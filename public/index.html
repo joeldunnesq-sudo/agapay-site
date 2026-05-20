@@ -138,6 +138,19 @@
       max-width: 460px;
       margin: 0 auto 2.75rem;
     }
+
+    .hero-watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 420px;
+      height: 420px;
+      object-fit: contain;
+      opacity: 0.06;
+      pointer-events: none;
+      z-index: 0;
+    }
  
     /* ── POINTS ── */
     .points {
@@ -416,6 +429,8 @@
  
   <!-- HERO -->
   <main class="hero">
+    <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
+    
     <div class="hero-inner">
  
       <a href="#" class="logo" aria-label="AgaPay Home">
