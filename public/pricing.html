@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pricing — AgaPay</title>
+  <meta name="description" content="AgaPay pricing — free for monasteries, affordable for mission parishes, and built to scale with your community. Honest fees, nothing hidden." />
+  <meta property="og:title" content="AgaPay Pricing" />
+  <meta property="og:url" content="https://agapay.app/pricing" />
+  <meta name="theme-color" content="#0F2D1F" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --deep:   #0F2D1F;
+      --forest: #355E3B;
+      --gold:   #C8A24A;
+      --cream:  #F3EFE6;
+      --stone:  #A69F91;
+      --ink:    #1A1A18;
+      --serif:  'Cormorant Garamond', Georgia, serif;
+      --sans:   'DM Sans', system-ui, sans-serif;
+      --r:      10px;
+      --rlg:    16px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(243,239,230,0.93);
+      backdrop-filter: blur(12px);
+      border-bottom: 0.5px solid rgba(166,159,145,0.35);
+    }
+    .nav-inner {
+      max-width: 860px; margin: 0 auto; padding: 0 1.5rem;
+      display: flex; align-items: center; justify-content: space-between; height: 64px;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; }
+    .nav-mark { width: 34px; height: 34px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+    .nav-name { font-family: var(--serif); font-size: 22px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
+    .nav-name em { color: var(--gold); font-style: normal; }
+    .nav-links { display: flex; align-items: center; gap: 1.75rem; }
+    .nav-links a { font-size: 14px; color: var(--stone); transition: color 0.2s; }
+    .nav-links a:hover { color: var(--ink); }
+    .nav-cta { background: var(--deep); color: var(--cream); border: none; padding: 9px 20px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: background 0.2s; }
+    .nav-cta:hover { background: var(--forest); }
+    .nav-give { background: var(--gold); color: var(--deep); border: none; padding: 9px 20px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
+    .nav-give:hover { opacity: 0.88; }
+
+    /* HERO */
+    .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 700px; height: 300px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.11) 0%, transparent 65%); pointer-events: none; }
+    .hero-inner { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; }
+    .hero-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1.25rem; font-weight: 500; }
+    .hero h1 { font-family: var(--serif); font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 500; color: var(--cream); line-height: 1.18; letter-spacing: -0.01em; margin-bottom: 1.5rem; }
+    .hero h1 em { color: var(--gold); font-style: italic; }
+    .hero-sub { font-size: 15px; color: var(--stone); line-height: 1.85; max-width: 480px; margin: 0 auto; }
+
+    /* WRAP */
+    .wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
+
+    /* SECTION */
+    .section { padding: 5rem 0; }
+    .section.alt { background: white; }
+    .section-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 0.6rem; font-weight: 500; }
+    .section-title { font-family: var(--serif); font-size: clamp(1.7rem, 3vw, 2.2rem); font-weight: 500; color: var(--deep); line-height: 1.22; margin-bottom: 1rem; letter-spacing: -0.01em; }
+    .section-lead { font-size: 15px; color: var(--stone); line-height: 1.9; max-width: 580px; margin-bottom: 3rem; }
+
+    /* PRICING CARDS */
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 3rem; }
+    .pcard { background: white; border: 0.5px solid rgba(166,159,145,0.4); border-radius: var(--rlg); padding: 2rem; display: flex; flex-direction: column; }
+    .pcard.featured { border: 2px solid var(--forest); }
+    .pcard.dark { background: var(--deep); border-color: transparent; }
+    .pcard-badge { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 20px; margin-bottom: 1rem; letter-spacing: 0.03em; }
+    .pcard-badge.green { background: rgba(53,94,59,0.12); color: var(--forest); border: 0.5px solid rgba(53,94,59,0.25); }
+    .pcard-badge.gold { background: rgba(200,162,74,0.12); color: #8B6B1F; border: 0.5px solid rgba(200,162,74,0.3); }
+    .pcard-badge.cream { background: rgba(243,239,230,0.12); color: var(--cream); border: 0.5px solid rgba(243,239,230,0.2); }
+    .pcard h3 { font-family: var(--serif); font-size: 1.3rem; font-weight: 500; color: var(--deep); margin-bottom: 0.4rem; line-height: 1.2; }
+    .pcard.dark h3 { color: var(--cream); }
+    .pcard-price { font-family: var(--serif); font-size: 2.4rem; font-weight: 500; color: var(--deep); line-height: 1; margin: 0.75rem 0 0.25rem; }
+    .pcard.dark .pcard-price { color: var(--cream); }
+    .pcard-price span { font-size: 14px; color: var(--stone); font-family: var(--sans); font-weight: 400; }
+    .pcard.dark .pcard-price span { color: rgba(166,159,145,0.7); }
+    .pcard-sub { font-size: 12px; color: var(--stone); margin-bottom: 1.5rem; }
+    .pcard.dark .pcard-sub { color: rgba(166,159,145,0.6); }
+    .pcard-divider { border: none; border-top: 0.5px solid rgba(166,159,145,0.25); margin-bottom: 1.5rem; }
+    .pcard.dark .pcard-divider { border-color: rgba(166,159,145,0.15); }
+    .pcard-features { list-style: none; display: flex; flex-direction: column; gap: 9px; margin-bottom: 1.75rem; flex: 1; }
+    .pcard-features li { font-size: 13px; color: var(--stone); display: flex; align-items: flex-start; gap: 8px; line-height: 1.55; }
+    .pcard.dark .pcard-features li { color: rgba(166,159,145,0.75); }
+    .pcard-features li::before { content: '✦'; color: var(--gold); font-size: 9px; margin-top: 3px; flex-shrink: 0; }
+    .pcard-features li.highlight { color: var(--ink); font-weight: 500; }
+    .pcard.dark .pcard-features li.highlight { color: var(--cream); }
+    .pcard-btn { width: 100%; padding: 11px; border-radius: var(--r); font-size: 13px; font-weight: 500; font-family: var(--sans); cursor: pointer; transition: all 0.2s; text-align: center; display: block; }
+    .pcard-btn.outline { background: transparent; border: 0.5px solid rgba(166,159,145,0.5); color: var(--deep); }
+    .pcard-btn.outline:hover { background: var(--cream); }
+    .pcard-btn.fill { background: var(--deep); border: none; color: var(--cream); }
+    .pcard-btn.fill:hover { background: var(--forest); }
+    .pcard-btn.gold { background: var(--gold); border: none; color: var(--deep); }
+    .pcard-btn.gold:hover { opacity: 0.88; }
+
+    /* FEE BREAKDOWN TABLE */
+    .breakdown { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); overflow: hidden; margin-bottom: 3rem; }
+    .breakdown-header { background: var(--deep); padding: 1.5rem 2rem; }
+    .breakdown-header h3 { font-family: var(--serif); font-size: 1.2rem; font-weight: 500; color: var(--cream); }
+    .breakdown-header p { font-size: 13px; color: rgba(166,159,145,0.7); margin-top: 4px; }
+    .breakdown table { width: 100%; border-collapse: collapse; }
+    .breakdown th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold); font-weight: 500; padding: 1rem 2rem; text-align: left; border-bottom: 0.5px solid rgba(166,159,145,0.2); background: rgba(243,239,230,0.5); }
+    .breakdown td { font-size: 13px; color: #4A4845; padding: 1rem 2rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); line-height: 1.5; }
+    .breakdown tr:last-child td { border-bottom: none; }
+    .breakdown td:first-child { font-weight: 500; color: var(--deep); }
+    .breakdown td.gold { color: var(--gold); font-weight: 500; }
+    .breakdown td.green { color: var(--forest); font-weight: 500; }
+    .breakdown tr.total td { background: rgba(243,239,230,0.5); font-weight: 500; }
+    .breakdown tr.total td:first-child { color: var(--deep); }
+
+    /* EXAMPLE CALC */
+    .calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 3rem; }
+    .calc-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.75rem; }
+    .calc-card h4 { font-family: var(--serif); font-size: 1.1rem; font-weight: 500; color: var(--deep); margin-bottom: 0.25rem; }
+    .calc-card-sub { font-size: 12px; color: var(--stone); margin-bottom: 1.25rem; }
+    .calc-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--stone); padding: 6px 0; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
+    .calc-row:last-child { border-bottom: none; }
+    .calc-row.total { font-weight: 500; color: var(--deep); padding-top: 10px; margin-top: 4px; border-top: 1px solid rgba(166,159,145,0.3); border-bottom: none; }
+    .calc-row.total span:last-child { color: var(--forest); font-size: 15px; }
+    .calc-row span:last-child { color: var(--ink); }
+    .calc-row.deduct span:last-child { color: #C0392B; }
+    .calc-row.earn span:last-child { color: var(--forest); }
+
+    /* FAQ */
+    .faqs { display: flex; flex-direction: column; gap: 0; }
+    .faq { border-bottom: 0.5px solid rgba(166,159,145,0.25); padding: 1.5rem 0; cursor: pointer; }
+    .faq:first-child { border-top: 0.5px solid rgba(166,159,145,0.25); }
+    .faq-q { font-size: 15px; font-weight: 500; color: var(--deep); display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+    .faq-q span { font-size: 18px; color: var(--gold); font-weight: 300; flex-shrink: 0; transition: transform 0.2s; }
+    .faq-a { font-size: 14px; color: var(--stone); line-height: 1.8; margin-top: 0.75rem; display: none; }
+    .faq.open .faq-a { display: block; }
+    .faq.open .faq-q span { transform: rotate(45deg); }
+
+    /* PULLQUOTE */
+    .pullquote { border-left: 2px solid var(--gold); padding: 0.75rem 0 0.75rem 1.75rem; margin: 3rem 0; }
+    .pullquote p { font-family: var(--serif); font-size: clamp(1.2rem, 2vw, 1.5rem); font-style: italic; color: var(--deep); line-height: 1.65; font-weight: 400; }
+
+    /* CTA */
+    .cta-band { background: var(--forest); padding: 4rem 2rem; text-align: center; }
+    .cta-band h2 { font-family: var(--serif); font-size: clamp(1.5rem, 2.5vw, 2rem); font-weight: 500; color: var(--cream); margin-bottom: 0.75rem; line-height: 1.3; }
+    .cta-band p { font-size: 14px; color: rgba(243,239,230,0.6); margin-bottom: 1.75rem; line-height: 1.8; max-width: 400px; margin-left: auto; margin-right: auto; }
+    .cta-band a { display: inline-block; background: var(--gold); color: var(--deep); padding: 13px 28px; border-radius: var(--r); font-size: 14px; font-weight: 500; font-family: var(--sans); transition: opacity 0.2s; }
+    .cta-band a:hover { opacity: 0.88; }
+
+    /* FOOTER */
+    footer { background: var(--deep); padding: 3.5rem 1.5rem 0; }
+    .footer-inner { max-width: 860px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 3rem; padding-bottom: 3rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
+    .footer-brand { display: flex; flex-direction: column; gap: 8px; }
+    .footer-logo { display: flex; align-items: center; gap: 8px; }
+    .footer-name { font-family: var(--serif); font-size: 19px; color: var(--cream); font-weight: 500; }
+    .footer-name em { color: var(--gold); font-style: normal; }
+    .footer-tagline { font-family: var(--serif); font-size: 13px; font-style: italic; color: rgba(166,159,145,0.4); }
+    .footer-nav { display: flex; gap: 3rem; flex-wrap: wrap; }
+    .footer-nav-group { display: flex; flex-direction: column; gap: 10px; }
+    .footer-nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin-bottom: 2px; }
+    .footer-nav-group a { font-size: 13px; color: rgba(166,159,145,0.55); transition: color 0.2s; }
+    .footer-nav-group a:hover { color: var(--cream); }
+    .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
+    .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.3); }
+
+    /* ANIMATIONS */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    .hero-eyebrow { animation: fadeUp 0.5s ease both; }
+    .hero h1      { animation: fadeUp 0.5s ease 0.08s both; }
+    .hero-sub     { animation: fadeUp 0.5s ease 0.16s both; }
+
+    /* RESPONSIVE */
+    @media (max-width: 600px) {
+      .breakdown td, .breakdown th { padding: 0.85rem 1rem; }
+      .nav-links a:not(:last-child):not(:nth-last-child(2)) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <div class="nav-mark">
+          <svg width="20" height="20" viewBox="0 0 44 44" fill="none">
+            <circle cx="22" cy="13" r="6" fill="#F3EFE6" opacity="0.92"/>
+            <circle cx="11" cy="33" r="4.5" fill="#F3EFE6" opacity="0.65"/>
+            <circle cx="33" cy="33" r="4.5" fill="#F3EFE6" opacity="0.65"/>
+            <path d="M22 19 C22 19 12 22 11 28" stroke="#F3EFE6" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            <path d="M22 19 C22 19 32 22 33 28" stroke="#F3EFE6" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            <path d="M13.5 33 C17.5 36.5 26.5 36.5 30.5 33" stroke="#C8A24A" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          </svg>
+        </div>
+        <span class="nav-name">Aga<em>Pay</em></span>
+      </a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/features">Features</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/about">About</a>
+        <a href="/#waitlist"><button class="nav-cta">Register parish</button></a>
+        <a href="/give"><button class="nav-give">Give now</button></a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">Pricing</div>
+      <h1>Honest fees.<br><em>Nothing hidden.</em></h1>
+      <p class="hero-sub">Free for monasteries. Affordable for missions. Built to scale with your community. Every fee explained — no surprises, ever.</p>
+    </div>
+  </div>
+
+  <!-- PRICING CARDS -->
+  <div class="section">
+    <div class="wrap">
+      <div class="section-eyebrow">Plans</div>
+      <h2 class="section-title">Find the right tier for your community</h2>
+      <p class="section-lead">Every Orthodox community is different. AgaPay is priced to serve a skete of six and a cathedral of six hundred — without making either feel like an afterthought.</p>
+
+      <div class="pricing-grid">
+
+        <div class="pcard dark">
+          <span class="pcard-badge cream">Monastery & Skete</span>
+          <h3>Monastic</h3>
+          <div class="pcard-price">Free <span>forever</span></div>
+          <div class="pcard-sub">All monasteries, sketes & convents</div>
+          <hr class="pcard-divider" />
+          <ul class="pcard-features">
+            <li class="highlight">No monthly platform fee — ever</li>
+            <li>1.5% AgaPay fee per transaction</li>
+            <li>All campaign and fund tools</li>
+            <li>Commemoration lists</li>
+            <li>Liturgical calendar</li>
+            <li>Donor-optional fee coverage</li>
+            <li>Email support</li>
+          </ul>
+          <a href="/#waitlist" class="pcard-btn gold">Register your monastery</a>
+        </div>
+
+        <div class="pcard">
+          <span class="pcard-badge gold">Mission Parish</span>
+          <h3>Mission</h3>
+          <div class="pcard-price">$19 <span>/ mo</span></div>
+          <div class="pcard-sub">Up to 75 giving households</div>
+          <hr class="pcard-divider" />
+          <ul class="pcard-features">
+            <li class="highlight">0.75% AgaPay fee per transaction</li>
+            <li>All three giving tiers</li>
+            <li>Liturgical calendar automation</li>
+            <li>Priest commemoration queue</li>
+            <li>Donor-optional fee coverage</li>
+            <li>Annual giving statements</li>
+            <li>Email support</li>
+          </ul>
+          <a href="/#waitlist" class="pcard-btn outline">Register your mission</a>
+        </div>
+
+        <div class="pcard featured">
+          <span class="pcard-badge green">Most parishes</span>
+          <h3>Parish</h3>
+          <div class="pcard-price">$39 <span>/ mo</span></div>
+          <div class="pcard-sub">75–300 giving households</div>
+          <hr class="pcard-divider" />
+          <ul class="pcard-features">
+            <li class="highlight">0.5% AgaPay fee per transaction</li>
+            <li>All three giving tiers</li>
+            <li>Full liturgical calendar automation</li>
+            <li>Priest commemoration queue</li>
+            <li>Donor-optional fee coverage</li>
+            <li>Annual giving statements</li>
+            <li>Multi-administrator access</li>
+            <li>Priority email support</li>
+          </ul>
+          <a href="/#waitlist" class="pcard-btn fill">Register your parish</a>
+        </div>
+
+        <div class="pcard">
+          <span class="pcard-badge green">Cathedral & Diocese</span>
+          <h3>Cathedral</h3>
+          <div class="pcard-price">Custom</div>
+          <div class="pcard-sub">300+ households or diocese-wide</div>
+          <hr class="pcard-divider" />
+          <ul class="pcard-features">
+            <li class="highlight">Negotiated transaction rate</li>
+            <li>Multi-parish dashboard</li>
+            <li>Diocese-level reporting</li>
+            <li>White-label option</li>
+            <li>Dedicated account manager</li>
+            <li>SLA guarantee</li>
+            <li>24/7 phone support</li>
+          </ul>
+          <a href="mailto:hello@agapay.app" class="pcard-btn outline">Contact us directly</a>
+        </div>
+
+      </div>
+
+      <div class="pullquote">
+        <p>"Donors can choose to cover all platform fees themselves — meaning your parish could use AgaPay at near-zero net cost."</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEE BREAKDOWN -->
+  <div class="section alt">
+    <div class="wrap">
+      <div class="section-eyebrow">Full fee breakdown</div>
+      <h2 class="section-title">Every fee, explained.</h2>
+      <p class="section-lead">AgaPay believes you should know exactly where every dollar goes. Here is the complete fee structure for every transaction — nothing omitted, nothing obscured.</p>
+
+      <div class="breakdown">
+        <div class="breakdown-header">
+          <h3>How fees work on a $100 donation</h3>
+          <p>Example: a parishioner gives $100 to their parish. Here is where every dollar goes.</p>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Fee</th>
+              <th>Who charges it</th>
+              <th>Amount</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Payment processing</td>
+              <td>Stripe</td>
+              <td class="deduct" style="color:#C0392B;">$3.20</td>
+              <td>2.9% + $0.30 — industry standard</td>
+            </tr>
+            <tr>
+              <td>AgaPay platform fee</td>
+              <td>AgaPay</td>
+              <td class="gold">$0.50</td>
+              <td>0.5% for Parish tier — sustains the platform</td>
+            </tr>
+            <tr class="total">
+              <td>Parish receives</td>
+              <td>—</td>
+              <td class="green" style="color:#355E3B;">$96.30</td>
+              <td>96.3% of every dollar given reaches the parish</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-eyebrow" style="margin-bottom:0.6rem;">When donors cover fees</div>
+      <h2 class="section-title" style="margin-bottom:0.75rem; font-size:1.5rem;">The donor fee coverage option</h2>
+      <p class="section-lead">AgaPay gives every donor the option to cover all platform fees at checkout. When they do, the parish receives the full amount given.</p>
+
+      <div class="breakdown">
+        <div class="breakdown-header">
+          <h3>$100 donation with donor fee coverage</h3>
+          <p>The donor opts to cover all fees — adding $3.70 to their gift.</p>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Fee</th>
+              <th>Who charges it</th>
+              <th>Amount</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Donor gives</td>
+              <td>—</td>
+              <td>$103.70</td>
+              <td>Donor covers all fees voluntarily</td>
+            </tr>
+            <tr>
+              <td>Stripe processing</td>
+              <td>Stripe</td>
+              <td style="color:#C0392B;">$3.20</td>
+              <td>2.9% + $0.30</td>
+            </tr>
+            <tr>
+              <td>AgaPay platform fee</td>
+              <td>AgaPay</td>
+              <td class="gold">$0.50</td>
+              <td>0.5% for Parish tier</td>
+            </tr>
+            <tr class="total">
+              <td>Parish receives</td>
+              <td>—</td>
+              <td style="color:#355E3B;">$100.00</td>
+              <td>The full intended gift — nothing deducted</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKED EXAMPLES -->
+  <div class="section">
+    <div class="wrap">
+      <div class="section-eyebrow">Real examples</div>
+      <h2 class="section-title">What AgaPay costs your community each month</h2>
+      <p class="section-lead">Every community is different. Here are three realistic scenarios showing your true monthly cost at each tier.</p>
+
+      <div class="calc-grid">
+
+        <div class="calc-card">
+          <h4>Holy Theotokos Skete</h4>
+          <div class="calc-card-sub">Monastic tier · 12 regular donors · $3,000/mo giving</div>
+          <div class="calc-row"><span>Monthly platform fee</span><span>$0.00</span></div>
+          <div class="calc-row"><span>AgaPay fee (1.5%)</span><span>$45.00</span></div>
+          <div class="calc-row"><span>Stripe processing</span><span>~$93.00</span></div>
+          <div class="calc-row total"><span>Skete receives</span><span>$2,862</span></div>
+        </div>
+
+        <div class="calc-card">
+          <h4>St. Seraphim Mission</h4>
+          <div class="calc-card-sub">Mission tier · 40 households · $6,000/mo giving</div>
+          <div class="calc-row"><span>Monthly platform fee</span><span>$19.00</span></div>
+          <div class="calc-row"><span>AgaPay fee (0.75%)</span><span>$45.00</span></div>
+          <div class="calc-row"><span>Stripe processing</span><span>~$186.00</span></div>
+          <div class="calc-row total"><span>Mission receives</span><span>$5,750</span></div>
+        </div>
+
+        <div class="calc-card">
+          <h4>St. Nicholas Parish</h4>
+          <div class="calc-card-sub">Parish tier · 150 households · $18,000/mo giving</div>
+          <div class="calc-row"><span>Monthly platform fee</span><span>$39.00</span></div>
+          <div class="calc-row"><span>AgaPay fee (0.5%)</span><span>$90.00</span></div>
+          <div class="calc-row"><span>Stripe processing</span><span>~$552.00</span></div>
+          <div class="calc-row total"><span>Parish receives</span><span>$17,319</span></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="section alt">
+    <div class="wrap">
+      <div class="section-eyebrow">Questions</div>
+      <h2 class="section-title">Frequently asked</h2>
+      <p class="section-lead">If your question isn't here, email us at hello@agapay.app — a real person will respond.</p>
+
+      <div class="faqs">
+        <div class="faq" onclick="toggleFaq(this)">
+          <div class="faq-q">Is AgaPay really free for monasteries, forever? <span>+</span></div>
+          <div class="faq-a">Yes — permanently and unconditionally. Monasteries and sketes of all sizes pay no monthly platform fee, ever. The only cost is the per-transaction AgaPay fee of 1.5%, which donors can choose to cover themselves. We made this decision at founding and it will not change.</div>
+        </div>
+        <div class="faq" onclick="toggleFaq(this)">
+          <div class="faq-q">What is Stripe and why does it appear in the fee breakdown? <span>+</span></div>
+          <div class="faq-a">Stripe is the payment processor that handles the actual movement of money — card processing, bank transfers, fraud protection, and compliance. It is the same infrastructure used by Amazon, Google, and most major platforms. Stripe charges 2.9% + $0.30 per transaction regardless of which platform you use. AgaPay is transparent about this cost because we believe you deserve to know exactly where your money goes.</div>
+        </div>
+        <div class="faq" onclick="toggleFaq(this)">
+          <div class="faq-q">Can donors really cover all the fees? <span>+</span></div>
+          <div class="faq-a">Yes. At checkout every donor sees an option to cover all platform fees — both the Stripe processing fee and the AgaPay fee. When they choose this option, the parish receives the full intended gift with nothing deducted. In our experience the majority of faithful donors are happy to cover fees when given the option clearly and honestly.</div>
+        </div>
+        <div class="faq" onclick="toggleFaq(this)">
+          <div class="faq-q">Are there any setup fees or contracts? <span>+</span></div>
+          <div class="faq-a">No setup fees. No annual contracts. No cancellation penalties. You pay month to month and can cancel at any time. We believe a platform should earn its parishes every month — not lock them in.</div>
+        </div>
+        <div class="faq" onclick="toggleFaq(this)">
+          <div class="faq-q">How does AgaPay verify canonical standing? <span>+</span></div>
+          <div class="faq-a">Every parish and monastery that registers with AgaPay is reviewed personally before activation. We verify that the community is in canonical standing within a recognized Orthodox jurisdiction — GOA, Antiochian, OCA, ROCOR, Serbian, or other. This protects the faithful and ensures that AgaPay is used only by legitimate Orthodox communities.</div>
+        </div>
+        <div class="faq" onclick="toggleFaq(this)">
+          <div class="faq-q">What jurisdictions does AgaPay serve? <span>+</span></div>
+          <div class="faq-a">AgaPay serves all Holy Orthodox jurisdictions in America — Greek Orthodox Archdiocese of America, Antiochian Orthodox Christian Archdiocese, Orthodox Church in America, Russian Orthodox Church Outside Russia, Serbian Orthodox Church, and others. We are pan-Orthodox by conviction, not by convenience.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-band">
+    <div class="wrap">
+      <h2>Ready to register your community?</h2>
+      <p>Founding parishes and monasteries receive preferred pricing and direct access to the founder. Join the waitlist today.</p>
+      <a href="/#waitlist">Request early access →</a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <div class="nav-mark">
+            <svg width="18" height="18" viewBox="0 0 44 44" fill="none">
+              <circle cx="22" cy="13" r="6" fill="#F3EFE6" opacity="0.85"/>
+              <circle cx="11" cy="33" r="4.5" fill="#F3EFE6" opacity="0.55"/>
+              <circle cx="33" cy="33" r="4.5" fill="#F3EFE6" opacity="0.55"/>
+              <path d="M22 19 C22 19 12 22 11 28" stroke="#F3EFE6" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+              <path d="M22 19 C22 19 32 22 33 28" stroke="#F3EFE6" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+              <path d="M13.5 33 C17.5 36.5 26.5 36.5 30.5 33" stroke="#C8A24A" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+            </svg>
+          </div>
+          <span class="footer-name">Aga<em>Pay</em></span>
+        </div>
+        <p class="footer-tagline">For the life of the world.</p>
+      </div>
+      <div class="footer-nav">
+        <div class="footer-nav-group">
+          <div class="footer-nav-label">Platform</div>
+          <a href="/features">Features</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/give">Give now</a>
+        </div>
+        <div class="footer-nav-group">
+          <div class="footer-nav-label">Company</div>
+          <a href="/about">About</a>
+          <a href="/contact">Contact</a>
+          <a href="/#waitlist">Register parish</a>
+        </div>
+        <div class="footer-nav-group">
+          <div class="footer-nav-label">Contact</div>
+          <a href="mailto:hello@agapay.app">hello@agapay.app</a>
+          <a href="mailto:parishes@agapay.app">parishes@agapay.app</a>
+          <a href="mailto:support@agapay.app">support@agapay.app</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 AgaPay · agapay.app</p>
+    </div>
+  </footer>
+
+  <script>
+    function toggleFaq(el) {
+      el.classList.toggle('open');
+    }
+  </script>
+
+</body>
+</html>
