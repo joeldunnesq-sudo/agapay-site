@@ -7,6 +7,7 @@
   <meta name="description" content="AgaPay brings stewardship, designated funds, and crisis campaigns together in one platform — built for Orthodox parishes and monasteries in America." />
   <meta property="og:title" content="AgaPay Features" />
   <meta property="og:url" content="https://agapay.app/features" />
+  <meta property="og:image" content="https://agapay.app/og-image.png" />
   <meta name="theme-color" content="#0F2D1F" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,7 +18,7 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --deep:   #0F2D1F;
+      --deep:    #0F2D1F;
       --forest: #355E3B;
       --gold:   #C8A24A;
       --cream:  #F3EFE6;
@@ -51,9 +52,35 @@
     .nav-links { display: flex; align-items: center; gap: 1.75rem; }
     .nav-links a { font-size: 14px; color: var(--stone); transition: color 0.2s; }
     .nav-links a:hover { color: var(--ink); }
-    .nav-cta { background: var(--deep); color: var(--cream); border: none; padding: 9px 20px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: background 0.2s; }
+    
+    .nav-cta { 
+      display: inline-block;
+      background: var(--deep); 
+      color: var(--cream); 
+      border: none; 
+      padding: 9px 20px; 
+      border-radius: var(--r); 
+      font-size: 13px; 
+      font-family: var(--sans); 
+      font-weight: 500; 
+      cursor: pointer; 
+      transition: background 0.2s; 
+    }
     .nav-cta:hover { background: var(--forest); }
-    .nav-give { background: var(--gold); color: var(--deep); border: none; padding: 9px 20px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
+    
+    .nav-give { 
+      display: inline-block;
+      background: var(--gold); 
+      color: var(--deep); 
+      border: none; 
+      padding: 9px 20px; 
+      border-radius: var(--r); 
+      font-size: 13px; 
+      font-family: var(--sans); 
+      font-weight: 500; 
+      cursor: pointer; 
+      transition: opacity 0.2s; 
+    }
     .nav-give:hover { opacity: 0.88; }
 
     /* HERO */
@@ -78,7 +105,7 @@
 
     /* THREE TIERS */
     .tiers-hero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: rgba(166,159,145,0.3); border: 0.5px solid rgba(166,159,145,0.3); border-radius: var(--rlg); overflow: hidden; margin-bottom: 5rem; }
-    .tier-hero { background: white; padding: 2.5rem 2rem; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .tier-hero { background: white; padding: 2.5rem 2rem; }
     .tier-hero:first-child { background: var(--deep); }
     .tier-num { font-family: var(--serif); font-size: 48px; font-weight: 600; color: var(--gold); line-height: 1; margin-bottom: 1rem; }
     .tier-hero h3 { font-family: var(--serif); font-size: 1.3rem; font-weight: 500; color: var(--deep); margin-bottom: 0.75rem; line-height: 1.2; }
@@ -114,7 +141,7 @@
     .cal-card p { font-size: 12px; color: var(--stone); line-height: 1.6; }
 
     /* STEPS */
-    .steps { display: flex; flex-direction: column; }
+    .steps { display: flex; flex-direction: column; list-style: none; }
     .step { display: flex; gap: 1.5rem; padding: 1.75rem 0; border-bottom: 0.5px solid rgba(166,159,145,0.25); }
     .step:last-child { border-bottom: none; }
     .step-num { width: 36px; height: 36px; min-width: 36px; border-radius: 50%; background: var(--gold); display: flex; align-items: center; justify-content: center; font-family: var(--serif); font-size: 16px; font-weight: 600; color: var(--deep); }
@@ -173,8 +200,12 @@
     .reveal-delay-4 { transition-delay: 0.4s; }
 
     /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .tiers-hero { grid-template-columns: 1fr; gap: 16px; background: transparent; border: none; }
+      .tier-hero { border: 0.5px solid rgba(166,159,145,0.3); border-radius: var(--rlg); }
+      .tier-hero:first-child { background: var(--deep); }
+    }
     @media (max-width: 680px) {
-      .tiers-hero { grid-template-columns: 1fr; }
       .split { grid-template-columns: 1fr; }
     }
     @media (max-width: 480px) {
@@ -186,7 +217,7 @@
 
   <nav>
     <div class="nav-inner">
-      <a href="/" class="nav-logo">
+      <a href="/" class="nav-logo" aria-label="AgaPay Home">
         <div class="nav-mark">
           <img src="/mark.png" alt="AgaPay" style="width: 48px; height: 48px; object-fit: contain;" />
         </div>
@@ -198,221 +229,223 @@
         <a href="/pricing">Pricing</a>
         <a href="/about">About</a>
         <a href="/#waitlist" class="nav-cta">Register parish</a>
-        <a href="/give"><button class="nav-give">Give now</button></a>
+        <a href="/give" class="nav-give">Give now</a>
       </div>
     </div>
   </nav>
 
-  <div class="hero">
+  <header class="hero">
     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
     <div class="hero-inner">
       <div class="hero-eyebrow">Features</div>
       <h1>Every way the Church gives,<br><em>finally in one place.</em></h1>
       <p class="hero-sub">AgaPay is built around three distinct giving modes — each shaped by how Orthodox Christians actually live and give, not by how a generic platform thinks they should.</p>
     </div>
-  </div>
+  </header>
 
-  <!-- THREE TIERS -->
-  <div class="section">
-    <div class="wrap">
-      <div class="section-eyebrow reveal">The three giving tiers</div>
-      <h2 class="section-title reveal reveal-delay-1">Stewardship. Funds. Campaigns.</h2>
-      <p class="section-lead reveal reveal-delay-2">Most giving platforms treat all donations the same. AgaPay understands that a weekly tithe, a memorial offering, and a disaster relief campaign are fundamentally different acts — and treats them accordingly.</p>
+  <main>
+    <!-- THREE TIERS -->
+    <section class="section" aria-label="The Three Giving Tiers">
+      <div class="wrap">
+        <div class="section-eyebrow reveal">The three giving tiers</div>
+        <h2 class="section-title reveal reveal-delay-1">Stewardship. Funds. Campaigns.</h2>
+        <p class="section-lead reveal reveal-delay-2">Most giving platforms treat all donations the same. AgaPay understands that a weekly tithe, a memorial offering, and a disaster relief campaign are fundamentally different acts — and treats them accordingly.</p>
 
-      <div class="tiers-hero">
-        <div class="tier-hero reveal reveal-delay-1">
-          <div class="tier-num">I</div>
-          <h3>Regular Stewardship</h3>
-          <p>The foundational tithe — recurring, faithful, tied to the rhythm of the liturgical year rather than arbitrary billing cycles.</p>
-          <ul class="tier-hero-items">
-            <li>Weekly and monthly recurring pledges</li>
-            <li>Annual stewardship campaigns</li>
-            <li>Liturgical calendar triggers — Great Lent, Pascha, Nativity</li>
-            <li>Automatic giving statements for tax purposes</li>
-            <li>Parishioner giving history and pledge tracking</li>
-          </ul>
-        </div>
-        <div class="tier-hero reveal reveal-delay-2">
-          <div class="tier-num">II</div>
-          <h3>Designated Funds</h3>
-          <p>Named, purposeful, permanent. A fund for the new iconostasis is not the same as a fund for the general operating budget.</p>
-          <ul class="tier-hero-items">
-            <li>Building and renovation funds</li>
-            <li>Iconostasis and beautification campaigns</li>
-            <li>Seminary and education scholarships</li>
-            <li>Parish school endowments</li>
-            <li>Restricted fund tracking with transparency reporting</li>
-          </ul>
-        </div>
-        <div class="tier-hero reveal reveal-delay-3">
-          <div class="tier-num">III</div>
-          <h3>Campaign Giving</h3>
-          <p>Acute, urgent, time-bound — with the canonical verification that GoFundMe can never offer.</p>
-          <ul class="tier-hero-items">
-            <li>Disaster and emergency relief appeals</li>
-            <li>Health crisis and medical funds</li>
-            <li>Love offerings for clergy and families in need</li>
-            <li>Time-limited feast day campaigns</li>
-            <li>Canonically verified — every campaign vetted</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="pullquote reveal">
-        <p>"The Church does not give because she is asked. She gives because she loves. AgaPay is built around that truth."</p>
-        <cite>— AgaPay founding principle</cite>
-      </div>
-    </div>
-  </div>
-
-  <!-- PARISH VS MONASTERY -->
-  <div class="section alt">
-    <div class="wrap">
-      <div class="section-eyebrow reveal">Who it serves</div>
-      <h2 class="section-title reveal reveal-delay-1">Parishes and monasteries, equally.</h2>
-      <p class="section-lead reveal reveal-delay-2">A parish and a monastery have different financial realities, different rhythms, and different relationships with giving. AgaPay treats them as equals — not as an afterthought.</p>
-
-      <div class="split">
-        <div class="split-card reveal reveal-delay-1">
-          <div class="split-card-header green">
-            <div class="split-card-tag">For parishes</div>
-            <h3>The full stewardship platform</h3>
-            <p>Everything a parish treasurer, priest, and council needs to run a financially healthy community.</p>
+        <div class="tiers-hero">
+          <div class="tier-hero reveal reveal-delay-1">
+            <div class="tier-num">I</div>
+            <h3>Regular Stewardship</h3>
+            <p>The foundational tithe — recurring, faithful, tied to the rhythm of the liturgical year rather than arbitrary billing cycles.</p>
+            <ul class="tier-hero-items">
+              <li>Weekly and monthly recurring pledges</li>
+              <li>Annual stewardship campaigns</li>
+              <li>Liturgical calendar triggers — Great Lent, Pascha, Nativity</li>
+              <li>Automatic giving statements for tax purposes</li>
+              <li>Parishioner giving history and pledge tracking</li>
+            </ul>
           </div>
-          <div class="split-card-body">
-            <ul class="split-features">
-              <li><div class="dot"></div>Weekly stewardship and recurring pledge management</li>
-              <li><div class="dot"></div>Feast day and candle offering collection</li>
-              <li><div class="dot"></div>Panakhida and parastas memorial donations with names submitted to the priest's queue</li>
-              <li><div class="dot"></div>Designated building and capital campaign funds</li>
-              <li><div class="dot"></div>Annual giving statements generated automatically</li>
-              <li><div class="dot"></div>Parish treasurer dashboard with full reporting</li>
-              <li><div class="dot"></div>Liturgical calendar automation for campaign timing</li>
-              <li><div class="dot"></div>Multi-administrator access with role permissions</li>
+          <div class="tier-hero reveal reveal-delay-2">
+            <div class="tier-num">II</div>
+            <h3>Designated Funds</h3>
+            <p>Named, purposeful, permanent. A fund for the new iconostasis is not the same as a fund for the general operating budget.</p>
+            <ul class="tier-hero-items">
+              <li>Building and renovation funds</li>
+              <li>Iconostasis and beautification campaigns</li>
+              <li>Seminary and education scholarships</li>
+              <li>Parish school endowments</li>
+              <li>Restricted fund tracking with transparency reporting</li>
+            </ul>
+          </div>
+          <div class="tier-hero reveal reveal-delay-3">
+            <div class="tier-num">III</div>
+            <h3>Campaign Giving</h3>
+            <p>Acute, urgent, time-bound — with the canonical verification that GoFundMe can never offer.</p>
+            <ul class="tier-hero-items">
+              <li>Disaster and emergency relief appeals</li>
+              <li>Health crisis and medical funds</li>
+              <li>Love offerings for clergy and families in need</li>
+              <li>Time-limited feast day campaigns</li>
+              <li>Canonically verified — every campaign vetted</li>
             </ul>
           </div>
         </div>
-        <div class="split-card reveal reveal-delay-2">
-          <div class="split-card-header dark">
-            <div class="split-card-tag">For monasteries</div>
-            <h3>Free, always — because it should be</h3>
-            <p>Monasteries give everything to the Church. AgaPay gives back by charging them nothing.</p>
+
+        <div class="pullquote reveal">
+          <p>"The Church does not give because she is asked. She gives because she loves. AgaPay is built around that truth."</p>
+          <cite>— AgaPay founding principle</cite>
+        </div>
+      </div>
+    </section>
+
+    <!-- PARISH VS MONASTERY -->
+    <section class="section alt" aria-label="Target Audiences">
+      <div class="wrap">
+        <div class="section-eyebrow reveal">Who it serves</div>
+        <h2 class="section-title reveal reveal-delay-1">Parishes and monasteries, equally.</h2>
+        <p class="section-lead reveal reveal-delay-2">A parish and a monastery have different financial realities, different rhythms, and different relationships with giving. AgaPay treats them as equals — not as an afterthought.</p>
+
+        <div class="split">
+          <div class="split-card reveal reveal-delay-1">
+            <div class="split-card-header green">
+              <div class="split-card-tag">For parishes</div>
+              <h3>The full stewardship platform</h3>
+              <p>Everything a parish treasurer, priest, and council needs to run a financially healthy community.</p>
+            </div>
+            <div class="split-card-body">
+              <ul class="split-features">
+                <li><div class="dot"></div>Weekly stewardship and recurring pledge management</li>
+                <li><div class="dot"></div>Feast day and candle offering collection</li>
+                <li><div class="dot"></div>Panakhida and parastas memorial donations with names submitted to the priest's queue</li>
+                <li><div class="dot"></div>Designated building and capital campaign funds</li>
+                <li><div class="dot"></div>Annual giving statements generated automatically</li>
+                <li><div class="dot"></div>Parish treasurer dashboard with full reporting</li>
+                <li><div class="dot"></div>Liturgical calendar automation for campaign timing</li>
+                <li><div class="dot"></div>Multi-administrator access with role permissions</li>
+              </ul>
+            </div>
           </div>
-          <div class="split-card-body">
-            <ul class="split-features">
-              <li><div class="dot"></div>Zero monthly platform fee — permanently free for all monasteries and sketes</li>
-              <li><div class="dot"></div>Product and craft sale campaigns — prayer ropes, books, icon prints</li>
-              <li><div class="dot"></div>Retreat and pilgrimage registration giving</li>
-              <li><div class="dot"></div>General support and oblation campaigns</li>
-              <li><div class="dot"></div>Building and restoration funds</li>
-              <li><div class="dot"></div>Crisis and urgent need appeals</li>
-              <li><div class="dot"></div>Memorial and prayer request donations</li>
-              <li><div class="dot"></div>Simple, dignified donor-facing pages</li>
-            </ul>
+          <div class="split-card reveal reveal-delay-2">
+            <div class="split-card-header dark">
+              <div class="split-card-tag">For monasteries</div>
+              <h3>Free, always — because it should be</h3>
+              <p>Monasteries give everything to the Church. AgaPay gives back by charging them nothing.</p>
+            </div>
+            <div class="split-card-body">
+              <ul class="split-features">
+                <li><div class="dot"></div>Zero monthly platform fee — permanently free for all monasteries and sketes</li>
+                <li><div class="dot"></div>Product and craft sale campaigns — prayer ropes, books, icon prints</li>
+                <li><div class="dot"></div>Retreat and pilgrimage registration giving</li>
+                <li><div class="dot"></div>General support and oblation campaigns</li>
+                <li><div class="dot"></div>Building and restoration funds</li>
+                <li><div class="dot"></div>Crisis and urgent need appeals</li>
+                <li><div class="dot"></div>Memorial and prayer request donations</li>
+                <li><div class="dot"></div>Simple, dignified donor-facing pages</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <!-- LITURGICAL CALENDAR -->
-  <div class="section">
-    <div class="wrap">
-      <div class="section-eyebrow reveal">The liturgical calendar</div>
-      <h2 class="section-title reveal reveal-delay-1">The only platform that knows<br>what season it is.</h2>
-      <p class="section-lead reveal reveal-delay-2">AgaPay is built around the Orthodox festal cycle — both Julian and Gregorian calendars supported. Campaigns are tied to the feasts, not to arbitrary marketing windows.</p>
+    <!-- LITURGICAL CALENDAR -->
+    <section class="section" aria-label="Liturgical Calendar Synchronization">
+      <div class="wrap">
+        <div class="section-eyebrow reveal">The liturgical calendar</div>
+        <h2 class="section-title reveal reveal-delay-1">The only platform that knows<br>what season it is.</h2>
+        <p class="section-lead reveal reveal-delay-2">AgaPay is built around the Orthodox festal cycle — both Julian and Gregorian calendars supported. Campaigns are tied to the feasts, not to arbitrary marketing windows.</p>
 
-      <div class="calendar-grid">
-        <div class="cal-card reveal reveal-delay-1">
-          <div class="cal-season">Nativity Fast</div>
-          <h4>Nativity of Christ</h4>
-          <p>Dec 25 / Jan 7 — Campaign window opens Dec 1. Both calendars supported.</p>
-        </div>
-        <div class="cal-card reveal reveal-delay-2">
-          <div class="cal-season">Fixed feast</div>
-          <h4>Theophany</h4>
-          <p>Jan 6 / 19 — Great Blessing of Waters offering window built in.</p>
-        </div>
-        <div class="cal-card reveal reveal-delay-3">
-          <div class="cal-season">Great Lent</div>
-          <h4>Clean Monday appeal</h4>
-          <p>Moveable — AgaPay calculates the correct date per your parish calendar.</p>
-        </div>
-        <div class="cal-card reveal reveal-delay-4">
-          <div class="cal-season">Bright Week</div>
-          <h4>Pascha appeal</h4>
-          <p>The holiest season — treated with the reverence it deserves.</p>
-        </div>
-        <div class="cal-card reveal reveal-delay-1">
-          <div class="cal-season">Soul Saturdays</div>
-          <h4>Panakhida memorials</h4>
-          <p>Auto-flagged throughout the year. Memorial donations routed to the priest's queue.</p>
-        </div>
-        <div class="cal-card reveal reveal-delay-2">
-          <div class="cal-season">Dormition Fast</div>
-          <h4>Dormition of the Theotokos</h4>
-          <p>Aug 15 / 28 — Elevated priority for Theotokos parishes.</p>
-        </div>
-        <div class="cal-card reveal reveal-delay-3">
-          <div class="cal-season">Apostles' Fast</div>
-          <h4>Ss. Peter &amp; Paul</h4>
-          <p>June 29 / July 12 — Configurable per parish patron.</p>
-        </div>
-        <div class="cal-card reveal reveal-delay-4">
-          <div class="cal-season">Your feast</div>
-          <h4>Patronal feast day</h4>
-          <p>Set your own patron saint. AgaPay builds the campaign around it automatically.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- HOW IT WORKS -->
-  <div class="section alt">
-    <div class="wrap">
-      <div class="section-eyebrow reveal">How it works</div>
-      <h2 class="section-title reveal reveal-delay-1">From registration to first offering<br>in under an hour.</h2>
-      <p class="section-lead reveal reveal-delay-2">AgaPay is designed to be set up by a parish council member, not a software engineer. If you can send an email, you can set up AgaPay.</p>
-
-      <div class="steps">
-        <div class="step reveal">
-          <div class="step-num">1</div>
-          <div>
-            <h3>Parish registers with AgaPay</h3>
-            <p>A priest or parish council administrator submits a registration request. We verify canonical standing before activation — ensuring only legitimate Orthodox communities use the platform. This protects the faithful.</p>
+        <div class="calendar-grid">
+          <div class="cal-card reveal reveal-delay-1">
+            <div class="cal-season">Nativity Fast</div>
+            <h4>Nativity of Christ</h4>
+            <p>Dec 25 / Jan 7 — Campaign window opens Dec 1. Both calendars supported.</p>
           </div>
-        </div>
-        <div class="step reveal reveal-delay-1">
-          <div class="step-num">2</div>
-          <div>
-            <h3>Configure your parish profile</h3>
-            <p>Set your jurisdiction, liturgical calendar (Julian or Gregorian), patronal feast, accepted offering types, and language preferences. ROCOR parishes can use Church Slavonic labels. GOA parishes can use Greek. Both are supported.</p>
+          <div class="cal-card reveal reveal-delay-2">
+            <div class="cal-season">Fixed feast</div>
+            <h4>Theophany</h4>
+            <p>Jan 6 / 19 — Great Blessing of Waters offering window built in.</p>
           </div>
-        </div>
-        <div class="step reveal reveal-delay-2">
-          <div class="step-num">3</div>
-          <div>
-            <h3>Share with your parishioners</h3>
-            <p>Every parish gets a clean, dedicated giving page at agapay.app/give/your-parish. Share it in your bulletin, from the ambo, or via email. No app download required for donors.</p>
+          <div class="cal-card reveal reveal-delay-3">
+            <div class="cal-season">Great Lent</div>
+            <h4>Clean Monday appeal</h4>
+            <p>Moveable — AgaPay calculates the correct date per your parish calendar.</p>
           </div>
-        </div>
-        <div class="step reveal reveal-delay-3">
-          <div class="step-num">4</div>
-          <div>
-            <h3>Names go to the priest automatically</h3>
-            <p>When a parishioner submits a candle offering or memorial donation, the departed names are formatted and sent directly to the priest's commemoration queue — ready for the proskomedia. Nothing is lost.</p>
+          <div class="cal-card reveal reveal-delay-4">
+            <div class="cal-season">Bright Week</div>
+            <h4>Pascha appeal</h4>
+            <p>The holiest season — treated with the reverence it deserves.</p>
           </div>
-        </div>
-        <div class="step reveal reveal-delay-4">
-          <div class="step-num">5</div>
-          <div>
-            <h3>Treasurer sees everything, clearly</h3>
-            <p>Every offering is categorized, dated, and attributed. The parish treasurer has a complete dashboard with exportable reports. Annual giving statements are generated automatically at year end.</p>
+          <div class="cal-card reveal reveal-delay-1">
+            <div class="cal-season">Soul Saturdays</div>
+            <h4>Panakhida memorials</h4>
+            <p>Auto-flagged throughout the year. Memorial donations routed to the priest's queue.</p>
+          </div>
+          <div class="cal-card reveal reveal-delay-2">
+            <div class="cal-season">Dormition Fast</div>
+            <h4>Dormition of the Theotokos</h4>
+            <p>Aug 15 / 28 — Elevated priority for Theotokos parishes.</p>
+          </div>
+          <div class="cal-card reveal reveal-delay-3">
+            <div class="cal-season">Apostles' Fast</div>
+            <h4>Ss. Peter &amp; Paul</h4>
+            <p>June 29 / July 12 — Configurable per parish patron.</p>
+          </div>
+          <div class="cal-card reveal reveal-delay-4">
+            <div class="cal-season">Your feast</div>
+            <h4>Patronal feast day</h4>
+            <p>Set your own patron saint. AgaPay builds the campaign around it automatically.</p>
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="section alt" aria-label="Onboarding Timeline">
+      <div class="wrap">
+        <div class="section-eyebrow reveal">How it works</div>
+        <h2 class="section-title reveal reveal-delay-1">From registration to first offering<br>in under an hour.</h2>
+        <p class="section-lead reveal reveal-delay-2">AgaPay is designed to be set up by a parish council member, not a software engineer. If you can send an email, you can set up AgaPay.</p>
+
+        <ol class="steps">
+          <li class="step reveal">
+            <div class="step-num">1</div>
+            <div>
+              <h3>Parish registers with AgaPay</h3>
+              <p>A priest or parish council administrator submits a registration request. We verify canonical standing before activation — ensuring only legitimate Orthodox communities use the platform. This protects the faithful.</p>
+            </div>
+          </li>
+          <li class="step reveal reveal-delay-1">
+            <div class="step-num">2</div>
+            <div>
+              <h3>Configure your parish profile</h3>
+              <p>Set your jurisdiction, liturgical calendar (Julian or Gregorian), patronal feast, accepted offering types, and language preferences. ROCOR parishes can use Church Slavonic labels. GOA parishes can use Greek. Both are supported.</p>
+            </div>
+          </li>
+          <li class="step reveal reveal-delay-2">
+            <div class="step-num">3</div>
+            <div>
+              <h3>Share with your parishioners</h3>
+              <p>Every parish gets a clean, dedicated giving page at agapay.app/give/your-parish. Share it in your bulletin, from the ambo, or via email. No app download required for donors.</p>
+            </div>
+          </li>
+          <li class="step reveal reveal-delay-3">
+            <div class="step-num">4</div>
+            <div>
+              <h3>Names go to the priest automatically</h3>
+              <p>When a parishioner submits a candle offering or memorial donation, the departed names are formatted and sent directly to the priest's commemoration queue — ready for the proskomedia. Nothing is lost.</p>
+            </div>
+          </li>
+          <li class="step reveal reveal-delay-4">
+            <div class="step-num">5</div>
+            <div>
+              <h3>Treasurer sees everything, clearly</h3>
+              <p>Every offering is categorized, dated, and attributed. The parish treasurer has a complete dashboard with exportable reports. Annual giving statements are generated automatically at year end.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+  </main>
 
   <!-- CTA -->
   <div class="cta-band">
@@ -427,7 +460,7 @@
     <div class="footer-inner">
       <div class="footer-brand">
         <div class="footer-logo">
-          <div class="nav-mark">
+          <div style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
             <img src="/mark.png" alt="AgaPay" style="width: 48px; height: 48px; object-fit: contain;" />
           </div>
           <span class="footer-name">Aga<em>Pay</em></span>
@@ -456,7 +489,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>© 2025 AgaPay · agapay.app</p>
+      <p>© 2026 AgaPay · agapay.app</p>
     </div>
   </footer>
 
@@ -466,9 +499,10 @@
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.1 });
+    }, { threshold: 0.05 });
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
   </script>
