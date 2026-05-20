@@ -484,6 +484,45 @@
     .ml-embedded .ml-form-embedWrapper .ml-form-embedBody .ml-form-embedContent {
       display: none !important;
     }
+
+  /* SCROLL ANIMATIONS */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    
+    /* HOVER LIFTS */
+    .pcard:hover,
+    .pillar:hover,
+    .fcard:hover,
+    .cal-card:hover,
+    .value:hover,
+    .contact-card:hover,
+    .calc-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(15,45,31,0.08);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }  
+
+    // SCROLL REVEAL
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+    
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
   </style>
 </head>
 <body>
@@ -514,7 +553,7 @@
           <div class="ml-embedded" data-form="vwTKVN"></div>
       </section>
  
-      <div class="points" style="margin-top: 2rem;">
+     <div class="points reveal" style="margin-top: 2rem;">
         <div class="point"><div class="point-dot" aria-hidden="true"></div><span>Weekly stewardship &amp; recurring pledges tied to the liturgical calendar</span></div>
         <div class="point"><div class="point-dot" aria-hidden="true"></div><span>Feast day offerings, candle intentions &amp; panakhida memorials</span></div>
         <div class="point"><div class="point-dot" aria-hidden="true"></div><span>Designated funds, love offerings &amp; crisis campaigns — free for monasteries</span></div>
