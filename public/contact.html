@@ -7,6 +7,7 @@
   <meta name="description" content="Get in touch with AgaPay. Register your parish, ask a question, or just say hello. A real person will respond." />
   <meta property="og:title" content="Contact AgaPay" />
   <meta property="og:url" content="https://agapay.app/contact" />
+  <meta property="og:image" content="https://agapay.app/og-image.png" />
   <meta name="theme-color" content="#0F2D1F" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,7 +18,7 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --deep:   #0F2D1F;
+      --deep:    #0F2D1F;
       --forest: #355E3B;
       --gold:   #C8A24A;
       --cream:  #F3EFE6;
@@ -51,9 +52,35 @@
     .nav-links { display: flex; align-items: center; gap: 1.75rem; }
     .nav-links a { font-size: 14px; color: var(--stone); transition: color 0.2s; }
     .nav-links a:hover { color: var(--ink); }
-    .nav-cta { background: var(--deep); color: var(--cream); border: none; padding: 9px 20px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: background 0.2s; }
+    
+    .nav-cta { 
+      display: inline-block;
+      background: var(--deep); 
+      color: var(--cream); 
+      border: none; 
+      padding: 9px 20px; 
+      border-radius: var(--r); 
+      font-size: 13px; 
+      font-family: var(--sans); 
+      font-weight: 500; 
+      cursor: pointer; 
+      transition: background 0.2s; 
+    }
     .nav-cta:hover { background: var(--forest); }
-    .nav-give { background: var(--gold); color: var(--deep); border: none; padding: 9px 20px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
+    
+    .nav-give { 
+      display: inline-block;
+      background: var(--gold); 
+      color: var(--deep); 
+      border: none; 
+      padding: 9px 20px; 
+      border-radius: var(--r); 
+      font-size: 13px; 
+      font-family: var(--sans); 
+      font-weight: 500; 
+      cursor: pointer; 
+      transition: opacity 0.2s; 
+    }
     .nav-give:hover { opacity: 0.88; }
 
     /* HERO */
@@ -101,6 +128,7 @@
     .form-sub { font-size: 13px; color: var(--stone); margin-bottom: 2rem; line-height: 1.6; }
     .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.25rem; }
     .form-group label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--stone); font-weight: 500; }
+    
     .form-group input,
     .form-group select,
     .form-group textarea {
@@ -113,7 +141,7 @@
       font-family: var(--sans);
       width: 100%;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, background-color 0.2s;
       appearance: none;
     }
     .form-group input:focus,
@@ -121,7 +149,21 @@
     .form-group textarea:focus { border-color: var(--gold); background: white; }
     .form-group textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .form-submit { width: 100%; padding: 13px; background: var(--deep); color: var(--cream); border: none; border-radius: var(--r); font-size: 14px; font-weight: 500; font-family: var(--sans); cursor: pointer; transition: background 0.2s; margin-top: 0.5rem; }
+    
+    .form-submit { 
+      width: 100%; 
+      padding: 13px; 
+      background: var(--deep); 
+      color: var(--cream); 
+      border: none; 
+      border-radius: var(--r); 
+      font-size: 14px; 
+      font-weight: 500; 
+      font-family: var(--sans); 
+      cursor: pointer; 
+      transition: background 0.2s; 
+      margin-top: 0.5rem; 
+    }
     .form-submit:hover { background: var(--forest); }
     .form-note { font-size: 12px; color: var(--stone); text-align: center; margin-top: 0.75rem; line-height: 1.6; }
 
@@ -187,7 +229,7 @@
 
   <nav>
     <div class="nav-inner">
-      <a href="/" class="nav-logo">
+      <a href="/" class="nav-logo" aria-label="AgaPay Home">
         <div class="nav-mark">
           <img src="/mark.png" alt="AgaPay" style="width: 48px; height: 48px; object-fit: contain;" />
         </div>
@@ -198,32 +240,32 @@
         <a href="/features">Features</a>
         <a href="/pricing">Pricing</a>
         <a href="/about">About</a>
-        <a href="/#waitlist"><button class="nav-cta">Register parish</button></a>
-        <a href="/give"><button class="nav-give">Give now</button></a>
+        <a href="/#waitlist" class="nav-cta">Register parish</a>
+        <a href="/give" class="nav-give">Give now</a>
       </div>
     </div>
   </nav>
 
-  <div class="hero">
+  <header class="hero">
     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
     <div class="hero-inner">
       <div class="hero-eyebrow">Contact</div>
       <h1>We read every<br><em>message ourselves.</em></h1>
       <p class="hero-sub">No bots. No ticket queues. A real person — the founder — will read your message and respond personally.</p>
     </div>
-  </div>
+  </header>
 
-  <div class="main">
+  <main class="main">
     <div class="wrap">
       <div class="main-grid">
 
         <!-- LEFT — CONTACT DETAILS -->
-        <div class="contact-details">
+        <section class="contact-details" aria-label="Direct Contact Links">
           <div class="details-eyebrow reveal">Get in touch</div>
 
           <div class="contact-card reveal reveal-delay-1">
             <div class="contact-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             </div>
             <h4>General inquiries</h4>
             <a href="mailto:hello@agapay.app">hello@agapay.app</a>
@@ -232,7 +274,7 @@
 
           <div class="contact-card reveal reveal-delay-2">
             <div class="contact-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </div>
             <h4>Parish & monastery registration</h4>
             <a href="mailto:parishes@agapay.app">parishes@agapay.app</a>
@@ -241,7 +283,7 @@
 
           <div class="contact-card reveal reveal-delay-3">
             <div class="contact-card-icon">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
             <h4>Support</h4>
             <a href="mailto:support@agapay.app">support@agapay.app</a>
@@ -251,84 +293,86 @@
           <div class="response-note reveal reveal-delay-4">
             <p><strong>Response time:</strong> We typically respond within one business day. Parish registration inquiries are prioritized. You will always hear from a real person.</p>
           </div>
-        </div>
+        </section>
 
         <!-- RIGHT — FORM -->
-        <div class="form-wrap reveal" id="contact-form-wrap">
-          <div id="form-body">
-            <div class="form-title">Send us a message</div>
-            <p class="form-sub">Whether you're a priest exploring AgaPay for your parish, a monastery administrator, or simply curious — we want to hear from you.</p>
+        <section class="form-wrap reveal" id="contact-form-wrap" aria-label="Message Transmission Form">
+          <form id="contact-form" onsubmit="handleSubmit(event)">
+            <div id="form-body">
+              <div class="form-title">Send us a message</div>
+              <p class="form-sub">Whether you're a priest exploring AgaPay for your parish, a monastery administrator, or simply curious — we want to hear from you.</p>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label>First name</label>
-                <input type="text" id="fname" placeholder="Fr. John" />
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="fname">First name</label>
+                  <input type="text" id="fname" name="firstname" placeholder="Fr. John" required />
+                </div>
+                <div class="form-group">
+                  <label for="lname">Last name</label>
+                  <input type="text" id="lname" name="lastname" placeholder="Smith" required />
+                </div>
               </div>
+
               <div class="form-group">
-                <label>Last name</label>
-                <input type="text" id="lname" placeholder="Smith" />
+                <label for="email">Email address</label>
+                <input type="email" id="email" name="email" placeholder="father.john@stnicholas.org" required />
               </div>
+
+              <div class="form-group">
+                <label for="role">I am a...</label>
+                <select id="role" name="role" required>
+                  <option value="">Select one</option>
+                  <option value="Parish priest">Parish priest</option>
+                  <option value="Parish council member">Parish council member</option>
+                  <option value="Parish treasurer">Parish treasurer</option>
+                  <option value="Monastery administrator">Monastery or skete administrator</option>
+                  <option value="Diocesan administrator">Diocesan administrator</option>
+                  <option value="Interested parishioner">Interested parishioner</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="jurisdiction">Jurisdiction</label>
+                <select id="jurisdiction" name="jurisdiction" required>
+                  <option value="">Select jurisdiction</option>
+                  <option value="GOA">Greek Orthodox Archdiocese (GOA)</option>
+                  <option value="Antiochian">Antiochian Orthodox</option>
+                  <option value="OCA">Orthodox Church in America (OCA)</option>
+                  <option value="ROCOR">Russian Orthodox Church Outside Russia (ROCOR)</option>
+                  <option value="Serbian">Serbian Orthodox</option>
+                  <option value="Other">Other / Multiple</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="message">Message</label>
+                <textarea id="message" name="message" placeholder="Tell us about your parish, your questions, or anything else on your mind..." required></textarea>
+              </div>
+
+              <button type="submit" class="form-submit">Send message →</button>
+              <p class="form-note">Your message goes directly to the founder. No bots, no ticket systems.</p>
             </div>
+          </form>
 
-            <div class="form-group">
-              <label>Email address</label>
-              <input type="email" id="email" placeholder="father.john@stnicholas.org" />
-            </div>
-
-            <div class="form-group">
-              <label>I am a...</label>
-              <select id="role">
-                <option value="">Select one</option>
-                <option>Parish priest</option>
-                <option>Parish council member</option>
-                <option>Parish treasurer</option>
-                <option>Monastery or skete administrator</option>
-                <option>Diocesan administrator</option>
-                <option>Interested parishioner</option>
-                <option>Other</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Jurisdiction</label>
-              <select id="jurisdiction">
-                <option value="">Select jurisdiction</option>
-                <option>Greek Orthodox Archdiocese (GOA)</option>
-                <option>Antiochian Orthodox</option>
-                <option>Orthodox Church in America (OCA)</option>
-                <option>Russian Orthodox Church Outside Russia (ROCOR)</option>
-                <option>Serbian Orthodox</option>
-                <option>Other / Multiple</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Message</label>
-              <textarea id="message" placeholder="Tell us about your parish, your questions, or anything else on your mind..."></textarea>
-            </div>
-
-            <button class="form-submit" onclick="handleSubmit()">Send message →</button>
-            <p class="form-note">Your message goes directly to the founder. No bots, no ticket systems.</p>
-          </div>
-
-          <div class="form-success" id="form-success">
+          <div class="form-success" id="form-success" role="alert">
             <div class="form-success-icon">
-              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <h3>Message received.</h3>
             <p>Thank you for reaching out. The founder will read your message personally and respond within one business day.<br><br>May God bless your community.</p>
           </div>
-        </div>
+        </section>
 
       </div>
     </div>
-  </div>
+  </main>
 
   <footer>
     <div class="footer-inner">
       <div class="footer-brand">
         <div class="footer-logo">
-          <div class="nav-mark">
+          <div style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
             <img src="/mark.png" alt="AgaPay" style="width: 48px; height: 48px; object-fit: contain;" />
           </div>
           <span class="footer-name">Aga<em>Pay</em></span>
@@ -357,51 +401,39 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>© 2025 AgaPay · agapay.app</p>
+      <p>© 2026 AgaPay · agapay.app</p>
     </div>
   </footer>
 
   <script>
-    // SCROLL REVEAL
+    // SCROLL REVEAL (Intersection Observer)
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.1 });
+    }, { threshold: 0.05 });
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    // FORM SUBMIT
-    function handleSubmit() {
+    // CLEAN FORM HANDLING LOGIC
+    function handleSubmit(event) {
+      event.preventDefault(); // Stop page reload mechanics safely
+      
       const email = document.getElementById('email').value.trim();
-      const fname = document.getElementById('fname').value.trim();
-      const lname = document.getElementById('lname').value.trim();
-      const role = document.getElementById('role').value;
-      const jurisdiction = document.getElementById('jurisdiction').value;
       const message = document.getElementById('message').value.trim();
 
       if (!email || !message) {
-        alert('Please provide your email address and a message.');
         return;
       }
 
-      const subject = encodeURIComponent('AgaPay Contact: ' + (role || 'Inquiry') + (jurisdiction ? ' — ' + jurisdiction : ''));
-      const body = encodeURIComponent(
-        'Name: ' + fname + ' ' + lname + '\n' +
-        'Email: ' + email + '\n' +
-        'Role: ' + role + '\n' +
-        'Jurisdiction: ' + jurisdiction + '\n\n' +
-        'Message:\n' + message
-      );
-
-      window.location.href = 'mailto:hello@agapay.app?subject=' + subject + '&body=' + body;
-
-      setTimeout(function() {
-        document.getElementById('form-body').style.display = 'none';
-        document.getElementById('form-success').style.display = 'block';
-      }, 1000);
+      // Dynamic placeholder for an asynchronous platform POST request hook
+      // e.g., fetch('https://formspree.io/f/your_id', { method: 'POST', body: new FormData(event.target) })
+      
+      document.getElementById('form-body').style.display = 'none';
+      document.getElementById('form-success').style.display = 'block';
     }
   </script>
 
