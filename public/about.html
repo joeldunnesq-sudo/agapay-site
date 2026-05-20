@@ -65,6 +65,20 @@
     }
     .nav-cta:hover { background: var(--forest); color: var(--cream); }
 
+    .nav-give {
+      background: var(--gold);
+      color: var(--deep);
+      border: none;
+      padding: 9px 20px;
+      border-radius: var(--r);
+      font-size: 13px;
+      font-family: var(--sans);
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+.nav-give:hover { opacity: 0.88; }
+
     /* HERO */
     .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
     .hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 700px; height: 300px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.11) 0%, transparent 65%); pointer-events: none; }
