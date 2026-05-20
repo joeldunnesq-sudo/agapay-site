@@ -75,6 +75,18 @@
     .hero h1 { font-family: var(--serif); font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 500; color: var(--cream); line-height: 1.18; letter-spacing: -0.01em; margin-bottom: 1.5rem; }
     .hero h1 em { color: var(--gold); font-style: italic; }
     .hero-sub { font-size: 15px; color: var(--stone); line-height: 1.85; max-width: 500px; margin: 0 auto; }
+    .hero-watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 420px;
+      height: 420px;
+      object-fit: contain;
+      opacity: 0.02;
+      pointer-events: none;
+      z-index: 0;
+    }
 
     /* WRAP */
     .wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
@@ -216,6 +228,7 @@
 
   <!-- HERO -->
   <div class="hero">
+     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
     <div class="hero-inner">
       <div class="hero-eyebrow">Features</div>
       <h1>Every way the Church gives,<br><em>finally in one place.</em></h1>
