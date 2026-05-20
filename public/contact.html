@@ -59,49 +59,38 @@
     /* HERO */
     .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
     .hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 700px; height: 300px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.11) 0%, transparent 65%); pointer-events: none; }
+    .hero-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; height: 450px; object-fit: contain; opacity: 0.08; pointer-events: none; z-index: 0; }
     .hero-inner { position: relative; z-index: 1; max-width: 580px; margin: 0 auto; }
     .hero-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1.25rem; font-weight: 500; }
     .hero h1 { font-family: var(--serif); font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 500; color: var(--cream); line-height: 1.18; letter-spacing: -0.01em; margin-bottom: 1.5rem; }
     .hero h1 em { color: var(--gold); font-style: italic; }
     .hero-sub { font-size: 15px; color: var(--stone); line-height: 1.85; max-width: 420px; margin: 0 auto; }
-    .hero-watermark {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 450px;
-      height: 450px;
-      object-fit: contain;
-      opacity: 0.08;
-      pointer-events: none;
-      z-index: 0;
-    }
 
     /* WRAP */
     .wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
 
-    /* MAIN SECTION */
+    /* MAIN */
     .main { padding: 5rem 0; }
     .main-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 5rem; align-items: start; }
 
     /* CONTACT DETAILS */
     .contact-details { position: sticky; top: 90px; }
     .details-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1.25rem; font-weight: 500; }
-    .detail-group { margin-bottom: 2rem; }
-    .detail-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--stone); font-weight: 500; margin-bottom: 0.5rem; }
-    .detail-value { font-size: 14px; color: var(--ink); line-height: 1.7; }
-    .detail-value a { color: var(--gold); transition: opacity 0.2s; }
-    .detail-value a:hover { opacity: 0.75; }
-    .detail-value p { font-size: 13px; color: var(--stone); margin-top: 3px; line-height: 1.6; }
-
-    .contact-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.75rem; margin-bottom: 1.25rem; }
+    .contact-card {
+      background: white;
+      border: 0.5px solid rgba(166,159,145,0.35);
+      border-radius: var(--rlg);
+      padding: 1.75rem;
+      margin-bottom: 1.25rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .contact-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,45,31,0.08); }
     .contact-card-icon { width: 36px; height: 36px; background: rgba(200,162,74,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 0.85rem; }
     .contact-card-icon svg { width: 17px; height: 17px; stroke: var(--gold); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .contact-card h4 { font-size: 13px; font-weight: 500; color: var(--deep); margin-bottom: 4px; }
     .contact-card a { font-size: 13px; color: var(--gold); display: block; transition: opacity 0.2s; }
     .contact-card a:hover { opacity: 0.75; }
     .contact-card p { font-size: 12px; color: var(--stone); margin-top: 4px; line-height: 1.6; }
-
     .response-note { background: rgba(53,94,59,0.07); border: 0.5px solid rgba(53,94,59,0.2); border-radius: var(--r); padding: 1rem 1.25rem; }
     .response-note p { font-size: 13px; color: var(--forest); line-height: 1.65; }
     .response-note strong { font-weight: 500; }
@@ -132,24 +121,11 @@
     .form-group textarea:focus { border-color: var(--gold); background: white; }
     .form-group textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .form-submit {
-      width: 100%;
-      padding: 13px;
-      background: var(--deep);
-      color: var(--cream);
-      border: none;
-      border-radius: var(--r);
-      font-size: 14px;
-      font-weight: 500;
-      font-family: var(--sans);
-      cursor: pointer;
-      transition: background 0.2s;
-      margin-top: 0.5rem;
-    }
+    .form-submit { width: 100%; padding: 13px; background: var(--deep); color: var(--cream); border: none; border-radius: var(--r); font-size: 14px; font-weight: 500; font-family: var(--sans); cursor: pointer; transition: background 0.2s; margin-top: 0.5rem; }
     .form-submit:hover { background: var(--forest); }
     .form-note { font-size: 12px; color: var(--stone); text-align: center; margin-top: 0.75rem; line-height: 1.6; }
 
-    /* SUCCESS STATE */
+    /* SUCCESS */
     .form-success { display: none; text-align: center; padding: 3rem 2rem; }
     .form-success-icon { width: 56px; height: 56px; background: rgba(53,94,59,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
     .form-success-icon svg { width: 24px; height: 24px; stroke: var(--forest); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -172,11 +148,28 @@
     .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
     .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.3); }
 
-    /* ANIMATIONS */
+    /* HERO ANIMATIONS */
     @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-    .hero-eyebrow { animation: fadeUp 0.5s ease both; }
-    .hero h1      { animation: fadeUp 0.5s ease 0.08s both; }
-    .hero-sub     { animation: fadeUp 0.5s ease 0.16s both; }
+    @media (prefers-reduced-motion: no-preference) {
+      .hero-eyebrow { animation: fadeUp 0.5s ease both; }
+      .hero h1      { animation: fadeUp 0.5s ease 0.08s both; }
+      .hero-sub     { animation: fadeUp 0.5s ease 0.16s both; }
+    }
+
+    /* SCROLL ANIMATIONS */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
 
     /* RESPONSIVE */
     @media (max-width: 680px) {
@@ -192,7 +185,6 @@
 </head>
 <body>
 
-  <!-- NAV -->
   <nav>
     <div class="nav-inner">
       <a href="/" class="nav-logo">
@@ -212,9 +204,8 @@
     </div>
   </nav>
 
-  <!-- HERO -->
   <div class="hero">
-     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
+    <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
     <div class="hero-inner">
       <div class="hero-eyebrow">Contact</div>
       <h1>We read every<br><em>message ourselves.</em></h1>
@@ -222,16 +213,15 @@
     </div>
   </div>
 
-  <!-- MAIN -->
   <div class="main">
     <div class="wrap">
       <div class="main-grid">
 
         <!-- LEFT — CONTACT DETAILS -->
         <div class="contact-details">
-          <div class="details-eyebrow">Get in touch</div>
+          <div class="details-eyebrow reveal">Get in touch</div>
 
-          <div class="contact-card">
+          <div class="contact-card reveal reveal-delay-1">
             <div class="contact-card-icon">
               <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             </div>
@@ -240,7 +230,7 @@
             <p>For any question about AgaPay — big or small.</p>
           </div>
 
-          <div class="contact-card">
+          <div class="contact-card reveal reveal-delay-2">
             <div class="contact-card-icon">
               <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </div>
@@ -249,7 +239,7 @@
             <p>Ready to bring your community onto AgaPay? Start here.</p>
           </div>
 
-          <div class="contact-card">
+          <div class="contact-card reveal reveal-delay-3">
             <div class="contact-card-icon">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
@@ -258,13 +248,13 @@
             <p>Technical questions and help for existing users.</p>
           </div>
 
-          <div class="response-note">
+          <div class="response-note reveal reveal-delay-4">
             <p><strong>Response time:</strong> We typically respond within one business day. Parish registration inquiries are prioritized. You will always hear from a real person.</p>
           </div>
         </div>
 
         <!-- RIGHT — FORM -->
-        <div class="form-wrap" id="contact-form-wrap">
+        <div class="form-wrap reveal" id="contact-form-wrap">
           <div id="form-body">
             <div class="form-title">Send us a message</div>
             <p class="form-sub">Whether you're a priest exploring AgaPay for your parish, a monastery administrator, or simply curious — we want to hear from you.</p>
@@ -334,7 +324,6 @@
     </div>
   </div>
 
-  <!-- FOOTER -->
   <footer>
     <div class="footer-inner">
       <div class="footer-brand">
@@ -373,6 +362,18 @@
   </footer>
 
   <script>
+    // SCROLL REVEAL
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // FORM SUBMIT
     function handleSubmit() {
       const email = document.getElementById('email').value.trim();
       const fname = document.getElementById('fname').value.trim();
