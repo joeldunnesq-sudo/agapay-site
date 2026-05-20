@@ -298,6 +298,83 @@
       .form-wrap { padding: 1.5rem; }
       .below { padding: 3.5rem 1.25rem; }
     }
+
+    /* ── MAILERLITE OVERRIDES ── */
+.ml-embedded .ml-form-embedWrapper {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.ml-embedded .ml-form-embedBody {
+  padding: 0 !important;
+  background: transparent !important;
+}
+.ml-embedded .ml-form-fieldRow {
+  padding: 0 !important;
+  margin-bottom: 12px !important;
+}
+.ml-embedded .ml-field-group input {
+  background: rgba(243,239,230,0.08) !important;
+  border: 0.5px solid rgba(200,162,74,0.35) !important;
+  border-radius: 8px !important;
+  color: #F3EFE6 !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 14px !important;
+  padding: 13px 16px !important;
+  width: 100% !important;
+  outline: none !important;
+  transition: border-color 0.2s !important;
+}
+.ml-embedded .ml-field-group input::placeholder {
+  color: rgba(166,159,145,0.6) !important;
+}
+.ml-embedded .ml-field-group input:focus {
+  border-color: rgba(200,162,74,0.65) !important;
+  background: rgba(243,239,230,0.11) !important;
+}
+.ml-embedded .ml-form-embedSubmit {
+  padding: 0 !important;
+  margin-top: 4px !important;
+}
+.ml-embedded .ml-form-embedSubmit button {
+  background: #C8A24A !important;
+  color: #0F2D1F !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  padding: 13px 24px !important;
+  width: 100% !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s !important;
+  letter-spacing: 0.02em !important;
+}
+.ml-embedded .ml-form-embedSubmit button:hover {
+  opacity: 0.88 !important;
+}
+.ml-embedded .ml-form-successBody {
+  background: transparent !important;
+  padding: 1rem 0 0 !important;
+}
+.ml-embedded .ml-form-successContent h4 {
+  font-family: 'Cormorant Garamond', serif !important;
+  font-size: 1.3rem !important;
+  color: #C8A24A !important;
+  font-weight: 500 !important;
+  margin-bottom: 6px !important;
+}
+.ml-embedded .ml-form-successContent p {
+  font-size: 13px !important;
+  color: rgba(166,159,145,0.8) !important;
+  font-family: 'DM Sans', sans-serif !important;
+}
+.ml-embedded .ml-form-embedPermissions,
+.ml-embedded .ml-form-recaptcha,
+.ml-embedded .ml-form-embedWrapper .ml-form-embedBody .ml-form-embedContent {
+  display: none !important;
+}
   </style>
 </head>
 <body>
