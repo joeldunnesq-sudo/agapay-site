@@ -7,6 +7,7 @@
   <meta name="description" content="AgaPay was built by a tonsured Reader of ROCOR to cement Holy Orthodoxy into the American land — and to show his children they have a part to play." />
   <meta property="og:title" content="About AgaPay" />
   <meta property="og:url" content="https://agapay.app/about" />
+  <meta property="og:image" content="https://agapay.app/og-image.png" />
   <meta name="theme-color" content="#0F2D1F" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,7 +18,7 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --deep:   #0F2D1F;
+      --deep:    #0F2D1F;
       --forest: #355E3B;
       --gold:   #C8A24A;
       --cream:  #F3EFE6;
@@ -51,6 +52,7 @@
     .nav-links { display: flex; align-items: center; gap: 1.75rem; }
     .nav-links a { font-size: 14px; color: var(--stone); transition: color 0.2s; }
     .nav-links a:hover { color: var(--ink); }
+    
     .nav-cta {
       background: var(--deep);
       color: var(--cream);
@@ -63,7 +65,9 @@
       transition: background 0.2s;
     }
     .nav-cta:hover { background: var(--forest); color: var(--cream); }
+    
     .nav-give {
+      display: inline-block;
       background: var(--gold);
       color: var(--deep);
       border: none;
@@ -176,10 +180,10 @@
     .reveal-delay-3 { transition-delay: 0.3s; }
     .reveal-delay-4 { transition-delay: 0.4s; }
 
-    /* RESPONSIVE */
+    /* RESPONSIVE FLIP */
     @media (max-width: 768px) {
-      .opening { grid-template-columns: 1fr; gap: 3rem; padding-top: 3rem; }
-      .opening-aside { position: static; order: 2; }
+      .opening { display: flex; flex-direction: column; gap: 3rem; padding-top: 3rem; }
+      .opening-aside { order: 2; width: 100%; }
       .prose { order: 1; padding-bottom: 0; }
       .scripture, .cta { padding: 2.5rem 1.5rem; }
     }
@@ -204,7 +208,7 @@
         <a href="/pricing">Pricing</a>
         <a href="/about">About</a>
         <a href="/#waitlist" class="nav-cta">Register parish</a>
-        <a href="/give"><button class="nav-give">Give now</button></a>
+        <a href="/give" class="nav-give">Give now</a>
       </div>
     </div>
   </nav>
@@ -242,7 +246,6 @@
       </aside>
 
       <div class="prose">
-
         <section class="prose-section reveal" aria-labelledby="story-heading">
           <div class="prose-eyebrow">The story</div>
           <h2 id="story-heading">Nothing I write on paper will live beyond me.</h2>
@@ -288,7 +291,6 @@
             <p>Built to sustain a family while serving the Body of Christ. There is no conflict in that — it is the oldest model of faithful work.</p>
           </div>
         </section>
-
       </div>
     </div>
 
@@ -302,14 +304,13 @@
       <p>We are onboarding a small number of founding parishes before public launch. Founding parishes receive preferred pricing and direct access to the founder.</p>
       <a href="/#waitlist">Request early access →</a>
     </section>
-
   </main>
 
   <footer>
     <div class="footer-inner">
       <div class="footer-brand">
         <div class="footer-logo">
-          <div class="nav-mark">
+          <div style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
             <img src="/mark.png" alt="AgaPay" style="width: 48px; height: 48px; object-fit: contain;" />
           </div>
           <span class="footer-name">Aga<em>Pay</em></span>
@@ -348,9 +349,10 @@
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.1 });
+    }, { threshold: 0.05 });
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
   </script>
