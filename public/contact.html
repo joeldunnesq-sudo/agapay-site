@@ -142,8 +142,18 @@
       width: 100%;
       outline: none;
       transition: border-color 0.2s, background-color 0.2s;
-      appearance: none;
     }
+    
+    /* Elegant Select Indicator Support */
+    .form-group select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23C8A24A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 40px;
+    }
+    
     .form-group input:focus,
     .form-group select:focus,
     .form-group textarea:focus { border-color: var(--gold); background: white; }
@@ -428,9 +438,6 @@
       if (!email || !message) {
         return;
       }
-
-      // Dynamic placeholder for an asynchronous platform POST request hook
-      // e.g., fetch('https://formspree.io/f/your_id', { method: 'POST', body: new FormData(event.target) })
       
       document.getElementById('form-body').style.display = 'none';
       document.getElementById('form-success').style.display = 'block';
