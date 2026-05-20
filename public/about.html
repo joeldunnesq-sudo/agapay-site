@@ -51,8 +51,19 @@
     .nav-links { display: flex; align-items: center; gap: 1.75rem; }
     .nav-links a { font-size: 14px; color: var(--stone); transition: color 0.2s; }
     .nav-links a:hover { color: var(--ink); }
-    .nav-cta { background: var(--deep); color: var(--cream); border: none; padding: 9px 20px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: background 0.2s; }
-    .nav-cta:hover { background: var(--forest); }
+    
+    .nav-cta { 
+      background: var(--deep); 
+      color: var(--cream); 
+      padding: 9px 20px; 
+      border-radius: var(--r); 
+      font-size: 13px; 
+      font-family: var(--sans); 
+      font-weight: 500; 
+      display: inline-block;
+      transition: background 0.2s; 
+    }
+    .nav-cta:hover { background: var(--forest); color: var(--cream); }
 
     /* HERO */
     .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
@@ -81,11 +92,11 @@
     .aside-contact a:hover { opacity: 0.75; }
 
     /* PROSE */
-    .prose { padding: 5rem 0 5rem; }
+    .prose { padding: 0 0 5rem; }
     .prose-section { margin-bottom: 3.5rem; }
     .prose-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 0.75rem; font-weight: 500; }
     .prose-section h2 { font-family: var(--serif); font-size: clamp(1.5rem, 2.5vw, 1.9rem); font-weight: 500; color: var(--deep); line-height: 1.25; margin-bottom: 1.25rem; letter-spacing: -0.01em; }
-    .prose-section p { font-size: 15px; color: #4A4845; line-height: 1.95; margin-bottom: 1.25rem; }
+    .prose-section p { font-size: 15px; color: #2D2B28; line-height: 1.75; margin-bottom: 1.25rem; }
     .prose-section p:last-child { margin-bottom: 0; }
 
     /* PULLQUOTE */
@@ -120,15 +131,19 @@
     .footer-tagline { font-family: var(--serif); font-size: 13px; font-style: italic; color: rgba(166,159,145,0.3); margin-top: 4px; }
 
     /* ANIMATIONS */
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-    .hero-eyebrow { animation: fadeUp 0.5s ease both; }
-    .hero h1      { animation: fadeUp 0.5s ease 0.08s both; }
-    .hero-sub     { animation: fadeUp 0.5s ease 0.16s both; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    
+    @media (prefers-reduced-motion: no-preference) {
+      .hero-eyebrow { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+      .hero h1      { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both; }
+      .hero-sub     { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.16s both; }
+    }
 
     /* RESPONSIVE */
-    @media (max-width: 680px) {
-      .opening { grid-template-columns: 1fr; gap: 2rem; }
-      .opening-aside { position: static; }
+    @media (max-width: 768px) {
+      .opening { grid-template-columns: 1fr; gap: 3rem; padding-top: 3rem; }
+      .opening-aside { position: static; order: 2; }
+      .prose { order: 1; padding-bottom: 0; }
       .scripture, .cta { padding: 2.5rem 1.5rem; }
     }
     @media (max-width: 480px) {
@@ -140,9 +155,9 @@
 
   <nav>
     <div class="nav-inner">
-      <a href="/" class="nav-logo">
+      <a href="/" class="nav-logo" aria-label="AgaPay Home">
         <div class="nav-mark">
-          <svg width="20" height="20" viewBox="0 0 44 44" fill="none">
+          <svg width="20" height="20" viewBox="0 0 44 44" fill="none" aria-hidden="true">
             <circle cx="22" cy="13" r="6" fill="#F3EFE6" opacity="0.92"/>
             <circle cx="11" cy="33" r="4.5" fill="#F3EFE6" opacity="0.65"/>
             <circle cx="33" cy="33" r="4.5" fill="#F3EFE6" opacity="0.65"/>
@@ -156,32 +171,32 @@
       <div class="nav-links">
         <a href="/">Home</a>
         <a href="/about">About</a>
-        <a href="/#waitlist"><button class="nav-cta">Register parish</button></a>
+        <a href="/#waitlist" class="nav-cta">Register parish</a>
       </div>
     </div>
   </nav>
 
-  <div class="hero">
+  <header class="hero">
     <div class="hero-inner">
       <div class="hero-eyebrow">About AgaPay</div>
       <h1>Cementing Holy Orthodoxy<br>into the <em>American land.</em></h1>
       <p class="hero-sub">AgaPay was not built by a company that saw a market opportunity. It was built by a man who loves the Church and wants his children to inherit something worthy of that love.</p>
     </div>
-  </div>
+  </header>
 
-  <div class="body-wrap">
+  <main class="body-wrap">
     <div class="opening">
 
-      <div class="opening-aside">
+      <aside class="opening-aside" aria-label="Founder Bio">
         <div class="aside-label">The founder</div>
         <div class="aside-card">
-          <div class="aside-avatar">Ꙋ</div>
+          <div class="aside-avatar" aria-hidden="true">Ꙋ</div>
           <div class="aside-name">The Founder</div>
           <div class="aside-title">
             <strong>Canonical standing</strong>
             Tonsured Reader<br>Russian Orthodox Church Outside Russia
             <strong>Family</strong>
-            Husband · Father of ten<br>Classical Orthodox home education
+            Husband &amp; Father of ten<br>Classical Orthodox home education
             <strong>Background</strong>
             Legal professional<br>American Orthodox Christian
           </div>
@@ -190,74 +205,73 @@
             <a href="mailto:hello@agapay.app">hello@agapay.app</a>
           </div>
         </div>
-      </div>
+      </aside>
 
       <div class="prose">
-
-        <div class="prose-section">
+        <section class="prose-section" aria-labelledby="story-heading">
           <div class="prose-eyebrow">The story</div>
-          <h2>Nothing I write on paper will live beyond me.</h2>
+          <h2 id="story-heading">Nothing I write on paper will live beyond me.</h2>
           <p>My legal career has been both demanding and rewarding. I have spent years in courtrooms and at desks, crafting arguments, building cases, serving clients. It is honorable work. But I have come to understand something that took time to see clearly: nothing I do in that work will live beyond me in the memories of those I love.</p>
           <p>That is not a counsel of despair. It is a call to build something else alongside it. Something that matters in a different register. Something that serves the Body of Christ and shows my children — all ten of them — that they have an integral part to play in the growth and maturation of Orthodoxy in the American land.</p>
           <p>That is why I built AgaPay.</p>
-        </div>
+        </section>
 
         <div class="pullquote">
           <p>"I want to create something worthwhile — something that makes a tangible difference in people's lives."</p>
         </div>
 
-        <div class="prose-section">
+        <section class="prose-section" aria-labelledby="need-heading">
           <div class="prose-eyebrow">The need</div>
-          <h2>The Church deserved better than what existed.</h2>
+          <h2 id="need-heading">The Church deserved better than what existed.</h2>
           <p>When I looked at the giving platforms available to Orthodox parishes — Tithe.ly, Pushpay, GoFundMe — I saw tools built for a different Christianity entirely. They did not know what a panakhida was. They had never heard of the Typikon. They were not built for the liturgical rhythm of our life, for the feast days and soul Saturdays and Great Lenten appeals that shape how Orthodox Christians give.</p>
           <p>I am a tonsured Reader in ROCOR. I have stood in the nave and held a taper at Pascha. I have submitted names for commemoration at the proskomedia. I know this life from the inside — and that is not something any competitor can replicate by hiring a consultant or adding a feature.</p>
           <p>AgaPay was built from within the Tradition. Every feature, every word, every design decision was made by someone who lives it. That is its foundation and its competitive advantage.</p>
-        </div>
+        </section>
 
-        <div class="prose-section">
+        <section class="prose-section" aria-labelledby="vision-heading">
           <div class="prose-eyebrow">The vision</div>
-          <h2>A platform that outlasts its founder.</h2>
+          <h2 id="vision-heading">A platform that outlasts its founder.</h2>
           <p>Holy Orthodoxy is young in the American land. The parishes being built today, the monasteries being established, the children being raised in the faith — these are the foundations of something that will endure for centuries if we tend it faithfully.</p>
           <p>I want AgaPay to be part of that tending. A piece of infrastructure that makes it easier for parishes to be financially sustainable, for monasteries to receive the support they need, for the faithful to give with the same intentionality and reverence they bring to every other aspect of liturgical life.</p>
           <p>And I want my children to see that their father built something in service of the Church — something real, something useful, something that carries the faith forward. That is worth more to me than any verdict or contract.</p>
-        </div>
+        </section>
 
-        <div class="values">
+        <section class="values" aria-label="Core Values">
           <div class="value">
-            <div class="value-num">I</div>
+            <div class="value-num" aria-hidden="true">I</div>
             <h3>Rooted in Tradition</h3>
             <p>We don't adapt the Church to the platform. We build the platform around the Church.</p>
           </div>
           <div class="value">
-            <div class="value-num">II</div>
+            <div class="value-num" aria-hidden="true">II</div>
             <h3>Transparent always</h3>
             <p>Fees, practices, and the business model — openly stated. Nothing hidden from the parishes we serve.</p>
           </div>
           <div class="value">
-            <div class="value-num">III</div>
+            <div class="value-num" aria-hidden="true">III</div>
             <h3>A family endeavor</h3>
             <p>Built to sustain a family while serving the Body of Christ. There is no conflict in that — it is the oldest model of faithful work.</p>
           </div>
-        </div>
-
+        </section>
       </div>
+
     </div>
 
-    <div class="scripture">
-      <p>"Bring the full tithe into the storehouse,<br>that there may be food in my house.<br>Test me in this, says the Lord of hosts."</p>
+    <section class="scripture" aria-label="Scripture Verse">
+      <p>"Bring the full tithe into the storehouse,<br />that there may be food in my house.<br />Test me in this, says the Lord of hosts."</p>
       <cite>— Malachi 3:10</cite>
-    </div>
+    </section>
 
-    <div class="cta">
-      <h2>Be among the first parishes on AgaPay</h2>
+    <section class="cta" aria-labelledby="cta-heading">
+      <h2 id="cta-heading">Be among the first parishes on AgaPay</h2>
       <p>We are onboarding a small number of founding parishes before public launch. Founding parishes receive preferred pricing and direct access to the founder.</p>
       <a href="/#waitlist">Request early access →</a>
-    </div>
+    </section>
 
-  </div>
+  </main>
 
   <footer>
-    <p>© 2025 AgaPay · <a href="mailto:hello@agapay.app">hello@agapay.app</a></p>
+    <p>© 2026 AgaPay &middot; <a href="mailto:hello@agapay.app">hello@agapay.app</a></p>
     <p class="footer-tagline">For the life of the world.</p>
   </footer>
 
