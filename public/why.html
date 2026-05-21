@@ -17,7 +17,7 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --deep:   #0F2D1F;
+      --deep:    #0F2D1F;
       --forest: #355E3B;
       --gold:   #C8A24A;
       --cream:  #F3EFE6;
@@ -35,15 +35,16 @@
 
     /* NAV */
     nav { position: sticky; top: 0; z-index: 100; background: rgba(243,239,230,0.93); backdrop-filter: blur(12px); border-bottom: 0.5px solid rgba(166,159,145,0.35); }
-    .nav-inner { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .nav-inner { max-width: 1024px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
     .nav-logo { display: flex; align-items: center; gap: 5px; }
     .nav-mark { width: 52px; height: 52px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
     .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
     .nav-name em { color: var(--gold); font-style: normal; }
-    .nav-links { display: flex; align-items: center; gap: 1.75rem; }
+    
+    .nav-links { display: flex; align-items: center; gap: 1.25rem; }
     .nav-links a { font-size: 14px; color: var(--stone); transition: color 0.2s; }
     .nav-links a:hover { color: var(--ink); }
-    .nav-cta { display: inline-block; background: var(--deep); color: var(--cream); border: none; padding: 9px 20px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: background 0.2s; }
+    .nav-cta { display: inline-block; background: var(--deep); color: var(--cream); border: none; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: background 0.2s; }
     .nav-cta:hover { background: var(--forest); }
     .nav-give { display: inline-block; background: var(--gold); color: var(--deep); border: none; padding: 9px 20px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
     .nav-give:hover { opacity: 0.88; }
@@ -82,45 +83,13 @@
     .pullquote cite { display: block; font-size: 12px; color: var(--stone); font-style: normal; margin-top: 8px; letter-spacing: 0.05em; }
 
     /* COMPARISON CARDS */
-    .compare-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      margin-bottom: 3rem;
-    }
-    .compare-card {
-      background: white;
-      border: 0.5px solid rgba(166,159,145,0.35);
-      border-radius: var(--rlg);
-      padding: 1.75rem;
-    }
-    .compare-card.agapay {
-      border: 2px solid var(--forest);
-    }
-    .compare-badge {
-      font-family: var(--serif);
-      font-size: 1.2rem;
-      font-weight: 500;
-      color: var(--deep);
-      margin-bottom: 1.25rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 0.5px solid rgba(166,159,145,0.25);
-    }
+    .compare-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 3rem; }
+    .compare-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.75rem; }
+    .compare-card.agapay { border: 2px solid var(--forest); }
+    .compare-badge { font-family: var(--serif); font-size: 1.2rem; font-weight: 500; color: var(--deep); margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 0.5px solid rgba(166,159,145,0.25); }
     .compare-badge.muted { color: var(--stone); }
-    .compare-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .compare-list li {
-      font-size: 13px;
-      color: var(--stone);
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      line-height: 1.55;
-    }
+    .compare-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .compare-list li { font-size: 13px; color: var(--stone); display: flex; align-items: flex-start; gap: 8px; line-height: 1.55; }
     .compare-card.agapay .compare-list li { color: var(--ink); }
     .ci { font-size: 11px; flex-shrink: 0; margin-top: 1px; font-weight: 600; }
     .ci.good { color: var(--gold); }
@@ -128,7 +97,7 @@
     .ci.warn { color: var(--stone); }
 
     /* CALC GRID */
-    .calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 3rem; }
+    .calc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 3rem; }
     .calc-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.75rem; transition: transform 0.2s ease, box-shadow 0.2s ease; }
     .calc-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,45,31,0.08); }
     .calc-card h4 { font-family: var(--serif); font-size: 1.1rem; font-weight: 500; color: var(--deep); margin-bottom: 0.25rem; }
@@ -186,11 +155,14 @@
     .reveal-delay-3 { transition-delay: 0.3s; }
     .reveal-delay-4 { transition-delay: 0.4s; }
 
-    @media (max-width: 680px) {
-      .compare-grid { grid-template-columns: 1fr; }
+    /* RESPONSIVE BREAKPOINTS */
+    @media (max-width: 768px) {
+      /* Mobile Menu Visibility Balancing */
+      .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
+      .calc-grid { grid-template-columns: 1fr; gap: 16px; }
     }
-    @media (max-width: 600px) {
-      .nav-links a:not(:last-child):not(:nth-last-child(2)) { display: none; }
+    @media (max-width: 680px) {
+      .compare-grid { grid-template-columns: 1fr; gap: 16px; }
     }
   </style>
 </head>
@@ -226,7 +198,7 @@
   </header>
 
   <!-- OUR STRENGTHS -->
-  <div class="section">
+  <main class="section">
     <div class="wrap">
       <div class="section-eyebrow reveal">What sets us apart</div>
       <h2 class="section-title reveal reveal-delay-1">Six things no competitor can replicate</h2>
@@ -270,7 +242,7 @@
         <cite>— AgaPay founding principle</cite>
       </div>
     </div>
-  </div>
+  </main>
 
   <!-- COMPARISON CARDS -->
   <div class="section alt">
@@ -414,7 +386,7 @@
           </div>
           <span class="footer-name">Aga<em>Pay</em></span>
         </div>
-        <p class="footer-tagline">For the life of the world.</p>
+        <p class="footer-tagline">Love where you give.</p>
       </div>
       <div class="footer-nav">
         <div class="footer-nav-group">
