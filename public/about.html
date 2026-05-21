@@ -42,21 +42,22 @@
       border-bottom: 0.5px solid rgba(166,159,145,0.35);
     }
     .nav-inner {
-      max-width: 960px; margin: 0 auto; padding: 0 1.5rem;
+      max-width: 1024px; margin: 0 auto; padding: 0 1.5rem;
       display: flex; align-items: center; justify-content: space-between; height: 64px;
     }
     .nav-logo { display: flex; align-items: center; gap: 5px; }
     .nav-mark { width: 50px; height: 50px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
     .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
     .nav-name em { color: var(--gold); font-style: normal; }
-    .nav-links { display: flex; align-items: center; gap: 1.75rem; }
+    
+    .nav-links { display: flex; align-items: center; gap: 1.25rem; }
     .nav-links a { font-size: 14px; color: var(--stone); transition: color 0.2s; }
     .nav-links a:hover { color: var(--ink); }
     
     .nav-cta {
       background: var(--deep);
       color: var(--cream);
-      padding: 9px 20px;
+      padding: 9px 18px;
       border-radius: var(--r);
       font-size: 13px;
       font-family: var(--sans);
@@ -71,7 +72,7 @@
       background: var(--gold);
       color: var(--deep);
       border: none;
-      padding: 9px 20px;
+      padding: 9px 18px;
       border-radius: var(--r);
       font-size: 13px;
       font-family: var(--sans);
@@ -200,8 +201,10 @@
       .prose { order: 1; padding-bottom: 0; }
       .scripture, .cta { padding: 2.5rem 1.5rem; }
     }
-    @media (max-width: 480px) {
-      .nav-links a:not(:last-child):not(:nth-last-child(2)) { display: none; }
+    
+    /* Cleaned Up Mobile Text Menu Truncation */
+    @media (max-width: 768px) {
+      .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
     }
   </style>
 </head>
