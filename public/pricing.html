@@ -521,7 +521,7 @@
           </div>
           
           <div class="calculator-benchmark-note">
-            <p><strong>Note:</strong> Transaction projections are based on the standard <strong>Parish Tier</strong> rate of 2.9% + $0.30, assuming a conservative average offering size of $75 per checking/card transaction nodule.</p>
+            <p><strong>Note:</strong> Transaction projections are based on the standard **Parish Tier** rate of 2.9% + $0.30, assuming a conservative average offering size of $75 per checking/card transaction nodule.</p>
           </div>
         </div>
 
@@ -606,6 +606,8 @@
     </div>
   </div>
 
+  <div class="candle-glow bottom-right" aria-hidden="true"></div>
+
   <footer>
     <div class="footer-inner">
       <div class="footer-brand">
@@ -665,17 +667,41 @@
       faqItem.classList.toggle('open');
     }
 
-    // ACCESSIBLE INTERACTIVE DRAWER CONTROLLER
+    // FIXED INTERACTIVE DRAWER CONTROLLER
     function toggleMenu() {
       const toggleBtn = document.querySelector('.menu-toggle');
       const drawer = document.getElementById('mobileDrawer');
       const body = document.body;
-      const isOpen = toggleBtn.getAttribute('aria-expanded') === 'true';
       
-      toggleBtn.setAttribute('aria-expanded', !isOpen);
-      drawer.classList.toggle('active');
-      body.classList.toggle('nav-open');
+      const isDrawerOpen = drawer.classList.contains('active');
+      
+      if (isDrawerOpen) {
+        toggleBtn.setAttribute('aria-expanded', 'false');
+        drawer.classList.remove('active');
+        drawer.setAttribute('aria-hidden', 'true');
+        body.classList.remove('nav-open');
+      } else {
+        toggleBtn.setAttribute('aria-expanded', 'true');
+        drawer.classList.add('active');
+        drawer.setAttribute('aria-hidden', 'false');
+        body.classList.add('nav-open');
+      }
     }
+
+    // DESKTOP RESIZE SAFETY GUARD
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) {
+        const toggleBtn = document.querySelector('.menu-toggle');
+        const drawer = document.getElementById('mobileDrawer');
+        
+        if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+        if (drawer) {
+          drawer.classList.remove('active');
+          drawer.setAttribute('aria-hidden', 'true');
+        }
+        document.body.classList.remove('nav-open');
+      }
+    });
 
     // REVENUE EMULSION PROCESSING SIMULATION SCRIPT ENGINE
     const volumeRange = document.getElementById('volumeRange');
@@ -692,22 +718,18 @@
       const monthlyVolume = parseFloat(volumeRange.value);
       const coverageRate = parseFloat(coverageRange.value) / 100;
       
-      // Fixed baseline: Assume an average stewardship batch gift item size threshold of $75
       const averageGiftSize = 75;
       const transactionsCount = monthlyVolume / averageGiftSize;
       
-      // Standard Parish Core Tier Framework variables: 2.9% + $0.30 fixed cut architecture
       const percentageCuts = monthlyVolume * 0.029;
       const fixedCuts = transactionsCount * 0.30;
       const totalCuts = percentageCuts + fixedCuts;
       
-      // Yield simulation variables mapping
       const amountSavedViaDonors = totalCuts * coverageRate;
       const amountDeductedFromParish = totalCuts - amountSavedViaDonors;
       const finalNetBankDeposit = monthlyVolume - amountDeductedFromParish;
       const effectiveYieldPercentage = (finalNetBankDeposit / monthlyVolume) * 100;
 
-      // Render calculations dynamically
       volumeDisplay.textContent = `$${monthlyVolume.toLocaleString()}`;
       coverageDisplay.textContent = `${Math.round(coverageRate * 100)}%`;
       
@@ -717,7 +739,6 @@
       efficiencyDisplay.textContent = `${effectiveYieldPercentage.toFixed(2)}% Effective Bank Yield`;
     }
 
-    // Initialize layout event listeners across range input state variations
     if(volumeRange && coverageRange) {
       volumeRange.addEventListener('input', calculateYield);
       coverageRange.addEventListener('input', calculateYield);
