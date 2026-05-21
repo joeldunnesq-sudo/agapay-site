@@ -4,12 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Terms of Service | AgaPay</title>
-  <meta name="theme-color" content="#0F2D1F" />
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
-  
   <style>
     :root { 
       --deep: #0F2D1F; --forest: #355E3B; --gold: #C8A24A; 
@@ -17,60 +12,32 @@
       --serif: 'Cormorant Garamond', Georgia, serif; 
       --sans: 'DM Sans', system-ui, sans-serif; 
     }
-    
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    body { 
-      font-family: var(--sans); 
-      background: var(--cream); 
-      color: var(--ink); 
-      line-height: 1.7; 
-      max-width: 860px; 
-      margin: 0 auto; 
-      padding: 2rem 1.25rem;
-      -webkit-text-size-adjust: 100%;
-    }
-
+    body { font-family: var(--sans); background: var(--cream); color: var(--ink); max-width: 860px; margin: 0 auto; padding: 3rem 1.5rem; line-height: 1.78; }
+    h1 { font-family: var(--serif); font-size: 2.4rem; margin: 3rem 0 1.5rem; color: var(--deep); }
+    h2 { font-family: var(--serif); font-size: 1.65rem; margin: 2.5rem 0 1rem; color: var(--deep); }
+    p, li { line-height: 1.78; margin-bottom: 1.1rem; }
+    ul { padding-left: 1.4rem; margin-bottom: 1rem; }
     nav { margin-bottom: 2.5rem; }
-    nav a { 
-      display: inline-block; 
-      padding: 10px 0; 
-      font-weight: 500; 
-      color: var(--deep); 
-      text-decoration: none;
-    }
-
-    h1 { 
-      font-family: var(--serif); 
-      color: var(--deep); 
-      font-size: clamp(2rem, 8vw, 2.5rem); 
-      margin-bottom: 1rem; 
-      line-height: 1.1;
-    }
-
-    h2 { 
-      font-family: var(--serif); 
-      color: var(--deep); 
-      margin-top: 2.25rem; 
-      margin-bottom: 1rem; 
-      font-size: clamp(1.3rem, 5vw, 1.65rem); 
-    }
-
-    p, li { color: #2D2B28; margin-bottom: 1rem; }
-    strong { color: var(--deep); }
-    ul { margin-bottom: 1.5rem; padding-left: 1.25rem; }
-
-    .disclaimer { 
-      background: rgba(200, 162, 74, 0.1); 
-      padding: 1.25rem; 
-      border-left: 4px solid var(--gold); 
-      font-size: 0.85rem; 
-      margin-bottom: 2rem; 
-    }
+    
+    /* Footer styles same as above */
+    footer { background: var(--deep); padding: 3.5rem 1.5rem 0; margin-top: 4rem; color: #fff; }
+    .footer-inner { max-width: 860px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 3rem; padding-bottom: 3rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
+    .footer-brand { display: flex; flex-direction: column; gap: 8px; }
+    .footer-logo { display: flex; align-items: center; gap: 8px; }
+    .footer-name { font-family: var(--serif); font-size: 32px; color: var(--cream); font-weight: 500; }
+    .footer-name em { color: var(--gold); font-style: normal; }
+    .footer-tagline { font-family: var(--serif); font-size: 16px; font-style: italic; color: rgba(243,239,230,0.7); margin-bottom: 4px; }
+    .footer-tagline-sub { font-family: var(--serif); font-size: 13px; font-style: italic; color: rgba(166,159,145,0.4); }
+    .footer-nav { display: flex; gap: 3rem; flex-wrap: wrap; }
+    .footer-nav-group { display: flex; flex-direction: column; gap: 10px; }
+    .footer-nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin-bottom: 2px; }
+    .footer-nav-group a { font-size: 13px; color: rgba(166,159,145,0.7); transition: color 0.2s; text-decoration: none; }
+    .footer-nav-group a:hover { color: var(--cream); }
+    .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
+    .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.4); }
   </style>
 </head>
 <body>
-
   <nav><a href="/">← Back to AgaPay</a></nav>
 
   <h1>Terms of Service</h1>
@@ -118,5 +85,40 @@
   <h2>Contact Us</h2>
   <p>If you have questions, please contact us at: <strong>hello@agapay.app</strong></p>
 
+<footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <img src="/mark.png" alt="AgaPay" style="width:48px;height:48px;object-fit:contain;" />
+          <span class="footer-name">Aga<em>Pay</em></span>
+        </div>
+        <p class="footer-tagline">Love where you give.</p>
+        <p class="footer-tagline-sub">For the life of the world.</p>
+      </div>
+      <div class="footer-nav">
+        <div class="footer-nav-group">
+          <div class="footer-nav-label">Platform</div>
+          <a href="/features">Features</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/why">Why AgaPay</a>
+          <a href="/give">Give now</a>
+        </div>
+        <div class="footer-nav-group">
+          <div class="footer-nav-label">Company</div>
+          <a href="/about">About</a>
+          <a href="/contact">Contact</a>
+          <a href="/#waitlist">Register parish</a>
+        </div>
+        <div class="footer-nav-group">
+          <div class="footer-nav-label">Contact</div>
+          <a href="mailto:hello@agapay.app">hello@agapay.app</a>
+          <a href="mailto:parishes@agapay.app">parishes@agapay.app</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 AgaPay · agapay.app</p>
+    </div>
+  </footer>
 </body>
-</html>
+</html>  
