@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Give | AgaPay</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --deep: #0F2D1F;
+      --forest: #2F5A39;
+      --gold: #B8902F;
+      --cream: #F6F1E8;
+      --stone: #6F6A60;
+      --ink: #171715;
+      --white: #FFFFFF;
+    }
+    
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+    }
+    .heading {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+    }
+    
+    .hero-bg {
+      background-image: linear-gradient(rgba(15, 45, 31, 0.75), rgba(15, 45, 31, 0.85)), 
+                        url('https://images.unsplash.com/photo-1582719478250-c9d5c3a2c4c4?ixlib=rb-4.0.3&auto=format&fit=crop&q=80');
+      background-size: cover;
+      background-position: center;
+    }
+  </style>
+</head>
+<body class="bg-[#F6F1E8] text-[#171715]">
+
+  <!-- HERO -->
+  <section class="hero-bg text-white py-24 md:py-32">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <h1 class="heading text-5xl md:text-6xl font-medium tracking-tight mb-6">
+        Give as the Church Has Always Given
+      </h1>
+      <p class="text-xl md:text-2xl max-w-2xl mx-auto opacity-90">
+        Weekly stewardship • Feast offerings • Candles • Panakhida • Acts of mercy
+      </p>
+      <div class="mt-10">
+        <a href="#" 
+           class="inline-block bg-[#B8902F] hover:bg-[#A07D2A] transition-colors text-white font-medium px-10 py-4 rounded-xl text-lg shadow-md">
+          Start Giving Now
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- GIVING OPTIONS -->
+  <section class="py-20 px-6 max-w-6xl mx-auto">
+    <h2 class="heading text-4xl text-center mb-4 text-[#0F2D1F]">Ways to Give</h2>
+    <p class="text-center text-[#6F6A60] mb-12 max-w-md mx-auto">
+      Support your parish, honor the saints, and care for those in need — all with reverence and simplicity.
+    </p>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      
+      <!-- Card 1 -->
+      <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EDE6D9] hover:shadow-md transition-all">
+        <div class="h-2 bg-[#2F5A39]"></div>
+        <div class="p-8">
+          <div class="text-4xl mb-4">📅</div>
+          <h3 class="heading text-2xl mb-2">Weekly Stewardship</h3>
+          <p class="text-[#6F6A60]">Recurring gifts aligned with the liturgical calendar. Support your parish consistently.</p>
+          <a href="#" class="mt-6 block text-[#B8902F] font-medium hover:text-[#A07D2A]">Set Up Recurring →</a>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EDE6D9] hover:shadow-md transition-all">
+        <div class="h-2 bg-[#B8902F]"></div>
+        <div class="p-8">
+          <div class="text-4xl mb-4">🕯️</div>
+          <h3 class="heading text-2xl mb-2">Candles & Panakhida</h3>
+          <p class="text-[#6F6A60]">Light virtual candles and submit names for living and departed loved ones.</p>
+          <a href="#" class="mt-6 block text-[#B8902F] font-medium hover:text-[#A07D2A]">Light a Candle →</a>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EDE6D9] hover:shadow-md transition-all">
+        <div class="h-2 bg-[#0F2D1F]"></div>
+        <div class="p-8">
+          <div class="text-4xl mb-4">🎉</div>
+          <h3 class="heading text-2xl mb-2">Feast Day Offerings</h3>
+          <p class="text-[#6F6A60]">Honor a particular feast, saint, or special occasion.</p>
+          <a href="#" class="mt-6 block text-[#B8902F] font-medium hover:text-[#A07D2A]">Give to a Feast →</a>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EDE6D9] hover:shadow-md transition-all">
+        <div class="h-2 bg-[#2F5A39]"></div>
+        <div class="p-8">
+          <div class="text-4xl mb-4">🏛️</div>
+          <h3 class="heading text-2xl mb-2">Designated Funds</h3>
+          <p class="text-[#6F6A60]">Building projects, missions, youth programs, and specific parish needs.</p>
+          <a href="#" class="mt-6 block text-[#B8902F] font-medium hover:text-[#A07D2A]">Browse Funds →</a>
+        </div>
+      </div>
+
+      <!-- Card 5 -->
+      <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#EDE6D9] hover:shadow-md transition-all">
+        <div class="h-2 bg-[#B8902F]"></div>
+        <div class="p-8">
+          <div class="text-4xl mb-4">❤️</div>
+          <h3 class="heading text-2xl mb-2">Love Offerings & Relief</h3>
+          <p class="text-[#6F6A60]">Support clergy families, widows, orphans, or emergency appeals.</p>
+          <a href="#" class="mt-6 block text-[#B8902F] font-medium hover:text-[#A07D2A]">Make a Love Offering →</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="bg-[#0F2D1F] text-white py-20 px-6">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="heading text-4xl text-center mb-12">How It Works</h2>
+      <div class="grid md:grid-cols-4 gap-8 text-center">
+        <div>
+          <div class="w-12 h-12 mx-auto bg-[#B8902F] text-white rounded-2xl flex items-center justify-center text-2xl mb-4">1</div>
+          <h4 class="font-medium mb-1">Choose</h4>
+          <p class="text-sm opacity-75">Select your gift type and parish</p>
+        </div>
+        <div>
+          <div class="w-12 h-12 mx-auto bg-[#B8902F] text-white rounded-2xl flex items-center justify-center text-2xl mb-4">2</div>
+          <h4 class="font-medium mb-1">Intention</h4>
+          <p class="text-sm opacity-75">Add names for panakhida or notes</p>
+        </div>
+        <div>
+          <div class="w-12 h-12 mx-auto bg-[#B8902F] text-white rounded-2xl flex items-center justify-center text-2xl mb-4">3</div>
+          <h4 class="font-medium mb-1">Give</h4>
+          <p class="text-sm opacity-75">One-time or recurring securely</p>
+        </div>
+        <div>
+          <div class="w-12 h-12 mx-auto bg-[#B8902F] text-white rounded-2xl flex items-center justify-center text-2xl mb-4">4</div>
+          <h4 class="font-medium mb-1">Receive</h4>
+          <p class="text-sm opacity-75">Confirmation & parish record</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MONASTERY NOTE -->
+  <div class="bg-[#2F5A39] text-white py-8 text-center">
+    <p class="font-medium">
+      ❤️ Free for all Orthodox monasteries — No platform fees
+    </p>
+  </div>
+
+  <!-- FINAL CTA -->
+  <section class="py-20 px-6 bg-[#F6F1E8] text-center">
+    <div class="max-w-xl mx-auto">
+      <h2 class="heading text-4xl mb-6">Ready to give?</h2>
+      <p class="text-lg text-[#6F6A60] mb-8">
+        Join the growing number of Orthodox Christians giving with reverence and simplicity.
+      </p>
+      <a href="#" 
+         class="inline-block bg-[#B8902F] hover:bg-[#A07D2A] text-white font-medium px-12 py-5 rounded-2xl text-lg transition-colors">
+        Start Giving Now
+      </a>
+    </div>
+  </section>
+
+  <!-- Trust Footer -->
+  <footer class="bg-white border-t border-[#EDE6D9] py-10 px-6 text-center text-sm text-[#6F6A60]">
+    <p>Secure giving powered by industry-leading processors • Private &amp; protected</p>
+    <p class="mt-2">Built for the Orthodox Church • Transparent • Low fees</p>
+  </footer>
+
+</body>
+</html>
