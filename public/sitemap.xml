@@ -16,6 +16,11 @@
     <priority>0.80</priority>
   </url>
   <url>
+    <loc>https://agapay.app/why</loc>
+    <lastmod>2025-05-20</lastmod>
+    <priority>0.60</priority>
+  </url>
+  <url>
     <loc>https://agapay.app/about</loc>
     <lastmod>2025-05-20</lastmod>
     <priority>0.70</priority>
