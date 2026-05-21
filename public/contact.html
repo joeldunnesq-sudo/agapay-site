@@ -42,14 +42,15 @@
       border-bottom: 0.5px solid rgba(166,159,145,0.35);
     }
     .nav-inner {
-      max-width: 860px; margin: 0 auto; padding: 0 1.5rem;
+      max-width: 1024px; margin: 0 auto; padding: 0 1.5rem;
       display: flex; align-items: center; justify-content: space-between; height: 64px;
     }
     .nav-logo { display: flex; align-items: center; gap: 5px; }
     .nav-mark { width: 50px; height: 50px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
     .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
     .nav-name em { color: var(--gold); font-style: normal; }
-    .nav-links { display: flex; align-items: center; gap: 1.75rem; }
+    
+    .nav-links { display: flex; align-items: center; gap: 1.25rem; }
     .nav-links a { font-size: 14px; color: var(--stone); transition: color 0.2s; }
     .nav-links a:hover { color: var(--ink); }
     
@@ -58,7 +59,7 @@
       background: var(--deep); 
       color: var(--cream); 
       border: none; 
-      padding: 9px 20px; 
+      padding: 9px 18px; 
       border-radius: var(--r); 
       font-size: 13px; 
       font-family: var(--sans); 
@@ -73,7 +74,7 @@
       background: var(--gold); 
       color: var(--deep); 
       border: none; 
-      padding: 9px 20px; 
+      padding: 9px 18px; 
       border-radius: var(--r); 
       font-size: 13px; 
       font-family: var(--sans); 
@@ -188,7 +189,7 @@
     footer { background: var(--deep); padding: 3.5rem 1.5rem 0; }
     .footer-inner { max-width: 860px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 3rem; padding-bottom: 3rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
     .footer-brand { display: flex; flex-direction: column; gap: 8px; }
-    .footer-logo { display: flex; align-items: center; gap: 5px; }
+    .footer-logo { display: flex; align-items: center; gap: 8px; }
     .footer-name { font-family: var(--serif); font-size: 32px; color: var(--cream); font-weight: 500; }
     .footer-name em { color: var(--gold); font-style: normal; }
     .footer-tagline { font-family: var(--serif); font-size: 13px; font-style: italic; color: rgba(166,159,145,0.4); }
@@ -224,13 +225,16 @@
     .reveal-delay-4 { transition-delay: 0.4s; }
 
     /* RESPONSIVE */
+    @media (max-width: 768px) {
+      /* Mobile Menu Visibility Balancing */
+      .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
+    }
     @media (max-width: 680px) {
       .main-grid { grid-template-columns: 1fr; gap: 3rem; }
       .contact-details { position: static; }
       .form-row { grid-template-columns: 1fr; }
     }
     @media (max-width: 480px) {
-      .nav-links a:not(:last-child):not(:nth-last-child(2)) { display: none; }
       .form-wrap { padding: 1.75rem; }
     }
   </style>
@@ -388,13 +392,14 @@
           </div>
           <span class="footer-name">Aga<em>Pay</em></span>
         </div>
-        <p class="footer-tagline">For the life of the world.</p>
+        <p class="footer-tagline">Love where you give.</p>
       </div>
       <div class="footer-nav">
         <div class="footer-nav-group">
           <div class="footer-nav-label">Platform</div>
           <a href="/features">Features</a>
           <a href="/pricing">Pricing</a>
+          <a href="/why">Why AgaPay</a>
           <a href="/give">Give now</a>
         </div>
         <div class="footer-nav-group">
