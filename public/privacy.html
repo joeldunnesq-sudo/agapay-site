@@ -7,46 +7,74 @@
   <meta name="theme-color" content="#0F2D1F" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
   <style>
-    :root { 
-      --deep: #0F2D1F; --forest: #355E3B; --gold: #C8A24A; 
-      --cream: #F6F1E8; --ink: #171715; --stone: #6F6A60;
-      --sans: 'DM Sans', system-ui, sans-serif; 
-      --serif: 'Cormorant Garamond', Georgia, serif; 
+    :root {
+      --deep:   #0F2D1F;
+      --forest: #355E3B;
+      --gold:   #C8A24A;
+      --cream:  #F6F1E8;
+      --ink:    #171715;
+      --stone:  #6F6A60;
+      --sans:   'DM Sans', system-ui, sans-serif;
+      --serif:  'Cormorant Garamond', Georgia, serif;
     }
-    
+
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-    body { 
-      font-family: var(--sans); 
-      background: var(--cream); 
-      color: var(--ink); 
-      max-width: 100%; 
-      margin: 0 auto; 
-      padding: 3rem 1.25rem; 
-      line-height: 1.8; 
+    body {
+      font-family: var(--sans);
+      background: var(--cream);
+      color: var(--ink);
+      line-height: 1.8;
       -webkit-text-size-adjust: 100%;
     }
 
-    .content-wrap {
+    .content-container {
       max-width: 860px;
       margin: 0 auto;
-      padding: 3rem 1.25rem;
+      padding: 3rem 1.5rem 4rem;
     }
 
-    h1 { font-family: var(--serif); color: var(--deep); font-size: clamp(2rem, 8vw, 2.5rem); margin-bottom: 1rem; }
-    h2 { font-family: var(--serif); color: var(--deep); margin-top: 2.5rem; margin-bottom: 1rem; font-size: clamp(1.3rem, 5vw, 1.5rem); }
-    p, li { color: #2D2B28; margin-bottom: 1rem; }
-    strong { color: var(--deep); }
-    ul { margin-bottom: 1.5rem; padding-left: 1.25rem; }
-    
     nav { margin-bottom: 2.5rem; }
-    nav a { display: inline-block; padding: 10px 0; font-weight: 500; color: var(--deep); text-decoration: none; }
-    
-    .disclaimer { background: rgba(200, 162, 74, 0.1); padding: 1.25rem; border-left: 4px solid var(--gold); font-size: 0.85rem; margin-bottom: 2rem; }
+    nav a { display: inline-block; padding: 10px 0; font-weight: 500; color: var(--deep); text-decoration: none; font-size: 14px; }
+    nav a:hover { color: var(--forest); }
 
-    /* Footer Styles */
-    footer { background: var(--deep); padding: 3.5rem 1.5rem 0; margin-top: 4rem; color: #fff; }
-    .footer-inner { max-width: 100%; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 3rem; padding-bottom: 3rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
+    h1 { font-family: var(--serif); color: var(--deep); font-size: clamp(2rem, 8vw, 2.5rem); margin-bottom: 0.5rem; }
+    .last-updated { font-size: 13px; color: var(--stone); margin-bottom: 2rem; }
+    h2 { font-family: var(--serif); color: var(--deep); margin-top: 2.5rem; margin-bottom: 1rem; font-size: clamp(1.3rem, 5vw, 1.5rem); border-bottom: 0.5px solid rgba(166,159,145,0.3); padding-bottom: 0.5rem; }
+    p { color: #2D2B28; margin-bottom: 1rem; font-size: 15px; }
+    li { color: #2D2B28; margin-bottom: 0.6rem; font-size: 15px; }
+    strong { color: var(--deep); }
+    ul { margin-bottom: 1.5rem; padding-left: 1.5rem; }
+    a { color: var(--forest); }
+    a:hover { color: var(--deep); }
+
+    .disclaimer {
+      background: rgba(200,162,74,0.1);
+      padding: 1.25rem 1.5rem;
+      border-left: 4px solid var(--gold);
+      font-size: 13.5px;
+      margin: 3rem 0 0;
+      border-radius: 0 8px 8px 0;
+      color: var(--stone);
+    }
+    .disclaimer strong { color: #8B6B1F; }
+
+    .toc {
+      background: white;
+      border: 0.5px solid rgba(166,159,145,0.35);
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 2.5rem;
+    }
+    .toc-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin-bottom: 0.75rem; }
+    .toc ol { padding-left: 1.25rem; }
+    .toc li { font-size: 14px; margin-bottom: 0.35rem; }
+    .toc a { color: var(--forest); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* FOOTER */
+    footer { background: var(--deep); padding: 3.5rem 1.5rem 0; width: 100%; }
+    .footer-inner { max-width: 860px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 3rem; padding-bottom: 3rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
     .footer-brand { display: flex; flex-direction: column; gap: 8px; }
     .footer-logo { display: flex; align-items: center; gap: 8px; }
     .footer-name { font-family: var(--serif); font-size: 32px; color: var(--cream); font-weight: 500; }
@@ -65,55 +93,155 @@
   </style>
 </head>
 <body>
-  <nav><a href="/">← Back to AgaPay</a></nav>
 
-  <h1>Privacy Policy</h1>
-  <p><strong>Last Updated: May 21, 2026</strong></p>
+  <div class="content-container">
+    <nav><a href="/">← Back to AgaPay</a></nav>
 
-  <div class="disclaimer">
-    <strong>Legal Disclaimer:</strong> This Privacy Policy is provided for informational purposes as a draft template. This document requires review and customization by counsel to ensure compliance with specific state statutes and your specific platform data architecture.
+    <h1>Privacy Policy</h1>
+    <p class="last-updated">Last Updated: May 21, 2026</p>
+
+    <div class="toc">
+      <div class="toc-title">Contents</div>
+      <ol>
+        <li><a href="#definitions">Definitions &amp; Roles</a></li>
+        <li><a href="#information">Information We Collect</a></li>
+        <li><a href="#cookies">Cookies &amp; Tracking Technologies</a></li>
+        <li><a href="#third-parties">Third-Party Service Providers</a></li>
+        <li><a href="#usage">Data Usage &amp; Purpose</a></li>
+        <li><a href="#retention">Data Retention</a></li>
+        <li><a href="#california">California Privacy Rights (CCPA/CPRA)</a></li>
+        <li><a href="#texas">Texas Privacy Rights (TDPSA)</a></li>
+        <li><a href="#children">Children's Privacy (COPPA)</a></li>
+        <li><a href="#security">Security</a></li>
+        <li><a href="#updates">Policy Updates &amp; Notification</a></li>
+        <li><a href="#arbitration">Dispute Resolution &amp; Arbitration</a></li>
+        <li><a href="#contact">Contact Us</a></li>
+      </ol>
+    </div>
+
+    <h2 id="definitions">1. Definitions &amp; Roles</h2>
+    <ul>
+      <li><strong>The Parish or Monastery ("Data Controller"):</strong> The Orthodox parish, monastery, or skete that has registered with AgaPay and directs the collection and use of donor data within its community.</li>
+      <li><strong>AgaPay ("Data Processor"):</strong> We process personal data solely on behalf of the Data Controller for the purpose of stewardship and donation management. We do not use this data for our own commercial purposes beyond what is necessary to provide the platform.</li>
+      <li><strong>Donor ("Data Subject"):</strong> Any individual who submits personal or financial information through the AgaPay platform in connection with a gift or offering.</li>
+    </ul>
+
+    <h2 id="information">2. Information We Collect</h2>
+    <ul>
+      <li><strong>Voluntarily Provided Information:</strong> Full name, email address, mailing address, phone number, and liturgical intention or memorial names submitted in connection with an offering.</li>
+      <li><strong>Financial Data:</strong> Payment card and banking information is collected and processed exclusively by Stripe, Inc. AgaPay does not store, transmit, or have access to full card numbers or banking credentials. See Section 4 for details on Stripe.</li>
+      <li><strong>Transaction Records:</strong> Gift amounts, dates, designated funds, and giving frequency — retained for tax and accounting compliance.</li>
+      <li><strong>Technical Usage Data:</strong> IP address, device type, operating system, browser type, pages visited, and session duration. This data is collected automatically when you access the platform.</li>
+    </ul>
+
+    <h2 id="cookies">3. Cookies &amp; Tracking Technologies</h2>
+    <p>AgaPay uses a limited set of cookies and similar tracking technologies to operate the platform. We do not use cookies for cross-site behavioral advertising or third-party ad targeting of any kind.</p>
+    <ul>
+      <li><strong>Essential Cookies:</strong> Required for the platform to function — session management, authentication, and security tokens. These cannot be disabled without impairing platform functionality.</li>
+      <li><strong>Analytics Cookies:</strong> We may use Cloudflare Web Analytics, a privacy-preserving analytics tool that does not use cookies or fingerprinting, to understand aggregate traffic patterns. No personally identifiable data is collected through this tool.</li>
+      <li><strong>No Third-Party Advertising Cookies:</strong> AgaPay does not serve advertisements and does not place or permit third-party advertising cookies on our platform.</li>
+    </ul>
+    <p>You may configure your browser to refuse cookies. Essential platform functions may not operate correctly if cookies are disabled.</p>
+
+    <h2 id="third-parties">4. Third-Party Service Providers</h2>
+    <p>AgaPay shares limited personal data with the following third-party service providers, each of whom is bound by contractual data protection obligations. We do not sell personal data to any third party.</p>
+    <ul>
+      <li><strong>Stripe, Inc.</strong> — Payment processing. Stripe collects, processes, and stores financial data under its own Privacy Policy and PCI-DSS compliance framework. Learn more at <a href="https://stripe.com/privacy" target="_blank" rel="noopener">stripe.com/privacy</a>.</li>
+      <li><strong>Cloudflare, Inc.</strong> — DNS, content delivery, and DDoS protection. Cloudflare may process IP addresses and technical request data as traffic passes through its network. Learn more at <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">cloudflare.com/privacypolicy</a>.</li>
+      <li><strong>MailerLite</strong> — Email list management for parishes and prospective users who voluntarily subscribe to AgaPay communications. MailerLite processes name and email address for this purpose only. Learn more at <a href="https://www.mailerlite.com/legal/privacy-policy" target="_blank" rel="noopener">mailerlite.com/legal/privacy-policy</a>.</li>
+    </ul>
+    <p>We do not share personal data with any party beyond those listed above except as required by law.</p>
+
+    <h2 id="usage">5. Data Usage &amp; Purpose</h2>
+    <p>We collect and process personal data solely for the following purposes:</p>
+    <ul>
+      <li>Processing and recording charitable gifts on behalf of the parish or monastery.</li>
+      <li>Transmitting liturgical memorial and intention names to designated clergy for commemoration at the proskomedia.</li>
+      <li>Generating annual giving statements for donor tax purposes.</li>
+      <li>Complying with applicable tax, accounting, and charitable reporting requirements.</li>
+      <li>Communicating with donors regarding their gifts when requested.</li>
+      <li>Maintaining platform security and preventing fraud.</li>
+    </ul>
+    <p>We do not use personal data for marketing profiling, behavioral advertising, or any purpose beyond those listed above.</p>
+
+    <h2 id="retention">6. Data Retention</h2>
+    <p>We retain personal data only for as long as necessary to fulfill the purposes for which it was collected, or as required by applicable law:</p>
+    <ul>
+      <li><strong>Financial and transaction records:</strong> Retained for a minimum of seven (7) years in compliance with IRS record-keeping requirements for charitable organizations and donors.</li>
+      <li><strong>Liturgical memorial and intention names:</strong> Transmitted to the designated priest and then retained in transaction records for the period above. Not used for any purpose beyond liturgical fulfillment and record-keeping.</li>
+      <li><strong>Account and profile data:</strong> Retained for the duration of the donor's active relationship with their parish on the platform, plus three (3) years following account closure or inactivity.</li>
+      <li><strong>Technical usage and log data:</strong> Retained for no more than ninety (90) days unless required for active security investigation.</li>
+    </ul>
+    <p>Upon expiration of the applicable retention period, data is securely deleted or anonymized.</p>
+
+    <h2 id="california">7. California Privacy Rights (CCPA/CPRA)</h2>
+    <p>If you are a California resident, the California Consumer Privacy Act (CCPA) as amended by the California Privacy Rights Act (CPRA) affords you specific rights regarding your personal information.</p>
+    <ul>
+      <li><strong>Right to Know:</strong> You may request disclosure of the categories and specific pieces of personal information we have collected about you.</li>
+      <li><strong>Right to Delete:</strong> You may request deletion of your personal information, subject to certain exceptions (including our legal obligation to retain financial records).</li>
+      <li><strong>Right to Correct:</strong> You may request correction of inaccurate personal information.</li>
+      <li><strong>Right to Opt Out of Sale or Sharing:</strong> AgaPay does not sell or share personal information as defined by the CCPA/CPRA. No opt-out mechanism is required, but we disclose this affirmatively.</li>
+      <li><strong>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising any of these rights.</li>
+    </ul>
+    <p>To exercise your rights, submit a written request to <strong>hello@agapay.app</strong>. We will verify your identity before processing any request and respond within forty-five (45) days as required by law.</p>
+
+    <h2 id="texas">8. Texas Privacy Rights (TDPSA)</h2>
+    <p>If you are a Texas resident, the Texas Data Privacy and Security Act (TDPSA), effective July 1, 2024, affords you the following rights regarding your personal data:</p>
+    <ul>
+      <li><strong>Right to Access:</strong> You may confirm whether we process your personal data and request access to it.</li>
+      <li><strong>Right to Correction:</strong> You may request correction of inaccuracies in your personal data.</li>
+      <li><strong>Right to Deletion:</strong> You may request deletion of personal data you have provided to us, subject to our lawful retention obligations.</li>
+      <li><strong>Right to Data Portability:</strong> You may request a copy of your personal data in a portable format.</li>
+      <li><strong>Right to Opt Out of Targeted Advertising or Sale:</strong> AgaPay does not engage in targeted advertising or sell personal data. No opt-out is required, but we disclose this affirmatively.</li>
+    </ul>
+    <p>To exercise any of these rights, submit a written request to <strong>hello@agapay.app</strong>. If we decline to act on your request, you may appeal by responding to our decision in writing. If your appeal is denied, you may contact the Texas Attorney General at <a href="https://www.texasattorneygeneral.gov" target="_blank" rel="noopener">texasattorneygeneral.gov</a>.</p>
+
+    <h2 id="children">9. Children's Privacy (COPPA)</h2>
+    <p>AgaPay is not directed to children under the age of 13, and we do not knowingly collect personal information from children under 13. Our platform is intended for use by adults — parish administrators, clergy, and adult donors — on behalf of their communities.</p>
+    <p>If you believe we have inadvertently collected personal information from a child under 13, please contact us immediately at <strong>hello@agapay.app</strong> and we will promptly delete such information from our records.</p>
+    <p>If you are between the ages of 13 and 18, please obtain parental or guardian consent before submitting any personal information through this platform.</p>
+
+    <h2 id="security">10. Security</h2>
+    <p>AgaPay employs administrative, technical, and physical safeguards designed to protect your personal data against unauthorized access, disclosure, alteration, or destruction. These measures include:</p>
+    <ul>
+      <li>AES-256 encryption for data at rest.</li>
+      <li>TLS encryption for all data in transit.</li>
+      <li>Payment processing through Stripe's PCI-DSS Level 1 certified infrastructure.</li>
+      <li>Access controls limiting personal data access to authorized personnel only.</li>
+    </ul>
+    <p>No method of transmission over the internet or electronic storage is completely secure. While we use commercially reasonable measures to protect your data, we cannot guarantee absolute security.</p>
+
+    <h2 id="updates">11. Policy Updates &amp; Notification</h2>
+    <p>We may update this Privacy Policy from time to time to reflect changes in our practices, applicable law, or platform features. When we make material changes, we will notify affected users by:</p>
+    <ul>
+      <li>Posting the updated policy on this page with a revised "Last Updated" date.</li>
+      <li>Sending an email notification to parish administrators registered on the platform at least thirty (30) days before material changes take effect.</li>
+      <li>Displaying a prominent notice on the AgaPay platform for at least thirty (30) days following the update.</li>
+    </ul>
+    <p>Your continued use of AgaPay following notice of material changes constitutes your acceptance of the updated policy. If you do not agree to the updated terms, you may terminate your account before the effective date of the change.</p>
+
+    <h2 id="arbitration">12. Dispute Resolution &amp; Arbitration</h2>
+    <p>Any dispute arising out of or relating to this Privacy Policy or the handling of your personal data shall be resolved as follows:</p>
+    <ul>
+      <li><strong>Informal Resolution:</strong> Before initiating any formal proceeding, you agree to contact us at hello@agapay.app and attempt to resolve the dispute informally. We will respond within thirty (30) days.</li>
+      <li><strong>Binding Arbitration:</strong> If informal resolution fails, any dispute shall be settled by binding arbitration administered in <strong>Lubbock, Texas</strong>, under the rules of the American Arbitration Association (AAA).</li>
+      <li><strong>Class Action Waiver:</strong> You and AgaPay agree that each may bring claims only in your or its individual capacity, and not as a plaintiff or class member in any purported class or representative proceeding.</li>
+      <li><strong>Governing Law:</strong> This Policy is governed by the laws of the State of Texas, without regard to its conflict of law provisions.</li>
+    </ul>
+
+    <h2 id="contact">13. Contact Us</h2>
+    <p>If you have questions, concerns, or requests regarding this Privacy Policy or the handling of your personal data, please contact us:</p>
+    <ul>
+      <li><strong>Email:</strong> <a href="mailto:hello@agapay.app">hello@agapay.app</a></li>
+      <li><strong>Platform:</strong> <a href="https://agapay.app">agapay.app</a></li>
+    </ul>
+    <p>We will respond to all privacy-related inquiries within thirty (30) days of receipt.</p>
+
+    <div class="disclaimer">
+      <strong>Attorney Review Recommended:</strong> This Privacy Policy represents a good-faith effort to address applicable federal and state privacy requirements as of May 2026. However, it has not been reviewed by licensed legal counsel. Before processing live financial transactions, AgaPay strongly recommends having this document reviewed and finalized by an attorney familiar with Texas law, federal financial privacy regulations (including GLBA where applicable), and your specific platform data architecture. Requirements vary and may change.
+    </div>
   </div>
 
-  <h2>1. Definitions & Roles</h2>
-  <ul>
-    <li><strong>The Parish/Monastery ("Data Controller"):</strong> Acts as the Data Controller.</li>
-    <li><strong>AgaPay ("Data Processor"):</strong> We process personal data solely on behalf of the Data Controller for the purpose of stewardship and donation management.</li>
-  </ul>
-
-  <h2>2. Information We Collect</h2>
-  <ul>
-    <li><strong>Volunteered Information:</strong> Name, contact information, and liturgical intention/memorial lists.</li>
-    <li><strong>Financial Data:</strong> Processed via Stripe. We do not store full credit card or banking credentials.</li>
-    <li><strong>Technical Usage Data:</strong> IP address, device type, browser metadata.</li>
-  </ul>
-
-  <h2>3. Data Usage & Purpose</h2>
-  <p>We process data to fulfill contractual obligations:</p>
-  <ul>
-    <li>Gift processing and record-keeping.</li>
-    <li>Liturgical fulfillment (transmitting memorial names to clergy).</li>
-    <li>Tax compliance and charitable reporting.</li>
-  </ul>
-
-  <h2>4. California Privacy Rights (CCPA/CPRA)</h2>
-  <p>If you are a California resident, the CCPA/CPRA provides specific rights:</p>
-  <ul>
-    <li><strong>Notice at Collection:</strong> We collect the categories described in Section 2. We do not use this data for cross-context behavioral advertising.</li>
-    <li><strong>Right to Know/Access/Delete/Correct:</strong> You have the right to request access, deletion, or correction of your personal data.</li>
-    <li><strong>"Do Not Sell or Share":</strong> AgaPay does not "sell" or "share" personal information as defined by the CCPA/CPRA.</li>
-  </ul>
-  <p>To exercise your rights, please submit a request to <strong>hello@agapay.app</strong>. We will verify your identity before processing.</p>
-
-  <h2>5. Security & Retention</h2>
-  <p>We employ administrative, technical, and physical safeguards, including AES-256 encryption. We retain data only for as long as necessary to perform services or comply with accounting laws.</p>
-
-  <h2>6. Dispute Resolution & Arbitration</h2>
-  <p>Any dispute shall be settled by binding arbitration in <strong>Lubbock, Texas</strong>. <strong>You and AgaPay agree that each may bring claims only in your or its individual capacity, and not as a plaintiff or class member in any class proceeding.</strong></p>
-
-  <h2>7. Contact Us</h2>
-  <p>If you have questions, please contact us at: <strong>hello@agapay.app</strong></p>
-
- 
   <footer>
     <div class="footer-inner">
       <div class="footer-brand">
@@ -123,7 +251,8 @@
           </div>
           <span class="footer-name">Aga<em>Pay</em></span>
         </div>
-        <p class="footer-tagline">Love how you give.</p>
+        <p class="footer-tagline">Love where you give.</p>
+        <p class="footer-tagline-sub">For the life of the world.</p>
       </div>
       <div class="footer-nav">
         <div class="footer-nav-group">
@@ -139,7 +268,7 @@
           <a href="/contact">Contact</a>
           <a href="/#waitlist">Register parish</a>
         </div>
-         <div class="footer-nav-group">
+        <div class="footer-nav-group">
           <div class="footer-nav-label">Legal</div>
           <a href="/privacy">Privacy Policy</a>
           <a href="/terms">Terms of Service</a>
@@ -156,5 +285,6 @@
       <p>© 2026 AgaPay · agapay.app</p>
     </div>
   </footer>
+
 </body>
 </html>
