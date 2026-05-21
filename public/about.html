@@ -18,7 +18,7 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --deep:    #0F2D1F;
+      --deep:   #0F2D1F;
       --forest: #355E3B;
       --gold:   #C8A24A;
       --cream:  #F3EFE6;
@@ -31,27 +31,32 @@
     }
 
     html { scroll-behavior: smooth; }
-    body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; }
+
+    /* CRITICAL: body must never have overflow hidden except when drawer is open.
+       And even then we use a class toggle, not a permanent rule. */
+    body {
+      font-family: var(--sans);
+      background: var(--cream);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      /* NO overflow: hidden here */
+    }
     body.nav-open { overflow: hidden; }
+
     a { color: inherit; text-decoration: none; }
 
-    /* PREMIUM GLOW AND DRAW STYLE INFRASTRUCTURE */
-    .ambient-wrapper { position: relative; overflow: hidden; }
+    /* CANDLE GLOW — must use position:fixed or be inside a non-overflow:hidden container */
     .candle-glow {
-      position: absolute; width: 450px; height: 450px;
-      background: radial-gradient(circle, rgba(200, 162, 74, 0.06) 0%, rgba(53, 94, 59, 0.02) 40%, transparent 70%);
-      filter: blur(50px); pointer-events: none; z-index: 0; border-radius: 50%;
+      position: fixed;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(200,162,74,0.05) 0%, rgba(53,94,59,0.02) 40%, transparent 70%);
+      filter: blur(60px);
+      pointer-events: none;
+      z-index: -1;
+      border-radius: 50%;
     }
     .candle-glow.top-left  { top: -150px; left: -150px; }
     .candle-glow.bottom-right { bottom: -150px; right: -150px; }
-
-    .aside-avatar svg line {
-      stroke-dasharray: 80; stroke-dashoffset: 80;
-      transition: stroke-dashoffset 2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .reveal.visible .aside-avatar svg line { stroke-dashoffset: 0; }
-
-    h1, h2, h3 { letter-spacing: -0.02em !important; }
 
     /* NAV */
     nav {
@@ -68,59 +73,45 @@
     .nav-mark { width: 50px; height: 50px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
     .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
     .nav-name em { color: var(--gold); font-style: normal; }
-    
     .nav-links { display: flex; align-items: center; gap: 1.25rem; }
-    .nav-links a { font-size: 14px; color: var(--stone); transition: color 0.2s; }
+    .nav-links a { font-size: 14px; color: var(--forest); transition: color 0.2s; }
     .nav-links a:hover { color: var(--ink); }
-    
-    .nav-cta {
-      background: var(--deep);
-      color: var(--cream);
-      padding: 9px 18px;
-      border-radius: var(--r);
-      font-size: 13px;
-      font-family: var(--sans);
-      font-weight: 500;
-      display: inline-block;
-      transition: background 0.2s;
-    }
-    .nav-cta:hover { background: var(--forest); color: var(--cream); }
-    
-    .nav-give {
-      display: inline-block;
-      background: var(--gold);
-      color: var(--deep) !important;
-      border: none;
-      padding: 9px 18px;
-      border-radius: var(--r);
-      font-size: 13px;
-      font-family: var(--sans);
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    .nav-give:hover { opacity: 0.9; color: var(--deep) !important; }
+    .nav-cta { display: inline-block; background: var(--deep); color: var(--cream) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; transition: background 0.2s; }
+    .nav-cta:hover { background: var(--forest) !important; }
+    .nav-give { display: inline-block; background: var(--gold); color: var(--deep) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 600; transition: opacity 0.2s; }
+    .nav-give:hover { opacity: 0.9; }
 
-    /* MOBILE HAMBURGER */
+    /* HAMBURGER */
     .menu-toggle {
       display: none; background: none; border: none; cursor: pointer;
-      width: 44px; height: 44px; z-index: 110; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+      width: 44px; height: 44px; z-index: 110;
+      flex-direction: column; align-items: center; justify-content: center; gap: 5px;
     }
-    .menu-toggle span { display: block; width: 22px; height: 2px; background-color: var(--deep); border-radius: 2px; transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s; }
+    .menu-toggle span {
+      display: block; width: 22px; height: 2px;
+      background-color: var(--deep); border-radius: 2px;
+      transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.2s;
+    }
     .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
     .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
     .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
+    /* MOBILE DRAWER — fixed overlay, does NOT affect page scroll */
     .mobile-nav-drawer {
-      position: fixed; top: 0; right: 0; bottom: 0; left: 0; background-color: var(--cream); z-index: 105;
-      padding: 6rem 2rem 3rem; display: flex; flex-direction: column; gap: 2rem;
-      opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+      position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+      background-color: var(--cream); z-index: 105;
+      padding: 6rem 2rem 3rem;
+      display: flex; flex-direction: column; gap: 2rem;
+      opacity: 0; visibility: hidden; transform: translateY(-10px);
+      transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+      overflow-y: auto;
     }
     .mobile-nav-drawer.active { opacity: 1; visibility: visible; transform: translateY(0); }
     .mobile-drawer-links { display: flex; flex-direction: column; gap: 1.5rem; }
     .mobile-drawer-links a { font-family: var(--serif); font-size: 24px; color: var(--deep); border-bottom: 0.5px solid rgba(166,159,145,0.15); padding-bottom: 0.75rem; }
     .mobile-drawer-actions { margin-top: auto; display: flex; flex-direction: column; gap: 1rem; }
-    .mobile-drawer-actions .nav-cta, .mobile-drawer-actions .nav-give { text-align: center; padding: 14px; font-size: 15px; width: 100%; }
+    .mobile-drawer-actions .nav-cta,
+    .mobile-drawer-actions .nav-give { text-align: center; padding: 14px; font-size: 15px; width: 100%; }
 
     /* HERO */
     .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
@@ -132,6 +123,14 @@
     .hero h1 em { color: var(--gold); font-style: italic; }
     .hero-sub { font-size: 15px; color: var(--stone); line-height: 1.85; max-width: 480px; margin: 0 auto; }
 
+    /* HERO ANIMATIONS */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: no-preference) {
+      .hero-eyebrow { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both; }
+      .hero h1      { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.08s both; }
+      .hero-sub     { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.16s both; }
+    }
+
     /* BODY */
     .body-wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
 
@@ -139,13 +138,8 @@
     .opening { padding: 5rem 0 0; display: grid; grid-template-columns: 1fr 2fr; gap: 4rem; align-items: start; }
     .opening-aside { position: sticky; top: 90px; }
     .aside-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1rem; font-weight: 500; }
-    .aside-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.5rem; position: relative; z-index: 1; }
-    
-    .aside-avatar { 
-      width: 52px; height: 52px; border-radius: 50%; background: var(--deep); border: 0.5px solid rgba(200,162,74,0.3);
-      display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; 
-    }
-    
+    .aside-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.5rem; }
+    .aside-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--deep); border: 0.5px solid rgba(200,162,74,0.3); display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
     .aside-name { font-size: 15px; font-weight: 500; color: var(--ink); margin-bottom: 4px; }
     .aside-title { font-size: 12px; color: var(--stone); line-height: 1.6; }
     .aside-title strong { display: block; color: var(--gold); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; margin-bottom: 4px; margin-top: 1rem; }
@@ -155,7 +149,7 @@
     .aside-contact a:hover { opacity: 0.75; }
 
     /* PROSE */
-    .prose { padding: 0 0 5rem; position: relative; z-index: 1; }
+    .prose { padding: 0 0 5rem; }
     .prose-section { margin-bottom: 3.5rem; }
     .prose-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 0.75rem; font-weight: 500; }
     .prose-section h2 { font-family: var(--serif); font-size: clamp(1.5rem, 2.5vw, 1.9rem); font-weight: 500; color: var(--deep); line-height: 1.25; margin-bottom: 1.25rem; letter-spacing: -0.01em; }
@@ -187,6 +181,13 @@
     .cta a { display: inline-block; background: var(--gold); color: var(--deep); padding: 13px 28px; border-radius: var(--r); font-size: 14px; font-weight: 500; font-family: var(--sans); transition: opacity 0.2s; }
     .cta a:hover { opacity: 0.88; }
 
+    /* SCROLL ANIMATIONS */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+
     /* FOOTER */
     footer { background: var(--deep); padding: 3.5rem 1.5rem 0; }
     .footer-inner { max-width: 860px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 3rem; padding-bottom: 3rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
@@ -194,7 +195,8 @@
     .footer-logo { display: flex; align-items: center; gap: 8px; }
     .footer-name { font-family: var(--serif); font-size: 32px; color: var(--cream); font-weight: 500; }
     .footer-name em { color: var(--gold); font-style: normal; }
-    .footer-tagline { font-family: var(--serif); font-size: 13px; font-style: italic; color: rgba(166,159,145,0.4); }
+    .footer-tagline { font-family: var(--serif); font-size: 16px; font-style: italic; color: rgba(243,239,230,0.7); margin-bottom: 4px; }
+    .footer-tagline-sub { font-family: var(--serif); font-size: 13px; font-style: italic; color: rgba(166,159,145,0.4); }
     .footer-nav { display: flex; gap: 3rem; flex-wrap: wrap; }
     .footer-nav-group { display: flex; flex-direction: column; gap: 10px; }
     .footer-nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin-bottom: 2px; }
@@ -203,19 +205,26 @@
     .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
     .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.3); }
 
+    /* RESPONSIVE */
     @media (max-width: 768px) {
+      .menu-toggle { display: flex; }
+      .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
+      .nav-inner .nav-cta, .nav-inner .nav-give { display: none; }
       .opening { display: flex; flex-direction: column; gap: 3rem; padding-top: 3rem; }
       .opening-aside { order: 2; width: 100%; position: static; }
       .prose { order: 1; padding-bottom: 0; }
       .scripture, .cta { padding: 2.5rem 1.5rem; }
-      .menu-toggle { display: flex; }
-      .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
-      .nav-inner .nav-cta, .nav-inner .nav-give { display: none; }
+    }
+    @media (max-width: 480px) {
+      .footer-inner { flex-direction: column; }
     }
   </style>
 </head>
-<body class="ambient-wrapper">
+<body>
+
+  <!-- Candle glow uses position:fixed so it never causes scroll issues -->
   <div class="candle-glow top-left" aria-hidden="true"></div>
+  <div class="candle-glow bottom-right" aria-hidden="true"></div>
 
   <nav>
     <div class="nav-inner">
@@ -265,12 +274,16 @@
 
   <main class="body-wrap">
     <div class="opening">
+
       <aside class="opening-aside reveal" aria-label="Founder Bio">
         <div class="aside-label">The founder</div>
         <div class="aside-card">
           <div class="aside-avatar" aria-hidden="true">
-            <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; stroke: var(--gold); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; fill: none;">
-              <line x1="12" y1="3" x2="12" y2="21" /><line x1="9" y1="6" x2="15" y2="6" /><line x1="6" y1="10" x2="18" y2="10" /><line x1="9" y1="17" x2="15" y2="15" />
+            <svg viewBox="0 0 24 24" style="width:24px;height:24px;stroke:var(--gold);stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;fill:none;">
+              <line x1="12" y1="3" x2="12" y2="21"/>
+              <line x1="9" y1="6" x2="15" y2="6"/>
+              <line x1="6" y1="10" x2="18" y2="10"/>
+              <line x1="9" y1="17" x2="15" y2="15"/>
             </svg>
           </div>
           <div class="aside-name">The Founder</div>
@@ -283,7 +296,9 @@
             Legal professional<br>American Orthodox Christian
           </div>
           <hr class="aside-divider" />
-          <div class="aside-contact"><a href="mailto:hello@agapay.app">hello@agapay.app</a></div>
+          <div class="aside-contact">
+            <a href="mailto:hello@agapay.app">hello@agapay.app</a>
+          </div>
         </div>
       </aside>
 
@@ -348,93 +363,87 @@
     </section>
   </main>
 
-  <div class="candle-glow bottom-right" aria-hidden="true"></div>
-
   <footer>
     <div class="footer-inner">
       <div class="footer-brand">
         <div class="footer-logo">
-          <div style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
-            <img src="/mark.png" alt="AgaPay" style="width: 48px; height: 48px; object-fit: contain;" />
+          <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;">
+            <img src="/mark.png" alt="AgaPay" style="width:48px;height:48px;object-fit:contain;" />
           </div>
           <span class="footer-name">Aga<em>Pay</em></span>
         </div>
         <p class="footer-tagline">Love where you give.</p>
+        <p class="footer-tagline-sub">For the life of the world.</p>
       </div>
       <div class="footer-nav">
         <div class="footer-nav-group">
           <div class="footer-nav-label">Platform</div>
-          <a href="/features">Features</a><a href="/pricing">Pricing</a><a href="/why">Why AgaPay</a><a href="/give">Give now</a>
+          <a href="/features">Features</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/why">Why AgaPay</a>
+          <a href="/give">Give now</a>
         </div>
         <div class="footer-nav-group">
           <div class="footer-nav-label">Company</div>
-          <a href="/about">About</a><a href="/contact">Contact</a><a href="/#waitlist">Register parish</a>
+          <a href="/about">About</a>
+          <a href="/contact">Contact</a>
+          <a href="/#waitlist">Register parish</a>
         </div>
         <div class="footer-nav-group">
           <div class="footer-nav-label">Contact</div>
-          <a href="mailto:hello@agapay.app">hello@agapay.app</a><a href="mailto:parishes@agapay.app">parishes@agapay.app</a><a href="mailto:support@agapay.app">support@agapay.app</a>
+          <a href="mailto:hello@agapay.app">hello@agapay.app</a>
+          <a href="mailto:parishes@agapay.app">parishes@agapay.app</a>
+          <a href="mailto:support@agapay.app">support@agapay.app</a>
         </div>
       </div>
     </div>
-    <div class="footer-bottom"><p>© 2026 AgaPay · agapay.app</p></div>
+    <div class="footer-bottom">
+      <p>© 2026 AgaPay · agapay.app</p>
+    </div>
   </footer>
 
   <script>
-    const observerOptions = { root: null, rootMargin: '0px 0px -8% 0px', threshold: 0.06 };
+    // SCROLL REVEAL
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('visible');
-          const paths = entry.target.querySelectorAll('path, line, circle');
-          paths.forEach(path => {
-            const length = path.getTotalLength ? path.getTotalLength() : 80;
-            path.style.strokeDasharray = length;
-            path.style.strokeDashoffset = length;
-            path.getBoundingClientRect();
-            path.style.strokeDashoffset = '0';
-          });
           observer.unobserve(entry.target);
         }
       });
-    }, observerOptions);
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    // ACCESSIBLE INTERACTIVE DRAWER CONTROLLER
+    // MOBILE NAV — clean toggle with resize safety guard
     function toggleMenu() {
-      const toggleBtn = document.querySelector('.menu-toggle');
+      const btn = document.querySelector('.menu-toggle');
       const drawer = document.getElementById('mobileDrawer');
-      const body = document.body;
-      
-      const isDrawerOpen = drawer.classList.contains('active');
-      
-      if (isDrawerOpen) {
-        toggleBtn.setAttribute('aria-expanded', 'false');
+      const isOpen = drawer.classList.contains('active');
+
+      if (isOpen) {
+        btn.setAttribute('aria-expanded', 'false');
         drawer.classList.remove('active');
         drawer.setAttribute('aria-hidden', 'true');
-        body.classList.remove('nav-open');
+        document.body.classList.remove('nav-open');
       } else {
-        toggleBtn.setAttribute('aria-expanded', 'true');
+        btn.setAttribute('aria-expanded', 'true');
         drawer.classList.add('active');
         drawer.setAttribute('aria-hidden', 'false');
-        body.classList.add('nav-open');
+        document.body.classList.add('nav-open');
       }
     }
 
-    // DESKTOP RESIZE SAFETY GUARD
     window.addEventListener('resize', () => {
       if (window.innerWidth > 768) {
-        const toggleBtn = document.querySelector('.menu-toggle');
+        const btn = document.querySelector('.menu-toggle');
         const drawer = document.getElementById('mobileDrawer');
-        
-        if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
-        if (drawer) {
-          drawer.classList.remove('active');
-          drawer.setAttribute('aria-hidden', 'true');
-        }
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+        if (drawer) { drawer.classList.remove('active'); drawer.setAttribute('aria-hidden', 'true'); }
         document.body.classList.remove('nav-open');
       }
     });
   </script>
+
 </body>
 </html>
