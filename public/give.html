@@ -9,59 +9,38 @@
   <meta property="og:url" content="https://agapay.app/give" />
   <meta property="og:image" content="https://agapay.app/og-image.png" />
   <meta name="theme-color" content="#0F2D1F" />
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
-  
+
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
-      --deep: #0F2D1F;
+      --deep:   #0F2D1F;
       --forest: #355E3B;
-      --gold: #C8A24A;
-      --cream: #F3EFE6;
-      --stone: #A69F91;
-      --ink: #1A1A18;
-      --serif: 'Cormorant Garamond', Georgia, serif;
-      --sans: 'DM Sans', system-ui, sans-serif;
-      --r: 10px;
-      --rlg: 16px;
+      --gold:   #C8A24A;
+      --cream:  #F3EFE6;
+      --stone:  #A69F91;
+      --ink:    #1A1A18;
+      --serif:  'Cormorant Garamond', Georgia, serif;
+      --sans:   'DM Sans', system-ui, sans-serif;
+      --r:      10px;
+      --rlg:    16px;
     }
     html { scroll-behavior: smooth; }
-    body {
-      font-family: var(--sans);
-      background: var(--cream);
-      color: var(--ink);
-      -webkit-font-smoothing: antialiased;
-    }
+    body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; }
     body.nav-open { overflow: hidden; }
     a { color: inherit; text-decoration: none; }
 
-    /* Candle Glow */
-    .candle-glow {
-      position: fixed;
-      width: 500px; height: 500px;
-      background: radial-gradient(circle, rgba(200,162,74,0.05) 0%, rgba(53,94,59,0.02) 40%, transparent 70%);
-      filter: blur(60px);
-      pointer-events: none;
-      z-index: -1;
-      border-radius: 50%;
-    }
+    /* CANDLE GLOW */
+    .candle-glow { position: fixed; width: 500px; height: 500px; background: radial-gradient(circle, rgba(200,162,74,0.05) 0%, rgba(53,94,59,0.02) 40%, transparent 70%); filter: blur(60px); pointer-events: none; z-index: -1; border-radius: 50%; }
     .candle-glow.top-left { top: -150px; left: -150px; }
     .candle-glow.bottom-right { bottom: -150px; right: -150px; }
 
-    /* NAV (copied exactly from your About page) */
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(243,239,230,0.93);
-      backdrop-filter: blur(12px);
-      border-bottom: 0.5px solid rgba(166,159,145,0.35);
-    }
-    .nav-inner {
-      max-width: 1024px; margin: 0 auto; padding: 0 1.5rem;
-      display: flex; align-items: center; justify-content: space-between; height: 64px;
-    }
+    /* NAV */
+    nav { position: sticky; top: 0; z-index: 100; background: rgba(243,239,230,0.93); backdrop-filter: blur(12px); border-bottom: 0.5px solid rgba(166,159,145,0.35); }
+    .nav-inner { max-width: 1024px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
     .nav-logo { display: flex; align-items: center; gap: 5px; z-index: 110; }
     .nav-mark { width: 52px; height: 52px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
     .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
@@ -74,29 +53,13 @@
     .nav-give { display: inline-block; background: var(--gold); color: var(--deep) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-weight: 600; transition: opacity 0.2s; }
     .nav-give:hover { opacity: 0.9; }
 
-    /* Hamburger & Mobile Drawer (exact copy) */
-    .menu-toggle {
-      display: none; background: none; border: none; cursor: pointer;
-      width: 44px; height: 44px; z-index: 110;
-      flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-    }
-    .menu-toggle span {
-      display: block; width: 22px; height: 2px;
-      background-color: var(--deep); border-radius: 2px;
-      transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.2s;
-    }
+    /* HAMBURGER */
+    .menu-toggle { display: none; background: none; border: none; cursor: pointer; width: 44px; height: 44px; z-index: 110; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
+    .menu-toggle span { display: block; width: 22px; height: 2px; background-color: var(--deep); border-radius: 2px; transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.2s; }
     .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
     .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
     .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-    .mobile-nav-drawer {
-      position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-      background-color: var(--cream); z-index: 105;
-      padding: 6rem 2rem 3rem;
-      display: flex; flex-direction: column; gap: 2rem;
-      opacity: 0; visibility: hidden; transform: translateY(-10px);
-      transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
-      overflow-y: auto;
-    }
+    .mobile-nav-drawer { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background-color: var(--cream); z-index: 105; padding: 6rem 2rem 3rem; display: flex; flex-direction: column; gap: 2rem; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s; overflow-y: auto; }
     .mobile-nav-drawer.active { opacity: 1; visibility: visible; transform: translateY(0); }
     .mobile-drawer-links { display: flex; flex-direction: column; gap: 1.5rem; }
     .mobile-drawer-links a { font-family: var(--serif); font-size: 24px; color: var(--deep); border-bottom: 0.5px solid rgba(166,159,145,0.15); padding-bottom: 0.75rem; }
@@ -118,33 +81,43 @@
     .body-wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
     .section { padding: 4.5rem 0; }
     .section h2 { font-family: var(--serif); font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 500; color: var(--deep); margin-bottom: 2rem; text-align: center; }
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
-    .card {
-      background: white;
-      border: 0.5px solid rgba(166,159,145,0.35);
-      border-radius: var(--rlg);
-      padding: 2rem 1.75rem;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(15,45,31,0.1); }
-    .card-icon { font-size: 2.8rem; margin-bottom: 1.25rem; display: block; }
-    .card h3 { font-family: var(--serif); font-size: 1.45rem; margin-bottom: 0.75rem; color: var(--deep); }
 
+    /* GIVING CARDS */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
+    .card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 2rem 1.75rem; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(15,45,31,0.1); }
+
+    /* SVG ICON CONTAINER */
+    .card-icon {
+      width: 52px; height: 52px;
+      background: rgba(200,162,74,0.1);
+      border: 0.5px solid rgba(200,162,74,0.3);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .card h3 { font-family: var(--serif); font-size: 1.45rem; margin-bottom: 0.75rem; color: var(--deep); }
+    .card p { font-size: 14px; color: var(--stone); line-height: 1.7; }
+    .card-link { color: var(--gold); margin-top: 1.5rem; display: inline-block; font-weight: 500; font-size: 14px; transition: opacity 0.2s; }
+    .card-link:hover { opacity: 0.75; }
+
+    /* HOW IT WORKS */
     .how-it-works { background: var(--deep); color: var(--cream); border-radius: var(--rlg); padding: 3.5rem 2rem; margin: 4rem 0; }
     .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 2rem; text-align: center; }
-    .step-number {
-      width: 48px; height: 48px; margin: 0 auto 1rem;
-      background: var(--gold); color: var(--deep);
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      font-size: 1.4rem; font-weight: 600;
-    }
+    .step-number { width: 48px; height: 48px; margin: 0 auto 1rem; background: var(--gold); color: var(--deep); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--serif); font-size: 1.4rem; font-weight: 600; }
+
+    /* MONASTERY NOTE */
+    .monastery-note { text-align: center; font-size: 1.05rem; color: var(--forest); font-weight: 500; margin: 2rem 0; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
     /* CTA */
     .final-cta { background: var(--forest); border-radius: var(--rlg); padding: 3.5rem 2rem; text-align: center; margin: 4rem 0; }
-    .final-cta h2 { color: var(--cream); margin-bottom: 1rem; }
-    .final-cta p { color: rgba(243,239,230,0.85); max-width: 420px; margin: 0 auto 1.75rem; }
+    .final-cta h2 { font-family: var(--serif); font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 500; color: var(--cream); margin-bottom: 1rem; }
+    .final-cta p { color: rgba(243,239,230,0.85); max-width: 420px; margin: 0 auto 1.75rem; font-size: 15px; line-height: 1.8; }
+    .final-cta a { background: var(--gold); color: var(--deep); padding: 14px 32px; border-radius: var(--r); font-weight: 500; display: inline-block; transition: opacity 0.2s; }
+    .final-cta a:hover { opacity: 0.88; }
 
-    /* FOOTER (exact copy) */
+    /* FOOTER */
     footer { background: var(--deep); padding: 3.5rem 1.5rem 0; }
     .footer-inner { max-width: 860px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 3rem; padding-bottom: 3rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
     .footer-brand { display: flex; flex-direction: column; gap: 8px; }
@@ -160,6 +133,16 @@
     .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
     .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.3); }
 
+    /* SCROLL ANIMATIONS */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+
+    /* RESPONSIVE */
     @media (max-width: 768px) {
       .menu-toggle { display: flex; }
       .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
@@ -169,11 +152,10 @@
   </style>
 </head>
 <body>
-  <!-- Candle Glows -->
+
   <div class="candle-glow top-left" aria-hidden="true"></div>
   <div class="candle-glow bottom-right" aria-hidden="true"></div>
 
-  <!-- NAV -->
   <nav>
     <div class="nav-inner">
       <a href="/" class="nav-logo" aria-label="AgaPay Home">
@@ -197,7 +179,6 @@
     </div>
   </nav>
 
-  <!-- Mobile Drawer -->
   <div class="mobile-nav-drawer" id="mobileDrawer" aria-hidden="true">
     <div class="mobile-drawer-links">
       <a href="/" onclick="toggleMenu()">Home</a>
@@ -208,94 +189,140 @@
     </div>
     <div class="mobile-drawer-actions">
       <a href="/#waitlist" class="nav-cta" onclick="toggleMenu()">Register parish</a>
-      <a href="/give" class="/give/select" onclick="toggleMenu()">Give now</a>
+      <a href="/give" class="nav-give" onclick="toggleMenu()">Give now</a>
     </div>
   </div>
 
-  <!-- HERO -->
   <header class="hero">
     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
     <div class="hero-inner">
       <div class="hero-eyebrow">Give with Reverence</div>
-      <h1>Give as the Church<br>has always given.</h1>
+      <h1>Give as the Church<br>has always <em>given.</em></h1>
       <p class="hero-sub">Weekly stewardship, candles, panakhida, feast offerings, and acts of mercy — all in one Orthodox-native platform.</p>
     </div>
   </header>
 
   <main class="body-wrap">
     <section class="section">
-      <h2>Ways to Give</h2>
+      <h2 class="reveal">Ways to Give</h2>
       <div class="cards">
-        <div class="card">
-          <span class="card-icon">💰</span>
+
+        <!-- WEEKLY STEWARDSHIP -->
+        <div class="card reveal reveal-delay-1">
+          <div class="card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="7" width="22" height="16" rx="3"/>
+              <path d="M3 11h22"/>
+              <circle cx="8" cy="17" r="1.5" fill="#C8A24A" stroke="none"/>
+              <path d="M12 17h8"/>
+            </svg>
+          </div>
           <h3>Weekly Stewardship</h3>
           <p>Consistent support for your parish, aligned with the liturgical calendar.</p>
-          <a href="/give/select" style="color: var(--gold); margin-top: 1.5rem; display: inline-block; font-weight: 500;">Set up recurring →</a>
+          <a href="/give/select" class="card-link">Set up recurring →</a>
         </div>
-        <div class="card">
-          <span class="card-icon">🕯️</span>
-          <h3>Candles & Panakhida</h3>
+
+        <!-- CANDLES & PANAKHIDA -->
+        <div class="card reveal reveal-delay-2">
+          <div class="card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/>
+              <path d="M14 17v7"/>
+              <path d="M11 24h6"/>
+              <circle cx="14" cy="10" r="1.5" fill="#C8A24A" stroke="none"/>
+            </svg>
+          </div>
+          <h3>Candles &amp; Panakhida</h3>
           <p>Light candles and submit names for the living and departed.</p>
-          <a href="/give/select" style="color: var(--gold); margin-top: 1.5rem; display: inline-block; font-weight: 500;">Light a candle →</a>
+          <a href="/give/select" class="card-link">Light a candle →</a>
         </div>
-        <div class="card">
-          <span class="card-icon">📅</span>
+
+        <!-- FEAST DAY OFFERINGS -->
+        <div class="card reveal reveal-delay-3">
+          <div class="card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="5" width="22" height="20" rx="3"/>
+              <path d="M3 11h22"/>
+              <path d="M9 3v4M19 3v4"/>
+              <path d="M8 16h4M8 20h8"/>
+            </svg>
+          </div>
           <h3>Feast Day Offerings</h3>
           <p>Honor saints and major feasts of the Church.</p>
-          <a href="/give/select" style="color: var(--gold); margin-top: 1.5rem; display: inline-block; font-weight: 500;">Give to a feast →</a>
+          <a href="/give/select" class="card-link">Give to a feast →</a>
         </div>
-        <div class="card">
-          <span class="card-icon">🏛️</span>
+
+        <!-- DESIGNATED FUNDS -->
+        <div class="card reveal reveal-delay-4">
+          <div class="card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 22h20"/>
+              <path d="M6 22V14l3-2v10"/>
+              <path d="M12 22V10l3-2v14"/>
+              <path d="M18 22V6l3-2v18"/>
+            </svg>
+          </div>
           <h3>Designated Funds</h3>
           <p>Building projects, missions, youth, and specific parish needs.</p>
-          <a href="/give/select" style="color: var(--gold); margin-top: 1.5rem; display: inline-block; font-weight: 500;">Browse funds →</a>
+          <a href="/give/select" class="card-link">Browse funds →</a>
         </div>
-        <div class="card">
-          <span class="card-icon">❤️</span>
-          <h3>Love Offerings & Relief</h3>
+
+        <!-- LOVE OFFERINGS -->
+        <div class="card reveal reveal-delay-5">
+          <div class="card-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 22s-9-5-9-11a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 6-9 11-9 11z"/>
+            </svg>
+          </div>
+          <h3>Love Offerings &amp; Relief</h3>
           <p>Support for clergy families, widows, monasteries, and emergency appeals.</p>
-          <a href="#" style="color: var(--gold); margin-top: 1.5rem; display: inline-block; font-weight: 500;">Make a love offering →</a>
+          <a href="/give/select" class="card-link">Make a love offering →</a>
         </div>
+
       </div>
     </section>
 
-    <!-- How It Works -->
-    <div class="how-it-works">
-      <h2 style="color: var(--cream); text-align: center; margin-bottom: 2.5rem;">How It Works</h2>
+    <!-- HOW IT WORKS -->
+    <div class="how-it-works reveal">
+      <h2 style="color: var(--cream); text-align: center; margin-bottom: 2.5rem; font-family: var(--serif); font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 500;">How It Works</h2>
       <div class="steps">
         <div>
           <div class="step-number">1</div>
-          <p><strong>Choose</strong><br>Your gift type and parish</p>
+          <p style="color: rgba(243,239,230,0.85); font-size: 14px; line-height: 1.7;"><strong style="color: var(--cream); display: block; margin-bottom: 4px;">Choose</strong>Your gift type and parish</p>
         </div>
         <div>
           <div class="step-number">2</div>
-          <p><strong>Intention</strong><br>Add names and notes</p>
+          <p style="color: rgba(243,239,230,0.85); font-size: 14px; line-height: 1.7;"><strong style="color: var(--cream); display: block; margin-bottom: 4px;">Intention</strong>Add names and notes</p>
         </div>
         <div>
           <div class="step-number">3</div>
-          <p><strong>Give</strong><br>One-time or recurring</p>
+          <p style="color: rgba(243,239,230,0.85); font-size: 14px; line-height: 1.7;"><strong style="color: var(--cream); display: block; margin-bottom: 4px;">Give</strong>One-time or recurring</p>
         </div>
         <div>
           <div class="step-number">4</div>
-          <p><strong>Receive</strong><br>Confirmation & parish record</p>
+          <p style="color: rgba(243,239,230,0.85); font-size: 14px; line-height: 1.7;"><strong style="color: var(--cream); display: block; margin-bottom: 4px;">Receive</strong>Confirmation &amp; parish record</p>
         </div>
       </div>
     </div>
 
-    <!-- Monastery Note -->
-    <p style="text-align: center; font-size: 1.1rem; color: var(--forest); font-weight: 500; margin: 2rem 0;">
-      ☦️ Monastic donations are completely free — No platform fees
+    <!-- MONASTERY NOTE -->
+    <p class="monastery-note reveal">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#355E3B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z"/>
+        <path d="M12 13v9"/>
+        <path d="M9 22h6"/>
+      </svg>
+      Monastic donations are completely free — no platform fees, ever
     </p>
 
-    <!-- Final CTA -->
-    <div class="final-cta">
+    <!-- FINAL CTA -->
+    <div class="final-cta reveal">
       <h2>Ready to give?</h2>
       <p>Join Orthodox Christians who are giving with reverence and simplicity.</p>
-      <a href="/give/select" style="background: var(--gold); color: var(--deep); padding: 14px 32px; border-radius: var(--r); font-weight: 500; display: inline-block;">Start Giving Now</a>
+      <a href="/give/select">Start Giving Now</a>
     </div>
   </main>
 
-  <!-- FOOTER -->
   <footer>
     <div class="footer-inner">
       <div class="footer-brand">
@@ -340,6 +367,18 @@
   </footer>
 
   <script>
+    // SCROLL REVEAL
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.06 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // MOBILE NAV
     function toggleMenu() {
       const btn = document.querySelector('.menu-toggle');
       const drawer = document.getElementById('mobileDrawer');
@@ -366,5 +405,6 @@
       }
     });
   </script>
+
 </body>
 </html>
