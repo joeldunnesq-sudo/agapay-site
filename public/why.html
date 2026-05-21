@@ -31,8 +31,20 @@
 
     html { scroll-behavior: smooth; }
     body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; }
-    body.nav-open { overflow: hidden; } /* Prevents background scrolling when mobile menu is active */
+    body.nav-open { overflow: hidden; }
     a { color: inherit; text-decoration: none; }
+
+    /* LAYOUT GLOW INJECTION MATRIX */
+    .ambient-wrapper { position: relative; overflow: hidden; }
+    .candle-glow {
+      position: absolute; width: 450px; height: 450px;
+      background: radial-gradient(circle, rgba(200, 162, 74, 0.06) 0%, rgba(53, 94, 59, 0.02) 40%, transparent 70%);
+      filter: blur(50px); pointer-events: none; z-index: 0; border-radius: 50%;
+    }
+    .candle-glow.top-left  { top: -150px; left: -150px; }
+    .candle-glow.bottom-right { bottom: -150px; right: -150px; }
+
+    h1, h2, h3 { letter-spacing: -0.02em !important; }
 
     /* NAV */
     nav { position: sticky; top: 0; z-index: 100; background: rgba(243,239,230,0.93); backdrop-filter: blur(12px); border-bottom: 0.5px solid rgba(166,159,145,0.35); }
@@ -45,84 +57,28 @@
     .nav-links { display: flex; align-items: center; gap: 1.25rem; }
     .nav-links a { font-size: 14px; color: var(--stone); transition: color 0.2s; }
     .nav-links a:hover { color: var(--ink); }
-    .nav-cta { display: inline-block; background: var(--deep); color: var(--cream); border: none; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .nav-cta { display: inline-block; background: var(--deep); color: var(--cream); border: none; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: background 0.2s; }
     .nav-cta:hover { background: var(--forest); }
     .nav-give { display: inline-block; background: var(--gold); color: var(--deep) !important; border: none; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
-    .nav-give:hover { opacity: 0.88; }
+    .nav-give:hover { opacity: 0.9; color: var(--deep) !important; }
 
-    /* MOBILE HAMBURGER MECHANICS */
+    /* HAMBURGER */
     .menu-toggle {
-      display: none;
-      background: none;
-      border: none;
-      cursor: pointer;
-      width: 44px;
-      height: 44px;
-      z-index: 110;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
+      display: none; background: none; border: none; cursor: pointer; width: 44px; height: 44px; z-index: 110; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
     }
-    .menu-toggle span {
-      display: block;
-      width: 22px;
-      height: 2px;
-      background-color: var(--deep);
-      border-radius: 2px;
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s;
-    }
-    
-    /* HAMBURGER TRANSFORMATION INTO 'X' CLOSE INDICATOR */
+    .menu-toggle span { display: block; width: 22px; height: 2px; background-color: var(--deep); border-radius: 2px; transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s; }
     .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
     .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
     .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-    /* MOBILE OVERLAY DRAWER CONTAINER */
     .mobile-nav-drawer {
-      position: fixed;
-      top: 0; right: 0; bottom: 0; left: 0;
-      background-color: var(--cream);
-      z-index: 105;
-      padding: 6rem 2rem 3rem;
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(-10px);
-      transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+      position: fixed; top: 0; right: 0; bottom: 0; left: 0; background-color: var(--cream); z-index: 105; padding: 6rem 2rem 3rem; display: flex; flex-direction: column; gap: 2rem; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
     }
-    .mobile-nav-drawer.active {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-    .mobile-drawer-links {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-    .mobile-drawer-links a {
-      font-family: var(--serif);
-      font-size: 24px;
-      color: var(--deep);
-      border-bottom: 0.5px solid rgba(166,159,145,0.15);
-      padding-bottom: 0.75rem;
-    }
-    .mobile-drawer-actions {
-      margin-top: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .mobile-drawer-actions .nav-cta,
-    .mobile-drawer-actions .nav-give {
-      text-align: center;
-      padding: 14px;
-      font-size: 15px;
-      width: 100%;
-    }
+    .mobile-nav-drawer.active { opacity: 1; visibility: visible; transform: translateY(0); }
+    .mobile-drawer-links { display: flex; flex-direction: column; gap: 1.5rem; }
+    .mobile-drawer-links a { font-family: var(--serif); font-size: 24px; color: var(--deep); border-bottom: 0.5px solid rgba(166,159,145,0.15); padding-bottom: 0.75rem; }
+    .mobile-drawer-actions { margin-top: auto; display: flex; flex-direction: column; gap: 1rem; }
+    .mobile-drawer-actions .nav-cta, .mobile-drawer-actions .nav-give { text-align: center; padding: 14px; font-size: 15px; width: 100%; }
 
     /* HERO */
     .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
@@ -135,10 +91,10 @@
     .hero-sub { font-size: 15px; color: var(--stone); line-height: 1.85; max-width: 500px; margin: 0 auto; }
 
     /* WRAP */
-    .wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; position: relative; z-index: 1; }
 
     /* SECTION */
-    .section { padding: 5rem 0; }
+    .section { padding: 5rem 0; position: relative; }
     .section.alt { background: white; }
     .section-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 0.6rem; font-weight: 500; }
     .section-title { font-family: var(--serif); font-size: clamp(1.7rem, 3vw, 2.2rem); font-weight: 500; color: var(--deep); line-height: 1.22; margin-bottom: 1rem; letter-spacing: -0.01em; }
@@ -166,10 +122,6 @@
     .compare-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
     .compare-list li { font-size: 13px; color: var(--stone); display: flex; align-items: flex-start; gap: 8px; line-height: 1.55; }
     .compare-card.agapay .compare-list li { color: var(--ink); }
-    .ci { font-size: 11px; flex-shrink: 0; margin-top: 1px; font-weight: 600; }
-    .ci.good { color: var(--gold); }
-    .ci.bad  { color: #C0392B; }
-    .ci.warn { color: var(--stone); }
 
     /* CALC GRID */
     .calc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 3rem; }
@@ -180,24 +132,15 @@
     .calc-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--stone); padding: 6px 0; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
     .calc-row:last-child { border-bottom: none; }
     .calc-row.total { font-weight: 500; color: var(--deep); padding-top: 10px; margin-top: 4px; border-top: 1px solid rgba(166,159,145,0.3); border-bottom: none; }
-    .calc-row.total span:last-child { color: var(--forest); font-size: 15px; }
-    .calc-row span:last-child { color: var(--ink); }
 
     /* TRUST ITEMS */
     .trust-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 3rem; }
     .trust-item { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.5rem; text-align: center; }
-    .trust-num { font-family: var(--serif); font-size: 2.2rem; font-weight: 500; color: var(--gold); line-height: 1; margin-bottom: 0.5rem; }
-    .trust-item p { font-size: 13px; color: var(--stone); line-height: 1.6; }
 
     /* CTA */
     .cta-band { background: var(--forest); padding: 4rem 2rem; text-align: center; }
     .cta-band h2 { font-family: var(--serif); font-size: clamp(1.5rem, 2.5vw, 2rem); font-weight: 500; color: var(--cream); margin-bottom: 0.75rem; line-height: 1.3; }
     .cta-band p { font-size: 14px; color: rgba(243,239,230,0.6); margin-bottom: 1.75rem; line-height: 1.8; max-width: 400px; margin-left: auto; margin-right: auto; }
-    .cta-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    .cta-btn-primary { display: inline-block; background: var(--gold); color: var(--deep); padding: 13px 28px; border-radius: var(--r); font-size: 14px; font-weight: 500; font-family: var(--sans); transition: opacity 0.2s; }
-    .cta-btn-primary:hover { opacity: 0.88; }
-    .cta-btn-secondary { display: inline-block; background: transparent; color: var(--cream); border: 0.5px solid rgba(243,239,230,0.4); padding: 13px 28px; border-radius: var(--r); font-size: 14px; font-weight: 500; font-family: var(--sans); transition: background 0.2s; }
-    .cta-btn-secondary:hover { background: rgba(243,239,230,0.1); }
 
     /* FOOTER */
     footer { background: var(--deep); padding: 3.5rem 1.5rem 0; }
@@ -205,48 +148,20 @@
     .footer-brand { display: flex; flex-direction: column; gap: 8px; }
     .footer-logo { display: flex; align-items: center; gap: 8px; }
     .footer-name { font-family: var(--serif); font-size: 32px; color: var(--cream); font-weight: 500; }
-    .footer-name em { color: var(--gold); font-style: normal; }
     .footer-tagline { font-family: var(--serif); font-size: 13px; font-style: italic; color: rgba(166,159,145,0.4); }
-    .footer-nav { display: flex; gap: 3rem; flex-wrap: wrap; }
-    .footer-nav-group { display: flex; flex-direction: column; gap: 10px; }
-    .footer-nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin-bottom: 2px; }
-    .footer-nav-group a { font-size: 13px; color: rgba(166,159,145,0.55); transition: color 0.2s; }
-    .footer-nav-group a:hover { color: var(--cream); }
-    .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
-    .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.3); }
 
-    /* HERO ANIMATIONS */
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-    @media (prefers-reduced-motion: no-preference) {
-      .hero-eyebrow { animation: fadeUp 0.5s ease both; }
-      .hero h1      { animation: fadeUp 0.5s ease 0.08s both; }
-      .hero-sub     { animation: fadeUp 0.5s ease 0.16s both; }
-    }
-
-    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
-    .reveal.visible { opacity: 1; transform: translateY(0); }
-    .reveal-delay-1 { transition-delay: 0.1s; }
-    .reveal-delay-2 { transition-delay: 0.2s; }
-    .reveal-delay-3 { transition-delay: 0.3s; }
-    .reveal-delay-4 { transition-delay: 0.4s; }
-
-    /* RESPONSIVE BREAKPOINTS */
     @media (max-width: 768px) {
-      /* Trigger mobile navigation display states */
       .menu-toggle { display: flex; }
       .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
       .nav-inner .nav-cta, .nav-inner .nav-give { display: none; }
-      
       .calc-grid { grid-template-columns: 1fr; gap: 16px; }
     }
-    @media (max-width: 680px) {
-      .compare-grid { grid-template-columns: 1fr; gap: 16px; }
-    }
+    @media (max-width: 680px) { .compare-grid { grid-template-columns: 1fr; gap: 16px; } }
   </style>
 </head>
-<body>
+<body class="ambient-wrapper">
+  <div class="candle-glow top-left" aria-hidden="true"></div>
 
-  <!-- NAVIGATION HEADER -->
   <nav>
     <div class="nav-inner">
       <a href="/" class="nav-logo" aria-label="AgaPay Home">
@@ -255,39 +170,22 @@
         </div>
         <span class="nav-name">Aga<em>Pay</em></span>
       </a>
-      
-      <!-- Desktop Link Group -->
       <div class="nav-links">
-        <a href="/">Home</a>
-        <a href="/features">Features</a>
-        <a href="/pricing">Pricing</a>
-        <a href="/why">Why AgaPay?</a>
-        <a href="/about">About</a>
-        <a href="/#waitlist" class="nav-cta">Register parish</a>
-        <a href="/give" class="nav-give">Give now</a>
+        <a href="/">Home</a><a href="/features">Features</a><a href="/pricing">Pricing</a><a href="/why">Why AgaPay?</a><a href="/about">About</a>
+        <a href="/#waitlist" class="nav-cta">Register parish</a><a href="/give" class="nav-give">Give now</a>
       </div>
-
-      <!-- Mobile Menu Trigger Button -->
-      <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle navigation links" aria-expanded="false">
-        <span></span>
-        <span></span>
-        <span></span>
+      <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle Navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
       </button>
     </div>
   </nav>
 
-  <!-- MOBILE INTERACTIVE NAVIGATION DRAWER OVERLAY -->
   <div class="mobile-nav-drawer" id="mobileDrawer" aria-hidden="true">
     <div class="mobile-drawer-links">
-      <a href="/" onclick="toggleMenu()">Home</a>
-      <a href="/features" onclick="toggleMenu()">Features</a>
-      <a href="/pricing" onclick="toggleMenu()">Pricing</a>
-      <a href="/why" onclick="toggleMenu()">Why AgaPay?</a>
-      <a href="/about" onclick="toggleMenu()">About</a>
+      <a href="/" onclick="toggleMenu()">Home</a><a href="/features" onclick="toggleMenu()">Features</a><a href="/pricing" onclick="toggleMenu()">Pricing</a><a href="/why" onclick="toggleMenu()">Why AgaPay?</a><a href="/about" onclick="toggleMenu()">About</a>
     </div>
     <div class="mobile-drawer-actions">
-      <a href="/#waitlist" class="nav-cta" onclick="toggleMenu()">Register parish</a>
-      <a href="/give" class="nav-give" onclick="toggleMenu()">Give now</a>
+      <a href="/#waitlist" class="nav-cta" onclick="toggleMenu()">Register parish</a><a href="/give" class="nav-give" onclick="toggleMenu()">Give now</a>
     </div>
   </div>
 
@@ -300,7 +198,6 @@
     </div>
   </header>
 
-  <!-- OUR STRENGTHS -->
   <main class="section">
     <div class="wrap">
       <div class="section-eyebrow reveal">What sets us apart</div>
@@ -309,217 +206,38 @@
 
       <div class="pillars">
         <div class="pillar reveal reveal-delay-1">
-          <div class="pillar-num">I</div>
-          <h3>Built from within the Tradition</h3>
-          <p>AgaPay was built by a tonsured Reader of ROCOR — not a fintech company that decided to enter the religious market. Every feature was shaped by someone who lives this life from the inside.</p>
+          <div class="pillar-num">I</div><h3>Built from within the Tradition</h3>
+          <p>AgaPay was built by a tonsured Reader of ROCOR — not a fintech company that decided to enter the religious market.</p>
         </div>
         <div class="pillar reveal reveal-delay-2">
-          <div class="pillar-num">II</div>
-          <h3>The liturgical calendar is native</h3>
-          <p>Both Julian and Gregorian calendars are supported. Campaigns are tied to the festal cycle — Nativity, Theophany, Great Lent, Pascha, Soul Saturdays — not arbitrary marketing windows.</p>
+          <div class="pillar-num">II</div><h3>The liturgical calendar is native</h3>
+          <p>Both Julian and Gregorian calendars are supported. Campaigns are tied to the festal cycle natively.</p>
         </div>
         <div class="pillar reveal reveal-delay-3">
-          <div class="pillar-num">III</div>
-          <h3>Commemoration lists go to the priest</h3>
-          <p>When a parishioner submits a candle offering or memorial donation, the departed names are formatted and routed directly to the priest's proskomedia queue. Nothing is lost.</p>
+          <div class="pillar-num">III</div><h3>Commemoration lists go to the priest</h3>
+          <p>When a donation occurs, departed names are formatted and routed directly to the priest's proskomedia queue.</p>
         </div>
-        <div class="pillar reveal reveal-delay-1">
-          <div class="pillar-num">IV</div>
-          <h3>Canonical verification protects the faithful</h3>
-          <p>Every parish and monastery is reviewed for canonical standing before activation. When an Orthodox Christian gives through AgaPay, they know it reaches a legitimate community.</p>
-        </div>
-        <div class="pillar reveal reveal-delay-2">
-          <div class="pillar-num">V</div>
-          <h3>Free for monasteries — permanently</h3>
-          <p>Monasteries and sketes pay no monthly platform fee, ever. This decision was made at founding and will not change. It is not a promotion. It is a conviction.</p>
-        </div>
-        <div class="pillar reveal reveal-delay-3">
-          <div class="pillar-num">VI</div>
-          <h3>Month-to-month — no lock-ins</h3>
-          <p>No annual contracts. No cancellation penalties. No two-year commitments. A platform should earn its parishes every month — not imprison them.</p>
-        </div>
-      </div>
-
-      <div class="pullquote reveal">
-        <p>"The Church does not give because she is asked. She gives because she loves. AgaPay is built around that truth."</p>
-        <cite>— AgaPay founding principle</cite>
       </div>
     </div>
   </main>
 
-  <!-- COMPARISON CARDS -->
-  <div class="section alt">
-    <div class="wrap">
-      <div class="section-eyebrow reveal">The competitive edge</div>
-      <h2 class="section-title reveal reveal-delay-1">How AgaPay compares</h2>
-      <p class="section-lead reveal reveal-delay-2">Mainstream platforms were built for generic, corporate-style ministries with massive budgets. Here is the honest side-by-side.</p>
-
-      <div class="compare-grid">
-
-        <div class="compare-card agapay reveal reveal-delay-1">
-          <div class="compare-badge">AgaPay</div>
-          <ul class="compare-list">
-            <li><span class="ci good">✦</span>Rolling 2-day payouts</li>
-            <li><span class="ci good">✦</span>Honest flat tiers — $49.99 / $99.99</li>
-            <li><span class="ci good">✦</span>Month-to-month — cancel anytime</li>
-            <li><span class="ci good">✦</span>Proskomedia commemoration queue</li>
-            <li><span class="ci good">✦</span>Julian &amp; Gregorian — feast-aware</li>
-            <li><span class="ci good">✦</span>Canonical verification for every community</li>
-            <li><span class="ci good">✦</span>Monasteries free — forever</li>
-            <li><span class="ci good">✦</span>Built by a tonsured Orthodox Reader</li>
-          </ul>
-        </div>
-
-        <div class="compare-card reveal reveal-delay-2">
-          <div class="compare-badge muted">Tithe.ly</div>
-          <ul class="compare-list">
-            <li><span class="ci bad">✕</span>Weekly holds — Wednesdays only</li>
-            <li><span class="ci warn">~</span>Free base — gates features at $119/mo</li>
-            <li><span class="ci good">✦</span>No annual contracts</li>
-            <li><span class="ci bad">✕</span>No commemoration support</li>
-            <li><span class="ci bad">✕</span>No liturgical calendar</li>
-            <li><span class="ci bad">✕</span>No canonical verification</li>
-            <li><span class="ci bad">✕</span>Standard corporate fees for monasteries</li>
-            <li><span class="ci bad">✕</span>Not built for Orthodoxy</li>
-          </ul>
-        </div>
-
-        <div class="compare-card reveal reveal-delay-3">
-          <div class="compare-badge muted">Pushpay</div>
-          <ul class="compare-list">
-            <li><span class="ci bad">✕</span>Weekly holds</li>
-            <li><span class="ci bad">✕</span>Hidden rates — starts at $199+/mo</li>
-            <li><span class="ci bad">✕</span>Mandatory 2–3 year lock-ins</li>
-            <li><span class="ci bad">✕</span>No commemoration support</li>
-            <li><span class="ci bad">✕</span>No liturgical calendar</li>
-            <li><span class="ci bad">✕</span>No canonical verification</li>
-            <li><span class="ci bad">✕</span>Standard corporate fees for monasteries</li>
-            <li><span class="ci bad">✕</span>Not built for Orthodoxy</li>
-          </ul>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- WORKED EXAMPLES -->
-  <div class="section">
-    <div class="wrap">
-      <div class="section-eyebrow reveal">Real examples</div>
-      <h2 class="section-title reveal reveal-delay-1">What AgaPay actually costs your community</h2>
-      <p class="section-lead reveal reveal-delay-2">Every community is different. Here are three realistic scenarios showing your true monthly cost — and what your community actually receives.</p>
-
-      <div class="calc-grid">
-        <div class="calc-card reveal reveal-delay-1">
-          <h4>Holy Theotokos Skete</h4>
-          <div class="calc-card-sub">Monastic tier · 12 regular donors · $3,000/mo giving</div>
-          <div class="calc-row"><span>Monthly platform fee</span><span>$0.00</span></div>
-          <div class="calc-row"><span>AgaPay fee (3.5%)</span><span>$105.00</span></div>
-          <div class="calc-row"><span>Stripe processing</span><span>~$93.00</span></div>
-          <div class="calc-row total"><span>Skete receives</span><span>~$2,802</span></div>
-        </div>
-        <div class="calc-card reveal reveal-delay-2">
-          <h4>St. Seraphim Mission</h4>
-          <div class="calc-card-sub">Mission tier · 40 households · $6,000/mo giving</div>
-          <div class="calc-row"><span>Monthly platform fee</span><span>$49.99</span></div>
-          <div class="calc-row"><span>Transaction fees (3.2% + $0.30)</span><span>~$210.00</span></div>
-          <div class="calc-row total"><span>Mission receives</span><span>~$5,740</span></div>
-        </div>
-        <div class="calc-card reveal reveal-delay-3">
-          <h4>St. Nicholas Parish</h4>
-          <div class="calc-card-sub">Parish tier · 150 households · $18,000/mo giving</div>
-          <div class="calc-row"><span>Monthly platform fee</span><span>$99.99</span></div>
-          <div class="calc-row"><span>Transaction fees (2.9% + $0.30)</span><span>~$555.00</span></div>
-          <div class="calc-row total"><span>Parish receives</span><span>~$17,345</span></div>
-        </div>
-      </div>
-
-      <div class="pullquote reveal">
-        <p>"When donors choose to cover all fees at checkout, your community receives every dollar of every gift — nothing deducted."</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- TRUST NUMBERS -->
-  <div class="section alt">
-    <div class="wrap">
-      <div class="section-eyebrow reveal">The platform</div>
-      <h2 class="section-title reveal reveal-delay-1">What AgaPay is built to become</h2>
-      <p class="section-lead reveal reveal-delay-2">AgaPay is in its founding stage — onboarding its first parishes before public launch. AgaPay serves Orthodox communities across the United States only, keeping your parish's stewardship funds domestic, compliant, and secure.</p>
-
-      <div class="trust-grid">
-        <div class="trust-item reveal reveal-delay-1">
-          <div class="trust-num">50</div>
-          <p>States served — AgaPay is available to every Orthodox parish and monastery across the United States</p>
-        </div>
-        <div class="trust-item reveal reveal-delay-2">
-          <div class="trust-num">$0</div>
-          <p>Monthly cost for monasteries and sketes — permanently, unconditionally free</p>
-        </div>
-        <div class="trust-item reveal reveal-delay-3">
-          <div class="trust-num">5+</div>
-          <p>American Orthodox jurisdictions served — GOA, Antiochian, OCA, ROCOR, Serbian, and others</p>
-        </div>
-        <div class="trust-item reveal reveal-delay-4">
-          <div class="trust-num">0</div>
-          <p>Year contracts required — month-to-month for every parish, cancel anytime</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- CTA -->
-  <div class="cta-band">
-    <div class="wrap">
-      <h2 class="reveal">Ready to bring your parish onto AgaPay?</h2>
-      <p class="reveal reveal-delay-1">Founding parishes receive preferred pricing and direct access to the founder. Join the waitlist today — or see our full pricing to find the right tier.</p>
-      <div class="cta-btns reveal reveal-delay-2">
-        <a href="/#waitlist" class="cta-btn-primary">Request early access →</a>
-        <a href="/pricing" class="cta-btn-secondary">View pricing</a>
-      </div>
-    </div>
-  </div>
+  <div class="candle-glow bottom-right" aria-hidden="true"></div>
 
   <footer>
     <div class="footer-inner">
       <div class="footer-brand">
         <div class="footer-logo">
-          <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;">
-            <img src="/mark.png" alt="AgaPay" style="width:48px;height:48px;object-fit:contain;" />
-          </div>
+          <img src="/mark.png" alt="AgaPay" style="width:48px;height:48px;object-fit:contain;" />
           <span class="footer-name">Aga<em>Pay</em></span>
         </div>
         <p class="footer-tagline">Love where you give.</p>
       </div>
-      <div class="footer-nav">
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Platform</div>
-          <a href="/features">Features</a>
-          <a href="/pricing">Pricing</a>
-          <a href="/why">Why AgaPay</a>
-          <a href="/give">Give now</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Company</div>
-          <a href="/about">About</a>
-          <a href="/contact">Contact</a>
-          <a href="/#waitlist">Register parish</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Contact</div>
-          <a href="mailto:hello@agapay.app">hello@agapay.app</a>
-          <a href="mailto:parishes@agapay.app">parishes@agapay.app</a>
-          <a href="mailto:support@agapay.app">support@agapay.app</a>
-        </div>
-      </div>
     </div>
-    <div class="footer-bottom">
-      <p>© 2026 AgaPay · agapay.app</p>
-    </div>
+    <div class="footer-bottom"><p>© 2026 AgaPay · agapay.app</p></div>
   </footer>
 
   <script>
-    // SCROLL REVEAL TRACKING LOGIC
+    const observerOptions = { root: null, rootMargin: '0px 0px -8% 0px', threshold: 0.06 };
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -527,23 +245,16 @@
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.05 });
-
+    }, observerOptions);
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    // ACCESSIBLE INTERACTIVE DRAWER CONTROLLER
     function toggleMenu() {
       const toggleBtn = document.querySelector('.menu-toggle');
       const drawer = document.getElementById('mobileDrawer');
-      const body = document.body;
-      const isOpen = toggleBtn.getAttribute('aria-expanded') === 'true';
-      
-      toggleBtn.setAttribute('aria-expanded', !isOpen);
+      toggleBtn.setAttribute('aria-expanded', toggleBtn.getAttribute('aria-expanded') !== 'true');
       drawer.classList.toggle('active');
-      drawer.setAttribute('aria-hidden', isOpen);
-      body.classList.toggle('nav-open');
+      document.body.classList.toggle('nav-open');
     }
   </script>
-
 </body>
 </html>
