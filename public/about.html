@@ -32,6 +32,7 @@
 
     html { scroll-behavior: smooth; }
     body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; }
+    body.nav-open { overflow: hidden; } /* Prevents background scrolling when menu is active */
     a { color: inherit; text-decoration: none; }
 
     /* NAV */
@@ -45,7 +46,7 @@
       max-width: 1024px; margin: 0 auto; padding: 0 1.5rem;
       display: flex; align-items: center; justify-content: space-between; height: 64px;
     }
-    .nav-logo { display: flex; align-items: center; gap: 5px; }
+    .nav-logo { display: flex; align-items: center; gap: 5px; z-index: 110; }
     .nav-mark { width: 50px; height: 50px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
     .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
     .nav-name em { color: var(--gold); font-style: normal; }
@@ -82,6 +83,80 @@
     }
     .nav-give:hover { opacity: 0.88; }
 
+    /* MOBILE HAMBURGER MECHANICS */
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      width: 44px;
+      height: 44px;
+      z-index: 110;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    .menu-toggle span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background-color: var(--deep);
+      border-radius: 2px;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s;
+    }
+    
+    /* HAMBURGER TRANSFORMATION INTO 'X' CLOSE INDICATOR */
+    .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* MOBILE OVERLAY DRAWER CONTAINER */
+    .mobile-nav-drawer {
+      position: fixed;
+      top: 0; right: 0; bottom: 0; left: 0;
+      background-color: var(--cream);
+      z-index: 105;
+      padding: 6rem 2rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+    }
+    .mobile-nav-drawer.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    .mobile-drawer-links {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .mobile-drawer-links a {
+      font-family: var(--serif);
+      font-size: 24px;
+      color: var(--deep);
+      border-bottom: 0.5px solid rgba(166,159,145,0.15);
+      padding-bottom: 0.75rem;
+    }
+    .mobile-drawer-actions {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .mobile-drawer-actions .nav-cta,
+    .mobile-drawer-actions .nav-give {
+      text-align: center;
+      padding: 14px;
+      font-size: 15px;
+      width: 100%;
+    }
+
     /* HERO */
     .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
     .hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 700px; height: 300px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.11) 0%, transparent 65%); pointer-events: none; }
@@ -101,7 +176,6 @@
     .aside-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1rem; font-weight: 500; }
     .aside-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.5rem; }
     
-    /* Corrected Aside Avatar Box System */
     .aside-avatar { 
       width: 52px; 
       height: 52px; 
@@ -194,22 +268,23 @@
     .reveal-delay-3 { transition-delay: 0.3s; }
     .reveal-delay-4 { transition-delay: 0.4s; }
 
-    /* RESPONSIVE FLIP */
+    /* RESPONSIVE LAYOUT LAWS */
     @media (max-width: 768px) {
       .opening { display: flex; flex-direction: column; gap: 3rem; padding-top: 3rem; }
-      .opening-aside { order: 2; width: 100%; }
+      .opening-aside { order: 2; width: 100%; position: static; }
       .prose { order: 1; padding-bottom: 0; }
       .scripture, .cta { padding: 2.5rem 1.5rem; }
-    }
-    
-    /* Cleaned Up Mobile Text Menu Truncation */
-    @media (max-width: 768px) {
+      
+      /* Trigger mobile navigation display states */
+      .menu-toggle { display: flex; }
       .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
+      .nav-inner .nav-cta, .nav-inner .nav-give { display: none; }
     }
   </style>
 </head>
 <body>
 
+  <!-- NAVIGATION HEADER -->
   <nav>
     <div class="nav-inner">
       <a href="/" class="nav-logo" aria-label="AgaPay Home">
@@ -218,6 +293,8 @@
         </div>
         <span class="nav-name">Aga<em>Pay</em></span>
       </a>
+      
+      <!-- Desktop Link Group -->
       <div class="nav-links">
         <a href="/">Home</a>
         <a href="/features">Features</a>
@@ -227,8 +304,30 @@
         <a href="/#waitlist" class="nav-cta">Register parish</a>
         <a href="/give" class="nav-give">Give now</a>
       </div>
+
+      <!-- Mobile Menu Trigger Button -->
+      <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle navigation links" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
   </nav>
+
+  <!-- MOBILE INTERACTIVE NAVIGATION DRAWER OVERLAY -->
+  <div class="mobile-nav-drawer" id="mobileDrawer" aria-hidden="true">
+    <div class="mobile-drawer-links">
+      <a href="/" onclick="toggleMenu()">Home</a>
+      <a href="/features" onclick="toggleMenu()">Features</a>
+      <a href="/pricing" onclick="toggleMenu()">Pricing</a>
+      <a href="/why" onclick="toggleMenu()">Why AgaPay?</a>
+      <a href="/about" onclick="toggleMenu()">About</a>
+    </div>
+    <div class="mobile-drawer-actions">
+      <a href="/#waitlist" class="nav-cta" onclick="toggleMenu()">Register parish</a>
+      <a href="/give" class="nav-give" onclick="toggleMenu()">Give now</a>
+    </div>
+  </div>
 
   <header class="hero">
     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
@@ -247,13 +346,9 @@
         <div class="aside-card">
           <div class="aside-avatar" aria-hidden="true">
             <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; stroke: var(--gold); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; fill: none;">
-              <!-- Main Vertical Shaft -->
               <line x1="12" y1="3" x2="12" y2="21" />
-              <!-- Top Titulus Crossbar (Inscription Bar) -->
               <line x1="9" y1="6" x2="15" y2="6" />
-              <!-- Main Horizontal Crossbar -->
               <line x1="6" y1="10" x2="18" y2="10" />
-              <!-- Bottom Slanted Footrest (Suppedaneum) -->
               <line x1="9" y1="17" x2="15" y2="15" />
             </svg>
           </div>
@@ -343,7 +438,7 @@
           </div>
           <span class="footer-name">Aga<em>Pay</em></span>
         </div>
-        <p class="footer-tagline">For the life of the world.</p>
+        <p class="footer-tagline">Love where you give.</p>
       </div>
       <div class="footer-nav">
         <div class="footer-nav-group">
@@ -373,7 +468,7 @@
   </footer>
 
   <script>
-    // SCROLL REVEAL
+    // SCROLL REVEAL TRACKING
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -384,6 +479,19 @@
     }, { threshold: 0.05 });
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // ACCESSIBLE INTERACTIVE DRAWER CONTROLLER
+    function toggleMenu() {
+      const toggleBtn = document.querySelector('.menu-toggle');
+      const drawer = document.getElementById('mobileDrawer');
+      const body = document.body;
+      const isOpen = toggleBtn.getAttribute('aria-expanded') === 'true';
+      
+      toggleBtn.setAttribute('aria-expanded', !isOpen);
+      drawer.classList.toggle('active');
+      drawer.setAttribute('aria-hidden', isOpen);
+      body.classList.toggle('nav-open');
+    }
   </script>
 
 </body>
