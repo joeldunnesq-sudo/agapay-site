@@ -22,7 +22,7 @@
       --forest: #355E3B;
       --gold:   #C8A24A;
       --cream:  #F3EFE6;
-      --stone:  --stone:  #A69F91;
+      --stone:  #A69F91;
       --ink:    #1A1A18;
       --serif:  'Cormorant Garamond', Georgia, serif;
       --sans:   'DM Sans', system-ui, sans-serif;
@@ -400,15 +400,41 @@
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
+    // ACCESSIBLE INTERACTIVE DRAWER CONTROLLER
     function toggleMenu() {
       const toggleBtn = document.querySelector('.menu-toggle');
       const drawer = document.getElementById('mobileDrawer');
       const body = document.body;
-      const isOpen = toggleBtn.getAttribute('aria-expanded') === 'true';
-      toggleBtn.setAttribute('aria-expanded', !isOpen);
-      drawer.classList.toggle('active');
-      body.classList.toggle('nav-open');
+      
+      const isDrawerOpen = drawer.classList.contains('active');
+      
+      if (isDrawerOpen) {
+        toggleBtn.setAttribute('aria-expanded', 'false');
+        drawer.classList.remove('active');
+        drawer.setAttribute('aria-hidden', 'true');
+        body.classList.remove('nav-open');
+      } else {
+        toggleBtn.setAttribute('aria-expanded', 'true');
+        drawer.classList.add('active');
+        drawer.setAttribute('aria-hidden', 'false');
+        body.classList.add('nav-open');
+      }
     }
+
+    // DESKTOP RESIZE SAFETY GUARD
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) {
+        const toggleBtn = document.querySelector('.menu-toggle');
+        const drawer = document.getElementById('mobileDrawer');
+        
+        if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+        if (drawer) {
+          drawer.classList.remove('active');
+          drawer.setAttribute('aria-hidden', 'true');
+        }
+        document.body.classList.remove('nav-open');
+      }
+    });
   </script>
 </body>
 </html>
