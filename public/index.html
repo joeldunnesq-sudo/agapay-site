@@ -240,6 +240,63 @@
       margin-bottom: 2px;
     }
 
+    /* WHY BAND */
+      .why-band-section {
+        background: white;
+        padding: 4rem 1.5rem;
+      }
+      .why-band-inner {
+        max-width: 860px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2.5rem;
+        flex-wrap: wrap;
+      }
+      .why-band-eyebrow {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--gold);
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+      }
+      .why-band-title {
+        font-family: var(--serif);
+        font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+        font-weight: 500;
+        color: var(--deep);
+        line-height: 1.25;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.01em;
+      }
+      .why-band-lead {
+        font-size: 14px;
+        color: var(--stone);
+        line-height: 1.8;
+        max-width: 480px;
+      }
+      .why-band-btn {
+        display: inline-block;
+        background: var(--deep);
+        color: var(--cream);
+        padding: 13px 26px;
+        border-radius: var(--r);
+        font-size: 14px;
+        font-weight: 500;
+        font-family: var(--sans);
+        white-space: nowrap;
+        transition: background 0.2s;
+        flex-shrink: 0;
+      }
+      .why-band-btn:hover { background: var(--forest); }
+      
+      @media (max-width: 600px) {
+        .why-band-inner { flex-direction: column; }
+        .why-band-btn { width: 100%; text-align: center; }
+      }
+          
     /* FAQ - Cleaned & Made Accessible */
     .faq-section {
       padding: 4rem 1.5rem;
@@ -472,6 +529,17 @@
       </div>
     </div>
   </section>
+
+  <div class="why-band-section">
+    <div class="why-band-inner">
+      <div class="why-band-text">
+        <div class="why-band-eyebrow">The competitive edge</div>
+        <h2 class="why-band-title">Why choose AgaPay over Tithe.ly or Pushpay?</h2>
+        <p class="why-band-lead">See the full side-by-side comparison — liturgical calendar support, canonical verification, transparent pricing, and why Orthodox parishes across America are making the switch.</p>
+      </div>
+      <a href="/why" class="why-band-btn">See why AgaPay →</a>
+    </div>
+  </div>
 
   <!-- FAQ -->
   <section class="faq-section" aria-label="Frequently Asked Questions">
