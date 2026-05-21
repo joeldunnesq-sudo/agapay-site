@@ -39,6 +39,28 @@
       min-height: 100vh;
     }
 
+    /* PREMIUM VISUAL INFRASTRUCTURE */
+    .ambient-wrapper {
+      position: relative;
+      overflow: hidden;
+    }
+    .candle-glow {
+      position: absolute;
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(200, 162, 74, 0.06) 0%, rgba(53, 94, 59, 0.02) 40%, transparent 70%);
+      filter: blur(50px);
+      pointer-events: none;
+      z-index: 0;
+      border-radius: 50%;
+    }
+    .candle-glow.top-left  { top: -150px; left: -150px; }
+    .candle-glow.bottom-right { bottom: -150px; right: -150px; }
+
+    h1, h2 {
+      letter-spacing: -0.02em !important;
+    }
+
     /* HERO */
     .hero {
       background: var(--deep);
@@ -240,7 +262,7 @@
       margin-bottom: 2px;
     }
 
-    /* WHY BAND — Re-engineered for high visual contrast against cream */
+    /* WHY BAND */
     .why-band-section {
       background: var(--cream);
       padding: 4rem 1.5rem;
@@ -452,8 +474,10 @@
   </main>
 
   <!-- FOUNDER NOTE -->
-  <section class="below" aria-label="Founder Statement">
-    <div class="below-inner">
+  <section class="below ambient-wrapper" aria-label="Founder Statement">
+    <div class="candle-glow top-left" aria-hidden="true"></div>
+    <div class="candle-glow bottom-right" aria-hidden="true"></div>
+    <div class="below-inner" style="position: relative; z-index: 1;">
       <hr class="divider" />
       <div class="founder">
         <span class="founder-eyebrow">A word from the founder</span>
@@ -467,8 +491,9 @@
   </section>
 
   <!-- WHY LINK BAND -->
-  <div class="why-band-section">
-    <div class="why-band-inner">
+  <div class="why-band-section ambient-wrapper">
+    <div class="candle-glow top-left" aria-hidden="true"></div>
+    <div class="why-band-inner" style="position: relative; z-index: 1;">
       <div class="why-band-text">
         <div class="why-band-eyebrow">The competitive edge</div>
         <h2 class="why-band-title">Why choose AgaPay?</h2>
@@ -479,8 +504,9 @@
   </div>
 
   <!-- SCRIPTURE -->
-  <div class="below" style="padding-top: 0;">
-    <div class="below-inner">
+  <div class="below ambient-wrapper" style="padding-top: 0;">
+    <div class="candle-glow bottom-right" aria-hidden="true"></div>
+    <div class="below-inner" style="position: relative; z-index: 1;">
       <div class="scripture reveal">
         <p>"Give to the Most High as He has given to you, and with a generous eye, according to your ability. For the Lord is one who repays, and He will repay you sevenfold."</p>
         <cite>— Sirach 35:12-13</cite>
@@ -527,12 +553,12 @@
     </div>
   </footer>
 
-  <!-- MAILERLITE & INTERACTION LOGIC -->
+  <!-- ADVANCED SCROLL DETECTION SCRIPTS -->
   <script>
     (function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[]).push(arguments);},l=d.createElement(e),l.async=1,l.src=u,n=d.getElementsByTagName(e)[0],n.parentNode.insertBefore(l,n);})(window,document,'script','https://assets.mailerlite.com/js/universal.js','ml');
     ml('account', '2362703');
 
-    // SCROLL REVEAL (Intersection Observer)
+    const observerOptions = { root: null, rootMargin: '0px 0px -8% 0px', threshold: 0.06 };
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -540,7 +566,7 @@
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.05 });
+    }, observerOptions);
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
   </script>
