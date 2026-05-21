@@ -81,20 +81,51 @@
     .pullquote p { font-family: var(--serif); font-size: clamp(1.2rem, 2vw, 1.5rem); font-style: italic; color: var(--deep); line-height: 1.65; font-weight: 400; }
     .pullquote cite { display: block; font-size: 12px; color: var(--stone); font-style: normal; margin-top: 8px; letter-spacing: 0.05em; }
 
-    /* COMPARISON TABLE */
-    .breakdown { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); overflow: hidden; margin-bottom: 3rem; }
-    .breakdown-header { background: var(--deep); padding: 1.5rem 2rem; }
-    .breakdown-header h3 { font-family: var(--serif); font-size: 1.2rem; font-weight: 500; color: var(--cream); }
-    .breakdown-header p { font-size: 13px; color: rgba(166,159,145,0.7); margin-top: 4px; }
-    .breakdown table { width: 100%; border-collapse: collapse; }
-    .breakdown th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold); font-weight: 500; padding: 1rem 1.5rem; text-align: left; border-bottom: 0.5px solid rgba(166,159,145,0.2); background: rgba(243,239,230,0.5); }
-    .breakdown th:first-child { width: 28%; }
-    .breakdown td { font-size: 13px; color: #4A4845; padding: 1rem 1.5rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); line-height: 1.5; vertical-align: top; }
-    .breakdown tr:last-child td { border-bottom: none; }
-    .breakdown td:first-child { font-weight: 500; color: var(--deep); }
-    .breakdown td.green { color: var(--forest); font-weight: 500; }
-    .breakdown td.gold { color: #8B6B1F; font-weight: 500; }
-    .breakdown td.red { color: #C0392B; }
+    /* COMPARISON CARDS */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 3rem;
+    }
+    .compare-card {
+      background: white;
+      border: 0.5px solid rgba(166,159,145,0.35);
+      border-radius: var(--rlg);
+      padding: 1.75rem;
+    }
+    .compare-card.agapay {
+      border: 2px solid var(--forest);
+    }
+    .compare-badge {
+      font-family: var(--serif);
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: var(--deep);
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 0.5px solid rgba(166,159,145,0.25);
+    }
+    .compare-badge.muted { color: var(--stone); }
+    .compare-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .compare-list li {
+      font-size: 13px;
+      color: var(--stone);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.55;
+    }
+    .compare-card.agapay .compare-list li { color: var(--ink); }
+    .ci { font-size: 11px; flex-shrink: 0; margin-top: 1px; font-weight: 600; }
+    .ci.good { color: var(--gold); }
+    .ci.bad  { color: #C0392B; }
+    .ci.warn { color: var(--stone); }
 
     /* CALC GRID */
     .calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 3rem; }
@@ -155,8 +186,10 @@
     .reveal-delay-3 { transition-delay: 0.3s; }
     .reveal-delay-4 { transition-delay: 0.4s; }
 
+    @media (max-width: 680px) {
+      .compare-grid { grid-template-columns: 1fr; }
+    }
     @media (max-width: 600px) {
-      .breakdown td, .breakdown th { padding: 0.85rem 1rem; font-size: 12px; }
       .nav-links a:not(:last-child):not(:nth-last-child(2)) { display: none; }
     }
   </style>
@@ -195,7 +228,7 @@
   <div class="section">
     <div class="wrap">
       <div class="section-eyebrow reveal">What sets us apart</div>
-      <h2 class="section-title reveal reveal-delay-1">Five things no competitor can replicate</h2>
+      <h2 class="section-title reveal reveal-delay-1">Six things no competitor can replicate</h2>
       <p class="section-lead reveal reveal-delay-2">These aren't features that were added to serve Orthodox parishes. They are the foundation AgaPay was built on from day one.</p>
 
       <div class="pillars">
@@ -238,78 +271,57 @@
     </div>
   </div>
 
-  <!-- COMPETITOR COMPARISON -->
+  <!-- COMPARISON CARDS -->
   <div class="section alt">
     <div class="wrap">
       <div class="section-eyebrow reveal">The competitive edge</div>
       <h2 class="section-title reveal reveal-delay-1">How AgaPay compares</h2>
       <p class="section-lead reveal reveal-delay-2">Mainstream platforms were built for generic, corporate-style ministries with massive budgets. Here is the honest side-by-side.</p>
 
-      <div class="breakdown reveal">
-        <div class="breakdown-header">
-          <h3>AgaPay vs. Tithe.ly vs. Pushpay</h3>
-          <p>A direct comparison of pricing, infrastructure, and liturgical workflows.</p>
+      <div class="compare-grid">
+
+        <div class="compare-card agapay reveal reveal-delay-1">
+          <div class="compare-badge">AgaPay</div>
+          <ul class="compare-list">
+            <li><span class="ci good">✦</span>Rolling 2-day payouts</li>
+            <li><span class="ci good">✦</span>Honest flat tiers — $49.99 / $99.99</li>
+            <li><span class="ci good">✦</span>Month-to-month — cancel anytime</li>
+            <li><span class="ci good">✦</span>Proskomedia commemoration queue</li>
+            <li><span class="ci good">✦</span>Julian &amp; Gregorian — feast-aware</li>
+            <li><span class="ci good">✦</span>Canonical verification for every community</li>
+            <li><span class="ci good">✦</span>Monasteries free — forever</li>
+            <li><span class="ci good">✦</span>Built by a tonsured Orthodox Reader</li>
+          </ul>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Feature</th>
-              <th>AgaPay</th>
-              <th>Tithe.ly</th>
-              <th>Pushpay</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Deposit schedule</td>
-              <td class="green">Rolling 2-day payouts</td>
-              <td class="red">Weekly holds (Wednesdays)</td>
-              <td class="red">Weekly holds</td>
-            </tr>
-            <tr>
-              <td>Pricing transparency</td>
-              <td class="green">Honest flat tiers ($49.99 / $99.99)</td>
-              <td>Free base — gates features at $119/mo</td>
-              <td class="red">Hidden rates — starts at $199+/mo</td>
-            </tr>
-            <tr>
-              <td>Contract requirements</td>
-              <td class="green">Month-to-month — cancel anytime</td>
-              <td class="green">No contracts</td>
-              <td class="red">Mandatory 2–3 year lock-ins</td>
-            </tr>
-            <tr>
-              <td>Liturgical commemorations</td>
-              <td class="gold">Integrated proskomedia queue</td>
-              <td class="red">None — generic text box</td>
-              <td class="red">None — generic text box</td>
-            </tr>
-            <tr>
-              <td>Liturgical calendar</td>
-              <td class="gold">Julian &amp; Gregorian — feast-aware</td>
-              <td class="red">None</td>
-              <td class="red">None</td>
-            </tr>
-            <tr>
-              <td>Canonical verification</td>
-              <td class="gold">Every community reviewed personally</td>
-              <td class="red">None</td>
-              <td class="red">None</td>
-            </tr>
-            <tr>
-              <td>Monastery support</td>
-              <td class="gold">Free forever tier — $0/mo</td>
-              <td class="red">Standard corporate fees</td>
-              <td class="red">Standard corporate fees</td>
-            </tr>
-            <tr>
-              <td>Built by Orthodox Christians</td>
-              <td class="gold">Yes — a ROCOR Reader</td>
-              <td class="red">No</td>
-              <td class="red">No</td>
-            </tr>
-          </tbody>
-        </table>
+
+        <div class="compare-card reveal reveal-delay-2">
+          <div class="compare-badge muted">Tithe.ly</div>
+          <ul class="compare-list">
+            <li><span class="ci bad">✕</span>Weekly holds — Wednesdays only</li>
+            <li><span class="ci warn">~</span>Free base — gates features at $119/mo</li>
+            <li><span class="ci good">✦</span>No annual contracts</li>
+            <li><span class="ci bad">✕</span>No commemoration support</li>
+            <li><span class="ci bad">✕</span>No liturgical calendar</li>
+            <li><span class="ci bad">✕</span>No canonical verification</li>
+            <li><span class="ci bad">✕</span>Standard corporate fees for monasteries</li>
+            <li><span class="ci bad">✕</span>Not built for Orthodoxy</li>
+          </ul>
+        </div>
+
+        <div class="compare-card reveal reveal-delay-3">
+          <div class="compare-badge muted">Pushpay</div>
+          <ul class="compare-list">
+            <li><span class="ci bad">✕</span>Weekly holds</li>
+            <li><span class="ci bad">✕</span>Hidden rates — starts at $199+/mo</li>
+            <li><span class="ci bad">✕</span>Mandatory 2–3 year lock-ins</li>
+            <li><span class="ci bad">✕</span>No commemoration support</li>
+            <li><span class="ci bad">✕</span>No liturgical calendar</li>
+            <li><span class="ci bad">✕</span>No canonical verification</li>
+            <li><span class="ci bad">✕</span>Standard corporate fees for monasteries</li>
+            <li><span class="ci bad">✕</span>Not built for Orthodoxy</li>
+          </ul>
+        </div>
+
       </div>
     </div>
   </div>
