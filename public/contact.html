@@ -7,7 +7,6 @@
   <meta name="description" content="Get in touch with AgaPay. Register your parish, ask a question, or just say hello. A real person will respond." />
   <meta property="og:title" content="Contact AgaPay" />
   <meta property="og:url" content="https://agapay.app/contact" />
-  <meta property="og:image" content="https://agapay.app/og-image.png" />
   <meta name="theme-color" content="#0F2D1F" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -18,24 +17,20 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --deep:    #0F2D1F;
-      --forest:  #2F5A39;
-      --gold:    #B8902F;
-      --cream:   #F6F1E8;
-      --stone:   #6F6A60;
-      --ink:     #171715;
-      --white:   #FFFFFF;
-    
-      --serif:   'Cormorant Garamond', Georgia, serif;
-      --sans:    'DM Sans', system-ui, sans-serif;
-    
-      --r:       10px;
-      --rlg:     16px;
+      --deep:   #0F2D1F;
+      --forest: #355E3B;
+      --gold:   #C8A24A;
+      --cream:  #F3EFE6;
+      --stone:  #A69F91;
+      --ink:    #1A1A18;
+      --serif:  'Cormorant Garamond', Georgia, serif;
+      --sans:   'DM Sans', system-ui, sans-serif;
+      --r:      10px;
+      --rlg:    16px;
     }
 
     html { scroll-behavior: smooth; }
     body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; }
-    body.nav-open { overflow: hidden; } /* Prevents background scrolling when mobile menu is active */
     a { color: inherit; text-decoration: none; }
 
     /* NAV */
@@ -46,121 +41,20 @@
       border-bottom: 0.5px solid rgba(166,159,145,0.35);
     }
     .nav-inner {
-      max-width: 1024px; margin: 0 auto; padding: 0 1.5rem;
+      max-width: 860px; margin: 0 auto; padding: 0 1.5rem;
       display: flex; align-items: center; justify-content: space-between; height: 64px;
     }
-    .nav-logo { display: flex; align-items: center; gap: 5px; z-index: 110; }
+    .nav-logo { display: flex; align-items: center; gap: 5px; }
     .nav-mark { width: 50px; height: 50px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
     .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
     .nav-name em { color: var(--gold); font-style: normal; }
-    
-    .nav-links { display: flex; align-items: center; gap: 1.25rem; }
-    .nav-links a { font-size: 14px; color: var(--stone); transition: color 0.2s; }
+    .nav-links { display: flex; align-items: center; gap: 1.75rem; }
+    .nav-links a { font-size: 14px; color: var(--forest); transition: color 0.2s; }
     .nav-links a:hover { color: var(--ink); }
-    
-    .nav-cta { 
-      display: inline-block;
-      background: var(--deep); 
-      color: var(--cream); 
-      border: none; 
-      padding: 9px 18px; 
-      border-radius: var(--r); 
-      font-size: 13px; 
-      font-family: var(--sans); 
-      font-weight: 600; 
-      cursor: pointer; 
-      transition: background 0.2s; 
-    }
+    .nav-cta { background: var(--deep); color: var(--cream); border: none; padding: 9px 20px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: background 0.2s; }
     .nav-cta:hover { background: var(--forest); }
-    
-    .nav-give { 
-      display: inline-block;
-      background: var(--gold); 
-      color: var(--deep) !important; 
-      border: none; 
-      padding: 9px 18px; 
-      border-radius: var(--r); 
-      font-size: 13px; 
-      font-family: var(--sans); 
-      font-weight: 600; 
-      cursor: pointer; 
-      transition: opacity 0.2s; 
-    }
+    .nav-give { background: var(--gold); color: var(--deep); border: none; padding: 9px 20px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
     .nav-give:hover { opacity: 0.88; }
-
-    /* MOBILE HAMBURGER MECHANICS */
-    .menu-toggle {
-      display: none;
-      background: none;
-      border: none;
-      cursor: pointer;
-      width: 44px;
-      height: 44px;
-      z-index: 110;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-    }
-    .menu-toggle span {
-      display: block;
-      width: 22px;
-      height: 2px;
-      background-color: var(--deep);
-      border-radius: 2px;
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s;
-    }
-    
-    /* HAMBURGER TRANSFORMATION INTO 'X' CLOSE INDICATOR */
-    .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-    .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
-    .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-
-    /* MOBILE OVERLAY DRAWER CONTAINER */
-    .mobile-nav-drawer {
-      position: fixed;
-      top: 0; right: 0; bottom: 0; left: 0;
-      background-color: var(--cream);
-      z-index: 105;
-      padding: 6rem 2rem 3rem;
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(-10px);
-      transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
-    }
-    .mobile-nav-drawer.active {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-    .mobile-drawer-links {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-    .mobile-drawer-links a {
-      font-family: var(--serif);
-      font-size: 24px;
-      color: var(--deep);
-      border-bottom: 0.5px solid rgba(166,159,145,0.15);
-      padding-bottom: 0.75rem;
-    }
-    .mobile-drawer-actions {
-      margin-top: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .mobile-drawer-actions .nav-cta,
-    .mobile-drawer-actions .nav-give {
-      text-align: center;
-      padding: 14px;
-      font-size: 15px;
-      width: 100%;
-    }
 
     /* HERO */
     .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
@@ -207,7 +101,6 @@
     .form-sub { font-size: 13px; color: var(--stone); margin-bottom: 2rem; line-height: 1.6; }
     .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.25rem; }
     .form-group label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--stone); font-weight: 500; }
-    
     .form-group input,
     .form-group select,
     .form-group textarea {
@@ -220,39 +113,15 @@
       font-family: var(--sans);
       width: 100%;
       outline: none;
-      transition: border-color 0.2s, background-color 0.2s;
-    }
-    
-    /* Elegant Select Indicator Support */
-    .form-group select {
+      transition: border-color 0.2s;
       appearance: none;
-      -webkit-appearance: none;
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23C8A24A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
-      background-repeat: no-repeat;
-      background-position: right 14px center;
-      padding-right: 40px;
     }
-    
     .form-group input:focus,
     .form-group select:focus,
     .form-group textarea:focus { border-color: var(--gold); background: white; }
     .form-group textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    
-    .form-submit { 
-      width: 100%; 
-      padding: 13px; 
-      background: var(--deep); 
-      color: var(--cream); 
-      border: none; 
-      border-radius: var(--r); 
-      font-size: 14px; 
-      font-weight: 500; 
-      font-family: var(--sans); 
-      cursor: pointer; 
-      transition: background 0.2s; 
-      margin-top: 0.5rem; 
-    }
+    .form-submit { width: 100%; padding: 13px; background: var(--deep); color: var(--cream); border: none; border-radius: var(--r); font-size: 14px; font-weight: 500; font-family: var(--sans); cursor: pointer; transition: background 0.2s; margin-top: 0.5rem; }
     .form-submit:hover { background: var(--forest); }
     .form-note { font-size: 12px; color: var(--stone); text-align: center; margin-top: 0.75rem; line-height: 1.6; }
 
@@ -270,7 +139,7 @@
     .footer-logo { display: flex; align-items: center; gap: 8px; }
     .footer-name { font-family: var(--serif); font-size: 32px; color: var(--cream); font-weight: 500; }
     .footer-name em { color: var(--gold); font-style: normal; }
-    .footer-tagline { font-family: var(--serif); font-size: 13px; font-style: italic; color: rgba(166,159,145,0.4); }
+    .footer-tagline { font-family: var(--serif); font-size: 16px; font-style: italic; color: rgba(243,239,230,0.7); margin-bottom: 4px; } .footer-tagline-sub { font-family: var(--serif); font-size: 13px; font-style: italic; color: rgba(166,159,145,0.4); }
     .footer-nav { display: flex; gap: 3rem; flex-wrap: wrap; }
     .footer-nav-group { display: flex; flex-direction: column; gap: 10px; }
     .footer-nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin-bottom: 2px; }
@@ -279,301 +148,82 @@
     .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
     .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.3); }
 
-    /* RESPONSIVE DISPLAY LAWS */
-    @media (max-width: 768px) {
-      .menu-toggle { display: flex; }
-      .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
-      .nav-inner .nav-cta, .nav-inner .nav-give { display: none; }
+    /* HERO ANIMATIONS */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: no-preference) {
+      .hero-eyebrow { animation: fadeUp 0.5s ease both; }
+      .hero h1      { animation: fadeUp 0.5s ease 0.08s both; }
+      .hero-sub     { animation: fadeUp 0.5s ease 0.16s both; }
     }
+
+    /* SCROLL ANIMATIONS */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* RESPONSIVE */
     @media (max-width: 680px) {
       .main-grid { grid-template-columns: 1fr; gap: 3rem; }
       .contact-details { position: static; }
       .form-row { grid-template-columns: 1fr; }
     }
     @media (max-width: 480px) {
+      .nav-links a:not(:last-child):not(:nth-last-child(2)) { display: none; }
       .form-wrap { padding: 1.75rem; }
     }
   </style>
 </head>
 <body>
 
-  <!-- NAVIGATION HEADER -->
-  <nav>
-    <div class="nav-inner">
-     <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contact — AgaPay</title>
-  <meta name="description" content="Get in touch with AgaPay. Register your parish, ask a question, or just say hello. A real person will respond." />
-  <meta property="og:title" content="Contact AgaPay" />
-  <meta property="og:url" content="https://agapay.app/contact" />
-  <meta property="og:image" content="https://agapay.app/og-image.png" />
-  <meta name="theme-color" content="#0F2D1F" />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
-
-  <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-    :root {
-      --deep:    #0F2D1F;
-      --forest:  #2F5A39;
-      --gold:    #B8902F;
-      --cream:   #F6F1E8;
-      --stone:   #6F6A60;
-      --ink:     #171715;
-      --white:   #FFFFFF;
-      --serif:   'Cormorant Garamond', Georgia, serif;
-      --sans:    'DM Sans', system-ui, sans-serif;
-      --r:       10px;
-      --rlg:     16px;
-    }
-
-    html { scroll-behavior: smooth; }
-    body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; }
-    body.nav-open { overflow: hidden; }
-    a { color: inherit; text-decoration: none; }
-
-    /* FIXED AMBIENT GLOWS */
-    .candle-glow {
-      position: fixed; width: 450px; height: 450px;
-      background: radial-gradient(circle, rgba(184, 144, 47, 0.05) 0%, rgba(47, 90, 57, 0.02) 40%, transparent 70%);
-      filter: blur(50px); pointer-events: none; z-index: -1; border-radius: 50%;
-    }
-    .candle-glow.top-left  { top: -150px; left: -150px; }
-    .candle-glow.bottom-right { bottom: -150px; right: -150px; }
-
-    /* NAV */
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(246, 241, 232, 0.95);
-      backdrop-filter: blur(12px);
-      border-bottom: 0.5px solid rgba(111, 106, 96, 0.2);
-    }
-    .nav-inner {
-      max-width: 1024px; margin: 0 auto; padding: 0 1.5rem;
-      display: flex; align-items: center; justify-content: space-between; height: 64px;
-    }
-    .nav-logo { display: flex; align-items: center; gap: 5px; z-index: 110; }
-    .nav-mark { width: 50px; height: 50px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-    .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
-    .nav-name em { color: var(--gold); font-style: normal; }
-    
-    .nav-links { display: flex; align-items: center; gap: 1.25rem; }
-    .nav-links a { font-size: 14px; color: var(--stone); transition: color 0.2s; }
-    .nav-links a:hover { color: var(--ink); }
-    .nav-cta { background: var(--deep); color: var(--cream); padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-    .nav-cta:hover { background: var(--forest); }
-    .nav-give { background: var(--gold); color: var(--deep) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
-    .nav-give:hover { opacity: 0.9; }
-
-    /* MOBILE HAMBURGER */
-    .menu-toggle {
-      display: none; background: none; border: none; cursor: pointer; width: 44px; height: 44px; z-index: 110; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-    }
-    .menu-toggle span { display: block; width: 22px; height: 2px; background-color: var(--deep); border-radius: 2px; transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s; }
-    .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-    .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
-    .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-
-    .mobile-nav-drawer {
-      position: fixed; top: 0; right: 0; bottom: 0; left: 0; background-color: var(--cream); z-index: 105; padding: 6rem 2rem 3rem; display: flex; flex-direction: column; gap: 2rem;
-      opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
-    }
-    .mobile-nav-drawer.active { opacity: 1; visibility: visible; transform: translateY(0); }
-    .mobile-drawer-links a { font-family: var(--serif); font-size: 24px; color: var(--deep); border-bottom: 0.5px solid rgba(111, 106, 96, 0.2); padding-bottom: 0.75rem; }
-    .mobile-drawer-actions { margin-top: auto; display: flex; flex-direction: column; gap: 1rem; }
-
-    /* HERO */
-    .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
-    .hero h1 { font-family: var(--serif); font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 500; color: var(--cream); margin-bottom: 1.5rem; }
-    .hero h1 em { color: var(--gold); font-style: italic; }
-    .hero-sub { font-size: 15px; color: var(--stone); line-height: 1.85; max-width: 420px; margin: 0 auto; }
-
-    /* MAIN CONTENT */
-    .main { padding: 5rem 0; }
-    .main-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 5rem; align-items: start; max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
-
-    /* CONTACT CARD */
-    .contact-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.75rem; margin-bottom: 1.25rem; }
-    .contact-card h4 { font-size: 13px; font-weight: 500; color: var(--deep); margin-bottom: 4px; }
-    .contact-card a { font-size: 13px; color: var(--gold); display: block; }
-
-    /* FORM */
-    .form-wrap { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 2.5rem; }
-    .form-submit { width: 100%; padding: 13px; background: var(--deep); color: var(--cream); border: none; border-radius: var(--r); font-weight: 500; cursor: pointer; transition: background 0.2s; }
-    .form-submit:hover { background: var(--forest); }
-
-    /* FOOTER */
-    footer { background: var(--deep); padding: 3.5rem 1.5rem 0; color: var(--stone); }
-    .footer-inner { max-width: 860px; margin: 0 auto; padding-bottom: 3rem; }
-
-    @media (max-width: 768px) {
-      .menu-toggle { display: flex; }
-      .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
-      .nav-inner .nav-cta, .nav-inner .nav-give { display: none; }
-      .main-grid { grid-template-columns: 1fr; gap: 3rem; }
-    }
-  </style>
-</head>
-<body>
-  <div class="candle-glow top-left" aria-hidden="true"></div>
-  <div class="candle-glow bottom-right" aria-hidden="true"></div>
-
   <nav>
     <div class="nav-inner">
       <a href="/" class="nav-logo">
-        <div class="nav-mark"><img src="/mark.png" alt="AgaPay" style="width: 48px; height: 48px; object-fit: contain;" /></div>
+        <div class="nav-mark">
+          <img src="/mark.png" alt="AgaPay" style="width: 48px; height: 48px; object-fit: contain;" />
+        </div>
         <span class="nav-name">Aga<em>Pay</em></span>
       </a>
-      <div class="nav-links">
-        <a href="/">Home</a><a href="/features">Features</a><a href="/pricing">Pricing</a><a href="/why">Why AgaPay?</a><a href="/about">About</a>
-        <a href="/#waitlist" class="nav-cta">Register parish</a><a href="/give" class="nav-give">Give now</a>
-      </div>
-      <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle navigation" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
-    </div>
-  </nav>
-
-  <div class="mobile-nav-drawer" id="mobileDrawer" aria-hidden="true">
-    <div class="mobile-drawer-links">
-      <a href="/" onclick="toggleMenu()">Home</a><a href="/features" onclick="toggleMenu()">Features</a><a href="/pricing" onclick="toggleMenu()">Pricing</a><a href="/why" onclick="toggleMenu()">Why AgaPay?</a><a href="/about" onclick="toggleMenu()">About</a>
-    </div>
-    <div class="mobile-drawer-actions">
-      <a href="/#waitlist" class="nav-cta" onclick="toggleMenu()">Register parish</a><a href="/give" class="nav-give" onclick="toggleMenu()">Give now</a>
-    </div>
-  </div>
-
-  <header class="hero">
-    <div class="hero-inner">
-      <h1>We read every<br><em>message ourselves.</em></h1>
-      <p class="hero-sub">No bots. No ticket queues. A real person — the founder — will read your message and respond personally.</p>
-    </div>
-  </header>
-
-  <main class="main">
-    <div class="main-grid">
-      <section class="contact-details">
-        <div class="contact-card">
-          <h4>General inquiries</h4>
-          <a href="mailto:hello@agapay.app">hello@agapay.app</a>
-        </div>
-      </section>
-
-      <section class="form-wrap" id="contact-form-wrap">
-        <form id="contact-form" onsubmit="handleSubmit(event)">
-          <div id="form-body">
-            <div class="form-group"><label>First name</label><input type="text" name="firstname" required /></div>
-            <div class="form-group"><label>Message</label><textarea name="message" required></textarea></div>
-            <button type="submit" class="form-submit">Send message →</button>
-          </div>
-        </form>
-        <div id="form-success" style="display:none;"><h3>Message received.</h3></div>
-      </section>
-    </div>
-  </main>
-
-  <footer>
-    <div class="footer-inner">
-      <p>© 2026 AgaPay · agapay.app</p>
-    </div>
-  </footer>
-
-  <script>
-    function toggleMenu() {
-      const toggleBtn = document.querySelector('.menu-toggle');
-      const drawer = document.getElementById('mobileDrawer');
-      const body = document.body;
-      const isDrawerOpen = drawer.classList.contains('active');
-      
-      if (isDrawerOpen) {
-        toggleBtn.setAttribute('aria-expanded', 'false');
-        drawer.classList.remove('active');
-        body.classList.remove('nav-open');
-      } else {
-        toggleBtn.setAttribute('aria-expanded', 'true');
-        drawer.classList.add('active');
-        body.classList.add('nav-open');
-      }
-    }
-
-    window.addEventListener('resize', () => {
-      if (window.innerWidth > 768) {
-        const drawer = document.getElementById('mobileDrawer');
-        drawer.classList.remove('active');
-        document.body.classList.remove('nav-open');
-      }
-    });
-
-    function handleSubmit(event) {
-      event.preventDefault(); 
-      document.getElementById('form-body').style.display = 'none';
-      document.getElementById('form-success').style.display = 'block';
-    }
-  </script>
-</body>
-</html>
-      
-      <!-- Desktop Navigation Nodes -->
       <div class="nav-links">
         <a href="/">Home</a>
         <a href="/features">Features</a>
         <a href="/pricing">Pricing</a>
-        <a href="/why">Why AgaPay?</a>
         <a href="/about">About</a>
-        <a href="/#waitlist" class="nav-cta">Register parish</a>
-        <a href="/give" class="nav-give">Give now</a>
+        <a href="/#waitlist"><button class="nav-cta">Register parish</button></a>
+        <a href="/give"><button class="nav-give">Give now</button></a>
       </div>
-
-      <!-- Hamburger Action Trigger -->
-      <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle navigation links" aria-expanded="false">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
     </div>
   </nav>
 
-  <!-- MOBILE NAVIGATION SLIDE-OUT OVERLAY DRAWER -->
-  <div class="mobile-nav-drawer" id="mobileDrawer" aria-hidden="true">
-    <div class="mobile-drawer-links">
-      <a href="/" onclick="toggleMenu()">Home</a>
-      <a href="/features" onclick="toggleMenu()">Features</a>
-      <a href="/pricing" onclick="toggleMenu()">Pricing</a>
-      <a href="/why" onclick="toggleMenu()">Why AgaPay?</a>
-      <a href="/about" onclick="toggleMenu()">About</a>
-    </div>
-    <div class="mobile-drawer-actions">
-      <a href="/#waitlist" class="nav-cta" onclick="toggleMenu()">Register parish</a>
-      <a href="/give" class="nav-give" onclick="toggleMenu()">Give now</a>
-    </div>
-  </div>
-
-  <header class="hero">
+  <div class="hero">
     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
     <div class="hero-inner">
       <div class="hero-eyebrow">Contact</div>
       <h1>We read every<br><em>message ourselves.</em></h1>
       <p class="hero-sub">No bots. No ticket queues. A real person — the founder — will read your message and respond personally.</p>
     </div>
-  </header>
+  </div>
 
-  <main class="main">
+  <div class="main">
     <div class="wrap">
       <div class="main-grid">
 
         <!-- LEFT — CONTACT DETAILS -->
-        <section class="contact-details" aria-label="Direct Contact Links">
+        <div class="contact-details">
           <div class="details-eyebrow reveal">Get in touch</div>
 
           <div class="contact-card reveal reveal-delay-1">
             <div class="contact-card-icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             </div>
             <h4>General inquiries</h4>
             <a href="mailto:hello@agapay.app">hello@agapay.app</a>
@@ -582,16 +232,16 @@
 
           <div class="contact-card reveal reveal-delay-2">
             <div class="contact-card-icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </div>
-            <h4>Parish &amp; monastery registration</h4>
+            <h4>Parish & monastery registration</h4>
             <a href="mailto:parishes@agapay.app">parishes@agapay.app</a>
             <p>Ready to bring your community onto AgaPay? Start here.</p>
           </div>
 
           <div class="contact-card reveal reveal-delay-3">
             <div class="contact-card-icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
             <h4>Support</h4>
             <a href="mailto:support@agapay.app">support@agapay.app</a>
@@ -601,98 +251,95 @@
           <div class="response-note reveal reveal-delay-4">
             <p><strong>Response time:</strong> We typically respond within one business day. Parish registration inquiries are prioritized. You will always hear from a real person.</p>
           </div>
-        </section>
+        </div>
 
         <!-- RIGHT — FORM -->
-        <section class="form-wrap reveal" id="contact-form-wrap" aria-label="Message Transmission Form">
-          <form id="contact-form" onsubmit="handleSubmit(event)">
-            <div id="form-body">
-              <div class="form-title">Send us a message</div>
-              <p class="form-sub">Whether you're a priest exploring AgaPay for your parish, a monastery administrator, or simply curious — we want to hear from you.</p>
+        <div class="form-wrap reveal" id="contact-form-wrap">
+          <div id="form-body">
+            <div class="form-title">Send us a message</div>
+            <p class="form-sub">Whether you're a priest exploring AgaPay for your parish, a monastery administrator, or simply curious — we want to hear from you.</p>
 
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="fname">First name</label>
-                  <input type="text" id="fname" name="firstname" placeholder="Fr. John" required />
-                </div>
-                <div class="form-group">
-                  <label for="lname">Last name</label>
-                  <input type="text" id="lname" name="lastname" placeholder="Smith" required />
-                </div>
-              </div>
-
+            <div class="form-row">
               <div class="form-group">
-                <label for="email">Email address</label>
-                <input type="email" id="email" name="email" placeholder="father.john@stnicholas.org" required />
+                <label>First name</label>
+                <input type="text" id="fname" placeholder="Fr. John" />
               </div>
-
               <div class="form-group">
-                <label for="role">I am a...</label>
-                <select id="role" name="role" required>
-                  <option value="">Select one</option>
-                  <option value="Parish priest">Parish priest</option>
-                  <option value="Parish council member">Parish council member</option>
-                  <option value="Parish treasurer">Parish treasurer</option>
-                  <option value="Monastery administrator">Monastery or skete administrator</option>
-                  <option value="Diocesan administrator">Diocesan administrator</option>
-                  <option value="Interested parishioner">Interested parishioner</option>
-                  <option value="Other">Other</option>
-                </select>
+                <label>Last name</label>
+                <input type="text" id="lname" placeholder="Smith" />
               </div>
-
-              <div class="form-group">
-                <label for="jurisdiction">Jurisdiction</label>
-                <select id="jurisdiction" name="jurisdiction" required>
-                  <option value="">Select jurisdiction</option>
-                  <option value="GOA">Greek Orthodox Archdiocese (GOA)</option>
-                  <option value="Antiochian">Antiochian Orthodox</option>
-                  <option value="OCA">Orthodox Church in America (OCA)</option>
-                  <option value="ROCOR">Russian Orthodox Church Outside Russia (ROCOR)</option>
-                  <option value="Serbian">Serbian Orthodox</option>
-                  <option value="Other">Other / Multiple</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="message">Message</label>
-                <textarea id="message" name="message" placeholder="Tell us about your parish, your questions, or anything else on your mind..." required></textarea>
-              </div>
-
-              <button type="submit" class="form-submit">Send message →</button>
-              <p class="form-note">Your message goes directly to the founder. No bots, no ticket systems.</p>
             </div>
-          </form>
 
-          <div class="form-success" id="form-success" role="alert">
+            <div class="form-group">
+              <label>Email address</label>
+              <input type="email" id="email" placeholder="father.john@stnicholas.org" />
+            </div>
+
+            <div class="form-group">
+              <label>I am a...</label>
+              <select id="role">
+                <option value="">Select one</option>
+                <option>Parish priest</option>
+                <option>Parish council member</option>
+                <option>Parish treasurer</option>
+                <option>Monastery or skete administrator</option>
+                <option>Diocesan administrator</option>
+                <option>Interested parishioner</option>
+                <option>Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Jurisdiction</label>
+              <select id="jurisdiction">
+                <option value="">Select jurisdiction</option>
+                <option>Greek Orthodox Archdiocese (GOA)</option>
+                <option>Antiochian Orthodox</option>
+                <option>Orthodox Church in America (OCA)</option>
+                <option>Russian Orthodox Church Outside Russia (ROCOR)</option>
+                <option>Serbian Orthodox</option>
+                <option>Other / Multiple</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Message</label>
+              <textarea id="message" placeholder="Tell us about your parish, your questions, or anything else on your mind..."></textarea>
+            </div>
+
+            <button class="form-submit" onclick="handleSubmit()">Send message →</button>
+            <p class="form-note">Your message goes directly to the founder. No bots, no ticket systems.</p>
+          </div>
+
+          <div class="form-success" id="form-success">
             <div class="form-success-icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <h3>Message received.</h3>
             <p>Thank you for reaching out. The founder will read your message personally and respond within one business day.<br><br>May God bless your community.</p>
           </div>
-        </section>
+        </div>
 
       </div>
     </div>
-  </main>
+  </div>
 
   <footer>
     <div class="footer-inner">
       <div class="footer-brand">
         <div class="footer-logo">
-          <div style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+          <div class="nav-mark">
             <img src="/mark.png" alt="AgaPay" style="width: 48px; height: 48px; object-fit: contain;" />
           </div>
           <span class="footer-name">Aga<em>Pay</em></span>
         </div>
-        <p class="footer-tagline">Love where you give.</p>
+        <p class="footer-tagline">Love where you give.</p><p class="footer-tagline-sub">For the life of the world.</p>
       </div>
       <div class="footer-nav">
         <div class="footer-nav-group">
           <div class="footer-nav-label">Platform</div>
           <a href="/features">Features</a>
           <a href="/pricing">Pricing</a>
-          <a href="/why">Why AgaPay</a>
           <a href="/give">Give now</a>
         </div>
         <div class="footer-nav-group">
@@ -710,49 +357,51 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>© 2026 AgaPay · agapay.app</p>
+      <p>© 2025 AgaPay · agapay.app</p>
     </div>
   </footer>
 
   <script>
-    // SCROLL REVEAL TRACKING LOGIC
+    // SCROLL REVEAL
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.05 });
+    }, { threshold: 0.1 });
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    // CLEAN MOBILE FORM OVERLAY TOGGLE
-    function toggleMenu() {
-      const toggleBtn = document.querySelector('.menu-toggle');
-      const drawer = document.getElementById('mobileDrawer');
-      const body = document.body;
-      const isOpen = toggleBtn.getAttribute('aria-expanded') === 'true';
-      
-      toggleBtn.setAttribute('aria-expanded', !isOpen);
-      drawer.classList.toggle('active');
-      drawer.setAttribute('aria-hidden', isOpen);
-      body.classList.toggle('nav-open');
-    }
-
-    // CLEAN FORM HANDLING LOGIC
-    function handleSubmit(event) {
-      event.preventDefault(); 
-      
+    // FORM SUBMIT
+    function handleSubmit() {
       const email = document.getElementById('email').value.trim();
+      const fname = document.getElementById('fname').value.trim();
+      const lname = document.getElementById('lname').value.trim();
+      const role = document.getElementById('role').value;
+      const jurisdiction = document.getElementById('jurisdiction').value;
       const message = document.getElementById('message').value.trim();
 
       if (!email || !message) {
+        alert('Please provide your email address and a message.');
         return;
       }
-      
-      document.getElementById('form-body').style.display = 'none';
-      document.getElementById('form-success').style.display = 'block';
+
+      const subject = encodeURIComponent('AgaPay Contact: ' + (role || 'Inquiry') + (jurisdiction ? ' — ' + jurisdiction : ''));
+      const body = encodeURIComponent(
+        'Name: ' + fname + ' ' + lname + '\n' +
+        'Email: ' + email + '\n' +
+        'Role: ' + role + '\n' +
+        'Jurisdiction: ' + jurisdiction + '\n\n' +
+        'Message:\n' + message
+      );
+
+      window.location.href = 'mailto:hello@agapay.app?subject=' + subject + '&body=' + body;
+
+      setTimeout(function() {
+        document.getElementById('form-body').style.display = 'none';
+        document.getElementById('form-success').style.display = 'block';
+      }, 1000);
     }
   </script>
 
