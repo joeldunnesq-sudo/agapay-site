@@ -31,12 +31,13 @@
 
     html { scroll-behavior: smooth; }
     body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; }
+    body.nav-open { overflow: hidden; } /* Prevents background scrolling when mobile menu is active */
     a { color: inherit; text-decoration: none; }
 
     /* NAV */
     nav { position: sticky; top: 0; z-index: 100; background: rgba(243,239,230,0.93); backdrop-filter: blur(12px); border-bottom: 0.5px solid rgba(166,159,145,0.35); }
     .nav-inner { max-width: 1024px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
-    .nav-logo { display: flex; align-items: center; gap: 5px; }
+    .nav-logo { display: flex; align-items: center; gap: 5px; z-index: 110; }
     .nav-mark { width: 52px; height: 52px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
     .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
     .nav-name em { color: var(--gold); font-style: normal; }
@@ -48,6 +49,80 @@
     .nav-cta:hover { background: var(--forest); }
     .nav-give { display: inline-block; background: var(--gold); color: var(--deep); border: none; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
     .nav-give:hover { opacity: 0.88; }
+
+    /* MOBILE HAMBURGER MECHANICS */
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      width: 44px;
+      height: 44px;
+      z-index: 110;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    .menu-toggle span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background-color: var(--deep);
+      border-radius: 2px;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s;
+    }
+    
+    /* HAMBURGER TRANSFORMATION INTO 'X' CLOSE INDICATOR */
+    .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* MOBILE OVERLAY DRAWER CONTAINER */
+    .mobile-nav-drawer {
+      position: fixed;
+      top: 0; right: 0; bottom: 0; left: 0;
+      background-color: var(--cream);
+      z-index: 105;
+      padding: 6rem 2rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+    }
+    .mobile-nav-drawer.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    .mobile-drawer-links {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .mobile-drawer-links a {
+      font-family: var(--serif);
+      font-size: 24px;
+      color: var(--deep);
+      border-bottom: 0.5px solid rgba(166,159,145,0.15);
+      padding-bottom: 0.75rem;
+    }
+    .mobile-drawer-actions {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .mobile-drawer-actions .nav-cta,
+    .mobile-drawer-actions .nav-give {
+      text-align: center;
+      padding: 14px;
+      font-size: 15px;
+      width: 100%;
+    }
 
     /* HERO */
     .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
@@ -163,7 +238,7 @@
     .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
     .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.3); }
 
-    /* ANIMATIONS */
+    /* HERO ANIMATIONS */
     @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
     @media (prefers-reduced-motion: no-preference) {
       .hero-eyebrow { animation: fadeUp 0.5s ease both; }
@@ -178,9 +253,12 @@
     .reveal-delay-3 { transition-delay: 0.3s; }
     .reveal-delay-4 { transition-delay: 0.4s; }
 
+    /* RESPONSIVE DISPLAY LAWS */
     @media (max-width: 768px) {
-      /* Mobile Menu Visibility Balancing */
+      /* Trigger mobile navigation display states */
+      .menu-toggle { display: flex; }
       .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
+      .nav-inner .nav-cta, .nav-inner .nav-give { display: none; }
     }
     @media (max-width: 600px) {
       .breakdown td, .breakdown th { padding: 0.85rem 1rem; }
@@ -191,6 +269,7 @@
 </head>
 <body>
 
+  <!-- NAVIGATION HEADER -->
   <nav>
     <div class="nav-inner">
       <a href="/" class="nav-logo" aria-label="AgaPay Home">
@@ -199,6 +278,8 @@
         </div>
         <span class="nav-name">Aga<em>Pay</em></span>
       </a>
+      
+      <!-- Desktop Link Group -->
       <div class="nav-links">
         <a href="/">Home</a>
         <a href="/features">Features</a>
@@ -208,8 +289,30 @@
         <a href="/#waitlist" class="nav-cta">Register parish</a>
         <a href="/give" class="nav-give">Give now</a>
       </div>
+
+      <!-- Mobile Menu Trigger Button -->
+      <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle navigation links" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
   </nav>
+
+  <!-- MOBILE INTERACTIVE NAVIGATION DRAWER OVERLAY -->
+  <div class="mobile-nav-drawer" id="mobileDrawer" aria-hidden="true">
+    <div class="mobile-drawer-links">
+      <a href="/" onclick="toggleMenu()">Home</a>
+      <a href="/features" onclick="toggleMenu()">Features</a>
+      <a href="/pricing" onclick="toggleMenu()">Pricing</a>
+      <a href="/why" onclick="toggleMenu()">Why AgaPay?</a>
+      <a href="/about" onclick="toggleMenu()">About</a>
+    </div>
+    <div class="mobile-drawer-actions">
+      <a href="/#waitlist" class="nav-cta" onclick="toggleMenu()">Register parish</a>
+      <a href="/give" class="nav-give" onclick="toggleMenu()">Give now</a>
+    </div>
+  </div>
 
   <header class="hero">
     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
@@ -473,6 +576,7 @@
   </footer>
 
   <script>
+    // SCROLL REVEAL TRACKING LOGIC
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -484,11 +588,25 @@
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
+    // FAQ TOGGLE INTERACTION LOGIC
     function toggleFaq(button) {
       const faqItem = button.closest('.faq');
       const isExpanded = button.getAttribute('aria-expanded') === 'true';
       button.setAttribute('aria-expanded', !isExpanded);
       faqItem.classList.toggle('open');
+    }
+
+    // ACCESSIBLE INTERACTIVE DRAWER CONTROLLER
+    function toggleMenu() {
+      const toggleBtn = document.querySelector('.menu-toggle');
+      const drawer = document.getElementById('mobileDrawer');
+      const body = document.body;
+      const isOpen = toggleBtn.getAttribute('aria-expanded') === 'true';
+      
+      toggleBtn.setAttribute('aria-expanded', !isOpen);
+      drawer.classList.toggle('active');
+      drawer.setAttribute('aria-hidden', isOpen);
+      body.classList.toggle('nav-open');
     }
   </script>
 
