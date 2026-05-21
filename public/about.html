@@ -22,7 +22,7 @@
       --forest: #355E3B;
       --gold:   #C8A24A;
       --cream:  #F3EFE6;
-      --stone:  #A69F91;
+      --stone:  --stone:  #A69F91;
       --ink:    #1A1A18;
       --serif:  'Cormorant Garamond', Georgia, serif;
       --sans:   'DM Sans', system-ui, sans-serif;
@@ -32,8 +32,26 @@
 
     html { scroll-behavior: smooth; }
     body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; }
-    body.nav-open { overflow: hidden; } /* Prevents background scrolling when menu is active */
+    body.nav-open { overflow: hidden; }
     a { color: inherit; text-decoration: none; }
+
+    /* PREMIUM GLOW AND DRAW STYLE INFRASTRUCTURE */
+    .ambient-wrapper { position: relative; overflow: hidden; }
+    .candle-glow {
+      position: absolute; width: 450px; height: 450px;
+      background: radial-gradient(circle, rgba(200, 162, 74, 0.06) 0%, rgba(53, 94, 59, 0.02) 40%, transparent 70%);
+      filter: blur(50px); pointer-events: none; z-index: 0; border-radius: 50%;
+    }
+    .candle-glow.top-left  { top: -150px; left: -150px; }
+    .candle-glow.bottom-right { bottom: -150px; right: -150px; }
+
+    .aside-avatar svg line {
+      stroke-dasharray: 80; stroke-dashoffset: 80;
+      transition: stroke-dashoffset 2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.visible .aside-avatar svg line { stroke-dashoffset: 0; }
+
+    h1, h2, h3 { letter-spacing: -0.02em !important; }
 
     /* NAV */
     nav {
@@ -62,7 +80,7 @@
       border-radius: var(--r);
       font-size: 13px;
       font-family: var(--sans);
-      font-weight: 600;
+      font-weight: 500;
       display: inline-block;
       transition: background 0.2s;
     }
@@ -81,81 +99,28 @@
       cursor: pointer;
       transition: opacity 0.2s;
     }
-    .nav-give:hover { opacity: 0.88; }
+    .nav-give:hover { opacity: 0.9; color: var(--deep) !important; }
 
-    /* MOBILE HAMBURGER MECHANICS */
+    /* MOBILE HAMBURGER */
     .menu-toggle {
-      display: none;
-      background: none;
-      border: none;
-      cursor: pointer;
-      width: 44px;
-      height: 44px;
-      z-index: 110;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
+      display: none; background: none; border: none; cursor: pointer;
+      width: 44px; height: 44px; z-index: 110; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
     }
-    .menu-toggle span {
-      display: block;
-      width: 22px;
-      height: 2px;
-      background-color: var(--deep);
-      border-radius: 2px;
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s;
-    }
-    
-    /* HAMBURGER TRANSFORMATION INTO 'X' CLOSE INDICATOR */
+    .menu-toggle span { display: block; width: 22px; height: 2px; background-color: var(--deep); border-radius: 2px; transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s; }
     .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
     .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
     .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-    /* MOBILE OVERLAY DRAWER CONTAINER */
     .mobile-nav-drawer {
-      position: fixed;
-      top: 0; right: 0; bottom: 0; left: 0;
-      background-color: var(--cream);
-      z-index: 105;
-      padding: 6rem 2rem 3rem;
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(-10px);
-      transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+      position: fixed; top: 0; right: 0; bottom: 0; left: 0; background-color: var(--cream); z-index: 105;
+      padding: 6rem 2rem 3rem; display: flex; flex-direction: column; gap: 2rem;
+      opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
     }
-    .mobile-nav-drawer.active {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-    .mobile-drawer-links {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-    .mobile-drawer-links a {
-      font-family: var(--serif);
-      font-size: 24px;
-      color: var(--deep);
-      border-bottom: 0.5px solid rgba(166,159,145,0.15);
-      padding-bottom: 0.75rem;
-    }
-    .mobile-drawer-actions {
-      margin-top: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .mobile-drawer-actions .nav-cta,
-    .mobile-drawer-actions .nav-give {
-      text-align: center;
-      padding: 14px;
-      font-size: 15px;
-      width: 100%;
-    }
+    .mobile-nav-drawer.active { opacity: 1; visibility: visible; transform: translateY(0); }
+    .mobile-drawer-links { display: flex; flex-direction: column; gap: 1.5rem; }
+    .mobile-drawer-links a { font-family: var(--serif); font-size: 24px; color: var(--deep); border-bottom: 0.5px solid rgba(166,159,145,0.15); padding-bottom: 0.75rem; }
+    .mobile-drawer-actions { margin-top: auto; display: flex; flex-direction: column; gap: 1rem; }
+    .mobile-drawer-actions .nav-cta, .mobile-drawer-actions .nav-give { text-align: center; padding: 14px; font-size: 15px; width: 100%; }
 
     /* HERO */
     .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
@@ -174,18 +139,11 @@
     .opening { padding: 5rem 0 0; display: grid; grid-template-columns: 1fr 2fr; gap: 4rem; align-items: start; }
     .opening-aside { position: sticky; top: 90px; }
     .aside-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1rem; font-weight: 500; }
-    .aside-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.5rem; }
+    .aside-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.5rem; position: relative; z-index: 1; }
     
     .aside-avatar { 
-      width: 52px; 
-      height: 52px; 
-      border-radius: 50%; 
-      background: var(--deep); 
-      border: 0.5px solid rgba(200,162,74,0.3);
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      margin-bottom: 1rem; 
+      width: 52px; height: 52px; border-radius: 50%; background: var(--deep); border: 0.5px solid rgba(200,162,74,0.3);
+      display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; 
     }
     
     .aside-name { font-size: 15px; font-weight: 500; color: var(--ink); margin-bottom: 4px; }
@@ -197,7 +155,7 @@
     .aside-contact a:hover { opacity: 0.75; }
 
     /* PROSE */
-    .prose { padding: 0 0 5rem; }
+    .prose { padding: 0 0 5rem; position: relative; z-index: 1; }
     .prose-section { margin-bottom: 3.5rem; }
     .prose-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 0.75rem; font-weight: 500; }
     .prose-section h2 { font-family: var(--serif); font-size: clamp(1.5rem, 2.5vw, 1.9rem); font-weight: 500; color: var(--deep); line-height: 1.25; margin-bottom: 1.25rem; letter-spacing: -0.01em; }
@@ -245,46 +203,20 @@
     .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
     .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.3); }
 
-    /* HERO ANIMATIONS */
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-    @media (prefers-reduced-motion: no-preference) {
-      .hero-eyebrow { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both; }
-      .hero h1      { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.08s both; }
-      .hero-sub     { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.16s both; }
-    }
-
-    /* SCROLL ANIMATIONS */
-    .reveal {
-      opacity: 0;
-      transform: translateY(24px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
-    }
-    .reveal.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .reveal-delay-1 { transition-delay: 0.1s; }
-    .reveal-delay-2 { transition-delay: 0.2s; }
-    .reveal-delay-3 { transition-delay: 0.3s; }
-    .reveal-delay-4 { transition-delay: 0.4s; }
-
-    /* RESPONSIVE LAYOUT LAWS */
     @media (max-width: 768px) {
       .opening { display: flex; flex-direction: column; gap: 3rem; padding-top: 3rem; }
       .opening-aside { order: 2; width: 100%; position: static; }
       .prose { order: 1; padding-bottom: 0; }
       .scripture, .cta { padding: 2.5rem 1.5rem; }
-      
-      /* Trigger mobile navigation display states */
       .menu-toggle { display: flex; }
       .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
       .nav-inner .nav-cta, .nav-inner .nav-give { display: none; }
     }
   </style>
 </head>
-<body>
+<body class="ambient-wrapper">
+  <div class="candle-glow top-left" aria-hidden="true"></div>
 
-  <!-- NAVIGATION HEADER -->
   <nav>
     <div class="nav-inner">
       <a href="/" class="nav-logo" aria-label="AgaPay Home">
@@ -293,8 +225,6 @@
         </div>
         <span class="nav-name">Aga<em>Pay</em></span>
       </a>
-      
-      <!-- Desktop Link Group -->
       <div class="nav-links">
         <a href="/">Home</a>
         <a href="/features">Features</a>
@@ -304,17 +234,12 @@
         <a href="/#waitlist" class="nav-cta">Register parish</a>
         <a href="/give" class="nav-give">Give now</a>
       </div>
-
-      <!-- Mobile Menu Trigger Button -->
-      <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle navigation links" aria-expanded="false">
-        <span></span>
-        <span></span>
-        <span></span>
+      <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
       </button>
     </div>
   </nav>
 
-  <!-- MOBILE INTERACTIVE NAVIGATION DRAWER OVERLAY -->
   <div class="mobile-nav-drawer" id="mobileDrawer" aria-hidden="true">
     <div class="mobile-drawer-links">
       <a href="/" onclick="toggleMenu()">Home</a>
@@ -340,16 +265,12 @@
 
   <main class="body-wrap">
     <div class="opening">
-
       <aside class="opening-aside reveal" aria-label="Founder Bio">
         <div class="aside-label">The founder</div>
         <div class="aside-card">
           <div class="aside-avatar" aria-hidden="true">
             <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; stroke: var(--gold); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; fill: none;">
-              <line x1="12" y1="3" x2="12" y2="21" />
-              <line x1="9" y1="6" x2="15" y2="6" />
-              <line x1="6" y1="10" x2="18" y2="10" />
-              <line x1="9" y1="17" x2="15" y2="15" />
+              <line x1="12" y1="3" x2="12" y2="21" /><line x1="9" y1="6" x2="15" y2="6" /><line x1="6" y1="10" x2="18" y2="10" /><line x1="9" y1="17" x2="15" y2="15" />
             </svg>
           </div>
           <div class="aside-name">The Founder</div>
@@ -362,9 +283,7 @@
             Legal professional<br>American Orthodox Christian
           </div>
           <hr class="aside-divider" />
-          <div class="aside-contact">
-            <a href="mailto:hello@agapay.app">hello@agapay.app</a>
-          </div>
+          <div class="aside-contact"><a href="mailto:hello@agapay.app">hello@agapay.app</a></div>
         </div>
       </aside>
 
@@ -429,6 +348,8 @@
     </section>
   </main>
 
+  <div class="candle-glow bottom-right" aria-hidden="true"></div>
+
   <footer>
     <div class="footer-inner">
       <div class="footer-brand">
@@ -443,56 +364,51 @@
       <div class="footer-nav">
         <div class="footer-nav-group">
           <div class="footer-nav-label">Platform</div>
-          <a href="/features">Features</a>
-          <a href="/pricing">Pricing</a>
-          <a href="/why">Why AgaPay</a>
-          <a href="/give">Give now</a>
+          <a href="/features">Features</a><a href="/pricing">Pricing</a><a href="/why">Why AgaPay</a><a href="/give">Give now</a>
         </div>
         <div class="footer-nav-group">
           <div class="footer-nav-label">Company</div>
-          <a href="/about">About</a>
-          <a href="/contact">Contact</a>
-          <a href="/#waitlist">Register parish</a>
+          <a href="/about">About</a><a href="/contact">Contact</a><a href="/#waitlist">Register parish</a>
         </div>
         <div class="footer-nav-group">
           <div class="footer-nav-label">Contact</div>
-          <a href="mailto:hello@agapay.app">hello@agapay.app</a>
-          <a href="mailto:parishes@agapay.app">parishes@agapay.app</a>
-          <a href="mailto:support@agapay.app">support@agapay.app</a>
+          <a href="mailto:hello@agapay.app">hello@agapay.app</a><a href="mailto:parishes@agapay.app">parishes@agapay.app</a><a href="mailto:support@agapay.app">support@agapay.app</a>
         </div>
       </div>
     </div>
-    <div class="footer-bottom">
-      <p>© 2026 AgaPay · agapay.app</p>
-    </div>
+    <div class="footer-bottom"><p>© 2026 AgaPay · agapay.app</p></div>
   </footer>
 
   <script>
-    // SCROLL REVEAL TRACKING
+    const observerOptions = { root: null, rootMargin: '0px 0px -8% 0px', threshold: 0.06 };
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('visible');
+          const paths = entry.target.querySelectorAll('path, line, circle');
+          paths.forEach(path => {
+            const length = path.getTotalLength ? path.getTotalLength() : 80;
+            path.style.strokeDasharray = length;
+            path.style.strokeDashoffset = length;
+            path.getBoundingClientRect();
+            path.style.strokeDashoffset = '0';
+          });
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.05 });
+    }, observerOptions);
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    // ACCESSIBLE INTERACTIVE DRAWER CONTROLLER
     function toggleMenu() {
       const toggleBtn = document.querySelector('.menu-toggle');
       const drawer = document.getElementById('mobileDrawer');
       const body = document.body;
       const isOpen = toggleBtn.getAttribute('aria-expanded') === 'true';
-      
       toggleBtn.setAttribute('aria-expanded', !isOpen);
       drawer.classList.toggle('active');
-      drawer.setAttribute('aria-hidden', isOpen);
       body.classList.toggle('nav-open');
     }
   </script>
-
 </body>
 </html>
