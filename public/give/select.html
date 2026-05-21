@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Select Parish | AgaPay</title>
+  <meta name="description" content="Choose your parish or monastery" />
+  <meta name="theme-color" content="#0F2D1F" />
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --deep: #0F2D1F;
+      --forest: #355E3B;
+      --gold: #C8A24A;
+      --cream: #F3EFE6;
+      --stone: #A69F91;
+      --ink: #1A1A18;
+      --serif: 'Cormorant Garamond', Georgia, serif;
+      --sans: 'DM Sans', system-ui, sans-serif;
+      --r: 10px;
+      --rlg: 16px;
+    }
+    body {
+      font-family: var(--sans);
+      background: var(--cream);
+      color: var(--ink);
+    }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(243,239,230,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 0.5px solid rgba(166,159,145,0.35);
+    }
+    .nav-inner {
+      max-width: 1024px; margin: 0 auto; padding: 0 1.5rem;
+      display: flex; align-items: center; justify-content: space-between; height: 64px;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 5px; }
+    .nav-mark { width: 52px; height: 52px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+    .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; letter-spacing: -0.01em; }
+    .nav-name em { color: var(--gold); }
+
+    .hero-small {
+      background: var(--deep); 
+      color: var(--cream); 
+      padding: 3.5rem 1.5rem 3rem; 
+      text-align: center;
+    }
+    .hero-small h1 {
+      font-family: var(--serif);
+      font-size: 2.3rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .body-wrap { 
+      max-width: 860px; 
+      margin: 0 auto; 
+      padding: 2rem 1.5rem; 
+    }
+
+    .search-bar {
+      width: 100%;
+      max-width: 520px;
+      margin: 2rem auto 2.5rem;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 16px 20px 16px 52px;
+      border: 1px solid var(--stone);
+      border-radius: var(--rlg);
+      font-size: 1.05rem;
+    }
+
+    .parish-card {
+      background: white;
+      border: 0.5px solid rgba(166,159,145,0.4);
+      border-radius: var(--rlg);
+      padding: 1.75rem;
+      margin-bottom: 1rem;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .parish-card:hover {
+      border-color: var(--gold);
+      transform: translateY(-3px);
+    }
+    .parish-name { 
+      font-family: var(--serif); 
+      font-size: 1.4rem; 
+      margin-bottom: 6px; 
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <div class="nav-mark"><img src="/mark.png" alt="" style="width:48px;height:48px;object-fit:contain;"></div>
+        <span class="nav-name">Aga<em>Pay</em></span>
+      </a>
+      <a href="/give" style="color: var(--forest); font-weight: 500;">← Back to Giving</a>
+    </div>
+  </nav>
+
+  <div class="hero-small">
+    <h1>Select Your Parish</h1>
+    <p>Your gift will go directly to the parish or monastery you choose.</p>
+  </div>
+
+  <div class="body-wrap">
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search by parish name, city, or state..." onkeyup="filterParishes()">
+    </div>
+
+    <div id="parishList"></div>
+  </div>
+
+  <script>
+    const parishes = [
+      { name: "St. John the Wonderworker Orthodox Church", location: "Austin, Texas" },
+      { name: "Holy Archangels Greek Orthodox Church", location: "Dallas, Texas" },
+      { name: "St. Seraphim of Sarov Orthodox Church", location: "Houston, Texas" },
+      { name: "St. Anthony the Great Orthodox Church", location: "San Antonio, Texas" }
+    ];
+
+    function renderParishes(filtered) {
+      const container = document.getElementById('parishList');
+      container.innerHTML = '';
+      filtered.forEach(parish => {
+        const card = document.createElement('div');
+        card.className = 'parish-card';
+        card.innerHTML = `<div class="parish-name">${parish.name}</div><div style="color:#A69F91">${parish.location}</div>`;
+        card.onclick = () => alert(`Selected: ${parish.name}`);
+        container.appendChild(card);
+      });
+    }
+
+    function filterParishes() {
+      const term = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = parishes.filter(p => p.name.toLowerCase().includes(term));
+      renderParishes(filtered);
+    }
+
+    renderParishes(parishes);
+  </script>
+</body>
+</html>
