@@ -422,14 +422,20 @@
 
     <!-- FREQUENCY — shown for stewardship -->
     <div class="frequency-section reveal reveal-delay-2" id="frequencySection">
-      <div class="section-label">Step 3 — Frequency</div>
+      <div class="section-label">Step 3 — Giving schedule</div>
       <div class="frequency-opts" role="group" aria-label="Gift frequency">
         <button class="freq-btn selected" data-freq="once" onclick="selectFreq(this)">One-time</button>
         <button class="freq-btn" data-freq="weekly" onclick="selectFreq(this)">Weekly</button>
+        <button class="freq-btn" data-freq="biweekly" onclick="selectFreq(this)">Bi-weekly</button>
         <button class="freq-btn" data-freq="monthly" onclick="selectFreq(this)">Monthly</button>
-        <button class="freq-btn" data-freq="annually" onclick="selectFreq(this)">Annually</button>
-      </div>
     </div>
+  <div id="recurringNote" style="display:none; margin-top:0.75rem; padding:0.85rem 1.1rem; background:rgba(53,94,59,0.07); border:0.5px solid rgba(53,94,59,0.2); border-radius:var(--r);">
+    <p style="font-size:13px; color:var(--forest); line-height:1.6;">
+      <strong style="color:var(--forest);">Automated giving enabled.</strong>
+      Your gift will be charged automatically on this schedule and can be cancelled at any time from your giving account.
+    </p>
+  </div>
+</div>
 
     <!-- DONOR DETAILS -->
     <div class="donor-section reveal reveal-delay-2">
@@ -565,12 +571,14 @@
     });
 
     // FREQUENCY
-    function selectFreq(btn) {
-      document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      selectedFreq = btn.dataset.freq;
-      updateSummary();
-    }
+      function selectFreq(btn) {
+        document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedFreq = btn.dataset.freq;
+        const isRecurring = selectedFreq !== 'once';
+        document.getElementById('recurringNote').style.display = isRecurring ? 'block' : 'none';
+        updateSummary();
+      }
 
     // NAMES TABS
     function selectNamesTab(tab) {
@@ -604,7 +612,7 @@
         love: 'Love Offering'
       };
       const freqLabels = {
-        once: 'One-time', weekly: 'Weekly', monthly: 'Monthly', annually: 'Annual'
+          once: 'One-time', weekly: 'Weekly', biweekly: 'Bi-weekly', monthly: 'Monthly'
       };
 
       document.getElementById('summaryType').textContent = typeLabels[selectedType] || '';
