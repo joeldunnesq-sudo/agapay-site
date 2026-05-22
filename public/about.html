@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>About — AgaPay</title>
+  <title>Why — AgaPay</title>
   <meta name="description" content="AgaPay was built by a tonsured Reader of ROCOR to cement Holy Orthodoxy into the American land — and to show his children they have a part to play." />
   <meta property="og:title" content="About AgaPay" />
   <meta property="og:url" content="https://agapay.app/about" />
@@ -17,7 +17,7 @@
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-       :root {
+    :root {
       --deep:    #0F2D1F;
       --forest:  #2F5A39;
       --gold:    #B8902F;
@@ -35,20 +35,16 @@
 
     html { scroll-behavior: smooth; }
 
-    /* CRITICAL: body must never have overflow hidden except when drawer is open.
-       And even then we use a class toggle, not a permanent rule. */
     body {
       font-family: var(--sans);
       background: var(--cream);
       color: var(--ink);
       -webkit-font-smoothing: antialiased;
-      /* NO overflow: hidden here */
     }
     body.nav-open { overflow: hidden; }
 
     a { color: inherit; text-decoration: none; }
 
-    /* CANDLE GLOW — must use position:fixed or be inside a non-overflow:hidden container */
     .candle-glow {
       position: fixed;
       width: 500px; height: 500px;
@@ -61,7 +57,6 @@
     .candle-glow.top-left  { top: -150px; left: -150px; }
     .candle-glow.bottom-right { bottom: -150px; right: -150px; }
 
-    /* NAV */
     nav {
       position: sticky; top: 0; z-index: 100;
       background: rgba(243,239,230,0.93);
@@ -79,12 +74,11 @@
     .nav-links { display: flex; align-items: center; gap: 1.25rem; }
     .nav-links a { font-size: 14px; color: var(--forest); transition: color 0.2s; }
     .nav-links a:hover { color: var(--ink); }
-    .nav-cta { display: inline-block; background: var(--deep); color: var(--cream) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; transition: background 0.2s; }
+    .nav-cta { display: inline-block; background: var(--deep); color: var(--white) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; transition: background 0.2s; }
     .nav-cta:hover { background: var(--forest) !important; }
-    .nav-give { display: inline-block; background: var(--gold); color: var(--deep) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 600; transition: opacity 0.2s; }
+    .nav-give { display: inline-block; background: var(--gold); color: var(--white) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 600; transition: opacity 0.2s; }
     .nav-give:hover { opacity: 0.9; }
 
-    /* HAMBURGER */
     .menu-toggle {
       display: none; background: none; border: none; cursor: pointer;
       width: 44px; height: 44px; z-index: 110;
@@ -99,7 +93,6 @@
     .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
     .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-    /* MOBILE DRAWER — fixed overlay, does NOT affect page scroll */
     .mobile-nav-drawer {
       position: fixed; top: 0; right: 0; bottom: 0; left: 0;
       background-color: var(--cream); z-index: 105;
@@ -116,7 +109,6 @@
     .mobile-drawer-actions .nav-cta,
     .mobile-drawer-actions .nav-give { text-align: center; padding: 14px; font-size: 15px; width: 100%; }
 
-    /* HERO */
     .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
     .hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 700px; height: 300px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.11) 0%, transparent 65%); pointer-events: none; }
     .hero-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; height: 450px; object-fit: contain; opacity: 0.08; pointer-events: none; z-index: 0; }
@@ -126,7 +118,6 @@
     .hero h1 em { color: var(--gold); font-style: italic; }
     .hero-sub { font-size: 15px; color: var(--stone); line-height: 1.85; max-width: 480px; margin: 0 auto; }
 
-    /* HERO ANIMATIONS */
     @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
     @media (prefers-reduced-motion: no-preference) {
       .hero-eyebrow { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both; }
@@ -134,10 +125,8 @@
       .hero-sub     { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.16s both; }
     }
 
-    /* BODY */
     .body-wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
 
-    /* OPENING GRID */
     .opening { padding: 5rem 0 0; display: grid; grid-template-columns: 1fr 2fr; gap: 4rem; align-items: start; }
     .opening-aside { position: sticky; top: 90px; }
     .aside-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1rem; font-weight: 500; }
@@ -151,7 +140,6 @@
     .aside-contact a { color: var(--gold); transition: opacity 0.2s; }
     .aside-contact a:hover { opacity: 0.75; }
 
-    /* PROSE */
     .prose { padding: 0 0 5rem; }
     .prose-section { margin-bottom: 3.5rem; }
     .prose-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 0.75rem; font-weight: 500; }
@@ -159,11 +147,9 @@
     .prose-section p { font-size: 15px; color: #2D2B28; line-height: 1.75; margin-bottom: 1.25rem; }
     .prose-section p:last-child { margin-bottom: 0; }
 
-    /* PULLQUOTE */
     .pullquote { border-left: 2px solid var(--gold); padding: 0.75rem 0 0.75rem 1.75rem; margin: 2.5rem 0; }
     .pullquote p { font-family: var(--serif); font-size: clamp(1.2rem, 2vw, 1.5rem); font-style: italic; color: var(--deep); line-height: 1.65; font-weight: 400; margin-bottom: 0 !important; }
 
-    /* VALUES */
     .values { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 3rem 0; }
     .value { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.5rem; transition: transform 0.2s ease, box-shadow 0.2s ease; }
     .value:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,45,31,0.08); }
@@ -171,35 +157,31 @@
     .value h3 { font-size: 14px; font-weight: 500; color: var(--deep); margin-bottom: 5px; }
     .value p { font-size: 13px; color: var(--stone); line-height: 1.65; margin-bottom: 0 !important; }
 
-    /* SCRIPTURE */
     .scripture { background: var(--deep); border-radius: var(--rlg); padding: 3rem 2.5rem; text-align: center; margin: 4rem 0; position: relative; overflow: hidden; }
     .scripture::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 500px; height: 200px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.1) 0%, transparent 65%); pointer-events: none; }
     .scripture p { font-family: var(--serif); font-size: clamp(1.2rem, 2vw, 1.5rem); font-style: italic; color: var(--cream); line-height: 1.7; position: relative; z-index: 1; }
     .scripture cite { display: block; font-size: 12px; color: var(--stone); font-style: normal; margin-top: 10px; letter-spacing: 0.06em; position: relative; z-index: 1; }
 
-    /* CTA */
     .cta { background: var(--forest); border-radius: var(--rlg); padding: 3rem 2.5rem; text-align: center; margin: 0 0 5rem; }
     .cta h2 { font-family: var(--serif); font-size: clamp(1.4rem, 2.5vw, 1.9rem); font-weight: 500; color: var(--cream); margin-bottom: 0.75rem; line-height: 1.3; }
     .cta p { font-size: 14px; color: rgba(243,239,230,0.6); margin-bottom: 1.75rem; line-height: 1.8; max-width: 400px; margin-left: auto; margin-right: auto; }
     .cta a { display: inline-block; background: var(--gold); color: var(--deep); padding: 13px 28px; border-radius: var(--r); font-size: 14px; font-weight: 500; font-family: var(--sans); transition: opacity 0.2s; }
     .cta a:hover { opacity: 0.88; }
 
-    /* SCROLL ANIMATIONS */
     .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
     .reveal-delay-1 { transition-delay: 0.1s; }
     .reveal-delay-2 { transition-delay: 0.2s; }
     .reveal-delay-3 { transition-delay: 0.3s; }
 
-    /* FOOTER */
     footer { background: var(--deep); padding: 3.5rem 1.5rem 0; }
     .footer-inner { max-width: 860px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 3rem; padding-bottom: 3rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
     .footer-brand { display: flex; flex-direction: column; gap: 8px; }
     .footer-logo { display: flex; align-items: center; gap: 8px; }
     .footer-name { font-family: var(--serif); font-size: 32px; color: var(--cream); font-weight: 500; }
     .footer-name em { color: var(--gold); font-style: normal; }
-    .footer-tagline { font-family: var(--serif); font-size: 16px; font-style: italic; color: rgba(243,239,230,0.7); margin-bottom: 4px; }
-    .footer-tagline-sub { font-family: var(--serif); font-size: 15px; font-style: italic; color: var(--cream); }
+    .footer-tagline { font-family: var(--serif); font-size: 15px; font-style: italic; color: var(--cream); margin-bottom: 4px; }
+    .footer-tagline-sub { font-family: var(--serif); font-size: 13px; font-style: italic; color: rgba(166,159,145,0.4); }
     .footer-nav { display: flex; gap: 3rem; flex-wrap: wrap; }
     .footer-nav-group { display: flex; flex-direction: column; gap: 10px; }
     .footer-nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin-bottom: 2px; }
@@ -208,7 +190,6 @@
     .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
     .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.3); }
 
-    /* RESPONSIVE */
     @media (max-width: 768px) {
       .menu-toggle { display: flex; }
       .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
@@ -225,7 +206,6 @@
 </head>
 <body>
 
-  <!-- Candle glow uses position:fixed so it never causes scroll issues -->
   <div class="candle-glow top-left" aria-hidden="true"></div>
   <div class="candle-glow bottom-right" aria-hidden="true"></div>
 
@@ -243,10 +223,10 @@
         <a href="/pricing">Pricing</a>
         <a href="/why">Why AgaPay?</a>
         <a href="/about">About</a>
-        <a href="/register" class="nav-cta">Register parish</a>
+        <a href="/#waitlist" class="nav-cta">Register parish</a>
         <a href="/give" class="nav-give">Give now</a>
       </div>
-      <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle navigation" aria-expanded="false">
+      <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -270,8 +250,8 @@
     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
     <div class="hero-inner">
       <div class="hero-eyebrow">About AgaPay</div>
-      <h1>Cementing Holy Orthodoxy<br>into the <em>American land.</em></h1>
-      <p class="hero-sub">AgaPay was not built by a company that saw a market opportunity. It was built by a man who loves the Church and wants his children to inherit something worthy of that love.</p>
+      <h1>Building infrastructure for the<br>life of the <em>Church.</em></h1>
+      <p class="hero-sub">AgaPay wasn't born in a boardroom to capture a market. It was built from within the Tradition, designed to help Orthodox parishes thrive and to leave our children an inheritance of faithful stewardship.</p>
     </div>
   </header>
 
@@ -289,14 +269,14 @@
               <line x1="9" y1="17" x2="15" y2="15"/>
             </svg>
           </div>
-          <div class="aside-name">The Founder</div>
+          <div class="aside-name">Joel Dunn</div>
           <div class="aside-title">
             <strong>Canonical standing</strong>
-            Tonsured Reader<br>Russian Orthodox Church Outside Russia
+            Tonsured Reader, ROCOR
             <strong>Family</strong>
-            Husband &amp; Father of ten<br>Classical Orthodox home education
+            Husband, Father, Servant
             <strong>Background</strong>
-            Legal professional<br>American Orthodox Christian
+            Litigator, Prosecutor, Orthodox Christian
           </div>
           <hr class="aside-divider" />
           <div class="aside-contact">
@@ -308,61 +288,90 @@
       <div class="prose">
         <section class="prose-section reveal" aria-labelledby="story-heading">
           <div class="prose-eyebrow">The story</div>
-          <h2 id="story-heading">Nothing I write on paper will live beyond me.</h2>
-          
-          <p>I have spent over a decade in courtrooms and at desks, building cases, pursuing justice, and serving the public. It is honorable, demanding work. But over the years, I came to understand a quiet reality: nothing I do in the legal system will truly live beyond me in the memories of those I love. Verdicts are rendered, files are archived, and the paper fades.</p>
-          <p>That is not a counsel of despair; it is a call to build something in a different register. I wanted to build something that serves the Body of Christ directly. Something that shows my ten children what it means to put one's hands to work for the Church, helping to secure the growth and maturation of Holy Orthodoxy in the American land.</p>
-          <p>That is why AgaPay exists.</p>
+          <h2 id="story-heading">A legacy beyond the courtroom.</h2>
+          <p>As an attorney, I’ve spent well over a decade seeking justice. I have spent thousands of hours in courtrooms and at desks, arguing cases and serving the interests of justice. It is honorable work. But I also realize that this work will not outlive me.</p>
+          <p>As Holy Orthodoxy continues to grow exponentially in the American land, there is an increasing need for its congregants to start building the infrastructure that the Church uniquely requires. If we are to cement Orthodoxy into the American land, we all share the vital, active role in the growth and maturation of Orthodoxy here in America.</p>
+          <p>That is why I built AgaPay.</p>
         </section>
 
         <div class="pullquote reveal reveal-delay-1">
-          <p>"I want to create something worthwhile — something that makes a tangible difference in people's lives."</p>
+          <p>"I want to create something that carries the faith forward and makes a meaningful contribution to the missionary work of spreading the Ancient Christian faith in the West."</p>
         </div>
 
         <section class="prose-section reveal" aria-labelledby="need-heading">
           <div class="prose-eyebrow">The need</div>
-          <h2 id="need-heading">The Church deserves a fully integrated giving platform.</h2>
-          <p>When I looked at the giving platforms adopted by Orthodox parishes, I saw tools built for a completely different theology. They were engineered for generic, mass-market ministries. They didn't know what a panakhida was. They had no concept of the Typikon. They were blind to the liturgical rhythm of our life: the feast days, Soul Saturdays, and Great Lenten appeals that shape how Orthodox Christians naturally give.</p>
-          <p>I am a tonsured Reader. I have stood in the nave, held a taper at Pascha, and submitted names for the proskomedia. I know this life from the inside. You cannot replicate that understanding by hiring a tech consultant or bolting on a 'custom feature' to a megachurch platform.</p>
-          <p>AgaPay was built from within the Tradition. Every line of code, every workflow, and every design decision was made by someone who lives the Orthodox life.</p>
+          <h2 id="need-heading">Love how you give.</h2>
+          <p>When I surveyed the giving platforms used by our parishes—tools like Tithe.ly or Pushpay—I saw software engineered for a completely different theology. Western Christianity has lost the fronema of the Ancient Church, its liturgical cycle, and a deep understanding of the virtue of charity.</p>
+          <p>As a tonsured Reader, I know what it means to stand in the nave at Pascha and to submit names for commemoration at the proskomedia. AgaPay is built from the inside out. Every line of code, every feature, and every design choice reflects the lived experience of the Orthodox Tradition. That is our foundation, and it is a distinction no competitor can replicate.</p>
         </section>
 
         <section class="prose-section reveal" aria-labelledby="vision-heading">
           <div class="prose-eyebrow">The vision</div>
-          <h2 id="vision-heading">A platform that outlasts its founder.</h2>
-          <p>Holy Orthodoxy is still young in America. The parishes being built today, the monasteries being established, and the children being raised in the faith are laying a foundation that will endure for centuries, if we tend it faithfully.</p>
-          <p>AgaPay is a piece of that tending. It is a digital infrastructure designed to make parishes financially resilient and to ensure monasteries receive the vital, unburdened support they need. It allows the faithful to give with the exact same intentionality and reverence they bring to every other aspect of their liturgical life.</p>
-          <p>I want my children to see that their father built something in service of the Church, something real, something useful, and something that carries the faith forward. To me, that is worth more than any verdict or title."</p>
+          <h2 id="vision-heading">Modern infrastructure for the ancient act of Christian charity.</h2>
+          <p>Holy Orthodoxy is still putting down roots in the American land. The missions being planted, the monasteries being built, and the children being raised in the faith today are the bedrock of what will endure for centuries if we tend it faithfully.</p>
+          <p>AgaPay is my contribution to that foundation. It is the giving platform designed to make our parishes financially resilient, enabling the faithful to give with the same intentionality they bring to the chalice.</p>
+          <p>Orthodox Christians should be able to give on a platform that shares not only their values, but also their way of life.</p>
         </section>
 
         <section class="values" aria-label="Core Values">
           <div class="value reveal reveal-delay-1">
-            <div class="value-num" aria-hidden="true">I</div>
+            <div class="value-icon" style="width:48px;height:48px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.75rem;">
+              <svg width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="9" x2="18" y2="27"/>
+                <line x1="9" y1="15" x2="27" y2="15"/>
+                <circle cx="18" cy="7" r="2.2"/>
+                <circle cx="18" cy="29" r="2.2"/>
+                <circle cx="7" cy="15" r="2.2"/>
+                <circle cx="29" cy="15" r="2.2"/>
+              </svg>
+            </div>
             <h3>Rooted in Tradition</h3>
-            <p>We don't adapt the Church to the platform. We build the platform around the Church.</p>
+            <p>We don't force the Church to adapt to Heterodox giving platforms. We build the AgaPay platform to serve the liturgical life of the Church.</p>
           </div>
           <div class="value reveal reveal-delay-2">
-            <div class="value-num" aria-hidden="true">II</div>
-            <h3>Transparent always</h3>
-            <p>Fees, practices, and the business model — openly stated. Nothing hidden from the parishes we serve.</p>
+            <div class="value-icon" style="width:48px;height:48px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.75rem;">
+              <svg width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8 C14 7 8 8 7 9 L7 28 C8 27 14 26 18 27 Z"/>
+                <path d="M18 8 C22 7 28 8 29 9 L29 28 C28 27 22 26 18 27 Z"/>
+                <line x1="18" y1="8" x2="18" y2="27"/>
+                <line x1="11" y1="14" x2="11" y2="22"/>
+                <line x1="8.5" y1="17" x2="13.5" y2="17"/>
+                <line x1="22" y1="14" x2="26" y2="14"/>
+                <line x1="22" y1="17" x2="26" y2="17"/>
+                <line x1="22" y1="20" x2="26" y2="20"/>
+                <path d="M7 28 C8 29 14 30 18 29 C22 30 28 29 29 28"/>
+              </svg>
+            </div>
+            <h3>Honest stewardship</h3>
+            <p>Clear fees, honorable practices, and an open business model. Aim to serve the building and growth of Orthodox parishes and monasteries.</p>
           </div>
           <div class="value reveal reveal-delay-3">
-            <div class="value-num" aria-hidden="true">III</div>
-            <h3>A family endeavor</h3>
-            <p>Built to sustain a family while serving the Body of Christ. There is no conflict in that — it is the oldest model of faithful work.</p>
+            <div class="value-icon" style="width:48px;height:48px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.75rem;">
+              <svg width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="11" r="3"/>
+                <path d="M12 30 C12 23 15 21 18 21 C21 21 24 23 24 30"/>
+                <circle cx="9" cy="13" r="2.4"/>
+                <path d="M4 30 C4 24 6.5 22.5 9 22.5 C11 22.5 13 23.5 13.5 26"/>
+                <circle cx="27" cy="13" r="2.4"/>
+                <path d="M32 30 C32 24 29.5 22.5 27 22.5 C25 22.5 23 23.5 22.5 26"/>
+                <path d="M9 11 C12 7 24 7 27 11" stroke-dasharray="2 1.5"/>
+              </svg>
+            </div>
+            <h3>One Body, One Platform</h3>
+            <p>AgaPay is built to serve the Body of Christ, the Church—honoring the oldest model of faithful, purposeful charity and almsgiving.</p>
           </div>
         </section>
       </div>
     </div>
 
     <section class="scripture reveal" aria-label="Scripture Verse">
-      <p>"Bring the full tithe into the storehouse,<br />that there may be food in my house.<br />Test me in this, says the Lord of hosts."</p>
-      <cite>— Malachi 3:10</cite>
+      <p>"Do almsgiving based on the quantity of your possessions. If you possess only a few, do not be afraid to give according to the little you have. You are storing up a good treasure for yourself in the day of necessity. For almsgiving delivers us from death and prevents us from entering into the darkness. Indeed, almsgiving is a good gift for all who do it before the Most High."</p>
+      <cite>— Tobit 4:8-11</cite>
     </section>
 
     <section class="cta reveal" aria-labelledby="cta-heading">
-      <h2 id="cta-heading">Be among the first parishes on AgaPay</h2>
-      <p>We are onboarding a small number of founding parishes before public launch. Founding parishes receive preferred pricing and direct access to the founder.</p>
+      <h2 id="cta-heading">Partner with AgaPay</h2>
+      <p>We are quietly onboarding a select group of founding parishes prior to our public launch. Founding parishes will secure preferred pricing and work directly with the founder to shape the platform's future.</p>
       <a href="/#waitlist">Request early access →</a>
     </section>
   </main>
@@ -372,7 +381,7 @@
       <div class="footer-brand">
         <div class="footer-logo">
           <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;">
-            <img src="/mark.png" alt="AgaPay" style="width:48px;height:48px;object-fit:contain;" />
+            <img src="/mark.png" alt="AgaPay" style="width:48px;height:48px;object-fit:contain;" loading="lazy" />
           </div>
           <span class="footer-name">Aga<em>Pay</em></span>
         </div>
@@ -390,7 +399,7 @@
           <div class="footer-nav-label">Company</div>
           <a href="/about">About</a>
           <a href="/contact">Contact</a>
-          <a href="/register">Register parish</a>
+          <a href="/#waitlist">Register parish</a>
         </div>
         <div class="footer-nav-group">
           <div class="footer-nav-label">Legal</div>
@@ -411,7 +420,6 @@
   </footer>
 
   <script>
-    // SCROLL REVEAL
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -423,7 +431,6 @@
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    // MOBILE NAV — clean toggle with resize safety guard
     function toggleMenu() {
       const btn = document.querySelector('.menu-toggle');
       const drawer = document.getElementById('mobileDrawer');
