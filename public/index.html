@@ -18,7 +18,7 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --deep:    #0F2D1F;
+      --deep:   #0F2D1F;
       --forest: #355E3B;
       --gold:   #C8A24A;
       --cream:  #F3EFE6;
@@ -30,28 +30,15 @@
     }
 
     html { scroll-behavior: smooth; }
+    body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
 
-    body {
-      font-family: var(--sans);
-      background: var(--cream);
-      color: var(--ink);
-      -webkit-font-smoothing: antialiased;
-      min-height: 100vh;
-    }
-
-    /* PREMIUM VISUAL INFRASTRUCTURE */
-    .ambient-wrapper { position: relative; overflow: hidden; }
-    .candle-glow {
-      position: absolute; width: 450px; height: 450px;
-      background: radial-gradient(circle, rgba(200, 162, 74, 0.06) 0%, rgba(53, 94, 59, 0.02) 40%, transparent 70%);
-      filter: blur(50px); pointer-events: none; z-index: 0; border-radius: 50%;
-    }
-    .candle-glow.top-left  { top: -150px; left: -150px; }
+    /* CANDLE GLOW */
+    .candle-glow { position: fixed; width: 500px; height: 500px; background: radial-gradient(circle, rgba(200,162,74,0.05) 0%, rgba(53,94,59,0.02) 40%, transparent 70%); filter: blur(60px); pointer-events: none; z-index: -1; border-radius: 50%; }
+    .candle-glow.top-left { top: -150px; left: -150px; }
     .candle-glow.bottom-right { bottom: -150px; right: -150px; }
 
-    h1, h2 { letter-spacing: -0.02em !important; }
-
-    /* HERO - MONUMENTAL CENTERED DESIGN */
+    /* HERO */
     .hero {
       background: var(--deep);
       min-height: 70vh;
@@ -76,41 +63,86 @@
       position: relative; z-index: 1; max-width: 600px; width: 100%;
       display: flex; flex-direction: column; align-items: center; text-align: center;
     }
+
+    /* LOGO */
     .logo { display: inline-flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 2rem; text-decoration: none; }
-    .logo-mark {
-      width: 50px; height: 50px; background: rgba(200,162,74,0.15);
-      border: 0.5px solid rgba(200,162,74,0.3); border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-    }
+    .logo-mark { width: 50px; height: 50px; background: rgba(200,162,74,0.15); border: 0.5px solid rgba(200,162,74,0.3); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
     .logo-name { font-family: var(--serif); font-size: 40px; font-weight: 500; color: var(--cream); letter-spacing: -0.01em; }
     .logo-name em { color: var(--gold); font-style: normal; }
-    
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 6px; background: rgba(200,162,74,0.1);
-      color: var(--gold); border: 0.5px solid rgba(200,162,74,0.25);
-      font-size: 11px; padding: 10px 13px; border-radius: 20px; margin-top: 2rem;
-      letter-spacing: 0.06em; text-transform: uppercase;
-    }
-    .hero h1 {
-      font-family: var(--serif); font-size: clamp(2rem, 5vw, 3.2rem);
-      font-weight: 500; color: var(--cream); line-height: 1.2;
-      margin: 0 auto 1.25rem; letter-spacing: -0.01em;
-    }
+
+    .hero h1 { font-family: var(--serif); font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 500; color: var(--cream); line-height: 1.2; margin: 0 auto 1.25rem; letter-spacing: -0.01em; }
     .hero h1 em { color: var(--gold); font-style: italic; }
     .hero-sub { font-size: 16px; color: var(--stone); line-height: 1.7; margin: 0 auto 2rem; }
+    .hero-tagline { font-family: var(--serif); font-size: 1.2rem; font-style: italic; color: var(--gold); margin-top: 0.5rem; margin-bottom: 2rem; letter-spacing: 0.02em; }
 
     /* FORM */
     .form-wrap {
-      background: rgba(243,239,230,0.06); border: 0.5px solid rgba(200,162,74,0.2);
-      border-radius: 14px; padding: 1.5rem; max-width: 400px; width: 100%;
+      background: rgba(243,239,230,0.06);
+      border: 0.5px solid rgba(200,162,74,0.2);
+      border-radius: 14px;
+      padding: 1.75rem;
+      max-width: 420px;
+      width: 100%;
     }
     .form-label {
-      font-size: 12px; color: var(--gold); letter-spacing: 0.06em;
-      text-transform: uppercase; margin-bottom: 1rem; display: block;
+      font-size: 12px;
+      color: var(--gold);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      display: block;
     }
     .ml-embedded { width: 100%; }
 
-    /* BELOW SECTIONS - Kept original styles */
+    /* MAILERLITE OVERRIDES */
+    .ml-embedded .ml-form-embedWrapper { background: transparent !important; padding: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+    .ml-embedded .ml-form-embedBody { padding: 0 !important; background: transparent !important; }
+    .ml-embedded .ml-form-fieldRow { padding: 0 !important; margin-bottom: 10px !important; }
+    .ml-embedded .ml-field-group input {
+      background: rgba(243,239,230,0.08) !important;
+      border: 0.5px solid rgba(200,162,74,0.35) !important;
+      border-radius: 8px !important;
+      color: #F3EFE6 !important;
+      font-family: 'DM Sans', sans-serif !important;
+      font-size: 14px !important;
+      padding: 13px 16px !important;
+      width: 100% !important;
+      outline: none !important;
+    }
+    .ml-embedded .ml-field-group input::placeholder { color: rgba(166,159,145,0.6) !important; }
+    .ml-embedded .ml-field-group input:focus { border-color: rgba(200,162,74,0.65) !important; background: rgba(243,239,230,0.11) !important; }
+    .ml-embedded .ml-form-embedSubmit { padding: 0 !important; margin-top: 4px !important; }
+    .ml-embedded .ml-form-embedSubmit button {
+      background: #C8A24A !important;
+      color: #0F2D1F !important;
+      border: none !important;
+      border-radius: 8px !important;
+      font-family: 'DM Sans', sans-serif !important;
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      padding: 13px 24px !important;
+      width: 100% !important;
+      cursor: pointer !important;
+      transition: opacity 0.2s !important;
+    }
+    .ml-embedded .ml-form-embedSubmit button:hover { opacity: 0.88 !important; }
+    .ml-embedded .ml-form-successBody { background: transparent !important; padding: 1rem 0 0 !important; }
+    .ml-embedded .ml-form-successContent h4 { font-family: 'Cormorant Garamond', serif !important; font-size: 1.3rem !important; color: #C8A24A !important; font-weight: 500 !important; margin-bottom: 6px !important; }
+    .ml-embedded .ml-form-successContent p { font-size: 13px !important; color: rgba(166,159,145,0.8) !important; font-family: 'DM Sans', sans-serif !important; }
+    .ml-embedded .ml-form-embedPermissions,
+    .ml-embedded .ml-form-recaptcha,
+    .ml-embedded .ml-form-embedWrapper .ml-form-embedBody .ml-form-embedContent { display: none !important; }
+
+    /* HERO BADGE */
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(200,162,74,0.1); color: var(--gold);
+      border: 0.5px solid rgba(200,162,74,0.25);
+      font-size: 11px; padding: 10px 13px; border-radius: 20px; margin-top: 2rem;
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+
+    /* BELOW — founder quote */
     .below { background: white; padding: 6rem 1.5rem; }
     .below-inner { max-width: 560px; margin: 0 auto; }
     .divider { width: 40px; height: 2px; background: var(--gold); margin: 0 auto 2.5rem; border: none; }
@@ -120,77 +152,108 @@
     .founder-sig { font-size: 13px; color: var(--stone); line-height: 1.7; }
     .founder-sig strong { display: block; font-size: 14px; font-weight: 500; color: var(--ink); margin-bottom: 2px; }
 
-    .why-band-section { background: var(--cream); padding: 4rem 1.5rem; }
+    /* WHY BAND */
+    .why-band-section { background: var(--cream); padding: 4rem 1.5rem; border-top: 0.5px solid rgba(166,159,145,0.2); border-bottom: 0.5px solid rgba(166,159,145,0.2); }
     .why-band-inner { max-width: 860px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 2.5rem; flex-wrap: wrap; }
-    .why-band-title { font-family: var(--serif); font-size: clamp(1.4rem, 2.5vw, 1.9rem); font-weight: 500; color: var(--deep); line-height: 1.25; margin-bottom: 0.75rem; }
+    .why-band-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 0.5rem; font-weight: 500; }
+    .why-band-title { font-family: var(--serif); font-size: clamp(1.4rem, 2.5vw, 1.9rem); font-weight: 500; color: var(--deep); line-height: 1.25; margin-bottom: 0.75rem; letter-spacing: -0.01em; }
     .why-band-lead { font-size: 14px; color: var(--stone); line-height: 1.8; max-width: 480px; }
-    .why-band-btn { display: inline-block; background-color: var(--forest); color: var(--cream); padding: 13px 28px; font-weight: 500; font-family: var(--sans); font-size: 13.5px; border-radius: var(--r); transition: 0.2s; }
-    .why-band-btn:hover { background-color: var(--deep); }
+    .why-band-btn {
+      display: inline-block;
+      background: var(--gold);
+      color: var(--deep);
+      padding: 15px 32px;
+      border-radius: var(--r);
+      font-family: var(--serif);
+      font-size: 17px;
+      font-weight: 500;
+      font-style: italic;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      flex-shrink: 0;
+      box-shadow: 0 4px 20px rgba(200,162,74,0.35);
+      transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .why-band-btn:hover { opacity: 0.92; transform: translateY(-2px); box-shadow: 0 8px 28px rgba(200,162,74,0.45); }
 
+    /* SCRIPTURE */
     .scripture { margin-top: 3.5rem; padding-top: 3rem; border-top: 0.5px solid rgba(166,159,145,0.3); text-align: center; }
     .scripture p { font-family: var(--serif); font-size: 17px; font-style: italic; color: var(--stone); line-height: 1.75; }
     .scripture cite { display: block; font-size: 12px; color: rgba(166,159,145,0.6); font-style: normal; margin-top: 8px; letter-spacing: 0.05em; }
 
+    /* FOOTER */
     footer { background: var(--deep); padding: 3.5rem 1.5rem 0; }
     .footer-inner { max-width: 860px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 3rem; padding-bottom: 3rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
     .footer-brand { display: flex; flex-direction: column; gap: 8px; }
-    .footer-logo { display: flex; align-items: center; gap: 3px; }
+    .footer-logo { display: flex; align-items: center; gap: 8px; }
     .footer-name { font-family: var(--serif); font-size: 32px; color: var(--cream); font-weight: 500; }
     .footer-name em { color: var(--gold); font-style: normal; }
-    .footer-tagline { font-family: var(--serif); font-size: 15px; font-style: italic; color: var(--cream) }
+    .footer-tagline { font-family: var(--serif); font-size: 16px; font-style: italic; color: rgba(243,239,230,0.7); }
     .footer-nav { display: flex; gap: 3rem; flex-wrap: wrap; }
     .footer-nav-group { display: flex; flex-direction: column; gap: 10px; }
     .footer-nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin-bottom: 2px; }
-    .footer-nav-group a { text-decoration: none; font-size: 13px; color: rgba(166,159,145,0.55); transition: color 0.2s; }
+    .footer-nav-group a { font-size: 13px; color: rgba(166,159,145,0.55); transition: color 0.2s; }
     .footer-nav-group a:hover { color: var(--cream); }
     .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
     .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.3); }
 
+    /* ANIMATIONS */
     @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: no-preference) {
+      .logo      { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both; }
+      .hero h1   { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.08s both; }
+      .hero-sub  { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.16s both; }
+      .form-wrap { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.24s both; }
+    }
     .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.1s; }
 
-    /* MAILERLITE OVERRIDES */
-    .ml-embedded .ml-form-embedWrapper { background: transparent !important; padding: 0 !important; }
-    .ml-embedded .ml-field-group input { background: rgba(243,239,230,0.08) !important; border: 0.5px solid rgba(200,162,74,0.35) !important; border-radius: 8px !important; color: #F3EFE6 !important; padding: 13px 16px !important; width: 100% !important; }
-    .ml-embedded .ml-form-embedSubmit button { background: #C8A24A !important; color: #0F2D1F !important; border: none !important; border-radius: 8px !important; font-family: 'DM Sans', sans-serif !important; padding: 13px 24px !important; width: 100% !important; cursor: pointer !important; }
+    @media (max-width: 600px) {
+      .why-band-inner { flex-direction: column; }
+      .why-band-btn { width: 100%; text-align: center; }
+    }
   </style>
 </head>
 <body>
+
+  <div class="candle-glow top-left" aria-hidden="true"></div>
+  <div class="candle-glow bottom-right" aria-hidden="true"></div>
 
   <!-- HERO -->
   <main class="hero">
     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
     <div class="hero-inner">
+
       <a href="#" class="logo" aria-label="AgaPay Home">
         <div class="logo-mark">
-          <img src="/mark.png" alt="AgaPay" style="width: 40px; height: 40px; object-fit: contain;" />
+          <img src="/mark.png" alt="AgaPay" style="width:40px;height:40px;object-fit:contain;" />
         </div>
         <span class="logo-name">Aga<em>Pay</em></span>
       </a>
 
       <h1>It's time to love how you <em>give.</em></h1>
       <p class="hero-sub">Ancient faith. Modern tools. Seamless giving for the modern parish.</p>
+      <p class="hero-tagline">Love how you give.</p>
 
       <div class="form-wrap">
-        <span class="form-label">✦ &nbsp; Request early access</span>
+        <span class="form-label">✦ &nbsp; Request early access for your parish</span>
         <div class="ml-embedded" data-form="vwTKVN"></div>
       </div>
 
       <div class="hero-badge">✦ &nbsp; Built by Orthodox Christians for Orthodox Christians &nbsp; ✦</div>
+
     </div>
   </main>
 
   <!-- FOUNDER NOTE -->
-  <section class="below ambient-wrapper" aria-label="Founder Statement">
-    <div class="candle-glow top-left" aria-hidden="true"></div>
-    <div class="candle-glow bottom-right" aria-hidden="true"></div>
-    <div class="below-inner" style="position: relative; z-index: 1;">
+  <section class="below" aria-label="Founder Statement">
+    <div class="below-inner">
       <hr class="divider" />
       <div class="founder">
         <span class="founder-eyebrow">A word from the founder</span>
         <blockquote class="reveal">"I built AgaPay because our parishes deserved better than a platform that doesn't know what a panakhida is. Every feature was shaped by someone who has stood in the nave, held a taper at Pascha, and submitted names for commemoration. That is not something any competitor can replicate."</blockquote>
-        <div class="founder-sig reveal">
+        <div class="founder-sig reveal reveal-delay-1">
           <strong>Joel Dunn, Founder</strong>
           Tonsured Reader, ROCOR &nbsp;&middot;&nbsp; Husband &nbsp;&middot;&nbsp; Father of ten
         </div>
@@ -198,40 +261,39 @@
     </div>
   </section>
 
-  <!-- WHY LINK BAND -->
-  <div class="why-band-section ambient-wrapper">
-    <div class="candle-glow top-left" aria-hidden="true"></div>
-    <div class="why-band-inner" style="position: relative; z-index: 1;">
-      <div class="why-band-text">
-        <h2 class="why-band-title">Why choose AgaPay?</h2>
+  <!-- WHY AGAPAY BAND -->
+  <div class="why-band-section">
+    <div class="why-band-inner">
+      <div class="why-band-text reveal">
+        <div class="why-band-eyebrow">The competitive edge</div>
+        <h2 class="why-band-title">Why choose AgaPay over Tithe.ly or Pushpay?</h2>
         <p class="why-band-lead">See the full side-by-side comparison — liturgical calendar support, canonical verification, transparent pricing, and why Orthodox parishes across America are making the switch.</p>
       </div>
-      <a href="/why" class="why-band-btn">See why AgaPay <span>→</span></a>
+      <a href="/why" class="why-band-btn reveal reveal-delay-1">See why AgaPay →</a>
     </div>
   </div>
 
   <!-- SCRIPTURE -->
-  <div class="below ambient-wrapper" style="padding-top: 0;">
-    <div class="candle-glow bottom-right" aria-hidden="true"></div>
-    <div class="below-inner" style="position: relative; z-index: 1;">
+  <section class="below" style="padding-top:0;" aria-label="Scripture">
+    <div class="below-inner">
       <div class="scripture reveal">
         <p>"Give to the Most High as He has given to you, and with a generous eye, according to your ability. For the Lord is one who repays, and He will repay you sevenfold."</p>
         <cite>— Sirach 35:12-13</cite>
       </div>
     </div>
-  </div>
+  </section>
 
   <!-- FOOTER -->
   <footer>
     <div class="footer-inner">
       <div class="footer-brand">
         <div class="footer-logo">
-          <div style="width:48px; height:48px; display:flex; align-items:center; justify-content:center;">
-            <img src="/mark.png" alt="AgaPay" style="width: 48px; height: 48px; object-fit: contain;" />
+          <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;">
+            <img src="/mark.png" alt="AgaPay" style="width:48px;height:48px;object-fit:contain;" />
           </div>
           <span class="footer-name">Aga<em>Pay</em></span>
         </div>
-        <p class="footer-tagline"> Love how you give.</p>
+        <p class="footer-tagline">Love how you give.</p>
       </div>
       <div class="footer-nav">
         <div class="footer-nav-group">
@@ -239,11 +301,13 @@
           <a href="/features">Features</a>
           <a href="/pricing">Pricing</a>
           <a href="/why">Why AgaPay</a>
+          <a href="/give">Give now</a>
         </div>
         <div class="footer-nav-group">
           <div class="footer-nav-label">Company</div>
           <a href="/about">About</a>
           <a href="/contact">Contact</a>
+          <a href="/#waitlist">Register parish</a>
         </div>
         <div class="footer-nav-group">
           <div class="footer-nav-label">Legal</div>
@@ -257,14 +321,18 @@
     </div>
   </footer>
 
+  <!-- MAILERLITE -->
   <script>
     (function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[]).push(arguments);},l=d.createElement(e),l.async=1,l.src=u,n=d.getElementsByTagName(e)[0],n.parentNode.insertBefore(l,n);})(window,document,'script','https://assets.mailerlite.com/js/universal.js','ml');
     ml('account', '2362703');
 
     const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); } });
+      entries.forEach(entry => {
+        if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
+      });
     }, { threshold: 0.1 });
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
   </script>
+
 </body>
 </html>
