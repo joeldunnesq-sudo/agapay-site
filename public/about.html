@@ -18,55 +18,31 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --deep:    #0F2D1F;
-      --forest:  #2F5A39;
-      --gold:    #B8902F;
-      --cream:   #F6F1E8;
-      --stone:   #6F6A60;
-      --ink:     #171715;
-      --white:   #FFFFFF;
-    
-      --serif:   'Cormorant Garamond', Georgia, serif;
-      --sans:    'DM Sans', system-ui, sans-serif;
-    
-      --r:       10px;
-      --rlg:     16px;
+      --deep:   #0F2D1F;
+      --forest: #2F5A39;
+      --gold:   #B8902F;
+      --cream:  #F6F1E8;
+      --stone:  #6F6A60;
+      --ink:    #171715;
+      --white:  #FFFFFF;
+      --serif:  'Cormorant Garamond', Georgia, serif;
+      --sans:   'DM Sans', system-ui, sans-serif;
+      --r:      10px;
+      --rlg:    16px;
     }
 
     html { scroll-behavior: smooth; }
-
-    body {
-      font-family: var(--sans);
-      background: var(--cream);
-      color: var(--ink);
-      -webkit-font-smoothing: antialiased;
-    }
+    body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; }
     body.nav-open { overflow: hidden; }
-
     a { color: inherit; text-decoration: none; }
 
-    .candle-glow {
-      position: fixed;
-      width: 500px; height: 500px;
-      background: radial-gradient(circle, rgba(200,162,74,0.05) 0%, rgba(53,94,59,0.02) 40%, transparent 70%);
-      filter: blur(60px);
-      pointer-events: none;
-      z-index: -1;
-      border-radius: 50%;
-    }
+    .candle-glow { position: fixed; width: 500px; height: 500px; background: radial-gradient(circle, rgba(200,162,74,0.05) 0%, rgba(53,94,59,0.02) 40%, transparent 70%); filter: blur(60px); pointer-events: none; z-index: -1; border-radius: 50%; }
     .candle-glow.top-left  { top: -150px; left: -150px; }
     .candle-glow.bottom-right { bottom: -150px; right: -150px; }
 
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(243,239,230,0.93);
-      backdrop-filter: blur(12px);
-      border-bottom: 0.5px solid rgba(166,159,145,0.35);
-    }
-    .nav-inner {
-      max-width: 1024px; margin: 0 auto; padding: 0 1.5rem;
-      display: flex; align-items: center; justify-content: space-between; height: 64px;
-    }
+    /* NAV */
+    nav { position: sticky; top: 0; z-index: 100; background: rgba(243,239,230,0.93); backdrop-filter: blur(12px); border-bottom: 0.5px solid rgba(166,159,145,0.35); }
+    .nav-inner { max-width: 1024px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
     .nav-logo { display: flex; align-items: center; gap: 5px; z-index: 110; }
     .nav-mark { width: 52px; height: 52px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
     .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
@@ -78,30 +54,12 @@
     .nav-cta:hover { background: var(--forest) !important; }
     .nav-give { display: inline-block; background: var(--gold); color: var(--white) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 600; transition: opacity 0.2s; }
     .nav-give:hover { opacity: 0.9; }
-
-    .menu-toggle {
-      display: none; background: none; border: none; cursor: pointer;
-      width: 44px; height: 44px; z-index: 110;
-      flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-    }
-    .menu-toggle span {
-      display: block; width: 22px; height: 2px;
-      background-color: var(--deep); border-radius: 2px;
-      transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.2s;
-    }
+    .menu-toggle { display: none; background: none; border: none; cursor: pointer; width: 44px; height: 44px; z-index: 110; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
+    .menu-toggle span { display: block; width: 22px; height: 2px; background-color: var(--deep); border-radius: 2px; transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.2s; }
     .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
     .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
     .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-
-    .mobile-nav-drawer {
-      position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-      background-color: var(--cream); z-index: 105;
-      padding: 6rem 2rem 3rem;
-      display: flex; flex-direction: column; gap: 2rem;
-      opacity: 0; visibility: hidden; transform: translateY(-10px);
-      transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
-      overflow-y: auto;
-    }
+    .mobile-nav-drawer { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background-color: var(--cream); z-index: 105; padding: 6rem 2rem 3rem; display: flex; flex-direction: column; gap: 2rem; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s; overflow-y: auto; }
     .mobile-nav-drawer.active { opacity: 1; visibility: visible; transform: translateY(0); }
     .mobile-drawer-links { display: flex; flex-direction: column; gap: 1.5rem; }
     .mobile-drawer-links a { font-family: var(--serif); font-size: 24px; color: var(--deep); border-bottom: 0.5px solid rgba(166,159,145,0.15); padding-bottom: 0.75rem; }
@@ -109,6 +67,7 @@
     .mobile-drawer-actions .nav-cta,
     .mobile-drawer-actions .nav-give { text-align: center; padding: 14px; font-size: 15px; width: 100%; }
 
+    /* HERO */
     .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
     .hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 700px; height: 300px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.11) 0%, transparent 65%); pointer-events: none; }
     .hero-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; height: 450px; object-fit: contain; opacity: 0.08; pointer-events: none; z-index: 0; }
@@ -125,14 +84,35 @@
       .hero-sub     { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.16s both; }
     }
 
+    /* BODY */
     .body-wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
-
     .opening { padding: 5rem 0 0; display: grid; grid-template-columns: 1fr 2fr; gap: 4rem; align-items: start; }
     .opening-aside { position: sticky; top: 90px; }
     .aside-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1rem; font-weight: 500; }
     .aside-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.5rem; }
-    .aside-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--deep); border: 0.5px solid rgba(200,162,74,0.3); display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
-    .aside-name { font-size: 15px; font-weight: 500; color: var(--ink); margin-bottom: 4px; }
+
+    /* FOUNDER HEADER — cross circle + photo circle + name */
+    .founder-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; }
+    .aside-avatar {
+      width: 48px; height: 48px; min-width: 48px;
+      border-radius: 50%;
+      background: var(--deep);
+      border: 0.5px solid rgba(200,162,74,0.3);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .founder-photo {
+      width: 48px; height: 48px; min-width: 48px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 0.5px solid rgba(200,162,74,0.3);
+      flex-shrink: 0;
+    }
+    .founder-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .founder-name-block { min-width: 0; }
+    .aside-name { font-size: 15px; font-weight: 500; color: var(--ink); margin-bottom: 2px; }
+    .founder-role { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
+
     .aside-title { font-size: 12px; color: var(--stone); line-height: 1.6; }
     .aside-title strong { display: block; color: var(--gold); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; margin-bottom: 4px; margin-top: 1rem; }
     .aside-divider { border: none; border-top: 0.5px solid rgba(166,159,145,0.3); margin: 1.25rem 0; }
@@ -140,6 +120,7 @@
     .aside-contact a { color: var(--gold); transition: opacity 0.2s; }
     .aside-contact a:hover { opacity: 0.75; }
 
+    /* PROSE */
     .prose { padding: 0 0 5rem; }
     .prose-section { margin-bottom: 3.5rem; }
     .prose-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 0.75rem; font-weight: 500; }
@@ -150,30 +131,34 @@
     .pullquote { border-left: 2px solid var(--gold); padding: 0.75rem 0 0.75rem 1.75rem; margin: 2.5rem 0; }
     .pullquote p { font-family: var(--serif); font-size: clamp(1.2rem, 2vw, 1.5rem); font-style: italic; color: var(--deep); line-height: 1.65; font-weight: 400; margin-bottom: 0 !important; }
 
-    .values { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 3rem 0; }
+    /* VALUES */
+    .values { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 3rem 0; }
     .value { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.5rem; transition: transform 0.2s ease, box-shadow 0.2s ease; }
     .value:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,45,31,0.08); }
-    .value-num { font-family: var(--serif); font-size: 28px; font-weight: 600; color: var(--gold); line-height: 1; margin-bottom: 0.75rem; }
     .value h3 { font-size: 14px; font-weight: 500; color: var(--deep); margin-bottom: 5px; }
     .value p { font-size: 13px; color: var(--stone); line-height: 1.65; margin-bottom: 0 !important; }
 
+    /* SCRIPTURE */
     .scripture { background: var(--deep); border-radius: var(--rlg); padding: 3rem 2.5rem; text-align: center; margin: 4rem 0; position: relative; overflow: hidden; }
     .scripture::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 500px; height: 200px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.1) 0%, transparent 65%); pointer-events: none; }
     .scripture p { font-family: var(--serif); font-size: clamp(1.2rem, 2vw, 1.5rem); font-style: italic; color: var(--cream); line-height: 1.7; position: relative; z-index: 1; }
     .scripture cite { display: block; font-size: 12px; color: var(--stone); font-style: normal; margin-top: 10px; letter-spacing: 0.06em; position: relative; z-index: 1; }
 
+    /* CTA */
     .cta { background: var(--forest); border-radius: var(--rlg); padding: 3rem 2.5rem; text-align: center; margin: 0 0 5rem; }
     .cta h2 { font-family: var(--serif); font-size: clamp(1.4rem, 2.5vw, 1.9rem); font-weight: 500; color: var(--cream); margin-bottom: 0.75rem; line-height: 1.3; }
     .cta p { font-size: 14px; color: rgba(243,239,230,0.6); margin-bottom: 1.75rem; line-height: 1.8; max-width: 400px; margin-left: auto; margin-right: auto; }
     .cta a { display: inline-block; background: var(--gold); color: var(--deep); padding: 13px 28px; border-radius: var(--r); font-size: 14px; font-weight: 500; font-family: var(--sans); transition: opacity 0.2s; }
     .cta a:hover { opacity: 0.88; }
 
+    /* SCROLL ANIMATIONS */
     .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
     .reveal-delay-1 { transition-delay: 0.1s; }
     .reveal-delay-2 { transition-delay: 0.2s; }
     .reveal-delay-3 { transition-delay: 0.3s; }
 
+    /* FOOTER */
     footer { background: var(--deep); padding: 3.5rem 1.5rem 0; }
     .footer-inner { max-width: 860px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 3rem; padding-bottom: 3rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
     .footer-brand { display: flex; flex-direction: column; gap: 8px; }
@@ -198,6 +183,7 @@
       .opening-aside { order: 2; width: 100%; position: static; }
       .prose { order: 1; padding-bottom: 0; }
       .scripture, .cta { padding: 2.5rem 1.5rem; }
+      .values { grid-template-columns: 1fr; }
     }
     @media (max-width: 480px) {
       .footer-inner { flex-direction: column; }
@@ -213,7 +199,7 @@
     <div class="nav-inner">
       <a href="/" class="nav-logo" aria-label="AgaPay Home">
         <div class="nav-mark">
-          <img src="/mark.png" alt="AgaPay" style="width: 48px; height: 48px; object-fit: contain;" />
+          <img src="/mark.png" alt="AgaPay" style="width:48px;height:48px;object-fit:contain;" />
         </div>
         <span class="nav-name">Aga<em>Pay</em></span>
       </a>
@@ -241,8 +227,8 @@
       <a href="/pricing" onclick="toggleMenu()">Pricing</a>
     </div>
     <div class="mobile-drawer-actions">
-      <a href="/give" class="nav-give" onclick="toggleMenu()">Give now</a>     
-      <a href="/Register" class="nav-cta" onclick="toggleMenu()">Register parish</a>
+      <a href="/give" class="nav-give" onclick="toggleMenu()">Give now</a>
+      <a href="/register" class="nav-cta" onclick="toggleMenu()">Register parish</a>
     </div>
   </div>
 
@@ -250,7 +236,7 @@
     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
     <div class="hero-inner">
       <div class="hero-eyebrow">About AgaPay</div>
-      <h1>Cementing Orthodoxy <br>into the <em>American land.</em></h1>
+      <h1>Cementing Orthodoxy<br>into the <em>American land.</em></h1>
       <p class="hero-sub">AgaPay wasn't born in a boardroom to capture a market. It was built from within the Tradition, designed to help Orthodox parishes thrive and to leave our children an inheritance of faithful stewardship.</p>
     </div>
   </header>
@@ -261,16 +247,26 @@
       <aside class="opening-aside reveal" aria-label="Founder Bio">
         <div class="aside-label">The founder</div>
         <div class="aside-card">
-         <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem;">
-            <div class="aside-avatar" style="overflow:hidden;flex-shrink:0;">
-              <img src="/joel.jpg" alt="Joel Dunn" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />
+
+          <!-- Cross circle + photo circle + name — all three in a row -->
+          <div class="founder-header">
+            <div class="aside-avatar" aria-hidden="true">
+              <svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:var(--gold);stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;fill:none;">
+                <line x1="12" y1="3" x2="12" y2="21"/>
+                <line x1="9" y1="6" x2="15" y2="6"/>
+                <line x1="6" y1="10" x2="18" y2="10"/>
+                <line x1="9" y1="17" x2="15" y2="15"/>
+              </svg>
             </div>
-            <div>
+            <div class="founder-photo">
+              <img src="/joel.jpg" alt="Joel Dunn" />
+            </div>
+            <div class="founder-name-block">
               <div class="aside-name">Joel Dunn</div>
-              <div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:0.08em;font-weight:500;">Founder</div>
+              <div class="founder-role">Founder</div>
             </div>
           </div>
-          <div class="aside-name">Joel Dunn</div>
+
           <div class="aside-title">
             <strong>Canonical standing</strong>
             Tonsured Reader, ROCOR
@@ -290,7 +286,7 @@
         <section class="prose-section reveal" aria-labelledby="story-heading">
           <div class="prose-eyebrow">The story</div>
           <h2 id="story-heading">A legacy beyond the courtroom.</h2>
-          <p>As an attorney, I’ve spent well over a decade seeking justice. I have spent thousands of hours in courtrooms and at desks, arguing cases and serving the interests of justice. It is honorable work. But I also realize that this work will not outlive me.</p>
+          <p>As an attorney, I've spent well over a decade seeking justice. I have spent thousands of hours in courtrooms and at desks, arguing cases and serving the interests of justice. It is honorable work. But I also realize that this work will not outlive me.</p>
           <p>As Holy Orthodoxy continues to grow exponentially in the American land, there is an increasing need for its congregants to start building the infrastructure that the Church uniquely requires. If we are to cement Orthodoxy into the American land, we all share the vital, active role in the growth and maturation of Orthodoxy here in America.</p>
           <p>That is why I built AgaPay.</p>
         </section>
@@ -302,7 +298,7 @@
         <section class="prose-section reveal" aria-labelledby="need-heading">
           <div class="prose-eyebrow">The need</div>
           <h2 id="need-heading">Love how you give.</h2>
-          <p>When I surveyed the giving platforms used by our parishes—tools like Tithe.ly or Pushpay—I saw software engineered for a completely different theology. Western Christianity has lost the fronema of the Ancient Church, its liturgical cycle, and a deep understanding of the virtue of charity.</p>
+          <p>When I surveyed the giving platforms used by our parishes — tools like Tithe.ly or Pushpay — I saw software engineered for a completely different theology. Western Christianity has lost the fronema of the Ancient Church, its liturgical cycle, and a deep understanding of the virtue of charity.</p>
           <p>As a tonsured Reader, I know what it means to stand in the nave at Pascha and to submit names for commemoration at the proskomedia. AgaPay is built from the inside out. Every line of code, every feature, and every design choice reflects the lived experience of the Orthodox Tradition. That is our foundation, and it is a distinction no competitor can replicate.</p>
         </section>
 
@@ -315,6 +311,7 @@
         </section>
 
         <section class="values" aria-label="Core Values">
+
           <div class="value reveal reveal-delay-1">
             <div class="value-icon" style="width:48px;height:48px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.75rem;">
               <svg width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
@@ -327,8 +324,9 @@
               </svg>
             </div>
             <h3>Rooted in Tradition</h3>
-            <p>We don't force the Church to adapt to Heterodox giving platforms. We build the AgaPay platform to serve the liturgical life of the Church.</p>
+            <p>We don't force the Church to adapt to heterodox giving platforms. We build AgaPay to serve the liturgical life of the Church.</p>
           </div>
+
           <div class="value reveal reveal-delay-2">
             <div class="value-icon" style="width:48px;height:48px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.75rem;">
               <svg width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
@@ -344,8 +342,9 @@
               </svg>
             </div>
             <h3>Honest stewardship</h3>
-            <p>Clear fees, honorable practices, and an open business model. Aim to serve the building and growth of Orthodox parishes and monasteries.</p>
+            <p>Clear fees, honorable practices, and an open business model — in service of the building and growth of Orthodox parishes and monasteries.</p>
           </div>
+
           <div class="value reveal reveal-delay-3">
             <div class="value-icon" style="width:48px;height:48px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.75rem;">
               <svg width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
@@ -359,15 +358,16 @@
               </svg>
             </div>
             <h3>One Body, One Platform</h3>
-            <p>AgaPay is built to serve the Body of Christ, the Church—honoring the oldest model of faithful, purposeful charity and almsgiving.</p>
+            <p>AgaPay is built to serve the Body of Christ — honoring the oldest model of faithful, purposeful charity and almsgiving.</p>
           </div>
+
         </section>
       </div>
     </div>
 
     <section class="scripture reveal" aria-label="Scripture Verse">
       <p>"Do almsgiving based on the quantity of your possessions. If you possess only a few, do not be afraid to give according to the little you have. You are storing up a good treasure for yourself in the day of necessity. For almsgiving delivers us from death and prevents us from entering into the darkness. Indeed, almsgiving is a good gift for all who do it before the Most High."</p>
-      <cite>— Tobit 4:8-11</cite>
+      <cite>— Tobit 4:8–11</cite>
     </section>
 
     <section class="cta reveal" aria-labelledby="cta-heading">
@@ -401,7 +401,7 @@
           <div class="footer-nav-label">Company</div>
           <a href="/about">About</a>
           <a href="/contact">Contact</a>
-          <a href="/#waitlist">Register parish</a>
+          <a href="/register">Register parish</a>
         </div>
         <div class="footer-nav-group">
           <div class="footer-nav-label">Legal</div>
@@ -430,14 +430,12 @@
         }
       });
     }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
-
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
     function toggleMenu() {
       const btn = document.querySelector('.menu-toggle');
       const drawer = document.getElementById('mobileDrawer');
       const isOpen = drawer.classList.contains('active');
-
       if (isOpen) {
         btn.setAttribute('aria-expanded', 'false');
         drawer.classList.remove('active');
@@ -450,7 +448,6 @@
         document.body.classList.add('nav-open');
       }
     }
-
     window.addEventListener('resize', () => {
       if (window.innerWidth > 768) {
         const btn = document.querySelector('.menu-toggle');
