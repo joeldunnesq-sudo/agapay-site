@@ -16,25 +16,22 @@
 
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    
-       :root {
-      --deep:    #0F2D1F;
-      --forest:  #2F5A39;
-      --gold:    #B8902F;
-      --cream:   #F6F1E8;
-      --stone:   #6F6A60;
-      --ink:     #171715;
-      --white:   #FFFFFF;
-    
-      --serif:   'Cormorant Garamond', Georgia, serif;
-      --sans:    'DM Sans', system-ui, sans-serif;
-    
-      --r:       10px;
-      --rlg:     16px;
+
+    :root {
+      --deep:   #0F2D1F;
+      --forest: #355E3B;
+      --gold:   #C8A24A;
+      --cream:  #F3EFE6;
+      --stone:  #A69F91;
+      --ink:    #1A1A18;
+      --serif:  'Cormorant Garamond', Georgia, serif;
+      --sans:   'DM Sans', system-ui, sans-serif;
+      --r:      10px;
+      --rlg:    16px;
     }
-    
+
     html { scroll-behavior: smooth; }
-    body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; }
+    body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; min-height: 100vh; }
     body.nav-open { overflow: hidden; }
     a { color: inherit; text-decoration: none; }
 
@@ -46,113 +43,161 @@
     /* NAV */
     nav { position: sticky; top: 0; z-index: 100; background: rgba(243,239,230,0.93); backdrop-filter: blur(12px); border-bottom: 0.5px solid rgba(166,159,145,0.35); }
     .nav-inner { max-width: 1024px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
-    .nav-logo { display: flex; align-items: center; gap: 5px; z-index: 110; }
+    .nav-logo { display: flex; align-items: center; gap: 5px; }
     .nav-mark { width: 52px; height: 52px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
     .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
     .nav-name em { color: var(--gold); font-style: normal; }
-    .nav-links { display: flex; align-items: center; gap: 1.25rem; }
-    .nav-links a { font-size: 14px; color: var(--forest); transition: color 0.2s; }
-    .nav-links a:hover { color: var(--ink); }
-    .nav-cta { display: inline-block; background: var(--deep); color: var(--cream) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; transition: background 0.2s; }
-    .nav-cta:hover { background: var(--forest) !important; }
-    .nav-give { display: inline-block; background: var(--gold); color: var(--deep) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-weight: 600; transition: opacity 0.2s; }
-    .nav-give:hover { opacity: 0.9; }
+    .nav-back { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--forest); font-weight: 500; transition: color 0.2s; }
+    .nav-back:hover { color: var(--deep); }
+    .nav-back svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-    /* HAMBURGER */
-    .menu-toggle { display: none; background: none; border: none; cursor: pointer; width: 44px; height: 44px; z-index: 110; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
-    .menu-toggle span { display: block; width: 22px; height: 2px; background-color: var(--deep); border-radius: 2px; transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.2s; }
-    .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-    .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
-    .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    /* HERO */
+    .hero { background: var(--deep); padding: 4rem 1.5rem 3.5rem; text-align: center; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 600px; height: 250px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.11) 0%, transparent 65%); pointer-events: none; }
+    .hero-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 320px; height: 320px; object-fit: contain; opacity: 0.06; pointer-events: none; z-index: 0; }
+    .hero-inner { position: relative; z-index: 1; max-width: 540px; margin: 0 auto; }
+    .hero-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1rem; font-weight: 500; }
+    .hero h1 { font-family: var(--serif); font-size: clamp(1.9rem, 4vw, 2.6rem); font-weight: 500; color: var(--cream); line-height: 1.2; margin-bottom: 0.75rem; }
+    .hero h1 em { color: var(--gold); font-style: italic; }
+    .hero-sub { font-size: 14px; color: var(--stone); line-height: 1.75; }
+
+    /* MAIN */
+    .main { max-width: 680px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+
+    /* SEARCH */
+    .search-wrap { position: relative; margin-bottom: 2rem; }
+    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+    .search-icon svg { width: 18px; height: 18px; stroke: var(--stone); fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+    .search-input {
+      width: 100%;
+      padding: 14px 14px 14px 44px;
+      background: white;
+      border: 0.5px solid rgba(166,159,145,0.45);
+      border-radius: var(--rlg);
+      font-size: 15px;
+      font-family: var(--sans);
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .search-input::placeholder { color: var(--stone); }
+    .search-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(200,162,74,0.1); }
+    .search-clear {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; padding: 4px;
+      color: var(--stone); display: none; align-items: center; justify-content: center;
+    }
+    .search-clear svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+    .search-clear.visible { display: flex; }
+
+    /* FILTER PILLS */
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.75rem; }
+    .pill {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 0.5px solid rgba(166,159,145,0.4);
+      background: white;
+      color: var(--stone);
+      transition: all 0.15s;
+      font-family: var(--sans);
+    }
+    .pill:hover { border-color: var(--gold); color: var(--ink); }
+    .pill.active { background: var(--deep); color: var(--cream); border-color: var(--deep); }
+
+    /* RESULTS META */
+    .results-meta { font-size: 12px; color: var(--stone); margin-bottom: 1rem; letter-spacing: 0.02em; }
+    .results-meta span { color: var(--gold); font-weight: 500; }
+
+    /* PARISH LIST */
+    .parish-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .parish-card {
+      background: white;
+      border: 0.5px solid rgba(166,159,145,0.35);
+      border-radius: var(--rlg);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+      text-decoration: none;
+      color: inherit;
+    }
+    .parish-card:hover {
+      border-color: rgba(200,162,74,0.5);
+      box-shadow: 0 4px 16px rgba(15,45,31,0.07);
+      transform: translateY(-1px);
+    }
+
+    .parish-avatar {
+      width: 48px; height: 48px; min-width: 48px;
+      border-radius: 10px;
+      background: var(--deep);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--serif);
+      font-size: 18px;
+      color: var(--gold);
+      font-weight: 500;
+    }
+    .parish-avatar.monastery { background: rgba(200,162,74,0.12); border: 0.5px solid rgba(200,162,74,0.3); }
+    .parish-avatar.monastery span { color: var(--gold); }
+
+    .parish-info { flex: 1; min-width: 0; }
+    .parish-name { font-size: 15px; font-weight: 500; color: var(--ink); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .parish-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .parish-jurisdiction { font-size: 12px; color: var(--stone); }
+    .parish-dot { width: 3px; height: 3px; border-radius: 50%; background: rgba(166,159,145,0.5); flex-shrink: 0; }
+    .parish-location { font-size: 12px; color: var(--stone); }
+
+    .parish-badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .parish-badge.free { background: rgba(200,162,74,0.1); color: #8B6B1F; border: 0.5px solid rgba(200,162,74,0.3); }
+    .parish-badge.verified { background: rgba(53,94,59,0.08); color: var(--forest); border: 0.5px solid rgba(53,94,59,0.2); }
+
+    .parish-arrow { color: var(--stone); flex-shrink: 0; transition: transform 0.2s, color 0.2s; }
+    .parish-card:hover .parish-arrow { transform: translateX(3px); color: var(--gold); }
+    .parish-arrow svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* EMPTY STATE */
+    .empty-state { text-align: center; padding: 4rem 2rem; display: none; }
+    .empty-state.visible { display: block; }
+    .empty-state p { font-family: var(--serif); font-size: 1.3rem; font-style: italic; color: var(--stone); margin-bottom: 0.5rem; }
+    .empty-state span { font-size: 13px; color: rgba(166,159,145,0.7); }
+
+    /* DIVIDER */
+    .list-divider { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin: 1.5rem 0 0.75rem; }
+
+    /* MOBILE NAV */
+    .menu-toggle { display: none; }
     .mobile-nav-drawer { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background-color: var(--cream); z-index: 105; padding: 6rem 2rem 3rem; display: flex; flex-direction: column; gap: 2rem; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s; overflow-y: auto; }
     .mobile-nav-drawer.active { opacity: 1; visibility: visible; transform: translateY(0); }
     .mobile-drawer-links { display: flex; flex-direction: column; gap: 1.5rem; }
     .mobile-drawer-links a { font-family: var(--serif); font-size: 24px; color: var(--deep); border-bottom: 0.5px solid rgba(166,159,145,0.15); padding-bottom: 0.75rem; }
     .mobile-drawer-actions { margin-top: auto; display: flex; flex-direction: column; gap: 1rem; }
-    .mobile-drawer-actions .nav-cta,
-    .mobile-drawer-actions .nav-give { text-align: center; padding: 14px; font-size: 15px; width: 100%; }
-
-    /* HERO */
-    .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
-    .hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 700px; height: 300px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.11) 0%, transparent 65%); pointer-events: none; }
-    .hero-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; height: 450px; object-fit: contain; opacity: 0.08; pointer-events: none; z-index: 0; }
-    .hero-inner { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; }
-    .hero-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1.25rem; font-weight: 500; }
-    .hero h1 { font-family: var(--serif); font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 500; color: var(--cream); line-height: 1.18; letter-spacing: -0.01em; margin-bottom: 1.5rem; }
-    .hero h1 em { color: var(--gold); font-style: italic; }
-    .hero-sub { font-size: 15px; color: var(--stone); line-height: 1.85; max-width: 480px; margin: 0 auto; }
-
-    /* BODY */
-    .body-wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
-    .section { padding: 4.5rem 0; }
-    .section h2 { font-family: var(--serif); font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 500; color: var(--deep); margin-bottom: 2rem; text-align: center; }
-
-    /* GIVING CARDS */
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
-    .card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 2rem 1.75rem; transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(15,45,31,0.1); }
-
-    /* SVG ICON CONTAINER */
-    .card-icon {
-      width: 52px; height: 52px;
-      background: rgba(200,162,74,0.1);
-      border: 0.5px solid rgba(200,162,74,0.3);
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 1.25rem;
-    }
-
-    .card h3 { font-family: var(--serif); font-size: 1.45rem; margin-bottom: 0.75rem; color: var(--deep); }
-    .card p { font-size: 14px; color: var(--stone); line-height: 1.7; }
-    .card-link { color: var(--gold); margin-top: 1.5rem; display: inline-block; font-weight: 500; font-size: 14px; transition: opacity 0.2s; }
-    .card-link:hover { opacity: 0.75; }
-
-    /* HOW IT WORKS */
-    .how-it-works { background: var(--deep); color: var(--cream); border-radius: var(--rlg); padding: 3.5rem 2rem; margin: 4rem 0; }
-    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 2rem; text-align: center; }
-    .step-number { width: 48px; height: 48px; margin: 0 auto 1rem; background: var(--gold); color: var(--deep); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--serif); font-size: 1.4rem; font-weight: 600; }
-
-    /* MONASTERY NOTE */
-    .monastery-note { text-align: center; font-size: 1.05rem; color: var(--forest); font-weight: 500; margin: 2rem 0; display: flex; align-items: center; justify-content: center; gap: 8px; }
-
-    /* CTA */
-    .final-cta { background: var(--forest); border-radius: var(--rlg); padding: 3.5rem 2rem; text-align: center; margin: 4rem 0; }
-    .final-cta h2 { font-family: var(--serif); font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 500; color: var(--cream); margin-bottom: 1rem; }
-    .final-cta p { color: rgba(243,239,230,0.85); max-width: 420px; margin: 0 auto 1.75rem; font-size: 15px; line-height: 1.8; }
-    .final-cta a { background: var(--gold); color: var(--deep); padding: 14px 32px; border-radius: var(--r); font-weight: 500; display: inline-block; transition: opacity 0.2s; }
-    .final-cta a:hover { opacity: 0.88; }
-
-    /* FOOTER */
-    footer { background: var(--deep); padding: 3.5rem 1.5rem 0; }
-    .footer-inner { max-width: 860px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 3rem; padding-bottom: 3rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
-    .footer-brand { display: flex; flex-direction: column; gap: 8px; }
-    .footer-logo { display: flex; align-items: center; gap: 8px; }
-    .footer-name { font-family: var(--serif); font-size: 32px; color: var(--cream); font-weight: 500; }
-    .footer-name em { color: var(--gold); font-style: normal; }
-    .footer-tagline { font-family: var(--serif); font-size: 16px; font-style: italic; color: rgba(243,239,230,0.7); }
-    .footer-nav { display: flex; gap: 3rem; flex-wrap: wrap; }
-    .footer-nav-group { display: flex; flex-direction: column; gap: 10px; }
-    .footer-nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin-bottom: 2px; }
-    .footer-nav-group a { font-size: 13px; color: rgba(166,159,145,0.55); transition: color 0.2s; }
-    .footer-nav-group a:hover { color: var(--cream); }
-    .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
-    .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.3); }
 
     /* SCROLL ANIMATIONS */
-    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
-    .reveal-delay-1 { transition-delay: 0.1s; }
-    .reveal-delay-2 { transition-delay: 0.2s; }
-    .reveal-delay-3 { transition-delay: 0.3s; }
-    .reveal-delay-4 { transition-delay: 0.4s; }
-    .reveal-delay-5 { transition-delay: 0.5s; }
+    .reveal-delay-1 { transition-delay: 0.05s; }
+    .reveal-delay-2 { transition-delay: 0.1s; }
+    .reveal-delay-3 { transition-delay: 0.15s; }
+    .reveal-delay-4 { transition-delay: 0.2s; }
+    .reveal-delay-5 { transition-delay: 0.25s; }
 
-    /* RESPONSIVE */
-    @media (max-width: 768px) {
-      .menu-toggle { display: flex; }
-      .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
-      .nav-inner .nav-cta, .nav-inner .nav-give { display: none; }
-      .cards { grid-template-columns: 1fr; }
+    @media (max-width: 480px) {
+      .hero { padding: 3rem 1.25rem 2.5rem; }
+      .main { padding: 2rem 1.25rem 4rem; }
+      .parish-card { padding: 1rem 1.25rem; }
     }
   </style>
 </head>
@@ -165,211 +210,162 @@
     <div class="nav-inner">
       <a href="/" class="nav-logo" aria-label="AgaPay Home">
         <div class="nav-mark">
-          <img src="/mark.png" alt="AgaPay" style="width: 48px; height: 48px; object-fit: contain;" />
+          <img src="/mark.png" alt="AgaPay" style="width:48px;height:48px;object-fit:contain;" />
         </div>
         <span class="nav-name">Aga<em>Pay</em></span>
       </a>
-      <div class="nav-links">
-        <a href="/">Home</a>
-        <a href="/features">Features</a>
-        <a href="/pricing">Pricing</a>
-        <a href="/why">Why AgaPay?</a>
-        <a href="/about">About</a>
-        <a href="/register" class="nav-cta">Register parish</a>
-        <a href="/give" class="nav-give">Give now</a>
-      </div>
-      <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle navigation" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
+      <a href="/give" class="nav-back">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to giving
+      </a>
     </div>
   </nav>
-
-  <div class="mobile-nav-drawer" id="mobileDrawer" aria-hidden="true">
-    <div class="mobile-drawer-links">
-      <a href="/" onclick="toggleMenu()">Home</a>
-      <a href="/features" onclick="toggleMenu()">Features</a>
-      <a href="/pricing" onclick="toggleMenu()">Pricing</a>
-      <a href="/why" onclick="toggleMenu()">Why AgaPay?</a>
-      <a href="/about" onclick="toggleMenu()">About</a>
-    </div>
-    <div class="mobile-drawer-actions">
-      <a href="/register" class="nav-cta" onclick="toggleMenu()">Register parish</a>
-      <a href="/give" class="nav-give" onclick="toggleMenu()">Give now</a>
-    </div>
-  </div>
 
   <header class="hero">
     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
     <div class="hero-inner">
-      <div class="hero-eyebrow">Give with Reverence</div>
-      <h1>Give as the Church<br>has always <em>given.</em></h1>
-      <p class="hero-sub">Weekly stewardship, candles, panakhida, feast offerings, and acts of mercy — all in one Orthodox-native platform.</p>
+      <div class="hero-eyebrow">Select your community</div>
+      <h1>Where would you like<br>to <em>give today?</em></h1>
+      <p class="hero-sub">Search for your parish or monastery by name, city, or jurisdiction.</p>
     </div>
   </header>
 
-  <main class="body-wrap">
-    <section class="section">
-      <h2 class="reveal">Ways to Give</h2>
-      <div class="cards">
+  <main class="main">
 
-        <!-- WEEKLY STEWARDSHIP -->
-        <div class="card reveal reveal-delay-1">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="7" width="22" height="16" rx="3"/>
-              <path d="M3 11h22"/>
-              <circle cx="8" cy="17" r="1.5" fill="#C8A24A" stroke="none"/>
-              <path d="M12 17h8"/>
-            </svg>
-          </div>
-          <h3>Weekly Stewardship</h3>
-          <p>Consistent support for your parish, aligned with the liturgical calendar.</p>
-          <a href="/give/select" class="card-link">Set up recurring →</a>
-        </div>
-
-        <!-- CANDLES & PANAKHIDA -->
-        <div class="card reveal reveal-delay-2">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/>
-              <path d="M14 17v7"/>
-              <path d="M11 24h6"/>
-              <circle cx="14" cy="10" r="1.5" fill="#C8A24A" stroke="none"/>
-            </svg>
-          </div>
-          <h3>Candles &amp; Panakhida</h3>
-          <p>Light candles and submit names for the living and departed.</p>
-          <a href="/give/select" class="card-link">Light a candle →</a>
-        </div>
-
-        <!-- FEAST DAY OFFERINGS -->
-        <div class="card reveal reveal-delay-3">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="5" width="22" height="20" rx="3"/>
-              <path d="M3 11h22"/>
-              <path d="M9 3v4M19 3v4"/>
-              <path d="M8 16h4M8 20h8"/>
-            </svg>
-          </div>
-          <h3>Feast Day Offerings</h3>
-          <p>Honor saints and major feasts of the Church.</p>
-          <a href="/give/select" class="card-link">Give to a feast →</a>
-        </div>
-
-        <!-- DESIGNATED FUNDS -->
-        <div class="card reveal reveal-delay-4">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 22h20"/>
-              <path d="M6 22V14l3-2v10"/>
-              <path d="M12 22V10l3-2v14"/>
-              <path d="M18 22V6l3-2v18"/>
-            </svg>
-          </div>
-          <h3>Designated Funds</h3>
-          <p>Building projects, missions, youth, and specific parish needs.</p>
-          <a href="/give/select" class="card-link">Browse funds →</a>
-        </div>
-
-        <!-- LOVE OFFERINGS -->
-        <div class="card reveal reveal-delay-5">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 22s-9-5-9-11a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 6-9 11-9 11z"/>
-            </svg>
-          </div>
-          <h3>Love Offerings &amp; Relief</h3>
-          <p>Support for clergy families, widows, monasteries, and emergency appeals.</p>
-          <a href="/give/select" class="card-link">Make a love offering →</a>
-        </div>
-
+    <!-- SEARCH -->
+    <div class="search-wrap reveal">
+      <div class="search-icon">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       </div>
-    </section>
-
-    <!-- HOW IT WORKS -->
-    <div class="how-it-works reveal">
-      <h2 style="color: var(--cream); text-align: center; margin-bottom: 2.5rem; font-family: var(--serif); font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 500;">How It Works</h2>
-      <div class="steps">
-        <div>
-          <div class="step-number">1</div>
-          <p style="color: rgba(243,239,230,0.85); font-size: 14px; line-height: 1.7;"><strong style="color: var(--cream); display: block; margin-bottom: 4px;">Choose</strong>Your gift type and parish</p>
-        </div>
-        <div>
-          <div class="step-number">2</div>
-          <p style="color: rgba(243,239,230,0.85); font-size: 14px; line-height: 1.7;"><strong style="color: var(--cream); display: block; margin-bottom: 4px;">Intention</strong>Add names and notes</p>
-        </div>
-        <div>
-          <div class="step-number">3</div>
-          <p style="color: rgba(243,239,230,0.85); font-size: 14px; line-height: 1.7;"><strong style="color: var(--cream); display: block; margin-bottom: 4px;">Give</strong>One-time or recurring</p>
-        </div>
-        <div>
-          <div class="step-number">4</div>
-          <p style="color: rgba(243,239,230,0.85); font-size: 14px; line-height: 1.7;"><strong style="color: var(--cream); display: block; margin-bottom: 4px;">Receive</strong>Confirmation &amp; parish record</p>
-        </div>
-      </div>
+      <input
+        type="search"
+        class="search-input"
+        id="searchInput"
+        placeholder="Search parishes, monasteries, cities…"
+        autocomplete="off"
+        aria-label="Search parishes"
+      />
+      <button class="search-clear" id="searchClear" aria-label="Clear search">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
 
-    <!-- MONASTERY NOTE -->
-    <p class="monastery-note reveal">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#355E3B" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M12 2l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4z"/>
-        <path d="M12 13v9"/>
-        <path d="M9 22h6"/>
-      </svg>
-      Monastic donations are completely free — no platform fees, ever
-    </p>
-
-    <!-- FINAL CTA -->
-    <div class="final-cta reveal">
-      <h2>Ready to give?</h2>
-      <p>Join Orthodox Christians who are giving with reverence and simplicity.</p>
-      <a href="/give/select">Start Giving Now</a>
+    <!-- FILTER PILLS -->
+    <div class="filters reveal reveal-delay-1" role="group" aria-label="Filter by jurisdiction">
+      <button class="pill active" data-filter="all">All</button>
+      <button class="pill" data-filter="rocor">ROCOR</button>
+      <button class="pill" data-filter="oca">OCA</button>
+      <button class="pill" data-filter="antiochian">Antiochian</button>
+      <button class="pill" data-filter="goa">GOA</button>
+      <button class="pill" data-filter="serbian">Serbian</button>
+      <button class="pill" data-filter="monastery">Monasteries</button>
     </div>
+
+    <!-- RESULTS META -->
+    <div class="results-meta reveal reveal-delay-2" id="resultsMeta">
+      Showing <span id="resultsCount">5</span> communities
+    </div>
+
+    <!-- PARISH LIST -->
+    <div class="parish-list" id="parishList" aria-label="Parish list">
+
+      <div class="list-divider" id="dividerMonasteries">Monasteries &amp; Sketes</div>
+
+      <a href="/give/holy-theotokos-skete" class="parish-card reveal reveal-delay-1"
+         data-name="Holy Theotokos Skete" data-jurisdiction="rocor" data-type="monastery" data-city="Nahant, MA">
+        <div class="parish-avatar monastery">
+          <span>☩</span>
+        </div>
+        <div class="parish-info">
+          <div class="parish-name">Holy Theotokos Skete</div>
+          <div class="parish-meta">
+            <span class="parish-jurisdiction">ROCOR</span>
+            <span class="parish-dot"></span>
+            <span class="parish-location">Nahant, MA</span>
+          </div>
+        </div>
+        <span class="parish-badge free">Free forever</span>
+        <span class="parish-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </a>
+
+      <div class="list-divider" id="dividerParishes">Parishes &amp; Missions</div>
+
+      <a href="/give/st-seraphim-mission" class="parish-card reveal reveal-delay-2"
+         data-name="St. Seraphim of Sarov Mission" data-jurisdiction="rocor" data-type="parish" data-city="Lubbock, TX">
+        <div class="parish-avatar">Сф</div>
+        <div class="parish-info">
+          <div class="parish-name">St. Seraphim of Sarov Mission</div>
+          <div class="parish-meta">
+            <span class="parish-jurisdiction">ROCOR</span>
+            <span class="parish-dot"></span>
+            <span class="parish-location">Lubbock, TX</span>
+          </div>
+        </div>
+        <span class="parish-badge verified">Verified</span>
+        <span class="parish-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </a>
+
+      <a href="/give/st-nicholas-parish" class="parish-card reveal reveal-delay-3"
+         data-name="St. Nicholas Orthodox Church" data-jurisdiction="antiochian" data-type="parish" data-city="Dallas, TX">
+        <div class="parish-avatar">Νκ</div>
+        <div class="parish-info">
+          <div class="parish-name">St. Nicholas Orthodox Church</div>
+          <div class="parish-meta">
+            <span class="parish-jurisdiction">Antiochian</span>
+            <span class="parish-dot"></span>
+            <span class="parish-location">Dallas, TX</span>
+          </div>
+        </div>
+        <span class="parish-badge verified">Verified</span>
+        <span class="parish-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </a>
+
+      <a href="/give/st-john-the-theologian" class="parish-card reveal reveal-delay-4"
+         data-name="St. John the Theologian" data-jurisdiction="oca" data-type="parish" data-city="Memphis, TN">
+        <div class="parish-avatar">Іω</div>
+        <div class="parish-info">
+          <div class="parish-name">St. John the Theologian</div>
+          <div class="parish-meta">
+            <span class="parish-jurisdiction">OCA</span>
+            <span class="parish-dot"></span>
+            <span class="parish-location">Memphis, TN</span>
+          </div>
+        </div>
+        <span class="parish-badge verified">Verified</span>
+        <span class="parish-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </a>
+
+      <a href="/give/annunciation-cathedral" class="parish-card reveal reveal-delay-5"
+         data-name="Annunciation Cathedral" data-jurisdiction="goa" data-type="parish" data-city="Atlanta, GA">
+        <div class="parish-avatar">Εα</div>
+        <div class="parish-info">
+          <div class="parish-name">Annunciation Cathedral</div>
+          <div class="parish-meta">
+            <span class="parish-jurisdiction">GOA</span>
+            <span class="parish-dot"></span>
+            <span class="parish-location">Atlanta, GA</span>
+          </div>
+        </div>
+        <span class="parish-badge verified">Verified</span>
+        <span class="parish-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </a>
+
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" id="emptyState" aria-live="polite">
+      <p>No communities found.</p>
+      <span>Try a different search or filter.</span>
+    </div>
+
+    <!-- REGISTER CTA -->
+    <div style="margin-top:2.5rem;padding:1.5rem 2rem;background:rgba(200,162,74,0.07);border:0.5px solid rgba(200,162,74,0.25);border-radius:var(--rlg);text-align:center;" class="reveal">
+      <p style="font-size:14px;color:var(--ink);margin-bottom:0.4rem;font-weight:500;">Don't see your parish?</p>
+      <p style="font-size:13px;color:var(--stone);margin-bottom:1rem;line-height:1.6;">AgaPay is currently onboarding founding parishes. Ask your priest or council to register.</p>
+      <a href="/#waitlist" style="display:inline-block;background:var(--deep);color:var(--cream);padding:10px 22px;border-radius:var(--r);font-size:13px;font-weight:500;font-family:var(--sans);transition:background 0.2s;">Register your parish →</a>
+    </div>
+
   </main>
-
-  <footer>
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <div class="footer-logo">
-          <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;">
-            <img src="/mark.png" alt="AgaPay" style="width:48px;height:48px;object-fit:contain;" />
-          </div>
-          <span class="footer-name">Aga<em>Pay</em></span>
-        </div>
-        <p class="footer-tagline">Love how you give.</p>
-      </div>
-      <div class="footer-nav">
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Platform</div>
-          <a href="/features">Features</a>
-          <a href="/pricing">Pricing</a>
-          <a href="/why">Why AgaPay</a>
-          <a href="/give">Give now</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Company</div>
-          <a href="/about">About</a>
-          <a href="/contact">Contact</a>
-          <a href="/register">Register parish</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Legal</div>
-          <a href="/privacy">Privacy Policy</a>
-          <a href="/terms">Terms of Service</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Contact</div>
-          <a href="mailto:hello@agapay.app">hello@agapay.app</a>
-          <a href="mailto:parishes@agapay.app">parishes@agapay.app</a>
-          <a href="mailto:support@agapay.app">support@agapay.app</a>
-        </div>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p>© 2026 AgaPay · agapay.app</p>
-    </div>
-  </footer>
 
   <script>
     // SCROLL REVEAL
@@ -380,35 +376,95 @@
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.06 });
+    }, { threshold: 0.05 });
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // SEARCH & FILTER
+    const searchInput = document.getElementById('searchInput');
+    const searchClear = document.getElementById('searchClear');
+    const parishList = document.getElementById('parishList');
+    const emptyState = document.getElementById('emptyState');
+    const resultsCount = document.getElementById('resultsCount');
+    const pills = document.querySelectorAll('.pill');
+    const dividerMonasteries = document.getElementById('dividerMonasteries');
+    const dividerParishes = document.getElementById('dividerParishes');
+
+    let activeFilter = 'all';
+    let searchQuery = '';
+
+    function filterParishes() {
+      const cards = parishList.querySelectorAll('.parish-card');
+      let visibleCount = 0;
+      let monasteryVisible = 0;
+      let parishVisible = 0;
+
+      cards.forEach(card => {
+        const name = card.dataset.name.toLowerCase();
+        const jurisdiction = card.dataset.jurisdiction;
+        const type = card.dataset.type;
+        const city = card.dataset.city.toLowerCase();
+
+        const matchesSearch = !searchQuery ||
+          name.includes(searchQuery) ||
+          city.includes(searchQuery) ||
+          jurisdiction.includes(searchQuery);
+
+        const matchesFilter = activeFilter === 'all' ||
+          (activeFilter === 'monastery' && type === 'monastery') ||
+          jurisdiction === activeFilter;
+
+        if (matchesSearch && matchesFilter) {
+          card.style.display = 'flex';
+          visibleCount++;
+          if (type === 'monastery') monasteryVisible++;
+          else parishVisible++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      dividerMonasteries.style.display = monasteryVisible > 0 ? 'block' : 'none';
+      dividerParishes.style.display = parishVisible > 0 ? 'block' : 'none';
+
+      resultsCount.textContent = visibleCount;
+      emptyState.classList.toggle('visible', visibleCount === 0);
+    }
+
+    searchInput.addEventListener('input', () => {
+      searchQuery = searchInput.value.trim().toLowerCase();
+      searchClear.classList.toggle('visible', searchQuery.length > 0);
+      filterParishes();
+    });
+
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      searchQuery = '';
+      searchClear.classList.remove('visible');
+      searchInput.focus();
+      filterParishes();
+    });
+
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        pills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        activeFilter = pill.dataset.filter;
+        filterParishes();
+      });
+    });
 
     // MOBILE NAV
     function toggleMenu() {
       const btn = document.querySelector('.menu-toggle');
       const drawer = document.getElementById('mobileDrawer');
-      const isOpen = drawer.classList.contains('active');
-      if (isOpen) {
-        btn.setAttribute('aria-expanded', 'false');
-        drawer.classList.remove('active');
-        drawer.setAttribute('aria-hidden', 'true');
-        document.body.classList.remove('nav-open');
-      } else {
-        btn.setAttribute('aria-expanded', 'true');
-        drawer.classList.add('active');
-        drawer.setAttribute('aria-hidden', 'false');
-        document.body.classList.add('nav-open');
+      const isOpen = drawer && drawer.classList.contains('active');
+      if (btn) btn.setAttribute('aria-expanded', !isOpen);
+      if (drawer) {
+        drawer.classList.toggle('active');
+        drawer.setAttribute('aria-hidden', isOpen);
       }
+      document.body.classList.toggle('nav-open');
     }
-    window.addEventListener('resize', () => {
-      if (window.innerWidth > 768) {
-        const btn = document.querySelector('.menu-toggle');
-        const drawer = document.getElementById('mobileDrawer');
-        if (btn) btn.setAttribute('aria-expanded', 'false');
-        if (drawer) { drawer.classList.remove('active'); drawer.setAttribute('aria-hidden', 'true'); }
-        document.body.classList.remove('nav-open');
-      }
-    });
   </script>
 
 </body>
