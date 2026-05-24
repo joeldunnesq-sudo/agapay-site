@@ -42,7 +42,7 @@
     /* NAV */
     nav { position: sticky; top: 0; z-index: 100; background: rgba(243,239,230,0.93); backdrop-filter: blur(12px); border-bottom: 0.5px solid rgba(166,159,145,0.35); }
     .nav-inner { max-width: 1024px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
-    .nav-logo { display: flex; align-items: center; gap: 5px; }
+    .nav-logo { display: flex; align-items: center; gap: 5px; z-index: 110; }
     .nav-mark { width: 52px; height: 52px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
     .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
     .nav-name em { color: var(--gold); font-style: normal; }
@@ -51,6 +51,8 @@
     .nav-links a:hover { color: var(--ink); }
     .nav-cta { display: inline-block; background: var(--deep); color: var(--cream) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; transition: background 0.2s; }
     .nav-cta:hover { background: var(--forest) !important; }
+    .nav-give { display: inline-block; background: var(--gold); color: var(--deep) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-weight: 600; transition: opacity 0.2s; }
+    .nav-give:hover { opacity: 0.9; }
     .menu-toggle { display: none; background: none; border: none; cursor: pointer; width: 44px; height: 44px; z-index: 110; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
     .menu-toggle span { display: block; width: 22px; height: 2px; background-color: var(--deep); border-radius: 2px; transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.2s; }
     .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
@@ -61,7 +63,8 @@
     .mobile-drawer-links { display: flex; flex-direction: column; gap: 1.5rem; }
     .mobile-drawer-links a { font-family: var(--serif); font-size: 24px; color: var(--deep); border-bottom: 0.5px solid rgba(166,159,145,0.15); padding-bottom: 0.75rem; }
     .mobile-drawer-actions { margin-top: auto; display: flex; flex-direction: column; gap: 1rem; }
-    .mobile-drawer-actions .nav-cta { text-align: center; padding: 14px; font-size: 15px; width: 100%; }
+    .mobile-drawer-actions .nav-cta,
+    .mobile-drawer-actions .nav-give { text-align: center; padding: 14px; font-size: 15px; width: 100%; }
 
     /* HERO */
     .hero { background: var(--deep); padding: 4rem 1.5rem 3.5rem; text-align: center; position: relative; overflow: hidden; }
@@ -76,15 +79,14 @@
     /* MAIN */
     .main { max-width: 640px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
 
-    /* PROGRESS BAR */
+    /* PROGRESS */
     .progress-wrap { margin-bottom: 2.5rem; }
     .progress-steps { display: flex; align-items: center; gap: 0; margin-bottom: 0.75rem; }
     .progress-step { display: flex; align-items: center; flex: 1; }
     .step-circle { width: 32px; height: 32px; min-width: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; font-family: var(--sans); transition: all 0.3s ease; border: 1.5px solid rgba(166,159,145,0.4); background: white; color: var(--stone); }
     .step-circle.active { background: var(--deep); color: var(--cream); border-color: var(--deep); }
-    .step-circle.complete { background: var(--forest); color: var(--cream); border-color: var(--forest); }
-    .step-circle.complete::after { content: '✓'; }
-    .step-circle.complete span { display: none; }
+    .step-circle.complete { background: var(--forest); color: var(--cream); border-color: var(--forest); font-size: 0; }
+    .step-circle.complete::after { content: '✓'; font-size: 13px; }
     .step-line { flex: 1; height: 1.5px; background: rgba(166,159,145,0.3); transition: background 0.3s ease; }
     .step-line.complete { background: var(--forest); }
     .progress-labels { display: flex; justify-content: space-between; }
@@ -136,7 +138,7 @@
     .type-btn:hover { border-color: var(--gold); color: var(--ink); }
     .type-btn.selected { background: var(--deep); color: var(--cream); border-color: var(--deep); }
 
-    /* DIVIDER */
+    /* DIVIDERS */
     .form-divider { border: none; border-top: 0.5px solid rgba(166,159,145,0.25); margin: 1.75rem 0; }
     .form-section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin-bottom: 1.25rem; }
 
@@ -148,6 +150,7 @@
     .btn-next:hover { background: var(--forest); }
     .btn-submit { padding: 15px 32px; background: var(--gold); color: var(--deep); border: none; border-radius: var(--r); font-size: 16px; font-family: var(--serif); font-style: italic; font-weight: 500; letter-spacing: 0.02em; cursor: pointer; transition: opacity 0.2s, transform 0.15s; box-shadow: 0 4px 20px rgba(200,162,74,0.3); flex: 1; }
     .btn-submit:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
     /* REVIEW CARD */
     .review-section { margin-bottom: 1.5rem; }
@@ -165,6 +168,11 @@
     .agreement-wrap label a { color: var(--gold); }
     .agreement-wrap label strong { color: var(--ink); }
 
+    /* STEP PANELS */
+    .step-panel { display: none; }
+    .step-panel.active { display: block; animation: fadeSlide 0.3s ease; }
+    @keyframes fadeSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
     /* SUCCESS */
     .success-state { display: none; text-align: center; padding: 3rem 1.5rem; }
     .success-state.visible { display: block; }
@@ -179,10 +187,12 @@
     .success-btn-primary { background: var(--deep); color: var(--cream); }
     .success-btn-secondary { background: transparent; border: 0.5px solid rgba(166,159,145,0.4); color: var(--stone); }
 
-    /* STEP PANELS */
-    .step-panel { display: none; }
-    .step-panel.active { display: block; animation: fadeSlide 0.3s ease; }
-    @keyframes fadeSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    /* SENDING STATE */
+    .sending-state { display: none; text-align: center; padding: 3rem 1.5rem; }
+    .sending-state.visible { display: block; }
+    .spinner { width: 40px; height: 40px; border: 3px solid rgba(200,162,74,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1.5rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .sending-state p { font-family: var(--serif); font-size: 1.2rem; font-style: italic; color: var(--stone); }
 
     /* FOOTER */
     footer { background: var(--deep); padding: 3.5rem 1.5rem 0; }
@@ -202,15 +212,13 @@
 
     @media (max-width: 768px) {
       .menu-toggle { display: flex; }
-      .nav-links a:not(.nav-cta) { display: none; }
-      .nav-inner .nav-cta { display: none; }
+      .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
+      .nav-inner .nav-cta, .nav-inner .nav-give { display: none; }
       .form-row { grid-template-columns: 1fr; }
       .form-card { padding: 1.75rem; }
-    }
-    @media (max-width: 480px) {
-      .footer-inner { flex-direction: column; }
       .type-toggle { flex-direction: column; }
     }
+    @media (max-width: 480px) { .footer-inner { flex-direction: column; } }
   </style>
 </head>
 <body>
@@ -226,15 +234,15 @@
         </div>
         <span class="nav-name">Aga<em>Pay</em></span>
       </a>
-     <div class="nav-links">
+       <div class="nav-links">
         <a href="/">Home</a>
         <a href="/features">Features</a>
         <a href="/pricing">Pricing</a>
         <a href="/why">Why AgaPay?</a>
-        <a href="/how-it-works">How it Works</a>
+        <a href="/how-it-works">How AgaPay Works</a>
         <a href="/about">About</a>
         <a href="/give/select" class="nav-give">Give now</a>
-        <a href="/register" class="nav-cta">Register parish</a>
+        
       </div>
       <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle menu" aria-expanded="false">
         <span></span><span></span><span></span>
@@ -259,7 +267,7 @@
     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
     <div class="hero-inner">
       <div class="hero-eyebrow">Parish Registration</div>
-      <h1>Bring AgaPay <br>to <em>your community.</em></h1>
+      <h1>Bring your community<br>onto <em>AgaPay.</em></h1>
       <p class="hero-sub">Registration takes about five minutes. Every parish is reviewed personally before activation. You will hear from us within one business day.</p>
     </div>
   </header>
@@ -283,23 +291,23 @@
       </div>
       <div class="progress-labels">
         <span class="progress-label active" id="label-1">Your community</span>
-        <span class="progress-label" id="label-2">Contact & staff</span>
-        <span class="progress-label" id="label-3">Review & submit</span>
+        <span class="progress-label" id="label-2">Contact &amp; staff</span>
+        <span class="progress-label" id="label-3">Review &amp; submit</span>
       </div>
     </div>
 
-    <!-- STEP 1 — COMMUNITY INFO -->
+    <!-- STEP 1 -->
     <div class="step-panel active" id="step-1">
       <div class="form-card">
         <div class="form-card-title">Your community</div>
-        <p class="form-card-sub">Tell us about your parish, mission, or monastery. All fields marked <span style="color:var(--gold);">✦</span> are required.</p>
+        <p class="form-card-sub">Tell us about your parish, mission, or monastery. Fields marked <span style="color:var(--gold);">✦</span> are required.</p>
 
         <div class="form-group" style="margin-bottom:1rem;">
           <label>Community type <span class="required">✦</span></label>
           <div class="type-toggle">
-            <button class="type-btn selected" data-type="parish" onclick="selectType(this)">Parish</button>
-            <button class="type-btn" data-type="mission" onclick="selectType(this)">Mission</button>
-            <button class="type-btn" data-type="monastery" onclick="selectType(this)">Monastery / Skete</button>
+            <button class="type-btn selected" data-type="Parish" onclick="selectType(this)">Parish</button>
+            <button class="type-btn" data-type="Mission" onclick="selectType(this)">Mission</button>
+            <button class="type-btn" data-type="Monastery / Skete" onclick="selectType(this)">Monastery / Skete</button>
           </div>
         </div>
 
@@ -357,7 +365,7 @@
         <div class="form-group">
           <label for="website">Parish website</label>
           <input type="url" id="website" placeholder="https://saintseraphim.org" />
-          <span class="form-hint">If you have one. Leave blank if not.</span>
+          <span class="form-hint">Leave blank if you don't have one.</span>
         </div>
 
         <div class="form-nav">
@@ -367,11 +375,11 @@
       </div>
     </div>
 
-    <!-- STEP 2 — CONTACT & STAFF -->
+    <!-- STEP 2 -->
     <div class="step-panel" id="step-2">
       <div class="form-card">
         <div class="form-card-title">Contact &amp; staff</div>
-        <p class="form-card-sub">We need to reach a real person at your community. All information goes directly to the founder — no automated systems.</p>
+        <p class="form-card-sub">We need to reach a real person at your community. This goes directly to the founder — no automated intake system.</p>
 
         <div class="form-section-label">Priest / Administrator</div>
 
@@ -421,7 +429,7 @@
         <div class="form-group">
           <label for="notes">Anything else we should know?</label>
           <textarea id="notes" placeholder="Tell us about your community, your current giving process, or any questions you have…"></textarea>
-          <span class="form-hint">Optional. This goes directly to the founder.</span>
+          <span class="form-hint">Optional. Goes directly to the founder.</span>
         </div>
 
         <div class="form-nav">
@@ -431,11 +439,11 @@
       </div>
     </div>
 
-    <!-- STEP 3 — REVIEW & SUBMIT -->
+    <!-- STEP 3 — REVIEW -->
     <div class="step-panel" id="step-3">
       <div class="form-card">
         <div class="form-card-title">Review &amp; submit</div>
-        <p class="form-card-sub">Please confirm your information before submitting. We will review your registration and respond within one business day.</p>
+        <p class="form-card-sub">Please confirm your information before submitting. We review every registration personally and will respond within one business day.</p>
 
         <div class="review-section">
           <div class="review-section-label">Your community</div>
@@ -456,9 +464,15 @@
 
         <div class="form-nav" style="margin-top:1.5rem;">
           <button class="btn-back" onclick="goToStep(2)">← Back</button>
-          <button class="btn-submit" onclick="handleSubmit()">Submit registration →</button>
+          <button class="btn-submit" id="submitBtn" onclick="handleSubmit()">Submit registration →</button>
         </div>
       </div>
+    </div>
+
+    <!-- SENDING STATE -->
+    <div class="sending-state" id="sendingState">
+      <div class="spinner"></div>
+      <p>Sending your registration…</p>
     </div>
 
     <!-- SUCCESS STATE -->
@@ -468,8 +482,8 @@
       </div>
       <h2>Glory to God.</h2>
       <p class="success-parish" id="successParishName"></p>
-      <p>Your registration has been received. The founder will review it personally and respond to <strong id="successEmail"></strong> within one business day.</p>
-      <p style="margin-top:0.5rem;">A confirmation has been sent to your email. If you don't see it within a few minutes, check your spam folder.</p>
+      <p>Your registration has been received and sent directly to the founder. You will hear from us at <strong id="successEmail"></strong> within one business day.</p>
+      <p style="margin-top:0.5rem;">A confirmation has been sent to your email address.</p>
       <p class="success-ref" id="successRef"></p>
       <div class="success-actions">
         <a href="/" class="success-btn-primary">Return home</a>
@@ -496,15 +510,14 @@
           <a href="/features">Features</a>
           <a href="/pricing">Pricing</a>
           <a href="/why">Why AgaPay</a>
-          <a href="how-it-works">How AgaPay Works</a>
-         
+          <a href="/how-it-works">How AgaPay Works</a>
         </div>
         <div class="footer-nav-group">
           <div class="footer-nav-label">Company</div>
           <a href="/about">About</a>
           <a href="/contact">Contact</a>
           <a href="/register">Register parish</a>
-          <a href="/give">Give now</a>
+          <a href="/give/select">Give now</a>
         </div>
         <div class="footer-nav-group">
           <div class="footer-nav-label">Legal</div>
@@ -519,42 +532,37 @@
   </footer>
 
   <script>
-    // STATE
+    // ─── STATE ───────────────────────────────────────────────
     let currentStep = 1;
-    let communityType = 'parish';
+    let communityType = 'Parish';
 
-    // COMMUNITY TYPE
+    // ─── WEB3FORMS ───────────────────────────────────────────
+    // IMPORTANT: Replace YOUR_ACCESS_KEY_HERE with your actual
+    // Web3Forms access key from https://web3forms.com
+    const WEB3FORMS_KEY = '5074501b-217b-4fba-8e83-ae18a05d6f3f';
+
+    // ─── COMMUNITY TYPE ──────────────────────────────────────
     function selectType(btn) {
       document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       communityType = btn.dataset.type;
     }
 
-    // STEP NAVIGATION
+    // ─── STEP NAVIGATION ─────────────────────────────────────
     function goToStep(step) {
       if (step > currentStep && !validateStep(currentStep)) return;
 
-      // Update panels
       document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
       document.getElementById(`step-${step}`).classList.add('active');
 
-      // Update progress
       for (let i = 1; i <= 3; i++) {
         const circle = document.getElementById(`circle-${i}`);
-        const label = document.getElementById(`label-${i}`);
+        const label  = document.getElementById(`label-${i}`);
         circle.classList.remove('active', 'complete');
         label.classList.remove('active', 'complete');
-        if (i < step) {
-          circle.classList.add('complete');
-          label.classList.add('complete');
-        } else if (i === step) {
-          circle.classList.add('active');
-          label.classList.add('active');
-        }
-        if (i < 3) {
-          const line = document.getElementById(`line-${i}`);
-          line.classList.toggle('complete', i < step);
-        }
+        if (i < step)       { circle.classList.add('complete'); label.classList.add('complete'); }
+        else if (i === step) { circle.classList.add('active');  label.classList.add('active'); }
+        if (i < 3) document.getElementById(`line-${i}`).classList.toggle('complete', i < step);
       }
 
       if (step === 3) buildReview();
@@ -562,105 +570,136 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // VALIDATION
+    // ─── VALIDATION ──────────────────────────────────────────
     function validateStep(step) {
       if (step === 1) {
-        const name = document.getElementById('parishName').value.trim();
-        const jur = document.getElementById('jurisdiction').value;
-        const city = document.getElementById('city').value.trim();
-        const state = document.getElementById('state').value;
-        if (!name) { alert('Please enter your community name.'); return false; }
-        if (!jur) { alert('Please select your jurisdiction.'); return false; }
-        if (!city) { alert('Please enter your city.'); return false; }
-        if (!state) { alert('Please select your state.'); return false; }
+        if (!document.getElementById('parishName').value.trim())  { alert('Please enter your community name.'); return false; }
+        if (!document.getElementById('jurisdiction').value)        { alert('Please select your jurisdiction.'); return false; }
+        if (!document.getElementById('city').value.trim())         { alert('Please enter your city.'); return false; }
+        if (!document.getElementById('state').value)               { alert('Please select your state.'); return false; }
       }
       if (step === 2) {
-        const pFirst = document.getElementById('priestFirst').value.trim();
+        if (!document.getElementById('priestFirst').value.trim())    { alert('Please enter the priest or administrator name.'); return false; }
         const pEmail = document.getElementById('priestEmail').value.trim();
-        const pPhone = document.getElementById('priestPhone').value.trim();
-        const tFirst = document.getElementById('treasurerFirst').value.trim();
+        if (!pEmail || !pEmail.includes('@'))                         { alert('Please enter a valid email for the priest or administrator.'); return false; }
+        if (!document.getElementById('priestPhone').value.trim())    { alert('Please enter a phone number.'); return false; }
+        if (!document.getElementById('treasurerFirst').value.trim()) { alert('Please enter the treasurer\'s name.'); return false; }
         const tEmail = document.getElementById('treasurerEmail').value.trim();
-        if (!pFirst) { alert('Please enter the priest or administrator name.'); return false; }
-        if (!pEmail || !pEmail.includes('@')) { alert('Please enter a valid email address for the priest or administrator.'); return false; }
-        if (!pPhone) { alert('Please enter a phone number.'); return false; }
-        if (!tFirst) { alert('Please enter the treasurer\'s name.'); return false; }
-        if (!tEmail || !tEmail.includes('@')) { alert('Please enter a valid email for the treasurer.'); return false; }
+        if (!tEmail || !tEmail.includes('@'))                         { alert('Please enter a valid email for the treasurer.'); return false; }
       }
       return true;
     }
 
-    // BUILD REVIEW
+    // ─── BUILD REVIEW ─────────────────────────────────────────
     function buildReview() {
-      const typeLabels = { parish: 'Parish', mission: 'Mission', monastery: 'Monastery / Skete' };
-
       const community = [
-        ['Community type', typeLabels[communityType]],
-        ['Name', document.getElementById('parishName').value],
-        ['Jurisdiction', document.getElementById('jurisdiction').value],
-        ['City, State', `${document.getElementById('city').value}, ${document.getElementById('state').value}`],
-        ['Website', document.getElementById('website').value || '—'],
-      ];
-
-      const contact = [
-        ['Priest / Administrator', `${document.getElementById('priestFirst').value} ${document.getElementById('priestLast').value}`],
-        ['Priest email', document.getElementById('priestEmail').value],
-        ['Priest phone', document.getElementById('priestPhone').value],
-        ['Treasurer', `${document.getElementById('treasurerFirst').value} ${document.getElementById('treasurerLast').value}`],
-        ['Treasurer email', document.getElementById('treasurerEmail').value],
+        ['Community type', communityType],
+        ['Name',           document.getElementById('parishName').value],
+        ['Jurisdiction',   document.getElementById('jurisdiction').value],
+        ['City, State',    `${document.getElementById('city').value}, ${document.getElementById('state').value}`],
+        ['Website',        document.getElementById('website').value || '—'],
       ];
       const notes = document.getElementById('notes').value.trim();
+      const contact = [
+        ['Priest / Admin',  `${document.getElementById('priestFirst').value} ${document.getElementById('priestLast').value}`],
+        ['Priest email',    document.getElementById('priestEmail').value],
+        ['Priest phone',    document.getElementById('priestPhone').value],
+        ['Treasurer',       `${document.getElementById('treasurerFirst').value} ${document.getElementById('treasurerLast').value}`],
+        ['Treasurer email', document.getElementById('treasurerEmail').value],
+      ];
       if (notes) contact.push(['Notes', notes]);
 
       document.getElementById('reviewCommunity').innerHTML = community.map(([k,v]) =>
         `<div class="review-row"><span class="review-key">${k}</span><span class="review-val">${v}</span></div>`
       ).join('');
-
       document.getElementById('reviewContact').innerHTML = contact.map(([k,v]) =>
         `<div class="review-row"><span class="review-key">${k}</span><span class="review-val">${v}</span></div>`
       ).join('');
-
       document.getElementById('reviewParishName').textContent = document.getElementById('parishName').value;
     }
 
-    // SUBMIT
-    function handleSubmit() {
+    // ─── SUBMIT via Web3Forms ─────────────────────────────────
+    async function handleSubmit() {
       if (!document.getElementById('agreeTerms').checked) {
         alert('Please confirm canonical standing and agree to the Terms of Service before submitting.');
         return;
       }
 
-      // Hide form, show success
+      const parishName     = document.getElementById('parishName').value;
+      const priestEmail    = document.getElementById('priestEmail').value.trim();
+      const treasurerEmail = document.getElementById('treasurerEmail').value.trim();
+      const notes          = document.getElementById('notes').value.trim();
+      const ref            = 'AGP-REG-' + Date.now().toString(36).toUpperCase();
+
+      // Hide form, show spinner
       document.getElementById('progressWrap').style.display = 'none';
       document.querySelectorAll('.step-panel').forEach(p => p.style.display = 'none');
+      document.getElementById('sendingState').classList.add('visible');
 
-      const parishName = document.getElementById('parishName').value;
-      const priestEmail = document.getElementById('priestEmail').value;
-      const ref = 'AGP-REG-' + Date.now().toString(36).toUpperCase();
+      // Build the payload for Web3Forms
+      const payload = {
+        access_key:   WEB3FORMS_KEY,
+        subject:      `AgaPay Parish Registration — ${parishName}`,
+        from_name:    'AgaPay Registration',
+        replyto:      priestEmail,
+        reference:    ref,
 
-      document.getElementById('successParishName').textContent = parishName + ' has been received.';
-      document.getElementById('successEmail').textContent = priestEmail;
-      document.getElementById('successRef').textContent = 'Reference: ' + ref;
-      document.getElementById('successState').classList.add('visible');
+        // Community info
+        community_type: communityType,
+        parish_name:    parishName,
+        jurisdiction:   document.getElementById('jurisdiction').value,
+        city_state:     `${document.getElementById('city').value}, ${document.getElementById('state').value}`,
+        website:        document.getElementById('website').value || '—',
 
-      // Auto-reply email via mailto (placeholder — replace with backend when live)
-      const subject = encodeURIComponent('AgaPay Registration Received — ' + parishName);
-      const body = encodeURIComponent(
-        `Dear ${document.getElementById('priestFirst').value},\n\n` +
-        `Thank you for registering ${parishName} with AgaPay.\n\n` +
-        `We have received your registration and will review it personally. You will hear from us within one business day.\n\n` +
-        `Reference: ${ref}\n\n` +
-        `In Christ,\nJoel Dunn\nFounder, AgaPay\nhello@agapay.app`
-      );
-      setTimeout(() => {
-        window.location.href = `mailto:${priestEmail}?subject=${subject}&body=${body}`;
-      }, 800);
+        // Priest info
+        priest_name:  `${document.getElementById('priestFirst').value} ${document.getElementById('priestLast').value}`,
+        priest_email: priestEmail,
+        priest_phone: document.getElementById('priestPhone').value,
 
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Treasurer info
+        treasurer_name:  `${document.getElementById('treasurerFirst').value} ${document.getElementById('treasurerLast').value}`,
+        treasurer_email: treasurerEmail,
+
+        // Notes
+        notes: notes || '—',
+
+        // Canonical agreement
+        canonical_agreement: 'Confirmed',
+      };
+
+      try {
+        const response = await fetch('https://api.web3forms.com/submit', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body:    JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          // Show success
+          document.getElementById('sendingState').classList.remove('visible');
+          document.getElementById('successParishName').textContent = parishName + ' has been received.';
+          document.getElementById('successEmail').textContent = priestEmail;
+          document.getElementById('successRef').textContent = 'Reference: ' + ref;
+          document.getElementById('successState').classList.add('visible');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          throw new Error(result.message || 'Submission failed');
+        }
+      } catch (err) {
+        document.getElementById('sendingState').classList.remove('visible');
+        document.querySelectorAll('.step-panel').forEach(p => p.style.display = '');
+        document.getElementById(`step-3`).classList.add('active');
+        document.getElementById('progressWrap').style.display = '';
+        alert('Something went wrong sending your registration. Please email us directly at parishes@agapay.app and we\'ll get you set up.');
+        console.error('Web3Forms error:', err);
+      }
     }
 
-    // MOBILE NAV
+    // ─── MOBILE NAV ───────────────────────────────────────────
     function toggleMenu() {
-      const btn = document.querySelector('.menu-toggle');
+      const btn    = document.querySelector('.menu-toggle');
       const drawer = document.getElementById('mobileDrawer');
       const isOpen = drawer.classList.contains('active');
       btn.setAttribute('aria-expanded', !isOpen);
@@ -668,12 +707,11 @@
       drawer.setAttribute('aria-hidden', isOpen);
       document.body.classList.toggle('nav-open');
     }
-
     window.addEventListener('resize', () => {
       if (window.innerWidth > 768) {
-        const btn = document.querySelector('.menu-toggle');
+        const btn    = document.querySelector('.menu-toggle');
         const drawer = document.getElementById('mobileDrawer');
-        if (btn) btn.setAttribute('aria-expanded', 'false');
+        if (btn)    btn.setAttribute('aria-expanded', 'false');
         if (drawer) { drawer.classList.remove('active'); drawer.setAttribute('aria-hidden', 'true'); }
         document.body.classList.remove('nav-open');
       }
