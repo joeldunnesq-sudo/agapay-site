@@ -16,26 +16,28 @@
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-      :root {
-      --deep:    #0F2D1F;
-      --forest:  #2F5A39;
-      --gold:    #B8902F;
-      --cream:   #F6F1E8;
-      --stone:   #6F6A60;
-      --ink:     #171715;
-      --white:   #FFFFFF;
-    
-      --serif:   'Cormorant Garamond', Georgia, serif;
-      --sans:    'DM Sans', system-ui, sans-serif;
-    
-      --r:       10px;
-      --rlg:     16px;
+    :root {
+      --deep:   #0F2D1F;
+      --forest: #2F5A39;
+      --gold:   #B8902F;
+      --cream:  #F6F1E8;
+      --stone:  #6F6A60;
+      --ink:    #171715;
+      --white:  #FFFFFF;
+      --serif:  'Cormorant Garamond', Georgia, serif;
+      --sans:   'DM Sans', system-ui, sans-serif;
+      --r:      10px;
+      --rlg:    16px;
     }
 
     html { scroll-behavior: smooth; }
-    
     body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; }
+    body.nav-open { overflow: hidden; }
     a { color: inherit; text-decoration: none; }
+
+    .candle-glow { position: fixed; width: 500px; height: 500px; background: radial-gradient(circle, rgba(200,162,74,0.05) 0%, rgba(53,94,59,0.02) 40%, transparent 70%); filter: blur(60px); pointer-events: none; z-index: -1; border-radius: 50%; }
+    .candle-glow.top-left { top: -150px; left: -150px; }
+    .candle-glow.bottom-right { bottom: -150px; right: -150px; }
 
     /* NAV */
     nav { position: sticky; top: 0; z-index: 100; background: rgba(243,239,230,0.93); backdrop-filter: blur(12px); border-bottom: 0.5px solid rgba(166,159,145,0.35); }
@@ -47,10 +49,26 @@
     .nav-links { display: flex; align-items: center; gap: 1.25rem; }
     .nav-links a { font-size: 14px; color: var(--forest); transition: color 0.2s; }
     .nav-links a:hover { color: var(--ink); }
-    .nav-cta { display: inline-block; background: var(--deep); color: var(--cream) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; transition: background 0.2s; }
+    .nav-cta { display: inline-block; background: var(--deep); color: var(--white) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; transition: background 0.2s; }
     .nav-cta:hover { background: var(--forest) !important; }
     .nav-give { display: inline-block; background: var(--gold); color: var(--deep) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 600; transition: opacity 0.2s; }
     .nav-give:hover { opacity: 0.9; }
+
+    /* HAMBURGER */
+    .menu-toggle { display: none; background: none; border: none; cursor: pointer; width: 44px; height: 44px; z-index: 110; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
+    .menu-toggle span { display: block; width: 22px; height: 2px; background-color: var(--deep); border-radius: 2px; transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.2s; }
+    .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* MOBILE DRAWER */
+    .mobile-nav-drawer { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background-color: var(--cream); z-index: 105; padding: 6rem 2rem 3rem; display: flex; flex-direction: column; gap: 2rem; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s; overflow-y: auto; }
+    .mobile-nav-drawer.active { opacity: 1; visibility: visible; transform: translateY(0); }
+    .mobile-drawer-links { display: flex; flex-direction: column; gap: 1.5rem; }
+    .mobile-drawer-links a { font-family: var(--serif); font-size: 24px; color: var(--deep); border-bottom: 0.5px solid rgba(166,159,145,0.15); padding-bottom: 0.75rem; }
+    .mobile-drawer-actions { margin-top: auto; display: flex; flex-direction: column; gap: 1rem; }
+    .mobile-drawer-actions .nav-cta,
+    .mobile-drawer-actions .nav-give { text-align: center; padding: 14px; font-size: 15px; width: 100%; }
 
     /* HERO */
     .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
@@ -65,18 +83,18 @@
     /* WRAP */
     .wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
 
-    /* SECTION */
+    /* SECTIONS */
     .section { padding: 5rem 0; }
     .section.alt { background: white; }
     .section-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 0.6rem; font-weight: 500; }
     .section-title { font-family: var(--serif); font-size: clamp(1.7rem, 3vw, 2.2rem); font-weight: 500; color: var(--deep); line-height: 1.22; margin-bottom: 1rem; letter-spacing: -0.01em; }
     .section-lead { font-size: 15px; color: var(--stone); line-height: 1.9; max-width: 580px; margin-bottom: 3rem; }
 
-    /* STRENGTH PILLARS */
+    /* PILLARS */
     .pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 3rem; }
     .pillar { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.75rem; transition: transform 0.2s ease, box-shadow 0.2s ease; }
     .pillar:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,45,31,0.08); }
-    .pillar-num { font-family: var(--serif); font-size: 34px; font-weight: 600; color: var(--gold); line-height: 1; margin-bottom: 0.85rem; }
+    .pillar-icon { width: 48px; height: 48px; background: rgba(200,162,74,0.12); border: 0.5px solid rgba(200,162,74,0.35); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 0.85rem; }
     .pillar h3 { font-size: 15px; font-weight: 500; color: var(--deep); margin-bottom: 6px; }
     .pillar p { font-size: 13px; color: var(--stone); line-height: 1.7; }
 
@@ -86,45 +104,13 @@
     .pullquote cite { display: block; font-size: 12px; color: var(--stone); font-style: normal; margin-top: 8px; letter-spacing: 0.05em; }
 
     /* COMPARISON CARDS */
-    .compare-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      margin-bottom: 3rem;
-    }
-    .compare-card {
-      background: white;
-      border: 0.5px solid rgba(166,159,145,0.35);
-      border-radius: var(--rlg);
-      padding: 1.75rem;
-    }
-    .compare-card.agapay {
-      border: 2px solid var(--forest);
-    }
-    .compare-badge {
-      font-family: var(--serif);
-      font-size: 1.2rem;
-      font-weight: 500;
-      color: var(--deep);
-      margin-bottom: 1.25rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 0.5px solid rgba(166,159,145,0.25);
-    }
+    .compare-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 3rem; }
+    .compare-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.75rem; }
+    .compare-card.agapay { border: 2px solid var(--forest); }
+    .compare-badge { font-family: var(--serif); font-size: 1.2rem; font-weight: 500; color: var(--deep); margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 0.5px solid rgba(166,159,145,0.25); }
     .compare-badge.muted { color: var(--stone); }
-    .compare-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .compare-list li {
-      font-size: 13px;
-      color: var(--stone);
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      line-height: 1.55;
-    }
+    .compare-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .compare-list li { font-size: 13px; color: var(--stone); display: flex; align-items: flex-start; gap: 8px; line-height: 1.55; }
     .compare-card.agapay .compare-list li { color: var(--ink); }
     .ci { font-size: 11px; flex-shrink: 0; margin-top: 1px; font-weight: 600; }
     .ci.good { color: var(--gold); }
@@ -143,7 +129,7 @@
     .calc-row.total span:last-child { color: var(--forest); font-size: 15px; }
     .calc-row span:last-child { color: var(--ink); }
 
-    /* TRUST ITEMS */
+    /* TRUST GRID */
     .trust-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 3rem; }
     .trust-item { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.5rem; text-align: center; }
     .trust-num { font-family: var(--serif); font-size: 2.2rem; font-weight: 500; color: var(--gold); line-height: 1; margin-bottom: 0.5rem; }
@@ -166,7 +152,7 @@
     .footer-logo { display: flex; align-items: center; gap: 8px; }
     .footer-name { font-family: var(--serif); font-size: 32px; color: var(--cream); font-weight: 500; }
     .footer-name em { color: var(--gold); font-style: normal; }
-    .footer-tagline { font-family: var(--serif); font-size: 16px; font-style: italic; color: rgba(243,239,230,0.7); margin-bottom: 4px; } .footer-tagline-sub { font-family: var(--serif); font-size: 13px; font-style: italic; color: rgba(166,159,145,0.4); }
+    .footer-tagline { font-family: var(--serif); font-size: 16px; font-style: italic; color: rgba(243,239,230,0.7); }
     .footer-nav { display: flex; gap: 3rem; flex-wrap: wrap; }
     .footer-nav-group { display: flex; flex-direction: column; gap: 10px; }
     .footer-nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin-bottom: 2px; }
@@ -182,7 +168,6 @@
       .hero h1      { animation: fadeUp 0.5s ease 0.08s both; }
       .hero-sub     { animation: fadeUp 0.5s ease 0.16s both; }
     }
-
     .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
     .reveal-delay-1 { transition-delay: 0.1s; }
@@ -190,21 +175,27 @@
     .reveal-delay-3 { transition-delay: 0.3s; }
     .reveal-delay-4 { transition-delay: 0.4s; }
 
-    @media (max-width: 680px) {
+    @media (max-width: 768px) {
+      .menu-toggle { display: flex; }
+      .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
+      .nav-inner .nav-cta, .nav-inner .nav-give { display: none; }
       .compare-grid { grid-template-columns: 1fr; }
     }
-    @media (max-width: 600px) {
-      .nav-links a:not(:last-child):not(:nth-last-child(2)) { display: none; }
+    @media (max-width: 480px) {
+      .footer-inner { flex-direction: column; }
     }
   </style>
 </head>
 <body>
 
+  <div class="candle-glow top-left" aria-hidden="true"></div>
+  <div class="candle-glow bottom-right" aria-hidden="true"></div>
+
   <nav>
     <div class="nav-inner">
       <a href="/" class="nav-logo" aria-label="AgaPay Home">
         <div class="nav-mark">
-          <img src="/mark.png" alt="AgaPay" style="width: 48px; height: 48px; object-fit: contain;" />
+          <img src="/mark.png" alt="AgaPay" style="width:48px;height:48px;object-fit:contain;" />
         </div>
         <span class="nav-name">Aga<em>Pay</em></span>
       </a>
@@ -215,11 +206,29 @@
         <a href="/why">Why AgaPay?</a>
         <a href="/how-it-works">How it Works</a>
         <a href="/about">About</a>
-        <a href="/give" class="nav-give">Give now</a>
+        <a href="/give/select" class="nav-give">Give now</a>
         <a href="/register" class="nav-cta">Register parish</a>
       </div>
+      <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </nav>
+
+  <div class="mobile-nav-drawer" id="mobileDrawer" aria-hidden="true">
+    <div class="mobile-drawer-links">
+      <a href="/" onclick="toggleMenu()">Home</a>
+      <a href="/features" onclick="toggleMenu()">Features</a>
+      <a href="/pricing" onclick="toggleMenu()">Pricing</a>
+      <a href="/why" onclick="toggleMenu()">Why AgaPay?</a>
+      <a href="/how-it-works" onclick="toggleMenu()">How it Works</a>
+      <a href="/about" onclick="toggleMenu()">About</a>
+    </div>
+    <div class="mobile-drawer-actions">
+      <a href="/give/select" class="nav-give" onclick="toggleMenu()">Give now</a>
+      <a href="/register" class="nav-cta" onclick="toggleMenu()">Register parish</a>
+    </div>
+  </div>
 
   <header class="hero">
     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
@@ -238,48 +247,51 @@
       <p class="section-lead reveal reveal-delay-2">These aren't features that were added to serve Orthodox parishes. They are the foundation AgaPay was built on from day one.</p>
 
       <div class="pillars">
+
         <div class="pillar reveal reveal-delay-1">
-          <div class="pillar-num" style="width:48px;height:48px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.85rem;">
-            <svg width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 9 L18 27 M9 18 L27 18" />
-              <circle cx="18" cy="6" r="3"/>
-              <circle cx="18" cy="30" r="3"/>
-              <circle cx="6" cy="18" r="3"/>
-              <circle cx="30" cy="18" r="3"/>
-            </svg>
+          <div class="pillar-icon" style="width:42px;height:42px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.75rem;">
+              <svg width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="9" x2="18" y2="27"/>
+                <line x1="9" y1="15" x2="27" y2="15"/>
+                <circle cx="18" cy="7" r="2.2"/>
+                <circle cx="18" cy="29" r="2.2"/>
+                <circle cx="7" cy="15" r="2.2"/>
+                <circle cx="29" cy="15" r="2.2"/>
+              </svg>
           </div>
           <h3>Built from within the Tradition</h3>
           <p>AgaPay was built by a tonsured Reader of ROCOR — not a fintech company that decided to enter the religious market. Every feature was shaped by someone who lives this life from the inside.</p>
         </div>
+
         <div class="pillar reveal reveal-delay-2">
-          <div class="pillar-num" style="width:48px;height:48px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.85rem;">
-            <svg width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <div class="pillar-icon">
+            <svg width="28" height="28" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <rect x="7" y="9" width="22" height="23" rx="3"/>
-              <line x1="12" y1="5" x2="12" y2="9"/>
-              <line x1="24" y1="5" x2="24" y2="9"/>
+              <line x1="12" y1="5" x2="12" y2="9"/><line x1="24" y1="5" x2="24" y2="9"/>
               <line x1="7" y1="15" x2="29" y2="15"/>
-              <path d="M18 18 L18 28 M14 21 L22 21"/>
+              <line x1="18" y1="20" x2="18" y2="28"/><line x1="14" y1="23" x2="22" y2="23"/>
             </svg>
           </div>
           <h3>The liturgical calendar is native</h3>
           <p>Both Julian and Gregorian calendars are supported. Campaigns are tied to the festal cycle — Nativity, Theophany, Great Lent, Pascha, Soul Saturdays — not arbitrary marketing windows.</p>
         </div>
+
         <div class="pillar reveal reveal-delay-3">
-          <div class="pillar-num" style="width:48px;height:48px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.85rem;">
-            <svg width="30" height="30" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <div class="pillar-icon">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/>
               <path d="M4 16c0 3 2 5 10 5s10-2 10-5"/>
               <path d="M10 13c1-2 2-3 4-3s3 1 4 3"/>
-              <line x1="14" y1="7" x2="14" y2="10"/>
-              <line x1="12" y1="8" x2="16" y2="8"/>
+              <line x1="14" y1="7" x2="14" y2="10"/><line x1="12" y1="8" x2="16" y2="8"/>
             </svg>
           </div>
           <h3>Commemoration lists go to the priest</h3>
           <p>When a parishioner submits a candle offering or memorial donation, the departed names are formatted and routed directly to the priest's proskomedia queue. Nothing is lost.</p>
         </div>
+
         <div class="pillar reveal reveal-delay-1">
-          <div class="pillar-num" style="width:48px;height:48px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.85rem;">
-            <svg width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <div class="pillar-icon">
+            <svg width="28" height="28" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <path d="M18 4 L6 9 V16 C6 23 11 29 18 32 C25 29 30 23 30 16 V9 Z"/>
               <path d="M13 18 L16.5 21.5 L23 14"/>
             </svg>
@@ -287,20 +299,25 @@
           <h3>Canonical verification protects the faithful</h3>
           <p>Every parish and monastery is reviewed for canonical standing before activation. When an Orthodox Christian gives through AgaPay, they know it reaches a legitimate community.</p>
         </div>
+
         <div class="pillar reveal reveal-delay-2">
-          <div class="pillar-num" style="width:48px;height:48px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.85rem;">
-            <svg width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 8 L18 2 M15 4 L21 4 M16 6 L20 5"/>
-              <path d="M18 8 C 20 15, 27 15, 27 22 C 27 26.5, 23 29, 18 29 C 13 29, 9 26.5, 9 22 C 9 15, 16 15, 18 8 Z"/>
-              <rect x="13" y="29" width="10" height="4"/>
+          <div class="pillar-icon">
+            <svg width="28" height="28" viewBox="0 0 38 38" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="2" x2="19" y2="6"/>
+              <line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/>
+              <line x1="16" y1="5.5" x2="22" y2="5.5"/>
+              <path d="M19 6 C10 10 8 17 11 22 C13 26 16 27 19 27 C22 27 25 26 27 22 C30 17 28 10 19 6Z"/>
+              <line x1="12" y1="27" x2="26" y2="27"/>
+              <line x1="13" y1="29" x2="25" y2="29"/>
             </svg>
           </div>
           <h3>Free for monasteries — permanently</h3>
           <p>Monasteries and sketes pay no monthly platform fee, ever. This decision was made at founding and will not change. It is not a promotion. It is a conviction.</p>
         </div>
+
         <div class="pillar reveal reveal-delay-3">
-          <div class="pillar-num" style="width:48px;height:48px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.85rem;">
-            <svg width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <div class="pillar-icon">
+            <svg width="28" height="28" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <rect x="9" y="16" width="18" height="14" rx="2"/>
               <circle cx="18" cy="21" r="1.5"/>
               <line x1="18" y1="22.5" x2="18" y2="25"/>
@@ -310,6 +327,7 @@
           <h3>Month-to-month — no lock-ins</h3>
           <p>No annual contracts. No cancellation penalties. No two-year commitments. A platform should earn its parishes every month — not imprison them.</p>
         </div>
+
       </div>
 
       <div class="pullquote reveal">
@@ -319,7 +337,7 @@
     </div>
   </div>
 
-  <!-- COMPARISON CARDS -->
+  <!-- COMPARISON -->
   <div class="section alt">
     <div class="wrap">
       <div class="section-eyebrow reveal">The competitive edge</div>
@@ -327,7 +345,6 @@
       <p class="section-lead reveal reveal-delay-2">Mainstream platforms were built for generic, corporate-style ministries with massive budgets. Here is the honest side-by-side.</p>
 
       <div class="compare-grid">
-
         <div class="compare-card agapay reveal reveal-delay-1">
           <div class="compare-badge">AgaPay</div>
           <ul class="compare-list">
@@ -341,7 +358,6 @@
             <li><span class="ci good">✦</span>Built by a tonsured Orthodox Reader</li>
           </ul>
         </div>
-
         <div class="compare-card reveal reveal-delay-2">
           <div class="compare-badge muted">Tithe.ly</div>
           <ul class="compare-list">
@@ -355,7 +371,6 @@
             <li><span class="ci bad">✕</span>Not built for Orthodoxy</li>
           </ul>
         </div>
-
         <div class="compare-card reveal reveal-delay-3">
           <div class="compare-badge muted">Pushpay</div>
           <ul class="compare-list">
@@ -369,7 +384,6 @@
             <li><span class="ci bad">✕</span>Not built for Orthodoxy</li>
           </ul>
         </div>
-
       </div>
     </div>
   </div>
@@ -440,9 +454,9 @@
   <div class="cta-band">
     <div class="wrap">
       <h2 class="reveal">Ready to bring your parish onto AgaPay?</h2>
-      <p class="reveal reveal-delay-1">Founding parishes receive preferred pricing and direct access to the founder. Join the waitlist today — or see our full pricing to find the right tier.</p>
+      <p class="reveal reveal-delay-1">Founding parishes receive preferred pricing and direct access to the founder. Register today or see our full pricing to find the right tier.</p>
       <div class="cta-btns reveal reveal-delay-2">
-        <a href="/how-it-works" class="cta-btn-primary">See how AgaPay works →</a>
+        <a href="/register" class="cta-btn-primary">Register your parish →</a>
         <a href="/pricing" class="cta-btn-secondary">View pricing</a>
       </div>
     </div>
@@ -457,21 +471,22 @@
           </div>
           <span class="footer-name">Aga<em>Pay</em></span>
         </div>
-        <p class="footer-tagline">Love where you give.</p><p class="footer-tagline-sub">For the life of the world.</p>
+        <p class="footer-tagline">Love how you give.</p>
       </div>
       <div class="footer-nav">
         <div class="footer-nav-group">
           <div class="footer-nav-label">Platform</div>
           <a href="/features">Features</a>
           <a href="/pricing">Pricing</a>
-          <a href="/why">Why AgaPay</a>orks</a>
-          <a href="/give">Give now</a>
+          <a href="/why">Why AgaPay</a>
+          <a href="/how-it-works">How it Works</a>
         </div>
         <div class="footer-nav-group">
           <div class="footer-nav-label">Company</div>
           <a href="/about">About</a>
           <a href="/contact">Contact</a>
-          <a href="/#waitlist">Register parish</a>
+          <a href="/register">Register parish</a>
+          <a href="/give/select">Give now</a>
         </div>
         <div class="footer-nav-group">
           <div class="footer-nav-label">Legal</div>
@@ -494,14 +509,29 @@
   <script>
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
+        if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
       });
     }, { threshold: 0.05 });
-
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    function toggleMenu() {
+      const btn    = document.querySelector('.menu-toggle');
+      const drawer = document.getElementById('mobileDrawer');
+      const isOpen = drawer.classList.contains('active');
+      btn.setAttribute('aria-expanded', !isOpen);
+      drawer.classList.toggle('active');
+      drawer.setAttribute('aria-hidden', isOpen);
+      document.body.classList.toggle('nav-open');
+    }
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) {
+        const btn    = document.querySelector('.menu-toggle');
+        const drawer = document.getElementById('mobileDrawer');
+        if (btn)    btn.setAttribute('aria-expanded', 'false');
+        if (drawer) { drawer.classList.remove('active'); drawer.setAttribute('aria-hidden', 'true'); }
+        document.body.classList.remove('nav-open');
+      }
+    });
   </script>
 
 </body>
