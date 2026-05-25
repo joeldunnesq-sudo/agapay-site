@@ -91,20 +91,24 @@
     .aside-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1rem; font-weight: 500; }
     .aside-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.5rem; }
 
-    /* FOUNDER HEADER — cross circle + photo circle + name */
-    .founder-header { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; margin-bottom: 1.25rem; }
-    .founder-top-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
-    .aside-avatar { width: 44px; height: 44px; min-width: 44px; border-radius: 50%; background: var(--deep); border: 0.5px solid rgba(200,162,74,0.3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .founder-photo { width: 100px; height: 100px; min-width: 96px; border-radius: 22px; overflow: hidden; border: 0.5px solid rgba(200,162,74,0.35); flex-shrink: 0; }
+    /* FOUNDER HEADER — updated for couples/landscape photo */
+    .founder-header { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; margin-bottom: 0.5rem; }
+    .founder-photo { width: 100%; height: 180px; border-radius: 12px; overflow: hidden; border: 0.5px solid rgba(200,162,74,0.35); flex-shrink: 0; margin-bottom: 0.5rem; }
     .founder-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .aside-name { font-size: 15px; font-weight: 500; color: var(--ink); margin-bottom: 2px; }
-    .founder-role { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
+    
+    .aside-name { font-size: 16px; font-weight: 500; color: var(--ink); margin-bottom: 2px; }
+    .founder-role { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
 
-    .aside-title { font-size: 12px; color: var(--stone); line-height: 1.6; }
-    .aside-title strong { display: block; color: var(--gold); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; margin-bottom: 4px; margin-top: 1rem; }
-    .aside-divider { border: none; border-top: 0.5px solid rgba(166,159,145,0.3); margin: 1.25rem 0; }
-    .aside-contact { font-size: 13px; color: var(--stone); }
-    .aside-contact a { color: var(--gold); transition: opacity 0.2s; }
+    /* FOUNDER DETAILS — grid layout for clean data */
+    .founder-details { margin-top: 1.75rem; display: flex; flex-direction: column; gap: 1.25rem; }
+    .detail-group { display: flex; flex-direction: column; gap: 4px; }
+    .detail-label { color: var(--gold); font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600; }
+    .detail-value { font-size: 13px; color: var(--ink); line-height: 1.4; font-weight: 500; }
+    .detail-sub { display: block; color: var(--stone); font-size: 12px; font-weight: 400; margin-top: 1px; }
+
+    .aside-divider { border: none; border-top: 0.5px solid rgba(166,159,145,0.3); margin: 1.5rem 0; }
+    .aside-contact { font-size: 13px; color: var(--stone); text-align: center; }
+    .aside-contact a { color: var(--gold); transition: opacity 0.2s; font-weight: 500; }
     .aside-contact a:hover { opacity: 0.75; }
 
     /* PROSE */
@@ -240,39 +244,41 @@
     <div class="opening">
 
       <aside class="opening-aside reveal" aria-label="Founder Bio">
-        <div class="aside-label">The founder</div>
+        <div class="aside-label">The founders</div>
         <div class="aside-card">
 
-          <!-- Cross circle + photo circle + name — all three in a row -->
           <div class="founder-header">
-          <div class="founder-photo">
-            <img src="/joel.jpg" alt="Joel Dunn" />
+            <div class="founder-photo">
+              <img src="/joel-stephanie.jpg" alt="Joel and Stephanie Dunn" />
+            </div>
+            <div class="aside-name">Joel & Stephanie Dunn</div>
+            <div class="founder-role">Founders</div>
           </div>
-          <div class="aside-name">Joel & Stephanie Dunn</div>
-          <div class="founder-role">Founders</div>
-          <div class="aside-avatar" aria-hidden="true">
-            <svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:var(--gold);stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;fill:none;">
-              <line x1="12" y1="3" x2="12" y2="21"/>
-              <line x1="9" y1="6" x2="15" y2="6"/>
-              <line x1="6" y1="10" x2="18" y2="10"/>
-              <line x1="9" y1="17" x2="15" y2="15"/>
-            </svg>
+
+          <div class="founder-details">
+            <div class="detail-group">
+              <div class="detail-label">Vocations</div>
+              <div class="detail-value">Tonsured Reader, ROCOR</div>
+              <div class="detail-value">Classical Homeschool Mom</div>
+            </div>
+            
+            <div class="detail-group">
+              <div class="detail-label">Family</div>
+              <div class="detail-value">Ten children, two dogs</div>
+            </div>
+            
+            <div class="detail-group">
+              <div class="detail-label">Community</div>
+              <div class="detail-value">St. Seraphim of Sarov Mission</div>
+              <div class="detail-sub">Lubbock, Texas</div>
+            </div>
           </div>
-        </div>
-          <div class="aside-title">
-            <strong>Vocations</strong>
-            Tonsured Reader, ROCOR<br>
-            Classical Homeschool Mom
-            <strong>Family</strong>
-            Ten Children, Two dogs
-           <strong>Community</strong>
-            St. Seraphim of Sarov Mission<br>
-            Lubbock, Texas
-          </div>
+
           <hr class="aside-divider" />
           <div class="aside-contact">
             <a href="mailto:hello@agapay.app">hello@agapay.app</a>
           </div>
+          
         </div>
       </aside>
 
