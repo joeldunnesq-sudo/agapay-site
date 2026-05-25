@@ -268,6 +268,7 @@
       <button class="pill" data-filter="goa">GOA</button>
       <button class="pill" data-filter="serbian">Serbian</button>
       <button class="pill" data-filter="monastery">Monasteries</button>
+      <button class="pill" data-filter="mission">Missions</button>
     </div>
 
     <!-- RESULTS META -->
@@ -540,6 +541,11 @@
 
         const monasteries = result.parishes.filter(parish => parish.type === 'monastery');
         const communities = result.parishes.filter(parish => parish.type !== 'monastery');
+        monasteries.sort((a, b) => a.name.localeCompare(b.name));
+        communities.sort((a, b) => {
+          if (a.type !== b.type) return a.type === 'parish' ? -1 : 1;
+          return a.name.localeCompare(b.name);
+        });
         parishList.innerHTML = `
           <div class="list-divider" id="dividerMonasteries"><span>Monasteries &amp; Sketes</span></div>
           ${monasteries.map(renderParishCard).join('')}
@@ -570,6 +576,7 @@
 
         const matchesFilter = activeFilter === 'all' ||
           (activeFilter === 'monastery' && type === 'monastery') ||
+          (activeFilter === 'mission' && type === 'mission') ||
           jurisdiction === activeFilter;
 
         if (matchesSearch && matchesFilter) {
