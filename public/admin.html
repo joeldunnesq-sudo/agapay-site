@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgaPay Admin</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --deep: #0F2D1F;
+      --forest: #2F5A39;
+      --gold: #B8902F;
+      --cream: #F6F1E8;
+      --stone: #6F6A60;
+      --ink: #171715;
+      --line: rgba(111,106,96,0.22);
+      --serif: 'Cormorant Garamond', Georgia, serif;
+      --sans: 'DM Sans', system-ui, sans-serif;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--sans);
+      background: var(--cream);
+      color: var(--ink);
+    }
+    header {
+      background: var(--deep);
+      color: var(--cream);
+      padding: 2rem 1.25rem;
+      border-bottom: 3px solid var(--gold);
+    }
+    .header-inner, main { max-width: 1080px; margin: 0 auto; }
+    h1 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 500;
+    }
+    .subtitle { margin: 0.35rem 0 0; color: rgba(246,241,232,0.72); font-size: 14px; }
+    main { padding: 1.5rem 1.25rem 4rem; }
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.75rem;
+      align-items: end;
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--stone);
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+      padding: 0.72rem 0.8rem;
+      color: var(--ink);
+      font: inherit;
+    }
+    textarea { resize: vertical; min-height: 90px; line-height: 1.55; }
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 0.78rem 1rem;
+      background: var(--deep);
+      color: var(--cream);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.secondary { background: white; color: var(--deep); border: 1px solid var(--line); }
+    button.gold { background: var(--gold); color: var(--deep); }
+    button:disabled { opacity: 0.6; cursor: wait; }
+    .status {
+      min-height: 1.25rem;
+      color: var(--stone);
+      font-size: 13px;
+      margin-bottom: 1rem;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.25fr);
+      gap: 1rem;
+      align-items: start;
+    }
+    .panel {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid var(--line);
+      color: var(--deep);
+      font-weight: 600;
+    }
+    .list { display: grid; }
+    .item {
+      border-bottom: 1px solid var(--line);
+      padding: 0.9rem 1rem;
+      cursor: pointer;
+      background: white;
+    }
+    .item:hover, .item.active { background: rgba(184,144,47,0.08); }
+    .item:last-child { border-bottom: 0; }
+    .item-name { font-family: var(--serif); font-size: 20px; color: var(--deep); line-height: 1.2; }
+    .item-meta { margin-top: 0.35rem; color: var(--stone); font-size: 12px; line-height: 1.5; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.18rem 0.55rem;
+      background: rgba(47,90,57,0.1);
+      color: var(--forest);
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 0.5rem;
+    }
+    .detail { padding: 1rem; }
+    .empty { padding: 2rem; color: var(--stone); text-align: center; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.7rem;
+      margin-bottom: 1rem;
+    }
+    .field {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.75rem;
+      background: #fffdf9;
+    }
+    .key {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--stone);
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .value { overflow-wrap: anywhere; line-height: 1.45; }
+    .full { grid-column: 1 / -1; }
+    .actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.75rem;
+      border-top: 1px solid var(--line);
+      margin-top: 1rem;
+      padding-top: 1rem;
+    }
+    @media (max-width: 820px) {
+      .toolbar, .layout, .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>AgaPay Admin</h1>
+      <p class="subtitle">Review parish registrations and canonical verification notes.</p>
+    </div>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <div>
+        <label for="adminToken">Admin token</label>
+        <input id="adminToken" type="password" placeholder="Paste AGAPAY_ADMIN_TOKEN" autocomplete="current-password" />
+      </div>
+      <button id="loadBtn" onclick="loadRegistrations()">Load registrations</button>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <div class="layout">
+      <section class="panel">
+        <div class="panel-title">
+          <span>Registrations</span>
+          <button class="secondary" onclick="loadRegistrations()">Refresh</button>
+        </div>
+        <div class="list" id="registrationList">
+          <div class="empty">Enter the admin token to load pending registrations.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">
+          <span>Details</span>
+          <span id="selectedReference"></span>
+        </div>
+        <div class="detail" id="detailPane">
+          <div class="empty">Select a registration.</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    let selectedReference = '';
+
+    function token() {
+      return document.getElementById('adminToken').value.trim();
+    }
+
+    function setStatus(message) {
+      document.getElementById('status').textContent = message || '';
+    }
+
+    function authHeaders() {
+      return {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer ' + token()
+      };
+    }
+
+    function field(label, value, className = '') {
+      const safeValue = value || '—';
+      return `<div class="field ${className}"><div class="key">${label}</div><div class="value">${safeValue}</div></div>`;
+    }
+
+    async function loadRegistrations() {
+      if (!token()) {
+        setStatus('Paste your admin token first.');
+        return;
+      }
+
+      const btn = document.getElementById('loadBtn');
+      btn.disabled = true;
+      setStatus('Loading registrations...');
+
+      try {
+        const response = await fetch('/api/admin/registrations', { headers: authHeaders() });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to load registrations');
+
+        renderList(result.registrations || []);
+        setStatus(`Loaded ${(result.registrations || []).length} registration(s).`);
+      } catch (err) {
+        setStatus(err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function renderList(registrations) {
+      const list = document.getElementById('registrationList');
+      if (!registrations.length) {
+        list.innerHTML = '<div class="empty">No registrations found.</div>';
+        return;
+      }
+
+      list.innerHTML = registrations.map((item) => `
+        <div class="item ${item.reference === selectedReference ? 'active' : ''}" onclick="loadDetail('${item.reference}')">
+          <div class="item-name">${item.parishName || item.reference}</div>
+          <div class="item-meta">${item.communityType || 'Community'} · ${item.jurisdiction || 'Jurisdiction'} · ${item.city || ''}, ${item.state || ''}</div>
+          <div class="item-meta">${item.priestEmail || ''}</div>
+          <span class="badge">${item.status || 'pending'}</span>
+        </div>
+      `).join('');
+    }
+
+    async function loadDetail(reference) {
+      selectedReference = reference;
+      document.getElementById('selectedReference').textContent = reference;
+      setStatus('Loading details...');
+
+      try {
+        const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference), { headers: authHeaders() });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to load registration');
+
+        renderDetail(result.registration);
+        setStatus('');
+      } catch (err) {
+        setStatus(err.message);
+      }
+    }
+
+    function renderDetail(reg) {
+      document.getElementById('detailPane').innerHTML = `
+        <div class="grid">
+          ${field('Status', reg.status)}
+          ${field('Received', reg.receivedAt)}
+          ${field('Community', reg.parishName)}
+          ${field('Type', reg.communityType)}
+          ${field('Jurisdiction', reg.jurisdiction, 'full')}
+          ${field('Location', `${reg.city || ''}, ${reg.state || ''}`)}
+          ${field('Website', reg.website)}
+          ${field('Priest/Admin', `${reg.priestFirst || ''} ${reg.priestLast || ''}`)}
+          ${field('Priest Email', reg.priestEmail)}
+          ${field('Priest Phone', reg.priestPhone)}
+          ${field('Treasurer', `${reg.treasurerFirst || ''} ${reg.treasurerLast || ''}`)}
+          ${field('Treasurer Email', reg.treasurerEmail)}
+          ${field('Notes', reg.notes, 'full')}
+          ${field('Reviewer Notes', reg.reviewerNotes, 'full')}
+        </div>
+        <div class="actions">
+          <div>
+            <label for="statusSelect">Review status</label>
+            <select id="statusSelect">
+              <option value="pending" ${reg.status === 'pending' ? 'selected' : ''}>Pending</option>
+              <option value="needs_more_info" ${reg.status === 'needs_more_info' ? 'selected' : ''}>Needs more info</option>
+              <option value="verified" ${reg.status === 'verified' ? 'selected' : ''}>Verified</option>
+              <option value="rejected" ${reg.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+            </select>
+          </div>
+          <div>
+            <label for="reviewerNotes">Reviewer notes</label>
+            <textarea id="reviewerNotes" placeholder="Internal notes for this registration">${reg.reviewerNotes || ''}</textarea>
+          </div>
+          <button class="gold" onclick="saveReview('${reg.reference}')">Save review</button>
+        </div>
+      `;
+    }
+
+    async function saveReview(reference) {
+      setStatus('Saving review...');
+      try {
+        const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference), {
+          method: 'PATCH',
+          headers: {
+            ...authHeaders(),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            status: document.getElementById('statusSelect').value,
+            reviewerNotes: document.getElementById('reviewerNotes').value
+          })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to save review');
+
+        renderDetail(result.registration);
+        await loadRegistrations();
+        setStatus('Review saved.');
+      } catch (err) {
+        setStatus(err.message);
+      }
+    }
+  </script>
+</body>
+</html>
