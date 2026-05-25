@@ -540,11 +540,6 @@
     let currentStep = 1;
     let communityType = 'Parish';
 
-    // ─── WEB3FORMS ───────────────────────────────────────────
-    // IMPORTANT: Replace YOUR_ACCESS_KEY_HERE with your actual
-    // Web3Forms access key from https://web3forms.com
-    const WEB3FORMS_KEY = '5074501b-217b-4fba-8e83-ae18a05d6f3f';
-
     // ─── COMMUNITY TYPE ──────────────────────────────────────
     function selectType(btn) {
       document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
@@ -622,7 +617,7 @@
       document.getElementById('reviewParishName').textContent = document.getElementById('parishName').value;
     }
 
-    // ─── SUBMIT via Web3Forms ─────────────────────────────────
+    // ─── SUBMIT via AGAPAY API ────────────────────────────────
     async function handleSubmit() {
       if (!document.getElementById('agreeTerms').checked) {
         alert('Please confirm canonical standing and agree to the Terms of Service before submitting.');
@@ -633,46 +628,32 @@
       const priestEmail    = document.getElementById('priestEmail').value.trim();
       const treasurerEmail = document.getElementById('treasurerEmail').value.trim();
       const notes          = document.getElementById('notes').value.trim();
-      const ref            = 'AGP-REG-' + Date.now().toString(36).toUpperCase();
 
       // Hide form, show spinner
       document.getElementById('progressWrap').style.display = 'none';
       document.querySelectorAll('.step-panel').forEach(p => p.style.display = 'none');
       document.getElementById('sendingState').classList.add('visible');
 
-      // Build the payload for Web3Forms
       const payload = {
-        access_key:   WEB3FORMS_KEY,
-        subject:      `AgaPay Parish Registration — ${parishName}`,
-        from_name:    'AgaPay Registration',
-        replyto:      priestEmail,
-        reference:    ref,
-
-        // Community info
-        community_type: communityType,
-        parish_name:    parishName,
-        jurisdiction:   document.getElementById('jurisdiction').value,
-        city_state:     `${document.getElementById('city').value}, ${document.getElementById('state').value}`,
-        website:        document.getElementById('website').value || '—',
-
-        // Priest info
-        priest_name:  `${document.getElementById('priestFirst').value} ${document.getElementById('priestLast').value}`,
-        priest_email: priestEmail,
-        priest_phone: document.getElementById('priestPhone').value,
-
-        // Treasurer info
-        treasurer_name:  `${document.getElementById('treasurerFirst').value} ${document.getElementById('treasurerLast').value}`,
-        treasurer_email: treasurerEmail,
-
-        // Notes
-        notes: notes || '—',
-
-        // Canonical agreement
-        canonical_agreement: 'Confirmed',
+        communityType,
+        parishName,
+        jurisdiction: document.getElementById('jurisdiction').value,
+        city: document.getElementById('city').value,
+        state: document.getElementById('state').value,
+        website: document.getElementById('website').value,
+        priestFirst: document.getElementById('priestFirst').value,
+        priestLast: document.getElementById('priestLast').value,
+        priestEmail,
+        priestPhone: document.getElementById('priestPhone').value,
+        treasurerFirst: document.getElementById('treasurerFirst').value,
+        treasurerLast: document.getElementById('treasurerLast').value,
+        treasurerEmail,
+        notes,
+        canonicalAgreement: true
       };
 
       try {
-        const response = await fetch('https://api.web3forms.com/submit', {
+        const response = await fetch('/api/registrations', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body:    JSON.stringify(payload),
@@ -680,24 +661,21 @@
 
         const result = await response.json();
 
-        if (result.success) {
-          // Show success
-          document.getElementById('sendingState').classList.remove('visible');
-          document.getElementById('successParishName').textContent = parishName + ' has been received.';
-          document.getElementById('successEmail').textContent = priestEmail;
-          document.getElementById('successRef').textContent = 'Reference: ' + ref;
-          document.getElementById('successState').classList.add('visible');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-          throw new Error(result.message || 'Submission failed');
-        }
+        if (!response.ok) throw new Error(result.error || 'Submission failed');
+
+        document.getElementById('sendingState').classList.remove('visible');
+        document.getElementById('successParishName').textContent = parishName + ' has been received.';
+        document.getElementById('successEmail').textContent = priestEmail;
+        document.getElementById('successRef').textContent = 'Reference: ' + result.reference;
+        document.getElementById('successState').classList.add('visible');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (err) {
         document.getElementById('sendingState').classList.remove('visible');
         document.querySelectorAll('.step-panel').forEach(p => p.style.display = '');
         document.getElementById(`step-3`).classList.add('active');
         document.getElementById('progressWrap').style.display = '';
         alert('Something went wrong sending your registration. Please email us directly at parishes@agapay.app and we\'ll get you set up.');
-        console.error('Web3Forms error:', err);
+        console.error('AgaPay registration error:', err);
       }
     }
 
