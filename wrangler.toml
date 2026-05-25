@@ -5,3 +5,7 @@ compatibility_date = "2026-05-25"
 [assets]
 directory = "./public"
 binding = "ASSETS"
+
+[[kv_namespaces]]
+binding = "AGAPAY_REGISTRATIONS"
+id = "YOUR_KV_NAMESPACE_ID"
