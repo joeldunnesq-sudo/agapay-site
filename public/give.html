@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Give | AgaPay</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="favicons//apple-touch-icon.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
-  <link rel="shortcut icon" href="/favicons/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="shortcut icon" href="/favicon.ico" />
   <meta name="description" content="Give to your parish, light candles, submit names, support monasteries, and offer alms — all in one Orthodox-native platform." />
   <meta property="og:title" content="Give | AgaPay" />
   <meta property="og:url" content="https://agapay.app/give" />
@@ -501,6 +501,58 @@
     let activeFilter = 'all';
     let searchQuery  = '';
 
+    function parishIcon(type) {
+      if (type === 'monastery') {
+        return '<svg width="28" height="28" viewBox="0 0 38 38" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="30" height="18" rx="1"/><rect x="14" y="6" width="10" height="14" rx="1"/><line x1="19" y1="2" x2="19" y2="6"/><line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/><line x1="16" y1="5.5" x2="22" y2="5.5"/><path d="M15 32 L15 25 Q19 21 23 25 L23 32"/><rect x="7" y="18" width="5" height="6" rx="2.5"/><rect x="26" y="18" width="5" height="6" rx="2.5"/></svg>';
+      }
+      if (type === 'mission') {
+        return '<svg width="28" height="28" viewBox="0 0 38 38" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="2" x2="19" y2="6"/><line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/><line x1="16" y1="5.5" x2="22" y2="5.5"/><path d="M19 6 C10 10 8 17 11 22 C13 26 16 27 19 27 C22 27 25 26 27 22 C30 17 28 10 19 6Z"/><line x1="12" y1="27" x2="26" y2="27"/><line x1="13" y1="29" x2="25" y2="29"/></svg>';
+      }
+      return '<svg width="28" height="28" viewBox="0 0 38 38" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="2" x2="19" y2="5"/><line x1="17" y1="3.5" x2="21" y2="3.5"/><path d="M19 5 C15 7 13 11 14 14 C15 16 17 17 19 17 C21 17 23 16 24 14 C25 11 23 7 19 5Z"/><line x1="10" y1="6" x2="10" y2="8"/><path d="M10 8 C8 9.5 7 12 7.5 14 C8 15.5 9 16 10 16 C11 16 12 15.5 12.5 14 C13 12 12 9.5 10 8Z"/><line x1="28" y1="6" x2="28" y2="8"/><path d="M28 8 C26 9.5 25 12 25.5 14 C26 15.5 27 16 28 16 C29 16 30 15.5 30.5 14 C31 12 30 9.5 28 8Z"/><rect x="4" y="17" width="30" height="14" rx="1"/><path d="M16 31 L16 25 Q19 22 22 25 L22 31"/></svg>';
+    }
+
+    function renderParishCard(parish, index) {
+      const location = `${parish.city || ''}, ${parish.state || ''}`.replace(/^, /, '').replace(/, $/, '');
+      const badge = parish.freeForever ? '<span class="parish-badge free">Free forever</span>' : '<span class="parish-badge verified">Verified</span>';
+      return `
+        <a href="/give/${parish.id}" class="parish-card reveal visible"
+           data-name="${parish.name}" data-jurisdiction="${parish.jurisdiction}" data-type="${parish.type}" data-city="${location}">
+          <div class="parish-avatar ${parish.type}">${parishIcon(parish.type)}</div>
+          <div class="parish-info">
+            <div class="parish-name">${parish.name}</div>
+            <div class="parish-meta">
+              <span class="parish-jurisdiction">${parish.jurisdictionLabel || parish.jurisdiction}</span>
+              <span class="parish-dot"></span>
+              <span class="parish-location">${location}</span>
+            </div>
+          </div>
+          ${badge}
+          <span class="parish-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+        </a>
+      `;
+    }
+
+    async function loadParishes() {
+      try {
+        const response = await fetch('/api/parishes');
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to load parishes');
+
+        const monasteries = result.parishes.filter(parish => parish.type === 'monastery');
+        const communities = result.parishes.filter(parish => parish.type !== 'monastery');
+        parishList.innerHTML = `
+          <div class="list-divider" id="dividerMonasteries"><span>Monasteries &amp; Sketes</span></div>
+          ${monasteries.map(renderParishCard).join('')}
+          <div class="list-divider" id="dividerParishes"><span>Parishes &amp; Missions</span></div>
+          ${communities.map(renderParishCard).join('')}
+        `;
+
+        filterParishes();
+      } catch (err) {
+        console.error('AgaPay parish directory error:', err);
+      }
+    }
+
     function filterParishes() {
       const cards = parishList.querySelectorAll('.parish-card');
       let visibleCount = 0, monasteryVisible = 0, parishVisible = 0;
@@ -529,8 +581,10 @@
         }
       });
 
-      dividerMonasteries.style.display = monasteryVisible > 0 ? 'block' : 'none';
-      dividerParishes.style.display    = parishVisible    > 0 ? 'block' : 'none';
+      const monasteryDivider = document.getElementById('dividerMonasteries');
+      const parishDivider = document.getElementById('dividerParishes');
+      monasteryDivider.style.display = monasteryVisible > 0 ? 'block' : 'none';
+      parishDivider.style.display    = parishVisible    > 0 ? 'block' : 'none';
       resultsCount.textContent = visibleCount;
       emptyState.classList.toggle('visible', visibleCount === 0);
     }
@@ -555,6 +609,8 @@
         filterParishes();
       });
     });
+
+    loadParishes();
   </script>
 
 </body>
