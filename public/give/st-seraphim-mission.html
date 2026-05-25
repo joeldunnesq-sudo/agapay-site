@@ -520,6 +520,14 @@
     let selectedFreq = 'once';
     let feeCovered = true;
     let selectedFund = 'Building & Renovation Fund';
+    let currentParish = {
+      id: 'st-seraphim-mission',
+      name: 'St. Seraphim of Sarov Mission',
+      jurisdictionLabel: 'ROCOR',
+      city: 'Lubbock',
+      state: 'TX',
+      funds: []
+    };
 
     const AGAPAY_RATE = 0.029;
     const AGAPAY_FIXED = 0.30;
@@ -565,6 +573,75 @@
       label.classList.add('selected');
       selectedFund = label.querySelector('.fund-name').textContent;
       updateSummary();
+    }
+
+    function parishSlugFromPath() {
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      return parts[0] === 'give' && parts[1] ? parts[1] : 'st-seraphim-mission';
+    }
+
+    function setText(selector, value) {
+      const el = document.querySelector(selector);
+      if (el) el.textContent = value;
+    }
+
+    function renderFunds(funds) {
+      const fundOptions = document.querySelector('.fund-options');
+      if (!fundOptions || !funds || !funds.length) return;
+
+      selectedFund = funds[0].name;
+      fundOptions.innerHTML = funds.map((fund, index) => `
+        <label class="fund-option ${index === 0 ? 'selected' : ''}" onclick="selectFund(this)">
+          <input type="radio" name="fund" value="${fund.id}" ${index === 0 ? 'checked' : ''} />
+          <div class="fund-radio"><div class="fund-radio-dot"></div></div>
+          <div class="fund-info">
+            <div class="fund-name">${fund.name}</div>
+            <div class="fund-desc">${fund.description || 'Designated support for this parish.'}</div>
+          </div>
+        </label>
+      `).join('');
+    }
+
+    async function loadCurrentParish() {
+      try {
+        const response = await fetch('/api/parishes');
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to load parish');
+
+        const slug = parishSlugFromPath();
+        const parish = result.parishes.find(item => item.id === slug);
+        if (!parish) {
+          alert('This parish is not currently active in AgaPay.');
+          window.location.href = '/give';
+          return;
+        }
+
+        currentParish = parish;
+        const location = `${parish.city || ''}, ${parish.state || ''}`.replace(/^, /, '').replace(/, $/, '');
+        document.title = `Give to ${parish.name} — AgaPay`;
+        setText('.parish-header h1', parish.name);
+        const meta = document.querySelector('.parish-header-meta');
+        if (meta) {
+          meta.innerHTML = `
+            <span>${parish.jurisdictionLabel || parish.jurisdiction}</span>
+            <span class="dot"></span>
+            <span>${location}</span>
+            <span class="dot"></span>
+            <span class="verified-badge">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Canonically verified
+            </span>
+          `;
+        }
+        const feeText = document.querySelector('.fee-text p');
+        if (feeText) feeText.textContent = `When you cover the fees, ${parish.name} receives your full gift — nothing deducted.`;
+        const successText = document.querySelector('.success-parish');
+        if (successText) successText.innerHTML = `Your gift to <strong>${parish.name}</strong> has been received.<br>A confirmation will be sent to your email.`;
+        renderFunds(parish.funds);
+        updateSummary();
+      } catch (err) {
+        console.error('AgaPay parish load error:', err);
+      }
     }
 
     // AMOUNT
@@ -670,7 +747,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify({
-            parishId: 'st-seraphim-mission',
+            parishId: currentParish.id,
             giftType: selectedType,
             amount: selectedAmount,
             frequency: selectedFreq,
@@ -704,6 +781,7 @@
       }
     }
 
+    loadCurrentParish();
     updateSummary();
   </script>
 
