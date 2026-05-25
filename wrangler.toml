@@ -8,4 +8,4 @@ binding = "ASSETS"
 
 [[kv_namespaces]]
 binding = "AGAPAY_REGISTRATIONS"
-id = "YOUR_KV_NAMESPACE_ID"
+id = "c0c630d2699a4d42a72db927c6341707"
