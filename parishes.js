@@ -1,0 +1,121 @@
+export const parishes = [
+  {
+    id: "holy-theotokos-skete",
+    name: "Holy Theotokos Skete",
+    type: "monastery",
+    jurisdiction: "rocor",
+    jurisdictionLabel: "ROCOR",
+    city: "Nahant",
+    state: "MA",
+    status: "verified",
+    freeForever: true,
+    stripeAccountId: "",
+    funds: [
+      {
+        id: "general",
+        name: "General Monastery Support",
+        description: "Daily life, hospitality, supplies, and monastery needs."
+      }
+    ]
+  },
+  {
+    id: "st-nicholas-parish",
+    name: "St. Nicholas Orthodox Church",
+    type: "parish",
+    jurisdiction: "antiochian",
+    jurisdictionLabel: "Antiochian",
+    city: "Dallas",
+    state: "TX",
+    status: "verified",
+    stripeAccountId: "",
+    funds: [
+      {
+        id: "general",
+        name: "General Operating Fund",
+        description: "Utilities, supplies, ministries, and day-to-day parish needs."
+      }
+    ]
+  },
+  {
+    id: "annunciation-cathedral",
+    name: "Annunciation Cathedral",
+    type: "parish",
+    jurisdiction: "goa",
+    jurisdictionLabel: "GOA",
+    city: "Atlanta",
+    state: "GA",
+    status: "verified",
+    stripeAccountId: "",
+    funds: [
+      {
+        id: "general",
+        name: "General Operating Fund",
+        description: "Utilities, supplies, ministries, and day-to-day parish needs."
+      }
+    ]
+  },
+  {
+    id: "st-seraphim-mission",
+    name: "St. Seraphim of Sarov Mission",
+    type: "mission",
+    jurisdiction: "rocor",
+    jurisdictionLabel: "ROCOR",
+    city: "Lubbock",
+    state: "TX",
+    status: "verified",
+    stripeAccountId: "",
+    funds: [
+      {
+        id: "building",
+        name: "Building & Renovation Fund",
+        description: "Toward the purchase or improvement of parish property."
+      },
+      {
+        id: "iconostasis",
+        name: "Iconostasis Fund",
+        description: "Icons, altar screens, and the beautification of the nave."
+      },
+      {
+        id: "clergy",
+        name: "Clergy Support Fund",
+        description: "Direct support for the priest and his family."
+      },
+      {
+        id: "education",
+        name: "Parish School & Education",
+        description: "Catechism materials, youth programs, and seminary support."
+      },
+      {
+        id: "general",
+        name: "General Operating Fund",
+        description: "Utilities, supplies, and day-to-day parish needs."
+      }
+    ]
+  },
+  {
+    id: "st-john-the-theologian",
+    name: "St. John the Theologian Mission",
+    type: "mission",
+    jurisdiction: "oca",
+    jurisdictionLabel: "OCA",
+    city: "Memphis",
+    state: "TN",
+    status: "verified",
+    stripeAccountId: "",
+    funds: [
+      {
+        id: "general",
+        name: "General Operating Fund",
+        description: "Utilities, supplies, ministries, and day-to-day parish needs."
+      }
+    ]
+  }
+];
+
+export function findParish(id) {
+  return parishes.find((parish) => parish.id === id);
+}
+
+export function publicParishes() {
+  return parishes.map(({ stripeAccountId, ...parish }) => parish);
+}
