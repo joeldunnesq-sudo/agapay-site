@@ -1,0 +1,16 @@
+{
+  "name": "agapay-site",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AgaPay Orthodox giving platform frontend and API foundation.",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs",
+    "check": "node scripts/check.mjs",
+    "smoke:api": "node scripts/smoke-api.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
