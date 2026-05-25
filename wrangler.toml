@@ -1,4 +1,4 @@
-name = "agapay"
+name = "agapay-site"
 main = "src/worker.js"
 compatibility_date = "2026-05-25"
 
