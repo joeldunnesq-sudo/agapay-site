@@ -1,117 +1,3 @@
-const parishes = [
-  {
-    id: "holy-theotokos-skete",
-    name: "Holy Theotokos Skete",
-    type: "monastery",
-    jurisdiction: "rocor",
-    jurisdictionLabel: "ROCOR",
-    city: "Nahant",
-    state: "MA",
-    status: "verified",
-    freeForever: true,
-    stripeAccountId: "",
-    funds: [
-      {
-        id: "general",
-        name: "General Monastery Support",
-        description: "Daily life, hospitality, supplies, and monastery needs."
-      }
-    ]
-  },
-  {
-    id: "st-nicholas-parish",
-    name: "St. Nicholas Orthodox Church",
-    type: "parish",
-    jurisdiction: "antiochian",
-    jurisdictionLabel: "Antiochian",
-    city: "Dallas",
-    state: "TX",
-    status: "verified",
-    stripeAccountId: "",
-    funds: [
-      {
-        id: "general",
-        name: "General Operating Fund",
-        description: "Utilities, supplies, ministries, and day-to-day parish needs."
-      }
-    ]
-  },
-  {
-    id: "annunciation-cathedral",
-    name: "Annunciation Cathedral",
-    type: "parish",
-    jurisdiction: "goa",
-    jurisdictionLabel: "GOA",
-    city: "Atlanta",
-    state: "GA",
-    status: "verified",
-    stripeAccountId: "",
-    funds: [
-      {
-        id: "general",
-        name: "General Operating Fund",
-        description: "Utilities, supplies, ministries, and day-to-day parish needs."
-      }
-    ]
-  },
-  {
-    id: "st-seraphim-mission",
-    name: "St. Seraphim of Sarov Mission",
-    type: "mission",
-    jurisdiction: "rocor",
-    jurisdictionLabel: "ROCOR",
-    city: "Lubbock",
-    state: "TX",
-    status: "verified",
-    stripeAccountId: "",
-    funds: [
-      {
-        id: "building",
-        name: "Building & Renovation Fund",
-        description: "Toward the purchase or improvement of parish property."
-      },
-      {
-        id: "iconostasis",
-        name: "Iconostasis Fund",
-        description: "Icons, altar screens, and the beautification of the nave."
-      },
-      {
-        id: "clergy",
-        name: "Clergy Support Fund",
-        description: "Direct support for the priest and his family."
-      },
-      {
-        id: "education",
-        name: "Parish School & Education",
-        description: "Catechism materials, youth programs, and seminary support."
-      },
-      {
-        id: "general",
-        name: "General Operating Fund",
-        description: "Utilities, supplies, and day-to-day parish needs."
-      }
-    ]
-  },
-  {
-    id: "st-john-the-theologian",
-    name: "St. John the Theologian Mission",
-    type: "mission",
-    jurisdiction: "oca",
-    jurisdictionLabel: "OCA",
-    city: "Memphis",
-    state: "TN",
-    status: "verified",
-    stripeAccountId: "",
-    funds: [
-      {
-        id: "general",
-        name: "General Operating Fund",
-        description: "Utilities, supplies, ministries, and day-to-day parish needs."
-      }
-    ]
-  }
-];
-
 const subscriptionTiers = [
   {
     id: "mission",
@@ -528,17 +414,10 @@ async function sendAdminRegistrationNotice(env, appUrl, registration) {
   });
 }
 
-function publicParishes() {
-  return parishes.map(({ stripeAccountId, ...parish }) => parish);
-}
-
 function publicSubscriptionTiers() {
   return subscriptionTiers.map(({ stripePriceEnv, ...tier }) => tier);
 }
 
-function findParish(id) {
-  return parishes.find((parish) => parish.id === id);
-}
 
 function slugify(value) {
   return String(value || "")
@@ -547,6 +426,19 @@ function slugify(value) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
+}
+
+function normalizeJurisdiction(value) {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized.includes("rocor") || normalized.includes("russian orthodox church outside russia")) return "rocor";
+  if (normalized.includes("orthodox church in america") || normalized === "oca") return "oca";
+  if (normalized.includes("antiochian")) return "antiochian";
+  if (normalized.includes("greek") || normalized.includes("goa")) return "goa";
+  if (normalized.includes("serbian")) return "serbian";
+  if (normalized.includes("romanian")) return "romanian";
+  if (normalized.includes("bulgarian")) return "bulgarian";
+  if (normalized.includes("ukrainian")) return "ukrainian";
+  return slugify(value || "other");
 }
 
 function parishFromRegistration(registration) {
@@ -559,7 +451,7 @@ function parishFromRegistration(registration) {
     id,
     name: registration.parishName,
     type,
-    jurisdiction: slugify(registration.jurisdiction || "other"),
+    jurisdiction: normalizeJurisdiction(registration.jurisdiction || "other"),
     jurisdictionLabel: registration.jurisdiction || "Other canonical jurisdiction",
     city: registration.city || "",
     state: registration.state || "",
@@ -640,9 +532,6 @@ async function findRegistrationByStripeSubscriptionId(env, subscriptionId) {
 }
 
 async function findCheckoutParish(env, parishId) {
-  const staticParish = findParish(parishId);
-  if (staticParish) return staticParish;
-
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return null;
 
@@ -656,15 +545,9 @@ async function findCheckoutParish(env, parishId) {
 }
 
 async function handleParishes(env) {
-  const staticParishes = publicParishes();
   const dynamicParishes = await verifiedRegistrationParishes(env);
-  const seen = new Set(staticParishes.map((parish) => parish.id));
-  const merged = [
-    ...staticParishes,
-    ...dynamicParishes.filter((parish) => !seen.has(parish.id))
-  ];
 
-  return json({ parishes: merged });
+  return json({ parishes: dynamicParishes });
 }
 
 async function handleRegistrations(request, env) {
