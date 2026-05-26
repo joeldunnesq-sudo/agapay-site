@@ -765,27 +765,38 @@ async function handleCheckout(request, env) {
   const recurring = body.frequency && body.frequency !== "once";
   const giftLabel = String(body.giftType).replace(/-/g, " ");
 
+  const checkoutMetadata = {
+    parish_id: parish.id,
+    gift_type: body.giftType,
+    fund: body.fund || "",
+    feast_description: body.feastDescription || "",
+    in_memoriam: body.inMemoriam || "",
+    campaign: body.campaign || "",
+    campaign_description: body.campaignDescription || "",
+    frequency: body.frequency || "once",
+    names_living: body.namesLiving || "",
+    names_departed: body.namesDeparted || ""
+  };
+
   const form = new URLSearchParams({
     mode: recurring ? "subscription" : "payment",
     success_url: `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&success=1`,
     cancel_url: `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&canceled=1`,
     customer_email: body.email,
-    "metadata[parish_id]": parish.id,
-    "metadata[gift_type]": body.giftType,
-    "metadata[fund]": body.fund || "",
-    "metadata[feast_description]": body.feastDescription || "",
-    "metadata[in_memoriam]": body.inMemoriam || "",
-    "metadata[campaign]": body.campaign || "",
-    "metadata[campaign_description]": body.campaignDescription || "",
-    "metadata[frequency]": body.frequency || "once",
-    "metadata[names_living]": body.namesLiving || "",
-    "metadata[names_departed]": body.namesDeparted || "",
-    "payment_intent_data[metadata][parish_id]": parish.id,
     "line_items[0][quantity]": "1",
     "line_items[0][price_data][currency]": "usd",
     "line_items[0][price_data][product_data][name]": `${parish.name} - ${giftLabel}`,
     "line_items[0][price_data][unit_amount]": String(chargeCents)
   });
+
+  for (const [key, value] of Object.entries(checkoutMetadata)) {
+    form.set(`metadata[${key}]`, value);
+    if (recurring) {
+      form.set(`subscription_data[metadata][${key}]`, value);
+    } else {
+      form.set(`payment_intent_data[metadata][${key}]`, value);
+    }
+  }
 
   if (recurring) {
     form.set("line_items[0][price_data][recurring][interval]", body.frequency === "weekly" ? "week" : "month");
