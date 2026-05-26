@@ -688,7 +688,7 @@ async function handleAdminRegistrationDetail(request, env, reference) {
     const parishDashboardToken = nextStatus === "verified" && !requestedDashboardToken
       ? generateDashboardToken()
       : requestedDashboardToken;
-    const updated = {
+    let updated = {
       ...current,
       status: nextStatus,
       parishId,
@@ -717,8 +717,24 @@ async function handleAdminRegistrationDetail(request, env, reference) {
         : current.publicProfileCreatedAt
     };
 
+    let dashboardInvite = null;
+    if (body.sendDashboardInvite && nextStatus === "verified") {
+      const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+      dashboardInvite = await sendDashboardInvite(env, appUrl, updated);
+      updated = {
+        ...updated,
+        dashboardInviteEmailStatus: dashboardInvite.status,
+        dashboardInviteEmailId: dashboardInvite.id || "",
+        dashboardInviteEmailDetail: dashboardInvite.detail || "",
+        dashboardInviteEmailRecipients: dashboardInvite.recipients || [],
+        dashboardInviteEmailSentAt: dashboardInvite.status === "sent"
+          ? new Date().toISOString()
+          : updated.dashboardInviteEmailSentAt
+      };
+    }
+
     await env.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify(updated));
-    return json({ ok: true, registration: updated });
+    return json({ ok: true, registration: updated, dashboardInvite });
   }
 
   return json({ error: "Method not allowed" }, { status: 405 });
