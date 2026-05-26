@@ -683,6 +683,10 @@
               <button class="secondary" onclick="generateDashboardToken()">Generate temporary token</button>
               <button class="gold" onclick="sendDashboardInvite('${reg.reference}')">Email dashboard invite</button>
             </div>
+            <label class="check-card" style="margin-top:0.75rem;">
+              <input id="autoDashboardInvite" type="checkbox" ${reg.status === 'verified' && reg.dashboardInviteEmailStatus === 'sent' ? '' : 'checked'} />
+              Email dashboard invite when saving a verified parish
+            </label>
             <p style="margin:0.65rem 0 0; color:var(--stone); font-size:12px; line-height:1.55;">
               The invite email goes to the priest and treasurer with the dashboard link, parish ID, and temporary token.
             </p>
@@ -759,7 +763,16 @@
       setStatus('Registration summary copied.');
     }
 
-    async function saveReview(reference) {
+    function dashboardInviteMessage(invite) {
+      if (!invite) return '';
+      if (invite.status === 'sent') return ` Dashboard invite sent to ${(invite.recipients || []).join(', ')}.`;
+      if (invite.status === 'not_configured') return ' Dashboard invite prepared, but email was not sent because RESEND_API_KEY is not configured.';
+      if (invite.status === 'missing_recipient') return ' Dashboard invite prepared, but no priest or treasurer email is on this registration.';
+      if (invite.status === 'failed') return ` Dashboard invite email failed: ${invite.detail || 'provider rejected the message'}.`;
+      return ` Dashboard invite status: ${invite.status || 'unknown'}.`;
+    }
+
+    async function saveReview(reference, options = {}) {
       setStatus('Saving review...');
       try {
         let funds = [];
@@ -794,6 +807,7 @@
             funds,
             campaigns,
             parishDashboardToken: document.getElementById('parishDashboardToken').value.trim(),
+            sendDashboardInvite: options.sendDashboardInvite ?? document.getElementById('autoDashboardInvite').checked,
             reviewerNotes: document.getElementById('reviewerNotes').value
           })
         });
@@ -802,11 +816,12 @@
 
         renderDetail(result.registration);
         await loadRegistrations();
+        const inviteMessage = dashboardInviteMessage(result.dashboardInvite);
         if (result.registration.status === 'verified' && result.registration.parishId) {
-          setStatus(`Review saved. ${result.registration.parishName} is now in /api/parishes as ${result.registration.parishId}.`);
+          setStatus(`Review saved. ${result.registration.parishName} is now in /api/parishes as ${result.registration.parishId}.${inviteMessage}`);
           return;
         }
-        setStatus('Review saved.');
+        setStatus(`Review saved.${inviteMessage}`);
       } catch (err) {
         setStatus(err.message);
       }
@@ -824,7 +839,7 @@
     async function sendDashboardInvite(reference) {
       setStatus('Sending dashboard invite...');
       try {
-        await saveReview(reference);
+        await saveReview(reference, { sendDashboardInvite: false });
 
         const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/dashboard-invite', {
           method: 'POST',
