@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Parish Dashboard | AgaPay</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
+  <link rel="shortcut icon" href="/favicons/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; }
     :root {
@@ -595,117 +597,532 @@
       padding: 0.1rem 0.28rem;
       color: var(--deep);
     }
+    .app { display: grid; grid-template-columns: 300px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar {
+      background: var(--deep);
+      color: var(--cream);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 1px solid rgba(184,144,47,0.2);
+    }
+    .sidebar-header {
+      padding: 1.5rem 1.25rem 1.25rem;
+      border-bottom: 1px solid rgba(184,144,47,0.15);
+      position: relative;
+      overflow: hidden;
+    }
+    .sidebar-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 220px;
+      height: 110px;
+      background: radial-gradient(ellipse at top, rgba(184,144,47,0.14), transparent 70%);
+      pointer-events: none;
+    }
+    .sidebar-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; position: relative; z-index: 1; }
+    .sidebar-mark {
+      width: 40px;
+      height: 40px;
+      background: rgba(184,144,47,0.12);
+      border: 1px solid rgba(184,144,47,0.3);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+    .sidebar-mark img { width: 36px; height: 36px; object-fit: contain; }
+    .sidebar-name { font-family: var(--serif); font-size: 25px; font-weight: 500; color: var(--cream); }
+    .sidebar-name em { color: var(--gold); font-style: normal; }
+    .sidebar-pill {
+      display: inline-flex;
+      border: 1px solid rgba(184,144,47,0.32);
+      border-radius: 999px;
+      padding: 0.22rem 0.65rem;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      position: relative;
+      z-index: 1;
+    }
+    .sidebar-auth, .sidebar-profile, .sidebar-metrics {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid rgba(184,144,47,0.11);
+    }
+    .sidebar-auth { display: grid; gap: 0.7rem; }
+    .sidebar-auth label {
+      color: var(--gold);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.35rem;
+    }
+    .sidebar input {
+      background: rgba(246,241,232,0.06);
+      border: 1px solid rgba(184,144,47,0.18);
+      color: var(--cream);
+      padding: 0.62rem 0.7rem;
+      font-size: 12px;
+    }
+    .sidebar input::placeholder { color: rgba(166,159,145,0.55); }
+    .sidebar-load {
+      width: 100%;
+      padding: 0.65rem 0.8rem;
+      background: var(--gold);
+      color: var(--deep);
+      box-shadow: none;
+      font-size: 13px;
+    }
+    .sidebar-profile { display: none; }
+    .sidebar-profile.visible { display: block; }
+    .sidebar-parish-name { font-family: var(--serif); font-size: 18px; color: var(--cream); line-height: 1.2; margin-bottom: 0.25rem; }
+    .sidebar-parish-meta { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 0.55rem; }
+    .sidebar-status-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.22rem 0.6rem;
+      background: rgba(47,90,57,0.25);
+      color: #91d7a1;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+    .sidebar-status-chip.paused { background: rgba(184,144,47,0.18); color: var(--gold); }
+    .sidebar-status-chip.hidden { background: rgba(111,106,96,0.2); color: var(--muted); }
+    .sidebar-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+    .sidebar-metric {
+      border: 1px solid rgba(184,144,47,0.14);
+      border-radius: 10px;
+      background: rgba(246,241,232,0.04);
+      padding: 0.75rem;
+    }
+    .sidebar-metric-val { font-family: var(--serif); font-size: 23px; color: var(--cream); line-height: 1; overflow-wrap: anywhere; }
+    .sidebar-metric.highlight .sidebar-metric-val { color: var(--gold); }
+    .sidebar-metric-label { margin-top: 0.25rem; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+    .sidebar-nav { padding: 0.75rem 0; border-bottom: 1px solid rgba(184,144,47,0.1); }
+    .sidebar-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0.65rem 1.25rem;
+      color: rgba(246,241,232,0.62);
+      font-size: 13px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sidebar-nav-item:hover { background: rgba(184,144,47,0.06); color: var(--cream); }
+    .sidebar-nav-item.active { background: rgba(184,144,47,0.1); color: var(--cream); border-left-color: var(--gold); }
+    .sidebar-nav-item svg, .sidebar-link svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
+    .sidebar-links { padding: 1rem 1.25rem; margin-top: auto; }
+    .sidebar-link { display: flex; align-items: center; gap: 8px; color: rgba(166,159,145,0.62); font-size: 12px; text-decoration: none; margin-bottom: 0.5rem; }
+    .sidebar-link:hover { color: var(--cream); }
+    .content { min-width: 0; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    .topbar {
+      height: 58px;
+      padding: 0 2rem;
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .topbar-title { font-family: var(--serif); color: var(--deep); font-size: 20px; font-weight: 600; }
+    .topbar-actions { display: flex; gap: 0.55rem; }
+    .status-bar { padding: 0 2rem; max-height: 0; overflow: hidden; transition: max-height 0.2s ease, padding 0.2s ease; }
+    .status-bar.visible { padding: 0.75rem 2rem 0; max-height: 90px; }
+    .status-inner {
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .status-inner.success { background: rgba(47,90,57,0.08); border: 1px solid rgba(47,90,57,0.2); color: var(--forest); }
+    .status-inner.error { background: rgba(150,40,40,0.07); border: 1px solid rgba(150,40,40,0.18); color: #8a2929; }
+    .status-inner.info { background: rgba(184,144,47,0.12); border: 1px solid rgba(184,144,47,0.25); color: #6b5012; }
+    .detail-wrap { flex: 1; overflow-y: auto; padding: 1.5rem 2rem 3rem; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .section-card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+      box-shadow: var(--soft-shadow);
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fff, var(--paper));
+    }
+    .section-title { font-family: var(--serif); font-size: 21px; color: var(--deep); font-weight: 600; display: flex; align-items: center; gap: 0.55rem; }
+    .section-title-icon { width: 28px; height: 28px; background: rgba(184,144,47,0.12); border: 1px solid rgba(184,144,47,0.25); border-radius: 8px; display: grid; place-items: center; }
+    .section-title-icon svg { width: 15px; height: 15px; stroke: var(--gold); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .section-body { padding: 1.25rem; }
+    .insights-card {
+      background: var(--deep);
+      border: 1px solid rgba(184,144,47,0.2);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+    .insights-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 500px;
+      height: 150px;
+      background: radial-gradient(ellipse at top, rgba(184,144,47,0.12), transparent 65%);
+      pointer-events: none;
+    }
+    .insights-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid rgba(184,144,47,0.15); position: relative; z-index: 1; }
+    .insights-title { font-family: var(--serif); font-size: 21px; color: var(--cream); font-weight: 500; }
+    .insights-body { padding: 1.25rem; position: relative; z-index: 1; }
+    .insights-empty-dark, .insights-empty { border: 1px dashed rgba(246,241,232,0.24); border-radius: 10px; padding: 1rem; color: rgba(246,241,232,0.68); font-size: 13px; line-height: 1.65; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; color: var(--stone); text-align: center; gap: 12px; }
+    .empty-state-icon { width: 56px; height: 56px; background: rgba(184,144,47,0.12); border: 1px solid rgba(184,144,47,0.25); border-radius: 999px; display: grid; place-items: center; }
+    .empty-state-icon svg { width: 24px; height: 24px; stroke: var(--gold); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+    .empty-state h3 { font-family: var(--serif); font-size: 24px; color: var(--deep); font-weight: 500; margin: 0; }
+    .empty-state p { font-size: 13px; max-width: 310px; line-height: 1.65; margin: 0; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: 10px; padding: 9px 16px; font-family: var(--sans); font-size: 13px; font-weight: 600; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s, background 0.15s; white-space: nowrap; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(15,45,31,0.12); }
+    .btn:disabled { opacity: 0.55; cursor: wait; transform: none; box-shadow: none; }
+    .btn-primary { background: var(--deep); color: var(--cream); }
+    .btn-gold { background: var(--gold); color: var(--deep); }
+    .btn-ghost { background: white; color: var(--deep); border: 1px solid var(--line); }
+    .btn-ghost-dark { background: rgba(246,241,232,0.08); color: rgba(246,241,232,0.8); border: 1px solid rgba(184,144,47,0.2); }
+    .btn-sm { padding: 6px 11px; font-size: 11px; }
+    .btn-row, .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .btn-danger-sm, .icon-button { background: rgba(150,40,40,0.06); color: #8a2929; border: 1px solid rgba(150,40,40,0.18); border-radius: 7px; width: 28px; height: 28px; display: inline-grid; place-items: center; padding: 0; font-size: 13px; cursor: pointer; box-shadow: none; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group.full, .full { grid-column: 1 / -1; }
+    .form-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--stone); font-weight: 600; }
+    .qr-layout { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+    .qr-code { width: 160px; height: 160px; display: grid; place-items: center; background: white; border: 1px solid var(--line); border-radius: 10px; padding: 0.65rem; }
+    .qr-code svg { width: 100%; height: 100%; display: block; }
+    .qr-copy-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-top: 10px; }
+    .qr-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .qr-feature-card {
+      background: white;
+      border: 1px solid rgba(184,144,47,0.28);
+      border-radius: 14px;
+      box-shadow: var(--soft-shadow);
+      margin-bottom: 1rem;
+      overflow: hidden;
+      position: relative;
+    }
+    .qr-feature-card::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto;
+      height: 4px;
+      background: linear-gradient(90deg, var(--gold), rgba(47,90,57,0.6));
+    }
+    .qr-feature-layout {
+      display: grid;
+      grid-template-columns: 118px minmax(0, 1fr) auto;
+      gap: 1rem;
+      align-items: center;
+      padding: 1.1rem 1.2rem;
+    }
+    .qr-feature-code {
+      width: 118px;
+      height: 118px;
+      display: grid;
+      place-items: center;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.5rem;
+    }
+    .qr-feature-code svg { width: 100%; height: 100%; display: block; }
+    .qr-feature-kicker {
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+    .qr-feature-title {
+      font-family: var(--serif);
+      color: var(--deep);
+      font-size: 24px;
+      line-height: 1.05;
+      font-weight: 600;
+      margin: 0 0 0.35rem;
+    }
+    .qr-feature-copy {
+      color: var(--stone);
+      font-size: 13px;
+      line-height: 1.55;
+      margin: 0;
+    }
+    .qr-feature-actions {
+      min-width: 260px;
+    }
+    .qr-feature-actions .qr-copy-row { margin-top: 0; }
+    .qr-feature-actions .btn-row { justify-content: flex-end; }
+    .option-intro, .giving-options-intro { background: rgba(47,90,57,0.06); border: 1px solid rgba(47,90,57,0.15); border-radius: 10px; padding: 0.85rem 1rem; font-size: 13px; color: var(--stone); line-height: 1.65; margin-bottom: 1rem; }
+    .option-group { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-bottom: 1rem; }
+    .option-group-head { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem; background: linear-gradient(180deg, white, var(--paper)); border-bottom: 1px solid var(--line); }
+    .option-group-title { font-size: 14px; font-weight: 600; color: var(--deep); margin: 0; }
+    .option-group-count, .option-count { font-size: 11px; color: var(--muted); }
+    .option-list { padding: 0.75rem; display: flex; flex-direction: column; gap: 6px; }
+    .option-item { border: 1px solid rgba(111,106,96,0.16); border-radius: 10px; background: white; padding: 0.75rem; }
+    .option-item-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+    .option-name { font-size: 13px; font-weight: 600; color: var(--deep); }
+    .option-desc, .option-empty { font-size: 12px; color: var(--stone); line-height: 1.5; }
+    .option-builder { border-top: 1px solid var(--line); padding: 1rem; background: var(--paper); }
+    .option-builder-title { font-size: 12px; font-weight: 700; color: var(--deep); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
+    .builder-grid { display: flex; flex-direction: column; gap: 8px; }
+    .builder-grid textarea { font-family: var(--sans); min-height: 72px; }
+    .advanced-editor, .advanced-toggle { border-top: 1px solid var(--line); margin-top: 1rem; padding-top: 1rem; }
+    .advanced-editor summary, .advanced-toggle summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--deep); margin-bottom: 0.75rem; }
+    .link-box, .stripe-link-box { display: none; margin-top: 10px; border: 1px solid rgba(184,144,47,0.28); border-radius: 10px; background: rgba(184,144,47,0.12); padding: 1rem; }
+    .link-box.visible, .stripe-link-box.visible { display: block; }
+    .link-box a, .stripe-link-box a { display: inline-flex; align-items: center; gap: 6px; background: var(--deep); color: var(--cream); padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; }
+    .link-box p, .stripe-link-box p { margin: 8px 0 0; font-size: 12px; color: var(--stone); line-height: 1.55; }
     @media (max-width: 860px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; }
       .login, .metrics, .grid, .top-dashboard, .form-grid, .toggle-row, .profile-strip, .insights-layout, .insight-stats { grid-template-columns: 1fr; }
-      .qr-layout, .qr-copy-row { grid-template-columns: 1fr; }
+      .qr-layout, .qr-copy-row, .qr-feature-layout { grid-template-columns: 1fr; }
       .qr-code { width: 148px; height: 148px; }
+      .qr-feature-actions { min-width: 0; }
+      .qr-feature-actions .btn-row { justify-content: flex-start; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="wrap">
-      <div class="brand-row">
-        <div class="brand"><img src="/mark.png" alt="" /><span>AgaPay</span></div>
-        <div class="pill">Parish dashboard</div>
-      </div>
-      <h1>Parish Dashboard</h1>
-      <p class="subtitle">Manage your public giving page, funds, campaigns, and donation settings.</p>
-    </div>
-  </header>
-
-  <main>
-    <div class="login">
-      <div>
-        <label for="parishId">Parish ID</label>
-        <input id="parishId" placeholder="st-seraphim-mission" autocomplete="off" />
-      </div>
-      <div>
-        <label for="parishToken">Parish token</label>
-        <input id="parishToken" type="password" placeholder="Paste parish dashboard token" autocomplete="current-password" />
-      </div>
-      <button onclick="loadDashboard()" id="loadBtn">Load dashboard</button>
-    </div>
-
-    <div class="status" id="status"></div>
-
-    <section class="profile-strip" id="profileStrip">
-      <div>
-        <h2 class="profile-name" id="profileName">Parish</h2>
-        <div class="profile-meta" id="profileMeta"></div>
-      </div>
-      <div class="status-chip" id="profileStatus">Active</div>
-    </section>
-
-    <div class="metrics">
-      <div class="metric"><div class="metric-value" id="metricStatus">-</div><div class="metric-label">Giving status</div></div>
-      <div class="metric"><div class="metric-value" id="metricFunds">0</div><div class="metric-label">Funds</div></div>
-      <div class="metric"><div class="metric-value" id="metricCampaigns">0</div><div class="metric-label">Campaigns</div></div>
-      <div class="metric"><div class="metric-value" id="metricStripe">-</div><div class="metric-label">Stripe</div></div>
-    </div>
-
-    <div class="top-dashboard">
-      <section class="panel giving-insights">
-        <div class="panel-title">
-          <span>Giving This Year</span>
-          <button class="secondary" onclick="loadGivingSummary()">Refresh</button>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="sidebar-mark"><img src="/mark.png" alt="AgaPay" /></div>
+          <span class="sidebar-name">Aga<em>Pay</em></span>
         </div>
-        <div class="panel-body" id="givingSummaryPane">
-          <div class="insights-empty">Load dashboard to view year-to-date giving activity.</div>
-        </div>
-      </section>
+        <span class="sidebar-pill">Parish Dashboard</span>
+      </div>
 
-      <section class="panel qr-panel">
-        <div class="panel-title">
-          <span>Parish QR Code</span>
-          <button class="secondary" onclick="copyGivingLink()">Copy link</button>
+      <div class="sidebar-auth">
+        <div>
+          <label for="parishId">Parish ID</label>
+          <input id="parishId" placeholder="st-seraphim-mission" autocomplete="off" />
         </div>
-        <div class="panel-body">
-          <div class="qr-tools">
-            <div class="qr-layout">
-              <div class="qr-code" id="qrCode" aria-label="Giving page QR code">
-                <span style="font-size:12px;color:var(--stone);text-align:center;">Load dashboard to generate QR</span>
+        <div>
+          <label for="parishToken">Parish token</label>
+          <input id="parishToken" type="password" placeholder="Parish dashboard token" autocomplete="current-password" />
+        </div>
+        <button class="sidebar-load" id="loadBtn" onclick="loadDashboard()">Load dashboard</button>
+      </div>
+
+      <div class="sidebar-profile" id="sidebarProfile">
+        <div class="sidebar-parish-name" id="sidebarParishName">-</div>
+        <div class="sidebar-parish-meta" id="sidebarParishMeta">-</div>
+        <span class="sidebar-status-chip" id="sidebarStatusChip">active</span>
+      </div>
+
+      <div class="sidebar-metrics">
+        <div class="sidebar-metric highlight">
+          <div class="sidebar-metric-val" id="metricStatus">-</div>
+          <div class="sidebar-metric-label">Status</div>
+        </div>
+        <div class="sidebar-metric">
+          <div class="sidebar-metric-val" id="metricStripe">-</div>
+          <div class="sidebar-metric-label">Stripe</div>
+        </div>
+        <div class="sidebar-metric">
+          <div class="sidebar-metric-val" id="metricFunds">0</div>
+          <div class="sidebar-metric-label">Funds</div>
+        </div>
+        <div class="sidebar-metric">
+          <div class="sidebar-metric-val" id="metricCampaigns">0</div>
+          <div class="sidebar-metric-label">Campaigns</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-item active" onclick="switchTab('giving')" id="nav-giving">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Giving Overview
+        </div>
+        <div class="sidebar-nav-item" onclick="switchTab('settings')" id="nav-settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Giving Page Settings
+        </div>
+        <div class="sidebar-nav-item" onclick="switchTab('options')" id="nav-options">
+          <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Funds &amp; Campaigns
+        </div>
+        <div class="sidebar-nav-item" onclick="switchTab('qr')" id="nav-qr">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="19" y="14" width="2" height="2"/><rect x="14" y="19" width="2" height="2"/><rect x="18" y="18" width="3" height="3"/></svg>
+          QR Code &amp; Link
+        </div>
+      </nav>
+
+      <div class="sidebar-links">
+        <a class="sidebar-link" id="sidebarPublicLink" href="/give" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Preview giving page
+        </a>
+        <a class="sidebar-link" href="/">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          AgaPay home
+        </a>
+      </div>
+    </aside>
+
+    <div class="content">
+      <div class="topbar">
+        <div class="topbar-title" id="topbarTitle">Parish Dashboard</div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm" onclick="loadDashboard()">Refresh</button>
+        </div>
+      </div>
+
+      <div class="status-bar" id="statusBar">
+        <div class="status-inner" id="statusInner"></div>
+      </div>
+
+      <div class="detail-wrap">
+        <div class="tab-panel active" id="tab-giving">
+          <div class="qr-feature-card">
+            <div class="qr-feature-layout">
+              <div class="qr-feature-code" id="qrCodeHero" aria-label="Giving page QR code">
+                <span style="font-size:11px;color:var(--stone);text-align:center;line-height:1.5;">Load dashboard<br>to generate QR</span>
               </div>
               <div>
-                <h3 class="qr-title">Direct Giving Link</h3>
-                <p class="section-note">Use this code on bulletins, signs, table cards, and parish emails. It points directly to this parish's AgaPay giving page.</p>
+                <div class="qr-feature-kicker">Parish giving link</div>
+                <h2 class="qr-feature-title">Share your AgaPay giving page</h2>
+                <p class="qr-feature-copy">Use this QR code and direct link in bulletins, emails, narthex signs, table cards, and parish announcements.</p>
+              </div>
+              <div class="qr-feature-actions">
                 <div class="qr-copy-row">
-                  <input id="givingUrlInput" value="" placeholder="Load dashboard to generate link" readonly />
-                  <button class="secondary" onclick="copyGivingLink()">Copy link</button>
+                  <input id="givingUrlHeroInput" value="" placeholder="Load dashboard to generate" readonly style="background:var(--paper);" />
+                  <button class="btn btn-ghost" onclick="copyGivingLink()">Copy</button>
                 </div>
-                <div class="qr-actions">
-                  <button class="secondary" onclick="downloadQrSvg()">Download SVG</button>
-                  <button class="secondary" onclick="downloadQrPng()">Download PNG</button>
+                <div class="btn-row">
+                  <button class="btn btn-gold" onclick="switchTab('qr')">Open QR tools</button>
+                  <button class="btn btn-ghost" onclick="downloadQrPng()">Download PNG</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="insights-card">
+            <div class="insights-header">
+              <span class="insights-title">Giving This Year</span>
+              <button class="btn btn-ghost-dark btn-sm" onclick="loadGivingSummary()">Refresh</button>
+            </div>
+            <div class="insights-body" id="givingSummaryPane">
+              <div class="insights-empty-dark">Load your dashboard to view year-to-date giving activity, donor counts, and monthly trends.</div>
+            </div>
+          </div>
+
+          <div class="empty-state" id="overviewEmpty">
+            <div class="empty-state-icon">
+              <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <h3>No data yet</h3>
+            <p>Enter your parish ID and token, then load the dashboard to see your giving overview.</p>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-settings">
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">
+                <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                Parish Information
+              </div>
+            </div>
+            <div class="section-body" id="settingsPane">
+              <div class="empty-state">
+                <div class="empty-state-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82"/></svg></div>
+                <h3>Not loaded</h3>
+                <p>Enter your parish ID and token to manage giving page settings.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-options">
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">
+                <div class="section-title-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg></div>
+                Funds &amp; Campaigns
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="copyPayload()">Copy options</button>
+            </div>
+            <div class="section-body" id="editorPane">
+              <div class="empty-state">
+                <div class="empty-state-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/></svg></div>
+                <h3>Not loaded</h3>
+                <p>Load your dashboard to manage designated funds and alms campaigns.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-qr">
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">
+                <div class="section-title-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+                Parish QR Code &amp; Giving Link
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="copyGivingLink()">Copy link</button>
+            </div>
+            <div class="section-body">
+              <div class="qr-layout">
+                <div class="qr-code" id="qrCode" aria-label="Giving page QR code">
+                  <span style="font-size:11px;color:var(--stone);text-align:center;line-height:1.5;">Load dashboard<br>to generate QR</span>
+                </div>
+                <div>
+                  <p class="section-note">Use this QR code on Sunday bulletins, welcome cards, and church signage. It points directly to this parish's AgaPay giving page.</p>
+                  <div class="qr-copy-row">
+                    <div class="form-group">
+                      <label class="form-label">Direct giving URL</label>
+                      <input id="givingUrlInput" value="" placeholder="Load dashboard to generate" readonly style="background:var(--paper);" />
+                    </div>
+                    <div style="align-self:flex-end;">
+                      <button class="btn btn-ghost" onclick="copyGivingLink()">Copy</button>
+                    </div>
+                  </div>
+                  <div class="btn-row">
+                    <button class="btn btn-ghost" onclick="downloadQrSvg()">Download SVG</button>
+                    <button class="btn btn-ghost" onclick="downloadQrPng()">Download PNG</button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
     </div>
-
-    <div class="grid">
-      <section class="panel">
-        <div class="panel-title">
-          <span>Giving Page</span>
-          <a id="publicLink" href="/give" style="color:var(--gold);font-size:13px;">Preview</a>
-        </div>
-        <div class="panel-body" id="settingsPane">
-          <div class="empty">Enter your parish ID and token.</div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-title">
-          <span>Giving Options</span>
-          <button class="secondary" onclick="copyPayload()">Copy options</button>
-        </div>
-        <div class="panel-body" id="editorPane">
-          <div class="empty">Load dashboard to manage donor giving choices.</div>
-        </div>
-      </section>
-    </div>
-  </main>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <script>
@@ -713,6 +1130,7 @@
     let currentQrSvg = '';
     let editableFunds = [];
     let editableCampaigns = [];
+    let activeTab = 'giving';
 
     const fundPresets = {
       general: {
@@ -785,8 +1203,45 @@
       }
     };
 
-    function setStatus(message) {
-      document.getElementById('status').textContent = message || '';
+    function setStatus(message, tone = '') {
+      const bar = document.getElementById('statusBar');
+      const inner = document.getElementById('statusInner');
+      if (!bar || !inner) return;
+      if (!message) {
+        bar.classList.remove('visible');
+        inner.textContent = '';
+        inner.className = 'status-inner';
+        return;
+      }
+      inner.textContent = message;
+      inner.className = 'status-inner ' + (tone || 'info');
+      bar.classList.add('visible');
+      if (tone === 'success') {
+        setTimeout(() => {
+          if (inner.textContent === message) {
+            bar.classList.remove('visible');
+            inner.textContent = '';
+            inner.className = 'status-inner';
+          }
+        }, 4000);
+      }
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+      document.querySelectorAll('.sidebar-nav-item').forEach(item => item.classList.remove('active'));
+      const panel = document.getElementById('tab-' + tab);
+      const nav = document.getElementById('nav-' + tab);
+      if (panel) panel.classList.add('active');
+      if (nav) nav.classList.add('active');
+      activeTab = tab;
+      const titles = {
+        giving: 'Giving Overview',
+        settings: 'Giving Page Settings',
+        options: 'Funds & Campaigns',
+        qr: 'QR Code & Giving Link'
+      };
+      document.getElementById('topbarTitle').textContent = titles[tab] || 'Parish Dashboard';
     }
 
     function authHeaders() {
@@ -917,7 +1372,7 @@
       const name = nameInput?.value.trim();
       const description = descInput?.value.trim();
       if (!name) {
-        setStatus(kind === 'fund' ? 'Enter a fund name.' : 'Enter a campaign name.');
+        setStatus(kind === 'fund' ? 'Enter a fund name.' : 'Enter a campaign name.', 'error');
         return;
       }
 
@@ -931,20 +1386,20 @@
       nameInput.value = '';
       descInput.value = '';
       renderGivingOptionsEditor();
-      setStatus(kind === 'fund' ? 'Fund added. Save giving options when ready.' : 'Campaign added. Save giving options when ready.');
+      setStatus(kind === 'fund' ? 'Fund added. Save giving options when ready.' : 'Campaign added. Save giving options when ready.', 'success');
     }
 
     function removeGivingOption(kind, index) {
       if (kind === 'fund') editableFunds.splice(index, 1);
       if (kind === 'campaign') editableCampaigns.splice(index, 1);
       renderGivingOptionsEditor();
-      setStatus('Giving option removed. Save giving options when ready.');
+      setStatus('Giving option removed. Save giving options when ready.', 'success');
     }
 
     async function loadDashboard() {
       const parishId = document.getElementById('parishId').value.trim();
       if (!parishId || !document.getElementById('parishToken').value.trim()) {
-        setStatus('Enter the parish ID and token.');
+        setStatus('Enter the parish ID and token.', 'error');
         return;
       }
 
@@ -960,7 +1415,7 @@
         loadGivingSummary();
         setStatus('');
       } catch (err) {
-        setStatus(err.message);
+        setStatus(err.message, 'error');
       } finally {
         document.getElementById('loadBtn').disabled = false;
       }
@@ -968,57 +1423,63 @@
 
     function renderDashboard() {
       const parish = currentParish;
-      document.getElementById('profileStrip').classList.add('visible');
-      document.getElementById('profileName').textContent = parish.parishName || 'Parish';
-      document.getElementById('profileMeta').textContent = [parish.communityType, parish.jurisdiction, [parish.city, parish.state].filter(Boolean).join(', ')].filter(Boolean).join(' / ');
-      document.getElementById('profileStatus').textContent = parish.givingStatus || 'active';
+      document.getElementById('sidebarProfile').classList.add('visible');
+      document.getElementById('sidebarParishName').textContent = parish.parishName || 'Parish';
+      document.getElementById('sidebarParishMeta').textContent = [parish.communityType, parish.jurisdiction, [parish.city, parish.state].filter(Boolean).join(', ')].filter(Boolean).join(' / ');
+      const statusChip = document.getElementById('sidebarStatusChip');
+      statusChip.textContent = parish.givingStatus || 'active';
+      statusChip.className = 'sidebar-status-chip ' + (parish.givingStatus || 'active');
       document.getElementById('metricStatus').textContent = parish.givingStatus || 'active';
       document.getElementById('metricFunds').textContent = (parish.funds || []).length;
       document.getElementById('metricCampaigns').textContent = (parish.campaigns || []).length;
       document.getElementById('metricStripe').textContent = parish.stripeAccountStatus || 'not_started';
-      document.getElementById('publicLink').href = dedicatedGivingUrl();
+      document.getElementById('sidebarPublicLink').href = dedicatedGivingUrl();
+      document.getElementById('topbarTitle').textContent = parish.parishName || 'Parish Dashboard';
+      const overviewEmpty = document.getElementById('overviewEmpty');
+      if (overviewEmpty) overviewEmpty.style.display = 'none';
 
       document.getElementById('settingsPane').innerHTML = `
         <div class="form-grid">
-          <div class="full">
-            <label>Parish</label>
-            <input value="${parish.parishName || ''}" disabled />
+          <div class="form-group full">
+            <label class="form-label">Parish name</label>
+            <input value="${escapeHtml(parish.parishName || '')}" disabled />
           </div>
-          <div>
-            <label>Jurisdiction</label>
-            <input value="${parish.jurisdiction || ''}" disabled />
+          <div class="form-group">
+            <label class="form-label">Jurisdiction</label>
+            <input value="${escapeHtml(parish.jurisdiction || '')}" disabled />
           </div>
-          <div>
-            <label>Location</label>
-            <input value="${[parish.city, parish.state].filter(Boolean).join(', ')}" disabled />
+          <div class="form-group">
+            <label class="form-label">Location</label>
+            <input value="${escapeHtml([parish.city, parish.state].filter(Boolean).join(', '))}" disabled />
           </div>
-          <div class="full">
-            <label for="website">Website</label>
-            <input id="website" value="${parish.website || ''}" placeholder="https://example.org" />
+          <div class="form-group full">
+            <label class="form-label" for="website">Website</label>
+            <input id="website" value="${escapeHtml(parish.website || '')}" placeholder="https://example.org" />
           </div>
-          <div>
-            <label for="givingStatus">Giving page status</label>
+          <div class="form-group">
+            <label class="form-label" for="givingStatus">Giving page status</label>
             <select id="givingStatus">
               <option value="active" ${parish.givingStatus === 'active' ? 'selected' : ''}>Active</option>
               <option value="paused" ${parish.givingStatus === 'paused' ? 'selected' : ''}>Paused</option>
               <option value="hidden" ${parish.givingStatus === 'hidden' ? 'selected' : ''}>Hidden</option>
             </select>
           </div>
-          <div>
-            <label>Stripe onboarding</label>
-            <input value="${parish.stripeAccountStatus || 'not_started'}" disabled />
+          <div class="form-group">
+            <label class="form-label">Stripe onboarding</label>
+            <input value="${escapeHtml(parish.stripeAccountStatus || 'not_started')}" disabled />
           </div>
         </div>
         <p class="section-note">Changes here affect the parish's public giving page and visibility in the AgaPay directory.</p>
+        <div class="section-divider"><span>Feature toggles</span></div>
         <div class="toggle-row">
           <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(parish.recurringGivingEnabled ?? true) ? 'checked' : ''} /> Recurring giving</label>
           <label class="check-card"><input id="candlesEnabled" type="checkbox" ${(parish.candlesEnabled ?? true) ? 'checked' : ''} /> Candles</label>
           <label class="check-card"><input id="commemorationsEnabled" type="checkbox" ${(parish.commemorationsEnabled ?? true) ? 'checked' : ''} /> Commemorations</label>
         </div>
-        <div class="actions">
-          <button class="gold" onclick="saveDashboard()">Save changes</button>
-          <button class="secondary" onclick="startStripeOnboarding()">Start Stripe onboarding</button>
-          <button class="secondary" onclick="loadDashboard()">Discard changes</button>
+        <div class="btn-row">
+          <button class="btn btn-gold" onclick="saveDashboard()">Save changes</button>
+          <button class="btn btn-primary" onclick="startStripeOnboarding()">Start Stripe onboarding</button>
+          <button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button>
         </div>
         <div class="stripe-link-box" id="stripeLinkBox">
           <a id="stripeOnboardingLink" href="#" target="_blank" rel="noopener">Open Stripe onboarding</a>
@@ -1178,7 +1639,7 @@
       try {
         body = payload();
       } catch {
-        setStatus('Giving options could not be saved. Open Advanced edit and check the formatting.');
+        setStatus('Giving options could not be saved. Open Advanced edit and check the formatting.', 'error');
         return;
       }
 
@@ -1190,35 +1651,43 @@
       });
       const result = await response.json();
       if (!response.ok) {
-        setStatus(result.error || 'Unable to save dashboard.');
+        setStatus(result.error || 'Unable to save dashboard.', 'error');
         return;
       }
-      setStatus('Parish settings saved.');
+      setStatus('Parish settings saved.', 'success');
       await loadDashboard();
     }
 
     function copyPayload() {
       if (!currentParish) {
-        setStatus('Load a parish first.');
+        setStatus('Load a parish first.', 'error');
         return;
       }
       navigator.clipboard.writeText(JSON.stringify(payload(), null, 2));
-      setStatus('Current settings copied.');
+      setStatus('Current settings copied.', 'success');
     }
 
     function renderQrCode() {
-      const target = document.getElementById('qrCode');
-      if (!target) return;
-      const input = document.getElementById('givingUrlInput');
+      const targets = ['qrCode', 'qrCodeHero']
+        .map(id => document.getElementById(id))
+        .filter(Boolean);
+      if (!targets.length) return;
+      const inputs = ['givingUrlInput', 'givingUrlHeroInput']
+        .map(id => document.getElementById(id))
+        .filter(Boolean);
       const url = dedicatedGivingUrl();
-      if (input) input.value = url;
+      inputs.forEach(input => { input.value = url; });
       if (!url) {
-        target.innerHTML = '<span style="font-size:12px;color:var(--stone);text-align:center;">Load dashboard to generate QR</span>';
+        targets.forEach(target => {
+          target.innerHTML = '<span style="font-size:12px;color:var(--stone);text-align:center;">Load dashboard to generate QR</span>';
+        });
         currentQrSvg = '';
         return;
       }
       if (typeof qrcode === 'undefined') {
-        target.innerHTML = '<span style="font-size:12px;color:var(--stone);text-align:center;">QR library unavailable</span>';
+        targets.forEach(target => {
+          target.innerHTML = '<span style="font-size:12px;color:var(--stone);text-align:center;">QR library unavailable</span>';
+        });
         currentQrSvg = '';
         return;
       }
@@ -1230,36 +1699,38 @@
         .createSvgTag(5, 3)
         .replace(/<svg /, '<svg role="img" aria-label="AgaPay giving QR code" ')
         .replace(/fill="#000000"/g, 'fill="#0F2D1F"');
-      target.innerHTML = currentQrSvg;
+      targets.forEach(target => {
+        target.innerHTML = currentQrSvg;
+      });
     }
 
     async function copyGivingLink() {
       const url = dedicatedGivingUrl();
       if (!url) {
-        setStatus('Load a parish first.');
+        setStatus('Load a parish first.', 'error');
         return;
       }
       await navigator.clipboard.writeText(url);
-      setStatus('Giving page link copied.');
+      setStatus('Giving page link copied.', 'success');
     }
 
     function downloadQrSvg() {
       if (!currentQrSvg) renderQrCode();
       if (!currentQrSvg) {
-        setStatus('QR code is not ready yet.');
+        setStatus('QR code is not ready yet.', 'error');
         return;
       }
       const svg = currentQrSvg.includes('xmlns=')
         ? currentQrSvg
         : currentQrSvg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
       downloadBlob(qrFilename('svg'), new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
-      setStatus('QR code SVG downloaded.');
+      setStatus('QR code SVG downloaded.', 'success');
     }
 
     function downloadQrPng() {
       if (!currentQrSvg) renderQrCode();
       if (!currentQrSvg) {
-        setStatus('QR code is not ready yet.');
+        setStatus('QR code is not ready yet.', 'error');
         return;
       }
 
@@ -1280,17 +1751,17 @@
         URL.revokeObjectURL(svgUrl);
         canvas.toBlob((blob) => {
           if (!blob) {
-            setStatus('Unable to create PNG.');
+            setStatus('Unable to create PNG.', 'error');
             return;
           }
           downloadBlob(qrFilename('png'), blob);
-          setStatus('QR code PNG downloaded.');
+          setStatus('QR code PNG downloaded.', 'success');
         }, 'image/png');
       };
 
       img.onerror = () => {
         URL.revokeObjectURL(svgUrl);
-        setStatus('Unable to render QR code PNG.');
+        setStatus('Unable to render QR code PNG.', 'error');
       };
       img.src = svgUrl;
     }
@@ -1312,9 +1783,9 @@
           link.href = result.onboardingUrl;
           linkBox.classList.add('visible');
         }
-        setStatus('Stripe onboarding link created. Click Open Stripe onboarding.');
+        setStatus('Stripe onboarding link created. Click Open Stripe onboarding.', 'success');
       } catch (err) {
-        setStatus(err.message);
+        setStatus(err.message, 'error');
       }
     }
 
