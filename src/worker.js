@@ -452,20 +452,24 @@ function cleanAssetRequest(request) {
     url.pathname = "/admin.html";
     return new Request(url, request);
   }
+  if (url.pathname === "/give/form") {
+    url.pathname = "/give/form.html";
+    return new Request(url, request);
+  }
   if (url.pathname === "/give/find_parish") {
-    url.pathname = "/give/find_parish.html";
+    url.pathname = "/give/form.html";
     return new Request(url, request);
   }
   if (url.pathname === "/give/parish-list") {
-    url.pathname = "/give/find_parish.html";
+    url.pathname = "/give/form.html";
     return new Request(url, request);
   }
   if (url.pathname === "/give/st-seraphim-mission") {
-    url.pathname = "/give/find_parish.html";
+    url.pathname = "/give/form.html";
     return new Request(url, request);
   }
   if (url.pathname.startsWith("/give/")) {
-    url.pathname = "/give/find_parish.html";
+    url.pathname = "/give/form.html";
     return new Request(url, request);
   }
   if (!url.pathname.includes(".")) {
@@ -493,4 +497,9 @@ export default {
     }
 
     if (url.pathname.startsWith("/api/")) {
-      return json({ er
+      return json({ error: "Not found" }, { status: 404 });
+    }
+
+    return env.ASSETS.fetch(cleanAssetRequest(request));
+  }
+};
