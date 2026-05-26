@@ -592,6 +592,8 @@
           ${field('Stripe Disabled Reason', reg.stripeDisabledReason)}
           ${field('Stripe Requirements Due', Array.isArray(reg.stripeRequirementsDue) ? reg.stripeRequirementsDue.join(', ') : '', 'full')}
           ${field('Stripe Invite Email', reg.stripeOnboardingEmailStatus)}
+          ${field('Dashboard Invite Email', reg.dashboardInviteEmailStatus)}
+          ${field('Dashboard Invite Recipients', Array.isArray(reg.dashboardInviteEmailRecipients) ? reg.dashboardInviteEmailRecipients.join(', ') : '', 'full')}
           ${field('Public Parish ID', reg.parishId)}
           ${field('Parish Dashboard Token', reg.parishDashboardToken ? 'Set' : 'Not set')}
           ${field('Received', reg.receivedAt)}
@@ -677,6 +679,13 @@
                 <input id="parishDashboardToken" value="${reg.parishDashboardToken || ''}" placeholder="Give this private token to the parish" />
               </div>
             </div>
+            <div class="button-row" style="margin-top:0.75rem;">
+              <button class="secondary" onclick="generateDashboardToken()">Generate temporary token</button>
+              <button class="gold" onclick="sendDashboardInvite('${reg.reference}')">Email dashboard invite</button>
+            </div>
+            <p style="margin:0.65rem 0 0; color:var(--stone); font-size:12px; line-height:1.55;">
+              The invite email goes to the priest and treasurer with the dashboard link, parish ID, and temporary token.
+            </p>
             <div class="toggle-row" style="margin-top:0.75rem;">
               <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(reg.recurringGivingEnabled ?? true) ? 'checked' : ''} /> Recurring giving</label>
               <label class="check-card"><input id="candlesEnabled" type="checkbox" ${(reg.candlesEnabled ?? true) ? 'checked' : ''} /> Candles</label>
@@ -784,7 +793,7 @@
             commemorationsEnabled: document.getElementById('commemorationsEnabled').checked,
             funds,
             campaigns,
-            parishDashboardToken: document.getElementById('parishDashboardToken').value,
+            parishDashboardToken: document.getElementById('parishDashboardToken').value.trim(),
             reviewerNotes: document.getElementById('reviewerNotes').value
           })
         });
@@ -798,6 +807,47 @@
           return;
         }
         setStatus('Review saved.');
+      } catch (err) {
+        setStatus(err.message);
+      }
+    }
+
+    function generateDashboardToken() {
+      const bytes = new Uint8Array(18);
+      crypto.getRandomValues(bytes);
+      const tokenValue = 'agp_tmp_' + Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+      const tokenInput = document.getElementById('parishDashboardToken');
+      if (tokenInput) tokenInput.value = tokenValue;
+      setStatus('Temporary dashboard token generated. Email dashboard invite will save it first.');
+    }
+
+    async function sendDashboardInvite(reference) {
+      setStatus('Sending dashboard invite...');
+      try {
+        await saveReview(reference);
+
+        const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/dashboard-invite', {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.detail || result.error || 'Unable to send dashboard invite');
+
+        renderDetail(result.registration);
+        await loadRegistrations();
+        if (result.email?.status === 'sent') {
+          setStatus(`Dashboard invite sent to ${(result.email.recipients || []).join(', ')}.`);
+          return;
+        }
+        if (result.email?.status === 'not_configured') {
+          setStatus('Dashboard invite was prepared, but email was not sent because RESEND_API_KEY is not configured.');
+          return;
+        }
+        if (result.email?.status === 'missing_recipient') {
+          setStatus('Dashboard invite was prepared, but no priest or treasurer email is on this registration.');
+          return;
+        }
+        throw new Error(result.email?.detail || `Email status: ${result.email?.status || 'unknown'}`);
       } catch (err) {
         setStatus(err.message);
       }
