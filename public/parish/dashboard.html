@@ -20,6 +20,9 @@
       --muted: #9A9488;
       --ink: #171715;
       --line: rgba(111,106,96,0.22);
+      --line-strong: rgba(15,45,31,0.16);
+      --shadow: 0 24px 70px rgba(15,45,31,0.12);
+      --soft-shadow: 0 12px 32px rgba(15,45,31,0.07);
       --serif: 'Cormorant Garamond', Georgia, serif;
       --sans: 'DM Sans', system-ui, sans-serif;
     }
@@ -27,16 +30,21 @@
       margin: 0;
       min-height: 100vh;
       font-family: var(--sans);
-      background: linear-gradient(180deg, rgba(15,45,31,0.05), transparent 260px), var(--cream);
+      background:
+        linear-gradient(180deg, rgba(15,45,31,0.07), transparent 320px),
+        linear-gradient(90deg, rgba(184,144,47,0.06), transparent 32%, rgba(47,90,57,0.05)),
+        var(--cream);
       color: var(--ink);
     }
     header {
-      background: radial-gradient(circle at 50% 0%, rgba(184,144,47,0.18), transparent 40%), var(--deep);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(184,144,47,0.22), transparent 42%),
+        linear-gradient(135deg, #0F2D1F 0%, #173B29 55%, #0B2117 100%);
       color: var(--cream);
-      padding: 1.25rem;
+      padding: 1.25rem 1.25rem 4.2rem;
       border-bottom: 1px solid rgba(184,144,47,0.5);
     }
-    .wrap { max-width: 1120px; margin: 0 auto; }
+    .wrap { max-width: 1180px; margin: 0 auto; }
     .brand-row {
       display: flex;
       justify-content: space-between;
@@ -51,13 +59,14 @@
       font-family: var(--serif);
       font-size: 28px;
     }
-    .brand img { width: 42px; height: 42px; border-radius: 8px; border: 1px solid rgba(184,144,47,0.3); }
+    .brand img { width: 42px; height: 42px; border-radius: 8px; border: 1px solid rgba(184,144,47,0.3); background: rgba(246,241,232,0.08); }
     .pill {
       border: 1px solid rgba(184,144,47,0.35);
       border-radius: 999px;
       padding: 0.45rem 0.75rem;
       color: rgba(246,241,232,0.78);
       font-size: 12px;
+      background: rgba(246,241,232,0.04);
     }
     h1 {
       margin: 0;
@@ -67,18 +76,18 @@
       line-height: 1;
     }
     .subtitle { max-width: 600px; margin: 0.75rem 0 0; color: rgba(246,241,232,0.72); line-height: 1.65; font-size: 14px; }
-    main { max-width: 1120px; margin: 0 auto; padding: 1.25rem 1.25rem 4rem; }
+    main { max-width: 1180px; margin: 0 auto; padding: 1.25rem 1.25rem 4rem; }
     .login {
       display: grid;
       grid-template-columns: minmax(180px, 0.45fr) minmax(240px, 1fr) auto;
       gap: 0.75rem;
       align-items: end;
-      margin: -2.6rem 0 1rem;
+      margin: -4.1rem 0 1rem;
       padding: 1rem;
       background: var(--paper);
       border: 1px solid rgba(184,144,47,0.28);
-      border-radius: 12px;
-      box-shadow: 0 18px 50px rgba(15,45,31,0.09);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
     }
     label {
       display: block;
@@ -97,6 +106,7 @@
       padding: 0.78rem 0.85rem;
       color: var(--ink);
       font: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
     }
     input:focus, textarea:focus, select:focus {
       outline: none;
@@ -113,11 +123,48 @@
       font: inherit;
       font-weight: 600;
       cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
     }
+    button:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(15,45,31,0.12); }
     button.gold { background: var(--gold); color: var(--deep); }
     button.secondary { background: white; color: var(--deep); border: 1px solid var(--line); }
     button:disabled { opacity: 0.6; cursor: wait; }
-    .status { min-height: 1.25rem; color: var(--forest); font-size: 13px; margin-bottom: 1rem; }
+    .status { min-height: 1.25rem; color: var(--forest); font-size: 13px; margin-bottom: 1rem; padding-left: 0.15rem; }
+    .profile-strip {
+      display: none;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1rem;
+      align-items: center;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1.1rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--soft-shadow);
+    }
+    .profile-strip.visible { display: grid; }
+    .profile-name {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(1.7rem, 3vw, 2.35rem);
+      color: var(--deep);
+      line-height: 1.05;
+    }
+    .profile-meta { margin-top: 0.35rem; color: var(--stone); font-size: 13px; }
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 0.45rem 0.75rem;
+      background: rgba(47,90,57,0.11);
+      color: var(--forest);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
     .metrics {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -127,10 +174,13 @@
     .metric {
       background: white;
       border: 1px solid var(--line);
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 1rem;
-      box-shadow: 0 10px 26px rgba(15,45,31,0.04);
+      box-shadow: var(--soft-shadow);
+      position: relative;
+      overflow: hidden;
     }
+    .metric::before { content: ''; position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, var(--gold), rgba(47,90,57,0.6)); }
     .metric-value { font-family: var(--serif); font-size: 28px; color: var(--deep); line-height: 1; }
     .metric-label { margin-top: 0.25rem; color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
     .grid {
@@ -142,22 +192,23 @@
     .panel {
       background: white;
       border: 1px solid var(--line);
-      border-radius: 12px;
+      border-radius: 14px;
       overflow: hidden;
-      box-shadow: 0 14px 35px rgba(15,45,31,0.06);
+      box-shadow: var(--soft-shadow);
     }
     .panel-title {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 0.75rem;
-      padding: 1rem 1.05rem;
+      padding: 1.05rem 1.15rem;
       border-bottom: 1px solid var(--line);
       color: var(--deep);
       font-weight: 600;
       background: linear-gradient(180deg, #fff, var(--paper));
     }
-    .panel-body { padding: 1rem; }
+    .panel-title span { font-family: var(--serif); font-size: 22px; font-weight: 600; }
+    .panel-body { padding: 1.1rem; }
     .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
     .full { grid-column: 1 / -1; }
     .toggle-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.7rem; margin-top: 0.75rem; }
@@ -172,9 +223,52 @@
       color: var(--deep);
       font-weight: 600;
     }
+    .check-card:has(input:checked) {
+      border-color: rgba(47,90,57,0.35);
+      background: rgba(47,90,57,0.07);
+    }
     .check-card input { width: auto; }
     .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
     .empty { padding: 2rem; color: var(--stone); text-align: center; line-height: 1.6; }
+    .section-note {
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.55;
+      margin: 0.4rem 0 0.85rem;
+    }
+    .stripe-link-box {
+      display: none;
+      margin-top: 0.75rem;
+      border: 1px solid rgba(184,144,47,0.28);
+      border-radius: 10px;
+      background: rgba(184,144,47,0.08);
+      padding: 0.85rem;
+    }
+    .stripe-link-box.visible { display: block; }
+    .stripe-link-box a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: var(--deep);
+      color: var(--cream);
+      padding: 0.7rem 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .stripe-link-box p {
+      margin: 0.55rem 0 0;
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .editor-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+    }
+    .editor-hint { color: var(--muted); font-size: 12px; }
     code {
       background: rgba(47,90,57,0.08);
       border: 1px solid rgba(47,90,57,0.16);
@@ -183,7 +277,7 @@
       color: var(--deep);
     }
     @media (max-width: 860px) {
-      .login, .metrics, .grid, .form-grid, .toggle-row { grid-template-columns: 1fr; }
+      .login, .metrics, .grid, .form-grid, .toggle-row, .profile-strip { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -213,6 +307,14 @@
     </div>
 
     <div class="status" id="status"></div>
+
+    <section class="profile-strip" id="profileStrip">
+      <div>
+        <h2 class="profile-name" id="profileName">Parish</h2>
+        <div class="profile-meta" id="profileMeta"></div>
+      </div>
+      <div class="status-chip" id="profileStatus">Active</div>
+    </section>
 
     <div class="metrics">
       <div class="metric"><div class="metric-value" id="metricStatus">-</div><div class="metric-label">Giving status</div></div>
@@ -296,6 +398,10 @@
 
     function renderDashboard() {
       const parish = currentParish;
+      document.getElementById('profileStrip').classList.add('visible');
+      document.getElementById('profileName').textContent = parish.parishName || 'Parish';
+      document.getElementById('profileMeta').textContent = [parish.communityType, parish.jurisdiction, [parish.city, parish.state].filter(Boolean).join(', ')].filter(Boolean).join(' / ');
+      document.getElementById('profileStatus').textContent = parish.givingStatus || 'active';
       document.getElementById('metricStatus').textContent = parish.givingStatus || 'active';
       document.getElementById('metricFunds').textContent = (parish.funds || []).length;
       document.getElementById('metricCampaigns').textContent = (parish.campaigns || []).length;
@@ -333,6 +439,7 @@
             <input value="${parish.stripeAccountStatus || 'not_started'}" disabled />
           </div>
         </div>
+        <p class="section-note">Changes here affect the parish's public giving page and visibility in the AgaPay directory.</p>
         <div class="toggle-row">
           <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(parish.recurringGivingEnabled ?? true) ? 'checked' : ''} /> Recurring giving</label>
           <label class="check-card"><input id="candlesEnabled" type="checkbox" ${(parish.candlesEnabled ?? true) ? 'checked' : ''} /> Candles</label>
@@ -340,15 +447,26 @@
         </div>
         <div class="actions">
           <button class="gold" onclick="saveDashboard()">Save changes</button>
+          <button class="secondary" onclick="startStripeOnboarding()">Start Stripe onboarding</button>
           <button class="secondary" onclick="loadDashboard()">Discard changes</button>
+        </div>
+        <div class="stripe-link-box" id="stripeLinkBox">
+          <a id="stripeOnboardingLink" href="#" target="_blank" rel="noopener">Open Stripe onboarding</a>
+          <p>Stripe onboarding links are single-use. If the link expires, return here and create a new one.</p>
         </div>
       `;
 
       document.getElementById('editorPane').innerHTML = `
-        <label for="fundsJson">Funds JSON</label>
+        <div class="editor-label-row">
+          <label for="fundsJson">Funds JSON</label>
+          <span class="editor-hint">Used by Designated Fund</span>
+        </div>
         <textarea id="fundsJson" spellcheck="false">${fallbackFunds(parish.funds)}</textarea>
         <div style="height:0.9rem;"></div>
-        <label for="campaignsJson">Campaigns JSON</label>
+        <div class="editor-label-row">
+          <label for="campaignsJson">Campaigns JSON</label>
+          <span class="editor-hint">Used by Alms Campaign</span>
+        </div>
         <textarea id="campaignsJson" spellcheck="false">${fallbackCampaigns(parish.campaigns)}</textarea>
         <div class="actions">
           <button class="gold" onclick="saveDashboard()">Save funds and campaigns</button>
@@ -400,6 +518,34 @@
       }
       navigator.clipboard.writeText(JSON.stringify(payload(), null, 2));
       setStatus('Current settings copied.');
+    }
+
+    async function startStripeOnboarding() {
+      if (!currentParish) return;
+      setStatus('Creating Stripe onboarding link...');
+      try {
+        const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/stripe-onboarding', {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.detail || result.error || 'Unable to create Stripe onboarding link');
+
+        const linkBox = document.getElementById('stripeLinkBox');
+        const link = document.getElementById('stripeOnboardingLink');
+        if (linkBox && link) {
+          link.href = result.onboardingUrl;
+          linkBox.classList.add('visible');
+        }
+        setStatus('Stripe onboarding link created. Click Open Stripe onboarding.');
+      } catch (err) {
+        setStatus(err.message);
+      }
+    }
+
+    const initialParams = new URLSearchParams(window.location.search);
+    if (initialParams.get('parish')) {
+      document.getElementById('parishId').value = initialParams.get('parish');
     }
   </script>
 </body>
