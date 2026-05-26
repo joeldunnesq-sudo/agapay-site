@@ -433,28 +433,35 @@
       background: var(--paper);
     }
     .app { display: grid; grid-template-columns: 300px minmax(0, 1fr); min-height: 100vh; }
-    .sidebar {
-      background: var(--deep);
-      color: var(--cream);
-      display: flex;
-      flex-direction: column;
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      overflow-y: auto;
-      border-right: 1px solid rgba(184,144,47,0.22);
+   .sidebar {
+     background: var(--deep);
+     color: var(--cream);
+     display: flex;
+     flex-direction: column;
+     position: sticky;
+     top: 0;
+     height: 100vh;
+     overflow: hidden; /* no longer scrollable at top level */
+     border-right: 1px solid rgba(184,144,47,0.22);
     }
-    .sidebar-header {
-      padding: 1.45rem 1.25rem 1.15rem;
-      border-bottom: 1px solid rgba(184,144,47,0.16);
-      position: sticky;
-      top: 0;
-      overflow: hidden;
-      isolation: isolate;
-      z-index: 30;
-      background: var(--deep);
-      box-shadow: 0 10px 24px rgba(15,45,31,0.18);
-    }
+   
+   .sidebar-body {
+     flex: 1;
+     overflow-y: auto;
+     display: flex;
+    flex-direction: column;
+   }
+
+.sidebar-header {
+  padding: 1.45rem 1.25rem 1.15rem;
+  border-bottom: 1px solid rgba(184,144,47,0.16);
+  flex-shrink: 0; /* never compress */
+  overflow: hidden;
+  isolation: isolate;
+  z-index: 30;
+  background: var(--deep);
+  box-shadow: 0 10px 24px rgba(15,45,31,0.18);
+}
     .sidebar-header::before {
       content: '';
       position: absolute;
@@ -1068,6 +1075,7 @@
 </head>
 <body>
   <div class="app">
+    
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-brand">
@@ -1077,71 +1085,88 @@
         <span class="sidebar-pill">Admin Console</span>
       </div>
 
-      <div class="sidebar-auth">
-        <label for="adminToken">Admin token</label>
-        <input id="adminToken" type="password" placeholder="AGAPAY_ADMIN_TOKEN" autocomplete="current-password" />
-        <button class="sidebar-load" id="loadBtn" onclick="loadRegistrations()">Load registrations</button>
-      </div>
+      <div class="sidebar-body">
+        <div class="sidebar-auth">
+          <label for="adminToken">Admin password</label>
+          <input id="adminToken" type="password" placeholder="Admin password" autocomplete="current-password" />
+          <button class="sidebar-load" id="loadBtn" onclick="loadRegistrations()">Load registrations</button>
+        </div>
 
-      <div class="sidebar-metrics">
-        <div class="sidebar-metric">
-          <div class="sidebar-metric-val" id="metricTotal">0</div>
-          <div class="sidebar-metric-label">Total</div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Change Admin Password</div>
+          <div class="sidebar-auth" style="padding:0;border-bottom:0;">
+            <div>
+              <label for="newAdminPassword">New password</label>
+              <input id="newAdminPassword" type="password" placeholder="At least 12 characters" autocomplete="new-password" />
+            </div>
+            <div>
+              <label for="confirmAdminPassword">Confirm password</label>
+              <input id="confirmAdminPassword" type="password" placeholder="Re-enter password" autocomplete="new-password" />
+            </div>
+            <button class="sidebar-load" type="button" onclick="changeAdminPassword()">Update password</button>
+          </div>
         </div>
-        <div class="sidebar-metric">
-          <div class="sidebar-metric-val" id="metricPending">0</div>
-          <div class="sidebar-metric-label">Pending</div>
-        </div>
-        <div class="sidebar-metric highlight">
-          <div class="sidebar-metric-val" id="metricVerified">0</div>
-          <div class="sidebar-metric-label">Verified</div>
-        </div>
-        <div class="sidebar-metric">
-          <div class="sidebar-metric-val" id="metricStripeReady">0</div>
-          <div class="sidebar-metric-label">Stripe live</div>
-        </div>
-      </div>
 
-      <div class="sidebar-filters">
-        <div>
-          <label for="searchInput">Search</label>
-          <input id="searchInput" type="search" placeholder="Parish, city, email..." oninput="renderFilteredList()" />
+        <div class="sidebar-metrics">
+          <div class="sidebar-metric">
+            <div class="sidebar-metric-val" id="metricTotal">0</div>
+            <div class="sidebar-metric-label">Total</div>
+          </div>
+          <div class="sidebar-metric">
+            <div class="sidebar-metric-val" id="metricPending">0</div>
+            <div class="sidebar-metric-label">Pending</div>
+          </div>
+          <div class="sidebar-metric highlight">
+            <div class="sidebar-metric-val" id="metricVerified">0</div>
+            <div class="sidebar-metric-label">Verified</div>
+          </div>
+          <div class="sidebar-metric">
+            <div class="sidebar-metric-val" id="metricStripeReady">0</div>
+            <div class="sidebar-metric-label">Stripe live</div>
+          </div>
         </div>
-        <div>
-          <label for="statusFilter">Status</label>
-          <select id="statusFilter" onchange="renderFilteredList()">
-            <option value="all">All statuses</option>
-            <option value="pending">Pending</option>
-            <option value="needs_more_info">Needs more info</option>
-            <option value="verified">Verified</option>
-            <option value="rejected">Rejected</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-        </div>
-        <div>
-          <label for="sortOrder">Sort</label>
-          <select id="sortOrder" onchange="renderFilteredList()">
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-            <option value="name">Parish name</option>
-          </select>
-        </div>
-      </div>
 
-      <div class="sidebar-section">
-        <div class="sidebar-section-title">Next Action Queue</div>
-        <div class="next-action-list" id="nextActionQueue">
-          <div class="next-action-empty">Load registrations to see the next parishes needing attention.</div>
+        <div class="sidebar-filters">
+          <div>
+            <label for="searchInput">Search</label>
+            <input id="searchInput" type="search" placeholder="Parish, city, email..." oninput="renderFilteredList()" />
+          </div>
+          <div>
+            <label for="statusFilter">Status</label>
+            <select id="statusFilter" onchange="renderFilteredList()">
+              <option value="all">All statuses</option>
+              <option value="pending">Pending</option>
+              <option value="needs_more_info">Needs more info</option>
+              <option value="verified">Verified</option>
+              <option value="rejected">Rejected</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div>
+            <label for="sortOrder">Sort</label>
+            <select id="sortOrder" onchange="renderFilteredList()">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="name">Parish name</option>
+            </select>
+          </div>
         </div>
-      </div>
 
-      <div class="sidebar-section">
-        <div class="sidebar-section-title">Quick Links</div>
-        <div class="quick-link-list">
-          <a class="quick-link" href="https://dashboard.stripe.com/" target="_blank" rel="noopener"><span>Stripe dashboard</span><span>↗</span></a>
-          <a class="quick-link" href="https://dash.cloudflare.com/" target="_blank" rel="noopener"><span>Cloudflare dashboard</span><span>↗</span></a>
-          <a class="quick-link" href="https://app.web3forms.com/" target="_blank" rel="noopener"><span>Web3Forms inbox</span><span>↗</span></a>
-          <a class="quick-link" href="https://agapay.app/" target="_blank" rel="noopener"><span>Public AgaPay site</span><span>↗</span></a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Next Action Queue</div>
+          <div class="next-action-list" id="nextActionQueue">
+            <div class="next-action-empty">Load registrations to see the next parishes needing attention.</div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Quick Links</div>
+          <div class="quick-link-list">
+            <a class="quick-link" href="https://dashboard.stripe.com/" target="_blank" rel="noopener"><span>Stripe dashboard</span><span>↗</span></a>
+            <a class="quick-link" href="https://dash.cloudflare.com/" target="_blank" rel="noopener"><span>Cloudflare dashboard</span><span>↗</span></a>
+            <a class="quick-link" href="https://app.web3forms.com/" target="_blank" rel="noopener"><span>Web3Forms inbox</span><span>↗</span></a>
+            <a class="quick-link" href="https://agapay.app/" target="_blank" rel="noopener"><span>Public AgaPay site</span><span>↗</span></a>
+          </div>
         </div>
       </div>
     </aside>
@@ -1256,6 +1281,45 @@
         'Accept': 'application/json',
         'Authorization': 'Bearer ' + token()
       };
+    }
+
+    async function changeAdminPassword() {
+      if (!token()) {
+        setStatus('Enter your current admin password first.', 'error');
+        return;
+      }
+
+      const newPasswordInput = document.getElementById('newAdminPassword');
+      const confirmPasswordInput = document.getElementById('confirmAdminPassword');
+      const newAdminPassword = newPasswordInput.value.trim();
+      const confirmAdminPassword = confirmPasswordInput.value.trim();
+
+      if (newAdminPassword.length < 12) {
+        setStatus('Admin password must be at least 12 characters.', 'error');
+        return;
+      }
+      if (newAdminPassword !== confirmAdminPassword) {
+        setStatus('Admin passwords do not match.', 'error');
+        return;
+      }
+
+      setStatus('Updating admin password...');
+      try {
+        const response = await fetch('/api/admin/password', {
+          method: 'PATCH',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newAdminPassword, confirmAdminPassword })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to update admin password');
+
+        document.getElementById('adminToken').value = newAdminPassword;
+        newPasswordInput.value = '';
+        confirmPasswordInput.value = '';
+        setStatus('Admin password updated. Use this password for future dashboard logins.', 'success');
+      } catch (err) {
+        setStatus(err.message, 'error');
+      }
     }
 
     function field(label, value, className = '') {
