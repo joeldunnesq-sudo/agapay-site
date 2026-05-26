@@ -170,6 +170,7 @@ function slugify(value) {
 function parishFromRegistration(registration) {
   const id = registration.parishId || slugify(registration.parishName);
   if (!id || registration.status !== "verified") return null;
+  if (registration.givingStatus && registration.givingStatus !== "active") return null;
   const type = normalizeCommunityType(registration.communityType);
 
   return {
@@ -181,8 +182,9 @@ function parishFromRegistration(registration) {
     city: registration.city || "",
     state: registration.state || "",
     status: "verified",
+    givingStatus: registration.givingStatus || "active",
     source: "registration",
-    funds: [
+    funds: Array.isArray(registration.funds) && registration.funds.length ? registration.funds : [
       {
         id: "general",
         name: "General Operating Fund",
@@ -431,6 +433,19 @@ async function handleAdminRegistrationDetail(request, env, reference) {
       ...current,
       status: nextStatus,
       parishId,
+      givingStatus: body.givingStatus || current.givingStatus || (nextStatus === "verified" ? "active" : "hidden"),
+      stripeAccountStatus: body.stripeAccountStatus || current.stripeAccountStatus || "not_started",
+      stripeAccountId: body.stripeAccountId ?? current.stripeAccountId ?? "",
+      reviewedBy: body.reviewedBy ?? current.reviewedBy ?? "",
+      verificationSource: body.verificationSource ?? current.verificationSource ?? "",
+      bishopOrAuthority: body.bishopOrAuthority ?? current.bishopOrAuthority ?? "",
+      dioceseOrDeanery: body.dioceseOrDeanery ?? current.dioceseOrDeanery ?? "",
+      platformFee: body.platformFee ?? current.platformFee ?? "",
+      recurringGivingEnabled: Boolean(body.recurringGivingEnabled ?? current.recurringGivingEnabled ?? true),
+      candlesEnabled: Boolean(body.candlesEnabled ?? current.candlesEnabled ?? true),
+      commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
+      funds: Array.isArray(body.funds) ? body.funds : current.funds,
+      campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
       reviewerNotes: body.reviewerNotes ?? current.reviewerNotes ?? "",
       reviewedAt: new Date().toISOString(),
       publicProfileCreatedAt: nextStatus === "verified"
