@@ -246,6 +246,22 @@ async function findRegistrationByParishId(env, parishId) {
   return null;
 }
 
+async function findCheckoutParish(env, parishId) {
+  const staticParish = findParish(parishId);
+  if (staticParish) return staticParish;
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return null;
+
+  const parish = parishFromRegistration(found.registration);
+  if (!parish) return null;
+
+  return {
+    ...parish,
+    stripeAccountId: found.registration.stripeAccountId || ""
+  };
+}
+
 async function handleParishes(env) {
   const staticParishes = publicParishes();
   const dynamicParishes = await verifiedRegistrationParishes(env);
@@ -324,7 +340,7 @@ async function handleCheckout(request, env) {
   const amountCents = centsFromAmount(body.amount);
   if (!amountCents) return json({ error: "Amount must be greater than zero" }, { status: 422 });
 
-  const parish = findParish(body.parishId);
+  const parish = await findCheckoutParish(env, body.parishId);
   if (!parish || parish.status !== "verified") return json({ error: "Verified parish not found" }, { status: 404 });
 
   if (!env.STRIPE_SECRET_KEY) {
@@ -343,8 +359,8 @@ async function handleCheckout(request, env) {
 
   const form = new URLSearchParams({
     mode: recurring ? "subscription" : "payment",
-    success_url: `${appUrl}/give/${parish.id}?success=1`,
-    cancel_url: `${appUrl}/give/${parish.id}?canceled=1`,
+    success_url: `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&success=1`,
+    cancel_url: `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&canceled=1`,
     customer_email: body.email,
     "metadata[parish_id]": parish.id,
     "metadata[gift_type]": body.giftType,
