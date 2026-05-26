@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parish Dashboard | AgaPay</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --deep: #0F2D1F;
+      --forest: #2F5A39;
+      --gold: #B8902F;
+      --cream: #F6F1E8;
+      --paper: #FFFDF9;
+      --stone: #6F6A60;
+      --muted: #9A9488;
+      --ink: #171715;
+      --line: rgba(111,106,96,0.22);
+      --serif: 'Cormorant Garamond', Georgia, serif;
+      --sans: 'DM Sans', system-ui, sans-serif;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--sans);
+      background: linear-gradient(180deg, rgba(15,45,31,0.05), transparent 260px), var(--cream);
+      color: var(--ink);
+    }
+    header {
+      background: radial-gradient(circle at 50% 0%, rgba(184,144,47,0.18), transparent 40%), var(--deep);
+      color: var(--cream);
+      padding: 1.25rem;
+      border-bottom: 1px solid rgba(184,144,47,0.5);
+    }
+    .wrap { max-width: 1120px; margin: 0 auto; }
+    .brand-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      font-family: var(--serif);
+      font-size: 28px;
+    }
+    .brand img { width: 42px; height: 42px; border-radius: 8px; border: 1px solid rgba(184,144,47,0.3); }
+    .pill {
+      border: 1px solid rgba(184,144,47,0.35);
+      border-radius: 999px;
+      padding: 0.45rem 0.75rem;
+      color: rgba(246,241,232,0.78);
+      font-size: 12px;
+    }
+    h1 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 500;
+      line-height: 1;
+    }
+    .subtitle { max-width: 600px; margin: 0.75rem 0 0; color: rgba(246,241,232,0.72); line-height: 1.65; font-size: 14px; }
+    main { max-width: 1120px; margin: 0 auto; padding: 1.25rem 1.25rem 4rem; }
+    .login {
+      display: grid;
+      grid-template-columns: minmax(180px, 0.45fr) minmax(240px, 1fr) auto;
+      gap: 0.75rem;
+      align-items: end;
+      margin: -2.6rem 0 1rem;
+      padding: 1rem;
+      background: var(--paper);
+      border: 1px solid rgba(184,144,47,0.28);
+      border-radius: 12px;
+      box-shadow: 0 18px 50px rgba(15,45,31,0.09);
+    }
+    label {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid rgba(111,106,96,0.25);
+      border-radius: 8px;
+      background: white;
+      padding: 0.78rem 0.85rem;
+      color: var(--ink);
+      font: inherit;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: rgba(184,144,47,0.75);
+      box-shadow: 0 0 0 3px rgba(184,144,47,0.12);
+    }
+    textarea { resize: vertical; min-height: 120px; line-height: 1.55; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; }
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      background: var(--deep);
+      color: var(--cream);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.gold { background: var(--gold); color: var(--deep); }
+    button.secondary { background: white; color: var(--deep); border: 1px solid var(--line); }
+    button:disabled { opacity: 0.6; cursor: wait; }
+    .status { min-height: 1.25rem; color: var(--forest); font-size: 13px; margin-bottom: 1rem; }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .metric {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 10px 26px rgba(15,45,31,0.04);
+    }
+    .metric-value { font-family: var(--serif); font-size: 28px; color: var(--deep); line-height: 1; }
+    .metric-label { margin-top: 0.25rem; color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 1rem;
+      align-items: start;
+    }
+    .panel {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 14px 35px rgba(15,45,31,0.06);
+    }
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 1.05rem;
+      border-bottom: 1px solid var(--line);
+      color: var(--deep);
+      font-weight: 600;
+      background: linear-gradient(180deg, #fff, var(--paper));
+    }
+    .panel-body { padding: 1rem; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+    .full { grid-column: 1 / -1; }
+    .toggle-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.7rem; margin-top: 0.75rem; }
+    .check-card {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--paper);
+      padding: 0.8rem;
+      color: var(--deep);
+      font-weight: 600;
+    }
+    .check-card input { width: auto; }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1rem; }
+    .empty { padding: 2rem; color: var(--stone); text-align: center; line-height: 1.6; }
+    code {
+      background: rgba(47,90,57,0.08);
+      border: 1px solid rgba(47,90,57,0.16);
+      border-radius: 6px;
+      padding: 0.1rem 0.28rem;
+      color: var(--deep);
+    }
+    @media (max-width: 860px) {
+      .login, .metrics, .grid, .form-grid, .toggle-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="brand-row">
+        <div class="brand"><img src="/mark.png" alt="" /><span>AgaPay</span></div>
+        <div class="pill">Parish dashboard</div>
+      </div>
+      <h1>Parish Dashboard</h1>
+      <p class="subtitle">Manage your public giving page, funds, campaigns, and donation settings.</p>
+    </div>
+  </header>
+
+  <main>
+    <div class="login">
+      <div>
+        <label for="parishId">Parish ID</label>
+        <input id="parishId" placeholder="st-seraphim-mission" autocomplete="off" />
+      </div>
+      <div>
+        <label for="parishToken">Parish token</label>
+        <input id="parishToken" type="password" placeholder="Paste parish dashboard token" autocomplete="current-password" />
+      </div>
+      <button onclick="loadDashboard()" id="loadBtn">Load dashboard</button>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <div class="metrics">
+      <div class="metric"><div class="metric-value" id="metricStatus">-</div><div class="metric-label">Giving status</div></div>
+      <div class="metric"><div class="metric-value" id="metricFunds">0</div><div class="metric-label">Funds</div></div>
+      <div class="metric"><div class="metric-value" id="metricCampaigns">0</div><div class="metric-label">Campaigns</div></div>
+      <div class="metric"><div class="metric-value" id="metricStripe">-</div><div class="metric-label">Stripe</div></div>
+    </div>
+
+    <div class="grid">
+      <section class="panel">
+        <div class="panel-title">
+          <span>Giving Page</span>
+          <a id="publicLink" href="/give" style="color:var(--gold);font-size:13px;">Preview</a>
+        </div>
+        <div class="panel-body" id="settingsPane">
+          <div class="empty">Enter your parish ID and token.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">
+          <span>Funds & Campaigns</span>
+          <button class="secondary" onclick="copyPayload()">Copy settings</button>
+        </div>
+        <div class="panel-body" id="editorPane">
+          <div class="empty">Load dashboard to edit funds and campaigns.</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    let currentParish = null;
+
+    function setStatus(message) {
+      document.getElementById('status').textContent = message || '';
+    }
+
+    function authHeaders() {
+      return {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer ' + document.getElementById('parishToken').value.trim()
+      };
+    }
+
+    function fallbackFunds(value) {
+      return JSON.stringify(value && value.length ? value : [
+        { id: 'general', name: 'General Operating Fund', description: 'Utilities, supplies, ministries, and day-to-day parish needs.' }
+      ], null, 2);
+    }
+
+    function fallbackCampaigns(value) {
+      return JSON.stringify(value && value.length ? value : [
+        { id: 'alms', name: 'Alms Campaign', description: 'Parish-approved alms for a specific need.' }
+      ], null, 2);
+    }
+
+    async function loadDashboard() {
+      const parishId = document.getElementById('parishId').value.trim();
+      if (!parishId || !document.getElementById('parishToken').value.trim()) {
+        setStatus('Enter the parish ID and token.');
+        return;
+      }
+
+      document.getElementById('loadBtn').disabled = true;
+      setStatus('Loading parish dashboard...');
+
+      try {
+        const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(parishId), { headers: authHeaders() });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to load dashboard');
+        currentParish = result.parish;
+        renderDashboard();
+        setStatus('');
+      } catch (err) {
+        setStatus(err.message);
+      } finally {
+        document.getElementById('loadBtn').disabled = false;
+      }
+    }
+
+    function renderDashboard() {
+      const parish = currentParish;
+      document.getElementById('metricStatus').textContent = parish.givingStatus || 'active';
+      document.getElementById('metricFunds').textContent = (parish.funds || []).length;
+      document.getElementById('metricCampaigns').textContent = (parish.campaigns || []).length;
+      document.getElementById('metricStripe').textContent = parish.stripeAccountStatus || 'not_started';
+      document.getElementById('publicLink').href = '/give/form?parish=' + encodeURIComponent(parish.parishId);
+
+      document.getElementById('settingsPane').innerHTML = `
+        <div class="form-grid">
+          <div class="full">
+            <label>Parish</label>
+            <input value="${parish.parishName || ''}" disabled />
+          </div>
+          <div>
+            <label>Jurisdiction</label>
+            <input value="${parish.jurisdiction || ''}" disabled />
+          </div>
+          <div>
+            <label>Location</label>
+            <input value="${[parish.city, parish.state].filter(Boolean).join(', ')}" disabled />
+          </div>
+          <div class="full">
+            <label for="website">Website</label>
+            <input id="website" value="${parish.website || ''}" placeholder="https://example.org" />
+          </div>
+          <div>
+            <label for="givingStatus">Giving page status</label>
+            <select id="givingStatus">
+              <option value="active" ${parish.givingStatus === 'active' ? 'selected' : ''}>Active</option>
+              <option value="paused" ${parish.givingStatus === 'paused' ? 'selected' : ''}>Paused</option>
+              <option value="hidden" ${parish.givingStatus === 'hidden' ? 'selected' : ''}>Hidden</option>
+            </select>
+          </div>
+          <div>
+            <label>Stripe onboarding</label>
+            <input value="${parish.stripeAccountStatus || 'not_started'}" disabled />
+          </div>
+        </div>
+        <div class="toggle-row">
+          <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(parish.recurringGivingEnabled ?? true) ? 'checked' : ''} /> Recurring giving</label>
+          <label class="check-card"><input id="candlesEnabled" type="checkbox" ${(parish.candlesEnabled ?? true) ? 'checked' : ''} /> Candles</label>
+          <label class="check-card"><input id="commemorationsEnabled" type="checkbox" ${(parish.commemorationsEnabled ?? true) ? 'checked' : ''} /> Commemorations</label>
+        </div>
+        <div class="actions">
+          <button class="gold" onclick="saveDashboard()">Save changes</button>
+          <button class="secondary" onclick="loadDashboard()">Discard changes</button>
+        </div>
+      `;
+
+      document.getElementById('editorPane').innerHTML = `
+        <label for="fundsJson">Funds JSON</label>
+        <textarea id="fundsJson" spellcheck="false">${fallbackFunds(parish.funds)}</textarea>
+        <div style="height:0.9rem;"></div>
+        <label for="campaignsJson">Campaigns JSON</label>
+        <textarea id="campaignsJson" spellcheck="false">${fallbackCampaigns(parish.campaigns)}</textarea>
+        <div class="actions">
+          <button class="gold" onclick="saveDashboard()">Save funds and campaigns</button>
+        </div>
+      `;
+    }
+
+    function payload() {
+      return {
+        website: document.getElementById('website').value,
+        givingStatus: document.getElementById('givingStatus').value,
+        recurringGivingEnabled: document.getElementById('recurringGivingEnabled').checked,
+        candlesEnabled: document.getElementById('candlesEnabled').checked,
+        commemorationsEnabled: document.getElementById('commemorationsEnabled').checked,
+        funds: JSON.parse(document.getElementById('fundsJson').value || '[]'),
+        campaigns: JSON.parse(document.getElementById('campaignsJson').value || '[]')
+      };
+    }
+
+    async function saveDashboard() {
+      if (!currentParish) return;
+      let body;
+      try {
+        body = payload();
+      } catch {
+        setStatus('Funds or campaigns JSON is invalid.');
+        return;
+      }
+
+      setStatus('Saving parish settings...');
+      const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setStatus(result.error || 'Unable to save dashboard.');
+        return;
+      }
+      setStatus('Parish settings saved.');
+      await loadDashboard();
+    }
+
+    function copyPayload() {
+      if (!currentParish) {
+        setStatus('Load a parish first.');
+        return;
+      }
+      navigator.clipboard.writeText(JSON.stringify(payload(), null, 2));
+      setStatus('Current settings copied.');
+    }
+  </script>
+</body>
+</html>
