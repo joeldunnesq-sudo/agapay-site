@@ -702,6 +702,13 @@ async function handleCheckout(request, env) {
     });
   }
 
+  if (!parish.stripeAccountId) {
+    return json(
+      { error: "Parish Stripe account is not connected yet", detail: "This parish needs to complete Stripe onboarding before it can receive donations." },
+      { status: 422 }
+    );
+  }
+
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const feeCents = body.coverFees ? Math.round(amountCents * 0.029 + 30) : 0;
   const chargeCents = amountCents + feeCents;
