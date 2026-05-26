@@ -449,6 +449,7 @@
       border-bottom: 1px solid rgba(184,144,47,0.16);
       position: relative;
       overflow: hidden;
+      isolation: isolate;
     }
     .sidebar-header::before {
       content: '';
@@ -460,8 +461,9 @@
       height: 110px;
       background: radial-gradient(ellipse at top, rgba(184,144,47,0.14), transparent 70%);
       pointer-events: none;
+      z-index: 0;
     }
-    .sidebar-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; position: relative; z-index: 1; }
+    .sidebar-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; position: relative; z-index: 2; }
     .sidebar-mark {
       width: 40px;
       height: 40px;
@@ -471,8 +473,10 @@
       display: grid;
       place-items: center;
       flex: 0 0 auto;
+      position: relative;
+      z-index: 3;
     }
-    .sidebar-mark img { width: 36px; height: 36px; object-fit: contain; }
+    .sidebar-mark img { width: 36px; height: 36px; object-fit: contain; display: block; position: relative; z-index: 4; }
     .sidebar-name { font-family: var(--serif); font-size: 25px; font-weight: 500; color: var(--cream); }
     .sidebar-name em { color: var(--gold); font-style: normal; }
     .sidebar-pill {
@@ -486,7 +490,7 @@
       letter-spacing: 0.1em;
       text-transform: uppercase;
       position: relative;
-      z-index: 1;
+      z-index: 2;
     }
     .sidebar-auth, .sidebar-filters {
       padding: 1rem 1.25rem;
