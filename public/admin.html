@@ -534,6 +534,78 @@
     .sidebar-metric-label { margin-top: 0.25rem; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
     .sidebar-filters { display: grid; gap: 0.7rem; }
     .sidebar-list { display: none; }
+    .sidebar-section {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid rgba(184,144,47,0.11);
+    }
+    .sidebar-section-title {
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.65rem;
+    }
+    .next-action-list {
+      display: grid;
+      gap: 0.5rem;
+    }
+    .next-action-item {
+      border: 1px solid rgba(184,144,47,0.14);
+      border-radius: 10px;
+      background: rgba(246,241,232,0.04);
+      padding: 0.7rem;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .next-action-item:hover {
+      background: rgba(184,144,47,0.08);
+      border-color: rgba(184,144,47,0.28);
+    }
+    .next-action-name {
+      color: var(--cream);
+      font-family: var(--serif);
+      font-size: 15px;
+      line-height: 1.15;
+    }
+    .next-action-label {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+      margin-top: 0.25rem;
+    }
+    .next-action-empty {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .quick-link-list {
+      display: grid;
+      gap: 0.45rem;
+    }
+    .quick-link {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      border: 1px solid rgba(184,144,47,0.14);
+      border-radius: 10px;
+      background: rgba(246,241,232,0.04);
+      color: rgba(246,241,232,0.76);
+      padding: 0.65rem 0.7rem;
+      text-decoration: none;
+      font-size: 12px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .quick-link:hover {
+      background: rgba(184,144,47,0.08);
+      color: var(--cream);
+    }
+    .quick-link span:last-child {
+      color: var(--gold);
+      font-size: 13px;
+      line-height: 1;
+    }
     .sidebar-list-header {
       display: flex;
       justify-content: space-between;
@@ -1047,6 +1119,23 @@
           </select>
         </div>
       </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Next Action Queue</div>
+        <div class="next-action-list" id="nextActionQueue">
+          <div class="next-action-empty">Load registrations to see the next parishes needing attention.</div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Quick Links</div>
+        <div class="quick-link-list">
+          <a class="quick-link" href="https://dashboard.stripe.com/" target="_blank" rel="noopener"><span>Stripe dashboard</span><span>↗</span></a>
+          <a class="quick-link" href="https://dash.cloudflare.com/" target="_blank" rel="noopener"><span>Cloudflare dashboard</span><span>↗</span></a>
+          <a class="quick-link" href="https://app.web3forms.com/" target="_blank" rel="noopener"><span>Web3Forms inbox</span><span>↗</span></a>
+          <a class="quick-link" href="https://agapay.app/" target="_blank" rel="noopener"><span>Public AgaPay site</span><span>↗</span></a>
+        </div>
+      </div>
     </aside>
 
     <div class="content">
@@ -1430,6 +1519,47 @@
       document.getElementById('metricPending').textContent = registrations.filter(item => item.status === 'pending').length;
       document.getElementById('metricVerified').textContent = registrations.filter(item => item.status === 'verified').length;
       document.getElementById('metricStripeReady').textContent = registrations.filter(item => ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus)).length;
+      renderNextActionQueue(registrations);
+    }
+
+    function nextActionPriority(reg) {
+      const status = reg.status || 'pending';
+      const stripeDone = ['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus);
+      const subscriptionDone = ['active', 'free_forever'].includes(reg.subscriptionStatus);
+
+      if (status === 'pending') return { priority: 1, label: 'Review canonical standing' };
+      if (status === 'needs_more_info') return { priority: 2, label: 'Follow up for more info' };
+      if (status !== 'verified') return null;
+      if (reg.dashboardInviteEmailStatus !== 'sent') return { priority: 3, label: 'Send dashboard invite' };
+      if (!stripeDone) return { priority: 4, label: 'Connect Stripe account' };
+      if (!subscriptionDone) return { priority: 5, label: 'Set platform subscription' };
+      return null;
+    }
+
+    function renderNextActionQueue(registrations) {
+      const container = document.getElementById('nextActionQueue');
+      if (!container) return;
+
+      const items = registrations
+        .map(reg => ({ reg, action: nextActionPriority(reg) }))
+        .filter(item => item.action)
+        .sort((a, b) => {
+          if (a.action.priority !== b.action.priority) return a.action.priority - b.action.priority;
+          return String(b.reg.receivedAt || '').localeCompare(String(a.reg.receivedAt || ''));
+        })
+        .slice(0, 5);
+
+      if (!items.length) {
+        container.innerHTML = '<div class="next-action-empty">Nothing needs attention right now.</div>';
+        return;
+      }
+
+      container.innerHTML = items.map(({ reg, action }) => `
+        <div class="next-action-item" onclick="loadDetail('${jsAttr(reg.reference)}')">
+          <div class="next-action-name">${escapeHtml(reg.parishName || reg.reference)}</div>
+          <div class="next-action-label">${escapeHtml(action.label)}</div>
+        </div>
+      `).join('');
     }
 
     function renderFilteredList() {
