@@ -824,6 +824,106 @@ async function handleAdminRegistrations(request, env) {
   return json({ registrations, cursor: list.list_complete ? null : list.cursor });
 }
 
+async function loadAllRegistrations(env) {
+  if (!env.AGAPAY_REGISTRATIONS) return [];
+
+  const list = await env.AGAPAY_REGISTRATIONS.list({ limit: 100 });
+  const registrations = [];
+
+  for (const key of list.keys) {
+    const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
+    if (!raw) continue;
+    try {
+      registrations.push(JSON.parse(raw));
+    } catch {
+      registrations.push({ reference: key.name, status: "unreadable" });
+    }
+  }
+
+  return registrations;
+}
+
+async function handleAdminPlatformSummary(request, env) {
+  if (!requireAdmin(request, env)) return unauthorized();
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  const registrations = await loadAllRegistrations(env);
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const monthly = Array.from({ length: 12 }, (_, index) => ({
+    month: index + 1,
+    label: monthLabel(index),
+    registered: 0,
+    verified: 0,
+    ytdDonationsCents: 0,
+    giftCount: 0
+  }));
+
+  let totalRegistered = 0;
+  let totalVerified = 0;
+  let connectedStripeAccounts = 0;
+  const connected = [];
+
+  for (const registration of registrations) {
+    totalRegistered += 1;
+    if (registration.status === "verified") totalVerified += 1;
+    if (registration.stripeAccountId) {
+      connectedStripeAccounts += 1;
+      connected.push(registration);
+    }
+
+    const received = registration.receivedAt ? new Date(registration.receivedAt) : null;
+    if (received && !Number.isNaN(received.getTime()) && received.getUTCFullYear() === year) {
+      monthly[received.getUTCMonth()].registered += 1;
+      if (registration.status === "verified") monthly[received.getUTCMonth()].verified += 1;
+    }
+  }
+
+  let donationDataSource = "not_configured";
+  let donationError = "";
+
+  if (env.STRIPE_SECRET_KEY && connected.length) {
+    donationDataSource = "stripe";
+    for (const registration of connected) {
+      const result = await listYtdStripeCharges(env, registration.stripeAccountId);
+      if (!result.ok) {
+        donationDataSource = "partial";
+        donationError = result.body?.error?.message || "Stripe giving summary failed for at least one parish.";
+        continue;
+      }
+
+      const summary = summarizeCharges(result.body.data || []);
+      for (const month of summary.monthly) {
+        const target = monthly[month.month - 1];
+        target.ytdDonationsCents += month.amountCents || 0;
+        target.giftCount += month.giftCount || 0;
+      }
+    }
+  } else if (!connected.length) {
+    donationDataSource = "not_connected";
+  }
+
+  const ytdDonationsCents = monthly.reduce((sum, item) => sum + item.ytdDonationsCents, 0);
+  const giftCount = monthly.reduce((sum, item) => sum + item.giftCount, 0);
+
+  return json({
+    summary: {
+      year,
+      generatedAt: now.toISOString(),
+      totalRegistered,
+      totalVerified,
+      connectedStripeAccounts,
+      ytdDonationsCents,
+      giftCount,
+      donationDataSource,
+      donationError,
+      monthly
+    }
+  });
+}
+
 async function handleAdminRegistrationDetail(request, env, reference) {
   if (!requireAdmin(request, env)) return unauthorized();
   if (!env.AGAPAY_REGISTRATIONS) {
@@ -1598,6 +1698,9 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/registrations") return handleRegistrations(request, env);
     if (request.method === "GET" && url.pathname === "/api/admin/registrations") {
       return handleAdminRegistrations(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/admin/platform-summary") {
+      return handleAdminPlatformSummary(request, env);
     }
     if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/subscription-checkout")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/subscription-checkout", ""));
