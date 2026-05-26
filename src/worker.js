@@ -195,6 +195,25 @@ async function stripeGetRequest(env, path) {
   return { ok: response.ok, status: response.status, body };
 }
 
+async function stripeGetConnectedRequest(env, path, stripeAccountId) {
+  if (!env.STRIPE_SECRET_KEY) {
+    return {
+      ok: false,
+      status: 500,
+      body: { error: { message: "STRIPE_SECRET_KEY is not configured" } }
+    };
+  }
+
+  const response = await fetch(`https://api.stripe.com${path}`, {
+    headers: {
+      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+      "Stripe-Account": stripeAccountId
+    }
+  });
+  const body = await response.json();
+  return { ok: response.ok, status: response.status, body };
+}
+
 function stripeAccountStatus(account) {
   if (account.payouts_enabled) return "payouts_enabled";
   if (account.charges_enabled) return "charges_enabled";
@@ -220,6 +239,14 @@ function htmlEscape(value) {
 
 function generateDashboardToken() {
   return `agp_tmp_${crypto.randomUUID().replace(/-/g, "")}`;
+}
+
+function startOfYearUnix(date = new Date()) {
+  return Math.floor(Date.UTC(date.getUTCFullYear(), 0, 1) / 1000);
+}
+
+function monthLabel(index) {
+  return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][index] || "";
 }
 
 async function sendEmail(env, message) {
@@ -895,6 +922,125 @@ async function handleParishStripeOnboarding(request, env, parishId) {
   return json({ ok: true, onboardingUrl: result.onboardingUrl, parish: result.registration });
 }
 
+async function listYtdStripeCharges(env, stripeAccountId) {
+  const charges = [];
+  let startingAfter = "";
+  let pages = 0;
+
+  do {
+    const params = new URLSearchParams({
+      limit: "100",
+      "created[gte]": String(startOfYearUnix())
+    });
+    if (startingAfter) params.set("starting_after", startingAfter);
+
+    const result = await stripeGetConnectedRequest(env, `/v1/charges?${params.toString()}`, stripeAccountId);
+    if (!result.ok) return result;
+
+    const data = Array.isArray(result.body.data) ? result.body.data : [];
+    charges.push(...data);
+    startingAfter = data.length ? data[data.length - 1].id : "";
+    pages += 1;
+
+    if (!result.body.has_more || !startingAfter || pages >= 5) break;
+  } while (true);
+
+  return { ok: true, body: { data: charges } };
+}
+
+function summarizeCharges(charges) {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const monthly = Array.from({ length: 12 }, (_, index) => ({
+    month: index + 1,
+    label: monthLabel(index),
+    amountCents: 0,
+    giftCount: 0
+  }));
+  const givers = new Set();
+  let ytdCents = 0;
+  let giftCount = 0;
+  let lastGiftAt = "";
+
+  for (const charge of charges) {
+    if (charge.status !== "succeeded" || charge.paid === false) continue;
+
+    const created = new Date((charge.created || 0) * 1000);
+    if (created.getUTCFullYear() !== year) continue;
+
+    const netCents = Math.max(0, Number(charge.amount_captured || charge.amount || 0) - Number(charge.amount_refunded || 0));
+    if (!netCents) continue;
+
+    const monthIndex = created.getUTCMonth();
+    monthly[monthIndex].amountCents += netCents;
+    monthly[monthIndex].giftCount += 1;
+    ytdCents += netCents;
+    giftCount += 1;
+
+    const giverKey = charge.billing_details?.email || charge.receipt_email || charge.customer || charge.payment_method || charge.id;
+    if (giverKey) givers.add(String(giverKey).toLowerCase());
+    if (!lastGiftAt || created.toISOString() > lastGiftAt) lastGiftAt = created.toISOString();
+  }
+
+  return {
+    year,
+    currency: "usd",
+    ytdCents,
+    giftCount,
+    giverCount: givers.size,
+    averageGiftCents: giftCount ? Math.round(ytdCents / giftCount) : 0,
+    lastGiftAt,
+    monthly
+  };
+}
+
+async function handleParishGivingSummary(request, env, parishId) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const token = getBearerToken(request);
+  if (!found.registration.parishDashboardToken || token !== found.registration.parishDashboardToken) {
+    return unauthorized();
+  }
+
+  const emptySummary = {
+    ...summarizeCharges([]),
+    generatedAt: new Date().toISOString()
+  };
+
+  if (!found.registration.stripeAccountId) {
+    return json({
+      summary: {
+        ...emptySummary,
+        dataSource: "not_connected",
+        note: "Stripe is not connected yet."
+      }
+    });
+  }
+
+  const result = await listYtdStripeCharges(env, found.registration.stripeAccountId);
+  if (!result.ok) {
+    return json(
+      { error: "Stripe giving summary failed", detail: result.body.error?.message || "Unknown Stripe error" },
+      { status: 502 }
+    );
+  }
+
+  return json({
+    summary: {
+      ...summarizeCharges(result.body.data || []),
+      dataSource: "stripe",
+      generatedAt: new Date().toISOString(),
+      note: result.body.data?.length >= 500 ? "Showing the first 500 Stripe charges for this year." : ""
+    }
+  });
+}
+
 async function handleParishDashboard(request, env, parishId) {
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
@@ -935,105 +1081,4 @@ async function handleParishDashboard(request, env, parishId) {
       return json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    const current = found.registration;
-    const updated = {
-      ...current,
-      website: body.website ?? current.website ?? "",
-      givingStatus: body.givingStatus || current.givingStatus || "active",
-      recurringGivingEnabled: Boolean(body.recurringGivingEnabled ?? current.recurringGivingEnabled ?? true),
-      candlesEnabled: Boolean(body.candlesEnabled ?? current.candlesEnabled ?? true),
-      commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
-      funds: Array.isArray(body.funds) ? body.funds : current.funds,
-      campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
-      parishUpdatedAt: new Date().toISOString()
-    };
-
-    await env.AGAPAY_REGISTRATIONS.put(found.key, JSON.stringify(updated));
-    return json({ ok: true, parish: updated });
-  }
-
-  return json({ error: "Method not allowed" }, { status: 405 });
-}
-
-function cleanAssetRequest(request) {
-  const url = new URL(request.url);
-  if (url.pathname === "/") return request;
-  if (url.pathname === "/admin") {
-    url.pathname = "/admin.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/parish/dashboard") {
-    url.pathname = "/parish/dashboard.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/give/form") {
-    url.pathname = "/give/form.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/give/find_parish") {
-    url.pathname = "/give/form.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/give/parish-list") {
-    url.pathname = "/give/form.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/give/st-seraphim-mission") {
-    url.pathname = "/give/form.html";
-    return new Request(url, request);
-  }
-  if (url.pathname.startsWith("/give/")) {
-    url.pathname = "/give/form.html";
-    return new Request(url, request);
-  }
-  if (!url.pathname.includes(".")) {
-    url.pathname = `${url.pathname}.html`;
-    return new Request(url, request);
-  }
-  return request;
-}
-
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-
-    if (request.method === "GET" && url.pathname === "/api/parishes") return handleParishes(env);
-    if (request.method === "POST" && url.pathname === "/api/registrations") return handleRegistrations(request, env);
-    if (request.method === "GET" && url.pathname === "/api/admin/registrations") {
-      return handleAdminRegistrations(request, env);
-    }
-    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-onboarding")) {
-      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/stripe-onboarding", ""));
-      return handleStripeOnboarding(request, env, reference);
-    }
-    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-refresh")) {
-      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/stripe-refresh", ""));
-      return handleStripeRefresh(request, env, reference);
-    }
-    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/dashboard-invite")) {
-      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/dashboard-invite", ""));
-      return handleDashboardInvite(request, env, reference);
-    }
-    if (url.pathname.startsWith("/api/admin/registrations/")) {
-      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", ""));
-      return handleAdminRegistrationDetail(request, env, reference);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stripe-onboarding")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stripe-onboarding", ""));
-      return handleParishStripeOnboarding(request, env, parishId);
-    }
-    if (url.pathname.startsWith("/api/parish/dashboard/")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", ""));
-      return handleParishDashboard(request, env, parishId);
-    }
-    if (request.method === "POST" && url.pathname === "/api/create-checkout-session") {
-      return handleCheckout(request, env);
-    }
-
-    if (url.pathname.startsWith("/api/")) {
-      return json({ error: "Not found" }, { status: 404 });
-    }
-
-    return env.ASSETS.fetch(cleanAssetRequest(request));
-  }
-};
+    const current = found.re
