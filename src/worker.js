@@ -132,6 +132,12 @@ function getAdminToken(request) {
   return request.headers.get("X-AgaPay-Admin-Token") || "";
 }
 
+function getBearerToken(request) {
+  const auth = request.headers.get("Authorization") || "";
+  if (auth.startsWith("Bearer ")) return auth.slice("Bearer ".length).trim();
+  return "";
+}
+
 function requireAdmin(request, env) {
   if (!env.AGAPAY_ADMIN_TOKEN) return false;
   return getAdminToken(request) === env.AGAPAY_ADMIN_TOKEN;
@@ -219,6 +225,25 @@ async function verifiedRegistrationParishes(env) {
   }
 
   return verified;
+}
+
+async function findRegistrationByParishId(env, parishId) {
+  if (!env.AGAPAY_REGISTRATIONS) return null;
+  const list = await env.AGAPAY_REGISTRATIONS.list({ limit: 100 });
+
+  for (const key of list.keys) {
+    const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
+    if (!raw) continue;
+    try {
+      const registration = JSON.parse(raw);
+      const currentParishId = registration.parishId || slugify(registration.parishName);
+      if (currentParishId === parishId) return { key: key.name, registration };
+    } catch {
+      // Ignore malformed records while searching.
+    }
+  }
+
+  return null;
 }
 
 async function handleParishes(env) {
@@ -446,6 +471,7 @@ async function handleAdminRegistrationDetail(request, env, reference) {
       commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
       funds: Array.isArray(body.funds) ? body.funds : current.funds,
       campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
+      parishDashboardToken: body.parishDashboardToken ?? current.parishDashboardToken ?? "",
       reviewerNotes: body.reviewerNotes ?? current.reviewerNotes ?? "",
       reviewedAt: new Date().toISOString(),
       publicProfileCreatedAt: nextStatus === "verified"
@@ -460,11 +486,75 @@ async function handleAdminRegistrationDetail(request, env, reference) {
   return json({ error: "Method not allowed" }, { status: 405 });
 }
 
+async function handleParishDashboard(request, env, parishId) {
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const token = getBearerToken(request);
+  if (!found.registration.parishDashboardToken || token !== found.registration.parishDashboardToken) {
+    return unauthorized();
+  }
+
+  if (request.method === "GET") {
+    const { registration } = found;
+    return json({
+      parish: {
+        parishId,
+        parishName: registration.parishName,
+        communityType: registration.communityType,
+        jurisdiction: registration.jurisdiction,
+        city: registration.city,
+        state: registration.state,
+        website: registration.website,
+        givingStatus: registration.givingStatus || "active",
+        stripeAccountStatus: registration.stripeAccountStatus || "not_started",
+        platformFee: registration.platformFee || "",
+        recurringGivingEnabled: registration.recurringGivingEnabled ?? true,
+        candlesEnabled: registration.candlesEnabled ?? true,
+        commemorationsEnabled: registration.commemorationsEnabled ?? true,
+        funds: Array.isArray(registration.funds) ? registration.funds : [],
+        campaigns: Array.isArray(registration.campaigns) ? registration.campaigns : []
+      }
+    });
+  }
+
+  if (request.method === "PATCH") {
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const current = found.registration;
+    const updated = {
+      ...current,
+      website: body.website ?? current.website ?? "",
+      givingStatus: body.givingStatus || current.givingStatus || "active",
+      recurringGivingEnabled: Boolean(body.recurringGivingEnabled ?? current.recurringGivingEnabled ?? true),
+      candlesEnabled: Boolean(body.candlesEnabled ?? current.candlesEnabled ?? true),
+      commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
+      funds: Array.isArray(body.funds) ? body.funds : current.funds,
+      campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
+      parishUpdatedAt: new Date().toISOString()
+    };
+
+    await env.AGAPAY_REGISTRATIONS.put(found.key, JSON.stringify(updated));
+    return json({ ok: true, parish: updated });
+  }
+
+  return json({ error: "Method not allowed" }, { status: 405 });
+}
+
 function cleanAssetRequest(request) {
   const url = new URL(request.url);
   if (url.pathname === "/") return request;
   if (url.pathname === "/admin") {
     url.pathname = "/admin.html";
+    return new Request(url, request);
+  }
+  if (url.pathname === "/parish/dashboard") {
+    url.pathname = "/parish/dashboard.html";
     return new Request(url, request);
   }
   if (url.pathname === "/give/form") {
@@ -506,6 +596,10 @@ export default {
     if (url.pathname.startsWith("/api/admin/registrations/")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", ""));
       return handleAdminRegistrationDetail(request, env, reference);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", ""));
+      return handleParishDashboard(request, env, parishId);
     }
     if (request.method === "POST" && url.pathname === "/api/create-checkout-session") {
       return handleCheckout(request, env);
