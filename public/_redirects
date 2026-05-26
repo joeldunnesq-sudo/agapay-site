@@ -1,4 +1,4 @@
-/give/:slug /give/find_parish.html 200
+/give/:slug /give/form.html 200
 /about /about.html 200
 /contact /contact.html 200
 /features /features.html 200
