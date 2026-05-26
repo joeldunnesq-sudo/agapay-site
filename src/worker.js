@@ -218,6 +218,10 @@ function htmlEscape(value) {
     .replace(/"/g, "&quot;");
 }
 
+function generateDashboardToken() {
+  return `agp_tmp_${crypto.randomUUID().replace(/-/g, "")}`;
+}
+
 async function sendEmail(env, message) {
   if (!env.RESEND_API_KEY) return { status: "not_configured" };
 
@@ -281,6 +285,53 @@ async function sendTreasurerStripeInvite(env, appUrl, registration) {
       "After opening the dashboard, enter the parish ID and token, then use the Stripe onboarding button in the Payments section."
     ].join("\n")
   });
+}
+
+async function sendDashboardInvite(env, appUrl, registration) {
+  const recipients = Array.from(new Set([
+    registration.priestEmail,
+    registration.treasurerEmail
+  ].filter(Boolean)));
+  if (!recipients.length) return { status: "missing_recipient" };
+
+  const parishId = registration.parishId || slugify(registration.parishName);
+  const dashboardUrl = `${appUrl}/parish/dashboard?parish=${encodeURIComponent(parishId)}`;
+  const from = env.AGAPAY_FROM_EMAIL || "AgaPay <onboarding@agapay.app>";
+  const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
+  const parishName = htmlEscape(registration.parishName || "your parish");
+  const token = htmlEscape(registration.parishDashboardToken || "");
+
+  const email = await sendEmail(env, {
+    from,
+    to: recipients,
+    reply_to: replyTo,
+    subject: `AgaPay dashboard access for ${registration.parishName || "your parish"}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.55;color:#171715;max-width:620px;">
+        <h2 style="color:#0F2D1F;">Your AgaPay parish dashboard</h2>
+        <p>Glory to Jesus Christ!</p>
+        <p><strong>${parishName}</strong> has been verified for AgaPay. You can now access the parish dashboard to manage your giving page, funds, campaigns, and Stripe onboarding.</p>
+        <p><a href="${dashboardUrl}" style="display:inline-block;background:#0F2D1F;color:#F6F1E8;padding:12px 16px;border-radius:8px;text-decoration:none;font-weight:700;">Open parish dashboard</a></p>
+        <p><strong>Dashboard:</strong> ${dashboardUrl}</p>
+        <p><strong>Parish ID:</strong> ${htmlEscape(parishId)}</p>
+        <p><strong>Temporary token:</strong> ${token}</p>
+        <p style="font-size:13px;color:#6F6A60;">This temporary token gives access to your AgaPay parish dashboard. Please keep it private. If you need help, reply to this email.</p>
+      </div>
+    `,
+    text: [
+      "Your AgaPay parish dashboard",
+      "",
+      `${registration.parishName || "Your parish"} has been verified for AgaPay.`,
+      "",
+      `Dashboard: ${dashboardUrl}`,
+      `Parish ID: ${parishId}`,
+      `Temporary token: ${registration.parishDashboardToken || ""}`,
+      "",
+      "This temporary token gives access to your AgaPay parish dashboard. Please keep it private."
+    ].join("\n")
+  });
+
+  return { ...email, recipients };
 }
 
 function publicParishes() {
@@ -597,6 +648,10 @@ async function handleAdminRegistrationDetail(request, env, reference) {
     const parishId = nextStatus === "verified"
       ? current.parishId || slugify(current.parishName)
       : current.parishId;
+    const requestedDashboardToken = body.parishDashboardToken ?? current.parishDashboardToken ?? "";
+    const parishDashboardToken = nextStatus === "verified" && !requestedDashboardToken
+      ? generateDashboardToken()
+      : requestedDashboardToken;
     const updated = {
       ...current,
       status: nextStatus,
@@ -614,7 +669,11 @@ async function handleAdminRegistrationDetail(request, env, reference) {
       commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
       funds: Array.isArray(body.funds) ? body.funds : current.funds,
       campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
-      parishDashboardToken: body.parishDashboardToken ?? current.parishDashboardToken ?? "",
+      parishDashboardToken,
+      parishDashboardTokenTemporary: Boolean(parishDashboardToken),
+      parishDashboardTokenCreatedAt: parishDashboardToken && parishDashboardToken !== current.parishDashboardToken
+        ? new Date().toISOString()
+        : current.parishDashboardTokenCreatedAt,
       reviewerNotes: body.reviewerNotes ?? current.reviewerNotes ?? "",
       reviewedAt: new Date().toISOString(),
       publicProfileCreatedAt: nextStatus === "verified"
@@ -774,6 +833,45 @@ async function handleStripeRefresh(request, env, reference) {
   return json({ ok: true, registration: updated });
 }
 
+async function handleDashboardInvite(request, env, reference) {
+  if (!requireAdmin(request, env)) return unauthorized();
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
+  if (!raw) return json({ error: "Registration not found" }, { status: 404 });
+
+  const registration = JSON.parse(raw);
+  if (registration.status !== "verified") {
+    return json({ error: "Verify the parish before sending a dashboard invite" }, { status: 422 });
+  }
+
+  const parishDashboardToken = registration.parishDashboardToken || generateDashboardToken();
+  const withToken = {
+    ...registration,
+    parishId: registration.parishId || slugify(registration.parishName),
+    parishDashboardToken,
+    parishDashboardTokenTemporary: true,
+    parishDashboardTokenCreatedAt: registration.parishDashboardTokenCreatedAt || new Date().toISOString()
+  };
+
+  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+  const email = await sendDashboardInvite(env, appUrl, withToken);
+  const updated = {
+    ...withToken,
+    dashboardInviteEmailStatus: email.status,
+    dashboardInviteEmailId: email.id || "",
+    dashboardInviteEmailDetail: email.detail || "",
+    dashboardInviteEmailRecipients: email.recipients || [],
+    dashboardInviteEmailSentAt: email.status === "sent" ? new Date().toISOString() : withToken.dashboardInviteEmailSentAt
+  };
+  await env.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify(updated));
+
+  return json({ ok: true, email, registration: updated });
+}
+
 async function handleParishStripeOnboarding(request, env, parishId) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   if (!env.AGAPAY_REGISTRATIONS) {
@@ -911,6 +1009,10 @@ export default {
     if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-refresh")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/stripe-refresh", ""));
       return handleStripeRefresh(request, env, reference);
+    }
+    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/dashboard-invite")) {
+      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/dashboard-invite", ""));
+      return handleDashboardInvite(request, env, reference);
     }
     if (url.pathname.startsWith("/api/admin/registrations/")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", ""));
