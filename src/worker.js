@@ -320,10 +320,10 @@ async function sendTreasurerStripeInvite(env, appUrl, registration) {
       <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
         <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">Dashboard credentials</p>
         <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Parish ID:</strong> ${htmlEscape(parishId)}</p>
-        <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Parish token:</strong> ${token}</p>
+        <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Parish password:</strong> ${token}</p>
       </div>
-      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">After opening the dashboard, enter the parish ID and token, then use the Stripe onboarding button in the Payments section.</p>
-      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">For security, Stripe onboarding links are created inside AgaPay after the parish token is entered.</p>
+      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">After opening the dashboard, enter the parish ID and password, then use the Stripe onboarding button in the Payments section.</p>
+      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">For security, Stripe onboarding links are created inside AgaPay after the parish password is entered.</p>
     `),
     text: [
       "AgaPay Stripe onboarding",
@@ -333,9 +333,9 @@ async function sendTreasurerStripeInvite(env, appUrl, registration) {
       "",
       `Open parish dashboard: ${dashboardUrl}`,
       `Parish ID: ${parishId}`,
-      `Parish token: ${registration.parishDashboardToken || ""}`,
+      `Parish password: ${registration.parishDashboardToken || ""}`,
       "",
-      "After opening the dashboard, enter the parish ID and token, then use the Stripe onboarding button in the Payments section."
+      "After opening the dashboard, enter the parish ID and password, then use the Stripe onboarding button in the Payments section."
     ].join("\n")
   });
 }
@@ -372,10 +372,10 @@ async function sendDashboardInvite(env, appUrl, registration) {
         <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">Dashboard credentials</p>
         <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Dashboard:</strong> <a href="${safeDashboardUrl}" style="color:#2F5A39;text-decoration:underline;">${safeDashboardUrl}</a></p>
         <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Parish ID:</strong> ${htmlEscape(parishId)}</p>
-        <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Temporary token:</strong> ${token}</p>
+        <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Temporary password:</strong> ${token}</p>
       </div>
-      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">After opening the dashboard, enter the parish ID and temporary token, then use the Stripe onboarding button in the Payments section.</p>
-      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">This temporary token gives access to your AgaPay parish dashboard. Please keep it private.</p>
+      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">After opening the dashboard, enter the parish ID and temporary password, then use the Stripe onboarding button in the Payments section.</p>
+      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">This temporary password gives access to your AgaPay parish dashboard. Please keep it private.</p>
     `),
     text: [
       "Your AgaPay parish dashboard",
@@ -385,11 +385,11 @@ async function sendDashboardInvite(env, appUrl, registration) {
       "",
       `Dashboard: ${dashboardUrl}`,
       `Parish ID: ${parishId}`,
-      `Temporary token: ${registration.parishDashboardToken || ""}`,
+      `Temporary password: ${registration.parishDashboardToken || ""}`,
       "",
-      "After opening the dashboard, enter the parish ID and temporary token, then use the Stripe onboarding button in the Payments section.",
+      "After opening the dashboard, enter the parish ID and temporary password, then use the Stripe onboarding button in the Payments section.",
       "",
-      "This temporary token gives access to your AgaPay parish dashboard. Please keep it private."
+      "This temporary password gives access to your AgaPay parish dashboard. Please keep it private."
     ].join("\n")
   });
 
@@ -1627,6 +1627,13 @@ async function handleParishDashboard(request, env, parishId) {
     }
 
     const current = found.registration;
+    const requestedPassword = body.newDashboardPassword !== undefined
+      ? String(body.newDashboardPassword || "").trim()
+      : "";
+    if (requestedPassword && requestedPassword.length < 8) {
+      return json({ error: "Dashboard password must be at least 8 characters." }, { status: 400 });
+    }
+
     const updated = {
       ...current,
       website: body.website ?? current.website ?? "",
@@ -1636,6 +1643,9 @@ async function handleParishDashboard(request, env, parishId) {
       commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
       funds: Array.isArray(body.funds) ? body.funds : current.funds,
       campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
+      parishDashboardToken: requestedPassword || current.parishDashboardToken,
+      parishDashboardTokenTemporary: requestedPassword ? false : current.parishDashboardTokenTemporary,
+      parishDashboardTokenUpdatedAt: requestedPassword ? new Date().toISOString() : current.parishDashboardTokenUpdatedAt,
       parishUpdatedAt: new Date().toISOString()
     };
 
