@@ -170,11 +170,12 @@ function slugify(value) {
 function parishFromRegistration(registration) {
   const id = registration.parishId || slugify(registration.parishName);
   if (!id || registration.status !== "verified") return null;
+  const type = normalizeCommunityType(registration.communityType);
 
   return {
     id,
     name: registration.parishName,
-    type: String(registration.communityType || "parish").toLowerCase(),
+    type,
     jurisdiction: slugify(registration.jurisdiction || "other"),
     jurisdictionLabel: registration.jurisdiction || "Other canonical jurisdiction",
     city: registration.city || "",
@@ -189,6 +190,13 @@ function parishFromRegistration(registration) {
       }
     ]
   };
+}
+
+function normalizeCommunityType(value) {
+  const normalized = String(value || "parish").toLowerCase();
+  if (normalized.includes("monastery") || normalized.includes("skete")) return "monastery";
+  if (normalized.includes("mission")) return "mission";
+  return "parish";
 }
 
 async function verifiedRegistrationParishes(env) {
@@ -314,6 +322,10 @@ async function handleCheckout(request, env) {
     "metadata[parish_id]": parish.id,
     "metadata[gift_type]": body.giftType,
     "metadata[fund]": body.fund || "",
+    "metadata[feast_description]": body.feastDescription || "",
+    "metadata[in_memoriam]": body.inMemoriam || "",
+    "metadata[campaign]": body.campaign || "",
+    "metadata[campaign_description]": body.campaignDescription || "",
     "metadata[frequency]": body.frequency || "once",
     "metadata[names_living]": body.namesLiving || "",
     "metadata[names_departed]": body.namesDeparted || "",
@@ -438,6 +450,10 @@ function cleanAssetRequest(request) {
   if (url.pathname === "/") return request;
   if (url.pathname === "/admin") {
     url.pathname = "/admin.html";
+    return new Request(url, request);
+  }
+  if (url.pathname === "/give/parish-list") {
+    url.pathname = "/give/st-seraphim-mission.html";
     return new Request(url, request);
   }
   if (url.pathname === "/give/st-seraphim-mission") {
