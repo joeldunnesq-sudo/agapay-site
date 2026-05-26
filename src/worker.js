@@ -156,6 +156,60 @@ function centsFromAmount(amount) {
   return Math.round(numeric * 100);
 }
 
+async function stripeFormRequest(env, path, form, method = "POST") {
+  if (!env.STRIPE_SECRET_KEY) {
+    return {
+      ok: false,
+      status: 500,
+      body: { error: { message: "STRIPE_SECRET_KEY is not configured" } }
+    };
+  }
+
+  const response = await fetch(`https://api.stripe.com${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: form
+  });
+  const body = await response.json();
+  return { ok: response.ok, status: response.status, body };
+}
+
+async function stripeGetRequest(env, path) {
+  if (!env.STRIPE_SECRET_KEY) {
+    return {
+      ok: false,
+      status: 500,
+      body: { error: { message: "STRIPE_SECRET_KEY is not configured" } }
+    };
+  }
+
+  const response = await fetch(`https://api.stripe.com${path}`, {
+    headers: {
+      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`
+    }
+  });
+  const body = await response.json();
+  return { ok: response.ok, status: response.status, body };
+}
+
+function stripeAccountStatus(account) {
+  if (account.payouts_enabled) return "payouts_enabled";
+  if (account.charges_enabled) return "charges_enabled";
+  if (account.requirements?.disabled_reason) return "restricted";
+  if (account.details_submitted) return "onboarding";
+  return "invited";
+}
+
+function absoluteWebsiteUrl(value) {
+  const website = String(value || "").trim();
+  if (!website) return "";
+  if (/^https?:\/\//i.test(website)) return website;
+  return `https://${website}`;
+}
+
 function publicParishes() {
   return parishes.map(({ stripeAccountId, ...parish }) => parish);
 }
@@ -502,6 +556,132 @@ async function handleAdminRegistrationDetail(request, env, reference) {
   return json({ error: "Method not allowed" }, { status: 405 });
 }
 
+async function handleStripeOnboarding(request, env, reference) {
+  if (!requireAdmin(request, env)) return unauthorized();
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
+  if (!raw) return json({ error: "Registration not found" }, { status: 404 });
+
+  const registration = JSON.parse(raw);
+  if (registration.status !== "verified") {
+    return json({ error: "Verify the parish before starting Stripe onboarding" }, { status: 422 });
+  }
+
+  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+  let stripeAccountId = registration.stripeAccountId || "";
+  let stripeAccount = null;
+
+  if (!stripeAccountId) {
+    const accountForm = new URLSearchParams({
+      type: "express",
+      country: "US",
+      email: registration.treasurerEmail || registration.priestEmail || "",
+      business_type: "non_profit",
+      "business_profile[name]": registration.parishName || "AgaPay Parish",
+      "business_profile[product_description]": "Online tithes, stewardship, and charitable donations for an Orthodox Christian parish.",
+      "capabilities[card_payments][requested]": "true",
+      "capabilities[transfers][requested]": "true",
+      "metadata[agapay_reference]": reference,
+      "metadata[agapay_parish_id]": registration.parishId || slugify(registration.parishName)
+    });
+    const website = absoluteWebsiteUrl(registration.website);
+    if (website) accountForm.set("business_profile[url]", website);
+
+    const created = await stripeFormRequest(env, "/v1/accounts", accountForm);
+    if (!created.ok) {
+      return json(
+        { error: "Stripe connected account creation failed", detail: created.body.error?.message || "Unknown Stripe error" },
+        { status: 502 }
+      );
+    }
+
+    stripeAccount = created.body;
+    stripeAccountId = stripeAccount.id;
+  } else {
+    const retrieved = await stripeGetRequest(env, `/v1/accounts/${encodeURIComponent(stripeAccountId)}`);
+    if (!retrieved.ok) {
+      return json(
+        { error: "Stripe connected account lookup failed", detail: retrieved.body.error?.message || "Unknown Stripe error" },
+        { status: 502 }
+      );
+    }
+    stripeAccount = retrieved.body;
+  }
+
+  const linkForm = new URLSearchParams({
+    account: stripeAccountId,
+    refresh_url: `${appUrl}/admin?stripe_refresh=${encodeURIComponent(reference)}`,
+    return_url: `${appUrl}/admin?stripe_return=${encodeURIComponent(reference)}`,
+    type: "account_onboarding"
+  });
+  const link = await stripeFormRequest(env, "/v1/account_links", linkForm);
+  if (!link.ok) {
+    return json(
+      { error: "Stripe onboarding link failed", detail: link.body.error?.message || "Unknown Stripe error" },
+      { status: 502 }
+    );
+  }
+
+  const updated = {
+    ...registration,
+    stripeAccountId,
+    stripeAccountStatus: stripeAccountStatus(stripeAccount),
+    stripeChargesEnabled: Boolean(stripeAccount.charges_enabled),
+    stripePayoutsEnabled: Boolean(stripeAccount.payouts_enabled),
+    stripeDetailsSubmitted: Boolean(stripeAccount.details_submitted),
+    stripeDisabledReason: stripeAccount.requirements?.disabled_reason || "",
+    stripeRequirementsDue: stripeAccount.requirements?.currently_due || [],
+    stripeOnboardingLinkCreatedAt: new Date().toISOString(),
+    reviewedAt: registration.reviewedAt || new Date().toISOString()
+  };
+  await env.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify(updated));
+
+  return json({ ok: true, onboardingUrl: link.body.url, registration: updated });
+}
+
+async function handleStripeRefresh(request, env, reference) {
+  if (!requireAdmin(request, env)) return unauthorized();
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
+  if (!raw) return json({ error: "Registration not found" }, { status: 404 });
+
+  const registration = JSON.parse(raw);
+  if (!registration.stripeAccountId) {
+    return json({ error: "This registration does not have a Stripe connected account yet" }, { status: 422 });
+  }
+
+  const retrieved = await stripeGetRequest(env, `/v1/accounts/${encodeURIComponent(registration.stripeAccountId)}`);
+  if (!retrieved.ok) {
+    return json(
+      { error: "Stripe connected account lookup failed", detail: retrieved.body.error?.message || "Unknown Stripe error" },
+      { status: 502 }
+    );
+  }
+
+  const account = retrieved.body;
+  const updated = {
+    ...registration,
+    stripeAccountStatus: stripeAccountStatus(account),
+    stripeChargesEnabled: Boolean(account.charges_enabled),
+    stripePayoutsEnabled: Boolean(account.payouts_enabled),
+    stripeDetailsSubmitted: Boolean(account.details_submitted),
+    stripeDisabledReason: account.requirements?.disabled_reason || "",
+    stripeRequirementsDue: account.requirements?.currently_due || [],
+    stripeStatusCheckedAt: new Date().toISOString()
+  };
+  await env.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify(updated));
+
+  return json({ ok: true, registration: updated });
+}
+
 async function handleParishDashboard(request, env, parishId) {
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
@@ -608,6 +788,14 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/registrations") return handleRegistrations(request, env);
     if (request.method === "GET" && url.pathname === "/api/admin/registrations") {
       return handleAdminRegistrations(request, env);
+    }
+    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-onboarding")) {
+      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/stripe-onboarding", ""));
+      return handleStripeOnboarding(request, env, reference);
+    }
+    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-refresh")) {
+      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/stripe-refresh", ""));
+      return handleStripeRefresh(request, env, reference);
     }
     if (url.pathname.startsWith("/api/admin/registrations/")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", ""));
