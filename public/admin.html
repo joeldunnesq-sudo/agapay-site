@@ -547,6 +547,11 @@
           ${field('Status', reg.status)}
           ${field('Giving Status', reg.givingStatus)}
           ${field('Stripe Status', reg.stripeAccountStatus)}
+          ${field('Stripe Account ID', reg.stripeAccountId)}
+          ${field('Charges Enabled', reg.stripeChargesEnabled === undefined ? '' : String(reg.stripeChargesEnabled))}
+          ${field('Payouts Enabled', reg.stripePayoutsEnabled === undefined ? '' : String(reg.stripePayoutsEnabled))}
+          ${field('Stripe Disabled Reason', reg.stripeDisabledReason)}
+          ${field('Stripe Requirements Due', Array.isArray(reg.stripeRequirementsDue) ? reg.stripeRequirementsDue.join(', ') : '', 'full')}
           ${field('Public Parish ID', reg.parishId)}
           ${field('Parish Dashboard Token', reg.parishDashboardToken ? 'Set' : 'Not set')}
           ${field('Received', reg.receivedAt)}
@@ -668,6 +673,13 @@
                 <input id="stripeAccountId" value="${reg.stripeAccountId || ''}" placeholder="acct_..." />
               </div>
             </div>
+            <div class="button-row" style="margin-top:0.75rem;">
+              <button class="gold" onclick="startStripeOnboarding('${reg.reference}')">Create onboarding link</button>
+              <button class="secondary" onclick="refreshStripeStatus('${reg.reference}')">Refresh Stripe status</button>
+            </div>
+            <p style="margin:0.65rem 0 0; color:var(--stone); font-size:12px; line-height:1.55;">
+              Onboarding links are single-use. If a link expires or the parish returns later, create a fresh one.
+            </p>
           </div>
 
           <div class="admin-section">
@@ -744,6 +756,55 @@
       } catch (err) {
         setStatus(err.message);
       }
+    }
+
+    async function startStripeOnboarding(reference) {
+      setStatus('Creating Stripe onboarding link...');
+      const popup = window.open('', '_blank');
+      try {
+        const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/stripe-onboarding', {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.detail || result.error || 'Unable to create Stripe onboarding link');
+
+        renderDetail(result.registration);
+        await loadRegistrations();
+        await navigator.clipboard.writeText(result.onboardingUrl);
+        setStatus('Stripe onboarding link created and copied. Opening it now.');
+        if (popup) {
+          popup.location.href = result.onboardingUrl;
+        } else {
+          window.location.href = result.onboardingUrl;
+        }
+      } catch (err) {
+        if (popup) popup.close();
+        setStatus(err.message);
+      }
+    }
+
+    async function refreshStripeStatus(reference) {
+      setStatus('Refreshing Stripe status...');
+      try {
+        const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/stripe-refresh', {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.detail || result.error || 'Unable to refresh Stripe status');
+
+        renderDetail(result.registration);
+        await loadRegistrations();
+        setStatus(`Stripe status refreshed: ${result.registration.stripeAccountStatus || 'unknown'}.`);
+      } catch (err) {
+        setStatus(err.message);
+      }
+    }
+
+    const stripeReturnReference = new URLSearchParams(window.location.search).get('stripe_return');
+    if (stripeReturnReference) {
+      setStatus(`Stripe onboarding returned for ${stripeReturnReference}. Paste your admin token, load registrations, then refresh Stripe status.`);
     }
   </script>
 </body>
