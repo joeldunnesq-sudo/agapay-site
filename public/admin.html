@@ -591,6 +591,7 @@
           ${field('Payouts Enabled', reg.stripePayoutsEnabled === undefined ? '' : String(reg.stripePayoutsEnabled))}
           ${field('Stripe Disabled Reason', reg.stripeDisabledReason)}
           ${field('Stripe Requirements Due', Array.isArray(reg.stripeRequirementsDue) ? reg.stripeRequirementsDue.join(', ') : '', 'full')}
+          ${field('Stripe Invite Email', reg.stripeOnboardingEmailStatus)}
           ${field('Public Parish ID', reg.parishId)}
           ${field('Parish Dashboard Token', reg.parishDashboardToken ? 'Set' : 'Not set')}
           ${field('Received', reg.receivedAt)}
@@ -828,9 +829,17 @@
         } catch {
           copied = false;
         }
+        const emailStatus = result.email?.status || 'unknown';
+        const emailNote = emailStatus === 'sent'
+          ? ' Treasurer invite email sent.'
+          : emailStatus === 'not_configured'
+            ? ' Email not sent because RESEND_API_KEY is not configured.'
+            : emailStatus === 'failed'
+              ? ` Email failed: ${result.email.detail || 'provider rejected the message'}.`
+              : '';
         const message = copied
-          ? 'Stripe onboarding link created and copied. Click Open Stripe onboarding.'
-          : 'Stripe onboarding link created. Click Open Stripe onboarding.';
+          ? `Stripe onboarding link created and copied. Click Open Stripe onboarding.${emailNote}`
+          : `Stripe onboarding link created. Click Open Stripe onboarding.${emailNote}`;
         if (help) help.textContent = copied
           ? 'The link has also been copied to your clipboard. Send it to the parish treasurer if they should complete onboarding themselves.'
           : 'Clipboard access was blocked, but the Standard account onboarding link is ready here.';
