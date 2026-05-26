@@ -872,8 +872,8 @@
             email
           })
         });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Checkout failed');
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.detail || result.error || 'Checkout failed');
         if (result.url) {
           window.location.href = result.url;
           return;
@@ -884,7 +884,7 @@
         document.getElementById('successState').classList.add('visible');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (err) {
-        alert('Something went wrong preparing checkout. Please try again or contact support@agapay.app.');
+        alert(`Checkout error: ${err.message}. Please try again or contact support@agapay.app.`);
         console.error('AgaPay checkout error:', err);
       } finally {
         submitBtn.disabled = false;
