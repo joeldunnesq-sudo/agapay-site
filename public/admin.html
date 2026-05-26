@@ -719,7 +719,7 @@
             <div class="payment-status" id="paymentStatus"></div>
             <div class="stripe-link-box" id="stripeLinkBox">
               <a id="stripeOnboardingLink" href="#" target="_blank" rel="noopener">Open Stripe onboarding</a>
-              <p id="stripeLinkHelp">Send this link to the parish treasurer if they should complete onboarding themselves.</p>
+              <p id="stripeLinkHelp">This creates or opens a Standard connected Stripe account for the parish. Send this link to the parish treasurer if they should complete onboarding themselves.</p>
             </div>
             <p style="margin:0.65rem 0 0; color:var(--stone); font-size:12px; line-height:1.55;">
               Onboarding links are single-use. If a link expires or the parish returns later, create a fresh one.
@@ -833,7 +833,7 @@
           : 'Stripe onboarding link created. Click Open Stripe onboarding.';
         if (help) help.textContent = copied
           ? 'The link has also been copied to your clipboard. Send it to the parish treasurer if they should complete onboarding themselves.'
-          : 'Clipboard access was blocked, but the link is ready here. Send it to the parish treasurer if they should complete onboarding themselves.';
+          : 'Clipboard access was blocked, but the Standard account onboarding link is ready here.';
         setPaymentStatus(message);
       } catch (err) {
         setPaymentStatus(err.message);
