@@ -189,6 +189,13 @@
       gap: 1rem;
       align-items: start;
     }
+    .top-dashboard {
+      display: grid;
+      grid-template-columns: minmax(0, 1.42fr) minmax(320px, 0.58fr);
+      gap: 1rem;
+      align-items: stretch;
+      margin-bottom: 1rem;
+    }
     .panel {
       background: white;
       border: 1px solid var(--line);
@@ -271,17 +278,32 @@
       line-height: 1.55;
     }
     .qr-tools {
-      margin-top: 1rem;
       border: 1px solid rgba(47,90,57,0.16);
       border-radius: 12px;
       background: linear-gradient(180deg, #fff, var(--paper));
       padding: 1rem;
+    }
+    .qr-panel .panel-body {
+      display: grid;
+      align-content: start;
+      gap: 0.85rem;
+    }
+    .qr-panel .qr-tools {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      padding: 0;
     }
     .qr-layout {
       display: grid;
       grid-template-columns: 156px minmax(0, 1fr);
       gap: 1rem;
       align-items: center;
+    }
+    .qr-panel .qr-layout {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      text-align: center;
     }
     .qr-code {
       width: 156px;
@@ -311,11 +333,18 @@
       gap: 0.55rem;
       margin-top: 0.75rem;
     }
+    .qr-panel .qr-copy-row {
+      grid-template-columns: 1fr;
+      width: 100%;
+    }
     .qr-actions {
       display: flex;
       flex-wrap: wrap;
       gap: 0.55rem;
       margin-top: 0.75rem;
+    }
+    .qr-panel .qr-actions {
+      justify-content: center;
     }
     .editor-label-row {
       display: flex;
@@ -567,7 +596,7 @@
       color: var(--deep);
     }
     @media (max-width: 860px) {
-      .login, .metrics, .grid, .form-grid, .toggle-row, .profile-strip, .insights-layout, .insight-stats { grid-template-columns: 1fr; }
+      .login, .metrics, .grid, .top-dashboard, .form-grid, .toggle-row, .profile-strip, .insights-layout, .insight-stats { grid-template-columns: 1fr; }
       .qr-layout, .qr-copy-row { grid-template-columns: 1fr; }
       .qr-code { width: 148px; height: 148px; }
     }
@@ -615,8 +644,8 @@
       <div class="metric"><div class="metric-value" id="metricStripe">-</div><div class="metric-label">Stripe</div></div>
     </div>
 
-    <div class="grid">
-      <section class="panel wide-panel giving-insights">
+    <div class="top-dashboard">
+      <section class="panel giving-insights">
         <div class="panel-title">
           <span>Giving This Year</span>
           <button class="secondary" onclick="loadGivingSummary()">Refresh</button>
@@ -626,6 +655,36 @@
         </div>
       </section>
 
+      <section class="panel qr-panel">
+        <div class="panel-title">
+          <span>Parish QR Code</span>
+          <button class="secondary" onclick="copyGivingLink()">Copy link</button>
+        </div>
+        <div class="panel-body">
+          <div class="qr-tools">
+            <div class="qr-layout">
+              <div class="qr-code" id="qrCode" aria-label="Giving page QR code">
+                <span style="font-size:12px;color:var(--stone);text-align:center;">Load dashboard to generate QR</span>
+              </div>
+              <div>
+                <h3 class="qr-title">Direct Giving Link</h3>
+                <p class="section-note">Use this code on bulletins, signs, table cards, and parish emails. It points directly to this parish's AgaPay giving page.</p>
+                <div class="qr-copy-row">
+                  <input id="givingUrlInput" value="" placeholder="Load dashboard to generate link" readonly />
+                  <button class="secondary" onclick="copyGivingLink()">Copy link</button>
+                </div>
+                <div class="qr-actions">
+                  <button class="secondary" onclick="downloadQrSvg()">Download SVG</button>
+                  <button class="secondary" onclick="downloadQrPng()">Download PNG</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="grid">
       <section class="panel">
         <div class="panel-title">
           <span>Giving Page</span>
@@ -951,23 +1010,6 @@
           </div>
         </div>
         <p class="section-note">Changes here affect the parish's public giving page and visibility in the AgaPay directory.</p>
-        <div class="qr-tools">
-          <div class="qr-layout">
-            <div class="qr-code" id="qrCode" aria-label="Giving page QR code"></div>
-            <div>
-              <h3 class="qr-title">Giving QR Code</h3>
-              <p class="section-note">Use this code on bulletins, signs, table cards, and parish emails. It points directly to this parish's AgaPay giving page.</p>
-              <div class="qr-copy-row">
-                <input id="givingUrlInput" value="${dedicatedGivingUrl()}" readonly />
-                <button class="secondary" onclick="copyGivingLink()">Copy link</button>
-              </div>
-              <div class="qr-actions">
-                <button class="secondary" onclick="downloadQrSvg()">Download SVG</button>
-                <button class="secondary" onclick="downloadQrPng()">Download PNG</button>
-              </div>
-            </div>
-          </div>
-        </div>
         <div class="toggle-row">
           <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(parish.recurringGivingEnabled ?? true) ? 'checked' : ''} /> Recurring giving</label>
           <label class="check-card"><input id="candlesEnabled" type="checkbox" ${(parish.candlesEnabled ?? true) ? 'checked' : ''} /> Candles</label>
@@ -1167,6 +1209,14 @@
     function renderQrCode() {
       const target = document.getElementById('qrCode');
       if (!target) return;
+      const input = document.getElementById('givingUrlInput');
+      const url = dedicatedGivingUrl();
+      if (input) input.value = url;
+      if (!url) {
+        target.innerHTML = '<span style="font-size:12px;color:var(--stone);text-align:center;">Load dashboard to generate QR</span>';
+        currentQrSvg = '';
+        return;
+      }
       if (typeof qrcode === 'undefined') {
         target.innerHTML = '<span style="font-size:12px;color:var(--stone);text-align:center;">QR library unavailable</span>';
         currentQrSvg = '';
@@ -1174,7 +1224,7 @@
       }
 
       const qr = qrcode(0, 'M');
-      qr.addData(dedicatedGivingUrl());
+      qr.addData(url);
       qr.make();
       currentQrSvg = qr
         .createSvgTag(5, 3)
