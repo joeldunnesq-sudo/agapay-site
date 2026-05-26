@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AgaPay Admin Console</title>
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
+  <link rel="shortcut icon" href="/favicons/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
@@ -430,7 +432,7 @@
       border-bottom: 1px solid var(--line);
       background: var(--paper);
     }
-    .app { display: grid; grid-template-columns: 270px minmax(0, 1fr); min-height: 100vh; }
+    .app { display: grid; grid-template-columns: 360px minmax(0, 1fr); min-height: 100vh; }
     .sidebar {
       background: var(--deep);
       color: var(--cream);
@@ -623,6 +625,54 @@
     .fields-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
     .field-key { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 0.25rem; }
     .field-val { overflow-wrap: anywhere; line-height: 1.45; color: var(--ink); font-size: 13px; }
+    .requirements-panel {
+      margin-top: 0.7rem;
+      border: 1px solid rgba(184,144,47,0.28);
+      border-radius: 10px;
+      background: rgba(184,144,47,0.08);
+      padding: 0.9rem;
+    }
+    .requirements-panel.clear {
+      border-color: rgba(47,90,57,0.18);
+      background: rgba(47,90,57,0.07);
+    }
+    .requirements-panel-title {
+      color: var(--deep);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    .requirements-panel-copy {
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.55;
+      margin: 0;
+    }
+    .requirements-panel-note {
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.55;
+      margin: 0.55rem 0 0;
+    }
+    .requirements-panel-note strong { color: var(--deep); }
+    .requirements-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      list-style: none;
+      margin: 0.7rem 0 0;
+      padding: 0;
+    }
+    .requirements-list li {
+      border: 1px solid rgba(184,144,47,0.24);
+      border-radius: 999px;
+      background: white;
+      color: var(--deep);
+      font-size: 12px;
+      line-height: 1.3;
+      padding: 0.35rem 0.6rem;
+      overflow-wrap: anywhere;
+    }
     .btn-row { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.8rem; }
     .btn-sm { padding: 0.42rem 0.65rem; font-size: 11px; }
     .link-box {
@@ -846,6 +896,45 @@
       return `<div class="field ${className}"><div class="field-key">${escapeHtml(label)}</div><div class="field-val">${escapeHtml(safeValue)}</div></div>`;
     }
 
+    function readableStripeRequirement(value) {
+      return String(value || '')
+        .replace(/\./g, ' / ')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+
+    function renderStripeRequirements(reg) {
+      const requirements = Array.isArray(reg.stripeRequirementsDue) ? reg.stripeRequirementsDue.filter(Boolean) : [];
+      const disabledReason = reg.stripeDisabledReason || '';
+      const hasStripeAccount = Boolean(reg.stripeAccountId);
+      const needsAction = Boolean(disabledReason || requirements.length);
+
+      let title = 'Stripe requirements';
+      let copy = 'No open Stripe requirements are currently reported for this parish.';
+
+      if (!hasStripeAccount) {
+        copy = 'This area will show any missing Stripe onboarding items after the parish has a connected Stripe account.';
+      } else if (needsAction) {
+        title = 'Stripe needs parish action';
+        copy = 'Stripe is asking the parish to provide or correct information before payments or payouts can be fully enabled.';
+      }
+
+      const items = requirements.map((item) => `<li>${escapeHtml(readableStripeRequirement(item))}</li>`).join('');
+      const disabled = disabledReason
+        ? `<p class="requirements-panel-note"><strong>Stripe reason:</strong> ${escapeHtml(readableStripeRequirement(disabledReason))}</p>`
+        : '';
+      const list = items ? `<ul class="requirements-list">${items}</ul>` : '';
+
+      return `
+        <div class="requirements-panel ${needsAction ? '' : 'clear'}">
+          <div class="requirements-panel-title">${escapeHtml(title)}</div>
+          <p class="requirements-panel-copy">${escapeHtml(copy)}</p>
+          ${disabled}
+          ${list}
+        </div>
+      `;
+    }
+
     function money(cents) {
       if (cents === null || cents === undefined || cents === '') return 'Custom';
       if (Number(cents) === 0) return 'Free';
@@ -1037,8 +1126,6 @@
           ${field('Stripe Account ID', reg.stripeAccountId)}
           ${field('Charges Enabled', reg.stripeChargesEnabled === undefined ? '' : String(reg.stripeChargesEnabled))}
           ${field('Payouts Enabled', reg.stripePayoutsEnabled === undefined ? '' : String(reg.stripePayoutsEnabled))}
-          ${field('Stripe Disabled Reason', reg.stripeDisabledReason)}
-          ${field('Stripe Requirements Due', Array.isArray(reg.stripeRequirementsDue) ? reg.stripeRequirementsDue.join(', ') : '', 'full')}
           ${field('Stripe Invite Email', reg.stripeOnboardingEmailStatus)}
           ${field('Dashboard Invite Email', reg.dashboardInviteEmailStatus)}
           ${field('AgaPay Alert Email', reg.adminNotificationEmailStatus)}
@@ -1064,6 +1151,7 @@
           ${field('Notes', reg.notes, 'full')}
           ${field('Reviewer Notes', reg.reviewerNotes, 'full')}
         </div>
+        ${renderStripeRequirements(reg)}
         ${reg.status === 'verified' && reg.parishId ? `
           <div class="field full">
             <div class="field-key">Public profile</div>
