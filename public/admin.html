@@ -432,7 +432,7 @@
       border-bottom: 1px solid var(--line);
       background: var(--paper);
     }
-    .app { display: grid; grid-template-columns: 360px minmax(0, 1fr); min-height: 100vh; }
+    .app { display: grid; grid-template-columns: 300px minmax(0, 1fr); min-height: 100vh; }
     .sidebar {
       background: var(--deep);
       color: var(--cream);
@@ -533,7 +533,7 @@
     .sidebar-metric.highlight .sidebar-metric-val { color: var(--gold); }
     .sidebar-metric-label { margin-top: 0.25rem; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
     .sidebar-filters { display: grid; gap: 0.7rem; }
-    .sidebar-list { flex: 1; overflow-y: auto; }
+    .sidebar-list { display: none; }
     .sidebar-list-header {
       display: flex;
       justify-content: space-between;
@@ -593,6 +593,97 @@
     .detail-empty-icon svg { width: 29px; height: 29px; stroke: var(--gold); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
     .detail-empty h2 { margin: 0 0 0.35rem; font-family: var(--serif); color: var(--deep); font-size: 25px; font-weight: 500; }
     .detail-empty p { margin: 0; font-size: 13px; line-height: 1.6; }
+    .queue-card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 10px rgba(15,45,31,0.04);
+      overflow: hidden;
+    }
+    .queue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fff, var(--paper));
+    }
+    .queue-title {
+      font-family: var(--serif);
+      color: var(--deep);
+      font-size: 22px;
+      font-weight: 600;
+      line-height: 1.1;
+    }
+    .queue-subtitle {
+      margin-top: 0.25rem;
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .queue-count {
+      color: var(--stone);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .queue-table-wrap { overflow-x: auto; }
+    .queue-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 960px;
+    }
+    .queue-table th {
+      padding: 0.72rem 0.8rem;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-align: left;
+      text-transform: uppercase;
+      background: var(--paper);
+    }
+    .queue-table td {
+      padding: 0.8rem;
+      border-bottom: 1px solid rgba(111,106,96,0.13);
+      color: var(--ink);
+      font-size: 13px;
+      vertical-align: middle;
+    }
+    .queue-table tr {
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .queue-table tbody tr:hover { background: rgba(184,144,47,0.06); }
+    .queue-table tbody tr.active { background: rgba(184,144,47,0.11); box-shadow: inset 4px 0 0 var(--gold); }
+    .queue-name {
+      font-family: var(--serif);
+      color: var(--deep);
+      font-size: 17px;
+      line-height: 1.15;
+      font-weight: 600;
+    }
+    .queue-meta {
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.45;
+      margin-top: 0.2rem;
+    }
+    .queue-next {
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.45;
+      max-width: 230px;
+    }
+    .queue-empty {
+      padding: 2rem;
+      color: var(--stone);
+      font-size: 13px;
+      line-height: 1.6;
+      text-align: center;
+    }
     .section-card {
       background: white;
       border: 1px solid var(--line);
@@ -798,16 +889,6 @@
           </select>
         </div>
       </div>
-
-      <div class="sidebar-list">
-        <div class="sidebar-list-header">
-          <span>Registrations</span>
-          <button class="secondary" onclick="loadRegistrations()">Refresh</button>
-        </div>
-        <div id="registrationList">
-          <div class="sidebar-empty">Enter admin token to load registrations.</div>
-        </div>
-      </div>
     </aside>
 
     <div class="content">
@@ -819,14 +900,29 @@
         <div class="status" id="status"></div>
       </div>
       <div class="detail-wrap" id="detailPane">
+        <section class="queue-card">
+          <div class="queue-header">
+            <div>
+              <div class="queue-title">Registration Queue</div>
+              <div class="queue-subtitle">Use the sidebar filters to narrow the queue, then select a parish to review.</div>
+            </div>
+            <div class="queue-count" id="queueCount">No registrations loaded</div>
+          </div>
+          <div id="registrationList">
+            <div class="queue-empty">Enter your admin token and load registrations.</div>
+          </div>
+        </section>
+
+        <div id="registrationDetail">
         <div class="detail-empty">
           <div class="detail-empty-inner">
             <div class="detail-empty-icon">
               <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             </div>
             <h2>Select a registration</h2>
-            <p>Enter your admin token, load registrations, then choose a parish from the sidebar to begin review.</p>
+            <p>Enter your admin token, load registrations, then choose a parish from the queue to begin review.</p>
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -1048,23 +1144,52 @@
 
     function renderList(registrations) {
       const list = document.getElementById('registrationList');
+      const queueCount = document.getElementById('queueCount');
+      if (queueCount) {
+        queueCount.textContent = registrations.length
+          ? `${registrations.length} shown / ${registrationsCache.length} total`
+          : registrationsCache.length ? 'No matches' : 'No registrations loaded';
+      }
       if (!registrations.length) {
-        list.innerHTML = '<div class="sidebar-empty">No matching registrations found.</div>';
+        list.innerHTML = '<div class="queue-empty">No matching registrations found. Adjust the filters or refresh the queue.</div>';
         return;
       }
 
-      list.innerHTML = registrations.map((item) => `
-        <div class="sidebar-item ${item.reference === selectedReference ? 'active' : ''}" onclick="loadDetail('${jsAttr(item.reference)}')">
-          <div class="sidebar-item-name">${escapeHtml(item.parishName || item.reference)}</div>
-          <div class="sidebar-item-meta">${escapeHtml(item.communityType || 'Community')} / ${escapeHtml(item.jurisdiction || 'Jurisdiction')}<br>${escapeHtml(item.city || '')}, ${escapeHtml(item.state || '')}</div>
-          <div class="sidebar-item-meta">${escapeHtml(item.priestEmail || '')}</div>
-          <div class="sidebar-item-badges">
-          <span class="badge ${escapeAttr(item.status || 'pending')}">${escapeHtml(item.status || 'pending')}</span>
-          <span class="badge ${escapeAttr(item.subscriptionStatus || 'not_started')}">${escapeHtml(readable(item.subscriptionStatus))}</span>
-          <span class="badge ${escapeAttr(item.stripeAccountStatus || 'not_started')}">Stripe ${escapeHtml(readable(item.stripeAccountStatus))}</span>
-          </div>
+      list.innerHTML = `
+        <div class="queue-table-wrap">
+          <table class="queue-table">
+            <thead>
+              <tr>
+                <th>Community</th>
+                <th>Canonical</th>
+                <th>Stripe</th>
+                <th>Subscription</th>
+                <th>Next Step</th>
+                <th>Received</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${registrations.map((item) => {
+                const action = nextAction(item);
+                return `
+                  <tr class="${item.reference === selectedReference ? 'active' : ''}" onclick="loadDetail('${jsAttr(item.reference)}')">
+                    <td>
+                      <div class="queue-name">${escapeHtml(item.parishName || item.reference)}</div>
+                      <div class="queue-meta">${escapeHtml(item.communityType || 'Community')} / ${escapeHtml(item.jurisdiction || 'Jurisdiction')} / ${escapeHtml([item.city, item.state].filter(Boolean).join(', ') || 'Location pending')}</div>
+                      <div class="queue-meta">${escapeHtml(item.priestEmail || item.treasurerEmail || '')}</div>
+                    </td>
+                    <td><span class="badge ${escapeAttr(item.status || 'pending')}">${escapeHtml(readable(item.status || 'pending'))}</span></td>
+                    <td><span class="badge ${escapeAttr(item.stripeAccountStatus || 'not_started')}">${escapeHtml(readable(item.stripeAccountStatus))}</span></td>
+                    <td><span class="badge ${escapeAttr(item.subscriptionStatus || 'not_started')}">${escapeHtml(readable(item.subscriptionStatus))}</span></td>
+                    <td><div class="queue-next"><strong>${escapeHtml(action.title)}</strong><br>${escapeHtml(action.body)}</div></td>
+                    <td>${escapeHtml(item.receivedAt || '-')}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
         </div>
-      `).join('');
+      `;
     }
 
     async function copyText(value) {
@@ -1088,6 +1213,7 @@
 
         renderDetail(result.registration);
         renderQueueNext(result.registration);
+        renderFilteredList();
         setStatus('');
       } catch (err) {
         setStatus(err.message, 'error');
@@ -1102,7 +1228,7 @@
       const subscriptionDone = ['active', 'free_forever'].includes(reg.subscriptionStatus);
       const reference = jsAttr(reg.reference);
       const publicParishId = escapeHtml(reg.parishId || '');
-      document.getElementById('detailPane').innerHTML = `
+      document.getElementById('registrationDetail').innerHTML = `
         <div class="workflow-card">
           <div class="workflow-top">
             <div>
@@ -1333,7 +1459,7 @@
     }
 
     function copyRegistrationSummary() {
-      const fields = Array.from(document.querySelectorAll('#detailPane .field')).map((field) => {
+      const fields = Array.from(document.querySelectorAll('#registrationDetail .field')).map((field) => {
         const key = field.querySelector('.field-key')?.textContent || '';
         const value = field.querySelector('.field-val')?.textContent.trim() || '';
         return `${key}: ${value}`;
