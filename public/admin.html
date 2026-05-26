@@ -4,10 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AgaPay Admin</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/touch-icon.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
-  <link rel="shortcut icon" href="/favicons/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -551,6 +548,7 @@
           ${field('Giving Status', reg.givingStatus)}
           ${field('Stripe Status', reg.stripeAccountStatus)}
           ${field('Public Parish ID', reg.parishId)}
+          ${field('Parish Dashboard Token', reg.parishDashboardToken ? 'Set' : 'Not set')}
           ${field('Received', reg.receivedAt)}
           ${field('Reviewed', reg.reviewedAt)}
           ${field('Community', reg.parishName)}
@@ -628,6 +626,10 @@
               <div>
                 <label for="platformFee">Platform fee setting</label>
                 <input id="platformFee" value="${reg.platformFee || ''}" placeholder="e.g. donor-covered, 1.5%, monastery-free" />
+              </div>
+              <div>
+                <label for="parishDashboardToken">Parish dashboard token</label>
+                <input id="parishDashboardToken" value="${reg.parishDashboardToken || ''}" placeholder="Give this private token to the parish" />
               </div>
             </div>
             <div class="toggle-row" style="margin-top:0.75rem;">
@@ -725,6 +727,7 @@
             commemorationsEnabled: document.getElementById('commemorationsEnabled').checked,
             funds,
             campaigns,
+            parishDashboardToken: document.getElementById('parishDashboardToken').value,
             reviewerNotes: document.getElementById('reviewerNotes').value
           })
         });
