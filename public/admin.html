@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AgaPay Admin</title>
+  <title>AgaPay Admin Console</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; }
     :root {
@@ -430,111 +430,357 @@
       border-bottom: 1px solid var(--line);
       background: var(--paper);
     }
-    @media (max-width: 820px) {
-      .toolbar, .layout, .grid, .metrics, .search-row, .form-grid, .toggle-row, .review-queue, .step-track { grid-template-columns: 1fr; }
-      .workflow-top, .queue-next { flex-direction: column; align-items: stretch; }
+    .app { display: grid; grid-template-columns: 270px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar {
+      background: var(--deep);
+      color: var(--cream);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 1px solid rgba(184,144,47,0.22);
+    }
+    .sidebar-header {
+      padding: 1.45rem 1.25rem 1.15rem;
+      border-bottom: 1px solid rgba(184,144,47,0.16);
+      position: relative;
+      overflow: hidden;
+    }
+    .sidebar-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 220px;
+      height: 110px;
+      background: radial-gradient(ellipse at top, rgba(184,144,47,0.14), transparent 70%);
+      pointer-events: none;
+    }
+    .sidebar-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; position: relative; z-index: 1; }
+    .sidebar-mark {
+      width: 40px;
+      height: 40px;
+      border: 1px solid rgba(184,144,47,0.3);
+      border-radius: 8px;
+      background: rgba(246,241,232,0.08);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+    .sidebar-mark img { width: 36px; height: 36px; object-fit: contain; }
+    .sidebar-name { font-family: var(--serif); font-size: 25px; font-weight: 500; color: var(--cream); }
+    .sidebar-name em { color: var(--gold); font-style: normal; }
+    .sidebar-pill {
+      display: inline-flex;
+      border: 1px solid rgba(184,144,47,0.32);
+      border-radius: 999px;
+      padding: 0.22rem 0.65rem;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      position: relative;
+      z-index: 1;
+    }
+    .sidebar-auth, .sidebar-filters {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid rgba(184,144,47,0.11);
+    }
+    .sidebar-auth label, .sidebar-filters label {
+      color: var(--gold);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.35rem;
+    }
+    .sidebar input, .sidebar select {
+      background: rgba(246,241,232,0.06);
+      border: 1px solid rgba(184,144,47,0.18);
+      color: var(--cream);
+      padding: 0.62rem 0.7rem;
+      font-size: 12px;
+    }
+    .sidebar input::placeholder { color: rgba(166,159,145,0.55); }
+    .sidebar select option { background: var(--deep); color: var(--cream); }
+    .sidebar-load {
+      width: 100%;
+      margin-top: 0.55rem;
+      padding: 0.65rem 0.8rem;
+      background: var(--gold);
+      color: var(--deep);
+      box-shadow: none;
+      font-size: 13px;
+    }
+    .sidebar-metrics {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid rgba(184,144,47,0.11);
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+    .sidebar-metric {
+      border: 1px solid rgba(184,144,47,0.14);
+      border-radius: 10px;
+      background: rgba(246,241,232,0.04);
+      padding: 0.75rem;
+    }
+    .sidebar-metric-val { font-family: var(--serif); font-size: 25px; color: var(--cream); line-height: 1; }
+    .sidebar-metric.highlight .sidebar-metric-val { color: var(--gold); }
+    .sidebar-metric-label { margin-top: 0.25rem; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+    .sidebar-filters { display: grid; gap: 0.7rem; }
+    .sidebar-list { flex: 1; overflow-y: auto; }
+    .sidebar-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.65rem 1.25rem 0.45rem;
+      border-bottom: 1px solid rgba(184,144,47,0.08);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .sidebar-list-header .secondary { padding: 0.38rem 0.55rem; font-size: 11px; background: rgba(246,241,232,0.05); color: var(--cream); border-color: rgba(184,144,47,0.18); }
+    .sidebar-item {
+      padding: 0.88rem 1.25rem;
+      border-bottom: 1px solid rgba(184,144,47,0.08);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .sidebar-item:hover { background: rgba(184,144,47,0.06); }
+    .sidebar-item.active { background: rgba(184,144,47,0.1); border-left: 3px solid var(--gold); padding-left: calc(1.25rem - 3px); }
+    .sidebar-item-name { font-family: var(--serif); color: var(--cream); font-size: 16px; line-height: 1.2; }
+    .sidebar-item-meta { margin-top: 0.25rem; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .sidebar-item-badges { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.45rem; }
+    .sidebar-empty { padding: 2rem 1.25rem; color: var(--muted); text-align: center; font-size: 13px; line-height: 1.55; }
+    .content { min-width: 0; min-height: 100vh; display: flex; flex-direction: column; }
+    .topbar {
+      height: 58px;
+      padding: 0 2rem;
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .topbar-ref { color: var(--stone); font-size: 12px; }
+    .topbar-ref strong { color: var(--gold); }
+    .status-shell { padding: 0 2rem; max-height: 0; overflow: hidden; transition: max-height 0.2s ease, padding 0.2s ease; }
+    .status-shell.visible { padding: 0.75rem 2rem 0; max-height: 90px; }
+    .detail-wrap { flex: 1; overflow-y: auto; padding: 1.5rem 2rem 3rem; }
+    .detail-empty { min-height: 410px; display: grid; place-items: center; color: var(--stone); text-align: center; }
+    .detail-empty-inner { max-width: 340px; }
+    .detail-empty-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(184,144,47,0.25);
+      background: rgba(184,144,47,0.12);
+      display: grid;
+      place-items: center;
+    }
+    .detail-empty-icon svg { width: 29px; height: 29px; stroke: var(--gold); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .detail-empty h2 { margin: 0 0 0.35rem; font-family: var(--serif); color: var(--deep); font-size: 25px; font-weight: 500; }
+    .detail-empty p { margin: 0; font-size: 13px; line-height: 1.6; }
+    .section-card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 10px rgba(15,45,31,0.04);
+    }
+    .section-header {
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fff, var(--paper));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+    .section-title { display: flex; align-items: center; gap: 0.55rem; font-family: var(--serif); color: var(--deep); font-size: 21px; font-weight: 600; }
+    .section-title-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid rgba(184,144,47,0.22);
+      background: rgba(184,144,47,0.1);
+      display: grid;
+      place-items: center;
+    }
+    .section-title-icon svg { width: 15px; height: 15px; stroke: var(--gold); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .section-body { padding: 1.15rem; }
+    .fields-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
+    .field-key { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 0.25rem; }
+    .field-val { overflow-wrap: anywhere; line-height: 1.45; color: var(--ink); font-size: 13px; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.8rem; }
+    .btn-sm { padding: 0.42rem 0.65rem; font-size: 11px; }
+    .link-box {
+      display: none;
+      margin-top: 0.75rem;
+      border: 1px solid rgba(184,144,47,0.28);
+      border-radius: 10px;
+      background: rgba(184,144,47,0.08);
+      padding: 0.85rem;
+    }
+    .link-box.visible { display: block; }
+    .link-box a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: var(--deep);
+      color: var(--cream);
+      padding: 0.7rem 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .section-divider { display: flex; align-items: center; gap: 0.7rem; margin: 1.25rem 0 0.8rem; }
+    .section-divider span { color: var(--gold); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+    .section-divider::before, .section-divider::after { content: ''; height: 1px; background: var(--line); flex: 1; }
+    header, main, .toolbar, .review-queue, .metrics, .layout { display: none; }
+    .workflow-card {
+      background: var(--deep);
+      border-color: rgba(184,144,47,0.25);
+      color: var(--cream);
+      position: relative;
+      overflow: hidden;
+    }
+    .workflow-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 420px;
+      height: 130px;
+      background: radial-gradient(ellipse at top, rgba(184,144,47,0.13), transparent 65%);
+      pointer-events: none;
+    }
+    .workflow-top, .step-track { position: relative; z-index: 1; }
+    .workflow-title { color: var(--cream); }
+    .workflow-sub { color: rgba(246,241,232,0.65); }
+    .step-chip { background: rgba(246,241,232,0.05); border-color: rgba(184,144,47,0.18); }
+    .step-chip.done { background: rgba(47,90,57,0.18); border-color: rgba(47,90,57,0.42); }
+    .step-chip.current { background: rgba(184,144,47,0.12); border-color: rgba(184,144,47,0.55); }
+    .step-chip strong { color: var(--cream); }
+    .step-chip.done strong { color: #95d8a4; }
+    .step-chip.current strong { color: var(--gold); }
+    .step-chip span { color: rgba(246,241,232,0.58); }
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; }
+      .step-track, .form-grid, .fields-grid, .toggle-row { grid-template-columns: 1fr; }
+      .full { grid-column: auto; }
+      .topbar, .detail-wrap { padding-left: 1rem; padding-right: 1rem; }
+      .status-shell.visible { padding-left: 1rem; padding-right: 1rem; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="header-inner">
-      <div class="brand-row">
-        <div class="brand">
-          <img src="/mark.png" alt="" />
-          <span>AgaPay</span>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="sidebar-mark"><img src="/mark.png" alt="AgaPay" /></div>
+          <span class="sidebar-name">Aga<em>Pay</em></span>
         </div>
-        <div class="header-pill">Parish review console</div>
+        <span class="sidebar-pill">Admin Console</span>
       </div>
-      <h1>AgaPay Admin</h1>
-      <p class="subtitle">A guided console for reviewing parish registrations, inviting churches into their dashboard, connecting Stripe, and managing AgaPay subscription status.</p>
-    </div>
-  </header>
 
-  <main>
-    <div class="toolbar">
-      <div>
+      <div class="sidebar-auth">
         <label for="adminToken">Admin token</label>
-        <input id="adminToken" type="password" placeholder="Paste AGAPAY_ADMIN_TOKEN" autocomplete="current-password" />
+        <input id="adminToken" type="password" placeholder="AGAPAY_ADMIN_TOKEN" autocomplete="current-password" />
+        <button class="sidebar-load" id="loadBtn" onclick="loadRegistrations()">Load registrations</button>
       </div>
-      <div>
-        <label for="statusFilter">Status</label>
-        <select id="statusFilter" onchange="renderFilteredList()">
-          <option value="all">All statuses</option>
-          <option value="pending">Pending</option>
-          <option value="needs_more_info">Needs more info</option>
-          <option value="verified">Verified</option>
-          <option value="rejected">Rejected</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
-      </div>
-      <button id="loadBtn" onclick="loadRegistrations()">Load registrations</button>
-    </div>
 
-    <div class="status" id="status"></div>
-
-    <div class="review-queue">
-      <div class="queue-card">
-        <h2>Review queue</h2>
-        <p>Work left to right: review canonical standing, verify the parish, send the dashboard invite, connect Stripe, then create the AgaPay subscription checkout when appropriate.</p>
-        <div class="queue-next" id="queueNext">
-          <div>
-            <strong>No registration selected</strong>
-            <span>Load registrations, then choose a parish from the list.</span>
-          </div>
-          <button class="secondary" onclick="loadRegistrations()">Refresh queue</button>
+      <div class="sidebar-metrics">
+        <div class="sidebar-metric">
+          <div class="sidebar-metric-val" id="metricTotal">0</div>
+          <div class="sidebar-metric-label">Total</div>
+        </div>
+        <div class="sidebar-metric">
+          <div class="sidebar-metric-val" id="metricPending">0</div>
+          <div class="sidebar-metric-label">Pending</div>
+        </div>
+        <div class="sidebar-metric highlight">
+          <div class="sidebar-metric-val" id="metricVerified">0</div>
+          <div class="sidebar-metric-label">Verified</div>
+        </div>
+        <div class="sidebar-metric">
+          <div class="sidebar-metric-val" id="metricStripeReady">0</div>
+          <div class="sidebar-metric-label">Stripe live</div>
         </div>
       </div>
-      <div class="queue-card">
-        <h2>Owner alerts</h2>
-        <p>New registrations now send an AgaPay notification email when Resend is configured. Set <code>AGAPAY_REGISTRATION_NOTIFY_EMAIL</code> if you want those alerts somewhere other than your reply-to/support inbox.</p>
+
+      <div class="sidebar-filters">
+        <div>
+          <label for="searchInput">Search</label>
+          <input id="searchInput" type="search" placeholder="Parish, city, email..." oninput="renderFilteredList()" />
+        </div>
+        <div>
+          <label for="statusFilter">Status</label>
+          <select id="statusFilter" onchange="renderFilteredList()">
+            <option value="all">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="needs_more_info">Needs more info</option>
+            <option value="verified">Verified</option>
+            <option value="rejected">Rejected</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div>
+          <label for="sortOrder">Sort</label>
+          <select id="sortOrder" onchange="renderFilteredList()">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="name">Parish name</option>
+          </select>
+        </div>
       </div>
-    </div>
 
-    <div class="metrics">
-      <div class="metric"><div class="metric-value" id="metricTotal">0</div><div class="metric-label">Total</div></div>
-      <div class="metric"><div class="metric-value" id="metricPending">0</div><div class="metric-label">Pending</div></div>
-      <div class="metric"><div class="metric-value" id="metricVerified">0</div><div class="metric-label">Verified</div></div>
-      <div class="metric"><div class="metric-value" id="metricNeedsInfo">0</div><div class="metric-label">Needs info</div></div>
-      <div class="metric"><div class="metric-value" id="metricStripeReady">0</div><div class="metric-label">Stripe ready</div></div>
-    </div>
-
-    <div class="layout">
-      <section class="panel">
-        <div class="panel-title">
+      <div class="sidebar-list">
+        <div class="sidebar-list-header">
           <span>Registrations</span>
           <button class="secondary" onclick="loadRegistrations()">Refresh</button>
         </div>
-        <div class="search-row">
-          <div>
-            <label for="searchInput">Search</label>
-            <input id="searchInput" type="search" placeholder="Parish, city, jurisdiction, email..." oninput="renderFilteredList()" />
-          </div>
-          <div>
-            <label for="sortOrder">Sort</label>
-            <select id="sortOrder" onchange="renderFilteredList()">
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-              <option value="name">Parish name</option>
-            </select>
-          </div>
+        <div id="registrationList">
+          <div class="sidebar-empty">Enter admin token to load registrations.</div>
         </div>
-        <div class="list" id="registrationList">
-          <div class="empty">Enter the admin token to load pending registrations.</div>
-        </div>
-      </section>
+      </div>
+    </aside>
 
-      <section class="panel">
-        <div class="panel-title">
-          <span>Details</span>
-          <span id="selectedReference"></span>
+    <div class="content">
+      <div class="topbar">
+        <span class="topbar-ref">Parish review console &middot; <strong id="selectedReference">No selection</strong></span>
+        <button class="secondary btn-sm" onclick="copyRegistrationSummary()">Copy summary</button>
+      </div>
+      <div class="status-shell" id="statusShell">
+        <div class="status" id="status"></div>
+      </div>
+      <div class="detail-wrap" id="detailPane">
+        <div class="detail-empty">
+          <div class="detail-empty-inner">
+            <div class="detail-empty-icon">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <h2>Select a registration</h2>
+            <p>Enter your admin token, load registrations, then choose a parish from the sidebar to begin review.</p>
+          </div>
         </div>
-        <div class="detail" id="detailPane">
-          <div class="empty">Select a registration.</div>
-        </div>
-      </section>
+      </div>
     </div>
-  </main>
+  </div>
 
   <script>
     let selectedReference = '';
@@ -544,16 +790,48 @@
       return document.getElementById('adminToken').value.trim();
     }
 
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value);
+    }
+
+    function jsString(value) {
+      return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
+    }
+
+    function jsAttr(value) {
+      return escapeAttr(jsString(value));
+    }
+
     function setStatus(message, tone = '') {
       const status = document.getElementById('status');
       status.textContent = message || '';
       status.className = message ? `status ${tone || 'info'}` : 'status';
+      const shell = document.getElementById('statusShell');
+      if (shell) shell.classList.toggle('visible', Boolean(message));
+      if (message && tone === 'success') {
+        setTimeout(() => {
+          if (status.textContent === message) {
+            status.textContent = '';
+            status.className = 'status';
+            if (shell) shell.classList.remove('visible');
+          }
+        }, 4000);
+      }
     }
 
-    function setPaymentStatus(message) {
+    function setPaymentStatus(message, tone = '') {
       const paymentStatus = document.getElementById('paymentStatus');
       if (paymentStatus) paymentStatus.textContent = message || '';
-      setStatus(message);
+      setStatus(message, tone);
     }
 
     function authHeaders() {
@@ -565,7 +843,7 @@
 
     function field(label, value, className = '') {
       const safeValue = value || '-';
-      return `<div class="field ${className}"><div class="key">${label}</div><div class="value">${safeValue}</div></div>`;
+      return `<div class="field ${className}"><div class="field-key">${escapeHtml(label)}</div><div class="field-val">${escapeHtml(safeValue)}</div></div>`;
     }
 
     function money(cents) {
@@ -601,15 +879,15 @@
       if (!queueNext) return;
       queueNext.innerHTML = `
         <div>
-          <strong>${action.title}</strong>
-          <span>${action.body}</span>
+          <strong>${escapeHtml(action.title)}</strong>
+          <span>${escapeHtml(action.body)}</span>
         </div>
         <button class="secondary" onclick="loadRegistrations()">Refresh queue</button>
       `;
     }
 
     function jsonForTextarea(value, fallback) {
-      return JSON.stringify(value && value.length ? value : fallback, null, 2);
+      return escapeHtml(JSON.stringify(value && value.length ? value : fallback, null, 2));
     }
 
     async function loadRegistrations() {
@@ -642,7 +920,6 @@
       document.getElementById('metricTotal').textContent = registrations.length;
       document.getElementById('metricPending').textContent = registrations.filter(item => item.status === 'pending').length;
       document.getElementById('metricVerified').textContent = registrations.filter(item => item.status === 'verified').length;
-      document.getElementById('metricNeedsInfo').textContent = registrations.filter(item => item.status === 'needs_more_info').length;
       document.getElementById('metricStripeReady').textContent = registrations.filter(item => ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus)).length;
     }
 
@@ -683,21 +960,19 @@
     function renderList(registrations) {
       const list = document.getElementById('registrationList');
       if (!registrations.length) {
-        list.innerHTML = '<div class="empty">No matching registrations found.</div>';
+        list.innerHTML = '<div class="sidebar-empty">No matching registrations found.</div>';
         return;
       }
 
       list.innerHTML = registrations.map((item) => `
-        <div class="item ${item.reference === selectedReference ? 'active' : ''}" onclick="loadDetail('${item.reference}')">
-          <div class="item-name">${item.parishName || item.reference}</div>
-          <div class="item-meta">${item.communityType || 'Community'} / ${item.jurisdiction || 'Jurisdiction'} / ${item.city || ''}, ${item.state || ''}</div>
-          <div class="item-meta">${item.priestEmail || ''}</div>
-          <span class="badge ${item.status || 'pending'}">${item.status || 'pending'}</span>
-          <span class="badge ${item.subscriptionStatus || 'not_started'}">${readable(item.subscriptionStatus)}</span>
-          <span class="badge ${item.stripeAccountStatus || 'not_started'}">Stripe ${readable(item.stripeAccountStatus)}</span>
-          <div class="quick-actions">
-            <button class="secondary" onclick="event.stopPropagation(); copyText('${item.priestEmail || ''}')">Copy priest email</button>
-            <button class="secondary" onclick="event.stopPropagation(); copyText('${item.treasurerEmail || ''}')">Copy treasurer email</button>
+        <div class="sidebar-item ${item.reference === selectedReference ? 'active' : ''}" onclick="loadDetail('${jsAttr(item.reference)}')">
+          <div class="sidebar-item-name">${escapeHtml(item.parishName || item.reference)}</div>
+          <div class="sidebar-item-meta">${escapeHtml(item.communityType || 'Community')} / ${escapeHtml(item.jurisdiction || 'Jurisdiction')}<br>${escapeHtml(item.city || '')}, ${escapeHtml(item.state || '')}</div>
+          <div class="sidebar-item-meta">${escapeHtml(item.priestEmail || '')}</div>
+          <div class="sidebar-item-badges">
+          <span class="badge ${escapeAttr(item.status || 'pending')}">${escapeHtml(item.status || 'pending')}</span>
+          <span class="badge ${escapeAttr(item.subscriptionStatus || 'not_started')}">${escapeHtml(readable(item.subscriptionStatus))}</span>
+          <span class="badge ${escapeAttr(item.stripeAccountStatus || 'not_started')}">Stripe ${escapeHtml(readable(item.stripeAccountStatus))}</span>
           </div>
         </div>
       `).join('');
@@ -736,14 +1011,16 @@
       const inviteDone = reg.dashboardInviteEmailStatus === 'sent';
       const stripeDone = ['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus);
       const subscriptionDone = ['active', 'free_forever'].includes(reg.subscriptionStatus);
+      const reference = jsAttr(reg.reference);
+      const publicParishId = escapeHtml(reg.parishId || '');
       document.getElementById('detailPane').innerHTML = `
         <div class="workflow-card">
           <div class="workflow-top">
             <div>
-              <div class="workflow-title">${action.title}</div>
-              <div class="workflow-sub">${action.body}</div>
+              <div class="workflow-title">${escapeHtml(action.title)}</div>
+              <div class="workflow-sub">${escapeHtml(action.body)}</div>
             </div>
-            <span class="badge ${reg.status || 'pending'}">${readable(reg.status)}</span>
+            <span class="badge ${escapeAttr(reg.status || 'pending')}">${escapeHtml(readable(reg.status))}</span>
           </div>
           <div class="step-track">
             <div class="step-chip ${reviewDone ? 'done' : 'current'}"><strong>1. Verify</strong><span>${reviewDone ? 'Canonical review complete.' : 'Confirm canonical standing and contacts.'}</span></div>
@@ -789,11 +1066,11 @@
         </div>
         ${reg.status === 'verified' && reg.parishId ? `
           <div class="field full">
-            <div class="key">Public profile</div>
-            <div class="value">
-              This registration is included in <code>/api/parishes</code> as <strong>${reg.parishId}</strong> when giving status is active.
+            <div class="field-key">Public profile</div>
+            <div class="field-val">
+              This registration is included in <code>/api/parishes</code> as <strong>${publicParishId}</strong> when giving status is active.
               <br><br>
-              Public giving URL: <code>/give/form?parish=${reg.parishId}</code>
+              Public giving URL: <code>/give/form?parish=${publicParishId}</code>
             </div>
           </div>
         ` : ''}
@@ -813,19 +1090,19 @@
               </div>
               <div>
                 <label for="reviewedBy">Reviewed by</label>
-                <input id="reviewedBy" value="${reg.reviewedBy || ''}" placeholder="Joel Dunn" />
+                <input id="reviewedBy" value="${escapeAttr(reg.reviewedBy)}" placeholder="Joel Dunn" />
               </div>
               <div>
                 <label for="verificationSource">Verification source</label>
-                <input id="verificationSource" value="${reg.verificationSource || ''}" placeholder="Diocesan directory, parish website, clergy confirmation" />
+                <input id="verificationSource" value="${escapeAttr(reg.verificationSource)}" placeholder="Diocesan directory, parish website, clergy confirmation" />
               </div>
               <div>
                 <label for="bishopOrAuthority">Bishop / authority</label>
-                <input id="bishopOrAuthority" value="${reg.bishopOrAuthority || ''}" placeholder="Bishop or diocesan authority" />
+                <input id="bishopOrAuthority" value="${escapeAttr(reg.bishopOrAuthority)}" placeholder="Bishop or diocesan authority" />
               </div>
               <div class="full">
                 <label for="dioceseOrDeanery">Diocese / deanery</label>
-                <input id="dioceseOrDeanery" value="${reg.dioceseOrDeanery || ''}" placeholder="Diocese, metropolis, deanery, or vicariate" />
+                <input id="dioceseOrDeanery" value="${escapeAttr(reg.dioceseOrDeanery)}" placeholder="Diocese, metropolis, deanery, or vicariate" />
               </div>
             </div>
           </div>
@@ -844,16 +1121,16 @@
               </div>
               <div>
                 <label for="platformFee">Platform fee setting</label>
-                <input id="platformFee" value="${reg.platformFee || ''}" placeholder="e.g. donor-covered, 1.5%, monastery-free" />
+                <input id="platformFee" value="${escapeAttr(reg.platformFee)}" placeholder="e.g. donor-covered, 1.5%, monastery-free" />
               </div>
               <div>
                 <label for="parishDashboardToken">Parish dashboard token</label>
-                <input id="parishDashboardToken" value="${reg.parishDashboardToken || ''}" placeholder="Give this private token to the parish" />
+                <input id="parishDashboardToken" value="${escapeAttr(reg.parishDashboardToken)}" placeholder="Give this private token to the parish" />
               </div>
             </div>
             <div class="button-row" style="margin-top:0.75rem;">
               <button class="secondary" onclick="generateDashboardToken()">Generate temporary token</button>
-              <button class="gold" onclick="sendDashboardInvite('${reg.reference}')">Email dashboard invite</button>
+              <button class="gold" onclick="sendDashboardInvite('${reference}')">Email dashboard invite</button>
             </div>
             <label class="check-card" style="margin-top:0.75rem;">
               <input id="autoDashboardInvite" type="checkbox" ${reg.status === 'verified' && reg.dashboardInviteEmailStatus === 'sent' ? '' : 'checked'} />
@@ -904,15 +1181,15 @@
               </div>
               <div>
                 <label for="stripeCustomerId">Stripe customer ID</label>
-                <input id="stripeCustomerId" value="${reg.stripeCustomerId || ''}" placeholder="cus_..." />
+                <input id="stripeCustomerId" value="${escapeAttr(reg.stripeCustomerId)}" placeholder="cus_..." />
               </div>
               <div>
                 <label for="stripeSubscriptionId">Stripe subscription ID</label>
-                <input id="stripeSubscriptionId" value="${reg.stripeSubscriptionId || ''}" placeholder="sub_..." />
+                <input id="stripeSubscriptionId" value="${escapeAttr(reg.stripeSubscriptionId)}" placeholder="sub_..." />
               </div>
             </div>
             <div class="button-row" style="margin-top:0.75rem;">
-              <button class="gold" onclick="createSubscriptionCheckout('${reg.reference}')">Create subscription checkout</button>
+              <button class="gold" onclick="createSubscriptionCheckout('${reference}')">Create subscription checkout</button>
             </div>
             <div class="payment-status" id="subscriptionStatusMessage"></div>
             <div class="stripe-link-box" id="subscriptionLinkBox">
@@ -937,12 +1214,12 @@
               </div>
               <div>
                 <label for="stripeAccountId">Stripe account ID</label>
-                <input id="stripeAccountId" value="${reg.stripeAccountId || ''}" placeholder="acct_..." />
+                <input id="stripeAccountId" value="${escapeAttr(reg.stripeAccountId)}" placeholder="acct_..." />
               </div>
             </div>
             <div class="button-row" style="margin-top:0.75rem;">
-              <button class="gold" onclick="startStripeOnboarding('${reg.reference}')">Create onboarding link</button>
-              <button class="secondary" onclick="refreshStripeStatus('${reg.reference}')">Refresh Stripe status</button>
+              <button class="gold" onclick="startStripeOnboarding('${reference}')">Create onboarding link</button>
+              <button class="secondary" onclick="refreshStripeStatus('${reference}')">Refresh Stripe status</button>
             </div>
             <div class="payment-status" id="paymentStatus"></div>
             <div class="stripe-link-box" id="stripeLinkBox">
@@ -957,10 +1234,10 @@
           <div class="admin-section">
             <div class="admin-section-title">Internal Notes</div>
             <label for="reviewerNotes">Reviewer notes</label>
-            <textarea id="reviewerNotes" placeholder="Internal notes for this registration">${reg.reviewerNotes || ''}</textarea>
+            <textarea id="reviewerNotes" placeholder="Internal notes for this registration">${escapeHtml(reg.reviewerNotes)}</textarea>
           </div>
           <div class="button-row">
-            <button class="gold" onclick="saveReview('${reg.reference}')">Save review</button>
+            <button class="gold" onclick="saveReview('${reference}')">Save review</button>
             <button class="secondary" onclick="copyRegistrationSummary()">Copy summary</button>
           </div>
         </div>
@@ -969,12 +1246,16 @@
 
     function copyRegistrationSummary() {
       const fields = Array.from(document.querySelectorAll('#detailPane .field')).map((field) => {
-        const key = field.querySelector('.key')?.textContent || '';
-        const value = field.querySelector('.value')?.textContent.trim() || '';
+        const key = field.querySelector('.field-key')?.textContent || '';
+        const value = field.querySelector('.field-val')?.textContent.trim() || '';
         return `${key}: ${value}`;
-      });
+      }).filter(line => line.trim() !== ':');
+      if (!fields.length) {
+        setStatus('No registration loaded yet.');
+        return;
+      }
       navigator.clipboard.writeText(fields.join('\n'));
-      setStatus('Registration summary copied.');
+      setStatus('Registration summary copied.', 'success');
     }
 
     function dashboardInviteMessage(invite) {
@@ -1087,10 +1368,10 @@
       }
     }
 
-    function setSubscriptionStatus(message) {
+    function setSubscriptionStatus(message, tone = '') {
       const box = document.getElementById('subscriptionStatusMessage');
       if (box) box.textContent = message || '';
-      setStatus(message);
+      setStatus(message, tone);
     }
 
     async function createSubscriptionCheckout(reference) {
