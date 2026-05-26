@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Give to St. Seraphim of Sarov Mission — AgaPay</title>
+  <meta name="description" content="Give to St. Seraphim of Sarov Mission through AgaPay — stewardship, candles, feast offerings, and more." />
+  <meta name="theme-color" content="#0F2D1F" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --deep:   #0F2D1F;
+      --forest: #355E3B;
+      --gold:   #C8A24A;
+      --cream:  #F3EFE6;
+      --stone:  #A69F91;
+      --ink:    #1A1A18;
+      --serif:  'Cormorant Garamond', Georgia, serif;
+      --sans:   'DM Sans', system-ui, sans-serif;
+      --r:      10px;
+      --rlg:    16px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+
+    .candle-glow { position: fixed; width: 500px; height: 500px; background: radial-gradient(circle, rgba(200,162,74,0.05) 0%, rgba(53,94,59,0.02) 40%, transparent 70%); filter: blur(60px); pointer-events: none; z-index: -1; border-radius: 50%; }
+    .candle-glow.top-left { top: -150px; left: -150px; }
+    .candle-glow.bottom-right { bottom: -150px; right: -150px; }
+
+    nav { position: sticky; top: 0; z-index: 100; background: rgba(243,239,230,0.93); backdrop-filter: blur(12px); border-bottom: 0.5px solid rgba(166,159,145,0.35); }
+    .nav-inner { max-width: 1024px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .nav-logo { display: flex; align-items: center; gap: 5px; }
+    .nav-mark { width: 52px; height: 52px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+    .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
+    .nav-name em { color: var(--gold); font-style: normal; }
+    .nav-back { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--forest); font-weight: 500; transition: color 0.2s; }
+    .nav-back:hover { color: var(--deep); }
+    .nav-back svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .parish-header { background: var(--deep); padding: 3rem 1.5rem; text-align: center; position: relative; overflow: hidden; }
+    .parish-header::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 600px; height: 200px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.1) 0%, transparent 65%); pointer-events: none; }
+    .parish-header-inner { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; }
+    .parish-avatar-lg { width: 85px; height: 85px; border-radius: 14px; background: var(--deep); border: 0.5px solid rgba(200,162,74,0.25); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
+    .parish-header h1 { font-family: var(--serif); font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 500; color: var(--cream); line-height: 1.2; margin-bottom: 0.5rem; }
+    .parish-header-meta { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+    .parish-header-meta span { font-size: 13px; color: var(--stone); }
+    .parish-header-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: rgba(166,159,145,0.5); }
+    .verified-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; background: rgba(200,162,74,0.15); color: var(--gold); border: 0.5px solid rgba(200,162,74,0.3); border-radius: 20px; padding: 2px 10px; }
+
+    .main { max-width: 760px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+
+    .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); font-weight: 500; margin-bottom: 0.85rem; }
+
+    /* GIFT TYPE CARDS */
+    .gift-types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 2rem; }
+    .gift-type-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.1rem 0.85rem; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; user-select: none; }
+    .gift-type-card:hover { border-color: rgba(200,162,74,0.4); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,45,31,0.06); }
+    .gift-type-card.selected { border: 2px solid var(--gold); background: rgba(200,162,74,0.04); box-shadow: 0 4px 16px rgba(200,162,74,0.12); }
+    .gift-type-card.selected .gift-type-icon { background: rgba(200,162,74,0.18); border-color: rgba(200,162,74,0.4); }
+    .gift-type-icon { width: 44px; height: 44px; background: rgba(200,162,74,0.1); border: 0.5px solid rgba(200,162,74,0.25); border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: background 0.2s, border-color 0.2s; }
+    .gift-type-name { font-size: 12px; font-weight: 500; color: var(--deep); line-height: 1.3; }
+    .gift-type-card.selected .gift-type-name { color: #6B4A10; }
+
+    /* CONTEXTUAL FIELDS — feast & funds */
+    .contextual-section { margin-bottom: 2rem; animation: fadeSlide 0.25s ease; }
+    .contextual-section.hidden { display: none; }
+    @keyframes fadeSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .contextual-input {
+      width: 100%;
+      padding: 12px 14px;
+      background: white;
+      border: 0.5px solid rgba(166,159,145,0.4);
+      border-radius: var(--r);
+      font-size: 14px;
+      font-family: var(--sans);
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .contextual-input::placeholder { color: var(--stone); }
+    .contextual-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(200,162,74,0.1); }
+
+    .fund-options { display: flex; flex-direction: column; gap: 8px; }
+    .fund-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: white;
+      border: 0.5px solid rgba(166,159,145,0.35);
+      border-radius: var(--r);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+    .fund-option:hover { border-color: rgba(200,162,74,0.4); }
+    .fund-option.selected { border: 1.5px solid var(--gold); background: rgba(200,162,74,0.04); }
+    .fund-option input[type="radio"] { display: none; }
+    .fund-radio { width: 18px; height: 18px; min-width: 18px; border-radius: 50%; border: 0.5px solid rgba(166,159,145,0.5); display: flex; align-items: center; justify-content: center; transition: border-color 0.15s; }
+    .fund-option.selected .fund-radio { border-color: var(--gold); }
+    .fund-radio-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); display: none; }
+    .fund-option.selected .fund-radio-dot { display: block; }
+    .fund-info { flex: 1; }
+    .fund-name { font-size: 14px; font-weight: 500; color: var(--ink); margin-bottom: 2px; }
+    .fund-desc { font-size: 12px; color: var(--stone); line-height: 1.5; }
+    .contextual-hint { font-size: 12px; color: var(--stone); margin-top: 8px; line-height: 1.5; }
+
+    /* AMOUNT */
+    .amount-section { margin-bottom: 2rem; }
+    .preset-amounts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 0.75rem; }
+    .preset-btn { padding: 11px 8px; background: white; border: 0.5px solid rgba(166,159,145,0.4); border-radius: var(--r); font-size: 14px; font-weight: 500; font-family: var(--sans); color: var(--ink); cursor: pointer; transition: all 0.15s; text-align: center; }
+    .preset-btn:hover { border-color: var(--gold); color: var(--deep); }
+    .preset-btn.selected { background: var(--deep); color: var(--cream); border-color: var(--deep); }
+    .custom-amount-wrap { position: relative; }
+    .custom-amount-symbol { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; color: var(--stone); font-weight: 500; pointer-events: none; }
+    .custom-amount-input { width: 100%; padding: 13px 14px 13px 30px; background: white; border: 0.5px solid rgba(166,159,145,0.4); border-radius: var(--r); font-size: 16px; font-family: var(--sans); color: var(--ink); outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    .custom-amount-input::placeholder { color: var(--stone); }
+    .custom-amount-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(200,162,74,0.1); }
+
+    /* NAMES */
+    .names-section { margin-bottom: 2rem; }
+    .names-section.hidden { display: none; }
+    .names-intro { font-size: 13px; color: var(--stone); line-height: 1.65; margin-bottom: 0.85rem; }
+    .names-intro strong { color: var(--ink); }
+    .names-tabs { display: flex; gap: 6px; margin-bottom: 0.85rem; }
+    .names-tab { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 0.5px solid rgba(166,159,145,0.4); background: white; color: var(--stone); font-family: var(--sans); transition: all 0.15s; }
+    .names-tab.active { background: var(--deep); color: var(--cream); border-color: var(--deep); }
+    .names-textarea { width: 100%; padding: 12px 14px; background: white; border: 0.5px solid rgba(166,159,145,0.4); border-radius: var(--r); font-size: 14px; font-family: var(--sans); color: var(--ink); resize: vertical; min-height: 100px; outline: none; line-height: 1.65; transition: border-color 0.2s, box-shadow 0.2s; }
+    .names-textarea::placeholder { color: var(--stone); }
+    .names-textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(200,162,74,0.1); }
+    .names-hint { font-size: 12px; color: var(--stone); margin-top: 6px; line-height: 1.5; }
+
+    /* FREQUENCY */
+    .frequency-section { margin-bottom: 2rem; }
+    .frequency-opts { display: flex; gap: 8px; }
+    .freq-btn { flex: 1; padding: 10px; background: white; border: 0.5px solid rgba(166,159,145,0.4); border-radius: var(--r); font-size: 13px; font-weight: 500; font-family: var(--sans); color: var(--stone); cursor: pointer; transition: all 0.15s; text-align: center; }
+    .freq-btn:hover { border-color: var(--gold); color: var(--ink); }
+    .freq-btn.selected { background: var(--deep); color: var(--cream); border-color: var(--deep); }
+
+    /* DONOR */
+    .donor-section { margin-bottom: 2rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--stone); font-weight: 500; }
+    .form-group input { padding: 11px 13px; background: white; border: 0.5px solid rgba(166,159,145,0.4); border-radius: var(--r); font-size: 14px; font-family: var(--sans); color: var(--ink); outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    .form-group input::placeholder { color: var(--stone); }
+    .form-group input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(200,162,74,0.1); }
+
+    /* FEE TOGGLE */
+    .fee-section { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: flex; align-items: flex-start; gap: 1rem; }
+    .fee-toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; margin-top: 2px; }
+    .fee-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .fee-toggle-track { position: absolute; inset: 0; background: rgba(166,159,145,0.3); border-radius: 12px; cursor: pointer; transition: background 0.2s; }
+    .fee-toggle-track::after { content: ''; position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+    .fee-toggle input:checked + .fee-toggle-track { background: var(--forest); }
+    .fee-toggle input:checked + .fee-toggle-track::after { transform: translateX(20px); }
+    .fee-text { flex: 1; }
+    .fee-text strong { font-size: 14px; font-weight: 500; color: var(--ink); display: block; margin-bottom: 3px; }
+    .fee-text p { font-size: 12px; color: var(--stone); line-height: 1.6; }
+    .fee-text .fee-calc { font-size: 13px; color: var(--forest); font-weight: 500; margin-top: 4px; display: block; }
+
+    /* SUMMARY */
+    .summary-section { background: var(--deep); border-radius: var(--rlg); padding: 1.5rem; margin-bottom: 1.5rem; position: relative; overflow: hidden; }
+    .summary-section::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 400px; height: 150px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.08) 0%, transparent 65%); pointer-events: none; }
+    .summary-inner { position: relative; z-index: 1; }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 0.5px solid rgba(243,239,230,0.08); }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-row.total { padding-top: 12px; margin-top: 4px; border-top: 0.5px solid rgba(243,239,230,0.15); border-bottom: none; }
+    .summary-label { font-size: 13px; color: rgba(243,239,230,0.6); }
+    .summary-value { font-size: 13px; color: var(--cream); font-weight: 500; }
+    .summary-row.total .summary-label { font-size: 14px; color: rgba(243,239,230,0.8); }
+    .summary-row.total .summary-value { font-family: var(--serif); font-size: 24px; color: var(--cream); font-weight: 500; }
+
+    /* SUBMIT */
+    .submit-btn { width: 100%; padding: 15px; background: var(--gold); color: var(--deep); border: none; border-radius: var(--r); font-size: 16px; font-family: var(--serif); font-weight: 500; font-style: italic; letter-spacing: 0.02em; cursor: pointer; transition: opacity 0.2s, transform 0.15s; box-shadow: 0 4px 20px rgba(200,162,74,0.3); margin-bottom: 0.85rem; }
+    .submit-btn:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(200,162,74,0.4); }
+    .submit-btn:active { transform: translateY(0); }
+    .submit-btn:disabled { opacity: 0.65; cursor: wait; transform: none; }
+    .submit-note { font-size: 12px; color: var(--stone); text-align: center; line-height: 1.6; }
+    .submit-note a { color: var(--gold); }
+
+    /* SUCCESS */
+    .success-state { display: none; text-align: center; padding: 3rem 1.5rem; }
+    .success-state.visible { display: block; }
+    .success-icon { width: 72px; height: 72px; background: rgba(53,94,59,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; }
+    .success-icon svg { width: 32px; height: 32px; stroke: var(--forest); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .success-state h2 { font-family: var(--serif); font-size: 2rem; font-weight: 500; color: var(--deep); margin-bottom: 0.5rem; }
+    .success-state .success-parish { font-size: 14px; color: var(--stone); margin-bottom: 1.5rem; line-height: 1.7; }
+    .success-state .success-ref { font-size: 12px; color: rgba(166,159,145,0.7); margin-bottom: 2rem; }
+    .success-state a { display: inline-block; background: var(--deep); color: var(--cream); padding: 12px 24px; border-radius: var(--r); font-size: 14px; font-weight: 500; font-family: var(--sans); }
+
+    /* SCROLL ANIMATIONS */
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.07s; }
+    .reveal-delay-2 { transition-delay: 0.14s; }
+    .reveal-delay-3 { transition-delay: 0.21s; }
+
+    @media (max-width: 580px) {
+      .preset-amounts { grid-template-columns: repeat(2, 1fr); }
+      .form-row { grid-template-columns: 1fr; }
+      .frequency-opts { flex-wrap: wrap; }
+    }
+    @media (max-width: 380px) {
+      .gift-types { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="candle-glow top-left" aria-hidden="true"></div>
+  <div class="candle-glow bottom-right" aria-hidden="true"></div>
+
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="nav-logo" aria-label="AgaPay Home">
+        <div class="nav-mark">
+          <img src="/mark.png" alt="AgaPay" style="width:48px;height:48px;object-fit:contain;" />
+        </div>
+        <span class="nav-name">Aga<em>Pay</em></span>
+      </a>
+      <a href="/give" class="nav-back">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to All Parishes
+      </a>
+    </div>
+  </nav>
+
+  <header class="parish-header">
+    <div class="parish-header-inner">
+      <div class="parish-avatar-lg">
+        <svg width="78" height="78" viewBox="0 0 38 38" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="2" x2="19" y2="6"/>
+          <line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/>
+          <line x1="16" y1="5.5" x2="22" y2="5.5"/>
+          <path d="M19 6 C10 10 8 17 11 22 C13 26 16 27 19 27 C22 27 25 26 27 22 C30 17 28 10 19 6Z"/>
+          <line x1="12" y1="27" x2="26" y2="27"/>
+          <line x1="13" y1="29" x2="25" y2="29"/>
+        </svg>
+      </div>
+      <h1>St. Seraphim of Sarov Mission</h1>
+      <div class="parish-header-meta">
+        <span>ROCOR</span>
+        <span class="dot"></span>
+        <span>Lubbock, TX</span>
+        <span class="dot"></span>
+        <span class="verified-badge">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Canonically verified
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main" id="giving-form">
+
+    <!-- GIFT TYPE -->
+    <div class="reveal">
+      <div class="section-label">Step 1 — Choose your gift type</div>
+      <div class="gift-types" role="group" aria-label="Gift type">
+
+        <button class="gift-type-card selected" data-type="stewardship" data-needs-names="false" data-needs-frequency="true" data-needs-feast="false" data-needs-funds="false" onclick="selectGiftType(this)">
+          <div class="gift-type-icon">
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="7" width="22" height="16" rx="3"/><path d="M3 11h22"/>
+              <circle cx="8" cy="17" r="1.5" fill="#C8A24A" stroke="none"/><path d="M12 17h8"/>
+            </svg>
+          </div>
+          <span class="gift-type-name">Weekly Stewardship</span>
+        </button>
+
+        <button class="gift-type-card" data-type="candle" data-needs-names="true" data-needs-frequency="false" data-needs-feast="false" data-needs-funds="false" onclick="selectGiftType(this)">
+          <div class="gift-type-icon">
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/>
+              <path d="M14 17v7"/><path d="M11 24h6"/>
+              <circle cx="14" cy="10" r="1.5" fill="#C8A24A" stroke="none"/>
+            </svg>
+          </div>
+          <span class="gift-type-name">Candles &amp; Panakhida</span>
+        </button>
+
+        <button class="gift-type-card" data-type="feast" data-needs-names="false" data-needs-frequency="false" data-needs-feast="true" data-needs-funds="false" onclick="selectGiftType(this)">
+          <div class="gift-type-icon">
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="5" width="22" height="20" rx="3"/>
+              <path d="M3 11h22"/><path d="M9 3v4M19 3v4"/>
+              <path d="M8 16h4M8 20h8"/>
+            </svg>
+          </div>
+          <span class="gift-type-name">Feast Day Offering</span>
+        </button>
+
+        <button class="gift-type-card" data-type="funds" data-needs-names="false" data-needs-frequency="false" data-needs-feast="false" data-needs-funds="true" onclick="selectGiftType(this)">
+          <div class="gift-type-icon">
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 22h20"/><path d="M6 22V14l3-2v10"/>
+              <path d="M12 22V10l3-2v14"/><path d="M18 22V6l3-2v18"/>
+            </svg>
+          </div>
+          <span class="gift-type-name">Designated Fund</span>
+        </button>
+
+       <button class="gift-type-card" data-type="love" data-needs-names="true" data-needs-frequency="false" data-needs-feast="false" data-needs-funds="false" onclick="selectGiftType(this)">
+          <div class="gift-type-icon">
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/>
+              <path d="M4 16c0 3 2 5 10 5s10-2 10-5"/>
+              <path d="M10 13c1-2 2-3 4-3s3 1 4 3"/>
+              <line x1="14" y1="7" x2="14" y2="10"/>
+              <line x1="12" y1="8" x2="16" y2="8"/>
+            </svg>
+          </div>
+          <span class="gift-type-name">Commemoration</span>
+        </button>
+
+        <button class="gift-type-card" data-type="alms" data-needs-names="false" data-needs-frequency="false" data-needs-feast="false" data-needs-funds="false" data-needs-alms="true" onclick="selectGiftType(this)">
+          <div class="gift-type-icon">
+            <svg width="24" height="24" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 24s-9-5.2-9-12.5C5 7.5 7.5 5 10.7 5c1.8 0 3.1.9 3.3 1.2C14.2 5.9 15.5 5 17.3 5C20.5 5 23 7.5 23 11.5 23 18.8 14 24 14 24z"/>
+              <path d="M9 14h10"/>
+              <path d="M14 9v10"/>
+            </svg>
+          </div>
+          <span class="gift-type-name">Alms Campaign</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- FEAST DAY DESCRIPTION -->
+    <div class="contextual-section hidden reveal reveal-delay-1" id="feastSection">
+      <div class="section-label">Feast day intention</div>
+      <input
+        type="text"
+        class="contextual-input"
+        id="feastDescription"
+        placeholder="e.g. Flowers for the Theotokos, Fellowship meal, Candles for the altar…"
+        aria-label="Feast day description"
+      />
+      <p class="contextual-hint">Describe how you would like your offering used. Your priest will see this note.</p>
+    </div>
+
+    <!-- IN MEMORIAM -->
+    <div class="contextual-section hidden reveal reveal-delay-1" id="inMemoriamSection">
+      <div class="section-label">In memoriam / in honor of</div>
+      <input
+        type="text"
+        class="contextual-input"
+        id="inMemoriam"
+        placeholder="e.g. In memory of Maria, or in honor of Fr. John"
+        aria-label="In memoriam or in honor of"
+      />
+      <p class="contextual-hint">Optional. Add a person, family, or intention connected to this offering.</p>
+    </div>
+
+    <!-- ALMS CAMPAIGN -->
+    <div class="contextual-section hidden reveal reveal-delay-1" id="almsSection">
+      <div class="section-label">Select a campaign</div>
+      <div class="fund-options" role="group" aria-label="Alms campaigns">
+        <label class="fund-option selected" onclick="selectCampaign(this)">
+          <input type="radio" name="campaign" value="disaster-relief" checked />
+          <div class="fund-radio"><div class="fund-radio-dot"></div></div>
+          <div class="fund-info">
+            <div class="fund-name">Disaster Relief</div>
+            <div class="fund-desc">Urgent support for families and communities affected by disaster.</div>
+          </div>
+        </label>
+        <label class="fund-option" onclick="selectCampaign(this)">
+          <input type="radio" name="campaign" value="medical-need" />
+          <div class="fund-radio"><div class="fund-radio-dot"></div></div>
+          <div class="fund-info">
+            <div class="fund-name">Medical or Sickness Support</div>
+            <div class="fund-desc">Alms for a parishioner or family facing illness or medical expenses.</div>
+          </div>
+        </label>
+        <label class="fund-option" onclick="selectCampaign(this)">
+          <input type="radio" name="campaign" value="clergy-car-fund" />
+          <div class="fund-radio"><div class="fund-radio-dot"></div></div>
+          <div class="fund-info">
+            <div class="fund-name">Priest's Car Fund</div>
+            <div class="fund-desc">Transportation support for pastoral visits, services, and parish care.</div>
+          </div>
+        </label>
+        <label class="fund-option" onclick="selectCampaign(this)">
+          <input type="radio" name="campaign" value="custom-alms" />
+          <div class="fund-radio"><div class="fund-radio-dot"></div></div>
+          <div class="fund-info">
+            <div class="fund-name">Other Alms Campaign</div>
+            <div class="fund-desc">A parish-approved campaign for a specific person or need.</div>
+          </div>
+        </label>
+      </div>
+      <input
+        type="text"
+        class="contextual-input"
+        id="campaignDescription"
+        placeholder="Optional campaign note, person, or specific need"
+        aria-label="Campaign note"
+        style="margin-top:0.85rem;"
+      />
+      <p class="contextual-hint">Campaign details are sent to the parish treasurer and clergy for review.</p>
+    </div>
+
+    <!-- DESIGNATED FUND SELECTOR -->
+    <div class="contextual-section hidden reveal reveal-delay-1" id="fundsSection">
+      <div class="section-label">Select a fund</div>
+      <div class="fund-options" role="group" aria-label="Designated funds">
+
+        <label class="fund-option selected" onclick="selectFund(this)">
+          <input type="radio" name="fund" value="building" checked />
+          <div class="fund-radio"><div class="fund-radio-dot"></div></div>
+          <div class="fund-info">
+            <div class="fund-name">Building &amp; Renovation Fund</div>
+            <div class="fund-desc">Toward the purchase or improvement of our parish property.</div>
+          </div>
+        </label>
+
+        <label class="fund-option" onclick="selectFund(this)">
+          <input type="radio" name="fund" value="iconostasis" />
+          <div class="fund-radio"><div class="fund-radio-dot"></div></div>
+          <div class="fund-info">
+            <div class="fund-name">Iconostasis Fund</div>
+            <div class="fund-desc">Icons, altar screens, and the beautification of the nave.</div>
+          </div>
+        </label>
+
+        <label class="fund-option" onclick="selectFund(this)">
+          <input type="radio" name="fund" value="clergy" />
+          <div class="fund-radio"><div class="fund-radio-dot"></div></div>
+          <div class="fund-info">
+            <div class="fund-name">Clergy Support Fund</div>
+            <div class="fund-desc">Direct support for our priest and his family.</div>
+          </div>
+        </label>
+
+        <label class="fund-option" onclick="selectFund(this)">
+          <input type="radio" name="fund" value="education" />
+          <div class="fund-radio"><div class="fund-radio-dot"></div></div>
+          <div class="fund-info">
+            <div class="fund-name">Parish School &amp; Education</div>
+            <div class="fund-desc">Catechism materials, youth programs, and seminary support.</div>
+          </div>
+        </label>
+
+        <label class="fund-option" onclick="selectFund(this)">
+          <input type="radio" name="fund" value="general" />
+          <div class="fund-radio"><div class="fund-radio-dot"></div></div>
+          <div class="fund-info">
+            <div class="fund-name">General Operating Fund</div>
+            <div class="fund-desc">Utilities, supplies, and day-to-day parish needs.</div>
+          </div>
+        </label>
+
+      </div>
+      <p class="contextual-hint">Funds are restricted and used only for the purpose named. Full transparency reporting provided to donors.</p>
+    </div>
+
+    <!-- AMOUNT -->
+    <div class="amount-section reveal reveal-delay-1">
+      <div class="section-label" id="amountStepLabel">Step 2 — Choose an amount</div>
+      <div class="preset-amounts" role="group" aria-label="Preset amounts">
+        <button class="preset-btn" data-amount="25" onclick="selectAmount(this)">$25</button>
+        <button class="preset-btn selected" data-amount="50" onclick="selectAmount(this)">$50</button>
+        <button class="preset-btn" data-amount="100" onclick="selectAmount(this)">$100</button>
+        <button class="preset-btn" data-amount="250" onclick="selectAmount(this)">$250</button>
+      </div>
+      <div class="custom-amount-wrap">
+        <span class="custom-amount-symbol">$</span>
+        <input type="number" class="custom-amount-input" id="customAmount" placeholder="Other amount" min="1" step="1" aria-label="Custom amount" />
+      </div>
+    </div>
+
+    <!-- NAMES / INTENTION -->
+    <div class="names-section hidden reveal reveal-delay-2" id="namesSection">
+      <div class="section-label">Names for commemoration</div>
+      <p class="names-intro">These names will be <strong>transmitted directly to the priest</strong> for commemoration at the proskomedia. Enter one name per line.</p>
+      <div class="names-tabs" role="group" aria-label="Living or departed">
+        <button class="names-tab active" data-tab="living" onclick="selectNamesTab(this)">For the living</button>
+        <button class="names-tab" data-tab="departed" onclick="selectNamesTab(this)">For the departed</button>
+      </div>
+      <textarea class="names-textarea" id="namesLiving" placeholder="John&#10;Mary&#10;Nicholas" aria-label="Names of the living"></textarea>
+      <textarea class="names-textarea" id="namesDeparted" placeholder="Peter&#10;Helen&#10;Dmitri" aria-label="Names of the departed" style="display:none;"></textarea>
+      <p class="names-hint">Names will be read in Church Slavonic. Please use baptismal names where known.</p>
+    </div>
+
+    <!-- FREQUENCY -->
+    <div class="frequency-section reveal reveal-delay-2" id="frequencySection">
+      <div class="section-label">Step 3 — Giving schedule</div>
+      <div class="frequency-opts" role="group" aria-label="Gift frequency">
+        <button class="freq-btn selected" data-freq="once" onclick="selectFreq(this)">One-time</button>
+        <button class="freq-btn" data-freq="weekly" onclick="selectFreq(this)">Weekly</button>
+        <button class="freq-btn" data-freq="biweekly" onclick="selectFreq(this)">Bi-weekly</button>
+        <button class="freq-btn" data-freq="monthly" onclick="selectFreq(this)">Monthly</button>
+      </div>
+      <div id="recurringNote" style="display:none; margin-top:0.75rem; padding:0.85rem 1.1rem; background:rgba(53,94,59,0.07); border:0.5px solid rgba(53,94,59,0.2); border-radius:var(--r);">
+        <p style="font-size:13px; color:var(--forest); line-height:1.6;">
+          <strong style="color:var(--forest);">Automated giving enabled.</strong>
+          Your gift will be charged automatically on this schedule and can be cancelled at any time from your giving account.
+        </p>
+      </div>
+    </div>
+
+    <!-- DONOR DETAILS -->
+    <div class="donor-section reveal reveal-delay-2">
+      <div class="section-label" id="donorStepLabel">Step 4 — Your information</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstName">First name</label>
+          <input type="text" id="firstName" placeholder="John" autocomplete="given-name" />
+        </div>
+        <div class="form-group">
+          <label for="lastName">Last name</label>
+          <input type="text" id="lastName" placeholder="Smith" autocomplete="family-name" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input type="email" id="email" placeholder="john@example.com" autocomplete="email" />
+      </div>
+    </div>
+
+    <!-- FEE COVERAGE -->
+    <div class="fee-section reveal reveal-delay-3">
+      <label class="fee-toggle" for="feeCoverage">
+        <input type="checkbox" id="feeCoverage" checked onchange="updateSummary()" />
+        <span class="fee-toggle-track"></span>
+      </label>
+      <div class="fee-text">
+        <strong>Cover the platform fees</strong>
+        <p>When you cover the fees, St. Seraphim Mission receives your full gift — nothing deducted.</p>
+        <span class="fee-calc" id="feeCalc">You cover $1.75 · Parish receives $50.00</span>
+      </div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="summary-section reveal reveal-delay-3">
+      <div class="summary-inner">
+        <div class="summary-row">
+          <span class="summary-label" id="summaryType">Weekly Stewardship</span>
+          <span class="summary-value" id="summaryFreq">One-time</span>
+        </div>
+        <div class="summary-row" id="summaryDetailRow" style="display:none;">
+          <span class="summary-label" id="summaryDetailLabel">Fund</span>
+          <span class="summary-value" id="summaryDetailValue">—</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Parish receives</span>
+          <span class="summary-value" id="summaryParishReceives">$50.00</span>
+        </div>
+        <div class="summary-row" id="summaryFeeRow">
+          <span class="summary-label">Fee coverage</span>
+          <span class="summary-value" id="summaryFee">+$1.75</span>
+        </div>
+        <div class="summary-row total">
+          <span class="summary-label">Your total</span>
+          <span class="summary-value" id="summaryTotal">$51.75</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBMIT -->
+    <button class="submit-btn reveal reveal-delay-3" id="submitGiftBtn" onclick="handleSubmit()">Give now →</button>
+    <p class="submit-note reveal reveal-delay-3">
+      Secured by Stripe · <a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms</a>
+    </p>
+
+  </main>
+
+  <!-- SUCCESS STATE -->
+  <div class="success-state" id="successState">
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h2>Glory to God.</h2>
+    <p class="success-parish">Your gift to <strong>St. Seraphim of Sarov Mission</strong> has been received.<br>A confirmation will be sent to your email.</p>
+    <p class="success-ref" id="successRef">Reference: AGP-2026-00001</p>
+    <a href="/give">Give again</a>
+  </div>
+
+  <script>
+    let selectedType = 'stewardship';
+    let selectedAmount = 50;
+    let selectedFreq = 'once';
+    let feeCovered = true;
+    let selectedFund = 'Building & Renovation Fund';
+    let selectedCampaign = 'Disaster Relief';
+    let currentParish = {
+      id: 'st-seraphim-mission',
+      name: 'St. Seraphim of Sarov Mission',
+      jurisdictionLabel: 'ROCOR',
+      city: 'Lubbock',
+      state: 'TX',
+      funds: []
+    };
+
+    const AGAPAY_RATE = 0.029;
+    const AGAPAY_FIXED = 0.30;
+
+    // SCROLL REVEAL
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.05 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // GIFT TYPE
+    function selectGiftType(card) {
+      document.querySelectorAll('.gift-type-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedType = card.dataset.type;
+
+      const needsNames = card.dataset.needsNames === 'true';
+      const needsFreq = card.dataset.needsFrequency === 'true';
+      const needsFeast = card.dataset.needsFeast === 'true';
+      const needsFunds = card.dataset.needsFunds === 'true';
+      const needsAlms = card.dataset.needsAlms === 'true';
+      const needsMemorial = selectedType === 'feast' || selectedType === 'funds';
+
+      document.getElementById('namesSection').classList.toggle('hidden', !needsNames);
+      document.getElementById('frequencySection').style.display = needsFreq ? 'block' : 'none';
+      document.getElementById('feastSection').classList.toggle('hidden', !needsFeast);
+      document.getElementById('fundsSection').classList.toggle('hidden', !needsFunds);
+      document.getElementById('almsSection').classList.toggle('hidden', !needsAlms);
+      document.getElementById('inMemoriamSection').classList.toggle('hidden', !needsMemorial);
+
+      // Step numbering
+      const hasExtra = needsFreq || needsNames || needsFeast || needsFunds || needsAlms || needsMemorial;
+      document.getElementById('amountStepLabel').textContent = hasExtra ? 'Step 2 — Choose an amount' : 'Step 2 — Choose an amount';
+      document.getElementById('donorStepLabel').textContent = hasExtra ? 'Step 4 — Your information' : 'Step 3 — Your information';
+
+      updateSummary();
+    }
+
+    // FUND SELECTION
+    function selectFund(label) {
+      document.querySelectorAll('.fund-option').forEach(f => f.classList.remove('selected'));
+      label.classList.add('selected');
+      selectedFund = label.querySelector('.fund-name').textContent;
+      updateSummary();
+    }
+
+    function selectCampaign(label) {
+      document.querySelectorAll('#almsSection .fund-option').forEach(f => f.classList.remove('selected'));
+      label.classList.add('selected');
+      selectedCampaign = label.querySelector('.fund-name').textContent;
+      updateSummary();
+    }
+
+    function parishSlugFromPath() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('parish')) return params.get('parish');
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      return parts[0] === 'give' && parts[1] ? parts[1] : 'st-seraphim-mission';
+    }
+
+    function parishIcon(type) {
+      if (type === 'monastery') {
+        return '<svg width="78" height="78" viewBox="0 0 38 38" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="30" height="18" rx="1"/><rect x="14" y="6" width="10" height="14" rx="1"/><line x1="19" y1="2" x2="19" y2="6"/><line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/><line x1="16" y1="5.5" x2="22" y2="5.5"/><path d="M15 32 L15 25 Q19 21 23 25 L23 32"/><rect x="7" y="18" width="5" height="6" rx="2.5"/><rect x="26" y="18" width="5" height="6" rx="2.5"/></svg>';
+      }
+      if (type === 'mission') {
+        return '<svg width="78" height="78" viewBox="0 0 38 38" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="2" x2="19" y2="6"/><line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/><line x1="16" y1="5.5" x2="22" y2="5.5"/><path d="M19 6 C10 10 8 17 11 22 C13 26 16 27 19 27 C22 27 25 26 27 22 C30 17 28 10 19 6Z"/><line x1="12" y1="27" x2="26" y2="27"/><line x1="13" y1="29" x2="25" y2="29"/></svg>';
+      }
+      return '<svg width="78" height="78" viewBox="0 0 38 38" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="2" x2="19" y2="5"/><line x1="17" y1="3.5" x2="21" y2="3.5"/><path d="M19 5 C15 7 13 11 14 14 C15 16 17 17 19 17 C21 17 23 16 24 14 C25 11 23 7 19 5Z"/><line x1="10" y1="6" x2="10" y2="8"/><path d="M10 8 C8 9.5 7 12 7.5 14 C8 15.5 9 16 10 16 C11 16 12 15.5 12.5 14 C13 12 12 9.5 10 8Z"/><line x1="28" y1="6" x2="28" y2="8"/><path d="M28 8 C26 9.5 25 12 25.5 14 C26 15.5 27 16 28 16 C29 16 30 15.5 30.5 14 C31 12 30 9.5 28 8Z"/><rect x="4" y="17" width="30" height="14" rx="1"/><path d="M16 31 L16 25 Q19 22 22 25 L22 31"/></svg>';
+    }
+
+    function setText(selector, value) {
+      const el = document.querySelector(selector);
+      if (el) el.textContent = value;
+    }
+
+    function renderFunds(funds) {
+      const fundOptions = document.querySelector('.fund-options');
+      if (!fundOptions || !funds || !funds.length) return;
+
+      selectedFund = funds[0].name;
+      fundOptions.innerHTML = funds.map((fund, index) => `
+        <label class="fund-option ${index === 0 ? 'selected' : ''}" onclick="selectFund(this)">
+          <input type="radio" name="fund" value="${fund.id}" ${index === 0 ? 'checked' : ''} />
+          <div class="fund-radio"><div class="fund-radio-dot"></div></div>
+          <div class="fund-info">
+            <div class="fund-name">${fund.name}</div>
+            <div class="fund-desc">${fund.description || 'Designated support for this parish.'}</div>
+          </div>
+        </label>
+      `).join('');
+    }
+
+    async function loadCurrentParish() {
+      try {
+        const response = await fetch('/api/parishes');
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to load parish');
+
+        const slug = parishSlugFromPath();
+        const parish = result.parishes.find(item => item.id === slug);
+        if (!parish) {
+          alert('This parish is not currently active in AgaPay.');
+          window.location.href = '/give';
+          return;
+        }
+
+        currentParish = parish;
+        const location = `${parish.city || ''}, ${parish.state || ''}`.replace(/^, /, '').replace(/, $/, '');
+        document.title = `Give to ${parish.name} — AgaPay`;
+        const avatar = document.querySelector('.parish-avatar-lg');
+        if (avatar) avatar.innerHTML = parishIcon(parish.type);
+        setText('.parish-header h1', parish.name);
+        const meta = document.querySelector('.parish-header-meta');
+        if (meta) {
+          meta.innerHTML = `
+            <span>${parish.jurisdictionLabel || parish.jurisdiction}</span>
+            <span class="dot"></span>
+            <span>${location}</span>
+            <span class="dot"></span>
+            <span class="verified-badge">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Canonically verified
+            </span>
+          `;
+        }
+        const feeText = document.querySelector('.fee-text p');
+        if (feeText) feeText.textContent = `When you cover the fees, ${parish.name} receives your full gift — nothing deducted.`;
+        const successText = document.querySelector('.success-parish');
+        if (successText) successText.innerHTML = `Your gift to <strong>${parish.name}</strong> has been received.<br>A confirmation will be sent to your email.`;
+        renderFunds(parish.funds);
+        updateSummary();
+      } catch (err) {
+        console.error('AgaPay parish load error:', err);
+      }
+    }
+
+    // AMOUNT
+    function selectAmount(btn) {
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedAmount = parseFloat(btn.dataset.amount);
+      document.getElementById('customAmount').value = '';
+      updateSummary();
+    }
+
+    document.getElementById('customAmount').addEventListener('input', function() {
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
+      selectedAmount = parseFloat(this.value) || 0;
+      updateSummary();
+    });
+
+    // FREQUENCY
+    function selectFreq(btn) {
+      document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedFreq = btn.dataset.freq;
+      document.getElementById('recurringNote').style.display = selectedFreq !== 'once' ? 'block' : 'none';
+      updateSummary();
+    }
+
+    // NAMES TABS
+    function selectNamesTab(tab) {
+      document.querySelectorAll('.names-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const isLiving = tab.dataset.tab === 'living';
+      document.getElementById('namesLiving').style.display = isLiving ? 'block' : 'none';
+      document.getElementById('namesDeparted').style.display = isLiving ? 'none' : 'block';
+    }
+
+    document.getElementById('feeCoverage').addEventListener('change', updateSummary);
+
+    // SUMMARY
+    function updateSummary() {
+      feeCovered = document.getElementById('feeCoverage').checked;
+      const amount = selectedAmount || 0;
+      const fees = amount * AGAPAY_RATE + AGAPAY_FIXED;
+      const parishReceives = amount;
+      const donorTotal = feeCovered ? amount + fees : amount;
+
+      const typeLabels = {
+        stewardship: 'Weekly Stewardship',
+        candle: 'Candles & Panakhida',
+        feast: 'Feast Day Offering',
+        funds: 'Designated Fund',
+        love: 'Commemoration',
+        alms: 'Alms Campaign'
+      };
+      const freqLabels = {
+        once: 'One-time', weekly: 'Weekly', biweekly: 'Bi-weekly', monthly: 'Monthly'
+      };
+
+      document.getElementById('summaryType').textContent = typeLabels[selectedType] || '';
+      document.getElementById('summaryFreq').textContent = freqLabels[selectedFreq] || '';
+      document.getElementById('summaryParishReceives').textContent = '$' + parishReceives.toFixed(2);
+      document.getElementById('summaryFee').textContent = feeCovered ? '+$' + fees.toFixed(2) : '—';
+      document.getElementById('summaryTotal').textContent = '$' + donorTotal.toFixed(2);
+      document.getElementById('summaryFeeRow').style.opacity = feeCovered ? '1' : '0.4';
+
+      // Show detail row for feast and funds
+      const detailRow = document.getElementById('summaryDetailRow');
+      const inMemoriam = document.getElementById('inMemoriam').value.trim();
+      if (selectedType === 'funds') {
+        detailRow.style.display = 'flex';
+        document.getElementById('summaryDetailLabel').textContent = 'Fund';
+        document.getElementById('summaryDetailValue').textContent = inMemoriam ? `${selectedFund} · ${inMemoriam}` : selectedFund;
+      } else if (selectedType === 'feast') {
+        const desc = document.getElementById('feastDescription').value.trim();
+        const detail = [desc, inMemoriam].filter(Boolean).join(' · ');
+        detailRow.style.display = detail ? 'flex' : 'none';
+        document.getElementById('summaryDetailLabel').textContent = 'Intention';
+        document.getElementById('summaryDetailValue').textContent = detail || '';
+      } else if (selectedType === 'alms') {
+        const campaignNote = document.getElementById('campaignDescription').value.trim();
+        detailRow.style.display = 'flex';
+        document.getElementById('summaryDetailLabel').textContent = 'Campaign';
+        document.getElementById('summaryDetailValue').textContent = campaignNote ? `${selectedCampaign} · ${campaignNote}` : selectedCampaign;
+      } else {
+        detailRow.style.display = 'none';
+      }
+
+      document.getElementById('feeCalc').textContent = feeCovered
+        ? `You cover $${fees.toFixed(2)} · Parish receives $${parishReceives.toFixed(2)}`
+        : `$${fees.toFixed(2)} deducted from gift · Parish receives $${(parishReceives - fees).toFixed(2)}`;
+    }
+
+    // Live update summary as feast description is typed
+    document.getElementById('feastDescription').addEventListener('input', updateSummary);
+    document.getElementById('inMemoriam').addEventListener('input', updateSummary);
+    document.getElementById('campaignDescription').addEventListener('input', updateSummary);
+
+    // SUBMIT
+    async function handleSubmit() {
+      const firstName = document.getElementById('firstName').value.trim();
+      const lastName = document.getElementById('lastName').value.trim();
+      const email = document.getElementById('email').value.trim();
+      if (!firstName || !email) { alert('Please enter your name and email address to continue.'); return; }
+      if (selectedAmount <= 0) { alert('Please choose or enter a gift amount.'); return; }
+      if (selectedType === 'funds' && !selectedFund) { alert('Please select a fund.'); return; }
+
+      const submitBtn = document.getElementById('submitGiftBtn');
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Preparing secure checkout...';
+
+      try {
+        const response = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            parishId: currentParish.id,
+            giftType: selectedType,
+            amount: selectedAmount,
+            frequency: selectedFreq,
+            fund: selectedType === 'funds' ? selectedFund : '',
+            feastDescription: document.getElementById('feastDescription').value.trim(),
+            inMemoriam: document.getElementById('inMemoriam').value.trim(),
+            campaign: selectedType === 'alms' ? selectedCampaign : '',
+            campaignDescription: document.getElementById('campaignDescription').value.trim(),
+            namesLiving: document.getElementById('namesLiving').value.trim(),
+            namesDeparted: document.getElementById('namesDeparted').value.trim(),
+            coverFees: document.getElementById('feeCoverage').checked,
+            firstName,
+            lastName,
+            email
+          })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Checkout failed');
+        if (result.url) {
+          window.location.href = result.url;
+          return;
+        }
+
+        document.getElementById('giving-form').style.display = 'none';
+        document.getElementById('successRef').textContent = 'Reference: ' + result.reference;
+        document.getElementById('successState').classList.add('visible');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (err) {
+        alert('Something went wrong preparing checkout. Please try again or contact support@agapay.app.');
+        console.error('AgaPay checkout error:', err);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+      }
+    }
+
+    loadCurrentParish();
+    updateSummary();
+  </script>
+
+</body>
+</html>
