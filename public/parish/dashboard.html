@@ -212,7 +212,12 @@
     .wide-panel { grid-column: 1 / -1; }
     .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
     .full { grid-column: 1 / -1; }
-    .toggle-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.7rem; margin-top: 0.75rem; }
+    .toggle-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 0.7rem;
+      margin-top: 0.75rem;
+    }
     .check-card {
       display: flex;
       align-items: center;
@@ -223,6 +228,8 @@
       padding: 0.8rem;
       color: var(--deep);
       font-weight: 600;
+      min-height: 48px;
+      overflow-wrap: anywhere;
     }
     .check-card:has(input:checked) {
       border-color: rgba(47,90,57,0.35);
@@ -376,11 +383,52 @@
       font-size: 12px;
       line-height: 1.5;
     }
+    .option-item-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.65rem;
+      align-items: start;
+    }
+    .icon-button {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 8px;
+      background: white;
+      color: #8a2929;
+      border: 1px solid rgba(150,40,40,0.18);
+      box-shadow: none;
+      flex: 0 0 auto;
+    }
+    .icon-button:hover { box-shadow: none; background: rgba(150,40,40,0.06); }
     .option-empty {
       color: var(--stone);
       font-size: 12px;
       line-height: 1.5;
       padding: 0.2rem;
+    }
+    .option-builder {
+      border-top: 1px solid var(--line);
+      background: white;
+      padding: 0.85rem;
+    }
+    .option-builder-title {
+      color: var(--deep);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 0.65rem;
+    }
+    .builder-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.6rem;
+    }
+    .builder-grid textarea {
+      min-height: 84px;
+      font-family: var(--sans);
+      font-size: 14px;
     }
     .advanced-editor {
       border-top: 1px solid var(--line);
@@ -604,6 +652,79 @@
   <script>
     let currentParish = null;
     let currentQrSvg = '';
+    let editableFunds = [];
+    let editableCampaigns = [];
+
+    const fundPresets = {
+      general: {
+        id: 'general',
+        name: 'General Operating Fund',
+        description: 'Utilities, supplies, ministries, and day-to-day parish needs.'
+      },
+      building: {
+        id: 'building',
+        name: 'New Building Fund',
+        description: 'Support for property purchase, construction, renovation, or long-term building needs.'
+      },
+      clergy: {
+        id: 'clergy',
+        name: 'Clergy Support Fund',
+        description: 'Direct support for the priest, clergy family, and clergy-related parish needs.'
+      },
+      benevolence: {
+        id: 'benevolence',
+        name: 'Benevolence Fund',
+        description: 'Parish-approved assistance for families and neighbors facing hardship.'
+      },
+      education: {
+        id: 'education',
+        name: 'Education & Youth Fund',
+        description: 'Catechism, youth programs, parish school materials, retreats, and formation.'
+      },
+      icons: {
+        id: 'icons',
+        name: 'Icons & Beautification Fund',
+        description: 'Icons, liturgical furnishings, vestments, candles, and beautification of the church.'
+      },
+      missions: {
+        id: 'missions',
+        name: 'Mission & Outreach Fund',
+        description: 'Evangelism, local outreach, charitable work, and mission-related parish efforts.'
+      }
+    };
+
+    const campaignPresets = {
+      disaster: {
+        id: 'disaster-relief',
+        name: 'Disaster Relief',
+        description: 'Emergency alms for parish families or neighbors affected by fire, flood, storm, or other disaster.'
+      },
+      medical: {
+        id: 'medical-support',
+        name: 'Medical or Sickness Support',
+        description: 'Alms for someone facing medical bills, recovery costs, or serious illness.'
+      },
+      priestCar: {
+        id: 'priest-car-fund',
+        name: "Priest's Car Fund",
+        description: 'Support toward a reliable vehicle or vehicle repairs for clergy transportation needs.'
+      },
+      funeral: {
+        id: 'funeral-support',
+        name: 'Funeral & Burial Support',
+        description: 'Alms to help a family with funeral, burial, or memorial-related expenses.'
+      },
+      family: {
+        id: 'family-hardship',
+        name: 'Family Hardship Support',
+        description: 'Temporary alms for rent, utilities, food, travel, or urgent family needs.'
+      },
+      monastery: {
+        id: 'monastery-support',
+        name: 'Monastery Support',
+        description: 'Alms for monastery needs, hospitality, supplies, repairs, or monastic support.'
+      }
+    };
 
     function setStatus(message) {
       document.getElementById('status').textContent = message || '';
@@ -628,6 +749,14 @@
       ], null, 2);
     }
 
+    function fallbackFundsArray(value) {
+      return JSON.parse(fallbackFunds(value));
+    }
+
+    function fallbackCampaignsArray(value) {
+      return JSON.parse(fallbackCampaigns(value));
+    }
+
     function dedicatedGivingUrl() {
       if (!currentParish) return '';
       return `${window.location.origin}/give/form?parish=${encodeURIComponent(currentParish.parishId)}`;
@@ -647,6 +776,15 @@
     function qrFilename(extension) {
       const parishId = currentParish?.parishId || 'agapay-parish';
       return `${parishId}-giving-qr.${extension}`;
+    }
+
+    function slugifyLocal(value) {
+      return String(value || 'item')
+        .toLowerCase()
+        .replace(/&/g, ' and ')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 48) || 'item';
     }
 
     function money(cents) {
@@ -674,12 +812,74 @@
       if (!items || !items.length) {
         return `<div class="option-empty">${emptyText}</div>`;
       }
-      return items.map((item) => `
+      return items.map((item, index) => `
         <div class="option-item">
-          <div class="option-name">${escapeHtml(item.name || item.id || 'Untitled')}</div>
+          <div class="option-item-head">
+            <div class="option-name">${escapeHtml(item.name || item.id || 'Untitled')}</div>
+            <button class="icon-button" title="Remove option" onclick="removeGivingOption('${items === editableFunds ? 'fund' : 'campaign'}', ${index})">x</button>
+          </div>
           <div class="option-desc">${escapeHtml(item.description || 'Shown as a selectable giving option.')}</div>
         </div>
       `).join('');
+    }
+
+    function presetOptions(presets) {
+      return Object.entries(presets).map(([key, value]) => `<option value="${key}">${escapeHtml(value.name)}</option>`).join('');
+    }
+
+    function syncGivingOptionEditors() {
+      const fundsEditor = document.getElementById('fundsJson');
+      const campaignsEditor = document.getElementById('campaignsJson');
+      if (fundsEditor) fundsEditor.value = JSON.stringify(editableFunds, null, 2);
+      if (campaignsEditor) campaignsEditor.value = JSON.stringify(editableCampaigns, null, 2);
+    }
+
+    function syncGivingOptionsFromAdvanced() {
+      const fundsEditor = document.getElementById('fundsJson');
+      const campaignsEditor = document.getElementById('campaignsJson');
+      editableFunds = JSON.parse(fundsEditor?.value || '[]');
+      editableCampaigns = JSON.parse(campaignsEditor?.value || '[]');
+    }
+
+    function fillGivingPreset(kind) {
+      const presets = kind === 'fund' ? fundPresets : campaignPresets;
+      const prefix = kind === 'fund' ? 'fund' : 'campaign';
+      const selected = document.getElementById(`${prefix}Preset`)?.value;
+      const preset = presets[selected];
+      if (!preset) return;
+      document.getElementById(`${prefix}Name`).value = preset.name;
+      document.getElementById(`${prefix}Description`).value = preset.description;
+    }
+
+    function addGivingOption(kind) {
+      const prefix = kind === 'fund' ? 'fund' : 'campaign';
+      const nameInput = document.getElementById(`${prefix}Name`);
+      const descInput = document.getElementById(`${prefix}Description`);
+      const name = nameInput?.value.trim();
+      const description = descInput?.value.trim();
+      if (!name) {
+        setStatus(kind === 'fund' ? 'Enter a fund name.' : 'Enter a campaign name.');
+        return;
+      }
+
+      const item = {
+        id: slugifyLocal(name),
+        name,
+        description: description || (kind === 'fund' ? 'Designated support for this parish.' : 'Parish-approved alms for this need.')
+      };
+      if (kind === 'fund') editableFunds.push(item);
+      if (kind === 'campaign') editableCampaigns.push(item);
+      nameInput.value = '';
+      descInput.value = '';
+      renderGivingOptionsEditor();
+      setStatus(kind === 'fund' ? 'Fund added. Save giving options when ready.' : 'Campaign added. Save giving options when ready.');
+    }
+
+    function removeGivingOption(kind, index) {
+      if (kind === 'fund') editableFunds.splice(index, 1);
+      if (kind === 'campaign') editableCampaigns.splice(index, 1);
+      renderGivingOptionsEditor();
+      setStatus('Giving option removed. Save giving options when ready.');
     }
 
     async function loadDashboard() {
@@ -785,25 +985,56 @@
       `;
       renderQrCode();
 
-      const fundsJson = fallbackFunds(parish.funds);
-      const campaignsJson = fallbackCampaigns(parish.campaigns);
-      document.getElementById('editorPane').innerHTML = `
+      editableFunds = fallbackFundsArray(parish.funds);
+      editableCampaigns = fallbackCampaignsArray(parish.campaigns);
+      renderGivingOptionsEditor();
+    }
+
+    function renderGivingOptionsEditor() {
+      const editorPane = document.getElementById('editorPane');
+      if (!editorPane) return;
+
+      editorPane.innerHTML = `
         <div class="giving-options-intro">
-          These are the choices donors see after selecting <strong>Designated Fund</strong> or <strong>Alms Campaign</strong> on the giving form.
+          These are the choices donors see after selecting <strong>Designated Fund</strong> or <strong>Alms Campaign</strong> on the giving form. Add common options from the dropdowns, or write your own in plain language.
         </div>
         <div class="option-group">
           <div class="option-group-head">
             <h3 class="option-group-title">Designated funds</h3>
-            <span class="option-group-count">${(parish.funds || []).length || 1} shown</span>
+            <span class="option-group-count">${editableFunds.length} shown</span>
           </div>
-          <div class="option-list">${optionCards(JSON.parse(fundsJson), 'No funds configured yet. The giving form will use a general operating fund.')}</div>
+          <div class="option-list">${optionCards(editableFunds, 'No funds configured yet. The giving form will use a general operating fund.')}</div>
+          <div class="option-builder">
+            <div class="option-builder-title">Add a fund</div>
+            <div class="builder-grid">
+              <select id="fundPreset" onchange="fillGivingPreset('fund')">
+                <option value="">Choose a common fund...</option>
+                ${presetOptions(fundPresets)}
+              </select>
+              <input id="fundName" placeholder="Fund name, e.g. New Iconostasis Fund" />
+              <textarea id="fundDescription" placeholder="Describe this fund in plain language. Example: Helps cover the cost of icons, woodwork, installation, and beautification of the nave."></textarea>
+              <button class="secondary" onclick="addGivingOption('fund')">Add fund</button>
+            </div>
+          </div>
         </div>
         <div class="option-group">
           <div class="option-group-head">
             <h3 class="option-group-title">Alms campaigns</h3>
-            <span class="option-group-count">${(parish.campaigns || []).length || 1} shown</span>
+            <span class="option-group-count">${editableCampaigns.length} shown</span>
           </div>
-          <div class="option-list">${optionCards(JSON.parse(campaignsJson), 'No alms campaigns configured yet. Add campaigns when the parish has a specific need.')}</div>
+          <div class="option-list">${optionCards(editableCampaigns, 'No alms campaigns configured yet. Add campaigns when the parish has a specific need.')}</div>
+          <div class="option-builder">
+            <div class="option-builder-title">Add an alms campaign</div>
+            <div class="builder-grid">
+              <select id="campaignPreset" onchange="fillGivingPreset('campaign')">
+                <option value="">Choose a common campaign...</option>
+                ${presetOptions(campaignPresets)}
+              </select>
+              <input id="campaignName" placeholder="Campaign name, e.g. Support for the Petrov Family" />
+              <textarea id="campaignDescription" placeholder="Describe the need in plain language. Example: Parish-approved alms to help with medical travel and recovery expenses."></textarea>
+              <button class="secondary" onclick="addGivingOption('campaign')">Add campaign</button>
+            </div>
+          </div>
         </div>
         <details class="advanced-editor">
           <summary>Advanced edit</summary>
@@ -811,19 +1042,20 @@
             <label for="fundsJson">Designated funds</label>
             <span class="editor-hint">Each item needs id, name, description</span>
           </div>
-          <textarea id="fundsJson" spellcheck="false">${fundsJson}</textarea>
+          <textarea id="fundsJson" spellcheck="false" onchange="syncGivingOptionsFromAdvanced()">${JSON.stringify(editableFunds, null, 2)}</textarea>
           <div style="height:0.9rem;"></div>
           <div class="editor-label-row">
             <label for="campaignsJson">Alms campaigns</label>
             <span class="editor-hint">Each item needs id, name, description</span>
           </div>
-          <textarea id="campaignsJson" spellcheck="false">${campaignsJson}</textarea>
+          <textarea id="campaignsJson" spellcheck="false" onchange="syncGivingOptionsFromAdvanced()">${JSON.stringify(editableCampaigns, null, 2)}</textarea>
         </details>
         <div class="actions">
           <button class="gold" onclick="saveDashboard()">Save giving options</button>
           <button class="secondary" onclick="loadDashboard()">Discard changes</button>
         </div>
       `;
+      syncGivingOptionEditors();
     }
 
     async function loadGivingSummary() {
@@ -886,14 +1118,15 @@
     }
 
     function payload() {
+      syncGivingOptionsFromAdvanced();
       return {
         website: document.getElementById('website').value,
         givingStatus: document.getElementById('givingStatus').value,
         recurringGivingEnabled: document.getElementById('recurringGivingEnabled').checked,
         candlesEnabled: document.getElementById('candlesEnabled').checked,
         commemorationsEnabled: document.getElementById('commemorationsEnabled').checked,
-        funds: JSON.parse(document.getElementById('fundsJson').value || '[]'),
-        campaigns: JSON.parse(document.getElementById('campaignsJson').value || '[]')
+        funds: editableFunds,
+        campaigns: editableCampaigns
       };
     }
 
