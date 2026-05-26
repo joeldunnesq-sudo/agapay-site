@@ -253,6 +253,46 @@
       padding-top: 1rem;
       background: linear-gradient(180deg, transparent, rgba(246,241,232,0.32));
     }
+    .admin-section {
+      border-top: 1px solid var(--line);
+      padding-top: 1rem;
+      margin-top: 1rem;
+    }
+    .admin-section-title {
+      font-family: var(--serif);
+      color: var(--deep);
+      font-size: 22px;
+      margin-bottom: 0.75rem;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+    .toggle-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.7rem;
+    }
+    .check-card {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--paper);
+      padding: 0.8rem;
+      color: var(--deep);
+      font-weight: 600;
+    }
+    .check-card input { width: auto; }
+    code {
+      background: rgba(47,90,57,0.08);
+      border: 1px solid rgba(47,90,57,0.16);
+      border-radius: 6px;
+      padding: 0.1rem 0.28rem;
+      color: var(--deep);
+    }
     .button-row {
       display: flex;
       flex-wrap: wrap;
@@ -278,7 +318,7 @@
       background: var(--paper);
     }
     @media (max-width: 820px) {
-      .toolbar, .layout, .grid, .metrics, .search-row { grid-template-columns: 1fr; }
+      .toolbar, .layout, .grid, .metrics, .search-row, .form-grid, .toggle-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -384,6 +424,10 @@
     function field(label, value, className = '') {
       const safeValue = value || '-';
       return `<div class="field ${className}"><div class="key">${label}</div><div class="value">${safeValue}</div></div>`;
+    }
+
+    function jsonForTextarea(value, fallback) {
+      return JSON.stringify(value && value.length ? value : fallback, null, 2);
     }
 
     async function loadRegistrations() {
@@ -501,6 +545,8 @@
       document.getElementById('detailPane').innerHTML = `
         <div class="grid">
           ${field('Status', reg.status)}
+          ${field('Giving Status', reg.givingStatus)}
+          ${field('Stripe Status', reg.stripeAccountStatus)}
           ${field('Public Parish ID', reg.parishId)}
           ${field('Received', reg.receivedAt)}
           ${field('Reviewed', reg.reviewedAt)}
@@ -514,6 +560,10 @@
           ${field('Priest Phone', reg.priestPhone)}
           ${field('Treasurer', `${reg.treasurerFirst || ''} ${reg.treasurerLast || ''}`)}
           ${field('Treasurer Email', reg.treasurerEmail)}
+          ${field('Diocese / Deanery', reg.dioceseOrDeanery)}
+          ${field('Bishop / Authority', reg.bishopOrAuthority)}
+          ${field('Verification Source', reg.verificationSource)}
+          ${field('Reviewed By', reg.reviewedBy)}
           ${field('Notes', reg.notes, 'full')}
           ${field('Reviewer Notes', reg.reviewerNotes, 'full')}
         </div>
@@ -521,21 +571,102 @@
           <div class="field full">
             <div class="key">Public profile</div>
             <div class="value">
-              This registration is now included in <code>/api/parishes</code> as <strong>${reg.parishId}</strong>.
+              This registration is included in <code>/api/parishes</code> as <strong>${reg.parishId}</strong> when giving status is active.
+              <br><br>
+              Public giving URL: <code>/give/form?parish=${reg.parishId}</code>
             </div>
           </div>
         ` : ''}
         <div class="actions">
-          <div>
-            <label for="statusSelect">Review status</label>
-            <select id="statusSelect">
-              <option value="pending" ${reg.status === 'pending' ? 'selected' : ''}>Pending</option>
-              <option value="needs_more_info" ${reg.status === 'needs_more_info' ? 'selected' : ''}>Needs more info</option>
-              <option value="verified" ${reg.status === 'verified' ? 'selected' : ''}>Verified</option>
-              <option value="rejected" ${reg.status === 'rejected' ? 'selected' : ''}>Rejected</option>
-            </select>
+          <div class="admin-section">
+            <div class="admin-section-title">Review</div>
+            <div class="form-grid">
+              <div>
+                <label for="statusSelect">Canonical review status</label>
+                <select id="statusSelect">
+                  <option value="pending" ${reg.status === 'pending' ? 'selected' : ''}>Pending</option>
+                  <option value="needs_more_info" ${reg.status === 'needs_more_info' ? 'selected' : ''}>Needs more info</option>
+                  <option value="verified" ${reg.status === 'verified' ? 'selected' : ''}>Verified</option>
+                  <option value="rejected" ${reg.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+                  <option value="cancelled" ${reg.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                </select>
+              </div>
+              <div>
+                <label for="reviewedBy">Reviewed by</label>
+                <input id="reviewedBy" value="${reg.reviewedBy || ''}" placeholder="Joel Dunn" />
+              </div>
+              <div>
+                <label for="verificationSource">Verification source</label>
+                <input id="verificationSource" value="${reg.verificationSource || ''}" placeholder="Diocesan directory, parish website, clergy confirmation" />
+              </div>
+              <div>
+                <label for="bishopOrAuthority">Bishop / authority</label>
+                <input id="bishopOrAuthority" value="${reg.bishopOrAuthority || ''}" placeholder="Bishop or diocesan authority" />
+              </div>
+              <div class="full">
+                <label for="dioceseOrDeanery">Diocese / deanery</label>
+                <input id="dioceseOrDeanery" value="${reg.dioceseOrDeanery || ''}" placeholder="Diocese, metropolis, deanery, or vicariate" />
+              </div>
+            </div>
           </div>
-          <div>
+
+          <div class="admin-section">
+            <div class="admin-section-title">Giving Page</div>
+            <div class="form-grid">
+              <div>
+                <label for="givingStatus">Giving page status</label>
+                <select id="givingStatus">
+                  <option value="active" ${(reg.givingStatus || 'active') === 'active' ? 'selected' : ''}>Active</option>
+                  <option value="paused" ${reg.givingStatus === 'paused' ? 'selected' : ''}>Paused</option>
+                  <option value="hidden" ${reg.givingStatus === 'hidden' ? 'selected' : ''}>Hidden</option>
+                  <option value="cancelled" ${reg.givingStatus === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                </select>
+              </div>
+              <div>
+                <label for="platformFee">Platform fee setting</label>
+                <input id="platformFee" value="${reg.platformFee || ''}" placeholder="e.g. donor-covered, 1.5%, monastery-free" />
+              </div>
+            </div>
+            <div class="toggle-row" style="margin-top:0.75rem;">
+              <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(reg.recurringGivingEnabled ?? true) ? 'checked' : ''} /> Recurring giving</label>
+              <label class="check-card"><input id="candlesEnabled" type="checkbox" ${(reg.candlesEnabled ?? true) ? 'checked' : ''} /> Candles</label>
+              <label class="check-card"><input id="commemorationsEnabled" type="checkbox" ${(reg.commemorationsEnabled ?? true) ? 'checked' : ''} /> Commemorations</label>
+            </div>
+            <div class="form-grid" style="margin-top:0.75rem;">
+              <div>
+                <label for="fundsJson">Funds JSON</label>
+                <textarea id="fundsJson" spellcheck="false">${jsonForTextarea(reg.funds, [{ id: 'general', name: 'General Operating Fund', description: 'Utilities, supplies, ministries, and day-to-day parish needs.' }])}</textarea>
+              </div>
+              <div>
+                <label for="campaignsJson">Campaigns JSON</label>
+                <textarea id="campaignsJson" spellcheck="false">${jsonForTextarea(reg.campaigns, [{ id: 'alms', name: 'Alms Campaign', description: 'Parish-approved alms for a specific need.' }])}</textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-section">
+            <div class="admin-section-title">Payments</div>
+            <div class="form-grid">
+              <div>
+                <label for="stripeAccountStatus">Stripe onboarding status</label>
+                <select id="stripeAccountStatus">
+                  <option value="not_started" ${(reg.stripeAccountStatus || 'not_started') === 'not_started' ? 'selected' : ''}>Not started</option>
+                  <option value="invited" ${reg.stripeAccountStatus === 'invited' ? 'selected' : ''}>Invited</option>
+                  <option value="onboarding" ${reg.stripeAccountStatus === 'onboarding' ? 'selected' : ''}>Onboarding</option>
+                  <option value="charges_enabled" ${reg.stripeAccountStatus === 'charges_enabled' ? 'selected' : ''}>Charges enabled</option>
+                  <option value="payouts_enabled" ${reg.stripeAccountStatus === 'payouts_enabled' ? 'selected' : ''}>Payouts enabled</option>
+                  <option value="restricted" ${reg.stripeAccountStatus === 'restricted' ? 'selected' : ''}>Restricted</option>
+                </select>
+              </div>
+              <div>
+                <label for="stripeAccountId">Stripe account ID</label>
+                <input id="stripeAccountId" value="${reg.stripeAccountId || ''}" placeholder="acct_..." />
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-section">
+            <div class="admin-section-title">Internal Notes</div>
             <label for="reviewerNotes">Reviewer notes</label>
             <textarea id="reviewerNotes" placeholder="Internal notes for this registration">${reg.reviewerNotes || ''}</textarea>
           </div>
@@ -560,6 +691,16 @@
     async function saveReview(reference) {
       setStatus('Saving review...');
       try {
+        let funds = [];
+        let campaigns = [];
+        try {
+          funds = JSON.parse(document.getElementById('fundsJson').value || '[]');
+          campaigns = JSON.parse(document.getElementById('campaignsJson').value || '[]');
+        } catch {
+          setStatus('Funds or campaigns JSON is invalid.');
+          return;
+        }
+
         const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference), {
           method: 'PATCH',
           headers: {
@@ -568,6 +709,19 @@
           },
           body: JSON.stringify({
             status: document.getElementById('statusSelect').value,
+            givingStatus: document.getElementById('givingStatus').value,
+            stripeAccountStatus: document.getElementById('stripeAccountStatus').value,
+            stripeAccountId: document.getElementById('stripeAccountId').value,
+            reviewedBy: document.getElementById('reviewedBy').value,
+            verificationSource: document.getElementById('verificationSource').value,
+            bishopOrAuthority: document.getElementById('bishopOrAuthority').value,
+            dioceseOrDeanery: document.getElementById('dioceseOrDeanery').value,
+            platformFee: document.getElementById('platformFee').value,
+            recurringGivingEnabled: document.getElementById('recurringGivingEnabled').checked,
+            candlesEnabled: document.getElementById('candlesEnabled').checked,
+            commemorationsEnabled: document.getElementById('commemorationsEnabled').checked,
+            funds,
+            campaigns,
             reviewerNotes: document.getElementById('reviewerNotes').value
           })
         });
