@@ -1081,4 +1081,109 @@ async function handleParishDashboard(request, env, parishId) {
       return json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    const current = found.re
+    const current = found.registration;
+    const updated = {
+      ...current,
+      website: body.website ?? current.website ?? "",
+      givingStatus: body.givingStatus || current.givingStatus || "active",
+      recurringGivingEnabled: Boolean(body.recurringGivingEnabled ?? current.recurringGivingEnabled ?? true),
+      candlesEnabled: Boolean(body.candlesEnabled ?? current.candlesEnabled ?? true),
+      commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
+      funds: Array.isArray(body.funds) ? body.funds : current.funds,
+      campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
+      parishUpdatedAt: new Date().toISOString()
+    };
+
+    await env.AGAPAY_REGISTRATIONS.put(found.key, JSON.stringify(updated));
+    return json({ ok: true, parish: updated });
+  }
+
+  return json({ error: "Method not allowed" }, { status: 405 });
+}
+
+function cleanAssetRequest(request) {
+  const url = new URL(request.url);
+  if (url.pathname === "/") return request;
+  if (url.pathname === "/admin") {
+    url.pathname = "/admin.html";
+    return new Request(url, request);
+  }
+  if (url.pathname === "/parish/dashboard") {
+    url.pathname = "/parish/dashboard.html";
+    return new Request(url, request);
+  }
+  if (url.pathname === "/give/form") {
+    url.pathname = "/give/form.html";
+    return new Request(url, request);
+  }
+  if (url.pathname === "/give/find_parish") {
+    url.pathname = "/give/form.html";
+    return new Request(url, request);
+  }
+  if (url.pathname === "/give/parish-list") {
+    url.pathname = "/give/form.html";
+    return new Request(url, request);
+  }
+  if (url.pathname === "/give/st-seraphim-mission") {
+    url.pathname = "/give/form.html";
+    return new Request(url, request);
+  }
+  if (url.pathname.startsWith("/give/")) {
+    url.pathname = "/give/form.html";
+    return new Request(url, request);
+  }
+  if (!url.pathname.includes(".")) {
+    url.pathname = `${url.pathname}.html`;
+    return new Request(url, request);
+  }
+  return request;
+}
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+
+    if (request.method === "GET" && url.pathname === "/api/parishes") return handleParishes(env);
+    if (request.method === "POST" && url.pathname === "/api/registrations") return handleRegistrations(request, env);
+    if (request.method === "GET" && url.pathname === "/api/admin/registrations") {
+      return handleAdminRegistrations(request, env);
+    }
+    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-onboarding")) {
+      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/stripe-onboarding", ""));
+      return handleStripeOnboarding(request, env, reference);
+    }
+    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-refresh")) {
+      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/stripe-refresh", ""));
+      return handleStripeRefresh(request, env, reference);
+    }
+    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/dashboard-invite")) {
+      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/dashboard-invite", ""));
+      return handleDashboardInvite(request, env, reference);
+    }
+    if (url.pathname.startsWith("/api/admin/registrations/")) {
+      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", ""));
+      return handleAdminRegistrationDetail(request, env, reference);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stripe-onboarding")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stripe-onboarding", ""));
+      return handleParishStripeOnboarding(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-summary")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-summary", ""));
+      return handleParishGivingSummary(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", ""));
+      return handleParishDashboard(request, env, parishId);
+    }
+    if (request.method === "POST" && url.pathname === "/api/create-checkout-session") {
+      return handleCheckout(request, env);
+    }
+
+    if (url.pathname.startsWith("/api/")) {
+      return json({ error: "Not found" }, { status: 404 });
+    }
+
+    return env.ASSETS.fetch(cleanAssetRequest(request));
+  }
+};
