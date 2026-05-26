@@ -112,6 +112,37 @@ const parishes = [
   }
 ];
 
+const subscriptionTiers = [
+  {
+    id: "mission",
+    label: "Mission",
+    monthlyCents: 4900,
+    stripePriceEnv: "AGAPAY_STRIPE_PRICE_MISSION_MONTHLY",
+    description: "Monthly AgaPay platform subscription for missions."
+  },
+  {
+    id: "parish",
+    label: "Parish",
+    monthlyCents: 9900,
+    stripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_MONTHLY",
+    description: "Monthly AgaPay platform subscription for established parishes."
+  },
+  {
+    id: "diocese",
+    label: "Diocese / Multi-Parish",
+    monthlyCents: null,
+    stripePriceEnv: "AGAPAY_STRIPE_PRICE_DIOCESE_MONTHLY",
+    description: "Custom AgaPay platform subscription for dioceses and multi-parish organizations."
+  },
+  {
+    id: "monastery_free",
+    label: "Monastery / Skete",
+    monthlyCents: 0,
+    stripePriceEnv: "",
+    description: "Free forever for Orthodox monasteries and sketes."
+  }
+];
+
 function json(body, init = {}) {
   return Response.json(body, {
     ...init,
@@ -220,6 +251,36 @@ function stripeAccountStatus(account) {
   if (account.requirements?.disabled_reason) return "restricted";
   if (account.details_submitted) return "onboarding";
   return "invited";
+}
+
+function subscriptionTier(id) {
+  return subscriptionTiers.find((tier) => tier.id === id) || null;
+}
+
+function defaultSubscriptionTier(registration) {
+  const type = normalizeCommunityType(registration.communityType);
+  if (type === "monastery") return "monastery_free";
+  if (type === "mission") return "mission";
+  return "parish";
+}
+
+function subscriptionStatusLabel(status) {
+  const labels = {
+    not_started: "Not started",
+    checkout_created: "Checkout created",
+    active: "Active",
+    past_due: "Past due",
+    cancelled: "Cancelled",
+    free_forever: "Free forever"
+  };
+  return labels[status] || status || "Not started";
+}
+
+function subscriptionTierSummary(tier) {
+  if (!tier) return "";
+  if (tier.monthlyCents === 0) return `${tier.label} - free forever`;
+  if (tier.monthlyCents === null) return `${tier.label} - custom`;
+  return `${tier.label} - $${(tier.monthlyCents / 100).toFixed(0)}/mo`;
 }
 
 function absoluteWebsiteUrl(value) {
@@ -418,8 +479,61 @@ async function sendDashboardInvite(env, appUrl, registration) {
   return { ...email, recipients };
 }
 
+async function sendAdminRegistrationNotice(env, appUrl, registration) {
+  const to = env.AGAPAY_REGISTRATION_NOTIFY_EMAIL || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
+  if (!to) return { status: "missing_recipient" };
+
+  const from = env.AGAPAY_FROM_EMAIL || "AgaPay <onboarding@agapay.app>";
+  const replyTo = registration.priestEmail || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
+  const adminUrl = `${appUrl}/admin`;
+  const parishName = htmlEscape(registration.parishName || "New parish registration");
+  const tier = subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration));
+  const location = [registration.city, registration.state].filter(Boolean).join(", ");
+
+  return sendEmail(env, {
+    from,
+    to: [to],
+    reply_to: replyTo,
+    subject: `New AgaPay registration: ${registration.parishName || registration.reference}`,
+    html: agapayEmailHtml(appUrl, "New parish registration", `
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">A new community has submitted the AgaPay registration form and is ready for canonical review.</p>
+      <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
+        <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">Registration summary</p>
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Reference:</strong> ${htmlEscape(registration.reference)}</p>
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Community:</strong> ${parishName}</p>
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Type:</strong> ${htmlEscape(registration.communityType || "")}</p>
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Jurisdiction:</strong> ${htmlEscape(registration.jurisdiction || "")}</p>
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Location:</strong> ${htmlEscape(location)}</p>
+        <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Subscription tier:</strong> ${htmlEscape(subscriptionTierSummary(tier))}</p>
+      </div>
+      <p style="margin:0 0 8px;font-size:14px;line-height:1.7;color:#171715;"><strong>Priest/Admin:</strong> ${htmlEscape(`${registration.priestFirst || ""} ${registration.priestLast || ""}`.trim())} - ${htmlEscape(registration.priestEmail || "")}</p>
+      <p style="margin:0 0 22px;font-size:14px;line-height:1.7;color:#171715;"><strong>Treasurer:</strong> ${htmlEscape(`${registration.treasurerFirst || ""} ${registration.treasurerLast || ""}`.trim())} - ${htmlEscape(registration.treasurerEmail || "")}</p>
+      <p style="margin:0;"><a href="${htmlEscape(adminUrl)}" style="display:inline-block;background:#B8902F;color:#0F2D1F;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open admin dashboard</a></p>
+    `),
+    text: [
+      "New parish registration",
+      "",
+      `Reference: ${registration.reference}`,
+      `Community: ${registration.parishName || ""}`,
+      `Type: ${registration.communityType || ""}`,
+      `Jurisdiction: ${registration.jurisdiction || ""}`,
+      `Location: ${location}`,
+      `Subscription tier: ${subscriptionTierSummary(tier)}`,
+      "",
+      `Priest/Admin: ${`${registration.priestFirst || ""} ${registration.priestLast || ""}`.trim()} - ${registration.priestEmail || ""}`,
+      `Treasurer: ${`${registration.treasurerFirst || ""} ${registration.treasurerLast || ""}`.trim()} - ${registration.treasurerEmail || ""}`,
+      "",
+      `Open admin dashboard: ${adminUrl}`
+    ].join("\n")
+  });
+}
+
 function publicParishes() {
   return parishes.map(({ stripeAccountId, ...parish }) => parish);
+}
+
+function publicSubscriptionTiers() {
+  return subscriptionTiers.map(({ stripePriceEnv, ...tier }) => tier);
 }
 
 function findParish(id) {
@@ -508,6 +622,23 @@ async function findRegistrationByParishId(env, parishId) {
   return null;
 }
 
+async function findRegistrationByStripeSubscriptionId(env, subscriptionId) {
+  if (!env.AGAPAY_REGISTRATIONS || !subscriptionId) return null;
+  const list = await env.AGAPAY_REGISTRATIONS.list({ limit: 100 });
+
+  for (const key of list.keys) {
+    const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
+    if (!raw) continue;
+    try {
+      const registration = JSON.parse(raw);
+      if (registration.stripeSubscriptionId === subscriptionId) return { key: key.name, registration };
+    } catch {
+      // Ignore malformed records during lookup.
+    }
+  }
+  return null;
+}
+
 async function findCheckoutParish(env, parishId) {
   const staticParish = findParish(parishId);
   if (staticParish) return staticParish;
@@ -565,16 +696,31 @@ async function handleRegistrations(request, env) {
   }
 
   const reference = `AGP-REG-${Date.now().toString(36).toUpperCase()}`;
+  const subscriptionTierId = body.subscriptionTier || defaultSubscriptionTier(body);
+  const tier = subscriptionTier(subscriptionTierId) || subscriptionTier(defaultSubscriptionTier(body));
   const registration = {
     reference,
     status: "pending",
     receivedAt: new Date().toISOString(),
     canonicalVerification: "pending_review",
-    ...body
+    ...body,
+    subscriptionTier: tier?.id || "parish",
+    subscriptionStatus: tier?.monthlyCents === 0 ? "free_forever" : "not_started",
+    subscriptionMonthlyCents: tier?.monthlyCents ?? null,
+    subscriptionTierLabel: tier?.label || ""
   };
 
   if (env.AGAPAY_REGISTRATIONS) {
     await env.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify(registration));
+    const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+    const notice = await sendAdminRegistrationNotice(env, appUrl, registration);
+    await env.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify({
+      ...registration,
+      adminNotificationEmailStatus: notice.status,
+      adminNotificationEmailId: notice.id || "",
+      adminNotificationEmailDetail: notice.detail || "",
+      adminNotificationEmailSentAt: notice.status === "sent" ? new Date().toISOString() : ""
+    }));
   }
 
   return json(
@@ -693,6 +839,11 @@ async function handleAdminRegistrations(request, env) {
         state: registration.state || "",
         priestEmail: registration.priestEmail || "",
         treasurerEmail: registration.treasurerEmail || "",
+        subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
+        subscriptionStatus: registration.subscriptionStatus || "not_started",
+        stripeAccountStatus: registration.stripeAccountStatus || "not_started",
+        dashboardInviteEmailStatus: registration.dashboardInviteEmailStatus || "",
+        adminNotificationEmailStatus: registration.adminNotificationEmailStatus || "",
         receivedAt: registration.receivedAt || ""
       });
     } catch {
@@ -738,6 +889,11 @@ async function handleAdminRegistrationDetail(request, env, reference) {
     const parishDashboardToken = nextStatus === "verified" && !requestedDashboardToken
       ? generateDashboardToken()
       : requestedDashboardToken;
+    const nextSubscriptionTierId = body.subscriptionTier || current.subscriptionTier || defaultSubscriptionTier(current);
+    const nextTier = subscriptionTier(nextSubscriptionTierId) || subscriptionTier(defaultSubscriptionTier(current));
+    const nextSubscriptionStatus = nextTier?.monthlyCents === 0
+      ? "free_forever"
+      : body.subscriptionStatus || current.subscriptionStatus || "not_started";
     let updated = {
       ...current,
       status: nextStatus,
@@ -750,6 +906,12 @@ async function handleAdminRegistrationDetail(request, env, reference) {
       bishopOrAuthority: body.bishopOrAuthority ?? current.bishopOrAuthority ?? "",
       dioceseOrDeanery: body.dioceseOrDeanery ?? current.dioceseOrDeanery ?? "",
       platformFee: body.platformFee ?? current.platformFee ?? "",
+      subscriptionTier: nextTier?.id || nextSubscriptionTierId,
+      subscriptionTierLabel: nextTier?.label || current.subscriptionTierLabel || "",
+      subscriptionMonthlyCents: nextTier?.monthlyCents ?? current.subscriptionMonthlyCents ?? null,
+      subscriptionStatus: nextSubscriptionStatus,
+      stripeCustomerId: body.stripeCustomerId ?? current.stripeCustomerId ?? "",
+      stripeSubscriptionId: body.stripeSubscriptionId ?? current.stripeSubscriptionId ?? "",
       recurringGivingEnabled: Boolean(body.recurringGivingEnabled ?? current.recurringGivingEnabled ?? true),
       candlesEnabled: Boolean(body.candlesEnabled ?? current.candlesEnabled ?? true),
       commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
@@ -788,6 +950,245 @@ async function handleAdminRegistrationDetail(request, env, reference) {
   }
 
   return json({ error: "Method not allowed" }, { status: 405 });
+}
+
+async function handleSubscriptionCheckout(request, env, reference) {
+  if (!requireAdmin(request, env)) return unauthorized();
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
+  if (!raw) return json({ error: "Registration not found" }, { status: 404 });
+
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    body = {};
+  }
+
+  const registration = JSON.parse(raw);
+  const tierId = body.subscriptionTier || registration.subscriptionTier || defaultSubscriptionTier(registration);
+  const tier = subscriptionTier(tierId);
+  if (!tier) return json({ error: "Unknown subscription tier" }, { status: 422 });
+
+  if (tier.monthlyCents === 0) {
+    const updated = {
+      ...registration,
+      subscriptionTier: tier.id,
+      subscriptionTierLabel: tier.label,
+      subscriptionMonthlyCents: 0,
+      subscriptionStatus: "free_forever",
+      subscriptionUpdatedAt: new Date().toISOString()
+    };
+    await env.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify(updated));
+    return json({ ok: true, subscription: updated.subscriptionStatus, registration: updated });
+  }
+
+  if (tier.monthlyCents === null && !env[tier.stripePriceEnv]) {
+    return json({ error: "This tier needs a Stripe Price ID or a custom billing setup before checkout can be created" }, { status: 422 });
+  }
+
+  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+  let stripeCustomerId = registration.stripeCustomerId || "";
+  if (!stripeCustomerId) {
+    const customerForm = new URLSearchParams({
+      email: registration.treasurerEmail || registration.priestEmail || "",
+      name: registration.parishName || "AgaPay parish",
+      "metadata[agapay_reference]": reference,
+      "metadata[agapay_parish_id]": registration.parishId || slugify(registration.parishName),
+      "metadata[agapay_subscription_tier]": tier.id
+    });
+    const customer = await stripeFormRequest(env, "/v1/customers", customerForm);
+    if (!customer.ok) {
+      return json(
+        { error: "Stripe customer creation failed", detail: customer.body.error?.message || "Unknown Stripe error" },
+        { status: 502 }
+      );
+    }
+    stripeCustomerId = customer.body.id;
+  }
+
+  const checkoutForm = new URLSearchParams({
+    mode: "subscription",
+    customer: stripeCustomerId,
+    success_url: `${appUrl}/admin?subscription_return=${encodeURIComponent(reference)}`,
+    cancel_url: `${appUrl}/admin?subscription_cancel=${encodeURIComponent(reference)}`,
+    client_reference_id: reference,
+    "metadata[agapay_reference]": reference,
+    "metadata[agapay_parish_id]": registration.parishId || slugify(registration.parishName),
+    "metadata[agapay_subscription_tier]": tier.id,
+    "subscription_data[metadata][agapay_reference]": reference,
+    "subscription_data[metadata][agapay_parish_id]": registration.parishId || slugify(registration.parishName),
+    "subscription_data[metadata][agapay_subscription_tier]": tier.id,
+    "line_items[0][quantity]": "1"
+  });
+
+  const configuredPriceId = tier.stripePriceEnv ? env[tier.stripePriceEnv] : "";
+  if (configuredPriceId) {
+    checkoutForm.set("line_items[0][price]", configuredPriceId);
+  } else {
+    checkoutForm.set("line_items[0][price_data][currency]", "usd");
+    checkoutForm.set("line_items[0][price_data][unit_amount]", String(tier.monthlyCents));
+    checkoutForm.set("line_items[0][price_data][recurring][interval]", "month");
+    checkoutForm.set("line_items[0][price_data][product_data][name]", `AgaPay ${tier.label} Subscription`);
+    checkoutForm.set("line_items[0][price_data][product_data][description]", tier.description);
+  }
+
+  const session = await stripeFormRequest(env, "/v1/checkout/sessions", checkoutForm);
+  if (!session.ok) {
+    return json(
+      { error: "Stripe subscription checkout failed", detail: session.body.error?.message || "Unknown Stripe error" },
+      { status: 502 }
+    );
+  }
+
+  const updated = {
+    ...registration,
+    subscriptionTier: tier.id,
+    subscriptionTierLabel: tier.label,
+    subscriptionMonthlyCents: tier.monthlyCents,
+    subscriptionStatus: "checkout_created",
+    stripeCustomerId,
+    stripeSubscriptionCheckoutSessionId: session.body.id || "",
+    stripeSubscriptionCheckoutCreatedAt: new Date().toISOString()
+  };
+  await env.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify(updated));
+
+  return json({ ok: true, checkoutUrl: session.body.url, registration: updated }, { status: 201 });
+}
+
+function parseStripeSignature(header) {
+  const values = {};
+  for (const part of String(header || "").split(",")) {
+    const [key, value] = part.split("=");
+    if (key && value) values[key.trim()] = value.trim();
+  }
+  return values;
+}
+
+function toHex(buffer) {
+  return Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function secureCompare(a, b) {
+  if (!a || !b || a.length !== b.length) return false;
+  let mismatch = 0;
+  for (let index = 0; index < a.length; index += 1) {
+    mismatch |= a.charCodeAt(index) ^ b.charCodeAt(index);
+  }
+  return mismatch === 0;
+}
+
+async function verifyStripeWebhook(payload, signatureHeader, secret) {
+  if (!secret) return false;
+  const signature = parseStripeSignature(signatureHeader);
+  if (!signature.t || !signature.v1) return false;
+
+  const timestamp = Number(signature.t);
+  if (!Number.isFinite(timestamp)) return false;
+  const ageSeconds = Math.abs(Math.floor(Date.now() / 1000) - timestamp);
+  if (ageSeconds > 300) return false;
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signedPayload = `${signature.t}.${payload}`;
+  const digest = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(signedPayload));
+  return secureCompare(toHex(digest), signature.v1);
+}
+
+function subscriptionStatusFromStripe(status) {
+  if (status === "active" || status === "trialing") return "active";
+  if (status === "past_due" || status === "unpaid") return "past_due";
+  if (status === "canceled" || status === "incomplete_expired") return "cancelled";
+  return status || "not_started";
+}
+
+async function updateSubscriptionRecord(env, reference, updates) {
+  if (!env.AGAPAY_REGISTRATIONS || !reference) return null;
+  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
+  if (!raw) return null;
+  const current = JSON.parse(raw);
+  const updated = {
+    ...current,
+    ...updates,
+    subscriptionUpdatedAt: new Date().toISOString()
+  };
+  await env.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify(updated));
+  return updated;
+}
+
+async function handleStripeWebhook(request, env) {
+  if (!env.STRIPE_WEBHOOK_SECRET) {
+    return json({ error: "STRIPE_WEBHOOK_SECRET is not configured" }, { status: 500 });
+  }
+
+  const payload = await request.text();
+  const verified = await verifyStripeWebhook(payload, request.headers.get("Stripe-Signature"), env.STRIPE_WEBHOOK_SECRET);
+  if (!verified) return json({ error: "Invalid Stripe signature" }, { status: 400 });
+
+  let event;
+  try {
+    event = JSON.parse(payload);
+  } catch {
+    return json({ error: "Invalid webhook payload" }, { status: 400 });
+  }
+
+  const object = event.data?.object || {};
+  if (event.type === "checkout.session.completed" && object.mode === "subscription") {
+    const reference = object.metadata?.agapay_reference || object.client_reference_id || "";
+    await updateSubscriptionRecord(env, reference, {
+      subscriptionStatus: "active",
+      stripeCustomerId: object.customer || "",
+      stripeSubscriptionId: object.subscription || "",
+      stripeSubscriptionCheckoutSessionId: object.id || "",
+      subscriptionActivatedAt: new Date().toISOString()
+    });
+  }
+
+  if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
+    const reference = object.metadata?.agapay_reference || "";
+    const status = event.type === "customer.subscription.deleted"
+      ? "cancelled"
+      : subscriptionStatusFromStripe(object.status);
+    if (reference) {
+      await updateSubscriptionRecord(env, reference, {
+        subscriptionStatus: status,
+        stripeSubscriptionId: object.id || "",
+        stripeCustomerId: object.customer || ""
+      });
+    } else {
+      const found = await findRegistrationByStripeSubscriptionId(env, object.id);
+      if (found) {
+        await updateSubscriptionRecord(env, found.key, {
+          subscriptionStatus: status,
+          stripeSubscriptionId: object.id || "",
+          stripeCustomerId: object.customer || ""
+        });
+      }
+    }
+  }
+
+  if (event.type === "invoice.payment_failed") {
+    const subscriptionId = object.subscription || "";
+    const found = await findRegistrationByStripeSubscriptionId(env, subscriptionId);
+    if (found) {
+      await updateSubscriptionRecord(env, found.key, {
+        subscriptionStatus: "past_due",
+        stripeSubscriptionId: subscriptionId,
+        stripeCustomerId: object.customer || found.registration.stripeCustomerId || ""
+      });
+    }
+  }
+
+  return json({ received: true });
 }
 
 async function createStripeOnboardingSession(request, env, reference, registration) {
@@ -1218,10 +1619,20 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    if (request.method === "POST" && url.pathname === "/api/stripe/webhook") {
+      return handleStripeWebhook(request, env);
+    }
     if (request.method === "GET" && url.pathname === "/api/parishes") return handleParishes(env);
+    if (request.method === "GET" && url.pathname === "/api/subscription-tiers") {
+      return json({ tiers: publicSubscriptionTiers() });
+    }
     if (request.method === "POST" && url.pathname === "/api/registrations") return handleRegistrations(request, env);
     if (request.method === "GET" && url.pathname === "/api/admin/registrations") {
       return handleAdminRegistrations(request, env);
+    }
+    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/subscription-checkout")) {
+      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/subscription-checkout", ""));
+      return handleSubscriptionCheckout(request, env, reference);
     }
     if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-onboarding")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/stripe-onboarding", ""));
