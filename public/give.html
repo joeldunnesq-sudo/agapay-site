@@ -399,6 +399,19 @@
             <line x1="13" y1="29" x2="25" y2="29"/>
           </svg>
         </div>
+        <div class="parish-info">
+          <div class="parish-name">St. John the Theologian Mission</div>
+          <div class="parish-meta">
+            <span class="parish-jurisdiction">OCA</span>
+            <span class="parish-dot"></span>
+            <span class="parish-location">Memphis, TN</span>
+          </div>
+        </div>
+        <span class="parish-badge verified">Verified</span>
+        <span class="parish-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </a>
+
+    </div>
 
     <!-- EMPTY STATE -->
     <div class="empty-state" id="emptyState" aria-live="polite">
@@ -503,7 +516,7 @@
       const location = `${parish.city || ''}, ${parish.state || ''}`.replace(/^, /, '').replace(/, $/, '');
       const badge = parish.freeForever ? '<span class="parish-badge free">Free forever</span>' : '<span class="parish-badge verified">Verified</span>';
       return `
-        <a href="/give/${parish.id}" class="parish-card reveal visible"
+        <a href="/give/form?parish=${encodeURIComponent(parish.id)}" class="parish-card reveal visible"
            data-name="${parish.name}" data-jurisdiction="${parish.jurisdiction}" data-type="${parish.type}" data-city="${location}">
           <div class="parish-avatar ${parish.type}">${parishIcon(parish.type)}</div>
           <div class="parish-info">
