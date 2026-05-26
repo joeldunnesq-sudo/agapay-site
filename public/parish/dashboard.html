@@ -262,6 +262,53 @@
       font-size: 12px;
       line-height: 1.55;
     }
+    .qr-tools {
+      margin-top: 1rem;
+      border: 1px solid rgba(47,90,57,0.16);
+      border-radius: 12px;
+      background: linear-gradient(180deg, #fff, var(--paper));
+      padding: 1rem;
+    }
+    .qr-layout {
+      display: grid;
+      grid-template-columns: 156px minmax(0, 1fr);
+      gap: 1rem;
+      align-items: center;
+    }
+    .qr-code {
+      width: 156px;
+      height: 156px;
+      display: grid;
+      place-items: center;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.65rem;
+    }
+    .qr-code svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .qr-title {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 22px;
+      color: var(--deep);
+      line-height: 1.1;
+    }
+    .qr-copy-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.55rem;
+      margin-top: 0.75rem;
+    }
+    .qr-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 0.75rem;
+    }
     .editor-label-row {
       display: flex;
       justify-content: space-between;
@@ -278,6 +325,8 @@
     }
     @media (max-width: 860px) {
       .login, .metrics, .grid, .form-grid, .toggle-row, .profile-strip { grid-template-columns: 1fr; }
+      .qr-layout, .qr-copy-row { grid-template-columns: 1fr; }
+      .qr-code { width: 148px; height: 148px; }
     }
   </style>
 </head>
@@ -346,8 +395,10 @@
     </div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <script>
     let currentParish = null;
+    let currentQrSvg = '';
 
     function setStatus(message) {
       document.getElementById('status').textContent = message || '';
@@ -370,6 +421,27 @@
       return JSON.stringify(value && value.length ? value : [
         { id: 'alms', name: 'Alms Campaign', description: 'Parish-approved alms for a specific need.' }
       ], null, 2);
+    }
+
+    function dedicatedGivingUrl() {
+      if (!currentParish) return '';
+      return `${window.location.origin}/give/form?parish=${encodeURIComponent(currentParish.parishId)}`;
+    }
+
+    function downloadBlob(filename, blob) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function qrFilename(extension) {
+      const parishId = currentParish?.parishId || 'agapay-parish';
+      return `${parishId}-giving-qr.${extension}`;
     }
 
     async function loadDashboard() {
@@ -406,7 +478,7 @@
       document.getElementById('metricFunds').textContent = (parish.funds || []).length;
       document.getElementById('metricCampaigns').textContent = (parish.campaigns || []).length;
       document.getElementById('metricStripe').textContent = parish.stripeAccountStatus || 'not_started';
-      document.getElementById('publicLink').href = '/give/form?parish=' + encodeURIComponent(parish.parishId);
+      document.getElementById('publicLink').href = dedicatedGivingUrl();
 
       document.getElementById('settingsPane').innerHTML = `
         <div class="form-grid">
@@ -440,6 +512,23 @@
           </div>
         </div>
         <p class="section-note">Changes here affect the parish's public giving page and visibility in the AgaPay directory.</p>
+        <div class="qr-tools">
+          <div class="qr-layout">
+            <div class="qr-code" id="qrCode" aria-label="Giving page QR code"></div>
+            <div>
+              <h3 class="qr-title">Giving QR Code</h3>
+              <p class="section-note">Use this code on bulletins, signs, table cards, and parish emails. It points directly to this parish's AgaPay giving page.</p>
+              <div class="qr-copy-row">
+                <input id="givingUrlInput" value="${dedicatedGivingUrl()}" readonly />
+                <button class="secondary" onclick="copyGivingLink()">Copy link</button>
+              </div>
+              <div class="qr-actions">
+                <button class="secondary" onclick="downloadQrSvg()">Download SVG</button>
+                <button class="secondary" onclick="downloadQrPng()">Download PNG</button>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="toggle-row">
           <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(parish.recurringGivingEnabled ?? true) ? 'checked' : ''} /> Recurring giving</label>
           <label class="check-card"><input id="candlesEnabled" type="checkbox" ${(parish.candlesEnabled ?? true) ? 'checked' : ''} /> Candles</label>
@@ -455,6 +544,7 @@
           <p>Stripe onboarding links are single-use. If the link expires, return here and create a new one.</p>
         </div>
       `;
+      renderQrCode();
 
       document.getElementById('editorPane').innerHTML = `
         <div class="editor-label-row">
@@ -518,6 +608,87 @@
       }
       navigator.clipboard.writeText(JSON.stringify(payload(), null, 2));
       setStatus('Current settings copied.');
+    }
+
+    function renderQrCode() {
+      const target = document.getElementById('qrCode');
+      if (!target) return;
+      if (typeof qrcode === 'undefined') {
+        target.innerHTML = '<span style="font-size:12px;color:var(--stone);text-align:center;">QR library unavailable</span>';
+        currentQrSvg = '';
+        return;
+      }
+
+      const qr = qrcode(0, 'M');
+      qr.addData(dedicatedGivingUrl());
+      qr.make();
+      currentQrSvg = qr
+        .createSvgTag(5, 3)
+        .replace(/<svg /, '<svg role="img" aria-label="AgaPay giving QR code" ')
+        .replace(/fill="#000000"/g, 'fill="#0F2D1F"');
+      target.innerHTML = currentQrSvg;
+    }
+
+    async function copyGivingLink() {
+      const url = dedicatedGivingUrl();
+      if (!url) {
+        setStatus('Load a parish first.');
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setStatus('Giving page link copied.');
+    }
+
+    function downloadQrSvg() {
+      if (!currentQrSvg) renderQrCode();
+      if (!currentQrSvg) {
+        setStatus('QR code is not ready yet.');
+        return;
+      }
+      const svg = currentQrSvg.includes('xmlns=')
+        ? currentQrSvg
+        : currentQrSvg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+      downloadBlob(qrFilename('svg'), new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
+      setStatus('QR code SVG downloaded.');
+    }
+
+    function downloadQrPng() {
+      if (!currentQrSvg) renderQrCode();
+      if (!currentQrSvg) {
+        setStatus('QR code is not ready yet.');
+        return;
+      }
+
+      const svg = currentQrSvg.includes('xmlns=')
+        ? currentQrSvg
+        : currentQrSvg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+      const img = new Image();
+      const svgUrl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
+
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1200;
+        canvas.height = 1200;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(svgUrl);
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            setStatus('Unable to create PNG.');
+            return;
+          }
+          downloadBlob(qrFilename('png'), blob);
+          setStatus('QR code PNG downloaded.');
+        }, 'image/png');
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(svgUrl);
+        setStatus('Unable to render QR code PNG.');
+      };
+      img.src = svgUrl;
     }
 
     async function startStripeOnboarding() {
