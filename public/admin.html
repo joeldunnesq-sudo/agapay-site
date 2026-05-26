@@ -309,6 +309,32 @@
       font-size: 12px;
       box-shadow: none;
     }
+    .stripe-link-box {
+      display: none;
+      margin-top: 0.75rem;
+      border: 1px solid rgba(184,144,47,0.28);
+      border-radius: 10px;
+      background: rgba(184,144,47,0.08);
+      padding: 0.85rem;
+    }
+    .stripe-link-box.visible { display: block; }
+    .stripe-link-box a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: var(--deep);
+      color: var(--cream);
+      padding: 0.7rem 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .stripe-link-box p {
+      margin: 0.55rem 0 0;
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.55;
+    }
     .search-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(150px, 0.35fr);
@@ -677,6 +703,10 @@
               <button class="gold" onclick="startStripeOnboarding('${reg.reference}')">Create onboarding link</button>
               <button class="secondary" onclick="refreshStripeStatus('${reg.reference}')">Refresh Stripe status</button>
             </div>
+            <div class="stripe-link-box" id="stripeLinkBox">
+              <a id="stripeOnboardingLink" href="#" target="_blank" rel="noopener">Open Stripe onboarding</a>
+              <p>The link has also been copied to your clipboard. Send it to the parish treasurer if they should complete onboarding themselves.</p>
+            </div>
             <p style="margin:0.65rem 0 0; color:var(--stone); font-size:12px; line-height:1.55;">
               Onboarding links are single-use. If a link expires or the parish returns later, create a fresh one.
             </p>
@@ -760,7 +790,6 @@
 
     async function startStripeOnboarding(reference) {
       setStatus('Creating Stripe onboarding link...');
-      const popup = window.open('', '_blank');
       try {
         const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/stripe-onboarding', {
           method: 'POST',
@@ -772,14 +801,14 @@
         renderDetail(result.registration);
         await loadRegistrations();
         await navigator.clipboard.writeText(result.onboardingUrl);
-        setStatus('Stripe onboarding link created and copied. Opening it now.');
-        if (popup) {
-          popup.location.href = result.onboardingUrl;
-        } else {
-          window.location.href = result.onboardingUrl;
+        const linkBox = document.getElementById('stripeLinkBox');
+        const link = document.getElementById('stripeOnboardingLink');
+        if (linkBox && link) {
+          link.href = result.onboardingUrl;
+          linkBox.classList.add('visible');
         }
+        setStatus('Stripe onboarding link created and copied. Click Open Stripe onboarding.');
       } catch (err) {
-        if (popup) popup.close();
         setStatus(err.message);
       }
     }
