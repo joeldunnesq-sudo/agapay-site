@@ -210,6 +210,79 @@ function absoluteWebsiteUrl(value) {
   return `https://${website}`;
 }
 
+function htmlEscape(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+async function sendEmail(env, message) {
+  if (!env.RESEND_API_KEY) return { status: "not_configured" };
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(message)
+  });
+  const body = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    return {
+      status: "failed",
+      detail: body.message || body.error || "Email provider rejected the message"
+    };
+  }
+
+  return { status: "sent", id: body.id || "" };
+}
+
+async function sendTreasurerStripeInvite(env, appUrl, registration) {
+  const to = registration.treasurerEmail || registration.priestEmail || "";
+  if (!to) return { status: "missing_recipient" };
+
+  const parishId = registration.parishId || slugify(registration.parishName);
+  const dashboardUrl = `${appUrl}/parish/dashboard?parish=${encodeURIComponent(parishId)}`;
+  const from = env.AGAPAY_FROM_EMAIL || "AgaPay <onboarding@agapay.app>";
+  const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
+  const parishName = htmlEscape(registration.parishName || "your parish");
+  const token = htmlEscape(registration.parishDashboardToken || "");
+
+  return sendEmail(env, {
+    from,
+    to: [to],
+    reply_to: replyTo,
+    subject: `Set up Stripe giving for ${registration.parishName || "your parish"}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.55;color:#171715;max-width:620px;">
+        <h2 style="color:#0F2D1F;">AgaPay Stripe onboarding</h2>
+        <p>Glory to Jesus Christ!</p>
+        <p>AgaPay is ready for <strong>${parishName}</strong> to complete Stripe onboarding so online gifts can be routed to the parish's connected Stripe account.</p>
+        <p><a href="${dashboardUrl}" style="display:inline-block;background:#0F2D1F;color:#F6F1E8;padding:12px 16px;border-radius:8px;text-decoration:none;font-weight:700;">Open parish dashboard</a></p>
+        <p><strong>Parish ID:</strong> ${htmlEscape(parishId)}</p>
+        <p><strong>Parish token:</strong> ${token}</p>
+        <p>After opening the dashboard, enter the parish ID and token, then use the Stripe onboarding button in the Payments section.</p>
+        <p style="font-size:13px;color:#6F6A60;">For security, Stripe onboarding links are created inside AgaPay after the parish token is entered. If you need help, reply to this email.</p>
+      </div>
+    `,
+    text: [
+      "AgaPay Stripe onboarding",
+      "",
+      `AgaPay is ready for ${registration.parishName || "your parish"} to complete Stripe onboarding.`,
+      "",
+      `Open parish dashboard: ${dashboardUrl}`,
+      `Parish ID: ${parishId}`,
+      `Parish token: ${registration.parishDashboardToken || ""}`,
+      "",
+      "After opening the dashboard, enter the parish ID and token, then use the Stripe onboarding button in the Payments section."
+    ].join("\n")
+  });
+}
+
 function publicParishes() {
   return parishes.map(({ stripeAccountId, ...parish }) => parish);
 }
@@ -556,21 +629,7 @@ async function handleAdminRegistrationDetail(request, env, reference) {
   return json({ error: "Method not allowed" }, { status: 405 });
 }
 
-async function handleStripeOnboarding(request, env, reference) {
-  if (!requireAdmin(request, env)) return unauthorized();
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
-
-  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
-  if (!raw) return json({ error: "Registration not found" }, { status: 404 });
-
-  const registration = JSON.parse(raw);
-  if (registration.status !== "verified") {
-    return json({ error: "Verify the parish before starting Stripe onboarding" }, { status: 422 });
-  }
-
+async function createStripeOnboardingSession(request, env, reference, registration) {
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   let stripeAccountId = registration.stripeAccountId || "";
   let stripeAccount = null;
@@ -628,6 +687,7 @@ async function handleStripeOnboarding(request, env, reference) {
 
   const updated = {
     ...registration,
+    parishDashboardToken: registration.parishDashboardToken || crypto.randomUUID(),
     stripeAccountId,
     stripeAccountStatus: stripeAccountStatus(stripeAccount),
     stripeChargesEnabled: Boolean(stripeAccount.charges_enabled),
@@ -640,7 +700,39 @@ async function handleStripeOnboarding(request, env, reference) {
   };
   await env.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify(updated));
 
-  return json({ ok: true, onboardingUrl: link.body.url, registration: updated });
+  return { onboardingUrl: link.body.url, registration: updated };
+}
+
+async function handleStripeOnboarding(request, env, reference) {
+  if (!requireAdmin(request, env)) return unauthorized();
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
+  if (!raw) return json({ error: "Registration not found" }, { status: 404 });
+
+  const registration = JSON.parse(raw);
+  if (registration.status !== "verified") {
+    return json({ error: "Verify the parish before starting Stripe onboarding" }, { status: 422 });
+  }
+
+  const result = await createStripeOnboardingSession(request, env, reference, registration);
+  if (result instanceof Response) return result;
+
+  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+  const email = await sendTreasurerStripeInvite(env, appUrl, result.registration);
+  const updated = {
+    ...result.registration,
+    stripeOnboardingEmailStatus: email.status,
+    stripeOnboardingEmailId: email.id || "",
+    stripeOnboardingEmailDetail: email.detail || "",
+    stripeOnboardingEmailSentAt: email.status === "sent" ? new Date().toISOString() : result.registration.stripeOnboardingEmailSentAt
+  };
+  await env.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify(updated));
+
+  return json({ ok: true, onboardingUrl: result.onboardingUrl, email, registration: updated });
 }
 
 async function handleStripeRefresh(request, env, reference) {
@@ -680,6 +772,29 @@ async function handleStripeRefresh(request, env, reference) {
   await env.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify(updated));
 
   return json({ ok: true, registration: updated });
+}
+
+async function handleParishStripeOnboarding(request, env, parishId) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const token = getBearerToken(request);
+  if (!found.registration.parishDashboardToken || token !== found.registration.parishDashboardToken) {
+    return unauthorized();
+  }
+  if (found.registration.status !== "verified") {
+    return json({ error: "This parish is not verified for giving yet" }, { status: 422 });
+  }
+
+  const result = await createStripeOnboardingSession(request, env, found.key, found.registration);
+  if (result instanceof Response) return result;
+
+  return json({ ok: true, onboardingUrl: result.onboardingUrl, parish: result.registration });
 }
 
 async function handleParishDashboard(request, env, parishId) {
@@ -800,6 +915,10 @@ export default {
     if (url.pathname.startsWith("/api/admin/registrations/")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", ""));
       return handleAdminRegistrationDetail(request, env, reference);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stripe-onboarding")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stripe-onboarding", ""));
+      return handleParishStripeOnboarding(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", ""));
