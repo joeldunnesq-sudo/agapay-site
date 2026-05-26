@@ -682,7 +682,7 @@ async function handleCheckout(request, env) {
   }
 
   if (recurring) {
-    form.set("line_items[0][price_data][recurring][interval]", body.frequency === "weekly" ? "week" : "month");
+    form.set("line_items[0][price_data][recurring][interval]", body.frequency === "weekly" || body.frequency === "biweekly" ? "week" : "month");
     if (body.frequency === "biweekly") form.set("line_items[0][price_data][recurring][interval_count]", "2");
   }
 
