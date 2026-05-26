@@ -73,6 +73,13 @@ function centsFromAmount(amount) {
   return Math.round(numeric * 100);
 }
 
+function donorName(body) {
+  return [body.firstName, body.lastName]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
 async function stripeFormRequest(env, path, form, method = "POST") {
   if (!env.STRIPE_SECRET_KEY) {
     return {
@@ -126,6 +133,30 @@ async function stripeGetConnectedRequest(env, path, stripeAccountId) {
       Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
       "Stripe-Account": stripeAccountId
     }
+  });
+  const body = await response.json();
+  return { ok: response.ok, status: response.status, body };
+}
+
+async function stripeFormConnectedRequest(env, path, form, stripeAccountId, method = "POST") {
+  if (!env.STRIPE_SECRET_KEY) {
+    return {
+      ok: false,
+      status: 500,
+      body: { error: { message: "STRIPE_SECRET_KEY is not configured" } }
+    };
+  }
+
+  const headers = {
+    Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+    "Content-Type": "application/x-www-form-urlencoded"
+  };
+  if (stripeAccountId) headers["Stripe-Account"] = stripeAccountId;
+
+  const response = await fetch(`https://api.stripe.com${path}`, {
+    method,
+    headers,
+    body: form
   });
   const body = await response.json();
   return { ok: response.ok, status: response.status, body };
@@ -544,6 +575,35 @@ async function findCheckoutParish(env, parishId) {
   };
 }
 
+async function findOrCreateDonorCustomer(env, parish, body) {
+  const email = String(body.email || "").trim().toLowerCase();
+  const name = donorName(body);
+  const stripeAccountId = parish.stripeAccountId || "";
+
+  const customerPath = `/v1/customers?email=${encodeURIComponent(email)}&limit=1`;
+  const lookup = stripeAccountId
+    ? await stripeGetConnectedRequest(env, customerPath, stripeAccountId)
+    : await stripeGetRequest(env, customerPath);
+
+  if (!lookup.ok) return lookup;
+
+  const existing = Array.isArray(lookup.body.data)
+    ? lookup.body.data.find((customer) => !customer.deleted)
+    : null;
+  if (existing?.id) return { ok: true, body: existing };
+
+  const customerForm = new URLSearchParams({
+    email,
+    name,
+    "metadata[agapay_parish_id]": parish.id,
+    "metadata[agapay_parish_name]": parish.name || "",
+    "metadata[agapay_donor_first_name]": body.firstName || "",
+    "metadata[agapay_donor_last_name]": body.lastName || ""
+  });
+
+  return stripeFormConnectedRequest(env, "/v1/customers", customerForm, stripeAccountId);
+}
+
 async function handleParishes(env) {
   const dynamicParishes = await verifiedRegistrationParishes(env);
 
@@ -647,9 +707,17 @@ async function handleCheckout(request, env) {
   const chargeCents = amountCents + feeCents;
   const recurring = body.frequency && body.frequency !== "once";
   const giftLabel = String(body.giftType).replace(/-/g, " ");
+  const customer = await findOrCreateDonorCustomer(env, parish, body);
+  if (!customer.ok) {
+    return json(
+      { error: "Stripe customer setup failed", detail: customer.body.error?.message || "Unknown Stripe error" },
+      { status: 502 }
+    );
+  }
 
   const checkoutMetadata = {
     parish_id: parish.id,
+    stripe_customer_id: customer.body.id || "",
     gift_type: body.giftType,
     fund: body.fund || "",
     feast_description: body.feastDescription || "",
@@ -665,7 +733,7 @@ async function handleCheckout(request, env) {
     mode: recurring ? "subscription" : "payment",
     success_url: `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&success=1`,
     cancel_url: `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&canceled=1`,
-    customer_email: body.email,
+    customer: customer.body.id,
     "line_items[0][quantity]": "1",
     "line_items[0][price_data][currency]": "usd",
     "line_items[0][price_data][product_data][name]": `${parish.name} - ${giftLabel}`,
