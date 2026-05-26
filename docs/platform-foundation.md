@@ -1,26 +1,28 @@
 # AgaPay Platform Foundation
 
-This snapshot keeps the existing static frontend and adds the first backend layer needed for a real multi-parish giving platform.
+This snapshot keeps the existing static frontend and uses a Cloudflare Worker as the backend for parish registration, public giving, admin review, Stripe Connect onboarding, and subscription status.
 
 ## What is included
 
-- `data/parishes.json`: canonical parish, mission, and monastery records used by the API.
-- `api/parishes.js`: public parish listing endpoint.
-- `api/registrations.js`: parish registration intake endpoint with server-side validation.
-- `api/create-checkout-session.js`: Stripe Checkout endpoint. It runs in demo mode until `STRIPE_SECRET_KEY` is configured.
-- `server.mjs`: local static + API dev server.
-- `vercel.json`: clean URL rewrites for static pages and API routes.
+- `src/worker.js`: the active Cloudflare Worker backend and router.
+- `public/`: static HTML, CSS, and browser-side JavaScript.
+- `wrangler.toml`: Cloudflare Worker, static asset, and plain variable configuration.
+- `AGAPAY_REGISTRATIONS`: Cloudflare KV namespace used as the parish source of truth.
 
 ## Environment variables
 
-- `STRIPE_SECRET_KEY`: required for real Stripe Checkout sessions.
-- `AGAPAY_APP_URL`: public app URL used for Stripe success and cancel URLs.
-- `AGAPAY_ALLOWED_ORIGIN`: optional CORS origin.
+- `STRIPE_SECRET_KEY`: Cloudflare Secret required for real Stripe Checkout and Connect calls.
+- `RESEND_API_KEY`: Cloudflare Secret required for outbound email.
+- `AGAPAY_ADMIN_TOKEN`: Cloudflare Secret required for admin access.
+- `STRIPE_WEBHOOK_SECRET`: Cloudflare Secret used to verify Stripe webhook events.
+- `AGAPAY_APP_URL`: public app URL used for Stripe success/cancel URLs and dashboard links.
+- `AGAPAY_FROM_EMAIL`: sender display address for Resend.
+- `AGAPAY_REPLY_TO_EMAIL`: reply-to email address.
+- `AGAPAY_REGISTRATION_NOTIFY_EMAIL`: owner notification address for new parish registrations.
 
 ## Next backend steps
 
-1. Replace file-backed registrations with Postgres or Supabase tables.
-2. Add admin authentication and a parish verification dashboard.
-3. Store Stripe connected account IDs per parish.
-4. Add Stripe webhooks for successful payments, recurring subscriptions, receipts, and failed payment notifications.
-5. Add donor accounts and annual giving statements.
+1. Build a donor portal using Stripe Customer IDs.
+2. Add receipts and annual giving statements.
+3. Add fuller admin reporting for parish onboarding, subscriptions, and giving status.
+4. Consider D1 when registration/dashboard data outgrows KV querying.
