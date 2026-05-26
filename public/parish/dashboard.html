@@ -934,8 +934,8 @@
           <input id="parishId" placeholder="st-seraphim-mission" autocomplete="off" />
         </div>
         <div>
-          <label for="parishToken">Parish token</label>
-          <input id="parishToken" type="password" placeholder="Parish dashboard token" autocomplete="current-password" />
+          <label for="parishToken">Parish password</label>
+          <input id="parishToken" type="password" placeholder="Parish dashboard password" autocomplete="current-password" />
         </div>
         <button class="sidebar-load" id="loadBtn" onclick="loadDashboard()">Load dashboard</button>
       </div>
@@ -1048,7 +1048,7 @@
               <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             </div>
             <h3>No data yet</h3>
-            <p>Enter your parish ID and token, then load the dashboard to see your giving overview.</p>
+            <p>Enter your parish ID and password, then load the dashboard to see your giving overview.</p>
           </div>
         </div>
 
@@ -1064,7 +1064,7 @@
               <div class="empty-state">
                 <div class="empty-state-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82"/></svg></div>
                 <h3>Not loaded</h3>
-                <p>Enter your parish ID and token to manage giving page settings.</p>
+                <p>Enter your parish ID and password to manage giving page settings.</p>
               </div>
             </div>
           </div>
@@ -1402,7 +1402,7 @@
     async function loadDashboard() {
       const parishId = document.getElementById('parishId').value.trim();
       if (!parishId || !document.getElementById('parishToken').value.trim()) {
-        setStatus('Enter the parish ID and token.', 'error');
+        setStatus('Enter the parish ID and password.', 'error');
         return;
       }
 
@@ -1473,6 +1473,18 @@
           </div>
         </div>
         <p class="section-note">Changes here affect the parish's public giving page and visibility in the AgaPay directory.</p>
+        <div class="section-divider"><span>Dashboard password</span></div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="newDashboardPassword">New password</label>
+            <input id="newDashboardPassword" type="password" placeholder="At least 8 characters" autocomplete="new-password" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="confirmDashboardPassword">Confirm password</label>
+            <input id="confirmDashboardPassword" type="password" placeholder="Re-enter new password" autocomplete="new-password" />
+          </div>
+        </div>
+        <p class="section-note">Leave these fields blank unless you want to change the parish dashboard password.</p>
         <div class="section-divider"><span>Feature toggles</span></div>
         <div class="toggle-row">
           <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(parish.recurringGivingEnabled ?? true) ? 'checked' : ''} /> Recurring giving</label>
@@ -1625,7 +1637,14 @@
 
     function payload() {
       syncGivingOptionsFromAdvanced();
-      return {
+      const newPassword = document.getElementById('newDashboardPassword')?.value.trim() || '';
+      const confirmPassword = document.getElementById('confirmDashboardPassword')?.value.trim() || '';
+      if (newPassword || confirmPassword) {
+        if (newPassword.length < 8) throw new Error('Dashboard password must be at least 8 characters.');
+        if (newPassword !== confirmPassword) throw new Error('Dashboard passwords do not match.');
+      }
+
+      const body = {
         website: document.getElementById('website').value,
         givingStatus: document.getElementById('givingStatus').value,
         recurringGivingEnabled: document.getElementById('recurringGivingEnabled').checked,
@@ -1634,6 +1653,8 @@
         funds: editableFunds,
         campaigns: editableCampaigns
       };
+      if (newPassword) body.newDashboardPassword = newPassword;
+      return body;
     }
 
     async function saveDashboard() {
@@ -1641,8 +1662,8 @@
       let body;
       try {
         body = payload();
-      } catch {
-        setStatus('Giving options could not be saved. Open Advanced edit and check the formatting.', 'error');
+      } catch (err) {
+        setStatus(err.message || 'Giving options could not be saved. Open Advanced edit and check the formatting.', 'error');
         return;
       }
 
@@ -1657,7 +1678,10 @@
         setStatus(result.error || 'Unable to save dashboard.', 'error');
         return;
       }
-      setStatus('Parish settings saved.', 'success');
+      if (body.newDashboardPassword) {
+        document.getElementById('parishToken').value = body.newDashboardPassword;
+      }
+      setStatus(body.newDashboardPassword ? 'Parish settings saved. Dashboard password updated.' : 'Parish settings saved.', 'success');
       await loadDashboard();
     }
 
