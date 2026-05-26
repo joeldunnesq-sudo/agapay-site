@@ -684,6 +684,163 @@
       line-height: 1.6;
       text-align: center;
     }
+    .growth-card {
+      background: var(--deep);
+      border: 1px solid rgba(184,144,47,0.24);
+      border-radius: 14px;
+      color: var(--cream);
+      margin-bottom: 1rem;
+      overflow: hidden;
+      position: relative;
+    }
+    .growth-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 520px;
+      height: 150px;
+      background: radial-gradient(ellipse at top, rgba(184,144,47,0.14), transparent 65%);
+      pointer-events: none;
+    }
+    .growth-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid rgba(184,144,47,0.15);
+      position: relative;
+      z-index: 1;
+    }
+    .growth-title {
+      font-family: var(--serif);
+      color: var(--cream);
+      font-size: 22px;
+      font-weight: 600;
+      line-height: 1.1;
+    }
+    .growth-subtitle {
+      margin-top: 0.25rem;
+      color: rgba(246,241,232,0.62);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .growth-body {
+      display: grid;
+      grid-template-columns: minmax(210px, 0.36fr) repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      padding: 1.2rem;
+      position: relative;
+      z-index: 1;
+    }
+    .growth-stats {
+      display: grid;
+      gap: 0.55rem;
+      align-content: start;
+    }
+    .growth-stat {
+      border: 1px solid rgba(246,241,232,0.12);
+      border-radius: 10px;
+      background: rgba(246,241,232,0.05);
+      padding: 0.8rem;
+    }
+    .growth-stat strong {
+      display: block;
+      font-family: var(--serif);
+      color: var(--cream);
+      font-size: 28px;
+      line-height: 1;
+    }
+    .growth-stat span {
+      display: block;
+      margin-top: 0.3rem;
+      color: rgba(246,241,232,0.58);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .growth-chart-card {
+      border: 1px solid rgba(246,241,232,0.12);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.97);
+      color: var(--ink);
+      padding: 1rem;
+    }
+    .growth-chart-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+      color: var(--deep);
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 0.7rem;
+    }
+    .growth-chart-title span {
+      color: var(--stone);
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .growth-bars {
+      min-height: 170px;
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 5px;
+      align-items: end;
+      border-bottom: 1px solid rgba(111,106,96,0.18);
+      padding: 0.5rem 0.2rem 0;
+    }
+    .growth-bar-wrap {
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 4px;
+      height: 100%;
+      align-items: end;
+    }
+    .growth-bar-stack {
+      display: grid;
+      align-items: end;
+      gap: 2px;
+      min-height: 4px;
+    }
+    .growth-bar {
+      width: 100%;
+      min-height: 3px;
+      border-radius: 4px 4px 0 0;
+      background: linear-gradient(180deg, var(--gold), rgba(184,144,47,0.52));
+    }
+    .growth-bar.alt {
+      background: linear-gradient(180deg, var(--forest), rgba(47,90,57,0.58));
+    }
+    .growth-label {
+      color: var(--muted);
+      font-size: 9px;
+      text-align: center;
+    }
+    .growth-note {
+      margin-top: 0.7rem;
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .growth-empty {
+      border: 1px dashed rgba(246,241,232,0.22);
+      border-radius: 10px;
+      padding: 1rem;
+      color: rgba(246,241,232,0.68);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .back-to-queue {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.75rem;
+    }
+    .hidden { display: none !important; }
     .section-card {
       background: white;
       border: 1px solid var(--line);
@@ -822,6 +979,7 @@
       .app { grid-template-columns: 1fr; }
       .sidebar { position: static; height: auto; }
       .step-track, .form-grid, .fields-grid, .toggle-row { grid-template-columns: 1fr; }
+      .growth-body { grid-template-columns: 1fr; }
       .full { grid-column: auto; }
       .topbar, .detail-wrap { padding-left: 1rem; padding-right: 1rem; }
       .status-shell.visible { padding-left: 1rem; padding-right: 1rem; }
@@ -894,13 +1052,29 @@
     <div class="content">
       <div class="topbar">
         <span class="topbar-ref">Parish review console &middot; <strong id="selectedReference">No selection</strong></span>
-        <button class="secondary btn-sm" onclick="copyRegistrationSummary()">Copy summary</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="secondary btn-sm hidden" id="backToQueueBtn" onclick="scrollToQueue()">Back to queue</button>
+          <button class="secondary btn-sm" onclick="copyRegistrationSummary()">Copy summary</button>
+        </div>
       </div>
       <div class="status-shell" id="statusShell">
         <div class="status" id="status"></div>
       </div>
       <div class="detail-wrap" id="detailPane">
-        <section class="queue-card">
+        <section class="growth-card" id="platformGrowthCard">
+          <div class="growth-header">
+            <div>
+              <div class="growth-title">Platform Growth</div>
+              <div class="growth-subtitle">Registrations, verified parishes, and giving volume across AgaPay.</div>
+            </div>
+            <button class="secondary btn-sm" onclick="loadPlatformSummary()">Refresh</button>
+          </div>
+          <div class="growth-body" id="platformGrowthPane">
+            <div class="growth-empty">Load registrations to see platform growth.</div>
+          </div>
+        </section>
+
+        <section class="queue-card" id="registrationQueue">
           <div class="queue-header">
             <div>
               <div class="queue-title">Registration Queue</div>
@@ -1037,6 +1211,17 @@
       return '$' + (Number(cents) / 100).toFixed(0) + '/mo';
     }
 
+    function moneyShort(cents) {
+      const amount = (Number(cents) || 0) / 100;
+      if (amount >= 1000000) return '$' + (amount / 1000000).toFixed(1) + 'M';
+      if (amount >= 1000) return '$' + (amount / 1000).toFixed(1) + 'K';
+      return '$' + amount.toFixed(0);
+    }
+
+    function monthLabel(index) {
+      return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][index] || '';
+    }
+
     function readable(value) {
       return String(value || 'not_started').replace(/_/g, ' ');
     }
@@ -1075,6 +1260,124 @@
       return escapeHtml(JSON.stringify(value && value.length ? value : fallback, null, 2));
     }
 
+    function computeLocalPlatformSummary(registrations) {
+      const year = new Date().getFullYear();
+      const monthly = Array.from({ length: 12 }, (_, index) => ({
+        month: index + 1,
+        label: monthLabel(index),
+        registered: 0,
+        verified: 0,
+        ytdDonationsCents: 0,
+        giftCount: 0
+      }));
+
+      for (const registration of registrations) {
+        const received = registration.receivedAt ? new Date(registration.receivedAt) : null;
+        if (!received || Number.isNaN(received.getTime()) || received.getFullYear() !== year) continue;
+        const month = received.getMonth();
+        monthly[month].registered += 1;
+        if (registration.status === 'verified') monthly[month].verified += 1;
+      }
+
+      return {
+        year,
+        totalRegistered: registrations.length,
+        totalVerified: registrations.filter(item => item.status === 'verified').length,
+        connectedStripeAccounts: registrations.filter(item => ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus)).length,
+        ytdDonationsCents: 0,
+        giftCount: 0,
+        donationDataSource: 'local_only',
+        monthly
+      };
+    }
+
+    function renderGrowthBars(summary, mode) {
+      const monthly = summary.monthly || [];
+      const maxValue = Math.max(
+        ...monthly.map(item => mode === 'donations'
+          ? Number(item.ytdDonationsCents || 0)
+          : Math.max(Number(item.registered || 0), Number(item.verified || 0))
+        ),
+        1
+      );
+
+      return monthly.map((item) => {
+        const primary = mode === 'donations' ? Number(item.ytdDonationsCents || 0) : Number(item.registered || 0);
+        const secondary = mode === 'donations' ? Number(item.giftCount || 0) : Number(item.verified || 0);
+        const primaryHeight = Math.max(primary ? 5 : 3, Math.round((primary / maxValue) * 145));
+        const secondaryHeight = mode === 'donations'
+          ? 0
+          : Math.max(secondary ? 5 : 0, Math.round((secondary / maxValue) * 145));
+        const title = mode === 'donations'
+          ? `${item.label}: ${moneyShort(primary)} / ${secondary} gifts`
+          : `${item.label}: ${primary} registered / ${secondary} verified`;
+        return `
+          <div class="growth-bar-wrap" title="${escapeAttr(title)}">
+            <div class="growth-bar-stack">
+              ${secondaryHeight ? `<div class="growth-bar alt" style="height:${secondaryHeight}px;"></div>` : ''}
+              <div class="growth-bar" style="height:${primaryHeight}px;"></div>
+            </div>
+            <div class="growth-label">${escapeHtml(item.label)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPlatformGrowth(summary) {
+      const pane = document.getElementById('platformGrowthPane');
+      if (!pane) return;
+      const donationSource = summary.donationDataSource || 'local_only';
+      const donationNote = donationSource === 'stripe'
+        ? 'Donation volume is based on successful Stripe charges for connected parish accounts.'
+        : donationSource === 'partial'
+          ? `Stripe data is partially available. ${summary.donationError || ''}`
+          : donationSource === 'not_connected'
+            ? 'Donation volume will appear after parishes connect Stripe and receive gifts.'
+            : 'Donation volume needs admin Stripe reporting; registration growth is shown from AgaPay records.';
+
+      pane.innerHTML = `
+        <div class="growth-stats">
+          <div class="growth-stat"><strong>${summary.totalRegistered || 0}</strong><span>Total registrations</span></div>
+          <div class="growth-stat"><strong>${summary.totalVerified || 0}</strong><span>Verified parishes</span></div>
+          <div class="growth-stat"><strong>${summary.connectedStripeAccounts || 0}</strong><span>Stripe connected</span></div>
+          <div class="growth-stat"><strong>${moneyShort(summary.ytdDonationsCents || 0)}</strong><span>${summary.year || new Date().getFullYear()} donations</span></div>
+        </div>
+        <div class="growth-chart-card">
+          <div class="growth-chart-title">Parish Growth <span>Gold registered / green verified</span></div>
+          <div class="growth-bars">${renderGrowthBars(summary, 'registrations')}</div>
+          <div class="growth-note">${summary.year || new Date().getFullYear()} monthly registration activity.</div>
+        </div>
+        <div class="growth-chart-card">
+          <div class="growth-chart-title">Donation Volume <span>${escapeHtml(readable(donationSource))}</span></div>
+          <div class="growth-bars">${renderGrowthBars(summary, 'donations')}</div>
+          <div class="growth-note">${escapeHtml(donationNote)}</div>
+        </div>
+      `;
+    }
+
+    async function loadPlatformSummary() {
+      if (!registrationsCache.length) {
+        renderPlatformGrowth(computeLocalPlatformSummary([]));
+        return;
+      }
+
+      renderPlatformGrowth(computeLocalPlatformSummary(registrationsCache));
+      try {
+        const response = await fetch('/api/admin/platform-summary', { headers: authHeaders() });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to load platform summary');
+        renderPlatformGrowth(result.summary);
+      } catch (err) {
+        const localSummary = computeLocalPlatformSummary(registrationsCache);
+        localSummary.donationDataSource = 'local_only';
+        renderPlatformGrowth(localSummary);
+      }
+    }
+
+    function scrollToQueue() {
+      document.getElementById('registrationQueue')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
     async function loadRegistrations() {
       if (!token()) {
         setStatus('Paste your admin token first.', 'error');
@@ -1093,6 +1396,7 @@
         registrationsCache = result.registrations || [];
         renderMetrics(registrationsCache);
         renderFilteredList();
+        loadPlatformSummary();
         setStatus(`Loaded ${(result.registrations || []).length} registration(s).`, 'success');
       } catch (err) {
         setStatus(err.message, 'error');
@@ -1204,6 +1508,7 @@
     async function loadDetail(reference) {
       selectedReference = reference;
       document.getElementById('selectedReference').textContent = reference;
+      document.getElementById('backToQueueBtn')?.classList.remove('hidden');
       setStatus('Loading details...');
 
       try {
@@ -1214,6 +1519,7 @@
         renderDetail(result.registration);
         renderQueueNext(result.registration);
         renderFilteredList();
+        document.getElementById('registrationDetail')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         setStatus('');
       } catch (err) {
         setStatus(err.message, 'error');
@@ -1229,6 +1535,7 @@
       const reference = jsAttr(reg.reference);
       const publicParishId = escapeHtml(reg.parishId || '');
       document.getElementById('registrationDetail').innerHTML = `
+        <button class="secondary btn-sm back-to-queue" onclick="scrollToQueue()">Back to registration queue</button>
         <div class="workflow-card">
           <div class="workflow-top">
             <div>
