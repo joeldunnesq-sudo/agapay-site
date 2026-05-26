@@ -7,8 +7,7 @@
   "scripts": {
     "dev": "node server.mjs",
     "start": "node server.mjs",
-    "check": "node scripts/check.mjs",
-    "smoke:api": "node scripts/smoke-api.mjs"
+    "check": "node --check src/worker.js && node scripts/check.mjs"
   },
   "engines": {
     "node": ">=20"
