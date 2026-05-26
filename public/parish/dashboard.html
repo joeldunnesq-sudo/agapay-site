@@ -209,6 +209,7 @@
     }
     .panel-title span { font-family: var(--serif); font-size: 22px; font-weight: 600; }
     .panel-body { padding: 1.1rem; }
+    .wide-panel { grid-column: 1 / -1; }
     .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
     .full { grid-column: 1 / -1; }
     .toggle-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.7rem; margin-top: 0.75rem; }
@@ -316,6 +317,200 @@
       gap: 1rem;
     }
     .editor-hint { color: var(--muted); font-size: 12px; }
+    .giving-options-intro {
+      border: 1px solid rgba(47,90,57,0.16);
+      border-radius: 12px;
+      background: rgba(47,90,57,0.06);
+      padding: 0.9rem;
+      color: var(--stone);
+      font-size: 13px;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+    .option-group {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--paper);
+      margin-bottom: 0.85rem;
+    }
+    .option-group-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.75rem;
+      padding: 0.85rem 0.9rem;
+      background: white;
+      border-bottom: 1px solid var(--line);
+    }
+    .option-group-title {
+      margin: 0;
+      color: var(--deep);
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .option-group-count {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .option-list {
+      display: grid;
+      gap: 0.55rem;
+      padding: 0.75rem;
+    }
+    .option-item {
+      border: 1px solid rgba(111,106,96,0.18);
+      border-radius: 10px;
+      background: white;
+      padding: 0.75rem;
+    }
+    .option-name {
+      color: var(--deep);
+      font-weight: 700;
+      line-height: 1.25;
+    }
+    .option-desc {
+      margin-top: 0.25rem;
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .option-empty {
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 0.2rem;
+    }
+    .advanced-editor {
+      border-top: 1px solid var(--line);
+      margin-top: 1rem;
+      padding-top: 1rem;
+    }
+    .advanced-editor summary {
+      cursor: pointer;
+      color: var(--deep);
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+    .giving-insights {
+      background:
+        linear-gradient(135deg, rgba(15,45,31,0.98), rgba(47,90,57,0.94)),
+        var(--deep);
+      color: var(--cream);
+    }
+    .giving-insights .panel-title {
+      background: rgba(255,255,255,0.04);
+      border-bottom-color: rgba(246,241,232,0.12);
+      color: var(--cream);
+    }
+    .insights-layout {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.55fr) minmax(0, 1fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+    .insights-hero {
+      border: 1px solid rgba(246,241,232,0.14);
+      border-radius: 14px;
+      padding: 1rem;
+      background: rgba(255,255,255,0.06);
+    }
+    .insights-label {
+      color: rgba(246,241,232,0.68);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .insights-total {
+      margin-top: 0.35rem;
+      font-family: var(--serif);
+      font-size: clamp(2.2rem, 6vw, 4rem);
+      line-height: 0.95;
+      color: var(--cream);
+    }
+    .insights-meta {
+      margin-top: 0.65rem;
+      color: rgba(246,241,232,0.72);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .insight-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+    .insight-stat {
+      border: 1px solid rgba(246,241,232,0.12);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      padding: 0.75rem;
+    }
+    .insight-stat strong {
+      display: block;
+      color: var(--cream);
+      font-size: 20px;
+      line-height: 1;
+    }
+    .insight-stat span {
+      display: block;
+      margin-top: 0.35rem;
+      color: rgba(246,241,232,0.62);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+    }
+    .chart-card {
+      border: 1px solid rgba(246,241,232,0.14);
+      border-radius: 14px;
+      padding: 1rem;
+      background: rgba(255,255,255,0.96);
+      color: var(--ink);
+    }
+    .chart-bars {
+      min-height: 220px;
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 0.45rem;
+      align-items: end;
+      border-bottom: 1px solid rgba(111,106,96,0.22);
+      padding: 0.75rem 0.25rem 0;
+    }
+    .chart-bar-wrap {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 0.35rem;
+      height: 100%;
+      align-items: end;
+    }
+    .chart-bar {
+      width: 100%;
+      min-height: 4px;
+      border-radius: 6px 6px 0 0;
+      background: linear-gradient(180deg, var(--gold), #7B6425);
+    }
+    .chart-label {
+      color: var(--muted);
+      font-size: 10px;
+      text-align: center;
+    }
+    .chart-note {
+      margin-top: 0.75rem;
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .insights-empty {
+      border: 1px dashed rgba(246,241,232,0.28);
+      border-radius: 12px;
+      padding: 1rem;
+      color: rgba(246,241,232,0.72);
+      line-height: 1.55;
+    }
     code {
       background: rgba(47,90,57,0.08);
       border: 1px solid rgba(47,90,57,0.16);
@@ -324,7 +519,7 @@
       color: var(--deep);
     }
     @media (max-width: 860px) {
-      .login, .metrics, .grid, .form-grid, .toggle-row, .profile-strip { grid-template-columns: 1fr; }
+      .login, .metrics, .grid, .form-grid, .toggle-row, .profile-strip, .insights-layout, .insight-stats { grid-template-columns: 1fr; }
       .qr-layout, .qr-copy-row { grid-template-columns: 1fr; }
       .qr-code { width: 148px; height: 148px; }
     }
@@ -373,6 +568,16 @@
     </div>
 
     <div class="grid">
+      <section class="panel wide-panel giving-insights">
+        <div class="panel-title">
+          <span>Giving This Year</span>
+          <button class="secondary" onclick="loadGivingSummary()">Refresh</button>
+        </div>
+        <div class="panel-body" id="givingSummaryPane">
+          <div class="insights-empty">Load dashboard to view year-to-date giving activity.</div>
+        </div>
+      </section>
+
       <section class="panel">
         <div class="panel-title">
           <span>Giving Page</span>
@@ -385,11 +590,11 @@
 
       <section class="panel">
         <div class="panel-title">
-          <span>Funds & Campaigns</span>
-          <button class="secondary" onclick="copyPayload()">Copy settings</button>
+          <span>Giving Options</span>
+          <button class="secondary" onclick="copyPayload()">Copy options</button>
         </div>
         <div class="panel-body" id="editorPane">
-          <div class="empty">Load dashboard to edit funds and campaigns.</div>
+          <div class="empty">Load dashboard to manage donor giving choices.</div>
         </div>
       </section>
     </div>
@@ -444,6 +649,39 @@
       return `${parishId}-giving-qr.${extension}`;
     }
 
+    function money(cents) {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 0
+      }).format((Number(cents) || 0) / 100);
+    }
+
+    function shortDate(value) {
+      if (!value) return 'No gifts yet';
+      return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(value));
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function optionCards(items, emptyText) {
+      if (!items || !items.length) {
+        return `<div class="option-empty">${emptyText}</div>`;
+      }
+      return items.map((item) => `
+        <div class="option-item">
+          <div class="option-name">${escapeHtml(item.name || item.id || 'Untitled')}</div>
+          <div class="option-desc">${escapeHtml(item.description || 'Shown as a selectable giving option.')}</div>
+        </div>
+      `).join('');
+    }
+
     async function loadDashboard() {
       const parishId = document.getElementById('parishId').value.trim();
       if (!parishId || !document.getElementById('parishToken').value.trim()) {
@@ -460,6 +698,7 @@
         if (!response.ok) throw new Error(result.error || 'Unable to load dashboard');
         currentParish = result.parish;
         renderDashboard();
+        loadGivingSummary();
         setStatus('');
       } catch (err) {
         setStatus(err.message);
@@ -546,20 +785,102 @@
       `;
       renderQrCode();
 
+      const fundsJson = fallbackFunds(parish.funds);
+      const campaignsJson = fallbackCampaigns(parish.campaigns);
       document.getElementById('editorPane').innerHTML = `
-        <div class="editor-label-row">
-          <label for="fundsJson">Funds JSON</label>
-          <span class="editor-hint">Used by Designated Fund</span>
+        <div class="giving-options-intro">
+          These are the choices donors see after selecting <strong>Designated Fund</strong> or <strong>Alms Campaign</strong> on the giving form.
         </div>
-        <textarea id="fundsJson" spellcheck="false">${fallbackFunds(parish.funds)}</textarea>
-        <div style="height:0.9rem;"></div>
-        <div class="editor-label-row">
-          <label for="campaignsJson">Campaigns JSON</label>
-          <span class="editor-hint">Used by Alms Campaign</span>
+        <div class="option-group">
+          <div class="option-group-head">
+            <h3 class="option-group-title">Designated funds</h3>
+            <span class="option-group-count">${(parish.funds || []).length || 1} shown</span>
+          </div>
+          <div class="option-list">${optionCards(JSON.parse(fundsJson), 'No funds configured yet. The giving form will use a general operating fund.')}</div>
         </div>
-        <textarea id="campaignsJson" spellcheck="false">${fallbackCampaigns(parish.campaigns)}</textarea>
+        <div class="option-group">
+          <div class="option-group-head">
+            <h3 class="option-group-title">Alms campaigns</h3>
+            <span class="option-group-count">${(parish.campaigns || []).length || 1} shown</span>
+          </div>
+          <div class="option-list">${optionCards(JSON.parse(campaignsJson), 'No alms campaigns configured yet. Add campaigns when the parish has a specific need.')}</div>
+        </div>
+        <details class="advanced-editor">
+          <summary>Advanced edit</summary>
+          <div class="editor-label-row">
+            <label for="fundsJson">Designated funds</label>
+            <span class="editor-hint">Each item needs id, name, description</span>
+          </div>
+          <textarea id="fundsJson" spellcheck="false">${fundsJson}</textarea>
+          <div style="height:0.9rem;"></div>
+          <div class="editor-label-row">
+            <label for="campaignsJson">Alms campaigns</label>
+            <span class="editor-hint">Each item needs id, name, description</span>
+          </div>
+          <textarea id="campaignsJson" spellcheck="false">${campaignsJson}</textarea>
+        </details>
         <div class="actions">
-          <button class="gold" onclick="saveDashboard()">Save funds and campaigns</button>
+          <button class="gold" onclick="saveDashboard()">Save giving options</button>
+          <button class="secondary" onclick="loadDashboard()">Discard changes</button>
+        </div>
+      `;
+    }
+
+    async function loadGivingSummary() {
+      const pane = document.getElementById('givingSummaryPane');
+      if (!currentParish || !pane) return;
+      pane.innerHTML = '<div class="insights-empty">Loading Stripe giving summary...</div>';
+
+      try {
+        const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/giving-summary', {
+          headers: authHeaders()
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.detail || result.error || 'Unable to load giving summary');
+        renderGivingSummary(result.summary);
+      } catch (err) {
+        pane.innerHTML = `<div class="insights-empty">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function renderGivingSummary(summary) {
+      const pane = document.getElementById('givingSummaryPane');
+      if (!pane) return;
+
+      if (!summary || summary.dataSource === 'not_connected') {
+        pane.innerHTML = '<div class="insights-empty">Connect Stripe to show year-to-date giving, donor counts, and monthly trends here.</div>';
+        return;
+      }
+
+      const monthly = summary.monthly || [];
+      const maxAmount = Math.max(...monthly.map(item => item.amountCents || 0), 1);
+      const bars = monthly.map((item) => {
+        const height = Math.max(4, Math.round(((item.amountCents || 0) / maxAmount) * 190));
+        return `
+          <div class="chart-bar-wrap" title="${escapeHtml(item.label)}: ${money(item.amountCents || 0)}">
+            <div class="chart-bar" style="height:${height}px;"></div>
+            <div class="chart-label">${escapeHtml(item.label)}</div>
+          </div>
+        `;
+      }).join('');
+
+      pane.innerHTML = `
+        <div class="insights-layout">
+          <div class="insights-hero">
+            <div class="insights-label">${summary.year || new Date().getFullYear()} YTD giving</div>
+            <div class="insights-total">${money(summary.ytdCents || 0)}</div>
+            <div class="insights-meta">Last gift: ${escapeHtml(shortDate(summary.lastGiftAt))}</div>
+            <div class="insight-stats">
+              <div class="insight-stat"><strong>${summary.giftCount || 0}</strong><span>Gifts</span></div>
+              <div class="insight-stat"><strong>${summary.giverCount || 0}</strong><span>Givers</span></div>
+              <div class="insight-stat"><strong>${money(summary.averageGiftCents || 0)}</strong><span>Avg gift</span></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="insights-label" style="color:var(--muted);">Monthly giving level</div>
+            <div class="chart-bars">${bars}</div>
+            <div class="chart-note">${escapeHtml(summary.note || 'Based on successful Stripe charges for this connected parish account.')}</div>
+          </div>
         </div>
       `;
     }
@@ -582,7 +903,7 @@
       try {
         body = payload();
       } catch {
-        setStatus('Funds or campaigns JSON is invalid.');
+        setStatus('Giving options could not be saved. Open Advanced edit and check the formatting.');
         return;
       }
 
