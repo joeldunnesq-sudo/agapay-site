@@ -447,9 +447,13 @@
     .sidebar-header {
       padding: 1.45rem 1.25rem 1.15rem;
       border-bottom: 1px solid rgba(184,144,47,0.16);
-      position: relative;
+      position: sticky;
+      top: 0;
       overflow: hidden;
       isolation: isolate;
+      z-index: 30;
+      background: var(--deep);
+      box-shadow: 0 10px 24px rgba(15,45,31,0.18);
     }
     .sidebar-header::before {
       content: '';
