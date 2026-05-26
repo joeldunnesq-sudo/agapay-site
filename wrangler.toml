@@ -12,6 +12,5 @@ id = "c0c630d2699a4d42a72db927c6341707"
 
 [secrets]
 required = [
-  "AGAPAY_ADMIN_TOKEN",
-  "STRIPE_SECRET_KEY"
+  "AGAPAY_ADMIN_TOKEN"
 ]
