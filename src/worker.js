@@ -577,7 +577,7 @@ async function handleStripeOnboarding(request, env, reference) {
 
   if (!stripeAccountId) {
     const accountForm = new URLSearchParams({
-      type: "express",
+      type: "standard",
       country: "US",
       email: registration.treasurerEmail || registration.priestEmail || "",
       business_type: "non_profit",
