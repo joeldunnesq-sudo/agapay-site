@@ -594,11 +594,11 @@
     let selectedFund = 'Building & Renovation Fund';
     let selectedCampaign = 'Disaster Relief';
     let currentParish = {
-      id: 'st-seraphim-mission',
-      name: 'St. Seraphim of Sarov Mission',
-      jurisdictionLabel: 'ROCOR',
-      city: 'Lubbock',
-      state: 'TX',
+      id: '',
+      name: 'AgaPay Parish',
+      jurisdictionLabel: '',
+      city: '',
+      state: '',
       funds: []
     };
 
@@ -663,7 +663,7 @@
       const params = new URLSearchParams(window.location.search);
       if (params.get('parish')) return params.get('parish');
       const parts = window.location.pathname.split('/').filter(Boolean);
-      return parts[0] === 'give' && parts[1] ? parts[1] : 'st-seraphim-mission';
+      return parts[0] === 'give' && parts[1] ? parts[1] : '';
     }
 
     function parishIcon(type) {
@@ -705,6 +705,10 @@
         if (!response.ok) throw new Error(result.error || 'Unable to load parish');
 
         const slug = parishSlugFromPath();
+        if (!slug) {
+          window.location.href = '/give';
+          return;
+        }
         const parish = result.parishes.find(item => item.id === slug);
         if (!parish) {
           alert('This parish is not currently active in AgaPay.');
