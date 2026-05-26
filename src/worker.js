@@ -252,24 +252,31 @@ function monthLabel(index) {
 async function sendEmail(env, message) {
   if (!env.RESEND_API_KEY) return { status: "not_configured" };
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(message)
-  });
-  const body = await response.json().catch(() => ({}));
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(message)
+    });
+    const body = await response.json().catch(() => ({}));
 
-  if (!response.ok) {
+    if (!response.ok) {
+      return {
+        status: "failed",
+        detail: body.message || body.error || "Email provider rejected the message"
+      };
+    }
+
+    return { status: "sent", id: body.id || "" };
+  } catch (err) {
     return {
       status: "failed",
-      detail: body.message || body.error || "Email provider rejected the message"
+      detail: err.message || "Email request failed"
     };
   }
-
-  return { status: "sent", id: body.id || "" };
 }
 
 async function sendTreasurerStripeInvite(env, appUrl, registration) {
@@ -675,7 +682,9 @@ async function handleAdminRegistrationDetail(request, env, reference) {
     const parishId = nextStatus === "verified"
       ? current.parishId || slugify(current.parishName)
       : current.parishId;
-    const requestedDashboardToken = body.parishDashboardToken ?? current.parishDashboardToken ?? "";
+    const requestedDashboardToken = body.parishDashboardToken !== undefined
+      ? String(body.parishDashboardToken || "").trim()
+      : String(current.parishDashboardToken || "").trim();
     const parishDashboardToken = nextStatus === "verified" && !requestedDashboardToken
       ? generateDashboardToken()
       : requestedDashboardToken;
