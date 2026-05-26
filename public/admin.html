@@ -140,9 +140,53 @@
       margin-bottom: 1rem;
       padding-left: 0.2rem;
     }
+    .status.success, .status.info, .status.error {
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: white;
+      box-shadow: 0 8px 22px rgba(15,45,31,0.04);
+    }
+    .status.success { border-color: rgba(47,90,57,0.25); background: rgba(47,90,57,0.08); }
+    .status.info { border-color: rgba(184,144,47,0.28); background: rgba(184,144,47,0.08); color: #725719; }
+    .status.error { border-color: rgba(150,40,40,0.22); background: rgba(150,40,40,0.08); color: #8a2929; }
+    .review-queue {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.7fr);
+      gap: 0.85rem;
+      margin-bottom: 1rem;
+    }
+    .queue-card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 10px 26px rgba(15,45,31,0.05);
+    }
+    .queue-card h2 {
+      margin: 0 0 0.5rem;
+      font-family: var(--serif);
+      color: var(--deep);
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .queue-card p { margin: 0; color: var(--stone); font-size: 13px; line-height: 1.65; }
+    .queue-next {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+      margin-top: 0.85rem;
+      padding: 0.85rem;
+      border-radius: 10px;
+      background: var(--cream);
+      border: 1px solid rgba(184,144,47,0.24);
+    }
+    .queue-next strong { display: block; color: var(--deep); font-size: 14px; margin-bottom: 0.18rem; }
+    .queue-next span { display: block; color: var(--stone); font-size: 12px; line-height: 1.45; }
     .metrics {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 0.75rem;
       margin-bottom: 1rem;
     }
@@ -220,8 +264,44 @@
     .badge.needs_more_info { background: rgba(111,106,96,0.13); color: var(--stone); }
     .badge.verified { background: rgba(47,90,57,0.12); color: var(--forest); }
     .badge.rejected { background: rgba(150,40,40,0.1); color: #8a2929; }
+    .badge.not_started { background: rgba(111,106,96,0.13); color: var(--stone); }
+    .badge.checkout_created { background: rgba(184,144,47,0.13); color: #7a5c17; }
+    .badge.active, .badge.free_forever, .badge.payouts_enabled { background: rgba(47,90,57,0.12); color: var(--forest); }
+    .badge.past_due, .badge.restricted { background: rgba(150,40,40,0.1); color: #8a2929; }
     .detail { padding: 1.1rem; }
     .empty { padding: 2.4rem; color: var(--stone); text-align: center; line-height: 1.6; }
+    .workflow-card {
+      border: 1px solid rgba(184,144,47,0.28);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(184,144,47,0.08), rgba(255,255,255,0.95));
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .workflow-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 0.85rem;
+    }
+    .workflow-title { font-family: var(--serif); font-size: 24px; color: var(--deep); line-height: 1.1; }
+    .workflow-sub { margin-top: 0.3rem; color: var(--stone); font-size: 13px; line-height: 1.55; }
+    .step-track {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+    .step-chip {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.75rem;
+      background: white;
+      min-height: 82px;
+    }
+    .step-chip.done { border-color: rgba(47,90,57,0.3); background: rgba(47,90,57,0.08); }
+    .step-chip.current { border-color: rgba(184,144,47,0.55); background: rgba(184,144,47,0.1); }
+    .step-chip strong { display: block; color: var(--deep); font-size: 13px; margin-bottom: 0.3rem; }
+    .step-chip span { display: block; color: var(--stone); font-size: 12px; line-height: 1.45; }
     .grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -351,7 +431,8 @@
       background: var(--paper);
     }
     @media (max-width: 820px) {
-      .toolbar, .layout, .grid, .metrics, .search-row, .form-grid, .toggle-row { grid-template-columns: 1fr; }
+      .toolbar, .layout, .grid, .metrics, .search-row, .form-grid, .toggle-row, .review-queue, .step-track { grid-template-columns: 1fr; }
+      .workflow-top, .queue-next { flex-direction: column; align-items: stretch; }
     }
   </style>
 </head>
@@ -366,7 +447,7 @@
         <div class="header-pill">Parish review console</div>
       </div>
       <h1>AgaPay Admin</h1>
-      <p class="subtitle">Review parish registrations and canonical verification notes.</p>
+      <p class="subtitle">A guided console for reviewing parish registrations, inviting churches into their dashboard, connecting Stripe, and managing AgaPay subscription status.</p>
     </div>
   </header>
 
@@ -384,6 +465,7 @@
           <option value="needs_more_info">Needs more info</option>
           <option value="verified">Verified</option>
           <option value="rejected">Rejected</option>
+          <option value="cancelled">Cancelled</option>
         </select>
       </div>
       <button id="loadBtn" onclick="loadRegistrations()">Load registrations</button>
@@ -391,11 +473,30 @@
 
     <div class="status" id="status"></div>
 
+    <div class="review-queue">
+      <div class="queue-card">
+        <h2>Review queue</h2>
+        <p>Work left to right: review canonical standing, verify the parish, send the dashboard invite, connect Stripe, then create the AgaPay subscription checkout when appropriate.</p>
+        <div class="queue-next" id="queueNext">
+          <div>
+            <strong>No registration selected</strong>
+            <span>Load registrations, then choose a parish from the list.</span>
+          </div>
+          <button class="secondary" onclick="loadRegistrations()">Refresh queue</button>
+        </div>
+      </div>
+      <div class="queue-card">
+        <h2>Owner alerts</h2>
+        <p>New registrations now send an AgaPay notification email when Resend is configured. Set <code>AGAPAY_REGISTRATION_NOTIFY_EMAIL</code> if you want those alerts somewhere other than your reply-to/support inbox.</p>
+      </div>
+    </div>
+
     <div class="metrics">
       <div class="metric"><div class="metric-value" id="metricTotal">0</div><div class="metric-label">Total</div></div>
       <div class="metric"><div class="metric-value" id="metricPending">0</div><div class="metric-label">Pending</div></div>
       <div class="metric"><div class="metric-value" id="metricVerified">0</div><div class="metric-label">Verified</div></div>
       <div class="metric"><div class="metric-value" id="metricNeedsInfo">0</div><div class="metric-label">Needs info</div></div>
+      <div class="metric"><div class="metric-value" id="metricStripeReady">0</div><div class="metric-label">Stripe ready</div></div>
     </div>
 
     <div class="layout">
@@ -443,8 +544,10 @@
       return document.getElementById('adminToken').value.trim();
     }
 
-    function setStatus(message) {
-      document.getElementById('status').textContent = message || '';
+    function setStatus(message, tone = '') {
+      const status = document.getElementById('status');
+      status.textContent = message || '';
+      status.className = message ? `status ${tone || 'info'}` : 'status';
     }
 
     function setPaymentStatus(message) {
@@ -465,13 +568,53 @@
       return `<div class="field ${className}"><div class="key">${label}</div><div class="value">${safeValue}</div></div>`;
     }
 
+    function money(cents) {
+      if (cents === null || cents === undefined || cents === '') return 'Custom';
+      if (Number(cents) === 0) return 'Free';
+      return '$' + (Number(cents) / 100).toFixed(0) + '/mo';
+    }
+
+    function readable(value) {
+      return String(value || 'not_started').replace(/_/g, ' ');
+    }
+
+    function subscriptionTierLabel(reg) {
+      if (reg.subscriptionTierLabel) return reg.subscriptionTierLabel;
+      if (reg.subscriptionTier === 'monastery_free') return 'Monastery / Skete';
+      if (reg.subscriptionTier === 'mission') return 'Mission';
+      if (reg.subscriptionTier === 'diocese') return 'Diocese / Multi-Parish';
+      return 'Parish';
+    }
+
+    function nextAction(reg) {
+      if (!reg) return { title: 'No registration selected', body: 'Load registrations, then choose a parish from the list.' };
+      if ((reg.status || 'pending') !== 'verified') return { title: 'Review canonical standing', body: 'Confirm jurisdiction, bishop/deanery, website, and contact details before marking verified.' };
+      if (reg.dashboardInviteEmailStatus !== 'sent') return { title: 'Send dashboard invite', body: 'Email the priest and treasurer their parish ID, temporary token, and Stripe onboarding instructions.' };
+      if (!['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus)) return { title: 'Connect Stripe', body: 'Create onboarding or ask the parish to finish Stripe from the dashboard.' };
+      if (!['active', 'free_forever'].includes(reg.subscriptionStatus)) return { title: 'Set up AgaPay subscription', body: 'Create subscription checkout or mark monastery/skete as free forever.' };
+      return { title: 'Parish is ready', body: 'Canonical verification, dashboard invite, Stripe, and subscription status are all in place.' };
+    }
+
+    function renderQueueNext(reg) {
+      const action = nextAction(reg);
+      const queueNext = document.getElementById('queueNext');
+      if (!queueNext) return;
+      queueNext.innerHTML = `
+        <div>
+          <strong>${action.title}</strong>
+          <span>${action.body}</span>
+        </div>
+        <button class="secondary" onclick="loadRegistrations()">Refresh queue</button>
+      `;
+    }
+
     function jsonForTextarea(value, fallback) {
       return JSON.stringify(value && value.length ? value : fallback, null, 2);
     }
 
     async function loadRegistrations() {
       if (!token()) {
-        setStatus('Paste your admin token first.');
+        setStatus('Paste your admin token first.', 'error');
         return;
       }
 
@@ -487,9 +630,9 @@
         registrationsCache = result.registrations || [];
         renderMetrics(registrationsCache);
         renderFilteredList();
-        setStatus(`Loaded ${(result.registrations || []).length} registration(s).`);
+        setStatus(`Loaded ${(result.registrations || []).length} registration(s).`, 'success');
       } catch (err) {
-        setStatus(err.message);
+        setStatus(err.message, 'error');
       } finally {
         btn.disabled = false;
       }
@@ -500,6 +643,7 @@
       document.getElementById('metricPending').textContent = registrations.filter(item => item.status === 'pending').length;
       document.getElementById('metricVerified').textContent = registrations.filter(item => item.status === 'verified').length;
       document.getElementById('metricNeedsInfo').textContent = registrations.filter(item => item.status === 'needs_more_info').length;
+      document.getElementById('metricStripeReady').textContent = registrations.filter(item => ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus)).length;
     }
 
     function renderFilteredList() {
@@ -517,7 +661,10 @@
           item.state,
           item.priestEmail,
           item.treasurerEmail,
-          item.status
+          item.status,
+          item.subscriptionTier,
+          item.subscriptionStatus,
+          item.stripeAccountStatus
         ].join(' ').toLowerCase();
         const matchesQuery = !query || haystack.includes(query);
         const matchesStatus = status === 'all' || item.status === status;
@@ -546,6 +693,8 @@
           <div class="item-meta">${item.communityType || 'Community'} / ${item.jurisdiction || 'Jurisdiction'} / ${item.city || ''}, ${item.state || ''}</div>
           <div class="item-meta">${item.priestEmail || ''}</div>
           <span class="badge ${item.status || 'pending'}">${item.status || 'pending'}</span>
+          <span class="badge ${item.subscriptionStatus || 'not_started'}">${readable(item.subscriptionStatus)}</span>
+          <span class="badge ${item.stripeAccountStatus || 'not_started'}">Stripe ${readable(item.stripeAccountStatus)}</span>
           <div class="quick-actions">
             <button class="secondary" onclick="event.stopPropagation(); copyText('${item.priestEmail || ''}')">Copy priest email</button>
             <button class="secondary" onclick="event.stopPropagation(); copyText('${item.treasurerEmail || ''}')">Copy treasurer email</button>
@@ -574,18 +723,40 @@
         if (!response.ok) throw new Error(result.error || 'Unable to load registration');
 
         renderDetail(result.registration);
+        renderQueueNext(result.registration);
         setStatus('');
       } catch (err) {
-        setStatus(err.message);
+        setStatus(err.message, 'error');
       }
     }
 
     function renderDetail(reg) {
+      const action = nextAction(reg);
+      const reviewDone = reg.status === 'verified';
+      const inviteDone = reg.dashboardInviteEmailStatus === 'sent';
+      const stripeDone = ['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus);
+      const subscriptionDone = ['active', 'free_forever'].includes(reg.subscriptionStatus);
       document.getElementById('detailPane').innerHTML = `
+        <div class="workflow-card">
+          <div class="workflow-top">
+            <div>
+              <div class="workflow-title">${action.title}</div>
+              <div class="workflow-sub">${action.body}</div>
+            </div>
+            <span class="badge ${reg.status || 'pending'}">${readable(reg.status)}</span>
+          </div>
+          <div class="step-track">
+            <div class="step-chip ${reviewDone ? 'done' : 'current'}"><strong>1. Verify</strong><span>${reviewDone ? 'Canonical review complete.' : 'Confirm canonical standing and contacts.'}</span></div>
+            <div class="step-chip ${inviteDone ? 'done' : reviewDone ? 'current' : ''}"><strong>2. Invite</strong><span>${inviteDone ? 'Dashboard invite sent.' : 'Send parish dashboard access.'}</span></div>
+            <div class="step-chip ${stripeDone ? 'done' : inviteDone ? 'current' : ''}"><strong>3. Stripe</strong><span>${stripeDone ? 'Payments are enabled.' : 'Connect the parish Stripe account.'}</span></div>
+            <div class="step-chip ${subscriptionDone ? 'done' : stripeDone ? 'current' : ''}"><strong>4. Subscription</strong><span>${subscriptionDone ? 'AgaPay billing is set.' : 'Set platform subscription tier/status.'}</span></div>
+          </div>
+        </div>
         <div class="grid">
           ${field('Status', reg.status)}
           ${field('Giving Status', reg.givingStatus)}
           ${field('Stripe Status', reg.stripeAccountStatus)}
+          ${field('Subscription', `${subscriptionTierLabel(reg)} / ${readable(reg.subscriptionStatus)} / ${money(reg.subscriptionMonthlyCents)}`)}
           ${field('Stripe Account ID', reg.stripeAccountId)}
           ${field('Charges Enabled', reg.stripeChargesEnabled === undefined ? '' : String(reg.stripeChargesEnabled))}
           ${field('Payouts Enabled', reg.stripePayoutsEnabled === undefined ? '' : String(reg.stripePayoutsEnabled))}
@@ -593,6 +764,7 @@
           ${field('Stripe Requirements Due', Array.isArray(reg.stripeRequirementsDue) ? reg.stripeRequirementsDue.join(', ') : '', 'full')}
           ${field('Stripe Invite Email', reg.stripeOnboardingEmailStatus)}
           ${field('Dashboard Invite Email', reg.dashboardInviteEmailStatus)}
+          ${field('AgaPay Alert Email', reg.adminNotificationEmailStatus)}
           ${field('Dashboard Invite Recipients', Array.isArray(reg.dashboardInviteEmailRecipients) ? reg.dashboardInviteEmailRecipients.join(', ') : '', 'full')}
           ${field('Public Parish ID', reg.parishId)}
           ${field('Parish Dashboard Token', reg.parishDashboardToken ? 'Set' : 'Not set')}
@@ -708,6 +880,48 @@
           </div>
 
           <div class="admin-section">
+            <div class="admin-section-title">AgaPay Subscription</div>
+            <div class="form-grid">
+              <div>
+                <label for="subscriptionTier">Subscription tier</label>
+                <select id="subscriptionTier">
+                  <option value="mission" ${(reg.subscriptionTier || '') === 'mission' ? 'selected' : ''}>Mission - $49/mo</option>
+                  <option value="parish" ${(!reg.subscriptionTier || reg.subscriptionTier === 'parish') ? 'selected' : ''}>Parish - $99/mo</option>
+                  <option value="diocese" ${reg.subscriptionTier === 'diocese' ? 'selected' : ''}>Diocese / multi-parish - custom</option>
+                  <option value="monastery_free" ${reg.subscriptionTier === 'monastery_free' ? 'selected' : ''}>Monastery / Skete - free forever</option>
+                </select>
+              </div>
+              <div>
+                <label for="subscriptionStatus">Subscription status</label>
+                <select id="subscriptionStatus">
+                  <option value="not_started" ${(reg.subscriptionStatus || 'not_started') === 'not_started' ? 'selected' : ''}>Not started</option>
+                  <option value="checkout_created" ${reg.subscriptionStatus === 'checkout_created' ? 'selected' : ''}>Checkout created</option>
+                  <option value="active" ${reg.subscriptionStatus === 'active' ? 'selected' : ''}>Active</option>
+                  <option value="past_due" ${reg.subscriptionStatus === 'past_due' ? 'selected' : ''}>Past due</option>
+                  <option value="cancelled" ${reg.subscriptionStatus === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                  <option value="free_forever" ${reg.subscriptionStatus === 'free_forever' ? 'selected' : ''}>Free forever</option>
+                </select>
+              </div>
+              <div>
+                <label for="stripeCustomerId">Stripe customer ID</label>
+                <input id="stripeCustomerId" value="${reg.stripeCustomerId || ''}" placeholder="cus_..." />
+              </div>
+              <div>
+                <label for="stripeSubscriptionId">Stripe subscription ID</label>
+                <input id="stripeSubscriptionId" value="${reg.stripeSubscriptionId || ''}" placeholder="sub_..." />
+              </div>
+            </div>
+            <div class="button-row" style="margin-top:0.75rem;">
+              <button class="gold" onclick="createSubscriptionCheckout('${reg.reference}')">Create subscription checkout</button>
+            </div>
+            <div class="payment-status" id="subscriptionStatusMessage"></div>
+            <div class="stripe-link-box" id="subscriptionLinkBox">
+              <a id="subscriptionCheckoutLink" href="#" target="_blank" rel="noopener">Open subscription checkout</a>
+              <p id="subscriptionLinkHelp">Use this link when the parish is ready to start its AgaPay monthly platform subscription. Monasteries/sketes are marked free forever.</p>
+            </div>
+          </div>
+
+          <div class="admin-section">
             <div class="admin-section-title">Payments</div>
             <div class="form-grid">
               <div>
@@ -801,6 +1015,10 @@
             bishopOrAuthority: document.getElementById('bishopOrAuthority').value,
             dioceseOrDeanery: document.getElementById('dioceseOrDeanery').value,
             platformFee: document.getElementById('platformFee').value,
+            subscriptionTier: document.getElementById('subscriptionTier').value,
+            subscriptionStatus: document.getElementById('subscriptionStatus').value,
+            stripeCustomerId: document.getElementById('stripeCustomerId').value,
+            stripeSubscriptionId: document.getElementById('stripeSubscriptionId').value,
             recurringGivingEnabled: document.getElementById('recurringGivingEnabled').checked,
             candlesEnabled: document.getElementById('candlesEnabled').checked,
             commemorationsEnabled: document.getElementById('commemorationsEnabled').checked,
@@ -815,15 +1033,16 @@
         if (!response.ok) throw new Error(result.error || 'Unable to save review');
 
         renderDetail(result.registration);
+        renderQueueNext(result.registration);
         await loadRegistrations();
         const inviteMessage = dashboardInviteMessage(result.dashboardInvite);
         if (result.registration.status === 'verified' && result.registration.parishId) {
-          setStatus(`Review saved. ${result.registration.parishName} is now in /api/parishes as ${result.registration.parishId}.${inviteMessage}`);
+          setStatus(`Review saved. ${result.registration.parishName} is now in /api/parishes as ${result.registration.parishId}.${inviteMessage}`, 'success');
           return;
         }
-        setStatus(`Review saved.${inviteMessage}`);
+        setStatus(`Review saved.${inviteMessage}`, 'success');
       } catch (err) {
-        setStatus(err.message);
+        setStatus(err.message, 'error');
       }
     }
 
@@ -865,6 +1084,62 @@
         throw new Error(result.email?.detail || `Email status: ${result.email?.status || 'unknown'}`);
       } catch (err) {
         setStatus(err.message);
+      }
+    }
+
+    function setSubscriptionStatus(message) {
+      const box = document.getElementById('subscriptionStatusMessage');
+      if (box) box.textContent = message || '';
+      setStatus(message);
+    }
+
+    async function createSubscriptionCheckout(reference) {
+      setSubscriptionStatus('Creating subscription checkout...');
+      try {
+        await saveReview(reference, { sendDashboardInvite: false });
+
+        const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/subscription-checkout', {
+          method: 'POST',
+          headers: {
+            ...authHeaders(),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            subscriptionTier: document.getElementById('subscriptionTier').value
+          })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.detail || result.error || 'Unable to create subscription checkout');
+
+        renderDetail(result.registration);
+        renderQueueNext(result.registration);
+        await loadRegistrations();
+
+        if (!result.checkoutUrl) {
+          setSubscriptionStatus('Subscription updated. This tier does not require Stripe checkout.');
+          return;
+        }
+
+        const linkBox = document.getElementById('subscriptionLinkBox');
+        const link = document.getElementById('subscriptionCheckoutLink');
+        const help = document.getElementById('subscriptionLinkHelp');
+        if (linkBox && link) {
+          link.href = result.checkoutUrl;
+          linkBox.classList.add('visible');
+        }
+        let copied = false;
+        try {
+          await navigator.clipboard.writeText(result.checkoutUrl);
+          copied = true;
+        } catch {
+          copied = false;
+        }
+        if (help) help.textContent = copied
+          ? 'The subscription checkout link was copied to your clipboard. Send it to the parish treasurer when they are ready to activate AgaPay billing.'
+          : 'Clipboard access was blocked, but the subscription checkout link is ready here.';
+        setSubscriptionStatus(copied ? 'Subscription checkout created and copied.' : 'Subscription checkout created.');
+      } catch (err) {
+        setSubscriptionStatus(err.message);
       }
     }
 
@@ -935,6 +1210,10 @@
     const stripeReturnReference = new URLSearchParams(window.location.search).get('stripe_return');
     if (stripeReturnReference) {
       setStatus(`Stripe onboarding returned for ${stripeReturnReference}. Paste your admin token, load registrations, then refresh Stripe status.`);
+    }
+    const subscriptionReturnReference = new URLSearchParams(window.location.search).get('subscription_return');
+    if (subscriptionReturnReference) {
+      setStatus(`Subscription checkout returned for ${subscriptionReturnReference}. Paste your admin token and load registrations. The Stripe webhook will mark it active after payment is confirmed.`);
     }
   </script>
 </body>
