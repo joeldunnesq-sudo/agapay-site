@@ -335,6 +335,13 @@
       font-size: 12px;
       line-height: 1.55;
     }
+    .payment-status {
+      min-height: 1.2rem;
+      margin-top: 0.55rem;
+      color: var(--forest);
+      font-size: 12px;
+      line-height: 1.5;
+    }
     .search-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(150px, 0.35fr);
@@ -438,6 +445,12 @@
 
     function setStatus(message) {
       document.getElementById('status').textContent = message || '';
+    }
+
+    function setPaymentStatus(message) {
+      const paymentStatus = document.getElementById('paymentStatus');
+      if (paymentStatus) paymentStatus.textContent = message || '';
+      setStatus(message);
     }
 
     function authHeaders() {
@@ -703,9 +716,10 @@
               <button class="gold" onclick="startStripeOnboarding('${reg.reference}')">Create onboarding link</button>
               <button class="secondary" onclick="refreshStripeStatus('${reg.reference}')">Refresh Stripe status</button>
             </div>
+            <div class="payment-status" id="paymentStatus"></div>
             <div class="stripe-link-box" id="stripeLinkBox">
               <a id="stripeOnboardingLink" href="#" target="_blank" rel="noopener">Open Stripe onboarding</a>
-              <p>The link has also been copied to your clipboard. Send it to the parish treasurer if they should complete onboarding themselves.</p>
+              <p id="stripeLinkHelp">Send this link to the parish treasurer if they should complete onboarding themselves.</p>
             </div>
             <p style="margin:0.65rem 0 0; color:var(--stone); font-size:12px; line-height:1.55;">
               Onboarding links are single-use. If a link expires or the parish returns later, create a fresh one.
@@ -789,7 +803,7 @@
     }
 
     async function startStripeOnboarding(reference) {
-      setStatus('Creating Stripe onboarding link...');
+      setPaymentStatus('Creating Stripe onboarding link...');
       try {
         const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/stripe-onboarding', {
           method: 'POST',
@@ -800,21 +814,34 @@
 
         renderDetail(result.registration);
         await loadRegistrations();
-        await navigator.clipboard.writeText(result.onboardingUrl);
         const linkBox = document.getElementById('stripeLinkBox');
         const link = document.getElementById('stripeOnboardingLink');
+        const help = document.getElementById('stripeLinkHelp');
         if (linkBox && link) {
           link.href = result.onboardingUrl;
           linkBox.classList.add('visible');
         }
-        setStatus('Stripe onboarding link created and copied. Click Open Stripe onboarding.');
+        let copied = false;
+        try {
+          await navigator.clipboard.writeText(result.onboardingUrl);
+          copied = true;
+        } catch {
+          copied = false;
+        }
+        const message = copied
+          ? 'Stripe onboarding link created and copied. Click Open Stripe onboarding.'
+          : 'Stripe onboarding link created. Click Open Stripe onboarding.';
+        if (help) help.textContent = copied
+          ? 'The link has also been copied to your clipboard. Send it to the parish treasurer if they should complete onboarding themselves.'
+          : 'Clipboard access was blocked, but the link is ready here. Send it to the parish treasurer if they should complete onboarding themselves.';
+        setPaymentStatus(message);
       } catch (err) {
-        setStatus(err.message);
+        setPaymentStatus(err.message);
       }
     }
 
     async function refreshStripeStatus(reference) {
-      setStatus('Refreshing Stripe status...');
+      setPaymentStatus('Refreshing Stripe status...');
       try {
         const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/stripe-refresh', {
           method: 'POST',
@@ -825,9 +852,9 @@
 
         renderDetail(result.registration);
         await loadRegistrations();
-        setStatus(`Stripe status refreshed: ${result.registration.stripeAccountStatus || 'unknown'}.`);
+        setPaymentStatus(`Stripe status refreshed: ${result.registration.stripeAccountStatus || 'unknown'}.`);
       } catch (err) {
-        setStatus(err.message);
+        setPaymentStatus(err.message);
       }
     }
 
