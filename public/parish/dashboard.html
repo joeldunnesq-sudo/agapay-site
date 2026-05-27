@@ -290,6 +290,121 @@
       .qr-layout, .qr-copy-row, .qr-feature-layout { grid-template-columns: 1fr; }
       .qr-feature-actions { min-width: 0; }
     }
+
+    /* AgaPay dashboard refresh - aligned with the donor dashboard. */
+    body {
+      background:
+        linear-gradient(180deg, rgba(15,45,31,0.055), transparent 280px),
+        var(--cream);
+    }
+    .sidebar {
+      border-right-color: rgba(184,144,47,0.22);
+      box-shadow: inset -1px 0 0 rgba(246,241,232,0.035);
+    }
+    .sidebar-header::before {
+      width: 270px;
+      height: 135px;
+      background: radial-gradient(ellipse at top, rgba(200,162,74,0.14), transparent 68%);
+    }
+    .topbar {
+      min-height: 60px;
+      background: rgba(253,251,247,0.94);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 1px 0 rgba(111,106,96,0.08);
+    }
+    .sidebar-mark,
+    .section-title-icon {
+      border-radius: 9px;
+      background: rgba(184,144,47,0.12);
+      border-color: rgba(184,144,47,0.28);
+    }
+    .section-card,
+    .qr-feature-card,
+    .option-group,
+    .history-stat,
+    .bulletin-preview,
+    .feast-card {
+      position: relative;
+      background:
+        linear-gradient(135deg, rgba(184,144,47,0.10), rgba(47,90,57,0.045) 46%, rgba(255,255,255,0.96) 100%),
+        #fff;
+      border-color: rgba(111,106,96,0.16);
+      box-shadow: 0 7px 22px rgba(15,45,31,0.06);
+    }
+    .section-card::before,
+    .qr-feature-card::before,
+    .option-group::before,
+    .history-stat::before,
+    .bulletin-preview::before,
+    .feast-card::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto;
+      height: 4px;
+      background: linear-gradient(90deg, var(--gold), rgba(184,144,47,0.78), rgba(47,90,57,0.78), var(--forest));
+      pointer-events: none;
+    }
+    .section-header,
+    .option-group-head,
+    .history-table th {
+      background:
+        linear-gradient(90deg, rgba(184,144,47,0.12), rgba(47,90,57,0.08)),
+        linear-gradient(180deg, #fff, var(--paper));
+    }
+    .section-card > *,
+    .qr-feature-card > *,
+    .option-group > *,
+    .history-stat > *,
+    .bulletin-preview > *,
+    .feast-card > * {
+      position: relative;
+      z-index: 1;
+    }
+    .option-item,
+    .commemoration-column,
+    .chart-card,
+    .qr-code {
+      border-color: rgba(111,106,96,0.16);
+      background: rgba(255,255,255,0.96);
+      box-shadow: 0 2px 10px rgba(15,45,31,0.035);
+    }
+    .insights-card,
+    .setup-wizard-card {
+      background: var(--deep);
+      border-color: rgba(184,144,47,0.24);
+      box-shadow: 0 10px 30px rgba(15,45,31,0.11);
+    }
+    .insights-card::before,
+    .setup-wizard-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 720px;
+      height: 300px;
+      background: radial-gradient(ellipse at top, rgba(200,162,74,0.13) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .insights-card::after,
+    .setup-wizard-card::after {
+      content: '';
+      position: absolute;
+      right: -150px;
+      bottom: -190px;
+      width: 440px;
+      height: 440px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,162,74,0.06) 0%, rgba(47,90,57,0.08) 38%, transparent 70%);
+      filter: blur(34px);
+      pointer-events: none;
+    }
+    .insights-header,
+    .insights-body,
+    .setup-wizard-body {
+      position: relative;
+      z-index: 1;
+    }
   </style>
 </head>
 <body>
