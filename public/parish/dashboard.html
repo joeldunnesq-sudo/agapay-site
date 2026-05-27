@@ -327,6 +327,29 @@
   </div><!-- /content -->
 </div><!-- /app -->
 
+<nav class="mobile-tabbar" aria-label="Parish dashboard sections">
+  <button class="mobile-tab-link active" type="button" data-nav-tab="giving" onclick="switchTab('giving')">
+    <svg viewBox="0 0 38 38" aria-hidden="true"><path d="M19 4.5 8.5 13v18h21V13L19 4.5Z"/><path d="M14.5 31V20.5h9V31"/><path d="M5.5 31h27"/><path d="M19 9v6"/><path d="M16.2 12h5.6"/></svg>
+    <span>Giving</span>
+  </button>
+  <button class="mobile-tab-link" type="button" data-nav-tab="history" onclick="switchTab('history')">
+    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7 6.5h14"/><path d="M7 11h14"/><path d="M7 15.5h10"/><path d="M7 20h8"/><path d="M4.5 4h19v20h-19z"/></svg>
+    <span>History</span>
+  </button>
+  <button class="mobile-tab-link" type="button" data-nav-tab="settings" onclick="switchTab('settings')">
+    <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="3"/><path d="M14 5v3"/><path d="M14 20v3"/><path d="M5 14h3"/><path d="M20 14h3"/><path d="m7.6 7.6 2.1 2.1"/><path d="m18.3 18.3 2.1 2.1"/><path d="m20.4 7.6-2.1 2.1"/><path d="m9.7 18.3-2.1 2.1"/></svg>
+    <span>Settings</span>
+  </button>
+  <button class="mobile-tab-link" type="button" data-nav-tab="options" onclick="switchTab('options')">
+    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7 8h14"/><path d="M7 14h14"/><path d="M7 20h14"/><circle cx="4.5" cy="8" r="1"/><circle cx="4.5" cy="14" r="1"/><circle cx="4.5" cy="20" r="1"/></svg>
+    <span>Funds</span>
+  </button>
+  <button class="mobile-tab-link" type="button" data-nav-tab="qr" onclick="switchTab('qr')">
+    <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="5" y="5" width="6" height="6"/><rect x="17" y="5" width="6" height="6"/><rect x="5" y="17" width="6" height="6"/><path d="M17 17h2v2h-2zM21 17h2v2h-2zM17 21h2v2h-2zM21 21h2v2h-2z"/></svg>
+    <span>QR</span>
+  </button>
+</nav>
+
 <div class="toast-container" id="toastContainer"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>

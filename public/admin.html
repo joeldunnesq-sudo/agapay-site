@@ -268,6 +268,21 @@
     </div>
   </div>
 
+  <nav class="mobile-tabbar" aria-label="Admin dashboard sections">
+    <button class="mobile-tab-link active" type="button" data-nav-tab="overview" onclick="switchTab('overview')">
+      <svg viewBox="0 0 38 38" aria-hidden="true"><path d="M19 4.5 8.5 13v18h21V13L19 4.5Z"/><path d="M14.5 31V20.5h9V31"/><path d="M5.5 31h27"/><path d="M19 9v6"/><path d="M16.2 12h5.6"/></svg>
+      <span>Overview</span>
+    </button>
+    <button class="mobile-tab-link" type="button" data-nav-tab="queue" onclick="switchTab('queue')">
+      <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7.5 5.5h13v17h-13z"/><path d="M10.5 10h7"/><path d="M10.5 14h7"/><path d="M10.5 18h5"/><path d="M19 3.5v4h4"/></svg>
+      <span>Queue</span>
+    </button>
+    <button class="mobile-tab-link" type="button" data-nav-tab="password" onclick="switchTab('password')">
+      <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="6" y="12" width="16" height="11" rx="2"/><path d="M10 12V9a4 4 0 0 1 8 0v3"/><path d="M14 16.5v3"/></svg>
+      <span>Password</span>
+    </button>
+  </nav>
+
   <div class="toast-container" id="toastContainer"></div>
 
   <script src="/admin/app.js"></script>

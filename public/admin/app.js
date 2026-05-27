@@ -1187,11 +1187,13 @@
 
     function switchTab(tab) {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.sidebar-nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelectorAll('.sidebar-nav-item, .mobile-tab-link').forEach(n => n.classList.remove('active'));
       const panel = document.getElementById('tab-' + tab);
       const nav   = document.getElementById('nav-' + tab);
+      const mobileNav = document.querySelector(`.mobile-tab-link[data-nav-tab="${tab}"]`);
       if (panel) panel.classList.add('active');
       if (nav)   nav.classList.add('active');
+      if (mobileNav) mobileNav.classList.add('active');
       activeTab = tab;
       const titles = { overview: 'Overview', queue: 'Registration Queue', password: 'Change Password' };
       const titleEl = document.getElementById('topbarTitle');
