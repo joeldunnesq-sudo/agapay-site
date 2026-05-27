@@ -2069,7 +2069,7 @@
 
     function collapseRegistrationDetail() {
       selectedReference = '';
-      document.getElementById('selectedReference').textContent = 'No selection';
+      document.getElementById('selectedReference')?.textContent = 'No selection';
       document.getElementById('backToQueueBtn')?.classList.add('hidden');
       document.getElementById('registrationDetail').innerHTML = '';
       renderFilteredList();
