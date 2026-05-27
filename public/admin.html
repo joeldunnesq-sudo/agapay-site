@@ -1569,6 +1569,176 @@
         linear-gradient(135deg, rgba(184,144,47,0.08), rgba(47,90,57,0.08)),
         rgba(246,241,232,0.045);
     }
+
+    @media (max-width: 900px) {
+      body { overflow-x: hidden; }
+      .content { min-height: auto; }
+      .sidebar {
+        position: static;
+        height: auto;
+        overflow: visible;
+      }
+      .sidebar-body {
+        overflow: visible;
+        display: block;
+      }
+      .sidebar-header,
+      .sidebar-auth,
+      .sidebar-filters,
+      .sidebar-section,
+      .sidebar-metrics {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      .sidebar-nav {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        padding: 0.75rem 1rem;
+      }
+      .sidebar-nav-item {
+        min-height: 44px;
+        border: 1px solid rgba(184,144,47,0.12);
+        border-radius: 10px;
+        background: rgba(246,241,232,0.035);
+        padding: 0.65rem 0.7rem;
+      }
+      .sidebar-nav-item:hover,
+      .sidebar-nav-item.active {
+        border-left-color: rgba(184,144,47,0.12);
+        border-color: rgba(184,144,47,0.32);
+        padding-left: 0.7rem;
+      }
+      .sidebar-metrics,
+      .community-snapshot {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .quick-link-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .topbar {
+        height: auto;
+        min-height: 58px;
+        padding: 0.85rem 1rem;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+      .topbar > div:last-child {
+        width: 100%;
+        display: grid !important;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .detail-wrap {
+        padding: 0.85rem 0.85rem 1.5rem;
+        overflow: visible;
+      }
+      .queue-filter-bar,
+      .form-grid,
+      .fields-grid,
+      .toggle-row,
+      .growth-body,
+      .health-body,
+      .step-track {
+        grid-template-columns: 1fr;
+      }
+      .queue-filter-bar {
+        padding: 0.85rem;
+      }
+      .queue-header,
+      .section-header,
+      .growth-header,
+      .health-header {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+      .queue-row {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+        padding: 0.9rem;
+      }
+      .queue-contact,
+      .queue-status-grid {
+        grid-template-columns: 1fr;
+      }
+      .queue-action-panel {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+        padding-left: 0;
+        padding-top: 0.75rem;
+      }
+      .bulk-bar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      .bulk-bar .btn-row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      .bulk-bar button[style] { margin-left: 0 !important; }
+      button,
+      .btn,
+      .sidebar-load,
+      .secondary {
+        min-height: 44px;
+      }
+      .btn-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .btn-row button,
+      .topbar button,
+      .section-header button,
+      .growth-header button,
+      .health-header button {
+        width: 100%;
+        justify-content: center;
+      }
+      textarea { min-height: 110px; }
+    }
+
+    @media (max-width: 560px) {
+      .sidebar-nav,
+      .sidebar-metrics,
+      .community-snapshot,
+      .quick-link-list {
+        grid-template-columns: 1fr;
+      }
+      .sidebar-brand { align-items: flex-start; }
+      .sidebar-name { font-size: 23px; }
+      .queue-card,
+      .section-card,
+      .growth-card,
+      .health-card {
+        border-radius: 12px;
+      }
+      .queue-header,
+      .section-header,
+      .section-body,
+      .growth-header,
+      .growth-body,
+      .health-header,
+      .health-body {
+        padding-left: 0.9rem;
+        padding-right: 0.9rem;
+      }
+      .growth-bars {
+        min-height: 140px;
+        gap: 0.25rem;
+      }
+      .growth-label { font-size: 8px; }
+      .toast-container {
+        left: 0.85rem;
+        right: 0.85rem;
+        bottom: 0.85rem;
+      }
+      .toast { max-width: none; width: 100%; }
+    }
   </style>
 </head>
 <body>
