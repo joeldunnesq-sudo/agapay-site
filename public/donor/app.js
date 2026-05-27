@@ -74,16 +74,30 @@ function setDonorProfile(donor) {
   const profileMeta = document.getElementById("profileMeta");
   if (profileName) profileName.textContent = name;
   if (profileMeta) profileMeta.textContent = donor.defaultParishId ? `${donor.email} - ${donor.defaultParishId}` : donor.email || "Donor account loaded";
+  updateDonorAuthState();
+}
+
+function updateDonorAuthState() {
+  const session = donorSession();
+  const signedIn = Boolean(session.email && session.token);
+  document.querySelectorAll("[data-auth-guest]").forEach((el) => {
+    el.hidden = signedIn;
+  });
+  document.querySelectorAll("[data-auth-required]").forEach((el) => {
+    el.hidden = !signedIn;
+  });
 }
 
 function saveDonorSession(data) {
   if (data?.token) localStorage.setItem(donorStore.token, data.token);
   if (data?.donor) setDonorProfile(data.donor);
+  updateDonorAuthState();
 }
 
 function clearDonorSession() {
   localStorage.removeItem(donorStore.token);
   localStorage.removeItem(donorStore.donor);
+  updateDonorAuthState();
 }
 
 async function loadPublicParishes(selectId = "parish") {
@@ -402,6 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (profileMeta) profileMeta.textContent = "Sign in to load live giving history";
     if (greeting) greeting.textContent = "Welcome to your donor dashboard";
   }
+  updateDonorAuthState();
   const emailInput = document.getElementById("donorEmail");
   if (emailInput && donorSession().email) emailInput.value = donorSession().email;
 });
