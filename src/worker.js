@@ -1276,18 +1276,26 @@ async function handleDonorVerify(request, env) {
   if (!email || !token) return json({ error: "Verification email and token are required" }, { status: 422 });
   const donor = await loadDonor(env, email);
   if (!donor) return unauthorized();
-  if (donor.emailVerifiedAt) {
-    const session = await issueDonorSession(env, donor);
-    return json({ ok: true, alreadyVerified: true, token: session.token, donor: publicDonor(session.donor) });
-  }
-  if (!donor.emailVerificationSalt || !donor.emailVerificationTokenHash) {
+
+  const hasVerificationToken = donor.emailVerificationSalt && donor.emailVerificationTokenHash;
+  if (!hasVerificationToken) {
+    if (donor.emailVerifiedAt) {
+      return json({ ok: true, alreadyVerified: true });
+    }
     return json({ error: "Verification token is missing or expired. Please sign up again to resend verification." }, { status: 410 });
   }
   if (donor.emailVerificationExpiresAt && new Date(donor.emailVerificationExpiresAt).getTime() < Date.now()) {
+    if (donor.emailVerifiedAt) {
+      return json({ ok: true, alreadyVerified: true });
+    }
     return json({ error: "Verification link expired. Please sign up again to resend verification." }, { status: 410 });
   }
   const submittedHash = await sha256Hex(`${donor.emailVerificationSalt}:${token}`);
   if (!secureCompare(submittedHash, donor.emailVerificationTokenHash)) return unauthorized();
+  if (donor.emailVerifiedAt) {
+    const session = await issueDonorSession(env, donor);
+    return json({ ok: true, alreadyVerified: true, token: session.token, donor: publicDonor(session.donor) });
+  }
 
   const verified = {
     ...donor,
@@ -1299,6 +1307,129 @@ async function handleDonorVerify(request, env) {
   };
   const session = await issueDonorSession(env, verified);
   return json({ ok: true, token: session.token, donor: publicDonor(session.donor) });
+}
+
+function jsonForScript(value) {
+  return JSON.stringify(value)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+}
+
+function donorVerifyHtml({ title, message, status = "info", script = "", refreshUrl = "" }, init = {}) {
+  const statusClass = status === "success" ? "success" : status === "error" ? "error" : "";
+  const refresh = refreshUrl ? `<meta http-equiv="refresh" content="2; url=${htmlEscape(refreshUrl)}" />` : "";
+  return new Response(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  ${refresh}
+  <title>${htmlEscape(title)} | AgaPay</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/donor/style.css" />
+</head>
+<body>
+  <div class="app">
+    <main class="content" style="min-height:100vh;">
+      <div class="page">
+        <section class="hero">
+          <div class="hero-grid">
+            <div>
+              <div class="eyebrow">Email verification</div>
+              <h1>${htmlEscape(title)}</h1>
+              <p>${htmlEscape(message)}</p>
+              <div class="notice ${statusClass}" style="margin-top:1rem;">${htmlEscape(message)}</div>
+              <p class="form-help" style="margin-top:1rem;"><a href="/donor/login">Go to donor login</a></p>
+            </div>
+            <div class="hero-mark"><img src="/mark.png" alt="" /></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+  ${script}
+</body>
+</html>`, {
+    ...init,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+      ...(init.headers || {})
+    }
+  });
+}
+
+async function handleDonorVerifyPage(request, env) {
+  if (request.method !== "GET") {
+    return donorVerifyHtml(
+      {
+        title: "Verification link unavailable",
+        message: "Open your donor verification link in a browser to confirm your email.",
+        status: "error"
+      },
+      { status: 405 }
+    );
+  }
+
+  const verification = await handleDonorVerify(request, env);
+  const data = await verification.json().catch(() => ({}));
+
+  if (!verification.ok) {
+    return donorVerifyHtml(
+      {
+        title: "We could not verify your email",
+        message: data.error || data.detail || "This verification link is invalid or expired. Please sign up again to request a new link.",
+        status: "error"
+      },
+      { status: verification.status }
+    );
+  }
+
+  if (!data.token) {
+    return donorVerifyHtml(
+      {
+        title: "Email already verified",
+        message: "Your email is already verified. Please log in to open your donor dashboard.",
+        status: "success",
+        refreshUrl: "/donor/login"
+      },
+      { status: 200 }
+    );
+  }
+
+  const session = {
+    email: data.donor?.email || new URL(request.url).searchParams.get("email") || "",
+    token: data.token,
+    donor: data.donor || {}
+  };
+  const script = `<script>
+(() => {
+  const session = ${jsonForScript(session)};
+  try {
+    if (session.email) localStorage.setItem("agapayDonorEmail", session.email);
+    if (session.token) localStorage.setItem("agapayDonorToken", session.token);
+    if (session.donor) localStorage.setItem("agapayDonorProfile", JSON.stringify(session.donor));
+  } catch (err) {}
+  window.location.replace("/donor");
+})();
+</script>`;
+
+  return donorVerifyHtml(
+    {
+      title: "Email verified",
+      message: data.alreadyVerified ? "Your email was already verified. Opening your donor dashboard." : "Your email is verified. Opening your donor dashboard.",
+      status: "success",
+      script,
+      refreshUrl: "/donor"
+    },
+    { status: 200 }
+  );
 }
 
 async function handleDonorDashboard(request, env) {
@@ -2582,6 +2713,9 @@ export default {
     }
     if (url.pathname === "/api/donor/verify") {
       return handleDonorVerify(request, env);
+    }
+    if (url.pathname === "/donor/verify" || url.pathname === "/donor/verify/") {
+      return handleDonorVerifyPage(request, env);
     }
     if (url.pathname === "/api/donor/session") {
       return handleDonorSession(request, env);

@@ -5,6 +5,8 @@ const worker = await readFile("src/worker.js", "utf8");
 assert.ok(worker.includes("AGAPAY_REGISTRATIONS"), "worker should use KV registrations as the parish source of truth");
 assert.ok(worker.includes("Stripe-Account"), "checkout should support routing payments to connected Stripe accounts");
 assert.ok(!worker.includes("const parishes = ["), "worker should not hardcode demo parishes");
+assert.ok(worker.includes('url.pathname === "/donor/verify"'), "worker should route donor verification links before assets");
+assert.ok(worker.includes("handleDonorVerifyPage"), "worker should handle donor verification links server-side");
 
 const registerHtml = await readFile("public/register.html", "utf8");
 assert.ok(!registerHtml.includes("WEB3FORMS_KEY"), "registration should not expose Web3Forms key");
