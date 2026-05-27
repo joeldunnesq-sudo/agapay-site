@@ -36,4 +36,11 @@ const giveHtml = await readFile("public/give/form.html", "utf8");
 assert.ok(giveHtml.includes("/api/create-checkout-session"), "giving page should post to checkout API");
 assert.ok(giveHtml.includes("/api/parishes"), "giving page should load registered parishes from the Worker API");
 
+const adminCss = await readFile("public/admin/style.css", "utf8");
+assert.ok(adminCss.includes("Donor dashboard design language refresh"), "admin dashboard should include donor-aligned responsive design refresh");
+assert.ok(adminCss.includes("@media (max-width: 980px)"), "admin dashboard should include donor-style mobile breakpoint");
+const parishCss = await readFile("public/parish/style.css", "utf8");
+assert.ok(parishCss.includes("Donor dashboard design language refresh"), "parish dashboard should include donor-aligned responsive design refresh");
+assert.ok(parishCss.includes("@media (max-width: 980px)"), "parish dashboard should include donor-style mobile breakpoint");
+
 console.log("AgaPay platform checks passed.");

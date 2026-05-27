@@ -535,3 +535,199 @@
       }
       .toast { max-width: none; width: 100%; }
     }
+
+
+/* Donor dashboard design language refresh: align parish shell and responsive rhythm. */
+.app {
+  grid-template-columns: 292px minmax(0, 1fr);
+  background:
+    linear-gradient(180deg, rgba(15,45,31,0.07), transparent 320px),
+    linear-gradient(90deg, rgba(184,144,47,0.06), transparent 32%, rgba(47,90,57,0.05)),
+    var(--cream);
+}
+.sidebar {
+  box-shadow: inset -1px 0 0 rgba(246,241,232,0.035);
+}
+.sidebar-header { padding: 1.45rem 1.25rem 1.15rem; }
+.sidebar-mark,
+.section-title-icon,
+.empty-state-icon {
+  border-radius: 9px;
+  background: rgba(184,144,47,0.12);
+  border-color: rgba(184,144,47,0.28);
+}
+.topbar {
+  min-height: 60px;
+  background: rgba(253,251,247,0.94);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 1px 0 rgba(111,106,96,0.08);
+}
+.detail-wrap {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.35rem 1.5rem 2.5rem;
+}
+.section-card,
+.qr-feature-card,
+.option-group,
+.history-stat,
+.bulletin-preview,
+.check-card {
+  border-radius: 14px;
+  box-shadow: 0 7px 22px rgba(15,45,31,0.06);
+}
+.section-card,
+.qr-feature-card,
+.option-group,
+.history-stat,
+.bulletin-preview {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(253,251,247,0.98)),
+    white;
+}
+.section-card::before,
+.qr-feature-card::before,
+.option-group::before,
+.history-stat::before {
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold), rgba(184,144,47,0.78), rgba(47,90,57,0.78), var(--forest));
+}
+.insights-card,
+.setup-wizard-card {
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(15,45,31,0.11);
+}
+.sidebar-nav-item {
+  min-height: 42px;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, padding 0.18s ease;
+}
+.sidebar-nav-item.active { color: var(--cream); }
+
+@media (max-width: 980px) {
+  body { overflow-x: hidden; }
+  .app { grid-template-columns: 1fr; }
+  .sidebar {
+    position: static;
+    height: auto;
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid rgba(184,144,47,0.18);
+  }
+  .sidebar-body {
+    overflow: visible;
+    display: block;
+  }
+  .content {
+    overflow: visible;
+    min-height: auto;
+  }
+  .sidebar-header,
+  .sidebar-auth,
+  .sidebar-profile,
+  .sidebar-metrics,
+  .sidebar-links {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .sidebar-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 0.75rem 1rem;
+  }
+  .sidebar-nav-item {
+    min-height: 44px;
+    border: 1px solid rgba(184,144,47,0.12);
+    border-radius: 10px;
+    background: rgba(246,241,232,0.035);
+    padding: 0.65rem 0.7rem;
+  }
+  .sidebar-nav-item:hover,
+  .sidebar-nav-item.active {
+    border-left-color: rgba(184,144,47,0.12);
+    border-color: rgba(184,144,47,0.32);
+    padding-left: 0.7rem;
+  }
+  .topbar {
+    height: auto;
+    min-height: 58px;
+    padding: 0.85rem 1rem;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+  .topbar-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .detail-wrap {
+    padding: 1rem 1rem 2rem;
+    overflow: visible;
+  }
+  .form-grid,
+  .toggle-row,
+  .insights-layout,
+  .insight-stats,
+  .setup-wizard-body,
+  .commemoration-list,
+  .feast-grid,
+  .history-summary,
+  .history-filters,
+  .qr-layout,
+  .qr-copy-row,
+  .qr-feature-layout {
+    grid-template-columns: 1fr;
+  }
+  .qr-feature-actions { min-width: 0; }
+}
+
+@media (max-width: 720px) {
+  .detail-wrap { padding: 0.85rem 0.85rem 1.5rem; }
+  .section-card,
+  .insights-card,
+  .setup-wizard-card,
+  .qr-feature-card,
+  .option-group { border-radius: 10px; }
+  .sidebar-nav,
+  .sidebar-metrics,
+  .topbar-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .qr-feature-code,
+  .qr-code {
+    width: min(160px, 100%);
+    height: auto;
+    aspect-ratio: 1;
+    justify-self: start;
+  }
+  .qr-feature-actions,
+  .topbar .btn,
+  .section-header .btn,
+  .insights-header .btn { width: 100%; }
+  .btn,
+  .sidebar-load,
+  .check-card { min-height: 44px; }
+  .btn-row,
+  .actions,
+  .qr-actions { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .btn-row .btn,
+  .actions .btn,
+  .qr-actions .btn { width: 100%; justify-content: center; }
+}
+
+@media (max-width: 430px) {
+  .sidebar-nav,
+  .sidebar-metrics,
+  .form-grid,
+  .toggle-row,
+  .insight-stats,
+  .feast-card,
+  .topbar-actions { grid-template-columns: 1fr; }
+  .sidebar-brand { align-items: flex-start; }
+  .sidebar-name { font-size: 23px; }
+  .section-title { font-size: 19px; }
+  .insights-total { font-size: clamp(2rem, 15vw, 3rem); }
+  .history-summary { grid-template-columns: 1fr; }
+  .qr-copy-row { grid-template-columns: 1fr; }
+}
