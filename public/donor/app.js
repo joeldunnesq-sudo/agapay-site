@@ -204,6 +204,11 @@ async function verifyDonorEmail() {
       headers: { Accept: "application/json", "Content-Type": "application/json" },
       body: JSON.stringify({ email, token })
     });
+    if (!data.token) {
+    setDonorStatus("Email already verified. Please log in to open your donor dashboard.", "success");
+    setTimeout(() => { window.location.href = "/donor/login"; }, 900);
+      return;
+    }
     saveDonorSession(data);
     setDonorStatus("Email verified. Opening your donor dashboard...", "success");
     setTimeout(() => { window.location.href = "/donor"; }, 900);
