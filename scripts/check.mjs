@@ -23,6 +23,9 @@ assert.ok(registerHtml.includes("/api/registrations"), "registration should post
 
 const donorApp = await readFile("public/donor/app.js", "utf8");
 assert.ok(donorApp.includes('nav.setAttribute("hx-boost", "false")'), "donor shell should not htmx-boost dashboard navigation");
+assert.ok(donorApp.includes("function updateDonorAuthState()"), "donor shell should update guest/authenticated controls from localStorage session");
+const donorHome = await readFile("public/donor/index.html", "utf8");
+assert.ok(donorHome.includes("data-auth-guest"), "donor home should mark guest-only controls so signed-in donors do not see login prompts");
 const donorPages = ["calendar", "commemorations", "give", "index", "login", "offerings", "signup"];
 for (const page of donorPages) {
   const html = await readFile(`public/donor/${page}.html`, "utf8");

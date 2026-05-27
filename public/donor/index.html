@@ -23,7 +23,7 @@
           </div>
           <span class="pill">Donor Dashboard</span>
         </div>
-        <div class="auth-panel">
+        <div class="auth-panel" data-auth-guest>
           <div class="auth-grid">
             <a class="btn btn-gold btn-block" href="/donor/signup">Create donor account</a>
             <a class="btn btn-ghost-dark btn-block" href="/donor/login">Log in</a>
@@ -58,8 +58,8 @@
       <div class="topbar">
         <div class="topbar-title">Donor Home</div>
         <div class="topbar-actions">
-          <a class="btn btn-ghost btn-sm" href="/donor/login">Login</a>
-          <a class="btn btn-gold btn-sm" href="/donor/signup">Sign up</a>
+          <a class="btn btn-ghost btn-sm" href="/donor/login" data-auth-guest>Login</a>
+          <a class="btn btn-gold btn-sm" href="/donor/signup" data-auth-guest>Sign up</a>
           <a class="btn btn-ghost btn-sm" href="/donor/commemorations">Submit names</a>
           <a class="btn btn-gold btn-sm" href="/donor/give">Quick give</a>
         </div>
