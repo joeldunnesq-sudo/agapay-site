@@ -20,6 +20,15 @@ const registerHtml = await readFile("public/register.html", "utf8");
 assert.ok(!registerHtml.includes("WEB3FORMS_KEY"), "registration should not expose Web3Forms key");
 assert.ok(registerHtml.includes("/api/registrations"), "registration should post to AgaPay API");
 
+
+const donorApp = await readFile("public/donor/app.js", "utf8");
+assert.ok(donorApp.includes('nav.setAttribute("hx-boost", "false")'), "donor shell should not htmx-boost dashboard navigation");
+const donorPages = ["calendar", "commemorations", "give", "index", "login", "offerings", "signup"];
+for (const page of donorPages) {
+  const html = await readFile(`public/donor/${page}.html`, "utf8");
+  assert.ok(!html.includes('hx-boost="true"'), `donor ${page} page should use full navigation so page initializers run`);
+}
+
 const giveHtml = await readFile("public/give/form.html", "utf8");
 assert.ok(giveHtml.includes("/api/create-checkout-session"), "giving page should post to checkout API");
 assert.ok(giveHtml.includes("/api/parishes"), "giving page should load registered parishes from the Worker API");
