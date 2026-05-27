@@ -1,8 +1,11 @@
+const ADMIN_PASSWORD_KV_KEY = "__agapay_admin_password";
+
 const subscriptionTiers = [
   {
     id: "mission",
     label: "Mission",
     monthlyCents: 4900,
+    transactionRateLabel: "5% + $0.30 per transaction",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_MISSION_MONTHLY",
     description: "Monthly AgaPay platform subscription for missions."
   },
@@ -10,22 +13,25 @@ const subscriptionTiers = [
     id: "parish",
     label: "Parish",
     monthlyCents: 9900,
+    transactionRateLabel: "5% + $0.30 per transaction",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_MONTHLY",
     description: "Monthly AgaPay platform subscription for established parishes."
   },
   {
     id: "diocese",
-    label: "Diocese / Multi-Parish",
+    label: "Cathedral / Diocese",
     monthlyCents: null,
+    transactionRateLabel: "Negotiated transaction rate",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_DIOCESE_MONTHLY",
-    description: "Custom AgaPay platform subscription for dioceses and multi-parish organizations."
+    description: "Custom AgaPay pricing for cathedrals, dioceses, and multi-parish organizations."
   },
   {
     id: "monastery_free",
     label: "Monastery / Skete",
     monthlyCents: 0,
+    transactionRateLabel: "5% + $0.30 per transaction",
     stripePriceEnv: "",
-    description: "Free forever for Orthodox monasteries and sketes."
+    description: "AgaPay transaction pricing for Orthodox monasteries and sketes."
   }
 ];
 
@@ -55,9 +61,18 @@ function getBearerToken(request) {
   return "";
 }
 
-function requireAdmin(request, env) {
-  if (!env.AGAPAY_ADMIN_TOKEN) return false;
-  return getAdminToken(request) === env.AGAPAY_ADMIN_TOKEN;
+async function currentAdminPassword(env) {
+  const kvPassword = env.AGAPAY_REGISTRATIONS
+    ? await env.AGAPAY_REGISTRATIONS.get(ADMIN_PASSWORD_KV_KEY)
+    : "";
+  return kvPassword || env.AGAPAY_ADMIN_TOKEN || "";
+}
+
+async function requireAdmin(request, env) {
+  const adminPassword = await currentAdminPassword(env);
+  if (!adminPassword) return false;
+  const submitted = getAdminToken(request);
+  return submitted === adminPassword || submitted === env.AGAPAY_ADMIN_TOKEN;
 }
 
 function requireFields(body, fields) {
@@ -195,9 +210,9 @@ function subscriptionStatusLabel(status) {
 
 function subscriptionTierSummary(tier) {
   if (!tier) return "";
-  if (tier.monthlyCents === 0) return `${tier.label} - free forever`;
-  if (tier.monthlyCents === null) return `${tier.label} - custom`;
-  return `${tier.label} - $${(tier.monthlyCents / 100).toFixed(0)}/mo`;
+  if (tier.monthlyCents === null) return `${tier.label} - custom / negotiated`;
+  if (tier.monthlyCents === 0) return `${tier.label} - free forever monthly subscription; ${tier.transactionRateLabel || "standard transaction fees apply"}`;
+  return `${tier.label} - $${(tier.monthlyCents / 100).toFixed(0)}/mo + ${tier.transactionRateLabel || "standard transaction fees"}`;
 }
 
 function absoluteWebsiteUrl(value) {
@@ -513,6 +528,7 @@ async function verifiedRegistrationParishes(env) {
   const verified = [];
 
   for (const key of list.keys) {
+    if (key.name === ADMIN_PASSWORD_KV_KEY) continue;
     const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
     if (!raw) continue;
     try {
@@ -531,6 +547,7 @@ async function findRegistrationByParishId(env, parishId) {
   const list = await env.AGAPAY_REGISTRATIONS.list({ limit: 100 });
 
   for (const key of list.keys) {
+    if (key.name === ADMIN_PASSWORD_KV_KEY) continue;
     const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
     if (!raw) continue;
     try {
@@ -550,6 +567,7 @@ async function findRegistrationByStripeSubscriptionId(env, subscriptionId) {
   const list = await env.AGAPAY_REGISTRATIONS.list({ limit: 100 });
 
   for (const key of list.keys) {
+    if (key.name === ADMIN_PASSWORD_KV_KEY) continue;
     const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
     if (!raw) continue;
     try {
@@ -710,8 +728,10 @@ async function handleCheckout(request, env) {
   }
 
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const feeCents = body.coverFees ? Math.round(amountCents * 0.029 + 30) : 0;
-  const chargeCents = amountCents + feeCents;
+  const totalTransactionFeeCents = Math.round(amountCents * 0.05 + 30);
+  const chargeCents = body.coverFees ? amountCents + totalTransactionFeeCents : amountCents;
+  const estimatedStripeFeeCents = Math.round(chargeCents * 0.029 + 30);
+  const agapayFeeCents = Math.max(0, totalTransactionFeeCents - estimatedStripeFeeCents);
   const recurring = body.frequency && body.frequency !== "once";
   const giftLabel = String(body.giftType).replace(/-/g, " ");
   const customer = await findOrCreateDonorCustomer(env, parish, body);
@@ -757,6 +777,13 @@ async function handleCheckout(request, env) {
   }
 
   if (recurring) {
+    const applicationFeePercent = (agapayFeeCents / chargeCents) * 100;
+    form.set("subscription_data[application_fee_percent]", applicationFeePercent.toFixed(2));
+  } else {
+    form.set("payment_intent_data[application_fee_amount]", String(agapayFeeCents));
+  }
+
+  if (recurring) {
     form.set("line_items[0][price_data][recurring][interval]", body.frequency === "weekly" || body.frequency === "biweekly" ? "week" : "month");
     if (body.frequency === "biweekly") form.set("line_items[0][price_data][recurring][interval_count]", "2");
   }
@@ -785,7 +812,7 @@ async function handleCheckout(request, env) {
 }
 
 async function handleAdminRegistrations(request, env) {
-  if (!requireAdmin(request, env)) return unauthorized();
+  if (!(await requireAdmin(request, env))) return unauthorized();
   if (!env.AGAPAY_REGISTRATIONS) {
     return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
   }
@@ -794,6 +821,7 @@ async function handleAdminRegistrations(request, env) {
   const registrations = [];
 
   for (const key of list.keys) {
+    if (key.name === ADMIN_PASSWORD_KV_KEY) continue;
     const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
     if (!raw) continue;
     try {
@@ -831,6 +859,7 @@ async function loadAllRegistrations(env) {
   const registrations = [];
 
   for (const key of list.keys) {
+    if (key.name === ADMIN_PASSWORD_KV_KEY) continue;
     const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
     if (!raw) continue;
     try {
@@ -844,7 +873,7 @@ async function loadAllRegistrations(env) {
 }
 
 async function handleAdminPlatformSummary(request, env) {
-  if (!requireAdmin(request, env)) return unauthorized();
+  if (!(await requireAdmin(request, env))) return unauthorized();
   if (!env.AGAPAY_REGISTRATIONS) {
     return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
   }
@@ -924,8 +953,38 @@ async function handleAdminPlatformSummary(request, env) {
   });
 }
 
+async function handleAdminPassword(request, env) {
+  if (request.method !== "PATCH") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!(await requireAdmin(request, env))) return unauthorized();
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const newPassword = String(body.newAdminPassword || "").trim();
+  const confirmPassword = String(body.confirmAdminPassword || "").trim();
+  if (newPassword.length < 12) {
+    return json({ error: "Admin password must be at least 12 characters." }, { status: 400 });
+  }
+  if (newPassword !== confirmPassword) {
+    return json({ error: "Admin passwords do not match." }, { status: 400 });
+  }
+  if (newPassword === env.AGAPAY_ADMIN_TOKEN) {
+    return json({ error: "Choose a password different from the Cloudflare root secret." }, { status: 400 });
+  }
+
+  await env.AGAPAY_REGISTRATIONS.put(ADMIN_PASSWORD_KV_KEY, newPassword);
+  return json({ ok: true, updatedAt: new Date().toISOString() });
+}
+
 async function handleAdminRegistrationDetail(request, env, reference) {
-  if (!requireAdmin(request, env)) return unauthorized();
+  if (!(await requireAdmin(request, env))) return unauthorized();
   if (!env.AGAPAY_REGISTRATIONS) {
     return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
   }
@@ -1022,7 +1081,7 @@ async function handleAdminRegistrationDetail(request, env, reference) {
 }
 
 async function handleSubscriptionCheckout(request, env, reference) {
-  if (!requireAdmin(request, env)) return unauthorized();
+  if (!(await requireAdmin(request, env))) return unauthorized();
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   if (!env.AGAPAY_REGISTRATIONS) {
     return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
@@ -1335,7 +1394,7 @@ async function createStripeOnboardingSession(request, env, reference, registrati
 }
 
 async function handleStripeOnboarding(request, env, reference) {
-  if (!requireAdmin(request, env)) return unauthorized();
+  if (!(await requireAdmin(request, env))) return unauthorized();
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   if (!env.AGAPAY_REGISTRATIONS) {
     return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
@@ -1367,7 +1426,7 @@ async function handleStripeOnboarding(request, env, reference) {
 }
 
 async function handleStripeRefresh(request, env, reference) {
-  if (!requireAdmin(request, env)) return unauthorized();
+  if (!(await requireAdmin(request, env))) return unauthorized();
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   if (!env.AGAPAY_REGISTRATIONS) {
     return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
@@ -1406,7 +1465,7 @@ async function handleStripeRefresh(request, env, reference) {
 }
 
 async function handleDashboardInvite(request, env, reference) {
-  if (!requireAdmin(request, env)) return unauthorized();
+  if (!(await requireAdmin(request, env))) return unauthorized();
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   if (!env.AGAPAY_REGISTRATIONS) {
     return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
@@ -1711,6 +1770,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/admin/platform-summary") {
       return handleAdminPlatformSummary(request, env);
+    }
+    if (url.pathname === "/api/admin/password") {
+      return handleAdminPassword(request, env);
     }
     if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/subscription-checkout")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/subscription-checkout", ""));
