@@ -911,11 +911,13 @@ async function handleAdminRegistrations(request, env) {
         status: registration.status || "pending",
         parishName: registration.parishName || "",
         communityType: registration.communityType || "",
+        liturgicalCalendar: registration.liturgicalCalendar || "julian",
         jurisdiction: registration.jurisdiction || "",
         city: registration.city || "",
         state: registration.state || "",
         priestEmail: registration.priestEmail || "",
         treasurerEmail: registration.treasurerEmail || "",
+        givingStatus: registration.givingStatus || "active",
         subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
         subscriptionStatus: registration.subscriptionStatus || "not_started",
         stripeAccountStatus: registration.stripeAccountStatus || "not_started",
@@ -1114,6 +1116,7 @@ async function handleAdminRegistrationDetail(request, env, reference) {
       bishopOrAuthority: body.bishopOrAuthority ?? current.bishopOrAuthority ?? "",
       dioceseOrDeanery: body.dioceseOrDeanery ?? current.dioceseOrDeanery ?? "",
       platformFee: body.platformFee ?? current.platformFee ?? "",
+      liturgicalCalendar: body.liturgicalCalendar ?? current.liturgicalCalendar ?? "julian",
       subscriptionTier: nextTier?.id || nextSubscriptionTierId,
       subscriptionTierLabel: nextTier?.label || current.subscriptionTierLabel || "",
       subscriptionMonthlyCents: nextTier?.monthlyCents ?? current.subscriptionMonthlyCents ?? null,
@@ -1125,6 +1128,7 @@ async function handleAdminRegistrationDetail(request, env, reference) {
       commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
       funds: Array.isArray(body.funds) ? body.funds : current.funds,
       campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
+      feastCampaigns: Array.isArray(body.feastCampaigns) ? body.feastCampaigns : current.feastCampaigns,
       parishDashboardToken,
       parishDashboardTokenTemporary: Boolean(parishDashboardToken),
       parishDashboardTokenCreatedAt: parishDashboardToken && parishDashboardToken !== current.parishDashboardToken
@@ -1830,6 +1834,7 @@ async function handleParishDashboard(request, env, parishId) {
         city: registration.city,
         state: registration.state,
         website: registration.website,
+        liturgicalCalendar: registration.liturgicalCalendar || "julian",
         givingStatus: registration.givingStatus || "active",
         stripeAccountStatus: registration.stripeAccountStatus || "not_started",
         subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
@@ -1851,7 +1856,8 @@ async function handleParishDashboard(request, env, parishId) {
         candlesEnabled: registration.candlesEnabled ?? true,
         commemorationsEnabled: registration.commemorationsEnabled ?? true,
         funds: Array.isArray(registration.funds) ? registration.funds : [],
-        campaigns: Array.isArray(registration.campaigns) ? registration.campaigns : []
+        campaigns: Array.isArray(registration.campaigns) ? registration.campaigns : [],
+        feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
       }
     });
   }
@@ -1875,12 +1881,14 @@ async function handleParishDashboard(request, env, parishId) {
     const updated = {
       ...current,
       website: body.website ?? current.website ?? "",
+      liturgicalCalendar: body.liturgicalCalendar || current.liturgicalCalendar || "julian",
       givingStatus: body.givingStatus || current.givingStatus || "active",
       recurringGivingEnabled: Boolean(body.recurringGivingEnabled ?? current.recurringGivingEnabled ?? true),
       candlesEnabled: Boolean(body.candlesEnabled ?? current.candlesEnabled ?? true),
       commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
       funds: Array.isArray(body.funds) ? body.funds : current.funds,
       campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
+      feastCampaigns: Array.isArray(body.feastCampaigns) ? body.feastCampaigns : current.feastCampaigns,
       parishDashboardToken: requestedPassword || current.parishDashboardToken,
       parishDashboardTokenTemporary: requestedPassword ? false : current.parishDashboardTokenTemporary,
       parishDashboardTokenUpdatedAt: requestedPassword ? new Date().toISOString() : current.parishDashboardTokenUpdatedAt,
