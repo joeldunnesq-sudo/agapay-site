@@ -2216,6 +2216,7 @@
           ${field('Reviewed', reg.reviewedAt)}
           ${field('Community', reg.parishName)}
           ${field('Type', reg.communityType)}
+          ${field('Liturgical Calendar', reg.liturgicalCalendar || 'julian')}
           ${field('Jurisdiction', reg.jurisdiction, 'full')}
           ${field('Location', `${reg.city || ''}, ${reg.state || ''}`)}
           ${field('Website', reg.website)}
@@ -2290,6 +2291,13 @@
               <div>
                 <label for="platformFee">Platform fee setting</label>
                 <input id="platformFee" value="${escapeAttr(reg.platformFee)}" placeholder="5% + $0.30 standard; negotiated for cathedral/diocese" />
+              </div>
+              <div>
+                <label for="liturgicalCalendar">Liturgical calendar</label>
+                <select id="liturgicalCalendar">
+                  <option value="julian" ${(reg.liturgicalCalendar || 'julian') === 'julian' ? 'selected' : ''}>Julian / Old Calendar</option>
+                  <option value="gregorian" ${reg.liturgicalCalendar === 'gregorian' ? 'selected' : ''}>Revised Julian / Gregorian</option>
+                </select>
               </div>
               <div>
                 <label for="parishDashboardToken">Parish dashboard token</label>
@@ -2467,6 +2475,7 @@
             bishopOrAuthority: document.getElementById('bishopOrAuthority').value,
             dioceseOrDeanery: document.getElementById('dioceseOrDeanery').value,
             platformFee: document.getElementById('platformFee').value,
+            liturgicalCalendar: document.getElementById('liturgicalCalendar').value,
             subscriptionTier: document.getElementById('subscriptionTier').value,
             subscriptionStatus: document.getElementById('subscriptionStatus').value,
             stripeCustomerId: document.getElementById('stripeCustomerId').value,
