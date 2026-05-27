@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "include": [
+    "/donor/verify",
+    "/donor/verify/*"
+  ],
+  "exclude": []
+}

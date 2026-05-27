@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 
 const worker = await readFile("src/worker.js", "utf8");
 assert.ok(worker.includes("AGAPAY_REGISTRATIONS"), "worker should use KV registrations as the parish source of truth");
@@ -11,6 +11,10 @@ assert.ok(worker.includes("handleDonorVerifyPage"), "worker should handle donor 
 const donorVerifyFunction = await readFile("functions/donor/verify.js", "utf8");
 assert.ok(donorVerifyFunction.includes("../../src/worker.js"), "Pages donor verification route should delegate to the Worker");
 assert.ok(donorVerifyFunction.includes("onRequest"), "Pages donor verification route should export an onRequest handler");
+
+const routesJson = await readFile("public/_routes.json", "utf8");
+assert.ok(routesJson.includes('"/donor/verify"'), "Pages routes should invoke the donor verification function");
+await assert.rejects(access("public/donor/verify.html"), undefined, "static donor verify HTML should not shadow the Pages Function");
 
 const registerHtml = await readFile("public/register.html", "utf8");
 assert.ok(!registerHtml.includes("WEB3FORMS_KEY"), "registration should not expose Web3Forms key");
