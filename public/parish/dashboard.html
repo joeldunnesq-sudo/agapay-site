@@ -822,10 +822,14 @@
     .setup-title { font-family: var(--serif); font-size: 1.35rem; color: var(--cream); margin-bottom: 0.35rem; }
     .setup-copy { color: rgba(246,241,232,0.7); font-size: 13px; line-height: 1.6; max-width: 680px; }
     .setup-steps { display: grid; gap: 8px; margin-top: 1rem; }
-    .setup-step { border: 1px solid rgba(246,241,232,0.14); background: rgba(246,241,232,0.05); border-radius: 10px; padding: 0.75rem; }
+    .setup-step { border: 1px solid rgba(246,241,232,0.14); background: rgba(246,241,232,0.05); border-radius: 10px; padding: 0.75rem; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 0.65rem; align-items: start; }
     .setup-step.done { border-color: rgba(125,207,148,0.32); background: rgba(47,90,57,0.2); }
     .setup-step strong { display: block; font-size: 13px; color: var(--cream); margin-bottom: 0.2rem; }
     .setup-step span { color: rgba(246,241,232,0.62); font-size: 12px; line-height: 1.5; }
+    .setup-check { width: 24px; height: 24px; border-radius: 999px; border: 1px solid rgba(246,241,232,0.2); display: grid; place-items: center; color: rgba(246,241,232,0.35); background: rgba(246,241,232,0.05); }
+    .setup-check svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+    .setup-step.done .setup-check { color: #7dcf94; border-color: rgba(125,207,148,0.45); background: rgba(125,207,148,0.12); }
+    .setup-step.done .setup-check svg { opacity: 1; }
     .setup-action-panel { border: 1px solid rgba(184,144,47,0.22); border-radius: 10px; background: rgba(246,241,232,0.06); padding: 0.85rem; align-self: start; }
     .setup-action-panel label { color: var(--gold); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 0.35rem; }
     .setup-action-panel select { width: 100%; border: 1px solid rgba(184,144,47,0.3); border-radius: 10px; background: rgba(246,241,232,0.08); color: var(--cream); padding: 9px 10px; font-family: var(--sans); margin-bottom: 8px; }
@@ -1036,6 +1040,7 @@
     .section-title { font-family: var(--serif); font-size: 21px; color: var(--deep); font-weight: 600; display: flex; align-items: center; gap: 0.55rem; }
     .section-title-icon { width: 28px; height: 28px; background: rgba(184,144,47,0.12); border: 1px solid rgba(184,144,47,0.25); border-radius: 8px; display: grid; place-items: center; }
     .section-title-icon svg { width: 15px; height: 15px; stroke: var(--gold); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .section-title-icon.community-mark svg { width: 22px; height: 22px; stroke-width: 1.45; }
     .section-body { padding: 1.25rem; }
     .insights-card {
       background: var(--deep);
@@ -1234,7 +1239,7 @@
           <div class="section-card" id="commemorationQueueCard">
             <div class="section-header">
               <div class="section-title">
-                <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 17h6"/></svg></div>
+                <div class="section-title-icon community-mark" id="commemorationCommunityIcon"></div>
                 Weekly Commemoration Queue
               </div>
               <button class="btn btn-ghost btn-sm" onclick="loadCommemorations(this)">Refresh</button>
@@ -1645,6 +1650,28 @@
       return `${money(tier.monthlyCents)}/mo`;
     }
 
+    function setupCheckMarkup() {
+      return '<span class="setup-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>';
+    }
+
+    function communityTypeKey(parish) {
+      const raw = `${parish?.communityType || ''} ${parish?.parishName || ''}`.toLowerCase();
+      if (raw.includes('monastery') || raw.includes('skete')) return 'monastery';
+      if (raw.includes('mission')) return 'mission';
+      return 'parish';
+    }
+
+    function communityMarkIcon(parish) {
+      const type = communityTypeKey(parish);
+      if (type === 'monastery') {
+        return '<svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><rect x="4" y="14" width="30" height="18" rx="1"/><rect x="14" y="6" width="10" height="14" rx="1"/><line x1="19" y1="2" x2="19" y2="6"/><line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/><line x1="16" y1="5.5" x2="22" y2="5.5"/><path d="M15 32 L15 25 Q19 21 23 25 L23 32"/><rect x="7" y="18" width="5" height="6" rx="2.5"/><rect x="26" y="18" width="5" height="6" rx="2.5"/></svg>';
+      }
+      if (type === 'mission') {
+        return '<svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><line x1="19" y1="2" x2="19" y2="6"/><line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/><line x1="16" y1="5.5" x2="22" y2="5.5"/><path d="M19 6 C10 10 8 17 11 22 C13 26 16 27 19 27 C22 27 25 26 27 22 C30 17 28 10 19 6Z"/><line x1="12" y1="27" x2="26" y2="27"/><line x1="13" y1="29" x2="25" y2="29"/></svg>';
+      }
+      return '<svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><line x1="19" y1="2" x2="19" y2="5"/><line x1="17" y1="3.5" x2="21" y2="3.5"/><path d="M19 5 C15 7 13 11 14 14 C15 16 17 17 19 17 C21 17 23 16 24 14 C25 11 23 7 19 5Z"/><line x1="10" y1="6" x2="10" y2="8"/><path d="M10 8 C8 9.5 7 12 7.5 14 C8 15.5 9 16 10 16 C11 16 12 15.5 12.5 14 C13 12 12 9.5 10 8Z"/><line x1="28" y1="6" x2="28" y2="8"/><path d="M28 8 C26 9.5 25 12 25.5 14 C26 15.5 27 16 28 16 C29 16 30 15.5 30.5 14 C31 12 30 9.5 28 8Z"/><rect x="4" y="17" width="30" height="14" rx="1"/><path d="M16 31 L16 25 Q19 22 22 25 L22 31"/></svg>';
+    }
+
     function renderSetupWizard() {
       const pane = document.getElementById('setupWizardPane');
       if (!pane || !currentParish) return;
@@ -1671,9 +1698,9 @@
               <div class="setup-title">First-time setup</div>
               <p class="setup-copy">Finish these steps so gifts can move from parishioners to your parish's Stripe account and AgaPay billing can be activated.</p>
               <div class="setup-steps">
-                <div class="setup-step done"><strong>1. Contact info verified</strong><span>Your registration has already supplied the parish contact details.</span></div>
-                <div class="setup-step ${stripeDone ? 'done' : ''}"><strong>2. Connect Stripe</strong><span>${stripeDone ? 'Stripe is connected for parish giving.' : 'Create a Stripe onboarding link and complete the account setup.'}</span></div>
-                <div class="setup-step ${billingDone ? 'done' : ''}"><strong>3. Select tier and billing</strong><span>${billingDone ? 'AgaPay subscription billing is active.' : 'Choose the parish tier and start billing checkout.'}</span></div>
+                <div class="setup-step done">${setupCheckMarkup()}<div><strong>1. Contact info verified</strong><span>Your registration has already supplied the parish contact details.</span></div></div>
+                <div class="setup-step ${stripeDone ? 'done' : ''}">${setupCheckMarkup()}<div><strong>2. Connect Stripe</strong><span>${stripeDone ? 'Stripe is connected for parish giving.' : 'Create a Stripe onboarding link and complete the account setup.'}</span></div></div>
+                <div class="setup-step ${billingDone ? 'done' : ''}">${setupCheckMarkup()}<div><strong>3. Select tier and billing</strong><span>${billingDone ? 'AgaPay subscription billing is active.' : 'Choose the parish tier and start billing checkout.'}</span></div></div>
               </div>
             </div>
             <div class="setup-action-panel">
@@ -1704,6 +1731,8 @@
       document.getElementById('metricStripe').textContent = parish.stripeAccountStatus || 'not_started';
       document.getElementById('sidebarPublicLink').href = dedicatedGivingUrl();
       document.getElementById('topbarTitle').textContent = parish.parishName || 'Parish Dashboard';
+      const commemorationIcon = document.getElementById('commemorationCommunityIcon');
+      if (commemorationIcon) commemorationIcon.innerHTML = communityMarkIcon(parish);
       const overviewEmpty = document.getElementById('overviewEmpty');
       if (overviewEmpty) overviewEmpty.style.display = 'none';
       renderSetupWizard();
@@ -2074,6 +2103,8 @@
 
     async function startStripeOnboarding(btn) {
       if (!currentParish) return;
+      const setupWindow = window.open('', '_blank');
+      if (setupWindow) setupWindow.opener = null;
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
       setStatus('Creating Stripe onboarding link...');
       try {
@@ -2097,10 +2128,12 @@
           setupLink.href = result.onboardingUrl;
           setupLink.textContent = 'Open Stripe onboarding';
           setupBox.classList.add('visible');
-          if (setupHelp) setupHelp.textContent = 'This single-use Stripe link opens in a new tab.';
+          if (setupHelp) setupHelp.textContent = setupWindow ? 'Stripe onboarding opened in a new tab.' : 'Your browser blocked the new tab. Use this link to continue.';
         }
-        setStatus('Stripe onboarding link created. Click Open Stripe onboarding.', 'success');
+        if (setupWindow) setupWindow.location.href = result.onboardingUrl;
+        setStatus(setupWindow ? 'Stripe onboarding opened in a new tab.' : 'Stripe onboarding link created. Click Open Stripe onboarding.', 'success');
       } catch (err) {
+        if (setupWindow) setupWindow.close();
         setStatus(err.message, 'error');
       } finally {
         if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
@@ -2109,6 +2142,8 @@
 
     async function startSubscriptionCheckout(btn) {
       if (!currentParish) return;
+      const setupWindow = window.open('', '_blank');
+      if (setupWindow) setupWindow.opener = null;
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
       setStatus('Creating subscription checkout...');
       try {
@@ -2121,6 +2156,7 @@
         const result = await response.json();
         if (!response.ok) throw new Error(result.detail || result.error || 'Unable to create subscription checkout');
         if (!result.checkoutUrl) {
+          if (setupWindow) setupWindow.close();
           await loadDashboard();
           setStatus('Subscription updated. No checkout is required for this tier.', 'success');
           return;
@@ -2132,10 +2168,12 @@
           setupLink.href = result.checkoutUrl;
           setupLink.textContent = 'Open billing checkout';
           setupBox.classList.add('visible');
-          if (setupHelp) setupHelp.textContent = 'Complete this checkout to activate AgaPay billing.';
+          if (setupHelp) setupHelp.textContent = setupWindow ? 'Billing checkout opened in a new tab.' : 'Your browser blocked the new tab. Use this link to continue.';
         }
-        setStatus('Subscription checkout created. Click Open billing checkout.', 'success');
+        if (setupWindow) setupWindow.location.href = result.checkoutUrl;
+        setStatus(setupWindow ? 'Subscription checkout opened in a new tab.' : 'Subscription checkout created. Click Open billing checkout.', 'success');
       } catch (err) {
+        if (setupWindow) setupWindow.close();
         setStatus(err.message, 'error');
       } finally {
         if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
