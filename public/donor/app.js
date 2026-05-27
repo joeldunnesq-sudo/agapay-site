@@ -76,6 +76,16 @@ function setDonorProfile(donor) {
   if (profileMeta) profileMeta.textContent = donor.defaultParishId ? `${donor.email} - ${donor.defaultParishId}` : donor.email || "Donor account loaded";
 }
 
+function saveDonorSession(data) {
+  if (data?.token) localStorage.setItem(donorStore.token, data.token);
+  if (data?.donor) setDonorProfile(data.donor);
+}
+
+function clearDonorSession() {
+  localStorage.removeItem(donorStore.token);
+  localStorage.removeItem(donorStore.donor);
+}
+
 async function loadPublicParishes(selectId = "parish") {
   const select = document.getElementById(selectId);
   if (!select) return [];
@@ -102,19 +112,12 @@ async function loginFromDashboard() {
   }
   setDonorStatus("Loading donor account...");
   try {
-    const data = await donorApi("/api/donor/session", {
+    const data = await donorApi("/api/donor/login", {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        password,
-        donorName: email.split("@")[0],
-        householdName: "AgaPay Household",
-        parishId: document.getElementById("parish")?.value || "st-seraphim-mission"
-      })
+      body: JSON.stringify({ email, password })
     });
-    localStorage.setItem(donorStore.token, data.token);
-    setDonorProfile(data.donor);
+    saveDonorSession(data);
     setDonorStatus("Donor account loaded.", "success");
     if (typeof loadDonorDashboardPage === "function") await loadDonorDashboardPage();
     if (typeof loadDonorOfferingsPage === "function") await loadDonorOfferingsPage();
@@ -124,10 +127,96 @@ async function loginFromDashboard() {
   }
 }
 
+async function loginFromPage(event) {
+  event.preventDefault();
+  const email = document.getElementById("donorEmail")?.value.trim();
+  const password = document.getElementById("donorPassword")?.value;
+  if (!email || !password) {
+    setDonorStatus("Enter your email and password.", "error");
+    return;
+  }
+  setDonorStatus("Signing you in...");
+  try {
+    const data = await donorApi("/api/donor/login", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    saveDonorSession(data);
+    setDonorStatus("Signed in. Opening your donor dashboard...", "success");
+    window.location.href = "/donor";
+  } catch (err) {
+    clearDonorSession();
+    setDonorStatus(err.message, "error");
+  }
+}
+
+async function signupFromPage(event) {
+  event.preventDefault();
+  const donorName = document.getElementById("donorName")?.value.trim();
+  const email = document.getElementById("donorEmail")?.value.trim();
+  const password = document.getElementById("donorPassword")?.value;
+  const parishId = document.getElementById("parish")?.value || "";
+  if (!donorName || !email || !password) {
+    setDonorStatus("Enter your name, email, and password.", "error");
+    return;
+  }
+  setDonorStatus("Creating your donor account...");
+  try {
+    const data = await donorApi("/api/donor/signup", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ donorName, householdName: donorName, email, password, parishId })
+    });
+    localStorage.setItem(donorStore.email, email);
+    setDonorProfile(data.donor);
+    if (data.verificationUrl) {
+      setDonorStatus("Account created. Email is not configured, so a test verification link is shown below.", "success");
+      const box = document.getElementById("verificationLinkBox");
+      const link = document.getElementById("verificationLink");
+      if (box && link) {
+        link.href = data.verificationUrl;
+        link.textContent = "Open test verification link";
+        box.style.display = "block";
+      }
+      return;
+    }
+    setDonorStatus("Account created. Check your email to verify your AgaPay account.", "success");
+    const next = document.getElementById("signupNextStep");
+    if (next) next.style.display = "block";
+  } catch (err) {
+    setDonorStatus(err.message, "error");
+  }
+}
+
+async function verifyDonorEmail() {
+  const params = new URLSearchParams(window.location.search);
+  const email = params.get("email") || donorSession().email;
+  const token = params.get("token") || "";
+  if (!email || !token) {
+    setDonorStatus("This verification link is missing information. Please sign up again to request a new link.", "error");
+    return;
+  }
+  setDonorStatus("Verifying your email...");
+  try {
+    const data = await donorApi("/api/donor/verify", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ email, token })
+    });
+    saveDonorSession(data);
+    setDonorStatus("Email verified. Opening your donor dashboard...", "success");
+    setTimeout(() => { window.location.href = "/donor"; }, 900);
+  } catch (err) {
+    clearDonorSession();
+    setDonorStatus(err.message, "error");
+  }
+}
+
 async function loadDonorDashboardPage() {
   const session = donorSession();
   if (!session.email || !session.token) {
-    setDonorStatus("Create or load a donor account to see live giving history.");
+    setDonorStatus("Sign up or log in to see live giving history.");
     return;
   }
   try {
