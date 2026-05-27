@@ -33,6 +33,7 @@ async function handleApi(req, res) {
 function resolveStaticPath(urlPath) {
   let pathname = decodeURIComponent(urlPath);
   if (pathname === "/") pathname = "/index.html";
+  if (pathname === "/donor" || pathname === "/donor/") pathname = "/donor/index.html";
   if (!path.extname(pathname)) pathname = `${pathname}.html`;
   if (pathname.startsWith("/give/") && !existsSync(path.join(publicDir, pathname))) {
     pathname = "/give/st-seraphim-mission.html";
