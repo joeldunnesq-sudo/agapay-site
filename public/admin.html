@@ -2243,6 +2243,8 @@
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
       
       try {
+        const selectedStatus = document.getElementById('statusSelect').value;
+        const shouldRunAutoVerifiedWorkflow = selectedStatus === 'verified' && !options.skipAutoVerifiedWorkflow;
         let funds = [];
         let campaigns = [];
         try {
@@ -2260,7 +2262,7 @@
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            status: document.getElementById('statusSelect').value,
+            status: selectedStatus,
             givingStatus: document.getElementById('givingStatus').value,
             stripeAccountStatus: document.getElementById('stripeAccountStatus').value,
             stripeAccountId: document.getElementById('stripeAccountId').value,
@@ -2279,27 +2281,66 @@
             funds,
             campaigns,
             parishDashboardToken: document.getElementById('parishDashboardToken').value.trim(),
-            sendDashboardInvite: options.sendDashboardInvite ?? document.getElementById('autoDashboardInvite').checked,
+            sendDashboardInvite: shouldRunAutoVerifiedWorkflow ? false : options.sendDashboardInvite ?? document.getElementById('autoDashboardInvite').checked,
             reviewerNotes: document.getElementById('reviewerNotes').value
           })
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Unable to save review');
 
-        renderDetail(result.registration);
-        renderQueueNext(result.registration);
+        let finalRegistration = result.registration;
+        let workflowMessage = '';
+        if (shouldRunAutoVerifiedWorkflow) {
+          const workflow = await runAutoVerifiedWorkflow(reference);
+          finalRegistration = workflow.registration || finalRegistration;
+          workflowMessage = workflow.message ? ` ${workflow.message}` : '';
+        }
+
+        renderDetail(finalRegistration);
+        renderQueueNext(finalRegistration);
         await loadRegistrations();
         const inviteMessage = dashboardInviteMessage(result.dashboardInvite);
-        if (result.registration.status === 'verified' && result.registration.parishId) {
-          setStatus(`Review saved. ${result.registration.parishName} is now live.${inviteMessage}`, 'success');
+        if (finalRegistration.status === 'verified' && finalRegistration.parishId) {
+          setStatus(`Review saved. ${finalRegistration.parishName} is now live.${inviteMessage}${workflowMessage}`, 'success');
           return;
         }
-        setStatus(`Review saved.${inviteMessage}`, 'success');
+        setStatus(`Review saved.${inviteMessage}${workflowMessage}`, 'success');
       } catch (err) {
         setStatus(err.message, 'error');
       } finally {
         if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
       }
+    }
+
+    async function runAutoVerifiedWorkflow(reference) {
+      const messages = [];
+      let registration = null;
+
+      const inviteResponse = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/dashboard-invite', {
+        method: 'POST',
+        headers: authHeaders()
+      });
+      const invite = await inviteResponse.json();
+      if (inviteResponse.ok) {
+        registration = invite.registration || registration;
+        messages.push(invite.email?.status === 'sent' ? 'Dashboard invite sent.' : 'Dashboard invite prepared.');
+      } else {
+        messages.push(`Dashboard invite skipped: ${invite.detail || invite.error || 'unknown error'}.`);
+      }
+
+      const stripeResponse = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/stripe-onboarding', {
+        method: 'POST',
+        headers: authHeaders()
+      });
+      const stripe = await stripeResponse.json();
+      if (stripeResponse.ok) {
+        registration = stripe.registration || registration;
+        messages.push(stripe.email?.status === 'sent' ? 'Stripe onboarding email sent.' : 'Stripe onboarding link created.');
+      } else {
+        messages.push(`Stripe onboarding skipped: ${stripe.detail || stripe.error || 'unknown error'}.`);
+      }
+
+      return { registration, message: messages.join(' ') };
     }
 
     function generateDashboardToken() {
@@ -2315,7 +2356,7 @@
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
       
       try {
-        await saveReview(reference, null, { sendDashboardInvite: false });
+        await saveReview(reference, null, { sendDashboardInvite: false, skipAutoVerifiedWorkflow: true });
 
         const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/dashboard-invite', {
           method: 'POST',
@@ -2356,7 +2397,7 @@
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
       
       try {
-        await saveReview(reference, null, { sendDashboardInvite: false });
+        await saveReview(reference, null, { sendDashboardInvite: false, skipAutoVerifiedWorkflow: true });
 
         const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/subscription-checkout', {
           method: 'POST',
