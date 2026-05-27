@@ -292,7 +292,7 @@ button, input, select, textarea { font: inherit; }
   overflow: hidden;
   border: 1px solid rgba(184, 144, 47, 0.2);
   border-radius: var(--rlg);
-  background: linear-gradient(135deg, var(--deep), #143826 56%, var(--wine));
+  background: linear-gradient(135deg, rgba(184, 144, 47, 0.96), #7f7430 34%, var(--forest) 68%, var(--deep));
   color: var(--cream);
   padding: 1.35rem;
   box-shadow: var(--shadow);
