@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css" />
+  <script src="/donor/app.js" defer></script>
 </head>
 <body hx-boost="true">
   <div class="app">
@@ -31,8 +32,9 @@
     <main class="content">
       <div class="topbar"><div class="topbar-title">Give</div><div class="topbar-actions"><a class="btn btn-ghost btn-sm" href="/donor">Dashboard</a></div></div>
       <div class="page">
+        <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
         <section class="hero">
-          <div class="hero-grid"><div><div class="eyebrow">Choose an offering</div><h1>Make a gift with intention.</h1><p>Select the type of gift, choose your parish, then continue to the existing AgaPay giving flow. This first version uses realistic mock dashboard state while the donor APIs are wired in.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div>
+          <div class="hero-grid"><div><div class="eyebrow">Choose an offering</div><h1>Make a gift with intention.</h1><p>Select the type of gift, choose your parish, then continue to Stripe Checkout. Your donor history is recorded in AgaPay as soon as checkout is created.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div>
         </section>
 
         <section class="offering-grid section-gap">
@@ -47,14 +49,14 @@
         <section class="card section-gap">
           <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/></svg></span> Gift Details</div></div>
           <div class="card-body">
-            <form action="/give/form" method="get">
+            <form id="donorCheckoutForm" onsubmit="startDonorCheckout(event)">
               <div class="form-grid">
                 <div class="form-group"><label class="form-label" for="parish">Parish</label><select class="form-select" id="parish" name="parish"><option value="st-seraphim-mission">St. Seraphim of Sarov Mission</option><option value="holy-theotokos-skete">Holy Theotokos Skete</option></select></div>
                 <div class="form-group"><label class="form-label" for="frequency">Frequency</label><select class="form-select" id="frequency" name="frequency"><option value="once">One-time</option><option value="weekly">Weekly</option><option value="biweekly">Biweekly</option><option value="monthly">Monthly</option></select></div>
                 <div class="form-group"><label class="form-label" for="amount">Amount</label><input class="form-input" id="amount" name="amount" value="100" /></div>
                 <div class="form-group"><label class="form-label" for="giftType">Gift type</label><select class="form-select" id="giftType" name="giftType"><option value="stewardship">Stewardship</option><option value="candles">Candles</option><option value="commemoration">Commemoration</option><option value="campaign">Alms Campaign</option></select></div>
               </div>
-              <p class="form-help">This submits to the existing public giving form route for now. A dedicated donor checkout API can be added after donor accounts are finalized.</p>
+              <p class="form-help">This uses the live AgaPay checkout API and records the gift under your donor account.</p>
               <div class="section-gap"><button class="btn btn-gold" type="submit">Continue to AgaPay checkout</button></div>
             </form>
           </div>
@@ -62,5 +64,8 @@
       </div>
     </main>
   </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => loadPublicParishes("parish"));
+  </script>
 </body>
 </html>
