@@ -292,7 +292,7 @@ button, input, select, textarea { font: inherit; }
   overflow: hidden;
   border: 1px solid rgba(184, 144, 47, 0.2);
   border-radius: var(--rlg);
-  background: linear-gradient(135deg, rgba(184, 144, 47, 0.96), #7f7430 34%, var(--forest) 68%, var(--deep));
+  background: var(--deep);
   color: var(--cream);
   padding: 1.35rem;
   box-shadow: var(--shadow);
@@ -301,10 +301,25 @@ button, input, select, textarea { font: inherit; }
 .hero::before {
   content: "";
   position: absolute;
-  inset: -90px auto auto 45%;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 700px;
+  height: 300px;
+  background: radial-gradient(ellipse at top, rgba(200, 162, 74, 0.13) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  right: -140px;
+  bottom: -180px;
   width: 420px;
-  height: 220px;
-  background: radial-gradient(ellipse at top, rgba(184, 144, 47, 0.2), transparent 70%);
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200, 162, 74, 0.06) 0%, rgba(47, 90, 57, 0.08) 38%, transparent 70%);
+  filter: blur(34px);
   pointer-events: none;
 }
 
