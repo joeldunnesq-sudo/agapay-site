@@ -156,6 +156,10 @@
     .output-metric.highlight .output-amount { color: var(--gold); }
     .output-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(246, 241, 232, 0.6); }
     .output-amount { font-family: var(--serif); font-size: 20px; font-weight: 500; }
+    .fee-split { background: rgba(246,241,232,0.06); border: 0.5px solid rgba(246,241,232,0.14); border-radius: var(--r); padding: 0.9rem 1rem; margin: 0.5rem 0 1.25rem; }
+    .fee-split-row { display: flex; justify-content: space-between; gap: 1rem; font-size: 12px; color: rgba(246,241,232,0.68); line-height: 1.5; }
+    .fee-split-row + .fee-split-row { margin-top: 5px; }
+    .fee-split-row strong { color: var(--cream); font-weight: 500; text-align: right; }
     .calc-output-divider { border: none; border-top: 0.5px solid rgba(246, 241, 232, 0.15); margin: 1.5rem 0; }
     .output-metric.total { flex-direction: column; align-items: flex-start; margin-bottom: 0; gap: 4px; }
     .output-metric.total .output-label { margin-bottom: 2px; }
@@ -259,7 +263,7 @@
     <div class="hero-inner">
       <div class="hero-eyebrow">Pricing</div>
       <h1>Honest fees.<br><em>Nothing hidden.</em></h1>
-      <p class="hero-sub">Free for monasteries. Affordable for missions. Built to scale with your community. Every fee explained — no surprises, ever.</p>
+      <p class="hero-sub">No monthly fee for monasteries. Affordable subscriptions for missions and parishes. Every transaction fee explained — no surprises, ever.</p>
     </div>
   </header>
 
@@ -278,6 +282,8 @@
           <hr class="pcard-divider" />
           <ul class="pcard-features">
             <li class="highlight">5% + $0.30 flat transaction fee</li>
+            <li>Stripe estimated processing: 2.9% + $0.30</li>
+            <li>AgaPay estimated share: about 2.1%</li>
             <li>Liturgical calendar automation</li>
             <li>Priest commemoration queue</li>
             <li>Donor-optional fee coverage</li>
@@ -295,6 +301,8 @@
           <hr class="pcard-divider" />
           <ul class="pcard-features">
             <li class="highlight">5% + $0.30 flat transaction fee</li>
+            <li>Stripe estimated processing: 2.9% + $0.30</li>
+            <li>AgaPay estimated share: about 2.1%</li>
             <li>Full liturgical calendar automation</li>
             <li>Priest commemoration queue</li>
             <li>Donor-optional fee coverage</li>
@@ -313,6 +321,7 @@
           <hr class="pcard-divider" />
           <ul class="pcard-features">
             <li class="highlight">Negotiated transaction rate</li>
+            <li>Stripe processing and AgaPay share defined in agreement</li>
             <li>Multi-parish dashboard</li>
             <li>Diocese-level reporting</li>
             <li>White-label option</li>
@@ -326,12 +335,14 @@
         <div class="pcard dark reveal reveal-delay-4">
           <span class="pcard-badge cream">Monastery &amp; Skete</span>
           <h3>Monastic</h3>
-          <div class="pcard-price">Free <span>forever</span></div>
+          <div class="pcard-price">$0 <span>/ mo</span></div>
           <div class="pcard-sub">All monasteries, sketes &amp; convents</div>
           <hr class="pcard-divider" />
           <ul class="pcard-features">
             <li class="highlight">No monthly platform fee — ever</li>
             <li>5% + $0.30 flat transaction fee</li>
+            <li>Stripe estimated processing: 2.9% + $0.30</li>
+            <li>AgaPay estimated share: about 2.1%</li>
             <li>All campaign and fund tools</li>
             <li>Commemoration lists</li>
             <li>Liturgical calendar</li>
@@ -343,7 +354,7 @@
       </div>
 
       <div class="pullquote reveal">
-        <p>"Donors can choose to cover all platform fees themselves — meaning your parish could use AgaPay at near-zero net cost."</p>
+        <p>"Donors can choose to cover transaction fees at checkout, so your parish can receive the full intended gift amount."</p>
       </div>
 
       <div class="why-band reveal">
@@ -392,6 +403,10 @@
             <span class="output-label">Total Fees</span>
             <div class="output-amount native-fee" id="lossDisplay">-$540.00</div>
           </div>
+          <div class="fee-split">
+            <div class="fee-split-row"><span>Estimated Stripe processing</span><strong id="stripeFeeDisplay">-$330.00</strong></div>
+            <div class="fee-split-row"><span>Estimated AgaPay share</span><strong id="agapayShareDisplay">-$210.00</strong></div>
+          </div>
           
           <div class="output-metric highlight">
             <span class="output-label">Saved via Donor Coverage</span>
@@ -425,9 +440,9 @@
         </div>
         <div class="faq reveal reveal-delay-2">
           <button class="faq-btn" onclick="toggleFaq(this)" aria-expanded="false">
-            <div class="faq-q">Why does your pricing model use flat transaction fees? <span>+</span></div>
+            <div class="faq-q">How is the 5% + $0.30 transaction fee split? <span>+</span></div>
           </button>
-          <div class="faq-a">Traditional church processors separate their platform fees from core card processing network fees, creating complex merchant statements. AgaPay uses a single, clear, flat transaction rate. This completely eliminates hidden percentages, clearing-house markups, and unexpected bookkeeping line items for your treasurer.</div>
+          <div class="faq-a">For standard tiers, the total transaction fee is 5% + $0.30. Stripe's standard online processing is estimated at 2.9% + $0.30, and AgaPay retains the remaining estimated 2.1% to operate the platform. Cathedral and diocese rates are negotiated separately.</div>
         </div>
         <div class="faq reveal reveal-delay-3">
           <button class="faq-btn" onclick="toggleFaq(this)" aria-expanded="false">
@@ -566,6 +581,8 @@
     const coverageDisplay = document.getElementById('coverageDisplay');
     
     const lossDisplay = document.getElementById('lossDisplay');
+    const stripeFeeDisplay = document.getElementById('stripeFeeDisplay');
+    const agapayShareDisplay = document.getElementById('agapayShareDisplay');
     const savedDisplay = document.getElementById('savedDisplay');
     const netDisplay = document.getElementById('netDisplay');
     const efficiencyDisplay = document.getElementById('efficiencyDisplay');
@@ -577,11 +594,14 @@
       const averageGiftSize = 75;
       const transactionsCount = monthlyVolume / averageGiftSize;
       
-      // NEW MODEL: 5% + 0.30 flat fee
-      const platformRate = 0.05; 
+      // Standard total fee: 5% + $0.30. Estimated split: Stripe 2.9% + $0.30, AgaPay about 2.1%.
+      const platformRate = 0.05;
+      const stripeRate = 0.029;
       const fixedFee = 0.30;
       
       const totalFees = (monthlyVolume * platformRate) + (transactionsCount * fixedFee);
+      const estimatedStripeFees = (monthlyVolume * stripeRate) + (transactionsCount * fixedFee);
+      const estimatedAgapayShare = Math.max(0, totalFees - estimatedStripeFees);
       
       const amountSavedViaDonors = totalFees * coverageRate;
       const amountDeductedFromParish = totalFees - amountSavedViaDonors;
@@ -592,6 +612,8 @@
       coverageDisplay.textContent = `${Math.round(coverageRate * 100)}%`;
       
       lossDisplay.textContent = `-$${totalFees.toFixed(2)}`;
+      stripeFeeDisplay.textContent = `-$${estimatedStripeFees.toFixed(2)}`;
+      agapayShareDisplay.textContent = `-$${estimatedAgapayShare.toFixed(2)}`;
       savedDisplay.textContent = `+$${amountSavedViaDonors.toFixed(2)}`;
       netDisplay.textContent = `$${finalNetBankDeposit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       efficiencyDisplay.textContent = `${effectiveYieldPercentage.toFixed(2)}% Effective Bank Yield`;
