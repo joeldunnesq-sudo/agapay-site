@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Donor Dashboard | AgaPay</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <link rel="stylesheet" href="/donor/style.css" />
+</head>
+<body hx-boost="true">
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-scroll">
+        <div class="brand">
+          <div class="brand-row">
+            <div class="brand-mark"><img src="/mark.png" alt="AgaPay" /></div>
+            <span class="brand-name">Aga<em>Pay</em></span>
+          </div>
+          <span class="pill">Donor Dashboard</span>
+        </div>
+        <div class="auth-panel">
+          <div class="auth-grid">
+            <div>
+              <label for="donorEmail">Email</label>
+              <input id="donorEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+            </div>
+            <div>
+              <label for="donorPassword">Password</label>
+              <input id="donorPassword" type="password" placeholder="Dashboard password" autocomplete="current-password" />
+            </div>
+            <button class="btn btn-gold btn-block" type="button" onclick="saveDonorSession()">Load dashboard</button>
+          </div>
+        </div>
+        <div class="profile-panel">
+          <div class="profile-name" id="profileName">Theophany Household</div>
+          <div class="profile-meta" id="profileMeta">St. Seraphim of Sarov Mission · Lubbock, TX</div>
+        </div>
+        <nav class="nav">
+          <a class="active" href="/donor"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg> Home</a>
+          <a href="/donor/give"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg> Give</a>
+          <a href="/donor/offerings"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg> Offerings</a>
+          <a href="/donor/commemorations"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 22h6"/></svg> Commemorations</a>
+          <a href="/donor/calendar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg> Calendar</a>
+        </nav>
+        <div class="sidebar-card">
+          <h3>Next Opportunities</h3>
+          <div class="mini-list">
+            <div class="mini-item"><strong>Ascension Offering</strong><span>Suggested alms campaign opens this week.</span></div>
+            <div class="mini-item"><strong>Saturday Commemorations</strong><span>Names submitted by Friday evening go to the weekly list.</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <a class="sidebar-link" href="/give"><svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg> Public giving page</a>
+        <a class="sidebar-link" href="/"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> AgaPay home</a>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="topbar">
+        <div class="topbar-title">Donor Home</div>
+        <div class="topbar-actions">
+          <a class="btn btn-ghost btn-sm" href="/donor/commemorations">Submit names</a>
+          <a class="btn btn-gold btn-sm" href="/donor/give">Quick give</a>
+        </div>
+      </div>
+
+      <div class="page">
+        <section class="hero">
+          <div class="hero-grid">
+            <div>
+              <div class="eyebrow">Stewardship overview</div>
+              <h1 id="greeting">Welcome back</h1>
+              <p>Your AgaPay donor dashboard brings giving, commemorations, and feast day opportunities into one quiet place for your household.</p>
+            </div>
+            <div class="hero-mark"><img src="/mark.png" alt="" /></div>
+          </div>
+        </section>
+
+        <section class="grid four section-gap">
+          <div class="metric-card"><div class="metric-label">Year to date</div><div class="metric-value">$2,840</div><div class="metric-note">Across 18 offerings and gifts.</div></div>
+          <div class="metric-card"><div class="metric-label">Recurring gift</div><div class="metric-value">$125</div><div class="metric-note">Monthly stewardship on the 1st.</div></div>
+          <div class="metric-card"><div class="metric-label">Commemorations</div><div class="metric-value">24</div><div class="metric-note">Names submitted this quarter.</div></div>
+          <div class="metric-card"><div class="metric-label">Next feast</div><div class="metric-value">Jun 13</div><div class="metric-note">Ascension of Our Lord.</div></div>
+        </section>
+
+        <section class="layout-main">
+          <div class="grid">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg></span> Quick Give</div>
+                <span class="status-pill">Mock data</span>
+              </div>
+              <div class="card-body">
+                <form action="/donor/give" method="get">
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label class="form-label" for="parish">Parish</label>
+                      <select class="form-select" id="parish" name="parish">
+                        <option>St. Seraphim of Sarov Mission</option>
+                        <option>Holy Theotokos Skete</option>
+                        <option>St. Nicholas Orthodox Church</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="purpose">Purpose</label>
+                      <select class="form-select" id="purpose" name="purpose">
+                        <option>Stewardship / Tithe</option>
+                        <option>Candles</option>
+                        <option>Commemorations</option>
+                        <option>Alms Campaign</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="quick-amounts" aria-label="Quick amount">
+                    <button type="button" onclick="setQuickAmount(this, 25)">$25</button>
+                    <button type="button" onclick="setQuickAmount(this, 50)">$50</button>
+                    <button type="button" onclick="setQuickAmount(this, 100)" class="active">$100</button>
+                    <button type="button" onclick="setQuickAmount(this, 250)">$250</button>
+                  </div>
+                  <input type="hidden" id="quickAmount" name="amount" value="100" />
+                  <button class="btn btn-gold" type="submit">Continue to gift</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg></span> Upcoming Liturgical Opportunities</div>
+              </div>
+              <div class="card-body">
+                <div class="list">
+                  <div class="list-item"><div class="list-main"><strong>Ascension of Our Lord</strong><span>Feast day offering and parish alms campaign.</span></div><span class="status-pill pending">Friday</span></div>
+                  <div class="list-item"><div class="list-main"><strong>Holy Apostles Fast</strong><span>Suggested recurring alms for food pantry and benevolence.</span></div><span class="status-pill">Upcoming</span></div>
+                  <div class="list-item"><div class="list-main"><strong>Weekly Commemorations</strong><span>Living and departed names sent to the parish queue.</span></div><span class="status-pill wine">Open</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <aside class="card">
+            <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></span> Recent Offerings</div></div>
+            <div class="card-body">
+              <div class="list">
+                <div class="list-item"><div class="list-main"><strong>General Operating Fund</strong><span>May 24 · One-time gift</span></div><div class="list-amount">$100</div></div>
+                <div class="list-item"><div class="list-main"><strong>Candles and Commemorations</strong><span>May 18 · Names received</span></div><div class="list-amount">$25</div></div>
+                <div class="list-item"><div class="list-main"><strong>Clergy Support Fund</strong><span>May 1 · Recurring gift</span></div><div class="list-amount">$125</div></div>
+              </div>
+            </div>
+          </aside>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function saveDonorSession() {
+      const email = document.getElementById("donorEmail").value.trim();
+      if (email) localStorage.setItem("agapayDonorEmail", email);
+      localStorage.setItem("agapayDonorSession", "mock-session-token");
+      document.getElementById("profileMeta").textContent = email ? email + " · St. Seraphim of Sarov Mission" : "Mock donor session loaded";
+    }
+    function setQuickAmount(button, amount) {
+      document.getElementById("quickAmount").value = String(amount);
+      document.querySelectorAll(".quick-amounts button").forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+    }
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    document.getElementById("greeting").textContent = greeting + ", Theophany Household";
+    const savedEmail = localStorage.getItem("agapayDonorEmail");
+    if (savedEmail) document.getElementById("donorEmail").value = savedEmail;
+  </script>
+</body>
+</html>
