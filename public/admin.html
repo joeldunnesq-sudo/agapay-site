@@ -708,6 +708,7 @@
       top: 0;
       z-index: 10;
     }
+    .topbar-title { font-family: var(--serif); color: var(--deep); font-size: 20px; font-weight: 600; }
     .topbar-ref { color: var(--stone); font-size: 12px; }
     .topbar-ref strong { color: var(--gold); }
     .detail-wrap { flex: 1; overflow-y: auto; padding: 1.5rem 2rem 3rem; }
@@ -1560,7 +1561,6 @@
         </div>
       </div>
       <div class="detail-wrap" id="detailPane">
-        <!-- ── TAB: OVERVIEW ─────────────────────────────────────── -->
         <div class="tab-panel active" id="tab-overview">
           <section class="community-snapshot" id="communitySnapshot">
           <div class="community-snapshot-card">
@@ -1615,7 +1615,6 @@
         </section>
         </div>
 
-        <!-- ── TAB: REGISTRATION QUEUE ──────────────────────────── -->
         <div class="tab-panel" id="tab-queue">
           <div class="queue-filter-bar">
             <div>
@@ -1679,7 +1678,6 @@
         </div>
         </div>
 
-        <!-- ── TAB: CHANGE PASSWORD ──────────────────────────────── -->
         <div class="tab-panel" id="tab-password">
           <div class="section-card">
             <div class="section-header">
@@ -1711,7 +1709,6 @@
     </div>
   </div>
 
-  <!-- TOAST NOTIFICATION MOUNT -->
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
@@ -2259,11 +2256,8 @@
             const action = nextAction(item);
             const location = [item.city, item.state].filter(Boolean).join(', ') || 'Location pending';
             return `
-              <div class="queue-row ${item.reference === selectedReference ? 'active' : ''}" data-ref="${escapeAttr(item.reference)}">
-                <div class="queue-check" onclick="event.stopPropagation()">
-                  <input type="checkbox" class="row-chk" value="${escapeAttr(item.reference)}" onchange="updateBulkBar()" />
-                </div>
-                <div class="queue-primary" onclick="loadDetail('${jsAttr(item.reference)}')" style="cursor:pointer">
+              <div class="queue-row ${item.reference === selectedReference ? 'active' : ''}" onclick="loadDetail('${jsAttr(item.reference)}')">
+                <div class="queue-primary">
                   <div class="queue-name">${escapeHtml(item.parishName || item.reference)}</div>
                   <div class="queue-meta">${escapeHtml(item.communityType || 'Community')} / ${escapeHtml(item.jurisdiction || 'Jurisdiction')} / ${escapeHtml(location)}</div>
                   <div class="queue-contact">
@@ -2271,9 +2265,9 @@
                     <span><strong>Treasurer:</strong> ${escapeHtml(item.treasurerEmail || 'Not provided')}</span>
                   </div>
                   <div class="queue-reference">${escapeHtml(item.reference || '')}</div>
-                </div><!-- /queue-primary -->
+                </div>
 
-                <div class="queue-status-panel" onclick="loadDetail('${jsAttr(item.reference)}')" style="cursor:pointer">
+                <div class="queue-status-panel">
                   <div class="queue-status-grid">
                     <div class="queue-status-item">
                       <span class="queue-status-label">Canonical</span>
@@ -2290,7 +2284,7 @@
                   </div>
                 </div>
 
-                <div class="queue-action-panel" onclick="loadDetail('${jsAttr(item.reference)}')" style="cursor:pointer">
+                <div class="queue-action-panel">
                   <div class="queue-received">Received ${escapeHtml(shortDate(item.receivedAt))}</div>
                   <div class="queue-next"><strong>${escapeHtml(action.title)}</strong><br>${escapeHtml(action.body)}</div>
                 </div>
@@ -2312,8 +2306,9 @@
 
     async function loadDetail(reference) {
       selectedReference = reference;
-      if (activeTab !== 'queue') switchTab('queue');
+      document.getElementById('selectedReference')?.textContent = reference;
       document.getElementById('backToQueueBtn')?.classList.remove('hidden');
+      if (activeTab !== 'queue') switchTab('queue');
       setStatus('Loading details...');
 
       try {
@@ -2573,9 +2568,9 @@
           </div>
 
           <div class="admin-section">
-            <div class="admin-section-title">Notes History</div>
+            <div class="admin-section-title">Internal Notes</div>
             <div class="notes-history">${renderNotesHistory(reg)}</div>
-            <label for="reviewerNotes">Add a note</label>
+            <label for="reviewerNotes">Reviewer notes</label>
             <textarea id="reviewerNotes" placeholder="Write a note — saved entries stay in history with a timestamp and your name"></textarea>
           </div>
           <div class="button-row">
@@ -2666,6 +2661,10 @@
           finalRegistration = workflow.registration || finalRegistration;
           workflowMessage = workflow.message ? ` ${workflow.message}` : '';
         }
+
+        // Clear the notes textarea after successful save
+        const notesEl = document.getElementById('reviewerNotes');
+        if (notesEl) notesEl.value = '';
 
         renderDetail(finalRegistration);
         renderQueueNext(finalRegistration);
@@ -2887,15 +2886,6 @@
       }
     }
 
-    const stripeReturnReference = new URLSearchParams(window.location.search).get('stripe_return');
-    if (stripeReturnReference) {
-      setStatus(`Stripe onboarding returned for ${stripeReturnReference}. Paste your admin token, load registrations, then refresh Stripe status.`);
-    }
-    const subscriptionReturnReference = new URLSearchParams(window.location.search).get('subscription_return');
-    if (subscriptionReturnReference) {
-      setStatus(`Subscription checkout returned for ${subscriptionReturnReference}. Paste your admin token and load registrations. The Stripe webhook will mark it active after payment is confirmed.`);
-    }
-
     // ── TAB NAVIGATION ────────────────────────────────────────────────────
     let activeTab = 'overview';
 
@@ -3005,21 +2995,19 @@
     // ── EMAIL LOG ─────────────────────────────────────────────────────────
     function renderEmailLog(reg) {
       const emailFields = [
-        { key: 'adminNotificationEmailStatus',  label: 'AgaPay alert',        to: 'hello@agapay.app' },
-        { key: 'dashboardInviteEmailStatus',     label: 'Dashboard invite',    to: reg.priestEmail || reg.treasurerEmail || 'priest/treasurer' },
-        { key: 'stripeOnboardingEmailStatus',    label: 'Stripe invite',       to: reg.treasurerEmail || reg.priestEmail || 'treasurer' },
+        { key: 'adminNotificationEmailStatus',  label: 'AgaPay alert',     to: 'hello@agapay.app' },
+        { key: 'dashboardInviteEmailStatus',     label: 'Dashboard invite',  to: reg.priestEmail || reg.treasurerEmail || 'priest/treasurer' },
+        { key: 'stripeOnboardingEmailStatus',    label: 'Stripe invite',     to: reg.treasurerEmail || reg.priestEmail || 'treasurer' },
       ];
       const logEntries = (reg.emailLog || []);
       const combined = [];
 
-      // Static status fields
       for (const f of emailFields) {
         const status = reg[f.key];
         if (!status || status === 'not_configured' || status === 'not_sent') continue;
         combined.push({ type: f.label, status, to: f.to, time: reg.reviewedAt || reg.receivedAt || '', source: 'field' });
       }
 
-      // Dynamic log entries (append-only from API)
       for (const e of logEntries) {
         combined.push({ type: e.type || 'Email', status: e.status || 'sent', to: e.to || '', time: e.sentAt || '', detail: e.detail || '', source: 'log' });
       }
@@ -3062,15 +3050,13 @@
       `).join('');
     }
 
-    // Override saveReview to auto-switch to queue tab and append note
-    const _origSaveReview = saveReview;
-    async function saveReviewWithNote(reference, options = {}) {
-      // Intercept the reviewerNotes field — append to notesHistory server-side
-      // The existing saveReview already sends reviewerNotes; the API appends it
-      await _origSaveReview(reference, options);
-      // Clear the notes textarea after save
-      const notesEl = document.getElementById('reviewerNotes');
-      if (notesEl) notesEl.value = '';
+    const stripeReturnReference = new URLSearchParams(window.location.search).get('stripe_return');
+    if (stripeReturnReference) {
+      setStatus(`Stripe onboarding returned for ${stripeReturnReference}. Paste your admin token, load registrations, then refresh Stripe status.`);
+    }
+    const subscriptionReturnReference = new URLSearchParams(window.location.search).get('subscription_return');
+    if (subscriptionReturnReference) {
+      setStatus(`Subscription checkout returned for ${subscriptionReturnReference}. Paste your admin token and load registrations. The Stripe webhook will mark it active after payment is confirmed.`);
     }
 
   </script>
