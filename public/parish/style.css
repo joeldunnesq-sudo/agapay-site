@@ -392,3 +392,146 @@
       position: relative;
       z-index: 1;
     }
+
+    @media (max-width: 860px) {
+      body { overflow-x: hidden; }
+      .content { overflow: visible; min-height: auto; }
+      .sidebar {
+        position: static;
+        height: auto;
+        overflow: visible;
+      }
+      .sidebar-body {
+        overflow: visible;
+        display: block;
+      }
+      .sidebar-header,
+      .sidebar-auth,
+      .sidebar-profile,
+      .sidebar-metrics,
+      .sidebar-links {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      .sidebar-nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        padding: 0.75rem 1rem;
+      }
+      .sidebar-nav-item {
+        min-height: 44px;
+        border: 1px solid rgba(184,144,47,0.12);
+        border-radius: 10px;
+        background: rgba(246,241,232,0.035);
+        padding: 0.65rem 0.7rem;
+      }
+      .sidebar-nav-item:hover,
+      .sidebar-nav-item.active {
+        border-left-color: rgba(184,144,47,0.12);
+        border-color: rgba(184,144,47,0.32);
+        padding-left: 0.7rem;
+      }
+      .topbar {
+        height: auto;
+        min-height: 58px;
+        padding: 0.85rem 1rem;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+      .topbar-actions,
+      .section-header,
+      .insights-header {
+        width: 100%;
+        align-items: stretch;
+        flex-direction: column;
+      }
+      .detail-wrap { padding: 0.85rem 0.85rem 1.5rem; overflow: visible; }
+      .section-card,
+      .insights-card,
+      .setup-wizard-card,
+      .qr-feature-card {
+        border-radius: 12px;
+      }
+      .section-body,
+      .insights-body,
+      .setup-wizard-body {
+        padding: 0.95rem;
+      }
+      .setup-wizard-body {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      .setup-action-panel { width: 100%; }
+      .qr-feature-layout {
+        gap: 0.85rem;
+        padding: 0.95rem;
+      }
+      .qr-feature-code,
+      .qr-code {
+        width: min(160px, 100%);
+        height: auto;
+        aspect-ratio: 1;
+        justify-self: start;
+      }
+      .qr-feature-actions,
+      .topbar .btn,
+      .section-header .btn,
+      .insights-header .btn {
+        width: 100%;
+      }
+      .btn,
+      .sidebar-load,
+      .check-card {
+        min-height: 44px;
+      }
+      .btn-row,
+      .actions,
+      .qr-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .btn-row .btn,
+      .actions .btn,
+      .qr-actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      .history-table-wrap {
+        margin: 0 -0.95rem;
+        padding: 0 0.95rem 0.25rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .history-table { min-width: 560px; }
+      .chart-bars {
+        min-height: 150px;
+        gap: 0.25rem;
+      }
+      .chart-label { font-size: 9px; }
+    }
+
+    @media (max-width: 520px) {
+      .sidebar-nav,
+      .sidebar-metrics,
+      .form-grid,
+      .toggle-row,
+      .insight-stats,
+      .feast-card {
+        grid-template-columns: 1fr;
+      }
+      .sidebar-brand { align-items: flex-start; }
+      .sidebar-name { font-size: 23px; }
+      .section-title { font-size: 19px; }
+      .insights-total { font-size: clamp(2rem, 15vw, 3rem); }
+      .history-summary { grid-template-columns: 1fr; }
+      .qr-copy-row { grid-template-columns: 1fr; }
+      .toast-container {
+        left: 0.85rem;
+        right: 0.85rem;
+        bottom: 0.85rem;
+      }
+      .toast { max-width: none; width: 100%; }
+    }
