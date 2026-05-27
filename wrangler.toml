@@ -7,6 +7,9 @@ AGAPAY_FROM_EMAIL = "AgaPay <onboarding@agapay.app>"
 AGAPAY_REPLY_TO_EMAIL = "support@agapay.app"
 AGAPAY_REGISTRATION_NOTIFY_EMAIL = "hello@agapay.app"
 
+[triggers]
+crons = ["0 14 * * 6"]
+
 [assets]
 directory = "./public"
 binding = "ASSETS"
