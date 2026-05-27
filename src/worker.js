@@ -1913,6 +1913,14 @@ function cleanAssetRequest(request) {
     url.pathname = "/parish/dashboard.html";
     return new Request(url, request);
   }
+  if (url.pathname === "/donor" || url.pathname === "/donor/") {
+    url.pathname = "/donor/index.html";
+    return new Request(url, request);
+  }
+  if (url.pathname.startsWith("/donor/") && !url.pathname.includes(".")) {
+    url.pathname = `${url.pathname}.html`;
+    return new Request(url, request);
+  }
   if (url.pathname === "/give/form") {
     url.pathname = "/give/form.html";
     return new Request(url, request);
