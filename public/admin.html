@@ -2066,11 +2066,42 @@
 
     function collapseRegistrationDetail() {
       selectedReference = '';
-      document.getElementById('selectedReference')?.textContent = 'No selection';
+      
+      const refEl = document.getElementById('selectedReference');
+      if (refEl) {
+        refEl.textContent = 'No selection';
+      }
+      
       document.getElementById('backToQueueBtn')?.classList.add('hidden');
       document.getElementById('registrationDetail').innerHTML = '';
       renderFilteredList();
       document.getElementById('registrationQueue')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function loadDetail(reference) {
+      selectedReference = reference;
+      
+      const refEl = document.getElementById('selectedReference');
+      if (refEl) {
+        refEl.textContent = reference;
+      }
+      
+      document.getElementById('backToQueueBtn')?.classList.remove('hidden');
+      if (activeTab !== 'queue') switchTab('queue');
+      setStatus('Loading details...');
+
+      try {
+        const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference), { headers: authHeaders() });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to load registration');
+
+        renderDetail(result.registration);
+        renderQueueNext(result.registration);
+        renderFilteredList();
+        document.getElementById('registrationDetail')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (err) {
+        setStatus(err.message, 'error');
+      }
     }
 
     async function loadRegistrations() {
@@ -2306,7 +2337,12 @@
 
     async function loadDetail(reference) {
       selectedReference = reference;
-      document.getElementById('selectedReference')?.textContent = reference;
+      
+      const refEl = document.getElementById('selectedReference');
+      if (refEl) {
+        refEl.textContent = reference;
+      }
+      
       document.getElementById('backToQueueBtn')?.classList.remove('hidden');
       if (activeTab !== 'queue') switchTab('queue');
       setStatus('Loading details...');
