@@ -493,12 +493,8 @@
       border-right: 1px solid rgba(184,144,47,0.22);
     }
     .sidebar-body {
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(184,144,47,0.3) transparent;
+      flex: 1; overflow-y: auto; display: flex; flex-direction: column;
+      scrollbar-width: thin; scrollbar-color: rgba(184,144,47,0.3) transparent;
     }
     .sidebar-body::-webkit-scrollbar { width: 4px; }
     .sidebar-body::-webkit-scrollbar-track { background: transparent; }
@@ -851,9 +847,13 @@
       padding: 0.8rem;
       background: var(--paper);
     }
+    .queue-check {
+      display: flex; align-items: flex-start; padding-top: 2px; flex-shrink: 0;
+    }
+    .queue-check input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--forest); cursor: pointer; }
     .queue-row {
       display: grid;
-      grid-template-columns: minmax(240px, 1.4fr) minmax(260px, 1fr) minmax(220px, 0.9fr);
+      grid-template-columns: 28px minmax(240px, 1.4fr) minmax(260px, 1fr) minmax(220px, 0.9fr);
       gap: 0.85rem;
       align-items: stretch;
       background: white;
@@ -1363,15 +1363,12 @@
     .step-chip.current strong { color: var(--gold); }
     .step-chip span { color: rgba(246,241,232,0.58); }
 
+    /* ── NAV TABS ── */
     .sidebar-nav { padding: 0.5rem 0; border-bottom: 1px solid rgba(184,144,47,0.11); }
     .sidebar-nav-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      display: flex; align-items: center; gap: 10px;
       padding: 0.65rem 1.25rem;
-      color: rgba(246,241,232,0.62);
-      font-size: 13px;
-      cursor: pointer;
+      color: rgba(246,241,232,0.62); font-size: 13px; cursor: pointer;
       border-left: 3px solid transparent;
       transition: background 0.15s, color 0.15s;
     }
@@ -1379,9 +1376,68 @@
     .sidebar-nav-item.active { background: rgba(184,144,47,0.1); color: var(--cream); border-left-color: var(--gold); }
     .sidebar-nav-item svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
     .tab-panel { display: none; }
-    .tab-panel.active { display: block; animation: fadeIn 0.2s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .tab-panel.active { display: block; animation: tabFadeIn 0.18s ease; }
+    @keyframes tabFadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     .topbar-title { font-family: var(--serif); color: var(--deep); font-size: 19px; font-weight: 600; }
+
+    /* ── BULK ACTIONS ── */
+    .bulk-bar {
+      display: none; align-items: center; gap: 0.75rem;
+      padding: 0.65rem 1rem;
+      background: rgba(184,144,47,0.08);
+      border-bottom: 1px solid rgba(184,144,47,0.2);
+      font-size: 13px; color: var(--deep);
+    }
+    .bulk-bar.visible { display: flex; }
+    .bulk-bar strong { font-weight: 700; }
+    .bulk-bar .btn-row { margin: 0; gap: 0.45rem; }
+    .queue-table th.check-col, .queue-table td.check-col { width: 36px; padding-left: 0.75rem; }
+    .queue-table input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--forest); cursor: pointer; }
+
+    /* ── EMAIL LOG ── */
+    .email-log { display: grid; gap: 0.45rem; margin-top: 0.75rem; }
+    .email-log-entry {
+      display: grid; grid-template-columns: auto 1fr auto;
+      gap: 0.55rem; align-items: start;
+      border: 1px solid rgba(111,106,96,0.16);
+      border-radius: 9px; background: var(--paper); padding: 0.65rem 0.75rem;
+      font-size: 12px;
+    }
+    .email-log-dot {
+      width: 8px; height: 8px; border-radius: 999px; margin-top: 3px; flex-shrink: 0;
+      background: var(--muted);
+    }
+    .email-log-dot.sent    { background: var(--forest); }
+    .email-log-dot.failed  { background: #8a2929; }
+    .email-log-dot.skipped { background: var(--gold); }
+    .email-log-type { font-weight: 700; color: var(--deep); }
+    .email-log-detail { color: var(--stone); line-height: 1.45; margin-top: 1px; }
+    .email-log-time { color: var(--muted); white-space: nowrap; font-size: 11px; }
+    .email-log-empty { color: var(--stone); font-size: 12px; line-height: 1.55; padding: 0.25rem; }
+
+    /* ── NOTES HISTORY ── */
+    .notes-history { display: grid; gap: 0.45rem; margin-bottom: 0.75rem; }
+    .notes-entry {
+      border: 1px solid var(--line); border-radius: 9px;
+      background: var(--paper); padding: 0.65rem 0.75rem;
+    }
+    .notes-entry-meta { color: var(--muted); font-size: 11px; margin-bottom: 0.3rem; }
+    .notes-entry-text { color: var(--ink); font-size: 13px; line-height: 1.55; }
+    .notes-empty { color: var(--stone); font-size: 12px; line-height: 1.55; padding: 0.2rem; }
+
+    /* ── INLINE FILTER BAR (queue tab) ── */
+    .queue-filter-bar {
+      background: white; border: 1px solid var(--line);
+      border-radius: 14px; margin-bottom: 1rem;
+      padding: 0.85rem 1rem;
+      box-shadow: 0 2px 10px rgba(15,45,31,0.04);
+      display: grid;
+      grid-template-columns: minmax(0,1.4fr) minmax(130px,0.6fr) minmax(130px,0.6fr);
+      gap: 0.65rem; align-items: end;
+    }
+    .queue-filter-bar label { color: var(--muted); }
+    .queue-filter-bar input,
+    .queue-filter-bar select { background: var(--paper); }
     @media (max-width: 900px) {
       .app { grid-template-columns: 1fr; }
       .sidebar { position: static; height: auto; }
@@ -1414,6 +1470,21 @@
           <button class="sidebar-load" id="loadBtn" onclick="loadRegistrations()">Load registrations</button>
         </div>
 
+        <nav class="sidebar-nav">
+          <div class="sidebar-nav-item active" onclick="switchTab('overview')" id="nav-overview">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Overview
+          </div>
+          <div class="sidebar-nav-item" onclick="switchTab('queue')" id="nav-queue">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Registration Queue
+          </div>
+          <div class="sidebar-nav-item" onclick="switchTab('password')" id="nav-password">
+            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Change Password
+          </div>
+        </nav>
+
         <div class="sidebar-metrics">
           <div class="sidebar-metric">
             <div class="sidebar-metric-val" id="metricTotal">0</div>
@@ -1432,21 +1503,6 @@
             <div class="sidebar-metric-label">Stripe live</div>
           </div>
         </div>
-
-        <nav class="sidebar-nav">
-          <div class="sidebar-nav-item active" onclick="switchTab('overview')" id="nav-overview">
-            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            Overview
-          </div>
-          <div class="sidebar-nav-item" onclick="switchTab('queue')" id="nav-queue">
-            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            Registration Queue
-          </div>
-          <div class="sidebar-nav-item" onclick="switchTab('password')" id="nav-password">
-            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Change Password
-          </div>
-        </nav>
 
         <div class="sidebar-filters">
           <div>
@@ -1490,6 +1546,8 @@
             <a class="quick-link" href="https://agapay.app/" target="_blank" rel="noopener"><span>Public AgaPay site</span><span>↗</span></a>
           </div>
         </div>
+
+
       </div>
     </aside>
 
@@ -1497,12 +1555,12 @@
       <div class="topbar">
         <div class="topbar-title" id="topbarTitle">Overview</div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <button class="secondary btn-sm hidden" id="backToQueueBtn" onclick="collapseRegistrationDetail()">← Back to queue</button>
+          <button class="secondary btn-sm hidden" id="backToQueueBtn" onclick="collapseRegistrationDetail()">← Queue</button>
           <button class="secondary btn-sm" onclick="copyRegistrationSummary()">Copy summary</button>
         </div>
       </div>
       <div class="detail-wrap" id="detailPane">
-        <!-- TAB: OVERVIEW -->
+        <!-- ── TAB: OVERVIEW ─────────────────────────────────────── -->
         <div class="tab-panel active" id="tab-overview">
           <section class="community-snapshot" id="communitySnapshot">
           <div class="community-snapshot-card">
@@ -1557,35 +1615,44 @@
         </section>
         </div>
 
-        <!-- TAB: REGISTRATION QUEUE -->
+        <!-- ── TAB: REGISTRATION QUEUE ──────────────────────────── -->
         <div class="tab-panel" id="tab-queue">
-          <div class="sidebar-filters" style="background:white;border:1px solid var(--line);border-radius:14px;margin-bottom:1rem;padding:1rem;box-shadow:0 2px 10px rgba(15,45,31,0.04);">
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;">
-              <div>
-                <label for="searchInput2">Search</label>
-                <input id="searchInput2" type="search" placeholder="Parish, city, email..." oninput="document.getElementById('searchInput').value=this.value;renderFilteredList()" style="background:var(--paper);color:var(--ink);border-color:rgba(111,106,96,0.25);" />
-              </div>
-              <div>
-                <label for="statusFilter2">Status</label>
-                <select id="statusFilter2" onchange="document.getElementById('statusFilter').value=this.value;renderFilteredList()" style="background:var(--paper);color:var(--ink);border-color:rgba(111,106,96,0.25);">
-                  <option value="all">All statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="needs_more_info">Needs more info</option>
-                  <option value="verified">Verified</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
-              <div>
-                <label for="sortOrder2">Sort</label>
-                <select id="sortOrder2" onchange="document.getElementById('sortOrder').value=this.value;renderFilteredList()" style="background:var(--paper);color:var(--ink);border-color:rgba(111,106,96,0.25);">
-                  <option value="newest">Newest first</option>
-                  <option value="oldest">Oldest first</option>
-                  <option value="name">Parish name</option>
-                </select>
-              </div>
+          <div class="queue-filter-bar">
+            <div>
+              <label for="searchInputMain">Search</label>
+              <input id="searchInputMain" type="search" placeholder="Parish, city, email..." oninput="syncFilter('search',this.value);renderFilteredList()" />
+            </div>
+            <div>
+              <label for="statusFilterMain">Status</label>
+              <select id="statusFilterMain" onchange="syncFilter('status',this.value);renderFilteredList()">
+                <option value="all">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="needs_more_info">Needs more info</option>
+                <option value="verified">Verified</option>
+                <option value="rejected">Rejected</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <label for="sortOrderMain">Sort</label>
+              <select id="sortOrderMain" onchange="syncFilter('sort',this.value);renderFilteredList()">
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="name">Parish name</option>
+              </select>
             </div>
           </div>
+
+          <div class="bulk-bar" id="bulkBar">
+            <strong id="bulkCount">0 selected</strong>
+            <div class="btn-row">
+              <button class="secondary btn-sm" onclick="bulkAction('invite')">Send dashboard invites</button>
+              <button class="secondary btn-sm" onclick="bulkAction('verify')">Mark as verified</button>
+              <button class="secondary btn-sm" onclick="bulkAction('stripe')">Create Stripe links</button>
+            </div>
+            <button class="secondary btn-sm" style="margin-left:auto;" onclick="clearSelection()">Clear</button>
+          </div>
+
           <section class="queue-card" id="registrationQueue">
           <div class="queue-header">
             <div>
@@ -1612,17 +1679,17 @@
         </div>
         </div>
 
-        <!-- TAB: CHANGE PASSWORD -->
+        <!-- ── TAB: CHANGE PASSWORD ──────────────────────────────── -->
         <div class="tab-panel" id="tab-password">
           <div class="section-card">
             <div class="section-header">
               <div class="section-title">
-                <div class="section-title-icon"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--gold);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+                <div class="section-title-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
                 Change Admin Password
               </div>
             </div>
             <div class="section-body">
-              <p style="margin:0 0 1rem;color:var(--stone);font-size:13px;line-height:1.65;">Enter your current password above to authenticate, then set a new password below. The new password must be at least 12 characters.</p>
+              <p style="margin:0 0 1rem;color:var(--stone);font-size:13px;line-height:1.65;">Enter your current password in the sidebar to authenticate, then set a new password below. Must be at least 12 characters.</p>
               <div class="form-grid">
                 <div>
                   <label for="newAdminPassword">New password</label>
@@ -1639,6 +1706,7 @@
             </div>
           </div>
         </div>
+
       </div>
     </div>
   </div>
@@ -1649,38 +1717,6 @@
   <script>
     let selectedReference = '';
     let registrationsCache = [];
-    let activeTab = 'overview';
-
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.sidebar-nav-item').forEach(n => n.classList.remove('active'));
-      const panel = document.getElementById('tab-' + tab);
-      const nav   = document.getElementById('nav-' + tab);
-      if (panel) panel.classList.add('active');
-      if (nav)   nav.classList.add('active');
-      activeTab = tab;
-      const titles = { overview: 'Overview', queue: 'Registration Queue', password: 'Change Password' };
-      const titleEl = document.getElementById('topbarTitle');
-      if (titleEl) titleEl.textContent = titles[tab] || 'Admin Console';
-      // Show/hide sidebar filters based on tab
-      const sidebarFilters = document.querySelector('.sidebar-filters');
-      if (sidebarFilters) sidebarFilters.style.display = tab === 'queue' ? '' : 'none';
-      const nextActionSection = document.querySelector('.sidebar-section');
-      // Sync inline filters when switching to queue
-      if (tab === 'queue') {
-        const s2 = document.getElementById('searchInput2');
-        const f2 = document.getElementById('statusFilter2');
-        const o2 = document.getElementById('sortOrder2');
-        if (s2) s2.value = document.getElementById('searchInput').value;
-        if (f2) f2.value = document.getElementById('statusFilter').value;
-        if (o2) o2.value = document.getElementById('sortOrder').value;
-      }
-    }
-
-    // When a registration is selected, auto-switch to queue tab
-    function switchToQueueTab() {
-      if (activeTab !== 'queue') switchTab('queue');
-    }
 
     function token() {
       return document.getElementById('adminToken').value.trim();
@@ -2037,7 +2073,7 @@
       document.getElementById('backToQueueBtn')?.classList.add('hidden');
       document.getElementById('registrationDetail').innerHTML = '';
       renderFilteredList();
-      document.getElementById('tab-queue')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('registrationQueue')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     async function loadRegistrations() {
@@ -2223,8 +2259,11 @@
             const action = nextAction(item);
             const location = [item.city, item.state].filter(Boolean).join(', ') || 'Location pending';
             return `
-              <div class="queue-row ${item.reference === selectedReference ? 'active' : ''}" onclick="loadDetail('${jsAttr(item.reference)}')">
-                <div class="queue-primary">
+              <div class="queue-row ${item.reference === selectedReference ? 'active' : ''}" data-ref="${escapeAttr(item.reference)}">
+                <div class="queue-check" onclick="event.stopPropagation()">
+                  <input type="checkbox" class="row-chk" value="${escapeAttr(item.reference)}" onchange="updateBulkBar()" />
+                </div>
+                <div class="queue-primary" onclick="loadDetail('${jsAttr(item.reference)}')" style="cursor:pointer">
                   <div class="queue-name">${escapeHtml(item.parishName || item.reference)}</div>
                   <div class="queue-meta">${escapeHtml(item.communityType || 'Community')} / ${escapeHtml(item.jurisdiction || 'Jurisdiction')} / ${escapeHtml(location)}</div>
                   <div class="queue-contact">
@@ -2232,9 +2271,9 @@
                     <span><strong>Treasurer:</strong> ${escapeHtml(item.treasurerEmail || 'Not provided')}</span>
                   </div>
                   <div class="queue-reference">${escapeHtml(item.reference || '')}</div>
-                </div>
+                </div><!-- /queue-primary -->
 
-                <div class="queue-status-panel">
+                <div class="queue-status-panel" onclick="loadDetail('${jsAttr(item.reference)}')" style="cursor:pointer">
                   <div class="queue-status-grid">
                     <div class="queue-status-item">
                       <span class="queue-status-label">Canonical</span>
@@ -2251,7 +2290,7 @@
                   </div>
                 </div>
 
-                <div class="queue-action-panel">
+                <div class="queue-action-panel" onclick="loadDetail('${jsAttr(item.reference)}')" style="cursor:pointer">
                   <div class="queue-received">Received ${escapeHtml(shortDate(item.receivedAt))}</div>
                   <div class="queue-next"><strong>${escapeHtml(action.title)}</strong><br>${escapeHtml(action.body)}</div>
                 </div>
@@ -2273,8 +2312,7 @@
 
     async function loadDetail(reference) {
       selectedReference = reference;
-      switchToQueueTab();
-      document.getElementById('selectedReference').textContent = reference;
+      if (activeTab !== 'queue') switchTab('queue');
       document.getElementById('backToQueueBtn')?.classList.remove('hidden');
       setStatus('Loading details...');
 
@@ -2528,9 +2566,17 @@
           </div>
 
           <div class="admin-section">
-            <div class="admin-section-title">Internal Notes</div>
-            <label for="reviewerNotes">Reviewer notes</label>
-            <textarea id="reviewerNotes" placeholder="Internal notes for this registration">${escapeHtml(reg.reviewerNotes)}</textarea>
+            <div class="admin-section-title">Email Log</div>
+            <div class="email-log" id="emailLogEntries">
+              ${renderEmailLog(reg)}
+            </div>
+          </div>
+
+          <div class="admin-section">
+            <div class="admin-section-title">Notes History</div>
+            <div class="notes-history">${renderNotesHistory(reg)}</div>
+            <label for="reviewerNotes">Add a note</label>
+            <textarea id="reviewerNotes" placeholder="Write a note — saved entries stay in history with a timestamp and your name"></textarea>
           </div>
           <div class="button-row">
             <button class="gold" onclick="saveReview('${reference}', this)">Save review</button>
@@ -2849,6 +2895,184 @@
     if (subscriptionReturnReference) {
       setStatus(`Subscription checkout returned for ${subscriptionReturnReference}. Paste your admin token and load registrations. The Stripe webhook will mark it active after payment is confirmed.`);
     }
+
+    // ── TAB NAVIGATION ────────────────────────────────────────────────────
+    let activeTab = 'overview';
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.sidebar-nav-item').forEach(n => n.classList.remove('active'));
+      const panel = document.getElementById('tab-' + tab);
+      const nav   = document.getElementById('nav-' + tab);
+      if (panel) panel.classList.add('active');
+      if (nav)   nav.classList.add('active');
+      activeTab = tab;
+      const titles = { overview: 'Overview', queue: 'Registration Queue', password: 'Change Password' };
+      const titleEl = document.getElementById('topbarTitle');
+      if (titleEl) titleEl.textContent = titles[tab] || 'Admin Console';
+      // Show/hide sidebar filters (only relevant on queue tab)
+      const sf = document.querySelector('.sidebar-filters');
+      if (sf) sf.style.display = tab === 'queue' ? '' : 'none';
+      // Sync inline filters when entering queue tab
+      if (tab === 'queue') syncInlineFilters();
+    }
+
+    function syncInlineFilters() {
+      const sm = document.getElementById('searchInputMain');
+      const fm = document.getElementById('statusFilterMain');
+      const om = document.getElementById('sortOrderMain');
+      if (sm) sm.value = document.getElementById('searchInput').value;
+      if (fm) fm.value = document.getElementById('statusFilter').value;
+      if (om) om.value = document.getElementById('sortOrder').value;
+    }
+
+    function syncFilter(type, value) {
+      if (type === 'search') {
+        document.getElementById('searchInput').value = value;
+      } else if (type === 'status') {
+        document.getElementById('statusFilter').value = value;
+      } else if (type === 'sort') {
+        document.getElementById('sortOrder').value = value;
+      }
+    }
+
+    // ── BULK ACTIONS ──────────────────────────────────────────────────────
+    let selectedRefs = new Set();
+
+    function updateBulkBar() {
+      selectedRefs = new Set(
+        Array.from(document.querySelectorAll('.row-chk:checked')).map(c => c.value)
+      );
+      const bar = document.getElementById('bulkBar');
+      const cnt = document.getElementById('bulkCount');
+      if (!bar) return;
+      if (selectedRefs.size > 0) {
+        bar.classList.add('visible');
+        cnt.textContent = selectedRefs.size + ' selected';
+      } else {
+        bar.classList.remove('visible');
+      }
+    }
+
+    function toggleSelectAll(chk) {
+      document.querySelectorAll('.row-chk').forEach(c => { c.checked = chk.checked; });
+      updateBulkBar();
+    }
+
+    function clearSelection() {
+      document.querySelectorAll('.row-chk').forEach(c => { c.checked = false; });
+      const all = document.getElementById('selectAllChk');
+      if (all) all.checked = false;
+      updateBulkBar();
+    }
+
+    async function bulkAction(action) {
+      if (!selectedRefs.size) return;
+      const refs = Array.from(selectedRefs);
+      const labels = { invite: 'dashboard invites', verify: 'verified status', stripe: 'Stripe onboarding links' };
+      if (!confirm(`Send ${labels[action]} to ${refs.length} parish(es)?`)) return;
+
+      setStatus(`Running bulk action on ${refs.length} parishes...`);
+      let done = 0, failed = 0;
+
+      for (const ref of refs) {
+        try {
+          if (action === 'invite') {
+            const r = await fetch('/api/admin/registrations/' + encodeURIComponent(ref) + '/dashboard-invite', { method: 'POST', headers: authHeaders() });
+            if (!r.ok) throw new Error();
+          } else if (action === 'verify') {
+            const r = await fetch('/api/admin/registrations/' + encodeURIComponent(ref), {
+              method: 'PATCH',
+              headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'verified' })
+            });
+            if (!r.ok) throw new Error();
+          } else if (action === 'stripe') {
+            const r = await fetch('/api/admin/registrations/' + encodeURIComponent(ref) + '/stripe-onboarding', { method: 'POST', headers: authHeaders() });
+            if (!r.ok) throw new Error();
+          }
+          done++;
+        } catch {
+          failed++;
+        }
+      }
+
+      clearSelection();
+      await loadRegistrations();
+      setStatus(`Bulk action complete: ${done} succeeded${failed ? ', ' + failed + ' failed' : ''}.`, failed ? 'error' : 'success');
+    }
+
+    // ── EMAIL LOG ─────────────────────────────────────────────────────────
+    function renderEmailLog(reg) {
+      const emailFields = [
+        { key: 'adminNotificationEmailStatus',  label: 'AgaPay alert',        to: 'hello@agapay.app' },
+        { key: 'dashboardInviteEmailStatus',     label: 'Dashboard invite',    to: reg.priestEmail || reg.treasurerEmail || 'priest/treasurer' },
+        { key: 'stripeOnboardingEmailStatus',    label: 'Stripe invite',       to: reg.treasurerEmail || reg.priestEmail || 'treasurer' },
+      ];
+      const logEntries = (reg.emailLog || []);
+      const combined = [];
+
+      // Static status fields
+      for (const f of emailFields) {
+        const status = reg[f.key];
+        if (!status || status === 'not_configured' || status === 'not_sent') continue;
+        combined.push({ type: f.label, status, to: f.to, time: reg.reviewedAt || reg.receivedAt || '', source: 'field' });
+      }
+
+      // Dynamic log entries (append-only from API)
+      for (const e of logEntries) {
+        combined.push({ type: e.type || 'Email', status: e.status || 'sent', to: e.to || '', time: e.sentAt || '', detail: e.detail || '', source: 'log' });
+      }
+
+      if (!combined.length) {
+        return '<div class="email-log-empty">No emails recorded for this registration yet.</div>';
+      }
+
+      return combined.map(e => {
+        const dotClass = e.status === 'sent' ? 'sent' : e.status === 'failed' ? 'failed' : 'skipped';
+        const detail = e.detail ? ` — ${escapeHtml(e.detail)}` : '';
+        const to = e.to ? ` → ${escapeHtml(e.to)}` : '';
+        return `<div class="email-log-entry">
+          <div class="email-log-dot ${dotClass}"></div>
+          <div>
+            <div class="email-log-type">${escapeHtml(e.type)}</div>
+            <div class="email-log-detail">${escapeHtml(e.status)}${to}${detail}</div>
+          </div>
+          <div class="email-log-time">${e.time ? escapeHtml(shortDate(e.time)) : ''}</div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── NOTES HISTORY ─────────────────────────────────────────────────────
+    function renderNotesHistory(reg) {
+      const history = reg.notesHistory || [];
+      if (!history.length) {
+        const legacy = (reg.reviewerNotes || '').trim();
+        if (!legacy) return '<div class="notes-empty">No notes yet. Use the field below to add the first note.</div>';
+        return `<div class="notes-entry">
+          <div class="notes-entry-meta">Legacy note (no timestamp)</div>
+          <div class="notes-entry-text">${escapeHtml(legacy)}</div>
+        </div>`;
+      }
+      return history.slice().reverse().map(n => `
+        <div class="notes-entry">
+          <div class="notes-entry-meta">${escapeHtml(n.author || 'Admin')} · ${n.createdAt ? escapeHtml(shortDate(n.createdAt)) : 'Unknown date'}</div>
+          <div class="notes-entry-text">${escapeHtml(n.text || '')}</div>
+        </div>
+      `).join('');
+    }
+
+    // Override saveReview to auto-switch to queue tab and append note
+    const _origSaveReview = saveReview;
+    async function saveReviewWithNote(reference, options = {}) {
+      // Intercept the reviewerNotes field — append to notesHistory server-side
+      // The existing saveReview already sends reviewerNotes; the API appends it
+      await _origSaveReview(reference, options);
+      // Clear the notes textarea after save
+      const notesEl = document.getElementById('reviewerNotes');
+      if (notesEl) notesEl.value = '';
+    }
+
   </script>
 </body>
 </html>
