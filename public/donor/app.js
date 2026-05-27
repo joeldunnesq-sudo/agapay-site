@@ -40,7 +40,12 @@ async function donorApi(path, options = {}) {
     headers: options.headers || donorAuthHeaders()
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || data.detail || "AgaPay request failed");
+  if (!res.ok) {
+    const err = new Error(data.error || data.detail || "AgaPay request failed");
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
   return data;
 }
 
@@ -55,6 +60,10 @@ function setDonorStatus(message, tone = "info") {
 function setText(id, value) {
   const el = document.getElementById(id);
   if (el) el.textContent = value;
+}
+
+function isDonorUnauthorized(err) {
+  return err?.status === 401 || String(err?.message || "").toLowerCase() === "unauthorized";
 }
 
 function money(cents) {
@@ -158,6 +167,34 @@ function saveDonorSession(data) {
 function clearDonorSession() {
   localStorage.removeItem(donorStore.token);
   localStorage.removeItem(donorStore.donor);
+  localStorage.removeItem(donorStore.email);
+  updateDonorAuthState();
+}
+
+function showGuestDonorDashboard() {
+  setDonorStatus("");
+  setText("profileName", "Donor Account");
+  setText("profileMeta", "Sign in to load live giving history");
+  setText("greeting", "Welcome, Faithful Member");
+  setText("desktopGreeting", "Welcome, Faithful Member");
+  setText("donorParishName", "");
+  setText("desktopParishName", "Sign in to load your church, giving history, and saved offering preferences.");
+  setText("metricMonth", "$0");
+  setText("metricYtd", "$0");
+  setText("metricOfferings", "0");
+  setText("metricCommemorations", "0");
+  setText("metricRecurring", "0");
+  setText("desktopMetricMonth", "$0");
+  setText("desktopMetricYtd", "$0");
+  setText("desktopMetricOfferings", "0");
+  setText("desktopMetricCommemorations", "0");
+  const recent = document.getElementById("recentOfferings");
+  if (recent) recent.innerHTML = "";
+  const desktopRecent = document.getElementById("desktopRecentOfferings");
+  if (desktopRecent) desktopRecent.innerHTML = "";
+  renderActiveCampaigns(null);
+  renderNextFeast(null);
+  updateQuickGiveLinks(null);
   updateDonorAuthState();
 }
 
@@ -248,6 +285,38 @@ const donorGiftTypeCopy = {
     context: "Your gift will be prepared as a feast day offering for the selected parish."
   }
 };
+
+function donorNavIcon(kind) {
+  const icons = {
+    home: '<svg viewBox="0 0 38 38" aria-hidden="true"><line x1="19" y1="2" x2="19" y2="5"/><line x1="17" y1="3.5" x2="21" y2="3.5"/><path d="M19 5 C15 7 13 11 14 14 C15 16 17 17 19 17 C21 17 23 16 24 14 C25 11 23 7 19 5Z"/><line x1="10" y1="6" x2="10" y2="8"/><path d="M10 8 C8 9.5 7 12 7.5 14 C8 15.5 9 16 10 16 C11 16 12 15.5 12.5 14 C13 12 12 9.5 10 8Z"/><line x1="28" y1="6" x2="28" y2="8"/><path d="M28 8 C26 9.5 25 12 25.5 14 C26 15.5 27 16 28 16 C29 16 30 15.5 30.5 14 C31 12 30 9.5 28 8Z"/><rect x="4" y="17" width="30" height="14" rx="1"/><path d="M16 31 L16 25 Q19 22 22 25 L22 31"/></svg>',
+    give: '<svg viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="7" width="22" height="16" rx="3"/><path d="M3 11h22"/><circle class="icon-dot" cx="8" cy="17" r="1.5"/><path d="M12 17h8"/></svg>',
+    calendar: '<svg viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="5" width="22" height="20" rx="3"/><path d="M3 11h22"/><path d="M9 3v4M19 3v4"/><path d="M8 16h4M8 20h8"/></svg>',
+    history: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M4 22h20"/><path d="M6 22V14l3-2v10"/><path d="M12 22V10l3-2v14"/><path d="M18 22V6l3-2v18"/></svg>',
+    commemorations: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/><path d="M4 16c0 3 2 5 10 5s10-2 10-5"/><path d="M10 13c1-2 2-3 4-3s3 1 4 3"/><line x1="14" y1="7" x2="14" y2="10"/><line x1="12" y1="8" x2="16" y2="8"/></svg>',
+    profile: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 24.5C14 24.5 5 18 5 11.5C5 8.5 7.5 6 10.5 6C12.5 6 13.5 7 14 8C14.5 7 15.5 6 17.5 6C20.5 6 23 8.5 23 11.5C23 18 14 24.5 14 24.5Z"/></svg>'
+  };
+  return icons[kind] || icons.home;
+}
+
+function donorNavKind(href) {
+  const path = String(href || "");
+  if (path.includes("/settings")) return "profile";
+  if (path.includes("/offerings")) return "history";
+  if (path.includes("/calendar")) return "calendar";
+  if (path.includes("/commemorations")) return "commemorations";
+  if (path.includes("/give")) return "give";
+  return "home";
+}
+
+function applyDonorNavIcons() {
+  document.querySelectorAll(".nav a, .mobile-tabbar a").forEach((link) => {
+    const existing = link.querySelector("svg");
+    if (!existing) return;
+    const wrapper = document.createElement("span");
+    wrapper.innerHTML = donorNavIcon(donorNavKind(link.getAttribute("href")));
+    existing.replaceWith(wrapper.firstElementChild);
+  });
+}
 
 function communityIconSvg(type) {
   const normalized = String(type || "parish").toLowerCase();
@@ -516,10 +585,7 @@ async function verifyDonorEmail() {
 async function loadDonorDashboardPage() {
   const session = donorSession();
   if (!session.email || !session.token) {
-    setDonorStatus("");
-    renderActiveCampaigns(null);
-    renderNextFeast(null);
-    updateQuickGiveLinks(null);
+    showGuestDonorDashboard();
     return;
   }
   try {
@@ -546,6 +612,11 @@ async function loadDonorDashboardPage() {
     const desktopRecent = document.getElementById("desktopRecentOfferings");
     if (desktopRecent) desktopRecent.innerHTML = offeringRows(data.recentOfferings || []);
   } catch (err) {
+    if (isDonorUnauthorized(err)) {
+      clearDonorSession();
+      showGuestDonorDashboard();
+      return;
+    }
     setDonorStatus(err.message, "error");
   }
 }
@@ -755,6 +826,7 @@ async function startDonorCheckout(event) {
 
 document.addEventListener("DOMContentLoaded", () => {
   const saved = donorProfile();
+  applyDonorNavIcons();
   document.body.removeAttribute("hx-boost");
   document.querySelectorAll(".nav").forEach((nav) => {
     nav.setAttribute("hx-boost", "false");

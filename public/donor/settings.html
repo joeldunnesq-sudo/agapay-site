@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="/donor/style.css" />
   <script src="/donor/app.js" defer></script>
 </head>
-<body>
+<body class="donor-mobile-page donor-settings-page">
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-scroll">
@@ -35,7 +35,7 @@
       </div>
       <div class="sidebar-footer"><a class="sidebar-link" href="/" hx-boost="false"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> AgaPay home</a></div>
     </aside>
-    <main class="content">
+    <main class="content donor-mobile-content">
       <div class="topbar"><div class="topbar-title">Settings</div><div class="topbar-actions"><a class="btn btn-ghost btn-sm" href="/donor">Dashboard</a></div></div>
       <div class="page">
         <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
@@ -76,6 +76,13 @@
           </div>
         </section>
       </div>
+      <nav class="mobile-tabbar" aria-label="Donor navigation">
+        <a href="/donor"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg><span>Home</span></a>
+        <a href="/donor/give"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg><span>Give</span></a>
+        <a href="/donor/calendar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg><span>Calendar</span></a>
+        <a href="/donor/offerings"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg><span>History</span></a>
+        <a class="active" href="/donor/settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33"/></svg><span>Profile</span></a>
+      </nav>
     </main>
   </div>
   <script>document.addEventListener("DOMContentLoaded", () => loadDonorSettingsPage());</script>
