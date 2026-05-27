@@ -867,12 +867,20 @@
       position: sticky;
       top: 0;
       height: 100vh;
-      overflow-y: auto;
+      overflow: hidden;
       border-right: 1px solid rgba(184,144,47,0.2);
+    }
+    .sidebar-body {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
     .sidebar-header {
       padding: 1.5rem 1.25rem 1.25rem;
       border-bottom: 1px solid rgba(184,144,47,0.15);
+      flex-shrink: 0;
       position: relative;
       overflow: hidden;
     }
@@ -888,7 +896,7 @@
       pointer-events: none;
       z-index: 0;
     }
-    .sidebar-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; position: relative; z-index: 1; }
+    .sidebar-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; position: relative; z-index: 2; }
     .sidebar-mark {
       width: 40px;
       height: 40px;
@@ -899,7 +907,7 @@
       place-items: center;
       flex: 0 0 auto;
     }
-    .sidebar-mark img { width: 36px; height: 36px; object-fit: contain; }
+    .sidebar-mark img { width: 36px; height: 36px; object-fit: contain; display: block; position: relative; z-index: 4; }
     .sidebar-name { font-family: var(--serif); font-size: 25px; font-weight: 500; color: var(--cream); }
     .sidebar-name em { color: var(--gold); font-style: normal; }
     .sidebar-pill {
@@ -1108,7 +1116,8 @@
         <span class="sidebar-pill">Parish Dashboard</span>
       </div>
 
-      <div class="sidebar-auth">
+      <div class="sidebar-body">
+        <div class="sidebar-auth">
         <div>
           <label for="parishId">Parish ID</label>
           <input id="parishId" placeholder="st-seraphim-mission" autocomplete="off" />
@@ -1120,13 +1129,13 @@
         <button class="sidebar-load" id="loadBtn" onclick="loadDashboard(this)">Load dashboard</button>
       </div>
 
-      <div class="sidebar-profile" id="sidebarProfile">
+        <div class="sidebar-profile" id="sidebarProfile">
         <div class="sidebar-parish-name" id="sidebarParishName">-</div>
         <div class="sidebar-parish-meta" id="sidebarParishMeta">-</div>
         <span class="sidebar-status-chip" id="sidebarStatusChip">active</span>
       </div>
 
-      <div class="sidebar-metrics">
+        <div class="sidebar-metrics">
         <div class="sidebar-metric highlight">
           <div class="sidebar-metric-val" id="metricStatus">-</div>
           <div class="sidebar-metric-label">Status</div>
@@ -1145,7 +1154,7 @@
         </div>
       </div>
 
-      <nav class="sidebar-nav">
+        <nav class="sidebar-nav">
         <div class="sidebar-nav-item active" onclick="switchTab('giving')" id="nav-giving">
           <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           Giving Overview
@@ -1164,7 +1173,7 @@
         </div>
       </nav>
 
-      <div class="sidebar-links">
+        <div class="sidebar-links">
         <a class="sidebar-link" id="sidebarPublicLink" href="/give" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           Preview giving page
@@ -1173,6 +1182,7 @@
           <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           AgaPay home
         </a>
+      </div>
       </div>
     </aside>
 
