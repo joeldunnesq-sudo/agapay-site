@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css" />
+  <script src="/donor/app.js" defer></script>
 </head>
 <body hx-boost="true">
   <div class="app">
@@ -31,6 +32,7 @@
     <main class="content">
       <div class="topbar"><div class="topbar-title">Commemorations</div><div class="topbar-actions"><a class="btn btn-ghost btn-sm" href="/donor/calendar">View calendar</a></div></div>
       <div class="page">
+        <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
         <section class="hero"><div class="hero-grid"><div><div class="eyebrow">Living and departed</div><h1>Submit names for prayer.</h1><p>Names added here are shown with live dashboard status now and will be connected to AgaPay's KV commemoration queue used by the parish dashboard.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
         <section class="layout-main">
           <div class="card">
@@ -44,7 +46,7 @@
                   <div class="form-group"><label class="form-label" for="departed">Departed names</label><textarea class="form-textarea" id="departed" placeholder="One name per line"></textarea></div>
                   <div class="form-group full"><label class="form-label" for="note">Note for parish</label><input class="form-input" id="note" placeholder="Optional context for the priest or parish office" /></div>
                 </div>
-                <p class="form-help">For live giving, this will be paired with `/api/create-checkout-session` so the payment and names are stored together.</p>
+                <p class="form-help">Names are saved to KV and appear in the parish commemoration queue for the weekly priest email.</p>
                 <div class="section-gap"><button class="btn btn-gold" type="submit">Add to commemoration queue</button></div>
               </form>
             </div>
@@ -58,31 +60,7 @@
     </main>
   </div>
   <script>
-    const entries = [
-      { title: "Candles and commemoration", parish: "St. Seraphim of Sarov Mission", names: "Living: Maria, Nicholas · Departed: John", status: "queued for Saturday" },
-      { title: "Memorial offering", parish: "St. Seraphim of Sarov Mission", names: "Departed: Anna", status: "sent to priest" }
-    ];
-    function renderEntries() {
-      document.getElementById("commemorationList").innerHTML = entries.map((item) => `<div class="list-item"><div class="list-main"><strong>${item.title}</strong><span>${item.parish}</span><span>${item.names}</span><span class="status-pill pending">${item.status}</span></div></div>`).join("");
-    }
-    function lines(id) {
-      return document.getElementById(id).value.split(/\n+/).map((v) => v.trim()).filter(Boolean);
-    }
-    function submitCommemoration(event) {
-      event.preventDefault();
-      const living = lines("living");
-      const departed = lines("departed");
-      if (!living.length && !departed.length) return;
-      entries.unshift({
-        title: document.getElementById("offering").value,
-        parish: document.getElementById("parish").selectedOptions[0].textContent,
-        names: `Living: ${living.join(", ") || "None"} · Departed: ${departed.join(", ") || "None"}`,
-        status: "queued for Saturday"
-      });
-      event.target.reset();
-      renderEntries();
-    }
-    renderEntries();
+    document.addEventListener("DOMContentLoaded", loadDonorCommemorationsPage);
   </script>
 </body>
 </html>
