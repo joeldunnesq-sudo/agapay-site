@@ -25,15 +25,25 @@
 
     <div class="sidebar-body">
       <div class="sidebar-auth">
-        <div>
-          <label for="parishId">Parish ID</label>
-          <input id="parishId" placeholder="st-seraphim-mission" autocomplete="off" />
+        <div class="dashboard-welcome-banner">
+          <div class="welcome-brand-mark"><img src="/mark.png" alt="" /></div>
+          <div class="welcome-copy">
+            <div class="welcome-kicker">AgaPay - Love how you Give</div>
+            <h2>Welcome, Parish Team</h2>
+            <p>Sign in to manage your giving page, QR code, funds, campaigns, Stripe setup, and weekly commemorations.</p>
+          </div>
         </div>
-        <div>
-          <label for="parishToken">Parish password</label>
-          <input id="parishToken" type="password" placeholder="Parish dashboard password" autocomplete="current-password" />
+        <div class="auth-fields">
+          <div>
+            <label for="parishId">Parish ID</label>
+            <input id="parishId" placeholder="st-seraphim-mission" autocomplete="off" />
+          </div>
+          <div>
+            <label for="parishToken">Parish password</label>
+            <input id="parishToken" type="password" placeholder="Enter parish password" autocomplete="current-password" />
+          </div>
+          <button class="sidebar-load" id="loadBtn" onclick="loadDashboard(this)">Open parish dashboard</button>
         </div>
-        <button class="sidebar-load" id="loadBtn" onclick="loadDashboard(this)">Load dashboard</button>
       </div>
 
       <div class="sidebar-profile" id="sidebarProfile">

@@ -25,9 +25,19 @@
 
       <div class="sidebar-body">
         <div class="sidebar-auth">
-          <label for="adminToken">Admin password</label>
-          <input id="adminToken" type="password" placeholder="Admin password" autocomplete="current-password" />
-          <button class="sidebar-load" id="loadBtn" onclick="loadRegistrations()">Load registrations</button>
+          <div class="dashboard-welcome-banner">
+            <div class="welcome-brand-mark"><img src="/mark.png" alt="" /></div>
+            <div class="welcome-copy">
+              <div class="welcome-kicker">AgaPay - Love how you Give</div>
+              <h2>Welcome, Admin</h2>
+              <p>Sign in to review parish registrations, verify canonical standing, and keep onboarding moving.</p>
+            </div>
+          </div>
+          <div class="auth-fields">
+            <label for="adminToken">Admin password</label>
+            <input id="adminToken" type="password" placeholder="Enter admin password" autocomplete="current-password" />
+            <button class="sidebar-load" id="loadBtn" onclick="loadRegistrations()">Open admin console</button>
+          </div>
         </div>
 
         <nav class="sidebar-nav">
