@@ -290,7 +290,24 @@ async function startDonorCheckout(event) {
 
 document.addEventListener("DOMContentLoaded", () => {
   const saved = donorProfile();
-  if (saved.email) setDonorProfile(saved);
+  document.body.removeAttribute("hx-boost");
+  document.querySelectorAll(".nav").forEach((nav) => {
+    nav.setAttribute("hx-boost", "true");
+    nav.setAttribute("hx-target", "body");
+  });
+  document.querySelectorAll('.sidebar-footer a[href="/"], .sidebar-footer a[href="/give"]').forEach((link) => {
+    link.setAttribute("hx-boost", "false");
+  });
+  if (saved.email) {
+    setDonorProfile(saved);
+  } else {
+    const profileName = document.getElementById("profileName");
+    const profileMeta = document.getElementById("profileMeta");
+    const greeting = document.getElementById("greeting");
+    if (profileName) profileName.textContent = "Donor Account";
+    if (profileMeta) profileMeta.textContent = "Sign in to load live giving history";
+    if (greeting) greeting.textContent = "Welcome to your donor dashboard";
+  }
   const emailInput = document.getElementById("donorEmail");
   if (emailInput && donorSession().email) emailInput.value = donorSession().email;
 });
