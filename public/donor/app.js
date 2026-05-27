@@ -386,8 +386,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const saved = donorProfile();
   document.body.removeAttribute("hx-boost");
   document.querySelectorAll(".nav").forEach((nav) => {
-    nav.setAttribute("hx-boost", "true");
-    nav.setAttribute("hx-target", "body");
+    nav.setAttribute("hx-boost", "false");
+    nav.removeAttribute("hx-target");
   });
   document.querySelectorAll('.sidebar-footer a[href="/"], .sidebar-footer a[href="/give"]').forEach((link) => {
     link.setAttribute("hx-boost", "false");
