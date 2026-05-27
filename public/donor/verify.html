@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verify Donor Email | AgaPay</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/donor/style.css" />
+  <script src="/donor/app.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-scroll">
+        <div class="brand"><div class="brand-row"><div class="brand-mark"><img src="/mark.png" alt="AgaPay" /></div><span class="brand-name">Aga<em>Pay</em></span></div><span class="pill">Email Verification</span></div>
+        <div class="sidebar-card"><h3>Almost There</h3><div class="mini-item"><strong>One trusted step</strong><span>AgaPay verifies donor emails before dashboard access.</span></div></div>
+      </div>
+      <div class="sidebar-footer"><a class="sidebar-link" href="/donor/login"><svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg> Donor login</a></div>
+    </aside>
+    <main class="content">
+      <div class="topbar"><div class="topbar-title">Verify Email</div></div>
+      <div class="page">
+        <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
+        <section class="hero"><div class="hero-grid"><div><div class="eyebrow">Verification</div><h1>Confirming your email.</h1><p>We are checking your AgaPay verification link. Once confirmed, your donor dashboard will open automatically.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
+        <section class="card section-gap">
+          <div class="card-body"><p class="form-help">If this page does not continue automatically, use the login link after verification completes.</p></div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <script>document.addEventListener("DOMContentLoaded", verifyDonorEmail);</script>
+</body>
+</html>
