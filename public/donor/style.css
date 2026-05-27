@@ -347,6 +347,7 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
 .layout-main { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 1rem; margin-top: 1rem; align-items: start; }
 
 .card {
+  position: relative;
   background: white;
   border: 1px solid var(--line);
   border-radius: var(--rlg);
@@ -361,7 +362,9 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
   gap: 0.8rem;
   padding: 1rem 1.15rem;
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(180deg, white, var(--paper));
+  background:
+    linear-gradient(90deg, rgba(184, 144, 47, 0.12), rgba(47, 90, 57, 0.08)),
+    linear-gradient(180deg, white, var(--paper));
 }
 
 .card-title {
@@ -395,17 +398,32 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
   padding: 1rem;
   border-radius: var(--rlg);
   border: 1px solid var(--line);
-  background: white;
+  background:
+    linear-gradient(135deg, rgba(184, 144, 47, 0.16), rgba(47, 90, 57, 0.08) 48%, rgba(255, 255, 255, 0.96) 100%),
+    white;
   overflow: hidden;
+  box-shadow: 0 7px 22px rgba(15, 45, 31, 0.06);
 }
 .metric-card::before {
   content: "";
   position: absolute;
   inset: 0 0 auto;
-  height: 3px;
-  background: linear-gradient(90deg, var(--gold), var(--wine), var(--forest));
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold), rgba(184, 144, 47, 0.78), rgba(47, 90, 57, 0.78), var(--forest));
 }
-.metric-label { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.metric-card::after {
+  content: "";
+  position: absolute;
+  right: -42px;
+  top: -58px;
+  width: 140px;
+  height: 140px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(47, 90, 57, 0.12), transparent 68%);
+  pointer-events: none;
+}
+.metric-label, .metric-value, .metric-note { position: relative; z-index: 1; }
+.metric-label { color: var(--stone); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 .metric-value { margin-top: 0.45rem; color: var(--deep); font-family: var(--serif); font-size: 34px; line-height: 1; }
 .metric-note { margin-top: 0.5rem; color: var(--stone); font-size: 12px; line-height: 1.45; }
 
