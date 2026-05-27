@@ -763,10 +763,15 @@
     .queue-table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 960px;
+      table-layout: fixed;
     }
+    .queue-table-wrap { overflow-x: visible; }
+    .queue-table col.community { width: 34%; }
+    .queue-table col.status { width: 12%; }
+    .queue-table col.next { width: 26%; }
+    .queue-table col.received { width: 14%; }
     .queue-table th {
-      padding: 0.72rem 0.8rem;
+      padding: 0.65rem 0.55rem;
       border-bottom: 1px solid var(--line);
       color: var(--muted);
       font-size: 10px;
@@ -777,11 +782,12 @@
       background: var(--paper);
     }
     .queue-table td {
-      padding: 0.8rem;
+      padding: 0.7rem 0.55rem;
       border-bottom: 1px solid rgba(111,106,96,0.13);
       color: var(--ink);
-      font-size: 13px;
+      font-size: 12px;
       vertical-align: middle;
+      overflow-wrap: anywhere;
     }
     
     /* --- TABLE HOVER UPGRADES --- */
@@ -816,21 +822,64 @@
     .queue-name {
       font-family: var(--serif);
       color: var(--deep);
-      font-size: 17px;
+      font-size: 15px;
       line-height: 1.15;
       font-weight: 600;
     }
     .queue-meta {
       color: var(--stone);
-      font-size: 12px;
+      font-size: 11px;
       line-height: 1.45;
       margin-top: 0.2rem;
     }
     .queue-next {
       color: var(--stone);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .queue-next strong { color: var(--deep); font-size: 12px; }
+    .queue-table .badge { font-size: 10px; padding: 0.22rem 0.48rem; }
+    .community-snapshot {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .community-snapshot-card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1rem;
+      box-shadow: 0 10px 26px rgba(15,45,31,0.04);
+      position: relative;
+      overflow: hidden;
+    }
+    .community-snapshot-card::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--gold), rgba(47,90,57,0.55));
+    }
+    .community-snapshot-value {
+      font-family: var(--serif);
+      color: var(--deep);
+      font-size: 32px;
+      line-height: 1;
+    }
+    .community-snapshot-label {
+      margin-top: 0.35rem;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .community-snapshot-note {
+      margin-top: 0.35rem;
+      color: var(--stone);
       font-size: 12px;
       line-height: 1.45;
-      max-width: 230px;
     }
     .queue-empty {
       padding: 2rem;
@@ -1226,6 +1275,7 @@
       .app { grid-template-columns: 1fr; }
       .sidebar { position: static; height: auto; }
       .step-track, .form-grid, .fields-grid, .toggle-row { grid-template-columns: 1fr; }
+      .community-snapshot { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .growth-body { grid-template-columns: 1fr; }
       .health-body { grid-template-columns: 1fr; }
       .full { grid-column: auto; }
@@ -1339,6 +1389,29 @@
         </div>
       </div>
       <div class="detail-wrap" id="detailPane">
+        <section class="community-snapshot" id="communitySnapshot">
+          <div class="community-snapshot-card">
+            <div class="community-snapshot-value" id="snapshotMissions">0</div>
+            <div class="community-snapshot-label">Missions</div>
+            <div class="community-snapshot-note">Growing communities</div>
+          </div>
+          <div class="community-snapshot-card">
+            <div class="community-snapshot-value" id="snapshotChurches">0</div>
+            <div class="community-snapshot-label">Churches</div>
+            <div class="community-snapshot-note">Parish homes</div>
+          </div>
+          <div class="community-snapshot-card">
+            <div class="community-snapshot-value" id="snapshotCathedrals">0</div>
+            <div class="community-snapshot-label">Cathedrals</div>
+            <div class="community-snapshot-note">Major centers</div>
+          </div>
+          <div class="community-snapshot-card">
+            <div class="community-snapshot-value" id="snapshotMonasteries">0</div>
+            <div class="community-snapshot-label">Monasteries</div>
+            <div class="community-snapshot-note">Monastic support</div>
+          </div>
+        </section>
+
         <section class="growth-card" id="platformGrowthCard">
           <div class="growth-header">
             <div>
@@ -1574,6 +1647,12 @@
       return String(value || 'not_started').replace(/_/g, ' ');
     }
 
+    function shortDate(value) {
+      const date = value ? new Date(value) : null;
+      if (!date || Number.isNaN(date.getTime())) return '-';
+      return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: '2-digit' }).format(date);
+    }
+
     function subscriptionTierLabel(reg) {
       if (reg.subscriptionTierLabel) return reg.subscriptionTierLabel;
       if (reg.subscriptionTier === 'monastery_free') return 'Monastery / Skete';
@@ -1790,8 +1869,30 @@
       document.getElementById('metricPending').textContent = registrations.filter(item => item.status === 'pending').length;
       document.getElementById('metricVerified').textContent = registrations.filter(item => item.status === 'verified').length;
       document.getElementById('metricStripeReady').textContent = registrations.filter(item => ['charges_enabled', 'payouts_enabled'].includes(item.stripeAccountStatus)).length;
+      renderCommunitySnapshot(registrations);
       renderNextActionQueue(registrations);
       renderOnboardingHealth(registrations);
+    }
+
+    function communityTypeOf(registration) {
+      const raw = `${registration.communityType || ''} ${registration.parishName || ''}`.toLowerCase();
+      if (raw.includes('monastery') || raw.includes('skete')) return 'monastery';
+      if (raw.includes('cathedral')) return 'cathedral';
+      if (raw.includes('mission')) return 'mission';
+      return 'church';
+    }
+
+    function renderCommunitySnapshot(registrations) {
+      const active = registrations.filter(item => item.status === 'verified' && item.givingStatus !== 'cancelled' && item.givingStatus !== 'hidden');
+      const counts = active.reduce((acc, item) => {
+        acc[communityTypeOf(item)] += 1;
+        return acc;
+      }, { mission: 0, church: 0, cathedral: 0, monastery: 0 });
+
+      document.getElementById('snapshotMissions').textContent = counts.mission;
+      document.getElementById('snapshotChurches').textContent = counts.church;
+      document.getElementById('snapshotCathedrals').textContent = counts.cathedral;
+      document.getElementById('snapshotMonasteries').textContent = counts.monastery;
     }
 
     function renderOnboardingHealth(registrations) {
@@ -1913,6 +2014,14 @@
       list.innerHTML = `
         <div class="queue-table-wrap">
           <table class="queue-table">
+            <colgroup>
+              <col class="community">
+              <col class="status">
+              <col class="status">
+              <col class="status">
+              <col class="next">
+              <col class="received">
+            </colgroup>
             <thead>
               <tr>
                 <th>Community</th>
@@ -1937,7 +2046,7 @@
                     <td><span class="badge ${escapeAttr(item.stripeAccountStatus || 'not_started')}">${escapeHtml(readable(item.stripeAccountStatus))}</span></td>
                     <td><span class="badge ${escapeAttr(item.subscriptionStatus || 'not_started')}">${escapeHtml(readable(item.subscriptionStatus))}</span></td>
                     <td><div class="queue-next"><strong>${escapeHtml(action.title)}</strong><br>${escapeHtml(action.body)}</div></td>
-                    <td>${escapeHtml(item.receivedAt || '-')}</td>
+                    <td>${escapeHtml(shortDate(item.receivedAt))}</td>
                   </tr>
                 `;
               }).join('')}
