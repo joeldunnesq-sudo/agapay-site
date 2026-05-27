@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css" />
+  <script src="/donor/app.js" defer></script>
 </head>
 <body hx-boost="true">
   <div class="app">
@@ -32,7 +33,7 @@
               <label for="donorPassword">Password</label>
               <input id="donorPassword" type="password" placeholder="Dashboard password" autocomplete="current-password" />
             </div>
-            <button class="btn btn-gold btn-block" type="button" onclick="saveDonorSession()">Load dashboard</button>
+            <button class="btn btn-gold btn-block" type="button" onclick="loginFromDashboard()">Load dashboard</button>
           </div>
         </div>
         <div class="profile-panel">
@@ -70,6 +71,7 @@
       </div>
 
       <div class="page">
+        <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
         <section class="hero">
           <div class="hero-grid">
             <div>
@@ -82,10 +84,10 @@
         </section>
 
         <section class="grid four section-gap">
-          <div class="metric-card"><div class="metric-label">Year to date</div><div class="metric-value">$2,840</div><div class="metric-note">Across 18 offerings and gifts.</div></div>
-          <div class="metric-card"><div class="metric-label">Recurring gift</div><div class="metric-value">$125</div><div class="metric-note">Monthly stewardship on the 1st.</div></div>
-          <div class="metric-card"><div class="metric-label">Commemorations</div><div class="metric-value">24</div><div class="metric-note">Names submitted this quarter.</div></div>
-          <div class="metric-card"><div class="metric-label">Next feast</div><div class="metric-value">Jun 13</div><div class="metric-note">Ascension of Our Lord.</div></div>
+          <div class="metric-card"><div class="metric-label">Year to date</div><div class="metric-value" id="metricYtd">$0</div><div class="metric-note">Paid offerings recorded in KV.</div></div>
+          <div class="metric-card"><div class="metric-label">Recurring gifts</div><div class="metric-value" id="metricRecurring">0</div><div class="metric-note">Active recurring records.</div></div>
+          <div class="metric-card"><div class="metric-label">Commemorations</div><div class="metric-value" id="metricCommemorations">0</div><div class="metric-note">Names submitted from this account.</div></div>
+          <div class="metric-card"><div class="metric-label">Offerings</div><div class="metric-value" id="metricOfferings">0</div><div class="metric-note">Recorded checkout and submission history.</div></div>
         </section>
 
         <section class="layout-main">
@@ -93,7 +95,7 @@
             <div class="card">
               <div class="card-header">
                 <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg></span> Quick Give</div>
-                <span class="status-pill">Mock data</span>
+                <span class="status-pill" id="homeDataStatus">Sign in</span>
               </div>
               <div class="card-body">
                 <form action="/donor/give" method="get">
@@ -101,9 +103,9 @@
                     <div class="form-group">
                       <label class="form-label" for="parish">Parish</label>
                       <select class="form-select" id="parish" name="parish">
-                        <option>St. Seraphim of Sarov Mission</option>
-                        <option>Holy Theotokos Skete</option>
-                        <option>St. Nicholas Orthodox Church</option>
+                        <option value="st-seraphim-mission">St. Seraphim of Sarov Mission</option>
+                        <option value="holy-theotokos-skete">Holy Theotokos Skete</option>
+                        <option value="st-nicholas-parish">St. Nicholas Orthodox Church</option>
                       </select>
                     </div>
                     <div class="form-group">
@@ -145,10 +147,8 @@
           <aside class="card">
             <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></span> Recent Offerings</div></div>
             <div class="card-body">
-              <div class="list">
-                <div class="list-item"><div class="list-main"><strong>General Operating Fund</strong><span>May 24 · One-time gift</span></div><div class="list-amount">$100</div></div>
-                <div class="list-item"><div class="list-main"><strong>Candles and Commemorations</strong><span>May 18 · Names received</span></div><div class="list-amount">$25</div></div>
-                <div class="list-item"><div class="list-main"><strong>Clergy Support Fund</strong><span>May 1 · Recurring gift</span></div><div class="list-amount">$125</div></div>
+              <div class="list" id="recentOfferings">
+                <div class="notice">Sign in to load real donor offering history.</div>
               </div>
             </div>
           </aside>
@@ -158,12 +158,6 @@
   </div>
 
   <script>
-    function saveDonorSession() {
-      const email = document.getElementById("donorEmail").value.trim();
-      if (email) localStorage.setItem("agapayDonorEmail", email);
-      localStorage.setItem("agapayDonorSession", "mock-session-token");
-      document.getElementById("profileMeta").textContent = email ? email + " · St. Seraphim of Sarov Mission" : "Mock donor session loaded";
-    }
     function setQuickAmount(button, amount) {
       document.getElementById("quickAmount").value = String(amount);
       document.querySelectorAll(".quick-amounts button").forEach((item) => item.classList.remove("active"));
@@ -172,8 +166,10 @@
     const hour = new Date().getHours();
     const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
     document.getElementById("greeting").textContent = greeting + ", Theophany Household";
-    const savedEmail = localStorage.getItem("agapayDonorEmail");
-    if (savedEmail) document.getElementById("donorEmail").value = savedEmail;
+    document.addEventListener("DOMContentLoaded", () => {
+      loadPublicParishes("parish");
+      loadDonorDashboardPage();
+    });
   </script>
 </body>
 </html>
