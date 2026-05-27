@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Give | AgaPay Donor Dashboard</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <link rel="stylesheet" href="/donor/style.css" />
+</head>
+<body hx-boost="true">
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-scroll">
+        <div class="brand"><div class="brand-row"><div class="brand-mark"><img src="/mark.png" alt="AgaPay" /></div><span class="brand-name">Aga<em>Pay</em></span></div><span class="pill">Donor Dashboard</span></div>
+        <div class="profile-panel"><div class="profile-name">Theophany Household</div><div class="profile-meta">St. Seraphim of Sarov Mission · Lubbock, TX</div></div>
+        <nav class="nav">
+          <a href="/donor"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg> Home</a>
+          <a class="active" href="/donor/give"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg> Give</a>
+          <a href="/donor/offerings"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg> Offerings</a>
+          <a href="/donor/commemorations"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 22h6"/></svg> Commemorations</a>
+          <a href="/donor/calendar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg> Calendar</a>
+        </nav>
+        <div class="sidebar-card"><h3>Connected Parish</h3><div class="mini-item"><strong>St. Seraphim Mission</strong><span>Payments will use the parish giving page until donor APIs are connected.</span></div></div>
+      </div>
+      <div class="sidebar-footer"><a class="sidebar-link" href="/give"><svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg> Public giving page</a></div>
+    </aside>
+    <main class="content">
+      <div class="topbar"><div class="topbar-title">Give</div><div class="topbar-actions"><a class="btn btn-ghost btn-sm" href="/donor">Dashboard</a></div></div>
+      <div class="page">
+        <section class="hero">
+          <div class="hero-grid"><div><div class="eyebrow">Choose an offering</div><h1>Make a gift with intention.</h1><p>Select the type of gift, choose your parish, then continue to the existing AgaPay giving flow. This first version uses realistic mock dashboard state while the donor APIs are wired in.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div>
+        </section>
+
+        <section class="offering-grid section-gap">
+          <a class="offering-card" href="/give/form?parish=st-seraphim-mission&giftType=stewardship"><span class="offering-icon"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg></span><h3>Tithe / Stewardship</h3><p>General recurring or one-time support for your parish.</p></a>
+          <a class="offering-card" href="/give/form?parish=st-seraphim-mission&giftType=candles"><span class="offering-icon"><svg viewBox="0 0 24 24"><path d="M12 2c2 3 4 5 4 9a4 4 0 0 1-8 0c0-4 2-6 4-9z"/><path d="M8 22h8"/></svg></span><h3>Candles</h3><p>Offer candles with prayer intentions for living or departed.</p></a>
+          <a class="offering-card" href="/donor/commemorations"><span class="offering-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 22h6"/></svg></span><h3>Memorials</h3><p>Submit names for the parish commemoration queue.</p></a>
+          <a class="offering-card" href="/give/form?parish=st-seraphim-mission&giftType=feast"><span class="offering-icon"><svg viewBox="0 0 24 24"><path d="M12 2l2.6 6.2 6.7.6-5.1 4.3 1.5 6.6-5.7-3.5-5.7 3.5 1.5-6.6-5.1-4.3 6.7-.6z"/></svg></span><h3>Feast Offering</h3><p>Mark major feasts with a designated offering.</p></a>
+          <a class="offering-card" href="/give/form?parish=st-seraphim-mission&giftType=campaign"><span class="offering-icon"><svg viewBox="0 0 24 24"><path d="M4 12h16"/><path d="M12 4v16"/><circle cx="12" cy="12" r="9"/></svg></span><h3>Alms Campaign</h3><p>Support parish-approved needs, disaster relief, and hardship funds.</p></a>
+          <a class="offering-card" href="/give/form?parish=st-seraphim-mission&giftType=fund"><span class="offering-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></span><h3>Designated Fund</h3><p>Building, clergy support, education, icons, and other parish funds.</p></a>
+        </section>
+
+        <section class="card section-gap">
+          <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/></svg></span> Gift Details</div></div>
+          <div class="card-body">
+            <form action="/give/form" method="get">
+              <div class="form-grid">
+                <div class="form-group"><label class="form-label" for="parish">Parish</label><select class="form-select" id="parish" name="parish"><option value="st-seraphim-mission">St. Seraphim of Sarov Mission</option><option value="holy-theotokos-skete">Holy Theotokos Skete</option></select></div>
+                <div class="form-group"><label class="form-label" for="frequency">Frequency</label><select class="form-select" id="frequency" name="frequency"><option value="once">One-time</option><option value="weekly">Weekly</option><option value="biweekly">Biweekly</option><option value="monthly">Monthly</option></select></div>
+                <div class="form-group"><label class="form-label" for="amount">Amount</label><input class="form-input" id="amount" name="amount" value="100" /></div>
+                <div class="form-group"><label class="form-label" for="giftType">Gift type</label><select class="form-select" id="giftType" name="giftType"><option value="stewardship">Stewardship</option><option value="candles">Candles</option><option value="commemoration">Commemoration</option><option value="campaign">Alms Campaign</option></select></div>
+              </div>
+              <p class="form-help">This submits to the existing public giving form route for now. A dedicated donor checkout API can be added after donor accounts are finalized.</p>
+              <div class="section-gap"><button class="btn btn-gold" type="submit">Continue to AgaPay checkout</button></div>
+            </form>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
