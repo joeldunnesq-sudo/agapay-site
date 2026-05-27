@@ -1,5 +1,8 @@
 const ADMIN_PASSWORD_KV_KEY = "__agapay_admin_password";
 const COMMEMORATION_KEY_PREFIX = "__agapay_commemoration__";
+const DONOR_KEY_PREFIX = "__agapay_donor__";
+const DONOR_OFFERING_KEY_PREFIX = "__agapay_donor_offering__";
+const DONOR_CHECKOUT_INDEX_PREFIX = "__agapay_checkout_offering__";
 
 const subscriptionTiers = [
   {
@@ -51,7 +54,12 @@ function unauthorized() {
 }
 
 function isSystemKvKey(keyName) {
-  return keyName === ADMIN_PASSWORD_KV_KEY || String(keyName || "").startsWith(COMMEMORATION_KEY_PREFIX);
+  const key = String(keyName || "");
+  return key === ADMIN_PASSWORD_KV_KEY
+    || key.startsWith(COMMEMORATION_KEY_PREFIX)
+    || key.startsWith(DONOR_KEY_PREFIX)
+    || key.startsWith(DONOR_OFFERING_KEY_PREFIX)
+    || key.startsWith(DONOR_CHECKOUT_INDEX_PREFIX);
 }
 
 function getAdminToken(request) {
@@ -64,6 +72,79 @@ function getBearerToken(request) {
   const auth = request.headers.get("Authorization") || "";
   if (auth.startsWith("Bearer ")) return auth.slice("Bearer ".length).trim();
   return "";
+}
+
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function donorKey(email) {
+  return `${DONOR_KEY_PREFIX}${normalizeEmail(email)}`;
+}
+
+function donorOfferingKey(email, id) {
+  return `${DONOR_OFFERING_KEY_PREFIX}${normalizeEmail(email)}:${id}`;
+}
+
+function donorCheckoutIndexKey(checkoutSessionId) {
+  return `${DONOR_CHECKOUT_INDEX_PREFIX}${checkoutSessionId}`;
+}
+
+function generateSecret(prefix = "agp") {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return `${prefix}_${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+}
+
+async function sha256Hex(value) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(value || "")));
+  return toHex(digest);
+}
+
+async function hashPassword(password, salt) {
+  return sha256Hex(`${salt}:${password}`);
+}
+
+async function hashSessionToken(token, salt) {
+  return sha256Hex(`session:${salt}:${token}`);
+}
+
+function publicDonor(donor) {
+  return {
+    email: donor.email || "",
+    donorName: donor.donorName || "",
+    householdName: donor.householdName || donor.donorName || "",
+    defaultParishId: donor.defaultParishId || "",
+    createdAt: donor.createdAt || "",
+    updatedAt: donor.updatedAt || "",
+    lastLoginAt: donor.lastLoginAt || ""
+  };
+}
+
+async function loadDonor(env, email) {
+  if (!env.AGAPAY_REGISTRATIONS) return null;
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
+  const raw = await env.AGAPAY_REGISTRATIONS.get(donorKey(normalized));
+  if (!raw) return null;
+  return JSON.parse(raw);
+}
+
+async function saveDonor(env, donor) {
+  await env.AGAPAY_REGISTRATIONS.put(donorKey(donor.email), JSON.stringify(donor));
+  return donor;
+}
+
+async function requireDonor(request, env) {
+  if (!env.AGAPAY_REGISTRATIONS) return null;
+  const email = normalizeEmail(request.headers.get("X-AgaPay-Donor-Email"));
+  const token = getBearerToken(request);
+  if (!email || !token) return null;
+  const donor = await loadDonor(env, email);
+  if (!donor || !donor.sessionTokenHash || !donor.sessionSalt) return null;
+  const submittedHash = await hashSessionToken(token, donor.sessionSalt);
+  if (!secureCompare(submittedHash, donor.sessionTokenHash)) return null;
+  return donor;
 }
 
 async function currentAdminPassword(env) {
@@ -532,8 +613,8 @@ async function storeCommemorationEntry(env, sourceId, metadata = {}, fallback = 
     sourceId: sourceId || "",
     giftType: metadata.gift_type || fallback.giftType || "commemoration",
     frequency: metadata.frequency || fallback.frequency || "once",
-    donorEmail: fallback.donorEmail || "",
-    donorName: fallback.donorName || "",
+    donorEmail: normalizeEmail(fallback.donorEmail || metadata.donor_email || ""),
+    donorName: fallback.donorName || metadata.donor_name || "",
     amountCents: Number(fallback.amountCents || 0),
     living,
     departed,
@@ -542,6 +623,113 @@ async function storeCommemorationEntry(env, sourceId, metadata = {}, fallback = 
 
   await env.AGAPAY_REGISTRATIONS.put(commemorationKey(parishId, entry.id), JSON.stringify(entry));
   return entry;
+}
+
+async function storeDonorOffering(env, offering) {
+  if (!env.AGAPAY_REGISTRATIONS || !offering?.donorEmail) return null;
+  const email = normalizeEmail(offering.donorEmail);
+  const id = offering.id || crypto.randomUUID();
+  const record = {
+    id,
+    donorEmail: email,
+    donorName: offering.donorName || "",
+    parishId: offering.parishId || "",
+    parishName: offering.parishName || "",
+    giftType: offering.giftType || "stewardship",
+    title: offering.title || "AgaPay offering",
+    fund: offering.fund || "",
+    campaign: offering.campaign || "",
+    feastDescription: offering.feastDescription || "",
+    inMemoriam: offering.inMemoriam || "",
+    frequency: offering.frequency || "once",
+    amountCents: Number(offering.amountCents || 0),
+    chargeCents: Number(offering.chargeCents || offering.amountCents || 0),
+    status: offering.status || "checkout_created",
+    paymentStatus: offering.paymentStatus || "pending",
+    checkoutSessionId: offering.checkoutSessionId || "",
+    checkoutUrl: offering.checkoutUrl || "",
+    stripeCustomerId: offering.stripeCustomerId || "",
+    stripePaymentIntentId: offering.stripePaymentIntentId || "",
+    stripeSubscriptionId: offering.stripeSubscriptionId || "",
+    namesLiving: offering.namesLiving || "",
+    namesDeparted: offering.namesDeparted || "",
+    createdAt: offering.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  const key = donorOfferingKey(email, id);
+  await env.AGAPAY_REGISTRATIONS.put(key, JSON.stringify(record));
+  if (record.checkoutSessionId) {
+    await env.AGAPAY_REGISTRATIONS.put(donorCheckoutIndexKey(record.checkoutSessionId), key);
+  }
+  return record;
+}
+
+async function updateDonorOfferingByCheckout(env, checkoutSessionId, updates = {}) {
+  if (!env.AGAPAY_REGISTRATIONS || !checkoutSessionId) return null;
+  const key = await env.AGAPAY_REGISTRATIONS.get(donorCheckoutIndexKey(checkoutSessionId));
+  if (!key) return null;
+  const raw = await env.AGAPAY_REGISTRATIONS.get(key);
+  if (!raw) return null;
+  const current = JSON.parse(raw);
+  const updated = {
+    ...current,
+    ...updates,
+    updatedAt: new Date().toISOString()
+  };
+  await env.AGAPAY_REGISTRATIONS.put(key, JSON.stringify(updated));
+  return updated;
+}
+
+async function loadDonorOfferings(env, email, limit = 100) {
+  if (!env.AGAPAY_REGISTRATIONS) return [];
+  const prefix = donorOfferingKey(email, "");
+  const list = await env.AGAPAY_REGISTRATIONS.list({ prefix, limit });
+  const offerings = [];
+  for (const key of list.keys) {
+    const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
+    if (!raw) continue;
+    try {
+      offerings.push(JSON.parse(raw));
+    } catch {
+      // Ignore malformed donor offering records.
+    }
+  }
+  return offerings.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+}
+
+async function loadDonorCommemorations(env, email, limit = 100) {
+  if (!env.AGAPAY_REGISTRATIONS) return [];
+  const normalized = normalizeEmail(email);
+  const list = await env.AGAPAY_REGISTRATIONS.list({ prefix: COMMEMORATION_KEY_PREFIX, limit });
+  const entries = [];
+  for (const key of list.keys) {
+    const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
+    if (!raw) continue;
+    try {
+      const entry = JSON.parse(raw);
+      if (normalizeEmail(entry.donorEmail) === normalized) entries.push(entry);
+    } catch {
+      // Ignore malformed commemoration records.
+    }
+  }
+  return entries.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+}
+
+function donorSummaryFromOfferings(offerings, commemorations = []) {
+  const year = new Date().getUTCFullYear();
+  const ytd = offerings.filter((item) => new Date(item.createdAt || 0).getUTCFullYear() === year);
+  const paid = ytd.filter((item) => item.paymentStatus === "paid" || item.status === "paid" || item.status === "completed");
+  const recurring = offerings.filter((item) => item.frequency && item.frequency !== "once");
+  const ytdCents = paid.reduce((sum, item) => sum + Number(item.amountCents || 0), 0);
+  return {
+    year,
+    ytdCents,
+    offeringCount: ytd.length,
+    paidOfferingCount: paid.length,
+    recurringCount: recurring.length,
+    commemorationCount: commemorations.reduce((sum, entry) => sum + (entry.living?.length || 0) + (entry.departed?.length || 0), 0),
+    lastOfferingAt: offerings[0]?.createdAt || ""
+  };
 }
 
 
@@ -814,6 +1002,8 @@ async function handleCheckout(request, env) {
   const agapayFeeCents = Math.max(0, totalTransactionFeeCents - estimatedStripeFeeCents);
   const recurring = body.frequency && body.frequency !== "once";
   const giftLabel = String(body.giftType).replace(/-/g, " ");
+  const normalizedDonorEmail = normalizeEmail(body.email);
+  const normalizedDonorName = donorName(body);
   const customer = await findOrCreateDonorCustomer(env, parish, body);
   if (!customer.ok) {
     return json(
@@ -824,7 +1014,12 @@ async function handleCheckout(request, env) {
 
   const checkoutMetadata = {
     parish_id: parish.id,
+    parish_name: parish.name || "",
     stripe_customer_id: customer.body.id || "",
+    donor_email: normalizedDonorEmail,
+    donor_name: normalizedDonorName,
+    donor_first_name: body.firstName || "",
+    donor_last_name: body.lastName || "",
     gift_type: body.giftType,
     fund: body.fund || "",
     feast_description: body.feastDescription || "",
@@ -832,6 +1027,8 @@ async function handleCheckout(request, env) {
     campaign: body.campaign || "",
     campaign_description: body.campaignDescription || "",
     frequency: body.frequency || "once",
+    amount_cents: String(amountCents),
+    charge_cents: String(chargeCents),
     names_living: body.namesLiving || "",
     names_departed: body.namesDeparted || ""
   };
@@ -888,7 +1085,217 @@ async function handleCheckout(request, env) {
     );
   }
 
+  await storeDonorOffering(env, {
+    id: stripeBody.id,
+    donorEmail: normalizedDonorEmail,
+    donorName: normalizedDonorName,
+    parishId: parish.id,
+    parishName: parish.name,
+    giftType: body.giftType,
+    title: `${parish.name} - ${giftLabel}`,
+    fund: body.fund || "",
+    campaign: body.campaign || "",
+    feastDescription: body.feastDescription || "",
+    inMemoriam: body.inMemoriam || "",
+    frequency: body.frequency || "once",
+    amountCents,
+    chargeCents,
+    status: "checkout_created",
+    paymentStatus: "pending",
+    checkoutSessionId: stripeBody.id,
+    checkoutUrl: stripeBody.url || "",
+    stripeCustomerId: customer.body.id || "",
+    namesLiving: body.namesLiving || "",
+    namesDeparted: body.namesDeparted || ""
+  });
+
   return json({ id: stripeBody.id, url: stripeBody.url }, { status: 201 });
+}
+
+async function handleDonorSession(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const email = normalizeEmail(body.email);
+  const password = String(body.password || "");
+  if (!email || !email.includes("@") || !password) {
+    return json({ error: "Email and password are required" }, { status: 422 });
+  }
+
+  const now = new Date().toISOString();
+  let donor = await loadDonor(env, email);
+  if (donor) {
+    const submittedHash = await hashPassword(password, donor.passwordSalt || "");
+    if (!secureCompare(submittedHash, donor.passwordHash || "")) return unauthorized();
+  } else {
+    if (password.length < 8) return json({ error: "Password must be at least 8 characters" }, { status: 422 });
+    const passwordSalt = generateSecret("salt");
+    donor = {
+      email,
+      donorName: body.donorName || [body.firstName, body.lastName].filter(Boolean).join(" ") || "",
+      householdName: body.householdName || body.donorName || "",
+      defaultParishId: body.parishId || body.defaultParishId || "",
+      passwordSalt,
+      passwordHash: await hashPassword(password, passwordSalt),
+      createdAt: now,
+      updatedAt: now
+    };
+  }
+
+  const token = generateSecret("agp_donor");
+  const sessionSalt = generateSecret("session");
+  donor = {
+    ...donor,
+    donorName: body.donorName || donor.donorName || [body.firstName, body.lastName].filter(Boolean).join(" ") || "",
+    householdName: body.householdName || donor.householdName || body.donorName || "",
+    defaultParishId: body.parishId || body.defaultParishId || donor.defaultParishId || "",
+    sessionSalt,
+    sessionTokenHash: await hashSessionToken(token, sessionSalt),
+    lastLoginAt: now,
+    updatedAt: now
+  };
+  await saveDonor(env, donor);
+
+  return json({ ok: true, token, donor: publicDonor(donor) });
+}
+
+async function handleDonorDashboard(request, env) {
+  const donor = await requireDonor(request, env);
+  if (!donor) return unauthorized();
+
+  if (request.method === "PATCH") {
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    let updated = {
+      ...donor,
+      donorName: body.donorName ?? donor.donorName,
+      householdName: body.householdName ?? donor.householdName,
+      defaultParishId: body.defaultParishId ?? body.parishId ?? donor.defaultParishId,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (body.newPassword) {
+      const currentPassword = String(body.currentPassword || "");
+      const submittedHash = await hashPassword(currentPassword, donor.passwordSalt || "");
+      if (!secureCompare(submittedHash, donor.passwordHash || "")) return unauthorized();
+      if (String(body.newPassword).length < 8) return json({ error: "Password must be at least 8 characters" }, { status: 422 });
+      const passwordSalt = generateSecret("salt");
+      updated = {
+        ...updated,
+        passwordSalt,
+        passwordHash: await hashPassword(body.newPassword, passwordSalt),
+        passwordUpdatedAt: new Date().toISOString()
+      };
+    }
+
+    await saveDonor(env, updated);
+    return json({ ok: true, donor: publicDonor(updated) });
+  }
+
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+
+  const offerings = await loadDonorOfferings(env, donor.email, 100);
+  const commemorations = await loadDonorCommemorations(env, donor.email, 100);
+  const summary = donorSummaryFromOfferings(offerings, commemorations);
+  let parish = null;
+  if (donor.defaultParishId) {
+    const found = await findRegistrationByParishId(env, donor.defaultParishId);
+    if (found) parish = parishFromRegistration(found.registration);
+  }
+
+  return json({
+    donor: publicDonor(donor),
+    parish,
+    summary,
+    recentOfferings: offerings.slice(0, 5),
+    recentCommemorations: commemorations.slice(0, 5)
+  });
+}
+
+async function handleDonorOfferings(request, env) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const donor = await requireDonor(request, env);
+  if (!donor) return unauthorized();
+  const offerings = await loadDonorOfferings(env, donor.email, 100);
+  return json({ offerings, summary: donorSummaryFromOfferings(offerings, await loadDonorCommemorations(env, donor.email, 100)) });
+}
+
+async function handleDonorCommemorations(request, env) {
+  const donor = await requireDonor(request, env);
+  if (!donor) return unauthorized();
+
+  if (request.method === "GET") {
+    const entries = await loadDonorCommemorations(env, donor.email, 100);
+    return json({ entries });
+  }
+
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const parishId = body.parishId || donor.defaultParishId;
+  const living = splitSubmittedNames(body.namesLiving);
+  const departed = splitSubmittedNames(body.namesDeparted);
+  if (!parishId) return json({ error: "Parish is required" }, { status: 422 });
+  if (!living.length && !departed.length) return json({ error: "At least one living or departed name is required" }, { status: 422 });
+
+  const parish = await findCheckoutParish(env, parishId);
+  if (!parish || parish.status !== "verified") return json({ error: "Verified parish not found" }, { status: 404 });
+
+  const entry = await storeCommemorationEntry(env, crypto.randomUUID(), {
+    parish_id: parish.id,
+    parish_name: parish.name || "",
+    donor_email: donor.email,
+    donor_name: donor.donorName || donor.householdName || "",
+    gift_type: body.giftType || "commemoration",
+    frequency: "once",
+    names_living: body.namesLiving || "",
+    names_departed: body.namesDeparted || ""
+  }, {
+    parishId: parish.id,
+    donorEmail: donor.email,
+    donorName: donor.donorName || donor.householdName || "",
+    giftType: body.giftType || "commemoration",
+    amountCents: 0
+  });
+
+  await storeDonorOffering(env, {
+    id: `commemoration-${entry.id}`,
+    donorEmail: donor.email,
+    donorName: donor.donorName || donor.householdName || "",
+    parishId: parish.id,
+    parishName: parish.name,
+    giftType: body.giftType || "commemoration",
+    title: `${parish.name} - commemoration submission`,
+    amountCents: 0,
+    chargeCents: 0,
+    status: "queued",
+    paymentStatus: "no_payment_required",
+    namesLiving: body.namesLiving || "",
+    namesDeparted: body.namesDeparted || "",
+    createdAt: entry.createdAt
+  });
+
+  return json({ ok: true, entry }, { status: 201 });
 }
 
 async function handleAdminRegistrations(request, env) {
@@ -1361,9 +1768,17 @@ async function handleStripeWebhook(request, env) {
   if (event.type === "checkout.session.completed") {
     await storeCommemorationEntry(env, object.id, object.metadata || {}, {
       amountCents: object.amount_total || object.amount_subtotal || 0,
-      donorEmail: object.customer_details?.email || object.customer_email || "",
-      donorName: object.customer_details?.name || "",
+      donorEmail: object.metadata?.donor_email || object.customer_details?.email || object.customer_email || "",
+      donorName: object.metadata?.donor_name || object.customer_details?.name || "",
       createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
+    });
+    await updateDonorOfferingByCheckout(env, object.id, {
+      status: "completed",
+      paymentStatus: object.payment_status || "paid",
+      stripeCustomerId: object.customer || "",
+      stripePaymentIntentId: object.payment_intent || "",
+      stripeSubscriptionId: object.subscription || "",
+      completedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
     });
   }
 
@@ -1371,10 +1786,31 @@ async function handleStripeWebhook(request, env) {
     const metadata = object.subscription_details?.metadata || object.lines?.data?.[0]?.metadata || object.metadata || {};
     await storeCommemorationEntry(env, object.id, metadata, {
       amountCents: object.amount_paid || 0,
-      donorEmail: object.customer_email || object.customer_details?.email || "",
-      donorName: object.customer_name || "",
+      donorEmail: metadata.donor_email || object.customer_email || object.customer_details?.email || "",
+      donorName: metadata.donor_name || object.customer_name || "",
       createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
     });
+    if (metadata.donor_email) {
+      await storeDonorOffering(env, {
+        id: object.id,
+        donorEmail: metadata.donor_email,
+        donorName: metadata.donor_name || object.customer_name || "",
+        parishId: metadata.parish_id || "",
+        parishName: metadata.parish_name || "",
+        giftType: metadata.gift_type || "recurring",
+        title: metadata.gift_type ? String(metadata.gift_type).replace(/-/g, " ") : "Recurring AgaPay offering",
+        frequency: metadata.frequency || "recurring",
+        amountCents: object.amount_paid || 0,
+        chargeCents: object.amount_paid || 0,
+        status: "completed",
+        paymentStatus: "paid",
+        stripeCustomerId: object.customer || "",
+        stripeSubscriptionId: object.subscription || "",
+        namesLiving: metadata.names_living || "",
+        namesDeparted: metadata.names_departed || "",
+        createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
+      });
+    }
   }
 
   if (event.type === "checkout.session.completed" && object.mode === "subscription") {
@@ -2005,6 +2441,18 @@ export default {
       return json({ tiers: publicSubscriptionTiers() });
     }
     if (request.method === "POST" && url.pathname === "/api/registrations") return handleRegistrations(request, env);
+    if (url.pathname === "/api/donor/session") {
+      return handleDonorSession(request, env);
+    }
+    if (url.pathname === "/api/donor/dashboard") {
+      return handleDonorDashboard(request, env);
+    }
+    if (url.pathname === "/api/donor/offerings") {
+      return handleDonorOfferings(request, env);
+    }
+    if (url.pathname === "/api/donor/commemorations") {
+      return handleDonorCommemorations(request, env);
+    }
     if (request.method === "GET" && url.pathname === "/api/admin/registrations") {
       return handleAdminRegistrations(request, env);
     }
