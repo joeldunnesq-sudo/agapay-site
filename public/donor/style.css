@@ -462,6 +462,7 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
 .btn-primary:hover { background: var(--forest); }
 .btn-gold { background: var(--gold); color: var(--deep); }
 .btn-ghost { background: white; color: var(--deep); border: 1px solid var(--line); }
+.btn-ghost-dark { background: rgba(246, 241, 232, 0.08); color: var(--cream); border: 1px solid rgba(184, 144, 47, 0.2); }
 .btn-wine { background: var(--wine); color: var(--cream); }
 .btn-sm { min-height: 32px; padding: 7px 11px; font-size: 12px; }
 .btn-block { width: 100%; }
