@@ -537,7 +537,7 @@
       <div class="fee-text">
         <strong>Cover the platform fees</strong>
         <p>When you cover the fees, St. Seraphim Mission receives your full gift — nothing deducted.</p>
-        <span class="fee-calc" id="feeCalc">You cover $1.75 · Parish receives $50.00</span>
+        <span class="fee-calc" id="feeCalc">You cover $2.80 · Parish receives $50.00</span>
       </div>
     </div>
 
@@ -602,7 +602,7 @@
       funds: []
     };
 
-    const AGAPAY_RATE = 0.029;
+    const AGAPAY_RATE = 0.05;
     const AGAPAY_FIXED = 0.30;
 
     // SCROLL REVEAL
@@ -786,7 +786,7 @@
       feeCovered = document.getElementById('feeCoverage').checked;
       const amount = selectedAmount || 0;
       const fees = amount * AGAPAY_RATE + AGAPAY_FIXED;
-      const parishReceives = amount;
+      const parishReceives = feeCovered ? amount : Math.max(0, amount - fees);
       const donorTotal = feeCovered ? amount + fees : amount;
 
       const typeLabels = {
@@ -804,9 +804,9 @@
       document.getElementById('summaryType').textContent = typeLabels[selectedType] || '';
       document.getElementById('summaryFreq').textContent = freqLabels[selectedFreq] || '';
       document.getElementById('summaryParishReceives').textContent = '$' + parishReceives.toFixed(2);
-      document.getElementById('summaryFee').textContent = feeCovered ? '+$' + fees.toFixed(2) : '—';
+      document.getElementById('summaryFee').textContent = feeCovered ? '+$' + fees.toFixed(2) : '-$' + fees.toFixed(2);
       document.getElementById('summaryTotal').textContent = '$' + donorTotal.toFixed(2);
-      document.getElementById('summaryFeeRow').style.opacity = feeCovered ? '1' : '0.4';
+      document.getElementById('summaryFeeRow').style.opacity = '1';
 
       // Show detail row for feast and funds
       const detailRow = document.getElementById('summaryDetailRow');
@@ -832,7 +832,7 @@
 
       document.getElementById('feeCalc').textContent = feeCovered
         ? `You cover $${fees.toFixed(2)} · Parish receives $${parishReceives.toFixed(2)}`
-        : `$${fees.toFixed(2)} deducted from gift · Parish receives $${(parishReceives - fees).toFixed(2)}`;
+        : `$${fees.toFixed(2)} deducted from gift · Parish receives $${parishReceives.toFixed(2)}`;
     }
 
     // Live update summary as feast description is typed
