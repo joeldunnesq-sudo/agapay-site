@@ -115,6 +115,7 @@ function publicDonor(donor) {
     donorName: donor.donorName || "",
     householdName: donor.householdName || donor.donorName || "",
     defaultParishId: donor.defaultParishId || "",
+    emailVerifiedAt: donor.emailVerifiedAt || "",
     createdAt: donor.createdAt || "",
     updatedAt: donor.updatedAt || "",
     lastLoginAt: donor.lastLoginAt || ""
@@ -141,6 +142,7 @@ async function requireDonor(request, env) {
   const token = getBearerToken(request);
   if (!email || !token) return null;
   const donor = await loadDonor(env, email);
+  if (!donor?.emailVerifiedAt) return null;
   if (!donor || !donor.sessionTokenHash || !donor.sessionSalt) return null;
   const submittedHash = await hashSessionToken(token, donor.sessionSalt);
   if (!secureCompare(submittedHash, donor.sessionTokenHash)) return null;
@@ -1113,6 +1115,46 @@ async function handleCheckout(request, env) {
 }
 
 async function handleDonorSession(request, env) {
+  return handleDonorLogin(request, env);
+}
+
+async function issueDonorSession(env, donor) {
+  const token = generateSecret("agp_donor");
+  const sessionSalt = generateSecret("session");
+  const updated = {
+    ...donor,
+    sessionSalt,
+    sessionTokenHash: await hashSessionToken(token, sessionSalt),
+    lastLoginAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  await saveDonor(env, updated);
+  return { token, donor: updated };
+}
+
+async function sendDonorVerificationEmail(env, donor, verificationUrl) {
+  const appUrl = env.AGAPAY_APP_URL || "https://agapay.app";
+  const from = env.AGAPAY_FROM_EMAIL || "AgaPay <onboarding@agapay.app>";
+  const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
+  const safeUrl = htmlEscape(verificationUrl);
+  const name = htmlEscape(donor.donorName || donor.householdName || "friend");
+
+  return sendEmail(env, {
+    from,
+    to: [donor.email],
+    reply_to: replyTo,
+    subject: "Verify your AgaPay donor account",
+    html: agapayEmailHtml(appUrl, "Verify your donor account", `
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Hello ${name}, please verify your email address to finish setting up your AgaPay donor dashboard.</p>
+      <p style="margin:0 0 24px;"><a href="${safeUrl}" style="display:inline-block;background:#B8902F;color:#0F2D1F;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Verify email address</a></p>
+      <p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#171715;">After verification, you can sign in to your donor dashboard to view offering history, submit commemorations, and give through AgaPay.</p>
+      <p style="margin:0;font-size:12px;line-height:1.6;color:#6F6A60;">If you did not create this AgaPay account, you can ignore this email.</p>
+    `)
+  });
+}
+
+async function handleDonorSignup(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   if (!env.AGAPAY_REGISTRATIONS) {
     return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
@@ -1127,45 +1169,136 @@ async function handleDonorSession(request, env) {
 
   const email = normalizeEmail(body.email);
   const password = String(body.password || "");
-  if (!email || !email.includes("@") || !password) {
-    return json({ error: "Email and password are required" }, { status: 422 });
+  const donorNameValue = String(body.donorName || [body.firstName, body.lastName].filter(Boolean).join(" ") || "").trim();
+  if (!email || !email.includes("@") || !password || !donorNameValue) {
+    return json({ error: "Name, email, and password are required" }, { status: 422 });
   }
+  if (password.length < 8) return json({ error: "Password must be at least 8 characters" }, { status: 422 });
 
   const now = new Date().toISOString();
-  let donor = await loadDonor(env, email);
-  if (donor) {
-    const submittedHash = await hashPassword(password, donor.passwordSalt || "");
-    if (!secureCompare(submittedHash, donor.passwordHash || "")) return unauthorized();
-  } else {
-    if (password.length < 8) return json({ error: "Password must be at least 8 characters" }, { status: 422 });
-    const passwordSalt = generateSecret("salt");
-    donor = {
-      email,
-      donorName: body.donorName || [body.firstName, body.lastName].filter(Boolean).join(" ") || "",
-      householdName: body.householdName || body.donorName || "",
-      defaultParishId: body.parishId || body.defaultParishId || "",
-      passwordSalt,
-      passwordHash: await hashPassword(password, passwordSalt),
-      createdAt: now,
-      updatedAt: now
-    };
+  const existing = await loadDonor(env, email);
+  if (existing?.emailVerifiedAt) {
+    return json({ error: "A donor account already exists for this email. Please log in." }, { status: 409 });
+  }
+  if (existing?.passwordHash) {
+    const submittedHash = await hashPassword(password, existing.passwordSalt || "");
+    if (!secureCompare(submittedHash, existing.passwordHash || "")) {
+      return json({ error: "A donor account already exists for this email. Please log in or use the original password to resend verification." }, { status: 409 });
+    }
   }
 
-  const token = generateSecret("agp_donor");
-  const sessionSalt = generateSecret("session");
-  donor = {
-    ...donor,
-    donorName: body.donorName || donor.donorName || [body.firstName, body.lastName].filter(Boolean).join(" ") || "",
-    householdName: body.householdName || donor.householdName || body.donorName || "",
-    defaultParishId: body.parishId || body.defaultParishId || donor.defaultParishId || "",
-    sessionSalt,
-    sessionTokenHash: await hashSessionToken(token, sessionSalt),
-    lastLoginAt: now,
+  const passwordSalt = existing?.passwordSalt || generateSecret("salt");
+  const verificationToken = generateSecret("verify");
+  const verificationSalt = generateSecret("verify_salt");
+  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+  const verificationUrl = `${String(appUrl).replace(/\/+$/, "")}/donor/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(verificationToken)}`;
+  const donor = {
+    ...(existing || {}),
+    email,
+    donorName: donorNameValue,
+    householdName: body.householdName || donorNameValue,
+    defaultParishId: body.parishId || body.defaultParishId || existing?.defaultParishId || "",
+    passwordSalt,
+    passwordHash: existing?.passwordHash || await hashPassword(password, passwordSalt),
+    emailVerifiedAt: "",
+    emailVerificationSalt: verificationSalt,
+    emailVerificationTokenHash: await sha256Hex(`${verificationSalt}:${verificationToken}`),
+    emailVerificationSentAt: now,
+    emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: existing?.createdAt || now,
     updatedAt: now
   };
+
+  const emailResult = await sendDonorVerificationEmail(env, donor, verificationUrl);
+  donor.emailVerificationStatus = emailResult.status || "";
+  donor.emailVerificationDetail = emailResult.detail || "";
   await saveDonor(env, donor);
 
-  return json({ ok: true, token, donor: publicDonor(donor) });
+  return json({
+    ok: true,
+    donor: publicDonor(donor),
+    email: { status: emailResult.status || "unknown", detail: emailResult.detail || "" },
+    verificationUrl: emailResult.status === "not_configured" ? verificationUrl : undefined
+  }, { status: 201 });
+}
+
+async function handleDonorLogin(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const email = normalizeEmail(body.email);
+  const password = String(body.password || "");
+  if (!email || !password) return json({ error: "Email and password are required" }, { status: 422 });
+  const donor = await loadDonor(env, email);
+  if (!donor) return unauthorized();
+  const submittedHash = await hashPassword(password, donor.passwordSalt || "");
+  if (!secureCompare(submittedHash, donor.passwordHash || "")) return unauthorized();
+  if (!donor.emailVerifiedAt) {
+    return json({ error: "Please verify your email before logging in.", code: "email_unverified" }, { status: 403 });
+  }
+
+  const session = await issueDonorSession(env, donor);
+  return json({ ok: true, token: session.token, donor: publicDonor(session.donor) });
+}
+
+async function handleDonorVerify(request, env) {
+  if (!["GET", "POST"].includes(request.method)) return json({ error: "Method not allowed" }, { status: 405 });
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  let email = "";
+  let token = "";
+  const url = new URL(request.url);
+  if (request.method === "GET") {
+    email = normalizeEmail(url.searchParams.get("email"));
+    token = String(url.searchParams.get("token") || "");
+  } else {
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+    email = normalizeEmail(body.email);
+    token = String(body.token || "");
+  }
+
+  if (!email || !token) return json({ error: "Verification email and token are required" }, { status: 422 });
+  const donor = await loadDonor(env, email);
+  if (!donor) return unauthorized();
+  if (donor.emailVerifiedAt) {
+    const session = await issueDonorSession(env, donor);
+    return json({ ok: true, alreadyVerified: true, token: session.token, donor: publicDonor(session.donor) });
+  }
+  if (!donor.emailVerificationSalt || !donor.emailVerificationTokenHash) {
+    return json({ error: "Verification token is missing or expired. Please sign up again to resend verification." }, { status: 410 });
+  }
+  if (donor.emailVerificationExpiresAt && new Date(donor.emailVerificationExpiresAt).getTime() < Date.now()) {
+    return json({ error: "Verification link expired. Please sign up again to resend verification." }, { status: 410 });
+  }
+  const submittedHash = await sha256Hex(`${donor.emailVerificationSalt}:${token}`);
+  if (!secureCompare(submittedHash, donor.emailVerificationTokenHash)) return unauthorized();
+
+  const verified = {
+    ...donor,
+    emailVerifiedAt: new Date().toISOString(),
+    emailVerificationSalt: "",
+    emailVerificationTokenHash: "",
+    emailVerificationExpiresAt: "",
+    updatedAt: new Date().toISOString()
+  };
+  const session = await issueDonorSession(env, verified);
+  return json({ ok: true, token: session.token, donor: publicDonor(session.donor) });
 }
 
 async function handleDonorDashboard(request, env) {
@@ -2441,6 +2574,15 @@ export default {
       return json({ tiers: publicSubscriptionTiers() });
     }
     if (request.method === "POST" && url.pathname === "/api/registrations") return handleRegistrations(request, env);
+    if (url.pathname === "/api/donor/signup") {
+      return handleDonorSignup(request, env);
+    }
+    if (url.pathname === "/api/donor/login") {
+      return handleDonorLogin(request, env);
+    }
+    if (url.pathname === "/api/donor/verify") {
+      return handleDonorVerify(request, env);
+    }
     if (url.pathname === "/api/donor/session") {
       return handleDonorSession(request, env);
     }
