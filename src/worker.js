@@ -114,6 +114,7 @@ function publicDonor(donor) {
     email: donor.email || "",
     donorName: donor.donorName || "",
     householdName: donor.householdName || donor.donorName || "",
+    contactPhone: donor.contactPhone || "",
     defaultParishId: donor.defaultParishId || "",
     emailVerifiedAt: donor.emailVerifiedAt || "",
     createdAt: donor.createdAt || "",
@@ -134,6 +135,49 @@ async function loadDonor(env, email) {
 async function saveDonor(env, donor) {
   await env.AGAPAY_REGISTRATIONS.put(donorKey(donor.email), JSON.stringify(donor));
   return donor;
+}
+
+async function migrateDonorEmailReferences(env, oldEmail, newEmail) {
+  if (!env.AGAPAY_REGISTRATIONS) return;
+  const oldNormalized = normalizeEmail(oldEmail);
+  const newNormalized = normalizeEmail(newEmail);
+  if (!oldNormalized || !newNormalized || oldNormalized === newNormalized) return;
+
+  const offeringList = await env.AGAPAY_REGISTRATIONS.list({ prefix: donorOfferingKey(oldNormalized, ""), limit: 1000 });
+  for (const key of offeringList.keys) {
+    const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
+    if (!raw) continue;
+    try {
+      const offering = {
+        ...JSON.parse(raw),
+        donorEmail: newNormalized,
+        updatedAt: new Date().toISOString()
+      };
+      const newKey = donorOfferingKey(newNormalized, offering.id || key.name.split(":").pop());
+      await env.AGAPAY_REGISTRATIONS.put(newKey, JSON.stringify(offering));
+      if (offering.checkoutSessionId) await env.AGAPAY_REGISTRATIONS.put(donorCheckoutIndexKey(offering.checkoutSessionId), newKey);
+      await env.AGAPAY_REGISTRATIONS.delete(key.name);
+    } catch {
+      // Ignore malformed donor offering records during email migration.
+    }
+  }
+
+  const commemorationList = await env.AGAPAY_REGISTRATIONS.list({ prefix: COMMEMORATION_KEY_PREFIX, limit: 1000 });
+  for (const key of commemorationList.keys) {
+    const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
+    if (!raw) continue;
+    try {
+      const entry = JSON.parse(raw);
+      if (normalizeEmail(entry.donorEmail) !== oldNormalized) continue;
+      await env.AGAPAY_REGISTRATIONS.put(key.name, JSON.stringify({
+        ...entry,
+        donorEmail: newNormalized,
+        updatedAt: new Date().toISOString()
+      }));
+    } catch {
+      // Ignore malformed commemoration records during email migration.
+    }
+  }
 }
 
 async function requireDonor(request, env) {
@@ -718,14 +762,23 @@ async function loadDonorCommemorations(env, email, limit = 100) {
 }
 
 function donorSummaryFromOfferings(offerings, commemorations = []) {
-  const year = new Date().getUTCFullYear();
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth();
   const ytd = offerings.filter((item) => new Date(item.createdAt || 0).getUTCFullYear() === year);
   const paid = ytd.filter((item) => item.paymentStatus === "paid" || item.status === "paid" || item.status === "completed");
   const recurring = offerings.filter((item) => item.frequency && item.frequency !== "once");
   const ytdCents = paid.reduce((sum, item) => sum + Number(item.amountCents || 0), 0);
+  const monthCents = paid
+    .filter((item) => {
+      const created = new Date(item.createdAt || 0);
+      return created.getUTCFullYear() === year && created.getUTCMonth() === month;
+    })
+    .reduce((sum, item) => sum + Number(item.amountCents || 0), 0);
   return {
     year,
     ytdCents,
+    monthCents,
     offeringCount: ytd.length,
     paidOfferingCount: paid.length,
     recurringCount: recurring.length,
@@ -774,13 +827,19 @@ function parishFromRegistration(registration) {
     status: "verified",
     givingStatus: registration.givingStatus || "active",
     source: "registration",
+    liturgicalCalendar: registration.liturgicalCalendar || "julian",
+    recurringGivingEnabled: registration.recurringGivingEnabled ?? true,
+    candlesEnabled: registration.candlesEnabled ?? true,
+    commemorationsEnabled: registration.commemorationsEnabled ?? true,
     funds: Array.isArray(registration.funds) && registration.funds.length ? registration.funds : [
       {
         id: "general",
         name: "General Operating Fund",
         description: "Utilities, supplies, ministries, and day-to-day parish needs."
       }
-    ]
+    ],
+    campaigns: Array.isArray(registration.campaigns) ? registration.campaigns : [],
+    feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
   };
 }
 
@@ -1448,9 +1507,26 @@ async function handleDonorDashboard(request, env) {
       ...donor,
       donorName: body.donorName ?? donor.donorName,
       householdName: body.householdName ?? donor.householdName,
+      contactPhone: body.contactPhone ?? body.phone ?? donor.contactPhone ?? "",
       defaultParishId: body.defaultParishId ?? body.parishId ?? donor.defaultParishId,
       updatedAt: new Date().toISOString()
     };
+
+    const requestedEmail = normalizeEmail(body.email || donor.email);
+    const emailChanged = requestedEmail && requestedEmail !== normalizeEmail(donor.email);
+    if (emailChanged) {
+      const currentPassword = String(body.currentPassword || "");
+      const submittedHash = await hashPassword(currentPassword, donor.passwordSalt || "");
+      if (!secureCompare(submittedHash, donor.passwordHash || "")) return unauthorized();
+      const existing = await loadDonor(env, requestedEmail);
+      if (existing) return json({ error: "That email address is already connected to a donor account" }, { status: 409 });
+      updated = {
+        ...updated,
+        email: requestedEmail,
+        emailVerifiedAt: new Date().toISOString(),
+        emailChangedAt: new Date().toISOString()
+      };
+    }
 
     if (body.newPassword) {
       const currentPassword = String(body.currentPassword || "");
@@ -1466,6 +1542,10 @@ async function handleDonorDashboard(request, env) {
       };
     }
 
+    if (emailChanged) {
+      await migrateDonorEmailReferences(env, donor.email, requestedEmail);
+      await env.AGAPAY_REGISTRATIONS.delete(donorKey(donor.email));
+    }
     await saveDonor(env, updated);
     return json({ ok: true, donor: publicDonor(updated) });
   }

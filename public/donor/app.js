@@ -4,6 +4,18 @@ const donorStore = {
   donor: "agapayDonorProfile"
 };
 
+const donorMajorFeasts = [
+  { name: "Theophany", gregorian: "01-06", julian: "01-19" },
+  { name: "Meeting of the Lord", gregorian: "02-02", julian: "02-15" },
+  { name: "Annunciation", gregorian: "03-25", julian: "04-07" },
+  { name: "Transfiguration", gregorian: "08-06", julian: "08-19" },
+  { name: "Dormition of the Theotokos", gregorian: "08-15", julian: "08-28" },
+  { name: "Nativity of the Theotokos", gregorian: "09-08", julian: "09-21" },
+  { name: "Elevation of the Cross", gregorian: "09-14", julian: "09-27" },
+  { name: "Entrance of the Theotokos", gregorian: "11-21", julian: "12-04" },
+  { name: "Nativity of Christ", gregorian: "12-25", julian: "01-07" }
+];
+
 function donorSession() {
   return {
     email: localStorage.getItem(donorStore.email) || "",
@@ -44,9 +56,46 @@ function money(cents) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format((Number(cents) || 0) / 100);
 }
 
+function donorInitials(donor) {
+  const source = donor?.householdName || donor?.donorName || donor?.email || "Faithful Member";
+  const words = String(source).trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return "FM";
+  if (words.length === 1 && words[0].includes("@")) return words[0].slice(0, 2).toUpperCase();
+  return words.slice(0, 2).map((word) => word[0]).join("").toUpperCase();
+}
+
+function donorDisplayName(donor) {
+  if (donor?.householdName) return donor.householdName;
+  if (donor?.donorName) return donor.donorName;
+  if (donor?.email) return donor.email.split("@")[0];
+  return "Faithful Member";
+}
+
 function shortDate(value) {
   if (!value) return "No date";
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
+}
+
+function monthDayDate(year, monthDay) {
+  const [month, day] = String(monthDay || "01-01").split("-").map((value) => Number(value));
+  return new Date(year, month - 1, day);
+}
+
+function calendarLabel(value) {
+  return String(value || "julian").toLowerCase().includes("gregorian")
+    ? "Revised Julian / Gregorian"
+    : "Julian / Old Calendar";
+}
+
+function nextFeastForCalendar(calendar) {
+  const key = String(calendar || "julian").toLowerCase().includes("gregorian") ? "gregorian" : "julian";
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const candidates = donorMajorFeasts
+    .map((feast) => ({ ...feast, date: monthDayDate(start.getFullYear(), feast[key]) }))
+    .map((feast) => feast.date < start ? { ...feast, date: monthDayDate(start.getFullYear() + 1, feast[key]) } : feast)
+    .sort((a, b) => a.date - b.date);
+  return candidates[0];
 }
 
 function escapeHtml(value) {
@@ -74,6 +123,11 @@ function setDonorProfile(donor) {
   const profileMeta = document.getElementById("profileMeta");
   if (profileName) profileName.textContent = name;
   if (profileMeta) profileMeta.textContent = donor.defaultParishId ? `${donor.email} - ${donor.defaultParishId}` : donor.email || "Donor account loaded";
+  document.querySelectorAll(".mobile-avatar").forEach((avatar) => {
+    avatar.textContent = donorInitials(donor);
+  });
+  const greeting = document.getElementById("greeting");
+  if (greeting) greeting.textContent = `Welcome, ${donorDisplayName(donor)}`;
   updateDonorAuthState();
 }
 
@@ -115,6 +169,113 @@ async function loadPublicParishes(selectId = "parish") {
   } catch {
     return [];
   }
+}
+
+function donorGiftUrl(giftType, parish, extra = {}) {
+  const params = new URLSearchParams({ giftType });
+  if (parish?.id) params.set("parish", parish.id);
+  Object.entries(extra).forEach(([key, value]) => {
+    if (value) params.set(key, value);
+  });
+  return `/donor/give?${params.toString()}`;
+}
+
+function communityIconSvg(type) {
+  const normalized = String(type || "parish").toLowerCase();
+  if (normalized === "monastery") {
+    return '<svg viewBox="0 0 38 38" aria-hidden="true"><rect x="4" y="14" width="30" height="18" rx="1"/><rect x="14" y="6" width="10" height="14" rx="1"/><line x1="19" y1="2" x2="19" y2="6"/><line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/><line x1="16" y1="5.5" x2="22" y2="5.5"/><path d="M15 32 L15 25 Q19 21 23 25 L23 32"/><rect x="7" y="18" width="5" height="6" rx="2.5"/><rect x="26" y="18" width="5" height="6" rx="2.5"/></svg>';
+  }
+  if (normalized === "mission") {
+    return '<svg viewBox="0 0 38 38" aria-hidden="true"><line x1="19" y1="2" x2="19" y2="6"/><line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/><line x1="16" y1="5.5" x2="22" y2="5.5"/><path d="M19 6 C10 10 8 17 11 22 C13 26 16 27 19 27 C22 27 25 26 27 22 C30 17 28 10 19 6Z"/><line x1="12" y1="27" x2="26" y2="27"/><line x1="13" y1="29" x2="25" y2="29"/></svg>';
+  }
+  return '<svg viewBox="0 0 38 38" aria-hidden="true"><line x1="19" y1="2" x2="19" y2="5"/><line x1="17" y1="3.5" x2="21" y2="3.5"/><path d="M19 5 C15 7 13 11 14 14 C15 16 17 17 19 17 C21 17 23 16 24 14 C25 11 23 7 19 5Z"/><line x1="10" y1="6" x2="10" y2="8"/><path d="M10 8 C8 9.5 7 12 7.5 14 C8 15.5 9 16 10 16 C11 16 12 15.5 12.5 14 C13 12 12 9.5 10 8Z"/><line x1="28" y1="6" x2="28" y2="8"/><path d="M28 8 C26 9.5 25 12 25.5 14 C26 15.5 27 16 28 16 C29 16 30 15.5 30.5 14 C31 12 30 9.5 28 8Z"/><rect x="4" y="17" width="30" height="14" rx="1"/><path d="M16 31 L16 25 Q19 22 22 25 L22 31"/></svg>';
+}
+
+function updateQuickGiveLinks(parish) {
+  const parishLink = document.getElementById("quickGiveParish");
+  const parishIcon = document.getElementById("quickGiveParishIcon");
+  const candleLink = document.getElementById("quickGiveCandle");
+  const campaignLink = document.getElementById("quickGiveCampaigns");
+  if (parishLink) parishLink.href = donorGiftUrl("stewardship", parish);
+  if (parishIcon) parishIcon.innerHTML = communityIconSvg(parish?.type);
+  if (candleLink) candleLink.href = donorGiftUrl("candles", parish);
+  if (campaignLink) campaignLink.href = donorGiftUrl("campaign", parish);
+}
+
+function activeParishCampaigns(parish) {
+  const campaigns = [
+    ...(Array.isArray(parish?.campaigns) ? parish.campaigns : []),
+    ...(Array.isArray(parish?.feastCampaigns) ? parish.feastCampaigns : [])
+  ];
+  return campaigns.filter((campaign) => {
+    const status = String(campaign?.status || (campaign?.enabled === false ? "hidden" : "active")).toLowerCase();
+    return campaign && !["hidden", "paused", "cancelled", "ended", "inactive"].includes(status);
+  });
+}
+
+function renderActiveCampaigns(parish) {
+  const wrap = document.getElementById("activeCampaigns");
+  if (!wrap) return;
+  const campaign = activeParishCampaigns(parish)[0];
+  if (!campaign) {
+    wrap.innerHTML = `
+      <article class="campaign-card campaign-empty">
+        <span class="campaign-pill">Campaigns</span>
+        <h3>No Active Campaigns</h3>
+        <p>${parish?.name ? "This church does not have an active alms campaign right now." : "Sign in and select a church to see parish-approved alms campaigns here."}</p>
+      </article>
+    `;
+    return;
+  }
+
+  const goalCents = Number(campaign.goalCents || campaign.targetCents || campaign.goalAmountCents || 0);
+  const raisedCents = Number(campaign.raisedCents || campaign.amountCents || campaign.currentCents || 0);
+  const percent = goalCents > 0 ? Math.min(100, Math.round((raisedCents / goalCents) * 100)) : 0;
+  const label = campaign.category || campaign.type || (campaign.feastId ? "Liturgical" : "Alms");
+  const link = donorGiftUrl("campaign", parish, { campaign: campaign.id || campaign.feastId || campaign.name });
+  wrap.innerHTML = `
+    <a class="campaign-card ${campaign.feastId ? "campaign-gold" : "campaign-green"}" href="${escapeHtml(link)}">
+      <div class="campaign-meta">
+        <span class="campaign-pill">${escapeHtml(label)}</span>
+        <span>${parish?.name ? escapeHtml(parish.name) : "AgaPay"}</span>
+      </div>
+      <h3>${escapeHtml(campaign.name || "Parish Alms Campaign")}</h3>
+      ${campaign.description ? `<p class="campaign-description">${escapeHtml(campaign.description)}</p>` : ""}
+      ${goalCents > 0 ? `<div class="campaign-track"><span style="width:${percent}%"></span></div><p><strong>${money(raisedCents)}</strong> of ${money(goalCents)} <span>${percent}%</span></p>` : ""}
+    </a>
+  `;
+}
+
+function renderNextFeast(parish) {
+  const name = document.getElementById("nextFeastName");
+  const date = document.getElementById("nextFeastDate");
+  const calendar = document.getElementById("nextFeastCalendar");
+  const link = document.getElementById("nextFeastLink");
+  if (!name || !date || !calendar) return;
+  if (!parish) {
+    calendar.textContent = "Next Feast Day:";
+    name.textContent = "Next feast day";
+    date.textContent = "Sign in and select a church to see the next feast for its calendar.";
+    if (link) link.href = "/donor/give?giftType=feast";
+    return;
+  }
+  const feast = nextFeastForCalendar(parish.liturgicalCalendar);
+  calendar.textContent = "Next Feast Day:";
+  name.textContent = feast?.name || "Next feast day";
+  date.textContent = feast?.date
+    ? `${shortDate(feast.date)} for ${parish.name || "your church"}`
+    : `Based on ${calendarLabel(parish.liturgicalCalendar)}`;
+  if (link) link.href = donorGiftUrl("feast", parish, { feast: feast?.name });
+}
+
+function applyDonorGiveParams() {
+  const params = new URLSearchParams(window.location.search);
+  const parish = params.get("parish");
+  const giftType = params.get("giftType");
+  const parishSelect = document.getElementById("parish");
+  const giftTypeSelect = document.getElementById("giftType");
+  if (parish && parishSelect) parishSelect.value = parish;
+  if (giftType && giftTypeSelect) giftTypeSelect.value = giftType;
 }
 
 async function loginFromDashboard() {
@@ -235,7 +396,10 @@ async function verifyDonorEmail() {
 async function loadDonorDashboardPage() {
   const session = donorSession();
   if (!session.email || !session.token) {
-    setDonorStatus("Sign up or log in to see live giving history.");
+    setDonorStatus("");
+    renderActiveCampaigns(null);
+    renderNextFeast(null);
+    updateQuickGiveLinks(null);
     return;
   }
   try {
@@ -243,13 +407,79 @@ async function loadDonorDashboardPage() {
     setDonorProfile(data.donor);
     const summary = data.summary || {};
     const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    setText("metricMonth", money(summary.monthCents));
     setText("metricYtd", money(summary.ytdCents));
     setText("metricOfferings", String(summary.offeringCount || 0));
     setText("metricCommemorations", String(summary.commemorationCount || 0));
     setText("metricRecurring", String(summary.recurringCount || 0));
-    setText("homeDataStatus", "Live data");
+    setText("donorParishName", data.parish?.name || "Choose a church in Settings");
+    updateQuickGiveLinks(data.parish);
+    renderActiveCampaigns(data.parish);
+    renderNextFeast(data.parish);
     const recent = document.getElementById("recentOfferings");
     if (recent) recent.innerHTML = offeringRows(data.recentOfferings || []);
+  } catch (err) {
+    setDonorStatus(err.message, "error");
+  }
+}
+
+async function loadDonorSettingsPage() {
+  await loadPublicParishes("defaultParishId");
+  const session = donorSession();
+  if (!session.email || !session.token) {
+    setDonorStatus("Log in to update donor settings.", "error");
+    return;
+  }
+  try {
+    const data = await donorApi("/api/donor/dashboard");
+    setDonorProfile(data.donor);
+    const donor = data.donor || {};
+    const setValue = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.value = value || "";
+    };
+    setValue("settingsName", donor.donorName || donor.householdName);
+    setValue("settingsEmail", donor.email);
+    setValue("settingsPhone", donor.contactPhone);
+    setValue("defaultParishId", donor.defaultParishId);
+    const parishName = document.getElementById("settingsParishName");
+    if (parishName) parishName.textContent = data.parish?.name || "Choose a parish below";
+  } catch (err) {
+    setDonorStatus(err.message, "error");
+  }
+}
+
+async function saveDonorSettings(event) {
+  event.preventDefault();
+  const body = {
+    donorName: document.getElementById("settingsName")?.value.trim(),
+    householdName: document.getElementById("settingsName")?.value.trim(),
+    email: document.getElementById("settingsEmail")?.value.trim(),
+    contactPhone: document.getElementById("settingsPhone")?.value.trim(),
+    defaultParishId: document.getElementById("defaultParishId")?.value,
+    currentPassword: document.getElementById("currentPassword")?.value,
+    newPassword: document.getElementById("newPassword")?.value
+  };
+  if (!body.donorName || !body.email) {
+    setDonorStatus("Name and email are required.", "error");
+    return;
+  }
+  if (body.newPassword && body.newPassword.length < 8) {
+    setDonorStatus("New password must be at least 8 characters.", "error");
+    return;
+  }
+  try {
+    setDonorStatus("Saving donor settings...");
+    const data = await donorApi("/api/donor/dashboard", {
+      method: "PATCH",
+      body: JSON.stringify(body)
+    });
+    if (data.donor?.email) localStorage.setItem(donorStore.email, data.donor.email);
+    setDonorProfile(data.donor);
+    document.getElementById("currentPassword").value = "";
+    document.getElementById("newPassword").value = "";
+    setDonorStatus("Donor settings saved.", "success");
+    await loadDonorSettingsPage();
   } catch (err) {
     setDonorStatus(err.message, "error");
   }
@@ -414,8 +644,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const greeting = document.getElementById("greeting");
     if (profileName) profileName.textContent = "Donor Account";
     if (profileMeta) profileMeta.textContent = "Sign in to load live giving history";
-    if (greeting) greeting.textContent = "Welcome to your donor dashboard";
+    if (greeting) greeting.textContent = "Welcome, Faithful Member";
   }
+  renderActiveCampaigns(null);
+  renderNextFeast(null);
+  updateQuickGiveLinks(null);
   updateDonorAuthState();
   const emailInput = document.getElementById("donorEmail");
   if (emailInput && donorSession().email) emailInput.value = donorSession().email;

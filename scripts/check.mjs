@@ -21,7 +21,12 @@ assert.ok(donorApp.includes('nav.setAttribute("hx-boost", "false")'), "donor she
 assert.ok(donorApp.includes("function updateDonorAuthState()"), "donor shell should update guest/authenticated controls from localStorage session");
 const donorHome = await readFile("public/donor/index.html", "utf8");
 assert.ok(donorHome.includes("data-auth-guest"), "donor home should mark guest-only controls so signed-in donors do not see login prompts");
-const donorPages = ["calendar", "commemorations", "give", "index", "login", "offerings", "signup"];
+assert.ok(donorHome.includes("donor-phone"), "donor home should use the mobile-first app shell");
+assert.ok(donorHome.includes("metricMonth"), "donor home should show month-to-date giving");
+assert.ok(donorHome.includes("/donor/settings"), "donor home avatar should link to settings");
+const donorSettings = await readFile("public/donor/settings.html", "utf8");
+assert.ok(donorSettings.includes("saveDonorSettings(event)"), "donor settings should save through the donor API");
+const donorPages = ["calendar", "commemorations", "give", "index", "login", "offerings", "settings", "signup"];
 for (const page of donorPages) {
   const html = await readFile(`public/donor/${page}.html`, "utf8");
   assert.ok(!html.includes('hx-boost="true"'), `donor ${page} page should use full navigation so page initializers run`);

@@ -7,14 +7,14 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css" />
   <script src="/donor/app.js" defer></script>
 </head>
-<body>
-  <div class="app">
-    <aside class="sidebar">
+<body class="donor-home">
+  <div class="app donor-app-shell">
+    <aside class="sidebar donor-home-sidebar">
       <div class="sidebar-scroll">
         <div class="brand">
           <div class="brand-row">
@@ -40,13 +40,6 @@
           <a href="/donor/commemorations"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 22h6"/></svg> Commemorations</a>
           <a href="/donor/calendar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg> Calendar</a>
         </nav>
-        <div class="sidebar-card">
-          <h3>Live Account</h3>
-          <div class="mini-list">
-            <div class="mini-item"><strong>Donor history</strong><span>Loads from KV after signing in.</span></div>
-            <div class="mini-item"><strong>Commemorations</strong><span>Submissions go to the parish weekly queue.</span></div>
-          </div>
-        </div>
       </div>
       <div class="sidebar-footer">
         <a class="sidebar-link" href="/give" hx-boost="false"><svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg> Public giving page</a>
@@ -54,116 +47,127 @@
       </div>
     </aside>
 
-    <main class="content">
-      <div class="topbar">
+    <main class="content donor-phone-stage">
+      <div class="topbar donor-home-topbar">
         <div class="topbar-title">Donor Home</div>
         <div class="topbar-actions">
           <a class="btn btn-ghost btn-sm" href="/donor/login" data-auth-guest>Login</a>
           <a class="btn btn-gold btn-sm" href="/donor/signup" data-auth-guest>Sign up</a>
-          <a class="btn btn-ghost btn-sm" href="/donor/commemorations">Submit names</a>
-          <a class="btn btn-gold btn-sm" href="/donor/give">Quick give</a>
         </div>
       </div>
 
-      <div class="page">
-        <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
-        <section class="hero">
-          <div class="hero-grid">
+      <div class="donor-phone">
+        <div class="donor-status-wrap">
+          <div class="notice" id="donorStatus" style="display:none;"></div>
+        </div>
+
+        <header class="mobile-hero-header">
+          <div class="mobile-brand-mark"><img src="/mark.png" alt="" /></div>
+          <div class="mobile-identity">
+            <div class="mobile-kicker">AgaPay - Love how you Give</div>
+            <h1 id="greeting">Welcome, Faithful Member</h1>
+            <p id="donorParishName" data-auth-required hidden></p>
+            <a class="welcome-signin-prompt" href="/donor/login" data-auth-guest>Sign in to load your church, giving history, and saved offering preferences.</a>
+          </div>
+          <a class="mobile-avatar" href="/donor/settings" aria-label="Open settings">FM</a>
+        </header>
+
+        <section class="mobile-summary-card" aria-label="Stewardship summary">
+          <div class="summary-metric">
+            <span>This month</span>
+            <strong id="metricMonth">$0</strong>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-metric">
+            <span>This year</span>
+            <strong id="metricYtd">$0</strong>
+          </div>
+          <img class="summary-watermark" src="/mark.png" alt="" />
+          <a class="summary-cta" href="/donor/give">Make an Offering <span aria-hidden="true">-&gt;</span></a>
+        </section>
+
+        <section class="mobile-section">
+          <div class="mobile-section-head">
+            <h2>Quick Give</h2>
+          </div>
+          <div class="quick-give-grid">
+            <a class="quick-give-tile" id="quickGiveParish" href="/donor/give?giftType=stewardship">
+              <span class="quick-give-icon" id="quickGiveParishIcon"><svg viewBox="0 0 38 38" aria-hidden="true"><line x1="19" y1="2" x2="19" y2="5"/><line x1="17" y1="3.5" x2="21" y2="3.5"/><path d="M19 5 C15 7 13 11 14 14 C15 16 17 17 19 17 C21 17 23 16 24 14 C25 11 23 7 19 5Z"/><line x1="10" y1="6" x2="10" y2="8"/><path d="M10 8 C8 9.5 7 12 7.5 14 C8 15.5 9 16 10 16 C11 16 12 15.5 12.5 14 C13 12 12 9.5 10 8Z"/><line x1="28" y1="6" x2="28" y2="8"/><path d="M28 8 C26 9.5 25 12 25.5 14 C26 15.5 27 16 28 16 C29 16 30 15.5 30.5 14 C31 12 30 9.5 28 8Z"/><rect x="4" y="17" width="30" height="14" rx="1"/><path d="M16 31 L16 25 Q19 22 22 25 L22 31"/></svg></span>
+              <span>Parish</span>
+            </a>
+            <a class="quick-give-tile" id="quickGiveCandle" href="/donor/give?giftType=candles">
+              <span class="quick-give-icon"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/><path d="M14 17v7"/><path d="M11 24h6"/><circle class="icon-dot" cx="14" cy="10" r="1.5"/></svg></span>
+              <span>Candle</span>
+            </a>
+            <a class="quick-give-tile" href="/donor/commemorations">
+              <span class="quick-give-icon"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/><path d="M4 16c0 3 2 5 10 5s10-2 10-5"/><path d="M10 13c1-2 2-3 4-3s3 1 4 3"/><line x1="14" y1="7" x2="14" y2="10"/><line x1="12" y1="8" x2="16" y2="8"/></svg></span>
+              <span>Memorial</span>
+            </a>
+            <a class="quick-give-tile" id="quickGiveCampaigns" href="/donor/give?giftType=campaign">
+              <span class="quick-give-icon"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 24.5C14 24.5 5 18 5 11.5C5 8.5 7.5 6 10.5 6C12.5 6 13.5 7 14 8C14.5 7 15.5 6 17.5 6C20.5 6 23 8.5 23 11.5C23 18 14 24.5 14 24.5Z"/></svg></span>
+              <span>Campaigns</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="mobile-section">
+          <div class="mobile-section-head">
+            <h2>Active Campaigns</h2>
+            <a href="/donor/give?giftType=campaign">See all</a>
+          </div>
+          <div class="campaign-stack" id="activeCampaigns">
+            <article class="campaign-card campaign-empty">
+              <span class="campaign-pill">Campaigns</span>
+              <h3>No Active Campaigns</h3>
+              <p>Choose or sign in to a church to see parish-approved alms campaigns here.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="mobile-section">
+          <div class="mobile-section-head">
+            <h2>Calendar</h2>
+            <a href="/donor/calendar">View all</a>
+          </div>
+          <article class="next-feast-card" id="nextFeastCard">
             <div>
-              <div class="eyebrow">Stewardship overview</div>
-              <h1 id="greeting">Welcome to your donor dashboard</h1>
-              <p>View live offering history, commemorations, and feast day opportunities tied to your AgaPay donor account.</p>
+              <span class="feast-kicker" id="nextFeastCalendar">Next Feast Day:</span>
+              <h3 id="nextFeastName">Next feast day</h3>
+              <p id="nextFeastDate">Sign in and select a church to see the next feast for its calendar.</p>
             </div>
-            <div class="hero-mark"><img src="/mark.png" alt="" /></div>
+            <a id="nextFeastLink" href="/donor/give?giftType=feast">Offer</a>
+          </article>
+        </section>
+
+        <section class="mobile-section mobile-live-section">
+          <div class="mobile-section-head">
+            <h2>Recent Offerings</h2>
+          </div>
+          <div class="mobile-stat-row">
+            <div><strong id="metricOfferings">0</strong><span>Offerings</span></div>
+            <div><strong id="metricRecurring">0</strong><span>Recurring</span></div>
+            <div><strong id="metricCommemorations">0</strong><span>Names</span></div>
+          </div>
+          <div class="list mobile-offering-list" id="recentOfferings">
           </div>
         </section>
 
-        <section class="grid four section-gap">
-          <div class="metric-card"><div class="metric-label">Year to date</div><div class="metric-value" id="metricYtd">$0</div><div class="metric-note">Paid offerings recorded in KV.</div></div>
-          <div class="metric-card"><div class="metric-label">Recurring gifts</div><div class="metric-value" id="metricRecurring">0</div><div class="metric-note">Active recurring records.</div></div>
-          <div class="metric-card"><div class="metric-label">Commemorations</div><div class="metric-value" id="metricCommemorations">0</div><div class="metric-note">Names submitted from this account.</div></div>
-          <div class="metric-card"><div class="metric-label">Offerings</div><div class="metric-value" id="metricOfferings">0</div><div class="metric-note">Recorded checkout and submission history.</div></div>
-        </section>
-
-        <section class="layout-main">
-          <div class="grid">
-            <div class="card">
-              <div class="card-header">
-                <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg></span> Quick Give</div>
-                <span class="status-pill" id="homeDataStatus">Sign in</span>
-              </div>
-              <div class="card-body">
-                <form action="/donor/give" method="get">
-                  <div class="form-grid">
-                    <div class="form-group">
-                      <label class="form-label" for="parish">Parish</label>
-                      <select class="form-select" id="parish" name="parish">
-                        <option value="st-seraphim-mission">St. Seraphim of Sarov Mission</option>
-                        <option value="holy-theotokos-skete">Holy Theotokos Skete</option>
-                        <option value="st-nicholas-parish">St. Nicholas Orthodox Church</option>
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label" for="purpose">Purpose</label>
-                      <select class="form-select" id="purpose" name="purpose">
-                        <option>Stewardship / Tithe</option>
-                        <option>Candles</option>
-                        <option>Commemorations</option>
-                        <option>Alms Campaign</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="quick-amounts" aria-label="Quick amount">
-                    <button type="button" onclick="setQuickAmount(this, 25)">$25</button>
-                    <button type="button" onclick="setQuickAmount(this, 50)">$50</button>
-                    <button type="button" onclick="setQuickAmount(this, 100)" class="active">$100</button>
-                    <button type="button" onclick="setQuickAmount(this, 250)">$250</button>
-                  </div>
-                  <input type="hidden" id="quickAmount" name="amount" value="100" />
-                  <button class="btn btn-gold" type="submit">Continue to gift</button>
-                </form>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-header">
-                <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg></span> Upcoming Liturgical Opportunities</div>
-              </div>
-              <div class="card-body">
-                <div class="list">
-                  <div class="list-item"><div class="list-main"><strong>Ascension of Our Lord</strong><span>Feast day offering and parish alms campaign.</span></div><span class="status-pill pending">Friday</span></div>
-                  <div class="list-item"><div class="list-main"><strong>Holy Apostles Fast</strong><span>Suggested recurring alms for food pantry and benevolence.</span></div><span class="status-pill">Upcoming</span></div>
-                  <div class="list-item"><div class="list-main"><strong>Weekly Commemorations</strong><span>Living and departed names sent to the parish queue.</span></div><span class="status-pill wine">Open</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <aside class="card">
-            <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></span> Recent Offerings</div></div>
-            <div class="card-body">
-              <div class="list" id="recentOfferings">
-                <div class="notice">Sign in to load real donor offering history.</div>
-              </div>
-            </div>
-          </aside>
-        </section>
+        <nav class="mobile-tabbar" aria-label="Donor navigation">
+          <a class="active" href="/donor"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg><span>Home</span></a>
+          <a href="/donor/give"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg><span>Give</span></a>
+          <a href="/donor/give?giftType=campaign"><svg viewBox="0 0 24 24"><path d="M5 4v16"/><path d="M5 5h13l-2 4 2 4H5"/></svg><span>Campaigns</span></a>
+          <a href="/donor/offerings"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg><span>History</span></a>
+          <a href="/donor/settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 0 1 7.1 3.29l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.17a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.31.26.64.33 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+        </nav>
       </div>
     </main>
   </div>
 
   <script>
-    function setQuickAmount(button, amount) {
-      document.getElementById("quickAmount").value = String(amount);
-      document.querySelectorAll(".quick-amounts button").forEach((item) => item.classList.remove("active"));
-      button.classList.add("active");
-    }
-    const hour = new Date().getHours();
-    const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
     document.addEventListener("DOMContentLoaded", () => {
       const donor = donorProfile();
-      document.getElementById("greeting").textContent = donor.householdName || donor.donorName ? `${greeting}, ${donor.householdName || donor.donorName}` : "Welcome to your donor dashboard";
-      loadPublicParishes("parish");
+      const name = donorDisplayName(donor);
+      document.getElementById("greeting").textContent = name ? `Welcome, ${name}` : "Welcome, Faithful Member";
       loadDonorDashboardPage();
     });
   </script>
