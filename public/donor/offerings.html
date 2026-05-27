@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css" />
+  <script src="/donor/app.js" defer></script>
 </head>
 <body hx-boost="true">
   <div class="app">
@@ -30,14 +31,15 @@
     <main class="content">
       <div class="topbar"><div class="topbar-title">My Offerings</div><div class="topbar-actions"><button class="btn btn-ghost btn-sm" type="button" onclick="filterOfferings('all')">All</button><button class="btn btn-ghost btn-sm" type="button" onclick="filterOfferings('recurring')">Recurring</button><button class="btn btn-ghost btn-sm" type="button" onclick="filterOfferings('commemoration')">Commemorations</button></div></div>
       <div class="page">
+        <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
         <section class="hero"><div class="hero-grid"><div><div class="eyebrow">History and receipts</div><h1>Every gift in one clear place.</h1><p>Filter by purpose, view status, and prepare annual stewardship summaries for your household records.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
         <section class="grid three section-gap">
-          <div class="metric-card"><div class="metric-label">Total this year</div><div class="metric-value">$2,840</div><div class="metric-note">Mock successful gifts.</div></div>
-          <div class="metric-card"><div class="metric-label">Recurring gifts</div><div class="metric-value">2</div><div class="metric-note">Monthly stewardship and clergy support.</div></div>
-          <div class="metric-card"><div class="metric-label">Receipts</div><div class="metric-value">18</div><div class="metric-note">Ready for export later.</div></div>
+          <div class="metric-card"><div class="metric-label">Total this year</div><div class="metric-value" id="offeringsYtd">$0</div><div class="metric-note">Paid gifts from live KV history.</div></div>
+          <div class="metric-card"><div class="metric-label">Recurring gifts</div><div class="metric-value" id="offeringsRecurring">0</div><div class="metric-note">Recurring checkout records.</div></div>
+          <div class="metric-card"><div class="metric-label">Receipts</div><div class="metric-value" id="offeringsReceiptCount">0</div><div class="metric-note">Recorded offerings for this account.</div></div>
         </section>
         <section class="card section-gap">
-          <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></span> Offering History</div><span class="status-pill">Mock data</span></div>
+          <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></span> Offering History</div><span class="status-pill" id="offeringsStatus">Sign in</span></div>
           <div class="card-body">
             <div class="form-grid" style="margin-bottom: 1rem;">
               <div class="form-group"><label class="form-label" for="search">Search</label><input class="form-input" id="search" placeholder="Fund, parish, amount..." oninput="searchOfferings()" /></div>
@@ -50,22 +52,7 @@
     </main>
   </div>
   <script>
-    const offerings = [
-      { type: "recurring", title: "Monthly Stewardship", parish: "St. Seraphim of Sarov Mission", date: "May 1, 2026", amount: "$125", status: "paid" },
-      { type: "commemoration", title: "Candles and Commemorations", parish: "St. Seraphim of Sarov Mission", date: "May 18, 2026", amount: "$25", status: "names received" },
-      { type: "alms", title: "Priest's Car Fund", parish: "St. Seraphim of Sarov Mission", date: "May 12, 2026", amount: "$75", status: "paid" },
-      { type: "one-time", title: "General Operating Fund", parish: "Holy Theotokos Skete", date: "Apr 28, 2026", amount: "$250", status: "paid" },
-      { type: "recurring", title: "Clergy Support Fund", parish: "St. Seraphim of Sarov Mission", date: "Apr 1, 2026", amount: "$125", status: "paid" }
-    ];
-    let currentFilter = "all";
-    function renderOfferings() {
-      const q = document.getElementById("search").value.toLowerCase();
-      const rows = offerings.filter((item) => (currentFilter === "all" || item.type === currentFilter) && JSON.stringify(item).toLowerCase().includes(q));
-      document.getElementById("offeringList").innerHTML = rows.map((item) => `<div class="list-item"><div class="list-main"><strong>${item.title}</strong><span>${item.parish} · ${item.date}</span><span class="status-pill ${item.type === "commemoration" ? "pending" : ""}">${item.status}</span></div><div class="list-amount">${item.amount}</div></div>`).join("") || '<div class="notice">No offerings match this filter.</div>';
-    }
-    function filterOfferings(type) { currentFilter = type; const el = document.getElementById("typeFilter"); if (el) el.value = type; renderOfferings(); }
-    function searchOfferings() { renderOfferings(); }
-    renderOfferings();
+    document.addEventListener("DOMContentLoaded", loadDonorOfferingsPage);
   </script>
 </body>
 </html>
