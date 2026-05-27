@@ -52,6 +52,11 @@ function setDonorStatus(message, tone = "info") {
   el.style.display = message ? "block" : "none";
 }
 
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
 function money(cents) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format((Number(cents) || 0) / 100);
 }
@@ -174,13 +179,75 @@ async function loadPublicParishes(selectId = "parish") {
 }
 
 function donorGiftUrl(giftType, parish, extra = {}) {
-  const params = new URLSearchParams({ giftType });
+  const params = new URLSearchParams({ giftType: normalizeDonorGiftType(giftType) });
   if (parish?.id) params.set("parish", parish.id);
   Object.entries(extra).forEach(([key, value]) => {
     if (value) params.set(key, value);
   });
   return `/donor/give?${params.toString()}`;
 }
+
+function quickDonorGiftUrl(giftType, parish, extra = {}) {
+  return donorGiftUrl(giftType, parish, { quick: "1", ...extra });
+}
+
+function normalizeDonorGiftType(value) {
+  const normalized = String(value || "stewardship").toLowerCase();
+  const aliases = {
+    alms: "campaign",
+    candle: "candles",
+    love: "commemoration",
+    memorial: "commemoration",
+    memorials: "commemoration",
+    funds: "fund"
+  };
+  return aliases[normalized] || normalized;
+}
+
+const donorGiftTypeCopy = {
+  stewardship: {
+    eyebrow: "Quick Parish Offering",
+    title: "Give to your parish.",
+    detailsTitle: "Parish Offering",
+    intro: "Tithe, steward, or make a general parish offering in one clean flow.",
+    context: "Your gift will be prepared as a parish offering. Use Designated Fund if this should go to a specific parish fund."
+  },
+  fund: {
+    eyebrow: "Quick Designated Fund",
+    title: "Give to a designated fund.",
+    detailsTitle: "Designated Fund Offering",
+    intro: "Support building, clergy, education, icons, or another parish-approved fund.",
+    context: "Your gift will be prepared as a designated fund offering. Add the fund name in the Stripe note if needed while this donor flow is being expanded."
+  },
+  candles: {
+    eyebrow: "Quick Candle Offering",
+    title: "Offer a candle.",
+    detailsTitle: "Candle Offering",
+    intro: "Make a candle offering for prayer intentions without moving through the full giving menu.",
+    context: "Your gift will be prepared as a candle offering. You can add prayer intention details on the commemoration page."
+  },
+  commemoration: {
+    eyebrow: "Quick Memorial Offering",
+    title: "Give for memorials and commemorations.",
+    detailsTitle: "Memorial Offering",
+    intro: "Make an offering connected to memorials, proskomedia, and parish commemoration needs.",
+    context: "After checkout, use the Commemorations page to submit living or departed names to the parish queue."
+  },
+  campaign: {
+    eyebrow: "Quick Campaign Offering",
+    title: "Support an active alms campaign.",
+    detailsTitle: "Alms Campaign Offering",
+    intro: "Give directly toward parish-approved needs, relief efforts, sickness support, or other alms campaigns.",
+    context: "Your gift will be prepared as an alms campaign offering for the selected parish."
+  },
+  feast: {
+    eyebrow: "Quick Feast Offering",
+    title: "Mark the feast with an offering.",
+    detailsTitle: "Feast Day Offering",
+    intro: "Make a feast day offering based on your parish calendar.",
+    context: "Your gift will be prepared as a feast day offering for the selected parish."
+  }
+};
 
 function communityIconSvg(type) {
   const normalized = String(type || "parish").toLowerCase();
@@ -198,12 +265,22 @@ function updateQuickGiveLinks(parish) {
   const parishIcon = document.getElementById("quickGiveParishIcon");
   const desktopParishIcon = document.getElementById("desktopParishIcon");
   const candleLink = document.getElementById("quickGiveCandle");
+  const memorialLink = document.getElementById("quickGiveMemorial");
   const campaignLink = document.getElementById("quickGiveCampaigns");
-  if (parishLink) parishLink.href = donorGiftUrl("stewardship", parish);
+  const desktopParishLink = document.getElementById("desktopQuickParish");
+  const desktopCandleLink = document.getElementById("desktopQuickCandle");
+  const desktopMemorialLink = document.getElementById("desktopQuickMemorial");
+  const desktopCampaignLink = document.getElementById("desktopQuickCampaigns");
+  if (parishLink) parishLink.href = quickDonorGiftUrl("stewardship", parish);
+  if (desktopParishLink) desktopParishLink.href = quickDonorGiftUrl("stewardship", parish);
   if (parishIcon) parishIcon.innerHTML = communityIconSvg(parish?.type);
   if (desktopParishIcon) desktopParishIcon.innerHTML = communityIconSvg(parish?.type);
-  if (candleLink) candleLink.href = donorGiftUrl("candles", parish);
-  if (campaignLink) campaignLink.href = donorGiftUrl("campaign", parish);
+  if (candleLink) candleLink.href = quickDonorGiftUrl("candles", parish);
+  if (desktopCandleLink) desktopCandleLink.href = quickDonorGiftUrl("candles", parish);
+  if (memorialLink) memorialLink.href = quickDonorGiftUrl("commemoration", parish);
+  if (desktopMemorialLink) desktopMemorialLink.href = quickDonorGiftUrl("commemoration", parish);
+  if (campaignLink) campaignLink.href = quickDonorGiftUrl("campaign", parish);
+  if (desktopCampaignLink) desktopCampaignLink.href = quickDonorGiftUrl("campaign", parish);
 }
 
 function activeParishCampaigns(parish) {
@@ -291,11 +368,34 @@ function renderNextFeast(parish) {
 function applyDonorGiveParams() {
   const params = new URLSearchParams(window.location.search);
   const parish = params.get("parish");
-  const giftType = params.get("giftType");
+  const giftType = normalizeDonorGiftType(params.get("giftType"));
+  const isQuick = params.get("quick") === "1";
   const parishSelect = document.getElementById("parish");
   const giftTypeSelect = document.getElementById("giftType");
   if (parish && parishSelect) parishSelect.value = parish;
   if (giftType && giftTypeSelect) giftTypeSelect.value = giftType;
+  if (!isQuick) return;
+
+  const copy = donorGiftTypeCopy[giftType] || donorGiftTypeCopy.stewardship;
+  document.body.classList.add("quick-give-mode");
+  setText("giveEyebrow", copy.eyebrow);
+  setText("giveTitle", copy.title);
+  setText("giveIntro", copy.intro);
+  setText("giftDetailsTitle", copy.detailsTitle);
+  const context = document.getElementById("quickGiveContext");
+  if (context) {
+    context.textContent = copy.context;
+    context.hidden = false;
+  }
+  const changeLink = document.getElementById("changeGiftLink");
+  if (changeLink) changeLink.hidden = false;
+  const card = document.getElementById("giftDetailsCard");
+  if (card) {
+    window.requestAnimationFrame(() => {
+      card.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("amount")?.focus({ preventScroll: true });
+    });
+  }
 }
 
 async function loginFromDashboard() {

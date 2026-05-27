@@ -537,6 +537,32 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
 .offering-card h3 { margin-top: 0.8rem; font-size: 21px; color: var(--deep); }
 .offering-card p { margin-top: 0.35rem; color: var(--stone); font-size: 13px; line-height: 1.55; }
 
+.quick-give-mode #offeringGrid {
+  display: none;
+}
+
+.quick-give-context {
+  margin-bottom: 1rem;
+  border: 1px solid rgba(184, 144, 47, 0.24);
+  border-radius: var(--r);
+  background: linear-gradient(90deg, rgba(184, 144, 47, 0.14), rgba(47, 90, 57, 0.08));
+  color: var(--deep);
+  font-size: 13px;
+  line-height: 1.65;
+  padding: 0.85rem 1rem;
+}
+
+.change-gift-link {
+  color: var(--forest);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.change-gift-link:hover {
+  color: var(--gold);
+}
+
 .list { display: grid; gap: 0.7rem; }
 .list-item {
   display: grid;
