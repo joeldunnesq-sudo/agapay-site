@@ -1469,8 +1469,7 @@
     .community-snapshot-card,
     .queue-card,
     .health-card,
-    .section-card,
-    .quick-link {
+    .section-card {
       position: relative;
       background:
         linear-gradient(135deg, rgba(184,144,47,0.10), rgba(47,90,57,0.045) 46%, rgba(255,255,255,0.96) 100%),
@@ -1481,8 +1480,7 @@
     .community-snapshot-card::before,
     .queue-card::before,
     .health-card::before,
-    .section-card::before,
-    .quick-link::before {
+    .section-card::before {
       content: '';
       position: absolute;
       inset: 0 0 auto;
@@ -1500,10 +1498,30 @@
     .community-snapshot-card > *,
     .queue-card > *,
     .health-card > *,
-    .section-card > *,
-    .quick-link > * {
+    .section-card > * {
       position: relative;
       z-index: 1;
+    }
+    .sidebar .quick-link {
+      background:
+        linear-gradient(135deg, rgba(184,144,47,0.08), rgba(47,90,57,0.06)),
+        rgba(246,241,232,0.045);
+      border-color: rgba(184,144,47,0.18);
+      color: rgba(246,241,232,0.86);
+      box-shadow: none;
+    }
+    .sidebar .quick-link:hover {
+      background:
+        linear-gradient(135deg, rgba(184,144,47,0.13), rgba(47,90,57,0.09)),
+        rgba(246,241,232,0.065);
+      color: var(--cream);
+      border-color: rgba(184,144,47,0.32);
+    }
+    .sidebar .quick-link::before {
+      content: none;
+    }
+    .sidebar .quick-link span:first-child {
+      color: inherit;
     }
     .growth-card,
     .workflow-card {
