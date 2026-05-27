@@ -794,6 +794,50 @@
     }
     .qr-feature-actions .qr-copy-row { margin-top: 0; }
     .qr-feature-actions .btn-row { justify-content: flex-end; }
+    .setup-wizard-card {
+      background: var(--deep);
+      border: 1px solid rgba(184,144,47,0.25);
+      border-radius: 14px;
+      color: var(--cream);
+      margin-bottom: 1rem;
+      overflow: hidden;
+      position: relative;
+      box-shadow: var(--shadow-sm);
+    }
+    .setup-wizard-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at top right, rgba(184,144,47,0.16), transparent 55%);
+      pointer-events: none;
+    }
+    .setup-wizard-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 1rem;
+      padding: 1.1rem 1.25rem;
+      position: relative;
+      z-index: 1;
+    }
+    .setup-title { font-family: var(--serif); font-size: 1.35rem; color: var(--cream); margin-bottom: 0.35rem; }
+    .setup-copy { color: rgba(246,241,232,0.7); font-size: 13px; line-height: 1.6; max-width: 680px; }
+    .setup-steps { display: grid; gap: 8px; margin-top: 1rem; }
+    .setup-step { border: 1px solid rgba(246,241,232,0.14); background: rgba(246,241,232,0.05); border-radius: 10px; padding: 0.75rem; }
+    .setup-step.done { border-color: rgba(125,207,148,0.32); background: rgba(47,90,57,0.2); }
+    .setup-step strong { display: block; font-size: 13px; color: var(--cream); margin-bottom: 0.2rem; }
+    .setup-step span { color: rgba(246,241,232,0.62); font-size: 12px; line-height: 1.5; }
+    .setup-action-panel { border: 1px solid rgba(184,144,47,0.22); border-radius: 10px; background: rgba(246,241,232,0.06); padding: 0.85rem; align-self: start; }
+    .setup-action-panel label { color: var(--gold); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 0.35rem; }
+    .setup-action-panel select { width: 100%; border: 1px solid rgba(184,144,47,0.3); border-radius: 10px; background: rgba(246,241,232,0.08); color: var(--cream); padding: 9px 10px; font-family: var(--sans); margin-bottom: 8px; }
+    .setup-action-panel select option { color: var(--ink); }
+    .setup-link-box { display:none; margin-top:0.75rem; border:1px solid rgba(184,144,47,0.25); border-radius:10px; background:rgba(246,241,232,0.08); padding:0.75rem; }
+    .setup-link-box.visible { display:block; }
+    .setup-link-box a { color: var(--cream); font-weight: 700; }
+    .commemoration-list { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .commemoration-column { border:1px solid var(--line); border-radius:10px; background:var(--paper); padding:0.85rem; }
+    .commemoration-column h4 { font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--gold); margin-bottom:0.5rem; }
+    .commemoration-column ul { margin:0; padding-left:1.1rem; color:var(--ink); font-size:13px; line-height:1.7; }
+    .commemoration-meta { margin-top:0.75rem; color:var(--stone); font-size:12px; line-height:1.55; }
     .option-intro, .giving-options-intro { background: rgba(47,90,57,0.06); border: 1px solid rgba(47,90,57,0.15); border-radius: 10px; padding: 0.85rem 1rem; font-size: 13px; color: var(--stone); line-height: 1.65; margin-bottom: 1rem; }
     .option-group { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-bottom: 1rem; }
     .option-group-head { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem; background: linear-gradient(180deg, white, var(--paper)); border-bottom: 1px solid var(--line); }
@@ -1045,7 +1089,7 @@
     @media (max-width: 860px) {
       .app { grid-template-columns: 1fr; }
       .sidebar { position: static; height: auto; }
-      .login, .metrics, .grid, .top-dashboard, .form-grid, .toggle-row, .profile-strip, .insights-layout, .insight-stats { grid-template-columns: 1fr; }
+      .login, .metrics, .grid, .top-dashboard, .form-grid, .toggle-row, .profile-strip, .insights-layout, .insight-stats, .setup-wizard-body, .commemoration-list { grid-template-columns: 1fr; }
       .qr-layout, .qr-copy-row, .qr-feature-layout { grid-template-columns: 1fr; }
       .qr-code { width: 148px; height: 148px; }
       .qr-feature-actions { min-width: 0; }
@@ -1142,6 +1186,8 @@
 
       <div class="detail-wrap">
         <div class="tab-panel active" id="tab-giving">
+          <div id="setupWizardPane"></div>
+
           <div class="qr-feature-card">
             <div class="qr-feature-layout">
               <div class="qr-feature-code" id="qrCodeHero" aria-label="Giving page QR code">
@@ -1172,6 +1218,19 @@
             </div>
             <div class="insights-body" id="givingSummaryPane">
               <div class="insights-empty-dark">Load your dashboard to view year-to-date giving activity, donor counts, and monthly trends.</div>
+            </div>
+          </div>
+
+          <div class="section-card" id="commemorationQueueCard">
+            <div class="section-header">
+              <div class="section-title">
+                <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 17h6"/></svg></div>
+                Weekly Commemoration Queue
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="loadCommemorations(this)">Refresh</button>
+            </div>
+            <div class="section-body" id="commemorationQueuePane">
+              <p class="section-note">Load your dashboard to view names submitted through commemoration gifts this week.</p>
             </div>
           </div>
 
@@ -1559,6 +1618,7 @@
         currentParish = result.parish;
         renderDashboard();
         loadGivingSummary();
+        loadCommemorations();
         setStatus('');
       } catch (err) {
         setStatus(err.message, 'error');
@@ -1566,6 +1626,58 @@
         if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
         if (inlineLoadBtn) { inlineLoadBtn.classList.remove('loading'); inlineLoadBtn.disabled = false; }
       }
+    }
+
+    function tierPriceLabel(tier) {
+      if (!tier) return '';
+      if (tier.monthlyCents === null) return 'Custom';
+      if (Number(tier.monthlyCents) === 0) return '$0/mo';
+      return `${money(tier.monthlyCents)}/mo`;
+    }
+
+    function renderSetupWizard() {
+      const pane = document.getElementById('setupWizardPane');
+      if (!pane || !currentParish) return;
+      const setup = currentParish.setup || {};
+      const stripeDone = Boolean(setup.stripeConnected);
+      const billingDone = Boolean(setup.billingActive);
+      const needsSetup = !stripeDone || !billingDone || setup.temporaryPassword;
+      if (!needsSetup) {
+        pane.innerHTML = '';
+        return;
+      }
+
+      const tiers = currentParish.subscriptionTiers || [];
+      const tierOptions = tiers.map((tier) => `
+        <option value="${escapeHtml(tier.id)}" ${tier.id === currentParish.subscriptionTier ? 'selected' : ''}>
+          ${escapeHtml(tier.label)} - ${escapeHtml(tierPriceLabel(tier))}
+        </option>
+      `).join('');
+
+      pane.innerHTML = `
+        <div class="setup-wizard-card">
+          <div class="setup-wizard-body">
+            <div>
+              <div class="setup-title">First-time setup</div>
+              <p class="setup-copy">Finish these steps so gifts can move from parishioners to your parish's Stripe account and AgaPay billing can be activated.</p>
+              <div class="setup-steps">
+                <div class="setup-step done"><strong>1. Contact info verified</strong><span>Your registration has already supplied the parish contact details.</span></div>
+                <div class="setup-step ${stripeDone ? 'done' : ''}"><strong>2. Connect Stripe</strong><span>${stripeDone ? 'Stripe is connected for parish giving.' : 'Create a Stripe onboarding link and complete the account setup.'}</span></div>
+                <div class="setup-step ${billingDone ? 'done' : ''}"><strong>3. Select tier and billing</strong><span>${billingDone ? 'AgaPay subscription billing is active.' : 'Choose the parish tier and start billing checkout.'}</span></div>
+              </div>
+            </div>
+            <div class="setup-action-panel">
+              ${stripeDone ? '' : '<button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startStripeOnboarding(this)">Connect Stripe</button>'}
+              ${billingDone ? '' : `
+                <label for="setupSubscriptionTier">AgaPay tier</label>
+                <select id="setupSubscriptionTier">${tierOptions}</select>
+                <button class="btn btn-ghost-dark" style="width:100%;justify-content:center;" onclick="startSubscriptionCheckout(this)">Start billing checkout</button>
+              `}
+              <div class="setup-link-box" id="setupLinkBox"><a id="setupActionLink" href="#" target="_blank" rel="noopener">Open setup link</a><p id="setupLinkHelp"></p></div>
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     function renderDashboard() {
@@ -1584,6 +1696,7 @@
       document.getElementById('topbarTitle').textContent = parish.parishName || 'Parish Dashboard';
       const overviewEmpty = document.getElementById('overviewEmpty');
       if (overviewEmpty) overviewEmpty.style.display = 'none';
+      renderSetupWizard();
 
       document.getElementById('settingsPane').innerHTML = `
         <div class="form-grid">
@@ -1967,9 +2080,90 @@
           link.href = result.onboardingUrl;
           linkBox.classList.add('visible');
         }
+        const setupBox = document.getElementById('setupLinkBox');
+        const setupLink = document.getElementById('setupActionLink');
+        const setupHelp = document.getElementById('setupLinkHelp');
+        if (setupBox && setupLink) {
+          setupLink.href = result.onboardingUrl;
+          setupLink.textContent = 'Open Stripe onboarding';
+          setupBox.classList.add('visible');
+          if (setupHelp) setupHelp.textContent = 'This single-use Stripe link opens in a new tab.';
+        }
         setStatus('Stripe onboarding link created. Click Open Stripe onboarding.', 'success');
       } catch (err) {
         setStatus(err.message, 'error');
+      } finally {
+        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+      }
+    }
+
+    async function startSubscriptionCheckout(btn) {
+      if (!currentParish) return;
+      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+      setStatus('Creating subscription checkout...');
+      try {
+        const tierSelect = document.getElementById('setupSubscriptionTier');
+        const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/subscription-checkout', {
+          method: 'POST',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscriptionTier: tierSelect ? tierSelect.value : currentParish.subscriptionTier })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.detail || result.error || 'Unable to create subscription checkout');
+        if (!result.checkoutUrl) {
+          await loadDashboard();
+          setStatus('Subscription updated. No checkout is required for this tier.', 'success');
+          return;
+        }
+        const setupBox = document.getElementById('setupLinkBox');
+        const setupLink = document.getElementById('setupActionLink');
+        const setupHelp = document.getElementById('setupLinkHelp');
+        if (setupBox && setupLink) {
+          setupLink.href = result.checkoutUrl;
+          setupLink.textContent = 'Open billing checkout';
+          setupBox.classList.add('visible');
+          if (setupHelp) setupHelp.textContent = 'Complete this checkout to activate AgaPay billing.';
+        }
+        setStatus('Subscription checkout created. Click Open billing checkout.', 'success');
+      } catch (err) {
+        setStatus(err.message, 'error');
+      } finally {
+        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+      }
+    }
+
+    function renderCommemorations(data) {
+      const pane = document.getElementById('commemorationQueuePane');
+      if (!pane) return;
+      const entries = data.entries || [];
+      const living = entries.flatMap(entry => entry.living || []);
+      const departed = entries.flatMap(entry => entry.departed || []);
+      const list = (names) => names.length
+        ? `<ul>${names.map(name => `<li>${escapeHtml(name)}</li>`).join('')}</ul>`
+        : '<p class="section-note">No names submitted this week.</p>';
+      pane.innerHTML = `
+        <div class="commemoration-list">
+          <div class="commemoration-column"><h4>Living</h4>${list(living)}</div>
+          <div class="commemoration-column"><h4>Departed</h4>${list(departed)}</div>
+        </div>
+        <p class="commemoration-meta">${entries.length} commemoration gift${entries.length === 1 ? '' : 's'} found for the current weekly queue. A summary email is sent to the priest every Saturday morning.</p>
+      `;
+    }
+
+    async function loadCommemorations(btn) {
+      const pane = document.getElementById('commemorationQueuePane');
+      if (!currentParish || !pane) return;
+      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+      pane.innerHTML = "<p class=\"section-note\">Loading this week's commemoration names...</p>";
+      try {
+        const response = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/commemorations', {
+          headers: authHeaders()
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to load commemorations');
+        renderCommemorations(result);
+      } catch (err) {
+        pane.innerHTML = `<p class="section-note">${escapeHtml(err.message)}</p>`;
       } finally {
         if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
       }
