@@ -420,6 +420,17 @@
       gap: 1rem;
     }
     .editor-hint { color: var(--muted); font-size: 12px; }
+    .feast-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .feast-card { border: 1px solid rgba(111,106,96,0.18); border-radius: 10px; background: white; padding: 0.75rem; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.75rem; align-items: center; }
+    .feast-card.enabled { border-color: rgba(184,144,47,0.45); background: rgba(184,144,47,0.06); }
+    .feast-name { color: var(--deep); font-size: 13px; font-weight: 700; margin-bottom: 0.18rem; }
+    .feast-meta { color: var(--stone); font-size: 11px; line-height: 1.45; }
+    .mini-toggle { position: relative; width: 42px; height: 24px; flex: 0 0 auto; }
+    .mini-toggle input { opacity: 0; position: absolute; inset: 0; cursor: pointer; }
+    .mini-toggle span { position: absolute; inset: 0; border-radius: 999px; background: rgba(111,106,96,0.22); border: 1px solid rgba(111,106,96,0.18); transition: background 0.18s ease, border-color 0.18s ease; }
+    .mini-toggle span::before { content: ''; position: absolute; width: 18px; height: 18px; left: 2px; top: 2px; border-radius: 50%; background: white; box-shadow: 0 2px 6px rgba(15,45,31,0.18); transition: transform 0.18s ease; }
+    .mini-toggle input:checked + span { background: rgba(184,144,47,0.78); border-color: rgba(184,144,47,0.85); }
+    .mini-toggle input:checked + span::before { transform: translateX(18px); }
     .giving-options-intro {
       border: 1px solid rgba(47,90,57,0.16);
       border-radius: 12px;
@@ -880,7 +891,13 @@
       display: flex;
       flex-direction: column;
       min-height: 0;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(184,144,47,0.38) rgba(246,241,232,0.04);
     }
+    .sidebar-body::-webkit-scrollbar { width: 10px; }
+    .sidebar-body::-webkit-scrollbar-track { background: rgba(246,241,232,0.035); border-left: 1px solid rgba(184,144,47,0.08); }
+    .sidebar-body::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgba(184,144,47,0.54), rgba(184,144,47,0.24)); border: 2px solid var(--deep); border-radius: 999px; }
+    .sidebar-body::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, rgba(184,144,47,0.72), rgba(184,144,47,0.36)); }
     .sidebar-header {
       padding: 1.5rem 1.25rem 1.25rem;
       border-bottom: 1px solid rgba(184,144,47,0.15);
@@ -1102,7 +1119,7 @@
     @media (max-width: 860px) {
       .app { grid-template-columns: 1fr; }
       .sidebar { position: static; height: auto; }
-      .login, .metrics, .grid, .top-dashboard, .form-grid, .toggle-row, .profile-strip, .insights-layout, .insight-stats, .setup-wizard-body, .commemoration-list { grid-template-columns: 1fr; }
+      .login, .metrics, .grid, .top-dashboard, .form-grid, .toggle-row, .profile-strip, .insights-layout, .insight-stats, .setup-wizard-body, .commemoration-list, .feast-grid { grid-template-columns: 1fr; }
       .qr-layout, .qr-copy-row, .qr-feature-layout { grid-template-columns: 1fr; }
       .qr-code { width: 148px; height: 148px; }
       .qr-feature-actions { min-width: 0; }
@@ -1342,6 +1359,7 @@
     let currentQrSvg = '';
     let editableFunds = [];
     let editableCampaigns = [];
+    let editableFeastCampaigns = [];
     let activeTab = 'giving';
 
     const fundPresets = {
@@ -1414,6 +1432,18 @@
         description: 'Alms for monastery needs, hospitality, supplies, repairs, or monastic support.'
       }
     };
+
+    const feastPresets = [
+      { id: 'nativity-theotokos', name: 'Nativity of the Theotokos', date: 'Sep 8', oldCalendarDate: 'Sep 21' },
+      { id: 'exaltation-cross', name: 'Exaltation of the Cross', date: 'Sep 14', oldCalendarDate: 'Sep 27' },
+      { id: 'entrance-theotokos', name: 'Entrance of the Theotokos', date: 'Nov 21', oldCalendarDate: 'Dec 4' },
+      { id: 'nativity-christ', name: 'Nativity of Christ', date: 'Dec 25', oldCalendarDate: 'Jan 7' },
+      { id: 'theophany', name: 'Theophany', date: 'Jan 6', oldCalendarDate: 'Jan 19' },
+      { id: 'meeting-lord', name: 'Meeting of the Lord', date: 'Feb 2', oldCalendarDate: 'Feb 15' },
+      { id: 'annunciation', name: 'Annunciation', date: 'Mar 25', oldCalendarDate: 'Apr 7' },
+      { id: 'transfiguration', name: 'Transfiguration', date: 'Aug 6', oldCalendarDate: 'Aug 19' },
+      { id: 'dormition', name: 'Dormition of the Theotokos', date: 'Aug 15', oldCalendarDate: 'Aug 28' }
+    ];
 
     // --- REBUILT TOAST NOTIFICATION ENGINE ---
     function setStatus(message, tone = '') {
@@ -1613,6 +1643,76 @@
       setStatus('Giving option removed. Save giving options when ready.', 'success');
     }
 
+    function calendarLabel(value) {
+      return value === 'gregorian' ? 'Revised Julian / Gregorian' : 'Julian / Old Calendar';
+    }
+
+    function feastDateLabel(feast, calendar) {
+      return calendar === 'gregorian' ? feast.date : feast.oldCalendarDate;
+    }
+
+    function isFeastEnabled(id) {
+      return editableFeastCampaigns.some(item => item.id === id && item.enabled !== false);
+    }
+
+    function toggleFeastCampaign(id, checked) {
+      const feast = feastPresets.find(item => item.id === id);
+      if (!feast) return;
+      editableFeastCampaigns = editableFeastCampaigns.filter(item => item.id !== id);
+      if (checked) {
+        editableFeastCampaigns.push({
+          id: feast.id,
+          name: feast.name,
+          enabled: true,
+          campaignName: `${feast.name} Alms Campaign`,
+          description: `Parish-approved alms connected to ${feast.name}.`
+        });
+      }
+      renderGivingOptionsEditor();
+      setStatus(checked ? `${feast.name} campaign enabled. Save when ready.` : `${feast.name} campaign disabled. Save when ready.`, 'success');
+    }
+
+    function renderFeastCampaignSetup() {
+      const calendar = document.getElementById('feastLiturgicalCalendar')?.value || currentParish?.liturgicalCalendar || 'julian';
+      return `
+        <div class="option-group">
+          <div class="option-group-head">
+            <h3 class="option-group-title">Major feast alms campaigns</h3>
+            <span class="option-group-count">${editableFeastCampaigns.filter(item => item.enabled !== false).length} enabled</span>
+          </div>
+          <div class="option-builder">
+            <div class="option-builder-title">Calendar timing</div>
+            <div class="builder-grid">
+              <select id="feastLiturgicalCalendar" onchange="renderGivingOptionsEditor()">
+                <option value="julian" ${calendar === 'julian' ? 'selected' : ''}>Julian / Old Calendar</option>
+                <option value="gregorian" ${calendar === 'gregorian' ? 'selected' : ''}>Revised Julian / Gregorian</option>
+              </select>
+              <p class="section-note" style="margin:0;">AgaPay will use this calendar preference to decide when feast-day alms campaigns should become available.</p>
+            </div>
+          </div>
+          <div class="option-list">
+            <div class="feast-grid">
+              ${feastPresets.map(feast => {
+                const enabled = isFeastEnabled(feast.id);
+                return `
+                  <div class="feast-card ${enabled ? 'enabled' : ''}">
+                    <div>
+                      <div class="feast-name">${escapeHtml(feast.name)}</div>
+                      <div class="feast-meta">${escapeHtml(calendarLabel(calendar))} · ${escapeHtml(feastDateLabel(feast, calendar))}</div>
+                    </div>
+                    <label class="mini-toggle" aria-label="Toggle ${escapeHtml(feast.name)} campaign">
+                      <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleFeastCampaign('${escapeHtml(feast.id)}', this.checked)" />
+                      <span></span>
+                    </label>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     async function loadDashboard(btn) {
       const parishId = document.getElementById('parishId').value.trim();
       if (!parishId || !document.getElementById('parishToken').value.trim()) {
@@ -1755,6 +1855,13 @@
             <label class="form-label" for="website">Website</label>
             <input id="website" value="${escapeHtml(parish.website || '')}" placeholder="https://example.org" />
           </div>
+          <div class="form-group full">
+            <label class="form-label" for="settingsLiturgicalCalendar">Liturgical calendar</label>
+            <select id="settingsLiturgicalCalendar">
+              <option value="julian" ${(parish.liturgicalCalendar || 'julian') === 'julian' ? 'selected' : ''}>Julian / Old Calendar</option>
+              <option value="gregorian" ${parish.liturgicalCalendar === 'gregorian' ? 'selected' : ''}>Revised Julian / Gregorian</option>
+            </select>
+          </div>
           <div class="form-group">
             <label class="form-label" for="givingStatus">Giving page status</label>
             <select id="givingStatus">
@@ -1801,6 +1908,7 @@
 
       editableFunds = fallbackFundsArray(parish.funds);
       editableCampaigns = fallbackCampaignsArray(parish.campaigns);
+      editableFeastCampaigns = Array.isArray(parish.feastCampaigns) ? parish.feastCampaigns : [];
       renderGivingOptionsEditor();
     }
 
@@ -1850,6 +1958,7 @@
             </div>
           </div>
         </div>
+        ${renderFeastCampaignSetup()}
         <details class="advanced-editor">
           <summary>Advanced edit</summary>
           <div class="editor-label-row">
@@ -1946,12 +2055,14 @@
 
       const body = {
         website: document.getElementById('website').value,
+        liturgicalCalendar: document.getElementById('feastLiturgicalCalendar')?.value || document.getElementById('settingsLiturgicalCalendar')?.value || currentParish.liturgicalCalendar || 'julian',
         givingStatus: document.getElementById('givingStatus').value,
         recurringGivingEnabled: document.getElementById('recurringGivingEnabled').checked,
         candlesEnabled: document.getElementById('candlesEnabled').checked,
         commemorationsEnabled: document.getElementById('commemorationsEnabled').checked,
         funds: editableFunds,
-        campaigns: editableCampaigns
+        campaigns: editableCampaigns,
+        feastCampaigns: editableFeastCampaigns
       };
       if (newPassword) body.newDashboardPassword = newPassword;
       return body;
