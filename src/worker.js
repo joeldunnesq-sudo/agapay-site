@@ -1,4 +1,5 @@
 const ADMIN_PASSWORD_KV_KEY = "__agapay_admin_password";
+const COMMEMORATION_KEY_PREFIX = "__agapay_commemoration__";
 
 const subscriptionTiers = [
   {
@@ -47,6 +48,10 @@ function json(body, init = {}) {
 
 function unauthorized() {
   return json({ error: "Unauthorized" }, { status: 401 });
+}
+
+function isSystemKvKey(keyName) {
+  return keyName === ADMIN_PASSWORD_KV_KEY || String(keyName || "").startsWith(COMMEMORATION_KEY_PREFIX);
 }
 
 function getAdminToken(request) {
@@ -464,6 +469,81 @@ function publicSubscriptionTiers() {
   return subscriptionTiers.map(({ stripePriceEnv, ...tier }) => tier);
 }
 
+function stripeReady(registration) {
+  return ["charges_enabled", "payouts_enabled"].includes(registration.stripeAccountStatus);
+}
+
+function subscriptionReady(registration) {
+  return ["active", "free_forever"].includes(registration.subscriptionStatus);
+}
+
+function weekWindow(date = new Date()) {
+  const end = new Date(date);
+  const start = new Date(end);
+  start.setUTCDate(start.getUTCDate() - 7);
+  return { start, end };
+}
+
+function splitSubmittedNames(value) {
+  return String(value || "")
+    .split(/\r?\n|,/)
+    .map((name) => name.trim())
+    .filter(Boolean);
+}
+
+function commemorationKey(parishId, sourceId) {
+  return `${COMMEMORATION_KEY_PREFIX}${parishId}:${sourceId}`;
+}
+
+async function loadCommemorationEntries(env, parishId, startDate, endDate) {
+  if (!env.AGAPAY_REGISTRATIONS || !parishId) return [];
+  const prefix = commemorationKey(parishId, "");
+  const list = await env.AGAPAY_REGISTRATIONS.list({ prefix, limit: 100 });
+  const entries = [];
+
+  for (const key of list.keys) {
+    const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
+    if (!raw) continue;
+    try {
+      const entry = JSON.parse(raw);
+      const created = new Date(entry.createdAt || 0);
+      if (startDate && created < startDate) continue;
+      if (endDate && created > endDate) continue;
+      entries.push(entry);
+    } catch {
+      // Ignore malformed queue entries rather than blocking the dashboard.
+    }
+  }
+
+  entries.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  return entries;
+}
+
+async function storeCommemorationEntry(env, sourceId, metadata = {}, fallback = {}) {
+  if (!env.AGAPAY_REGISTRATIONS) return null;
+  const parishId = metadata.parish_id || fallback.parishId || "";
+  const living = splitSubmittedNames(metadata.names_living);
+  const departed = splitSubmittedNames(metadata.names_departed);
+  if (!parishId || (!living.length && !departed.length)) return null;
+
+  const entry = {
+    id: sourceId || crypto.randomUUID(),
+    parishId,
+    sourceId: sourceId || "",
+    giftType: metadata.gift_type || fallback.giftType || "commemoration",
+    frequency: metadata.frequency || fallback.frequency || "once",
+    donorEmail: fallback.donorEmail || "",
+    donorName: fallback.donorName || "",
+    amountCents: Number(fallback.amountCents || 0),
+    living,
+    departed,
+    createdAt: fallback.createdAt || new Date().toISOString()
+  };
+
+  await env.AGAPAY_REGISTRATIONS.put(commemorationKey(parishId, entry.id), JSON.stringify(entry));
+  return entry;
+}
+
 
 function slugify(value) {
   return String(value || "")
@@ -528,7 +608,7 @@ async function verifiedRegistrationParishes(env) {
   const verified = [];
 
   for (const key of list.keys) {
-    if (key.name === ADMIN_PASSWORD_KV_KEY) continue;
+    if (isSystemKvKey(key.name)) continue;
     const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
     if (!raw) continue;
     try {
@@ -547,7 +627,7 @@ async function findRegistrationByParishId(env, parishId) {
   const list = await env.AGAPAY_REGISTRATIONS.list({ limit: 100 });
 
   for (const key of list.keys) {
-    if (key.name === ADMIN_PASSWORD_KV_KEY) continue;
+    if (isSystemKvKey(key.name)) continue;
     const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
     if (!raw) continue;
     try {
@@ -567,7 +647,7 @@ async function findRegistrationByStripeSubscriptionId(env, subscriptionId) {
   const list = await env.AGAPAY_REGISTRATIONS.list({ limit: 100 });
 
   for (const key of list.keys) {
-    if (key.name === ADMIN_PASSWORD_KV_KEY) continue;
+    if (isSystemKvKey(key.name)) continue;
     const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
     if (!raw) continue;
     try {
@@ -821,7 +901,7 @@ async function handleAdminRegistrations(request, env) {
   const registrations = [];
 
   for (const key of list.keys) {
-    if (key.name === ADMIN_PASSWORD_KV_KEY) continue;
+    if (isSystemKvKey(key.name)) continue;
     const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
     if (!raw) continue;
     try {
@@ -859,7 +939,7 @@ async function loadAllRegistrations(env) {
   const registrations = [];
 
   for (const key of list.keys) {
-    if (key.name === ADMIN_PASSWORD_KV_KEY) continue;
+    if (isSystemKvKey(key.name)) continue;
     const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
     if (!raw) continue;
     try {
@@ -1080,24 +1160,7 @@ async function handleAdminRegistrationDetail(request, env, reference) {
   return json({ error: "Method not allowed" }, { status: 405 });
 }
 
-async function handleSubscriptionCheckout(request, env, reference) {
-  if (!(await requireAdmin(request, env))) return unauthorized();
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
-
-  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
-  if (!raw) return json({ error: "Registration not found" }, { status: 404 });
-
-  let body = {};
-  try {
-    body = await request.json();
-  } catch {
-    body = {};
-  }
-
-  const registration = JSON.parse(raw);
+async function createSubscriptionCheckoutForRegistration(request, env, reference, registration, body = {}, returnPath = "/admin") {
   const tierId = body.subscriptionTier || registration.subscriptionTier || defaultSubscriptionTier(registration);
   const tier = subscriptionTier(tierId);
   if (!tier) return json({ error: "Unknown subscription tier" }, { status: 422 });
@@ -1139,11 +1202,12 @@ async function handleSubscriptionCheckout(request, env, reference) {
     stripeCustomerId = customer.body.id;
   }
 
+  const returnSeparator = returnPath.includes("?") ? "&" : "?";
   const checkoutForm = new URLSearchParams({
     mode: "subscription",
     customer: stripeCustomerId,
-    success_url: `${appUrl}/admin?subscription_return=${encodeURIComponent(reference)}`,
-    cancel_url: `${appUrl}/admin?subscription_cancel=${encodeURIComponent(reference)}`,
+    success_url: `${appUrl}${returnPath}${returnSeparator}subscription_return=${encodeURIComponent(reference)}`,
+    cancel_url: `${appUrl}${returnPath}${returnSeparator}subscription_cancel=${encodeURIComponent(reference)}`,
     client_reference_id: reference,
     "metadata[agapay_reference]": reference,
     "metadata[agapay_parish_id]": registration.parishId || slugify(registration.parishName),
@@ -1186,6 +1250,26 @@ async function handleSubscriptionCheckout(request, env, reference) {
   await env.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify(updated));
 
   return json({ ok: true, checkoutUrl: session.body.url, registration: updated }, { status: 201 });
+}
+
+async function handleSubscriptionCheckout(request, env, reference) {
+  if (!(await requireAdmin(request, env))) return unauthorized();
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
+  if (!raw) return json({ error: "Registration not found" }, { status: 404 });
+
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    body = {};
+  }
+
+  return createSubscriptionCheckoutForRegistration(request, env, reference, JSON.parse(raw), body, "/admin");
 }
 
 function parseStripeSignature(header) {
@@ -1270,6 +1354,25 @@ async function handleStripeWebhook(request, env) {
   }
 
   const object = event.data?.object || {};
+  if (event.type === "checkout.session.completed") {
+    await storeCommemorationEntry(env, object.id, object.metadata || {}, {
+      amountCents: object.amount_total || object.amount_subtotal || 0,
+      donorEmail: object.customer_details?.email || object.customer_email || "",
+      donorName: object.customer_details?.name || "",
+      createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
+    });
+  }
+
+  if (event.type === "invoice.payment_succeeded") {
+    const metadata = object.subscription_details?.metadata || object.lines?.data?.[0]?.metadata || object.metadata || {};
+    await storeCommemorationEntry(env, object.id, metadata, {
+      amountCents: object.amount_paid || 0,
+      donorEmail: object.customer_email || object.customer_details?.email || "",
+      donorName: object.customer_name || "",
+      createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
+    });
+  }
+
   if (event.type === "checkout.session.completed" && object.mode === "subscription") {
     const reference = object.metadata?.agapay_reference || object.client_reference_id || "";
     await updateSubscriptionRecord(env, reference, {
@@ -1319,7 +1422,7 @@ async function handleStripeWebhook(request, env) {
   return json({ received: true });
 }
 
-async function createStripeOnboardingSession(request, env, reference, registration) {
+async function createStripeOnboardingSession(request, env, reference, registration, returnPath = "/admin") {
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   let stripeAccountId = registration.stripeAccountId || "";
   let stripeAccount = null;
@@ -1361,10 +1464,11 @@ async function createStripeOnboardingSession(request, env, reference, registrati
     stripeAccount = retrieved.body;
   }
 
+  const returnSeparator = returnPath.includes("?") ? "&" : "?";
   const linkForm = new URLSearchParams({
     account: stripeAccountId,
-    refresh_url: `${appUrl}/admin?stripe_refresh=${encodeURIComponent(reference)}`,
-    return_url: `${appUrl}/admin?stripe_return=${encodeURIComponent(reference)}`,
+    refresh_url: `${appUrl}${returnPath}${returnSeparator}stripe_refresh=${encodeURIComponent(reference)}`,
+    return_url: `${appUrl}${returnPath}${returnSeparator}stripe_return=${encodeURIComponent(reference)}`,
     type: "account_onboarding"
   });
   const link = await stripeFormRequest(env, "/v1/account_links", linkForm);
@@ -1520,10 +1624,71 @@ async function handleParishStripeOnboarding(request, env, parishId) {
     return json({ error: "This parish is not verified for giving yet" }, { status: 422 });
   }
 
-  const result = await createStripeOnboardingSession(request, env, found.key, found.registration);
+  const result = await createStripeOnboardingSession(
+    request,
+    env,
+    found.key,
+    found.registration,
+    `/parish/dashboard?parish=${encodeURIComponent(parishId)}`
+  );
   if (result instanceof Response) return result;
 
   return json({ ok: true, onboardingUrl: result.onboardingUrl, parish: result.registration });
+}
+
+async function handleParishSubscriptionCheckout(request, env, parishId) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const token = getBearerToken(request);
+  if (!found.registration.parishDashboardToken || token !== found.registration.parishDashboardToken) {
+    return unauthorized();
+  }
+  if (found.registration.status !== "verified") {
+    return json({ error: "This parish is not verified for billing setup yet" }, { status: 422 });
+  }
+
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    body = {};
+  }
+
+  return createSubscriptionCheckoutForRegistration(
+    request,
+    env,
+    found.key,
+    found.registration,
+    body,
+    `/parish/dashboard?parish=${encodeURIComponent(parishId)}`
+  );
+}
+
+async function handleParishCommemorations(request, env, parishId) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const token = getBearerToken(request);
+  if (!found.registration.parishDashboardToken || token !== found.registration.parishDashboardToken) {
+    return unauthorized();
+  }
+
+  const { start, end } = weekWindow();
+  const entries = await loadCommemorationEntries(env, parishId, start, end);
+  return json({
+    week: {
+      start: start.toISOString(),
+      end: end.toISOString()
+    },
+    entries
+  });
 }
 
 async function listYtdStripeCharges(env, stripeAccountId) {
@@ -1667,6 +1832,20 @@ async function handleParishDashboard(request, env, parishId) {
         website: registration.website,
         givingStatus: registration.givingStatus || "active",
         stripeAccountStatus: registration.stripeAccountStatus || "not_started",
+        subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
+        subscriptionTierLabel: registration.subscriptionTierLabel || subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration))?.label || "",
+        subscriptionStatus: registration.subscriptionStatus || "not_started",
+        subscriptionMonthlyCents: registration.subscriptionMonthlyCents ?? subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration))?.monthlyCents ?? null,
+        parishDashboardTokenTemporary: Boolean(registration.parishDashboardTokenTemporary),
+        priestEmail: registration.priestEmail || "",
+        treasurerEmail: registration.treasurerEmail || "",
+        setup: {
+          contactInfoVerified: true,
+          stripeConnected: stripeReady(registration),
+          billingActive: subscriptionReady(registration),
+          temporaryPassword: Boolean(registration.parishDashboardTokenTemporary)
+        },
+        subscriptionTiers: publicSubscriptionTiers(),
         platformFee: registration.platformFee || "",
         recurringGivingEnabled: registration.recurringGivingEnabled ?? true,
         candlesEnabled: registration.candlesEnabled ?? true,
@@ -1753,7 +1932,52 @@ function cleanAssetRequest(request) {
   return request;
 }
 
+function formatCommemorationNames(entries, field) {
+  const names = entries.flatMap((entry) => Array.isArray(entry[field]) ? entry[field] : []);
+  if (!names.length) return "<p style=\"margin:0;color:#6F6A60;\">No names submitted.</p>";
+  return `<ul style="margin:0 0 0 18px;padding:0;color:#171715;line-height:1.7;">${names.map((name) => `<li>${htmlEscape(name)}</li>`).join("")}</ul>`;
+}
+
+async function sendWeeklyCommemorationEmails(env, scheduledTime) {
+  const registrations = await loadAllRegistrations(env);
+  const appUrl = env.AGAPAY_APP_URL || "https://agapay.app";
+  const { start, end } = weekWindow(new Date(scheduledTime || Date.now()));
+
+  const results = [];
+  for (const registration of registrations) {
+    if (registration.status !== "verified" || !registration.parishId || !registration.priestEmail) continue;
+    const entries = await loadCommemorationEntries(env, registration.parishId, start, end);
+    const email = await sendEmail(env, {
+      from: env.AGAPAY_FROM_EMAIL || "AgaPay <onboarding@agapay.app>",
+      to: [registration.priestEmail],
+      reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
+      subject: `Weekly AgaPay commemorations for ${registration.parishName || "your parish"}`,
+      html: agapayEmailHtml(appUrl, "Weekly Commemoration List", `
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
+        <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Here is this week's AgaPay commemoration list for <strong>${htmlEscape(registration.parishName || "your parish")}</strong>.</p>
+        <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
+          <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">Living</p>
+          ${formatCommemorationNames(entries, "living")}
+        </div>
+        <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
+          <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">Departed</p>
+          ${formatCommemorationNames(entries, "departed")}
+        </div>
+        <p style="margin:0;font-size:13px;line-height:1.7;color:#6F6A60;">This message is sent every Saturday morning, even when no names were submitted.</p>
+      `),
+      text: `Weekly AgaPay commemorations for ${registration.parishName || "your parish"}\n\nLiving:\n${entries.flatMap((entry) => entry.living || []).join("\n") || "No names submitted."}\n\nDeparted:\n${entries.flatMap((entry) => entry.departed || []).join("\n") || "No names submitted."}`
+    });
+    results.push({ parishId: registration.parishId, status: email.status });
+  }
+
+  return results;
+}
+
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(sendWeeklyCommemorationEmails(env, event.scheduledTime));
+  },
+
   async fetch(request, env) {
     const url = new URL(request.url);
 
@@ -1797,6 +2021,14 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stripe-onboarding")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stripe-onboarding", ""));
       return handleParishStripeOnboarding(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/subscription-checkout")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/subscription-checkout", ""));
+      return handleParishSubscriptionCheckout(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/commemorations")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/commemorations", ""));
+      return handleParishCommemorations(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-summary")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-summary", ""));
