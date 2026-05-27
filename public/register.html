@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Register — AgaPay</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
-  <link rel="shortcut icon" href="/favicons/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="shortcut icon" href="/favicon.ico" />
   <meta name="description" content="Register your Orthodox parish or monastery with AgaPay. Canonically verified giving for the American Church." />
   <meta name="theme-color" content="#0F2D1F" />
 
@@ -372,6 +372,17 @@
           <span class="form-hint">Leave blank if you don't have one.</span>
         </div>
 
+        <div class="form-group">
+          <label for="liturgicalCalendar">Liturgical calendar <span class="required">✦</span></label>
+          <div class="select-wrap">
+            <select id="liturgicalCalendar">
+              <option value="julian">Julian / Old Calendar</option>
+              <option value="gregorian">Revised Julian / Gregorian</option>
+            </select>
+          </div>
+          <span class="form-hint">Used later for feast-day campaign timing in the parish dashboard.</span>
+        </div>
+
         <div class="form-nav">
           <div></div>
           <button class="btn-next" onclick="goToStep(2)">Continue →</button>
@@ -597,6 +608,7 @@
         ['Jurisdiction',   document.getElementById('jurisdiction').value],
         ['City, State',    `${document.getElementById('city').value}, ${document.getElementById('state').value}`],
         ['Website',        document.getElementById('website').value || '—'],
+        ['Liturgical calendar', document.getElementById('liturgicalCalendar').selectedOptions[0]?.textContent || 'Julian / Old Calendar'],
       ];
       const notes = document.getElementById('notes').value.trim();
       const contact = [
@@ -641,6 +653,7 @@
         city: document.getElementById('city').value,
         state: document.getElementById('state').value,
         website: document.getElementById('website').value,
+        liturgicalCalendar: document.getElementById('liturgicalCalendar').value,
         priestFirst: document.getElementById('priestFirst').value,
         priestLast: document.getElementById('priestLast').value,
         priestEmail,
