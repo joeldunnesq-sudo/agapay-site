@@ -56,6 +56,72 @@
         </div>
       </div>
 
+      <section class="donor-desktop-home">
+        <div class="desktop-hero">
+          <div>
+            <div class="eyebrow">AgaPay - Love how you Give</div>
+            <h1 id="desktopGreeting">Welcome, Faithful Member</h1>
+            <p id="desktopParishName">Sign in to load your church, giving history, and saved offering preferences.</p>
+          </div>
+          <div class="desktop-hero-actions">
+            <a class="btn btn-gold" href="/donor/give">Make an Offering</a>
+            <a class="btn btn-ghost" href="/donor/settings">Settings</a>
+          </div>
+        </div>
+
+        <div class="desktop-metrics-grid">
+          <div class="metric-card"><div class="metric-label">This month</div><div class="metric-value" id="desktopMetricMonth">$0</div><div class="metric-note">Giving through AgaPay this month.</div></div>
+          <div class="metric-card"><div class="metric-label">This year</div><div class="metric-value" id="desktopMetricYtd">$0</div><div class="metric-note">Year-to-date offerings.</div></div>
+          <div class="metric-card"><div class="metric-label">Offerings</div><div class="metric-value" id="desktopMetricOfferings">0</div><div class="metric-note">Recorded gifts and checkout activity.</div></div>
+          <div class="metric-card"><div class="metric-label">Names</div><div class="metric-value" id="desktopMetricCommemorations">0</div><div class="metric-note">Commemoration submissions.</div></div>
+        </div>
+
+        <div class="desktop-dashboard-grid">
+          <section class="desktop-panel">
+            <div class="desktop-panel-head">
+              <h2>Quick Give</h2>
+            </div>
+            <div class="desktop-quick-grid">
+              <a class="desktop-quick-card" href="/donor/give?giftType=stewardship"><span id="desktopParishIcon" class="desktop-quick-icon"></span><strong>Parish</strong><span>Tithes and designated funds</span></a>
+              <a class="desktop-quick-card" href="/donor/give?giftType=candles"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/><path d="M14 17v7"/><path d="M11 24h6"/><circle class="icon-dot" cx="14" cy="10" r="1.5"/></svg></span><strong>Candle</strong><span>Offer candles and intentions</span></a>
+              <a class="desktop-quick-card" href="/donor/commemorations"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/><path d="M4 16c0 3 2 5 10 5s10-2 10-5"/><path d="M10 13c1-2 2-3 4-3s3 1 4 3"/><line x1="14" y1="7" x2="14" y2="10"/><line x1="12" y1="8" x2="16" y2="8"/></svg></span><strong>Memorial</strong><span>Submit names for prayer</span></a>
+              <a class="desktop-quick-card" href="/donor/give?giftType=campaign"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><path d="M14 24.5C14 24.5 5 18 5 11.5C5 8.5 7.5 6 10.5 6C12.5 6 13.5 7 14 8C14.5 7 15.5 6 17.5 6C20.5 6 23 8.5 23 11.5C23 18 14 24.5 14 24.5Z"/></svg></span><strong>Campaigns</strong><span>Support active parish needs</span></a>
+            </div>
+          </section>
+
+          <section class="desktop-panel">
+            <div class="desktop-panel-head">
+              <h2>Active Campaign</h2>
+              <a href="/donor/give?giftType=campaign">See all</a>
+            </div>
+            <div class="campaign-stack" id="desktopActiveCampaigns"></div>
+          </section>
+
+          <section class="desktop-panel">
+            <div class="desktop-panel-head">
+              <h2>Calendar</h2>
+              <a href="/donor/calendar">View all</a>
+            </div>
+            <article class="next-feast-card">
+              <div>
+                <span class="feast-kicker" id="desktopNextFeastCalendar">Next Feast Day:</span>
+                <h3 id="desktopNextFeastName">Next feast day</h3>
+                <p id="desktopNextFeastDate">Sign in and select a church to see the next feast for its calendar.</p>
+              </div>
+              <a id="desktopNextFeastLink" href="/donor/give?giftType=feast">Offer</a>
+            </article>
+          </section>
+
+          <section class="desktop-panel">
+            <div class="desktop-panel-head">
+              <h2>Recent Offerings</h2>
+              <a href="/donor/offerings">View history</a>
+            </div>
+            <div class="list" id="desktopRecentOfferings"></div>
+          </section>
+        </div>
+      </section>
+
       <div class="donor-phone">
         <div class="donor-status-wrap">
           <div class="notice" id="donorStatus" style="display:none;"></div>

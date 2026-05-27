@@ -128,6 +128,8 @@ function setDonorProfile(donor) {
   });
   const greeting = document.getElementById("greeting");
   if (greeting) greeting.textContent = `Welcome, ${donorDisplayName(donor)}`;
+  const desktopGreeting = document.getElementById("desktopGreeting");
+  if (desktopGreeting) desktopGreeting.textContent = `Welcome, ${donorDisplayName(donor)}`;
   updateDonorAuthState();
 }
 
@@ -194,10 +196,12 @@ function communityIconSvg(type) {
 function updateQuickGiveLinks(parish) {
   const parishLink = document.getElementById("quickGiveParish");
   const parishIcon = document.getElementById("quickGiveParishIcon");
+  const desktopParishIcon = document.getElementById("desktopParishIcon");
   const candleLink = document.getElementById("quickGiveCandle");
   const campaignLink = document.getElementById("quickGiveCampaigns");
   if (parishLink) parishLink.href = donorGiftUrl("stewardship", parish);
   if (parishIcon) parishIcon.innerHTML = communityIconSvg(parish?.type);
+  if (desktopParishIcon) desktopParishIcon.innerHTML = communityIconSvg(parish?.type);
   if (candleLink) candleLink.href = donorGiftUrl("candles", parish);
   if (campaignLink) campaignLink.href = donorGiftUrl("campaign", parish);
 }
@@ -214,17 +218,18 @@ function activeParishCampaigns(parish) {
 }
 
 function renderActiveCampaigns(parish) {
-  const wrap = document.getElementById("activeCampaigns");
-  if (!wrap) return;
+  const targets = [document.getElementById("activeCampaigns"), document.getElementById("desktopActiveCampaigns")].filter(Boolean);
+  if (!targets.length) return;
   const campaign = activeParishCampaigns(parish)[0];
   if (!campaign) {
-    wrap.innerHTML = `
+    const empty = `
       <article class="campaign-card campaign-empty">
         <span class="campaign-pill">Campaigns</span>
         <h3>No Active Campaigns</h3>
         <p>${parish?.name ? "This church does not have an active alms campaign right now." : "Sign in and select a church to see parish-approved alms campaigns here."}</p>
       </article>
     `;
+    targets.forEach((target) => { target.innerHTML = empty; });
     return;
   }
 
@@ -233,7 +238,7 @@ function renderActiveCampaigns(parish) {
   const percent = goalCents > 0 ? Math.min(100, Math.round((raisedCents / goalCents) * 100)) : 0;
   const label = campaign.category || campaign.type || (campaign.feastId ? "Liturgical" : "Alms");
   const link = donorGiftUrl("campaign", parish, { campaign: campaign.id || campaign.feastId || campaign.name });
-  wrap.innerHTML = `
+  const html = `
     <a class="campaign-card ${campaign.feastId ? "campaign-gold" : "campaign-green"}" href="${escapeHtml(link)}">
       <div class="campaign-meta">
         <span class="campaign-pill">${escapeHtml(label)}</span>
@@ -244,28 +249,43 @@ function renderActiveCampaigns(parish) {
       ${goalCents > 0 ? `<div class="campaign-track"><span style="width:${percent}%"></span></div><p><strong>${money(raisedCents)}</strong> of ${money(goalCents)} <span>${percent}%</span></p>` : ""}
     </a>
   `;
+  targets.forEach((target) => { target.innerHTML = html; });
 }
 
 function renderNextFeast(parish) {
-  const name = document.getElementById("nextFeastName");
-  const date = document.getElementById("nextFeastDate");
-  const calendar = document.getElementById("nextFeastCalendar");
-  const link = document.getElementById("nextFeastLink");
-  if (!name || !date || !calendar) return;
+  const targets = [
+    {
+      name: document.getElementById("nextFeastName"),
+      date: document.getElementById("nextFeastDate"),
+      calendar: document.getElementById("nextFeastCalendar"),
+      link: document.getElementById("nextFeastLink")
+    },
+    {
+      name: document.getElementById("desktopNextFeastName"),
+      date: document.getElementById("desktopNextFeastDate"),
+      calendar: document.getElementById("desktopNextFeastCalendar"),
+      link: document.getElementById("desktopNextFeastLink")
+    }
+  ].filter((target) => target.name && target.date && target.calendar);
+  if (!targets.length) return;
   if (!parish) {
-    calendar.textContent = "Next Feast Day:";
-    name.textContent = "Next feast day";
-    date.textContent = "Sign in and select a church to see the next feast for its calendar.";
-    if (link) link.href = "/donor/give?giftType=feast";
+    targets.forEach((target) => {
+      target.calendar.textContent = "Next Feast Day:";
+      target.name.textContent = "Next feast day";
+      target.date.textContent = "Sign in and select a church to see the next feast for its calendar.";
+      if (target.link) target.link.href = "/donor/give?giftType=feast";
+    });
     return;
   }
   const feast = nextFeastForCalendar(parish.liturgicalCalendar);
-  calendar.textContent = "Next Feast Day:";
-  name.textContent = feast?.name || "Next feast day";
-  date.textContent = feast?.date
-    ? `${shortDate(feast.date)} for ${parish.name || "your church"}`
-    : `Based on ${calendarLabel(parish.liturgicalCalendar)}`;
-  if (link) link.href = donorGiftUrl("feast", parish, { feast: feast?.name });
+  targets.forEach((target) => {
+    target.calendar.textContent = "Next Feast Day:";
+    target.name.textContent = feast?.name || "Next feast day";
+    target.date.textContent = feast?.date
+      ? `${shortDate(feast.date)} for ${parish.name || "your church"}`
+      : `Based on ${calendarLabel(parish.liturgicalCalendar)}`;
+    if (target.link) target.link.href = donorGiftUrl("feast", parish, { feast: feast?.name });
+  });
 }
 
 function applyDonorGiveParams() {
@@ -413,11 +433,18 @@ async function loadDonorDashboardPage() {
     setText("metricCommemorations", String(summary.commemorationCount || 0));
     setText("metricRecurring", String(summary.recurringCount || 0));
     setText("donorParishName", data.parish?.name || "Choose a church in Settings");
+    setText("desktopMetricMonth", money(summary.monthCents));
+    setText("desktopMetricYtd", money(summary.ytdCents));
+    setText("desktopMetricOfferings", String(summary.offeringCount || 0));
+    setText("desktopMetricCommemorations", String(summary.commemorationCount || 0));
+    setText("desktopParishName", data.parish?.name || "Choose a church in Settings to personalize your dashboard.");
     updateQuickGiveLinks(data.parish);
     renderActiveCampaigns(data.parish);
     renderNextFeast(data.parish);
     const recent = document.getElementById("recentOfferings");
     if (recent) recent.innerHTML = offeringRows(data.recentOfferings || []);
+    const desktopRecent = document.getElementById("desktopRecentOfferings");
+    if (desktopRecent) desktopRecent.innerHTML = offeringRows(data.recentOfferings || []);
   } catch (err) {
     setDonorStatus(err.message, "error");
   }
@@ -642,9 +669,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const profileName = document.getElementById("profileName");
     const profileMeta = document.getElementById("profileMeta");
     const greeting = document.getElementById("greeting");
+    const desktopGreeting = document.getElementById("desktopGreeting");
     if (profileName) profileName.textContent = "Donor Account";
     if (profileMeta) profileMeta.textContent = "Sign in to load live giving history";
     if (greeting) greeting.textContent = "Welcome, Faithful Member";
+    if (desktopGreeting) desktopGreeting.textContent = "Welcome, Faithful Member";
   }
   renderActiveCampaigns(null);
   renderNextFeast(null);

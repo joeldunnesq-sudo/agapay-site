@@ -724,6 +724,10 @@ body.donor-home {
   display: none;
 }
 
+.donor-desktop-home {
+  display: none;
+}
+
 .donor-phone-stage {
   min-height: 100vh;
   display: grid;
@@ -1233,6 +1237,196 @@ body.donor-home {
   fill: currentColor;
   stroke: currentColor;
   stroke-width: 1.9;
+}
+
+@media (min-width: 901px) {
+  .donor-home .donor-app-shell {
+    display: grid;
+    grid-template-columns: 292px minmax(0, 1fr);
+    min-height: 100vh;
+  }
+
+  .donor-home-sidebar {
+    display: flex;
+  }
+
+  .donor-home-topbar {
+    display: flex;
+  }
+
+  .donor-phone {
+    display: none;
+  }
+
+  .donor-phone-stage {
+    display: flex;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  .donor-desktop-home {
+    display: block;
+    width: min(1180px, 100%);
+    margin: 0 auto;
+    padding: 1.5rem 2rem 3rem;
+  }
+
+  .desktop-hero {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1.5rem;
+    align-items: center;
+    border: 1px solid rgba(184, 144, 47, 0.2);
+    border-radius: var(--rlg);
+    background:
+      radial-gradient(circle at 86% 24%, rgba(184, 144, 47, 0.14), transparent 12rem),
+      linear-gradient(145deg, #0F2D1F, #164F30);
+    color: var(--cream);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+
+  .desktop-hero h1 {
+    margin-top: 0.25rem;
+    color: var(--cream);
+    font-size: clamp(2.2rem, 4vw, 3.3rem);
+  }
+
+  .desktop-hero p {
+    margin-top: 0.45rem;
+    max-width: 680px;
+    color: rgba(246, 241, 232, 0.72);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .desktop-hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .desktop-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .desktop-dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+    margin-top: 1rem;
+  }
+
+  .desktop-panel {
+    border: 1px solid var(--line);
+    border-radius: var(--rlg);
+    background: white;
+    box-shadow: 0 3px 12px rgba(15, 45, 31, 0.04);
+    overflow: hidden;
+  }
+
+  .desktop-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.15rem;
+    border-bottom: 1px solid var(--line);
+    background:
+      linear-gradient(90deg, rgba(184, 144, 47, 0.12), rgba(47, 90, 57, 0.08)),
+      linear-gradient(180deg, white, var(--paper));
+  }
+
+  .desktop-panel-head h2 {
+    color: var(--deep);
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  .desktop-panel-head a {
+    color: var(--forest);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .desktop-panel > .list,
+  .desktop-panel > .campaign-stack,
+  .desktop-panel > .next-feast-card {
+    margin: 1.15rem;
+  }
+
+  .desktop-quick-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.85rem;
+    padding: 1.15rem;
+  }
+
+  .desktop-quick-card {
+    min-height: 145px;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 0.45rem;
+    border: 1px solid rgba(111, 106, 96, 0.18);
+    border-radius: var(--r);
+    background: var(--paper);
+    color: var(--deep);
+    text-align: center;
+    text-decoration: none;
+    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .desktop-quick-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(184, 144, 47, 0.42);
+    box-shadow: var(--shadow);
+  }
+
+  .desktop-quick-icon {
+    display: grid;
+    place-items: center;
+    min-height: 38px;
+  }
+
+  .desktop-quick-icon svg {
+    width: 36px;
+    height: 36px;
+    color: var(--deep);
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .desktop-quick-icon .icon-dot {
+    fill: currentColor;
+    stroke: none;
+  }
+
+  .desktop-quick-card strong {
+    font-family: var(--serif);
+    font-size: 21px;
+    line-height: 1;
+  }
+
+  .desktop-quick-card span:last-child {
+    max-width: 150px;
+    color: var(--stone);
+    font-size: 12px;
+    line-height: 1.4;
+  }
 }
 
 @media (max-width: 720px) {
