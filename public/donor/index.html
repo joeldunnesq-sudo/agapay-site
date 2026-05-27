@@ -25,15 +25,8 @@
         </div>
         <div class="auth-panel">
           <div class="auth-grid">
-            <div>
-              <label for="donorEmail">Email</label>
-              <input id="donorEmail" type="email" placeholder="you@example.com" autocomplete="email" />
-            </div>
-            <div>
-              <label for="donorPassword">Password</label>
-              <input id="donorPassword" type="password" placeholder="Dashboard password" autocomplete="current-password" />
-            </div>
-            <button class="btn btn-gold btn-block" type="button" onclick="loginFromDashboard()">Load dashboard</button>
+            <a class="btn btn-gold btn-block" href="/donor/signup">Create donor account</a>
+            <a class="btn btn-ghost-dark btn-block" href="/donor/login">Log in</a>
           </div>
         </div>
         <div class="profile-panel">
@@ -65,6 +58,8 @@
       <div class="topbar">
         <div class="topbar-title">Donor Home</div>
         <div class="topbar-actions">
+          <a class="btn btn-ghost btn-sm" href="/donor/login">Login</a>
+          <a class="btn btn-gold btn-sm" href="/donor/signup">Sign up</a>
           <a class="btn btn-ghost btn-sm" href="/donor/commemorations">Submit names</a>
           <a class="btn btn-gold btn-sm" href="/donor/give">Quick give</a>
         </div>
