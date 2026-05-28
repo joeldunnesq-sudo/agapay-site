@@ -36,6 +36,41 @@
     <priority>0.70</priority>
   </url>
   <url>
+    <loc>https://agapay.app/giving</loc>
+    <lastmod>2026-05-28</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/giving/parish-giving</loc>
+    <lastmod>2026-05-28</lastmod>
+    <priority>0.70</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/giving/recurring-donations</loc>
+    <lastmod>2026-05-28</lastmod>
+    <priority>0.70</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/giving/fundraising</loc>
+    <lastmod>2026-05-28</lastmod>
+    <priority>0.70</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/giving/event-payments</loc>
+    <lastmod>2026-05-28</lastmod>
+    <priority>0.70</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/marketplace</loc>
+    <lastmod>2026-05-28</lastmod>
+    <priority>0.70</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/directory</loc>
+    <lastmod>2026-05-28</lastmod>
+    <priority>0.70</priority>
+  </url>
+  <url>
     <loc>https://agapay.app/give</loc>
     <lastmod>2026-05-26</lastmod>
     <priority>0.60</priority>

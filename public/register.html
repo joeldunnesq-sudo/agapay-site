@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Register — AgaPay</title>
+  <title>Register â€” AgaPay</title>
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
@@ -90,7 +90,7 @@
     .step-circle { width: 32px; height: 32px; min-width: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; font-family: var(--sans); transition: all 0.3s ease; border: 1.5px solid rgba(166,159,145,0.4); background: white; color: var(--stone); }
     .step-circle.active { background: var(--deep); color: var(--cream); border-color: var(--deep); }
     .step-circle.complete { background: var(--forest); color: var(--cream); border-color: var(--forest); font-size: 0; }
-    .step-circle.complete::after { content: '✓'; font-size: 13px; }
+    .step-circle.complete::after { content: 'âœ“'; font-size: 13px; }
     .step-line { flex: 1; height: 1.5px; background: rgba(166,159,145,0.3); transition: background 0.3s ease; }
     .step-line.complete { background: var(--forest); }
     .progress-labels { display: flex; justify-content: space-between; }
@@ -239,16 +239,13 @@
         </div>
         <span class="nav-name">AGAPAY</span>
       </a>
-       <div class="nav-links">
-        <a href="/">Home</a>
-        <a href="/features">Features</a>
-        <a href="/pricing">Pricing</a>
-        <a href="/why">Why AgaPay?</a>
+             <div class="nav-links">
+        <a href="/giving">Giving</a>
+        <a href="/marketplace">Marketplace</a>
+        <a href="/directory">Directory</a>
         <a href="/vision">Vision</a>
-        <a href="/how-it-works">How it Works</a>
-        <a href="/about">About</a>
-        <a href="/donor/login" class="nav-give">Give now</a>
-        
+        <a href="/how-it-works">Resources</a>
+        <a href="/register" class="nav-cta">Join AGAPAY</a>
       </div>
       <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle menu" aria-expanded="false">
         <span></span><span></span><span></span>
@@ -257,16 +254,15 @@
   </nav>
 
   <div class="mobile-nav-drawer" id="mobileDrawer" aria-hidden="true">
-    <div class="mobile-drawer-links">
-      <a href="/" onclick="toggleMenu()">Home</a>
-      <a href="/features" onclick="toggleMenu()">Features</a>
-      <a href="/pricing" onclick="toggleMenu()">Pricing</a>
-      <a href="/why" onclick="toggleMenu()">Why AgaPay?</a>
+        <div class="mobile-drawer-links">
+      <a href="/giving" onclick="toggleMenu()">Giving</a>
+      <a href="/marketplace" onclick="toggleMenu()">Marketplace</a>
+      <a href="/directory" onclick="toggleMenu()">Directory</a>
       <a href="/vision" onclick="toggleMenu()">Vision</a>
-      <a href="/about" onclick="toggleMenu()">About</a>
+      <a href="/how-it-works" onclick="toggleMenu()">Resources</a>
     </div>
     <div class="mobile-drawer-actions">
-      <a href="/register" class="nav-cta" onclick="toggleMenu()">Register parish</a>
+      <a href="/register" class="nav-cta" onclick="toggleMenu()">Join AGAPAY</a>
     </div>
   </div>
 
@@ -307,10 +303,10 @@
     <div class="step-panel active" id="step-1">
       <div class="form-card">
         <div class="form-card-title">Your community</div>
-        <p class="form-card-sub">Tell us about your parish, mission, or monastery. Fields marked <span style="color:var(--gold);">✦</span> are required.</p>
+        <p class="form-card-sub">Tell us about your parish, mission, or monastery. Fields marked <span style="color:var(--gold);">âœ¦</span> are required.</p>
 
         <div class="form-group" style="margin-bottom:1rem;">
-          <label>Community type <span class="required">✦</span></label>
+          <label>Community type <span class="required">âœ¦</span></label>
           <div class="type-toggle">
             <button class="type-btn" data-type="Mission" onclick="selectType(this)">Mission</button>
             <button class="type-btn selected" data-type="Parish" onclick="selectType(this)">Parish</button>
@@ -320,12 +316,12 @@
         </div>
 
         <div class="form-group">
-          <label for="parishName">Community name <span class="required">✦</span></label>
+          <label for="parishName">Community name <span class="required">âœ¦</span></label>
           <input type="text" id="parishName" placeholder="St. Seraphim of Sarov Mission" />
         </div>
 
         <div class="form-group">
-          <label for="jurisdiction">Jurisdiction <span class="required">✦</span></label>
+          <label for="jurisdiction">Jurisdiction <span class="required">âœ¦</span></label>
           <div class="select-wrap">
             <select id="jurisdiction">
               <option value="">Select your jurisdiction</option>
@@ -344,11 +340,11 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="city">City <span class="required">✦</span></label>
+            <label for="city">City <span class="required">âœ¦</span></label>
             <input type="text" id="city" placeholder="Lubbock" />
           </div>
           <div class="form-group">
-            <label for="state">State <span class="required">✦</span></label>
+            <label for="state">State <span class="required">âœ¦</span></label>
             <div class="select-wrap">
               <select id="state">
                 <option value="">State</option>
@@ -377,7 +373,7 @@
         </div>
 
         <div class="form-group">
-          <label for="liturgicalCalendar">Liturgical calendar <span class="required">✦</span></label>
+          <label for="liturgicalCalendar">Liturgical calendar <span class="required">âœ¦</span></label>
           <div class="select-wrap">
             <select id="liturgicalCalendar">
               <option value="julian">Julian / Old Calendar</option>
@@ -389,7 +385,7 @@
 
         <div class="form-nav">
           <div></div>
-          <button class="btn-next" onclick="goToStep(2)">Continue →</button>
+          <button class="btn-next" onclick="goToStep(2)">Continue â†’</button>
         </div>
       </div>
     </div>
@@ -398,28 +394,28 @@
     <div class="step-panel" id="step-2">
       <div class="form-card">
         <div class="form-card-title">Contact &amp; staff</div>
-        <p class="form-card-sub">We need to reach a real person at your community. This goes directly to the founder — no automated intake system.</p>
+        <p class="form-card-sub">We need to reach a real person at your community. This goes directly to the founder â€” no automated intake system.</p>
 
         <div class="form-section-label">Priest / Administrator</div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="priestFirst">First name <span class="required">✦</span></label>
+            <label for="priestFirst">First name <span class="required">âœ¦</span></label>
             <input type="text" id="priestFirst" placeholder="Fr. John" />
           </div>
           <div class="form-group">
-            <label for="priestLast">Last name <span class="required">✦</span></label>
+            <label for="priestLast">Last name <span class="required">âœ¦</span></label>
             <input type="text" id="priestLast" placeholder="Smith" />
           </div>
         </div>
 
         <div class="form-group">
-          <label for="priestEmail">Email address <span class="required">✦</span></label>
+          <label for="priestEmail">Email address <span class="required">âœ¦</span></label>
           <input type="email" id="priestEmail" placeholder="father.john@saintseraphim.org" />
         </div>
 
         <div class="form-group">
-          <label for="priestPhone">Phone number <span class="required">✦</span></label>
+          <label for="priestPhone">Phone number <span class="required">âœ¦</span></label>
           <input type="tel" id="priestPhone" placeholder="(806) 555-0100" />
         </div>
 
@@ -428,17 +424,17 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="treasurerFirst">First name <span class="required">✦</span></label>
+            <label for="treasurerFirst">First name <span class="required">âœ¦</span></label>
             <input type="text" id="treasurerFirst" placeholder="John" />
           </div>
           <div class="form-group">
-            <label for="treasurerLast">Last name <span class="required">✦</span></label>
+            <label for="treasurerLast">Last name <span class="required">âœ¦</span></label>
             <input type="text" id="treasurerLast" placeholder="Smith" />
           </div>
         </div>
 
         <div class="form-group">
-          <label for="treasurerEmail">Treasurer email <span class="required">✦</span></label>
+          <label for="treasurerEmail">Treasurer email <span class="required">âœ¦</span></label>
           <input type="email" id="treasurerEmail" placeholder="treasurer@saintseraphim.org" />
           <span class="form-hint">Annual giving statements and financial reports will be sent here.</span>
         </div>
@@ -447,18 +443,18 @@
 
         <div class="form-group">
           <label for="notes">Anything else we should know?</label>
-          <textarea id="notes" placeholder="Tell us about your community, your current giving process, or any questions you have…"></textarea>
+          <textarea id="notes" placeholder="Tell us about your community, your current giving process, or any questions you haveâ€¦"></textarea>
           <span class="form-hint">Optional. Goes directly to the founder.</span>
         </div>
 
         <div class="form-nav">
-          <button class="btn-back" onclick="goToStep(1)">← Back</button>
-          <button class="btn-next" onclick="goToStep(3)">Review →</button>
+          <button class="btn-back" onclick="goToStep(1)">â† Back</button>
+          <button class="btn-next" onclick="goToStep(3)">Review â†’</button>
         </div>
       </div>
     </div>
 
-    <!-- STEP 3 — REVIEW -->
+    <!-- STEP 3 â€” REVIEW -->
     <div class="step-panel" id="step-3">
       <div class="form-card">
         <div class="form-card-title">Review &amp; submit</div>
@@ -483,8 +479,8 @@
         <div data-agapay-turnstile style="margin-top:1rem;"></div>
 
         <div class="form-nav" style="margin-top:1.5rem;">
-          <button class="btn-back" onclick="goToStep(2)">← Back</button>
-          <button class="btn-submit" id="submitBtn" onclick="handleSubmit()">Submit registration →</button>
+          <button class="btn-back" onclick="goToStep(2)">â† Back</button>
+          <button class="btn-submit" id="submitBtn" onclick="handleSubmit()">Submit registration â†’</button>
         </div>
       </div>
     </div>
@@ -492,7 +488,7 @@
     <!-- SENDING STATE -->
     <div class="sending-state" id="sendingState">
       <div class="spinner"></div>
-      <p>Sending your registration…</p>
+      <p>Sending your registrationâ€¦</p>
     </div>
 
     <!-- SUCCESS STATE -->
@@ -547,24 +543,24 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>© 2026 AgaPay · agapay.app</p>
+      <p>Â© 2026 AgaPay Â· agapay.app</p>
     </div>
   </footer>
 
   <script src="/security.js"></script>
   <script>
-    // ─── STATE ───────────────────────────────────────────────
+    // â”€â”€â”€ STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let currentStep = 1;
     let communityType = 'Parish';
 
-    // ─── COMMUNITY TYPE ──────────────────────────────────────
+    // â”€â”€â”€ COMMUNITY TYPE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function selectType(btn) {
       document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       communityType = btn.dataset.type;
     }
 
-    // ─── STEP NAVIGATION ─────────────────────────────────────
+    // â”€â”€â”€ STEP NAVIGATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function goToStep(step) {
       if (step > currentStep && !validateStep(currentStep)) return;
 
@@ -586,7 +582,7 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // ─── VALIDATION ──────────────────────────────────────────
+    // â”€â”€â”€ VALIDATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function validateStep(step) {
       if (step === 1) {
         if (!document.getElementById('parishName').value.trim())  { alert('Please enter your community name.'); return false; }
@@ -606,14 +602,14 @@
       return true;
     }
 
-    // ─── BUILD REVIEW ─────────────────────────────────────────
+    // â”€â”€â”€ BUILD REVIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function buildReview() {
       const community = [
         ['Community type', communityType],
         ['Name',           document.getElementById('parishName').value],
         ['Jurisdiction',   document.getElementById('jurisdiction').value],
         ['City, State',    `${document.getElementById('city').value}, ${document.getElementById('state').value}`],
-        ['Website',        document.getElementById('website').value || '—'],
+        ['Website',        document.getElementById('website').value || 'â€”'],
         ['Liturgical calendar', document.getElementById('liturgicalCalendar').selectedOptions[0]?.textContent || 'Julian / Old Calendar'],
       ];
       const notes = document.getElementById('notes').value.trim();
@@ -635,7 +631,7 @@
       document.getElementById('reviewParishName').textContent = document.getElementById('parishName').value;
     }
 
-    // ─── SUBMIT via AGAPAY API ────────────────────────────────
+    // â”€â”€â”€ SUBMIT via AGAPAY API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function handleSubmit() {
       if (!document.getElementById('agreeTerms').checked) {
         alert('Please confirm canonical standing and agree to the Terms of Service before submitting.');
@@ -699,7 +695,7 @@
       }
     }
 
-    // ─── MOBILE NAV ───────────────────────────────────────────
+    // â”€â”€â”€ MOBILE NAV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function toggleMenu() {
       const btn    = document.querySelector('.menu-toggle');
       const drawer = document.getElementById('mobileDrawer');

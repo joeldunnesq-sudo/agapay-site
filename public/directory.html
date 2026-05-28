@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Directory | AGAPAY</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles/numbers.css" />
+  <style>
+    *{box-sizing:border-box} body{margin:0;font-family:"DM Sans",system-ui,sans-serif;background:#F6F1E8;color:#171715}
+    .header{position:sticky;top:0;z-index:20;background:#061522;border-bottom:1px solid rgba(200,162,74,.22)}
+    .nav{max-width:1120px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{display:flex;align-items:center;gap:10px;color:#F6F1E8;text-decoration:none}.brand img{width:44px;height:44px}
+    .brand strong{font-family:"Cormorant Garamond",serif;letter-spacing:.08em;font-size:30px}
+    .links{display:flex;gap:20px;align-items:center}.links a{color:#E7DFD2;text-decoration:none;font-size:14px}
+    .cta{background:linear-gradient(135deg,#D6AF5B,#B98832);color:#061522;padding:10px 16px;border-radius:8px;font-weight:700;text-decoration:none}
+    .hero{background:linear-gradient(135deg,#061522,#0B2130);color:#F6F1E8;padding:72px 20px}
+    .wrap{max-width:1120px;margin:0 auto}
+    h1{font-family:"Cormorant Garamond",serif;font-size:54px;line-height:1.04;margin:0 0 12px}
+    p{line-height:1.7;max-width:760px}
+    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;padding:34px 20px 56px}
+    .card{background:#fff;border:1px solid rgba(111,106,96,.2);border-top:4px solid #C8A24A;border-radius:10px;padding:16px}
+    .card h3{margin:0 0 8px;font-size:18px}
+    .card p{margin:0;color:#6F6A60;font-size:14px}
+    @media (max-width:960px){.links{display:none}.grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:640px){h1{font-size:38px}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header class="header">
+    <nav class="nav">
+      <a class="brand" href="/"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></a>
+      <div class="links">
+        <a href="/giving">Giving</a>
+        <a href="/marketplace">Marketplace</a>
+        <a href="/directory">Directory</a>
+        <a href="/vision">Vision</a>
+        <a href="/how-it-works">Resources</a>
+        <a class="cta" href="/register">Join AGAPAY</a>
+      </div>
+    </nav>
+  </header>
+  <section class="hero">
+    <div class="wrap">
+      <h1>Orthodox Directory</h1>
+      <p>One trusted index for churches, businesses, ministries, and monasteries â€” helping Orthodox communities find and support one another.</p>
+    </div>
+  </section>
+  <section class="wrap grid">
+    <article class="card"><h3>Churches</h3><p>Browse Orthodox parishes and missions by location and jurisdiction.</p></article>
+    <article class="card"><h3>Businesses</h3><p>Discover Orthodox-owned businesses serving local and national communities.</p></article>
+    <article class="card"><h3>Ministries</h3><p>Find nonprofits, schools, camps, and mission organizations.</p></article>
+    <article class="card"><h3>Monasteries</h3><p>Connect with monasteries and support their sacred work.</p></article>
+  </section>
+</body>
+</html>

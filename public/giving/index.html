@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Giving | AGAPAY</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles/numbers.css" />
+  <style>
+    *{box-sizing:border-box} body{margin:0;font-family:"DM Sans",system-ui,sans-serif;background:#F6F1E8;color:#171715}
+    .header{position:sticky;top:0;z-index:20;background:#061522;border-bottom:1px solid rgba(200,162,74,.22)}
+    .nav{max-width:1120px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{display:flex;align-items:center;gap:10px;color:#F6F1E8;text-decoration:none}.brand img{width:44px;height:44px}
+    .brand strong{font-family:"Cormorant Garamond",serif;letter-spacing:.08em;font-size:30px}
+    .links{display:flex;gap:20px;align-items:center}.links a{color:#E7DFD2;text-decoration:none;font-size:14px}
+    .cta{background:linear-gradient(135deg,#D6AF5B,#B98832);color:#061522;padding:10px 16px;border-radius:8px;font-weight:700;text-decoration:none}
+    .hero{background:linear-gradient(135deg,#061522,#0B2130);color:#F6F1E8;padding:72px 20px}
+    .wrap{max-width:1120px;margin:0 auto}
+    h1{font-family:"Cormorant Garamond",serif;font-size:54px;line-height:1.04;margin:0 0 12px}
+    p{line-height:1.7;max-width:760px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:34px 20px 56px}
+    .card{background:#fff;border:1px solid rgba(111,106,96,.2);border-top:4px solid #C8A24A;border-radius:10px;padding:18px}
+    .card h3{margin:0 0 8px;font-size:22px;font-family:"Cormorant Garamond",serif}
+    .card p{margin:0;color:#6F6A60;font-size:14px}
+    .card a{display:inline-block;margin-top:12px;color:#0B2130;font-weight:700}
+    @media (max-width:960px){.links{display:none}.grid{grid-template-columns:1fr}}
+    @media (max-width:640px){h1{font-size:38px}}
+  </style>
+</head>
+<body>
+  <header class="header">
+    <nav class="nav">
+      <a class="brand" href="/"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></a>
+      <div class="links">
+        <a href="/giving">Giving</a><a href="/marketplace">Marketplace</a><a href="/directory">Directory</a><a href="/vision">Vision</a><a href="/how-it-works">Resources</a><a class="cta" href="/register">Join AGAPAY</a>
+      </div>
+    </nav>
+  </header>
+  <section class="hero">
+    <div class="wrap">
+      <h1>Giving</h1>
+      <p>Everything Orthodox communities need for stewardship, recurring generosity, fundraising momentum, and event payments — all under one digital roof.</p>
+    </div>
+  </section>
+  <section class="wrap grid">
+    <article class="card"><h3>Parish Giving</h3><p>Tithes, candles, memorials, designated funds, and campaign support from one flow.</p><a href="/giving/parish-giving">Explore Parish Giving →</a></article>
+    <article class="card"><h3>Recurring Donations</h3><p>Help communities build durable, predictable support through recurring gifts.</p><a href="/giving/recurring-donations">Explore Recurring Donations →</a></article>
+    <article class="card"><h3>Fundraising</h3><p>Run campaigns and parish projects with transparent progress and clear donor intent.</p><a href="/giving/fundraising">Explore Fundraising →</a></article>
+    <article class="card"><h3>Event Payments</h3><p>Simple collection for banquets, conferences, retreats, and parish ticketed events.</p><a href="/giving/event-payments">Explore Event Payments →</a></article>
+  </section>
+</body>
+</html>

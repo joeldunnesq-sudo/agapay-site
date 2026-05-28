@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contact — AgaPay</title>
+  <title>Contact â€” AgaPay</title>
  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
@@ -202,15 +202,13 @@
         </div>
         <span class="nav-name">AGAPAY</span>
       </a>
-      <div class="nav-links">
-        <a href="/">Home</a>
-        <a href="/features">Features</a>
-        <a href="/pricing">Pricing</a>
+            <div class="nav-links">
+        <a href="/giving">Giving</a>
+        <a href="/marketplace">Marketplace</a>
+        <a href="/directory">Directory</a>
         <a href="/vision">Vision</a>
-        <a href="/about">About</a>
-        <a href="/how-it-works">How it Works</a>
-        <a href="/register"><button class="nav-cta">Register parish</button></a>
-        <a href="/donor/login"><button class="nav-give">Give now</button></a>
+        <a href="/how-it-works">Resources</a>
+        <a href="/register" class="nav-cta">Join AGAPAY</a>
       </div>
     </div>
   </nav>
@@ -220,7 +218,7 @@
     <div class="hero-inner">
       <div class="hero-eyebrow">Contact</div>
       <h1>We read every<br><em>message ourselves.</em></h1>
-      <p class="hero-sub">No bots. No ticket queues. A real person — the founder — will read your message and respond personally.</p>
+      <p class="hero-sub">No bots. No ticket queues. A real person â€” the founder â€” will read your message and respond personally.</p>
     </div>
   </div>
 
@@ -228,7 +226,7 @@
     <div class="wrap">
       <div class="main-grid">
 
-        <!-- LEFT — CONTACT DETAILS -->
+        <!-- LEFT â€” CONTACT DETAILS -->
         <div class="contact-details">
           <div class="details-eyebrow reveal">Get in touch</div>
 
@@ -238,7 +236,7 @@
             </div>
             <h4>General inquiries</h4>
             <a href="mailto:hello@agapay.app">hello@agapay.app</a>
-            <p>For any question about AgaPay — big or small.</p>
+            <p>For any question about AgaPay â€” big or small.</p>
           </div>
 
           <div class="contact-card reveal reveal-delay-2">
@@ -264,11 +262,11 @@
           </div>
         </div>
 
-        <!-- RIGHT — FORM -->
+        <!-- RIGHT â€” FORM -->
         <div class="form-wrap reveal" id="contact-form-wrap">
           <div id="form-body">
             <div class="form-title">Send us a message</div>
-            <p class="form-sub">Whether you're a priest exploring AgaPay for your parish, a monastery administrator, or simply curious — we want to hear from you.</p>
+            <p class="form-sub">Whether you're a priest exploring AgaPay for your parish, a monastery administrator, or simply curious â€” we want to hear from you.</p>
 
             <div class="form-row">
               <div class="form-group">
@@ -318,7 +316,7 @@
               <textarea id="message" placeholder="Tell us about your parish, your questions, or anything else on your mind..."></textarea>
             </div>
 
-            <button class="form-submit" onclick="handleSubmit()">Send message →</button>
+            <button class="form-submit" onclick="handleSubmit()">Send message â†’</button>
             <p class="form-note">Your message goes directly to the founder. No bots, no ticket systems.</p>
           </div>
 
@@ -376,7 +374,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>© 2026 AgaPay · agapay.app</p>
+      <p>Â© 2026 AgaPay Â· agapay.app</p>
     </div>
   </footer>
   <script>
@@ -405,7 +403,7 @@
         return;
       }
 
-      const subject = encodeURIComponent('AgaPay Contact: ' + (role || 'Inquiry') + (jurisdiction ? ' — ' + jurisdiction : ''));
+      const subject = encodeURIComponent('AgaPay Contact: ' + (role || 'Inquiry') + (jurisdiction ? ' â€” ' + jurisdiction : ''));
       const body = encodeURIComponent(
         'Name: ' + fname + ' ' + lname + '\n' +
         'Email: ' + email + '\n' +
