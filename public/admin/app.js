@@ -599,19 +599,25 @@
           ${registrations.map((item) => {
             const action = nextAction(item);
             const location = [item.city, item.state].filter(Boolean).join(', ') || 'Location pending';
+            const community = item.communityType || 'Community';
+            const jurisdiction = item.jurisdiction || 'Jurisdiction';
             return `
               <div class="queue-row ${item.reference === selectedReference ? 'active' : ''}" onclick="loadDetail('${jsAttr(item.reference)}')">
+                <label class="queue-check" onclick="event.stopPropagation()" aria-label="Select ${escapeAttr(item.parishName || item.reference)}">
+                  <input class="row-chk" type="checkbox" value="${escapeAttr(item.reference)}" onchange="updateBulkBar()" />
+                </label>
+
                 <div class="queue-primary">
                   <div class="queue-name">${escapeHtml(item.parishName || item.reference)}</div>
-                  <div class="queue-meta">${escapeHtml(item.communityType || 'Community')} / ${escapeHtml(item.jurisdiction || 'Jurisdiction')} / ${escapeHtml(location)}</div>
-                  <div class="queue-contact">
-                    <span><strong>Priest:</strong> ${escapeHtml(item.priestEmail || 'Not provided')}</span>
-                    <span><strong>Treasurer:</strong> ${escapeHtml(item.treasurerEmail || 'Not provided')}</span>
+                  <div class="queue-meta-line">
+                    <span>${escapeHtml(community)}</span>
+                    <span>${escapeHtml(jurisdiction)}</span>
+                    <span>${escapeHtml(location)}</span>
                   </div>
                   <div class="queue-reference">${escapeHtml(item.reference || '')}</div>
                 </div>
 
-                <div class="queue-status-panel">
+                <div class="queue-middle-panel">
                   <div class="queue-status-grid">
                     <div class="queue-status-item">
                       <span class="queue-status-label">Canonical</span>
@@ -625,6 +631,10 @@
                       <span class="queue-status-label">Billing</span>
                       <span class="badge ${escapeAttr(item.subscriptionStatus || 'not_started')}">${escapeHtml(readable(item.subscriptionStatus))}</span>
                     </div>
+                  </div>
+                  <div class="queue-contact">
+                    <span><strong>Priest</strong> ${escapeHtml(item.priestEmail || 'Not provided')}</span>
+                    <span><strong>Treasurer</strong> ${escapeHtml(item.treasurerEmail || 'Not provided')}</span>
                   </div>
                 </div>
 
