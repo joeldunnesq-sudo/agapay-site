@@ -14,11 +14,16 @@ assert.ok(worker.includes("PASSWORD_HASH_VERSION"), "worker should use versioned
 assert.ok(worker.includes("pbkdf2-sha256"), "worker should hash new passwords with PBKDF2-SHA256");
 assert.ok(worker.includes("rateLimit(request, env"), "worker should rate-limit sensitive API routes");
 assert.ok(worker.includes("verifyTurnstileIfConfigured"), "worker should support optional Cloudflare Turnstile checks");
-assert.ok(worker.includes("stripeEventProcessed(env, event.id)") && worker.includes("recordStripeEvent(env, event.id)"), "Stripe webhooks should be idempotent by event id");
+assert.ok(worker.includes("claimStripeEvent(env, event)") && worker.includes("finishStripeEvent(env, event.id"), "Stripe webhooks should claim and finish events for idempotency");
 assert.ok(worker.includes("checkout.session.expired"), "Stripe webhooks should handle expired checkout sessions");
+assert.ok(worker.includes("checkout.session.async_payment_succeeded"), "Stripe webhooks should handle delayed successful checkout payments");
+assert.ok(worker.includes("checkout.session.async_payment_failed"), "Stripe webhooks should handle delayed failed checkout payments");
+assert.ok(worker.includes("payment_intent.succeeded"), "Stripe webhooks should handle successful payment intents");
 assert.ok(worker.includes("payment_intent.payment_failed"), "Stripe webhooks should handle failed payments");
+assert.ok(worker.includes("payment_intent.canceled"), "Stripe webhooks should handle canceled payments");
 assert.ok(worker.includes("charge.refunded"), "Stripe webhooks should handle refunds");
 assert.ok(worker.includes("charge.dispute.created"), "Stripe webhooks should handle disputes");
+assert.ok(worker.includes("charge.dispute.closed"), "Stripe webhooks should handle closed disputes");
 assert.ok(worker.includes("account.updated"), "Stripe webhooks should sync connected account status");
 assert.ok(worker.includes("PARISH_ID_INDEX_PREFIX"), "worker should maintain KV parish id indexes");
 assert.ok(worker.includes("handleAdminRebuildIndexes"), "worker should expose an admin-only index rebuild endpoint");

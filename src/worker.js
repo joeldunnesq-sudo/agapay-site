@@ -12,6 +12,7 @@ const STRIPE_PAYMENT_INTENT_INDEX_PREFIX = "__agapay_index_payment_intent__";
 const PASSWORD_HASH_VERSION = "pbkdf2-sha256";
 const PASSWORD_HASH_ITERATIONS = 100000;
 const DONOR_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14;
+const STRIPE_EVENT_PROCESSING_RETRY_MS = 1000 * 60 * 10;
 
 const subscriptionTiers = [
   {
@@ -236,30 +237,150 @@ async function d1SetSetting(env, key, value) {
   );
 }
 
-async function stripeEventProcessed(env, eventId) {
-  if (!eventId) return false;
+function parseStoredStripeEvent(raw) {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") return parsed;
+  } catch {}
+  return { status: "processed", receivedAt: raw };
+}
+
+function staleStripeProcessingEvent(receivedAt, nowMs = Date.now()) {
+  const receivedMs = Date.parse(receivedAt || "");
+  return Number.isFinite(receivedMs) && nowMs - receivedMs > STRIPE_EVENT_PROCESSING_RETRY_MS;
+}
+
+async function claimStripeEvent(env, event = {}) {
+  const eventId = event.id || "";
+  if (!eventId) return { claimed: true };
+  const now = new Date().toISOString();
   if (d1(env)) {
-    const row = await d1First(env, "SELECT id FROM stripe_events WHERE id = ?1", eventId);
-    return Boolean(row);
+    try {
+      const result = await d1Run(
+        env,
+        `INSERT INTO stripe_events (id, event_type, status, received_at)
+         VALUES (?1, ?2, 'processing', ?3)
+         ON CONFLICT(id) DO NOTHING`,
+        eventId,
+        event.type || "",
+        now
+      );
+      if ((result?.meta?.changes || 0) > 0) return { claimed: true };
+      const row = await d1First(env, "SELECT status, received_at FROM stripe_events WHERE id = ?1", eventId);
+      if (row?.status === "failed" || (row?.status === "processing" && staleStripeProcessingEvent(row.received_at))) {
+        await d1Run(
+          env,
+          `UPDATE stripe_events
+           SET event_type = ?2, status = 'processing', received_at = ?3, processed_at = NULL, error_message = ''
+           WHERE id = ?1`,
+          eventId,
+          event.type || "",
+          now
+        );
+        return { claimed: true, retryingFailed: row?.status === "failed", retryingStale: row?.status === "processing" };
+      }
+      return { claimed: false, duplicate: true, status: row?.status || "processed" };
+    } catch (error) {
+      const row = await d1First(env, "SELECT id FROM stripe_events WHERE id = ?1", eventId);
+      if (row) return { claimed: false, duplicate: true, status: "processed", legacy: true };
+      await d1Run(env, "INSERT INTO stripe_events (id, received_at) VALUES (?1, ?2)", eventId, now);
+      return { claimed: true, legacy: true };
+    }
   }
-  if (env.AGAPAY_REGISTRATIONS) return Boolean(await env.AGAPAY_REGISTRATIONS.get(stripeEventKey(eventId)));
-  return false;
+
+  if (env.AGAPAY_REGISTRATIONS) {
+    const key = stripeEventKey(eventId);
+    const existing = parseStoredStripeEvent(await env.AGAPAY_REGISTRATIONS.get(key));
+    if (existing && existing.status !== "failed" && !(existing.status === "processing" && staleStripeProcessingEvent(existing.receivedAt))) {
+      return { claimed: false, duplicate: true, status: existing.status || "processed" };
+    }
+    await env.AGAPAY_REGISTRATIONS.put(key, JSON.stringify({
+      id: eventId,
+      eventType: event.type || "",
+      status: "processing",
+      receivedAt: now,
+      processedAt: "",
+      errorMessage: ""
+    }), {
+      expirationTtl: 60 * 60 * 24 * 90
+    });
+    return {
+      claimed: true,
+      retryingFailed: existing?.status === "failed",
+      retryingStale: existing?.status === "processing"
+    };
+  }
+  return { claimed: true };
+}
+
+async function finishStripeEvent(env, eventId, status = "processed", errorMessage = "") {
+  if (!eventId) return;
+  const now = new Date().toISOString();
+  if (d1(env)) {
+    try {
+      await d1Run(
+        env,
+        `UPDATE stripe_events
+         SET status = ?2, processed_at = ?3, error_message = ?4
+         WHERE id = ?1`,
+        eventId,
+        status,
+        status === "processed" ? now : "",
+        String(errorMessage || "").slice(0, 1000)
+      );
+      return;
+    } catch {
+      if (status === "failed") {
+        await d1Run(env, "DELETE FROM stripe_events WHERE id = ?1", eventId);
+      }
+      return;
+    }
+  }
+  if (env.AGAPAY_REGISTRATIONS) {
+    await env.AGAPAY_REGISTRATIONS.put(stripeEventKey(eventId), JSON.stringify({
+      id: eventId,
+      status,
+      receivedAt: now,
+      processedAt: status === "processed" ? now : "",
+      errorMessage: String(errorMessage || "").slice(0, 1000)
+    }), {
+      expirationTtl: 60 * 60 * 24 * 90
+    });
+  }
 }
 
 async function recordStripeEvent(env, eventId) {
   if (!eventId) return;
   const now = new Date().toISOString();
   if (d1(env)) {
-    await d1Run(
-      env,
-      `INSERT INTO stripe_events (id, received_at)
-       VALUES (?1, ?2)
-       ON CONFLICT(id) DO UPDATE SET received_at = excluded.received_at`,
-      eventId,
-      now
-    );
+    try {
+      await d1Run(
+        env,
+        `INSERT INTO stripe_events (id, event_type, status, received_at, processed_at, error_message)
+         VALUES (?1, '', 'processed', ?2, ?2, '')
+         ON CONFLICT(id) DO UPDATE SET status = 'processed', processed_at = excluded.processed_at, error_message = ''`,
+        eventId,
+        now
+      );
+    } catch {
+      await d1Run(
+        env,
+        `INSERT INTO stripe_events (id, received_at)
+         VALUES (?1, ?2)
+         ON CONFLICT(id) DO UPDATE SET received_at = excluded.received_at`,
+        eventId,
+        now
+      );
+    }
   } else if (env.AGAPAY_REGISTRATIONS) {
-    await env.AGAPAY_REGISTRATIONS.put(stripeEventKey(eventId), now, {
+    await env.AGAPAY_REGISTRATIONS.put(stripeEventKey(eventId), JSON.stringify({
+      id: eventId,
+      status: "processed",
+      receivedAt: now,
+      processedAt: now,
+      errorMessage: ""
+    }), {
       expirationTtl: 60 * 60 * 24 * 90
     });
   }
@@ -2814,6 +2935,7 @@ function subscriptionStatusFromStripe(status) {
   if (status === "active" || status === "trialing") return "active";
   if (status === "past_due" || status === "unpaid") return "past_due";
   if (status === "canceled" || status === "incomplete_expired") return "cancelled";
+  if (status === "paused") return "paused";
   return status || "not_started";
 }
 
@@ -2846,12 +2968,29 @@ async function handleStripeWebhook(request, env) {
     return json({ error: "Invalid webhook payload" }, { status: 400 });
   }
 
-  if (event.id && await stripeEventProcessed(env, event.id)) {
-    return json({ received: true, duplicate: true });
+  const claim = await claimStripeEvent(env, event);
+  if (!claim.claimed) {
+    return json({ received: true, duplicate: true, status: claim.status || "processed" });
   }
 
+  try {
+    await processStripeWebhookEvent(env, event);
+    await finishStripeEvent(env, event.id, "processed");
+    return json({ received: true });
+  } catch (error) {
+    await finishStripeEvent(env, event.id, "failed", error?.message || String(error));
+    return json(
+      { error: "Webhook processing failed", detail: error?.message || "Unknown webhook error" },
+      { status: 500 }
+    );
+  }
+}
+
+async function processStripeWebhookEvent(env, event) {
   const object = event.data?.object || {};
-  if (event.type === "checkout.session.completed") {
+  if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
+    const paymentStatus = object.payment_status || "paid";
+    const status = paymentStatus === "paid" || object.mode === "subscription" ? "completed" : "pending";
     await storeCommemorationEntry(env, object.id, object.metadata || {}, {
       amountCents: object.amount_total || object.amount_subtotal || 0,
       donorEmail: object.metadata?.donor_email || object.customer_details?.email || object.customer_email || "",
@@ -2859,12 +2998,23 @@ async function handleStripeWebhook(request, env) {
       createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
     });
     await updateDonorOfferingByCheckout(env, object.id, {
-      status: "completed",
-      paymentStatus: object.payment_status || "paid",
+      status,
+      paymentStatus,
       stripeCustomerId: object.customer || "",
       stripePaymentIntentId: object.payment_intent || "",
       stripeSubscriptionId: object.subscription || "",
-      completedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
+      completedAt: status === "completed" ? (object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()) : ""
+    });
+  }
+
+  if (event.type === "checkout.session.async_payment_failed") {
+    await updateDonorOfferingByCheckout(env, object.id, {
+      status: "failed",
+      paymentStatus: object.payment_status || "failed",
+      stripeCustomerId: object.customer || "",
+      stripePaymentIntentId: object.payment_intent || "",
+      failureMessage: object.last_payment_error?.message || "",
+      failedAt: new Date().toISOString()
     });
   }
 
@@ -2886,12 +3036,29 @@ async function handleStripeWebhook(request, env) {
     }
   }
 
+  if (event.type === "payment_intent.succeeded") {
+    await updateDonorOfferingByPaymentIntent(env, object.id, {
+      status: "completed",
+      paymentStatus: object.status || "succeeded",
+      stripeCustomerId: object.customer || "",
+      completedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
+    });
+  }
+
   if (event.type === "payment_intent.payment_failed") {
     await updateDonorOfferingByPaymentIntent(env, object.id, {
       status: "failed",
       paymentStatus: "failed",
       failureMessage: object.last_payment_error?.message || "",
       failedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
+    });
+  }
+
+  if (event.type === "payment_intent.canceled") {
+    await updateDonorOfferingByPaymentIntent(env, object.id, {
+      status: "cancelled",
+      paymentStatus: "cancelled",
+      cancelledAt: object.canceled_at ? new Date(object.canceled_at * 1000).toISOString() : new Date().toISOString()
     });
   }
 
@@ -2914,7 +3081,17 @@ async function handleStripeWebhook(request, env) {
     });
   }
 
-  if (event.type === "invoice.payment_succeeded") {
+  if (event.type === "charge.dispute.closed") {
+    await updateDonorOfferingByPaymentIntent(env, object.payment_intent, {
+      status: object.status === "won" ? "completed" : "dispute_closed",
+      paymentStatus: object.status === "won" ? "paid" : "dispute_closed",
+      stripeDisputeId: object.id || "",
+      disputeStatus: object.status || "",
+      disputeClosedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
+    });
+  }
+
+  if (event.type === "invoice.payment_succeeded" || event.type === "invoice.paid") {
     const metadata = object.subscription_details?.metadata || object.lines?.data?.[0]?.metadata || object.metadata || {};
     await storeCommemorationEntry(env, object.id, metadata, {
       amountCents: object.amount_paid || 0,
@@ -2956,10 +3133,20 @@ async function handleStripeWebhook(request, env) {
     });
   }
 
-  if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
+  if (
+    event.type === "customer.subscription.created"
+    || event.type === "customer.subscription.updated"
+    || event.type === "customer.subscription.deleted"
+    || event.type === "customer.subscription.paused"
+    || event.type === "customer.subscription.resumed"
+  ) {
     const reference = object.metadata?.agapay_reference || "";
     const status = event.type === "customer.subscription.deleted"
       ? "cancelled"
+      : event.type === "customer.subscription.paused"
+        ? "paused"
+        : event.type === "customer.subscription.resumed"
+          ? "active"
       : subscriptionStatusFromStripe(object.status);
     if (reference) {
       await updateSubscriptionRecord(env, reference, {
@@ -2979,14 +3166,16 @@ async function handleStripeWebhook(request, env) {
     }
   }
 
-  if (event.type === "invoice.payment_failed") {
+  if (event.type === "invoice.payment_failed" || event.type === "invoice.payment_action_required") {
     const subscriptionId = object.subscription || "";
     const found = await findRegistrationByStripeSubscriptionId(env, subscriptionId);
     if (found) {
       await updateSubscriptionRecord(env, found.key, {
         subscriptionStatus: "past_due",
         stripeSubscriptionId: subscriptionId,
-        stripeCustomerId: object.customer || found.registration.stripeCustomerId || ""
+        stripeCustomerId: object.customer || found.registration.stripeCustomerId || "",
+        subscriptionPaymentIssueAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString(),
+        subscriptionPaymentIssueType: event.type
       });
     }
   }
@@ -3006,10 +3195,6 @@ async function handleStripeWebhook(request, env) {
       }, found.registration);
     }
   }
-
-  await recordStripeEvent(env, event.id);
-
-  return json({ received: true });
 }
 
 async function createStripeOnboardingSession(request, env, reference, registration, returnPath = "/admin") {

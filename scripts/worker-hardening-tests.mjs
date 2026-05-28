@@ -66,6 +66,16 @@ async function stripeSignature(payload, secret) {
   return `t=${timestamp},v1=${hex}`;
 }
 
+async function postStripeWebhook(testEnv, event) {
+  const payload = JSON.stringify(event);
+  const signature = await stripeSignature(payload, testEnv.STRIPE_WEBHOOK_SECRET);
+  return worker.fetch(new Request("https://agapay.test/api/stripe/webhook", {
+    method: "POST",
+    headers: { "Stripe-Signature": signature },
+    body: payload
+  }), testEnv);
+}
+
 {
   const testEnv = env();
   const signup = await worker.fetch(request("/api/donor/signup", {
@@ -168,7 +178,7 @@ async function stripeSignature(payload, secret) {
 
 {
   const testEnv = env();
-  const payload = JSON.stringify({
+  const event = {
     id: "evt_test_idempotent",
     type: "checkout.session.expired",
     data: {
@@ -179,19 +189,77 @@ async function stripeSignature(payload, secret) {
         expires_at: Math.floor(Date.now() / 1000)
       }
     }
-  });
-  const signature = await stripeSignature(payload, testEnv.STRIPE_WEBHOOK_SECRET);
-  const webhookRequest = () => new Request("https://agapay.test/api/stripe/webhook", {
-    method: "POST",
-    headers: { "Stripe-Signature": signature },
-    body: payload
-  });
-  const first = await worker.fetch(webhookRequest(), testEnv);
+  };
+  const first = await postStripeWebhook(testEnv, event);
   assert.equal(first.status, 200);
-  const second = await worker.fetch(webhookRequest(), testEnv);
+  const second = await postStripeWebhook(testEnv, event);
   assert.equal(second.status, 200);
   const secondBody = await json(second);
   assert.equal(secondBody.duplicate, true);
+}
+
+{
+  const testEnv = env();
+  const offeringKey = "__agapay_donor_offering__faithful@example.com:off_pi";
+  await testEnv.AGAPAY_REGISTRATIONS.put(offeringKey, JSON.stringify({
+    id: "off_pi",
+    donorEmail: "faithful@example.com",
+    parishId: "st-test",
+    status: "checkout_created",
+    paymentStatus: "pending",
+    stripePaymentIntentId: "pi_test_succeeded"
+  }));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_payment_intent__pi_test_succeeded", offeringKey);
+
+  const response = await postStripeWebhook(testEnv, {
+    id: "evt_payment_intent_succeeded",
+    type: "payment_intent.succeeded",
+    data: {
+      object: {
+        id: "pi_test_succeeded",
+        status: "succeeded",
+        customer: "cus_test",
+        created: Math.floor(Date.now() / 1000)
+      }
+    }
+  });
+  assert.equal(response.status, 200);
+  const updated = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(offeringKey));
+  assert.equal(updated.status, "completed");
+  assert.equal(updated.paymentStatus, "succeeded");
+  assert.equal(updated.stripeCustomerId, "cus_test");
+}
+
+{
+  const testEnv = env();
+  const offeringKey = "__agapay_donor_offering__faithful@example.com:off_async";
+  await testEnv.AGAPAY_REGISTRATIONS.put(offeringKey, JSON.stringify({
+    id: "off_async",
+    donorEmail: "faithful@example.com",
+    parishId: "st-test",
+    status: "checkout_created",
+    paymentStatus: "pending",
+    checkoutSessionId: "cs_async_failed"
+  }));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_checkout_offering__cs_async_failed", offeringKey);
+
+  const response = await postStripeWebhook(testEnv, {
+    id: "evt_checkout_async_failed",
+    type: "checkout.session.async_payment_failed",
+    data: {
+      object: {
+        id: "cs_async_failed",
+        payment_status: "unpaid",
+        payment_intent: "pi_async_failed",
+        customer: "cus_test"
+      }
+    }
+  });
+  assert.equal(response.status, 200);
+  const updated = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(offeringKey));
+  assert.equal(updated.status, "failed");
+  assert.equal(updated.paymentStatus, "unpaid");
+  assert.equal(updated.stripePaymentIntentId, "pi_async_failed");
 }
 
 console.log("AgaPay Worker hardening tests passed.");
