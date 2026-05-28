@@ -83,36 +83,50 @@
     .phase-2 .phase-photo{background-image:url("/images/vision/church-exterior.jpg")}
     .phase-3 .phase-photo{background-image:url("/images/vision/hero-incense.jpg")}
 
-    .ecosystem{padding:4.1rem 0;background:var(--paper)}
-    .eco-layout{display:grid;grid-template-columns:.9fr 1.55fr .9fr;gap:1.25rem;align-items:start}
-    .eco-copy h2{font:500 clamp(2.1rem,4.5vw,3.2rem)/1.07 var(--serif);color:var(--deep);margin-bottom:.8rem;max-width:420px}
-    .eco-copy p{color:var(--stone);line-height:1.75;margin-bottom:.7rem;max-width:500px}
-    .eco-facts,.eco-principles{display:grid;gap:.95rem}
-    .eco-fact,.eco-principle{display:grid;grid-template-columns:56px 1fr;gap:.75rem;align-items:start;padding:.6rem 0;border-bottom:1px solid rgba(200,162,74,.3)}
-    .eco-fact:last-child,.eco-principle:last-child{border-bottom:0}
-    .eco-mini-icon{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;border:1.8px solid rgba(200,162,74,.68);color:#c39a43;background:#fff}
-    .eco-mini-icon svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-    .eco-fact h4,.eco-principle h4{font-size:1.08rem;letter-spacing:.03em;color:var(--deep);margin-bottom:.25rem}
-    .eco-fact p,.eco-principle p{color:var(--stone);line-height:1.58;font-size:.94rem}
-
-    .eco-wheel{position:relative;min-height:760px;background:#fff;border:1px solid var(--line);border-radius:16px}
-    .eco-ring{position:absolute;border:2px solid rgba(200,162,74,.72);border-radius:50%;pointer-events:none}
-    .eco-ring.outer{width:640px;height:640px;left:50%;top:50%;transform:translate(-50%,-50%)}
-    .eco-ring.inner{width:420px;height:420px;left:50%;top:50%;transform:translate(-50%,-50%);border-color:rgba(200,162,74,.5)}
-    .eco-wheel-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-    .eco-hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:230px;height:230px;border-radius:50%;background:radial-gradient(circle at 35% 32%,#12314a,#061522 76%);border:2px solid rgba(200,162,74,.72);color:var(--cream);display:grid;place-items:center;text-align:center;padding:1rem;z-index:4;box-shadow:0 14px 40px rgba(6,21,34,.25)}
-    .eco-hub img{width:42px;height:42px;object-fit:contain;margin-bottom:.35rem}
-    .eco-hub strong{display:block;font:500 2rem/1 var(--serif);letter-spacing:.08em}
-    .eco-hub span{display:block;color:rgba(246,241,232,.78);font-size:.96rem;line-height:1.35;margin-top:.45rem}
-    .eco-node{position:absolute;width:170px;text-align:center;z-index:3}
-    .eco-node .eco-mini-icon{margin:0 auto .45rem}
-    .eco-node h5{font-size:1.02rem;color:var(--deep);line-height:1.2}
-    .eco-node.top{left:50%;top:36px;transform:translateX(-50%)}
-    .eco-node.top-right{right:56px;top:160px}
-    .eco-node.right-bottom{right:56px;bottom:170px}
-    .eco-node.bottom{left:50%;bottom:36px;transform:translateX(-50%)}
-    .eco-node.bottom-left{left:56px;bottom:170px}
-    .eco-node.top-left{left:56px;top:160px}
+    .ecosystem{padding:4.35rem 0;background:linear-gradient(180deg,#fffdf8,#f8f1e6)}
+    .eco-layout{display:block}
+    .eco-board{display:grid;grid-template-columns:minmax(250px,.68fr) minmax(780px,1.6fr);gap:2rem;align-items:center}
+    .eco-copy h2{font:500 clamp(2.35rem,4.8vw,4rem)/1.02 var(--serif);color:var(--deep);margin-bottom:.7rem}
+    .eco-copy h2::after{content:"";display:block;width:54px;height:2px;background:var(--gold);margin:1rem 0 1.25rem}
+    .eco-copy p{color:#26323c;line-height:1.75;font-size:1.02rem;max-width:360px}
+    .eco-feature-list{display:grid;gap:1.05rem;margin-top:2rem}
+    .eco-feature{display:grid;grid-template-columns:58px 1fr;gap:.8rem;align-items:center}
+    .eco-feature-icon,.eco-principle-icon{border:1.5px solid rgba(200,162,74,.55);border-radius:50%;background:#fffaf0;color:#b88633;display:grid;place-items:center}
+    .eco-feature-icon{width:58px;height:58px}
+    .eco-feature svg,.eco-principle svg,.eco-orbit-icon svg,.eco-product svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+    .eco-feature h3,.eco-principle h3{font-size:.82rem;letter-spacing:.12em;text-transform:uppercase;color:var(--deep);margin-bottom:.28rem}
+    .eco-feature p,.eco-principle p{color:#35424b;font-size:.92rem;line-height:1.55}
+    .eco-product svg{width:36px;height:36px}
+    .eco-stage{position:relative;width:min(100%,880px);height:790px;min-width:0;margin:0 auto}
+    .eco-stage::before{content:"";position:absolute;left:50%;top:50%;width:620px;height:620px;transform:translate(-50%,-50%);border:2px solid rgba(200,162,74,.72);border-radius:50%}
+    .eco-stage::after{content:"";position:absolute;left:50%;top:51%;width:492px;height:492px;transform:translate(-50%,-50%);border:1px solid rgba(200,162,74,.38);border-radius:50%;background:radial-gradient(circle,rgba(200,162,74,.1),rgba(255,255,255,.1) 62%,transparent 64%)}
+    .eco-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;width:132px;height:132px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#102f48,#061522 76%);border:2px solid rgba(200,162,74,.8);color:var(--cream);display:grid;place-items:center;text-align:center;box-shadow:0 18px 46px rgba(6,21,34,.3)}
+    .eco-core img{width:32px;height:32px;object-fit:contain;margin-bottom:.25rem}
+    .eco-core strong{display:block;font:500 1.52rem/1 var(--serif);letter-spacing:.08em}
+    .eco-core span{display:block;margin-top:.22rem;color:var(--gold);font-size:.52rem;letter-spacing:.12em;text-transform:uppercase}
+    .eco-product{position:absolute;z-index:3;width:178px;min-height:108px;text-align:center;color:var(--deep);display:grid;place-items:center;padding:.78rem}
+    .eco-product::before{content:"";position:absolute;inset:0;border:1.5px solid rgba(200,162,74,.45);border-radius:999px;background:rgba(255,251,244,.72);z-index:-1}
+    .eco-product-icon{color:#b88633;margin-bottom:.35rem}
+    .eco-product h3{font-size:.82rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:0;line-height:1.18}
+    .eco-product h3 span{display:block}
+    .eco-product h3 .agapay-word{font-size:.72rem;color:#a87f28;letter-spacing:.16em;margin-bottom:.12rem}
+    .eco-product.giving{left:50%;top:184px;transform:translateX(-50%)}
+    .eco-product.marketplace{left:160px;top:410px}
+    .eco-product.directory{right:160px;top:410px}
+    .eco-orbit-node{position:absolute;z-index:4;width:150px;text-align:center;color:var(--deep)}
+    .eco-orbit-icon{width:74px;height:74px;margin:0 auto .45rem;border:1.5px solid rgba(200,162,74,.62);border-radius:50%;background:#fff;color:#b88633;display:grid;place-items:center}
+    .eco-orbit-node strong{display:block;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;line-height:1.25}
+    .eco-orbit-node.churches{left:50%;top:24px;transform:translateX(-50%)}
+    .eco-orbit-node.businesses{right:80px;top:176px}
+    .eco-orbit-node.ministries{right:80px;top:526px}
+    .eco-orbit-node.schools{left:80px;top:176px}
+    .eco-orbit-node.monasteries{left:50%;bottom:4px;transform:translateX(-50%)}
+    .eco-orbit-node.families{left:80px;top:526px}
+    .eco-mobile-heading{display:none}
+    .eco-principles{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin-top:1.1rem;border-top:1px solid rgba(200,162,74,.34);border-bottom:1px solid rgba(200,162,74,.34)}
+    .eco-principle{display:grid;grid-template-columns:58px 1fr;gap:.85rem;align-items:start;padding:1.2rem 1.05rem;border-right:1px solid rgba(200,162,74,.28)}
+    .eco-principle:last-child{border-right:0}
+    .eco-principle-icon{width:58px;height:58px;color:#061522;background:#f8f3ea;border-color:rgba(200,162,74,.32)}
 
     .mission{background:var(--deep);color:var(--cream)}
     .mission-grid{display:grid;grid-template-columns:1fr 1fr;min-height:330px}
@@ -173,15 +187,41 @@
 
     @media (max-width:1020px){
       .hero-grid,.mission-grid,.phase-cards,.values-grid{grid-template-columns:1fr}
-      .eco-layout{grid-template-columns:1fr}
       .hero-grid{padding-top:88px}
       .hero-copy,.mission-copy{padding-right:0}
       .hero-image,.mission-photo{min-height:300px}
-      .eco-wheel{min-height:auto;padding:1rem;display:grid;gap:.75rem}
-      .eco-ring,.eco-wheel-svg{display:none}
-      .eco-hub{position:static;transform:none;width:180px;height:180px;margin:0 auto .6rem}
-      .eco-node,.eco-node.top,.eco-node.top-right,.eco-node.right-bottom,.eco-node.bottom,.eco-node.bottom-left,.eco-node.top-left{position:static;width:100%;display:grid;grid-template-columns:56px 1fr;gap:.75rem;text-align:left;align-items:center}
-      .eco-node .eco-mini-icon{margin:0}
+      .eco-board{grid-template-columns:1fr;gap:2rem}
+      .eco-copy{text-align:left}
+      .eco-copy p{max-width:none}
+      .eco-feature-list{grid-template-columns:1fr;gap:.85rem}
+      .eco-stage{height:auto;display:grid;gap:.75rem}
+      .eco-stage::before,.eco-stage::after{display:none}
+      .eco-core{position:static;transform:none;width:176px;height:176px;margin:0 auto 1rem;order:0}
+      .eco-mobile-heading{display:block;color:var(--gold);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin:.75rem 0 .1rem}
+      .eco-mobile-heading.products{order:1}
+      .eco-mobile-heading.communities{order:5}
+      .eco-product{position:static;transform:none;width:100%;min-height:auto;border:1px solid rgba(200,162,74,.35);border-radius:14px;background:#fff8ea;padding:1rem;text-align:left;display:grid;grid-template-columns:44px 1fr;gap:.75rem;align-items:center}
+      .eco-product::before{display:none}
+      .eco-product-icon{margin-bottom:0}
+      .eco-product.giving,.eco-product.marketplace,.eco-product.directory{left:auto;right:auto;top:auto;bottom:auto;transform:none}
+      .eco-product.giving{order:2}
+      .eco-product.marketplace{order:3}
+      .eco-product.directory{order:4}
+      .eco-product h3{font-size:.86rem}
+      .eco-product svg{width:28px;height:28px}
+      .eco-orbit-node{position:static;transform:none;width:100%;display:grid;grid-template-columns:44px 1fr;gap:.75rem;align-items:center;text-align:left;border:1px solid rgba(166,159,145,.22);border-radius:14px;background:#fff;padding:.75rem}
+      .eco-orbit-node.churches,.eco-orbit-node.businesses,.eco-orbit-node.ministries,.eco-orbit-node.schools,.eco-orbit-node.monasteries,.eco-orbit-node.families{left:auto;right:auto;top:auto;bottom:auto;transform:none}
+      .eco-orbit-node.churches{order:6}
+      .eco-orbit-node.businesses{order:7}
+      .eco-orbit-node.ministries{order:8}
+      .eco-orbit-node.schools{order:9}
+      .eco-orbit-node.monasteries{order:10}
+      .eco-orbit-node.families{order:11}
+      .eco-orbit-icon{width:44px;height:44px;margin:0}
+      .eco-orbit-icon svg{width:23px;height:23px}
+      .eco-principles{grid-template-columns:1fr;gap:0;margin-top:.5rem}
+      .eco-principle{border-right:0;border-bottom:1px solid rgba(200,162,74,.26);padding:1rem .25rem}
+      .eco-principle:last-child{border-bottom:0}
       .cta-row{grid-template-columns:1fr}
       .cta-left{align-items:flex-start}
       .cta-copy{max-width:none}
@@ -196,7 +236,7 @@
   <header class="site-header">
     <div class="wrap nav">
       <a class="brand" href="/" aria-label="AGAPAY Home">
-        <span class="brand-mark"><img src="/mark.png" alt="AGAPAY mark" /></span>
+        <span class="brand-mark"><img src="mark.png" alt="AGAPAY mark" /></span>
         <span class="brand-name"><strong>AGAPAY</strong><span>Orthodox Giving Lives Here</span></span>
       </a>
       <nav class="links" aria-label="Primary">
@@ -229,48 +269,92 @@
       <article class="phase-card phase-3"><div class="phase-photo" aria-hidden="true"></div><div class="phase-num">3</div><div class="phase-label">Phase Three</div><h4>Ministries, Nonprofits, &amp; Schools</h4><p>The third phase extends infrastructure support for ministries, nonprofits, schools, and mission-driven Orthodox organizations.</p><ul class="phase-list"><li>Fundraising and donor management</li><li>Tuition and payment systems</li><li>Grant and sponsorship support</li><li>Event registration and engagement</li><li>Mission support and giving networks</li></ul></article>
     </div></div></section>
 
-    <section class="ecosystem"><div class="wrap eco-layout">
-      <div class="eco-copy">
-        <div class="eyebrow">Our Ecosystem</div>
-        <h2>One Platform. Every Connection.</h2>
-        <p>AGAPAY brings together the key products Orthodox communities need, connecting institutions, businesses, and faithful families in one unified ecosystem.</p>
-        <div class="eco-facts">
-          <article class="eco-fact"><div class="eco-mini-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-6 9 6"/><path d="M5 10v8h14v-8"/><path d="M9 14h6"/></svg></div><div><h4>One Platform</h4><p>All the essential tools in one integrated, purpose-built platform.</p></div></article>
-          <article class="eco-fact"><div class="eco-mini-icon"><svg viewBox="0 0 24 24"><circle cx="7" cy="9" r="3"/><circle cx="17" cy="9" r="3"/><path d="M2.5 20c.8-2.8 2.8-4.2 5.5-4.2"/><path d="M16 15.8c2.7 0 4.7 1.4 5.5 4.2"/></svg></div><div><h4>Every Connection</h4><p>Connecting churches, businesses, ministries, and families.</p></div></article>
-          <article class="eco-fact"><div class="eco-mini-icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M12 8v8"/><path d="M9 11h6"/></svg></div><div><h4>One Mission</h4><p>Strengthening Orthodox life through technology, stewardship, and shared purpose.</p></div></article>
+    <section class="ecosystem">
+      <div class="wrap eco-board">
+        <div class="eco-copy">
+          <div class="eyebrow">Our Ecosystem</div>
+          <h2>One Platform. Every Connection.</h2>
+          <p>AGAPAY brings together the key products Orthodox communities need, connecting institutions, businesses, and faithful families in one unified ecosystem.</p>
+          <div class="eco-feature-list">
+            <div class="eco-feature">
+              <span class="eco-feature-icon"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M6 19V9l6-5 6 5v10"/><path d="M9 19v-5h6v5"/></svg></span>
+              <div><h3>One Platform</h3><p>Giving, marketplace, and directory tools living under one trusted Orthodox roof.</p></div>
+            </div>
+            <div class="eco-feature">
+              <span class="eco-feature-icon"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10"/><path d="M12 8v6"/><path d="M9 11h6"/></svg></span>
+              <div><h3>One Mission</h3><p>Strengthening Orthodox institutions so more resources stay with the communities they serve.</p></div>
+            </div>
+            <div class="eco-feature">
+              <span class="eco-feature-icon"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10"/><path d="M12 8v6"/><path d="M9 11h6"/></svg></span>
+              <div><h3>One Faith</h3><p>Technology shaped around Orthodox life, stewardship, and the shared work of the Church.</p></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="eco-stage" aria-label="AGAPAY ecosystem diagram">
+          <div class="eco-mobile-heading products">AGAPAY Products</div>
+          <div class="eco-product giving">
+            <div class="eco-product-icon"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M6 19V9l6-5 6 5v10"/><path d="M9 19v-5h6v5"/></svg></div>
+            <div><h3><span class="agapay-word">AGAPAY</span><span>Giving</span></h3></div>
+          </div>
+          <div class="eco-product marketplace">
+            <div class="eco-product-icon"><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg></div>
+            <div><h3><span class="agapay-word">AGAPAY</span><span>Marketplace</span></h3></div>
+          </div>
+          <div class="eco-product directory">
+            <div class="eco-product-icon"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2"/><circle cx="12" cy="10" r="2.5"/><path d="M8 17c.8-2 2.2-3 4-3s3.2 1 4 3"/></svg></div>
+            <div><h3><span class="agapay-word">AGAPAY</span><span>Directory</span></h3></div>
+          </div>
+
+          <div class="eco-mobile-heading communities">Served Communities</div>
+          <div class="eco-orbit-node churches">
+            <span class="eco-orbit-icon"><svg viewBox="0 0 24 24"><path d="M4 21h16"/><path d="M6 21V10l6-5 6 5v11"/><path d="M9 21v-6h6v6"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></span>
+            <strong>Churches &amp; Parishes</strong>
+          </div>
+          <div class="eco-orbit-node businesses">
+            <span class="eco-orbit-icon"><svg viewBox="0 0 24 24"><path d="M4 10h16l-1.2-5H5.2L4 10Z"/><path d="M6 10v10h12V10"/><path d="M9 20v-6h6v6"/></svg></span>
+            <strong>Orthodox Businesses</strong>
+          </div>
+          <div class="eco-orbit-node ministries">
+            <span class="eco-orbit-icon"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10"/><path d="M12 8v6"/><path d="M9 11h6"/></svg></span>
+            <strong>Ministries &amp; Nonprofits</strong>
+          </div>
+          <div class="eco-orbit-node schools">
+            <span class="eco-orbit-icon"><svg viewBox="0 0 24 24"><path d="m3 9 9-5 9 5-9 5-9-5Z"/><path d="M7 12v4c1.4 1.2 3 1.8 5 1.8s3.6-.6 5-1.8v-4"/></svg></span>
+            <strong>Schools &amp; Academies</strong>
+          </div>
+          <div class="eco-orbit-node monasteries">
+            <span class="eco-orbit-icon"><svg viewBox="0 0 24 24"><path d="M4 21h16"/><path d="M7 21V11l5-5 5 5v10"/><path d="M10 21v-5h4v5"/><path d="M12 6V2"/><path d="M10.5 3.5h3"/></svg></span>
+            <strong>Monasteries</strong>
+          </div>
+          <div class="eco-orbit-node families">
+            <span class="eco-orbit-icon"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20c.7-3 2.7-4.5 5-4.5"/><path d="M16 15.5c2.3 0 4.3 1.5 5 4.5"/></svg></span>
+            <strong>Faithful Families</strong>
+          </div>
+
+          <div class="eco-core"><div><img src="mark.png" alt="" /><strong>AGAPAY</strong></div></div>
+        </div>
+
+        <div class="eco-principles">
+          <div class="eco-principle">
+            <span class="eco-principle-icon"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 2.8 8 7 10 4.2-2 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-5"/></svg></span>
+            <div><h3>Faith-Aligned</h3><p>Built with Orthodox values at the center.</p></div>
+          </div>
+          <div class="eco-principle">
+            <span class="eco-principle-icon"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+            <div><h3>Secure &amp; Reliable</h3><p>Enterprise-grade security you can trust.</p></div>
+          </div>
+          <div class="eco-principle">
+            <span class="eco-principle-icon"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20c.7-3 2.7-4.5 5-4.5"/><path d="M16 15.5c2.3 0 4.3 1.5 5 4.5"/></svg></span>
+            <div><h3>Built for Community</h3><p>Tools that strengthen relationships and institutions.</p></div>
+          </div>
+          <div class="eco-principle">
+            <span class="eco-principle-icon"><svg viewBox="0 0 24 24"><path d="M19 3C11 4 6 9 5 17"/><path d="M5 21c0-7 4-12 14-18"/><path d="M9 18c4 0 8-4 10-15"/></svg></span>
+            <div><h3>Sustainable Impact</h3><p>Supporting Orthodox life today and for generations.</p></div>
+          </div>
         </div>
       </div>
-
-      <div class="eco-wheel">
-        <div class="eco-ring outer"></div>
-        <div class="eco-ring inner"></div>
-        <svg class="eco-wheel-svg" viewBox="0 0 760 760" aria-hidden="true">
-          <line x1="380" y1="380" x2="380" y2="105" stroke="rgba(200,162,74,.72)" stroke-width="2"/>
-          <line x1="380" y1="380" x2="612" y2="220" stroke="rgba(200,162,74,.72)" stroke-width="2"/>
-          <line x1="380" y1="380" x2="612" y2="540" stroke="rgba(200,162,74,.72)" stroke-width="2"/>
-          <line x1="380" y1="380" x2="380" y2="655" stroke="rgba(200,162,74,.72)" stroke-width="2"/>
-          <line x1="380" y1="380" x2="148" y2="540" stroke="rgba(200,162,74,.72)" stroke-width="2"/>
-          <line x1="380" y1="380" x2="148" y2="220" stroke="rgba(200,162,74,.72)" stroke-width="2"/>
-        </svg>
-
-        <div class="eco-node top"><div class="eco-mini-icon"><svg viewBox="0 0 24 24"><path d="M4 21h16"/><path d="M6 21V10l6-5 6 5v11"/><path d="M9 21v-6h6v6"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div><h5>Churches &amp; Parishes</h5></div>
-        <div class="eco-node top-right"><div class="eco-mini-icon"><svg viewBox="0 0 24 24"><path d="M4 10h16"/><path d="M5 10l1-5h12l1 5"/><path d="M6 10v9h12v-9"/><path d="M9 19v-5h6v5"/></svg></div><h5>Orthodox Businesses</h5></div>
-        <div class="eco-node right-bottom"><div class="eco-mini-icon"><svg viewBox="0 0 24 24"><path d="M12 21V3"/><path d="M8 7h8"/><path d="M9 11h6"/><path d="M6 21h12"/></svg></div><h5>Ministries &amp; Nonprofits</h5></div>
-        <div class="eco-node bottom"><div class="eco-mini-icon"><svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M7 21V9l5-5 5 5v12"/><path d="M10 21v-5h4v5"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div><h5>Monasteries</h5></div>
-        <div class="eco-node bottom-left"><div class="eco-mini-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><circle cx="6" cy="11" r="2.5"/><circle cx="18" cy="11" r="2.5"/><path d="M3 20c.8-2.3 2.5-3.5 5-3.5"/><path d="M16 16.5c2.5 0 4.2 1.2 5 3.5"/><path d="M8 20c.9-2.5 2.2-3.7 4-3.7s3.1 1.2 4 3.7"/></svg></div><h5>Faithful Families</h5></div>
-        <div class="eco-node top-left"><div class="eco-mini-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5V5a2 2 0 0 1 2-2h6v18H6a2 2 0 0 0-2 2"/><path d="M20 19.5V5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 1 2 2"/></svg></div><h5>Schools &amp; Academies</h5></div>
-
-        <div class="eco-hub"><div><img src="/mark.png" alt="" /><strong>AGAPAY</strong><span>Building the financial home of the Orthodox world.</span></div></div>
-      </div>
-
-      <div class="eco-principles">
-        <article class="eco-principle"><div class="eco-mini-icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M9 12l2 2 4-5"/></svg></div><div><h4>Faith-Aligned</h4><p>Built with Orthodox values at the center.</p></div></article>
-        <article class="eco-principle"><div class="eco-mini-icon"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15" r="1"/></svg></div><div><h4>Secure &amp; Reliable</h4><p>Enterprise-grade security Orthodox institutions can trust.</p></div></article>
-        <article class="eco-principle"><div class="eco-mini-icon"><svg viewBox="0 0 24 24"><circle cx="7" cy="9" r="3"/><circle cx="17" cy="9" r="3"/><path d="M2.5 20c.8-2.8 2.8-4.2 5.5-4.2"/><path d="M16 15.8c2.7 0 4.7 1.4 5.5 4.2"/></svg></div><div><h4>Built for Community</h4><p>Tools that strengthen relationships and institutions.</p></div></article>
-        <article class="eco-principle"><div class="eco-mini-icon"><svg viewBox="0 0 24 24"><path d="M19 3s-4 1-7 5-5 7-5 7"/><path d="M5 3c2 0 4 1 5 2"/><path d="M9 21c0-2-1-4-2-5"/></svg></div><div><h4>Sustainable Impact</h4><p>Supporting Orthodox life today and for generations.</p></div></article>
-        <article class="eco-principle"><div class="eco-mini-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M8 6h8"/><path d="M9 10h6"/><path d="M10 14h4"/><path d="M7 22h10"/></svg></div><div><h4>Together in Mission</h4><p>One platform. Many communities. One faith.</p></div></article>
-      </div>
-    </div></section>
+    </section>
 
     <section class="mission"><div class="wrap mission-grid"><div class="mission-copy"><div class="eyebrow">Our Mission</div><h2>Technology in service of Orthodox life.</h2><p>AGAPAY is not simply building software. We are building infrastructure intended to strengthen Orthodox institutions, support Orthodox families, encourage faithful stewardship, and help Orthodox communities flourish for generations to come.</p><div class="mission-callout"><p>Our vision is rooted in a simple belief:<br />Financial tools should strengthen communities - not extract from them.</p></div></div><div class="mission-photo" role="img" aria-label="Orthodox incense lamp"></div></div></section>
 
@@ -279,7 +363,7 @@
         <div class="cta-shell">
           <div class="cta-row">
             <div class="cta-left">
-              <div class="cta-mark" aria-hidden="true"><img src="/mark.png" alt="" /></div>
+              <div class="cta-mark" aria-hidden="true"><img src="mark.png" alt="" /></div>
               <h3>Join us as we build the future of Orthodox giving.</h3>
             </div>
             <p class="cta-copy">Whether you are a parish, ministry, business, school, monastery, or faithful supporter, AGAPAY is building a platform designed to strengthen Orthodox life through modern, values-aligned infrastructure.</p>
@@ -295,7 +379,7 @@
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-brand">
-        <div class="footer-lockup"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></div>
+        <div class="footer-lockup"><img src="mark.png" alt="" /><strong>AGAPAY</strong></div>
         <p>Love how you Give.</p>
       </div>
       <div class="footer-col"><h4>Platform</h4><a href="/features">Solutions</a><a href="/how-it-works">How It Works</a><a href="/pricing">Pricing</a></div>
