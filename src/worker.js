@@ -509,10 +509,10 @@ async function sendDashboardInvite(env, appUrl, registration) {
     subject: `AgaPay dashboard access for ${registration.parishName || "your parish"}`,
     html: agapayEmailHtml(appUrl, "Your AgaPay parish dashboard", `
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
-      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;"><strong>${parishName}</strong> has been verified for AgaPay. You can now access the parish dashboard to manage your giving page, funds, campaigns, and Stripe onboarding.</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;"><strong>${parishName}</strong> has been verified for AgaPay. You can now access the parish dashboard to manage your giving page, funds, campaigns, billing, and Stripe onboarding.</p>
       <div style="background:#0F2D1F;border-radius:12px;padding:18px 18px;margin:0 0 22px;">
         <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#B8902F;font-weight:700;">Next step</p>
-        <p style="margin:0;font-size:15px;line-height:1.7;color:#F6F1E8;"><strong>Please start Stripe onboarding as soon as possible.</strong> Your parish will be able to receive donations through AgaPay once the Stripe connection is completed and approved.</p>
+        <p style="margin:0;font-size:15px;line-height:1.7;color:#F6F1E8;"><strong>Please choose your AgaPay tier and complete billing first.</strong> Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.</p>
       </div>
       <p style="margin:0 0 24px;"><a href="${safeDashboardUrl}" style="display:inline-block;background:#B8902F;color:#0F2D1F;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open parish dashboard</a></p>
       <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
@@ -521,20 +521,20 @@ async function sendDashboardInvite(env, appUrl, registration) {
         <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Parish ID:</strong> ${htmlEscape(parishId)}</p>
         <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Temporary password:</strong> ${token}</p>
       </div>
-      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">After opening the dashboard, enter the parish ID and temporary password, then use the Stripe onboarding button in the Payments section.</p>
+      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">After opening the dashboard, enter the parish ID and temporary password. The setup card will walk you through billing first, then Stripe onboarding.</p>
       <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">This temporary password gives access to your AgaPay parish dashboard. Please keep it private.</p>
     `),
     text: [
       "Your AgaPay parish dashboard",
       "",
       `${registration.parishName || "Your parish"} has been verified for AgaPay.`,
-      "Please start Stripe onboarding as soon as possible. Your parish will be able to receive donations through AgaPay once the Stripe connection is completed and approved.",
+      "Please choose your AgaPay tier and complete billing first. Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.",
       "",
       `Dashboard: ${dashboardUrl}`,
       `Parish ID: ${parishId}`,
       `Temporary password: ${registration.parishDashboardToken || ""}`,
       "",
-      "After opening the dashboard, enter the parish ID and temporary password, then use the Stripe onboarding button in the Payments section.",
+      "After opening the dashboard, enter the parish ID and temporary password. The setup card will walk you through billing first, then Stripe onboarding.",
       "",
       "This temporary password gives access to your AgaPay parish dashboard. Please keep it private."
     ].join("\n")
@@ -2454,6 +2454,74 @@ async function handleParishSubscriptionCheckout(request, env, parishId) {
   );
 }
 
+async function handleParishSubscriptionRefresh(request, env, parishId) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const token = getBearerToken(request);
+  if (!found.registration.parishDashboardToken || token !== found.registration.parishDashboardToken) {
+    return unauthorized();
+  }
+
+  const registration = found.registration;
+  const sessionId = registration.stripeSubscriptionCheckoutSessionId || "";
+  if (!sessionId) {
+    return json({
+      ok: true,
+      subscriptionStatus: registration.subscriptionStatus || "not_started",
+      stripeSubscriptionId: registration.stripeSubscriptionId || "",
+      stripeCustomerId: registration.stripeCustomerId || ""
+    });
+  }
+
+  const session = await stripeGetRequest(env, `/v1/checkout/sessions/${encodeURIComponent(sessionId)}`);
+  if (!session.ok) {
+    return json(
+      { error: "Stripe subscription lookup failed", detail: session.body.error?.message || "Unknown Stripe error" },
+      { status: 502 }
+    );
+  }
+
+  const stripeSession = session.body || {};
+  const now = new Date().toISOString();
+  const updates = {
+    stripeCustomerId: stripeSession.customer || registration.stripeCustomerId || "",
+    stripeSubscriptionCheckoutSessionStatus: stripeSession.status || registration.stripeSubscriptionCheckoutSessionStatus || "",
+    stripeSubscriptionCheckoutPaymentStatus: stripeSession.payment_status || registration.stripeSubscriptionCheckoutPaymentStatus || "",
+    subscriptionLastCheckedAt: now
+  };
+
+  if (
+    stripeSession.mode === "subscription" &&
+    stripeSession.subscription &&
+    (stripeSession.status === "complete" || stripeSession.payment_status === "paid")
+  ) {
+    updates.subscriptionStatus = "active";
+    updates.stripeSubscriptionId = stripeSession.subscription;
+    updates.subscriptionActivatedAt = registration.subscriptionActivatedAt || now;
+  }
+
+  const updated = {
+    ...registration,
+    ...updates
+  };
+  await env.AGAPAY_REGISTRATIONS.put(found.key, JSON.stringify(updated));
+
+  return json({
+    ok: true,
+    subscriptionStatus: updated.subscriptionStatus || "not_started",
+    stripeSubscriptionId: updated.stripeSubscriptionId || "",
+    stripeCustomerId: updated.stripeCustomerId || "",
+    stripeSubscriptionCheckoutSessionStatus: updated.stripeSubscriptionCheckoutSessionStatus || "",
+    stripeSubscriptionCheckoutPaymentStatus: updated.stripeSubscriptionCheckoutPaymentStatus || ""
+  });
+}
+
 async function handleParishCommemorations(request, env, parishId) {
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
   const found = await findRegistrationByParishId(env, parishId);
@@ -2845,6 +2913,10 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/subscription-checkout")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/subscription-checkout", ""));
       return handleParishSubscriptionCheckout(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/subscription-refresh")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/subscription-refresh", ""));
+      return handleParishSubscriptionRefresh(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/commemorations")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/commemorations", ""));

@@ -199,6 +199,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Unable to load dashboard');
       currentParish = data.parish;
+      await refreshSubscriptionStatus({ quiet: true });
       saveSession();
       renderDashboard();
       loadGivingSummary();
@@ -213,6 +214,26 @@
   // ── SETUP WIZARD ─────────────────────────────────────────
   function tierPriceLabel(tier) { if(!tier) return ''; if(tier.monthlyCents===null) return 'Custom'; if(Number(tier.monthlyCents)===0) return '$0/mo'; return `${money(tier.monthlyCents)}/mo`; }
   function setupCheckMarkup() { return '<span class="setup-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>'; }
+  function billingStatusDone(status) { return ['active','free_forever'].includes(status); }
+  async function refreshSubscriptionStatus(options) {
+    if (!currentParish || !currentParish.parishId || currentParish.subscriptionStatus !== 'checkout_created') return;
+    try {
+      const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/subscription-refresh', { method:'POST', headers:authHeaders() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || data.error || 'Unable to refresh billing status');
+      if (data.subscriptionStatus) {
+        currentParish.subscriptionStatus = data.subscriptionStatus;
+        currentParish.stripeSubscriptionId = data.stripeSubscriptionId || currentParish.stripeSubscriptionId || '';
+        currentParish.stripeCustomerId = data.stripeCustomerId || currentParish.stripeCustomerId || '';
+        currentParish.setup = {
+          ...(currentParish.setup || {}),
+          billingActive: billingStatusDone(data.subscriptionStatus)
+        };
+      }
+    } catch (err) {
+      if (!options || !options.quiet) setStatus(err.message, 'error');
+    }
+  }
   function communityTypeKey(parish) { const raw=`${parish?.communityType||''} ${parish?.parishName||''}`.toLowerCase(); if(raw.includes('monastery')||raw.includes('skete')) return 'monastery'; if(raw.includes('mission')) return 'mission'; return 'parish'; }
   function communityMarkIcon(parish) {
     const type=communityTypeKey(parish);
@@ -226,7 +247,7 @@
     if(!(!stripeDone||!billingDone||setup.temporaryPassword)){pane.innerHTML='';return;}
     const tiers=currentParish.subscriptionTiers||[];
     const tierOptions=tiers.map(t=>`<option value="${escapeHtml(t.id)}" ${t.id===currentParish.subscriptionTier?'selected':''}>${escapeHtml(t.label)} - ${escapeHtml(tierPriceLabel(t))}</option>`).join('');
-    pane.innerHTML=`<div class="setup-wizard-card"><div class="setup-wizard-body"><div><div class="setup-title">First-time setup</div><p class="setup-copy">Finish these steps so gifts can move from parishioners to your parish's Stripe account and AgaPay billing can be activated.</p><div class="setup-steps"><div class="setup-step done">${setupCheckMarkup()}<div><strong>1. Contact info verified</strong><span>Your registration has already supplied the parish contact details.</span></div></div><div class="setup-step ${stripeDone?'done':''}">${setupCheckMarkup()}<div><strong>2. Connect Stripe</strong><span>${stripeDone?'Stripe is connected for parish giving.':'Create a Stripe onboarding link and complete the account setup.'}</span></div></div><div class="setup-step ${billingDone?'done':''}">${setupCheckMarkup()}<div><strong>3. Select tier and billing</strong><span>${billingDone?'AgaPay subscription billing is active.':'Choose the parish tier and start billing checkout.'}</span></div></div></div></div><div class="setup-action-panel">${stripeDone?'':'<button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startStripeOnboarding(this)">Connect Stripe</button>'}${billingDone?'':`<label for="setupSubscriptionTier">AgaPay tier</label><select id="setupSubscriptionTier">${tierOptions}</select><button class="btn btn-ghost-dark" style="width:100%;justify-content:center;" onclick="startSubscriptionCheckout(this)">Start billing checkout</button>`}<div class="setup-link-box" id="setupLinkBox"><a id="setupActionLink" href="#" target="_blank" rel="noopener">Open setup link</a><p id="setupLinkHelp"></p></div></div></div></div>`;
+    pane.innerHTML=`<div class="setup-wizard-card"><div class="setup-wizard-body"><div><div class="setup-title">First-time setup</div><p class="setup-copy">Choose the parish's AgaPay tier first, then connect Stripe so gifts can be received through the platform.</p><div class="setup-steps"><div class="setup-step done">${setupCheckMarkup()}<div><strong>1. Contact info verified</strong><span>Your registration has already supplied the parish contact details.</span></div></div><div class="setup-step ${billingDone?'done':''}">${setupCheckMarkup()}<div><strong>2. Select tier and billing</strong><span>${billingDone?'AgaPay subscription billing is active.':'Choose the parish tier and complete billing checkout.'}</span></div></div><div class="setup-step ${stripeDone?'done':''}">${setupCheckMarkup()}<div><strong>3. Connect Stripe</strong><span>${stripeDone?'Stripe is connected for parish giving.':billingDone?'Create a Stripe onboarding link and complete the account setup.':'Stripe setup unlocks after billing is active.'}</span></div></div></div></div><div class="setup-action-panel">${billingDone?'':`<label for="setupSubscriptionTier">AgaPay tier</label><select id="setupSubscriptionTier">${tierOptions}</select><button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startSubscriptionCheckout(this)">Start billing checkout</button><p class="setup-copy" style="margin:0;">After billing is active, you will connect Stripe so the parish can receive donations.</p>`}${billingDone&&!stripeDone?'<button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startStripeOnboarding(this)">Connect Stripe</button>':''}${setup.temporaryPassword?'<p class="setup-copy" style="margin:0;">You are still using a temporary password. Change it in Settings when ready.</p>':''}<div class="setup-link-box" id="setupLinkBox"><a id="setupActionLink" href="#" target="_blank" rel="noopener">Open setup link</a><p id="setupLinkHelp"></p></div></div></div></div>`;
   }
 
   // ── RENDER DASHBOARD ──────────────────────────────────────
@@ -275,7 +296,7 @@
       </div>
       <div class="btn-row">
         <button class="btn btn-gold" onclick="saveDashboard(this)">Save changes</button>
-        <button class="btn btn-primary" onclick="startStripeOnboarding(this)">Start Stripe onboarding</button>
+        ${(p.setup||{}).billingActive?'<button class="btn btn-primary" onclick="startStripeOnboarding(this)">Start Stripe onboarding</button>':'<button class="btn btn-ghost" disabled title="Complete AgaPay billing first">Stripe unlocks after billing</button>'}
         <button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button>
         <button class="btn btn-ghost" onclick="logoutParish()">Log out</button>
       </div>
