@@ -1203,6 +1203,8 @@
       if (sf) sf.style.display = tab === 'queue' ? '' : 'none';
       // Sync inline filters when entering queue tab
       if (tab === 'queue') syncInlineFilters();
+      document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
+      if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function syncInlineFilters() {

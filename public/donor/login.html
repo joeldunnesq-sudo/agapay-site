@@ -12,38 +12,36 @@
   <link rel="stylesheet" href="/donor/style.css" />
   <script src="/donor/app.js" defer></script>
 </head>
-<body>
-  <div class="app">
-    <aside class="sidebar">
-      <div class="sidebar-scroll">
-        <div class="brand"><div class="brand-row"><div class="brand-mark"><img src="/mark.png" alt="AgaPay" /></div><span class="brand-name">Aga<em>Pay</em></span></div><span class="pill">Donor Login</span></div>
-        <nav class="nav" hx-boost="false">
-          <a href="/donor/signup"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Sign Up</a>
-          <a href="/donor/login" class="active"><svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg> Login</a>
-          <a href="/give"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg> Give</a>
-        </nav>
+<body class="donor-login-simple">
+  <main class="donor-auth-page">
+    <section class="donor-auth-shell">
+      <div class="notice" id="donorStatus" style="display:none;"></div>
+
+      <div class="donor-auth-intro">
+        <img src="/mark.png" alt="" />
+        <div>
+          <div class="eyebrow">Welcome back</div>
+          <h1>Open your donor dashboard.</h1>
+          <p>Log in after verifying your email to view giving history, manage commemorations, and give through AgaPay.</p>
+        </div>
       </div>
-      <div class="sidebar-footer"><a class="sidebar-link" href="/" hx-boost="false"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> AgaPay home</a></div>
-    </aside>
-    <main class="content">
-      <div class="topbar"><div class="topbar-title">Donor Login</div><div class="topbar-actions"><a class="btn btn-gold btn-sm" href="/donor/signup">Create account</a></div></div>
-      <div class="page">
-        <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
-        <section class="hero"><div class="hero-grid"><div><div class="eyebrow">Welcome back</div><h1>Open your donor dashboard.</h1><p>Log in after verifying your email to view giving history, manage commemorations, and give through AgaPay.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
-        <section class="card section-gap">
-          <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg></span> Login</div></div>
-          <div class="card-body">
-            <form onsubmit="loginFromPage(event)">
-              <div class="form-grid">
-                <div class="form-group"><label class="form-label" for="donorEmail">Email</label><input class="form-input" id="donorEmail" type="email" autocomplete="email" placeholder="you@example.com" /></div>
-                <div class="form-group"><label class="form-label" for="donorPassword">Password</label><input class="form-input" id="donorPassword" type="password" autocomplete="current-password" placeholder="Your password" /></div>
-              </div>
-              <div class="section-gap"><button class="btn btn-gold" type="submit">Log in</button></div>
-            </form>
-          </div>
-        </section>
-      </div>
-    </main>
-  </div>
+
+      <form class="donor-auth-card" onsubmit="loginFromPage(event)">
+        <h2>Login</h2>
+        <div class="form-group">
+          <label class="form-label" for="donorEmail">Email</label>
+          <input class="form-input" id="donorEmail" type="email" autocomplete="email" placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="donorPassword">Password</label>
+          <input class="form-input" id="donorPassword" type="password" autocomplete="current-password" placeholder="Your password" />
+        </div>
+        <div class="donor-auth-actions">
+          <button class="btn btn-gold" type="submit">Log in</button>
+          <a class="btn btn-ghost" href="/donor/signup">Sign up</a>
+        </div>
+      </form>
+    </section>
+  </main>
 </body>
 </html>

@@ -94,6 +94,8 @@
     document.getElementById('topbarTitle').textContent = titles[tab] || 'Parish Dashboard';
     if (tab === 'history' && currentParish && !allGifts.length) loadGivingHistory();
     if (tab === 'qr') renderBulletinPreview();
+    document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
+    if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   // ── AUTH ─────────────────────────────────────────────────
