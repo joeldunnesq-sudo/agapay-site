@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vision | AGAPAY</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
+  <link rel="shortcut icon" href="/favicons/favicon.ico" />
+  <meta name="description" content="AGAPAY's vision for Orthodox financial infrastructure: churches, marketplace, and ministries united in one ecosystem." />
+  <meta name="theme-color" content="#061522" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --deep: #061522;
+      --deep-2: #0B2130;
+      --gold: #C8A24A;
+      --cream: #F6F1E8;
+      --paper: #FFFDF8;
+      --stone: #6F6A60;
+      --ink: #171715;
+      --line: rgba(166,159,145,0.3);
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "DM Sans", system-ui, sans-serif;
+      --r: 12px;
+    }
+    body { font-family: var(--sans); color: var(--ink); background: var(--cream); -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    .wrap { width: min(1220px, calc(100% - 2.25rem)); margin: 0 auto; }
+
+    .site-header { position: sticky; top: 0; z-index: 40; background: rgba(6,21,34,0.96); border-bottom: 1px solid rgba(200,162,74,0.16); }
+    .nav { min-height: 78px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .brand { display: inline-flex; align-items: center; gap: 0.8rem; color: var(--cream); }
+    .brand img { width: 46px; height: 46px; object-fit: contain; }
+    .brand-stack strong { display: block; font: 500 2rem/1 var(--serif); letter-spacing: 0.08em; text-transform: uppercase; }
+    .brand-stack span { display: block; font-size: 0.62rem; letter-spacing: 0.14em; color: var(--gold); text-transform: uppercase; margin-top: 0.25rem; }
+    .links { display: flex; align-items: center; gap: 1.4rem; color: rgba(246,241,232,0.86); font-size: 0.92rem; }
+    .links a.active { color: var(--gold); border-bottom: 2px solid var(--gold); padding-bottom: 0.35rem; }
+    .cta { background: linear-gradient(135deg, #D7B25C, #B88633); color: #0A1724; padding: 0.72rem 1.2rem; border-radius: 8px; font-weight: 600; font-size: 0.92rem; }
+
+    .hero { background: var(--deep); color: var(--cream); }
+    .hero-grid { display: grid; grid-template-columns: 1fr 1.2fr; min-height: 540px; }
+    .hero-copy { padding: 4rem 2.5rem 3.2rem 0.2rem; align-self: center; }
+    .eyebrow { color: var(--gold); text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.12em; font-weight: 600; margin-bottom: 0.8rem; }
+    .hero h1 { font: 500 clamp(2.3rem,5vw,4.1rem)/1.05 var(--serif); max-width: 520px; margin-bottom: 1.15rem; }
+    .hero p { max-width: 540px; color: rgba(246,241,232,0.88); line-height: 1.75; font-size: 1.02rem; margin-bottom: 0.9rem; }
+    .hero-image {
+      position: relative;
+      background:
+        linear-gradient(90deg, rgba(6,21,34,0.45), rgba(6,21,34,0.1)),
+        url("/images/vision/fresco-vault.jpg") center/cover no-repeat;
+      min-height: 540px;
+    }
+    .hero-image::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 40% 45%, rgba(216,176,88,0.2), transparent 50%);
+      pointer-events: none;
+    }
+
+    .values { background: var(--paper); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .values-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); }
+    .value { padding: 2rem 1.35rem; border-right: 1px solid var(--line); }
+    .value:last-child { border-right: 0; }
+    .value .eyebrow { font-size: 0.72rem; margin-bottom: 0.45rem; }
+    .value h3 { font: 500 2rem/1.06 var(--serif); color: var(--deep); margin-bottom: 0.65rem; }
+    .value p { color: var(--stone); line-height: 1.65; }
+
+    .phase-section { background: linear-gradient(180deg, #07192A 0%, #061522 100%); color: var(--cream); padding: 3.8rem 0 4.2rem; }
+    .phase-heading { text-align: center; margin-bottom: 2rem; }
+    .phase-heading .eyebrow { margin-bottom: 0.4rem; }
+    .phase-cards { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1rem; }
+    .phase-card { background: rgba(255,255,255,0.95); color: var(--ink); border: 1px solid rgba(166,159,145,0.4); border-radius: var(--r); padding: 1.3rem; position: relative; overflow: hidden; }
+    .phase-card::before { content: ""; position: absolute; top: 0.9rem; right: 0.9rem; width: 92px; height: 92px; border-radius: 50%; border: 1px solid rgba(200,162,74,0.35); opacity: 0.55; }
+    .phase-num { width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--gold); color: var(--deep); display: grid; place-items: center; font-weight: 700; background: #fff; margin-bottom: 0.85rem; }
+    .phase-label { font-size: 0.74rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--stone); margin-bottom: 0.35rem; font-weight: 600; }
+    .phase-card h4 { font: 500 2.1rem/1.08 var(--serif); color: var(--deep); margin-bottom: 0.6rem; }
+    .phase-card p { color: #4e4a42; line-height: 1.65; margin-bottom: 0.8rem; }
+    .phase-list { list-style: none; display: grid; gap: 0.35rem; }
+    .phase-list li { font-size: 0.95rem; color: #3f3a32; padding-left: 1.15rem; position: relative; }
+    .phase-list li::before { content: "•"; position: absolute; left: 0; color: var(--gold); font-weight: 700; }
+
+    .ecosystem { padding: 4.1rem 0; background: var(--paper); }
+    .eco-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 1.5rem; align-items: center; }
+    .eco-copy h2 { font: 500 clamp(2.1rem,4.5vw,3.2rem)/1.07 var(--serif); color: var(--deep); margin-bottom: 0.8rem; max-width: 420px; }
+    .eco-copy p { color: var(--stone); line-height: 1.75; margin-bottom: 0.7rem; max-width: 500px; }
+    .wheel {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 0.7rem;
+      align-items: center;
+    }
+    .spoke { border: 1px solid rgba(200,162,74,0.3); border-radius: 10px; padding: 0.65rem; text-align: center; font-size: 0.9rem; color: var(--deep); min-height: 74px; display: grid; place-items: center; }
+    .hub {
+      grid-column: 2;
+      grid-row: 2;
+      border-radius: 50%;
+      width: 150px;
+      height: 150px;
+      margin: 0 auto;
+      background:
+        radial-gradient(circle at 35% 35%, #12314a, #071a2b 74%);
+      border: 2px solid rgba(200,162,74,0.5);
+      color: var(--cream);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      text-align: center;
+      padding: 0.8rem;
+    }
+    .hub img { width: 36px; height: 36px; }
+    .hub strong { font: 500 1.35rem/1 var(--serif); letter-spacing: 0.08em; }
+    .hub span { font-size: 0.76rem; color: rgba(246,241,232,0.84); line-height: 1.35; }
+
+    .mission { background: var(--deep); color: var(--cream); }
+    .mission-grid { display: grid; grid-template-columns: 1fr 1fr; min-height: 330px; }
+    .mission-copy { padding: 3.2rem 2rem 3rem 0; align-self: center; }
+    .mission h2 { font: 500 clamp(2.1rem,4vw,3.2rem)/1.06 var(--serif); margin-bottom: 0.9rem; }
+    .mission p { color: rgba(246,241,232,0.86); line-height: 1.75; max-width: 520px; }
+    .mission-photo { background: linear-gradient(90deg, rgba(6,21,34,0.25), rgba(6,21,34,0.1)), url("/images/vision/hero-incense.jpg") center/cover no-repeat; }
+
+    .gallery { background: #fff; padding: 3rem 0 3.8rem; }
+    .gallery-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; }
+    .gallery-card { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--paper); }
+    .gallery-card img { width: 100%; height: 220px; object-fit: cover; }
+    .gallery-card .cap { padding: 0.7rem 0.9rem; color: var(--stone); font-size: 0.9rem; }
+
+    .cta-band { background: linear-gradient(180deg, #071a2b, #061522); color: var(--cream); padding: 2.4rem 0; border-top: 1px solid rgba(200,162,74,0.18); }
+    .cta-row { display: flex; justify-content: space-between; gap: 1rem; align-items: center; }
+    .cta-row h3 { font: 500 clamp(1.9rem,3.8vw,2.8rem)/1.1 var(--serif); max-width: 640px; }
+    .cta-buttons { display: flex; gap: 0.75rem; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; border-radius: 9px; padding: 0 1.15rem; font-weight: 600; font-size: 0.95rem; }
+    .btn-gold { background: linear-gradient(135deg, #D7B25C, #B88633); color: #0A1724; }
+    .btn-outline { border: 1px solid rgba(200,162,74,0.7); color: var(--gold); background: transparent; }
+
+    footer { background: #05131F; color: rgba(246,241,232,0.7); border-top: 1px solid rgba(200,162,74,0.16); padding: 1.2rem 0 1.4rem; font-size: 0.88rem; }
+    .footer-row { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+
+    @media (max-width: 1020px) {
+      .hero-grid, .mission-grid, .eco-grid { grid-template-columns: 1fr; }
+      .hero-copy, .mission-copy { padding-right: 0; }
+      .hero-image, .mission-photo { min-height: 300px; }
+      .phase-cards, .values-grid, .gallery-grid { grid-template-columns: 1fr; }
+      .cta-row { flex-direction: column; align-items: flex-start; }
+      .links { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap nav">
+      <a class="brand" href="/" aria-label="AGAPAY Home">
+        <img src="/mark.png" alt="AGAPAY mark" />
+        <span class="brand-stack">
+          <strong>AGAPAY</strong>
+          <span>Orthodox Giving Lives Here</span>
+        </span>
+      </a>
+      <nav class="links" aria-label="Primary">
+        <a href="/why">Why Agapay</a>
+        <a href="/vision" class="active">Vision</a>
+        <a href="/features">Solutions</a>
+        <a href="/how-it-works">Resources</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/contact">Contact</a>
+      </nav>
+      <a href="/register" class="cta">Join Agapay</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow">Our Vision</div>
+          <h1>Building the financial home of the Orthodox world.</h1>
+          <p>Agapay exists to strengthen Orthodox communities through modern financial infrastructure rooted in shared faith, stewardship, and long-term institutional support.</p>
+          <p>We believe Orthodox churches, ministries, schools, businesses, monasteries, and faithful families deserve tools built specifically for the life of the Church.</p>
+        </div>
+        <div class="hero-image" role="img" aria-label="Orthodox fresco interior"></div>
+      </div>
+    </section>
+
+    <section class="values">
+      <div class="wrap values-grid">
+        <article class="value">
+          <div class="eyebrow">Why Agapay Exists</div>
+          <h3>Orthodox communities deserve infrastructure built for them.</h3>
+          <p>Agapay was created to build a connected financial ecosystem that helps Orthodox institutions grow stronger together.</p>
+        </article>
+        <article class="value">
+          <div class="eyebrow">The Challenge</div>
+          <h3>Orthodox institutions are digitally fragmented.</h3>
+          <p>Financial activity leaves the ecosystem. Resources become scattered. Communities remain disconnected.</p>
+        </article>
+        <article class="value">
+          <div class="eyebrow">Our Response</div>
+          <h3>A unified ecosystem built on faith, trust, and stewardship.</h3>
+          <p>Agapay creates modern infrastructure to help Orthodox life become more connected, sustainable, and resilient.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="phase-section">
+      <div class="wrap">
+        <div class="phase-heading">
+          <div class="eyebrow">The Three-Phase Vision</div>
+        </div>
+        <div class="phase-cards">
+          <article class="phase-card">
+            <div class="phase-num">1</div>
+            <div class="phase-label">Phase One</div>
+            <h4>Orthodox Giving Infrastructure</h4>
+            <p>The first phase focuses on building modern software for Orthodox churches and parishes.</p>
+            <ul class="phase-list">
+              <li>Digital giving and stewardship tools</li>
+              <li>Recurring donations</li>
+              <li>Parish fundraising and event payments</li>
+              <li>Financial management integrations</li>
+              <li>Donor engagement tools</li>
+            </ul>
+          </article>
+          <article class="phase-card">
+            <div class="phase-num">2</div>
+            <div class="phase-label">Phase Two</div>
+            <h4>The Orthodox Marketplace</h4>
+            <p>The second phase expands into an Orthodox marketplace where businesses, monasteries, and creators connect directly with the faithful.</p>
+            <ul class="phase-list">
+              <li>Orthodox businesses and monastery goods</li>
+              <li>Books, icons, and sacred art</li>
+              <li>Vestments and church supplies</li>
+              <li>Handcrafted and digital products</li>
+              <li>Events and pilgrimage services</li>
+            </ul>
+          </article>
+          <article class="phase-card">
+            <div class="phase-num">3</div>
+            <div class="phase-label">Phase Three</div>
+            <h4>Ministries, Nonprofits, &amp; Schools</h4>
+            <p>The third phase extends infrastructure support for ministries, nonprofits, schools, and mission-driven Orthodox organizations.</p>
+            <ul class="phase-list">
+              <li>Fundraising and donor management</li>
+              <li>Tuition and payment systems</li>
+              <li>Grant and sponsorship support</li>
+              <li>Event registration and engagement</li>
+              <li>Mission support and giving networks</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="ecosystem">
+      <div class="wrap eco-grid">
+        <div class="eco-copy">
+          <div class="eyebrow">The Ecosystem</div>
+          <h2>One connected Orthodox financial ecosystem.</h2>
+          <p>Agapay is designed to connect the many parts of Orthodox life through shared infrastructure and trusted relationships.</p>
+          <p>As the platform grows, churches, ministries, businesses, schools, monasteries, and faithful families become increasingly connected through tools designed specifically for Orthodox communities.</p>
+        </div>
+        <div class="wheel">
+          <div class="spoke">Churches &amp; Parishes</div>
+          <div class="spoke">Orthodox Businesses</div>
+          <div class="spoke">Ministries &amp; Nonprofits</div>
+          <div class="spoke">Schools &amp; Academies</div>
+          <div class="hub">
+            <img src="/mark.png" alt="" />
+            <strong>AGAPAY</strong>
+            <span>Building the financial home of the Orthodox world.</span>
+          </div>
+          <div class="spoke">Monasteries</div>
+          <div class="spoke">Publishers &amp; Events</div>
+          <div class="spoke">Faithful Families</div>
+          <div class="spoke">Orthodox Schools</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mission">
+      <div class="wrap mission-grid">
+        <div class="mission-copy">
+          <div class="eyebrow">Our Mission</div>
+          <h2>Technology in service of Orthodox life.</h2>
+          <p>Agapay is not simply building software. We are building infrastructure intended to strengthen Orthodox institutions, support Orthodox families, encourage faithful stewardship, and help Orthodox communities flourish for generations to come.</p>
+        </div>
+        <div class="mission-photo" role="img" aria-label="Orthodox incense lamp"></div>
+      </div>
+    </section>
+
+    <section class="gallery">
+      <div class="wrap gallery-grid">
+        <article class="gallery-card">
+          <img src="/images/vision/church-exterior.jpg" alt="Orthodox church exterior" />
+          <div class="cap">Orthodox architecture and place</div>
+        </article>
+        <article class="gallery-card">
+          <img src="/images/vision/icon-hands.jpg" alt="Orthodox icon held in hands" />
+          <div class="cap">Tradition, reverence, and beauty</div>
+        </article>
+        <article class="gallery-card">
+          <img src="/images/vision/fresco-vault.jpg" alt="Frescoes inside Orthodox church" />
+          <div class="cap">Shared faith, shared future</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <div class="wrap cta-row">
+        <h3>Join us as we build the future of Orthodox giving.</h3>
+        <div class="cta-buttons">
+          <a href="/register" class="btn btn-gold">Join Agapay</a>
+          <a href="/how-it-works" class="btn btn-outline">Explore the Vision</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap footer-row">
+      <span>© 2026 AGAPAY. Ancient faith. Modern infrastructure.</span>
+      <span><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></span>
+    </div>
+  </footer>
+</body>
+</html>
