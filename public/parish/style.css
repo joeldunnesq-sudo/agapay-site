@@ -1,8 +1,8 @@
     * { box-sizing: border-box; }
     :root {
-      --deep: #0F2D1F;
-      --forest: #2F5A39;
-      --gold: #B8902F;
+      --deep: #061522;
+      --forest: #0B2130;
+      --gold: #C8A24A;
       --cream: #F6F1E8;
       --paper: #FFFDF9;
       --stone: #6F6A60;
@@ -1065,3 +1065,4 @@
         font-size: 9px;
       }
     }
+

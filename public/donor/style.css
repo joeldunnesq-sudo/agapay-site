@@ -1,11 +1,11 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --deep: #0F2D1F;
-  --forest: #2F5A39;
+  --deep: #061522;
+  --forest: #0B2130;
   --wine: #5C1E1E;
   --wine-soft: rgba(92, 30, 30, 0.1);
-  --gold: #B8902F;
+  --gold: #C8A24A;
   --gold-soft: rgba(184, 144, 47, 0.14);
   --cream: #F6F1E8;
   --paper: #FDFBF7;
@@ -1780,7 +1780,7 @@ body.donor-mobile-page {
     border-radius: var(--rlg);
     background:
       radial-gradient(circle at 86% 24%, rgba(184, 144, 47, 0.14), transparent 12rem),
-      linear-gradient(145deg, #0F2D1F, #164F30);
+      linear-gradient(145deg, #061522, #164F30);
     color: var(--cream);
     padding: 1.5rem;
     box-shadow: var(--shadow);
@@ -1976,3 +1976,4 @@ body.donor-mobile-page {
     min-height: 78px;
   }
 }
+
