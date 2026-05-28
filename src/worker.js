@@ -186,6 +186,85 @@ async function listKvKeys(env, { prefix = "", limit = 1000, pageSize = 100 } = {
   return keys;
 }
 
+function hasProductionStore(env) {
+  return Boolean(env.AGAPAY_DB || env.AGAPAY_REGISTRATIONS);
+}
+
+function missingProductionStoreResponse() {
+  return json({ error: "AgaPay production data store is not configured" }, { status: 500 });
+}
+
+function d1(env) {
+  return env.AGAPAY_DB || null;
+}
+
+function parseJsonRow(row) {
+  if (!row?.data) return null;
+  return JSON.parse(row.data);
+}
+
+async function d1First(env, sql, ...params) {
+  if (!d1(env)) return null;
+  return d1(env).prepare(sql).bind(...params).first();
+}
+
+async function d1All(env, sql, ...params) {
+  if (!d1(env)) return [];
+  const result = await d1(env).prepare(sql).bind(...params).all();
+  return result.results || [];
+}
+
+async function d1Run(env, sql, ...params) {
+  if (!d1(env)) return null;
+  return d1(env).prepare(sql).bind(...params).run();
+}
+
+async function d1GetSetting(env, key) {
+  const row = await d1First(env, "SELECT value FROM app_settings WHERE key = ?1", key);
+  return row?.value || "";
+}
+
+async function d1SetSetting(env, key, value) {
+  await d1Run(
+    env,
+    `INSERT INTO app_settings (key, value, updated_at)
+     VALUES (?1, ?2, ?3)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+    key,
+    value,
+    new Date().toISOString()
+  );
+}
+
+async function stripeEventProcessed(env, eventId) {
+  if (!eventId) return false;
+  if (d1(env)) {
+    const row = await d1First(env, "SELECT id FROM stripe_events WHERE id = ?1", eventId);
+    return Boolean(row);
+  }
+  if (env.AGAPAY_REGISTRATIONS) return Boolean(await env.AGAPAY_REGISTRATIONS.get(stripeEventKey(eventId)));
+  return false;
+}
+
+async function recordStripeEvent(env, eventId) {
+  if (!eventId) return;
+  const now = new Date().toISOString();
+  if (d1(env)) {
+    await d1Run(
+      env,
+      `INSERT INTO stripe_events (id, received_at)
+       VALUES (?1, ?2)
+       ON CONFLICT(id) DO UPDATE SET received_at = excluded.received_at`,
+      eventId,
+      now
+    );
+  } else if (env.AGAPAY_REGISTRATIONS) {
+    await env.AGAPAY_REGISTRATIONS.put(stripeEventKey(eventId), now, {
+      expirationTtl: 60 * 60 * 24 * 90
+    });
+  }
+}
+
 function generateSecret(prefix = "agp") {
   const bytes = new Uint8Array(24);
   crypto.getRandomValues(bytes);
@@ -276,17 +355,58 @@ function publicDonor(donor) {
 }
 
 async function loadDonor(env, email) {
-  if (!env.AGAPAY_REGISTRATIONS) return null;
   const normalized = normalizeEmail(email);
   if (!normalized) return null;
+
+  if (d1(env)) {
+    const row = await d1First(env, "SELECT data FROM donors WHERE email = ?1", normalized);
+    const donor = parseJsonRow(row);
+    if (donor) return donor;
+  }
+
+  if (!env.AGAPAY_REGISTRATIONS) return null;
   const raw = await env.AGAPAY_REGISTRATIONS.get(donorKey(normalized));
   if (!raw) return null;
-  return JSON.parse(raw);
+  const donor = JSON.parse(raw);
+  if (d1(env)) await saveDonor(env, donor);
+  return donor;
 }
 
 async function saveDonor(env, donor) {
-  await env.AGAPAY_REGISTRATIONS.put(donorKey(donor.email), JSON.stringify(donor));
+  const email = normalizeEmail(donor.email);
+  const record = { ...donor, email };
+  const data = JSON.stringify(record);
+
+  if (d1(env)) {
+    await d1Run(
+      env,
+      `INSERT INTO donors (email, default_parish_id, email_verified_at, created_at, updated_at, data)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+       ON CONFLICT(email) DO UPDATE SET
+         default_parish_id = excluded.default_parish_id,
+         email_verified_at = excluded.email_verified_at,
+         created_at = excluded.created_at,
+         updated_at = excluded.updated_at,
+         data = excluded.data`,
+      email,
+      record.defaultParishId || "",
+      record.emailVerifiedAt || "",
+      record.createdAt || "",
+      record.updatedAt || new Date().toISOString(),
+      data
+    );
+  } else if (env.AGAPAY_REGISTRATIONS) {
+    await env.AGAPAY_REGISTRATIONS.put(donorKey(email), data);
+  }
+
   return donor;
+}
+
+async function deleteDonor(env, email) {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return;
+  if (d1(env)) await d1Run(env, "DELETE FROM donors WHERE email = ?1", normalized);
+  if (env.AGAPAY_REGISTRATIONS) await env.AGAPAY_REGISTRATIONS.delete(donorKey(normalized));
 }
 
 async function verifyDonorPassword(donor, password) {
@@ -325,10 +445,32 @@ async function applyParishDashboardPassword(registration, password, { temporary 
 }
 
 async function migrateDonorEmailReferences(env, oldEmail, newEmail) {
-  if (!env.AGAPAY_REGISTRATIONS) return;
   const oldNormalized = normalizeEmail(oldEmail);
   const newNormalized = normalizeEmail(newEmail);
   if (!oldNormalized || !newNormalized || oldNormalized === newNormalized) return;
+
+  if (d1(env)) {
+    const offerings = await loadDonorOfferings(env, oldNormalized, 1000);
+    for (const offering of offerings) {
+      await storeDonorOffering(env, {
+        ...offering,
+        donorEmail: newNormalized,
+        updatedAt: new Date().toISOString()
+      });
+    }
+
+    const commemorations = await loadDonorCommemorations(env, oldNormalized, 1000);
+    for (const entry of commemorations) {
+      await saveCommemorationEntry(env, {
+        ...entry,
+        donorEmail: newNormalized,
+        updatedAt: new Date().toISOString()
+      });
+    }
+    return;
+  }
+
+  if (!env.AGAPAY_REGISTRATIONS) return;
 
   const offeringKeys = await listKvKeys(env, { prefix: donorOfferingKey(oldNormalized, ""), limit: 1000 });
   for (const key of offeringKeys) {
@@ -368,7 +510,7 @@ async function migrateDonorEmailReferences(env, oldEmail, newEmail) {
 }
 
 async function requireDonor(request, env) {
-  if (!env.AGAPAY_REGISTRATIONS) return null;
+  if (!hasProductionStore(env)) return null;
   const email = normalizeEmail(request.headers.get("X-AgaPay-Donor-Email"));
   const token = getBearerToken(request);
   if (!email || !token) return null;
@@ -383,11 +525,17 @@ async function requireDonor(request, env) {
 
 async function verifyAdminPassword(env, submitted) {
   if (!submitted) return false;
-  const kvPassword = env.AGAPAY_REGISTRATIONS
+  const storedPassword = d1(env)
+    ? await d1GetSetting(env, ADMIN_PASSWORD_KV_KEY)
+    : env.AGAPAY_REGISTRATIONS
+      ? await env.AGAPAY_REGISTRATIONS.get(ADMIN_PASSWORD_KV_KEY)
+      : "";
+  const fallbackPassword = !storedPassword && d1(env) && env.AGAPAY_REGISTRATIONS
     ? await env.AGAPAY_REGISTRATIONS.get(ADMIN_PASSWORD_KV_KEY)
     : "";
-  if (kvPassword && await verifyPasswordRecord(submitted, kvPassword)) return true;
-  if (kvPassword && !parsePasswordRecord(kvPassword) && secureCompare(submitted, kvPassword)) return true;
+  const passwordToCheck = storedPassword || fallbackPassword;
+  if (passwordToCheck && await verifyPasswordRecord(submitted, passwordToCheck)) return true;
+  if (passwordToCheck && !parsePasswordRecord(passwordToCheck) && secureCompare(submitted, passwordToCheck)) return true;
   return Boolean(env.AGAPAY_ADMIN_TOKEN && secureCompare(submitted, env.AGAPAY_ADMIN_TOKEN));
 }
 
@@ -811,7 +959,23 @@ function commemorationKey(parishId, sourceId) {
 }
 
 async function loadCommemorationEntries(env, parishId, startDate, endDate) {
-  if (!env.AGAPAY_REGISTRATIONS || !parishId) return [];
+  if (!parishId) return [];
+
+  if (d1(env)) {
+    const rows = await d1All(
+      env,
+      `SELECT data FROM commemorations
+       WHERE parish_id = ?1 AND created_at >= ?2 AND created_at <= ?3
+       ORDER BY created_at DESC
+       LIMIT 1000`,
+      parishId,
+      startDate ? startDate.toISOString() : "0000-01-01T00:00:00.000Z",
+      endDate ? endDate.toISOString() : "9999-12-31T23:59:59.999Z"
+    );
+    return rows.map(parseJsonRow).filter(Boolean);
+  }
+
+  if (!env.AGAPAY_REGISTRATIONS) return [];
   const prefix = commemorationKey(parishId, "");
   const keys = await listKvKeys(env, { prefix, limit: 1000 });
   const entries = [];
@@ -835,7 +999,7 @@ async function loadCommemorationEntries(env, parishId, startDate, endDate) {
 }
 
 async function storeCommemorationEntry(env, sourceId, metadata = {}, fallback = {}) {
-  if (!env.AGAPAY_REGISTRATIONS) return null;
+  if (!hasProductionStore(env)) return null;
   const parishId = metadata.parish_id || fallback.parishId || "";
   const living = splitSubmittedNames(metadata.names_living);
   const departed = splitSubmittedNames(metadata.names_departed);
@@ -855,12 +1019,43 @@ async function storeCommemorationEntry(env, sourceId, metadata = {}, fallback = 
     createdAt: fallback.createdAt || new Date().toISOString()
   };
 
-  await env.AGAPAY_REGISTRATIONS.put(commemorationKey(parishId, entry.id), JSON.stringify(entry));
-  return entry;
+  return saveCommemorationEntry(env, entry);
+}
+
+async function saveCommemorationEntry(env, entry) {
+  if (!hasProductionStore(env) || !entry?.parishId || !entry?.id) return null;
+  const record = {
+    ...entry,
+    donorEmail: normalizeEmail(entry.donorEmail || ""),
+    createdAt: entry.createdAt || new Date().toISOString()
+  };
+
+  if (d1(env)) {
+    await d1Run(
+      env,
+      `INSERT INTO commemorations (id, parish_id, source_id, donor_email, created_at, data)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+       ON CONFLICT(id) DO UPDATE SET
+         parish_id = excluded.parish_id,
+         source_id = excluded.source_id,
+         donor_email = excluded.donor_email,
+         created_at = excluded.created_at,
+         data = excluded.data`,
+      `${record.parishId}:${record.id}`,
+      record.parishId,
+      record.sourceId || record.id,
+      record.donorEmail,
+      record.createdAt,
+      JSON.stringify(record)
+    );
+  } else {
+    await env.AGAPAY_REGISTRATIONS.put(commemorationKey(record.parishId, record.id), JSON.stringify(record));
+  }
+  return record;
 }
 
 async function storeDonorOffering(env, offering) {
-  if (!env.AGAPAY_REGISTRATIONS || !offering?.donorEmail) return null;
+  if (!hasProductionStore(env) || !offering?.donorEmail) return null;
   const email = normalizeEmail(offering.donorEmail);
   const id = offering.id || crypto.randomUUID();
   const record = {
@@ -890,19 +1085,59 @@ async function storeDonorOffering(env, offering) {
     createdAt: offering.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
-  const key = donorOfferingKey(email, id);
-  await env.AGAPAY_REGISTRATIONS.put(key, JSON.stringify(record));
-  if (record.checkoutSessionId) {
-    await env.AGAPAY_REGISTRATIONS.put(donorCheckoutIndexKey(record.checkoutSessionId), key);
-  }
-  if (record.stripePaymentIntentId) {
-    await env.AGAPAY_REGISTRATIONS.put(stripePaymentIntentIndexKey(record.stripePaymentIntentId), key);
+  if (d1(env)) {
+    await d1Run(
+      env,
+      `INSERT INTO donor_offerings (
+        id, donor_email, parish_id, checkout_session_id, payment_intent_id,
+        stripe_subscription_id, status, payment_status, created_at, updated_at, data
+       )
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+       ON CONFLICT(id) DO UPDATE SET
+         donor_email = excluded.donor_email,
+         parish_id = excluded.parish_id,
+         checkout_session_id = excluded.checkout_session_id,
+         payment_intent_id = excluded.payment_intent_id,
+         stripe_subscription_id = excluded.stripe_subscription_id,
+         status = excluded.status,
+         payment_status = excluded.payment_status,
+         created_at = excluded.created_at,
+         updated_at = excluded.updated_at,
+         data = excluded.data`,
+      record.id,
+      record.donorEmail,
+      record.parishId,
+      record.checkoutSessionId,
+      record.stripePaymentIntentId,
+      record.stripeSubscriptionId,
+      record.status,
+      record.paymentStatus,
+      record.createdAt,
+      record.updatedAt,
+      JSON.stringify(record)
+    );
+  } else {
+    const key = donorOfferingKey(email, id);
+    await env.AGAPAY_REGISTRATIONS.put(key, JSON.stringify(record));
+    if (record.checkoutSessionId) {
+      await env.AGAPAY_REGISTRATIONS.put(donorCheckoutIndexKey(record.checkoutSessionId), key);
+    }
+    if (record.stripePaymentIntentId) {
+      await env.AGAPAY_REGISTRATIONS.put(stripePaymentIntentIndexKey(record.stripePaymentIntentId), key);
+    }
   }
   return record;
 }
 
 async function updateDonorOfferingByCheckout(env, checkoutSessionId, updates = {}) {
-  if (!env.AGAPAY_REGISTRATIONS || !checkoutSessionId) return null;
+  if (!hasProductionStore(env) || !checkoutSessionId) return null;
+  if (d1(env)) {
+    const row = await d1First(env, "SELECT data FROM donor_offerings WHERE checkout_session_id = ?1 LIMIT 1", checkoutSessionId);
+    const current = parseJsonRow(row);
+    if (!current) return null;
+    return storeDonorOffering(env, { ...current, ...updates });
+  }
+
   const key = await env.AGAPAY_REGISTRATIONS.get(donorCheckoutIndexKey(checkoutSessionId));
   if (!key) return null;
   const raw = await env.AGAPAY_REGISTRATIONS.get(key);
@@ -921,7 +1156,14 @@ async function updateDonorOfferingByCheckout(env, checkoutSessionId, updates = {
 }
 
 async function updateDonorOfferingByPaymentIntent(env, paymentIntentId, updates = {}) {
-  if (!env.AGAPAY_REGISTRATIONS || !paymentIntentId) return null;
+  if (!hasProductionStore(env) || !paymentIntentId) return null;
+  if (d1(env)) {
+    const row = await d1First(env, "SELECT data FROM donor_offerings WHERE payment_intent_id = ?1 LIMIT 1", paymentIntentId);
+    const current = parseJsonRow(row);
+    if (!current) return null;
+    return storeDonorOffering(env, { ...current, ...updates });
+  }
+
   const key = await env.AGAPAY_REGISTRATIONS.get(stripePaymentIntentIndexKey(paymentIntentId));
   if (!key) return null;
   const raw = await env.AGAPAY_REGISTRATIONS.get(key);
@@ -937,6 +1179,16 @@ async function updateDonorOfferingByPaymentIntent(env, paymentIntentId, updates 
 }
 
 async function loadDonorOfferings(env, email, limit = 100) {
+  if (d1(env)) {
+    const rows = await d1All(
+      env,
+      "SELECT data FROM donor_offerings WHERE donor_email = ?1 ORDER BY created_at DESC LIMIT ?2",
+      normalizeEmail(email),
+      limit
+    );
+    return rows.map(parseJsonRow).filter(Boolean);
+  }
+
   if (!env.AGAPAY_REGISTRATIONS) return [];
   const prefix = donorOfferingKey(email, "");
   const keys = await listKvKeys(env, { prefix, limit });
@@ -954,8 +1206,18 @@ async function loadDonorOfferings(env, email, limit = 100) {
 }
 
 async function loadDonorCommemorations(env, email, limit = 100) {
-  if (!env.AGAPAY_REGISTRATIONS) return [];
   const normalized = normalizeEmail(email);
+  if (d1(env)) {
+    const rows = await d1All(
+      env,
+      "SELECT data FROM commemorations WHERE donor_email = ?1 ORDER BY created_at DESC LIMIT ?2",
+      normalized,
+      limit
+    );
+    return rows.map(parseJsonRow).filter(Boolean);
+  }
+
+  if (!env.AGAPAY_REGISTRATIONS) return [];
   const keys = await listKvKeys(env, { prefix: COMMEMORATION_KEY_PREFIX, limit: Math.max(limit, 1000) });
   const entries = [];
   for (const key of keys) {
@@ -1061,22 +1323,56 @@ function normalizeCommunityType(value) {
 }
 
 async function saveRegistrationRecord(env, reference, registration, previous = null) {
-  if (!env.AGAPAY_REGISTRATIONS || !reference) return registration;
-  await env.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify(registration));
-
+  if (!reference) return registration;
   const parishId = registration.parishId || slugify(registration.parishName);
   const previousParishId = previous ? previous.parishId || slugify(previous.parishName) : "";
-  if (parishId) await env.AGAPAY_REGISTRATIONS.put(parishIdIndexKey(parishId), reference);
-  if (previousParishId && previousParishId !== parishId) await env.AGAPAY_REGISTRATIONS.delete(parishIdIndexKey(previousParishId));
 
-  if (registration.stripeAccountId) await env.AGAPAY_REGISTRATIONS.put(stripeAccountIndexKey(registration.stripeAccountId), reference);
-  if (previous?.stripeAccountId && previous.stripeAccountId !== registration.stripeAccountId) {
-    await env.AGAPAY_REGISTRATIONS.delete(stripeAccountIndexKey(previous.stripeAccountId));
+  if (d1(env)) {
+    await d1Run(
+      env,
+      `INSERT INTO registrations (
+        reference, parish_id, status, parish_name, community_type,
+        stripe_account_id, stripe_subscription_id, received_at, updated_at, data
+       )
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+       ON CONFLICT(reference) DO UPDATE SET
+         parish_id = excluded.parish_id,
+         status = excluded.status,
+         parish_name = excluded.parish_name,
+         community_type = excluded.community_type,
+         stripe_account_id = excluded.stripe_account_id,
+         stripe_subscription_id = excluded.stripe_subscription_id,
+         received_at = excluded.received_at,
+         updated_at = excluded.updated_at,
+         data = excluded.data`,
+      reference,
+      parishId,
+      registration.status || "pending",
+      registration.parishName || "",
+      registration.communityType || "",
+      registration.stripeAccountId || "",
+      registration.stripeSubscriptionId || "",
+      registration.receivedAt || "",
+      registration.reviewedAt || registration.parishUpdatedAt || registration.subscriptionUpdatedAt || new Date().toISOString(),
+      JSON.stringify(registration)
+    );
+    return registration;
   }
 
-  if (registration.stripeSubscriptionId) await env.AGAPAY_REGISTRATIONS.put(stripeSubscriptionIndexKey(registration.stripeSubscriptionId), reference);
-  if (previous?.stripeSubscriptionId && previous.stripeSubscriptionId !== registration.stripeSubscriptionId) {
-    await env.AGAPAY_REGISTRATIONS.delete(stripeSubscriptionIndexKey(previous.stripeSubscriptionId));
+  if (hasProductionStore(env)) {
+    await env.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify(registration));
+    if (parishId) await env.AGAPAY_REGISTRATIONS.put(parishIdIndexKey(parishId), reference);
+    if (previousParishId && previousParishId !== parishId) await env.AGAPAY_REGISTRATIONS.delete(parishIdIndexKey(previousParishId));
+
+    if (registration.stripeAccountId) await env.AGAPAY_REGISTRATIONS.put(stripeAccountIndexKey(registration.stripeAccountId), reference);
+    if (previous?.stripeAccountId && previous.stripeAccountId !== registration.stripeAccountId) {
+      await env.AGAPAY_REGISTRATIONS.delete(stripeAccountIndexKey(previous.stripeAccountId));
+    }
+
+    if (registration.stripeSubscriptionId) await env.AGAPAY_REGISTRATIONS.put(stripeSubscriptionIndexKey(registration.stripeSubscriptionId), reference);
+    if (previous?.stripeSubscriptionId && previous.stripeSubscriptionId !== registration.stripeSubscriptionId) {
+      await env.AGAPAY_REGISTRATIONS.delete(stripeSubscriptionIndexKey(previous.stripeSubscriptionId));
+    }
   }
 
   return registration;
@@ -1095,7 +1391,37 @@ async function loadIndexedRegistration(env, indexKey) {
   }
 }
 
+async function loadRegistrationByReference(env, reference) {
+  if (!reference) return null;
+
+  if (d1(env)) {
+    const row = await d1First(env, "SELECT data FROM registrations WHERE reference = ?1", reference);
+    const registration = parseJsonRow(row);
+    if (registration) return registration;
+  }
+
+  if (!env.AGAPAY_REGISTRATIONS) return null;
+  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
+  if (!raw) return null;
+  const registration = JSON.parse(raw);
+  if (d1(env)) await saveRegistrationRecord(env, reference, registration);
+  return registration;
+}
+
 async function verifiedRegistrationParishes(env) {
+  if (d1(env)) {
+    const rows = await d1All(
+      env,
+      "SELECT data FROM registrations WHERE status = 'verified' ORDER BY received_at DESC LIMIT 1000"
+    );
+    if (rows.length) {
+      return rows
+        .map(parseJsonRow)
+        .map(parishFromRegistration)
+        .filter(Boolean);
+    }
+  }
+
   if (!env.AGAPAY_REGISTRATIONS) return [];
 
   const keys = await listKvKeys(env, { limit: 1000 });
@@ -1117,6 +1443,12 @@ async function verifiedRegistrationParishes(env) {
 }
 
 async function findRegistrationByParishId(env, parishId) {
+  if (d1(env)) {
+    const row = await d1First(env, "SELECT reference, data FROM registrations WHERE parish_id = ?1 LIMIT 1", parishId);
+    const registration = parseJsonRow(row);
+    if (registration) return { key: row.reference, registration };
+  }
+
   if (!env.AGAPAY_REGISTRATIONS) return null;
   const indexed = await loadIndexedRegistration(env, parishIdIndexKey(parishId));
   if (indexed) return indexed;
@@ -1143,7 +1475,14 @@ async function findRegistrationByParishId(env, parishId) {
 }
 
 async function findRegistrationByStripeSubscriptionId(env, subscriptionId) {
-  if (!env.AGAPAY_REGISTRATIONS || !subscriptionId) return null;
+  if (!subscriptionId) return null;
+  if (d1(env)) {
+    const row = await d1First(env, "SELECT reference, data FROM registrations WHERE stripe_subscription_id = ?1 LIMIT 1", subscriptionId);
+    const registration = parseJsonRow(row);
+    if (registration) return { key: row.reference, registration };
+  }
+
+  if (!env.AGAPAY_REGISTRATIONS) return null;
   const indexed = await loadIndexedRegistration(env, stripeSubscriptionIndexKey(subscriptionId));
   if (indexed) return indexed;
 
@@ -1167,7 +1506,14 @@ async function findRegistrationByStripeSubscriptionId(env, subscriptionId) {
 }
 
 async function findRegistrationByStripeAccountId(env, stripeAccountId) {
-  if (!env.AGAPAY_REGISTRATIONS || !stripeAccountId) return null;
+  if (!stripeAccountId) return null;
+  if (d1(env)) {
+    const row = await d1First(env, "SELECT reference, data FROM registrations WHERE stripe_account_id = ?1 LIMIT 1", stripeAccountId);
+    const registration = parseJsonRow(row);
+    if (registration) return { key: row.reference, registration };
+  }
+
+  if (!env.AGAPAY_REGISTRATIONS) return null;
   const indexed = await loadIndexedRegistration(env, stripeAccountIndexKey(stripeAccountId));
   if (indexed) return indexed;
 
@@ -1303,7 +1649,7 @@ async function handleRegistrations(request, env) {
     {
       ok: true,
       reference,
-      mode: env.AGAPAY_REGISTRATIONS ? "stored" : "demo",
+      mode: hasProductionStore(env) ? "stored" : "demo",
       message: "Registration received. AgaPay will review the parish before activation."
     },
     { status: 201 }
@@ -1508,9 +1854,7 @@ async function sendDonorVerificationEmail(env, donor, verificationUrl) {
 
 async function handleDonorSignup(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const limited = await rateLimit(request, env, "donor-signup", { limit: 8, windowSeconds: 300 });
   if (limited) return limited;
 
@@ -1577,9 +1921,7 @@ async function handleDonorSignup(request, env) {
 
 async function handleDonorLogin(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const limited = await rateLimit(request, env, "donor-login", { limit: 10, windowSeconds: 300 });
   if (limited) return limited;
 
@@ -1607,9 +1949,7 @@ async function handleDonorLogin(request, env) {
 
 async function handleDonorVerify(request, env) {
   if (!["GET", "POST"].includes(request.method)) return json({ error: "Method not allowed" }, { status: 405 });
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   let email = "";
   let token = "";
@@ -1832,7 +2172,7 @@ async function handleDonorDashboard(request, env) {
 
     if (emailChanged) {
       await migrateDonorEmailReferences(env, donor.email, requestedEmail);
-      await env.AGAPAY_REGISTRATIONS.delete(donorKey(donor.email));
+      await deleteDonor(env, donor.email);
     }
     await saveDonor(env, updated);
     return json({ ok: true, donor: publicDonor(updated) });
@@ -1932,8 +2272,41 @@ async function handleDonorCommemorations(request, env) {
 
 async function handleAdminRegistrations(request, env) {
   if (!(await requireAdmin(request, env))) return unauthorized();
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  if (!hasProductionStore(env)) {
+    return missingProductionStoreResponse();
+  }
+
+  if (d1(env)) {
+    const rows = await d1All(env, "SELECT data FROM registrations ORDER BY received_at DESC LIMIT 1000");
+    if (rows.length) {
+      const registrations = rows.map((row) => {
+        try {
+          const registration = parseJsonRow(row);
+          return {
+            reference: registration.reference || "",
+            status: registration.status || "pending",
+            parishName: registration.parishName || "",
+            communityType: registration.communityType || "",
+            liturgicalCalendar: registration.liturgicalCalendar || "julian",
+            jurisdiction: registration.jurisdiction || "",
+            city: registration.city || "",
+            state: registration.state || "",
+            priestEmail: registration.priestEmail || "",
+            treasurerEmail: registration.treasurerEmail || "",
+            givingStatus: registration.givingStatus || "active",
+            subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
+            subscriptionStatus: registration.subscriptionStatus || "not_started",
+            stripeAccountStatus: registration.stripeAccountStatus || "not_started",
+            dashboardInviteEmailStatus: registration.dashboardInviteEmailStatus || "",
+            adminNotificationEmailStatus: registration.adminNotificationEmailStatus || "",
+            receivedAt: registration.receivedAt || ""
+          };
+        } catch {
+          return { reference: "", status: "unreadable" };
+        }
+      });
+      return json({ registrations, cursor: null, source: "d1" });
+    }
   }
 
   const keys = await listKvKeys(env, { limit: 1000 });
@@ -1974,6 +2347,15 @@ async function handleAdminRegistrations(request, env) {
 }
 
 async function loadAllRegistrations(env) {
+  if (d1(env)) {
+    const rows = await d1All(env, "SELECT data FROM registrations ORDER BY received_at DESC LIMIT 1000");
+    if (rows.length) return rows.map(parseJsonRow).filter(Boolean);
+  }
+
+  return loadAllKvRegistrations(env);
+}
+
+async function loadAllKvRegistrations(env) {
   if (!env.AGAPAY_REGISTRATIONS) return [];
 
   const keys = await listKvKeys(env, { limit: 1000 });
@@ -1993,11 +2375,64 @@ async function loadAllRegistrations(env) {
   return registrations;
 }
 
+async function handleAdminMigrateKvToD1(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!(await requireAdmin(request, env))) return unauthorized();
+  if (!d1(env)) return json({ error: "AGAPAY_DB D1 binding is not configured" }, { status: 500 });
+  if (!env.AGAPAY_REGISTRATIONS) return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+
+  const keys = await listKvKeys(env, { limit: 5000 });
+  const migrated = {
+    registrations: 0,
+    donors: 0,
+    offerings: 0,
+    commemorations: 0,
+    settings: 0,
+    stripeEvents: 0,
+    skipped: 0
+  };
+
+  for (const key of keys) {
+    const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
+    if (!raw) {
+      migrated.skipped += 1;
+      continue;
+    }
+
+    try {
+      if (key.name === ADMIN_PASSWORD_KV_KEY) {
+        await d1SetSetting(env, ADMIN_PASSWORD_KV_KEY, raw);
+        migrated.settings += 1;
+      } else if (key.name.startsWith(DONOR_KEY_PREFIX)) {
+        await saveDonor(env, JSON.parse(raw));
+        migrated.donors += 1;
+      } else if (key.name.startsWith(DONOR_OFFERING_KEY_PREFIX)) {
+        await storeDonorOffering(env, JSON.parse(raw));
+        migrated.offerings += 1;
+      } else if (key.name.startsWith(COMMEMORATION_KEY_PREFIX)) {
+        await saveCommemorationEntry(env, JSON.parse(raw));
+        migrated.commemorations += 1;
+      } else if (key.name.startsWith(STRIPE_EVENT_PREFIX)) {
+        await recordStripeEvent(env, key.name.slice(STRIPE_EVENT_PREFIX.length));
+        migrated.stripeEvents += 1;
+      } else if (isSystemKvKey(key.name)) {
+        migrated.skipped += 1;
+      } else {
+        const registration = JSON.parse(raw);
+        await saveRegistrationRecord(env, registration.reference || key.name, registration);
+        migrated.registrations += 1;
+      }
+    } catch {
+      migrated.skipped += 1;
+    }
+  }
+
+  return json({ ok: true, migrated, migratedAt: new Date().toISOString() });
+}
+
 async function handleAdminPlatformSummary(request, env) {
   if (!(await requireAdmin(request, env))) return unauthorized();
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const registrations = await loadAllRegistrations(env);
   const now = new Date();
@@ -2077,9 +2512,7 @@ async function handleAdminPlatformSummary(request, env) {
 async function handleAdminRebuildIndexes(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   if (!(await requireAdmin(request, env))) return unauthorized();
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const registrations = await loadAllRegistrations(env);
   let indexed = 0;
@@ -2097,9 +2530,7 @@ async function handleAdminPassword(request, env) {
   const limited = await rateLimit(request, env, "admin-password", { limit: 5, windowSeconds: 300 });
   if (limited) return limited;
   if (!(await requireAdmin(request, env))) return unauthorized();
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   let body;
   try {
@@ -2120,25 +2551,28 @@ async function handleAdminPassword(request, env) {
     return json({ error: "Choose a password different from the Cloudflare root secret." }, { status: 400 });
   }
 
-  await env.AGAPAY_REGISTRATIONS.put(ADMIN_PASSWORD_KV_KEY, JSON.stringify(await createPasswordRecord(newPassword)));
+  const passwordRecord = JSON.stringify(await createPasswordRecord(newPassword));
+  if (d1(env)) {
+    await d1SetSetting(env, ADMIN_PASSWORD_KV_KEY, passwordRecord);
+  } else {
+    await env.AGAPAY_REGISTRATIONS.put(ADMIN_PASSWORD_KV_KEY, passwordRecord);
+  }
   return json({ ok: true, updatedAt: new Date().toISOString() });
 }
 
 async function handleAdminRegistrationDetail(request, env, reference) {
   if (!(await requireAdmin(request, env))) return unauthorized();
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   if (request.method === "GET") {
-    const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
-    if (!raw) return json({ error: "Registration not found" }, { status: 404 });
-    return json({ registration: JSON.parse(raw) });
+    const registration = await loadRegistrationByReference(env, reference);
+    if (!registration) return json({ error: "Registration not found" }, { status: 404 });
+    return json({ registration });
   }
 
   if (request.method === "PATCH") {
-    const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
-    if (!raw) return json({ error: "Registration not found" }, { status: 404 });
+    const current = await loadRegistrationByReference(env, reference);
+    if (!current) return json({ error: "Registration not found" }, { status: 404 });
 
     let body;
     try {
@@ -2147,7 +2581,6 @@ async function handleAdminRegistrationDetail(request, env, reference) {
       return json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    const current = JSON.parse(raw);
     const nextStatus = body.status || current.status;
     const parishId = nextStatus === "verified"
       ? current.parishId || slugify(current.parishName)
@@ -2318,12 +2751,10 @@ async function createSubscriptionCheckoutForRegistration(request, env, reference
 async function handleSubscriptionCheckout(request, env, reference) {
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
-  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
-  if (!raw) return json({ error: "Registration not found" }, { status: 404 });
+  const registration = await loadRegistrationByReference(env, reference);
+  if (!registration) return json({ error: "Registration not found" }, { status: 404 });
 
   let body = {};
   try {
@@ -2332,7 +2763,7 @@ async function handleSubscriptionCheckout(request, env, reference) {
     body = {};
   }
 
-  return createSubscriptionCheckoutForRegistration(request, env, reference, JSON.parse(raw), body, "/admin");
+  return createSubscriptionCheckoutForRegistration(request, env, reference, registration, body, "/admin");
 }
 
 function parseStripeSignature(header) {
@@ -2387,10 +2818,9 @@ function subscriptionStatusFromStripe(status) {
 }
 
 async function updateSubscriptionRecord(env, reference, updates) {
-  if (!env.AGAPAY_REGISTRATIONS || !reference) return null;
-  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
-  if (!raw) return null;
-  const current = JSON.parse(raw);
+  if (!hasProductionStore(env) || !reference) return null;
+  const current = await loadRegistrationByReference(env, reference);
+  if (!current) return null;
   const updated = {
     ...current,
     ...updates,
@@ -2416,9 +2846,8 @@ async function handleStripeWebhook(request, env) {
     return json({ error: "Invalid webhook payload" }, { status: 400 });
   }
 
-  if (event.id && env.AGAPAY_REGISTRATIONS) {
-    const alreadyProcessed = await env.AGAPAY_REGISTRATIONS.get(stripeEventKey(event.id));
-    if (alreadyProcessed) return json({ received: true, duplicate: true });
+  if (event.id && await stripeEventProcessed(env, event.id)) {
+    return json({ received: true, duplicate: true });
   }
 
   const object = event.data?.object || {};
@@ -2578,11 +3007,7 @@ async function handleStripeWebhook(request, env) {
     }
   }
 
-  if (event.id && env.AGAPAY_REGISTRATIONS) {
-    await env.AGAPAY_REGISTRATIONS.put(stripeEventKey(event.id), new Date().toISOString(), {
-      expirationTtl: 60 * 60 * 24 * 90
-    });
-  }
+  await recordStripeEvent(env, event.id);
 
   return json({ received: true });
 }
@@ -2665,14 +3090,11 @@ async function createStripeOnboardingSession(request, env, reference, registrati
 async function handleStripeOnboarding(request, env, reference) {
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
-  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
-  if (!raw) return json({ error: "Registration not found" }, { status: 404 });
+  const registration = await loadRegistrationByReference(env, reference);
+  if (!registration) return json({ error: "Registration not found" }, { status: 404 });
 
-  const registration = JSON.parse(raw);
   if (registration.status !== "verified") {
     return json({ error: "Verify the parish before starting Stripe onboarding" }, { status: 422 });
   }
@@ -2697,14 +3119,11 @@ async function handleStripeOnboarding(request, env, reference) {
 async function handleStripeRefresh(request, env, reference) {
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
-  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
-  if (!raw) return json({ error: "Registration not found" }, { status: 404 });
+  const registration = await loadRegistrationByReference(env, reference);
+  if (!registration) return json({ error: "Registration not found" }, { status: 404 });
 
-  const registration = JSON.parse(raw);
   if (!registration.stripeAccountId) {
     return json({ error: "This registration does not have a Stripe connected account yet" }, { status: 422 });
   }
@@ -2736,14 +3155,11 @@ async function handleStripeRefresh(request, env, reference) {
 async function handleDashboardInvite(request, env, reference) {
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
-  const raw = await env.AGAPAY_REGISTRATIONS.get(reference);
-  if (!raw) return json({ error: "Registration not found" }, { status: 404 });
+  const registration = await loadRegistrationByReference(env, reference);
+  if (!registration) return json({ error: "Registration not found" }, { status: 404 });
 
-  const registration = JSON.parse(raw);
   if (registration.status !== "verified") {
     return json({ error: "Verify the parish before sending a dashboard invite" }, { status: 422 });
   }
@@ -2774,9 +3190,7 @@ async function handleDashboardInvite(request, env, reference) {
 
 async function handleParishStripeOnboarding(request, env, parishId) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
@@ -2803,9 +3217,7 @@ async function handleParishStripeOnboarding(request, env, parishId) {
 
 async function handleParishSubscriptionCheckout(request, env, parishId) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
@@ -2837,9 +3249,7 @@ async function handleParishSubscriptionCheckout(request, env, parishId) {
 
 async function handleParishSubscriptionRefresh(request, env, parishId) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
@@ -2905,9 +3315,7 @@ async function handleParishSubscriptionRefresh(request, env, parishId) {
 
 async function handleParishSubscriptionPortal(request, env, parishId) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
@@ -2943,6 +3351,8 @@ async function handleParishSubscriptionPortal(request, env, parishId) {
 
 async function handleParishCommemorations(request, env, parishId) {
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
 
@@ -3036,9 +3446,7 @@ function summarizeCharges(charges) {
 
 async function handleParishGivingSummary(request, env, parishId) {
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!env.AGAPAY_REGISTRATIONS) {
-    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
-  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
@@ -3082,6 +3490,8 @@ async function handleParishGivingSummary(request, env, parishId) {
 }
 
 async function handleParishDashboard(request, env, parishId) {
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
 
@@ -3305,6 +3715,9 @@ export default {
     }
     if (url.pathname === "/api/admin/rebuild-indexes") {
       return handleAdminRebuildIndexes(request, env);
+    }
+    if (url.pathname === "/api/admin/migrate-kv-to-d1") {
+      return handleAdminMigrateKvToD1(request, env);
     }
     if (url.pathname === "/api/admin/password") {
       return handleAdminPassword(request, env);

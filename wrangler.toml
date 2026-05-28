@@ -18,6 +18,11 @@ binding = "ASSETS"
 binding = "AGAPAY_REGISTRATIONS"
 id = "c0c630d2699a4d42a72db927c6341707"
 
+[[d1_databases]]
+binding = "AGAPAY_DB"
+database_name = "agapay-production"
+database_id = "24f514a6-6904-425b-a4c8-b3584b23c0be"
+
 [secrets]
 required = [
   "AGAPAY_ADMIN_TOKEN"
