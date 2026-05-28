@@ -1991,11 +1991,11 @@
     }
 
     .mobile-tab-link svg {
-      width: 22px;
-      height: 22px;
+      width: 24px;
+      height: 24px;
       stroke: currentColor;
       fill: none;
-      stroke-width: 1.8;
+      stroke-width: 1.9;
       stroke-linecap: round;
       stroke-linejoin: round;
     }
@@ -2241,33 +2241,35 @@
         position: fixed;
         left: 50%;
         right: auto;
-        bottom: max(0.8rem, env(safe-area-inset-bottom));
+        bottom: 0;
         z-index: 9000;
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 0.25rem;
-        width: min(calc(100% - 1.4rem), 440px);
+        width: min(100%, 480px);
+        min-height: 76px;
         transform: translateX(-50%);
-        padding: 0.45rem;
-        border: 1px solid rgba(184,144,47,0.24);
-        border-radius: 24px;
-        background:
-          linear-gradient(180deg, rgba(15,45,31,0.94), rgba(9,30,20,0.97)),
-          var(--deep);
-        box-shadow: 0 18px 46px rgba(15,45,31,0.26);
+        padding: 0;
+        border: 0;
+        border-top: 1px solid rgba(111,106,96,0.16);
+        border-radius: 24px 24px 0 0;
+        background: rgba(246,241,232,0.95);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 -10px 30px rgba(15,45,31,0.12);
       }
 
       .mobile-tab-link {
         display: grid;
         place-items: center;
-        gap: 0.25rem;
-        min-height: 58px;
-        padding: 0.45rem 0.2rem;
-        border-radius: 18px;
-        color: rgba(246,241,232,0.62);
+        align-content: center;
+        gap: 0.2rem;
+        min-height: 76px;
+        padding: 0.35rem 0.15rem;
+        border-radius: 0;
+        color: rgba(15,45,31,0.58);
         font-size: 10px;
         font-weight: 700;
         letter-spacing: 0.01em;
+        text-decoration: none;
       }
 
       .mobile-tab-link:hover {
@@ -2276,12 +2278,12 @@
       }
 
       .mobile-tab-link.active {
-        background: rgba(184,144,47,0.16);
-        color: var(--cream);
+        background: transparent;
+        color: var(--deep);
       }
 
       .mobile-tab-link.active svg {
-        color: var(--gold);
+        color: currentColor;
       }
 
       .community-snapshot,

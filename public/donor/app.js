@@ -209,15 +209,45 @@ async function loadPublicParishes(selectId = "parish") {
   try {
     const data = await donorApi("/api/parishes", { headers: { Accept: "application/json" } });
     const parishes = data.parishes || [];
+    window.agapayPublicParishes = parishes;
     if (parishes.length) {
-      select.innerHTML = parishes.map((parish) => `<option value="${escapeHtml(parish.id)}">${escapeHtml(parish.name)}</option>`).join("");
       const donor = donorProfile();
-      if (donor.defaultParishId) select.value = donor.defaultParishId;
+      renderParishOptions(select, parishes, donor.defaultParishId || select.value);
     }
     return parishes;
   } catch {
     return [];
   }
+}
+
+function parishOptionLabel(parish) {
+  const place = [parish.city, parish.state].filter(Boolean).join(", ");
+  const type = parish.type ? `${parish.type.charAt(0).toUpperCase()}${parish.type.slice(1)}` : "Church";
+  return [parish.name, place, type].filter(Boolean).join(" - ");
+}
+
+function renderParishOptions(select, parishes, selectedValue = "", query = "") {
+  const normalizedQuery = String(query || "").trim().toLowerCase();
+  const filtered = parishes.filter((parish) => {
+    const haystack = [parish.name, parish.city, parish.state, parish.type, parish.jurisdictionLabel, parish.jurisdiction]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return !normalizedQuery || haystack.includes(normalizedQuery);
+  });
+  const placeholder = select.dataset.placeholder || "Choose your parish";
+  const options = [`<option value="">${escapeHtml(placeholder)}</option>`].concat(
+    filtered.map((parish) => `<option value="${escapeHtml(parish.id)}">${escapeHtml(parishOptionLabel(parish))}</option>`)
+  );
+  select.innerHTML = options.join("");
+  if (selectedValue && filtered.some((parish) => parish.id === selectedValue)) select.value = selectedValue;
+}
+
+function filterParishSelect(searchId, selectId) {
+  const select = document.getElementById(selectId);
+  const search = document.getElementById(searchId);
+  if (!select || !search) return;
+  renderParishOptions(select, window.agapayPublicParishes || [], select.value, search.value);
 }
 
 function donorGiftUrl(giftType, parish, extra = {}) {
@@ -266,7 +296,7 @@ const donorGiftTypeCopy = {
     title: "Offer a candle.",
     detailsTitle: "Candle Offering",
     intro: "Make a candle offering for prayer intentions without moving through the full giving menu.",
-    context: "Your gift will be prepared as a candle offering. You can add prayer intention details on the commemoration page."
+    context: "Your gift will be prepared as a candle offering. Add living or departed names below for the parish prayer list."
   },
   commemoration: {
     eyebrow: "Quick Memorial Offering",
@@ -448,6 +478,7 @@ function applyDonorGiveParams() {
   const giftTypeSelect = document.getElementById("giftType");
   if (parish && parishSelect) parishSelect.value = parish;
   if (giftType && giftTypeSelect) giftTypeSelect.value = giftType;
+  toggleCandleIntentionFields();
   if (!isQuick) return;
 
   const copy = donorGiftTypeCopy[giftType] || donorGiftTypeCopy.stewardship;
@@ -470,6 +501,13 @@ function applyDonorGiveParams() {
       document.getElementById("amount")?.focus({ preventScroll: true });
     });
   }
+}
+
+function toggleCandleIntentionFields() {
+  const giftType = normalizeDonorGiftType(document.getElementById("giftType")?.value);
+  const fields = document.getElementById("candleIntentionFields");
+  if (!fields) return;
+  fields.hidden = giftType !== "candles";
 }
 
 async function loginFromDashboard() {
@@ -807,18 +845,23 @@ async function startDonorCheckout(event) {
   }
   const name = donor.donorName || donor.householdName || session.email.split("@")[0];
   const [firstName, ...rest] = name.split(/\s+/);
+  const giftType = document.getElementById("giftType")?.value;
+  const includeCandleIntentions = normalizeDonorGiftType(giftType) === "candles";
   try {
     setDonorStatus("Preparing checkout...");
     const data = await donorApi("/api/create-checkout-session", {
       method: "POST",
       body: JSON.stringify({
         parishId: document.getElementById("parish")?.value,
-        giftType: document.getElementById("giftType")?.value,
+        giftType,
         amount: document.getElementById("amount")?.value,
         frequency: document.getElementById("frequency")?.value || "once",
         firstName: firstName || "AgaPay",
         lastName: rest.join(" "),
         email: session.email,
+        namesLiving: includeCandleIntentions ? document.getElementById("candleLivingNames")?.value || "" : "",
+        namesDeparted: includeCandleIntentions ? document.getElementById("candleDepartedNames")?.value || "" : "",
+        inMemoriam: includeCandleIntentions ? document.getElementById("candleIntentionNote")?.value || "" : "",
         coverFees: true
       })
     });

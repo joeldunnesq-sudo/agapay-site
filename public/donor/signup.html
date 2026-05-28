@@ -39,7 +39,12 @@
                 <div class="form-group full"><label class="form-label" for="donorName">Name</label><input class="form-input" id="donorName" autocomplete="name" placeholder="Your name or household name" /></div>
                 <div class="form-group"><label class="form-label" for="donorEmail">Email</label><input class="form-input" id="donorEmail" type="email" autocomplete="email" placeholder="you@example.com" /></div>
                 <div class="form-group"><label class="form-label" for="donorPassword">Password</label><input class="form-input" id="donorPassword" type="password" autocomplete="new-password" placeholder="At least 8 characters" /></div>
-                <div class="form-group full"><label class="form-label" for="parish">Default parish</label><select class="form-select" id="parish"><option value="">Choose a parish after signup</option></select></div>
+                <div class="form-group full">
+                  <label class="form-label" for="parish">My Parish</label>
+                  <input class="form-input parish-search" id="parishSearch" placeholder="Search by parish, city, state, or jurisdiction" oninput="filterParishSelect('parishSearch','parish')" />
+                  <select class="form-select" id="parish" data-placeholder="Choose my parish"><option value="">Choose my parish</option></select>
+                  <p class="form-help">Pick the church you usually give to. You can switch churches anytime from donor settings.</p>
+                </div>
               </div>
               <p class="form-help">AgaPay will email you a verification link. Your dashboard opens after your email is verified.</p>
               <div class="section-gap"><button class="btn btn-gold" type="submit">Create account</button></div>

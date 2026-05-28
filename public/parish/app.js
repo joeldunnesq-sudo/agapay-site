@@ -107,7 +107,7 @@
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', history:'Giving History', settings:'Giving Page Settings', options:'Funds & Campaigns', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', history:'Giving History', settings:'Giving Settings', options:'Funds & Campaigns', qr:'QR Code & Giving Link' };
     document.getElementById('topbarTitle').textContent = titles[tab] || 'Parish Dashboard';
     if (tab === 'history' && currentParish && !allGifts.length) loadGivingHistory();
     if (tab === 'qr') renderBulletinPreview();

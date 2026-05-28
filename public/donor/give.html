@@ -24,6 +24,7 @@
           <a href="/donor/offerings"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg> Offerings</a>
           <a href="/donor/commemorations"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 22h6"/></svg> Commemorations</a>
           <a href="/donor/calendar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg> Calendar</a>
+          <a href="/donor/settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82"/></svg> Settings</a>
         </nav>
         <div class="sidebar-card"><h3>Connected Parish</h3><div class="mini-item"><strong>Live parish list</strong><span>The parish selector loads from `/api/parishes`.</span></div></div>
       </div>
@@ -55,7 +56,14 @@
                 <div class="form-group"><label class="form-label" for="parish">Parish</label><select class="form-select" id="parish" name="parish"><option value="st-seraphim-mission">St. Seraphim of Sarov Mission</option><option value="holy-theotokos-skete">Holy Theotokos Skete</option></select></div>
                 <div class="form-group"><label class="form-label" for="frequency">Frequency</label><select class="form-select" id="frequency" name="frequency"><option value="once">One-time</option><option value="weekly">Weekly</option><option value="biweekly">Biweekly</option><option value="monthly">Monthly</option></select></div>
                 <div class="form-group"><label class="form-label" for="amount">Amount</label><input class="form-input" id="amount" name="amount" value="100" /></div>
-                <div class="form-group"><label class="form-label" for="giftType">Gift type</label><select class="form-select" id="giftType" name="giftType"><option value="stewardship">Stewardship</option><option value="fund">Designated Fund</option><option value="candles">Candles</option><option value="commemoration">Commemoration</option><option value="campaign">Alms Campaign</option><option value="feast">Feast Offering</option></select></div>
+                <div class="form-group"><label class="form-label" for="giftType">Gift type</label><select class="form-select" id="giftType" name="giftType" onchange="toggleCandleIntentionFields()"><option value="stewardship">Stewardship</option><option value="fund">Designated Fund</option><option value="candles">Candles</option><option value="commemoration">Commemoration</option><option value="campaign">Alms Campaign</option><option value="feast">Feast Offering</option></select></div>
+                <div class="form-group full candle-intention-fields" id="candleIntentionFields" hidden>
+                  <div class="form-grid">
+                    <div class="form-group"><label class="form-label" for="candleLivingNames">Living names</label><textarea class="form-textarea" id="candleLivingNames" placeholder="One name per line"></textarea></div>
+                    <div class="form-group"><label class="form-label" for="candleDepartedNames">Departed names</label><textarea class="form-textarea" id="candleDepartedNames" placeholder="One name per line"></textarea></div>
+                    <div class="form-group full"><label class="form-label" for="candleIntentionNote">Candle intention</label><input class="form-input" id="candleIntentionNote" placeholder="Optional note, feast, or intention for the parish" /></div>
+                  </div>
+                </div>
               </div>
               <p class="form-help">This uses the live AgaPay checkout API and records the gift under your donor account.</p>
               <div class="section-gap"><button class="btn btn-gold" type="submit">Continue to AgaPay checkout</button></div>

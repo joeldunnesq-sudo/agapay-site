@@ -57,14 +57,6 @@
           <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           Giving Overview
         </div>
-        <div class="sidebar-nav-item" onclick="switchTab('history')" id="nav-history">
-          <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-          Giving History
-        </div>
-        <div class="sidebar-nav-item" onclick="switchTab('settings')" id="nav-settings">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          Giving Page Settings
-        </div>
         <div class="sidebar-nav-item" onclick="switchTab('options')" id="nav-options">
           <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           Funds &amp; Campaigns
@@ -72,6 +64,14 @@
         <div class="sidebar-nav-item" onclick="switchTab('qr')" id="nav-qr">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="19" y="14" width="2" height="2"/><rect x="14" y="19" width="2" height="2"/><rect x="18" y="18" width="3" height="3"/></svg>
           QR Code &amp; Link
+        </div>
+        <div class="sidebar-nav-item" onclick="switchTab('settings')" id="nav-settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Giving Settings
+        </div>
+        <div class="sidebar-nav-item" onclick="switchTab('history')" id="nav-history">
+          <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+          Giving History
         </div>
       </nav>
 
@@ -328,14 +328,6 @@
     <svg viewBox="0 0 38 38" aria-hidden="true"><path d="M19 4.5 8.5 13v18h21V13L19 4.5Z"/><path d="M14.5 31V20.5h9V31"/><path d="M5.5 31h27"/><path d="M19 9v6"/><path d="M16.2 12h5.6"/></svg>
     <span>Giving</span>
   </button>
-  <button class="mobile-tab-link" type="button" data-nav-tab="history" onclick="switchTab('history')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7 6.5h14"/><path d="M7 11h14"/><path d="M7 15.5h10"/><path d="M7 20h8"/><path d="M4.5 4h19v20h-19z"/></svg>
-    <span>History</span>
-  </button>
-  <button class="mobile-tab-link" type="button" data-nav-tab="settings" onclick="switchTab('settings')">
-    <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="3"/><path d="M14 5v3"/><path d="M14 20v3"/><path d="M5 14h3"/><path d="M20 14h3"/><path d="m7.6 7.6 2.1 2.1"/><path d="m18.3 18.3 2.1 2.1"/><path d="m20.4 7.6-2.1 2.1"/><path d="m9.7 18.3-2.1 2.1"/></svg>
-    <span>Settings</span>
-  </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="options" onclick="switchTab('options')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7 8h14"/><path d="M7 14h14"/><path d="M7 20h14"/><circle cx="4.5" cy="8" r="1"/><circle cx="4.5" cy="14" r="1"/><circle cx="4.5" cy="20" r="1"/></svg>
     <span>Funds</span>
@@ -343,6 +335,14 @@
   <button class="mobile-tab-link" type="button" data-nav-tab="qr" onclick="switchTab('qr')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="5" y="5" width="6" height="6"/><rect x="17" y="5" width="6" height="6"/><rect x="5" y="17" width="6" height="6"/><path d="M17 17h2v2h-2zM21 17h2v2h-2zM17 21h2v2h-2zM21 21h2v2h-2z"/></svg>
     <span>QR</span>
+  </button>
+  <button class="mobile-tab-link" type="button" data-nav-tab="settings" onclick="switchTab('settings')">
+    <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="3"/><path d="M14 5v3"/><path d="M14 20v3"/><path d="M5 14h3"/><path d="M20 14h3"/><path d="m7.6 7.6 2.1 2.1"/><path d="m18.3 18.3 2.1 2.1"/><path d="m20.4 7.6-2.1 2.1"/><path d="m9.7 18.3-2.1 2.1"/></svg>
+    <span>Settings</span>
+  </button>
+  <button class="mobile-tab-link" type="button" data-nav-tab="history" onclick="switchTab('history')">
+    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7 6.5h14"/><path d="M7 11h14"/><path d="M7 15.5h10"/><path d="M7 20h8"/><path d="M4.5 4h19v20h-19z"/></svg>
+    <span>History</span>
   </button>
 </nav>
 

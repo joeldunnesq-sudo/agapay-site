@@ -524,6 +524,15 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
 .form-group.full { grid-column: 1 / -1; }
 .form-textarea { min-height: 112px; resize: vertical; line-height: 1.55; }
 .form-help { margin-top: 5px; color: var(--stone); font-size: 12px; line-height: 1.5; }
+.parish-search { margin-bottom: 0.35rem; }
+.change-parish-link {
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  width: fit-content;
+}
+.change-parish-link:hover { color: var(--deep); }
 
 .offering-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.85rem; }
 .offering-card {
@@ -1590,6 +1599,141 @@ body.donor-mobile-page {
 
   .donor-mobile-page .mobile-tabbar {
     width: 100%;
+  }
+}
+
+@media (min-width: 901px) {
+  body.donor-mobile-page {
+    background: var(--cream);
+  }
+
+  .donor-mobile-page .app {
+    display: grid;
+    grid-template-columns: 292px minmax(0, 1fr);
+    min-height: 100vh;
+  }
+
+  .donor-mobile-page .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+  }
+
+  .donor-mobile-page .topbar {
+    display: flex;
+  }
+
+  .donor-mobile-content {
+    min-height: 100vh;
+    display: flex;
+    justify-items: stretch;
+    padding: 0;
+  }
+
+  .donor-mobile-page .page {
+    flex: 1;
+    width: min(1180px, 100%);
+    min-height: auto;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 3rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .donor-mobile-page .hero {
+    padding: 1.35rem;
+    border-radius: var(--rlg);
+    box-shadow: var(--shadow);
+  }
+
+  .donor-mobile-page .hero-grid {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .donor-mobile-page .hero-mark {
+    display: grid;
+  }
+
+  .donor-mobile-page h1 {
+    font-size: clamp(2rem, 5vw, 3.6rem);
+  }
+
+  .donor-mobile-page .grid.two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .donor-mobile-page .grid.three,
+  .donor-mobile-page .offering-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .donor-mobile-page .grid.four {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .donor-mobile-page .layout-main {
+    grid-template-columns: minmax(0, 1fr) 350px;
+  }
+
+  .donor-mobile-page .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .donor-mobile-page .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--rlg);
+    background: white;
+    padding: 0;
+  }
+
+  .donor-mobile-page .day-head {
+    display: block;
+    min-height: auto;
+    border-right: 1px solid var(--line);
+    background: var(--deep);
+  }
+
+  .donor-mobile-page .day {
+    min-height: 86px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    background: white;
+    padding: 0.65rem;
+    opacity: 1;
+  }
+
+  .donor-mobile-page .day:has(.day-number:empty) {
+    display: block;
+    opacity: 1;
+  }
+
+  .donor-mobile-page .feast {
+    margin-top: 0.45rem;
+    font-size: 11px;
+    line-height: 1.35;
+    padding: 0.45rem;
+  }
+
+  .donor-mobile-page .card,
+  .donor-mobile-page .metric-card,
+  .donor-mobile-page .offering-card {
+    border-radius: var(--rlg);
+  }
+
+  .donor-mobile-page .card-body,
+  .donor-mobile-page .card-header {
+    padding: 1rem 1.1rem;
+  }
+
+  .donor-mobile-page .mobile-tabbar {
+    display: none;
   }
 }
 

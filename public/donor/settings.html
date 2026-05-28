@@ -60,7 +60,12 @@
                 <div class="form-group full"><label class="form-label" for="settingsName">Name</label><input class="form-input" id="settingsName" autocomplete="name" placeholder="Your name or household name" /></div>
                 <div class="form-group"><label class="form-label" for="settingsEmail">Email address</label><input class="form-input" id="settingsEmail" type="email" autocomplete="email" placeholder="you@example.com" /></div>
                 <div class="form-group"><label class="form-label" for="settingsPhone">Contact number</label><input class="form-input" id="settingsPhone" type="tel" autocomplete="tel" placeholder="(555) 555-5555" /></div>
-                <div class="form-group full"><label class="form-label" for="defaultParishId">Church</label><select class="form-select" id="defaultParishId"><option value="">Choose your church</option></select></div>
+                <div class="form-group full">
+                  <label class="form-label" for="defaultParishId">My Parish</label>
+                  <input class="form-input parish-search" id="defaultParishSearch" placeholder="Search by parish, city, state, or jurisdiction" oninput="filterParishSelect('defaultParishSearch','defaultParishId')" />
+                  <select class="form-select" id="defaultParishId" data-placeholder="Choose the church I am giving to"><option value="">Choose the church I am giving to</option></select>
+                  <p class="form-help">Visiting family or attending another Orthodox church? Change this before giving so Quick Give points to the right parish.</p>
+                </div>
               </div>
               <div class="section-divider"><span>Password</span></div>
               <div class="form-grid">
