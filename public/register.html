@@ -477,6 +477,7 @@
             I confirm that <strong id="reviewParishName">this community</strong> is in canonical standing within a recognized Holy Orthodox jurisdiction, and that I am authorized to register on its behalf. I have read and agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.
           </label>
         </div>
+        <div data-agapay-turnstile style="margin-top:1rem;"></div>
 
         <div class="form-nav" style="margin-top:1.5rem;">
           <button class="btn-back" onclick="goToStep(2)">← Back</button>
@@ -547,6 +548,7 @@
     </div>
   </footer>
 
+  <script src="/security.js"></script>
   <script>
     // ─── STATE ───────────────────────────────────────────────
     let currentStep = 1;
@@ -663,7 +665,8 @@
         treasurerLast: document.getElementById('treasurerLast').value,
         treasurerEmail,
         notes,
-        canonicalAgreement: true
+        canonicalAgreement: true,
+        ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
       };
 
       try {

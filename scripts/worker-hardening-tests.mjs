@@ -32,7 +32,8 @@ function env() {
     AGAPAY_REGISTRATIONS: new MemoryKV(),
     AGAPAY_ADMIN_TOKEN: "root-admin-token-for-tests",
     AGAPAY_APP_URL: "https://agapay.test",
-    STRIPE_WEBHOOK_SECRET: "whsec_test_secret"
+    STRIPE_WEBHOOK_SECRET: "whsec_test_secret",
+    STRIPE_SECRET_KEY: "sk_test_worker_hardening"
   };
 }
 
@@ -74,6 +75,16 @@ async function postStripeWebhook(testEnv, event) {
     headers: { "Stripe-Signature": signature },
     body: payload
   }), testEnv);
+}
+
+async function withMockFetch(handler, run) {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = handler;
+  try {
+    return await run();
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 }
 
 {
@@ -174,6 +185,147 @@ async function postStripeWebhook(testEnv, event) {
     }), testEnv);
   }
   assert.equal(limited.status, 429);
+}
+
+{
+  const testEnv = env();
+  testEnv.TURNSTILE_SECRET_KEY = "turnstile-secret";
+  testEnv.TURNSTILE_SITE_KEY = "turnstile-site";
+  const blocked = await worker.fetch(request("/api/donor/signup", {
+    method: "POST",
+    body: {
+      donorName: "Blocked Member",
+      email: "blocked@example.com",
+      password: "correct-horse-battery",
+      parishId: "st-test"
+    }
+  }), testEnv);
+  assert.equal(blocked.status, 403);
+  const blockedBody = await json(blocked);
+  assert.match(blockedBody.error, /Security check/);
+}
+
+{
+  const testEnv = env();
+  const config = await worker.fetch(request("/api/security/config"), testEnv);
+  assert.equal(config.status, 200);
+  assert.equal((await json(config)).turnstileEnabled, false);
+
+  testEnv.TURNSTILE_SECRET_KEY = "turnstile-secret";
+  testEnv.TURNSTILE_SITE_KEY = "turnstile-site";
+  const enabled = await worker.fetch(request("/api/security/config"), testEnv);
+  assert.equal(enabled.status, 200);
+  const enabledBody = await json(enabled);
+  assert.equal(enabledBody.turnstileEnabled, true);
+  assert.equal(enabledBody.turnstileSiteKey, "turnstile-site");
+}
+
+{
+  const testEnv = env();
+  let limited;
+  for (let index = 0; index < 21; index += 1) {
+    limited = await worker.fetch(request("/api/admin/registrations", {
+      headers: { Authorization: "Bearer wrong-admin-password" }
+    }), testEnv);
+  }
+  assert.equal(limited.status, 429);
+}
+
+{
+  const testEnv = env();
+  const registration = {
+    reference: "AGP-PARISH-RATE",
+    status: "verified",
+    parishId: "st-rate-limit",
+    parishName: "St. Rate Limit Orthodox Church",
+    communityType: "parish",
+    givingStatus: "active",
+    parishDashboardToken: "real-password"
+  };
+  await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_parish_id__st-rate-limit", registration.reference);
+  let limited;
+  for (let index = 0; index < 41; index += 1) {
+    limited = await worker.fetch(request("/api/parish/dashboard/st-rate-limit", {
+      headers: { Authorization: "Bearer wrong-parish-password" }
+    }), testEnv);
+  }
+  assert.equal(limited.status, 429);
+}
+
+{
+  const testEnv = env();
+  const registration = {
+    reference: "AGP-CHECKOUT",
+    status: "verified",
+    parishId: "st-checkout",
+    parishName: "St. Checkout Orthodox Church",
+    communityType: "parish",
+    jurisdiction: "OCA",
+    jurisdictionLabel: "OCA",
+    city: "Dallas",
+    state: "TX",
+    givingStatus: "active",
+    stripeAccountId: "acct_connected_test",
+    funds: [{ id: "general", name: "General Fund", description: "General support." }]
+  };
+  await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_parish_id__st-checkout", registration.reference);
+
+  const calls = [];
+  await withMockFetch(async (url, init = {}) => {
+    const href = String(url);
+    calls.push({ url: href, init });
+    if (href.includes("/v1/customers?")) {
+      return new Response(JSON.stringify({ data: [] }), { status: 200 });
+    }
+    if (href.endsWith("/v1/customers")) {
+      assert.equal(init.headers["Stripe-Account"], "acct_connected_test");
+      return new Response(JSON.stringify({ id: "cus_checkout_test" }), { status: 200 });
+    }
+    if (href.endsWith("/v1/checkout/sessions")) {
+      assert.equal(init.headers["Stripe-Account"], "acct_connected_test");
+      const form = new URLSearchParams(init.body);
+      assert.equal(form.get("mode"), "payment");
+      assert.equal(form.get("payment_intent_data[application_fee_amount]"), "48");
+      assert.equal(form.get("metadata[parish_id]"), "st-checkout");
+      assert.equal(form.get("metadata[donor_email]"), "giver@example.com");
+      return new Response(JSON.stringify({
+        id: "cs_checkout_test",
+        url: "https://checkout.stripe.test/session"
+      }), { status: 200 });
+    }
+    throw new Error(`Unexpected fetch ${href}`);
+  }, async () => {
+    const checkout = await worker.fetch(request("/api/create-checkout-session", {
+      method: "POST",
+      body: {
+        parishId: "st-checkout",
+        giftType: "stewardship",
+        amount: 25,
+        frequency: "once",
+        firstName: "Faithful",
+        lastName: "Giver",
+        email: "giver@example.com",
+        coverFees: true
+      }
+    }), testEnv);
+    assert.equal(checkout.status, 201);
+    const checkoutBody = await json(checkout);
+    assert.equal(checkoutBody.id, "cs_checkout_test");
+    assert.equal(checkoutBody.url, "https://checkout.stripe.test/session");
+  });
+
+  assert.equal(calls.length, 3);
+  const offeringRaw = await testEnv.AGAPAY_REGISTRATIONS.get("__agapay_donor_offering__giver@example.com:cs_checkout_test");
+  assert.ok(offeringRaw);
+  const offering = JSON.parse(offeringRaw);
+  assert.equal(offering.status, "checkout_created");
+  assert.equal(offering.paymentStatus, "pending");
+  assert.equal(offering.amountCents, 2500);
+  assert.equal(offering.chargeCents, 2655);
+  assert.equal(offering.stripeCustomerId, "cus_checkout_test");
+  assert.equal(await testEnv.AGAPAY_REGISTRATIONS.get("__agapay_checkout_offering__cs_checkout_test"), "__agapay_donor_offering__giver@example.com:cs_checkout_test");
 }
 
 {

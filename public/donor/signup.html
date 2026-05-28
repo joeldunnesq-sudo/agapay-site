@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css" />
+  <script src="/security.js"></script>
   <script src="/donor/app.js" defer></script>
 </head>
 <body>
@@ -47,6 +48,7 @@
                 </div>
               </div>
               <p class="form-help">AgaPay will email you a verification link. Your dashboard opens after your email is verified.</p>
+              <div data-agapay-turnstile class="section-gap"></div>
               <div class="section-gap"><button class="btn btn-gold" type="submit">Create account</button></div>
             </form>
             <div class="notice success section-gap" id="signupNextStep" style="display:none;">Check your email for the AgaPay verification link, then return to log in.</div>

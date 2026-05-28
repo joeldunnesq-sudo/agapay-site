@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css" />
+  <script src="/security.js"></script>
   <script src="/donor/app.js" defer></script>
 </head>
 <body class="donor-mobile-page donor-give-page">
@@ -66,6 +67,7 @@
                 </div>
               </div>
               <p class="form-help">This uses the live AgaPay checkout API and records the gift under your donor account.</p>
+              <div data-agapay-turnstile class="section-gap"></div>
               <div class="section-gap"><button class="btn btn-gold" type="submit">Continue to AgaPay checkout</button></div>
             </form>
           </div>

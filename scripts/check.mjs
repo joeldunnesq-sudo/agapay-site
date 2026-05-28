@@ -14,6 +14,11 @@ assert.ok(worker.includes("PASSWORD_HASH_VERSION"), "worker should use versioned
 assert.ok(worker.includes("pbkdf2-sha256"), "worker should hash new passwords with PBKDF2-SHA256");
 assert.ok(worker.includes("rateLimit(request, env"), "worker should rate-limit sensitive API routes");
 assert.ok(worker.includes("verifyTurnstileIfConfigured"), "worker should support optional Cloudflare Turnstile checks");
+assert.ok(worker.includes("handleSecurityConfig"), "worker should expose public security config for Turnstile-capable clients");
+assert.ok(worker.includes('"admin-auth"'), "admin auth routes should be rate-limited before password checks");
+assert.ok(worker.includes('"parish-auth"'), "parish dashboard login routes should be rate-limited before password checks");
+assert.ok(worker.includes('"admin-money-actions"'), "admin Stripe/billing actions should be rate-limited");
+assert.ok(worker.includes('"parish-money-actions"'), "parish Stripe/billing actions should be rate-limited");
 assert.ok(worker.includes("claimStripeEvent(env, event)") && worker.includes("finishStripeEvent(env, event.id"), "Stripe webhooks should claim and finish events for idempotency");
 assert.ok(worker.includes("checkout.session.expired"), "Stripe webhooks should handle expired checkout sessions");
 assert.ok(worker.includes("checkout.session.async_payment_succeeded"), "Stripe webhooks should handle delayed successful checkout payments");
@@ -49,6 +54,13 @@ assert.ok(donorHome.includes("metricMonth"), "donor home should show month-to-da
 assert.ok(donorHome.includes("/donor/settings"), "donor home avatar should link to settings");
 const donorSettings = await readFile("public/donor/settings.html", "utf8");
 assert.ok(donorSettings.includes("saveDonorSettings(event)"), "donor settings should save through the donor API");
+const donorSecurity = await readFile("public/security.js", "utf8");
+assert.ok(donorSecurity.includes("/api/security/config"), "security helper should load Turnstile config from the Worker");
+assert.ok(donorSecurity.includes("agapaySecurityPayload"), "security helper should expose Turnstile payloads to public forms");
+const donorSignup = await readFile("public/donor/signup.html", "utf8");
+assert.ok(donorSignup.includes("/security.js") && donorSignup.includes("data-agapay-turnstile"), "donor signup should render Turnstile when configured");
+const donorGive = await readFile("public/donor/give.html", "utf8");
+assert.ok(donorGive.includes("/security.js") && donorGive.includes("data-agapay-turnstile"), "donor checkout should render Turnstile when configured");
 const donorPages = ["calendar", "commemorations", "give", "index", "login", "offerings", "settings", "signup"];
 for (const page of donorPages) {
   const html = await readFile(`public/donor/${page}.html`, "utf8");
@@ -58,5 +70,9 @@ for (const page of donorPages) {
 const giveHtml = await readFile("public/give/form.html", "utf8");
 assert.ok(giveHtml.includes("/api/create-checkout-session"), "giving page should post to checkout API");
 assert.ok(giveHtml.includes("/api/parishes"), "giving page should load registered parishes from the Worker API");
+assert.ok(giveHtml.includes("/security.js") && giveHtml.includes("data-agapay-turnstile"), "public giving checkout should render Turnstile when configured");
+assert.ok(giveHtml.includes("agapaySecurityPayload"), "public giving checkout should send Turnstile tokens when configured");
+assert.ok(registerHtml.includes("/security.js") && registerHtml.includes("data-agapay-turnstile"), "registration should render Turnstile when configured");
+assert.ok(registerHtml.includes("agapaySecurityPayload"), "registration should send Turnstile tokens when configured");
 
 console.log("AgaPay platform checks passed.");

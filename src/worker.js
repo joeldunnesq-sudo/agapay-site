@@ -120,7 +120,7 @@ async function rateLimit(request, env, bucket, { limit = 10, windowSeconds = 60 
 }
 
 async function verifyTurnstileIfConfigured(request, env, token) {
-  if (!env.TURNSTILE_SECRET_KEY) return null;
+  if (!env.TURNSTILE_SECRET_KEY || !env.TURNSTILE_SITE_KEY) return null;
   if (!token) return json({ error: "Security check is required. Please refresh and try again." }, { status: 403 });
   const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
     method: "POST",
@@ -133,6 +133,13 @@ async function verifyTurnstileIfConfigured(request, env, token) {
   const result = await response.json().catch(() => ({}));
   if (!result.success) return json({ error: "Security check failed. Please refresh and try again." }, { status: 403 });
   return null;
+}
+
+function handleSecurityConfig(env) {
+  return json({
+    turnstileEnabled: Boolean(env.TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET_KEY),
+    turnstileSiteKey: env.TURNSTILE_SITE_KEY || ""
+  });
 }
 
 function normalizeEmail(value) {
@@ -2071,6 +2078,8 @@ async function handleDonorLogin(request, env) {
 async function handleDonorVerify(request, env) {
   if (!["GET", "POST"].includes(request.method)) return json({ error: "Method not allowed" }, { status: 405 });
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const limited = await rateLimit(request, env, "donor-verify", { limit: 20, windowSeconds: 300 });
+  if (limited) return limited;
 
   let email = "";
   let token = "";
@@ -2253,6 +2262,9 @@ async function handleDonorDashboard(request, env) {
   if (!donor) return unauthorized();
 
   if (request.method === "PATCH") {
+    const limited = await rateLimit(request, env, "donor-settings", { limit: 20, windowSeconds: 300 });
+    if (limited) return limited;
+
     let body;
     try {
       body = await request.json();
@@ -2337,6 +2349,8 @@ async function handleDonorCommemorations(request, env) {
   }
 
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "donor-commemorations", { limit: 20, windowSeconds: 300 });
+  if (limited) return limited;
 
   let body;
   try {
@@ -2392,6 +2406,8 @@ async function handleDonorCommemorations(request, env) {
 }
 
 async function handleAdminRegistrations(request, env) {
+  const limited = await rateLimit(request, env, "admin-auth", { limit: 20, windowSeconds: 300 });
+  if (limited) return limited;
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (!hasProductionStore(env)) {
     return missingProductionStoreResponse();
@@ -2498,6 +2514,8 @@ async function loadAllKvRegistrations(env) {
 
 async function handleAdminMigrateKvToD1(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "admin-maintenance", { limit: 3, windowSeconds: 300 });
+  if (limited) return limited;
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (!d1(env)) return json({ error: "AGAPAY_DB D1 binding is not configured" }, { status: 500 });
   if (!env.AGAPAY_REGISTRATIONS) return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
@@ -2552,6 +2570,8 @@ async function handleAdminMigrateKvToD1(request, env) {
 }
 
 async function handleAdminPlatformSummary(request, env) {
+  const limited = await rateLimit(request, env, "admin-auth", { limit: 60, windowSeconds: 300 });
+  if (limited) return limited;
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
@@ -2632,6 +2652,8 @@ async function handleAdminPlatformSummary(request, env) {
 
 async function handleAdminRebuildIndexes(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "admin-maintenance", { limit: 5, windowSeconds: 300 });
+  if (limited) return limited;
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
@@ -2682,6 +2704,13 @@ async function handleAdminPassword(request, env) {
 }
 
 async function handleAdminRegistrationDetail(request, env, reference) {
+  const limited = await rateLimit(
+    request,
+    env,
+    request.method === "PATCH" ? "admin-registration-write" : "admin-auth",
+    { limit: request.method === "PATCH" ? 30 : 80, windowSeconds: 300 }
+  );
+  if (limited) return limited;
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
@@ -2870,8 +2899,10 @@ async function createSubscriptionCheckoutForRegistration(request, env, reference
 }
 
 async function handleSubscriptionCheckout(request, env, reference) {
-  if (!(await requireAdmin(request, env))) return unauthorized();
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "admin-money-actions", { limit: 20, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!(await requireAdmin(request, env))) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const registration = await loadRegistrationByReference(env, reference);
@@ -3273,8 +3304,10 @@ async function createStripeOnboardingSession(request, env, reference, registrati
 }
 
 async function handleStripeOnboarding(request, env, reference) {
-  if (!(await requireAdmin(request, env))) return unauthorized();
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "admin-money-actions", { limit: 20, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!(await requireAdmin(request, env))) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const registration = await loadRegistrationByReference(env, reference);
@@ -3302,8 +3335,10 @@ async function handleStripeOnboarding(request, env, reference) {
 }
 
 async function handleStripeRefresh(request, env, reference) {
-  if (!(await requireAdmin(request, env))) return unauthorized();
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "admin-money-actions", { limit: 60, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!(await requireAdmin(request, env))) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const registration = await loadRegistrationByReference(env, reference);
@@ -3338,8 +3373,10 @@ async function handleStripeRefresh(request, env, reference) {
 }
 
 async function handleDashboardInvite(request, env, reference) {
-  if (!(await requireAdmin(request, env))) return unauthorized();
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "admin-email-actions", { limit: 20, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!(await requireAdmin(request, env))) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const registration = await loadRegistrationByReference(env, reference);
@@ -3375,6 +3412,8 @@ async function handleDashboardInvite(request, env, reference) {
 
 async function handleParishStripeOnboarding(request, env, parishId) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-money-actions", { limit: 10, windowSeconds: 300 });
+  if (limited) return limited;
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const found = await findRegistrationByParishId(env, parishId);
@@ -3402,6 +3441,8 @@ async function handleParishStripeOnboarding(request, env, parishId) {
 
 async function handleParishSubscriptionCheckout(request, env, parishId) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-money-actions", { limit: 10, windowSeconds: 300 });
+  if (limited) return limited;
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const found = await findRegistrationByParishId(env, parishId);
@@ -3434,6 +3475,8 @@ async function handleParishSubscriptionCheckout(request, env, parishId) {
 
 async function handleParishSubscriptionRefresh(request, env, parishId) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-money-actions", { limit: 30, windowSeconds: 300 });
+  if (limited) return limited;
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const found = await findRegistrationByParishId(env, parishId);
@@ -3500,6 +3543,8 @@ async function handleParishSubscriptionRefresh(request, env, parishId) {
 
 async function handleParishSubscriptionPortal(request, env, parishId) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-money-actions", { limit: 10, windowSeconds: 300 });
+  if (limited) return limited;
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const found = await findRegistrationByParishId(env, parishId);
@@ -3536,6 +3581,8 @@ async function handleParishSubscriptionPortal(request, env, parishId) {
 
 async function handleParishCommemorations(request, env, parishId) {
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-dashboard", { limit: 80, windowSeconds: 300 });
+  if (limited) return limited;
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const found = await findRegistrationByParishId(env, parishId);
@@ -3631,6 +3678,8 @@ function summarizeCharges(charges) {
 
 async function handleParishGivingSummary(request, env, parishId) {
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-dashboard", { limit: 80, windowSeconds: 300 });
+  if (limited) return limited;
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const found = await findRegistrationByParishId(env, parishId);
@@ -3675,6 +3724,13 @@ async function handleParishGivingSummary(request, env, parishId) {
 }
 
 async function handleParishDashboard(request, env, parishId) {
+  const limited = await rateLimit(
+    request,
+    env,
+    request.method === "PATCH" ? "parish-dashboard-write" : "parish-auth",
+    { limit: request.method === "PATCH" ? 20 : 40, windowSeconds: 300 }
+  );
+  if (limited) return limited;
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const found = await findRegistrationByParishId(env, parishId);
@@ -3866,6 +3922,9 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/parishes") return handleParishes(env);
     if (request.method === "GET" && url.pathname === "/api/subscription-tiers") {
       return json({ tiers: publicSubscriptionTiers() });
+    }
+    if (request.method === "GET" && url.pathname === "/api/security/config") {
+      return handleSecurityConfig(env);
     }
     if (request.method === "POST" && url.pathname === "/api/registrations") return handleRegistrations(request, env);
     if (url.pathname === "/api/donor/signup") {

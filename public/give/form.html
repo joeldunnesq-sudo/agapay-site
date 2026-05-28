@@ -568,6 +568,7 @@
     </div>
 
     <!-- SUBMIT -->
+    <div data-agapay-turnstile style="margin:1rem 0;"></div>
     <button class="submit-btn reveal reveal-delay-3" id="submitGiftBtn" onclick="handleSubmit()">Give now →</button>
     <p class="submit-note reveal reveal-delay-3">
       Secured by Stripe · <a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms</a>
@@ -873,7 +874,8 @@
             coverFees: document.getElementById('feeCoverage').checked,
             firstName,
             lastName,
-            email
+            email,
+            ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
           })
         });
         const result = await response.json().catch(() => ({}));
@@ -899,6 +901,7 @@
     loadCurrentParish();
     updateSummary();
   </script>
+  <script src="/security.js"></script>
 
 </body>
 </html>

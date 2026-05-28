@@ -573,7 +573,14 @@ async function signupFromPage(event) {
     const data = await donorApi("/api/donor/signup", {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify({ donorName, householdName: donorName, email, password, parishId })
+      body: JSON.stringify({
+        donorName,
+        householdName: donorName,
+        email,
+        password,
+        parishId,
+        ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
+      })
     });
     localStorage.setItem(donorStore.email, email);
     setDonorProfile(data.donor);
@@ -862,7 +869,8 @@ async function startDonorCheckout(event) {
         namesLiving: includeCandleIntentions ? document.getElementById("candleLivingNames")?.value || "" : "",
         namesDeparted: includeCandleIntentions ? document.getElementById("candleDepartedNames")?.value || "" : "",
         inMemoriam: includeCandleIntentions ? document.getElementById("candleIntentionNote")?.value || "" : "",
-        coverFees: true
+        coverFees: true,
+        ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
       })
     });
     if (data.url) window.location.href = data.url;
