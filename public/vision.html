@@ -24,10 +24,18 @@
 
     .site-header{position:absolute;inset:0 0 auto 0;z-index:40;background:transparent;border-bottom:1px solid rgba(200,162,74,.16)}
     .nav{min-height:78px;display:flex;align-items:center;justify-content:space-between;gap:1rem}
-    .brand{display:inline-flex;align-items:center;gap:.8rem;color:var(--cream)}
-    .brand img{width:46px;height:46px}
-    .brand strong{display:block;font:500 2rem/1 var(--serif);letter-spacing:.08em;text-transform:uppercase}
-    .brand span{display:block;font-size:.62rem;letter-spacing:.14em;color:var(--gold);text-transform:uppercase;margin-top:.25rem}
+    .brand{display:inline-flex;align-items:center;gap:.75rem;color:var(--cream);min-width:max-content}
+    .brand-mark{
+      width:52px;height:52px;border-radius:50%;
+      border:1px solid rgba(200,162,74,.55);
+      background:rgba(6,21,34,.34);
+      display:grid;place-items:center;
+      flex:0 0 52px;
+    }
+    .brand-mark img{width:48px;height:48px;object-fit:contain}
+    .brand-name{display:flex;flex-direction:column;line-height:1}
+    .brand-name strong{font:500 2.05rem/1 var(--serif);letter-spacing:.08em;text-transform:uppercase}
+    .brand-name span{margin-top:.2rem;font-size:.6rem;letter-spacing:.12em;color:var(--gold);text-transform:uppercase}
     .links{display:flex;gap:1.4rem;color:rgba(246,241,232,.86);font-size:.92rem}
     .links .active{color:var(--gold);border-bottom:2px solid var(--gold);padding-bottom:.35rem}
     .cta{background:linear-gradient(135deg,#D7B25C,#B88633);color:#0A1724;padding:.72rem 1.2rem;border-radius:8px;font-weight:600;font-size:.92rem}
@@ -45,6 +53,13 @@
     .values{background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
     .values-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
     .value{padding:2rem 1.35rem;border-right:1px solid var(--line)}
+    .value-head{display:flex;align-items:center;gap:.8rem;margin-bottom:.45rem}
+    .value-icon{
+      width:66px;height:66px;border-radius:50%;
+      border:2px solid rgba(200,162,74,.7);
+      color:#c39a43;background:#fff;display:grid;place-items:center;flex:0 0 66px;
+    }
+    .value-icon svg{width:34px;height:34px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
     .value:last-child{border-right:0}
     .value .eyebrow{font-size:.72rem;margin-bottom:.45rem}
     .value h3{font:500 2rem/1.06 var(--serif);color:var(--deep);margin-bottom:.65rem}
@@ -62,10 +77,10 @@
     .phase-list{list-style:none;display:grid;gap:.35rem}
     .phase-list li{font-size:.95rem;color:#3f3a32;padding-left:1.15rem;position:relative}
     .phase-list li::before{content:"•";position:absolute;left:0;color:var(--gold);font-weight:700}
-    .phase-photo{position:absolute;top:0;right:0;width:52%;height:52%;z-index:1;background-size:cover;background-position:center;opacity:.24;mask-image:linear-gradient(to left,rgba(0,0,0,.9),rgba(0,0,0,0));pointer-events:none}
+    .phase-photo{position:absolute;top:0;right:0;width:52%;height:52%;z-index:1;background-size:cover;background-position:center;opacity:.34;mask-image:linear-gradient(to left,rgba(0,0,0,.9),rgba(0,0,0,0));pointer-events:none}
     .phase-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(255,255,255,.7))}
-    .phase-1 .phase-photo{background-image:url("/images/vision/church-exterior.jpg")}
-    .phase-2 .phase-photo{background-image:url("/images/vision/icon-hands.jpg")}
+    .phase-1 .phase-photo{background-image:url("/images/vision/icon-hands.jpg")}
+    .phase-2 .phase-photo{background-image:url("/images/vision/church-exterior.jpg")}
     .phase-3 .phase-photo{background-image:url("/images/vision/hero-incense.jpg")}
 
     .ecosystem{padding:4.1rem 0;background:var(--paper)}
@@ -163,22 +178,21 @@
   <header class="site-header">
     <div class="wrap nav">
       <a class="brand" href="/" aria-label="AGAPAY Home">
-        <img src="/mark.png" alt="AGAPAY mark" />
-        <span><strong>AGAPAY</strong><span>Orthodox Giving Lives Here</span></span>
+        <span class="brand-mark"><img src="/mark.png" alt="AGAPAY mark" /></span>
+        <span class="brand-name"><strong>AGAPAY</strong><span>Orthodox Giving Lives Here</span></span>
       </a>
       <nav class="links" aria-label="Primary">
-        <a href="/why">Why Agapay</a><a href="/vision" class="active">Vision</a><a href="/features">Solutions</a><a href="/how-it-works">Resources</a><a href="/pricing">Pricing</a><a href="/contact">Contact</a>
+        <a href="/why">Why AGAPAY</a><a href="/vision" class="active">Vision</a><a href="/features">Solutions</a><a href="/how-it-works">Resources</a><a href="/pricing">Pricing</a><a href="/contact">Contact</a>
       </nav>
-      <a href="/register" class="cta">Join Agapay</a>
+      <a href="/register" class="cta">Join AGAPAY</a>
     </div>
   </header>
   <main>
     <section class="hero">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <div class="eyebrow">Our Vision</div>
           <h1>Building the financial home of the Orthodox world.</h1>
-          <p>Agapay exists to strengthen Orthodox communities through modern financial infrastructure rooted in shared faith, stewardship, and long-term institutional support.</p>
+          <p>AGAPAY exists to strengthen Orthodox communities through modern financial infrastructure rooted in shared faith, stewardship, and long-term institutional support.</p>
           <p>We believe Orthodox churches, ministries, schools, businesses, monasteries, and faithful families deserve tools built specifically for the life of the Church.</p>
         </div>
         <div class="hero-image" role="img" aria-label="Orthodox fresco interior"></div>
@@ -186,9 +200,9 @@
     </section>
 
     <section class="values"><div class="wrap values-grid">
-      <article class="value"><div class="eyebrow">Why Agapay Exists</div><h3>Orthodox communities deserve infrastructure built for them.</h3><p>Agapay was created to build a connected financial ecosystem that helps Orthodox institutions grow stronger together.</p></article>
-      <article class="value"><div class="eyebrow">The Challenge</div><h3>Orthodox institutions are digitally fragmented.</h3><p>Financial activity leaves the ecosystem. Resources become scattered. Communities remain disconnected.</p></article>
-      <article class="value"><div class="eyebrow">Our Response</div><h3>A unified ecosystem built on faith, trust, and stewardship.</h3><p>Agapay creates modern infrastructure to help Orthodox life become more connected, sustainable, and resilient.</p></article>
+      <article class="value"><div class="value-head"><div class="value-icon"><svg viewBox="0 0 24 24"><path d="M4 21h16"/><path d="M6 21V10l6-5 6 5v11"/><path d="M9 21v-6h6v6"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div><div class="eyebrow">Why AGAPAY Exists</div></div><h3>Orthodox communities deserve infrastructure built for them.</h3><p>AGAPAY was created to build a connected financial ecosystem that helps Orthodox institutions grow stronger together.</p></article>
+      <article class="value"><div class="value-head"><div class="value-icon"><svg viewBox="0 0 24 24"><circle cx="7" cy="9" r="3"/><circle cx="17" cy="9" r="3"/><path d="M2.5 20c.8-2.8 2.8-4.2 5.5-4.2"/><path d="M16 15.8c2.7 0 4.7 1.4 5.5 4.2"/></svg></div><div class="eyebrow">The Challenge</div></div><h3>Orthodox institutions are digitally fragmented.</h3><p>Financial activity leaves the ecosystem. Resources become scattered. Communities remain disconnected.</p></article>
+      <article class="value"><div class="value-head"><div class="value-icon"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10"/><path d="M12 8v6"/><path d="M9 11h6"/></svg></div><div class="eyebrow">Our Response</div></div><h3>A unified ecosystem built on faith, trust, and stewardship.</h3><p>AGAPAY creates modern infrastructure to help Orthodox life become more connected, sustainable, and resilient.</p></article>
     </div></section>
 
     <section class="phase-section"><div class="wrap"><div class="phase-heading"><div class="eyebrow">The Three-Phase Vision</div></div><div class="phase-cards">
@@ -198,7 +212,7 @@
     </div></div></section>
 
     <section class="ecosystem"><div class="wrap eco-grid">
-      <div class="eco-copy"><div class="eyebrow">The Ecosystem</div><h2>One connected Orthodox financial ecosystem.</h2><p>Agapay is designed to connect the many parts of Orthodox life through shared infrastructure and trusted relationships.</p><p>As the platform grows, churches, ministries, businesses, schools, monasteries, and faithful families become increasingly connected through tools designed specifically for Orthodox communities.</p></div>
+      <div class="eco-copy"><div class="eyebrow">The Ecosystem</div><h2>One connected Orthodox financial ecosystem.</h2><p>AGAPAY is designed to connect the many parts of Orthodox life through shared infrastructure and trusted relationships.</p><p>As the platform grows, churches, ministries, businesses, schools, monasteries, and faithful families become increasingly connected through tools designed specifically for Orthodox communities.</p></div>
       <div class="eco-orbit">
         <svg class="eco-svg" viewBox="0 0 700 600" aria-hidden="true">
           <circle cx="350" cy="290" r="180" fill="none" stroke="rgba(200,162,74,0.58)" stroke-width="2" stroke-dasharray="2 6"/>
@@ -215,7 +229,7 @@
       </div>
     </div></section>
 
-    <section class="mission"><div class="wrap mission-grid"><div class="mission-copy"><div class="eyebrow">Our Mission</div><h2>Technology in service of Orthodox life.</h2><p>Agapay is not simply building software. We are building infrastructure intended to strengthen Orthodox institutions, support Orthodox families, encourage faithful stewardship, and help Orthodox communities flourish for generations to come.</p><div class="mission-callout"><p>Our vision is rooted in a simple belief:<br />Financial tools should strengthen communities — not extract from them.</p></div></div><div class="mission-photo" role="img" aria-label="Orthodox incense lamp"></div></div></section>
+    <section class="mission"><div class="wrap mission-grid"><div class="mission-copy"><div class="eyebrow">Our Mission</div><h2>Technology in service of Orthodox life.</h2><p>AGAPAY is not simply building software. We are building infrastructure intended to strengthen Orthodox institutions, support Orthodox families, encourage faithful stewardship, and help Orthodox communities flourish for generations to come.</p><div class="mission-callout"><p>Our vision is rooted in a simple belief:<br />Financial tools should strengthen communities — not extract from them.</p></div></div><div class="mission-photo" role="img" aria-label="Orthodox incense lamp"></div></div></section>
 
     <section class="final-cta">
       <div class="wrap">
@@ -225,9 +239,9 @@
               <div class="cta-mark" aria-hidden="true"><img src="/mark.png" alt="" /></div>
               <h3>Join us as we build the future of Orthodox giving.</h3>
             </div>
-            <p class="cta-copy">Whether you are a parish, ministry, business, school, monastery, or faithful supporter, Agapay is building a platform designed to strengthen Orthodox life through modern, values-aligned infrastructure.</p>
+            <p class="cta-copy">Whether you are a parish, ministry, business, school, monastery, or faithful supporter, AGAPAY is building a platform designed to strengthen Orthodox life through modern, values-aligned infrastructure.</p>
             <div class="cta-buttons">
-              <a href="/register" class="btn btn-gold">Join Agapay</a>
+              <a href="/register" class="btn btn-gold">Join AGAPAY</a>
               <a href="/how-it-works" class="btn btn-outline">Explore the Vision</a>
             </div>
           </div>
@@ -242,7 +256,7 @@
         <p>Love how you Give.</p>
       </div>
       <div class="footer-col"><h4>Platform</h4><a href="/features">Solutions</a><a href="/how-it-works">How It Works</a><a href="/pricing">Pricing</a></div>
-      <div class="footer-col"><h4>Company</h4><a href="/about">About</a><a href="/why">Why Agapay</a><a href="/vision">Vision</a><a href="/contact">Contact</a></div>
+      <div class="footer-col"><h4>Company</h4><a href="/about">About</a><a href="/why">Why AGAPAY</a><a href="/vision">Vision</a><a href="/contact">Contact</a></div>
       <div class="footer-col"><h4>Resources</h4><a href="/donor/login">Donor Login</a><a href="/parish/login">Parish Login</a><a href="/admin/login">Admin Login</a></div>
       <div class="footer-col"><h4>Legal</h4><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div>
     </div>
