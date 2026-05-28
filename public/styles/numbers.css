@@ -1,0 +1,27 @@
+/* Global numeric typography: match donor dashboard numerals sitewide */
+:root {
+  --numeric-font: var(--serif, "Cormorant Garamond", Georgia, serif);
+}
+
+body {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+:where(
+  .metric-value,
+  .metric-val,
+  .insights-total,
+  .summary-metric strong,
+  .list-amount,
+  .amount,
+  .price,
+  .currency,
+  .stat-number,
+  .kpi-value,
+  .table-amount,
+  [data-money],
+  [data-amount]
+) {
+  font-family: var(--numeric-font);
+  font-variant-numeric: lining-nums tabular-nums;
+}
