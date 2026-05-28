@@ -231,10 +231,11 @@
     .setup-check svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
     .setup-step.done .setup-check { color: #7dcf94; border-color: rgba(125,207,148,0.45); background: rgba(125,207,148,0.12); }
     .setup-step.done .setup-check svg { opacity: 1; }
-    .setup-action-panel { border: 1px solid rgba(184,144,47,0.22); border-radius: 10px; background: rgba(246,241,232,0.06); padding: 0.85rem; align-self: start; }
+    .setup-action-panel { border: 1px solid rgba(184,144,47,0.22); border-radius: 10px; background: rgba(246,241,232,0.06); padding: 0.95rem; align-self: stretch; display: flex; flex-direction: column; }
     .setup-action-panel label { color: var(--gold); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 0.35rem; }
     .setup-action-panel select { width: 100%; border: 1px solid rgba(184,144,47,0.3); border-radius: 10px; background: rgba(246,241,232,0.08); color: var(--cream); padding: 9px 10px; font-family: var(--sans); margin-bottom: 8px; }
     .setup-action-panel select option { color: var(--ink); }
+    .setup-action-copy { margin: 0.85rem 0 0; }
     .setup-link-box { display: none; margin-top: 0.75rem; border: 1px solid rgba(184,144,47,0.25); border-radius: 10px; background: rgba(246,241,232,0.08); padding: 0.75rem; }
     .setup-link-box.visible { display: block; }
     .setup-link-box a { color: var(--cream); font-weight: 700; }

@@ -2522,6 +2522,44 @@ async function handleParishSubscriptionRefresh(request, env, parishId) {
   });
 }
 
+async function handleParishSubscriptionPortal(request, env, parishId) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!env.AGAPAY_REGISTRATIONS) {
+    return json({ error: "AGAPAY_REGISTRATIONS KV binding is not configured" }, { status: 500 });
+  }
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const token = getBearerToken(request);
+  if (!found.registration.parishDashboardToken || token !== found.registration.parishDashboardToken) {
+    return unauthorized();
+  }
+
+  const customerId = found.registration.stripeCustomerId || "";
+  if (!customerId) {
+    return json(
+      { error: "No billing customer found", detail: "Complete AgaPay billing checkout before opening subscription management." },
+      { status: 422 }
+    );
+  }
+
+  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+  const form = new URLSearchParams({
+    customer: customerId,
+    return_url: `${appUrl}/parish/dashboard?parish=${encodeURIComponent(parishId)}`
+  });
+  const session = await stripeFormRequest(env, "/v1/billing_portal/sessions", form);
+  if (!session.ok) {
+    return json(
+      { error: "Stripe billing portal failed", detail: session.body.error?.message || "Unknown Stripe error" },
+      { status: 502 }
+    );
+  }
+
+  return json({ ok: true, portalUrl: session.body.url });
+}
+
 async function handleParishCommemorations(request, env, parishId) {
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
   const found = await findRegistrationByParishId(env, parishId);
@@ -2917,6 +2955,10 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/subscription-refresh")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/subscription-refresh", ""));
       return handleParishSubscriptionRefresh(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/subscription-portal")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/subscription-portal", ""));
+      return handleParishSubscriptionPortal(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/commemorations")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/commemorations", ""));
