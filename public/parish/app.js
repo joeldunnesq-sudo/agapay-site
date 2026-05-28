@@ -38,6 +38,14 @@
     } catch {}
   }
 
+  function logoutParish() {
+    try {
+      sessionStorage.removeItem('agapay_parish_id');
+      sessionStorage.removeItem('agapay_parish_token');
+    } catch {}
+    window.location.href = '/parish/login';
+  }
+
   // ── PRESETS ──────────────────────────────────────────────
   const fundPresets = {
     general:    { id:'general',    name:'General Operating Fund',    description:'Utilities, supplies, ministries, and day-to-day parish needs.' },
@@ -269,6 +277,7 @@
         <button class="btn btn-gold" onclick="saveDashboard(this)">Save changes</button>
         <button class="btn btn-primary" onclick="startStripeOnboarding(this)">Start Stripe onboarding</button>
         <button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button>
+        <button class="btn btn-ghost" onclick="logoutParish()">Log out</button>
       </div>
       <div class="stripe-link-box" id="stripeLinkBox">
         <a id="stripeOnboardingLink" href="#" target="_blank" rel="noopener">Open Stripe onboarding</a>

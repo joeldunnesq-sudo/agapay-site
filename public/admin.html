@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="/admin/style.css" />
 </head>
 <body>
+  <input id="adminToken" type="hidden" />
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-header">
@@ -24,23 +25,6 @@
       </div>
 
       <div class="sidebar-body">
-        <div class="sidebar-auth">
-          <div class="dashboard-welcome-banner">
-            <div class="welcome-brand-mark"><img src="/mark.png" alt="" /></div>
-            <div class="welcome-copy">
-              <div class="welcome-kicker">AgaPay - Love how you Give</div>
-              <h2>Welcome, Admin</h2>
-              <p>Sign in to review parish registrations, verify canonical standing, and keep onboarding moving.</p>
-            </div>
-            <div class="welcome-avatar" aria-hidden="true">AD</div>
-          </div>
-          <div class="auth-fields">
-            <label for="adminToken">Admin password</label>
-            <input id="adminToken" type="password" placeholder="Enter admin password" autocomplete="current-password" />
-            <button class="sidebar-load" id="loadBtn" onclick="loadRegistrations()">Open admin console</button>
-          </div>
-        </div>
-
         <nav class="sidebar-nav">
           <div class="sidebar-nav-item active" onclick="switchTab('overview')" id="nav-overview">
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
@@ -50,9 +34,9 @@
             <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             Registration Queue
           </div>
-          <div class="sidebar-nav-item" onclick="switchTab('password')" id="nav-password">
+          <div class="sidebar-nav-item" onclick="switchTab('settings')" id="nav-settings">
             <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Change Password
+            Settings
           </div>
         </nav>
 
@@ -128,6 +112,7 @@
         <div style="display:flex;gap:8px;align-items:center;">
           <button class="secondary btn-sm hidden" id="backToQueueBtn" onclick="collapseRegistrationDetail()">← Queue</button>
           <button class="secondary btn-sm" onclick="copyRegistrationSummary()">Copy summary</button>
+          <button class="secondary btn-sm" onclick="logoutAdmin()">Log out</button>
         </div>
       </div>
       <div class="detail-wrap" id="detailPane">
@@ -231,7 +216,7 @@
             <div class="queue-count" id="queueCount">No registrations loaded</div>
           </div>
           <div id="registrationList">
-            <div class="queue-empty">Enter your admin token and load registrations.</div>
+            <div class="queue-empty">Log in to load registrations.</div>
           </div>
         </section>
 
@@ -242,22 +227,22 @@
               <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             </div>
             <h2>Select a registration</h2>
-            <p>Enter your admin token, load registrations, then choose a parish from the queue to begin review.</p>
+            <p>Choose a parish from the queue to begin review.</p>
           </div>
         </div>
         </div>
         </div>
 
-        <div class="tab-panel" id="tab-password">
+        <div class="tab-panel" id="tab-settings">
           <div class="section-card">
             <div class="section-header">
               <div class="section-title">
                 <div class="section-title-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-                Change Admin Password
+                Admin Settings
               </div>
             </div>
             <div class="section-body">
-              <p style="margin:0 0 1rem;color:var(--stone);font-size:13px;line-height:1.65;">Enter your current password in the sidebar to authenticate, then set a new password below. Must be at least 12 characters.</p>
+              <p style="margin:0 0 1rem;color:var(--stone);font-size:13px;line-height:1.65;">Manage the admin console session and security settings. Passwords must be at least 12 characters.</p>
               <div class="form-grid">
                 <div>
                   <label for="newAdminPassword">New password</label>
@@ -270,6 +255,23 @@
               </div>
               <div class="btn-row">
                 <button class="gold" onclick="changeAdminPassword(this)">Update password</button>
+                <button class="secondary" onclick="logoutAdmin()">Log out of admin console</button>
+              </div>
+            </div>
+          </div>
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">
+                <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+                Platform Operations
+              </div>
+            </div>
+            <div class="section-body">
+              <div class="fields-grid">
+                <div class="field"><div class="field-key">Registration alerts</div><div class="field-val">Sent to the Cloudflare variable <strong>AGAPAY_REGISTRATION_NOTIFY_EMAIL</strong>.</div></div>
+                <div class="field"><div class="field-key">Outbound email</div><div class="field-val">Managed with Resend using <strong>AGAPAY_FROM_EMAIL</strong> and <strong>AGAPAY_REPLY_TO_EMAIL</strong>.</div></div>
+                <div class="field"><div class="field-key">Payment provider</div><div class="field-val">Stripe Connect onboarding and subscription billing are controlled from each registration review.</div></div>
+                <div class="field"><div class="field-key">Public directory</div><div class="field-val">Verified, active parishes appear in the public giving flow automatically.</div></div>
               </div>
             </div>
           </div>
@@ -288,9 +290,9 @@
       <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7.5 5.5h13v17h-13z"/><path d="M10.5 10h7"/><path d="M10.5 14h7"/><path d="M10.5 18h5"/><path d="M19 3.5v4h4"/></svg>
       <span>Queue</span>
     </button>
-    <button class="mobile-tab-link" type="button" data-nav-tab="password" onclick="switchTab('password')">
+    <button class="mobile-tab-link" type="button" data-nav-tab="settings" onclick="switchTab('settings')">
       <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="6" y="12" width="16" height="11" rx="2"/><path d="M10 12V9a4 4 0 0 1 8 0v3"/><path d="M14 16.5v3"/></svg>
-      <span>Password</span>
+      <span>Settings</span>
     </button>
   </nav>
 

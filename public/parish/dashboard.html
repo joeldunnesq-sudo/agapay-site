@@ -24,28 +24,8 @@
     </div>
 
     <div class="sidebar-body">
-      <div class="sidebar-auth">
-        <div class="dashboard-welcome-banner">
-          <div class="welcome-brand-mark"><img src="/mark.png" alt="" /></div>
-          <div class="welcome-copy">
-            <div class="welcome-kicker">AgaPay - Love how you Give</div>
-            <h2>Welcome, Parish Team</h2>
-            <p>Sign in to manage your giving page, QR code, funds, campaigns, Stripe setup, and weekly commemorations.</p>
-          </div>
-          <div class="welcome-avatar" aria-hidden="true">PT</div>
-        </div>
-        <div class="auth-fields">
-          <div>
-            <label for="parishId">Parish ID</label>
-            <input id="parishId" placeholder="st-seraphim-mission" autocomplete="off" />
-          </div>
-          <div>
-            <label for="parishToken">Parish password</label>
-            <input id="parishToken" type="password" placeholder="Enter parish password" autocomplete="current-password" />
-          </div>
-          <button class="sidebar-load" id="loadBtn" onclick="loadDashboard(this)">Open parish dashboard</button>
-        </div>
-      </div>
+      <input id="parishId" type="hidden" />
+      <input id="parishToken" type="hidden" />
 
       <div class="sidebar-profile" id="sidebarProfile">
         <div class="sidebar-parish-name" id="sidebarParishName">-</div>
@@ -108,6 +88,10 @@
           <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           AgaPay home
         </a>
+        <button class="sidebar-link sidebar-link-button" type="button" onclick="logoutParish()">
+          <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>
+          Log out
+        </button>
       </div>
     </div>
   </aside>
@@ -117,6 +101,7 @@
       <div class="topbar-title" id="topbarTitle">Parish Dashboard</div>
       <div class="topbar-actions">
         <button class="btn btn-ghost btn-sm" onclick="loadDashboard(this)">Refresh</button>
+        <button class="btn btn-ghost btn-sm" onclick="logoutParish()">Log out</button>
       </div>
     </div>
 

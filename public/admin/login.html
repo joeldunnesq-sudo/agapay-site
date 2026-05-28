@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login | AgaPay</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
+  <link rel="shortcut icon" href="/favicons/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/admin/style.css" />
+  <script src="/admin/app.js" defer></script>
+</head>
+<body class="admin-login-simple">
+  <main class="admin-auth-page">
+    <section class="admin-auth-shell">
+      <div class="admin-auth-intro">
+        <img src="/mark.png" alt="" />
+        <div>
+          <div class="eyebrow">Welcome back</div>
+          <h1>Open your admin console.</h1>
+          <p>Log in to review parish registrations, verify canonical standing, manage onboarding, and keep AgaPay moving.</p>
+        </div>
+      </div>
+
+      <form class="admin-auth-card" onsubmit="loginFromAdminPage(event)">
+        <h2>Login</h2>
+        <div class="form-group">
+          <label class="form-label" for="adminToken">Password</label>
+          <input id="adminToken" type="password" autocomplete="current-password" placeholder="Your admin password" />
+        </div>
+        <div class="admin-auth-actions">
+          <button class="btn btn-gold" type="submit">Log in</button>
+          <a class="btn btn-ghost" href="/">AgaPay home</a>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+</body>
+</html>

@@ -1,8 +1,63 @@
     let selectedReference = '';
     let registrationsCache = [];
+    const adminSessionKey = 'agapay_admin_token';
 
     function token() {
-      return document.getElementById('adminToken').value.trim();
+      return document.getElementById('adminToken')?.value.trim() || sessionStorage.getItem(adminSessionKey) || '';
+    }
+
+    function saveAdminSession(value) {
+      try {
+        sessionStorage.setItem(adminSessionKey, value);
+        const input = document.getElementById('adminToken');
+        if (input) input.value = value;
+      } catch {}
+    }
+
+    function clearAdminSession() {
+      try { sessionStorage.removeItem(adminSessionKey); } catch {}
+      const input = document.getElementById('adminToken');
+      if (input) input.value = '';
+    }
+
+    function restoreAdminSession() {
+      const onLoginPage = document.body?.classList.contains('admin-login-simple');
+      const storedToken = sessionStorage.getItem(adminSessionKey) || '';
+      const input = document.getElementById('adminToken');
+      if (storedToken && input) input.value = storedToken;
+      if (!onLoginPage && !storedToken) {
+        window.location.replace('/admin/login');
+        return;
+      }
+      if (!onLoginPage && storedToken) {
+        setTimeout(() => loadRegistrations(), 80);
+      }
+    }
+
+    async function loginFromAdminPage(event) {
+      event.preventDefault();
+      const password = document.getElementById('adminToken')?.value.trim();
+      const submit = event.submitter;
+      if (!password) { setStatus('Enter the admin password.', 'error'); return; }
+      if (submit) { submit.classList.add('loading'); submit.disabled = true; }
+      try {
+        const response = await fetch('/api/admin/registrations', {
+          headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + password }
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || 'Unable to log in');
+        saveAdminSession(password);
+        window.location.href = '/admin';
+      } catch (err) {
+        setStatus(err.message, 'error');
+      } finally {
+        if (submit) { submit.classList.remove('loading'); submit.disabled = false; }
+      }
+    }
+
+    function logoutAdmin() {
+      clearAdminSession();
+      window.location.href = '/admin/login';
     }
 
     function escapeHtml(value) {
@@ -96,7 +151,7 @@
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Unable to update admin password');
 
-        document.getElementById('adminToken').value = newAdminPassword;
+        saveAdminSession(newAdminPassword);
         newPasswordInput.value = '';
         confirmPasswordInput.value = '';
         setStatus('Admin password updated. Use this password for future dashboard logins.', 'success');
@@ -366,13 +421,12 @@
 
     async function loadRegistrations() {
       if (!token()) {
-        setStatus('Paste your admin token first.', 'error');
+        setStatus('Log in to load registrations.', 'error');
         return;
       }
 
       const btn = document.getElementById('loadBtn');
-      btn.classList.add('loading');
-      btn.disabled = true;
+      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
       setStatus('Loading registrations...');
 
       try {
@@ -389,8 +443,7 @@
       } catch (err) {
         setStatus(err.message, 'error');
       } finally {
-        btn.classList.remove('loading');
-        btn.disabled = false;
+        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
       }
     }
 
@@ -1195,7 +1248,7 @@
       if (nav)   nav.classList.add('active');
       if (mobileNav) mobileNav.classList.add('active');
       activeTab = tab;
-      const titles = { overview: 'Overview', queue: 'Registration Queue', password: 'Change Password' };
+      const titles = { overview: 'Overview', queue: 'Registration Queue', settings: 'Settings' };
       const titleEl = document.getElementById('topbarTitle');
       if (titleEl) titleEl.textContent = titles[tab] || 'Admin Console';
       // Show/hide sidebar filters (only relevant on queue tab)
@@ -1352,9 +1405,11 @@
 
     const stripeReturnReference = new URLSearchParams(window.location.search).get('stripe_return');
     if (stripeReturnReference) {
-      setStatus(`Stripe onboarding returned for ${stripeReturnReference}. Paste your admin token, load registrations, then refresh Stripe status.`);
+      setStatus(`Stripe onboarding returned for ${stripeReturnReference}. Log in, then refresh Stripe status.`);
     }
     const subscriptionReturnReference = new URLSearchParams(window.location.search).get('subscription_return');
     if (subscriptionReturnReference) {
-      setStatus(`Subscription checkout returned for ${subscriptionReturnReference}. Paste your admin token and load registrations. The Stripe webhook will mark it active after payment is confirmed.`);
+      setStatus(`Subscription checkout returned for ${subscriptionReturnReference}. Log in to review the registration. The Stripe webhook will mark it active after payment is confirmed.`);
     }
+
+    restoreAdminSession();

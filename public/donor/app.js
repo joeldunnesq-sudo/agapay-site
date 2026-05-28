@@ -171,6 +171,11 @@ function clearDonorSession() {
   updateDonorAuthState();
 }
 
+function logoutDonor() {
+  clearDonorSession();
+  window.location.href = "/donor/login";
+}
+
 function showGuestDonorDashboard() {
   setDonorStatus("");
   setText("profileName", "Donor Account");
