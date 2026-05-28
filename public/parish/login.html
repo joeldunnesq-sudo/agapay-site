@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parish Login | AgaPay</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
+  <link rel="shortcut icon" href="/favicons/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/parish/style.css" />
+  <script src="/parish/app.js" defer></script>
+</head>
+<body class="parish-login-simple">
+  <main class="parish-auth-page">
+    <section class="parish-auth-shell">
+      <div class="parish-auth-intro">
+        <img src="/mark.png" alt="" />
+        <div>
+          <div class="eyebrow">Welcome back</div>
+          <h1>Open your parish dashboard.</h1>
+          <p>Log in to manage your giving page, QR code, funds, campaigns, Stripe setup, and weekly commemorations.</p>
+        </div>
+      </div>
+
+      <form class="parish-auth-card" onsubmit="loginFromParishPage(event)">
+        <h2>Login</h2>
+        <div class="form-group">
+          <label class="form-label" for="parishId">Parish ID</label>
+          <input id="parishId" autocomplete="username" placeholder="st-seraphim-mission" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="parishToken">Password</label>
+          <input id="parishToken" type="password" autocomplete="current-password" placeholder="Your parish password" />
+        </div>
+        <div class="parish-auth-actions">
+          <button class="btn btn-gold" type="submit">Log in</button>
+          <a class="btn btn-ghost" href="/register.html">Register parish</a>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+</body>
+</html>

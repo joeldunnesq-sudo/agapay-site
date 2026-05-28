@@ -11,11 +11,20 @@
   // ── SESSION PERSISTENCE ──────────────────────────────────
   (function restoreSession() {
     try {
+      const isDashboardPage = Boolean(document.getElementById('setupWizardPane'));
       const id    = sessionStorage.getItem('agapay_parish_id');
       const token = sessionStorage.getItem('agapay_parish_token');
-      if (id)    document.getElementById('parishId').value    = id;
-      if (token) document.getElementById('parishToken').value = token;
-      if (id && token) {
+      const parishIdField = document.getElementById('parishId');
+      const parishTokenField = document.getElementById('parishToken');
+      const urlParish = new URLSearchParams(window.location.search).get('parish');
+      if (isDashboardPage && (!id || !token)) {
+        const suffix = urlParish || id;
+        window.location.replace('/parish/login' + (suffix ? `?parish=${encodeURIComponent(suffix)}` : ''));
+        return;
+      }
+      if (id && parishIdField) parishIdField.value = id;
+      if (token && parishTokenField) parishTokenField.value = token;
+      if (id && token && isDashboardPage) {
         // Auto-load after a short delay so the page settles
         setTimeout(() => { const btn = document.getElementById('loadBtn'); loadDashboard(btn); }, 120);
       }
@@ -101,6 +110,29 @@
   // ── AUTH ─────────────────────────────────────────────────
   function authHeaders() {
     return { 'Accept':'application/json', 'Authorization':'Bearer ' + document.getElementById('parishToken').value.trim() };
+  }
+
+  async function loginFromParishPage(event) {
+    event.preventDefault();
+    const parishId = document.getElementById('parishId')?.value.trim();
+    const password = document.getElementById('parishToken')?.value.trim();
+    const submit = event.submitter;
+    if (!parishId || !password) { setStatus('Enter the parish ID and password.','error'); return; }
+    if (submit) { submit.classList.add('loading'); submit.disabled = true; }
+    try {
+      const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(parishId), {
+        headers: { 'Accept':'application/json', 'Authorization':'Bearer ' + password }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to log in');
+      sessionStorage.setItem('agapay_parish_id', parishId);
+      sessionStorage.setItem('agapay_parish_token', password);
+      window.location.href = '/parish/dashboard?parish=' + encodeURIComponent(parishId);
+    } catch (err) {
+      setStatus(err.message,'error');
+    } finally {
+      if (submit) { submit.classList.remove('loading'); submit.disabled = false; }
+    }
   }
 
   // ── HELPERS ──────────────────────────────────────────────
@@ -558,4 +590,5 @@
 
   // ── URL PARAM AUTO-FILL ───────────────────────────────────
   const params = new URLSearchParams(window.location.search);
-  if (params.get('parish')) document.getElementById('parishId').value = params.get('parish');
+  const parishIdField = document.getElementById('parishId');
+  if (params.get('parish') && parishIdField) parishIdField.value = params.get('parish');

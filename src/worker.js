@@ -447,7 +447,7 @@ async function sendTreasurerStripeInvite(env, appUrl, registration) {
   if (!to) return { status: "missing_recipient" };
 
   const parishId = registration.parishId || slugify(registration.parishName);
-  const dashboardUrl = `${appUrl}/parish/dashboard?parish=${encodeURIComponent(parishId)}`;
+  const dashboardUrl = `${appUrl}/parish/login?parish=${encodeURIComponent(parishId)}`;
   const from = env.AGAPAY_FROM_EMAIL || "AgaPay <onboarding@agapay.app>";
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   const parishName = htmlEscape(registration.parishName || "your parish");
@@ -495,7 +495,7 @@ async function sendDashboardInvite(env, appUrl, registration) {
   if (!recipients.length) return { status: "missing_recipient" };
 
   const parishId = registration.parishId || slugify(registration.parishName);
-  const dashboardUrl = `${appUrl}/parish/dashboard?parish=${encodeURIComponent(parishId)}`;
+  const dashboardUrl = `${appUrl}/parish/login?parish=${encodeURIComponent(parishId)}`;
   const from = env.AGAPAY_FROM_EMAIL || "AgaPay <onboarding@agapay.app>";
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   const parishName = htmlEscape(registration.parishName || "your parish");
