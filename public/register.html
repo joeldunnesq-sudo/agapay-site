@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Register â€” AgaPay</title>
+  <title>Register - AgaPay</title>
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
   <link rel="shortcut icon" href="/favicon.ico" />
-  <meta name="description" content="Register your Orthodox parish or monastery with AgaPay. Canonically verified giving for the American Church." />
+  <meta name="description" content="Join AGAPAY as a donor, parish, business, ministry, school, monastery, or mission." />
   <meta name="theme-color" content="#061522" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -102,6 +102,20 @@
     .form-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 2.5rem; }
     .form-card-title { font-family: var(--serif); font-size: 1.5rem; font-weight: 500; color: var(--deep); margin-bottom: 0.35rem; }
     .form-card-sub { font-size: 13px; color: var(--stone); margin-bottom: 2rem; line-height: 1.6; }
+
+    /* ENTRY CHOICE */
+    .entry-card-wrap { margin-bottom: 1.5rem; }
+    .entry-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 2rem; }
+    .entry-title { font-family: var(--serif); font-size: 1.55rem; color: var(--deep); margin-bottom: 0.35rem; }
+    .entry-sub { color: var(--stone); font-size: 13px; line-height: 1.6; margin-bottom: 1.2rem; }
+    .entry-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; }
+    .entry-option { border: 1px solid rgba(166,159,145,0.35); border-radius: var(--r); background: var(--cream); padding: 0.9rem; text-align: left; color: var(--ink); cursor: pointer; transition: border-color 0.15s, transform 0.15s, background 0.15s; }
+    .entry-option:hover { border-color: var(--gold); transform: translateY(-1px); background: white; }
+    .entry-option strong { display: block; font-family: var(--serif); font-size: 1.15rem; color: var(--deep); line-height: 1.2; }
+    .entry-option span { display: block; margin-top: 0.3rem; font-size: 12px; color: var(--stone); line-height: 1.5; }
+    .entry-option.donor { background: linear-gradient(145deg, #061522, #164F30); border-color: rgba(200,162,74,0.45); }
+    .entry-option.donor strong { color: var(--cream); }
+    .entry-option.donor span { color: rgba(246,241,232,0.74); }
 
     /* FORM ELEMENTS */
     .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 1.25rem; }
@@ -221,6 +235,8 @@
       .form-row { grid-template-columns: 1fr; }
       .form-card { padding: 1.75rem; }
       .type-toggle { flex-direction: column; }
+      .entry-card { padding: 1.25rem; }
+      .entry-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 480px) { .footer-inner { flex-direction: column; } }
   </style>
@@ -271,13 +287,54 @@
   <header class="hero">
     <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
     <div class="hero-inner">
-      <div class="hero-eyebrow">Parish Registration</div>
-      <h1>Bring your community<br>onto <em>AgaPay.</em></h1>
-      <p class="hero-sub">Registration takes about five minutes. Every parish is reviewed personally before activation. You will hear from us within one business day.</p>
+      <div class="hero-eyebrow">Registration</div>
+      <h1>Join the AGAPAY<br><em>ecosystem.</em></h1>
+      <p class="hero-sub">Start as a donor or register an Orthodox organization. We personally review each organization profile before activation.</p>
     </div>
   </header>
 
   <main class="main">
+
+    <div class="entry-card-wrap" id="registrationEntry">
+      <div class="entry-card">
+        <h2 class="entry-title">Who are you registering?</h2>
+        <p class="entry-sub">Choose your path. Donors create a faithful account. Organizations continue into the AGAPAY onboarding form.</p>
+        <div class="entry-grid">
+          <button class="entry-option donor" type="button" onclick="startDonorRegistration()">
+            <strong>Donor / Family</strong>
+            <span>Create your donor account, connect to your parish, and start giving.</span>
+          </button>
+          <button class="entry-option" type="button" onclick="startOrganizationRegistration('Parish')">
+            <strong>Parish / Church</strong>
+            <span>Register your parish and launch AGAPAY giving tools.</span>
+          </button>
+          <button class="entry-option" type="button" onclick="startOrganizationRegistration('Mission')">
+            <strong>Mission</strong>
+            <span>Set up missionary fundraising and stewardship workflows.</span>
+          </button>
+          <button class="entry-option" type="button" onclick="startOrganizationRegistration('Monastery / Skete')">
+            <strong>Monastery</strong>
+            <span>Receive offerings and support for your monastic community.</span>
+          </button>
+          <button class="entry-option" type="button" onclick="startOrganizationRegistration('Business')">
+            <strong>Orthodox Business</strong>
+            <span>Prepare for values-aligned commerce inside AGAPAY.</span>
+          </button>
+          <button class="entry-option" type="button" onclick="startOrganizationRegistration('Ministry / Nonprofit')">
+            <strong>Ministry / Nonprofit</strong>
+            <span>Build donor support workflows for your mission.</span>
+          </button>
+          <button class="entry-option" type="button" onclick="startOrganizationRegistration('School / Academy')">
+            <strong>School / Academy</strong>
+            <span>Prepare tuition and giving infrastructure for families.</span>
+          </button>
+          <button class="entry-option" type="button" onclick="startOrganizationRegistration('Other Orthodox Organization')">
+            <strong>Other Organization</strong>
+            <span>Register another Orthodox-aligned institution.</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- PROGRESS -->
     <div class="progress-wrap" id="progressWrap">
@@ -314,6 +371,10 @@
             <button class="type-btn selected" data-type="Parish" onclick="selectType(this)">Parish</button>
             <button class="type-btn" data-type="Cathedral" onclick="selectType(this)">Cathedral</button>
             <button class="type-btn" data-type="Monastery / Skete" onclick="selectType(this)">Monastery</button>
+            <button class="type-btn" data-type="Business" onclick="selectType(this)">Business</button>
+            <button class="type-btn" data-type="Ministry / Nonprofit" onclick="selectType(this)">Ministry</button>
+            <button class="type-btn" data-type="School / Academy" onclick="selectType(this)">School</button>
+            <button class="type-btn" data-type="Other Orthodox Organization" onclick="selectType(this)">Other</button>
           </div>
         </div>
 
@@ -534,7 +595,7 @@
           <div class="footer-nav-label">Company</div>
           <a href="/about">About</a>
           <a href="/contact">Contact</a>
-          <a href="/register">Register parish</a>
+          <a href="/register">Register organization</a>
           <a href="/donor/login">Give now</a>
         </div>
         <div class="footer-nav-group">
@@ -554,6 +615,37 @@
     // â”€â”€â”€ STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let currentStep = 1;
     let communityType = 'Parish';
+
+    function showRegistrationEntry() {
+      const entry = document.getElementById('registrationEntry');
+      if (entry) entry.style.display = '';
+      const progress = document.getElementById('progressWrap');
+      if (progress) progress.style.display = 'none';
+      document.querySelectorAll('.step-panel').forEach(p => {
+        p.classList.remove('active');
+        p.style.display = 'none';
+      });
+    }
+
+    function showOrganizationFlow(defaultType) {
+      const entry = document.getElementById('registrationEntry');
+      if (entry) entry.style.display = 'none';
+      const progress = document.getElementById('progressWrap');
+      if (progress) progress.style.display = '';
+      document.querySelectorAll('.step-panel').forEach(p => p.style.display = '');
+      goToStep(1);
+      const selected = Array.from(document.querySelectorAll('.type-btn')).find(btn => btn.dataset.type === defaultType);
+      if (selected) selectType(selected);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function startDonorRegistration() {
+      window.location.href = '/donor/signup';
+    }
+
+    function startOrganizationRegistration(defaultType) {
+      showOrganizationFlow(defaultType || 'Parish');
+    }
 
     // â”€â”€â”€ COMMUNITY TYPE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function selectType(btn) {
@@ -716,6 +808,8 @@
         document.body.classList.remove('nav-open');
       }
     });
+
+    showRegistrationEntry();
   </script>
 
 </body>

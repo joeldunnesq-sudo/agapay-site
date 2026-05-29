@@ -1068,32 +1068,32 @@ function agapayEmailHtml(appUrl, title, bodyHtml) {
   const markUrl = htmlEscape(`${baseUrl}/mark.png`);
 
   return `
-    <div style="margin:0;padding:0;background:#F6F1E8;color:#171715;font-family:Arial,Helvetica,sans-serif;">
+    <div style="margin:0;padding:0;background:#F4F0E6;color:#111827;font-family:Arial,Helvetica,sans-serif;">
       <div style="max-width:660px;margin:0 auto;padding:28px 14px;">
-        <div style="background:#FFFFFF;border:1px solid rgba(166,159,145,0.32);border-radius:16px;overflow:hidden;box-shadow:0 12px 34px rgba(15,45,31,0.10);">
-          <div style="background:#0F2D1F;padding:28px 30px;border-bottom:3px solid #B8902F;">
+        <div style="background:#FFFFFF;border:1px solid rgba(201,162,91,0.34);border-radius:16px;overflow:hidden;box-shadow:0 14px 34px rgba(6,21,34,0.14);">
+          <div style="background:linear-gradient(120deg,#041427 0%,#07284A 58%,#0A365B 100%);padding:28px 30px;border-bottom:3px solid #C9A25B;">
             <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
               <tr>
                 <td style="width:58px;vertical-align:middle;">
-                  <img src="${markUrl}" alt="AgaPay" width="50" height="50" style="display:block;width:50px;height:50px;border-radius:10px;" />
+                  <img src="${markUrl}" alt="AGAPAY" width="50" height="50" style="display:block;width:50px;height:50px;border-radius:10px;" />
                 </td>
                 <td style="vertical-align:middle;padding-left:12px;">
-                  <div style="font-family:Georgia,'Times New Roman',serif;font-size:36px;line-height:1;font-weight:500;color:#F6F1E8;letter-spacing:-0.01em;">Aga<span style="color:#B8902F;">Pay</span></div>
-                  <div style="font-family:Georgia,'Times New Roman',serif;font-size:14px;font-style:italic;color:rgba(246,241,232,0.72);padding-top:6px;">Love where you give.</div>
+                  <div style="font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1;font-weight:500;color:#F7F1E3;letter-spacing:0.04em;">AGAPAY</div>
+                  <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#D7B06A;font-weight:700;padding-top:7px;">Love how you give</div>
                 </td>
               </tr>
             </table>
           </div>
 
           <div style="padding:34px 30px 30px;background:#FFFFFF;">
-            <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#B8902F;font-weight:700;margin-bottom:12px;">AgaPay parish onboarding</div>
-            <h1 style="margin:0 0 18px;font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:1.18;font-weight:500;color:#0F2D1F;">${htmlEscape(title)}</h1>
+            <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#B58A3F;font-weight:700;margin-bottom:12px;">AGAPAY platform update</div>
+            <h1 style="margin:0 0 18px;font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:1.18;font-weight:500;color:#061522;">${htmlEscape(title)}</h1>
             ${bodyHtml}
-            <p style="margin:24px 0 0;font-size:15px;line-height:1.7;color:#171715;">In Christ,<br /><strong>AgaPay Team</strong></p>
+            <p style="margin:24px 0 0;font-size:15px;line-height:1.7;color:#171715;">In Christ,<br /><strong>AGAPAY Team</strong></p>
           </div>
 
-          <div style="background:#F6F1E8;padding:18px 30px;border-top:1px solid rgba(166,159,145,0.26);">
-            <p style="margin:0;font-size:12px;line-height:1.6;color:#6F6A60;">AgaPay helps canonical Orthodox parishes, missions, and monasteries receive faithful giving online. If you need help, reply to this email.</p>
+          <div style="background:#F4F0E6;padding:18px 30px;border-top:1px solid rgba(201,162,91,0.28);">
+            <p style="margin:0;font-size:12px;line-height:1.6;color:#595959;">AGAPAY helps canonical Orthodox parishes, missions, monasteries, ministries, schools, and faithful families flourish through values-aligned financial technology. If you need help, reply to this email.</p>
           </div>
         </div>
       </div>
@@ -1164,7 +1164,7 @@ async function sendTreasurerStripeInvite(env, appUrl, registration) {
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
       <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">AgaPay is ready for <strong>${parishName}</strong> to complete Stripe onboarding so online gifts can be routed to the parish's connected Stripe account.</p>
       <p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:#171715;"><strong>Please complete Stripe onboarding as soon as possible.</strong> Once Stripe approves and connects the account, your parish can begin receiving donations through AgaPay.</p>
-      <p style="margin:0 0 24px;"><a href="${safeDashboardUrl}" style="display:inline-block;background:#B8902F;color:#0F2D1F;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open parish dashboard</a></p>
+      <p style="margin:0 0 24px;"><a href="${safeDashboardUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open parish dashboard</a></p>
       <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
         <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">Dashboard credentials</p>
         <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Parish ID:</strong> ${htmlEscape(parishId)}</p>
@@ -1215,10 +1215,10 @@ async function sendDashboardInvite(env, appUrl, registration) {
         <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#B8902F;font-weight:700;">Next step</p>
         <p style="margin:0;font-size:15px;line-height:1.7;color:#F6F1E8;"><strong>Please choose your AgaPay tier and complete billing first.</strong> Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.</p>
       </div>
-      <p style="margin:0 0 24px;"><a href="${safeDashboardUrl}" style="display:inline-block;background:#B8902F;color:#0F2D1F;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open parish dashboard</a></p>
+      <p style="margin:0 0 24px;"><a href="${safeDashboardUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open parish dashboard</a></p>
       <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
         <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">Dashboard credentials</p>
-        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Dashboard:</strong> <a href="${safeDashboardUrl}" style="color:#2F5A39;text-decoration:underline;">${safeDashboardUrl}</a></p>
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Dashboard:</strong> <a href="${safeDashboardUrl}" style="color:#0A365B;text-decoration:underline;">${safeDashboardUrl}</a></p>
         <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Parish ID:</strong> ${htmlEscape(parishId)}</p>
         <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Temporary password:</strong> ${token}</p>
       </div>
@@ -1273,7 +1273,7 @@ async function sendAdminRegistrationNotice(env, appUrl, registration) {
       </div>
       <p style="margin:0 0 8px;font-size:14px;line-height:1.7;color:#171715;"><strong>Priest/Admin:</strong> ${htmlEscape(`${registration.priestFirst || ""} ${registration.priestLast || ""}`.trim())} - ${htmlEscape(registration.priestEmail || "")}</p>
       <p style="margin:0 0 22px;font-size:14px;line-height:1.7;color:#171715;"><strong>Treasurer:</strong> ${htmlEscape(`${registration.treasurerFirst || ""} ${registration.treasurerLast || ""}`.trim())} - ${htmlEscape(registration.treasurerEmail || "")}</p>
-      <p style="margin:0;"><a href="${htmlEscape(adminUrl)}" style="display:inline-block;background:#B8902F;color:#0F2D1F;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open admin dashboard</a></p>
+      <p style="margin:0;"><a href="${htmlEscape(adminUrl)}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open admin dashboard</a></p>
     `),
     text: [
       "New parish registration",
@@ -2210,7 +2210,7 @@ async function sendDonorVerificationEmail(env, donor, verificationUrl) {
     html: agapayEmailHtml(appUrl, "Verify your donor account", `
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
       <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Hello ${name}, please verify your email address to finish setting up your AgaPay donor dashboard.</p>
-      <p style="margin:0 0 24px;"><a href="${safeUrl}" style="display:inline-block;background:#B8902F;color:#0F2D1F;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Verify email address</a></p>
+      <p style="margin:0 0 24px;"><a href="${safeUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Verify email address</a></p>
       <p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#171715;">After verification, you can sign in to your donor dashboard to view offering history, submit commemorations, and give through AgaPay.</p>
       <p style="margin:0;font-size:12px;line-height:1.6;color:#6F6A60;">If you did not create this AgaPay account, you can ignore this email.</p>
     `)

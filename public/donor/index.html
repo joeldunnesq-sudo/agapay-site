@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Donor Dashboard | AgaPay</title>
+  <title>Faithful Dashboard | AgaPay</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -22,7 +22,7 @@
             <div class="brand-mark"><img src="/mark.png" alt="AgaPay" /></div>
             <span class="brand-name">AGAPAY</span>
           </div>
-          <span class="pill">Donor Dashboard</span>
+          <span class="pill">Faithful Dashboard</span>
         </div>
         <div class="auth-panel" data-auth-guest>
           <div class="auth-grid">
@@ -31,7 +31,7 @@
           </div>
         </div>
         <div class="profile-panel">
-          <div class="profile-name" id="profileName">Donor Account</div>
+          <div class="profile-name" id="profileName">Faithful Account</div>
           <div class="profile-meta" id="profileMeta">Sign in to load live giving history</div>
         </div>
         <nav class="nav" hx-boost="false">
@@ -51,7 +51,7 @@
 
     <main class="content donor-phone-stage">
       <div class="topbar donor-home-topbar">
-        <div class="topbar-title">Donor Home</div>
+        <div class="topbar-title">Faithful Home</div>
         <div class="topbar-actions">
           <a class="btn btn-ghost btn-sm" href="/donor/login" data-auth-guest>Login</a>
           <a class="btn btn-gold btn-sm" href="/donor/signup" data-auth-guest>Sign up</a>
@@ -89,6 +89,29 @@
               <a class="desktop-quick-card" id="desktopQuickCandle" href="/donor/give?quick=1&giftType=candles"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/><path d="M14 17v7"/><path d="M11 24h6"/><circle class="icon-dot" cx="14" cy="10" r="1.5"/></svg></span><strong>Candle</strong><span>Offer candles and intentions</span></a>
               <a class="desktop-quick-card" id="desktopQuickMemorial" href="/donor/give?quick=1&giftType=commemoration"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/><path d="M4 16c0 3 2 5 10 5s10-2 10-5"/><path d="M10 13c1-2 2-3 4-3s3 1 4 3"/><line x1="14" y1="7" x2="14" y2="10"/><line x1="12" y1="8" x2="16" y2="8"/></svg></span><strong>Memorial</strong><span>Submit names for prayer</span></a>
               <a class="desktop-quick-card" id="desktopQuickCampaigns" href="/donor/give?quick=1&giftType=campaign"><span class="desktop-quick-icon"><svg viewBox="0 0 28 28"><path d="M14 24.5C14 24.5 5 18 5 11.5C5 8.5 7.5 6 10.5 6C12.5 6 13.5 7 14 8C14.5 7 15.5 6 17.5 6C20.5 6 23 8.5 23 11.5C23 18 14 24.5 14 24.5Z"/></svg></span><strong>Campaigns</strong><span>Support active parish needs</span></a>
+            </div>
+          </section>
+
+          <section class="desktop-panel platform-products-panel">
+            <div class="desktop-panel-head">
+              <h2>AGAPAY Platform Products</h2>
+            </div>
+            <div class="platform-products-grid">
+              <a class="platform-product-card live" href="/donor/give">
+                <span class="platform-product-kicker">Live now</span>
+                <strong>AGAPAY Giving</strong>
+                <p>Give to parishes and missions, submit commemorations, and track offering history.</p>
+              </a>
+              <article class="platform-product-card coming-soon" aria-label="Marketplace coming soon">
+                <span class="platform-product-kicker">Coming soon</span>
+                <strong>AGAPAY Marketplace</strong>
+                <p>Support Orthodox businesses, monasteries, and creators in one values-aligned marketplace.</p>
+              </article>
+              <article class="platform-product-card coming-soon" aria-label="Directory coming soon">
+                <span class="platform-product-kicker">Coming soon</span>
+                <strong>AGAPAY Directory</strong>
+                <p>Discover Orthodox churches, schools, ministries, businesses, and monastic communities.</p>
+              </article>
             </div>
           </section>
 
@@ -177,6 +200,29 @@
               <span class="quick-give-icon"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 24.5C14 24.5 5 18 5 11.5C5 8.5 7.5 6 10.5 6C12.5 6 13.5 7 14 8C14.5 7 15.5 6 17.5 6C20.5 6 23 8.5 23 11.5C23 18 14 24.5 14 24.5Z"/></svg></span>
               <span>Campaigns</span>
             </a>
+          </div>
+        </section>
+
+        <section class="mobile-section">
+          <div class="mobile-section-head">
+            <h2>AGAPAY Products</h2>
+          </div>
+          <div class="mobile-products-grid">
+            <a class="mobile-product-card live" href="/donor/give">
+              <span>Live now</span>
+              <strong>AGAPAY Giving</strong>
+              <p>Donations, memorials, candles, and giving history.</p>
+            </a>
+            <article class="mobile-product-card coming-soon" aria-label="Marketplace coming soon">
+              <span>Coming soon</span>
+              <strong>AGAPAY Marketplace</strong>
+              <p>Orthodox businesses, monasteries, and makers.</p>
+            </article>
+            <article class="mobile-product-card coming-soon" aria-label="Directory coming soon">
+              <span>Coming soon</span>
+              <strong>AGAPAY Directory</strong>
+              <p>Find churches, schools, ministries, and services.</p>
+            </article>
           </div>
         </section>
 

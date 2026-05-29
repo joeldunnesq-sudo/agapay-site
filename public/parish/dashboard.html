@@ -118,6 +118,39 @@
       <div class="tab-panel active" id="tab-giving">
         <div id="setupWizardPane"></div>
 
+        <div class="section-card platform-access-card">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-title-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M3 12h6"/><path d="M15 12h6"/><path d="M12 3v6"/><path d="M12 15v6"/></svg></div>
+              AGAPAY Platform Access
+            </div>
+          </div>
+          <div class="section-body">
+            <p class="section-note">Your parish dashboard now tracks all AGAPAY products. Giving is live today; Marketplace and Directory will unlock in future phases.</p>
+            <div class="platform-access-grid">
+              <article class="platform-access-item live">
+                <span class="platform-access-kicker">Live now</span>
+                <h3>AGAPAY Giving</h3>
+                <p>Manage parish giving settings, campaigns, QR links, and recurring donation tools.</p>
+                <div class="btn-row">
+                  <button class="btn btn-gold btn-sm" type="button" onclick="switchTab('settings')">Open giving settings</button>
+                  <button class="btn btn-ghost btn-sm" type="button" onclick="switchTab('options')">Edit funds & campaigns</button>
+                </div>
+              </article>
+              <article class="platform-access-item soon" aria-label="Marketplace coming soon">
+                <span class="platform-access-kicker">Coming soon</span>
+                <h3>AGAPAY Marketplace</h3>
+                <p>List monastery goods, books, icons, and Orthodox business offerings in the AGAPAY marketplace.</p>
+              </article>
+              <article class="platform-access-item soon" aria-label="Directory coming soon">
+                <span class="platform-access-kicker">Coming soon</span>
+                <h3>AGAPAY Directory</h3>
+                <p>Publish discoverable parish profile data so faithful families can find and support your community.</p>
+              </article>
+            </div>
+          </div>
+        </div>
+
         <div class="qr-feature-card">
           <div class="qr-feature-layout">
             <div class="qr-feature-code" id="qrCodeHero" aria-label="Giving page QR code">

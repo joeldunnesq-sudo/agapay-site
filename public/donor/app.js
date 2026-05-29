@@ -132,11 +132,11 @@ function setDonorProfile(donor) {
   if (!donor) return;
   localStorage.setItem(donorStore.donor, JSON.stringify(donor));
   if (donor.email) localStorage.setItem(donorStore.email, donor.email);
-  const name = donor.householdName || donor.donorName || donor.email || "AgaPay donor";
+  const name = donor.householdName || donor.donorName || donor.email || "AgaPay faithful";
   const profileName = document.getElementById("profileName");
   const profileMeta = document.getElementById("profileMeta");
   if (profileName) profileName.textContent = name;
-  if (profileMeta) profileMeta.textContent = donor.defaultParishId ? `${donor.email} - ${donor.defaultParishId}` : donor.email || "Donor account loaded";
+  if (profileMeta) profileMeta.textContent = donor.defaultParishId ? `${donor.email} - ${donor.defaultParishId}` : donor.email || "Faithful account loaded";
   document.querySelectorAll(".mobile-avatar").forEach((avatar) => {
     avatar.textContent = donorInitials(donor);
   });
@@ -178,7 +178,7 @@ function logoutDonor() {
 
 function showGuestDonorDashboard() {
   setDonorStatus("");
-  setText("profileName", "Donor Account");
+  setText("profileName", "Faithful Account");
   setText("profileMeta", "Sign in to load live giving history");
   setText("greeting", "Welcome, Faithful Member");
   setText("desktopGreeting", "Welcome, Faithful Member");
@@ -898,7 +898,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const profileMeta = document.getElementById("profileMeta");
     const greeting = document.getElementById("greeting");
     const desktopGreeting = document.getElementById("desktopGreeting");
-    if (profileName) profileName.textContent = "Donor Account";
+    if (profileName) profileName.textContent = "Faithful Account";
     if (profileMeta) profileMeta.textContent = "Sign in to load live giving history";
     if (greeting) greeting.textContent = "Welcome, Faithful Member";
     if (desktopGreeting) desktopGreeting.textContent = "Welcome, Faithful Member";
