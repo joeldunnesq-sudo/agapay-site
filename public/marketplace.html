@@ -391,19 +391,14 @@
       filter: sepia(0.65) saturate(0.7) brightness(1.06);
     }
     .hero-search {
-      position: absolute;
-      bottom: 1rem;
-      left: 1rem;
-      right: 1rem;
-      z-index: 4;
-      margin-top: 0;
+      margin-top: 1rem;
+      max-width: 560px;
       display: grid;
       grid-template-columns: 1fr auto;
       border: 1px solid rgba(200, 162, 74, 0.35);
       border-radius: 10px;
       overflow: hidden;
-      background: rgba(246, 241, 232, 0.74);
-      backdrop-filter: blur(3px);
+      background: rgba(246, 241, 232, 0.78);
     }
     .hero-search input {
       border: 0;
@@ -882,7 +877,7 @@
       .hero-art { min-height: 0; justify-items: center; }
       .hero-art img { max-height: 330px; }
       .hero-art::before { background: linear-gradient(180deg, rgba(255,253,248,0), rgba(255,253,248,0.32)); }
-      .hero-search { position: static; width: min(640px, 100%); margin-top: 1rem; }
+      .hero-search { width: min(640px, 100%); }
       .market-body { grid-template-columns: 1fr; margin-top: -1.2rem; }
       .rail { position: static; }
       .shop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -980,15 +975,15 @@
             <a class="hero-btn-primary" href="#featuredShopsGrid"><svg viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M5 7v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>Explore Shops</a>
             <a class="hero-btn-secondary" href="/how-it-works">How It Works <svg viewBox="0 0 24 24"><path d="M5 12h13"/><path d="m13 6 6 6-6 6"/></svg></a>
           </div>
-        </div>
-        <div class="hero-art">
-          <img src="/images/marketplace/marketplace-sketch-hero.png" alt="Orthodox marketplace sketch" />
           <form class="hero-search" id="marketSearchForm">
             <input id="marketSearchInput" type="search" placeholder="Search products, categories, or shops" aria-label="Search marketplace" />
             <button type="submit" aria-label="Search marketplace">
               <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
             </button>
           </form>
+        </div>
+        <div class="hero-art">
+          <img src="/images/marketplace/marketplace-sketch-hero.png" alt="Orthodox marketplace sketch" />
         </div>
       </div>
     </section>
