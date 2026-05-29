@@ -17,6 +17,7 @@ body {
   .price,
   .currency,
   .stat-number,
+  .phase-num,
   .kpi-value,
   .table-amount,
   [data-money],
