@@ -22,23 +22,93 @@
     a{text-decoration:none;color:inherit}
     .wrap{width:min(1220px,calc(100% - 2.25rem));margin:0 auto}
 
-    .site-header{position:absolute;inset:0 0 auto 0;z-index:40;background:transparent;border-bottom:1px solid rgba(200,162,74,.16)}
-    .nav{min-height:78px;display:flex;align-items:center;justify-content:space-between;gap:1rem}
-    .brand{display:inline-flex;align-items:center;gap:.75rem;color:var(--cream);min-width:max-content}
-    .brand-mark{
-      width:52px;height:52px;border-radius:50%;
-      border:1px solid rgba(200,162,74,.55);
-      background:rgba(6,21,34,.34);
-      display:grid;place-items:center;
-      flex:0 0 52px;
+    .site-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      padding: 1.25rem clamp(1rem, 3vw, 3rem);
     }
-    .brand-mark img{width:48px;height:48px;object-fit:contain}
-    .brand-name{display:flex;flex-direction:column;line-height:1}
-    .brand-name strong{font:500 2.05rem/1 var(--serif);letter-spacing:.08em;text-transform:uppercase}
-    .brand-name span{margin-top:.2rem;font-size:.6rem;letter-spacing:.12em;color:var(--gold);text-transform:uppercase}
-    .links{display:flex;gap:1.4rem;color:rgba(246,241,232,.86);font-size:.92rem}
-    .links .active{color:var(--gold);border-bottom:2px solid var(--gold);padding-bottom:.35rem}
-    .cta{background:linear-gradient(135deg,#D7B25C,#B88633);color:#0A1724;padding:.72rem 1.2rem;border-radius:8px;font-weight:600;font-size:.92rem}
+    .nav {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--cream);
+      min-width: max-content;
+    }
+    .brand-mark {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(200, 162, 74, 0.55);
+      border-radius: 50%;
+      background: rgba(6, 21, 34, 0.34);
+    }
+    .brand-mark img { width: 48px; height: 48px; object-fit: contain; }
+    .brand-name {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+    .brand-name strong {
+      font-family: var(--serif);
+      font-size: 2.05rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .brand-name span {
+      margin-top: 0.2rem;
+      color: var(--gold);
+      font-size: 0.6rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+      gap: clamp(1rem, 2.5vw, 2.4rem);
+      color: rgba(246, 241, 232, 0.86);
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      color: var(--cream);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+    .nav-login { color: var(--gold); }
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 1.45rem;
+      border-radius: 5px;
+      color: var(--deep);
+      font-family: var(--serif);
+      font-size: 1.08rem;
+      font-style: italic;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      background: linear-gradient(135deg, #D6AF5B, #B98832);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+    }
 
     .hero{background:var(--deep);color:var(--cream);position:relative;overflow:hidden;min-height:650px;display:grid;align-items:center}
     .hero::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,21,34,.98) 0%,rgba(6,21,34,.9) 34%,rgba(6,21,34,.38) 72%,rgba(6,21,34,.78) 100%),linear-gradient(0deg,rgba(6,21,34,.88),rgba(6,21,34,.1) 52%,rgba(6,21,34,.48)),url("images/vision/fresco-vault.jpg") center right/cover no-repeat;filter:saturate(.95) contrast(1.08);z-index:1}
@@ -171,7 +241,7 @@
       .cta-row{grid-template-columns:1fr}
       .cta-left{align-items:flex-start}
       .cta-copy{max-width:none}
-      .links{display:none}
+      .nav-links{display:none}
       .footer-grid{grid-template-columns:1fr 1fr}
       .footer-bottom{flex-direction:column}
     }
@@ -182,16 +252,20 @@
 </head>
 <body>
   <header class="site-header">
-    <div class="wrap nav">
-      <a class="brand" href="/" aria-label="AGAPAY Home">
-        <span class="brand-mark"><img src="mark.png" alt="AGAPAY mark" /></span>
-        <span class="brand-name"><strong>AGAPAY</strong><span>Orthodox Giving Lives Here</span></span>
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="/" aria-label="AgaPay home">
+        <span class="brand-mark"><img src="/mark.png" alt="" /></span>
+        <span class="brand-name"><strong>AGAPAY</strong><span>Love how you give</span></span>
       </a>
-      <nav class="links" aria-label="Primary">
-        <a href="/giving">Giving</a><a href="/marketplace">Marketplace</a><a href="/directory">Directory</a><a href="/vision" class="active">Vision</a><a href="/how-it-works">Resources</a>
-      </nav>
-      <a href="/register" class="cta">Join AGAPAY</a>
-    </div>
+      <div class="nav-links">
+        <a href="/vision">Vision</a>
+        <a href="/giving">Giving</a>
+        <a href="/marketplace">Marketplace</a>
+        <a href="/directory">Directory</a>
+        <a href="/how-it-works">Resources</a>
+        <a href="/register" class="nav-cta">Join AGAPAY</a>
+      </div>
+    </nav>
   </header>
   <main>
     <section class="hero">
