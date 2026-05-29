@@ -3,7 +3,7 @@ main = "src/worker.js"
 compatibility_date = "2026-05-25"
 
 [vars]
-AGAPAY_FROM_EMAIL = "AgaPay <onboarding@agapay.app>"
+AGAPAY_FROM_EMAIL = "AGAPAY <onboarding@agapay.app>"
 AGAPAY_REPLY_TO_EMAIL = "support@agapay.app"
 AGAPAY_REGISTRATION_NOTIFY_EMAIL = "hello@agapay.app"
 

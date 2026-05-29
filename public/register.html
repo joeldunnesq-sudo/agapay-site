@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Register - AgaPay</title>
+  <title>Register - AGAPAY</title>
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
@@ -109,6 +109,7 @@
     .entry-title { font-family: var(--serif); font-size: 1.55rem; color: var(--deep); margin-bottom: 0.35rem; }
     .entry-sub { color: var(--stone); font-size: 13px; line-height: 1.6; margin-bottom: 1.2rem; }
     .entry-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; }
+    .entry-grid.binary { max-width: 720px; margin: 0 auto; }
     .entry-option { border: 1px solid rgba(166,159,145,0.35); border-radius: var(--r); background: var(--cream); padding: 0.9rem; text-align: left; color: var(--ink); cursor: pointer; transition: border-color 0.15s, transform 0.15s, background 0.15s; }
     .entry-option:hover { border-color: var(--gold); transform: translateY(-1px); background: white; }
     .entry-option strong { display: block; font-family: var(--serif); font-size: 1.15rem; color: var(--deep); line-height: 1.2; }
@@ -151,10 +152,11 @@
     .select-wrap select { padding-right: 32px; cursor: pointer; }
 
     /* COMMUNITY TYPE TOGGLE */
-    .type-toggle { display: flex; gap: 8px; margin-bottom: 1.25rem; }
-    .type-btn { flex: 1; padding: 10px; background: var(--cream); border: 0.5px solid rgba(166,159,145,0.4); border-radius: var(--r); font-size: 13px; font-weight: 500; font-family: var(--sans); color: var(--stone); cursor: pointer; transition: all 0.15s; text-align: center; }
+    .type-toggle { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 1.25rem; }
+    .type-btn { padding: 10px; background: var(--cream); border: 0.5px solid rgba(166,159,145,0.4); border-radius: var(--r); font-size: 13px; font-weight: 500; font-family: var(--sans); color: var(--stone); cursor: pointer; transition: all 0.15s; text-align: center; }
     .type-btn:hover { border-color: var(--gold); color: var(--ink); }
     .type-btn.selected { background: var(--deep); color: var(--cream); border-color: var(--deep); }
+    .conditional-hidden { display: none !important; }
 
     /* DIVIDERS */
     .form-divider { border: none; border-top: 0.5px solid rgba(166,159,145,0.25); margin: 1.75rem 0; }
@@ -234,7 +236,7 @@
       .nav-inner .nav-cta, .nav-inner .nav-give { display: none; }
       .form-row { grid-template-columns: 1fr; }
       .form-card { padding: 1.75rem; }
-      .type-toggle { flex-direction: column; }
+      .type-toggle { grid-template-columns: 1fr 1fr; }
       .entry-card { padding: 1.25rem; }
       .entry-grid { grid-template-columns: 1fr; }
     }
@@ -251,9 +253,9 @@
 
   <nav>
     <div class="nav-inner">
-      <a href="/" class="nav-logo" aria-label="AgaPay Home">
+      <a href="/" class="nav-logo" aria-label="AGAPAY Home">
         <div class="nav-mark">
-          <img src="/mark.png" alt="AgaPay" style="width:48px;height:48px;object-fit:contain;" />
+          <img src="/mark.png" alt="AGAPAY" style="width:48px;height:48px;object-fit:contain;" />
         </div>
         <span class="nav-name">AGAPAY</span>
       </a>
@@ -298,39 +300,15 @@
     <div class="entry-card-wrap" id="registrationEntry">
       <div class="entry-card">
         <h2 class="entry-title">Who are you registering?</h2>
-        <p class="entry-sub">Choose your path. Donors create a faithful account. Organizations continue into the AGAPAY onboarding form.</p>
-        <div class="entry-grid">
+        <p class="entry-sub">Choose your path. Individuals and families create donor accounts. Organizations continue into a guided AGAPAY onboarding form.</p>
+        <div class="entry-grid binary">
           <button class="entry-option donor" type="button" onclick="startDonorRegistration()">
-            <strong>Donor / Family</strong>
-            <span>Create your donor account, connect to your parish, and start giving.</span>
+            <strong>Individual / Family</strong>
+            <span>Create your donor account, choose your parish, and manage giving.</span>
           </button>
           <button class="entry-option" type="button" onclick="startOrganizationRegistration('Parish')">
-            <strong>Parish / Church</strong>
-            <span>Register your parish and launch AGAPAY giving tools.</span>
-          </button>
-          <button class="entry-option" type="button" onclick="startOrganizationRegistration('Mission')">
-            <strong>Mission</strong>
-            <span>Set up missionary fundraising and stewardship workflows.</span>
-          </button>
-          <button class="entry-option" type="button" onclick="startOrganizationRegistration('Monastery / Skete')">
-            <strong>Monastery</strong>
-            <span>Receive offerings and support for your monastic community.</span>
-          </button>
-          <button class="entry-option" type="button" onclick="startOrganizationRegistration('Business')">
-            <strong>Orthodox Business</strong>
-            <span>Prepare for values-aligned commerce inside AGAPAY.</span>
-          </button>
-          <button class="entry-option" type="button" onclick="startOrganizationRegistration('Ministry / Nonprofit')">
-            <strong>Ministry / Nonprofit</strong>
-            <span>Build donor support workflows for your mission.</span>
-          </button>
-          <button class="entry-option" type="button" onclick="startOrganizationRegistration('School / Academy')">
-            <strong>School / Academy</strong>
-            <span>Prepare tuition and giving infrastructure for families.</span>
-          </button>
-          <button class="entry-option" type="button" onclick="startOrganizationRegistration('Other Orthodox Organization')">
-            <strong>Other Organization</strong>
-            <span>Register another Orthodox-aligned institution.</span>
+            <strong>Organization</strong>
+            <span>Register a parish, monastery, business, ministry, school, mission, or other Orthodox organization.</span>
           </button>
         </div>
       </div>
@@ -361,11 +339,11 @@
     <!-- STEP 1 -->
     <div class="step-panel active" id="step-1">
       <div class="form-card">
-        <div class="form-card-title">Your community</div>
-        <p class="form-card-sub">Tell us about your parish, mission, or monastery. Fields marked <span style="color:var(--gold);">âœ¦</span> are required.</p>
+        <div class="form-card-title" id="stepOneTitle">Your organization</div>
+        <p class="form-card-sub" id="stepOneSub">Tell us what kind of Orthodox organization you are registering. The form will adjust so we only ask for what applies.</p>
 
         <div class="form-group" style="margin-bottom:1rem;">
-          <label>Community type <span class="required">âœ¦</span></label>
+          <label>Organization type <span class="required">*</span></label>
           <div class="type-toggle">
             <button class="type-btn" data-type="Mission" onclick="selectType(this)">Mission</button>
             <button class="type-btn selected" data-type="Parish" onclick="selectType(this)">Parish</button>
@@ -379,12 +357,12 @@
         </div>
 
         <div class="form-group">
-          <label for="parishName">Community name <span class="required">âœ¦</span></label>
-          <input type="text" id="parishName" placeholder="St. Seraphim of Sarov Mission" />
+          <label for="parishName" id="organizationNameLabel">Organization name <span class="required">*</span></label>
+          <input type="text" id="parishName" placeholder="St. Seraphim Orthodox Church" />
         </div>
 
-        <div class="form-group">
-          <label for="jurisdiction">Jurisdiction <span class="required">âœ¦</span></label>
+        <div class="form-group" id="jurisdictionGroup">
+          <label for="jurisdiction" id="jurisdictionLabel">Jurisdiction <span class="required">*</span></label>
           <div class="select-wrap">
             <select id="jurisdiction">
               <option value="">Select your jurisdiction</option>
@@ -401,13 +379,24 @@
           </div>
         </div>
 
+        <div class="form-group">
+          <label for="addressLine1">Street address <span class="required">*</span></label>
+          <input type="text" id="addressLine1" placeholder="123 Church Street" />
+          <span class="form-hint">This helps us place approved organizations in the AGAPAY directory.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="addressLine2">Address line 2</label>
+          <input type="text" id="addressLine2" placeholder="Suite, campus, or building name" />
+        </div>
+
         <div class="form-row">
           <div class="form-group">
-            <label for="city">City <span class="required">âœ¦</span></label>
+            <label for="city">City <span class="required">*</span></label>
             <input type="text" id="city" placeholder="Lubbock" />
           </div>
           <div class="form-group">
-            <label for="state">State <span class="required">âœ¦</span></label>
+            <label for="state">State <span class="required">*</span></label>
             <div class="select-wrap">
               <select id="state">
                 <option value="">State</option>
@@ -430,13 +419,24 @@
         </div>
 
         <div class="form-group">
-          <label for="website">Parish website</label>
-          <input type="url" id="website" placeholder="https://saintseraphim.org" />
-          <span class="form-hint">Leave blank if you don't have one.</span>
+          <label for="postalCode">ZIP / postal code <span class="required">*</span></label>
+          <input type="text" id="postalCode" placeholder="79401" />
         </div>
 
         <div class="form-group">
-          <label for="liturgicalCalendar">Liturgical calendar <span class="required">âœ¦</span></label>
+          <label for="website" id="websiteLabel">Website</label>
+          <input type="url" id="website" placeholder="https://example.org" />
+          <span class="form-hint" id="websiteHint">Helpful for verification. Leave blank if you don't have one.</span>
+        </div>
+
+        <div class="form-group" id="descriptionGroup">
+          <label for="organizationDescription" id="descriptionLabel">Organization description</label>
+          <textarea id="organizationDescription" placeholder="Briefly describe your work, audience, products, or services."></textarea>
+          <span class="form-hint" id="descriptionHint">This helps AGAPAY review fit and directory placement.</span>
+        </div>
+
+        <div class="form-group" id="calendarGroup">
+          <label for="liturgicalCalendar">Liturgical calendar <span class="required">*</span></label>
           <div class="select-wrap">
             <select id="liturgicalCalendar">
               <option value="julian">Julian / Old Calendar</option>
@@ -456,50 +456,50 @@
     <!-- STEP 2 -->
     <div class="step-panel" id="step-2">
       <div class="form-card">
-        <div class="form-card-title">Contact &amp; staff</div>
-        <p class="form-card-sub">We need to reach a real person at your community. This goes directly to the founder â€” no automated intake system.</p>
+        <div class="form-card-title">Contacts</div>
+        <p class="form-card-sub" id="stepTwoSub">We need to reach a real person at your organization. This goes directly to the founder, not an automated intake system.</p>
 
-        <div class="form-section-label">Priest / Administrator</div>
+        <div class="form-section-label" id="primaryContactLabel">Priest / Administrator</div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="priestFirst">First name <span class="required">âœ¦</span></label>
+            <label for="priestFirst">First name <span class="required">*</span></label>
             <input type="text" id="priestFirst" placeholder="Fr. John" />
           </div>
           <div class="form-group">
-            <label for="priestLast">Last name <span class="required">âœ¦</span></label>
+            <label for="priestLast">Last name <span class="required">*</span></label>
             <input type="text" id="priestLast" placeholder="Smith" />
           </div>
         </div>
 
         <div class="form-group">
-          <label for="priestEmail">Email address <span class="required">âœ¦</span></label>
+          <label for="priestEmail">Email address <span class="required">*</span></label>
           <input type="email" id="priestEmail" placeholder="father.john@saintseraphim.org" />
         </div>
 
         <div class="form-group">
-          <label for="priestPhone">Phone number <span class="required">âœ¦</span></label>
+          <label for="priestPhone">Phone number <span class="required">*</span></label>
           <input type="tel" id="priestPhone" placeholder="(806) 555-0100" />
         </div>
 
         <hr class="form-divider" />
-        <div class="form-section-label">Parish Treasurer</div>
+        <div class="form-section-label" id="financeContactLabel">Finance contact</div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="treasurerFirst">First name <span class="required">âœ¦</span></label>
+            <label for="treasurerFirst">First name <span class="required">*</span></label>
             <input type="text" id="treasurerFirst" placeholder="John" />
           </div>
           <div class="form-group">
-            <label for="treasurerLast">Last name <span class="required">âœ¦</span></label>
+            <label for="treasurerLast">Last name <span class="required">*</span></label>
             <input type="text" id="treasurerLast" placeholder="Smith" />
           </div>
         </div>
 
         <div class="form-group">
-          <label for="treasurerEmail">Treasurer email <span class="required">âœ¦</span></label>
+          <label for="treasurerEmail" id="financeEmailLabel">Finance contact email <span class="required">*</span></label>
           <input type="email" id="treasurerEmail" placeholder="treasurer@saintseraphim.org" />
-          <span class="form-hint">Annual giving statements and financial reports will be sent here.</span>
+          <span class="form-hint" id="financeEmailHint">Billing, payout, and financial setup notices will be sent here.</span>
         </div>
 
         <hr class="form-divider" />
@@ -535,8 +535,8 @@
 
         <div class="agreement-wrap">
           <input type="checkbox" id="agreeTerms" />
-          <label for="agreeTerms">
-            I confirm that <strong id="reviewParishName">this community</strong> is in canonical standing within a recognized Holy Orthodox jurisdiction, and that I am authorized to register on its behalf. I have read and agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.
+          <label for="agreeTerms" id="agreementText">
+            I confirm that <strong id="reviewParishName">this organization</strong> is authorized to register with AGAPAY, and that the information above is accurate. I have read and agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.
           </label>
         </div>
         <div data-agapay-turnstile style="margin-top:1rem;"></div>
@@ -577,7 +577,7 @@
       <div class="footer-brand">
         <div class="footer-logo">
           <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;">
-            <img src="/mark.png" alt="AgaPay" style="width:48px;height:48px;object-fit:contain;" />
+            <img src="/mark.png" alt="AGAPAY" style="width:48px;height:48px;object-fit:contain;" />
           </div>
           <span class="footer-name">AGAPAY</span>
         </div>
@@ -588,8 +588,8 @@
           <div class="footer-nav-label">Platform</div>
           <a href="/features">Features</a>
           <a href="/pricing">Pricing</a>
-          <a href="/why">Why AgaPay</a>
-          <a href="/how-it-works">How AgaPay Works</a>
+          <a href="/why">Why AGAPAY</a>
+          <a href="/how-it-works">How AGAPAY Works</a>
         </div>
         <div class="footer-nav-group">
           <div class="footer-nav-label">Company</div>
@@ -606,7 +606,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>Â© 2026 AgaPay Â· agapay.app</p>
+      <p>Â© 2026 AGAPAY Â· agapay.app</p>
     </div>
   </footer>
 
@@ -615,6 +615,118 @@
     // â”€â”€â”€ STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let currentStep = 1;
     let communityType = 'Parish';
+    const requiredMark = '<span class="required">*</span>';
+    const organizationTypes = {
+      'Mission': {
+        nameLabel: 'Mission name',
+        namePlaceholder: 'St. Herman Orthodox Mission',
+        primaryLabel: 'Priest / mission lead',
+        financeLabel: 'Treasurer / finance contact',
+        financeHint: 'Billing, payout, and financial setup notices will be sent here.',
+        requiresJurisdiction: true,
+        showsCalendar: true,
+        requiresWebsite: false,
+        requiresDescription: false,
+        agreement: 'I confirm that this mission is in canonical standing within a recognized Holy Orthodox jurisdiction, and that I am authorized to register on its behalf.'
+      },
+      'Parish': {
+        nameLabel: 'Parish / church name',
+        namePlaceholder: 'St. Seraphim Orthodox Church',
+        primaryLabel: 'Priest / administrator',
+        financeLabel: 'Parish treasurer',
+        financeHint: 'Annual giving statements, billing, and financial reports will be sent here.',
+        requiresJurisdiction: true,
+        showsCalendar: true,
+        requiresWebsite: false,
+        requiresDescription: false,
+        agreement: 'I confirm that this parish is in canonical standing within a recognized Holy Orthodox jurisdiction, and that I am authorized to register on its behalf.'
+      },
+      'Cathedral': {
+        nameLabel: 'Cathedral name',
+        namePlaceholder: 'Holy Trinity Orthodox Cathedral',
+        primaryLabel: 'Cathedral administrator',
+        financeLabel: 'Treasurer / finance contact',
+        financeHint: 'Billing, payout, and financial setup notices will be sent here.',
+        requiresJurisdiction: true,
+        showsCalendar: true,
+        requiresWebsite: false,
+        requiresDescription: false,
+        agreement: 'I confirm that this cathedral is in canonical standing within a recognized Holy Orthodox jurisdiction, and that I am authorized to register on its behalf.'
+      },
+      'Monastery / Skete': {
+        nameLabel: 'Monastery / skete name',
+        namePlaceholder: 'Holy Cross Monastery',
+        primaryLabel: 'Abbot, abbess, or administrator',
+        financeLabel: 'Finance contact',
+        financeHint: 'Billing, payout, and donor support notices will be sent here.',
+        requiresJurisdiction: true,
+        showsCalendar: true,
+        requiresWebsite: false,
+        requiresDescription: false,
+        agreement: 'I confirm that this monastery or skete is in canonical standing within a recognized Holy Orthodox jurisdiction, and that I am authorized to register on its behalf.'
+      },
+      'Business': {
+        nameLabel: 'Business name',
+        namePlaceholder: 'Theophany Books & Gifts',
+        primaryLabel: 'Owner / primary contact',
+        financeLabel: 'Billing contact',
+        financeHint: 'Marketplace, billing, and verification notices will be sent here.',
+        requiresJurisdiction: false,
+        showsCalendar: false,
+        requiresWebsite: true,
+        requiresDescription: true,
+        descriptionLabel: 'Business description',
+        descriptionPlaceholder: 'Describe what you sell or provide, who you serve, and how it fits an Orthodox values-aligned marketplace.',
+        websiteHint: 'Required for business verification and values review.',
+        agreement: 'I confirm that this business is Orthodox-aligned, that I am authorized to register it, and that its goods or services are consistent with AGAPAY values.'
+      },
+      'Ministry / Nonprofit': {
+        nameLabel: 'Ministry / nonprofit name',
+        namePlaceholder: 'Orthodox Christian Charities',
+        primaryLabel: 'Director / primary contact',
+        financeLabel: 'Finance contact',
+        financeHint: 'Fundraising, billing, and financial setup notices will be sent here.',
+        requiresJurisdiction: false,
+        showsCalendar: false,
+        requiresWebsite: false,
+        requiresDescription: true,
+        descriptionLabel: 'Mission description',
+        descriptionPlaceholder: 'Describe your ministry, nonprofit mission, programs, and the communities you serve.',
+        agreement: 'I confirm that this ministry or nonprofit is Orthodox-aligned, and that I am authorized to register it with AGAPAY.'
+      },
+      'School / Academy': {
+        nameLabel: 'School / academy name',
+        namePlaceholder: 'St. Katherine Orthodox Academy',
+        primaryLabel: 'Head of school / administrator',
+        financeLabel: 'Business office contact',
+        financeHint: 'Tuition, billing, and financial setup notices will be sent here.',
+        requiresJurisdiction: false,
+        showsCalendar: false,
+        requiresWebsite: false,
+        requiresDescription: true,
+        descriptionLabel: 'School description',
+        descriptionPlaceholder: 'Describe your school, academy, camp, or educational work.',
+        agreement: 'I confirm that this school or academy is Orthodox-aligned, and that I am authorized to register it with AGAPAY.'
+      },
+      'Other Orthodox Organization': {
+        nameLabel: 'Organization name',
+        namePlaceholder: 'Orthodox community organization',
+        primaryLabel: 'Primary contact',
+        financeLabel: 'Finance contact',
+        financeHint: 'Billing and setup notices will be sent here.',
+        requiresJurisdiction: false,
+        showsCalendar: false,
+        requiresWebsite: false,
+        requiresDescription: true,
+        descriptionLabel: 'Organization description',
+        descriptionPlaceholder: 'Describe the organization and how it serves Orthodox life.',
+        agreement: 'I confirm that this organization is Orthodox-aligned, and that I am authorized to register it with AGAPAY.'
+      }
+    };
+
+    function activeTypeConfig() {
+      return organizationTypes[communityType] || organizationTypes.Parish;
+    }
 
     function showRegistrationEntry() {
       const entry = document.getElementById('registrationEntry');
@@ -633,9 +745,9 @@
       const progress = document.getElementById('progressWrap');
       if (progress) progress.style.display = '';
       document.querySelectorAll('.step-panel').forEach(p => p.style.display = '');
-      goToStep(1);
       const selected = Array.from(document.querySelectorAll('.type-btn')).find(btn => btn.dataset.type === defaultType);
       if (selected) selectType(selected);
+      goToStep(1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -652,6 +764,33 @@
       document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       communityType = btn.dataset.type;
+      updateDynamicForm();
+    }
+
+    function setGroupVisibility(id, visible) {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('conditional-hidden', !visible);
+    }
+
+    function updateDynamicForm() {
+      const config = activeTypeConfig();
+      document.getElementById('organizationNameLabel').innerHTML = `${config.nameLabel} ${requiredMark}`;
+      document.getElementById('parishName').placeholder = config.namePlaceholder;
+      document.getElementById('primaryContactLabel').textContent = config.primaryLabel;
+      document.getElementById('financeContactLabel').textContent = config.financeLabel;
+      document.getElementById('financeEmailLabel').innerHTML = `${config.financeLabel} email ${requiredMark}`;
+      document.getElementById('financeEmailHint').textContent = config.financeHint;
+
+      document.getElementById('websiteLabel').innerHTML = config.requiresWebsite ? `Website ${requiredMark}` : 'Website';
+      document.getElementById('websiteHint').textContent = config.websiteHint || 'Helpful for verification. Leave blank if you do not have one.';
+      document.getElementById('descriptionLabel').innerHTML = `${config.descriptionLabel || 'Organization description'} ${config.requiresDescription ? requiredMark : ''}`;
+      document.getElementById('organizationDescription').placeholder = config.descriptionPlaceholder || 'Briefly describe your work, audience, products, or services.';
+
+      setGroupVisibility('jurisdictionGroup', config.requiresJurisdiction);
+      setGroupVisibility('calendarGroup', config.showsCalendar);
+      setGroupVisibility('descriptionGroup', config.requiresDescription || communityType === 'Business');
+
+      document.getElementById('agreementText').innerHTML = `${config.agreement} I have read and agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.`;
     }
 
     // â”€â”€â”€ STEP NAVIGATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -678,41 +817,53 @@
 
     // â”€â”€â”€ VALIDATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function validateStep(step) {
+      const config = activeTypeConfig();
       if (step === 1) {
-        if (!document.getElementById('parishName').value.trim())  { alert('Please enter your community name.'); return false; }
-        if (!document.getElementById('jurisdiction').value)        { alert('Please select your jurisdiction.'); return false; }
+        if (!document.getElementById('parishName').value.trim())   { alert('Please enter the organization name.'); return false; }
+        if (config.requiresJurisdiction && !document.getElementById('jurisdiction').value) { alert('Please select your jurisdiction.'); return false; }
+        if (!document.getElementById('addressLine1').value.trim()) { alert('Please enter the organization street address.'); return false; }
         if (!document.getElementById('city').value.trim())         { alert('Please enter your city.'); return false; }
         if (!document.getElementById('state').value)               { alert('Please select your state.'); return false; }
+        if (!document.getElementById('postalCode').value.trim())   { alert('Please enter the ZIP or postal code.'); return false; }
+        if (config.requiresWebsite && !document.getElementById('website').value.trim()) { alert('Please enter the business website so AGAPAY can verify fit.'); return false; }
+        if (config.requiresDescription && !document.getElementById('organizationDescription').value.trim()) { alert('Please enter a short description so AGAPAY can review fit.'); return false; }
       }
       if (step === 2) {
-        if (!document.getElementById('priestFirst').value.trim())    { alert('Please enter the priest or administrator name.'); return false; }
+        if (!document.getElementById('priestFirst').value.trim())    { alert('Please enter the primary contact name.'); return false; }
         const pEmail = document.getElementById('priestEmail').value.trim();
-        if (!pEmail || !pEmail.includes('@'))                         { alert('Please enter a valid email for the priest or administrator.'); return false; }
+        if (!pEmail || !pEmail.includes('@'))                         { alert('Please enter a valid email for the primary contact.'); return false; }
         if (!document.getElementById('priestPhone').value.trim())    { alert('Please enter a phone number.'); return false; }
-        if (!document.getElementById('treasurerFirst').value.trim()) { alert('Please enter the treasurer\'s name.'); return false; }
+        if (!document.getElementById('treasurerFirst').value.trim()) { alert('Please enter the finance contact name.'); return false; }
         const tEmail = document.getElementById('treasurerEmail').value.trim();
-        if (!tEmail || !tEmail.includes('@'))                         { alert('Please enter a valid email for the treasurer.'); return false; }
+        if (!tEmail || !tEmail.includes('@'))                         { alert('Please enter a valid email for the finance contact.'); return false; }
       }
       return true;
     }
 
     // â”€â”€â”€ BUILD REVIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function buildReview() {
+      const config = activeTypeConfig();
+      const address = [
+        document.getElementById('addressLine1').value,
+        document.getElementById('addressLine2').value,
+        `${document.getElementById('city').value}, ${document.getElementById('state').value} ${document.getElementById('postalCode').value}`.trim()
+      ].filter(Boolean).join(', ');
       const community = [
         ['Community type', communityType],
         ['Name',           document.getElementById('parishName').value],
-        ['Jurisdiction',   document.getElementById('jurisdiction').value],
-        ['City, State',    `${document.getElementById('city').value}, ${document.getElementById('state').value}`],
-        ['Website',        document.getElementById('website').value || 'â€”'],
-        ['Liturgical calendar', document.getElementById('liturgicalCalendar').selectedOptions[0]?.textContent || 'Julian / Old Calendar'],
+        ['Address',        address],
+        ...(config.requiresJurisdiction || document.getElementById('jurisdiction').value ? [['Jurisdiction', document.getElementById('jurisdiction').value || '-']] : []),
+        ...(document.getElementById('website').value ? [['Website', document.getElementById('website').value]] : []),
+        ...(config.showsCalendar ? [['Liturgical calendar', document.getElementById('liturgicalCalendar').selectedOptions[0]?.textContent || 'Julian / Old Calendar']] : []),
+        ...(document.getElementById('organizationDescription').value.trim() ? [['Description', document.getElementById('organizationDescription').value.trim()]] : []),
       ];
       const notes = document.getElementById('notes').value.trim();
       const contact = [
-        ['Priest / Admin',  `${document.getElementById('priestFirst').value} ${document.getElementById('priestLast').value}`],
-        ['Priest email',    document.getElementById('priestEmail').value],
-        ['Priest phone',    document.getElementById('priestPhone').value],
-        ['Treasurer',       `${document.getElementById('treasurerFirst').value} ${document.getElementById('treasurerLast').value}`],
-        ['Treasurer email', document.getElementById('treasurerEmail').value],
+        [config.primaryLabel, `${document.getElementById('priestFirst').value} ${document.getElementById('priestLast').value}`],
+        ['Primary contact email', document.getElementById('priestEmail').value],
+        ['Primary contact phone', document.getElementById('priestPhone').value],
+        [config.financeLabel, `${document.getElementById('treasurerFirst').value} ${document.getElementById('treasurerLast').value}`],
+        ['Finance contact email', document.getElementById('treasurerEmail').value],
       ];
       if (notes) contact.push(['Notes', notes]);
 
@@ -722,13 +873,14 @@
       document.getElementById('reviewContact').innerHTML = contact.map(([k,v]) =>
         `<div class="review-row"><span class="review-key">${k}</span><span class="review-val">${v}</span></div>`
       ).join('');
-      document.getElementById('reviewParishName').textContent = document.getElementById('parishName').value;
+      const reviewName = document.getElementById('reviewParishName');
+      if (reviewName) reviewName.textContent = document.getElementById('parishName').value;
     }
 
     // â”€â”€â”€ SUBMIT via AGAPAY API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function handleSubmit() {
       if (!document.getElementById('agreeTerms').checked) {
-        alert('Please confirm canonical standing and agree to the Terms of Service before submitting.');
+        alert('Please confirm authorization and agree to the Terms of Service before submitting.');
         return;
       }
 
@@ -746,10 +898,14 @@
         communityType,
         parishName,
         jurisdiction: document.getElementById('jurisdiction').value,
+        addressLine1: document.getElementById('addressLine1').value,
+        addressLine2: document.getElementById('addressLine2').value,
         city: document.getElementById('city').value,
         state: document.getElementById('state').value,
+        postalCode: document.getElementById('postalCode').value,
         website: document.getElementById('website').value,
         liturgicalCalendar: document.getElementById('liturgicalCalendar').value,
+        organizationDescription: document.getElementById('organizationDescription').value,
         priestFirst: document.getElementById('priestFirst').value,
         priestLast: document.getElementById('priestLast').value,
         priestEmail,
@@ -784,8 +940,8 @@
         document.querySelectorAll('.step-panel').forEach(p => p.style.display = '');
         document.getElementById(`step-3`).classList.add('active');
         document.getElementById('progressWrap').style.display = '';
-        alert('Something went wrong sending your registration. Please email us directly at parishes@agapay.app and we\'ll get you set up.');
-        console.error('AgaPay registration error:', err);
+        alert('Something went wrong sending your registration. Please email us directly at support@agapay.app and we will get you set up.');
+        console.error('AGAPAY registration error:', err);
       }
     }
 
@@ -809,6 +965,7 @@
       }
     });
 
+    updateDynamicForm();
     showRegistrationEntry();
   </script>
 

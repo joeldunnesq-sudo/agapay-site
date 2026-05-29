@@ -21,7 +21,7 @@ const subscriptionTiers = [
     monthlyCents: 4900,
     transactionRateLabel: "5% + $0.30 per transaction",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_MISSION_MONTHLY",
-    description: "Monthly AgaPay platform subscription for missions."
+    description: "Monthly AGAPAY platform subscription for missions."
   },
   {
     id: "parish",
@@ -29,7 +29,7 @@ const subscriptionTiers = [
     monthlyCents: 9900,
     transactionRateLabel: "5% + $0.30 per transaction",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_PARISH_MONTHLY",
-    description: "Monthly AgaPay platform subscription for established parishes."
+    description: "Monthly AGAPAY platform subscription for established parishes."
   },
   {
     id: "diocese",
@@ -37,7 +37,7 @@ const subscriptionTiers = [
     monthlyCents: null,
     transactionRateLabel: "Negotiated transaction rate",
     stripePriceEnv: "AGAPAY_STRIPE_PRICE_DIOCESE_MONTHLY",
-    description: "Custom AgaPay pricing for cathedrals, dioceses, and multi-parish organizations."
+    description: "Custom AGAPAY pricing for cathedrals, dioceses, and multi-parish organizations."
   },
   {
     id: "monastery_free",
@@ -45,7 +45,7 @@ const subscriptionTiers = [
     monthlyCents: 0,
     transactionRateLabel: "5% + $0.30 per transaction",
     stripePriceEnv: "",
-    description: "AgaPay transaction pricing for Orthodox monasteries and sketes."
+    description: "AGAPAY transaction pricing for Orthodox monasteries and sketes."
   }
 ];
 
@@ -436,7 +436,7 @@ function hasProductionStore(env) {
 }
 
 function missingProductionStoreResponse() {
-  return json({ error: "AgaPay production data store is not configured" }, { status: 500 });
+  return json({ error: "AGAPAY production data store is not configured" }, { status: 500 });
 }
 
 function d1(env) {
@@ -1151,7 +1151,7 @@ async function sendTreasurerStripeInvite(env, appUrl, registration) {
 
   const parishId = registration.parishId || slugify(registration.parishName);
   const dashboardUrl = `${appUrl}/parish/login?parish=${encodeURIComponent(parishId)}`;
-  const from = env.AGAPAY_FROM_EMAIL || "AgaPay <onboarding@agapay.app>";
+  const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   const parishName = htmlEscape(registration.parishName || "your parish");
   const token = htmlEscape(registration.parishDashboardToken || "");
@@ -1162,10 +1162,10 @@ async function sendTreasurerStripeInvite(env, appUrl, registration) {
     to: [to],
     reply_to: replyTo,
     subject: `Set up Stripe giving for ${registration.parishName || "your parish"}`,
-    html: agapayEmailHtml(appUrl, "AgaPay Stripe onboarding", `
+    html: agapayEmailHtml(appUrl, "AGAPAY Stripe onboarding", `
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
-      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">AgaPay is ready for <strong>${parishName}</strong> to complete Stripe onboarding so online gifts can be routed to the parish's connected Stripe account.</p>
-      <p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:#171715;"><strong>Please complete Stripe onboarding as soon as possible.</strong> Once Stripe approves and connects the account, your parish can begin receiving donations through AgaPay.</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">AGAPAY is ready for <strong>${parishName}</strong> to complete Stripe onboarding so online gifts can be routed to the parish's connected Stripe account.</p>
+      <p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:#171715;"><strong>Please complete Stripe onboarding as soon as possible.</strong> Once Stripe approves and connects the account, your parish can begin receiving donations through AGAPAY.</p>
       <p style="margin:0 0 24px;"><a href="${safeDashboardUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open parish dashboard</a></p>
       <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
         <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">Dashboard credentials</p>
@@ -1173,13 +1173,13 @@ async function sendTreasurerStripeInvite(env, appUrl, registration) {
         <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Parish password:</strong> ${token}</p>
       </div>
       <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">After opening the dashboard, enter the parish ID and password, then use the Stripe onboarding button in the Payments section.</p>
-      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">For security, Stripe onboarding links are created inside AgaPay after the parish password is entered.</p>
+      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">For security, Stripe onboarding links are created inside AGAPAY after the parish password is entered.</p>
     `),
     text: [
-      "AgaPay Stripe onboarding",
+      "AGAPAY Stripe onboarding",
       "",
-      `AgaPay is ready for ${registration.parishName || "your parish"} to complete Stripe onboarding.`,
-      "Please complete Stripe onboarding as soon as possible. Once Stripe approves and connects the account, your parish can begin receiving donations through AgaPay.",
+      `AGAPAY is ready for ${registration.parishName || "your parish"} to complete Stripe onboarding.`,
+      "Please complete Stripe onboarding as soon as possible. Once Stripe approves and connects the account, your parish can begin receiving donations through AGAPAY.",
       "",
       `Open parish dashboard: ${dashboardUrl}`,
       `Parish ID: ${parishId}`,
@@ -1199,7 +1199,7 @@ async function sendDashboardInvite(env, appUrl, registration) {
 
   const parishId = registration.parishId || slugify(registration.parishName);
   const dashboardUrl = `${appUrl}/parish/login?parish=${encodeURIComponent(parishId)}`;
-  const from = env.AGAPAY_FROM_EMAIL || "AgaPay <onboarding@agapay.app>";
+  const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   const parishName = htmlEscape(registration.parishName || "your parish");
   const token = htmlEscape(registration.parishDashboardToken || "");
@@ -1209,13 +1209,13 @@ async function sendDashboardInvite(env, appUrl, registration) {
     from,
     to: recipients,
     reply_to: replyTo,
-    subject: `AgaPay dashboard access for ${registration.parishName || "your parish"}`,
-    html: agapayEmailHtml(appUrl, "Your AgaPay parish dashboard", `
+    subject: `AGAPAY dashboard access for ${registration.parishName || "your parish"}`,
+    html: agapayEmailHtml(appUrl, "Your AGAPAY parish dashboard", `
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
-      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;"><strong>${parishName}</strong> has been verified for AgaPay. You can now access the parish dashboard to manage your giving page, funds, campaigns, billing, and Stripe onboarding.</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;"><strong>${parishName}</strong> has been verified for AGAPAY. You can now access the parish dashboard to manage your giving page, funds, campaigns, billing, and Stripe onboarding.</p>
       <div style="background:#0F2D1F;border-radius:12px;padding:18px 18px;margin:0 0 22px;">
         <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#B8902F;font-weight:700;">Next step</p>
-        <p style="margin:0;font-size:15px;line-height:1.7;color:#F6F1E8;"><strong>Please choose your AgaPay tier and complete billing first.</strong> Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.</p>
+        <p style="margin:0;font-size:15px;line-height:1.7;color:#F6F1E8;"><strong>Please choose your AGAPAY tier and complete billing first.</strong> Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.</p>
       </div>
       <p style="margin:0 0 24px;"><a href="${safeDashboardUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open parish dashboard</a></p>
       <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
@@ -1225,13 +1225,13 @@ async function sendDashboardInvite(env, appUrl, registration) {
         <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Temporary password:</strong> ${token}</p>
       </div>
       <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">After opening the dashboard, enter the parish ID and temporary password. The setup card will walk you through billing first, then Stripe onboarding.</p>
-      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">This temporary password gives access to your AgaPay parish dashboard. Please keep it private.</p>
+      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">This temporary password gives access to your AGAPAY parish dashboard. Please keep it private.</p>
     `),
     text: [
-      "Your AgaPay parish dashboard",
+      "Your AGAPAY parish dashboard",
       "",
-      `${registration.parishName || "Your parish"} has been verified for AgaPay.`,
-      "Please choose your AgaPay tier and complete billing first. Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.",
+      `${registration.parishName || "Your parish"} has been verified for AGAPAY.`,
+      "Please choose your AGAPAY tier and complete billing first. Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.",
       "",
       `Dashboard: ${dashboardUrl}`,
       `Parish ID: ${parishId}`,
@@ -1239,7 +1239,7 @@ async function sendDashboardInvite(env, appUrl, registration) {
       "",
       "After opening the dashboard, enter the parish ID and temporary password. The setup card will walk you through billing first, then Stripe onboarding.",
       "",
-      "This temporary password gives access to your AgaPay parish dashboard. Please keep it private."
+      "This temporary password gives access to your AGAPAY parish dashboard. Please keep it private."
     ].join("\n")
   });
 
@@ -1250,45 +1250,63 @@ async function sendAdminRegistrationNotice(env, appUrl, registration) {
   const to = env.AGAPAY_REGISTRATION_NOTIFY_EMAIL || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   if (!to) return { status: "missing_recipient" };
 
-  const from = env.AGAPAY_FROM_EMAIL || "AgaPay <onboarding@agapay.app>";
+  const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
   const replyTo = registration.priestEmail || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   const adminUrl = `${appUrl}/admin`;
   const parishName = htmlEscape(registration.parishName || "New parish registration");
   const tier = subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration));
   const location = [registration.city, registration.state].filter(Boolean).join(", ");
+  const address = [registration.addressLine1, registration.addressLine2, [registration.city, registration.state, registration.postalCode].filter(Boolean).join(" ")]
+    .filter(Boolean)
+    .join(", ");
+  const jurisdictionRow = registration.jurisdiction
+    ? `<p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Jurisdiction:</strong> ${htmlEscape(registration.jurisdiction || "")}</p>`
+    : "";
+  const websiteRow = registration.website
+    ? `<p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Website:</strong> ${htmlEscape(registration.website || "")}</p>`
+    : "";
+  const descriptionRow = registration.organizationDescription
+    ? `<p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Description:</strong> ${htmlEscape(registration.organizationDescription || "")}</p>`
+    : "";
 
   return sendEmail(env, {
     from,
     to: [to],
     reply_to: replyTo,
-    subject: `New AgaPay registration: ${registration.parishName || registration.reference}`,
-    html: agapayEmailHtml(appUrl, "New parish registration", `
-      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">A new community has submitted the AgaPay registration form and is ready for canonical review.</p>
+    subject: `New AGAPAY registration: ${registration.parishName || registration.reference}`,
+    html: agapayEmailHtml(appUrl, "New organization registration", `
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">A new organization has submitted the AGAPAY registration form and is ready for review.</p>
       <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
         <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">Registration summary</p>
         <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Reference:</strong> ${htmlEscape(registration.reference)}</p>
         <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Community:</strong> ${parishName}</p>
         <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Type:</strong> ${htmlEscape(registration.communityType || "")}</p>
-        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Jurisdiction:</strong> ${htmlEscape(registration.jurisdiction || "")}</p>
+        ${jurisdictionRow}
         <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Location:</strong> ${htmlEscape(location)}</p>
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Address:</strong> ${htmlEscape(address)}</p>
+        ${websiteRow}
+        ${descriptionRow}
         <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Subscription tier:</strong> ${htmlEscape(subscriptionTierSummary(tier))}</p>
       </div>
-      <p style="margin:0 0 8px;font-size:14px;line-height:1.7;color:#171715;"><strong>Priest/Admin:</strong> ${htmlEscape(`${registration.priestFirst || ""} ${registration.priestLast || ""}`.trim())} - ${htmlEscape(registration.priestEmail || "")}</p>
-      <p style="margin:0 0 22px;font-size:14px;line-height:1.7;color:#171715;"><strong>Treasurer:</strong> ${htmlEscape(`${registration.treasurerFirst || ""} ${registration.treasurerLast || ""}`.trim())} - ${htmlEscape(registration.treasurerEmail || "")}</p>
+      <p style="margin:0 0 8px;font-size:14px;line-height:1.7;color:#171715;"><strong>Primary contact:</strong> ${htmlEscape(`${registration.priestFirst || ""} ${registration.priestLast || ""}`.trim())} - ${htmlEscape(registration.priestEmail || "")}</p>
+      <p style="margin:0 0 22px;font-size:14px;line-height:1.7;color:#171715;"><strong>Finance contact:</strong> ${htmlEscape(`${registration.treasurerFirst || ""} ${registration.treasurerLast || ""}`.trim())} - ${htmlEscape(registration.treasurerEmail || "")}</p>
       <p style="margin:0;"><a href="${htmlEscape(adminUrl)}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open admin dashboard</a></p>
     `),
     text: [
-      "New parish registration",
+      "New AGAPAY registration",
       "",
       `Reference: ${registration.reference}`,
       `Community: ${registration.parishName || ""}`,
       `Type: ${registration.communityType || ""}`,
-      `Jurisdiction: ${registration.jurisdiction || ""}`,
+      registration.jurisdiction ? `Jurisdiction: ${registration.jurisdiction || ""}` : "",
       `Location: ${location}`,
+      `Address: ${address}`,
+      registration.website ? `Website: ${registration.website || ""}` : "",
+      registration.organizationDescription ? `Description: ${registration.organizationDescription || ""}` : "",
       `Subscription tier: ${subscriptionTierSummary(tier)}`,
       "",
-      `Priest/Admin: ${`${registration.priestFirst || ""} ${registration.priestLast || ""}`.trim()} - ${registration.priestEmail || ""}`,
-      `Treasurer: ${`${registration.treasurerFirst || ""} ${registration.treasurerLast || ""}`.trim()} - ${registration.treasurerEmail || ""}`,
+      `Primary contact: ${`${registration.priestFirst || ""} ${registration.priestLast || ""}`.trim()} - ${registration.priestEmail || ""}`,
+      `Finance contact: ${`${registration.treasurerFirst || ""} ${registration.treasurerLast || ""}`.trim()} - ${registration.treasurerEmail || ""}`,
       "",
       `Open admin dashboard: ${adminUrl}`
     ].join("\n")
@@ -1432,7 +1450,7 @@ async function storeDonorOffering(env, offering) {
     parishId: offering.parishId || "",
     parishName: offering.parishName || "",
     giftType: offering.giftType || "stewardship",
-    title: offering.title || "AgaPay offering",
+    title: offering.title || "AGAPAY offering",
     fund: offering.fund || "",
     campaign: offering.campaign || "",
     feastDescription: offering.feastDescription || "",
@@ -1950,22 +1968,21 @@ async function handleParishes(env) {
   return json({ parishes: dynamicParishes });
 }
 
+function registrationRequiresJurisdiction(type) {
+  return ["Mission", "Parish", "Cathedral", "Monastery / Skete"].includes(String(type || ""));
+}
+
+function registrationRequiresValuesReview(type) {
+  return ["Business", "Ministry / Nonprofit", "School / Academy", "Other Orthodox Organization"].includes(String(type || ""));
+}
+
+function registrationRequiresWebsite(type) {
+  return String(type || "") === "Business";
+}
+
 async function handleRegistrations(request, env) {
   const limited = await rateLimit(request, env, "registrations", { limit: 6, windowSeconds: 600 });
   if (limited) return limited;
-
-  const requiredFields = [
-    "communityType",
-    "parishName",
-    "jurisdiction",
-    "city",
-    "state",
-    "priestFirst",
-    "priestEmail",
-    "priestPhone",
-    "treasurerFirst",
-    "treasurerEmail"
-  ];
 
   let body;
   try {
@@ -1977,11 +1994,29 @@ async function handleRegistrations(request, env) {
   const turnstile = await verifyTurnstileIfConfigured(request, env, body.turnstileToken || body.cfTurnstileToken);
   if (turnstile) return turnstile;
 
+  const requiredFields = [
+    "communityType",
+    "parishName",
+    "addressLine1",
+    "city",
+    "state",
+    "postalCode",
+    "priestFirst",
+    "priestEmail",
+    "priestPhone",
+    "treasurerFirst",
+    "treasurerEmail"
+  ];
+
+  if (registrationRequiresJurisdiction(body.communityType)) requiredFields.push("jurisdiction");
+  if (registrationRequiresWebsite(body.communityType)) requiredFields.push("website");
+  if (registrationRequiresValuesReview(body.communityType)) requiredFields.push("organizationDescription");
+
   const missing = requireFields(body, requiredFields);
   if (missing.length) return json({ error: "Missing required fields", fields: missing }, { status: 422 });
 
   if (!String(body.priestEmail).includes("@") || !String(body.treasurerEmail).includes("@")) {
-    return json({ error: "A valid priest and treasurer email are required" }, { status: 422 });
+    return json({ error: "A valid primary contact and finance contact email are required" }, { status: 422 });
   }
 
   const reference = `AGP-REG-${Date.now().toString(36).toUpperCase()}`;
@@ -2017,7 +2052,7 @@ async function handleRegistrations(request, env) {
       ok: true,
       reference,
       mode: hasProductionStore(env) ? "stored" : "demo",
-      message: "Registration received. AgaPay will review the parish before activation."
+      message: "Registration received. AGAPAY will review the organization before activation."
     },
     { status: 201 }
   );
@@ -2199,7 +2234,7 @@ async function issueDonorSession(env, donor) {
 
 async function sendDonorVerificationEmail(env, donor, verificationUrl) {
   const appUrl = env.AGAPAY_APP_URL || "https://agapay.app";
-  const from = env.AGAPAY_FROM_EMAIL || "AgaPay <onboarding@agapay.app>";
+  const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   const safeUrl = htmlEscape(verificationUrl);
   const name = htmlEscape(donor.donorName || donor.householdName || "friend");
@@ -2208,13 +2243,13 @@ async function sendDonorVerificationEmail(env, donor, verificationUrl) {
     from,
     to: [donor.email],
     reply_to: replyTo,
-    subject: "Verify your AgaPay donor account",
+    subject: "Verify your AGAPAY donor account",
     html: agapayEmailHtml(appUrl, "Verify your donor account", `
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
-      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Hello ${name}, please verify your email address to finish setting up your AgaPay donor dashboard.</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Hello ${name}, please verify your email address to finish setting up your AGAPAY donor dashboard.</p>
       <p style="margin:0 0 24px;"><a href="${safeUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Verify email address</a></p>
-      <p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#171715;">After verification, you can sign in to your donor dashboard to view offering history, submit commemorations, and give through AgaPay.</p>
-      <p style="margin:0;font-size:12px;line-height:1.6;color:#6F6A60;">If you did not create this AgaPay account, you can ignore this email.</p>
+      <p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#171715;">After verification, you can sign in to your donor dashboard to view offering history, submit commemorations, and give through AGAPAY.</p>
+      <p style="margin:0;font-size:12px;line-height:1.6;color:#6F6A60;">If you did not create this AGAPAY account, you can ignore this email.</p>
     `)
   });
 }
@@ -2391,7 +2426,7 @@ function donorVerifyHtml({ title, message, status = "info", script = "", refresh
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   ${refresh}
-  <title>${htmlEscape(title)} | AgaPay</title>
+  <title>${htmlEscape(title)} | AGAPAY</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -3072,7 +3107,7 @@ async function createSubscriptionCheckoutForRegistration(request, env, reference
   if (!stripeCustomerId) {
     const customerForm = new URLSearchParams({
       email: registration.treasurerEmail || registration.priestEmail || "",
-      name: registration.parishName || "AgaPay parish",
+      name: registration.parishName || "AGAPAY parish",
       "metadata[agapay_reference]": reference,
       "metadata[agapay_parish_id]": registration.parishId || slugify(registration.parishName),
       "metadata[agapay_subscription_tier]": tier.id
@@ -3110,7 +3145,7 @@ async function createSubscriptionCheckoutForRegistration(request, env, reference
     checkoutForm.set("line_items[0][price_data][currency]", "usd");
     checkoutForm.set("line_items[0][price_data][unit_amount]", String(tier.monthlyCents));
     checkoutForm.set("line_items[0][price_data][recurring][interval]", "month");
-    checkoutForm.set("line_items[0][price_data][product_data][name]", `AgaPay ${tier.label} Subscription`);
+    checkoutForm.set("line_items[0][price_data][product_data][name]", `AGAPAY ${tier.label} Subscription`);
     checkoutForm.set("line_items[0][price_data][product_data][description]", tier.description);
   }
 
@@ -3377,7 +3412,7 @@ async function processStripeWebhookEvent(env, event) {
         parishId: metadata.parish_id || "",
         parishName: metadata.parish_name || "",
         giftType: metadata.gift_type || "recurring",
-        title: metadata.gift_type ? String(metadata.gift_type).replace(/-/g, " ") : "Recurring AgaPay offering",
+        title: metadata.gift_type ? String(metadata.gift_type).replace(/-/g, " ") : "Recurring AGAPAY offering",
         frequency: metadata.frequency || "recurring",
         amountCents: object.amount_paid || 0,
         chargeCents: object.amount_paid || 0,
@@ -3478,7 +3513,7 @@ async function createStripeOnboardingSession(request, env, reference, registrati
       country: "US",
       email: registration.treasurerEmail || registration.priestEmail || "",
       business_type: "non_profit",
-      "business_profile[name]": registration.parishName || "AgaPay Parish",
+      "business_profile[name]": registration.parishName || "AGAPAY Parish",
       "business_profile[product_description]": "Online tithes, stewardship, and charitable donations for an Orthodox Christian parish.",
       "capabilities[card_payments][requested]": "true",
       "capabilities[transfers][requested]": "true",
@@ -3797,7 +3832,7 @@ async function handleParishSubscriptionPortal(request, env, parishId) {
   const customerId = found.registration.stripeCustomerId || "";
   if (!customerId) {
     return json(
-      { error: "No billing customer found", detail: "Complete AgaPay billing checkout before opening subscription management." },
+      { error: "No billing customer found", detail: "Complete AGAPAY billing checkout before opening subscription management." },
       { status: 422 }
     );
   }
@@ -4122,13 +4157,13 @@ async function sendWeeklyCommemorationEmails(env, scheduledTime) {
     if (registration.status !== "verified" || !registration.parishId || !registration.priestEmail) continue;
     const entries = await loadCommemorationEntries(env, registration.parishId, start, end);
     const email = await sendEmail(env, {
-      from: env.AGAPAY_FROM_EMAIL || "AgaPay <onboarding@agapay.app>",
+      from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
       to: [registration.priestEmail],
       reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
-      subject: `Weekly AgaPay commemorations for ${registration.parishName || "your parish"}`,
+      subject: `Weekly AGAPAY commemorations for ${registration.parishName || "your parish"}`,
       html: agapayEmailHtml(appUrl, "Weekly Commemoration List", `
         <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
-        <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Here is this week's AgaPay commemoration list for <strong>${htmlEscape(registration.parishName || "your parish")}</strong>.</p>
+        <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Here is this week's AGAPAY commemoration list for <strong>${htmlEscape(registration.parishName || "your parish")}</strong>.</p>
         <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
           <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">Living</p>
           ${formatCommemorationNames(entries, "living")}
@@ -4139,7 +4174,7 @@ async function sendWeeklyCommemorationEmails(env, scheduledTime) {
         </div>
         <p style="margin:0;font-size:13px;line-height:1.7;color:#6F6A60;">This message is sent every Saturday morning, even when no names were submitted.</p>
       `),
-      text: `Weekly AgaPay commemorations for ${registration.parishName || "your parish"}\n\nLiving:\n${entries.flatMap((entry) => entry.living || []).join("\n") || "No names submitted."}\n\nDeparted:\n${entries.flatMap((entry) => entry.departed || []).join("\n") || "No names submitted."}`
+      text: `Weekly AGAPAY commemorations for ${registration.parishName || "your parish"}\n\nLiving:\n${entries.flatMap((entry) => entry.living || []).join("\n") || "No names submitted."}\n\nDeparted:\n${entries.flatMap((entry) => entry.departed || []).join("\n") || "No names submitted."}`
     });
     results.push({ parishId: registration.parishId, status: email.status });
   }
