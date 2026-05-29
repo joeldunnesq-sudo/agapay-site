@@ -1074,8 +1074,10 @@ function agapayEmailHtml(appUrl, title, bodyHtml) {
           <div style="background:linear-gradient(120deg,#041427 0%,#07284A 58%,#0A365B 100%);padding:28px 30px;border-bottom:3px solid #C9A25B;">
             <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
               <tr>
-                <td style="width:58px;vertical-align:middle;">
-                  <img src="${markUrl}" alt="AGAPAY" width="50" height="50" style="display:block;width:50px;height:50px;border-radius:10px;" />
+                <td style="width:64px;vertical-align:middle;">
+                  <div style="width:56px;height:56px;display:grid;place-items:center;border:1px solid rgba(200,162,74,0.55);border-radius:50%;background:rgba(6,21,34,0.34);">
+                    <img src="${markUrl}" alt="AGAPAY" width="50" height="50" style="display:block;width:50px;height:50px;object-fit:contain;" />
+                  </div>
                 </td>
                 <td style="vertical-align:middle;padding-left:12px;">
                   <div style="font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1;font-weight:500;color:#F7F1E3;letter-spacing:0.04em;">AGAPAY</div>
