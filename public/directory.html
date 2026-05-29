@@ -1,61 +1,1098 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Directory | AGAPAY</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
+  <link rel="shortcut icon" href="/favicons/favicon.ico" />
+  <meta name="description" content="Find Orthodox churches, businesses, ministries, schools, monasteries, and services through the AGAPAY Directory." />
+  <meta name="theme-color" content="#061522" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <style>
-    *{box-sizing:border-box} body{margin:0;font-family:"DM Sans",system-ui,sans-serif;background:#F6F1E8;color:#171715}
-    .header{position:sticky;top:0;z-index:20;background:#061522;border-bottom:1px solid rgba(200,162,74,.22)}
-    .nav{max-width:1120px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-    .brand{display:flex;align-items:center;gap:10px;color:#F6F1E8;text-decoration:none}.brand img{width:44px;height:44px}
-    .brand strong{font-family:"Cormorant Garamond",serif;letter-spacing:.08em;font-size:30px}
-    .links{display:flex;gap:20px;align-items:center}.links a{color:#E7DFD2;text-decoration:none;font-size:14px}
-    .cta{background:linear-gradient(135deg,#D6AF5B,#B98832);color:#061522;padding:10px 16px;border-radius:8px;font-weight:700;text-decoration:none}
-    .hero{background:linear-gradient(135deg,#061522,#0B2130);color:#F6F1E8;padding:72px 20px}
-    .wrap{max-width:1120px;margin:0 auto}
-    h1{font-family:"Cormorant Garamond",serif;font-size:54px;line-height:1.04;margin:0 0 12px}
-    p{line-height:1.7;max-width:760px}
-    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;padding:34px 20px 56px}
-    .card{background:#fff;border:1px solid rgba(111,106,96,.2);border-top:4px solid #C8A24A;border-radius:10px;padding:16px}
-    .card h3{margin:0 0 8px;font-size:18px}
-    .card p{margin:0;color:#6F6A60;font-size:14px}
-    @media (max-width:960px){.links{display:none}.grid{grid-template-columns:1fr 1fr}}
-    @media (max-width:640px){h1{font-size:38px}.grid{grid-template-columns:1fr}}
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --night: #061522;
+      --night-2: #0B2130;
+      --ink: #171715;
+      --cream: #F6F1E8;
+      --paper: #FFFDF8;
+      --stone: #70695D;
+      --muted: #A69F91;
+      --gold: #C8A24A;
+      --gold-dark: #A97C25;
+      --line: rgba(166, 159, 145, 0.28);
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "DM Sans", system-ui, sans-serif;
+      --r: 10px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      min-height: 100vh;
+      font-family: var(--sans);
+      color: var(--ink);
+      background: var(--cream);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+    button, input, select { font: inherit; }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: linear-gradient(90deg, #061522, #0B2130);
+      border-bottom: 1px solid rgba(200, 162, 74, 0.24);
+      padding: 0.95rem clamp(1rem, 2.6vw, 2.6rem);
+    }
+    .nav {
+      width: min(1320px, 100%);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--cream);
+      min-width: max-content;
+    }
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1px solid rgba(200, 162, 74, 0.52);
+      background: rgba(6, 21, 34, 0.45);
+    }
+    .brand-mark img { width: 38px; height: 38px; object-fit: contain; }
+    .brand-name { display: flex; flex-direction: column; line-height: 1; }
+    .brand-name strong {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .brand-name span {
+      margin-top: 0.22rem;
+      color: var(--gold);
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .nav-links {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: clamp(0.9rem, 2vw, 2rem);
+      color: rgba(246, 241, 232, 0.9);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .nav-links a.active {
+      color: var(--gold);
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 0.36rem;
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-left: 1rem;
+    }
+    .btn-donate {
+      min-height: 44px;
+      padding: 0 1.45rem;
+      border-radius: 8px;
+      border: 1px solid rgba(200, 162, 74, 0.6);
+      color: var(--cream);
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: rgba(6, 21, 34, 0.34);
+    }
+    .btn-donate svg, .nav-avatar svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--gold);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .nav-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid rgba(200, 162, 74, 0.7);
+      background: rgba(6, 21, 34, 0.36);
+      display: grid;
+      place-items: center;
+    }
+
+    .page {
+      width: min(1536px, 100%);
+      margin: 0 auto;
+      background: var(--paper);
+      box-shadow: 0 0 0 1px rgba(166, 159, 145, 0.16);
+    }
+
+    .directory-hero {
+      position: relative;
+      overflow: hidden;
+      padding: 2.2rem clamp(1rem, 4vw, 4rem) 1.6rem;
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 18% 0%, rgba(200, 162, 74, 0.11), transparent 32%),
+        linear-gradient(180deg, #FFFDF8 0%, #F8F2E7 100%);
+    }
+    .directory-hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(30deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08)),
+        linear-gradient(150deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08));
+      background-size: 54px 94px;
+      opacity: 0.22;
+      pointer-events: none;
+    }
+    .hero-sketch {
+      position: absolute;
+      right: -2rem;
+      bottom: -2.1rem;
+      width: min(34vw, 470px);
+      opacity: 0.24;
+      filter: sepia(0.65) saturate(0.78);
+      pointer-events: none;
+    }
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      justify-items: center;
+      text-align: center;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      color: var(--gold-dark);
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .eyebrow svg {
+      width: 24px;
+      height: 24px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .directory-hero h1 {
+      margin-top: 0.65rem;
+      font-family: var(--serif);
+      font-size: clamp(3.1rem, 6vw, 5.1rem);
+      font-weight: 500;
+      line-height: 0.94;
+      letter-spacing: 0;
+      color: #061522;
+    }
+    .directory-hero p {
+      margin-top: 0.8rem;
+      max-width: 660px;
+      color: #4B4B47;
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    .search-panel {
+      width: min(800px, 100%);
+      margin-top: 1.45rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 220px auto;
+      align-items: stretch;
+      border: 1px solid rgba(166, 159, 145, 0.34);
+      border-radius: 9px;
+      overflow: hidden;
+      background: rgba(255, 253, 248, 0.82);
+      box-shadow: 0 18px 40px rgba(6, 21, 34, 0.08);
+    }
+    .search-field,
+    .location-field {
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0 1rem;
+      color: var(--stone);
+      background: rgba(255, 253, 248, 0.86);
+    }
+    .search-field { border-right: 1px solid rgba(166, 159, 145, 0.28); }
+    .search-field svg,
+    .location-field svg {
+      width: 20px;
+      height: 20px;
+      flex: 0 0 auto;
+      stroke: var(--gold-dark);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .search-field input,
+    .location-field select {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--ink);
+      font-size: 0.92rem;
+    }
+    .location-field select {
+      appearance: none;
+      font-weight: 600;
+      background-image: linear-gradient(45deg, transparent 50%, var(--gold-dark) 50%), linear-gradient(135deg, var(--gold-dark) 50%, transparent 50%);
+      background-position: calc(100% - 10px) 50%, calc(100% - 5px) 50%;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+      padding-right: 1rem;
+    }
+    .search-button {
+      min-width: 136px;
+      border: 0;
+      background: #061522;
+      color: var(--gold);
+      font-size: 0.86rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .category-strip {
+      position: relative;
+      z-index: 1;
+      width: min(1210px, 100%);
+      margin-top: 1.25rem;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 0.9rem;
+    }
+    .category-card {
+      min-height: 84px;
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 1rem;
+      border: 1px solid rgba(166, 159, 145, 0.24);
+      border-radius: 8px;
+      background: rgba(255, 253, 248, 0.76);
+      box-shadow: 0 8px 20px rgba(6, 21, 34, 0.04);
+    }
+    .category-card svg {
+      width: 36px;
+      height: 36px;
+      flex: 0 0 auto;
+      stroke: var(--gold-dark);
+      fill: none;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .category-card strong {
+      display: block;
+      color: #061522;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+    .category-card span {
+      display: block;
+      margin-top: 0.2rem;
+      color: var(--stone);
+      font-size: 0.78rem;
+    }
+
+    .directory-workspace {
+      display: grid;
+      grid-template-columns: 265px minmax(450px, 1fr) minmax(420px, 1.05fr);
+      min-height: 570px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .filter-rail {
+      background: linear-gradient(180deg, #061522, #0B2130);
+      color: rgba(246, 241, 232, 0.9);
+      padding: 1.55rem 1.5rem;
+      border-radius: 0 8px 8px 0;
+      margin: 0 0 2rem;
+      align-self: start;
+      box-shadow: 0 18px 38px rgba(6, 21, 34, 0.24);
+    }
+    .filter-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.1rem;
+    }
+    .filter-head h2 {
+      color: var(--gold);
+      font-size: 0.86rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .filter-head h2::after {
+      content: "";
+      display: inline-block;
+      width: 92px;
+      height: 1px;
+      margin-left: 0.7rem;
+      vertical-align: middle;
+      background: var(--gold-dark);
+    }
+    .filter-head button {
+      border: 0;
+      background: transparent;
+      color: var(--gold);
+      cursor: pointer;
+      font-size: 0.78rem;
+    }
+    .filter-group {
+      padding: 1rem 0;
+      border-bottom: 1px solid rgba(200, 162, 74, 0.28);
+    }
+    .filter-group h3 {
+      margin-bottom: 0.75rem;
+      color: var(--gold);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      margin: 0.48rem 0;
+      font-size: 0.82rem;
+    }
+    .check-row input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--gold);
+    }
+    .filter-select {
+      width: 100%;
+      min-height: 38px;
+      margin-bottom: 0.65rem;
+      padding: 0 0.8rem;
+      border: 1px solid rgba(200, 162, 74, 0.5);
+      border-radius: 5px;
+      background: rgba(6, 21, 34, 0.34);
+      color: var(--cream);
+      outline: none;
+    }
+    .apply-button {
+      width: 100%;
+      min-height: 44px;
+      margin-top: 1rem;
+      border: 0;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #D6AF5B, #B98832);
+      color: #061522;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .results-pane {
+      padding: 1.35rem 1.2rem 2rem;
+      background: linear-gradient(180deg, #FFFDF8, #F7F0E5);
+    }
+    .results-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      color: #061522;
+      font-size: 0.84rem;
+    }
+    .sort-select {
+      border: 0;
+      background: transparent;
+      color: #061522;
+      font-weight: 700;
+      outline: none;
+    }
+    .listing-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+    .listing-card {
+      display: grid;
+      grid-template-columns: 104px minmax(0, 1fr) auto;
+      gap: 0.85rem;
+      align-items: center;
+      padding: 0.72rem;
+      border: 1px solid rgba(166, 159, 145, 0.24);
+      border-radius: 8px;
+      background: rgba(255, 253, 248, 0.92);
+      box-shadow: 0 10px 22px rgba(6, 21, 34, 0.04);
+    }
+    .listing-card img {
+      width: 104px;
+      height: 86px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+    .listing-card h3 {
+      font-family: var(--serif);
+      color: #061522;
+      font-size: 1.35rem;
+      font-weight: 600;
+      line-height: 1.05;
+    }
+    .listing-meta {
+      margin-top: 0.25rem;
+      color: var(--stone);
+      font-size: 0.78rem;
+    }
+    .listing-copy {
+      margin-top: 0.32rem;
+      color: #4B4B47;
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+    .listing-tag {
+      display: inline-flex;
+      margin-top: 0.45rem;
+      padding: 0.22rem 0.48rem;
+      border-radius: 5px;
+      background: rgba(200, 162, 74, 0.13);
+      color: #5F4312;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .listing-actions {
+      display: grid;
+      justify-items: end;
+      gap: 1.1rem;
+      min-width: 120px;
+    }
+    .heart {
+      border: 0;
+      background: transparent;
+      color: var(--gold-dark);
+      cursor: pointer;
+    }
+    .heart svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.7;
+    }
+    .profile-button {
+      min-height: 36px;
+      padding: 0 1rem;
+      border: 1px solid rgba(169, 124, 37, 0.55);
+      border-radius: 5px;
+      background: transparent;
+      color: #7B5415;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.25rem;
+      color: #061522;
+      font-size: 0.85rem;
+    }
+    .pagination .current {
+      width: 26px;
+      height: 26px;
+      display: grid;
+      place-items: center;
+      border-radius: 5px;
+      background: #061522;
+      color: var(--cream);
+    }
+
+    .map-pane {
+      position: relative;
+      overflow: hidden;
+      min-height: 570px;
+      background:
+        linear-gradient(0deg, rgba(255, 253, 248, 0.08), rgba(255, 253, 248, 0.08)),
+        repeating-linear-gradient(28deg, transparent 0 52px, rgba(200, 162, 74, 0.26) 53px 55px, transparent 56px 126px),
+        repeating-linear-gradient(118deg, rgba(89, 122, 91, 0.16) 0 1px, transparent 1px 88px),
+        linear-gradient(135deg, #DDE5D4, #F3E7D3 38%, #D6E2D7 70%, #F3E8D8);
+      border-left: 1px solid var(--line);
+    }
+    .map-pane::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 22% 32%, rgba(70, 128, 91, 0.18), transparent 14%),
+        radial-gradient(circle at 73% 20%, rgba(80, 136, 151, 0.16), transparent 11%),
+        radial-gradient(circle at 58% 68%, rgba(80, 136, 151, 0.13), transparent 10%);
+      mix-blend-mode: multiply;
+      opacity: 0.8;
+    }
+    .map-label {
+      position: absolute;
+      color: rgba(6, 21, 34, 0.65);
+      font-size: 0.85rem;
+      z-index: 1;
+    }
+    .map-label.dallas { left: 43%; top: 55%; font-size: 1.35rem; color: rgba(6, 21, 34, 0.8); }
+    .map-label.frisco { left: 52%; top: 9%; }
+    .map-label.plano { left: 66%; top: 26%; }
+    .map-label.irving { left: 26%; top: 48%; }
+    .map-label.garland { left: 66%; top: 44%; }
+    .map-label.arlington { left: 10%; top: 61%; }
+    .map-controls {
+      position: absolute;
+      right: 1.5rem;
+      top: 1.8rem;
+      z-index: 2;
+      display: grid;
+      gap: 0.65rem;
+    }
+    .map-control {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(166, 159, 145, 0.25);
+      border-radius: 7px;
+      background: rgba(255, 253, 248, 0.92);
+      color: #061522;
+      font-weight: 800;
+      box-shadow: 0 10px 22px rgba(6, 21, 34, 0.08);
+    }
+    .pin {
+      position: absolute;
+      z-index: 2;
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      border: 2px solid rgba(255, 253, 248, 0.95);
+      background: #061522;
+      color: var(--gold);
+      box-shadow: 0 8px 20px rgba(6, 21, 34, 0.24);
+    }
+    .pin svg {
+      width: 21px;
+      height: 21px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .pin.one { left: 17%; top: 56%; }
+    .pin.two { left: 25%; top: 31%; }
+    .pin.three { left: 43%; top: 49%; }
+    .pin.four { left: 55%; top: 35%; }
+    .pin.five { left: 68%; top: 51%; }
+    .pin.six { left: 78%; top: 15%; }
+    .pin.seven { left: 39%; top: 82%; }
+    .pin.eight { left: 52%; top: 65%; }
+    .map-card {
+      position: absolute;
+      right: 3rem;
+      bottom: 2.8rem;
+      z-index: 3;
+      width: 300px;
+      display: grid;
+      grid-template-columns: 58px 1fr;
+      gap: 0.85rem;
+      align-items: start;
+      padding: 1rem;
+      border: 1px solid rgba(166, 159, 145, 0.25);
+      border-radius: 8px;
+      background: rgba(255, 253, 248, 0.92);
+      box-shadow: 0 18px 40px rgba(6, 21, 34, 0.18);
+    }
+    .map-card-icon {
+      width: 58px;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: #061522;
+      color: var(--gold);
+    }
+    .map-card-icon svg {
+      width: 30px;
+      height: 30px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .map-card h3 {
+      font-family: var(--serif);
+      font-size: 1.25rem;
+      line-height: 1.1;
+      color: #061522;
+    }
+    .map-card p {
+      margin-top: 0.24rem;
+      color: var(--stone);
+      font-size: 0.82rem;
+    }
+    .map-card a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.8rem;
+      color: var(--gold-dark);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .directory-trust {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+      padding: 1.45rem clamp(1rem, 4vw, 4rem);
+      background: linear-gradient(180deg, #FFFDF8, #F7F0E5);
+      border-bottom: 1px solid var(--line);
+    }
+    .trust-item {
+      display: grid;
+      grid-template-columns: 46px 1fr;
+      gap: 0.85rem;
+      align-items: center;
+    }
+    .trust-item svg {
+      width: 42px;
+      height: 42px;
+      padding: 8px;
+      border: 1px solid rgba(200, 162, 74, 0.45);
+      border-radius: 999px;
+      stroke: var(--gold-dark);
+      fill: none;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .trust-item strong {
+      display: block;
+      color: #061522;
+      font-size: 0.9rem;
+    }
+    .trust-item span {
+      display: block;
+      margin-top: 0.18rem;
+      color: var(--stone);
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    .site-footer {
+      background: #05131F;
+      color: rgba(246, 241, 232, 0.74);
+      border-top: 1px solid rgba(200, 162, 74, 0.16);
+      padding: 2.5rem 0 1.4rem;
+    }
+    .footer-wrap {
+      width: min(1320px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.5fr repeat(4, minmax(0, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.6rem;
+    }
+    .footer-lockup {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin-bottom: 0.4rem;
+    }
+    .footer-lockup img { width: 40px; height: 40px; object-fit: contain; }
+    .footer-lockup strong {
+      display: block;
+      font: 500 1.8rem/1 var(--serif);
+      color: var(--cream);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .footer-brand p {
+      color: rgba(246, 241, 232, 0.6);
+      line-height: 1.6;
+    }
+    .footer-col h4 {
+      margin-bottom: 0.8rem;
+      color: var(--gold);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .footer-col a {
+      display: block;
+      margin: 0.45rem 0;
+      color: rgba(246, 241, 232, 0.68);
+      font-size: 0.86rem;
+    }
+    .footer-bottom {
+      padding-top: 1rem;
+      border-top: 1px solid rgba(246, 241, 232, 0.08);
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      color: rgba(246, 241, 232, 0.44);
+      font-size: 0.8rem;
+    }
+
+    @media (max-width: 1180px) {
+      .nav-links { display: none; }
+      .hero-sketch { width: min(46vw, 380px); }
+      .category-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .directory-workspace { grid-template-columns: 250px minmax(0, 1fr); }
+      .map-pane { grid-column: 1 / -1; min-height: 420px; border-left: 0; border-top: 1px solid var(--line); }
+      .directory-trust { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .footer-bottom { flex-direction: column; }
+    }
+    @media (max-width: 760px) {
+      .site-header { padding: 0.8rem 0.9rem; }
+      .brand-name strong { font-size: 1.65rem; }
+      .brand-name span { display: none; }
+      .btn-donate { display: none; }
+      .nav-avatar { display: none; }
+      .directory-hero { padding: 2rem 1rem 1.2rem; }
+      .hero-sketch { right: -6rem; bottom: 5rem; width: 380px; opacity: 0.14; }
+      .directory-hero h1 { font-size: clamp(2.7rem, 14vw, 4rem); }
+      .directory-hero p { font-size: 0.95rem; }
+      .search-panel { grid-template-columns: 1fr; }
+      .search-field,
+      .location-field { border-right: 0; border-bottom: 1px solid rgba(166, 159, 145, 0.25); }
+      .search-button { min-height: 50px; }
+      .category-strip {
+        grid-template-columns: repeat(6, 220px);
+        overflow-x: auto;
+        justify-self: stretch;
+        padding-bottom: 0.35rem;
+      }
+      .directory-workspace { grid-template-columns: 1fr; }
+      .filter-rail {
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .results-pane { padding: 1.1rem 1rem 1.4rem; }
+      .results-head { flex-direction: column; align-items: flex-start; }
+      .listing-card {
+        grid-template-columns: 84px minmax(0, 1fr);
+        align-items: start;
+      }
+      .listing-card img { width: 84px; height: 84px; }
+      .listing-card h3 { font-size: 1.12rem; }
+      .listing-actions {
+        grid-column: 1 / -1;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        justify-items: stretch;
+        min-width: 0;
+      }
+      .heart { justify-self: start; }
+      .profile-button { justify-self: end; }
+      .map-pane { min-height: 390px; }
+      .map-card {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        width: auto;
+      }
+      .directory-trust { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+    }
   </style>
   <link rel="stylesheet" href="/site-mobile-nav.css" />
   <script src="/site-mobile-nav.js" defer></script>
 </head>
 <body>
-  <header class="header">
-    <nav class="nav">
-      <a class="brand" href="/"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></a>
-      <div class="links">
+  <header class="site-header">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="/" aria-label="AGAPAY home">
+        <span class="brand-mark"><img src="/mark.png" alt="" /></span>
+        <span class="brand-name"><strong>AGAPAY</strong><span>Love how you give</span></span>
+      </a>
+      <div class="nav-links">
+        <a href="/vision">Vision</a>
         <a href="/giving">Giving</a>
         <a href="/marketplace">Marketplace</a>
-        <a href="/directory">Directory</a>
-        <a href="/vision">Vision</a>
+        <a href="/directory" class="active">Directory</a>
         <a href="/how-it-works">Resources</a>
-        <a class="cta" href="/register">Join AGAPAY</a>
+        <a href="/about">About</a>
+      </div>
+      <div class="nav-actions">
+        <a class="btn-donate" href="/register">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+          <span>List Your Organization</span>
+        </a>
+        <a class="nav-avatar" href="/donor/login" aria-label="Donor login">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        </a>
       </div>
     </nav>
   </header>
-  <section class="hero">
-    <div class="wrap">
-      <h1>Orthodox Directory</h1>
-      <p>One trusted index for churches, businesses, ministries, and monasteries â€” helping Orthodox communities find and support one another.</p>
+
+  <main class="page">
+    <section class="directory-hero">
+      <img class="hero-sketch" src="/images/directory/church-sketch-directory.png" alt="" />
+      <div class="hero-inner">
+        <div class="eyebrow">
+          <svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 9h14"/><path d="M12 2c0 3-1.8 4.8-4.5 4.8"/><path d="M12 2c0 3 1.8 4.8 4.5 4.8"/></svg>
+          AGAPAY Directory
+        </div>
+        <h1>Find Orthodox Life Near You</h1>
+        <p>Discover churches, businesses, ministries, schools, and monasteries in your community and around the world.</p>
+
+        <form class="search-panel">
+          <label class="search-field">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
+            <input type="search" placeholder="Search by name, category, or keyword..." aria-label="Search by name, category, or keyword" />
+          </label>
+          <label class="location-field">
+            <svg viewBox="0 0 24 24"><path d="M12 21s7-5.7 7-12a7 7 0 1 0-14 0c0 6.3 7 12 7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            <select aria-label="Location">
+              <option>Dallas, TX</option>
+              <option>San Antonio, TX</option>
+              <option>Atlanta, GA</option>
+              <option>Chicago, IL</option>
+            </select>
+          </label>
+          <button class="search-button" type="submit">Search</button>
+        </form>
+
+        <div class="category-strip" aria-label="Directory categories">
+          <article class="category-card">
+            <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M9 13h6"/><path d="M12 5V2"/></svg>
+            <div><strong>Churches</strong><span>2,531 listings</span></div>
+          </article>
+          <article class="category-card">
+            <svg viewBox="0 0 24 24"><path d="M4 10h16"/><path d="M5 10l1-5h12l1 5"/><path d="M6 10v10h12V10"/><path d="M9 20v-5h6v5"/></svg>
+            <div><strong>Businesses</strong><span>1,230 listings</span></div>
+          </article>
+          <article class="category-card">
+            <svg viewBox="0 0 24 24"><path d="M4 5c3-1 5-1 8 1v14c-3-2-5-2-8-1V5Z"/><path d="M20 5c-3-1-5-1-8 1v14c3-2 5-2 8-1V5Z"/></svg>
+            <div><strong>Schools</strong><span>418 listings</span></div>
+          </article>
+          <article class="category-card">
+            <svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 9h14"/></svg>
+            <div><strong>Ministries</strong><span>731 listings</span></div>
+          </article>
+          <article class="category-card">
+            <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 21v-7a6 6 0 0 1 12 0v7"/><path d="M12 8V3"/></svg>
+            <div><strong>Monasteries</strong><span>169 listings</span></div>
+          </article>
+          <article class="category-card">
+            <svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20a5 5 0 0 1 10 0"/><path d="M11 20a5 5 0 0 1 10 0"/></svg>
+            <div><strong>Services</strong><span>534 listings</span></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="directory-workspace" aria-label="Directory search results">
+      <aside class="filter-rail">
+        <div class="filter-head"><h2>Filters</h2><button type="button">Reset</button></div>
+        <div class="filter-group">
+          <h3>Category</h3>
+          <label class="check-row"><input type="checkbox" checked /> Churches (2,531)</label>
+          <label class="check-row"><input type="checkbox" /> Businesses (1,230)</label>
+          <label class="check-row"><input type="checkbox" /> Schools (418)</label>
+          <label class="check-row"><input type="checkbox" /> Ministries (731)</label>
+          <label class="check-row"><input type="checkbox" /> Monasteries (169)</label>
+          <label class="check-row"><input type="checkbox" /> Services (534)</label>
+        </div>
+        <div class="filter-group">
+          <h3>Location</h3>
+          <select class="filter-select"><option>Within 50 miles</option><option>Within 100 miles</option><option>Anywhere</option></select>
+          <select class="filter-select"><option>Dallas, TX</option><option>San Antonio, TX</option><option>Chicago, IL</option></select>
+        </div>
+        <div class="filter-group">
+          <h3>Denomination</h3>
+          <select class="filter-select"><option>All Denominations</option><option>Greek Orthodox</option><option>OCA</option><option>Antiochian</option><option>ROCOR</option></select>
+        </div>
+        <div class="filter-group">
+          <h3>Jurisdiction</h3>
+          <select class="filter-select"><option>All Jurisdictions</option><option>Canonical Orthodox Churches</option><option>Orthodox nonprofits</option><option>Orthodox-owned businesses</option></select>
+        </div>
+        <button class="apply-button" type="button">Apply Filters</button>
+      </aside>
+
+      <section class="results-pane">
+        <div class="results-head">
+          <span>Showing 1-25 of 2,531 results</span>
+          <label>Sort by: <select class="sort-select"><option>Recently Added</option><option>Nearest</option><option>A-Z</option></select></label>
+        </div>
+        <div class="listing-stack">
+          <article class="listing-card">
+            <img src="/images/vision/church-exterior.jpg" alt="St. Nicholas Greek Orthodox Church" />
+            <div>
+              <h3>St. Nicholas Greek Orthodox Church</h3>
+              <div class="listing-meta">Dallas, TX - Greek Orthodox Archdiocese</div>
+              <p class="listing-copy">A community rooted in faith and tradition.</p>
+              <span class="listing-tag">Church</span>
+            </div>
+            <div class="listing-actions">
+              <button class="heart" type="button" aria-label="Save St. Nicholas Greek Orthodox Church"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg></button>
+              <button class="profile-button" type="button">View Profile</button>
+            </div>
+          </article>
+          <article class="listing-card">
+            <img src="/images/marketplace/cathedral-night.jpg" alt="Theophany Books and Gifts" />
+            <div>
+              <h3>Theophany Books &amp; Gifts</h3>
+              <div class="listing-meta">Dallas, TX - Orthodox Christian Books &amp; Gifts</div>
+              <p class="listing-copy">Resources for your spiritual journey.</p>
+              <span class="listing-tag">Business</span>
+            </div>
+            <div class="listing-actions">
+              <button class="heart" type="button" aria-label="Save Theophany Books and Gifts"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg></button>
+              <button class="profile-button" type="button">View Profile</button>
+            </div>
+          </article>
+          <article class="listing-card">
+            <img src="/images/marketplace/interior-iconostasis.jpg" alt="St. Katherine Orthodox School" />
+            <div>
+              <h3>St. Katherine Orthodox School</h3>
+              <div class="listing-meta">Dallas, TX - Classical Orthodox Education</div>
+              <p class="listing-copy">Forming hearts and minds in Christ.</p>
+              <span class="listing-tag">School</span>
+            </div>
+            <div class="listing-actions">
+              <button class="heart" type="button" aria-label="Save St. Katherine Orthodox School"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg></button>
+              <button class="profile-button" type="button">View Profile</button>
+            </div>
+          </article>
+          <article class="listing-card">
+            <img src="/images/marketplace/gilded-censer.jpg" alt="Orthodox Christian Charities" />
+            <div>
+              <h3>Orthodox Christian Charities</h3>
+              <div class="listing-meta">Dallas, TX - Charity &amp; Humanitarian Aid</div>
+              <p class="listing-copy">Serving those in need with Christ's love.</p>
+              <span class="listing-tag">Ministry</span>
+            </div>
+            <div class="listing-actions">
+              <button class="heart" type="button" aria-label="Save Orthodox Christian Charities"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg></button>
+              <button class="profile-button" type="button">View Profile</button>
+            </div>
+          </article>
+        </div>
+        <nav class="pagination" aria-label="Directory pages">
+          <span>&lt;-</span><span class="current">1</span><span>2</span><span>3</span><span>...</span><span>102</span><span>-&gt;</span>
+        </nav>
+      </section>
+
+      <section class="map-pane" aria-label="Map preview">
+        <span class="map-label frisco">Frisco</span>
+        <span class="map-label plano">Plano</span>
+        <span class="map-label irving">Irving</span>
+        <span class="map-label garland">Garland</span>
+        <span class="map-label arlington">Arlington</span>
+        <span class="map-label dallas">Dallas</span>
+        <div class="map-controls"><span class="map-control">+</span><span class="map-control">-</span><span class="map-control">o</span></div>
+        <span class="pin one"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 9h14"/></svg></span>
+        <span class="pin two"><svg viewBox="0 0 24 24"><path d="M4 10h16"/><path d="M5 10l1-5h12l1 5"/><path d="M6 10v10h12V10"/></svg></span>
+        <span class="pin three"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M12 5V2"/></svg></span>
+        <span class="pin four"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 21v-7a6 6 0 0 1 12 0v7"/><path d="M12 8V3"/></svg></span>
+        <span class="pin five"><svg viewBox="0 0 24 24"><path d="M4 5c3-1 5-1 8 1v14c-3-2-5-2-8-1V5Z"/><path d="M20 5c-3-1-5-1-8 1v14c3-2 5-2 8-1V5Z"/></svg></span>
+        <span class="pin six"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20a5 5 0 0 1 10 0"/><path d="M11 20a5 5 0 0 1 10 0"/></svg></span>
+        <span class="pin seven"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 21v-7a6 6 0 0 1 12 0v7"/><path d="M12 8V3"/></svg></span>
+        <span class="pin eight"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/></svg></span>
+        <article class="map-card">
+          <span class="map-card-icon"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M12 5V2"/></svg></span>
+          <div>
+            <h3>St. Nicholas Greek Orthodox Church</h3>
+            <p>Dallas, TX</p>
+            <a href="#">View Profile <span>-&gt;</span></a>
+          </div>
+        </article>
+      </section>
+    </section>
+
+    <section class="directory-trust">
+      <article class="trust-item">
+        <svg viewBox="0 0 24 24"><path d="M12 3 4 7v6c0 5 3.4 7.8 8 9 4.6-1.2 8-4 8-9V7l-8-4Z"/><path d="m9 12 2 2 4-5"/></svg>
+        <div><strong>Vetted Orthodox listings</strong><span>Built for trusted discovery across Orthodox communities.</span></div>
+      </article>
+      <article class="trust-item">
+        <svg viewBox="0 0 24 24"><path d="M12 21s7-5.7 7-12a7 7 0 1 0-14 0c0 6.3 7 12 7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        <div><strong>Local and national search</strong><span>Find nearby parishes or discover organizations across the country.</span></div>
+      </article>
+      <article class="trust-item">
+        <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
+        <div><strong>Clear organization profiles</strong><span>Every listing can lead people to giving, contact, and support options.</span></div>
+      </article>
+      <article class="trust-item">
+        <svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20a5 5 0 0 1 10 0"/><path d="M11 20a5 5 0 0 1 10 0"/></svg>
+        <div><strong>One connected community</strong><span>Churches, businesses, schools, ministries, and monasteries under one roof.</span></div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-wrap footer-grid">
+      <div class="footer-brand">
+        <div class="footer-lockup"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></div>
+        <p>Love how you Give.</p>
+      </div>
+      <div class="footer-col"><h4>Platform</h4><a href="/features">Solutions</a><a href="/how-it-works">How It Works</a><a href="/pricing">Pricing</a></div>
+      <div class="footer-col"><h4>Company</h4><a href="/about">About</a><a href="/why">Why AGAPAY</a><a href="/vision">Vision</a><a href="/contact">Contact</a></div>
+      <div class="footer-col"><h4>Resources</h4><a href="/donor/login">Donor Login</a><a href="/parish/login">Parish Login</a><a href="/admin/login">Admin Login</a></div>
+      <div class="footer-col"><h4>Legal</h4><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div>
     </div>
-  </section>
-  <section class="wrap grid">
-    <article class="card"><h3>Churches</h3><p>Browse Orthodox parishes and missions by location and jurisdiction.</p></article>
-    <article class="card"><h3>Businesses</h3><p>Discover Orthodox-owned businesses serving local and national communities.</p></article>
-    <article class="card"><h3>Ministries</h3><p>Find nonprofits, schools, camps, and mission organizations.</p></article>
-    <article class="card"><h3>Monasteries</h3><p>Connect with monasteries and support their sacred work.</p></article>
-  </section>
+    <div class="footer-wrap footer-bottom"><span>&copy; 2026 AGAPAY. All rights reserved.</span><span>Built for Orthodox communities.</span></div>
+  </footer>
 </body>
 </html>
