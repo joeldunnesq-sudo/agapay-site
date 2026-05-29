@@ -95,7 +95,7 @@ const marketplaceShops = [
     reviewCount: 184,
     badge: "Top Rated",
     imageType: "photo",
-    imageUrl: "/pantocrator.png",
+    imageUrl: "/images/marketplace/interior-iconostasis.jpg",
     category: "icons-artwork",
     tags: ["best-sellers", "orthodox-makers"]
   },
@@ -108,7 +108,7 @@ const marketplaceShops = [
     reviewCount: 312,
     badge: "Top Rated",
     imageType: "photo",
-    imageUrl: "/family.jpg",
+    imageUrl: "/images/marketplace/mosaic-dome.jpg",
     category: "books-media",
     tags: ["best-sellers", "new-arrivals"]
   },
@@ -121,7 +121,7 @@ const marketplaceShops = [
     reviewCount: 156,
     badge: "Top Rated",
     imageType: "photo",
-    imageUrl: "/images/vision/icon-hands.jpg",
+    imageUrl: "/images/marketplace/enamel-lampada.jpg",
     category: "jewelry-crosses",
     tags: ["best-sellers", "new-arrivals"]
   },
@@ -134,7 +134,7 @@ const marketplaceShops = [
     reviewCount: 98,
     badge: "Orthodox Maker",
     imageType: "photo",
-    imageUrl: "/images/vision/hero-incense.jpg",
+    imageUrl: "/images/marketplace/candle-stand.jpg",
     category: "church-supplies",
     tags: ["orthodox-makers", "new-arrivals"]
   }
@@ -146,7 +146,7 @@ const marketplaceProducts = [
     title: "Theotokos of Tenderness Icon",
     shopName: "Mount Athos Icons",
     priceCents: 18900,
-    imageUrl: "/pantocrator.png",
+    imageUrl: "/images/marketplace/interior-iconostasis.jpg",
     category: "icons-artwork",
     tags: ["best-sellers", "orthodox-makers"]
   },
@@ -155,7 +155,7 @@ const marketplaceProducts = [
     title: "The Way of a Pilgrim",
     shopName: "Ancient Faith Publishing",
     priceCents: 1495,
-    imageUrl: "/images/vision/church-exterior.jpg",
+    imageUrl: "/images/marketplace/dome-cross.jpg",
     category: "books-media",
     tags: ["best-sellers", "new-arrivals"]
   },
@@ -164,7 +164,7 @@ const marketplaceProducts = [
     title: "Wool Prayer Rope 100 Knot",
     shopName: "Holy Cross Monastery",
     priceCents: 3300,
-    imageUrl: "/images/vision/icon-hands.jpg",
+    imageUrl: "/images/marketplace/gilded-censer.jpg",
     category: "jewelry-crosses",
     tags: ["orthodox-makers", "best-sellers", "monastery-shops"]
   },
@@ -173,7 +173,7 @@ const marketplaceProducts = [
     title: "Beeswax Altar Candle",
     shopName: "St. Elizabeth Convent",
     priceCents: 1200,
-    imageUrl: "/images/vision/hero-incense.jpg",
+    imageUrl: "/images/marketplace/candle-stand.jpg",
     category: "church-supplies",
     tags: ["new-arrivals", "orthodox-makers"]
   },
@@ -182,7 +182,7 @@ const marketplaceProducts = [
     title: "Hand Carved Orthodox Cross",
     shopName: "Orthodox Woodworker",
     priceCents: 4500,
-    imageUrl: "/censor.png",
+    imageUrl: "/images/marketplace/enamel-lampada.jpg",
     category: "home-gifts",
     tags: ["orthodox-makers", "best-sellers"]
   },
@@ -191,7 +191,7 @@ const marketplaceProducts = [
     title: "Akathist Prayer Book",
     shopName: "Ancient Faith Publishing",
     priceCents: 1895,
-    imageUrl: "/family.jpg",
+    imageUrl: "/images/marketplace/mosaic-dome.jpg",
     category: "books-media",
     tags: ["new-arrivals", "on-sale"]
   },
@@ -200,7 +200,7 @@ const marketplaceProducts = [
     title: "Incense + Charcoal Set",
     shopName: "Holy Cross Monastery",
     priceCents: 2200,
-    imageUrl: "/images/vision/hero-incense.jpg",
+    imageUrl: "/images/marketplace/gilded-censer.jpg",
     category: "church-supplies",
     tags: ["monastery-shops", "best-sellers"]
   },
@@ -209,7 +209,7 @@ const marketplaceProducts = [
     title: "Orthodox Children's Primer",
     shopName: "Ancient Faith Publishing",
     priceCents: 2495,
-    imageUrl: "/images/vision/church-exterior.jpg",
+    imageUrl: "/images/marketplace/dome-cross.jpg",
     category: "children-education",
     tags: ["new-arrivals"]
   }
