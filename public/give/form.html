@@ -48,7 +48,20 @@
     .parish-header { background: var(--deep); padding: 3rem 1.5rem; text-align: center; position: relative; overflow: hidden; }
     .parish-header::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 600px; height: 200px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.1) 0%, transparent 65%); pointer-events: none; }
     .parish-header-inner { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; }
-    .parish-avatar-lg { width: 85px; height: 85px; border-radius: 14px; background: var(--deep); border: 0.5px solid rgba(200,162,74,0.25); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
+    .parish-avatar-lg {
+      width: 152px;
+      height: 152px;
+      border-radius: 20px;
+      background: #fbf8f0;
+      border: 0.5px solid rgba(200,162,74,0.38);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.15rem;
+      overflow: hidden;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.2), inset 0 0 0 1px rgba(255,255,255,0.55);
+    }
+    .parish-avatar-lg img { width: 100%; height: 100%; display: block; object-fit: cover; }
     .parish-header h1 { font-family: var(--serif); font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 500; color: var(--cream); line-height: 1.2; margin-bottom: 0.5rem; }
     .parish-header-meta { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
     .parish-header-meta span { font-size: 13px; color: var(--stone); }
@@ -206,6 +219,7 @@
     .reveal-delay-3 { transition-delay: 0.21s; }
 
     @media (max-width: 580px) {
+      .parish-avatar-lg { width: 132px; height: 132px; border-radius: 18px; }
       .preset-amounts { grid-template-columns: repeat(2, 1fr); }
       .form-row { grid-template-columns: 1fr; }
       .frequency-opts { flex-wrap: wrap; }
@@ -239,14 +253,7 @@
   <header class="parish-header">
     <div class="parish-header-inner">
       <div class="parish-avatar-lg">
-        <svg width="78" height="78" viewBox="0 0 38 38" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="19" y1="2" x2="19" y2="6"/>
-          <line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/>
-          <line x1="16" y1="5.5" x2="22" y2="5.5"/>
-          <path d="M19 6 C10 10 8 17 11 22 C13 26 16 27 19 27 C22 27 25 26 27 22 C30 17 28 10 19 6Z"/>
-          <line x1="12" y1="27" x2="26" y2="27"/>
-          <line x1="13" y1="29" x2="25" y2="29"/>
-        </svg>
+        <img src="/images/giving/mission-church-square.png" alt="Orthodox mission church sketch" />
       </div>
       <h1>St. Seraphim of Sarov Mission</h1>
       <div class="parish-header-meta">
@@ -668,14 +675,26 @@
       return parts[0] === 'give' && parts[1] ? parts[1] : '';
     }
 
-    function parishIcon(type) {
-      if (type === 'monastery') {
-        return '<svg width="78" height="78" viewBox="0 0 38 38" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="30" height="18" rx="1"/><rect x="14" y="6" width="10" height="14" rx="1"/><line x1="19" y1="2" x2="19" y2="6"/><line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/><line x1="16" y1="5.5" x2="22" y2="5.5"/><path d="M15 32 L15 25 Q19 21 23 25 L23 32"/><rect x="7" y="18" width="5" height="6" rx="2.5"/><rect x="26" y="18" width="5" height="6" rx="2.5"/></svg>';
-      }
-      if (type === 'mission') {
-        return '<svg width="78" height="78" viewBox="0 0 38 38" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="2" x2="19" y2="6"/><line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/><line x1="16" y1="5.5" x2="22" y2="5.5"/><path d="M19 6 C10 10 8 17 11 22 C13 26 16 27 19 27 C22 27 25 26 27 22 C30 17 28 10 19 6Z"/><line x1="12" y1="27" x2="26" y2="27"/><line x1="13" y1="29" x2="25" y2="29"/></svg>';
-      }
-      return '<svg width="78" height="78" viewBox="0 0 38 38" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="2" x2="19" y2="5"/><line x1="17" y1="3.5" x2="21" y2="3.5"/><path d="M19 5 C15 7 13 11 14 14 C15 16 17 17 19 17 C21 17 23 16 24 14 C25 11 23 7 19 5Z"/><line x1="10" y1="6" x2="10" y2="8"/><path d="M10 8 C8 9.5 7 12 7.5 14 C8 15.5 9 16 10 16 C11 16 12 15.5 12.5 14 C13 12 12 9.5 10 8Z"/><line x1="28" y1="6" x2="28" y2="8"/><path d="M28 8 C26 9.5 25 12 25.5 14 C26 15.5 27 16 28 16 C29 16 30 15.5 30.5 14 C31 12 30 9.5 28 8Z"/><rect x="4" y="17" width="30" height="14" rx="1"/><path d="M16 31 L16 25 Q19 22 22 25 L22 31"/></svg>';
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
+    }
+
+    function parishSketchImage(type) {
+      if (type === 'monastery') return '/images/giving/monastery-square.png';
+      if (type === 'mission') return '/images/giving/mission-church-square.png';
+      return '/images/giving/parish-church-square.png';
+    }
+
+    function parishArtwork(parish) {
+      const imageUrl = parish.imageUrl || parishSketchImage(parish.type);
+      const imageAlt = parish.imageAlt || `${parish.name || 'Orthodox community'} sketch`;
+      return `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(imageAlt)}" />`;
     }
 
     function setText(selector, value) {
@@ -722,7 +741,7 @@
         const location = `${parish.city || ''}, ${parish.state || ''}`.replace(/^, /, '').replace(/, $/, '');
         document.title = `Give to ${parish.name} — AgaPay`;
         const avatar = document.querySelector('.parish-avatar-lg');
-        if (avatar) avatar.innerHTML = parishIcon(parish.type);
+        if (avatar) avatar.innerHTML = parishArtwork(parish);
         setText('.parish-header h1', parish.name);
         const meta = document.querySelector('.parish-header-meta');
         if (meta) {

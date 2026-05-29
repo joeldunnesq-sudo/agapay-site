@@ -1667,6 +1667,18 @@ function normalizeJurisdiction(value) {
   return slugify(value || "other");
 }
 
+function communitySketchImage(type) {
+  if (type === "monastery") return "/images/giving/monastery-square.png";
+  if (type === "mission") return "/images/giving/mission-church-square.png";
+  return "/images/giving/parish-church-square.png";
+}
+
+function communitySketchAlt(type) {
+  if (type === "monastery") return "Orthodox monastery sketch";
+  if (type === "mission") return "Orthodox mission church sketch";
+  return "Orthodox parish church sketch";
+}
+
 function parishFromRegistration(registration) {
   const id = registration.parishId || slugify(registration.parishName);
   if (!id || registration.status !== "verified") return null;
@@ -1684,6 +1696,8 @@ function parishFromRegistration(registration) {
     status: "verified",
     givingStatus: registration.givingStatus || "active",
     source: "registration",
+    imageUrl: registration.imageUrl || registration.photoUrl || communitySketchImage(type),
+    imageAlt: registration.imageAlt || communitySketchAlt(type),
     liturgicalCalendar: registration.liturgicalCalendar || "julian",
     recurringGivingEnabled: registration.recurringGivingEnabled ?? true,
     candlesEnabled: registration.candlesEnabled ?? true,

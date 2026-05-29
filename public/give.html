@@ -103,11 +103,24 @@
     .parish-card { background: white; border: 0.5px solid rgba(166,159,145,0.3); border-radius: var(--rlg); padding: 1.1rem 1.25rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s; text-decoration: none; color: inherit; }
     .parish-card:hover { border-color: rgba(200,162,74,0.5); box-shadow: 0 4px 20px rgba(15,45,31,0.08); transform: translateY(-1px); }
 
-    /* AVATAR VARIANTS */
-    .parish-avatar { width: 48px; height: 48px; min-width: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .parish-avatar.mission   { background: var(--deep); }
-    .parish-avatar.parish    { background: var(--deep); }
-    .parish-avatar.monastery { background: rgba(200,162,74,0.1); border: 0.5px solid rgba(200,162,74,0.3); }
+    /* PARISH ARTWORK */
+    .parish-art {
+      width: 104px;
+      height: 78px;
+      min-width: 104px;
+      border-radius: 13px;
+      overflow: hidden;
+      background: #fbf8f0;
+      border: 0.5px solid rgba(200,162,74,0.32);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.55);
+      flex-shrink: 0;
+    }
+    .parish-art img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
 
     .parish-info { flex: 1; min-width: 0; }
     .parish-name { font-size: 15px; font-weight: 500; color: var(--ink); margin-bottom: 3px; font-family: var(--serif); }
@@ -167,7 +180,8 @@
     @media (max-width: 480px) {
       .hero { padding: 3rem 1.25rem 2.5rem; }
       .main { padding: 2rem 1.25rem 4rem; }
-      .parish-card { padding: 1rem 1rem; }
+      .parish-card { padding: 0.9rem; gap: 0.85rem; }
+      .parish-art { width: 84px; height: 66px; min-width: 84px; border-radius: 11px; }
       .icon-legend { gap: 1rem; }
       .footer-inner { flex-direction: column; }
     }
@@ -375,29 +389,39 @@
     let activeFilter = 'all';
     let searchQuery  = '';
 
-    function parishIcon(type) {
-      if (type === 'monastery') {
-        return '<svg width="28" height="28" viewBox="0 0 38 38" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="30" height="18" rx="1"/><rect x="14" y="6" width="10" height="14" rx="1"/><line x1="19" y1="2" x2="19" y2="6"/><line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/><line x1="16" y1="5.5" x2="22" y2="5.5"/><path d="M15 32 L15 25 Q19 21 23 25 L23 32"/><rect x="7" y="18" width="5" height="6" rx="2.5"/><rect x="26" y="18" width="5" height="6" rx="2.5"/></svg>';
-      }
-      if (type === 'mission') {
-        return '<svg width="28" height="28" viewBox="0 0 38 38" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="2" x2="19" y2="6"/><line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/><line x1="16" y1="5.5" x2="22" y2="5.5"/><path d="M19 6 C10 10 8 17 11 22 C13 26 16 27 19 27 C22 27 25 26 27 22 C30 17 28 10 19 6Z"/><line x1="12" y1="27" x2="26" y2="27"/><line x1="13" y1="29" x2="25" y2="29"/></svg>';
-      }
-      return '<svg width="28" height="28" viewBox="0 0 38 38" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="2" x2="19" y2="5"/><line x1="17" y1="3.5" x2="21" y2="3.5"/><path d="M19 5 C15 7 13 11 14 14 C15 16 17 17 19 17 C21 17 23 16 24 14 C25 11 23 7 19 5Z"/><line x1="10" y1="6" x2="10" y2="8"/><path d="M10 8 C8 9.5 7 12 7.5 14 C8 15.5 9 16 10 16 C11 16 12 15.5 12.5 14 C13 12 12 9.5 10 8Z"/><line x1="28" y1="6" x2="28" y2="8"/><path d="M28 8 C26 9.5 25 12 25.5 14 C26 15.5 27 16 28 16 C29 16 30 15.5 30.5 14 C31 12 30 9.5 28 8Z"/><rect x="4" y="17" width="30" height="14" rx="1"/><path d="M16 31 L16 25 Q19 22 22 25 L22 31"/></svg>';
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
+    }
+
+    function parishSketchImage(type) {
+      if (type === 'monastery') return '/images/giving/monastery-square.png';
+      if (type === 'mission') return '/images/giving/mission-church-square.png';
+      return '/images/giving/parish-church-square.png';
     }
 
     function renderParishCard(parish, index) {
       const location = `${parish.city || ''}, ${parish.state || ''}`.replace(/^, /, '').replace(/, $/, '');
       const badge = parish.freeForever ? '<span class="parish-badge free">Free forever</span>' : '<span class="parish-badge verified">Verified</span>';
+      const imageUrl = parish.imageUrl || parishSketchImage(parish.type);
+      const imageAlt = parish.imageAlt || `${parish.name || 'Orthodox community'} sketch`;
       return `
         <a href="/give/form?parish=${encodeURIComponent(parish.id)}" class="parish-card reveal visible"
-           data-name="${parish.name}" data-jurisdiction="${parish.jurisdiction}" data-type="${parish.type}" data-city="${location}">
-          <div class="parish-avatar ${parish.type}">${parishIcon(parish.type)}</div>
+           data-name="${escapeHtml(parish.name)}" data-jurisdiction="${escapeHtml(parish.jurisdiction)}" data-type="${escapeHtml(parish.type)}" data-city="${escapeHtml(location)}">
+          <div class="parish-art ${escapeHtml(parish.type)}">
+            <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(imageAlt)}" loading="lazy" />
+          </div>
           <div class="parish-info">
-            <div class="parish-name">${parish.name}</div>
+            <div class="parish-name">${escapeHtml(parish.name)}</div>
             <div class="parish-meta">
-              <span class="parish-jurisdiction">${parish.jurisdictionLabel || parish.jurisdiction}</span>
+              <span class="parish-jurisdiction">${escapeHtml(parish.jurisdictionLabel || parish.jurisdiction)}</span>
               <span class="parish-dot"></span>
-              <span class="parish-location">${location}</span>
+              <span class="parish-location">${escapeHtml(location)}</span>
             </div>
           </div>
           ${badge}
