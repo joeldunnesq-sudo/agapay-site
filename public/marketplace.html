@@ -45,15 +45,15 @@
     img { max-width: 100%; display: block; }
 
     .site-header {
-      position: absolute;
+      position: sticky;
       top: 0;
-      left: 0;
-      right: 0;
-      z-index: 30;
-      padding: 1.25rem clamp(1rem, 3vw, 3rem);
+      z-index: 40;
+      background: linear-gradient(90deg, #061522, #0B2130);
+      border-bottom: 1px solid rgba(200, 162, 74, 0.24);
+      padding: 0.95rem clamp(1rem, 2.6vw, 2.6rem);
     }
     .nav {
-      max-width: 1240px;
+      width: min(1320px, 100%);
       margin: 0 auto;
       display: flex;
       align-items: center;
@@ -68,15 +68,15 @@
       min-width: max-content;
     }
     .brand-mark {
-      width: 52px;
-      height: 52px;
+      width: 42px;
+      height: 42px;
       display: grid;
       place-items: center;
-      border: 1px solid rgba(200, 162, 74, 0.55);
       border-radius: 50%;
-      background: rgba(6, 21, 34, 0.34);
+      border: 1px solid rgba(200, 162, 74, 0.52);
+      background: rgba(6, 21, 34, 0.45);
     }
-    .brand-mark img { width: 48px; height: 48px; object-fit: contain; }
+    .brand-mark img { width: 38px; height: 38px; object-fit: contain; }
     .brand-name {
       display: flex;
       flex-direction: column;
@@ -84,48 +84,64 @@
     }
     .brand-name strong {
       font-family: var(--serif);
-      font-size: 2.05rem;
+      font-size: 2rem;
       font-weight: 500;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
     .brand-name span {
-      margin-top: 0.2rem;
+      margin-top: 0.22rem;
       color: var(--gold);
       font-size: 0.6rem;
-      font-weight: 500;
-      letter-spacing: 0.12em;
+      font-weight: 600;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
     }
     .nav-links {
       display: flex;
       align-items: center;
       margin-left: auto;
-      gap: clamp(1rem, 2.5vw, 2.4rem);
-      color: rgba(246, 241, 232, 0.86);
-      font-size: 0.86rem;
+      gap: clamp(0.9rem, 2vw, 2rem);
+      color: rgba(246, 241, 232, 0.9);
+      font-size: 0.9rem;
       font-weight: 600;
     }
     .nav-links a.active {
       color: var(--gold);
       border-bottom: 2px solid var(--gold);
-      padding-bottom: 0.33rem;
+      padding-bottom: 0.36rem;
     }
-    .nav-cta {
+    .nav-actions { display: flex; align-items: center; gap: 0.8rem; margin-left: 1rem; }
+    .btn-donate {
+      min-height: 44px;
+      padding: 0 1.45rem;
+      border-radius: 8px;
+      border: 1px solid rgba(200, 162, 74, 0.6);
+      color: var(--cream);
+      font-size: 0.95rem;
+      font-weight: 600;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      min-height: 46px;
-      padding: 0 1.45rem;
-      border-radius: 5px;
-      color: var(--night);
-      font-family: var(--serif);
-      font-size: 1.08rem;
-      font-style: italic;
-      font-weight: 500;
-      letter-spacing: 0.03em;
-      background: linear-gradient(135deg, #D6AF5B, #B98832);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+      gap: 0.45rem;
+      background: rgba(6, 21, 34, 0.34);
+    }
+    .btn-donate svg, .nav-avatar svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--gold);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .nav-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid rgba(200, 162, 74, 0.7);
+      background: rgba(6, 21, 34, 0.36);
+      display: grid;
+      place-items: center;
     }
 
     .mobile-menu-btn {
@@ -270,78 +286,135 @@
     }
 
     .market-hero {
-      position: relative;
-      min-height: 420px;
-      color: var(--cream);
+      width: min(1320px, calc(100% - 2rem));
+      margin: 0.95rem auto 0;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      box-shadow: 0 10px 38px rgba(12, 22, 32, 0.08);
       overflow: hidden;
-      background: var(--night);
-    }
-    .market-hero::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background:
-        linear-gradient(90deg, rgba(3, 14, 24, 0.97) 0%, rgba(5, 18, 29, 0.94) 38%, rgba(5, 18, 29, 0.22) 71%, rgba(5, 18, 29, 0.66) 100%),
-        linear-gradient(0deg, rgba(3, 14, 24, 0.9), rgba(3, 14, 24, 0.06) 50%, rgba(3, 14, 24, 0.44)),
-        url("/images/marketplace/church-interior-gold.jpg") center right / cover no-repeat;
-    }
-    .market-hero::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 76% 30%, rgba(216, 175, 91, 0.22), transparent 25rem);
-      pointer-events: none;
     }
     .market-hero-inner {
-      position: relative;
-      z-index: 2;
-      max-width: 1240px;
-      margin: 0 auto;
-      padding: 8rem clamp(1.25rem, 5vw, 4.5rem) 2.6rem;
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) minmax(420px, 1.1fr);
+      gap: 1rem;
+      padding: 2rem 2.2rem;
+      border-bottom: 1px solid var(--line);
+      align-items: center;
+      overflow: hidden;
     }
-    .hero-copy { max-width: 660px; }
+    .hero-copy { max-width: 620px; }
     .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.56rem;
       color: var(--gold);
       text-transform: uppercase;
-      letter-spacing: 0.12em;
-      font-size: 0.72rem;
-      font-weight: 600;
+      letter-spacing: 0.1em;
+      font-size: 0.76rem;
+      font-weight: 700;
       margin-bottom: 0.7rem;
+    }
+    .eyebrow svg {
+      width: 21px;
+      height: 21px;
+      stroke: var(--gold);
+      fill: none;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
     .hero-copy h1 {
       font-family: var(--serif);
-      font-size: clamp(2.8rem, 6vw, 5.3rem);
-      line-height: 1.02;
+      color: #0A1524;
+      font-size: clamp(2.7rem, 5.5vw, 4.5rem);
+      line-height: 0.98;
       font-weight: 500;
-      letter-spacing: -0.01em;
       margin-bottom: 0.75rem;
     }
     .hero-copy p {
-      max-width: 560px;
-      color: rgba(246, 241, 232, 0.9);
-      line-height: 1.72;
+      color: #4D4A44;
       font-size: 1.03rem;
+      line-height: 1.66;
+      max-width: 540px;
+      margin-bottom: 1.25rem;
+    }
+    .hero-actions { display: flex; align-items: center; gap: 0.95rem; flex-wrap: wrap; }
+    .hero-btn-primary, .hero-btn-secondary {
+      min-height: 46px;
+      border-radius: 7px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      padding: 0 1.25rem;
+      font-size: 0.94rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .hero-btn-primary {
+      background: linear-gradient(135deg, #061522, #0B2130);
+      color: #F6F1E8;
+      border: 1px solid rgba(200, 162, 74, 0.25);
+    }
+    .hero-btn-secondary { color: #101621; }
+    .hero-btn-primary svg, .hero-btn-secondary svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .hero-btn-primary svg { stroke: var(--gold); }
+    .hero-btn-secondary svg { stroke: #4B4B47; }
+    .hero-art {
+      position: relative;
+      min-height: 350px;
+      display: grid;
+      align-items: end;
+      justify-items: end;
+    }
+    .hero-art::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(255, 253, 248, 1), rgba(255, 253, 248, 0.58) 38%, rgba(255, 253, 248, 0.15));
+      pointer-events: none;
+      z-index: 2;
+    }
+    .hero-art img {
+      width: min(100%, 960px);
+      object-fit: contain;
+      max-height: 390px;
+      opacity: 0.9;
+      filter: sepia(0.65) saturate(0.7) brightness(1.06);
     }
     .hero-search {
-      margin-top: 1rem;
-      max-width: 560px;
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      right: 1rem;
+      z-index: 4;
+      margin-top: 0;
       display: grid;
       grid-template-columns: 1fr auto;
       border: 1px solid rgba(200, 162, 74, 0.35);
       border-radius: 10px;
       overflow: hidden;
-      background: rgba(246, 241, 232, 0.08);
+      background: rgba(246, 241, 232, 0.74);
+      backdrop-filter: blur(3px);
     }
     .hero-search input {
       border: 0;
       outline: 0;
       background: transparent;
-      color: var(--cream);
+      color: #0B2130;
       font-family: var(--sans);
       font-size: 0.95rem;
       padding: 0.86rem 0.95rem;
     }
-    .hero-search input::placeholder { color: rgba(246, 241, 232, 0.62); }
+    .hero-search input::placeholder { color: rgba(11, 33, 48, 0.56); }
     .hero-search button {
       border: 0;
       width: 54px;
@@ -358,36 +431,6 @@
       stroke-width: 2;
       stroke-linecap: round;
       stroke-linejoin: round;
-    }
-    .hero-trust {
-      margin-top: 1rem;
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.8rem;
-      max-width: 760px;
-    }
-    .hero-trust-item {
-      display: grid;
-      grid-template-columns: 20px 1fr;
-      gap: 0.5rem;
-      color: rgba(246, 241, 232, 0.84);
-      font-size: 0.82rem;
-      line-height: 1.44;
-    }
-    .hero-trust-item strong {
-      display: block;
-      color: #fff8e8;
-      margin-bottom: 0.12rem;
-    }
-    .hero-trust-item svg {
-      width: 18px;
-      height: 18px;
-      stroke: var(--gold);
-      fill: none;
-      stroke-width: 1.8;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      margin-top: 0.08rem;
     }
 
     .market-body {
@@ -834,6 +877,12 @@
     }
 
     @media (max-width: 1160px) {
+      .nav-links { display: none; }
+      .market-hero-inner { grid-template-columns: 1fr; padding: 1.5rem 1.25rem; }
+      .hero-art { min-height: 0; justify-items: center; }
+      .hero-art img { max-height: 330px; }
+      .hero-art::before { background: linear-gradient(180deg, rgba(255,253,248,0), rgba(255,253,248,0.32)); }
+      .hero-search { position: static; width: min(640px, 100%); margin-top: 1rem; }
       .market-body { grid-template-columns: 1fr; margin-top: -1.2rem; }
       .rail { position: static; }
       .shop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -841,16 +890,17 @@
       .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .market-cta .inner { grid-template-columns: 1fr; }
       .footer-grid { grid-template-columns: 1fr 1fr; }
+      .footer-bottom { flex-direction: column; align-items: flex-start; }
     }
     @media (max-width: 900px) {
-      .nav-links { display: none; }
       .mobile-menu-btn { display: inline-flex; }
-      .market-hero::before {
-        background:
-          linear-gradient(180deg, rgba(3, 14, 24, 0.94), rgba(3, 14, 24, 0.7)),
-          url("/images/marketplace/church-interior-gold.jpg") center / cover no-repeat;
-      }
-      .hero-trust { grid-template-columns: 1fr; }
+      .btn-donate { min-height: 40px; padding: 0 1rem; }
+      .btn-donate span { display: none; }
+      .hero-copy h1 { font-size: clamp(2.6rem, 11vw, 3.8rem); }
+      .hero-copy p { font-size: 0.95rem; }
+      .hero-actions { width: 100%; }
+      .hero-btn-primary, .hero-btn-secondary { width: 100%; }
+      .hero-art img { max-height: 260px; }
       .rail { display: none; }
       .market-body { width: min(1240px, calc(100% - 1rem)); }
       .pane-status { flex-direction: column; align-items: flex-start; }
@@ -861,12 +911,10 @@
       .footer-bottom { flex-direction: column; align-items: flex-start; }
     }
     @media (max-width: 720px) {
-      .site-header { position: absolute; padding-top: 1rem; }
+      .site-header { padding: 0.8rem 0.9rem; }
       .brand-name strong { font-size: 1.75rem; letter-spacing: 0.07em; }
       .brand-name span { display: none; }
-      .nav-cta { min-height: 42px; padding-inline: 1rem; }
-      .market-hero-inner { padding-top: 7.5rem; }
-      .hero-copy h1 { font-size: clamp(3rem, 13vw, 4.9rem); }
+      .hero-copy h1 { font-size: clamp(2.6rem, 11vw, 3.8rem); }
     }
   </style>
 </head>
@@ -883,7 +931,11 @@
         <a href="/marketplace" class="active">Marketplace</a>
         <a href="/directory">Directory</a>
         <a href="/how-it-works">Resources</a>
-        <a href="/register" class="nav-cta">Join AGAPAY</a>
+        <a href="/about">About</a>
+      </div>
+      <div class="nav-actions">
+        <a class="btn-donate" href="/donor/login"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg><span>Donate</span></a>
+        <a class="nav-avatar" href="/donor/login" aria-label="Donor account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg></a>
       </div>
       <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open menu">
         <svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
@@ -895,7 +947,7 @@
   <aside class="mobile-drawer" id="mobileDrawer" aria-label="Marketplace mobile menu">
     <div class="drawer-head">
       <strong class="drawer-title">Marketplace</strong>
-      <button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close menu">×</button>
+      <button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close menu">x</button>
     </div>
     <div class="drawer-scroll">
       <nav class="drawer-links" aria-label="Drawer navigation">
@@ -921,20 +973,22 @@
     <section class="market-hero">
       <div class="market-hero-inner">
         <div class="hero-copy">
-          <div class="eyebrow">Marketplace</div>
+          <div class="eyebrow"><svg viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M5 7v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>Marketplace</div>
           <h1>Shop with purpose.</h1>
           <p>Discover products and services from Orthodox businesses, monasteries, and ministries. Every purchase supports our shared mission.</p>
+          <div class="hero-actions">
+            <a class="hero-btn-primary" href="#featuredShopsGrid"><svg viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M5 7v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>Explore Shops</a>
+            <a class="hero-btn-secondary" href="/how-it-works">How It Works <svg viewBox="0 0 24 24"><path d="M5 12h13"/><path d="m13 6 6 6-6 6"/></svg></a>
+          </div>
+        </div>
+        <div class="hero-art">
+          <img src="/images/marketplace/marketplace-sketch-hero.png" alt="Orthodox marketplace sketch" />
           <form class="hero-search" id="marketSearchForm">
             <input id="marketSearchInput" type="search" placeholder="Search products, categories, or shops" aria-label="Search marketplace" />
             <button type="submit" aria-label="Search marketplace">
               <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
             </button>
           </form>
-          <div class="hero-trust">
-            <article class="hero-trust-item"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 2.8 8 7 10 4.2-2 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-5"/></svg><div><strong>Faith-Aligned</strong><span>Every shop shares Orthodox values.</span></div></article>
-            <article class="hero-trust-item"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><div><strong>Secure &amp; Trusted</strong><span>Protected checkout through AGAPAY.</span></div></article>
-            <article class="hero-trust-item"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20c.7-3 2.7-4.5 5-4.5"/><path d="M16 15.5c2.3 0 4.3 1.5 5 4.5"/></svg><div><strong>Support Orthodox Life</strong><span>Your purchases strengthen Orthodox communities.</span></div></article>
-          </div>
         </div>
       </div>
     </section>

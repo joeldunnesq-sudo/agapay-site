@@ -222,7 +222,7 @@
     .hero-btn-secondary svg { stroke: #4B4B47; }
     .hero-art {
       position: relative;
-      min-height: 290px;
+      min-height: 350px;
       display: grid;
       align-items: end;
       justify-items: end;
@@ -236,9 +236,9 @@
       z-index: 2;
     }
     .hero-art img {
-      width: min(100%, 820px);
+      width: min(100%, 960px);
       object-fit: contain;
-      max-height: 320px;
+      max-height: 390px;
       opacity: 0.9;
       filter: sepia(0.65) saturate(0.7) brightness(1.06);
     }
@@ -674,6 +674,7 @@
       .nav-links { display: none; }
       .giving-hero { grid-template-columns: 1fr; padding: 1.5rem 1.25rem; }
       .hero-art { min-height: 0; justify-items: center; }
+      .hero-art img { max-height: 330px; }
       .hero-art::before { background: linear-gradient(180deg, rgba(255,253,248,0), rgba(255,253,248,0.32)); }
       .causes-nav {
         display: grid;
@@ -698,7 +699,7 @@
       .hero-copy p { font-size: 0.95rem; }
       .hero-actions { width: 100%; }
       .hero-btn-primary, .hero-btn-secondary { width: 100%; }
-      .hero-art img { max-height: 220px; }
+      .hero-art img { max-height: 260px; }
       .causes-nav { grid-auto-columns: minmax(230px, 1fr); }
       .campaign-grid { grid-template-columns: 1fr; }
       .section-head h2 { font-size: 2rem; }
@@ -707,6 +708,8 @@
       .footer-grid { grid-template-columns: 1fr; }
     }
   </style>
+  <link rel="stylesheet" href="/site-mobile-nav.css" />
+  <script src="/site-mobile-nav.js" defer></script>
 </head>
 <body>
   <header class="site-header">
