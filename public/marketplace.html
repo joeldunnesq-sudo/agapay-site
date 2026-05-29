@@ -1,60 +1,1218 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Marketplace | AGAPAY</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
+  <link rel="shortcut icon" href="/favicons/favicon.ico" />
+  <meta name="description" content="Shop the AGAPAY Orthodox marketplace for monastery goods, books, icons, and trusted Orthodox makers." />
+  <meta name="theme-color" content="#061522" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <style>
-    *{box-sizing:border-box} body{margin:0;font-family:"DM Sans",system-ui,sans-serif;background:#F6F1E8;color:#171715}
-    .header{position:sticky;top:0;z-index:20;background:#061522;border-bottom:1px solid rgba(200,162,74,.22)}
-    .nav{max-width:1120px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-    .brand{display:flex;align-items:center;gap:10px;color:#F6F1E8;text-decoration:none}.brand img{width:44px;height:44px}
-    .brand strong{font-family:"Cormorant Garamond",serif;letter-spacing:.08em;font-size:30px}
-    .links{display:flex;gap:20px;align-items:center}.links a{color:#E7DFD2;text-decoration:none;font-size:14px}
-    .cta{background:linear-gradient(135deg,#D6AF5B,#B98832);color:#061522;padding:10px 16px;border-radius:8px;font-weight:700;text-decoration:none}
-    .hero{background:linear-gradient(135deg,#061522,#0B2130);color:#F6F1E8;padding:72px 20px}
-    .wrap{max-width:1120px;margin:0 auto}
-    h1{font-family:"Cormorant Garamond",serif;font-size:54px;line-height:1.04;margin:0 0 12px}
-    p{line-height:1.7;max-width:760px}
-    .grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;padding:34px 20px 56px}
-    .card{background:#fff;border:1px solid rgba(111,106,96,.2);border-top:4px solid #C8A24A;border-radius:10px;padding:16px}
-    .card h3{margin:0 0 8px;font-size:18px}
-    .card p{margin:0;color:#6F6A60;font-size:14px}
-    @media (max-width:960px){.links{display:none}.grid{grid-template-columns:1fr 1fr}}
-    @media (max-width:640px){h1{font-size:38px}.grid{grid-template-columns:1fr}}
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --night: #061522;
+      --night-2: #0B2130;
+      --ink: #171715;
+      --cream: #F6F1E8;
+      --paper: #FFFDF8;
+      --stone: #70695D;
+      --muted: #A69F91;
+      --gold: #C8A24A;
+      --gold-dark: #A97C25;
+      --line: rgba(166, 159, 145, 0.28);
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "DM Sans", system-ui, sans-serif;
+      --r: 10px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      min-height: 100vh;
+      font-family: var(--sans);
+      color: var(--ink);
+      background: var(--cream);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+
+    .site-header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 30;
+      padding: 1.25rem clamp(1rem, 3vw, 3rem);
+    }
+    .nav {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--cream);
+      min-width: max-content;
+    }
+    .brand-mark {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(200, 162, 74, 0.55);
+      border-radius: 50%;
+      background: rgba(6, 21, 34, 0.34);
+    }
+    .brand-mark img { width: 48px; height: 48px; object-fit: contain; }
+    .brand-name {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+    .brand-name strong {
+      font-family: var(--serif);
+      font-size: 2.05rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .brand-name span {
+      margin-top: 0.2rem;
+      color: var(--gold);
+      font-size: 0.6rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+      gap: clamp(1rem, 2.5vw, 2.4rem);
+      color: rgba(246, 241, 232, 0.86);
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+    .nav-links a.active {
+      color: var(--gold);
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 0.33rem;
+    }
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 1.45rem;
+      border-radius: 5px;
+      color: var(--night);
+      font-family: var(--serif);
+      font-size: 1.08rem;
+      font-style: italic;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      background: linear-gradient(135deg, #D6AF5B, #B98832);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      border: 1px solid rgba(200, 162, 74, 0.45);
+      background: rgba(6, 21, 34, 0.45);
+      color: var(--cream);
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .mobile-menu-btn svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 16, 26, 0.58);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 70;
+    }
+    .mobile-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(90vw, 380px);
+      height: 100vh;
+      background: linear-gradient(180deg, #081a2a, #061522);
+      color: var(--cream);
+      transform: translateX(105%);
+      transition: transform 0.24s ease;
+      z-index: 80;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      border-left: 1px solid rgba(200, 162, 74, 0.26);
+      box-shadow: -20px 0 45px rgba(0, 0, 0, 0.35);
+    }
+    .drawer-open .drawer-backdrop {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .drawer-open .mobile-drawer { transform: translateX(0); }
+    .drawer-head {
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(200, 162, 74, 0.2);
+    }
+    .drawer-title {
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      letter-spacing: 0.04em;
+    }
+    .drawer-close {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid rgba(200, 162, 74, 0.3);
+      background: transparent;
+      color: var(--cream);
+      display: grid;
+      place-items: center;
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+    .drawer-scroll {
+      overflow-y: auto;
+      padding: 0.8rem 1rem 1.2rem;
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+    .drawer-links {
+      display: grid;
+      gap: 0.35rem;
+    }
+    .drawer-links a {
+      padding: 0.6rem 0.55rem;
+      border-radius: 8px;
+      color: rgba(246, 241, 232, 0.9);
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .drawer-links a.active {
+      background: rgba(200, 162, 74, 0.16);
+      color: #FFE7B6;
+    }
+    .drawer-join {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #D6AF5B, #B98832);
+      color: #0A1724;
+      font-size: 0.96rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .drawer-group h3 {
+      color: var(--gold);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+    .drawer-filter-list {
+      list-style: none;
+      display: grid;
+      gap: 0.34rem;
+    }
+    .drawer-filter-list button {
+      width: 100%;
+      text-align: left;
+      border: 0;
+      border-radius: 8px;
+      padding: 0.55rem 0.58rem;
+      background: transparent;
+      color: rgba(246, 241, 232, 0.82);
+      font-size: 0.9rem;
+      font-family: var(--sans);
+    }
+    .drawer-filter-list button.active {
+      background: rgba(200, 162, 74, 0.18);
+      color: #FFE7B6;
+      font-weight: 600;
+    }
+
+    .market-hero {
+      position: relative;
+      min-height: 420px;
+      color: var(--cream);
+      overflow: hidden;
+      background: var(--night);
+    }
+    .market-hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(3, 14, 24, 0.97) 0%, rgba(5, 18, 29, 0.94) 38%, rgba(5, 18, 29, 0.22) 71%, rgba(5, 18, 29, 0.66) 100%),
+        linear-gradient(0deg, rgba(3, 14, 24, 0.9), rgba(3, 14, 24, 0.06) 50%, rgba(3, 14, 24, 0.44)),
+        url("/images/vision/fresco-vault.jpg") center right / cover no-repeat;
+    }
+    .market-hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 76% 30%, rgba(216, 175, 91, 0.22), transparent 25rem);
+      pointer-events: none;
+    }
+    .market-hero-inner {
+      position: relative;
+      z-index: 2;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 8rem clamp(1.25rem, 5vw, 4.5rem) 2.6rem;
+    }
+    .hero-copy { max-width: 660px; }
+    .eyebrow {
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.72rem;
+      font-weight: 600;
+      margin-bottom: 0.7rem;
+    }
+    .hero-copy h1 {
+      font-family: var(--serif);
+      font-size: clamp(2.8rem, 6vw, 5.3rem);
+      line-height: 1.02;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.75rem;
+    }
+    .hero-copy p {
+      max-width: 560px;
+      color: rgba(246, 241, 232, 0.9);
+      line-height: 1.72;
+      font-size: 1.03rem;
+    }
+    .hero-search {
+      margin-top: 1rem;
+      max-width: 560px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      border: 1px solid rgba(200, 162, 74, 0.35);
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(246, 241, 232, 0.08);
+    }
+    .hero-search input {
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--cream);
+      font-family: var(--sans);
+      font-size: 0.95rem;
+      padding: 0.86rem 0.95rem;
+    }
+    .hero-search input::placeholder { color: rgba(246, 241, 232, 0.62); }
+    .hero-search button {
+      border: 0;
+      width: 54px;
+      background: linear-gradient(135deg, #D6AF5B, #B98832);
+      color: #0A1724;
+      display: grid;
+      place-items: center;
+    }
+    .hero-search svg {
+      width: 19px;
+      height: 19px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .hero-trust {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.8rem;
+      max-width: 760px;
+    }
+    .hero-trust-item {
+      display: grid;
+      grid-template-columns: 20px 1fr;
+      gap: 0.5rem;
+      color: rgba(246, 241, 232, 0.84);
+      font-size: 0.82rem;
+      line-height: 1.44;
+    }
+    .hero-trust-item strong {
+      display: block;
+      color: #fff8e8;
+      margin-bottom: 0.12rem;
+    }
+    .hero-trust-item svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--gold);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      margin-top: 0.08rem;
+    }
+
+    .market-body {
+      width: min(1240px, calc(100% - 2rem));
+      margin: -1.45rem auto 0;
+      display: grid;
+      grid-template-columns: 272px minmax(0, 1fr);
+      gap: 1rem;
+      align-items: start;
+      position: relative;
+      z-index: 10;
+    }
+    .rail {
+      position: sticky;
+      top: 1rem;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(200, 162, 74, 0.2);
+      background:
+        linear-gradient(180deg, rgba(6, 21, 34, 0.98), rgba(5, 18, 29, 0.95)),
+        url("/images/vision/fresco-vault.jpg") center/cover no-repeat;
+      color: rgba(246, 241, 232, 0.92);
+      box-shadow: 0 16px 44px rgba(6, 21, 34, 0.2);
+    }
+    .rail-group {
+      padding: 1rem;
+      border-bottom: 1px solid rgba(200, 162, 74, 0.12);
+    }
+    .rail-group:last-of-type { border-bottom: 0; }
+    .rail-head {
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.68rem;
+      font-weight: 700;
+      margin-bottom: 0.55rem;
+    }
+    .rail-list {
+      list-style: none;
+      display: grid;
+      gap: 0.3rem;
+    }
+    .rail-list button {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: rgba(246, 241, 232, 0.86);
+      text-align: left;
+      border-radius: 8px;
+      padding: 0.52rem 0.58rem;
+      font-size: 0.88rem;
+      font-family: var(--sans);
+    }
+    .rail-list button.active {
+      background: rgba(200, 162, 74, 0.19);
+      color: #FFE9B3;
+      font-weight: 600;
+    }
+    .rail-promo {
+      margin: 0.9rem;
+      border-radius: 12px;
+      border: 1px solid rgba(200, 162, 74, 0.2);
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .rail-promo img {
+      width: 100%;
+      height: 125px;
+      object-fit: cover;
+      opacity: 0.88;
+    }
+    .rail-promo-copy { padding: 0.8rem; }
+    .rail-promo-copy h4 {
+      font-family: var(--serif);
+      font-size: 1.08rem;
+      color: var(--cream);
+      margin-bottom: 0.3rem;
+    }
+    .rail-promo-copy p {
+      color: rgba(246, 241, 232, 0.76);
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .main-pane {
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      overflow: hidden;
+      box-shadow: 0 12px 36px rgba(6, 21, 34, 0.1);
+    }
+    .pane-status {
+      padding: 0.95rem 1.2rem;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      font-size: 0.84rem;
+      color: var(--stone);
+      background: linear-gradient(180deg, #fffdf8, #faf4e9);
+    }
+    .status-pill {
+      border: 1px solid rgba(200, 162, 74, 0.4);
+      border-radius: 999px;
+      padding: 0.22rem 0.62rem;
+      color: #8A6620;
+      font-weight: 700;
+      font-size: 0.74rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .status-pill.loading {
+      color: #6F6A60;
+      border-color: rgba(166, 159, 145, 0.42);
+    }
+
+    .market-section {
+      padding: 1.6rem 1.4rem 1.7rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .market-section:last-of-type { border-bottom: 0; }
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.8rem;
+      margin-bottom: 0.85rem;
+    }
+    .section-head h2 {
+      font-family: var(--serif);
+      font-size: clamp(1.9rem, 3vw, 2.7rem);
+      line-height: 1.04;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      color: var(--night);
+    }
+    .section-link {
+      color: #8A6620;
+      font-size: 0.9rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .empty-note {
+      border: 1px dashed rgba(166, 159, 145, 0.5);
+      border-radius: 12px;
+      padding: 1rem;
+      color: var(--stone);
+      line-height: 1.55;
+      background: #fff;
+      font-size: 0.92rem;
+    }
+
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+    .shop-card {
+      border: 1px solid rgba(166, 159, 145, 0.32);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 7px 20px rgba(6, 21, 34, 0.05);
+    }
+    .shop-thumb {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      background: #0A1C2C;
+    }
+    .shop-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .shop-fav {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid rgba(246, 241, 232, 0.75);
+      background: rgba(6, 21, 34, 0.55);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 0.85rem;
+      line-height: 1;
+    }
+    .shop-thumb.icon-only {
+      display: grid;
+      place-items: center;
+      background: linear-gradient(145deg, #04111B, #0D2A3E);
+    }
+    .shop-thumb.icon-only svg {
+      width: 88px;
+      height: 88px;
+      stroke: var(--gold);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .shop-body { padding: 0.78rem 0.82rem 0.88rem; }
+    .shop-title {
+      color: var(--night);
+      font-weight: 700;
+      font-size: 0.98rem;
+      line-height: 1.34;
+    }
+    .shop-meta {
+      margin-top: 0.22rem;
+      color: var(--stone);
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+    .shop-rating {
+      margin-top: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      color: #786F62;
+    }
+    .tag {
+      border: 1px solid rgba(200, 162, 74, 0.5);
+      border-radius: 999px;
+      padding: 0.17rem 0.46rem;
+      color: #8A6620;
+      background: rgba(200, 162, 74, 0.12);
+      font-size: 0.71rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 0.76rem;
+    }
+    .category-card {
+      border: 1px solid rgba(166, 159, 145, 0.33);
+      border-radius: 12px;
+      background: #fff;
+      min-height: 126px;
+      padding: 0.86rem 0.65rem;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      text-align: center;
+      gap: 0.4rem;
+    }
+    .category-card svg {
+      width: 31px;
+      height: 31px;
+      stroke: #A5792B;
+      fill: none;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .category-card h3 {
+      color: var(--night);
+      font-size: 0.9rem;
+      font-weight: 700;
+      line-height: 1.32;
+    }
+    .category-card p {
+      color: var(--stone);
+      font-size: 0.78rem;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0.76rem;
+    }
+    .product-card {
+      border: 1px solid rgba(166, 159, 145, 0.32);
+      border-radius: 12px;
+      background: #fff;
+      overflow: hidden;
+      box-shadow: 0 8px 22px rgba(6, 21, 34, 0.05);
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+    .product-thumb {
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      background: #e6decf;
+    }
+    .product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .product-body {
+      padding: 0.72rem;
+      display: grid;
+      align-content: start;
+      gap: 0.28rem;
+    }
+    .product-title {
+      font-size: 0.93rem;
+      font-weight: 700;
+      color: var(--night);
+      line-height: 1.34;
+    }
+    .product-shop {
+      color: var(--stone);
+      font-size: 0.78rem;
+      line-height: 1.3;
+    }
+    .product-foot {
+      margin-top: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.45rem;
+    }
+    .price {
+      color: #1f1b14;
+      font-weight: 800;
+      font-size: 1.12rem;
+      font-family: var(--numeric-font, var(--serif));
+    }
+    .cart-mini {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      border: 1px solid rgba(200, 162, 74, 0.45);
+      color: #9A6F21;
+      background: rgba(200, 162, 74, 0.08);
+      display: grid;
+      place-items: center;
+    }
+    .cart-mini svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .market-cta {
+      margin-top: 1rem;
+      background:
+        linear-gradient(90deg, rgba(6, 21, 34, 0.96), rgba(6, 21, 34, 0.8)),
+        url("/images/vision/hero-incense.jpg") center/cover no-repeat;
+      color: var(--cream);
+      border-top: 1px solid rgba(200, 162, 74, 0.24);
+      border-bottom: 1px solid rgba(200, 162, 74, 0.16);
+    }
+    .market-cta .inner {
+      width: min(1240px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.7rem 0;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 1rem;
+    }
+    .market-cta h2 {
+      font-family: var(--serif);
+      font-size: clamp(2.05rem, 3.8vw, 3rem);
+      font-weight: 500;
+      line-height: 1.05;
+      margin-bottom: 0.33rem;
+    }
+    .market-cta p {
+      color: rgba(246, 241, 232, 0.84);
+      max-width: 560px;
+      line-height: 1.6;
+    }
+    .market-cta .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 1.2rem;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #D6AF5B, #B98832);
+      color: #0A1724;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .site-footer {
+      background: #05131F;
+      color: rgba(246, 241, 232, 0.74);
+      border-top: 1px solid rgba(200, 162, 74, 0.15);
+      padding: 2.2rem 0 1.2rem;
+    }
+    .footer-inner {
+      width: min(1240px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.6fr repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+    }
+    .footer-lockup {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin-bottom: 0.35rem;
+    }
+    .footer-lockup img { width: 40px; height: 40px; object-fit: contain; }
+    .footer-lockup strong {
+      font-family: var(--serif);
+      font-size: 1.8rem;
+      font-weight: 500;
+      color: var(--cream);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .footer-brand p {
+      color: rgba(246, 241, 232, 0.62);
+      line-height: 1.56;
+      max-width: 320px;
+    }
+    .footer-col h4 {
+      color: var(--gold);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .footer-col a {
+      display: block;
+      color: rgba(246, 241, 232, 0.8);
+      font-size: 0.92rem;
+      margin-bottom: 0.35rem;
+    }
+    .footer-bottom {
+      border-top: 1px solid rgba(200, 162, 74, 0.14);
+      padding-top: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      color: rgba(246, 241, 232, 0.56);
+      font-size: 0.84rem;
+    }
+
+    @media (max-width: 1160px) {
+      .market-body { grid-template-columns: 1fr; margin-top: -1.2rem; }
+      .rail { position: static; }
+      .shop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .category-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .market-cta .inner { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 900px) {
+      .nav-links { display: none; }
+      .mobile-menu-btn { display: inline-flex; }
+      .market-hero::before {
+        background:
+          linear-gradient(180deg, rgba(3, 14, 24, 0.94), rgba(3, 14, 24, 0.7)),
+          url("/images/vision/fresco-vault.jpg") center / cover no-repeat;
+      }
+      .hero-trust { grid-template-columns: 1fr; }
+      .rail { display: none; }
+      .market-body { width: min(1240px, calc(100% - 1rem)); }
+      .pane-status { flex-direction: column; align-items: flex-start; }
+      .market-section { padding: 1.3rem 1rem 1.35rem; }
+      .section-head { flex-direction: column; align-items: flex-start; gap: 0.4rem; }
+      .shop-grid, .category-grid, .product-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-bottom { flex-direction: column; align-items: flex-start; }
+    }
+    @media (max-width: 720px) {
+      .site-header { position: absolute; padding-top: 1rem; }
+      .brand-name strong { font-size: 1.75rem; letter-spacing: 0.07em; }
+      .brand-name span { display: none; }
+      .nav-cta { min-height: 42px; padding-inline: 1rem; }
+      .market-hero-inner { padding-top: 7.5rem; }
+      .hero-copy h1 { font-size: clamp(3rem, 13vw, 4.9rem); }
+    }
   </style>
 </head>
 <body>
-  <header class="header">
-    <nav class="nav">
-      <a class="brand" href="/"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></a>
-      <div class="links">
-        <a href="/giving">Giving</a>
-        <a href="/marketplace">Marketplace</a>
-        <a href="/directory">Directory</a>
+  <header class="site-header">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="/" aria-label="AGAPAY home">
+        <span class="brand-mark"><img src="/mark.png" alt="" /></span>
+        <span class="brand-name"><strong>AGAPAY</strong><span>Love how you give</span></span>
+      </a>
+      <div class="nav-links">
         <a href="/vision">Vision</a>
+        <a href="/giving">Giving</a>
+        <a href="/marketplace" class="active">Marketplace</a>
+        <a href="/directory">Directory</a>
         <a href="/how-it-works">Resources</a>
-        <a class="cta" href="/register">Join AGAPAY</a>
+        <a href="/register" class="nav-cta">Join AGAPAY</a>
       </div>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open menu">
+        <svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+      </button>
     </nav>
   </header>
-  <section class="hero">
-    <div class="wrap">
-      <h1>Orthodox Marketplace</h1>
-      <p>Commerce rooted in shared faith and community support. AGAPAY Marketplace will connect buyers with Orthodox businesses, monasteries, artisans, publishers, and church suppliers.</p>
+
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="mobile-drawer" id="mobileDrawer" aria-label="Marketplace mobile menu">
+    <div class="drawer-head">
+      <strong class="drawer-title">Marketplace</strong>
+      <button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close menu">×</button>
     </div>
-  </section>
-  <section class="wrap grid">
-    <article class="card"><h3>Orthodox Businesses</h3><p>Shops and services aligned with Orthodox values.</p></article>
-    <article class="card"><h3>Monasteries</h3><p>Monastic goods and mission-supporting purchases.</p></article>
-    <article class="card"><h3>Artisans</h3><p>Handcrafted items, iconography, and sacred art.</p></article>
-    <article class="card"><h3>Publishers</h3><p>Books, media, educational and liturgical materials.</p></article>
-    <article class="card"><h3>Church Supplies</h3><p>Practical essentials for parish and liturgical life.</p></article>
-  </section>
+    <div class="drawer-scroll">
+      <nav class="drawer-links" aria-label="Drawer navigation">
+        <a href="/vision">Vision</a>
+        <a href="/giving">Giving</a>
+        <a href="/marketplace" class="active">Marketplace</a>
+        <a href="/directory">Directory</a>
+        <a href="/how-it-works">Resources</a>
+      </nav>
+      <a class="drawer-join" href="/register">Join AGAPAY</a>
+      <section class="drawer-group">
+        <h3>Browse</h3>
+        <ul class="drawer-filter-list" id="drawerBrowseList"></ul>
+      </section>
+      <section class="drawer-group">
+        <h3>Featured</h3>
+        <ul class="drawer-filter-list" id="drawerFeaturedList"></ul>
+      </section>
+    </div>
+  </aside>
+
+  <main>
+    <section class="market-hero">
+      <div class="market-hero-inner">
+        <div class="hero-copy">
+          <div class="eyebrow">Marketplace</div>
+          <h1>Shop with purpose.</h1>
+          <p>Discover products and services from Orthodox businesses, monasteries, and ministries. Every purchase supports our shared mission.</p>
+          <form class="hero-search" id="marketSearchForm">
+            <input id="marketSearchInput" type="search" placeholder="Search products, categories, or shops" aria-label="Search marketplace" />
+            <button type="submit" aria-label="Search marketplace">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
+            </button>
+          </form>
+          <div class="hero-trust">
+            <article class="hero-trust-item"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 2.8 8 7 10 4.2-2 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-5"/></svg><div><strong>Faith-Aligned</strong><span>Every shop shares Orthodox values.</span></div></article>
+            <article class="hero-trust-item"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><div><strong>Secure &amp; Trusted</strong><span>Protected checkout through AGAPAY.</span></div></article>
+            <article class="hero-trust-item"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20c.7-3 2.7-4.5 5-4.5"/><path d="M16 15.5c2.3 0 4.3 1.5 5 4.5"/></svg><div><strong>Support Orthodox Life</strong><span>Your purchases strengthen Orthodox communities.</span></div></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="market-body">
+      <aside class="rail" aria-label="Marketplace filters">
+        <div class="rail-group">
+          <h2 class="rail-head">Browse</h2>
+          <ul class="rail-list" id="browseList"></ul>
+        </div>
+        <div class="rail-group">
+          <h2 class="rail-head">Featured</h2>
+          <ul class="rail-list" id="featuredList"></ul>
+        </div>
+        <article class="rail-promo">
+          <img src="/images/vision/hero-incense.jpg" alt="Orthodox incense" />
+          <div class="rail-promo-copy">
+            <h4>Every purchase strengthens Orthodox life.</h4>
+            <p>Thank you for supporting Orthodox businesses and ministries.</p>
+          </div>
+        </article>
+      </aside>
+
+      <div class="main-pane">
+        <div class="pane-status">
+          <span id="resultsLabel">Loading marketplace catalog...</span>
+          <span class="status-pill loading" id="filterStatusPill">Loading</span>
+        </div>
+
+        <section class="market-section">
+          <div class="section-head">
+            <h2>Featured Shops</h2>
+            <a class="section-link" href="#">View all shops -></a>
+          </div>
+          <div class="shop-grid" id="featuredShopsGrid"></div>
+        </section>
+
+        <section class="market-section">
+          <div class="section-head">
+            <h2>Popular Categories</h2>
+            <a class="section-link" href="#">View all categories -></a>
+          </div>
+          <div class="category-grid" id="popularCategoriesGrid"></div>
+        </section>
+
+        <section class="market-section">
+          <div class="section-head">
+            <h2>Curated Picks</h2>
+            <a class="section-link" href="#">View all products -></a>
+          </div>
+          <div class="product-grid" id="curatedPicksGrid"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="market-cta">
+      <div class="inner">
+        <div>
+          <h2>Have a business or ministry?</h2>
+          <p>Join the AGAPAY Marketplace and reach thousands of Orthodox families, ministries, and parishes nationwide.</p>
+        </div>
+        <a class="btn" href="/register">Become a Marketplace Seller</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="footer-lockup"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></div>
+          <p>Building the financial home of the Orthodox world.</p>
+        </div>
+        <nav class="footer-col" aria-label="Platform">
+          <h4>Platform</h4>
+          <a href="/giving">Giving</a>
+          <a href="/marketplace">Marketplace</a>
+          <a href="/directory">Directory</a>
+          <a href="/vision">Vision</a>
+        </nav>
+        <nav class="footer-col" aria-label="Resources">
+          <h4>Resources</h4>
+          <a href="/how-it-works">How It Works</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/why">Why AGAPAY</a>
+          <a href="/contact">Contact</a>
+        </nav>
+        <nav class="footer-col" aria-label="Legal">
+          <h4>Legal</h4>
+          <a href="/terms">Terms of Service</a>
+          <a href="/privacy">Privacy Policy</a>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 AGAPAY. All rights reserved.</span>
+        <span>Love how you give.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const state = {
+      q: "",
+      category: "all",
+      spotlight: "all"
+    };
+
+    const els = {
+      browseList: document.getElementById("browseList"),
+      featuredList: document.getElementById("featuredList"),
+      drawerBrowseList: document.getElementById("drawerBrowseList"),
+      drawerFeaturedList: document.getElementById("drawerFeaturedList"),
+      marketSearchForm: document.getElementById("marketSearchForm"),
+      marketSearchInput: document.getElementById("marketSearchInput"),
+      featuredShopsGrid: document.getElementById("featuredShopsGrid"),
+      popularCategoriesGrid: document.getElementById("popularCategoriesGrid"),
+      curatedPicksGrid: document.getElementById("curatedPicksGrid"),
+      resultsLabel: document.getElementById("resultsLabel"),
+      filterStatusPill: document.getElementById("filterStatusPill"),
+      mobileMenuBtn: document.getElementById("mobileMenuBtn"),
+      drawerBackdrop: document.getElementById("drawerBackdrop"),
+      drawerCloseBtn: document.getElementById("drawerCloseBtn")
+    };
+
+    function iconSvg(id) {
+      const map = {
+        "grid": '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><rect x="13" y="13" width="7" height="7"/></svg>',
+        "book-open": '<svg viewBox="0 0 24 24"><path d="M4 5h7v14H4z"/><path d="M13 5h7v14h-7z"/><path d="M11 7a4 4 0 0 1 2 0"/></svg>',
+        "image": '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4-4L6 21"/></svg>',
+        "cross": '<svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 21h8"/></svg>',
+        "shirt": '<svg viewBox="0 0 24 24"><path d="M4 4h16v5H4z"/><path d="M7 9v11"/><path d="M17 9v11"/><path d="M7 14h10"/></svg>',
+        "jewel": '<svg viewBox="0 0 24 24"><circle cx="7" cy="7" r="2"/><circle cx="17" cy="7" r="2"/><path d="M7 9v7l5 5 5-5V9"/></svg>',
+        "church": '<svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 20V8l5-4 5 4v12"/><path d="M9 12h6"/></svg>',
+        "gift": '<svg viewBox="0 0 24 24"><path d="M4 12h16"/><path d="M6 12V8h12v4"/><path d="M6 12v8h12v-8"/><path d="M12 8V4"/></svg>',
+        "users": '<svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="2.5"/><circle cx="16" cy="8" r="2.5"/><path d="M3 20c.7-3 2.7-4.5 5-4.5"/><path d="M16 15.5c2.3 0 4.3 1.5 5 4.5"/></svg>',
+        "music": '<svg viewBox="0 0 24 24"><path d="M12 4v16"/><path d="M6 8v8"/><path d="M18 8v8"/><path d="M4 12h16"/></svg>',
+        "monitor": '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 20h8"/><path d="M12 17v3"/></svg>',
+        "star": '<svg viewBox="0 0 24 24"><path d="m12 2 3 6 7 .9-5 4.9 1.3 7L12 17l-6.3 3.8L7 13.8 2 8.9 9 8z"/></svg>',
+        "spark": '<svg viewBox="0 0 24 24"><path d="M12 3v4"/><path d="M12 17v4"/><path d="m5.5 6.5 2.8 2.8"/><path d="m15.7 16.7 2.8 2.8"/><path d="M3 12h4"/><path d="M17 12h4"/><path d="m5.5 17.5 2.8-2.8"/><path d="m15.7 7.3 2.8-2.8"/></svg>',
+        "chart": '<svg viewBox="0 0 24 24"><path d="M4 20h16"/><rect x="6" y="10" width="3" height="8"/><rect x="11" y="7" width="3" height="11"/><rect x="16" y="4" width="3" height="14"/></svg>',
+        "shield": '<svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 2.8 8 7 10 4.2-2 7-5.5 7-10V6z"/></svg>',
+        "tag": '<svg viewBox="0 0 24 24"><path d="M20 10 12 2H4v8l8 8z"/><circle cx="8.5" cy="7.5" r="1.2"/></svg>'
+      };
+      return map[id] || map.grid;
+    }
+
+    function communityMarkSvg() {
+      return '<svg viewBox="0 0 120 120" fill="none"><line x1="60" y1="12" x2="60" y2="24"/><line x1="54" y1="18" x2="66" y2="18"/><path d="M60 24C46 30 40 44 44 56c3 7 8 10 16 10s13-3 16-10c4-12-2-26-16-32Z"/><path d="M26 32v10"/><path d="M26 42c-8 6-10 18-4 27 3 5 8 7 13 7s10-2 13-7c6-9 4-21-4-27"/><path d="M94 32v10"/><path d="M94 42c-8 6-10 18-4 27 3 5 8 7 13 7s10-2 13-7c6-9 4-21-4-27"/><rect x="14" y="62" width="92" height="44" rx="4"/><path d="M48 106V86c0-7 5-12 12-12s12 5 12 12v20"/></svg>';
+    }
+
+    function renderEmpty(container, text) {
+      container.innerHTML = '<div class="empty-note">' + text + '</div>';
+    }
+
+    function money(cents) {
+      return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format((Number(cents) || 0) / 100);
+    }
+
+    function applyFilterStatus() {
+      const parts = [];
+      if (state.category && state.category !== "all") parts.push(state.category.replace(/-/g, " "));
+      if (state.spotlight && state.spotlight !== "all") parts.push(state.spotlight.replace(/-/g, " "));
+      if (state.q) parts.push('"' + state.q + '"');
+      const text = parts.length ? parts.join(" · ") : "All listings";
+      els.filterStatusPill.textContent = text;
+      els.filterStatusPill.classList.remove("loading");
+    }
+
+    function renderFilterButtons(list, target, key) {
+      target.innerHTML = list.map((item) => {
+        const isActive = state[key] === item.id;
+        return '<li><button type="button" data-key="' + key + '" data-value="' + item.id + '" class="' + (isActive ? "active" : "") + '">' + item.label + '</button></li>';
+      }).join("");
+    }
+
+    function renderFilterRows(data) {
+      renderFilterButtons(data.browseCategories || [], els.browseList, "category");
+      renderFilterButtons(data.featuredFilters || [], els.featuredList, "spotlight");
+      renderFilterButtons(data.browseCategories || [], els.drawerBrowseList, "category");
+      renderFilterButtons(data.featuredFilters || [], els.drawerFeaturedList, "spotlight");
+    }
+
+    function renderFeaturedShops(items) {
+      if (!items.length) {
+        renderEmpty(els.featuredShopsGrid, "No featured shops match your filters yet.");
+        return;
+      }
+      els.featuredShopsGrid.innerHTML = items.map((shop) => {
+        const thumb = shop.imageType === "icon"
+          ? '<div class="shop-thumb icon-only"><span class="shop-fav">♡</span>' + communityMarkSvg() + "</div>"
+          : '<div class="shop-thumb"><span class="shop-fav">♡</span><img src="' + shop.imageUrl + '" alt="' + shop.name + '" /></div>';
+        return '<article class="shop-card">' + thumb
+          + '<div class="shop-body"><h3 class="shop-title">' + shop.name + '</h3><p class="shop-meta">' + shop.subtitle + "<br />" + shop.location + '</p>'
+          + '<div class="shop-rating"><span>★ ' + shop.rating.toFixed(1) + " (" + shop.reviewCount + ')</span><span class="tag">' + (shop.badge || "Featured") + "</span></div></div></article>";
+      }).join("");
+    }
+
+    function renderPopularCategories(items) {
+      if (!items.length) {
+        renderEmpty(els.popularCategoriesGrid, "No categories available for this filter combination.");
+        return;
+      }
+      els.popularCategoriesGrid.innerHTML = items.slice(0, 6).map((entry) =>
+        '<article class="category-card"><span aria-hidden="true">' + iconSvg(entry.icon || "grid") + '</span><h3>' + entry.label + '</h3><p>' + (entry.itemCount || 0) + " items</p></article>"
+      ).join("");
+    }
+
+    function renderCuratedPicks(items) {
+      if (!items.length) {
+        renderEmpty(els.curatedPicksGrid, "No products match your current search and filters.");
+        return;
+      }
+      els.curatedPicksGrid.innerHTML = items.map((product) =>
+        '<article class="product-card"><div class="product-thumb"><img src="' + product.imageUrl + '" alt="' + product.title + '" /></div>'
+        + '<div class="product-body"><h3 class="product-title">' + product.title + '</h3><p class="product-shop">' + product.shopName + '</p>'
+        + '<div class="product-foot"><span class="price">' + money(product.priceCents) + '</span><span class="cart-mini">' + iconSvg("gift") + '</span></div></div></article>'
+      ).join("");
+    }
+
+    async function loadMarketplace() {
+      const params = new URLSearchParams();
+      if (state.q) params.set("q", state.q);
+      if (state.category && state.category !== "all") params.set("category", state.category);
+      if (state.spotlight && state.spotlight !== "all") params.set("spotlight", state.spotlight);
+
+      els.resultsLabel.textContent = "Loading marketplace catalog...";
+      try {
+        const res = await fetch("/api/marketplace/catalog?" + params.toString(), { headers: { Accept: "application/json" } });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Marketplace could not load.");
+
+        renderFilterRows(data);
+        renderFeaturedShops(data.featuredShops || []);
+        renderPopularCategories(data.popularCategories || []);
+        renderCuratedPicks(data.curatedPicks || []);
+
+        const shops = Number((data.totals || {}).shops) || 0;
+        const products = Number((data.totals || {}).products) || 0;
+        els.resultsLabel.textContent = shops + " shops · " + products + " products";
+        applyFilterStatus();
+      } catch (error) {
+        els.resultsLabel.textContent = "Unable to load marketplace data";
+        els.filterStatusPill.textContent = "Offline";
+        renderEmpty(els.featuredShopsGrid, "Marketplace data is temporarily unavailable.");
+        renderEmpty(els.popularCategoriesGrid, "Please refresh in a moment.");
+        renderEmpty(els.curatedPicksGrid, "Please refresh in a moment.");
+      }
+    }
+
+    function updateFilter(key, value) {
+      state[key] = value;
+      loadMarketplace();
+    }
+
+    function openDrawer() { document.body.classList.add("drawer-open"); }
+    function closeDrawer() { document.body.classList.remove("drawer-open"); }
+
+    document.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-key]");
+      if (!button) return;
+      const key = button.getAttribute("data-key");
+      const value = button.getAttribute("data-value");
+      if (!key || !value) return;
+      updateFilter(key, value);
+      if (window.matchMedia("(max-width: 900px)").matches) closeDrawer();
+    });
+
+    els.marketSearchForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      state.q = (els.marketSearchInput.value || "").trim();
+      loadMarketplace();
+    });
+
+    els.mobileMenuBtn.addEventListener("click", openDrawer);
+    els.drawerBackdrop.addEventListener("click", closeDrawer);
+    els.drawerCloseBtn.addEventListener("click", closeDrawer);
+
+    loadMarketplace();
+  </script>
 </body>
 </html>
