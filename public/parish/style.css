@@ -644,6 +644,11 @@
       display: none;
     }
 
+    .topbar-mobile-meta,
+    .mobile-page-actions {
+      display: none;
+    }
+
     .dashboard-welcome-banner {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
@@ -913,11 +918,59 @@
         line-height: 1.05;
       }
 
+      .topbar-actions {
+        display: none;
+      }
+
+      .topbar-mobile-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.45rem;
+        color: var(--stone);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .topbar-status-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        border: 1px solid rgba(47,90,57,0.28);
+        border-radius: 999px;
+        background: rgba(47,90,57,0.12);
+        color: var(--deep);
+        padding: 0.22rem 0.65rem;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .topbar-status-pill.paused,
+      .topbar-status-pill.pending {
+        border-color: rgba(184,144,47,0.38);
+        background: rgba(184,144,47,0.16);
+        color: #6f4f09;
+      }
+
+      .topbar-status-pill.hidden,
+      .topbar-status-pill.cancelled {
+        border-color: rgba(111,106,96,0.24);
+        background: rgba(111,106,96,0.1);
+        color: var(--stone);
+      }
+
+      .sidebar-profile .sidebar-status-chip {
+        display: none;
+      }
+
       .detail-wrap {
         width: 100%;
         max-width: 520px;
         margin: 0 auto;
-        padding: 0.75rem 0.9rem calc(6.8rem + env(safe-area-inset-bottom));
+        padding: 0.75rem 0.9rem 1rem;
       }
 
       .tab-panel.active {
@@ -1053,6 +1106,27 @@
       .history-table td {
         border: 0;
         padding: 0.28rem 0;
+      }
+
+      .mobile-page-actions {
+        width: 100%;
+        max-width: 520px;
+        margin: 0 auto;
+        padding: 0.35rem 0.9rem calc(6.5rem + env(safe-area-inset-bottom));
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .mobile-page-actions .btn {
+        min-height: 58px;
+        width: 100%;
+        justify-content: flex-start;
+        border-radius: 14px;
+        background: white;
+        border-color: rgba(111,106,96,0.2);
+        color: var(--deep);
+        box-shadow: 0 10px 26px rgba(15,45,31,0.06);
+        font-size: 15px;
       }
     }
 

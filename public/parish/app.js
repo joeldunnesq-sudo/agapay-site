@@ -108,7 +108,8 @@
     if (mobileNav) mobileNav.classList.add('active');
     activeTab = tab;
     const titles = { giving:'Giving Overview', history:'Giving History', settings:'Giving Settings', options:'Funds & Campaigns', qr:'QR Code & Giving Link' };
-    document.getElementById('topbarTitle').textContent = titles[tab] || 'Parish Dashboard';
+    const isMobile = window.matchMedia('(max-width: 760px)').matches;
+    document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if (tab === 'history' && currentParish && !allGifts.length) loadGivingHistory();
     if (tab === 'qr') renderBulletinPreview();
     document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -118,6 +119,12 @@
   // ── AUTH ─────────────────────────────────────────────────
   function authHeaders() {
     return { 'Accept':'application/json', 'Authorization':'Bearer ' + document.getElementById('parishToken').value.trim() };
+  }
+
+  function statusLabel(value) {
+    return String(value || 'active')
+      .replace(/_/g, ' ')
+      .replace(/\b[a-z]/g, c => c.toUpperCase());
   }
 
   async function loginFromParishPage(event) {
@@ -255,7 +262,8 @@
     const p = currentParish;
     document.getElementById('sidebarProfile').classList.add('visible');
     document.getElementById('sidebarParishName').textContent = p.parishName || 'Parish';
-    document.getElementById('sidebarParishMeta').textContent = [p.communityType, p.jurisdiction, [p.city,p.state].filter(Boolean).join(', ')].filter(Boolean).join(' / ');
+    const parishMeta = [p.communityType, p.jurisdiction, [p.city,p.state].filter(Boolean).join(', ')].filter(Boolean).join(' / ');
+    document.getElementById('sidebarParishMeta').textContent = parishMeta;
     const chip = document.getElementById('sidebarStatusChip');
     chip.textContent = p.givingStatus || 'active';
     chip.className   = 'sidebar-status-chip ' + (p.givingStatus || 'active');
@@ -265,6 +273,13 @@
     document.getElementById('metricStripe').textContent    = p.stripeAccountStatus || 'not_started';
     document.getElementById('sidebarPublicLink').href = dedicatedGivingUrl();
     document.getElementById('topbarTitle').textContent = p.parishName || 'Parish Dashboard';
+    const mobileMeta = document.getElementById('topbarMobileParishMeta');
+    if (mobileMeta) mobileMeta.textContent = parishMeta || 'Parish dashboard';
+    const mobileStatus = document.getElementById('topbarMobileStatus');
+    if (mobileStatus) {
+      mobileStatus.textContent = statusLabel(p.givingStatus || 'active');
+      mobileStatus.className = 'topbar-status-pill ' + (p.givingStatus || 'active');
+    }
     const commIcon = document.getElementById('commemorationCommunityIcon');
     if (commIcon) commIcon.innerHTML = communityMarkIcon(p);
     const overviewEmpty = document.getElementById('overviewEmpty');
