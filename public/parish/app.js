@@ -107,7 +107,7 @@
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', history:'Giving History', settings:'Giving Settings', options:'Funds & Campaigns', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', history:'Giving History', settings:'Settings', options:'Funds & Campaigns', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if (tab === 'history' && currentParish && !allGifts.length) loadGivingHistory();
@@ -191,7 +191,7 @@
   function toggleFeastCampaign(id,checked) { const feast=feastPresets.find(f=>f.id===id); if(!feast) return; editableFeastCampaigns=editableFeastCampaigns.filter(f=>f.id!==id); if(checked) editableFeastCampaigns.push({id:feast.id,name:feast.name,enabled:true,campaignName:`${feast.name} Alms Campaign`,description:`Parish-approved alms connected to ${feast.name}.`}); renderGivingOptionsEditor(); setStatus(checked?`${feast.name} enabled. Save when ready.`:`${feast.name} disabled. Save when ready.`,'success'); }
   function renderFeastCampaignSetup() {
     const cal=document.getElementById('feastLiturgicalCalendar')?.value||currentParish?.liturgicalCalendar||'julian';
-    return `<div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Major feast alms campaigns</h3><span class="option-group-count">${editableFeastCampaigns.filter(f=>f.enabled!==false).length} enabled</span></div><div class="option-builder"><div class="option-builder-title">Calendar timing</div><div class="builder-grid"><select id="feastLiturgicalCalendar" onchange="renderGivingOptionsEditor()"><option value="julian" ${cal==='julian'?'selected':''}>Julian / Old Calendar</option><option value="gregorian" ${cal==='gregorian'?'selected':''}>Revised Julian / Gregorian</option></select><p class="section-note" style="margin:0;">AgaPay will use this calendar preference to decide when feast-day alms campaigns become available.</p></div></div><div class="option-list"><div class="feast-grid">${feastPresets.map(feast=>{const enabled=isFeastEnabled(feast.id);return `<div class="feast-card ${enabled?'enabled':''}"><div><div class="feast-name">${escapeHtml(feast.name)}</div><div class="feast-meta">${escapeHtml(calendarLabel(cal))} · ${escapeHtml(feastDateLabel(feast,cal))}</div></div><label class="mini-toggle" aria-label="Toggle ${escapeHtml(feast.name)}"><input type="checkbox" ${enabled?'checked':''} onchange="toggleFeastCampaign('${escapeHtml(feast.id)}',this.checked)"/><span></span></label></div>`;}).join('')}</div></div></div>`;
+    return `<div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Major feast alms campaigns</h3><span class="option-group-count">${editableFeastCampaigns.filter(f=>f.enabled!==false).length} enabled</span></div><div class="option-builder"><div class="option-builder-title">Calendar timing</div><div class="builder-grid"><select id="feastLiturgicalCalendar" onchange="renderGivingOptionsEditor()"><option value="julian" ${cal==='julian'?'selected':''}>Julian / Old Calendar</option><option value="gregorian" ${cal==='gregorian'?'selected':''}>Revised Julian / Gregorian</option></select><p class="section-note" style="margin:0;">AGAPAY will use this calendar preference to decide when feast-day alms campaigns become available.</p></div></div><div class="option-list"><div class="feast-grid">${feastPresets.map(feast=>{const enabled=isFeastEnabled(feast.id);return `<div class="feast-card ${enabled?'enabled':''}"><div><div class="feast-name">${escapeHtml(feast.name)}</div><div class="feast-meta">${escapeHtml(calendarLabel(cal))} · ${escapeHtml(feastDateLabel(feast,cal))}</div></div><label class="mini-toggle" aria-label="Toggle ${escapeHtml(feast.name)}"><input type="checkbox" ${enabled?'checked':''} onchange="toggleFeastCampaign('${escapeHtml(feast.id)}',this.checked)"/><span></span></label></div>`;}).join('')}</div></div></div>`;
   }
 
   // ── LOAD DASHBOARD ────────────────────────────────────────
@@ -254,7 +254,7 @@
     if(stripeDone&&billingDone){pane.innerHTML='';return;}
     const tiers=currentParish.subscriptionTiers||[];
     const tierOptions=tiers.map(t=>`<option value="${escapeHtml(t.id)}" ${t.id===currentParish.subscriptionTier?'selected':''}>${escapeHtml(t.label)} - ${escapeHtml(tierPriceLabel(t))}</option>`).join('');
-    pane.innerHTML=`<div class="setup-wizard-card"><div class="setup-wizard-body"><div><div class="setup-title">First-time setup</div><p class="setup-copy">Choose the parish's AgaPay tier first, then connect Stripe so gifts can be received through the platform.</p><div class="setup-steps"><div class="setup-step done">${setupCheckMarkup()}<div><strong>1. Contact info verified</strong><span>Your registration has already supplied the parish contact details.</span></div></div><div class="setup-step ${billingDone?'done':''}">${setupCheckMarkup()}<div><strong>2. Select tier and billing</strong><span>${billingDone?'AgaPay subscription billing is active.':'Choose the parish tier and complete billing checkout.'}</span></div></div><div class="setup-step ${stripeDone?'done':''}">${setupCheckMarkup()}<div><strong>3. Connect Stripe</strong><span>${stripeDone?'Stripe is connected for parish giving.':billingDone?'Create a Stripe onboarding link and complete the account setup.':'Stripe setup unlocks after billing is active.'}</span></div></div></div></div><div class="setup-action-panel">${billingDone?'':`<label for="setupSubscriptionTier">AgaPay tier</label><select id="setupSubscriptionTier">${tierOptions}</select><button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startSubscriptionCheckout(this)">Start billing checkout</button><p class="setup-copy setup-action-copy">After billing is active, you will connect Stripe so the parish can receive donations.</p>`}${billingDone&&!stripeDone?'<button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startStripeOnboarding(this)">Connect Stripe</button>':''}<div class="setup-link-box" id="setupLinkBox"><a id="setupActionLink" href="#" target="_blank" rel="noopener">Open setup link</a><p id="setupLinkHelp"></p></div></div></div></div>`;
+    pane.innerHTML=`<div class="setup-wizard-card"><div class="setup-wizard-body"><div><div class="setup-title">First-time setup</div><p class="setup-copy">Choose the parish's AGAPAY tier first, then connect Stripe so gifts can be received through the platform.</p><div class="setup-steps"><div class="setup-step done">${setupCheckMarkup()}<div><strong>1. Contact info verified</strong><span>Your registration has already supplied the parish contact details.</span></div></div><div class="setup-step ${billingDone?'done':''}">${setupCheckMarkup()}<div><strong>2. Select tier and billing</strong><span>${billingDone?'AGAPAY subscription billing is active.':'Choose the parish tier and complete billing checkout.'}</span></div></div><div class="setup-step ${stripeDone?'done':''}">${setupCheckMarkup()}<div><strong>3. Connect Stripe</strong><span>${stripeDone?'Stripe is connected for parish giving.':billingDone?'Create a Stripe onboarding link and complete the account setup.':'Stripe setup unlocks after billing is active.'}</span></div></div></div></div><div class="setup-action-panel">${billingDone?'':`<label for="setupSubscriptionTier">AGAPAY tier</label><select id="setupSubscriptionTier">${tierOptions}</select><button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startSubscriptionCheckout(this)">Start billing checkout</button><p class="setup-copy setup-action-copy">After billing is active, you will connect Stripe so the parish can receive donations.</p>`}${billingDone&&!stripeDone?'<button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startStripeOnboarding(this)">Connect Stripe</button>':''}<div class="setup-link-box" id="setupLinkBox"><a id="setupActionLink" href="#" target="_blank" rel="noopener">Open setup link</a><p id="setupLinkHelp"></p></div></div></div></div>`;
   }
 
   // ── RENDER DASHBOARD ──────────────────────────────────────
@@ -288,23 +288,28 @@
 
     document.getElementById('settingsPane').innerHTML = `
       <div class="form-grid">
-        <div class="form-group full"><label class="form-label">Parish name</label><input value="${escapeHtml(p.parishName||'')}" disabled /></div>
+        <div class="form-group full"><label class="form-label" for="parishName">Parish name</label><input id="parishName" value="${escapeHtml(p.parishName||'')}" placeholder="Parish name" /></div>
         <div class="form-group"><label class="form-label">Jurisdiction</label><input value="${escapeHtml(p.jurisdiction||'')}" disabled /></div>
-        <div class="form-group"><label class="form-label">Location</label><input value="${escapeHtml([p.city,p.state].filter(Boolean).join(', '))}" disabled /></div>
+        <div class="form-group full"><label class="form-label" for="addressLine1">Address line 1</label><input id="addressLine1" value="${escapeHtml(p.addressLine1||'')}" placeholder="Street address" /></div>
+        <div class="form-group full"><label class="form-label" for="addressLine2">Address line 2</label><input id="addressLine2" value="${escapeHtml(p.addressLine2||'')}" placeholder="Suite, unit, building (optional)" /></div>
+        <div class="form-group"><label class="form-label" for="city">City</label><input id="city" value="${escapeHtml(p.city||'')}" placeholder="City" /></div>
+        <div class="form-group"><label class="form-label" for="state">State</label><input id="state" value="${escapeHtml(p.state||'')}" placeholder="State" /></div>
+        <div class="form-group"><label class="form-label" for="postalCode">Postal code</label><input id="postalCode" value="${escapeHtml(p.postalCode||'')}" placeholder="ZIP / postal code" /></div>
+        <div class="form-group"><label class="form-label" for="country">Country</label><input id="country" value="${escapeHtml(p.country||'US')}" placeholder="Country code" /></div>
         <div class="form-group full"><label class="form-label" for="website">Website</label><input id="website" value="${escapeHtml(p.website||'')}" placeholder="https://example.org" /></div>
         <div class="form-group full"><label class="form-label" for="settingsLiturgicalCalendar">Liturgical calendar</label><select id="settingsLiturgicalCalendar"><option value="julian" ${(p.liturgicalCalendar||'julian')==='julian'?'selected':''}>Julian / Old Calendar</option><option value="gregorian" ${p.liturgicalCalendar==='gregorian'?'selected':''}>Revised Julian / Gregorian</option></select></div>
         <div class="form-group"><label class="form-label" for="givingStatus">Giving page status</label><select id="givingStatus"><option value="active" ${p.givingStatus==='active'?'selected':''}>Active</option><option value="paused" ${p.givingStatus==='paused'?'selected':''}>Paused</option><option value="hidden" ${p.givingStatus==='hidden'?'selected':''}>Hidden</option></select></div>
         <div class="form-group"><label class="form-label">Stripe onboarding</label><input value="${escapeHtml(p.stripeAccountStatus||'not_started')}" disabled /></div>
       </div>
-      <p class="section-note">Changes here affect the parish's public giving page and visibility in the AgaPay directory.</p>
+      <p class="section-note">Changes here affect the parish's public giving page and visibility in the AGAPAY directory.</p>
       <div class="section-divider"><span>Dashboard password</span></div>
       <div class="form-grid">
         <div class="form-group"><label class="form-label" for="newDashboardPassword">New password</label><input id="newDashboardPassword" type="password" placeholder="At least 8 characters" autocomplete="new-password" /></div>
         <div class="form-group"><label class="form-label" for="confirmDashboardPassword">Confirm password</label><input id="confirmDashboardPassword" type="password" placeholder="Re-enter new password" autocomplete="new-password" /></div>
       </div>
       <p class="section-note">Leave blank unless you want to change the parish dashboard password.</p>
-      <div class="section-divider"><span>AgaPay subscription</span></div>
-      <p class="section-note">Open Stripe's secure billing portal to change tiers, update payment details, or cancel the AgaPay subscription.</p>
+      <div class="section-divider"><span>AGAPAY subscription</span></div>
+      <p class="section-note">Open Stripe's secure billing portal to change tiers, update payment details, or cancel the AGAPAY subscription.</p>
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="openSubscriptionPortal(this)">Manage or cancel subscription</button>
       </div>
@@ -316,7 +321,7 @@
       </div>
       <div class="btn-row">
         <button class="btn btn-gold" onclick="saveDashboard(this)">Save changes</button>
-        ${(p.setup||{}).billingActive?'<button class="btn btn-primary" onclick="startStripeOnboarding(this)">Start Stripe onboarding</button>':'<button class="btn btn-ghost" disabled title="Complete AgaPay billing first">Stripe unlocks after billing</button>'}
+        ${(p.setup||{}).billingActive?'<button class="btn btn-primary" onclick="startStripeOnboarding(this)">Start Stripe onboarding</button>':'<button class="btn btn-ghost" disabled title="Complete AGAPAY billing first">Stripe unlocks after billing</button>'}
         <button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button>
         <button class="btn btn-ghost" onclick="logoutParish()">Log out</button>
       </div>
@@ -468,6 +473,13 @@
     const conPw = document.getElementById('confirmDashboardPassword')?.value.trim() || '';
     if (newPw || conPw) { if (newPw.length < 8) throw new Error('Password must be at least 8 characters.'); if (newPw !== conPw) throw new Error('Passwords do not match.'); }
     const body = {
+      parishName:             document.getElementById('parishName')?.value,
+      addressLine1:           document.getElementById('addressLine1')?.value,
+      addressLine2:           document.getElementById('addressLine2')?.value,
+      city:                   document.getElementById('city')?.value,
+      state:                  document.getElementById('state')?.value,
+      postalCode:             document.getElementById('postalCode')?.value,
+      country:                document.getElementById('country')?.value,
       website:                document.getElementById('website')?.value,
       liturgicalCalendar:     document.getElementById('feastLiturgicalCalendar')?.value || document.getElementById('settingsLiturgicalCalendar')?.value || currentParish?.liturgicalCalendar || 'julian',
       givingStatus:           document.getElementById('givingStatus')?.value,
@@ -507,7 +519,7 @@
     inputs.forEach(inp => { inp.value = url; });
     if (!url || typeof qrcode === 'undefined') { targets.forEach(t => { t.innerHTML = '<span style="font-size:11px;color:var(--stone);text-align:center;line-height:1.5;">Load dashboard<br>to generate QR</span>'; }); currentQrSvg = ''; return; }
     const qr = qrcode(0,'M'); qr.addData(url); qr.make();
-    currentQrSvg = qr.createSvgTag(5,3).replace(/<svg /,'<svg role="img" aria-label="AgaPay giving QR code" ').replace(/fill="#000000"/g,'fill="#0F2D1F"');
+    currentQrSvg = qr.createSvgTag(5,3).replace(/<svg /,'<svg role="img" aria-label="AGAPAY giving QR code" ').replace(/fill="#000000"/g,'fill="#0F2D1F"');
     targets.forEach(t => { t.innerHTML = currentQrSvg; });
   }
 
@@ -550,7 +562,7 @@
       <text x="210" y="70" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#6F6A60">Give online — simple, secure, and Orthodox.</text>
       <g transform="translate(145,82) scale(0.43)">${qrInner}</g>
       <text x="210" y="225" text-anchor="middle" font-family="monospace" font-size="9" fill="#6F6A60">${escapeHtml(url)}</text>
-      <text x="210" y="256" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#9A9488">Powered by AgaPay · agapay.app</text>
+      <text x="210" y="256" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#9A9488">Powered by AGAPAY · agapay.app</text>
     </svg>`;
   }
 

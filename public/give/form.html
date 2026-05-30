@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Give to St. Seraphim of Sarov Mission — AgaPay</title>
-  <meta name="description" content="Give to St. Seraphim of Sarov Mission through AgaPay — stewardship, candles, feast offerings, and more." />
+  <title>Give to St. Seraphim of Sarov Mission — AGAPAY</title>
+  <meta name="description" content="Give to St. Seraphim of Sarov Mission through AGAPAY — stewardship, candles, feast offerings, and more." />
   <meta name="theme-color" content="#061522" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -237,9 +237,9 @@
 
   <nav>
     <div class="nav-inner">
-      <a href="/" class="nav-logo" aria-label="AgaPay Home">
+      <a href="/" class="nav-logo" aria-label="AGAPAY Home">
         <div class="nav-mark">
-          <img src="/mark.png" alt="AgaPay" style="width:48px;height:48px;object-fit:contain;" />
+          <img src="/mark.png" alt="AGAPAY" style="width:48px;height:48px;object-fit:contain;" />
         </div>
         <span class="nav-name">AGAPAY</span>
       </a>
@@ -604,7 +604,7 @@
     let selectedCampaign = 'Disaster Relief';
     let currentParish = {
       id: '',
-      name: 'AgaPay Parish',
+      name: 'AGAPAY Parish',
       jurisdictionLabel: '',
       city: '',
       state: '',
@@ -732,14 +732,14 @@
         }
         const parish = result.parishes.find(item => item.id === slug);
         if (!parish) {
-          alert('This parish is not currently active in AgaPay.');
+          alert('This parish is not currently active in AGAPAY.');
           window.location.href = '/give';
           return;
         }
 
         currentParish = parish;
         const location = `${parish.city || ''}, ${parish.state || ''}`.replace(/^, /, '').replace(/, $/, '');
-        document.title = `Give to ${parish.name} — AgaPay`;
+        document.title = `Give to ${parish.name} — AGAPAY`;
         const avatar = document.querySelector('.parish-avatar-lg');
         if (avatar) avatar.innerHTML = parishArtwork(parish);
         setText('.parish-header h1', parish.name);
@@ -763,7 +763,7 @@
         renderFunds(parish.funds);
         updateSummary();
       } catch (err) {
-        console.error('AgaPay parish load error:', err);
+        console.error('AGAPAY parish load error:', err);
       }
     }
 
@@ -911,7 +911,7 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch (err) {
         alert(`Checkout error: ${err.message}. Please try again or contact support@agapay.app.`);
-        console.error('AgaPay checkout error:', err);
+        console.error('AGAPAY checkout error:', err);
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;

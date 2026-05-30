@@ -29,7 +29,7 @@ function donorAuthHeaders(extra = {}) {
     Accept: "application/json",
     "Content-Type": "application/json",
     Authorization: `Bearer ${session.token}`,
-    "X-AgaPay-Donor-Email": session.email,
+    "X-AGAPAY-Donor-Email": session.email,
     ...extra
   };
 }
@@ -41,7 +41,7 @@ async function donorApi(path, options = {}) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(data.error || data.detail || "AgaPay request failed");
+    const err = new Error(data.error || data.detail || "AGAPAY request failed");
     err.status = res.status;
     err.data = data;
     throw err;
@@ -132,7 +132,7 @@ function setDonorProfile(donor) {
   if (!donor) return;
   localStorage.setItem(donorStore.donor, JSON.stringify(donor));
   if (donor.email) localStorage.setItem(donorStore.email, donor.email);
-  const name = donor.householdName || donor.donorName || donor.email || "AgaPay faithful";
+  const name = donor.householdName || donor.donorName || donor.email || "AGAPAY faithful";
   const profileName = document.getElementById("profileName");
   const profileMeta = document.getElementById("profileMeta");
   if (profileName) profileName.textContent = name;
@@ -423,7 +423,7 @@ function renderActiveCampaigns(parish) {
     <a class="campaign-card ${campaign.feastId ? "campaign-gold" : "campaign-green"}" href="${escapeHtml(link)}">
       <div class="campaign-meta">
         <span class="campaign-pill">${escapeHtml(label)}</span>
-        <span>${parish?.name ? escapeHtml(parish.name) : "AgaPay"}</span>
+        <span>${parish?.name ? escapeHtml(parish.name) : "AGAPAY"}</span>
       </div>
       <h3>${escapeHtml(campaign.name || "Parish Alms Campaign")}</h3>
       ${campaign.description ? `<p class="campaign-description">${escapeHtml(campaign.description)}</p>` : ""}
@@ -595,7 +595,7 @@ async function signupFromPage(event) {
       }
       return;
     }
-    setDonorStatus("Account created. Check your email to verify your AgaPay account.", "success");
+    setDonorStatus("Account created. Check your email to verify your AGAPAY account.", "success");
     const next = document.getElementById("signupNextStep");
     if (next) next.style.display = "block";
   } catch (err) {
@@ -738,7 +738,7 @@ function offeringRows(offerings) {
   return offerings.map((item) => `
     <div class="list-item">
       <div class="list-main">
-        <strong>${escapeHtml(item.fund || item.campaign || item.title || item.giftType || "AgaPay offering")}</strong>
+        <strong>${escapeHtml(item.fund || item.campaign || item.title || item.giftType || "AGAPAY offering")}</strong>
         <span>${escapeHtml(item.parishName || item.parishId || "Parish")} - ${shortDate(item.createdAt)}</span>
         <span class="status-pill ${item.paymentStatus === "pending" ? "pending" : ""}">${escapeHtml(item.paymentStatus || item.status || "recorded")}</span>
       </div>
@@ -863,7 +863,7 @@ async function startDonorCheckout(event) {
         giftType,
         amount: document.getElementById("amount")?.value,
         frequency: document.getElementById("frequency")?.value || "once",
-        firstName: firstName || "AgaPay",
+        firstName: firstName || "AGAPAY",
         lastName: rest.join(" "),
         email: session.email,
         namesLiving: includeCandleIntentions ? document.getElementById("candleLivingNames")?.value || "" : "",

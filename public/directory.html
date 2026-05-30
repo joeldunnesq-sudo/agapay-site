@@ -147,8 +147,8 @@
     }
 
     .page {
-      width: min(1536px, 100%);
-      margin: 0 auto;
+      width: min(1320px, calc(100% - 2rem));
+      margin: 0.95rem auto 2rem;
       background: var(--paper);
       box-shadow: 0 0 0 1px rgba(166, 159, 145, 0.16);
     }
@@ -558,45 +558,53 @@
       position: relative;
       overflow: hidden;
       min-height: 570px;
-      background:
-        linear-gradient(0deg, rgba(255, 253, 248, 0.08), rgba(255, 253, 248, 0.08)),
-        repeating-linear-gradient(28deg, transparent 0 52px, rgba(200, 162, 74, 0.26) 53px 55px, transparent 56px 126px),
-        repeating-linear-gradient(118deg, rgba(89, 122, 91, 0.16) 0 1px, transparent 1px 88px),
-        linear-gradient(135deg, #DDE5D4, #F3E7D3 38%, #D6E2D7 70%, #F3E8D8);
+      background: #ECF1E8;
       border-left: 1px solid var(--line);
     }
-    .map-pane::before {
-      content: "";
+    .live-map {
       position: absolute;
       inset: 0;
-      background-image:
-        radial-gradient(circle at 22% 32%, rgba(70, 128, 91, 0.18), transparent 14%),
-        radial-gradient(circle at 73% 20%, rgba(80, 136, 151, 0.16), transparent 11%),
-        radial-gradient(circle at 58% 68%, rgba(80, 136, 151, 0.13), transparent 10%);
-      mix-blend-mode: multiply;
-      opacity: 0.8;
     }
-    .map-label {
-      position: absolute;
-      color: rgba(6, 21, 34, 0.65);
-      font-size: 0.85rem;
-      z-index: 1;
+    .map-pane .leaflet-control-container .leaflet-control {
+      border: 1px solid rgba(166, 159, 145, 0.25);
+      box-shadow: 0 10px 22px rgba(6, 21, 34, 0.08);
     }
-    .map-label.dallas { left: 43%; top: 55%; font-size: 1.35rem; color: rgba(6, 21, 34, 0.8); }
-    .map-label.frisco { left: 52%; top: 9%; }
-    .map-label.plano { left: 66%; top: 26%; }
-    .map-label.irving { left: 26%; top: 48%; }
-    .map-label.garland { left: 66%; top: 44%; }
-    .map-label.arlington { left: 10%; top: 61%; }
-    .map-controls {
+    .map-pane .leaflet-control-zoom a,
+    .map-pane .leaflet-control-attribution {
+      background: rgba(255, 253, 248, 0.92);
+      color: #061522;
+      border-color: rgba(166, 159, 145, 0.3);
+    }
+    .map-marker {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      border: 2px solid rgba(255, 253, 248, 0.96);
+      background: #061522;
+      color: var(--gold);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 8px 20px rgba(6, 21, 34, 0.24);
+    }
+    .map-marker svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .map-controls-fallback {
       position: absolute;
       right: 1.5rem;
       top: 1.8rem;
       z-index: 2;
       display: grid;
       gap: 0.65rem;
+      pointer-events: none;
     }
-    .map-control {
+    .map-control-fallback {
       width: 36px;
       height: 36px;
       display: grid;
@@ -608,36 +616,6 @@
       font-weight: 800;
       box-shadow: 0 10px 22px rgba(6, 21, 34, 0.08);
     }
-    .pin {
-      position: absolute;
-      z-index: 2;
-      width: 42px;
-      height: 42px;
-      display: grid;
-      place-items: center;
-      border-radius: 999px;
-      border: 2px solid rgba(255, 253, 248, 0.95);
-      background: #061522;
-      color: var(--gold);
-      box-shadow: 0 8px 20px rgba(6, 21, 34, 0.24);
-    }
-    .pin svg {
-      width: 21px;
-      height: 21px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.7;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .pin.one { left: 17%; top: 56%; }
-    .pin.two { left: 25%; top: 31%; }
-    .pin.three { left: 43%; top: 49%; }
-    .pin.four { left: 55%; top: 35%; }
-    .pin.five { left: 68%; top: 51%; }
-    .pin.six { left: 78%; top: 15%; }
-    .pin.seven { left: 39%; top: 82%; }
-    .pin.eight { left: 52%; top: 65%; }
     .map-card {
       position: absolute;
       right: 3rem;
@@ -855,6 +833,12 @@
       .footer-grid { grid-template-columns: 1fr; }
     }
   </style>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
   <link rel="stylesheet" href="/site-mobile-nav.css" />
   <script src="/site-mobile-nav.js" defer></script>
 </head>
@@ -1035,27 +1019,14 @@
       </section>
 
       <section class="map-pane" aria-label="Map preview">
-        <span class="map-label frisco">Frisco</span>
-        <span class="map-label plano">Plano</span>
-        <span class="map-label irving">Irving</span>
-        <span class="map-label garland">Garland</span>
-        <span class="map-label arlington">Arlington</span>
-        <span class="map-label dallas">Dallas</span>
-        <div class="map-controls"><span class="map-control">+</span><span class="map-control">-</span><span class="map-control">o</span></div>
-        <span class="pin one"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 9h14"/></svg></span>
-        <span class="pin two"><svg viewBox="0 0 24 24"><path d="M4 10h16"/><path d="M5 10l1-5h12l1 5"/><path d="M6 10v10h12V10"/></svg></span>
-        <span class="pin three"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M12 5V2"/></svg></span>
-        <span class="pin four"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 21v-7a6 6 0 0 1 12 0v7"/><path d="M12 8V3"/></svg></span>
-        <span class="pin five"><svg viewBox="0 0 24 24"><path d="M4 5c3-1 5-1 8 1v14c-3-2-5-2-8-1V5Z"/><path d="M20 5c-3-1-5-1-8 1v14c3-2 5-2 8-1V5Z"/></svg></span>
-        <span class="pin six"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20a5 5 0 0 1 10 0"/><path d="M11 20a5 5 0 0 1 10 0"/></svg></span>
-        <span class="pin seven"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 21v-7a6 6 0 0 1 12 0v7"/><path d="M12 8V3"/></svg></span>
-        <span class="pin eight"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/></svg></span>
+        <div id="directoryMap" class="live-map"></div>
+        <div class="map-controls-fallback" aria-hidden="true"><span class="map-control-fallback">+</span><span class="map-control-fallback">-</span><span class="map-control-fallback">◎</span></div>
         <article class="map-card">
           <span class="map-card-icon"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M12 5V2"/></svg></span>
           <div>
-            <h3>St. Nicholas Greek Orthodox Church</h3>
-            <p>Dallas, TX</p>
-            <a href="#">View Profile <span>-&gt;</span></a>
+            <h3 id="mapCardTitle">St. Nicholas Greek Orthodox Church</h3>
+            <p id="mapCardLocation">Dallas, TX</p>
+            <a href="#" id="mapCardLink">View Profile <span>-&gt;</span></a>
           </div>
         </article>
       </section>
@@ -1094,5 +1065,69 @@
     </div>
     <div class="footer-wrap footer-bottom"><span>&copy; 2026 AGAPAY. All rights reserved.</span><span>Built for Orthodox communities.</span></div>
   </footer>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script>
+    (function initDirectoryMap() {
+      if (!window.L) return;
+      const mapRoot = document.getElementById('directoryMap');
+      if (!mapRoot) return;
+      const fallbackControls = document.querySelector('.map-controls-fallback');
+      if (fallbackControls) fallbackControls.style.display = 'none';
+
+      const listings = [
+        { name: 'St. Nicholas Greek Orthodox Church', city: 'Dallas, TX', type: 'church', lat: 32.7767, lng: -96.7970, url: '#' },
+        { name: 'Theophany Books & Gifts', city: 'Dallas, TX', type: 'business', lat: 32.8223, lng: -96.8670, url: '#' },
+        { name: 'St. Katherine Orthodox School', city: 'Dallas, TX', type: 'school', lat: 32.8458, lng: -96.7795, url: '#' },
+        { name: 'Orthodox Christian Charities', city: 'Dallas, TX', type: 'ministry', lat: 32.7357, lng: -96.6692, url: '#' },
+        { name: 'Holy Cross Monastery', city: 'Irving, TX', type: 'monastery', lat: 32.8140, lng: -96.9489, url: '#' },
+        { name: 'Orthodox Family Services', city: 'Plano, TX', type: 'service', lat: 33.0198, lng: -96.6989, url: '#' }
+      ];
+
+      const map = L.map(mapRoot, { scrollWheelZoom: false, zoomControl: true }).setView([32.84, -96.83], 9);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      const iconSvgByType = {
+        church: '<svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M12 5V2"/></svg>',
+        business: '<svg viewBox="0 0 24 24"><path d="M4 10h16"/><path d="M5 10l1-5h12l1 5"/><path d="M6 10v10h12V10"/><path d="M9 20v-5h6v5"/></svg>',
+        school: '<svg viewBox="0 0 24 24"><path d="M4 5c3-1 5-1 8 1v14c-3-2-5-2-8-1V5Z"/><path d="M20 5c-3-1-5-1-8 1v14c3-2 5-2 8-1V5Z"/></svg>',
+        ministry: '<svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 9h14"/></svg>',
+        monastery: '<svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 21v-7a6 6 0 0 1 12 0v7"/><path d="M12 8V3"/></svg>',
+        service: '<svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20a5 5 0 0 1 10 0"/><path d="M11 20a5 5 0 0 1 10 0"/></svg>'
+      };
+
+      function markerIcon(type) {
+        const html = '<span class="map-marker">' + (iconSvgByType[type] || iconSvgByType.church) + '</span>';
+        return L.divIcon({ html, className: '', iconSize: [42, 42], iconAnchor: [21, 21] });
+      }
+
+      const cardTitle = document.getElementById('mapCardTitle');
+      const cardLocation = document.getElementById('mapCardLocation');
+      const cardLink = document.getElementById('mapCardLink');
+      function setCard(item) {
+        if (!item) return;
+        if (cardTitle) cardTitle.textContent = item.name;
+        if (cardLocation) cardLocation.textContent = item.city;
+        if (cardLink) cardLink.href = item.url || '#';
+      }
+
+      const bounds = [];
+      listings.forEach((item) => {
+        const marker = L.marker([item.lat, item.lng], { icon: markerIcon(item.type) }).addTo(map);
+        marker.bindPopup('<strong>' + item.name + '</strong><br />' + item.city);
+        marker.on('click', () => setCard(item));
+        bounds.push([item.lat, item.lng]);
+      });
+      if (bounds.length) map.fitBounds(bounds, { padding: [28, 28] });
+      setCard(listings[0]);
+      setTimeout(() => map.invalidateSize(), 180);
+    })();
+  </script>
 </body>
 </html>

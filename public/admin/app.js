@@ -251,7 +251,7 @@
       if ((reg.status || 'pending') !== 'verified') return { title: 'Review canonical standing', body: 'Confirm jurisdiction, bishop/deanery, website, and contact details before marking verified.' };
       if (reg.dashboardInviteEmailStatus !== 'sent') return { title: 'Send dashboard invite', body: 'Email the priest and treasurer their parish ID, temporary token, and Stripe onboarding instructions.' };
       if (!['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus)) return { title: 'Connect Stripe', body: 'Create onboarding or ask the parish to finish Stripe from the dashboard.' };
-      if (!['active', 'free_forever'].includes(reg.subscriptionStatus)) return { title: 'Set up AgaPay subscription', body: 'Create subscription checkout or mark monastery/skete as free forever.' };
+      if (!['active', 'free_forever'].includes(reg.subscriptionStatus)) return { title: 'Set up AGAPAY subscription', body: 'Create subscription checkout or mark monastery/skete as free forever.' };
       return { title: 'Parish is ready', body: 'Canonical verification, dashboard invite, Stripe, and subscription status are all in place.' };
     }
 
@@ -346,7 +346,7 @@
           ? `Stripe data is partially available. ${summary.donationError || ''}`
           : donationSource === 'not_connected'
             ? 'Donation volume will appear after parishes connect Stripe and receive gifts.'
-            : 'Donation volume needs admin Stripe reporting; registration growth is shown from AgaPay records.';
+            : 'Donation volume needs admin Stripe reporting; registration growth is shown from AGAPAY records.';
 
       pane.innerHTML = `
         <div class="growth-stats">
@@ -706,7 +706,7 @@
             <div class="step-chip ${reviewDone ? 'done' : 'current'}"><strong>1. Verify</strong><span>${reviewDone ? 'Canonical review complete.' : 'Confirm canonical standing and contacts.'}</span></div>
             <div class="step-chip ${inviteDone ? 'done' : reviewDone ? 'current' : ''}"><strong>2. Invite</strong><span>${inviteDone ? 'Dashboard invite sent.' : 'Send parish dashboard access.'}</span></div>
             <div class="step-chip ${stripeDone ? 'done' : inviteDone ? 'current' : ''}"><strong>3. Stripe</strong><span>${stripeDone ? 'Payments are enabled.' : 'Connect the parish Stripe account.'}</span></div>
-            <div class="step-chip ${subscriptionDone ? 'done' : stripeDone ? 'current' : ''}"><strong>4. Subscription</strong><span>${subscriptionDone ? 'AgaPay billing is set.' : 'Set platform subscription tier/status.'}</span></div>
+            <div class="step-chip ${subscriptionDone ? 'done' : stripeDone ? 'current' : ''}"><strong>4. Subscription</strong><span>${subscriptionDone ? 'AGAPAY billing is set.' : 'Set platform subscription tier/status.'}</span></div>
           </div>
         </div>
         <div class="grid">
@@ -720,7 +720,7 @@
           ${field('Payouts Enabled', reg.stripePayoutsEnabled === undefined ? '' : String(reg.stripePayoutsEnabled))}
           ${field('Stripe Invite Email', reg.stripeOnboardingEmailStatus)}
           ${field('Dashboard Invite Email', reg.dashboardInviteEmailStatus)}
-          ${field('AgaPay Alert Email', reg.adminNotificationEmailStatus)}
+          ${field('AGAPAY Alert Email', reg.adminNotificationEmailStatus)}
           ${field('Dashboard Invite Recipients', Array.isArray(reg.dashboardInviteEmailRecipients) ? reg.dashboardInviteEmailRecipients.join(', ') : '', 'full')}
           ${field('Public Parish ID', reg.parishId)}
           ${field('Parish Dashboard Token', reg.parishDashboardToken ? 'Set' : 'Not set')}
@@ -845,7 +845,7 @@
           </div>
 
           <div class="admin-section">
-            <div class="admin-section-title">AgaPay Subscription</div>
+            <div class="admin-section-title">AGAPAY Subscription</div>
             <div class="form-grid">
               <div>
                 <label for="subscriptionTier">Subscription tier</label>
@@ -882,7 +882,7 @@
             <div class="payment-status" id="subscriptionStatusMessage"></div>
             <div class="stripe-link-box" id="subscriptionLinkBox">
               <a id="subscriptionCheckoutLink" href="#" target="_blank" rel="noopener">Open subscription checkout</a>
-              <p id="subscriptionLinkHelp">Use this link when the parish is ready to start its AgaPay monthly platform subscription. Standard transaction fees are 5% + $0.30; cathedral/diocese pricing is negotiated.</p>
+              <p id="subscriptionLinkHelp">Use this link when the parish is ready to start its AGAPAY monthly platform subscription. Standard transaction fees are 5% + $0.30; cathedral/diocese pricing is negotiated.</p>
             </div>
           </div>
 
@@ -1165,7 +1165,7 @@
           copied = false;
         }
         if (help) help.textContent = copied
-          ? 'The subscription checkout link was copied to your clipboard. Send it to the parish treasurer when they are ready to activate AgaPay billing.'
+          ? 'The subscription checkout link was copied to your clipboard. Send it to the parish treasurer when they are ready to activate AGAPAY billing.'
           : 'Clipboard access was blocked, but the subscription checkout link is ready here.';
         setSubscriptionStatus(copied ? 'Subscription checkout created and copied.' : 'Subscription checkout created.', 'success');
       } catch (err) {
@@ -1358,7 +1358,7 @@
     // ── EMAIL LOG ─────────────────────────────────────────────────────────
     function renderEmailLog(reg) {
       const emailFields = [
-        { key: 'adminNotificationEmailStatus',  label: 'AgaPay alert',     to: 'hello@agapay.app' },
+        { key: 'adminNotificationEmailStatus',  label: 'AGAPAY alert',     to: 'hello@agapay.app' },
         { key: 'dashboardInviteEmailStatus',     label: 'Dashboard invite',  to: reg.priestEmail || reg.treasurerEmail || 'priest/treasurer' },
         { key: 'stripeOnboardingEmailStatus',    label: 'Stripe invite',     to: reg.treasurerEmail || reg.priestEmail || 'treasurer' },
       ];

@@ -378,7 +378,7 @@
       .qr-feature-actions { min-width: 0; }
     }
 
-    /* AgaPay dashboard refresh - aligned with the donor dashboard. */
+    /* AGAPAY dashboard refresh - aligned with the donor dashboard. */
     body {
       background:
         linear-gradient(180deg, rgba(15,45,31,0.055), transparent 280px),

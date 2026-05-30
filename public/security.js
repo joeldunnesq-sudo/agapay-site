@@ -15,7 +15,7 @@
     });
   }
 
-  async function initAgaPaySecurity() {
+  async function initAGAPAYSecurity() {
     try {
       const response = await fetch("/api/security/config", { headers: { Accept: "application/json" } });
       const config = await response.json();
@@ -36,8 +36,8 @@
   };
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initAgaPaySecurity);
+    document.addEventListener("DOMContentLoaded", initAGAPAYSecurity);
   } else {
-    initAgaPaySecurity();
+    initAGAPAYSecurity();
   }
 })();

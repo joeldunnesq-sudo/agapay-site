@@ -294,6 +294,7 @@
       overflow: hidden;
     }
     .market-hero-inner {
+      position: relative;
       display: grid;
       grid-template-columns: minmax(320px, 1fr) minmax(420px, 1.1fr);
       gap: 1rem;
@@ -301,7 +302,22 @@
       border-bottom: 1px solid var(--line);
       align-items: center;
       overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(200, 162, 74, 0.11), transparent 32%),
+        linear-gradient(180deg, #FFFDF8 0%, #F8F2E7 100%);
     }
+    .market-hero-inner::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(30deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08)),
+        linear-gradient(150deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08));
+      background-size: 54px 94px;
+      opacity: 0.2;
+      pointer-events: none;
+    }
+    .market-hero-inner > * { position: relative; z-index: 1; }
     .hero-copy { max-width: 620px; }
     .eyebrow {
       display: inline-flex;
@@ -429,7 +445,7 @@
     }
 
     .market-body {
-      width: min(1240px, calc(100% - 2rem));
+      width: min(1320px, calc(100% - 2rem));
       margin: -1.45rem auto 0;
       display: grid;
       grid-template-columns: 272px minmax(0, 1fr);
@@ -778,7 +794,7 @@
       border-bottom: 1px solid rgba(200, 162, 74, 0.16);
     }
     .market-cta .inner {
-      width: min(1240px, calc(100% - 2rem));
+      width: min(1320px, calc(100% - 2rem));
       margin: 0 auto;
       padding: 1.7rem 0;
       display: grid;
@@ -818,7 +834,7 @@
       padding: 2.2rem 0 1.2rem;
     }
     .footer-inner {
-      width: min(1240px, calc(100% - 2rem));
+      width: min(1320px, calc(100% - 2rem));
       margin: 0 auto;
     }
     .footer-grid {
@@ -897,7 +913,7 @@
       .hero-btn-primary, .hero-btn-secondary { width: 100%; }
       .hero-art img { max-height: 260px; }
       .rail { display: none; }
-      .market-body { width: min(1240px, calc(100% - 1rem)); }
+      .market-body { width: min(1320px, calc(100% - 1rem)); }
       .pane-status { flex-direction: column; align-items: flex-start; }
       .market-section { padding: 1.3rem 1rem 1.35rem; }
       .section-head { flex-direction: column; align-items: flex-start; gap: 0.4rem; }

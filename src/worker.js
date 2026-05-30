@@ -318,7 +318,7 @@ function isSystemKvKey(keyName) {
 function getAdminToken(request) {
   const auth = request.headers.get("Authorization") || "";
   if (auth.startsWith("Bearer ")) return auth.slice("Bearer ".length).trim();
-  return request.headers.get("X-AgaPay-Admin-Token") || "";
+  return request.headers.get("X-AGAPAY-Admin-Token") || "";
 }
 
 function getBearerToken(request) {
@@ -876,7 +876,7 @@ async function migrateDonorEmailReferences(env, oldEmail, newEmail) {
 
 async function requireDonor(request, env) {
   if (!hasProductionStore(env)) return null;
-  const email = normalizeEmail(request.headers.get("X-AgaPay-Donor-Email"));
+  const email = normalizeEmail(request.headers.get("X-AGAPAY-Donor-Email"));
   const token = getBearerToken(request);
   if (!email || !token) return null;
   const donor = await loadDonor(env, email);
@@ -4037,8 +4037,12 @@ async function handleParishDashboard(request, env, parishId) {
         parishName: registration.parishName,
         communityType: registration.communityType,
         jurisdiction: registration.jurisdiction,
+        addressLine1: registration.addressLine1 || "",
+        addressLine2: registration.addressLine2 || "",
         city: registration.city,
         state: registration.state,
+        postalCode: registration.postalCode || "",
+        country: registration.country || "US",
         website: registration.website,
         liturgicalCalendar: registration.liturgicalCalendar || "julian",
         givingStatus: registration.givingStatus || "active",
@@ -4086,6 +4090,13 @@ async function handleParishDashboard(request, env, parishId) {
 
     let updated = {
       ...current,
+      parishName: String(body.parishName ?? current.parishName ?? "").trim() || current.parishName || "",
+      addressLine1: String(body.addressLine1 ?? current.addressLine1 ?? "").trim(),
+      addressLine2: String(body.addressLine2 ?? current.addressLine2 ?? "").trim(),
+      city: String(body.city ?? current.city ?? "").trim(),
+      state: String(body.state ?? current.state ?? "").trim(),
+      postalCode: String(body.postalCode ?? current.postalCode ?? "").trim(),
+      country: String(body.country ?? current.country ?? "US").trim() || "US",
       website: body.website ?? current.website ?? "",
       liturgicalCalendar: body.liturgicalCalendar || current.liturgicalCalendar || "julian",
       givingStatus: body.givingStatus || current.givingStatus || "active",
