@@ -466,15 +466,38 @@
     .copy-stack { display: grid; gap: 1rem; }
     .copy-stack p strong { color: var(--night); }
 
-    .values-grid {
+    .center-heading {
+      text-align: center;
+      margin-bottom: 1.45rem;
+    }
+    .center-heading .small-cross {
+      color: var(--gold-dark);
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      line-height: 1;
+      margin-top: 0.18rem;
+    }
+    .center-heading h2 {
+      font-family: var(--serif);
+      color: var(--night);
+      font-size: clamp(1.35rem, 2.4vw, 2rem);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.15rem;
+    }
+
+    .values-grid,
+    .belief-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 0.9rem;
       margin-top: 1.4rem;
     }
-    .value-card {
+    .value-card,
+    .belief-card {
       position: relative;
-      min-height: 220px;
+      min-height: 150px;
       padding: 1.2rem;
       border: 1px solid rgba(200, 162, 74, 0.28);
       border-radius: 12px;
@@ -483,13 +506,20 @@
         radial-gradient(circle at 12% 0%, rgba(200, 162, 74, 0.12), transparent 45%);
       box-shadow: 0 10px 24px rgba(6, 21, 34, 0.04);
     }
-    .value-card::before {
+    .value-card::before,
+    .belief-card::before {
       content: "";
       position: absolute;
       inset: 0 0 auto 0;
       height: 3px;
       background: linear-gradient(90deg, var(--gold), #184a2b);
       border-radius: 12px 12px 0 0;
+    }
+    .belief-card {
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      gap: 1rem;
+      align-items: center;
     }
     .value-icon {
       width: 46px;
@@ -502,15 +532,23 @@
       background: rgba(255, 253, 248, 0.68);
       margin-bottom: 0.85rem;
     }
+    .belief-card .value-icon {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 0;
+    }
+    .belief-card .value-icon svg { width: 34px; height: 34px; }
     .value-icon svg { width: 24px; height: 24px; stroke-width: 1.65; }
-    .value-card h3 {
+    .value-card h3,
+    .belief-card h3 {
       color: var(--night);
       font-size: 0.98rem;
       letter-spacing: 0.05em;
       text-transform: uppercase;
       margin-bottom: 0.55rem;
     }
-    .value-card p {
+    .value-card p,
+    .belief-card p {
       color: var(--stone);
       font-size: 0.93rem;
       line-height: 1.65;
@@ -543,6 +581,148 @@
       font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
+    }
+
+    .serve-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+    .serve-card {
+      min-height: 150px;
+      border: 1px solid rgba(200, 162, 74, 0.28);
+      border-radius: 10px;
+      background: rgba(255, 253, 248, 0.78);
+      padding: 1rem 0.75rem;
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      text-align: center;
+      gap: 0.45rem;
+    }
+    .serve-image {
+      width: 66px;
+      height: 50px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #E8E1D5, #F6F1E8);
+      display: grid;
+      place-items: center;
+      color: var(--gold-dark);
+      border: 1px solid rgba(166, 159, 145, 0.2);
+    }
+    .serve-image svg {
+      width: 30px;
+      height: 30px;
+      stroke-width: 1.55;
+      stroke: currentColor;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .serve-card h3 {
+      color: var(--night);
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 700;
+      margin-top: 0.1rem;
+    }
+    .serve-card p {
+      color: var(--stone);
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
+
+    .success-row {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.72fr) minmax(320px, 1fr);
+      gap: 1.5rem;
+      align-items: stretch;
+    }
+    .success-list {
+      padding: 0.4rem 0;
+    }
+    .success-list h2, .commit-card h2, .join-panel h2 {
+      font-family: var(--serif);
+      color: var(--night);
+      font-size: clamp(1.25rem, 2.4vw, 1.85rem);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+    .success-list ul, .commit-card ul {
+      list-style: none;
+      display: grid;
+      gap: 0.42rem;
+    }
+    .success-list li, .commit-card li {
+      color: var(--night);
+      font-size: 0.95rem;
+      line-height: 1.45;
+      display: grid;
+      grid-template-columns: 20px 1fr;
+      gap: 0.5rem;
+      align-items: start;
+    }
+    .success-list li::before, .commit-card li::before {
+      content: "+";
+      color: var(--gold-dark);
+      font-weight: 800;
+      line-height: 1.25;
+    }
+    .success-photo {
+      min-height: 230px;
+      border: 1px solid rgba(200, 162, 74, 0.28);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #e7e1d5;
+    }
+    .success-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      filter: sepia(0.08) saturate(0.94);
+    }
+
+    .commit-join {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 1.1fr);
+      gap: 0;
+      border-top: 1px solid var(--line);
+      margin-top: 1.6rem;
+      padding-top: 1.6rem;
+    }
+    .commit-card {
+      padding-right: clamp(1rem, 3vw, 2rem);
+      border-right: 1px solid var(--line);
+    }
+    .commit-card .responsibility {
+      margin-top: 0.85rem;
+      color: var(--night);
+      line-height: 1.45;
+    }
+    .commit-card .responsibility strong {
+      display: block;
+      color: var(--gold-dark);
+    }
+    .join-panel {
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      text-align: center;
+      padding-left: clamp(1rem, 3vw, 2rem);
+    }
+    .join-panel h2 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      letter-spacing: 0.12em;
+      margin-bottom: 0.5rem;
+    }
+    .join-panel p {
+      color: var(--stone);
+      line-height: 1.55;
+      margin-bottom: 1.3rem;
+      max-width: 480px;
     }
 
     .closing {
@@ -658,14 +838,18 @@
       .nav-links, .nav-actions { display: none; }
       .mobile-menu-btn { display: flex; }
       .page { width: 100%; margin: 0; border-left: none; border-right: none; }
-      .about-hero, .founders, .two-col, .closing {
+      .about-hero, .founders, .two-col, .closing,
+      .success-row, .commit-join {
         grid-template-columns: 1fr;
       }
       .about-hero { min-height: 0; }
       .hero-photo { min-height: 280px; }
       .hero-photo img { min-height: 280px; }
       .image-panel img, .closing-photo img { min-height: 340px; }
-      .values-grid { grid-template-columns: 1fr; }
+      .values-grid, .belief-grid { grid-template-columns: 1fr; }
+      .serve-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .commit-card { border-right: 0; padding-right: 0; }
+      .join-panel { padding-left: 0; padding-top: 1.5rem; }
       .footer-grid { grid-template-columns: 1fr 1fr; }
     }
 
@@ -678,6 +862,9 @@
       .section { padding: 2.2rem 1rem; }
       .about-hero { padding: 2rem 1rem; }
       .about-hero h1 { font-size: clamp(2.5rem, 13vw, 4rem); }
+      .belief-card { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+      .serve-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .success-photo { min-height: 220px; }
       .closing-actions { display: grid; }
       .footer-grid { grid-template-columns: 1fr; }
       .footer-bottom { display: grid; }
@@ -794,28 +981,31 @@
 
     <section class="section">
       <div class="section-inner">
-        <div class="kicker"><svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-5"/></svg>The vision</div>
-        <h2>Modern infrastructure for the ancient act of Christian charity.</h2>
-        <div class="copy-stack" style="max-width:900px;">
-          <p>Holy Orthodoxy is still putting down roots in the American land. The missions being planted, the monasteries being built, and the children being raised in the faith today are the bedrock of what will endure for centuries - if we tend it faithfully.</p>
-          <p>AGAPAY is our family's contribution to that foundation: a giving platform designed to make parishes financially resilient, and to let the faithful give with the same intentionality they bring to the chalice.</p>
-          <p>Orthodox Christians should be able to give on a platform that shares not only their values, but their way of life.</p>
+        <div class="center-heading">
+          <h2>What We Believe</h2>
+          <div class="small-cross">+</div>
         </div>
-        <div class="values-grid">
-          <article class="value-card">
+        <div class="belief-grid">
+          <article class="belief-card">
+            <div class="value-icon"><svg viewBox="0 0 24 24"><path d="M8 3h8"/><path d="M9 3v6a3 3 0 0 0 6 0V3"/><path d="M12 12v8"/><path d="M8 20h8"/><path d="M5 9h14"/></svg></div>
+            <div>
+              <h3>Stewardship Is Spiritual</h3>
+              <p>Giving is not merely a transaction. It is part of the life of the Church.</p>
+            </div>
+          </article>
+          <article class="belief-card">
             <div class="value-icon"><svg viewBox="0 0 24 24"><path d="M5 20h14"/><path d="M7 20V9l5-5 5 5v11"/><path d="M10 20v-6h4v6"/></svg></div>
-            <h3>Rooted in Tradition</h3>
-            <p>We don't ask the Church to adapt to heterodox giving platforms. We build AGAPAY to serve the liturgical life of the Church.</p>
+            <div>
+              <h3>Technology Should Serve Communities</h3>
+              <p>Platforms should strengthen institutions. Not extract from them.</p>
+            </div>
           </article>
-          <article class="value-card">
-            <div class="value-icon"><svg viewBox="0 0 24 24"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-            <h3>Honest stewardship</h3>
-            <p>Clear fees, honorable practices, and an open business model - in service of the growth of Orthodox parishes and monasteries.</p>
-          </article>
-          <article class="value-card">
-            <div class="value-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-            <h3>One Body, one platform</h3>
-            <p>AGAPAY is built to serve the Body of Christ, honoring the oldest model of faithful, purposeful almsgiving.</p>
+          <article class="belief-card">
+            <div class="value-icon"><svg viewBox="0 0 24 24"><path d="M8 12l2.5 2.5a3 3 0 0 0 4.2 0L22 7"/><path d="M2 7l7.3 7.5"/><path d="M7 7h4l2 2h4"/><path d="M2 7l4-4 5 5"/><path d="M22 7l-4-4-4 4"/></svg></div>
+            <div>
+              <h3>Trust Matters</h3>
+              <p>Orthodox communities deserve transparency, accountability, and support.</p>
+            </div>
           </article>
         </div>
       </div>
@@ -829,18 +1019,79 @@
     </section>
 
     <section class="section">
-      <div class="section-inner closing">
-        <figure class="closing-photo">
-          <img src="/family.jpg" alt="Joel Dunn and his family on Lazarus Saturday 2026" />
-        </figure>
-        <div class="closing-copy">
-          <div class="caption">Lazarus Saturday 2026</div>
-          <p>We aren't just building software - we're building a foundation. AGAPAY is our family's contribution to ensuring the next generation inherits a thriving, financially resilient Orthodox community in America.</p>
-          <h2 style="margin-top:1.4rem;">Partner with AGAPAY</h2>
-          <p>We are quietly onboarding a select group of founding parishes ahead of our public launch. Founding parishes secure preferred pricing and work directly with the founder to shape where AGAPAY goes next.</p>
-          <div class="closing-actions">
-            <a class="btn-primary" href="/register">Register your parish</a>
-            <a class="btn-secondary" href="/pricing">View pricing</a>
+      <div class="section-inner">
+        <div class="center-heading">
+          <h2>Who We Serve</h2>
+          <div class="small-cross">+</div>
+        </div>
+        <div class="serve-grid">
+          <article class="serve-card">
+            <div class="serve-image"><svg viewBox="0 0 24 24"><path d="M5 20h14"/><path d="M7 20V9l5-5 5 5v11"/><path d="M10 20v-6h4v6"/></svg></div>
+            <h3>Parishes</h3>
+            <p>Local churches and their faithful.</p>
+          </article>
+          <article class="serve-card">
+            <div class="serve-image"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M6 20V9l6-5 6 5v11"/><path d="M9 20v-5h6v5"/></svg></div>
+            <h3>Missions</h3>
+            <p>Planting and growing Orthodox communities.</p>
+          </article>
+          <article class="serve-card">
+            <div class="serve-image"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M8 20V8l4-4 4 4v12"/><path d="M6 12h12"/></svg></div>
+            <h3>Monasteries</h3>
+            <p>Monasteries and sketes across the nation.</p>
+          </article>
+          <article class="serve-card">
+            <div class="serve-image"><svg viewBox="0 0 24 24"><path d="M22 10 12 4 2 10l10 6 10-6z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg></div>
+            <h3>Schools</h3>
+            <p>Orthodox schools and educational ministries.</p>
+          </article>
+          <article class="serve-card">
+            <div class="serve-image"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></div>
+            <h3>Ministries</h3>
+            <p>Nonprofits and ministries serving the Church.</p>
+          </article>
+          <article class="serve-card">
+            <div class="serve-image"><svg viewBox="0 0 24 24"><path d="M4 20V8h16v12"/><path d="M3 8l2-4h14l2 4"/><path d="M9 20v-6h6v6"/></svg></div>
+            <h3>Orthodox Businesses</h3>
+            <p>Businesses, artisans, and faithful makers.</p>
+          </article>
+        </div>
+
+        <div class="success-row" style="margin-top:1.7rem;">
+          <div class="success-list">
+            <h2>What Success Looks Like</h2>
+            <ul>
+              <li>Success is not measured by transaction volume.</li>
+              <li>Success is a mission parish receiving support.</li>
+              <li>A monastery sustaining its work.</li>
+              <li>A family discovering an Orthodox business.</li>
+              <li>A ministry finding new donors.</li>
+              <li>A parish growing stronger because the tools finally fit the life it already lives.</li>
+            </ul>
+          </div>
+          <figure class="success-photo">
+            <img src="/images/vision/church-exterior.jpg" alt="Orthodox parish life" />
+          </figure>
+        </div>
+
+        <div class="commit-join">
+          <div class="commit-card">
+            <h2>Founder Commitment</h2>
+            <ul>
+              <li>AGAPAY will never be built around advertising.</li>
+              <li>It will never sell donor data.</li>
+              <li>It will never treat Orthodox communities as market segments.</li>
+            </ul>
+            <p class="responsibility">Our responsibility is simple:<strong>Build tools worthy of the people who use them.</strong></p>
+          </div>
+          <div class="join-panel">
+            <div class="small-cross" style="color:var(--gold-dark);font-family:var(--serif);font-size:1.4rem;">+</div>
+            <h2>Join AGAPAY</h2>
+            <p>Let's build something worthy together.<br />For the Church. For our communities. For generations to come.</p>
+            <div class="closing-actions">
+              <a class="btn-primary" href="/register">Register your parish</a>
+              <a class="btn-secondary" href="/pricing">View pricing</a>
+            </div>
           </div>
         </div>
       </div>
