@@ -3,427 +3,1133 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contact â€” AGAPAY</title>
- <link rel="apple-touch-icon" sizes="180x180" href="/favicons/touch-icon.png" />
+  <title>Contact | AGAPAY</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
-  <meta name="description" content="Get in touch with AGAPAY. Register your parish, ask a question, or just say hello. A real person will respond." />
-  <meta property="og:title" content="Contact AGAPAY" />
-  <meta property="og:url" content="https://agapay.app/contact" />
+  <meta name="description" content="Contact AGAPAY for parish registration, platform support, marketplace questions, partnerships, and general inquiries." />
   <meta name="theme-color" content="#061522" />
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
-
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles/numbers.css" />
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-       :root {
-      --deep:   #061522;
-      --forest: #0B2130;
-      --gold:   #C8A24A;
-      --cream:   #F6F1E8;
-      --stone:   #6F6A60;
-      --ink:     #171715;
-      --white:   #FFFFFF;
-    
-      --serif:   'Cormorant Garamond', Georgia, serif;
-      --sans:    'DM Sans', system-ui, sans-serif;
-    
-      --r:       10px;
-      --rlg:     16px;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --night: #061522;
+      --night-2: #0B2130;
+      --ink: #171715;
+      --cream: #F6F1E8;
+      --paper: #FFFDF8;
+      --stone: #70695D;
+      --muted: #A69F91;
+      --gold: #C8A24A;
+      --gold-dark: #A97C25;
+      --line: rgba(166, 159, 145, 0.28);
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "DM Sans", system-ui, sans-serif;
     }
 
     html { scroll-behavior: smooth; }
-    body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; }
-    a { color: inherit; text-decoration: none; }
-
-    /* NAV */
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(243,239,230,0.93);
-      backdrop-filter: blur(12px);
-      border-bottom: 0.5px solid rgba(166,159,145,0.35);
-    }
-    .nav-inner {
-      max-width: 860px; margin: 0 auto; padding: 0 1.5rem;
-      display: flex; align-items: center; justify-content: space-between; height: 64px;
-    }
-    .nav-logo { display: flex; align-items: center; gap: 5px; }
-    .nav-mark { width: 52px; height: 52px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-    .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
-    .nav-name em { color: var(--gold); font-style: normal; }
-    .nav-links { display: flex; align-items: center; gap: 1.75rem; }
-    .nav-links a { font-size: 14px; color: var(--forest); transition: color 0.2s; }
-    .nav-links a:hover { color: var(--ink); }
-    .nav-cta { background: var(--deep); color: var(--cream); border: none; padding: 9px 20px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: background 0.2s; }
-    .nav-cta:hover { background: var(--forest); }
-    .nav-give { background: var(--gold); color: var(--deep); border: none; padding: 9px 20px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
-    .nav-give:hover { opacity: 0.88; }
-
-    /* HERO */
-    .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
-    .hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 700px; height: 300px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.11) 0%, transparent 65%); pointer-events: none; }
-    .hero-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; height: 450px; object-fit: contain; opacity: 0.08; pointer-events: none; z-index: 0; }
-    .hero-inner { position: relative; z-index: 1; max-width: 580px; margin: 0 auto; }
-    .hero-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1.25rem; font-weight: 500; }
-    .hero h1 { font-family: var(--serif); font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 500; color: var(--cream); line-height: 1.18; letter-spacing: -0.01em; margin-bottom: 1.5rem; }
-    .hero h1 em { color: var(--gold); font-style: italic; }
-    .hero-sub { font-size: 15px; color: var(--stone); line-height: 1.85; max-width: 420px; margin: 0 auto; }
-
-    /* WRAP */
-    .wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
-
-    /* MAIN */
-    .main { padding: 5rem 0; }
-    .main-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 5rem; align-items: start; }
-
-    /* CONTACT DETAILS */
-    .contact-details { position: sticky; top: 90px; }
-    .details-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1.25rem; font-weight: 500; }
-    .contact-card {
-      background: white;
-      border: 0.5px solid rgba(166,159,145,0.35);
-      border-radius: var(--rlg);
-      padding: 1.75rem;
-      margin-bottom: 1.25rem;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .contact-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,45,31,0.08); }
-    .contact-card-icon { width: 36px; height: 36px; background: rgba(200,162,74,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 0.85rem; }
-    .contact-card-icon svg { width: 17px; height: 17px; stroke: var(--gold); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .contact-card h4 { font-size: 13px; font-weight: 500; color: var(--deep); margin-bottom: 4px; }
-    .contact-card a { font-size: 13px; color: var(--gold); display: block; transition: opacity 0.2s; }
-    .contact-card a:hover { opacity: 0.75; }
-    .contact-card p { font-size: 12px; color: var(--stone); margin-top: 4px; line-height: 1.6; }
-    .response-note { background: rgba(53,94,59,0.07); border: 0.5px solid rgba(53,94,59,0.2); border-radius: var(--r); padding: 1rem 1.25rem; }
-    .response-note p { font-size: 13px; color: var(--forest); line-height: 1.65; }
-    .response-note strong { font-weight: 500; }
-
-    /* FORM */
-    .form-wrap { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 2.5rem; }
-    .form-title { font-family: var(--serif); font-size: 1.5rem; font-weight: 500; color: var(--deep); margin-bottom: 0.4rem; }
-    .form-sub { font-size: 13px; color: var(--stone); margin-bottom: 2rem; line-height: 1.6; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.25rem; }
-    .form-group label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--stone); font-weight: 500; }
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      padding: 11px 14px;
-      border: 0.5px solid rgba(166,159,145,0.4);
-      border-radius: var(--r);
-      font-size: 14px;
+    body {
+      min-height: 100vh;
+      font-family: var(--sans);
       color: var(--ink);
       background: var(--cream);
-      font-family: var(--sans);
-      width: 100%;
-      outline: none;
-      transition: border-color 0.2s;
-      appearance: none;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus { border-color: var(--gold); background: white; }
-    .form-group textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .form-submit { width: 100%; padding: 13px; background: var(--deep); color: var(--cream); border: none; border-radius: var(--r); font-size: 14px; font-weight: 500; font-family: var(--sans); cursor: pointer; transition: background 0.2s; margin-top: 0.5rem; }
-    .form-submit:hover { background: var(--forest); }
-    .form-note { font-size: 12px; color: var(--stone); text-align: center; margin-top: 0.75rem; line-height: 1.6; }
-
-    /* SUCCESS */
-    .form-success { display: none; text-align: center; padding: 3rem 2rem; }
-    .form-success-icon { width: 56px; height: 56px; background: rgba(53,94,59,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
-    .form-success-icon svg { width: 24px; height: 24px; stroke: var(--forest); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .form-success h3 { font-family: var(--serif); font-size: 1.5rem; font-weight: 500; color: var(--deep); margin-bottom: 0.5rem; }
-    .form-success p { font-size: 14px; color: var(--stone); line-height: 1.8; }
-
-     /* FOOTER */
-    footer { background: var(--deep); padding: 3.5rem 1.5rem 0; }
-    .footer-inner { max-width: 860px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 3rem; padding-bottom: 3rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
-    .footer-brand { display: flex; flex-direction: column; gap: 8px; }
-    .footer-logo { display: flex; align-items: center; gap: 8px; }
-    .footer-name { font-family: var(--serif); font-size: 32px; color: var(--cream); font-weight: 500; }
-    .footer-name em { color: var(--gold); font-style: normal; }
-    .footer-tagline { font-family: var(--serif); font-size: 15px; font-style: italic; color: var(--cream); margin-bottom: 4px; }
-    .footer-tagline-sub { font-family: var(--serif); font-size: 13px; font-style: italic; color: rgba(166,159,145,0.4); }
-    .footer-nav { display: flex; gap: 3rem; flex-wrap: wrap; }
-    .footer-nav-group { display: flex; flex-direction: column; gap: 10px; }
-    .footer-nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin-bottom: 2px; }
-    .footer-nav-group a { font-size: 13px; color: rgba(166,159,145,0.55); transition: color 0.2s; }
-    .footer-nav-group a:hover { color: var(--cream); }
-    .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
-    .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.3); }
-
-    /* HERO ANIMATIONS */
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-    @media (prefers-reduced-motion: no-preference) {
-      .hero-eyebrow { animation: fadeUp 0.5s ease both; }
-      .hero h1      { animation: fadeUp 0.5s ease 0.08s both; }
-      .hero-sub     { animation: fadeUp 0.5s ease 0.16s both; }
+    body.drawer-open { overflow: hidden; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    svg {
+      display: block;
+      stroke: currentColor;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
-    /* SCROLL ANIMATIONS */
-    .reveal {
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: linear-gradient(90deg, #061522, #0B2130);
+      border-bottom: 1px solid rgba(200, 162, 74, 0.24);
+      padding: 0.95rem clamp(1rem, 2.6vw, 2.6rem);
+    }
+    .nav {
+      width: min(1320px, 100%);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--cream);
+      min-width: max-content;
+    }
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1px solid rgba(200, 162, 74, 0.52);
+      background: rgba(6, 21, 34, 0.45);
+    }
+    .brand-mark img { width: 38px; height: 38px; object-fit: contain; }
+    .brand-name { display: flex; flex-direction: column; line-height: 1; }
+    .brand-name strong {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .brand-name span {
+      margin-top: 0.22rem;
+      color: var(--gold);
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .nav-links {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: clamp(0.9rem, 2vw, 2rem);
+      color: rgba(246, 241, 232, 0.9);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .nav-links a.active {
+      color: var(--gold);
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 0.36rem;
+    }
+    .nav-actions { display: flex; align-items: center; gap: 0.8rem; margin-left: 1rem; }
+    .btn-donate {
+      min-height: 44px;
+      padding: 0 1.45rem;
+      border-radius: 8px;
+      border: 1px solid rgba(200, 162, 74, 0.6);
+      color: var(--cream);
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: rgba(6, 21, 34, 0.34);
+    }
+    .btn-donate svg, .nav-avatar svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--gold);
+      stroke-width: 1.8;
+    }
+    .nav-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid rgba(200, 162, 74, 0.7);
+      background: rgba(6, 21, 34, 0.36);
+      display: grid;
+      place-items: center;
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      border: 1px solid rgba(200, 162, 74, 0.45);
+      background: rgba(6, 21, 34, 0.45);
+      color: var(--cream);
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .mobile-menu-btn svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      stroke-width: 1.9;
+    }
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 16, 26, 0.58);
       opacity: 0;
-      transform: translateY(24px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 70;
     }
-    .reveal.visible {
-      opacity: 1;
-      transform: translateY(0);
+    .mobile-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(90vw, 380px);
+      height: 100vh;
+      background: linear-gradient(180deg, #081a2a, #061522);
+      color: var(--cream);
+      transform: translateX(105%);
+      transition: transform 0.24s ease;
+      z-index: 80;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      border-left: 1px solid rgba(200, 162, 74, 0.26);
+      box-shadow: -20px 0 45px rgba(0, 0, 0, 0.35);
     }
-    .reveal-delay-1 { transition-delay: 0.1s; }
-    .reveal-delay-2 { transition-delay: 0.2s; }
-    .reveal-delay-3 { transition-delay: 0.3s; }
-    .reveal-delay-4 { transition-delay: 0.4s; }
+    .drawer-open .drawer-backdrop { opacity: 1; pointer-events: auto; }
+    .drawer-open .mobile-drawer { transform: translateX(0); }
+    .drawer-head {
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(200, 162, 74, 0.2);
+    }
+    .drawer-title {
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      letter-spacing: 0.04em;
+    }
+    .drawer-close {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid rgba(200, 162, 74, 0.3);
+      background: transparent;
+      color: var(--cream);
+      display: grid;
+      place-items: center;
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+    .drawer-scroll {
+      overflow-y: auto;
+      padding: 0.8rem 1rem 1.2rem;
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+    .drawer-links { display: grid; gap: 0.35rem; }
+    .drawer-links a {
+      padding: 0.6rem 0.55rem;
+      border-radius: 8px;
+      color: rgba(246, 241, 232, 0.9);
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .drawer-links a.active {
+      background: rgba(200, 162, 74, 0.16);
+      color: #FFE7B6;
+    }
+    .drawer-join {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #D6AF5B, #B98832);
+      color: #0A1724;
+      font-size: 0.96rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
 
-    /* RESPONSIVE */
-    @media (max-width: 680px) {
-      .main-grid { grid-template-columns: 1fr; gap: 3rem; }
-      .contact-details { position: static; }
-      .form-row { grid-template-columns: 1fr; }
+    .page {
+      width: min(1320px, calc(100% - 2rem));
+      margin: 0.95rem auto 2rem;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      box-shadow: 0 10px 38px rgba(12, 22, 32, 0.08);
+      overflow: hidden;
     }
-    @media (max-width: 480px) {
-      .nav-links a:not(:last-child):not(:nth-last-child(2)) { display: none; }
-      .form-wrap { padding: 1.75rem; }
+    .contact-hero {
+      position: relative;
+      min-height: 560px;
+      display: grid;
+      grid-template-columns: minmax(330px, 0.74fr) minmax(520px, 1.26fr);
+      align-items: center;
+      gap: 1rem;
+      padding: clamp(2rem, 4.5vw, 4.25rem);
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 18% 0%, rgba(200, 162, 74, 0.12), transparent 32%),
+        linear-gradient(180deg, #FFFDF8 0%, #F8F2E7 100%);
+      overflow: hidden;
+    }
+    .contact-hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(30deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08)),
+        linear-gradient(150deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08));
+      background-size: 54px 94px;
+      opacity: 0.18;
+      pointer-events: none;
+    }
+    .contact-hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(255,253,248,0.98) 0%, rgba(255,253,248,0.82) 34%, rgba(255,253,248,0.2) 62%, rgba(255,253,248,0) 100%);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .hero-copy {
+      position: relative;
+      z-index: 2;
+      max-width: 460px;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.56rem;
+      color: var(--gold-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.76rem;
+      font-weight: 800;
+      margin-bottom: 0.8rem;
+    }
+    .eyebrow svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      stroke-width: 1.7;
+    }
+    .hero-copy h1 {
+      font-family: var(--serif);
+      color: var(--night);
+      font-size: clamp(3.4rem, 6.4vw, 5.35rem);
+      line-height: 0.96;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+    .hero-copy h1 span { display: block; color: var(--gold-dark); }
+    .hero-copy p {
+      color: var(--night);
+      font-size: 1.04rem;
+      line-height: 1.75;
+      margin-bottom: 1rem;
+      max-width: 400px;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 0.9rem; margin-top: 1.35rem; }
+    .btn-primary, .btn-secondary {
+      min-height: 46px;
+      border-radius: 7px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      padding: 0 1.25rem;
+      font-size: 0.88rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+    .btn-primary {
+      border: 1px solid var(--night);
+      background: linear-gradient(135deg, #061522, #0B2130);
+      color: var(--cream);
+      box-shadow: 0 10px 20px rgba(6, 21, 34, 0.18);
+    }
+    .btn-secondary {
+      border: 1px solid rgba(169, 124, 37, 0.55);
+      background: rgba(255, 253, 248, 0.78);
+      color: var(--gold-dark);
+    }
+    .btn-primary svg, .btn-secondary svg { width: 17px; height: 17px; stroke-width: 1.8; }
+    .btn-primary:hover, .btn-secondary:hover { transform: translateY(-1px); }
+    .hero-art {
+      position: absolute;
+      right: -2%;
+      top: 0;
+      bottom: 0;
+      width: min(850px, 65vw);
+      opacity: 0.92;
+      z-index: 0;
+    }
+    .hero-art img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center right;
+      filter: sepia(0.07) saturate(0.98);
+    }
+
+    .section {
+      padding: clamp(2.2rem, 4.5vw, 4.4rem) clamp(1rem, 3vw, 2.3rem);
+      border-bottom: 1px solid var(--line);
+    }
+    .section-inner { width: min(1080px, 100%); margin: 0 auto; }
+    .section-title {
+      text-align: center;
+      margin-bottom: 1.8rem;
+    }
+    .section-title h2 {
+      font-family: var(--serif);
+      color: var(--night);
+      font-size: clamp(2rem, 3.3vw, 3rem);
+      font-weight: 500;
+      line-height: 1.05;
+    }
+    .section-title .cross { color: var(--gold-dark); margin-top: 0.25rem; font-family: var(--serif); font-size: 1.45rem; }
+
+    .help-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.35rem;
+    }
+    .help-card, .contact-panel, .message-card, .person-card, .cta-band {
+      border: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 100% 0%, rgba(200, 162, 74, 0.08), transparent 28%),
+        rgba(255, 253, 248, 0.88);
+      border-radius: 10px;
+      box-shadow: 0 14px 32px rgba(6, 21, 34, 0.06);
+    }
+    .help-card {
+      min-height: 240px;
+      padding: 1.65rem;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      text-align: center;
+      gap: 0.75rem;
+    }
+    .card-icon, .direct-icon, .person-icon, .faq-icon {
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      border: 1px solid rgba(200, 162, 74, 0.44);
+      background: rgba(200, 162, 74, 0.08);
+      color: var(--gold-dark);
+    }
+    .card-icon { width: 72px; height: 72px; }
+    .card-icon svg { width: 42px; height: 42px; stroke-width: 1.45; }
+    .help-card h3, .contact-label, .person-card h2, .cta-band h2 {
+      font-family: var(--serif);
+      color: var(--night);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .help-card h3 { font-size: 1.2rem; }
+    .help-card p {
+      max-width: 230px;
+      color: var(--night);
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+    .learn-link {
+      margin-top: 0.45rem;
+      color: var(--gold-dark);
+      font-size: 0.83rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .direct-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.82fr);
+      gap: 2rem;
+      align-items: stretch;
+    }
+    .direct-list { display: grid; gap: 0; }
+    .direct-row {
+      display: grid;
+      grid-template-columns: 60px minmax(0, 1fr);
+      gap: 1rem;
+      align-items: center;
+      padding: 1.05rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .direct-row:last-child { border-bottom: 0; }
+    .direct-icon { width: 50px; height: 50px; }
+    .direct-icon svg { width: 25px; height: 25px; stroke-width: 1.55; }
+    .contact-label {
+      color: var(--night);
+      font-size: 0.86rem;
+      font-family: var(--sans);
+      font-weight: 800;
+      margin-bottom: 0.18rem;
+    }
+    .direct-row a { color: var(--night); font-size: 1rem; font-weight: 600; }
+    .response-card {
+      padding: 2rem;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      min-height: 100%;
+      background: linear-gradient(135deg, #F7F2E8, #FFFDF8);
+    }
+    .response-card .clock {
+      width: 74px;
+      height: 74px;
+      border: 2px solid var(--gold-dark);
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      color: var(--gold-dark);
+      margin-bottom: 1.2rem;
+    }
+    .response-card .clock svg { width: 40px; height: 40px; stroke-width: 1.45; }
+    .response-card span {
+      color: var(--stone);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+    .response-card strong {
+      display: block;
+      margin: 0.5rem 0 1rem;
+      font-family: var(--serif);
+      color: var(--night);
+      font-size: clamp(1.8rem, 3vw, 2.55rem);
+      font-weight: 500;
+      line-height: 1.06;
+    }
+    .response-card p {
+      color: var(--night);
+      font-family: var(--serif);
+      font-size: 1.18rem;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .message-card {
+      padding: clamp(1.1rem, 3vw, 2rem);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    .field { display: grid; gap: 0.35rem; }
+    .field.full { grid-column: 1 / -1; }
+    .field label {
+      color: var(--night);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid rgba(166, 159, 145, 0.36);
+      border-radius: 5px;
+      background: rgba(255, 253, 248, 0.8);
+      color: var(--night);
+      font: inherit;
+      min-height: 46px;
+      padding: 0.75rem 0.85rem;
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+      line-height: 1.55;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(169, 124, 37, 0.72);
+      box-shadow: 0 0 0 3px rgba(200, 162, 74, 0.13);
+      background: #fff;
+    }
+    .send-btn {
+      grid-column: 1 / -1;
+      min-height: 52px;
+      border: 0;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #061522, #0B2130);
+      color: var(--cream);
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      cursor: pointer;
+    }
+    .send-btn svg { width: 18px; height: 18px; stroke-width: 1.8; }
+    .form-status {
+      grid-column: 1 / -1;
+      display: none;
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      background: rgba(47, 90, 57, 0.09);
+      border: 1px solid rgba(47, 90, 57, 0.18);
+      color: #2F5A39;
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+    .form-status.visible { display: block; }
+
+    .faq-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 0.98fr) minmax(360px, 0.78fr);
+      gap: 2.5rem;
+      align-items: center;
+    }
+    .faq-list { border-top: 1px solid var(--line); }
+    details {
+      border-bottom: 1px solid var(--line);
+      padding: 1rem 0;
+    }
+    summary {
+      cursor: pointer;
+      color: var(--night);
+      font-size: 1rem;
+      font-weight: 700;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::after {
+      content: "+";
+      color: var(--gold-dark);
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+    details[open] summary::after { content: "-"; }
+    details p {
+      color: var(--stone);
+      line-height: 1.68;
+      padding: 0.75rem 1.5rem 0 0;
+    }
+    .faq-art {
+      opacity: 0.78;
+      justify-self: center;
+      max-width: 440px;
+    }
+
+    .person-card {
+      display: grid;
+      grid-template-columns: 270px minmax(0, 1.2fr) minmax(190px, 0.7fr);
+      gap: 1.8rem;
+      align-items: stretch;
+      padding: 0;
+      overflow: hidden;
+    }
+    .person-photo {
+      min-height: 250px;
+      background: #E7E1D6;
+    }
+    .person-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+    }
+    .person-copy {
+      padding: 2rem 0;
+      display: grid;
+      align-content: center;
+    }
+    .person-copy h2 {
+      font-family: var(--serif);
+      color: var(--night);
+      font-size: clamp(2rem, 3vw, 3rem);
+      font-weight: 500;
+      line-height: 1.06;
+      margin-bottom: 1rem;
+    }
+    .person-copy p {
+      color: var(--night);
+      line-height: 1.72;
+      max-width: 430px;
+    }
+    .person-meta {
+      padding: 2rem;
+      border-left: 1px solid var(--line);
+      display: grid;
+      align-content: center;
+    }
+    .person-meta strong {
+      display: block;
+      font-family: var(--serif);
+      color: var(--night);
+      font-size: 1.7rem;
+      font-weight: 500;
+      margin-bottom: 0.35rem;
+    }
+    .person-meta span {
+      display: block;
+      color: var(--gold-dark);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.85rem;
+    }
+    .person-meta p {
+      color: var(--night);
+      line-height: 1.58;
+    }
+
+    .cta-band {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 2rem;
+      align-items: center;
+      padding: clamp(1.4rem, 3vw, 2.4rem);
+      background:
+        linear-gradient(90deg, rgba(255,253,248,0.95), rgba(255,253,248,0.78)),
+        url("/images/directory/church-sketch-directory.png") right center / auto 145% no-repeat;
+    }
+    .cta-band h2 {
+      font-size: clamp(2rem, 3.6vw, 3.1rem);
+      line-height: 1.05;
+      text-transform: none;
+      letter-spacing: 0.03em;
+      margin-bottom: 0.5rem;
+    }
+    .cta-band p { color: var(--stone); line-height: 1.65; max-width: 520px; }
+    .cta-actions {
+      display: grid;
+      gap: 0.85rem;
+      min-width: 260px;
+    }
+
+    .site-footer {
+      background: linear-gradient(90deg, #061522, #0B2130);
+      color: var(--cream);
+      padding: 3rem clamp(1rem, 2.6vw, 2.6rem) 1.2rem;
+    }
+    .footer-inner { width: min(1320px, 100%); margin: 0 auto; }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: minmax(240px, 1.6fr) repeat(3, minmax(120px, 1fr));
+      gap: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid rgba(200, 162, 74, 0.18);
+    }
+    .footer-lockup {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.9rem;
+    }
+    .footer-lockup img { width: 46px; height: 46px; object-fit: contain; }
+    .footer-lockup strong {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+    }
+    .footer-brand p {
+      color: rgba(246, 241, 232, 0.75);
+      line-height: 1.6;
+      max-width: 280px;
+    }
+    .footer-col h4 {
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.72rem;
+      margin-bottom: 0.8rem;
+    }
+    .footer-col a {
+      display: block;
+      color: rgba(246, 241, 232, 0.72);
+      font-size: 0.9rem;
+      margin-bottom: 0.45rem;
+    }
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      color: rgba(246, 241, 232, 0.52);
+      font-size: 0.82rem;
+      padding-top: 1.1rem;
+    }
+
+    @media (max-width: 1040px) {
+      .nav-links, .nav-actions { display: none; }
+      .mobile-menu-btn { display: inline-flex; margin-left: auto; }
+      .contact-hero {
+        grid-template-columns: 1fr;
+        min-height: 620px;
+        align-items: start;
+      }
+      .contact-hero::after {
+        background: linear-gradient(180deg, rgba(255,253,248,0.98) 0%, rgba(255,253,248,0.86) 38%, rgba(255,253,248,0.18) 100%);
+      }
+      .hero-art {
+        right: 0;
+        top: auto;
+        bottom: 0;
+        width: 100%;
+        height: 58%;
+      }
+      .hero-art img { object-position: center bottom; }
+      .help-grid, .direct-grid, .faq-layout, .person-card, .cta-band {
+        grid-template-columns: 1fr;
+      }
+      .person-copy, .person-meta { padding: 1.4rem; }
+      .person-meta { border-left: 0; border-top: 1px solid var(--line); }
+      .cta-actions { min-width: 0; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .site-header { padding: 0.75rem 1rem; }
+      .brand-mark { width: 38px; height: 38px; }
+      .brand-mark img { width: 34px; height: 34px; }
+      .brand-name strong { font-size: 1.55rem; }
+      .brand-name span { font-size: 0.52rem; }
+      .page {
+        width: 100%;
+        margin: 0;
+        border-left: 0;
+        border-right: 0;
+      }
+      .contact-hero {
+        min-height: 680px;
+        padding: 1.6rem 1rem;
+      }
+      .hero-copy h1 { font-size: clamp(3rem, 16vw, 4.2rem); }
+      .hero-actions { align-items: stretch; }
+      .hero-actions a { width: 100%; }
+      .section { padding: 2.3rem 1rem; }
+      .help-card { min-height: 190px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full, .send-btn, .form-status { grid-column: auto; }
+      .person-card { border-radius: 0; }
+      .person-photo { min-height: 320px; }
+      .cta-band {
+        background:
+          linear-gradient(180deg, rgba(255,253,248,0.96), rgba(255,253,248,0.9)),
+          url("/images/directory/church-sketch-directory.png") center bottom / 130% auto no-repeat;
+        padding-bottom: 13rem;
+      }
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-bottom { flex-direction: column; }
     }
   </style>
-  <link rel="stylesheet" href="/styles/numbers.css" />
-  <link rel="stylesheet" href="/site-mobile-nav.css" />
-  <script src="/site-mobile-nav.js" defer></script>
 </head>
 <body>
-
-  <nav>
-    <div class="nav-inner">
-      <a href="/" class="nav-logo">
-        <div class="nav-mark">
-          <img src="/mark.png" alt="AGAPAY" style="width: 48px; height: 48px; object-fit: contain;" />
-        </div>
-        <span class="nav-name">AGAPAY</span>
+  <header class="site-header">
+    <div class="nav">
+      <a class="brand" href="/" aria-label="AGAPAY home">
+        <span class="brand-mark"><img src="/mark.png" alt="" /></span>
+        <span class="brand-name"><strong>AGAPAY</strong><span>Love how you give</span></span>
       </a>
-            <div class="nav-links">
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a href="/vision">Vision</a>
         <a href="/giving">Giving</a>
         <a href="/marketplace">Marketplace</a>
         <a href="/directory">Directory</a>
-        <a href="/vision">Vision</a>
         <a href="/how-it-works">Resources</a>
-        <a href="/register" class="nav-cta">Join AGAPAY</a>
+        <a href="/about">About</a>
+        <a class="active" href="/contact">Contact</a>
+      </nav>
+      <div class="nav-actions">
+        <a class="btn-donate" href="/register">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          Join AGAPAY
+        </a>
+        <a class="nav-avatar" href="/donor/login" aria-label="Log in">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        </a>
       </div>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
+      </button>
     </div>
-  </nav>
+  </header>
 
-  <div class="hero">
-    <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
-    <div class="hero-inner">
-      <div class="hero-eyebrow">Contact</div>
-      <h1>We read every<br><em>message ourselves.</em></h1>
-      <p class="hero-sub">No bots. No ticket queues. A real person â€” the founder â€” will read your message and respond personally.</p>
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="mobile-drawer" aria-label="Mobile navigation">
+    <div class="drawer-head">
+      <div class="drawer-title">AGAPAY</div>
+      <button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close navigation">x</button>
     </div>
-  </div>
+    <div class="drawer-scroll">
+      <nav class="drawer-links">
+        <a href="/vision">Vision</a>
+        <a href="/giving">Giving</a>
+        <a href="/marketplace">Marketplace</a>
+        <a href="/directory">Directory</a>
+        <a href="/how-it-works">Resources</a>
+        <a href="/about">About</a>
+        <a class="active" href="/contact">Contact</a>
+        <a href="/pricing">Pricing</a>
+      </nav>
+      <a class="drawer-join" href="/register">Join AGAPAY</a>
+      <a class="drawer-join" href="/donor/login">Log in</a>
+    </div>
+  </aside>
 
-  <div class="main">
-    <div class="wrap">
-      <div class="main-grid">
+  <main class="page">
+    <section class="contact-hero">
+      <div class="hero-copy">
+        <div class="eyebrow"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M8 6h8"/><path d="M7 10h10"/></svg>Contact AGAPAY</div>
+        <h1>Questions? <span>Let's talk.</span></h1>
+        <p>Whether you're a parish priest, treasurer, monastery, ministry leader, or business owner, we'd love to hear from you.</p>
+        <p>We're intentionally building AGAPAY with direct founder involvement and personal support.</p>
+        <div class="hero-actions">
+          <a class="btn-primary" href="mailto:hello@agapay.app?subject=Schedule%20a%20call%20with%20AGAPAY">
+            Schedule a call
+            <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.7 19.7 0 0 1-8.59-3.06 19.2 19.2 0 0 1-5.9-5.9A19.7 19.7 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.13.96.35 1.9.66 2.81a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.27-1.27a2 2 0 0 1 2.11-.45c.91.31 1.85.53 2.81.66A2 2 0 0 1 22 16.92z"/></svg>
+          </a>
+          <a class="btn-secondary" href="#message">
+            Send a message
+            <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg>
+          </a>
+        </div>
+      </div>
+      <figure class="hero-art" aria-hidden="true">
+        <img src="/images/contact/contact-hero.png" alt="" />
+      </figure>
+    </section>
 
-        <!-- LEFT â€” CONTACT DETAILS -->
-        <div class="contact-details">
-          <div class="details-eyebrow reveal">Get in touch</div>
+    <section class="section">
+      <div class="section-inner">
+        <div class="section-title">
+          <h2>How Can We Help?</h2>
+          <div class="cross">+</div>
+        </div>
+        <div class="help-grid">
+          <article class="help-card">
+            <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M5 20h14"/><path d="M7 20V9l5-5 5 5v11"/><path d="M10 20v-6h4v6"/><path d="M12 2v5"/><path d="M9.5 4.5h5"/></svg></div>
+            <h3>Register a Parish</h3>
+            <p>Questions about onboarding your parish or monastery.</p>
+            <a class="learn-link" href="/register">Learn more -></a>
+          </article>
+          <article class="help-card">
+            <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 13v-2a8 8 0 0 1 16 0v2"/><path d="M18 19a4 4 0 0 1-4 4h-2"/><path d="M4 13h3v6H4z"/><path d="M17 13h3v6h-3z"/></svg></div>
+            <h3>Platform Support</h3>
+            <p>Need help with giving, donations, campaigns, or accounts.</p>
+            <a class="learn-link" href="mailto:support@agapay.app">Learn more -></a>
+          </article>
+          <article class="help-card">
+            <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M8 12l2.5 2.5a3 3 0 0 0 4.2 0L22 7"/><path d="M2 7l7.3 7.5"/><path d="M7 7h4l2 2h4"/><path d="M2 7l4-4 5 5"/><path d="M22 7l-4-4-4 4"/></svg></div>
+            <h3>Partnership Inquiry</h3>
+            <p>Schools, ministries, dioceses, businesses, and organizations.</p>
+            <a class="learn-link" href="#message">Learn more -></a>
+          </article>
+        </div>
+      </div>
+    </section>
 
-          <div class="contact-card reveal reveal-delay-1">
-            <div class="contact-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    <section class="section">
+      <div class="section-inner direct-grid">
+        <div>
+          <div class="eyebrow"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg>Reach Us Directly</div>
+          <div class="direct-list">
+            <div class="direct-row">
+              <div class="direct-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg></div>
+              <div><div class="contact-label">General Inquiries</div><a href="mailto:hello@agapay.app">hello@agapay.app</a></div>
             </div>
-            <h4>General inquiries</h4>
-            <a href="mailto:hello@agapay.app">hello@agapay.app</a>
-            <p>For any question about AGAPAY â€” big or small.</p>
-          </div>
-
-          <div class="contact-card reveal reveal-delay-2">
-            <div class="contact-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <div class="direct-row">
+              <div class="direct-icon"><svg viewBox="0 0 24 24"><path d="M5 20h14"/><path d="M7 20V9l5-5 5 5v11"/><path d="M10 20v-6h4v6"/></svg></div>
+              <div><div class="contact-label">Parish Registration</div><a href="mailto:parishes@agapay.app">parishes@agapay.app</a></div>
             </div>
-            <h4>Parish & monastery registration</h4>
-            <a href="mailto:parishes@agapay.app">parishes@agapay.app</a>
-            <p>Ready to bring your community onto AGAPAY? <a href="register">Start here.</a></p>
-          </div>
-
-          <div class="contact-card reveal reveal-delay-3">
-            <div class="contact-card-icon">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div class="direct-row">
+              <div class="direct-icon"><svg viewBox="0 0 24 24"><path d="M4 13v-2a8 8 0 0 1 16 0v2"/><path d="M18 19a4 4 0 0 1-4 4h-2"/><path d="M4 13h3v6H4z"/><path d="M17 13h3v6h-3z"/></svg></div>
+              <div><div class="contact-label">Support</div><a href="mailto:support@agapay.app">support@agapay.app</a></div>
             </div>
-            <h4>Support</h4>
-            <a href="mailto:support@agapay.app">support@agapay.app</a>
-            <p>Technical questions and help for existing users.</p>
-          </div>
-
-          <div class="response-note reveal reveal-delay-4">
-            <p><strong>Response time:</strong> We typically respond within one business day. Parish registration inquiries are prioritized. You will always hear from a real person.</p>
           </div>
         </div>
+        <aside class="contact-panel response-card">
+          <div class="clock"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+          <span>Typical Response Time</span>
+          <strong>Within 1 business day</strong>
+          <p>Direct founder access<br />for founding parishes.</p>
+        </aside>
+      </div>
+    </section>
 
-        <!-- RIGHT â€” FORM -->
-        <div class="form-wrap reveal" id="contact-form-wrap">
-          <div id="form-body">
-            <div class="form-title">Send us a message</div>
-            <p class="form-sub">Whether you're a priest exploring AGAPAY for your parish, a monastery administrator, or simply curious â€” we want to hear from you.</p>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>First name</label>
-                <input type="text" id="fname" placeholder="Fr. John" />
-              </div>
-              <div class="form-group">
-                <label>Last name</label>
-                <input type="text" id="lname" placeholder="Smith" />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Email address</label>
-              <input type="email" id="email" placeholder="father.john@stnicholas.org" />
-            </div>
-
-            <div class="form-group">
-              <label>I am a...</label>
-              <select id="role">
-                <option value="">Select one</option>
-                <option>Parish priest</option>
-                <option>Parish council member</option>
-                <option>Parish treasurer</option>
-                <option>Monastery or skete administrator</option>
-                <option>Diocesan administrator</option>
-                <option>Interested parishioner</option>
-                <option>Other</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Jurisdiction</label>
-              <select id="jurisdiction">
-                <option value="">Select jurisdiction</option>
-                <option>Greek Orthodox Archdiocese (GOA)</option>
-                <option>Antiochian Orthodox</option>
-                <option>Orthodox Church in America (OCA)</option>
-                <option>Russian Orthodox Church Outside Russia (ROCOR)</option>
-                <option>Serbian Orthodox</option>
-                <option>Other / Multiple</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Message</label>
-              <textarea id="message" placeholder="Tell us about your parish, your questions, or anything else on your mind..."></textarea>
-            </div>
-
-            <button class="form-submit" onclick="handleSubmit()">Send message â†’</button>
-            <p class="form-note">Your message goes directly to the founder. No bots, no ticket systems.</p>
+    <section class="section" id="message">
+      <div class="section-inner">
+        <div class="section-title">
+          <h2>Send a Message</h2>
+          <div class="cross">+</div>
+        </div>
+        <form class="message-card form-grid" onsubmit="sendContactMessage(event)">
+          <div class="field">
+            <label for="name">Name</label>
+            <input id="name" name="name" autocomplete="name" required />
           </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email" required />
+          </div>
+          <div class="field">
+            <label for="organization">Organization</label>
+            <input id="organization" name="organization" placeholder="Parish, monastery, ministry, business, etc." />
+          </div>
+          <div class="field">
+            <label for="topic">I'm contacting AGAPAY about:</label>
+            <select id="topic" name="topic" required>
+              <option value="">Select an option</option>
+              <option>Parish Registration</option>
+              <option>Monastery Registration</option>
+              <option>Platform Support</option>
+              <option>Marketplace</option>
+              <option>Partnership</option>
+              <option>General Question</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="messageText">Message</label>
+            <textarea id="messageText" name="message" required></textarea>
+          </div>
+          <button class="send-btn" type="submit">
+            <svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4z"/></svg>
+            Send Message
+          </button>
+          <div class="form-status" id="formStatus">Your message is ready in your email app.</div>
+        </form>
+      </div>
+    </section>
 
-          <div class="form-success" id="form-success">
-            <div class="form-success-icon">
-              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-            </div>
-            <h3>Message received.</h3>
-            <p>Thank you for reaching out. The founder will read your message personally and respond within one business day.<br><br>May God bless your community.</p>
+    <section class="section">
+      <div class="section-inner faq-layout">
+        <div>
+          <div class="eyebrow"><svg viewBox="0 0 24 24"><path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>Frequently Asked Questions</div>
+          <div class="faq-list">
+            <details>
+              <summary>Is AGAPAY available nationwide?</summary>
+              <p>Yes. AGAPAY serves Orthodox communities throughout the United States.</p>
+            </details>
+            <details>
+              <summary>Can monasteries use AGAPAY?</summary>
+              <p>Yes. Monasteries and sketes receive free monthly platform access.</p>
+            </details>
+            <details>
+              <summary>How long does onboarding take?</summary>
+              <p>Most communities can begin setup quickly after canonical review and approval.</p>
+            </details>
+            <details>
+              <summary>Which jurisdictions are supported?</summary>
+              <p>AGAPAY is designed for canonical Orthodox communities across America.</p>
+            </details>
           </div>
         </div>
-
+        <img class="faq-art" src="/images/directory/church-sketch-directory.png" alt="Orthodox church sketch" />
       </div>
-    </div>
-  </div>
+    </section>
 
- <footer>
+    <section class="section">
+      <div class="section-inner person-card">
+        <figure class="person-photo">
+          <img src="/joel.jpg" alt="Joel Dunn" />
+        </figure>
+        <div class="person-copy">
+          <h2>A Real Person Will Read Your Message</h2>
+          <div class="cross" style="color:var(--gold-dark);font-family:var(--serif);font-size:1.4rem;margin-bottom:0.65rem;">+</div>
+          <p><strong>AGAPAY isn't a call center.</strong><br />When you contact us, you're speaking with the people actually building the platform.</p>
+        </div>
+        <aside class="person-meta">
+          <strong>Joel Dunn</strong>
+          <span>Founder</span>
+          <p>Reader, ROCOR<br />Husband &amp; Father of Ten</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-inner cta-band">
+        <div>
+          <h2>Ready to bring AGAPAY<br />to your community?</h2>
+          <p>Founding parishes receive preferred onboarding and direct founder support.</p>
+        </div>
+        <div class="cta-actions">
+          <a class="btn-primary" href="/register">Register Your Parish</a>
+          <a class="btn-secondary" href="/pricing">View Pricing</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-brand">
-        <div class="footer-logo">
-          <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;">
-            <img src="/mark.png" alt="AGAPAY" style="width:48px;height:48px;object-fit:contain;" loading="lazy" />
-          </div>
-          <span class="footer-name">AGAPAY</span>
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="footer-lockup"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></div>
+          <p>Building the financial home of the Orthodox world.</p>
         </div>
-        <p class="footer-tagline">Love how you give.</p>
-      </div>
-      <div class="footer-nav">
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Platform</div>
-          <a href="/features">Features</a>
+        <nav class="footer-col" aria-label="Platform">
+          <h4>Platform</h4>
+          <a href="/vision">Vision</a>
+          <a href="/giving">Giving</a>
+          <a href="/marketplace">Marketplace</a>
+          <a href="/directory">Directory</a>
+        </nav>
+        <nav class="footer-col" aria-label="Resources">
+          <h4>Resources</h4>
+          <a href="/how-it-works">How It Works</a>
           <a href="/pricing">Pricing</a>
           <a href="/why">Why AGAPAY</a>
-          <a href="/how-it-works">How AGAPAY Works</a>
-         
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Company</div>
-          <a href="/about">About</a>
           <a href="/contact">Contact</a>
-          <a href="/register">Register parish</a>
-           <a href="/donor/login">Give now</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Legal</div>
-          <a href="/privacy">Privacy Policy</a>
+        </nav>
+        <nav class="footer-col" aria-label="Legal">
+          <h4>Legal</h4>
           <a href="/terms">Terms of Service</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Contact</div>
-          <a href="mailto:hello@agapay.app">hello@agapay.app</a>
-          <a href="mailto:parishes@agapay.app">parishes@agapay.app</a>
-          <a href="mailto:support@agapay.app">support@agapay.app</a>
-        </div>
+          <a href="/privacy">Privacy Policy</a>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 AGAPAY. All rights reserved.</span>
+        <span>Love how you give.</span>
       </div>
     </div>
-    <div class="footer-bottom">
-      <p>Â© 2026 AGAPAY Â· agapay.app</p>
-    </div>
   </footer>
+
   <script>
-    // SCROLL REVEAL
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-        }
-      });
-    }, { threshold: 0.1 });
+    const body = document.body;
+    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+    const drawerBackdrop = document.getElementById("drawerBackdrop");
+    const drawerCloseBtn = document.getElementById("drawerCloseBtn");
+    function setDrawer(open) {
+      body.classList.toggle("drawer-open", open);
+      mobileMenuBtn?.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    mobileMenuBtn?.addEventListener("click", () => setDrawer(true));
+    drawerBackdrop?.addEventListener("click", () => setDrawer(false));
+    drawerCloseBtn?.addEventListener("click", () => setDrawer(false));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") setDrawer(false);
+    });
 
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-    // FORM SUBMIT
-    function handleSubmit() {
-      const email = document.getElementById('email').value.trim();
-      const fname = document.getElementById('fname').value.trim();
-      const lname = document.getElementById('lname').value.trim();
-      const role = document.getElementById('role').value;
-      const jurisdiction = document.getElementById('jurisdiction').value;
-      const message = document.getElementById('message').value.trim();
-
-      if (!email || !message) {
-        alert('Please provide your email address and a message.');
-        return;
-      }
-
-      const subject = encodeURIComponent('AGAPAY Contact: ' + (role || 'Inquiry') + (jurisdiction ? ' â€” ' + jurisdiction : ''));
-      const body = encodeURIComponent(
-        'Name: ' + fname + ' ' + lname + '\n' +
-        'Email: ' + email + '\n' +
-        'Role: ' + role + '\n' +
-        'Jurisdiction: ' + jurisdiction + '\n\n' +
-        'Message:\n' + message
-      );
-
-      window.location.href = 'mailto:hello@agapay.app?subject=' + subject + '&body=' + body;
-
-      setTimeout(function() {
-        document.getElementById('form-body').style.display = 'none';
-        document.getElementById('form-success').style.display = 'block';
-      }, 1000);
+    function sendContactMessage(event) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const data = new FormData(form);
+      const topic = data.get("topic") || "General Question";
+      const subject = encodeURIComponent("AGAPAY Contact: " + topic);
+      const bodyText = [
+        "Name: " + (data.get("name") || ""),
+        "Email: " + (data.get("email") || ""),
+        "Organization: " + (data.get("organization") || ""),
+        "Topic: " + topic,
+        "",
+        "Message:",
+        data.get("message") || ""
+      ].join("\n");
+      window.location.href = "mailto:hello@agapay.app?subject=" + subject + "&body=" + encodeURIComponent(bodyText);
+      const status = document.getElementById("formStatus");
+      if (status) status.classList.add("visible");
     }
   </script>
-
 </body>
 </html>
-
-
