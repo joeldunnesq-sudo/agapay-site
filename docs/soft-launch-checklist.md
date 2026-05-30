@@ -2,6 +2,10 @@
 
 This is the launch gate for the first production soft launch.
 
+Companion execution guide:
+
+- `docs/stripe-testmode-e2e-runbook.md`
+
 ## 1) Release preflight (must pass)
 
 - [ ] Run `npm run check`
@@ -63,4 +67,3 @@ Soft launch is approved only when:
 - [ ] All section 2 and 3 flows pass
 - [ ] No open P0 bugs
 - [ ] Named owner confirms monitoring and support coverage
-
