@@ -5,6 +5,7 @@ This is the launch gate for the first production soft launch.
 Companion execution guide:
 
 - `docs/stripe-testmode-e2e-runbook.md`
+- `docs/soft-launch-test-execution-sheet.md`
 
 ## 1) Release preflight (must pass)
 
