@@ -50,11 +50,13 @@ async function donorApi(path, options = {}) {
 }
 
 function setDonorStatus(message, tone = "info") {
-  const el = document.getElementById("donorStatus");
-  if (!el) return;
-  el.textContent = message || "";
-  el.className = message ? `notice ${tone}` : "notice";
-  el.style.display = message ? "block" : "none";
+  ["donorStatus", "desktopDonorStatus"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = message || "";
+    el.className = message ? `notice ${tone}` : "notice";
+    el.style.display = message ? "block" : "none";
+  });
 }
 
 function setText(id, value) {
@@ -878,6 +880,35 @@ async function startDonorCheckout(event) {
   } catch (err) {
     setDonorStatus(err.message, "error");
   }
+}
+
+async function handleDonorCheckoutReturn() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("gift_success") !== "1") return false;
+
+  const sessionId = params.get("session_id");
+  if (!sessionId) {
+    setDonorStatus("Your payment was successful. We are still waiting for Stripe's final confirmation.", "success");
+    window.history.replaceState(null, "", "/donor");
+    return true;
+  }
+
+  setDonorStatus("Confirming your offering...");
+  try {
+    const data = await donorApi(`/api/checkout-session-status?session_id=${encodeURIComponent(sessionId)}`, {
+      method: "GET"
+    });
+    if (data.paymentStatus === "paid" || data.status === "completed") {
+      setDonorStatus("Payment successful. Your offering has been recorded in your dashboard.", "success");
+    } else {
+      setDonorStatus(`Stripe returned payment status: ${data.paymentStatus || data.status || "processing"}.`, "info");
+    }
+  } catch (err) {
+    setDonorStatus("Your payment was successful. Stripe confirmation is still processing, so your history may update shortly.", "success");
+    console.warn("AGAPAY donor checkout confirmation warning:", err);
+  }
+  window.history.replaceState(null, "", "/donor");
+  return true;
 }
 
 document.addEventListener("DOMContentLoaded", () => {

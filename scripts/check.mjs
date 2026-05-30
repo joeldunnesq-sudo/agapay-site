@@ -42,6 +42,7 @@ assert.ok(worker.includes("grossUpForStripeProcessingFeeCents("), "worker should
 assert.ok(!worker.includes("subscription_data[application_fee_percent]"), "worker should not apply AGAPAY application fee percentages to recurring donor gifts");
 assert.ok(worker.includes("/api/checkout-session-status"), "worker should expose checkout return reconciliation");
 assert.ok(worker.includes("session_id={CHECKOUT_SESSION_ID}"), "Stripe success URLs should include the Checkout session id");
+assert.ok(worker.includes("/donor?gift_success=1"), "authenticated donor checkouts should return to the donor dashboard");
 assert.ok(!worker.includes("const parishes = ["), "worker should not hardcode demo parishes");
 assert.ok(worker.includes('url.pathname === "/donor/verify"'), "worker should route donor verification links before assets");
 assert.ok(worker.includes("handleDonorVerifyPage"), "worker should handle donor verification links server-side");
@@ -100,6 +101,7 @@ assert.ok(giveHtml.includes("/api/checkout-session-status"), "giving page should
 assert.ok(giveHtml.includes("/api/parishes"), "giving page should load registered parishes from the Worker API");
 assert.ok(giveHtml.includes("/security.js") && giveHtml.includes("data-agapay-turnstile"), "public giving checkout should render Turnstile when configured");
 assert.ok(giveHtml.includes("agapaySecurityPayload"), "public giving checkout should send Turnstile tokens when configured");
+assert.ok(donorApp.includes("handleDonorCheckoutReturn"), "donor dashboard should confirm returned Stripe checkout sessions");
 assert.ok(registerHtml.includes("/security.js") && registerHtml.includes("data-agapay-turnstile"), "registration should render Turnstile when configured");
 assert.ok(registerHtml.includes("agapaySecurityPayload"), "registration should send Turnstile tokens when configured");
 

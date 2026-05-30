@@ -2167,13 +2167,21 @@ async function handleCheckout(request, env) {
 
   const recurring = body.frequency && body.frequency !== "once";
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+  const normalizedDonorEmail = normalizeEmail(body.email);
+  const donor = await requireDonor(request, env);
+  const donorDashboardReturn = Boolean(donor?.email && normalizeEmail(donor.email) === normalizedDonorEmail);
+  const successUrl = donorDashboardReturn
+    ? `${appUrl}/donor?gift_success=1&session_id={CHECKOUT_SESSION_ID}`
+    : `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&success=1&session_id={CHECKOUT_SESSION_ID}`;
+  const cancelUrl = donorDashboardReturn
+    ? `${appUrl}/donor/give?checkout_canceled=1`
+    : `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&canceled=1`;
   const {
     chargeCents,
     estimatedStripeFeeCents,
     agapayFeeCents
   } = checkoutFinancials(amountCents, Boolean(body.coverFees), recurring);
   const giftLabel = String(body.giftType).replace(/-/g, " ");
-  const normalizedDonorEmail = normalizeEmail(body.email);
   const normalizedDonorName = donorName(body);
   const customer = await findOrCreateDonorCustomer(env, parish, body);
   if (!customer.ok) {
@@ -2209,8 +2217,8 @@ async function handleCheckout(request, env) {
 
   const form = new URLSearchParams({
     mode: recurring ? "subscription" : "payment",
-    success_url: `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&success=1&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&canceled=1`,
+    success_url: successUrl,
+    cancel_url: cancelUrl,
     customer: customer.body.id,
     "line_items[0][quantity]": "1",
     "line_items[0][price_data][currency]": "usd",

@@ -71,6 +71,7 @@
             <a class="btn btn-ghost" href="/donor/settings">Change Church</a>
           </div>
         </div>
+        <div class="notice desktop-status" id="desktopDonorStatus" style="display:none;"></div>
 
         <div class="desktop-metrics-grid">
           <div class="metric-card"><div class="metric-label">This month</div><div class="metric-value" id="desktopMetricMonth">$0</div><div class="metric-note">Giving through AGAPAY this month.</div></div>
@@ -280,11 +281,12 @@
   </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
       const donor = donorProfile();
       const name = donorDisplayName(donor);
       document.getElementById("greeting").textContent = name ? `Welcome, ${name}` : "Welcome, Faithful Member";
-      loadDonorDashboardPage();
+      await handleDonorCheckoutReturn();
+      await loadDonorDashboardPage();
     });
   </script>
 </body>
