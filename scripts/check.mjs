@@ -30,8 +30,16 @@ assert.ok(worker.includes("charge.refunded"), "Stripe webhooks should handle ref
 assert.ok(worker.includes("charge.dispute.created"), "Stripe webhooks should handle disputes");
 assert.ok(worker.includes("charge.dispute.closed"), "Stripe webhooks should handle closed disputes");
 assert.ok(worker.includes("account.updated"), "Stripe webhooks should sync connected account status");
+assert.ok(worker.includes("STRIPE_WEBHOOK_SECRET_CONNECT"), "Stripe webhooks should support a separate Connect signing secret");
+assert.ok(worker.includes("verifyStripeWebhookWithAnySecret"), "Stripe webhooks should validate against all configured Stripe signing secrets");
+assert.ok(worker.includes("handleParishStripeRefresh"), "parishes should be able to refresh Stripe Connect status after onboarding");
 assert.ok(worker.includes("PARISH_ID_INDEX_PREFIX"), "worker should maintain KV parish id indexes");
 assert.ok(worker.includes("handleAdminRebuildIndexes"), "worker should expose an admin-only index rebuild endpoint");
+assert.ok(worker.includes("handleAdminReleaseStatus"), "worker should expose an admin release status endpoint");
+assert.ok(worker.includes('url.pathname === "/api/admin/release-status"'), "worker should route the admin release status endpoint");
+assert.ok(worker.includes("checkoutFinancials("), "worker should centralize checkout fee calculations");
+assert.ok(worker.includes("grossUpForStripeProcessingFeeCents("), "worker should gross up recurring donations only for Stripe processing when requested");
+assert.ok(!worker.includes("subscription_data[application_fee_percent]"), "worker should not apply AGAPAY application fee percentages to recurring donor gifts");
 assert.ok(!worker.includes("const parishes = ["), "worker should not hardcode demo parishes");
 assert.ok(worker.includes('url.pathname === "/donor/verify"'), "worker should route donor verification links before assets");
 assert.ok(worker.includes("handleDonorVerifyPage"), "worker should handle donor verification links server-side");
@@ -42,6 +50,23 @@ await assert.rejects(access("public/donor/verify.html"), undefined, "static dono
 const registerHtml = await readFile("public/register.html", "utf8");
 assert.ok(!registerHtml.includes("WEB3FORMS_KEY"), "registration should not expose Web3Forms key");
 assert.ok(registerHtml.includes("/api/registrations"), "registration should post to AgaPay API");
+assert.ok(registerHtml.includes("startDonorRegistration"), "registration should begin with a donor/family entry point");
+assert.ok(registerHtml.includes("startOrganizationRegistration"), "registration should begin with an organization entry point");
+assert.ok(registerHtml.includes("organizationDescription"), "registration should collect values-review copy when needed");
+assert.ok(registerHtml.includes("requiresJurisdiction"), "registration should branch required fields by organization type");
+assert.ok(registerHtml.includes("requiresWebsite"), "registration should require websites for businesses");
+
+const directoryPage = await readFile("public/directory.html", "utf8");
+assert.ok(directoryPage.includes("const listings = ["), "directory should define listing data for cards and map markers");
+assert.ok(directoryPage.includes("type: 'church'"), "directory should include church listings");
+assert.ok(directoryPage.includes("type: 'business'"), "directory should include business listings");
+assert.ok(directoryPage.includes("type: 'school'"), "directory should include school listings");
+assert.ok(directoryPage.includes("type: 'ministry'"), "directory should include ministry listings");
+assert.ok(directoryPage.includes("type: 'monastery'"), "directory should include monastery listings");
+assert.ok(directoryPage.includes("type: 'service'"), "directory should include service listings");
+assert.ok(directoryPage.includes("map.fitBounds(bounds"), "directory map should auto-fit visible listings");
+assert.ok(directoryPage.includes("setCard(listings[0])"), "directory should seed the map detail card");
+assert.ok(directoryPage.includes('id="mapCardTitle"'), "directory should render a map detail title target");
 
 
 const donorApp = await readFile("public/donor/app.js", "utf8");

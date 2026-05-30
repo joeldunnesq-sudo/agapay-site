@@ -921,6 +921,51 @@ function centsFromAmount(amount) {
   return Math.round(numeric * 100);
 }
 
+function estimateStripeProcessingFeeCents(chargeCents) {
+  if (!Number.isFinite(chargeCents) || chargeCents <= 0) return 0;
+  return Math.max(0, Math.round(chargeCents * 0.029 + 30));
+}
+
+function grossUpForStripeProcessingFeeCents(netAmountCents) {
+  if (!Number.isFinite(netAmountCents) || netAmountCents <= 0) return 0;
+  let chargeCents = Math.max(
+    netAmountCents,
+    Math.ceil((netAmountCents + 30) / (1 - 0.029))
+  );
+  while (chargeCents - estimateStripeProcessingFeeCents(chargeCents) < netAmountCents) chargeCents += 1;
+  while (
+    chargeCents > netAmountCents
+    && (chargeCents - 1) - estimateStripeProcessingFeeCents(chargeCents - 1) >= netAmountCents
+  ) {
+    chargeCents -= 1;
+  }
+  return chargeCents;
+}
+
+function checkoutFinancials(amountCents, coverFees, recurring) {
+  const totalTransactionFeeCents = Math.round(amountCents * 0.05 + 30);
+  if (recurring) {
+    const chargeCents = coverFees
+      ? grossUpForStripeProcessingFeeCents(amountCents)
+      : amountCents;
+    return {
+      chargeCents,
+      estimatedStripeFeeCents: estimateStripeProcessingFeeCents(chargeCents),
+      agapayFeeCents: 0,
+      totalTransactionFeeCents
+    };
+  }
+
+  const chargeCents = coverFees ? amountCents + totalTransactionFeeCents : amountCents;
+  const estimatedStripeFeeCents = estimateStripeProcessingFeeCents(chargeCents);
+  return {
+    chargeCents,
+    estimatedStripeFeeCents,
+    agapayFeeCents: Math.max(0, totalTransactionFeeCents - estimatedStripeFeeCents),
+    totalTransactionFeeCents
+  };
+}
+
 function donorName(body) {
   return [body.firstName, body.lastName]
     .map((part) => String(part || "").trim())
@@ -1458,6 +1503,9 @@ async function storeDonorOffering(env, offering) {
     frequency: offering.frequency || "once",
     amountCents: Number(offering.amountCents || 0),
     chargeCents: Number(offering.chargeCents || offering.amountCents || 0),
+    agapayFeeCents: Number(offering.agapayFeeCents || 0),
+    estimatedStripeFeeCents: Number(offering.estimatedStripeFeeCents || 0),
+    coverFees: Boolean(offering.coverFees),
     status: offering.status || "checkout_created",
     paymentStatus: offering.paymentStatus || "pending",
     checkoutSessionId: offering.checkoutSessionId || "",
@@ -2110,12 +2158,13 @@ async function handleCheckout(request, env) {
     );
   }
 
-  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const totalTransactionFeeCents = Math.round(amountCents * 0.05 + 30);
-  const chargeCents = body.coverFees ? amountCents + totalTransactionFeeCents : amountCents;
-  const estimatedStripeFeeCents = Math.round(chargeCents * 0.029 + 30);
-  const agapayFeeCents = Math.max(0, totalTransactionFeeCents - estimatedStripeFeeCents);
   const recurring = body.frequency && body.frequency !== "once";
+  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+  const {
+    chargeCents,
+    estimatedStripeFeeCents,
+    agapayFeeCents
+  } = checkoutFinancials(amountCents, Boolean(body.coverFees), recurring);
   const giftLabel = String(body.giftType).replace(/-/g, " ");
   const normalizedDonorEmail = normalizeEmail(body.email);
   const normalizedDonorName = donorName(body);
@@ -2144,6 +2193,9 @@ async function handleCheckout(request, env) {
     frequency: body.frequency || "once",
     amount_cents: String(amountCents),
     charge_cents: String(chargeCents),
+    agapay_fee_cents: String(agapayFeeCents),
+    estimated_stripe_fee_cents: String(estimatedStripeFeeCents),
+    cover_fees: body.coverFees ? "true" : "false",
     names_living: body.namesLiving || "",
     names_departed: body.namesDeparted || ""
   };
@@ -2168,10 +2220,10 @@ async function handleCheckout(request, env) {
     }
   }
 
-  if (recurring) {
-    const applicationFeePercent = (agapayFeeCents / chargeCents) * 100;
-    form.set("subscription_data[application_fee_percent]", applicationFeePercent.toFixed(2));
-  } else {
+  // AGAPAY's 5% + $0.30 fee applies to one-time donations only. Recurring
+  // gifts intentionally omit a Connect application fee so Stripe renewals do
+  // not drift away from the published pricing model.
+  if (!recurring) {
     form.set("payment_intent_data[application_fee_amount]", String(agapayFeeCents));
   }
 
@@ -2215,6 +2267,9 @@ async function handleCheckout(request, env) {
     frequency: body.frequency || "once",
     amountCents,
     chargeCents,
+    agapayFeeCents,
+    estimatedStripeFeeCents,
+    coverFees: Boolean(body.coverFees),
     status: "checkout_created",
     paymentStatus: "pending",
     checkoutSessionId: stripeBody.id,
@@ -2938,6 +2993,42 @@ async function handleAdminPlatformSummary(request, env) {
   });
 }
 
+async function handleAdminReleaseStatus(request, env) {
+  const limited = await rateLimit(request, env, "admin-auth", { limit: 60, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!(await requireAdmin(request, env))) return unauthorized();
+
+  const registrations = hasProductionStore(env) ? await loadAllRegistrations(env) : [];
+  const verified = registrations.filter((registration) => registration.status === "verified");
+  const storedAdminPassword = d1(env)
+    ? await d1GetSetting(env, ADMIN_PASSWORD_KV_KEY)
+    : env.AGAPAY_REGISTRATIONS
+      ? await env.AGAPAY_REGISTRATIONS.get(ADMIN_PASSWORD_KV_KEY)
+      : "";
+
+  return json({
+    ok: true,
+    releaseStatus: {
+      checkedAt: new Date().toISOString(),
+      storeMode: d1(env) ? "d1" : (env.AGAPAY_REGISTRATIONS ? "kv" : "none"),
+      productionStoreConfigured: hasProductionStore(env),
+      d1Configured: Boolean(d1(env)),
+      kvConfigured: Boolean(env.AGAPAY_REGISTRATIONS),
+      stripeSecretConfigured: Boolean(env.STRIPE_SECRET_KEY),
+      stripeWebhookConfigured: Boolean(env.STRIPE_WEBHOOK_SECRET),
+      stripeConnectWebhookConfigured: Boolean(env.STRIPE_WEBHOOK_SECRET_CONNECT),
+      resendConfigured: Boolean(env.RESEND_API_KEY),
+      appUrlConfigured: Boolean(env.AGAPAY_APP_URL),
+      turnstileConfigured: Boolean(env.TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET_KEY),
+      adminPasswordConfigured: Boolean(storedAdminPassword || env.AGAPAY_ADMIN_TOKEN),
+      registrationCount: registrations.length,
+      verifiedCount: verified.length,
+      stripeReadyCount: verified.filter((registration) => stripeReady(registration)).length,
+      subscriptionReadyCount: verified.filter((registration) => subscriptionReady(registration)).length
+    }
+  });
+}
+
 async function handleAdminRebuildIndexes(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const limited = await rateLimit(request, env, "admin-maintenance", { limit: 5, windowSeconds: 300 });
@@ -3250,6 +3341,18 @@ async function verifyStripeWebhook(payload, signatureHeader, secret) {
   return secureCompare(toHex(digest), signature.v1);
 }
 
+function stripeWebhookSecrets(env) {
+  return [env.STRIPE_WEBHOOK_SECRET, env.STRIPE_WEBHOOK_SECRET_CONNECT]
+    .filter((secret, index, secrets) => secret && secrets.indexOf(secret) === index);
+}
+
+async function verifyStripeWebhookWithAnySecret(payload, signatureHeader, secrets) {
+  for (const secret of secrets) {
+    if (await verifyStripeWebhook(payload, signatureHeader, secret)) return true;
+  }
+  return false;
+}
+
 function subscriptionStatusFromStripe(status) {
   if (status === "active" || status === "trialing") return "active";
   if (status === "past_due" || status === "unpaid") return "past_due";
@@ -3272,12 +3375,13 @@ async function updateSubscriptionRecord(env, reference, updates) {
 }
 
 async function handleStripeWebhook(request, env) {
-  if (!env.STRIPE_WEBHOOK_SECRET) {
+  const secrets = stripeWebhookSecrets(env);
+  if (!secrets.length) {
     return json({ error: "STRIPE_WEBHOOK_SECRET is not configured" }, { status: 500 });
   }
 
   const payload = await request.text();
-  const verified = await verifyStripeWebhook(payload, request.headers.get("Stripe-Signature"), env.STRIPE_WEBHOOK_SECRET);
+  const verified = await verifyStripeWebhookWithAnySecret(payload, request.headers.get("Stripe-Signature"), secrets);
   if (!verified) return json({ error: "Invalid Stripe signature" }, { status: 400 });
 
   let event;
@@ -3622,26 +3726,22 @@ async function handleStripeOnboarding(request, env, reference) {
   return json({ ok: true, onboardingUrl: result.onboardingUrl, email, registration: updated });
 }
 
-async function handleStripeRefresh(request, env, reference) {
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  const limited = await rateLimit(request, env, "admin-money-actions", { limit: 60, windowSeconds: 300 });
-  if (limited) return limited;
-  if (!(await requireAdmin(request, env))) return unauthorized();
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
-
-  const registration = await loadRegistrationByReference(env, reference);
-  if (!registration) return json({ error: "Registration not found" }, { status: 404 });
-
+async function refreshStripeStatusForRegistration(env, reference, registration) {
   if (!registration.stripeAccountId) {
-    return json({ error: "This registration does not have a Stripe connected account yet" }, { status: 422 });
+    return {
+      ok: false,
+      status: 422,
+      body: { error: "This registration does not have a Stripe connected account yet" }
+    };
   }
 
   const retrieved = await stripeGetRequest(env, `/v1/accounts/${encodeURIComponent(registration.stripeAccountId)}`);
   if (!retrieved.ok) {
-    return json(
-      { error: "Stripe connected account lookup failed", detail: retrieved.body.error?.message || "Unknown Stripe error" },
-      { status: 502 }
-    );
+    return {
+      ok: false,
+      status: 502,
+      body: { error: "Stripe connected account lookup failed", detail: retrieved.body.error?.message || "Unknown Stripe error" }
+    };
   }
 
   const account = retrieved.body;
@@ -3657,7 +3757,43 @@ async function handleStripeRefresh(request, env, reference) {
   };
   await saveRegistrationRecord(env, reference, updated, registration);
 
-  return json({ ok: true, registration: updated });
+  return { ok: true, registration: updated, account };
+}
+
+async function handleStripeRefresh(request, env, reference) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "admin-money-actions", { limit: 60, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!(await requireAdmin(request, env))) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const registration = await loadRegistrationByReference(env, reference);
+  if (!registration) return json({ error: "Registration not found" }, { status: 404 });
+
+  const refreshed = await refreshStripeStatusForRegistration(env, reference, registration);
+  if (!refreshed.ok) return json(refreshed.body, { status: refreshed.status });
+
+  return json({ ok: true, registration: refreshed.registration });
+}
+
+async function handleParishStripeRefresh(request, env, parishId) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-money-actions", { limit: 30, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const token = getBearerToken(request);
+  if (!(await verifyParishDashboardPassword(found.registration, token))) {
+    return unauthorized();
+  }
+
+  const refreshed = await refreshStripeStatusForRegistration(env, found.key, found.registration);
+  if (!refreshed.ok) return json(refreshed.body, { status: refreshed.status });
+
+  return json({ ok: true, parish: parishDashboardPayload(parishId, refreshed.registration), registration: refreshed.registration });
 }
 
 async function handleDashboardInvite(request, env, reference) {
@@ -4011,6 +4147,47 @@ async function handleParishGivingSummary(request, env, parishId) {
   });
 }
 
+function parishDashboardPayload(parishId, registration) {
+  return {
+    parishId,
+    parishName: registration.parishName,
+    communityType: registration.communityType,
+    jurisdiction: registration.jurisdiction,
+    addressLine1: registration.addressLine1 || "",
+    addressLine2: registration.addressLine2 || "",
+    city: registration.city,
+    state: registration.state,
+    postalCode: registration.postalCode || "",
+    country: registration.country || "US",
+    website: registration.website,
+    liturgicalCalendar: registration.liturgicalCalendar || "julian",
+    givingStatus: registration.givingStatus || "active",
+    stripeAccountId: registration.stripeAccountId || "",
+    stripeAccountStatus: registration.stripeAccountStatus || "not_started",
+    subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
+    subscriptionTierLabel: registration.subscriptionTierLabel || subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration))?.label || "",
+    subscriptionStatus: registration.subscriptionStatus || "not_started",
+    subscriptionMonthlyCents: registration.subscriptionMonthlyCents ?? subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration))?.monthlyCents ?? null,
+    parishDashboardTokenTemporary: Boolean(registration.parishDashboardTokenTemporary),
+    priestEmail: registration.priestEmail || "",
+    treasurerEmail: registration.treasurerEmail || "",
+    setup: {
+      contactInfoVerified: true,
+      stripeConnected: stripeReady(registration),
+      billingActive: subscriptionReady(registration),
+      temporaryPassword: Boolean(registration.parishDashboardTokenTemporary)
+    },
+    subscriptionTiers: publicSubscriptionTiers(),
+    platformFee: registration.platformFee || "",
+    recurringGivingEnabled: registration.recurringGivingEnabled ?? true,
+    candlesEnabled: registration.candlesEnabled ?? true,
+    commemorationsEnabled: registration.commemorationsEnabled ?? true,
+    funds: Array.isArray(registration.funds) ? registration.funds : [],
+    campaigns: Array.isArray(registration.campaigns) ? registration.campaigns : [],
+    feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
+  };
+}
+
 async function handleParishDashboard(request, env, parishId) {
   const limited = await rateLimit(
     request,
@@ -4032,43 +4209,7 @@ async function handleParishDashboard(request, env, parishId) {
   if (request.method === "GET") {
     const { registration } = found;
     return json({
-      parish: {
-        parishId,
-        parishName: registration.parishName,
-        communityType: registration.communityType,
-        jurisdiction: registration.jurisdiction,
-        addressLine1: registration.addressLine1 || "",
-        addressLine2: registration.addressLine2 || "",
-        city: registration.city,
-        state: registration.state,
-        postalCode: registration.postalCode || "",
-        country: registration.country || "US",
-        website: registration.website,
-        liturgicalCalendar: registration.liturgicalCalendar || "julian",
-        givingStatus: registration.givingStatus || "active",
-        stripeAccountStatus: registration.stripeAccountStatus || "not_started",
-        subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
-        subscriptionTierLabel: registration.subscriptionTierLabel || subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration))?.label || "",
-        subscriptionStatus: registration.subscriptionStatus || "not_started",
-        subscriptionMonthlyCents: registration.subscriptionMonthlyCents ?? subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration))?.monthlyCents ?? null,
-        parishDashboardTokenTemporary: Boolean(registration.parishDashboardTokenTemporary),
-        priestEmail: registration.priestEmail || "",
-        treasurerEmail: registration.treasurerEmail || "",
-        setup: {
-          contactInfoVerified: true,
-          stripeConnected: stripeReady(registration),
-          billingActive: subscriptionReady(registration),
-          temporaryPassword: Boolean(registration.parishDashboardTokenTemporary)
-        },
-        subscriptionTiers: publicSubscriptionTiers(),
-        platformFee: registration.platformFee || "",
-        recurringGivingEnabled: registration.recurringGivingEnabled ?? true,
-        candlesEnabled: registration.candlesEnabled ?? true,
-        commemorationsEnabled: registration.commemorationsEnabled ?? true,
-        funds: Array.isArray(registration.funds) ? registration.funds : [],
-        campaigns: Array.isArray(registration.campaigns) ? registration.campaigns : [],
-        feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
-      }
+      parish: parishDashboardPayload(parishId, registration)
     });
   }
 
@@ -4256,12 +4397,15 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/admin/registrations") {
       return handleAdminRegistrations(request, env);
     }
-    if (request.method === "GET" && url.pathname === "/api/admin/platform-summary") {
-      return handleAdminPlatformSummary(request, env);
-    }
-    if (url.pathname === "/api/admin/rebuild-indexes") {
-      return handleAdminRebuildIndexes(request, env);
-    }
+      if (request.method === "GET" && url.pathname === "/api/admin/platform-summary") {
+        return handleAdminPlatformSummary(request, env);
+      }
+      if (request.method === "GET" && url.pathname === "/api/admin/release-status") {
+        return handleAdminReleaseStatus(request, env);
+      }
+      if (url.pathname === "/api/admin/rebuild-indexes") {
+        return handleAdminRebuildIndexes(request, env);
+      }
     if (url.pathname === "/api/admin/migrate-kv-to-d1") {
       return handleAdminMigrateKvToD1(request, env);
     }
@@ -4291,6 +4435,10 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stripe-onboarding")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stripe-onboarding", ""));
       return handleParishStripeOnboarding(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stripe-refresh")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stripe-refresh", ""));
+      return handleParishStripeRefresh(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/subscription-checkout")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/subscription-checkout", ""));

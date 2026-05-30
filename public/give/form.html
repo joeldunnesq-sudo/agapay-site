@@ -543,7 +543,7 @@
         <span class="fee-toggle-track"></span>
       </label>
       <div class="fee-text">
-        <strong>Cover the platform fees</strong>
+        <strong id="feeCoverageTitle">Cover the platform fees</strong>
         <p>When you cover the fees, St. Seraphim Mission receives your full gift — nothing deducted.</p>
         <span class="fee-calc" id="feeCalc">You cover $2.80 · Parish receives $50.00</span>
       </div>
@@ -613,6 +613,52 @@
 
     const AGAPAY_RATE = 0.05;
     const AGAPAY_FIXED = 0.30;
+    const STRIPE_RATE = 0.029;
+    const STRIPE_FIXED = 0.30;
+
+    function cents(value) {
+      return Math.max(0, Math.round((Number(value) || 0) * 100));
+    }
+
+    function dollars(centsValue) {
+      return ((Number(centsValue) || 0) / 100).toFixed(2);
+    }
+
+    function estimateStripeProcessingFeeCents(chargeCents) {
+      if (!Number.isFinite(chargeCents) || chargeCents <= 0) return 0;
+      return Math.max(0, Math.round(chargeCents * STRIPE_RATE + STRIPE_FIXED * 100));
+    }
+
+    function grossUpForStripeProcessingFeeCents(netAmountCents) {
+      if (!Number.isFinite(netAmountCents) || netAmountCents <= 0) return 0;
+      let chargeCents = Math.max(netAmountCents, Math.ceil((netAmountCents + (STRIPE_FIXED * 100)) / (1 - STRIPE_RATE)));
+      while (chargeCents - estimateStripeProcessingFeeCents(chargeCents) < netAmountCents) chargeCents += 1;
+      while (chargeCents > netAmountCents && ((chargeCents - 1) - estimateStripeProcessingFeeCents(chargeCents - 1) >= netAmountCents)) {
+        chargeCents -= 1;
+      }
+      return chargeCents;
+    }
+
+    function feeModel(amountCents, feeCovered, recurring) {
+      if (recurring) {
+        const donorTotalCents = feeCovered ? grossUpForStripeProcessingFeeCents(amountCents) : amountCents;
+        const stripeFeeCents = estimateStripeProcessingFeeCents(donorTotalCents);
+        return {
+          feeLabel: 'processing fees',
+          feeCents: Math.max(0, donorTotalCents - amountCents),
+          parishReceivesCents: feeCovered ? amountCents : Math.max(0, amountCents - stripeFeeCents),
+          donorTotalCents
+        };
+      }
+
+      const feeCents = Math.round(amountCents * AGAPAY_RATE + AGAPAY_FIXED * 100);
+      return {
+        feeLabel: 'platform fees',
+        feeCents,
+        parishReceivesCents: feeCovered ? amountCents : Math.max(0, amountCents - feeCents),
+        donorTotalCents: feeCovered ? amountCents + feeCents : amountCents
+      };
+    }
 
     // SCROLL REVEAL
     const observer = new IntersectionObserver((entries) => {
@@ -805,10 +851,14 @@
     // SUMMARY
     function updateSummary() {
       feeCovered = document.getElementById('feeCoverage').checked;
-      const amount = selectedAmount || 0;
-      const fees = amount * AGAPAY_RATE + AGAPAY_FIXED;
-      const parishReceives = feeCovered ? amount : Math.max(0, amount - fees);
-      const donorTotal = feeCovered ? amount + fees : amount;
+      const amountCents = cents(selectedAmount || 0);
+      const recurring = selectedFreq !== 'once';
+      const model = feeModel(amountCents, feeCovered, recurring);
+      const fees = Number(dollars(model.feeCents));
+      const parishReceives = Number(dollars(model.parishReceivesCents));
+      const donorTotal = Number(dollars(model.donorTotalCents));
+      const feeTitle = document.getElementById('feeCoverageTitle');
+      const feeCopy = document.querySelector('.fee-text p');
 
       const typeLabels = {
         stewardship: 'Weekly Stewardship',
@@ -828,6 +878,16 @@
       document.getElementById('summaryFee').textContent = feeCovered ? '+$' + fees.toFixed(2) : '-$' + fees.toFixed(2);
       document.getElementById('summaryTotal').textContent = '$' + donorTotal.toFixed(2);
       document.getElementById('summaryFeeRow').style.opacity = '1';
+      if (feeTitle) feeTitle.textContent = recurring ? 'Cover the processing fees' : 'Cover the platform fees';
+      if (feeCopy) {
+        if (recurring) {
+          feeCopy.textContent = feeCovered
+            ? `When you cover the fees, ${currentParish.name} receives the full recurring gift. AGAPAY does not add a platform fee to renewals.`
+            : `Recurring gifts only pass through Stripe processing costs. AGAPAY does not add a platform fee to renewals.`;
+        } else {
+          feeCopy.textContent = `When you cover the fees, ${currentParish.name} receives your full gift â€” nothing deducted.`;
+        }
+      }
 
       // Show detail row for feast and funds
       const detailRow = document.getElementById('summaryDetailRow');

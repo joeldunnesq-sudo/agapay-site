@@ -33,6 +33,23 @@ assert.ok(
   directoryHtml.includes("id=\"directoryMap\""),
   "Directory page should include the live map root element"
 );
+assert.ok(
+  directoryHtml.includes("mapCardTitle"),
+  "Directory page should include the live map detail card"
+);
+assert.ok(
+  directoryHtml.includes("fitBounds(bounds"),
+  "Directory page should auto-fit the map to visible markers"
+);
+assert.ok(
+  directoryHtml.includes("const listings = ["),
+  "Directory page should define listing data for cards and markers"
+);
+
+const registerHtml = await readFile("public/register.html", "utf8");
+assert.ok(registerHtml.includes("startDonorRegistration"), "Registration page should support donor/family entry");
+assert.ok(registerHtml.includes("startOrganizationRegistration"), "Registration page should support organization entry");
+assert.ok(registerHtml.includes("organizationDescription"), "Registration page should support values-review descriptions");
 
 const parishApp = await readFile("public/parish/app.js", "utf8");
 assert.ok(parishApp.includes("addressLine1"), "Parish settings should include editable address line 1");
@@ -42,6 +59,11 @@ assert.ok(parishApp.includes("country"), "Parish settings should include editabl
 const worker = await readFile("src/worker.js", "utf8");
 assert.ok(worker.includes("X-AGAPAY-Admin-Token"), "Worker should accept AGAPAY admin auth header");
 assert.ok(worker.includes("X-AGAPAY-Donor-Email"), "Worker should accept AGAPAY donor auth header");
+assert.ok(worker.includes("handleAdminReleaseStatus"), "Worker should expose a release-status report");
+assert.ok(worker.includes("STRIPE_WEBHOOK_SECRET_CONNECT"), "Worker should support a separate Connect webhook signing secret");
+assert.ok(worker.includes("handleParishStripeRefresh"), "Worker should let parishes refresh Stripe Connect status");
+assert.ok(worker.includes("grossUpForStripeProcessingFeeCents"), "Worker should gross up recurring donations only for Stripe processing");
+assert.ok(!worker.includes("subscription_data[application_fee_percent]"), "Worker should not apply recurring AGAPAY application fee percentages");
 
 if (process.env.AGAPAY_BASE_URL) {
   const baseUrl = process.env.AGAPAY_BASE_URL.replace(/\/+$/, "");

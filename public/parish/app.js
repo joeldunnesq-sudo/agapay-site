@@ -207,6 +207,7 @@
       if (!res.ok) throw new Error(data.error || 'Unable to load dashboard');
       currentParish = data.parish;
       await refreshSubscriptionStatus({ quiet: true });
+      await refreshStripeStatus({ quiet: true });
       saveSession();
       renderDashboard();
       loadGivingSummary();
@@ -237,6 +238,19 @@
           billingActive: billingStatusDone(data.subscriptionStatus)
         };
       }
+    } catch (err) {
+      if (!options || !options.quiet) setStatus(err.message, 'error');
+    }
+  }
+  async function refreshStripeStatus(options) {
+    if (!currentParish || !currentParish.parishId || !currentParish.stripeAccountId) return;
+    const status = currentParish.stripeAccountStatus || '';
+    if (!options?.force && ['charges_enabled','payouts_enabled'].includes(status)) return;
+    try {
+      const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/stripe-refresh', { method:'POST', headers:authHeaders() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || data.error || 'Unable to refresh Stripe status');
+      if (data.parish) currentParish = data.parish;
     } catch (err) {
       if (!options || !options.quiet) setStatus(err.message, 'error');
     }

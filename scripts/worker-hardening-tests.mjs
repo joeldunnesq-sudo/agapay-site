@@ -33,6 +33,7 @@ function env() {
     AGAPAY_ADMIN_TOKEN: "root-admin-token-for-tests",
     AGAPAY_APP_URL: "https://agapay.test",
     STRIPE_WEBHOOK_SECRET: "whsec_test_secret",
+    STRIPE_WEBHOOK_SECRET_CONNECT: "whsec_connect_test_secret",
     STRIPE_SECRET_KEY: "sk_test_worker_hardening"
   };
 }
@@ -67,9 +68,9 @@ async function stripeSignature(payload, secret) {
   return `t=${timestamp},v1=${hex}`;
 }
 
-async function postStripeWebhook(testEnv, event) {
+async function postStripeWebhook(testEnv, event, secret = testEnv.STRIPE_WEBHOOK_SECRET) {
   const payload = JSON.stringify(event);
-  const signature = await stripeSignature(payload, testEnv.STRIPE_WEBHOOK_SECRET);
+  const signature = await stripeSignature(payload, secret);
   return worker.fetch(new Request("https://agapay.test/api/stripe/webhook", {
     method: "POST",
     headers: { "Stripe-Signature": signature },
@@ -324,8 +325,190 @@ async function withMockFetch(handler, run) {
   assert.equal(offering.paymentStatus, "pending");
   assert.equal(offering.amountCents, 2500);
   assert.equal(offering.chargeCents, 2655);
+  assert.equal(offering.agapayFeeCents, 48);
+  assert.equal(offering.estimatedStripeFeeCents, 107);
   assert.equal(offering.stripeCustomerId, "cus_checkout_test");
   assert.equal(await testEnv.AGAPAY_REGISTRATIONS.get("__agapay_checkout_offering__cs_checkout_test"), "__agapay_donor_offering__giver@example.com:cs_checkout_test");
+}
+
+{
+  const testEnv = env();
+  const registration = {
+    reference: "AGP-CHECKOUT-RECURRING",
+    status: "verified",
+    parishId: "st-recurring",
+    parishName: "St. Recurring Orthodox Church",
+    communityType: "parish",
+    jurisdiction: "OCA",
+    jurisdictionLabel: "OCA",
+    city: "Austin",
+    state: "TX",
+    givingStatus: "active",
+    stripeAccountId: "acct_connected_recurring",
+    funds: [{ id: "general", name: "General Fund", description: "General support." }]
+  };
+  await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_parish_id__st-recurring", registration.reference);
+
+  await withMockFetch(async (url, init = {}) => {
+    const href = String(url);
+    if (href.includes("/v1/customers?")) {
+      return new Response(JSON.stringify({ data: [] }), { status: 200 });
+    }
+    if (href.endsWith("/v1/customers")) {
+      assert.equal(init.headers["Stripe-Account"], "acct_connected_recurring");
+      return new Response(JSON.stringify({ id: "cus_recurring_test" }), { status: 200 });
+    }
+    if (href.endsWith("/v1/checkout/sessions")) {
+      assert.equal(init.headers["Stripe-Account"], "acct_connected_recurring");
+      const form = new URLSearchParams(init.body);
+      assert.equal(form.get("mode"), "subscription");
+      assert.equal(form.get("line_items[0][price_data][unit_amount]"), "2606");
+      assert.equal(form.get("subscription_data[application_fee_percent]"), null);
+      assert.equal(form.get("payment_intent_data[application_fee_amount]"), null);
+      return new Response(JSON.stringify({
+        id: "cs_recurring_test",
+        url: "https://checkout.stripe.test/recurring"
+      }), { status: 200 });
+    }
+    throw new Error(`Unexpected fetch ${href}`);
+  }, async () => {
+    const checkout = await worker.fetch(request("/api/create-checkout-session", {
+      method: "POST",
+      body: {
+        parishId: "st-recurring",
+        giftType: "stewardship",
+        amount: 25,
+        frequency: "monthly",
+        firstName: "Faithful",
+        lastName: "Subscriber",
+        email: "subscriber@example.com",
+        coverFees: true
+      }
+    }), testEnv);
+    assert.equal(checkout.status, 201);
+    const checkoutBody = await json(checkout);
+    assert.equal(checkoutBody.id, "cs_recurring_test");
+  });
+
+  const offeringRaw = await testEnv.AGAPAY_REGISTRATIONS.get("__agapay_donor_offering__subscriber@example.com:cs_recurring_test");
+  assert.ok(offeringRaw);
+  const offering = JSON.parse(offeringRaw);
+  assert.equal(offering.amountCents, 2500);
+  assert.equal(offering.chargeCents, 2606);
+  assert.equal(offering.agapayFeeCents, 0);
+  assert.equal(offering.stripeCustomerId, "cus_recurring_test");
+}
+
+{
+  const testEnv = env();
+  const releaseStatus = await worker.fetch(request("/api/admin/release-status", {
+    headers: { Authorization: "Bearer root-admin-token-for-tests" }
+  }), testEnv);
+  assert.equal(releaseStatus.status, 200);
+  const body = await json(releaseStatus);
+  assert.equal(body.ok, true);
+  assert.equal(body.releaseStatus.storeMode, "kv");
+  assert.equal(body.releaseStatus.productionStoreConfigured, true);
+  assert.equal(body.releaseStatus.appUrlConfigured, true);
+  assert.equal(body.releaseStatus.adminPasswordConfigured, true);
+  assert.equal(body.releaseStatus.stripeConnectWebhookConfigured, true);
+}
+
+{
+  const testEnv = env();
+  const reference = "AGP-PARISH-REFRESH";
+  await testEnv.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify({
+    reference,
+    status: "verified",
+    parishId: "st-parish-refresh",
+    parishName: "St. Parish Refresh",
+    communityType: "parish",
+    givingStatus: "active",
+    parishDashboardToken: "refresh-password",
+    stripeAccountId: "acct_parish_refresh",
+    stripeAccountStatus: "onboarding",
+    subscriptionStatus: "active"
+  }));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_parish_id__st-parish-refresh", reference);
+
+  await withMockFetch(async (url, init = {}) => {
+    const href = String(url);
+    if (href.endsWith("/v1/accounts/acct_parish_refresh")) {
+      assert.equal(init.headers.Authorization, "Bearer sk_test_worker_hardening");
+      return new Response(JSON.stringify({
+        id: "acct_parish_refresh",
+        charges_enabled: true,
+        payouts_enabled: false,
+        details_submitted: true,
+        requirements: {
+          currently_due: [],
+          disabled_reason: null
+        }
+      }), { status: 200 });
+    }
+    throw new Error(`Unexpected fetch ${href}`);
+  }, async () => {
+    const response = await worker.fetch(request("/api/parish/dashboard/st-parish-refresh/stripe-refresh", {
+      method: "POST",
+      headers: { Authorization: "Bearer refresh-password" }
+    }), testEnv);
+    assert.equal(response.status, 200);
+    const body = await json(response);
+    assert.equal(body.parish.stripeAccountStatus, "charges_enabled");
+    assert.equal(body.parish.setup.stripeConnected, true);
+    assert.equal(body.parish.stripeAccountId, "acct_parish_refresh");
+  });
+}
+
+{
+  const testEnv = env();
+  const parishMissingJurisdiction = await worker.fetch(request("/api/registrations", {
+    method: "POST",
+    body: {
+      communityType: "Parish",
+      parishName: "St. Missing Jurisdiction",
+      addressLine1: "123 Main St",
+      city: "Dallas",
+      state: "TX",
+      postalCode: "75001",
+      country: "US",
+      priestFirst: "John",
+      priestLast: "Priest",
+      priestEmail: "priest@example.com",
+      treasurerFirst: "Jane",
+      treasurerLast: "Treasurer",
+      treasurerEmail: "treasurer@example.com",
+      subscriptionTier: "parish"
+    }
+  }), testEnv);
+  assert.equal(parishMissingJurisdiction.status, 422);
+  const parishBody = await json(parishMissingJurisdiction);
+  assert.ok(parishBody.fields.includes("jurisdiction"));
+
+  const businessMissingReviewFields = await worker.fetch(request("/api/registrations", {
+    method: "POST",
+    body: {
+      communityType: "Business",
+      parishName: "Orthodox Bookshop",
+      addressLine1: "456 Market St",
+      city: "Dallas",
+      state: "TX",
+      postalCode: "75001",
+      country: "US",
+      priestFirst: "Olivia",
+      priestLast: "Owner",
+      priestEmail: "owner@example.com",
+      treasurerFirst: "Frank",
+      treasurerLast: "Finance",
+      treasurerEmail: "finance@example.com",
+      subscriptionTier: "parish"
+    }
+  }), testEnv);
+  assert.equal(businessMissingReviewFields.status, 422);
+  const businessBody = await json(businessMissingReviewFields);
+  assert.ok(businessBody.fields.includes("website"));
+  assert.ok(businessBody.fields.includes("organizationDescription"));
 }
 
 {
@@ -348,6 +531,44 @@ async function withMockFetch(handler, run) {
   assert.equal(second.status, 200);
   const secondBody = await json(second);
   assert.equal(secondBody.duplicate, true);
+}
+
+{
+  const testEnv = env();
+  const reference = "AGP-CONNECT-WEBHOOK";
+  await testEnv.AGAPAY_REGISTRATIONS.put(reference, JSON.stringify({
+    reference,
+    status: "verified",
+    parishId: "st-connect-webhook",
+    parishName: "St. Connect Webhook",
+    givingStatus: "active",
+    stripeAccountId: "acct_connect_webhook",
+    stripeAccountStatus: "onboarding"
+  }));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_stripe_account__acct_connect_webhook", reference);
+
+  const response = await postStripeWebhook(testEnv, {
+    id: "evt_connect_account_updated",
+    type: "account.updated",
+    account: "acct_connect_webhook",
+    data: {
+      object: {
+        id: "acct_connect_webhook",
+        charges_enabled: true,
+        payouts_enabled: true,
+        details_submitted: true,
+        requirements: {
+          currently_due: [],
+          disabled_reason: null
+        }
+      }
+    }
+  }, testEnv.STRIPE_WEBHOOK_SECRET_CONNECT);
+  assert.equal(response.status, 200);
+  const updated = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(reference));
+  assert.equal(updated.stripeAccountStatus, "payouts_enabled");
+  assert.equal(updated.stripeChargesEnabled, true);
+  assert.equal(updated.stripePayoutsEnabled, true);
 }
 
 {
