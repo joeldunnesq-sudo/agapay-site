@@ -492,15 +492,20 @@
       line-height: 1.4;
     }
     .tier-features li::before {
-      content: "";
+      content: "✓";
       width: 15px;
       height: 15px;
       margin-top: 0.1rem;
       border: 1px solid #C58D2F;
       border-radius: 50%;
-      background:
-        linear-gradient(135deg, transparent 42%, #C58D2F 42% 54%, transparent 54%) 38% 46% / 7px 7px no-repeat,
-        linear-gradient(45deg, transparent 48%, #C58D2F 48% 60%, transparent 60%) 64% 41% / 8px 8px no-repeat;
+      background: rgba(200, 162, 74, 0.1);
+      color: #1D7A3A;
+      display: grid;
+      place-items: center;
+      font-family: var(--sans);
+      font-size: 0.67rem;
+      font-weight: 900;
+      line-height: 1;
     }
     .tier-card .small-btn { margin-top: auto; width: 100%; min-height: 42px; font-size: 0.75rem; }
 
@@ -612,6 +617,49 @@
       font-size: 0.95rem;
     }
     .slider-group { margin-top: 1.35rem; }
+    .input-group {
+      margin-top: 1.15rem;
+      display: grid;
+      gap: 0.55rem;
+    }
+    .input-group label {
+      color: var(--night);
+      font-size: 0.84rem;
+      font-weight: 800;
+    }
+    .input-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 0.55rem;
+      border: 1px solid rgba(166, 159, 145, 0.28);
+      border-radius: 9px;
+      background: #fff;
+      padding: 0.45rem 0.65rem;
+      max-width: 190px;
+    }
+    .input-row span {
+      color: #A75F10;
+      font-family: var(--numeric-font, var(--serif));
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .input-row input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      color: var(--night);
+      font-family: var(--numeric-font, var(--serif));
+      font-size: 1.1rem;
+      font-weight: 700;
+      background: transparent;
+    }
+    .calc-assumption {
+      margin-top: 0.75rem;
+      color: #667078;
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
     .slider-head {
       display: flex;
       align-items: center;
@@ -675,6 +723,14 @@
     }
     .result-row.negative strong { color: #B33A32; }
     .result-row.positive strong { color: #218143; }
+    .result-row.muted {
+      color: #5B656D;
+      font-size: 0.82rem;
+    }
+    .result-row.muted strong {
+      color: #5B656D;
+      font-size: 0.96rem;
+    }
     .result-row.net {
       margin-top: 0.2rem;
       border: 0;
@@ -923,7 +979,7 @@
     <section class="pricing-content" aria-label="Pricing plans">
       <div class="pricing-grid">
         <article class="tier-card">
-          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 20V9l5-4 5 4v11"/><path d="M12 5V2"/><path d="M10 3h4"/><path d="M9 13h6"/></svg></div>
+          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 20V10l5-5 5 5v10"/><path d="M12 5V2"/><path d="M10.5 3.5h3"/><path d="M10 20v-5a2 2 0 0 1 4 0v5"/><path d="M8.5 12h7"/></svg></div>
           <h2 class="tier-title">Mission</h2>
           <div class="tier-price">$49 <span>/ mo</span></div>
           <p class="tier-sub">For mission parishes and communities up to 50 giving households.</p>
@@ -940,7 +996,7 @@
 
         <article class="tier-card featured">
           <div class="popular">Most popular</div>
-          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 20V8l5-4 5 4v12"/><path d="M12 4V2"/><path d="M10 3h4"/><path d="M9 13h6"/><path d="M10 20v-4a2 2 0 0 1 4 0v4"/></svg></div>
+          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M6 20V10l6-5 6 5v10"/><path d="M8 10a4 4 0 0 1 8 0"/><path d="M12 5V2"/><path d="M10.5 3.5h3"/><path d="M10 20v-5a2 2 0 0 1 4 0v5"/><path d="M8.5 13h1.5"/><path d="M14 13h1.5"/></svg></div>
           <h2 class="tier-title">Parish</h2>
           <div class="tier-price">$99 <span>/ mo</span></div>
           <p class="tier-sub">For established parishes with 51-300 giving households.</p>
@@ -956,7 +1012,7 @@
         </article>
 
         <article class="tier-card">
-          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5 20V10l4-3 3 2 3-2 4 3v10"/><path d="M12 9V4"/><path d="M10 5h4"/><path d="M8 14h2"/><path d="M14 14h2"/></svg></div>
+          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5 20V11l4-3 3 2 3-2 4 3v9"/><path d="M8 20v-5h3v5"/><path d="M13 20v-5h3v5"/><path d="M12 10V5"/><path d="M10.5 6.5h3"/><path d="M6 11h12"/><path d="M7.5 8.5V6"/><path d="M16.5 8.5V6"/></svg></div>
           <h2 class="tier-title">Monastic</h2>
           <div class="tier-price">$0 <span>/ mo</span></div>
           <p class="tier-sub">For monasteries, sketes, and convents.</p>
@@ -972,7 +1028,7 @@
         </article>
 
         <article class="tier-card">
-          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5 20V9l3-2 4-3 4 3 3 2v11"/><path d="M12 4V2"/><path d="M10 3h4"/><path d="M7 13h3"/><path d="M14 13h3"/><path d="M10 20v-4a2 2 0 0 1 4 0v4"/></svg></div>
+          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M2.5 20h19"/><path d="M5 20V11l3-2 4-4 4 4 3 2v9"/><path d="M12 5V2"/><path d="M10.5 3.5h3"/><path d="M4.5 12a2.5 2.5 0 0 1 5 0"/><path d="M14.5 12a2.5 2.5 0 0 1 5 0"/><path d="M8 20v-5h2.5v5"/><path d="M13.5 20v-5H16v5"/><path d="M10.5 20v-6a1.5 1.5 0 0 1 3 0v6"/></svg></div>
           <h2 class="tier-title">Cathedral / Diocese</h2>
           <div class="tier-price">Custom</div>
           <p class="tier-sub">For 301+ households, cathedrals, and diocesan use.</p>
@@ -1010,10 +1066,15 @@
         <section class="calculator" aria-label="Fee calculator">
           <div class="calc-controls">
             <h2>See what your parish actually receives.</h2>
-            <p>Adjust monthly giving and donor fee coverage to understand your true net deposit.</p>
+            <p>Adjust monthly giving, the average gift size, and donor fee coverage to understand your true net deposit.</p>
             <div class="slider-group">
               <div class="slider-head"><label for="volumeRange">Monthly gift volume</label><output id="volumeDisplay">$20,000</output></div>
               <input type="range" id="volumeRange" min="2000" max="50000" step="1000" value="20000" />
+            </div>
+            <div class="input-group">
+              <label for="averageGiftInput">Average gift size</label>
+              <div class="input-row"><span>$</span><input id="averageGiftInput" type="number" min="5" max="5000" step="5" value="75" inputmode="decimal" /></div>
+              <p class="calc-assumption" id="giftAssumption">Assuming about 267 gifts per month at a $75 average gift.</p>
             </div>
             <div class="slider-group">
               <div class="slider-head"><label for="coverageRange">Donor fee coverage</label><output id="coverageDisplay">75%</output></div>
@@ -1022,11 +1083,12 @@
           </div>
           <div class="calc-results">
             <div class="result-row"><span>Total gifts</span><strong id="grossDisplay">$20,000.00</strong></div>
-            <div class="result-row negative"><span>Estimated fees (5% + $0.30)</span><strong id="feeDisplay">-$1,080.00</strong></div>
-            <div class="result-row positive"><span>Donor-covered fees</span><strong id="coveredDisplay">+$810.00</strong></div>
-            <div class="result-row"><span>Stripe estimate</span><strong id="stripeDisplay">-$620.00</strong></div>
-            <div class="result-row"><span>AGAPAY estimate</span><strong id="agapayDisplay">-$460.00</strong></div>
-            <div class="result-row net"><span>Net deposited</span><strong id="netDisplay">$19,730.00</strong></div>
+            <div class="result-row negative"><span>Total estimated fees</span><strong id="feeDisplay">-$1,080.10</strong></div>
+            <div class="result-row muted"><span>Stripe portion of total fees</span><strong id="stripeDisplay">$660.10</strong></div>
+            <div class="result-row muted"><span>AGAPAY portion of total fees</span><strong id="agapayDisplay">$420.00</strong></div>
+            <div class="result-row positive"><span>Donor-covered offset</span><strong id="coveredDisplay">+$810.08</strong></div>
+            <div class="result-row negative"><span>Parish-absorbed fees</span><strong id="parishFeesDisplay">-$270.02</strong></div>
+            <div class="result-row net"><span>Net deposited</span><strong id="netDisplay">$19,729.98</strong></div>
             <div class="result-row positive"><span>Effective yield</span><strong id="yieldDisplay">98.65%</strong></div>
           </div>
         </section>
@@ -1055,7 +1117,7 @@
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">How does the 5% + $0.30 fee work? <span>+</span></button>
-            <p>The standard donation transaction fee is 5% + $0.30. Stripe's estimated online processing is 2.9% + $0.30, and AGAPAY receives the remaining estimated 2.1% platform share.</p>
+            <p>The standard donation transaction fee is 5% + $0.30 per gift. Stripe's estimated online processing is 2.9% + $0.30, and AGAPAY receives the remaining estimated 2.1% platform share, so the calculator uses an average gift size to estimate the number of gifts.</p>
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">How does AGAPAY verify canonical standing? <span>+</span></button>
@@ -1147,34 +1209,43 @@
 
     const volumeRange = document.getElementById("volumeRange");
     const coverageRange = document.getElementById("coverageRange");
+    const averageGiftInput = document.getElementById("averageGiftInput");
     const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const wholeMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
+    function formatCents(cents) {
+      return money.format((Number(cents) || 0) / 100);
+    }
+
     function updateCalculator() {
       const monthlyVolume = Number(volumeRange.value || 0);
+      const monthlyCents = Math.round(monthlyVolume * 100);
       const coverageRate = Number(coverageRange.value || 0) / 100;
-      const averageGift = 75;
-      const transactions = monthlyVolume / averageGift;
-      const totalFees = (monthlyVolume * 0.05) + (transactions * 0.30);
-      const estimatedStripe = (monthlyVolume * 0.029) + (transactions * 0.30);
-      const estimatedAgapay = Math.max(0, totalFees - estimatedStripe);
-      const donorCovered = totalFees * coverageRate;
-      const parishFees = totalFees - donorCovered;
-      const net = monthlyVolume - parishFees;
-      const yieldPercent = monthlyVolume > 0 ? (net / monthlyVolume) * 100 : 0;
+      const averageGift = Math.max(5, Number(averageGiftInput?.value || 75));
+      const transactions = Math.max(1, Math.round(monthlyVolume / averageGift));
+      const totalFeeCents = Math.round(monthlyCents * 0.05) + (transactions * 30);
+      const estimatedStripeCents = Math.round(monthlyCents * 0.029) + (transactions * 30);
+      const estimatedAgapayCents = Math.max(0, totalFeeCents - estimatedStripeCents);
+      const donorCoveredCents = Math.round(totalFeeCents * coverageRate);
+      const parishFeeCents = totalFeeCents - donorCoveredCents;
+      const netCents = monthlyCents - parishFeeCents;
+      const yieldPercent = monthlyCents > 0 ? (netCents / monthlyCents) * 100 : 0;
 
       document.getElementById("volumeDisplay").textContent = wholeMoney.format(monthlyVolume);
       document.getElementById("coverageDisplay").textContent = `${Math.round(coverageRate * 100)}%`;
-      document.getElementById("grossDisplay").textContent = money.format(monthlyVolume);
-      document.getElementById("feeDisplay").textContent = `-${money.format(totalFees)}`;
-      document.getElementById("coveredDisplay").textContent = `+${money.format(donorCovered)}`;
-      document.getElementById("stripeDisplay").textContent = `-${money.format(estimatedStripe)}`;
-      document.getElementById("agapayDisplay").textContent = `-${money.format(estimatedAgapay)}`;
-      document.getElementById("netDisplay").textContent = money.format(net);
+      document.getElementById("giftAssumption").textContent = `Assuming about ${transactions.toLocaleString("en-US")} gifts per month at a ${wholeMoney.format(averageGift)} average gift.`;
+      document.getElementById("grossDisplay").textContent = formatCents(monthlyCents);
+      document.getElementById("feeDisplay").textContent = `-${formatCents(totalFeeCents)}`;
+      document.getElementById("coveredDisplay").textContent = `+${formatCents(donorCoveredCents)}`;
+      document.getElementById("stripeDisplay").textContent = formatCents(estimatedStripeCents);
+      document.getElementById("agapayDisplay").textContent = formatCents(estimatedAgapayCents);
+      document.getElementById("parishFeesDisplay").textContent = `-${formatCents(parishFeeCents)}`;
+      document.getElementById("netDisplay").textContent = formatCents(netCents);
       document.getElementById("yieldDisplay").textContent = `${yieldPercent.toFixed(2)}%`;
     }
     volumeRange?.addEventListener("input", updateCalculator);
     coverageRange?.addEventListener("input", updateCalculator);
+    averageGiftInput?.addEventListener("input", updateCalculator);
     updateCalculator();
   </script>
 </body>
