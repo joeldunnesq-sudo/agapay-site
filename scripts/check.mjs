@@ -75,4 +75,4 @@ assert.ok(giveHtml.includes("agapaySecurityPayload"), "public giving checkout sh
 assert.ok(registerHtml.includes("/security.js") && registerHtml.includes("data-agapay-turnstile"), "registration should render Turnstile when configured");
 assert.ok(registerHtml.includes("agapaySecurityPayload"), "registration should send Turnstile tokens when configured");
 
-console.log("AgaPay platform checks passed.");
+console.log("AGAPAY platform checks passed.");

@@ -414,4 +414,4 @@ async function withMockFetch(handler, run) {
   assert.equal(updated.stripePaymentIntentId, "pi_async_failed");
 }
 
-console.log("AgaPay Worker hardening tests passed.");
+console.log("AGAPAY Worker hardening tests passed.");

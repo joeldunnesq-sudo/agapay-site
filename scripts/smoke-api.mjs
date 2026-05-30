@@ -44,4 +44,4 @@ await checkoutHandler(
 assert.equal(res.statusCode, 200);
 assert.equal(JSON.parse(res.body).mode, "demo");
 
-console.log("AgaPay API smoke tests passed.");
+console.log("AGAPAY API smoke tests passed.");
