@@ -3,492 +3,899 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>About — AGAPAY</title>
+  <title>About AGAPAY | Orthodox Giving</title>
   <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
-  <meta name="description" content="AGAPAY was built by a tonsured Reader to cement Holy Orthodoxy into the American land — and to show his children they have a part to play." />
+  <meta name="description" content="AGAPAY was built from within the Orthodox Tradition to help parishes thrive and leave our children an inheritance of faithful stewardship." />
   <meta property="og:title" content="About AGAPAY" />
   <meta property="og:url" content="https://agapay.app/about" />
-  <meta property="og:image" content="https://agapay.app/og-image.png" />
   <meta name="theme-color" content="#061522" />
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
-
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles/numbers.css" />
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --deep:   #061522;
-      --forest: #0B2130;
-      --gold:   #C8A24A;
-      --cream:  #F6F1E8;
-      --stone:  #6F6A60;
-      --ink:    #171715;
-      --white:  #FFFFFF;
-      --serif:  'Cormorant Garamond', Georgia, serif;
-      --sans:   'DM Sans', system-ui, sans-serif;
-      --r:      10px;
-      --rlg:    16px;
+      --night: #061522;
+      --night-2: #0B2130;
+      --ink: #171715;
+      --cream: #F6F1E8;
+      --paper: #FFFDF8;
+      --stone: #70695D;
+      --muted: #A69F91;
+      --gold: #C8A24A;
+      --gold-dark: #A97C25;
+      --line: rgba(166, 159, 145, 0.28);
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "DM Sans", system-ui, sans-serif;
     }
 
     html { scroll-behavior: smooth; }
-    body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; }
-    body.nav-open { overflow: hidden; }
+    body {
+      min-height: 100vh;
+      font-family: var(--sans);
+      color: var(--ink);
+      background: var(--cream);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    body.drawer-open { overflow: hidden; }
     a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    svg { display: block; }
 
-    .candle-glow { position: fixed; width: 500px; height: 500px; background: radial-gradient(circle, rgba(200,162,74,0.05) 0%, rgba(53,94,59,0.02) 40%, transparent 70%); filter: blur(60px); pointer-events: none; z-index: -1; border-radius: 50%; }
-    .candle-glow.top-left  { top: -150px; left: -150px; }
-    .candle-glow.bottom-right { bottom: -150px; right: -150px; }
-
-    /* NAV */
-    nav { position: sticky; top: 0; z-index: 100; background: rgba(243,239,230,0.93); backdrop-filter: blur(12px); border-bottom: 0.5px solid rgba(166,159,145,0.35); }
-    .nav-inner { max-width: 1024px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
-    .nav-logo { display: flex; align-items: center; gap: 5px; z-index: 110; }
-    .nav-mark { width: 52px; height: 52px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-    .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
-    .nav-name em { color: var(--gold); font-style: normal; }
-    .nav-links { display: flex; align-items: center; gap: 1.25rem; }
-    .nav-links a { font-size: 14px; color: var(--forest); transition: color 0.2s; }
-    .nav-links a:hover { color: var(--ink); }
-    .nav-cta { display: inline-block; background: var(--deep); color: var(--white) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; transition: background 0.2s; }
-    .nav-cta:hover { background: var(--forest) !important; }
-    .nav-give { display: inline-block; background: var(--gold); color: var(--deep) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 600; transition: opacity 0.2s; }
-    .nav-give:hover { opacity: 0.9; }
-    .menu-toggle { display: none; background: none; border: none; cursor: pointer; width: 44px; height: 44px; z-index: 110; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
-    .menu-toggle span { display: block; width: 22px; height: 2px; background-color: var(--deep); border-radius: 2px; transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.2s; }
-    .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-    .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
-    .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-    .mobile-nav-drawer { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background-color: var(--cream); z-index: 105; padding: 6rem 2rem 3rem; display: flex; flex-direction: column; gap: 2rem; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s; overflow-y: auto; }
-    .mobile-nav-drawer.active { opacity: 1; visibility: visible; transform: translateY(0); }
-    .mobile-drawer-links { display: flex; flex-direction: column; gap: 1.5rem; }
-    .mobile-drawer-links a { font-family: var(--serif); font-size: 24px; color: var(--deep); border-bottom: 0.5px solid rgba(166,159,145,0.15); padding-bottom: 0.75rem; }
-    .mobile-drawer-actions { margin-top: auto; display: flex; flex-direction: column; gap: 1rem; }
-    .mobile-drawer-actions .nav-cta,
-    .mobile-drawer-actions .nav-give { text-align: center; padding: 14px; font-size: 15px; width: 100%; }
-
-    /* HERO */
-    .hero { background: var(--deep); padding: 6rem 1.5rem 5rem; text-align: center; position: relative; overflow: hidden; }
-    .hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 700px; height: 300px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.11) 0%, transparent 65%); pointer-events: none; }
-    .hero-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; height: 450px; object-fit: contain; opacity: 0.08; pointer-events: none; z-index: 0; }
-    .hero-inner { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; }
-    .hero-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1.25rem; font-weight: 500; }
-    .hero h1 { font-family: var(--serif); font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 500; color: var(--cream); line-height: 1.18; letter-spacing: -0.01em; margin-bottom: 1.5rem; }
-    .hero h1 em { color: var(--gold); font-style: italic; }
-    .hero-sub { font-size: 15px; color: var(--stone); line-height: 1.85; max-width: 480px; margin: 0 auto; }
-
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-    @media (prefers-reduced-motion: no-preference) {
-      .hero-eyebrow { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both; }
-      .hero h1      { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.08s both; }
-      .hero-sub     { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.16s both; }
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: linear-gradient(90deg, #061522, #0B2130);
+      border-bottom: 1px solid rgba(200, 162, 74, 0.24);
+      padding: 0.95rem clamp(1rem, 2.6vw, 2.6rem);
+    }
+    .nav {
+      width: min(1320px, 100%);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--cream);
+      min-width: max-content;
+    }
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1px solid rgba(200, 162, 74, 0.52);
+      background: rgba(6, 21, 34, 0.45);
+    }
+    .brand-mark img { width: 38px; height: 38px; object-fit: contain; }
+    .brand-name { display: flex; flex-direction: column; line-height: 1; }
+    .brand-name strong {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .brand-name span {
+      margin-top: 0.22rem;
+      color: var(--gold);
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .nav-links {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: clamp(0.9rem, 2vw, 2rem);
+      color: rgba(246, 241, 232, 0.9);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .nav-links a.active {
+      color: var(--gold);
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 0.36rem;
+    }
+    .nav-actions { display: flex; align-items: center; gap: 0.8rem; margin-left: 1rem; }
+    .btn-donate {
+      min-height: 44px;
+      padding: 0 1.45rem;
+      border-radius: 8px;
+      border: 1px solid rgba(200, 162, 74, 0.6);
+      color: var(--cream);
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: rgba(6, 21, 34, 0.34);
+    }
+    .btn-donate svg, .nav-avatar svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--gold);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .nav-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid rgba(200, 162, 74, 0.7);
+      background: rgba(6, 21, 34, 0.36);
+      display: grid;
+      place-items: center;
+    }
+    .mobile-menu-btn {
+      display: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      border: 1px solid rgba(200, 162, 74, 0.45);
+      background: rgba(6, 21, 34, 0.45);
+      color: var(--cream);
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .mobile-menu-btn svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 16, 26, 0.58);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 70;
+    }
+    .mobile-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(90vw, 380px);
+      height: 100vh;
+      background: linear-gradient(180deg, #081a2a, #061522);
+      color: var(--cream);
+      transform: translateX(105%);
+      transition: transform 0.24s ease;
+      z-index: 80;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      border-left: 1px solid rgba(200, 162, 74, 0.26);
+      box-shadow: -20px 0 45px rgba(0, 0, 0, 0.35);
+    }
+    .drawer-open .drawer-backdrop { opacity: 1; pointer-events: auto; }
+    .drawer-open .mobile-drawer { transform: translateX(0); }
+    .drawer-head {
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(200, 162, 74, 0.2);
+    }
+    .drawer-title {
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      letter-spacing: 0.04em;
+    }
+    .drawer-close {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid rgba(200, 162, 74, 0.3);
+      background: transparent;
+      color: var(--cream);
+      display: grid;
+      place-items: center;
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+    .drawer-scroll {
+      overflow-y: auto;
+      padding: 0.8rem 1rem 1.2rem;
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+    .drawer-links { display: grid; gap: 0.35rem; }
+    .drawer-links a {
+      padding: 0.6rem 0.55rem;
+      border-radius: 8px;
+      color: rgba(246, 241, 232, 0.9);
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .drawer-links a.active {
+      background: rgba(200, 162, 74, 0.16);
+      color: #FFE7B6;
+    }
+    .drawer-join {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #D6AF5B, #B98832);
+      color: #0A1724;
+      font-size: 0.96rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
     }
 
-    /* BODY */
-    .body-wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
-    .opening { padding: 5rem 0 0; display: grid; grid-template-columns: 1fr 2fr; gap: 4rem; align-items: start; }
-    .opening-aside { position: sticky; top: 90px; }
-    .aside-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1rem; font-weight: 500; }
-    .aside-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.5rem; }
-
-    /* FOUNDER HEADER — updated for couples/landscape photo */
-    .founder-header { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; margin-bottom: 0.5rem; }
-    .founder-photo { width: 100%; height: 180px; border-radius: 12px; overflow: hidden; border: 0.5px solid rgba(200,162,74,0.35); flex-shrink: 0; margin-bottom: 0.5rem; }
-    .founder-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    
-    .aside-name { font-size: 16px; font-weight: 500; color: var(--ink); margin-bottom: 2px; }
-    .founder-role { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
-
-    /* FOUNDER DETAILS — grid layout for clean data */
-    .founder-details { margin-top: 1.75rem; display: flex; flex-direction: column; gap: 1.25rem; }
-    .detail-group { display: flex; flex-direction: column; gap: 4px; }
-    .detail-label { color: var(--gold); font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600; }
-    .detail-value { font-size: 13px; color: var(--ink); line-height: 1.4; font-weight: 500; }
-    .detail-sub { display: block; color: var(--stone); font-size: 12px; font-weight: 400; margin-top: 1px; }
-
-    .aside-divider { border: none; border-top: 0.5px solid rgba(166,159,145,0.3); margin: 1.5rem 0; }
-    .aside-contact { font-size: 13px; color: var(--stone); text-align: center; }
-    .aside-contact a { color: var(--gold); transition: opacity 0.2s; font-weight: 500; }
-    .aside-contact a:hover { opacity: 0.75; }
-
-    /* PROSE */
-    .prose { padding: 0 0 5rem; }
-    .prose-section { margin-bottom: 3.5rem; }
-    .prose-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 0.75rem; font-weight: 500; }
-    .prose-section h2 { font-family: var(--serif); font-size: clamp(1.5rem, 2.5vw, 1.9rem); font-weight: 500; color: var(--deep); line-height: 1.25; margin-bottom: 1.25rem; letter-spacing: -0.01em; }
-    .prose-section p { font-size: 15px; color: #2D2B28; line-height: 1.75; margin-bottom: 1.25rem; }
-    .prose-section p:last-child { margin-bottom: 0; }
-
-    .pullquote { border-left: 2px solid var(--gold); padding: 0.75rem 0 0.75rem 1.75rem; margin: 2.5rem 0; }
-    .pullquote p { font-family: var(--serif); font-size: clamp(1.2rem, 2vw, 1.5rem); font-style: italic; color: var(--deep); line-height: 1.65; font-weight: 400; margin-bottom: 0 !important; }
-
-    /* VALUES */
-    .values { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 3rem 0; }
-    .value { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.5rem; transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .value:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,45,31,0.08); }
-    .value h3 { font-size: 14px; font-weight: 500; color: var(--deep); margin-bottom: 5px; }
-    .value p { font-size: 13px; color: var(--stone); line-height: 1.65; margin-bottom: 0 !important; }
-
-    /* SCRIPTURE */
-    .scripture { background: var(--deep); border-radius: var(--rlg); padding: 3rem 2.5rem; text-align: center; margin: 4rem 0; position: relative; overflow: hidden; }
-    .scripture::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 500px; height: 200px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.1) 0%, transparent 65%); pointer-events: none; }
-    .scripture p { font-family: var(--serif); font-size: clamp(1.2rem, 2vw, 1.5rem); font-style: italic; color: var(--cream); line-height: 1.7; position: relative; z-index: 1; }
-    .scripture cite { display: block; font-size: 12px; color: var(--stone); font-style: normal; margin-top: 10px; letter-spacing: 0.06em; position: relative; z-index: 1; }
-
-    /* FAMILY FEATURE */
-    .family-feature { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.5rem; text-align: center; margin: 0 0 4rem; transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .family-feature:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,45,31,0.08); }
-    .family-feature-img { width: 100%; height: auto; max-height: 600px; object-fit: cover; border-radius: 12px; margin-bottom: 1.25rem; border: 0.5px solid rgba(166,159,145,0.2); display: block; }
-    .family-feature-caption { font-size: 14px; color: var(--stone); line-height: 1.7; max-width: 600px; margin: 0 auto; }
-    .family-feature-caption strong { color: var(--deep); font-weight: 500; font-size: 15px; }
-
-    /* CTA */
-    .cta { background: var(--forest); border-radius: var(--rlg); padding: 3rem 2.5rem; text-align: center; margin: 0 0 5rem; }
-    .cta h2 { font-family: var(--serif); font-size: clamp(1.4rem, 2.5vw, 1.9rem); font-weight: 500; color: var(--cream); margin-bottom: 0.75rem; line-height: 1.3; }
-    .cta p { font-size: 14px; color: rgba(243,239,230,0.6); margin-bottom: 1.75rem; line-height: 1.8; max-width: 400px; margin-left: auto; margin-right: auto; }
-    .cta a { display: inline-block; background: var(--gold); color: var(--deep); padding: 13px 28px; border-radius: var(--r); font-size: 14px; font-weight: 500; font-family: var(--sans); transition: opacity 0.2s; }
-    .cta a:hover { opacity: 0.88; }
-
-    /* SCROLL ANIMATIONS */
-    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
-    .reveal.visible { opacity: 1; transform: translateY(0); }
-    .reveal-delay-1 { transition-delay: 0.1s; }
-    .reveal-delay-2 { transition-delay: 0.2s; }
-    .reveal-delay-3 { transition-delay: 0.3s; }
-
-    /* FOOTER */
-    footer { background: var(--deep); padding: 3.5rem 1.5rem 0; }
-    .footer-inner { max-width: 860px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 3rem; padding-bottom: 3rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
-    .footer-brand { display: flex; flex-direction: column; gap: 8px; }
-    .footer-logo { display: flex; align-items: center; gap: 8px; }
-    .footer-name { font-family: var(--serif); font-size: 32px; color: var(--cream); font-weight: 500; }
-    .footer-name em { color: var(--gold); font-style: normal; }
-    .footer-tagline { font-family: var(--serif); font-size: 15px; font-style: italic; color: var(--cream); margin-bottom: 4px; }
-    .footer-tagline-sub { font-family: var(--serif); font-size: 13px; font-style: italic; color: rgba(166,159,145,0.4); }
-    .footer-nav { display: flex; gap: 3rem; flex-wrap: wrap; }
-    .footer-nav-group { display: flex; flex-direction: column; gap: 10px; }
-    .footer-nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin-bottom: 2px; }
-    .footer-nav-group a { font-size: 13px; color: rgba(166,159,145,0.55); transition: color 0.2s; }
-    .footer-nav-group a:hover { color: var(--cream); }
-    .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
-    .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.3); }
-
-    @media (max-width: 768px) {
-      .menu-toggle { display: flex; }
-      .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
-      .nav-inner .nav-cta, .nav-inner .nav-give { display: none; }
-      .opening { display: flex; flex-direction: column; gap: 3rem; padding-top: 3rem; }
-      .opening-aside { order: 2; width: 100%; position: static; }
-      .prose { order: 1; padding-bottom: 0; }
-      .scripture, .cta, .family-feature { padding: 2.5rem 1.5rem; }
-      .values { grid-template-columns: 1fr; }
+    .page {
+      width: min(1320px, calc(100% - 2rem));
+      margin: 0.95rem auto 2rem;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      box-shadow: 0 10px 38px rgba(12, 22, 32, 0.08);
+      overflow: hidden;
     }
-    @media (max-width: 480px) {
-      .footer-inner { flex-direction: column; }
+    .section {
+      padding: clamp(2.3rem, 5vw, 4.8rem) clamp(1rem, 3vw, 2.5rem);
+      border-bottom: 1px solid var(--line);
+    }
+    .section-inner { width: min(1160px, 100%); margin: 0 auto; }
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--gold-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.76rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+    }
+    .kicker svg, .icon-line svg, .value-icon svg {
+      stroke: currentColor;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .kicker svg { width: 21px; height: 21px; stroke-width: 1.7; }
+    .section h2 {
+      font-family: var(--serif);
+      color: var(--night);
+      font-size: clamp(2.15rem, 4vw, 3.55rem);
+      font-weight: 500;
+      line-height: 1.05;
+      margin-bottom: 1rem;
+    }
+    .section p {
+      color: var(--stone);
+      font-size: 1rem;
+      line-height: 1.75;
+    }
+
+    .about-hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(320px, 0.78fr) minmax(420px, 1.22fr);
+      gap: clamp(1.5rem, 4vw, 3rem);
+      align-items: center;
+      min-height: 520px;
+      padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 4vw, 4rem);
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 16% 0%, rgba(200, 162, 74, 0.13), transparent 32%),
+        linear-gradient(180deg, #FFFDF8 0%, #F8F2E7 100%);
+      overflow: hidden;
+    }
+    .about-hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(30deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08)),
+        linear-gradient(150deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08));
+      background-size: 54px 94px;
+      opacity: 0.18;
+      pointer-events: none;
+    }
+    .about-hero > * { position: relative; z-index: 1; }
+    .about-hero h1 {
+      font-family: var(--serif);
+      color: var(--night);
+      font-size: clamp(3rem, 7vw, 5.4rem);
+      line-height: 0.98;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+    .about-hero h1 span { color: var(--gold-dark); display: block; }
+    .about-hero p {
+      max-width: 560px;
+      color: var(--night);
+      font-size: 1.03rem;
+      line-height: 1.78;
+    }
+    .hero-photo {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(200, 162, 74, 0.28);
+      box-shadow: 0 20px 45px rgba(6, 21, 34, 0.11);
+      min-height: 380px;
+      background: #e7e1d5;
+    }
+    .hero-photo img {
+      width: 100%;
+      height: 100%;
+      min-height: 380px;
+      object-fit: cover;
+      object-position: center;
+      filter: sepia(0.08) saturate(0.94);
+    }
+
+    .founders {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+      gap: clamp(1.5rem, 4vw, 3rem);
+      align-items: start;
+    }
+    .founder-card {
+      border: 1px solid rgba(200, 162, 74, 0.28);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.74);
+      overflow: hidden;
+      box-shadow: 0 12px 26px rgba(6, 21, 34, 0.05);
+    }
+    .founder-card img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      object-position: center;
+    }
+    .founder-card-body { padding: 1.2rem; }
+    .founder-card h2 {
+      font-size: clamp(1.85rem, 3vw, 2.5rem);
+      margin-bottom: 0.2rem;
+    }
+    .role {
+      color: var(--gold-dark);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .detail-list { display: grid; gap: 0.82rem; }
+    .detail-list p { font-size: 0.94rem; line-height: 1.55; }
+    .detail-list strong {
+      display: block;
+      color: var(--night);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.22rem;
+    }
+    .founder-contact {
+      margin-top: 1.1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+      color: var(--stone);
+      font-size: 0.94rem;
+    }
+    .founder-contact a { color: var(--gold-dark); font-weight: 800; }
+    .story-copy {
+      display: grid;
+      gap: 2rem;
+    }
+    .story-block {
+      padding: 1.4rem;
+      border-left: 3px solid rgba(200, 162, 74, 0.8);
+      background:
+        linear-gradient(90deg, rgba(200, 162, 74, 0.08), transparent),
+        rgba(255, 255, 255, 0.46);
+      border-radius: 0 12px 12px 0;
+    }
+    .story-block p + p { margin-top: 1rem; }
+
+    .quote-band {
+      position: relative;
+      background: linear-gradient(90deg, #071724, #0C2739);
+      color: var(--cream);
+      padding: clamp(2.5rem, 5vw, 4.5rem) clamp(1rem, 3vw, 2.5rem);
+      overflow: hidden;
+      border-bottom: 1px solid rgba(200, 162, 74, 0.28);
+    }
+    .quote-inner {
+      width: min(900px, 100%);
+      margin: 0 auto;
+      text-align: center;
+    }
+    .quote-inner p {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(1.45rem, 3.4vw, 2.45rem);
+      line-height: 1.28;
+      color: var(--cream);
+    }
+    .quote-inner cite {
+      display: block;
+      margin-top: 1rem;
+      color: var(--gold);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-style: normal;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.85fr);
+      gap: clamp(1.5rem, 4vw, 3rem);
+      align-items: center;
+    }
+    .image-panel {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(200, 162, 74, 0.3);
+      box-shadow: 0 16px 35px rgba(6, 21, 34, 0.08);
+      background: #e8e0d3;
+    }
+    .image-panel img {
+      width: 100%;
+      min-height: 420px;
+      object-fit: cover;
+      object-position: center;
+    }
+    .copy-stack { display: grid; gap: 1rem; }
+    .copy-stack p strong { color: var(--night); }
+
+    .values-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.9rem;
+      margin-top: 1.4rem;
+    }
+    .value-card {
+      position: relative;
+      min-height: 220px;
+      padding: 1.2rem;
+      border: 1px solid rgba(200, 162, 74, 0.28);
+      border-radius: 12px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 251, 244, 0.92)),
+        radial-gradient(circle at 12% 0%, rgba(200, 162, 74, 0.12), transparent 45%);
+      box-shadow: 0 10px 24px rgba(6, 21, 34, 0.04);
+    }
+    .value-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--gold), #184a2b);
+      border-radius: 12px 12px 0 0;
+    }
+    .value-icon {
+      width: 46px;
+      height: 46px;
+      border: 1px solid rgba(200, 162, 74, 0.45);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--gold-dark);
+      background: rgba(255, 253, 248, 0.68);
+      margin-bottom: 0.85rem;
+    }
+    .value-icon svg { width: 24px; height: 24px; stroke-width: 1.65; }
+    .value-card h3 {
+      color: var(--night);
+      font-size: 0.98rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.55rem;
+    }
+    .value-card p {
+      color: var(--stone);
+      font-size: 0.93rem;
+      line-height: 1.65;
+    }
+
+    .scripture {
+      background: linear-gradient(90deg, #071724, #0C2739);
+      border-radius: 16px;
+      padding: clamp(2rem, 4vw, 3rem);
+      color: var(--cream);
+      text-align: center;
+      border: 1px solid rgba(200, 162, 74, 0.24);
+      box-shadow: 0 20px 40px rgba(6, 21, 34, 0.12);
+    }
+    .scripture p {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(1.15rem, 2.5vw, 1.6rem);
+      line-height: 1.6;
+      color: var(--cream);
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .scripture cite {
+      display: block;
+      margin-top: 1rem;
+      color: var(--gold);
+      font-style: normal;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .closing {
+      display: grid;
+      grid-template-columns: minmax(360px, 1fr) minmax(320px, 0.9fr);
+      gap: clamp(1.5rem, 4vw, 3rem);
+      align-items: stretch;
+    }
+    .closing-photo {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(200, 162, 74, 0.28);
+      background: #e7e1d5;
+    }
+    .closing-photo img {
+      width: 100%;
+      height: 100%;
+      min-height: 420px;
+      object-fit: cover;
+      object-position: center;
+    }
+    .closing-copy {
+      display: grid;
+      align-content: center;
+      border: 1px solid rgba(200, 162, 74, 0.36);
+      border-radius: 16px;
+      padding: clamp(1.4rem, 4vw, 2.4rem);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(255, 251, 244, 0.96)),
+        radial-gradient(circle at 5% 10%, rgba(200, 162, 74, 0.14), transparent 36%);
+    }
+    .caption {
+      color: var(--gold-dark);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .closing-actions { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 1.4rem; }
+    .btn-primary, .btn-secondary {
+      min-height: 48px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      padding: 0 1.2rem;
+      font-weight: 800;
+      font-size: 0.86rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .btn-primary { background: var(--night); color: var(--cream); }
+    .btn-secondary {
+      border: 1px solid rgba(200, 162, 74, 0.54);
+      color: var(--gold-dark);
+      background: rgba(255, 253, 248, 0.68);
+    }
+
+    .site-footer {
+      background: linear-gradient(90deg, #061522, #0B2130);
+      color: var(--cream);
+      padding: 2.4rem clamp(1rem, 2.6vw, 2.6rem) 1.2rem;
+    }
+    .footer-inner { width: min(1320px, 100%); margin: 0 auto; }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: minmax(240px, 1.1fr) repeat(3, minmax(140px, 0.55fr));
+      gap: 2rem;
+      padding-bottom: 1.8rem;
+      border-bottom: 1px solid rgba(200, 162, 74, 0.18);
+    }
+    .footer-lockup { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .footer-lockup img {
+      width: 48px;
+      height: 48px;
+      border: 1px solid rgba(200, 162, 74, 0.45);
+      border-radius: 50%;
+      object-fit: contain;
+    }
+    .footer-lockup strong {
+      font-family: var(--serif);
+      font-size: 1.9rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+    }
+    .footer-brand p { color: rgba(246, 241, 232, 0.74); line-height: 1.65; max-width: 320px; }
+    .footer-col h4 {
+      color: var(--gold);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 0.85rem;
+    }
+    .footer-col a {
+      display: block;
+      color: rgba(246, 241, 232, 0.72);
+      font-size: 0.9rem;
+      margin-bottom: 0.52rem;
+    }
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      padding-top: 1.2rem;
+      color: rgba(246, 241, 232, 0.58);
+      font-size: 0.82rem;
+    }
+
+    @media (max-width: 980px) {
+      .nav-links, .nav-actions { display: none; }
+      .mobile-menu-btn { display: flex; }
+      .page { width: 100%; margin: 0; border-left: none; border-right: none; }
+      .about-hero, .founders, .two-col, .closing {
+        grid-template-columns: 1fr;
+      }
+      .about-hero { min-height: 0; }
+      .hero-photo { min-height: 280px; }
+      .hero-photo img { min-height: 280px; }
+      .image-panel img, .closing-photo img { min-height: 340px; }
+      .values-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      .site-header { padding: 0.75rem 1rem; }
+      .brand-name strong { font-size: 1.45rem; }
+      .brand-name span { font-size: 0.52rem; }
+      .brand-mark { width: 38px; height: 38px; }
+      .brand-mark img { width: 34px; height: 34px; }
+      .section { padding: 2.2rem 1rem; }
+      .about-hero { padding: 2rem 1rem; }
+      .about-hero h1 { font-size: clamp(2.5rem, 13vw, 4rem); }
+      .closing-actions { display: grid; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-bottom { display: grid; }
     }
   </style>
-  <link rel="stylesheet" href="/styles/numbers.css" />
-  <link rel="stylesheet" href="/site-mobile-nav.css" />
-  <script src="/site-mobile-nav.js" defer></script>
 </head>
 <body>
-
-  <div class="candle-glow top-left" aria-hidden="true"></div>
-  <div class="candle-glow bottom-right" aria-hidden="true"></div>
-
- <nav>
-    <div class="nav-inner">
-      <a href="/" class="nav-logo" aria-label="AGAPAY Home">
-        <div class="nav-mark">
-          <img src="/mark.png" alt="AGAPAY" style="width:48px;height:48px;object-fit:contain;" />
-        </div>
-        <span class="nav-name">AGAPAY</span>
+  <header class="site-header">
+    <nav class="nav" aria-label="Primary navigation">
+      <a class="brand" href="/" aria-label="AGAPAY home">
+        <span class="brand-mark"><img src="/mark.png" alt="" /></span>
+        <span class="brand-name"><strong>AGAPAY</strong><span>Love how you give</span></span>
       </a>
-            <div class="nav-links">
+      <div class="nav-links">
+        <a href="/vision">Vision</a>
         <a href="/giving">Giving</a>
         <a href="/marketplace">Marketplace</a>
         <a href="/directory">Directory</a>
-        <a href="/vision">Vision</a>
         <a href="/how-it-works">Resources</a>
-        <a href="/register" class="nav-cta">Join AGAPAY</a>
+        <a class="active" href="/about">About</a>
       </div>
-      <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle navigation" aria-expanded="false">
-        <span></span><span></span><span></span>
+      <div class="nav-actions">
+        <a class="btn-donate" href="/register">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          Join AGAPAY
+        </a>
+        <a class="nav-avatar" href="/donor/login" aria-label="Log in">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.8-4 4.5-6 8-6s6.2 2 8 6"/></svg>
+        </a>
+      </div>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
       </button>
-    </div>
-  </nav>
-
-  <div class="mobile-nav-drawer" id="mobileDrawer" aria-hidden="true">
-        <div class="mobile-drawer-links">
-      <a href="/giving" onclick="toggleMenu()">Giving</a>
-      <a href="/marketplace" onclick="toggleMenu()">Marketplace</a>
-      <a href="/directory" onclick="toggleMenu()">Directory</a>
-      <a href="/vision" onclick="toggleMenu()">Vision</a>
-      <a href="/how-it-works" onclick="toggleMenu()">Resources</a>
-    </div>
-    <div class="mobile-drawer-actions">
-      <a href="/register" class="nav-cta" onclick="toggleMenu()">Join AGAPAY</a>
-    </div>
-  </div>
-
-  <header class="hero">
-    <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
-    <div class="hero-inner">
-      <div class="hero-eyebrow">About AGAPAY</div>
-      <h1>Cementing Orthodoxy<br>into the <em>American land.</em></h1>
-      <p class="hero-sub">AGAPAY wasn't born in a boardroom to capture a market. It was built from within the Tradition, designed to help Orthodox parishes thrive and to leave our children an inheritance of faithful stewardship.</p>
-    </div>
+    </nav>
   </header>
 
-  <main class="body-wrap">
-    <div class="opening">
-
-      <aside class="opening-aside reveal" aria-label="Founder Bio">
-        <div class="aside-label">The founders</div>
-        <div class="aside-card">
-
-          <div class="founder-header">
-            <div class="founder-photo">
-              <img src="/joel.jpg" alt="Joel and Stephanie Dunn" />
-            </div>
-            <div class="aside-name">Joel & Stephanie Dunn</div>
-            <div class="founder-role">Founders</div>
-          </div>
-
-         <div class="founder-details">
-            <div class="detail-group">
-              <div class="detail-label">Vocations</div>
-              <div class="detail-value">Tonsured Reader, ROCOR</div>
-              <div class="detail-value">Classical Homeschool Mom</div>
-            </div>
-            
-            <div class="detail-group">
-              <div class="detail-label">Family</div>
-              <div class="detail-value">Married 18+ years</div>
-              <div class="detail-sub">Ten children, two dogs</div>
-            </div>
-            
-            <div class="detail-group">
-              <div class="detail-label">Community</div>
-              <div class="detail-value">St. Catherine of Alexandria Mission</div>
-              <div class="detail-sub">Lubbock, Texas</div>
-            </div>
-
-            <!-- NEW RELATABILITY SECTION -->
-            <div class="detail-group">
-              <div class="detail-label">Off the clock</div>
-              <div class="detail-value" style="font-weight: 400; color: var(--stone); line-height: 1.5;">
-                Attempting to diligently manage the joyful chaos of a 12-person household. 
-              </div>
-            </div>
-          </div>
-
-          <hr class="aside-divider" />
-          
-          <!-- NEW WARM SIGN-OFF -->
-          <div style="font-size: 13px; color: var(--ink); text-align: center; margin-bottom: 12px; font-style: italic;">
-            We'd love to hear from you.
-          </div>
-          
-          <div class="aside-contact">
-            <a href="mailto:hello@agapay.app">hello@agapay.app</a>
-          </div>
-          
-        </div>
-      </aside>
-
-      <div class="prose">
-        <section class="prose-section reveal" aria-labelledby="story-heading">
-          <div class="prose-eyebrow">The story</div>
-          <h2 id="story-heading">A legacy beyond the courtroom.</h2>
-          <p>As an attorney, I've spent well over a decade seeking justice. I have spent thousands of hours in courtrooms and at desks, arguing cases and serving the interests of justice. It is honorable work. But I also realize that this work will not outlive me.</p>
-          <p>As Holy Orthodoxy continues to grow exponentially in the American land, there is an increasing need for its congregants to start building the infrastructure that the Church uniquely requires. If we are to cement Orthodoxy into the American land, we all share the vital, active role in the growth and maturation of Orthodoxy here in America.</p>
-          <p>That is why I built AGAPAY.</p>
-        </section>
-
-        <div class="pullquote reveal reveal-delay-1">
-          <p>"I want to create something that carries the faith forward and makes a meaningful contribution to the missionary work of spreading the Ancient Christian faith in the West."</p>
-        </div>
-
-        <section class="prose-section reveal" aria-labelledby="need-heading">
-          <div class="prose-eyebrow">The need</div>
-          <h2 id="need-heading">Love how you give.</h2>
-          <p>When I surveyed the giving platforms used by our parishes — tools like Tithe.ly or Pushpay — I saw software engineered for a completely different theology. Western Christianity has lost the fronema of the Ancient Church, its liturgical cycle, and a deep understanding of the virtue of charity.</p>
-          <p>As a tonsured Reader, I know what it means to stand in the nave at Pascha and to submit names for commemoration at the proskomedia. AGAPAY is built from the inside out. Every line of code, every feature, and every design choice reflects the lived experience of the Orthodox Tradition. That is our foundation, and it is a distinction no competitor can replicate.</p>
-        </section>
-
-        <section class="prose-section reveal" aria-labelledby="vision-heading">
-          <div class="prose-eyebrow">The vision</div>
-          <h2 id="vision-heading">Modern infrastructure for the ancient act of Christian charity.</h2>
-          <p>Holy Orthodoxy is still putting down roots in the American land. The missions being planted, the monasteries being built, and the children being raised in the faith today are the bedrock of what will endure for centuries if we tend it faithfully.</p>
-          <p>AGAPAY is my contribution to that foundation. It is the giving platform designed to make our parishes financially resilient, enabling the faithful to give with the same intentionality they bring to the chalice.</p>
-          <p>Orthodox Christians should be able to give on a platform that shares not only their values, but also their way of life.</p>
-        </section>
-
-        <section class="values" aria-label="Core Values">
-
-          <div class="value reveal reveal-delay-1">
-            <div class="value-icon" style="width:48px;height:48px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.75rem;">
-              <svg width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="9" x2="18" y2="27"/>
-                <line x1="9" y1="15" x2="27" y2="15"/>
-                <circle cx="18" cy="7" r="2.2"/>
-                <circle cx="18" cy="29" r="2.2"/>
-                <circle cx="7" cy="15" r="2.2"/>
-                <circle cx="29" cy="15" r="2.2"/>
-              </svg>
-            </div>
-            <h3>Rooted in Tradition</h3>
-            <p>We don't force the Church to adapt to heterodox giving platforms. We build AGAPAY to serve the liturgical life of the Church.</p>
-          </div>
-
-          <div class="value reveal reveal-delay-2">
-            <div class="value-icon" style="width:48px;height:48px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.75rem;">
-              <svg width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 8 C14 7 8 8 7 9 L7 28 C8 27 14 26 18 27 Z"/>
-                <path d="M18 8 C22 7 28 8 29 9 L29 28 C28 27 22 26 18 27 Z"/>
-                <line x1="18" y1="8" x2="18" y2="27"/>
-                <line x1="11" y1="14" x2="11" y2="22"/>
-                <line x1="8.5" y1="17" x2="13.5" y2="17"/>
-                <line x1="22" y1="14" x2="26" y2="14"/>
-                <line x1="22" y1="17" x2="26" y2="17"/>
-                <line x1="22" y1="20" x2="26" y2="20"/>
-                <path d="M7 28 C8 29 14 30 18 29 C22 30 28 29 29 28"/>
-              </svg>
-            </div>
-            <h3>Honest stewardship</h3>
-            <p>Clear fees, honorable practices, and an open business model — in service of the building and growth of Orthodox parishes and monasteries.</p>
-          </div>
-
-          <div class="value reveal reveal-delay-3">
-            <div class="value-icon" style="width:48px;height:48px;background:rgba(200,162,74,0.12);border:0.5px solid rgba(200,162,74,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:0.75rem;">
-              <svg width="30" height="30" viewBox="0 0 36 36" fill="none" stroke="#C8A24A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="18" cy="11" r="3"/>
-                <path d="M12 30 C12 23 15 21 18 21 C21 21 24 23 24 30"/>
-                <circle cx="9" cy="13" r="2.4"/>
-                <path d="M4 30 C4 24 6.5 22.5 9 22.5 C11 22.5 13 23.5 13.5 26"/>
-                <circle cx="27" cy="13" r="2.4"/>
-                <path d="M32 30 C32 24 29.5 22.5 27 22.5 C25 22.5 23 23.5 22.5 26"/>
-                <path d="M9 11 C12 7 24 7 27 11" stroke-dasharray="2 1.5"/>
-              </svg>
-            </div>
-            <h3>One Body, One Platform</h3>
-            <p>AGAPAY is built to serve the Body of Christ — honoring the oldest model of faithful, purposeful charity and almsgiving.</p>
-          </div>
-
-        </section>
-      </div>
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="mobile-drawer" aria-label="Mobile navigation">
+    <div class="drawer-head">
+      <div class="drawer-title">AGAPAY</div>
+      <button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close navigation">x</button>
     </div>
-    
-    <section class="scripture reveal" aria-label="Scripture Verse">
-      <p>"Do almsgiving based on the quantity of your possessions. If you possess only a few, do not be afraid to give according to the little you have. You are storing up a good treasure for yourself in the day of necessity. For almsgiving delivers us from death and prevents us from entering into the darkness. Indeed, almsgiving is a good gift for all who do it before the Most High."</p>
-      <cite>— Tobit 4:8–11</cite>
+    <div class="drawer-scroll">
+      <nav class="drawer-links">
+        <a href="/vision">Vision</a>
+        <a href="/giving">Giving</a>
+        <a href="/marketplace">Marketplace</a>
+        <a href="/directory">Directory</a>
+        <a href="/how-it-works">Resources</a>
+        <a class="active" href="/about">About</a>
+        <a href="/pricing">Pricing</a>
+      </nav>
+      <a class="drawer-join" href="/register">Join AGAPAY</a>
+    </div>
+  </aside>
+
+  <main class="page">
+    <section class="about-hero">
+      <div>
+        <div class="kicker"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 21h8"/></svg>About AGAPAY</div>
+        <h1>Cementing Orthodoxy <span>into the American land.</span></h1>
+        <p>AGAPAY wasn't born in a boardroom to capture a market. It was built from within the Tradition - to help Orthodox parishes thrive, and to leave our children an inheritance of faithful stewardship.</p>
+      </div>
+      <figure class="hero-photo">
+        <img src="/family.jpg" alt="Joel Dunn and his family" />
+      </figure>
     </section>
 
-    <!-- NEW FAMILY FEATURE SECTION -->
-    <section class="family-feature reveal" aria-label="The Dunn Family">
-      <img src="/family.jpg" alt="Joel Dunn and his family" class="family-feature-img" />
-      <p class="family-feature-caption">
-        <strong>Lazarus Saturday 2026</strong><br>
-        We aren't just building software — we're building a foundation. AGAPAY is our family's contribution to ensuring the next generation inherits a thriving, financially resilient Orthodox community here in America.
-      </p>
+    <section class="section">
+      <div class="section-inner founders">
+        <aside class="founder-card">
+          <img src="/joel.jpg" alt="Joel and Stephanie Dunn" />
+          <div class="founder-card-body">
+            <div class="kicker">The founders</div>
+            <h2>Joel &amp; Stephanie Dunn</h2>
+            <div class="role">Founders</div>
+            <div class="detail-list">
+              <p><strong>Vocations</strong>Tonsured Reader, ROCOR / Classical Homeschool Mom</p>
+              <p><strong>Family</strong>Married 18+ years / Ten children, two dogs</p>
+              <p><strong>Community</strong>St. Catherine of Alexandria Mission, Lubbock, Texas</p>
+              <p><strong>Off the clock</strong>Attempting to diligently manage the joyful chaos of a 12-person household.</p>
+            </div>
+            <p class="founder-contact">We'd love to hear from you. <a href="mailto:hello@agapay.app">hello@agapay.app</a></p>
+          </div>
+        </aside>
+        <div class="story-copy">
+          <div class="story-block">
+            <div class="kicker"><svg viewBox="0 0 24 24"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-5"/><path d="M12 16V8"/><path d="M16 16v-9"/></svg>The story</div>
+            <h2>A legacy beyond the courtroom.</h2>
+            <p>As an attorney, I've spent well over a decade in the service of justice - thousands of hours in courtrooms and at the desk, arguing cases and doing honorable work. But I've come to see that this work will not outlive me.</p>
+            <p>As Holy Orthodoxy continues to grow in the American land, there is a growing need for the faithful to build the infrastructure the Church uniquely requires. If Orthodoxy is to take root here for the long term, each of us has an active part to play in its growth.</p>
+            <p>That is why I built AGAPAY.</p>
+          </div>
+          <div class="quote-inner" style="text-align:left;">
+            <p style="color:var(--night);">"I wanted to create something that carries the faith forward - a meaningful contribution to the missionary work of spreading the Ancient Christian faith in the West."</p>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section class="cta reveal" aria-labelledby="cta-heading">
-      <h2 id="cta-heading">Partner with AGAPAY</h2>
-      <p>We are quietly onboarding a select group of founding parishes prior to our public launch. Founding parishes will secure preferred pricing and work directly with the founder to shape the platform's future.</p>
-      <a href="/#waitlist">Request early access →</a>
+    <section class="section">
+      <div class="section-inner two-col">
+        <div class="copy-stack">
+          <div class="kicker"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>The need</div>
+          <h2>Love how you give.</h2>
+          <p>When I looked at the platforms our parishes were using - tools like Tithe.ly and Pushpay - I saw capable software built for a different theology. They serve their purpose, but they weren't shaped by the phronema of the Ancient Church, its liturgical cycle, or its understanding of charity as a virtue.</p>
+          <p>As a tonsured Reader, I know what it means to stand in the nave at Pascha and to submit names for commemoration at the proskomedia. AGAPAY is built from the inside out - every feature and design choice reflecting the lived experience of the Orthodox Tradition. That is our foundation.</p>
+        </div>
+        <figure class="image-panel">
+          <img src="/images/vision/icon-hands.jpg" alt="Orthodox icon held in hands" />
+        </figure>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-inner">
+        <div class="kicker"><svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-5"/></svg>The vision</div>
+        <h2>Modern infrastructure for the ancient act of Christian charity.</h2>
+        <div class="copy-stack" style="max-width:900px;">
+          <p>Holy Orthodoxy is still putting down roots in the American land. The missions being planted, the monasteries being built, and the children being raised in the faith today are the bedrock of what will endure for centuries - if we tend it faithfully.</p>
+          <p>AGAPAY is our family's contribution to that foundation: a giving platform designed to make parishes financially resilient, and to let the faithful give with the same intentionality they bring to the chalice.</p>
+          <p>Orthodox Christians should be able to give on a platform that shares not only their values, but their way of life.</p>
+        </div>
+        <div class="values-grid">
+          <article class="value-card">
+            <div class="value-icon"><svg viewBox="0 0 24 24"><path d="M5 20h14"/><path d="M7 20V9l5-5 5 5v11"/><path d="M10 20v-6h4v6"/></svg></div>
+            <h3>Rooted in Tradition</h3>
+            <p>We don't ask the Church to adapt to heterodox giving platforms. We build AGAPAY to serve the liturgical life of the Church.</p>
+          </article>
+          <article class="value-card">
+            <div class="value-icon"><svg viewBox="0 0 24 24"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+            <h3>Honest stewardship</h3>
+            <p>Clear fees, honorable practices, and an open business model - in service of the growth of Orthodox parishes and monasteries.</p>
+          </article>
+          <article class="value-card">
+            <div class="value-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            <h3>One Body, one platform</h3>
+            <p>AGAPAY is built to serve the Body of Christ, honoring the oldest model of faithful, purposeful almsgiving.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-inner scripture">
+        <p>"If thou hast abundance, give alms accordingly: if thou have but a little, be not afraid to give according to that little: for thou layest up a good treasure for thyself against the day of necessity. Because that alms do deliver from death, and suffereth not to come into darkness. For alms is a good gift unto all that give it in the sight of the most High."</p>
+        <cite>Tobit 4:8-11 (Brenton Septuagint, 1851)</cite>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-inner closing">
+        <figure class="closing-photo">
+          <img src="/family.jpg" alt="Joel Dunn and his family on Lazarus Saturday 2026" />
+        </figure>
+        <div class="closing-copy">
+          <div class="caption">Lazarus Saturday 2026</div>
+          <p>We aren't just building software - we're building a foundation. AGAPAY is our family's contribution to ensuring the next generation inherits a thriving, financially resilient Orthodox community in America.</p>
+          <h2 style="margin-top:1.4rem;">Partner with AGAPAY</h2>
+          <p>We are quietly onboarding a select group of founding parishes ahead of our public launch. Founding parishes secure preferred pricing and work directly with the founder to shape where AGAPAY goes next.</p>
+          <div class="closing-actions">
+            <a class="btn-primary" href="/register">Register your parish</a>
+            <a class="btn-secondary" href="/pricing">View pricing</a>
+          </div>
+        </div>
+      </div>
     </section>
   </main>
 
-  <footer>
+  <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-brand">
-        <div class="footer-logo">
-          <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;">
-            <img src="/mark.png" alt="AGAPAY" style="width:48px;height:48px;object-fit:contain;" loading="lazy" />
-          </div>
-          <span class="footer-name">AGAPAY</span>
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="footer-lockup"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></div>
+          <p>Building the financial home of the Orthodox world.</p>
         </div>
-        <p class="footer-tagline">Love how you give.</p>
-      </div>
-      <div class="footer-nav">
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Platform</div>
-          <a href="/features">Features</a>
+        <nav class="footer-col" aria-label="Platform">
+          <h4>Platform</h4>
+          <a href="/giving">Giving</a>
+          <a href="/marketplace">Marketplace</a>
+          <a href="/directory">Directory</a>
+          <a href="/vision">Vision</a>
+        </nav>
+        <nav class="footer-col" aria-label="Resources">
+          <h4>Resources</h4>
+          <a href="/how-it-works">How It Works</a>
           <a href="/pricing">Pricing</a>
           <a href="/why">Why AGAPAY</a>
-          <a href="/how-it-works">How AGAPAY Works</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Company</div>
-          <a href="/about">About</a>
           <a href="/contact">Contact</a>
-          <a href="/register">Register parish</a>
-           <a href="/donor/login">Give now</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Legal</div>
-          <a href="/privacy">Privacy Policy</a>
+        </nav>
+        <nav class="footer-col" aria-label="Legal">
+          <h4>Legal</h4>
           <a href="/terms">Terms of Service</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Contact</div>
-          <a href="mailto:hello@agapay.app">hello@agapay.app</a>
-          <a href="mailto:parishes@agapay.app">parishes@agapay.app</a>
-          <a href="mailto:support@agapay.app">support@agapay.app</a>
-        </div>
+          <a href="/privacy">Privacy Policy</a>
+        </nav>
       </div>
-    </div>
-    <div class="footer-bottom">
-      <p>© 2026 AGAPAY · agapay.app</p>
+      <div class="footer-bottom">
+        <span>&copy; 2026 AGAPAY. All rights reserved.</span>
+        <span>Love how you give.</span>
+      </div>
     </div>
   </footer>
 
   <script>
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-    function toggleMenu() {
-      const btn = document.querySelector('.menu-toggle');
-      const drawer = document.getElementById('mobileDrawer');
-      const isOpen = drawer.classList.contains('active');
-      if (isOpen) {
-        btn.setAttribute('aria-expanded', 'false');
-        drawer.classList.remove('active');
-        drawer.setAttribute('aria-hidden', 'true');
-        document.body.classList.remove('nav-open');
-      } else {
-        btn.setAttribute('aria-expanded', 'true');
-        drawer.classList.add('active');
-        drawer.setAttribute('aria-hidden', 'false');
-        document.body.classList.add('nav-open');
-      }
+    const body = document.body;
+    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+    const drawerBackdrop = document.getElementById("drawerBackdrop");
+    const drawerCloseBtn = document.getElementById("drawerCloseBtn");
+    function setDrawer(open) {
+      body.classList.toggle("drawer-open", open);
+      mobileMenuBtn?.setAttribute("aria-expanded", open ? "true" : "false");
     }
-    window.addEventListener('resize', () => {
-      if (window.innerWidth > 768) {
-        const btn = document.querySelector('.menu-toggle');
-        const drawer = document.getElementById('mobileDrawer');
-        if (btn) btn.setAttribute('aria-expanded', 'false');
-        if (drawer) { drawer.classList.remove('active'); drawer.setAttribute('aria-hidden', 'true'); }
-        document.body.classList.remove('nav-open');
-      }
+    mobileMenuBtn?.addEventListener("click", () => setDrawer(true));
+    drawerBackdrop?.addEventListener("click", () => setDrawer(false));
+    drawerCloseBtn?.addEventListener("click", () => setDrawer(false));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") setDrawer(false);
     });
   </script>
-
 </body>
 </html>
-
-
-
