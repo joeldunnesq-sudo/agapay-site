@@ -921,6 +921,38 @@
     document.getElementById('inMemoriam').addEventListener('input', updateSummary);
     document.getElementById('campaignDescription').addEventListener('input', updateSummary);
 
+    async function handleCheckoutReturn() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('success') !== '1') return;
+
+      document.getElementById('giving-form').style.display = 'none';
+      document.getElementById('successState').classList.add('visible');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      const sessionId = params.get('session_id');
+      if (!sessionId) {
+        document.getElementById('successRef').textContent = 'Payment confirmation is processing.';
+        return;
+      }
+
+      document.getElementById('successRef').textContent = 'Confirming your gift...';
+      try {
+        const response = await fetch('/api/checkout-session-status?session_id=' + encodeURIComponent(sessionId), {
+          headers: { Accept: 'application/json' }
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.detail || result.error || 'Confirmation is still processing');
+        if (result.paymentStatus === 'paid' || result.status === 'completed') {
+          document.getElementById('successRef').textContent = 'Payment confirmed: ' + result.checkoutSessionId;
+          return;
+        }
+        document.getElementById('successRef').textContent = 'Payment status: ' + (result.paymentStatus || result.status || 'processing');
+      } catch (err) {
+        document.getElementById('successRef').textContent = 'Payment confirmation is still processing. Your receipt will arrive by email.';
+        console.warn('AGAPAY checkout confirmation warning:', err);
+      }
+    }
+
     // SUBMIT
     async function handleSubmit() {
       const firstName = document.getElementById('firstName').value.trim();
@@ -978,8 +1010,13 @@
       }
     }
 
-    loadCurrentParish();
-    updateSummary();
+    async function initGivingPage() {
+      await loadCurrentParish();
+      updateSummary();
+      await handleCheckoutReturn();
+    }
+
+    initGivingPage();
   </script>
   <script src="/security.js"></script>
 

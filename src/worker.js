@@ -1564,18 +1564,12 @@ async function storeDonorOffering(env, offering) {
 
 async function updateDonorOfferingByCheckout(env, checkoutSessionId, updates = {}) {
   if (!hasProductionStore(env) || !checkoutSessionId) return null;
-  if (d1(env)) {
-    const row = await d1First(env, "SELECT data FROM donor_offerings WHERE checkout_session_id = ?1 LIMIT 1", checkoutSessionId);
-    const current = parseJsonRow(row);
-    if (!current) return null;
-    return storeDonorOffering(env, { ...current, ...updates });
-  }
+  const current = await loadDonorOfferingByCheckout(env, checkoutSessionId);
+  if (!current) return null;
+  if (d1(env)) return storeDonorOffering(env, { ...current, ...updates });
 
   const key = await env.AGAPAY_REGISTRATIONS.get(donorCheckoutIndexKey(checkoutSessionId));
   if (!key) return null;
-  const raw = await env.AGAPAY_REGISTRATIONS.get(key);
-  if (!raw) return null;
-  const current = JSON.parse(raw);
   const updated = {
     ...current,
     ...updates,
@@ -1586,6 +1580,19 @@ async function updateDonorOfferingByCheckout(env, checkoutSessionId, updates = {
     await env.AGAPAY_REGISTRATIONS.put(stripePaymentIntentIndexKey(updated.stripePaymentIntentId), key);
   }
   return updated;
+}
+
+async function loadDonorOfferingByCheckout(env, checkoutSessionId) {
+  if (!hasProductionStore(env) || !checkoutSessionId) return null;
+  if (d1(env)) {
+    const row = await d1First(env, "SELECT data FROM donor_offerings WHERE checkout_session_id = ?1 LIMIT 1", checkoutSessionId);
+    return parseJsonRow(row);
+  }
+
+  const key = await env.AGAPAY_REGISTRATIONS.get(donorCheckoutIndexKey(checkoutSessionId));
+  if (!key) return null;
+  const raw = await env.AGAPAY_REGISTRATIONS.get(key);
+  return raw ? JSON.parse(raw) : null;
 }
 
 async function updateDonorOfferingByPaymentIntent(env, paymentIntentId, updates = {}) {
@@ -2202,7 +2209,7 @@ async function handleCheckout(request, env) {
 
   const form = new URLSearchParams({
     mode: recurring ? "subscription" : "payment",
-    success_url: `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&success=1`,
+    success_url: `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&success=1&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&canceled=1`,
     customer: customer.body.id,
     "line_items[0][quantity]": "1",
@@ -2280,6 +2287,75 @@ async function handleCheckout(request, env) {
   });
 
   return json({ id: stripeBody.id, url: stripeBody.url }, { status: 201 });
+}
+
+async function handleCheckoutSessionStatus(request, env) {
+  const limited = await rateLimit(request, env, "checkout-status", { limit: 30, windowSeconds: 300 });
+  if (limited) return limited;
+
+  const url = new URL(request.url);
+  let sessionId = url.searchParams.get("session_id") || "";
+  if (!sessionId && request.method === "POST") {
+    try {
+      const body = await request.json();
+      sessionId = body.sessionId || body.session_id || "";
+    } catch {
+      return json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+  }
+
+  sessionId = String(sessionId || "").trim();
+  if (!sessionId || !sessionId.startsWith("cs_")) {
+    return json({ error: "Missing checkout session id" }, { status: 422 });
+  }
+
+  const offering = await loadDonorOfferingByCheckout(env, sessionId);
+  if (!offering) {
+    return json({ error: "Checkout session is not tracked by AGAPAY" }, { status: 404 });
+  }
+
+  const parish = await findCheckoutParish(env, offering.parishId);
+  if (!parish?.stripeAccountId) {
+    return json({ error: "Parish Stripe account is not connected yet" }, { status: 422 });
+  }
+
+  const stripe = await stripeGetConnectedRequest(
+    env,
+    `/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
+    parish.stripeAccountId
+  );
+  if (!stripe.ok) {
+    return json(
+      { error: "Unable to verify checkout session", detail: stripe.body.error?.message || "Stripe rejected the lookup" },
+      { status: 502 }
+    );
+  }
+
+  const session = stripe.body || {};
+  const paymentIntentId = typeof session.payment_intent === "string"
+    ? session.payment_intent
+    : session.payment_intent?.id || "";
+  const paymentStatus = session.payment_status || offering.paymentStatus || "pending";
+  let status = offering.status || "checkout_created";
+  if (paymentStatus === "paid" || session.status === "complete") status = "completed";
+  if (session.status === "expired") status = "expired";
+
+  const updated = await updateDonorOfferingByCheckout(env, sessionId, {
+    status,
+    paymentStatus,
+    stripeCustomerId: session.customer || offering.stripeCustomerId || "",
+    stripePaymentIntentId: paymentIntentId || offering.stripePaymentIntentId || "",
+    stripeSubscriptionId: session.subscription || offering.stripeSubscriptionId || "",
+    completedAt: status === "completed" ? offering.completedAt || new Date().toISOString() : offering.completedAt || ""
+  });
+
+  return json({
+    ok: true,
+    checkoutSessionId: sessionId,
+    status: updated?.status || status,
+    paymentStatus: updated?.paymentStatus || paymentStatus,
+    paymentIntentId: updated?.stripePaymentIntentId || paymentIntentId || ""
+  });
 }
 
 async function handleDonorSession(request, env) {
@@ -4466,6 +4542,9 @@ export default {
     }
     if (request.method === "POST" && url.pathname === "/api/create-checkout-session") {
       return handleCheckout(request, env);
+    }
+    if ((request.method === "GET" || request.method === "POST") && url.pathname === "/api/checkout-session-status") {
+      return handleCheckoutSessionStatus(request, env);
     }
 
     if (url.pathname.startsWith("/api/")) {

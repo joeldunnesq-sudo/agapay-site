@@ -334,6 +334,66 @@ async function withMockFetch(handler, run) {
 {
   const testEnv = env();
   const registration = {
+    reference: "AGP-CHECKOUT-RECONCILE",
+    status: "verified",
+    parishId: "st-reconcile",
+    parishName: "St. Reconcile Orthodox Church",
+    communityType: "parish",
+    jurisdiction: "OCA",
+    jurisdictionLabel: "OCA",
+    city: "Plano",
+    state: "TX",
+    givingStatus: "active",
+    stripeAccountId: "acct_connected_reconcile"
+  };
+  const offeringKey = "__agapay_donor_offering__giver@example.com:cs_reconcile";
+  await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_parish_id__st-reconcile", registration.reference);
+  await testEnv.AGAPAY_REGISTRATIONS.put(offeringKey, JSON.stringify({
+    id: "cs_reconcile",
+    donorEmail: "giver@example.com",
+    donorName: "Faithful Giver",
+    parishId: "st-reconcile",
+    parishName: "St. Reconcile Orthodox Church",
+    status: "checkout_created",
+    paymentStatus: "pending",
+    checkoutSessionId: "cs_reconcile",
+    createdAt: new Date().toISOString()
+  }));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_checkout_offering__cs_reconcile", offeringKey);
+
+  await withMockFetch(async (url, init = {}) => {
+    const href = String(url);
+    if (href.endsWith("/v1/checkout/sessions/cs_reconcile")) {
+      assert.equal(init.headers["Stripe-Account"], "acct_connected_reconcile");
+      return new Response(JSON.stringify({
+        id: "cs_reconcile",
+        status: "complete",
+        payment_status: "paid",
+        customer: "cus_reconcile",
+        payment_intent: "pi_reconcile"
+      }), { status: 200 });
+    }
+    throw new Error(`Unexpected fetch ${href}`);
+  }, async () => {
+    const response = await worker.fetch(request("/api/checkout-session-status?session_id=cs_reconcile"), testEnv);
+    assert.equal(response.status, 200);
+    const body = await json(response);
+    assert.equal(body.status, "completed");
+    assert.equal(body.paymentStatus, "paid");
+    assert.equal(body.paymentIntentId, "pi_reconcile");
+  });
+
+  const offering = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(offeringKey));
+  assert.equal(offering.status, "completed");
+  assert.equal(offering.paymentStatus, "paid");
+  assert.equal(offering.stripeCustomerId, "cus_reconcile");
+  assert.equal(offering.stripePaymentIntentId, "pi_reconcile");
+}
+
+{
+  const testEnv = env();
+  const registration = {
     reference: "AGP-CHECKOUT-RECURRING",
     status: "verified",
     parishId: "st-recurring",
