@@ -2201,6 +2201,77 @@ async function handleParishes(env) {
   return json({ parishes: dynamicParishes });
 }
 
+async function loadPaidDonorOfferingPlatformTotals(env) {
+  if (d1(env)) {
+    const row = await d1First(
+      env,
+      `SELECT
+         COUNT(*) AS gift_count,
+         COALESCE(SUM(CAST(json_extract(data, '$.amountCents') AS INTEGER)), 0) AS total_given_cents
+       FROM donor_offerings
+       WHERE payment_status = 'paid' OR status IN ('paid', 'completed')`
+    );
+    return {
+      giftCount: Number(row?.gift_count || 0),
+      totalGivenCents: Number(row?.total_given_cents || 0)
+    };
+  }
+
+  if (!env.AGAPAY_REGISTRATIONS) return { giftCount: 0, totalGivenCents: 0 };
+  const keys = await listKvKeys(env, { prefix: DONOR_OFFERING_KEY_PREFIX, limit: 5000 });
+  let giftCount = 0;
+  let totalGivenCents = 0;
+
+  for (const key of keys) {
+    const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
+    if (!raw) continue;
+    try {
+      const offering = JSON.parse(raw);
+      if (offering.paymentStatus === "paid" || offering.status === "paid" || offering.status === "completed") {
+        giftCount += 1;
+        totalGivenCents += Number(offering.amountCents || 0);
+      }
+    } catch {
+      // Ignore malformed donation records in public aggregate totals.
+    }
+  }
+
+  return { giftCount, totalGivenCents };
+}
+
+async function handlePublicPlatformSummary(env) {
+  if (!hasProductionStore(env)) {
+    return json({
+      summary: {
+        organizationsSupported: 0,
+        activeCampaigns: 0,
+        totalGivenCents: 0,
+        giftCount: 0,
+        dataSource: "not_configured",
+        generatedAt: new Date().toISOString()
+      }
+    });
+  }
+
+  const parishes = await verifiedRegistrationParishes(env);
+  const donationTotals = await loadPaidDonorOfferingPlatformTotals(env);
+  const activeCampaigns = parishes.reduce((total, parish) => {
+    const campaigns = Array.isArray(parish.campaigns) ? parish.campaigns : [];
+    return total + campaigns.filter((campaign) => campaign && campaign.active !== false && campaign.hidden !== true).length;
+  }, 0);
+
+  return json({
+    summary: {
+      organizationsSupported: parishes.length,
+      activeCampaigns,
+      totalGivenCents: donationTotals.totalGivenCents,
+      giftCount: donationTotals.giftCount,
+      dataSource: d1(env) ? "d1" : "kv",
+      generatedAt: new Date().toISOString()
+    }
+  });
+}
+
 function registrationRequiresJurisdiction(type) {
   return ["Mission", "Parish", "Cathedral", "Monastery / Skete"].includes(String(type || ""));
 }
@@ -4781,6 +4852,7 @@ export default {
       return handleStripeWebhook(request, env);
     }
     if (request.method === "GET" && url.pathname === "/api/parishes") return handleParishes(env);
+    if (request.method === "GET" && url.pathname === "/api/platform/summary") return handlePublicPlatformSummary(env);
     if (request.method === "GET" && url.pathname === "/api/subscription-tiers") {
       return json({ tiers: publicSubscriptionTiers() });
     }
