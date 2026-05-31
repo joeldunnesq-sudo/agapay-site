@@ -4684,6 +4684,10 @@ function cleanAssetRequest(request) {
     url.pathname = "/parish/dashboard.html";
     return new Request(url, request);
   }
+  if (url.pathname === "/giving" || url.pathname === "/giving/") {
+    url.pathname = "/giving/index.html";
+    return new Request(url, request);
+  }
   if (url.pathname === "/donor" || url.pathname === "/donor/") {
     url.pathname = "/donor/index.html";
     return new Request(url, request);
@@ -4767,6 +4771,11 @@ export default {
 
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (request.method === "GET" && (url.pathname === "/give" || url.pathname === "/give/" || url.pathname === "/give.html")) {
+      url.pathname = "/giving";
+      return Response.redirect(url.toString(), 301);
+    }
 
     if (request.method === "POST" && url.pathname === "/api/stripe/webhook") {
       return handleStripeWebhook(request, env);

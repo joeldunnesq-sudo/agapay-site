@@ -8,7 +8,9 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
-  <meta name="description" content="Give with faith through AGAPAY and support Orthodox churches, ministries, monasteries, missions, schools, and causes." />
+  <meta name="description" content="Find an Orthodox parish, mission, or monastery and give securely through AGAPAY." />
+  <meta property="og:title" content="Giving | AGAPAY" />
+  <meta property="og:url" content="https://agapay.app/giving" />
   <meta name="theme-color" content="#061522" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -27,7 +29,8 @@
       --stone: #70695D;
       --muted: #A69F91;
       --gold: #C8A24A;
-      --line: rgba(166, 159, 145, 0.26);
+      --gold-dark: #B7852E;
+      --line: rgba(166, 159, 145, 0.28);
       --serif: "Cormorant Garamond", Georgia, serif;
       --sans: "DM Sans", system-ui, sans-serif;
     }
@@ -44,105 +47,9 @@
     a { color: inherit; text-decoration: none; }
     img { max-width: 100%; display: block; }
 
-    .site-header {
-      position: sticky;
-      top: 0;
-      z-index: 40;
-      background: linear-gradient(90deg, #061522, #0B2130);
-      border-bottom: 1px solid rgba(200, 162, 74, 0.24);
-      padding: 0.95rem clamp(1rem, 2.6vw, 2.6rem);
-    }
-    .nav {
-      width: min(1320px, 100%);
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      color: var(--cream);
-      min-width: max-content;
-    }
-    .brand-mark {
-      width: 42px;
-      height: 42px;
-      display: grid;
-      place-items: center;
-      border-radius: 50%;
-      border: 1px solid rgba(200, 162, 74, 0.52);
-      background: rgba(6, 21, 34, 0.45);
-    }
-    .brand-mark img { width: 38px; height: 38px; object-fit: contain; }
-    .brand-name { display: flex; flex-direction: column; line-height: 1; }
-    .brand-name strong {
-      font-family: var(--serif);
-      font-size: 2rem;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .brand-name span {
-      margin-top: 0.22rem;
-      color: var(--gold);
-      font-size: 0.6rem;
-      font-weight: 600;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-    }
-    .nav-links {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: clamp(0.9rem, 2vw, 2rem);
-      color: rgba(246, 241, 232, 0.9);
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-    .nav-links a.active {
-      color: var(--gold);
-      border-bottom: 2px solid var(--gold);
-      padding-bottom: 0.36rem;
-    }
-    .nav-actions { display: flex; align-items: center; gap: 0.8rem; margin-left: 1rem; }
-    .btn-donate {
-      min-height: 44px;
-      padding: 0 1.45rem;
-      border-radius: 8px;
-      border: 1px solid rgba(200, 162, 74, 0.6);
-      color: var(--cream);
-      font-size: 0.95rem;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      background: rgba(6, 21, 34, 0.34);
-    }
-    .btn-donate svg, .nav-avatar svg {
-      width: 18px;
-      height: 18px;
-      stroke: var(--gold);
-      fill: none;
-      stroke-width: 1.8;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .nav-avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 999px;
-      border: 1px solid rgba(200, 162, 74, 0.7);
-      background: rgba(6, 21, 34, 0.36);
-      display: grid;
-      place-items: center;
-    }
-
     .page {
       width: min(1320px, calc(100% - 2rem));
-      margin: 0.95rem auto 2rem;
+      margin: 0.95rem auto 2.25rem;
       border: 1px solid var(--line);
       background: var(--paper);
       box-shadow: 0 10px 38px rgba(12, 22, 32, 0.08);
@@ -151,66 +58,97 @@
 
     .giving-hero {
       position: relative;
-      display: grid;
-      grid-template-columns: minmax(320px, 1fr) minmax(420px, 1.1fr);
-      gap: 1rem;
-      padding: 2rem 2.2rem;
-      border-bottom: 1px solid var(--line);
-      align-items: center;
       overflow: hidden;
       background:
-        radial-gradient(circle at 18% 0%, rgba(200, 162, 74, 0.11), transparent 32%),
-        linear-gradient(180deg, #FFFDF8 0%, #F8F2E7 100%);
+        radial-gradient(circle at 16% 2%, rgba(200, 162, 74, 0.14), transparent 32%),
+        linear-gradient(180deg, #FFFDF8 0%, #F7F0E4 100%);
+      border-bottom: 1px solid var(--line);
     }
     .giving-hero::before {
       content: "";
       position: absolute;
       inset: 0;
       background-image:
-        linear-gradient(30deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08)),
-        linear-gradient(150deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08));
+        linear-gradient(30deg, rgba(166, 159, 145, 0.07) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.07) 87.5%, rgba(166, 159, 145, 0.07)),
+        linear-gradient(150deg, rgba(166, 159, 145, 0.07) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.07) 87.5%, rgba(166, 159, 145, 0.07));
       background-size: 54px 94px;
-      opacity: 0.2;
+      opacity: 0.18;
       pointer-events: none;
     }
-    .giving-hero > * { position: relative; z-index: 1; }
+    .hero-art {
+      position: absolute;
+      right: -8%;
+      bottom: -9%;
+      width: min(62vw, 880px);
+      opacity: 0.96;
+      filter: sepia(0.34) saturate(0.92) contrast(1.06);
+      pointer-events: none;
+    }
+    .hero-art::before {
+      content: "";
+      position: absolute;
+      inset: -2rem;
+      z-index: 1;
+      background:
+        linear-gradient(90deg, rgba(255, 253, 248, 0.98), rgba(255, 253, 248, 0.66) 32%, rgba(255, 253, 248, 0.05) 70%),
+        linear-gradient(0deg, rgba(255, 253, 248, 0.86), transparent 28%);
+    }
+    .hero-art img { position: relative; z-index: 0; width: 100%; }
+    .hero-inner {
+      position: relative;
+      z-index: 2;
+      min-height: 570px;
+      padding: clamp(2rem, 4vw, 3.4rem);
+      display: grid;
+      grid-template-columns: minmax(320px, 560px) minmax(0, 1fr);
+      align-items: center;
+      gap: 2rem;
+    }
     .hero-copy .eyebrow {
       display: inline-flex;
       align-items: center;
-      gap: 0.56rem;
-      color: var(--gold);
+      gap: 0.55rem;
+      color: var(--gold-dark);
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      font-size: 0.76rem;
+      letter-spacing: 0.13em;
+      font-size: 0.78rem;
       font-weight: 700;
-      margin-bottom: 0.7rem;
+      margin-bottom: 0.85rem;
     }
-    .hero-copy .eyebrow svg {
-      width: 21px;
-      height: 21px;
-      stroke: var(--gold);
+    .hero-copy .eyebrow svg,
+    .search-icon svg,
+    .cause-icon svg,
+    .trust-icon svg,
+    .finder-card svg,
+    .easy-icon svg {
+      stroke: currentColor;
       fill: none;
-      stroke-width: 1.7;
       stroke-linecap: round;
       stroke-linejoin: round;
     }
+    .hero-copy .eyebrow svg { width: 22px; height: 22px; stroke-width: 1.7; }
     .hero-copy h1 {
       font-family: var(--serif);
       color: #0A1524;
-      font-size: clamp(2.7rem, 5.5vw, 4.5rem);
-      line-height: 0.98;
+      font-size: clamp(3.1rem, 6.2vw, 5.1rem);
+      line-height: 0.96;
       font-weight: 500;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.9rem;
+    }
+    .hero-copy h1 em {
+      color: var(--gold-dark);
+      font-style: italic;
+      font-weight: 500;
     }
     .hero-copy p {
       color: #4D4A44;
-      font-size: 1.03rem;
-      line-height: 1.66;
-      max-width: 540px;
-      margin-bottom: 1.25rem;
+      font-size: 1.04rem;
+      line-height: 1.72;
+      max-width: 520px;
+      margin-bottom: 1.35rem;
     }
-    .hero-actions { display: flex; align-items: center; gap: 0.95rem; flex-wrap: wrap; }
-    .hero-btn-primary, .hero-btn-secondary {
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 0.85rem; }
+    .hero-btn {
       min-height: 46px;
       border-radius: 7px;
       display: inline-flex;
@@ -218,709 +156,707 @@
       justify-content: center;
       gap: 0.55rem;
       padding: 0 1.25rem;
-      font-size: 0.94rem;
+      font-size: 0.88rem;
       font-weight: 700;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
     }
-    .hero-btn-primary {
-      background: linear-gradient(135deg, #061522, #0B2130);
-      color: #F6F1E8;
+    .hero-btn.primary {
+      background: linear-gradient(135deg, var(--night), var(--night-2));
+      color: var(--cream);
       border: 1px solid rgba(200, 162, 74, 0.25);
     }
-    .hero-btn-secondary { color: #101621; }
-    .hero-btn-primary svg, .hero-btn-secondary svg {
-      width: 17px;
-      height: 17px;
-      fill: none;
-      stroke-width: 1.8;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+    .hero-btn.secondary {
+      color: #101621;
+      border: 1px solid rgba(183, 133, 46, 0.35);
+      background: rgba(255, 253, 248, 0.62);
     }
-    .hero-btn-primary svg { stroke: var(--gold); }
-    .hero-btn-secondary svg { stroke: #4B4B47; }
-    .hero-art {
+
+    .hero-finder {
       position: relative;
-      min-height: 350px;
+      z-index: 3;
+      width: min(930px, calc(100% - 4rem));
+      margin: -4.8rem auto 1.5rem;
+      border: 1px solid rgba(200, 162, 74, 0.36);
+      background: rgba(255, 253, 248, 0.93);
+      border-radius: 12px;
+      box-shadow: 0 20px 46px rgba(12, 22, 32, 0.12);
+      padding: 1rem;
+      backdrop-filter: blur(12px);
+    }
+    .search-wrap {
+      position: relative;
       display: grid;
-      align-items: end;
-      justify-items: end;
-      margin-right: -0.4rem;
+      grid-template-columns: 1fr auto;
+      border: 1px solid rgba(166, 159, 145, 0.42);
+      border-radius: 10px;
+      background: #fff;
+      overflow: hidden;
     }
-    .hero-art::before {
-      content: "";
+    .search-icon {
       position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, rgba(255, 253, 248, 0.92), rgba(255, 253, 248, 0.42) 38%, rgba(255, 253, 248, 0.06));
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gold-dark);
       pointer-events: none;
-      z-index: 2;
     }
-    .hero-art img {
-      width: min(142%, 1260px);
-      object-fit: contain;
-      max-height: 430px;
-      opacity: 0.98;
-      filter: sepia(0.4) saturate(0.9) brightness(1.02) contrast(1.08);
+    .search-icon svg { width: 19px; height: 19px; stroke-width: 1.8; }
+    .search-input {
+      width: 100%;
+      min-height: 56px;
+      border: 0;
+      outline: none;
+      padding: 0 3.1rem 0 3rem;
+      background: transparent;
+      color: var(--ink);
+      font: 500 1rem/1 var(--sans);
+    }
+    .search-input::placeholder { color: rgba(111, 106, 96, 0.74); }
+    .search-clear {
+      position: absolute;
+      right: 7.6rem;
+      top: 50%;
+      transform: translateY(-50%);
+      display: none;
+      width: 30px;
+      height: 30px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(200, 162, 74, 0.1);
+      color: var(--gold-dark);
+      cursor: pointer;
+    }
+    .search-clear.visible { display: grid; place-items: center; }
+    .search-clear svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2; }
+    .search-submit {
+      border: 0;
+      min-width: 118px;
+      padding: 0 1rem;
+      background: linear-gradient(135deg, var(--night), var(--night-2));
+      color: var(--gold);
+      font: 800 0.82rem/1 var(--sans);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.85rem;
+    }
+    .pill {
+      border: 1px solid rgba(166, 159, 145, 0.38);
+      background: #fff;
+      color: var(--stone);
+      border-radius: 999px;
+      padding: 0.46rem 0.82rem;
+      font: 700 0.75rem/1 var(--sans);
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+    .pill:hover { border-color: rgba(183, 133, 46, 0.55); color: var(--ink); }
+    .pill.active {
+      background: var(--night);
+      color: var(--cream);
+      border-color: var(--night);
     }
 
     .causes-nav {
-      border-bottom: 1px solid var(--line);
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
       background: #fff;
     }
     .cause-tab {
       border-right: 1px solid var(--line);
-      padding: 0.95rem 0.85rem 0.78rem;
+      padding: 1rem 0.85rem 0.9rem;
       display: grid;
       grid-template-columns: 34px 1fr;
       gap: 0.6rem;
       align-items: center;
       background: #FFFEFC;
-      transition: background 0.15s ease;
     }
-    .cause-tab:hover { background: #FFFCF6; }
     .cause-tab:last-child { border-right: 0; }
     .cause-tab.active { box-shadow: inset 0 -3px 0 var(--gold); }
-    .cause-icon { width: 32px; height: 32px; display: grid; place-items: center; color: #B7852E; }
-    .cause-icon svg {
-      width: 26px;
-      height: 26px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.7;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
+    .cause-icon { width: 32px; height: 32px; display: grid; place-items: center; color: var(--gold-dark); }
+    .cause-icon svg { width: 26px; height: 26px; stroke-width: 1.7; }
     .cause-title {
       color: #121C2A;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      font-weight: 700;
+      font-weight: 800;
       line-height: 1.2;
     }
-    .cause-sub {
-      color: #6F6A60;
-      font-size: 0.74rem;
-      margin-top: 0.16rem;
-      line-height: 1.22;
-    }
+    .cause-sub { color: var(--stone); font-size: 0.73rem; margin-top: 0.16rem; line-height: 1.25; }
 
-    .content {
-      padding: 1rem;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 340px;
-      gap: 1rem;
-      align-items: start;
-    }
-    .campaigns {
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 1rem;
-      position: relative;
-      overflow: hidden;
-    }
-    .campaigns::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, #B7852E, #D6AF5B 35%, #B7852E 70%, transparent);
-      border-radius: 10px 10px 0 0;
-      opacity: 0.5;
-      pointer-events: none;
+    .main-section {
+      padding: clamp(1.25rem, 3vw, 2.4rem);
     }
     .section-head {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.95rem;
-      gap: 0.7rem;
+      align-items: end;
+      gap: 1rem;
+      margin-bottom: 1rem;
       flex-wrap: wrap;
     }
     .section-head h2 {
       font-family: var(--serif);
-      font-size: 2.35rem;
-      line-height: 1;
-      font-weight: 500;
-      color: #121C2A;
-    }
-    .section-head a {
-      color: #B7852E;
-      font-size: 0.8rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-    .campaign-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.85rem; }
-    .campaign-card {
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      overflow: hidden;
-      background: #fff;
-      display: grid;
-      grid-template-rows: 152px 1fr;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      min-width: 0;
-      width: 100%;
-    }
-    .campaign-card:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(10, 22, 35, 0.08); }
-    .campaign-thumb { position: relative; overflow: hidden; }
-    .campaign-thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .campaign-like {
-      position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: rgba(255, 253, 248, 0.95);
-      border: 1px solid rgba(200, 162, 74, 0.42);
-      display: grid;
-      place-items: center;
-      color: #B7852E;
-      font-size: 0.92rem;
-    }
-    .campaign-body { padding: 0.8rem 0.74rem; display: grid; align-content: start; gap: 0.45rem; }
-    .campaign-title {
-      font-family: var(--serif);
-      font-size: 1.85rem;
-      line-height: 0.98;
-      color: #0F1C2B;
-      font-weight: 500;
-    }
-    .campaign-loc { color: #6F6A60; font-size: 0.76rem; }
-    .campaign-text { color: #3E3B35; font-size: 0.84rem; line-height: 1.52; min-height: 2.5em; }
-    .progress-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: #3E3B35;
-      font-size: 0.75rem;
-      margin-top: 0.1rem;
-    }
-    .progress-row strong {
-      color: #121C2A;
-      font-family: var(--numeric-font, var(--sans));
-      font-weight: 700;
-      font-size: 0.86rem;
-    }
-    .progress {
-      height: 4px;
-      border-radius: 999px;
-      background: #E8E2D7;
-      overflow: hidden;
-      margin-top: 0.2rem;
-    }
-    .progress > span {
-      display: block;
-      height: 100%;
-      border-radius: inherit;
-      background: linear-gradient(90deg, #B7852E, #D6AF5B);
-    }
-    .campaign-btn {
-      margin-top: 0.48rem;
-      min-height: 40px;
-      border-radius: 7px;
-      border: 1px solid rgba(183, 133, 46, 0.62);
-      color: #7B541A;
-      background: #FFFCF4;
-      font-size: 0.8rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .campaign-slider-dots {
-      margin-top: 0.75rem;
-      display: flex;
-      justify-content: center;
-      gap: 0.4rem;
-    }
-    .campaign-slider-dots span { width: 22px; height: 4px; border-radius: 999px; background: #E3DDD1; }
-    .campaign-slider-dots span.active { background: linear-gradient(90deg, #B7852E, #D6AF5B); }
-
-    .right-rail { display: grid; gap: 0.9rem; }
-    .impact {
-      border-radius: 10px;
-      border: 1px solid rgba(200, 162, 74, 0.32);
-      background: linear-gradient(135deg, #061522, #0B2130 62%, #14395A);
-      color: #F6F1E8;
-      padding: 1rem;
-    }
-    .impact h3 {
-      text-align: center;
-      color: var(--gold);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-size: 0.96rem;
-      margin-bottom: 0.72rem;
-      padding-bottom: 0.55rem;
-      border-bottom: 1px solid rgba(200, 162, 74, 0.24);
-    }
-    .impact-item {
-      border-top: 1px solid rgba(200, 162, 74, 0.24);
-      padding: 0.7rem 0;
-      display: grid;
-      grid-template-columns: 42px 1fr auto;
-      align-items: center;
-      gap: 0.56rem;
-    }
-    .impact-item:first-of-type { border-top: 0; }
-    .impact-badge {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: rgba(200, 162, 74, 0.14);
-      border: 1px solid rgba(200, 162, 74, 0.4);
-      display: grid;
-      place-items: center;
-      color: var(--gold);
-    }
-    .impact-badge svg {
-      width: 21px;
-      height: 21px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.7;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .impact-metric strong {
-      display: block;
-      font-family: var(--numeric-font, var(--sans));
-      font-size: 2rem;
-      line-height: 1;
-      font-weight: 700;
-    }
-    .impact-metric span { display: block; color: rgba(246, 241, 232, 0.82); font-size: 0.8rem; }
-    .impact-link {
-      color: var(--gold);
-      font-size: 0.72rem;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
-    .easy {
-      border-radius: 10px;
-      border: 1px solid var(--line);
-      background: #FFFEFC;
-      overflow: hidden;
-    }
-    .easy h3 {
-      text-align: center;
-      color: #B7852E;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-size: 0.95rem;
-      padding: 0.9rem;
-      border-bottom: 1px solid var(--line);
-    }
-    .easy-item {
-      padding: 0.85rem 0.9rem;
-      border-bottom: 1px solid var(--line);
-      display: grid;
-      grid-template-columns: 34px 1fr auto;
-      gap: 0.6rem;
-      align-items: center;
-    }
-    .easy-item:last-child { border-bottom: 0; }
-    .easy-icon {
-      width: 33px;
-      height: 33px;
-      border-radius: 50%;
-      border: 1px solid rgba(200, 162, 74, 0.43);
-      color: #B7852E;
-      display: grid;
-      place-items: center;
-    }
-    .easy-icon svg {
-      width: 17px;
-      height: 17px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.8;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .easy-copy strong {
-      display: block;
-      font-family: var(--serif);
-      font-size: 1.45rem;
-      font-weight: 600;
-      line-height: 1;
-      color: #131F2E;
-    }
-    .easy-copy span { display: block; margin-top: 0.1rem; color: #595448; font-size: 0.8rem; }
-    .easy-arrow { color: #B7852E; font-size: 1.15rem; font-weight: 700; }
-    .easy-cta {
-      padding: 0.85rem 0.9rem;
-      text-align: center;
-      color: #7B541A;
-      font-size: 0.76rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      font-weight: 700;
-      background: #FCF8EE;
-    }
-
-    .trust-band {
-      margin: 0 1rem 1rem;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: #FFFEFC;
-      padding: 1rem;
-      display: grid;
-      grid-template-columns: 1.8fr 1fr 1fr 1fr;
-      gap: 1rem;
-      align-items: center;
-    }
-    .trust-lead {
-      display: grid;
-      grid-template-columns: 50px 1fr;
-      gap: 0.7rem;
-      align-items: center;
-    }
-    .trust-shield {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #061522, #0B2130);
-      border: 1px solid rgba(200, 162, 74, 0.32);
-      display: grid;
-      place-items: center;
-      color: var(--gold);
-    }
-    .trust-shield svg {
-      width: 25px;
-      height: 25px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.7;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .trust-lead h4 {
-      font-family: var(--serif);
-      font-size: 2rem;
+      font-size: clamp(2.2rem, 4vw, 3.3rem);
       line-height: 1;
       font-weight: 500;
       color: #101B2A;
-      margin-bottom: 0.18rem;
     }
-    .trust-lead p { color: #595448; font-size: 0.8rem; line-height: 1.4; }
-    .trust-point {
+    .section-head p {
+      color: var(--stone);
+      line-height: 1.7;
+      max-width: 620px;
+      margin-top: 0.5rem;
+    }
+    .results-meta {
+      color: var(--stone);
+      font-size: 0.85rem;
+      letter-spacing: 0.03em;
+      font-weight: 600;
+    }
+    .results-meta span { color: var(--gold-dark); font-family: var(--numeric-font, var(--sans)); }
+    .finder-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 8px 26px rgba(12, 22, 32, 0.06);
+      overflow: hidden;
+    }
+    .parish-list {
       display: grid;
-      grid-template-columns: 29px 1fr;
-      gap: 0.5rem;
-      align-items: center;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.85rem;
+      padding: 1rem;
     }
-    .trust-point-icon {
-      width: 28px;
-      height: 28px;
+    .list-divider {
+      grid-column: 1 / -1;
+      color: var(--stone);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.74rem;
+      font-weight: 800;
+      padding: 0.55rem 0 0.15rem;
+      border-bottom: 1px solid rgba(166, 159, 145, 0.22);
+    }
+    .list-divider span { color: var(--gold-dark); }
+    .parish-card {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 112px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 0.85rem;
+      border: 1px solid rgba(166, 159, 145, 0.24);
+      border-radius: 12px;
+      background: #FFFEFC;
+      padding: 0.75rem;
+      color: inherit;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .parish-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(200, 162, 74, 0.55);
+      box-shadow: 0 8px 20px rgba(12, 22, 32, 0.08);
+    }
+    .parish-art {
+      width: 112px;
+      aspect-ratio: 4 / 3;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #FBF8F0;
+      border: 1px solid rgba(200, 162, 74, 0.28);
+    }
+    .parish-art img { width: 100%; height: 100%; object-fit: cover; }
+    .parish-info { min-width: 0; }
+    .parish-name {
+      font-family: var(--serif);
+      font-size: 1.45rem;
+      line-height: 1.04;
+      color: #101B2A;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+    .parish-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.38rem;
+      color: var(--stone);
+      font-size: 0.82rem;
+      line-height: 1.3;
+    }
+    .parish-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(166, 159, 145, 0.55); }
+    .parish-badge {
+      justify-self: start;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.2rem 0.55rem;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .parish-badge.free { color: #7B541A; border: 1px solid rgba(200, 162, 74, 0.32); background: rgba(200, 162, 74, 0.1); }
+    .parish-badge.verified { color: #355E3B; border: 1px solid rgba(53, 94, 59, 0.2); background: rgba(53, 94, 59, 0.08); }
+    .parish-arrow { color: var(--gold-dark); }
+    .parish-arrow svg { width: 18px; height: 18px; stroke-width: 2; }
+    .empty-state {
+      display: none;
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--stone);
+    }
+    .empty-state.visible { display: block; }
+    .empty-state p {
+      font-family: var(--serif);
+      font-size: 1.8rem;
+      font-style: italic;
+      margin-bottom: 0.35rem;
+    }
+
+    .easy-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .easy-card, .trust-card {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #FFFEFC;
+      padding: 1.2rem;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .easy-card::before, .trust-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 3px;
+      background: linear-gradient(90deg, var(--gold-dark), var(--gold), rgba(15, 45, 31, 0.55));
+    }
+    .easy-icon, .trust-icon {
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
-      border: 1px solid rgba(200, 162, 74, 0.4);
-      color: #B7852E;
+      border: 1px solid rgba(200, 162, 74, 0.42);
       display: grid;
       place-items: center;
+      color: var(--gold-dark);
+      margin-bottom: 0.8rem;
+      background: rgba(200, 162, 74, 0.08);
     }
-    .trust-point-icon svg {
-      width: 15px;
-      height: 15px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.7;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+    .easy-icon svg, .trust-icon svg { width: 22px; height: 22px; stroke-width: 1.75; }
+    .easy-card h3, .trust-card h3 {
+      font-family: var(--serif);
+      color: #101B2A;
+      font-size: 1.65rem;
+      line-height: 1;
+      font-weight: 600;
+      margin-bottom: 0.45rem;
     }
-    .trust-point strong { display: block; font-size: 0.83rem; line-height: 1.1; color: #121D2C; }
-    .trust-point span { display: block; font-size: 0.72rem; color: #6F6A60; margin-top: 0.14rem; }
+    .easy-card p, .trust-card p { color: var(--stone); line-height: 1.65; font-size: 0.94rem; }
 
-    .site-footer {
-      background: #05131F;
-      color: rgba(246, 241, 232, 0.74);
-      border-top: 1px solid rgba(200, 162, 74, 0.16);
-      padding: 2.5rem 0 1.4rem;
-    }
-    .footer-wrap {
-      width: min(1320px, calc(100% - 2rem));
-      margin: 0 auto;
-    }
-    .footer-grid {
+    .trust-wrap {
       display: grid;
-      grid-template-columns: 1.5fr repeat(4, minmax(0, 1fr));
-      gap: 1.25rem;
-      margin-bottom: 1.6rem;
+      grid-template-columns: minmax(0, 1.1fr) repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
     }
-    .footer-lockup { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.4rem; }
-    .footer-lockup img { width: 40px; height: 40px; object-fit: contain; }
-    .footer-lockup strong {
-      display: block;
-      font: 500 1.8rem/1 var(--serif);
+    .trust-lead {
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--night), var(--night-2) 65%, #14395A);
       color: var(--cream);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      padding: 1.35rem;
+      border: 1px solid rgba(200, 162, 74, 0.28);
     }
-    .footer-brand p { color: rgba(246, 241, 232, 0.6); line-height: 1.6; }
-    .footer-col h4 {
-      color: var(--gold);
-      font-size: 0.72rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+    .trust-lead h3 {
+      font-family: var(--serif);
+      font-size: 2.2rem;
+      line-height: 1;
+      font-weight: 500;
       margin-bottom: 0.55rem;
     }
-    .footer-col a {
-      display: block;
-      margin-bottom: 0.4rem;
-      color: rgba(246, 241, 232, 0.76);
-      font-size: 0.92rem;
+    .trust-lead p { color: rgba(246, 241, 232, 0.78); line-height: 1.7; }
+
+    .scripture {
+      text-align: center;
+      padding: clamp(2rem, 5vw, 3.6rem);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(200, 162, 74, 0.14), transparent 40%),
+        linear-gradient(180deg, #FFFEFC, #F7F0E4);
+      border-top: 1px solid var(--line);
     }
-    .footer-bottom {
-      border-top: 1px solid rgba(200, 162, 74, 0.14);
-      padding-top: 0.95rem;
-      display: flex;
-      justify-content: space-between;
+    .scripture p {
+      font-family: var(--serif);
+      color: var(--stone);
+      font-size: clamp(1.35rem, 2.4vw, 2.1rem);
+      font-style: italic;
+      line-height: 1.5;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .scripture cite {
+      display: block;
+      color: rgba(111, 106, 96, 0.72);
+      font-style: normal;
+      font-size: 0.85rem;
+      margin-top: 0.85rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .register-cta {
+      margin-top: 1rem;
+      border-radius: 14px;
+      border: 1px solid rgba(200, 162, 74, 0.3);
+      background: linear-gradient(135deg, var(--night), var(--night-2));
+      color: var(--cream);
+      padding: clamp(1.4rem, 4vw, 2.4rem);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 1rem;
-      font-size: 0.84rem;
-      color: rgba(246, 241, 232, 0.54);
+      align-items: center;
+    }
+    .register-cta h2 {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 1;
+      font-weight: 500;
+      margin-bottom: 0.4rem;
+    }
+    .register-cta p { color: rgba(246, 241, 232, 0.74); line-height: 1.65; max-width: 680px; }
+    .register-cta a {
+      display: inline-flex;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      padding: 0 1.3rem;
+      background: linear-gradient(135deg, #D6AF5B, var(--gold-dark));
+      color: #061522;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
 
     @media (max-width: 1180px) {
-      .nav-links { display: none; }
-      .giving-hero { grid-template-columns: 1fr; padding: 1.5rem 1.25rem; }
-      .hero-art { min-height: 0; justify-items: center; margin-right: 0; }
-      .hero-art img { width: min(116%, 1040px); max-height: 360px; }
-      .hero-art::before { background: linear-gradient(180deg, rgba(255,253,248,0), rgba(255,253,248,0.32)); }
+      .hero-inner { grid-template-columns: 1fr; min-height: 640px; align-items: start; }
+      .hero-art { width: min(105vw, 900px); right: -18%; bottom: -6%; }
       .causes-nav {
-        display: grid;
         grid-auto-flow: column;
         grid-auto-columns: minmax(210px, 1fr);
         overflow-x: auto;
-        scrollbar-width: thin;
+        grid-template-columns: none;
       }
-      .content { grid-template-columns: 1fr; }
-      .campaign-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .trust-band { grid-template-columns: 1fr 1fr; }
-      .footer-grid { grid-template-columns: 1fr 1fr; }
-      .footer-bottom { flex-direction: column; }
+      .parish-list { grid-template-columns: 1fr; }
+      .trust-wrap { grid-template-columns: 1fr 1fr; }
     }
-    @media (max-width: 980px) {
-      .campaign-grid { grid-template-columns: 1fr; }
+    @media (max-width: 820px) {
+      .page { width: min(1320px, calc(100% - 1rem)); }
+      .hero-inner { min-height: 610px; padding: 1.6rem; }
+      .hero-copy h1 { font-size: clamp(2.9rem, 13vw, 4.3rem); }
+      .hero-art { width: 120vw; right: -38%; bottom: -3%; opacity: 0.88; }
+      .hero-finder { width: calc(100% - 1rem); margin: -3.4rem auto 1rem; padding: 0.75rem; }
+      .search-wrap { grid-template-columns: 1fr; }
+      .search-submit { min-height: 46px; }
+      .search-clear { right: 0.75rem; top: 28px; }
+      .causes-nav { grid-auto-columns: minmax(215px, 1fr); }
+      .parish-card { grid-template-columns: 92px minmax(0, 1fr); }
+      .parish-art { width: 92px; }
+      .parish-badge { grid-column: 2; }
+      .parish-arrow { display: none; }
+      .easy-grid, .trust-wrap, .register-cta { grid-template-columns: 1fr; }
+      .register-cta a { width: 100%; }
     }
-    @media (max-width: 760px) {
-      .page { width: min(1320px, calc(100% - 1rem)); overflow: hidden; }
-      .site-header { padding: 0.8rem 0.9rem; }
-      .brand-name strong { font-size: 1.65rem; }
-      .brand-name span { display: none; }
-      .btn-donate { min-height: 40px; padding: 0 1rem; }
-      .btn-donate span { display: none; }
-      .hero-copy h1 { font-size: clamp(2.6rem, 11vw, 3.8rem); }
+    @media (max-width: 520px) {
+      .main-section { padding: 1rem; }
       .hero-copy p { font-size: 0.95rem; }
-      .hero-actions { width: 100%; }
-      .hero-btn-primary, .hero-btn-secondary { width: 100%; }
-      .hero-art img { width: min(100%, 960px); max-height: 260px; }
-      .causes-nav { grid-auto-columns: minmax(230px, 1fr); }
-      .campaigns,
-      .content,
-      .campaign-grid,
-      .campaign-card,
-      .campaign-body,
-      .campaign-title,
-      .campaign-text { min-width: 0; }
-      .campaign-grid { grid-template-columns: 1fr; width: 100%; }
-      .campaign-title,
-      .campaign-text { overflow-wrap: anywhere; }
-      .section-head h2 { font-size: 2rem; }
-      .section-head a { white-space: normal; }
-      .trust-band { grid-template-columns: 1fr; }
-      .trust-lead h4 { font-size: 1.6rem; }
-      .footer-grid { grid-template-columns: 1fr; }
+      .hero-btn { width: 100%; }
+      .parish-name { font-size: 1.25rem; }
+      .parish-list { padding: 0.75rem; }
+      .filters { gap: 0.35rem; }
+      .pill { padding: 0.42rem 0.68rem; font-size: 0.7rem; }
     }
   </style>
   <link rel="stylesheet" href="/site-mobile-nav.css" />
   <script src="/site-mobile-nav.js" defer></script>
 </head>
 <body>
-  <header class="site-header">
-    <nav class="nav" aria-label="Main navigation">
-      <a class="brand" href="/" aria-label="AGAPAY home">
-        <span class="brand-mark"><img src="/mark.png" alt="" /></span>
-        <span class="brand-name"><strong>AGAPAY</strong><span>Love how you give</span></span>
-      </a>
-      <div class="nav-links">
-        <a href="/vision">Vision</a>
-        <a href="/giving" class="active">Giving</a>
-        <a href="/marketplace">Marketplace</a>
-        <a href="/directory">Directory</a>
-        <a href="/how-it-works">Resources</a>
-        <a href="/about">About</a>
-      </div>
-      <div class="nav-actions">
-        <a class="btn-donate" href="/donor/login"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg><span>Donate</span></a>
-        <a class="nav-avatar" href="/donor/login" aria-label="Donor account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg></a>
-      </div>
-    </nav>
-  </header>
-
   <main class="page">
     <section class="giving-hero">
-      <div class="hero-copy">
-        <div class="eyebrow"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 9h14"/><path d="M12 2c0 3-1.8 4.8-4.5 4.8"/><path d="M12 2c0 3 1.8 4.8 4.5 4.8"/></svg>Giving</div>
-        <h1>Give with Faith.<br />Impact Eternally.</h1>
-        <p>Support the work of the Church and Orthodox organizations building the Kingdom of God through secure, trusted, and beautiful giving experiences.</p>
-        <div class="hero-actions">
-          <a class="hero-btn-primary" href="/donor/login"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg>Make a Donation</a>
-          <a class="hero-btn-secondary" href="/how-it-works">How It Works <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+      <div class="hero-art" aria-hidden="true">
+        <img src="/images/giving/church-sketch-hero.png" alt="" />
+      </div>
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <div class="eyebrow"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 9h14"/><path d="M12 2c0 3-1.8 4.8-4.5 4.8"/><path d="M12 2c0 3 1.8 4.8 4.5 4.8"/></svg>Giving</div>
+          <h1>Give with Faith.<br /><em>Impact Eternally.</em></h1>
+          <p>Find a registered Orthodox parish, mission, or monastery and give securely through AGAPAY.</p>
+          <div class="hero-actions">
+            <a class="hero-btn primary" href="#find-community">Find a Community</a>
+            <a class="hero-btn secondary" href="/how-it-works">How It Works</a>
+          </div>
         </div>
       </div>
-      <div class="hero-art">
-        <img src="/images/giving/church-sketch-hero.png" alt="Orthodox church sketch" />
+      <div class="hero-finder" id="find-community">
+        <div class="search-wrap">
+          <div class="search-icon">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          </div>
+          <input type="search" class="search-input" id="searchInput" placeholder="Search by parish, monastery, city, or jurisdiction..." autocomplete="off" aria-label="Search registered Orthodox communities" />
+          <button class="search-clear" id="searchClear" aria-label="Clear search">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <button class="search-submit" type="button" onclick="document.getElementById('find-community-results').scrollIntoView({ behavior: 'smooth', block: 'start' })">Search</button>
+        </div>
+        <div class="filters" role="group" aria-label="Filter registered communities">
+          <button class="pill active" data-filter="all">All</button>
+          <button class="pill" data-filter="parish">Parishes</button>
+          <button class="pill" data-filter="mission">Missions</button>
+          <button class="pill" data-filter="monastery">Monasteries</button>
+          <button class="pill" data-filter="rocor">ROCOR</button>
+          <button class="pill" data-filter="oca">OCA</button>
+          <button class="pill" data-filter="antiochian">Antiochian</button>
+          <button class="pill" data-filter="goa">GOA</button>
+          <button class="pill" data-filter="serbian">Serbian</button>
+        </div>
       </div>
     </section>
 
-    <section class="causes-nav" aria-label="Giving causes">
-      <article class="cause-tab active"><span class="cause-icon"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M9 13h6"/><path d="M12 5V2"/></svg></span><div><div class="cause-title">Churches</div><div class="cause-sub">Support your parish</div></div></article>
+    <section class="causes-nav" aria-label="Giving categories">
+      <article class="cause-tab active"><span class="cause-icon"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M9 13h6"/><path d="M12 5V2"/></svg></span><div><div class="cause-title">Parishes</div><div class="cause-sub">Tithes and funds</div></div></article>
+      <article class="cause-tab"><span class="cause-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 9h14"/></svg></span><div><div class="cause-title">Missions</div><div class="cause-sub">Growing communities</div></div></article>
       <article class="cause-tab"><span class="cause-icon"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 21v-7a6 6 0 0 1 12 0v7"/><path d="M12 8V3"/></svg></span><div><div class="cause-title">Monasteries</div><div class="cause-sub">Sustain prayer</div></div></article>
-      <article class="cause-tab"><span class="cause-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 9h14"/><path d="M12 2c0 3-1.8 4.8-4.5 4.8"/><path d="M12 2c0 3 1.8 4.8 4.5 4.8"/></svg></span><div><div class="cause-title">Ministries</div><div class="cause-sub">Equip and expand</div></div></article>
-      <article class="cause-tab"><span class="cause-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18"/><path d="M12 3a15 15 0 0 0 0 18"/></svg></span><div><div class="cause-title">Missions</div><div class="cause-sub">Reach the world</div></div></article>
-      <article class="cause-tab"><span class="cause-icon"><svg viewBox="0 0 24 24"><path d="M3 6h18v14H3z"/><path d="m8 6 4 4 4-4"/><path d="M8 13h8"/></svg></span><div><div class="cause-title">Schools</div><div class="cause-sub">Educate in truth</div></div></article>
-      <article class="cause-tab"><span class="cause-icon"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg></span><div><div class="cause-title">Charities</div><div class="cause-sub">Serve those in need</div></div></article>
-      <article class="cause-tab"><span class="cause-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg></span><div><div class="cause-title">All Causes</div><div class="cause-sub">View all</div></div></article>
+      <article class="cause-tab"><span class="cause-icon"><svg viewBox="0 0 24 24"><path d="M6 3h12v18H6z"/><path d="M9 7h6"/><path d="M9 11h6"/><path d="M9 15h4"/></svg></span><div><div class="cause-title">Commemorations</div><div class="cause-sub">Names for prayer</div></div></article>
+      <article class="cause-tab"><span class="cause-icon"><svg viewBox="0 0 24 24"><path d="M12 3c2 3 3 5 3 7a3 3 0 0 1-6 0c0-2 1-4 3-7Z"/><path d="M12 13v8"/><path d="M9 21h6"/></svg></span><div><div class="cause-title">Candles</div><div class="cause-sub">Prayer intentions</div></div></article>
+      <article class="cause-tab"><span class="cause-icon"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M8 16V8"/><path d="M12 16V4"/><path d="M16 16v-6"/></svg></span><div><div class="cause-title">Campaigns</div><div class="cause-sub">Parish needs</div></div></article>
+      <article class="cause-tab"><span class="cause-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg></span><div><div class="cause-title">All Causes</div><div class="cause-sub">One giving home</div></div></article>
     </section>
 
-    <section class="content">
-      <div class="campaigns">
-        <div class="section-head">
-          <h2>Featured Campaigns</h2>
-          <a href="/directory">View all campaigns &rarr;</a>
+    <section class="main-section" id="find-community-results">
+      <div class="section-head">
+        <div>
+          <h2>Find a Registered Community</h2>
+          <p>Search the live AGAPAY directory and select a parish, mission, or monastery to begin a secure gift.</p>
         </div>
-        <div class="campaign-grid">
-          <article class="campaign-card">
-            <div class="campaign-thumb"><span class="campaign-like">&#9825;</span><img src="/images/marketplace/cathedral-night.jpg" alt="St. Nicholas Orthodox Church" /></div>
-            <div class="campaign-body">
-              <h3 class="campaign-title">St. Nicholas Orthodox Church</h3>
-              <p class="campaign-loc">Dallas, TX</p>
-              <p class="campaign-text">Help us complete the restoration of our historic church building.</p>
-              <div class="progress-row"><strong>$78,420</strong><span>of $125,000 &middot; 63%</span></div>
-              <div class="progress"><span style="width:63%"></span></div>
-              <a class="campaign-btn" href="/donor/login">View Campaign</a>
-            </div>
-          </article>
-          <article class="campaign-card">
-            <div class="campaign-thumb"><span class="campaign-like">&#9825;</span><img src="/images/marketplace/mosaic-dome.jpg" alt="St. Katherine Orthodox School" /></div>
-            <div class="campaign-body">
-              <h3 class="campaign-title">St. Katherine Orthodox School</h3>
-              <p class="campaign-loc">Dallas, TX</p>
-              <p class="campaign-text">Providing excellent Orthodox education for the next generation.</p>
-              <div class="progress-row"><strong>$48,300</strong><span>of $75,000 &middot; 64%</span></div>
-              <div class="progress"><span style="width:64%"></span></div>
-              <a class="campaign-btn" href="/donor/login">View Campaign</a>
-            </div>
-          </article>
-          <article class="campaign-card">
-            <div class="campaign-thumb"><span class="campaign-like">&#9825;</span><img src="/images/marketplace/candle-stand.jpg" alt="Holy Cross Monastery" /></div>
-            <div class="campaign-body">
-              <h3 class="campaign-title">Holy Cross Monastery</h3>
-              <p class="campaign-loc">Wayne, WV</p>
-              <p class="campaign-text">Support the daily life and ministry of our monastic community.</p>
-              <div class="progress-row"><strong>$31,250</strong><span>of $50,000 &middot; 63%</span></div>
-              <div class="progress"><span style="width:63%"></span></div>
-              <a class="campaign-btn" href="/donor/login">View Campaign</a>
-            </div>
-          </article>
-          <article class="campaign-card">
-            <div class="campaign-thumb"><span class="campaign-like">&#9825;</span><img src="/images/marketplace/dome-cross.jpg" alt="Orthodox Mission in Guatemala" /></div>
-            <div class="campaign-body">
-              <h3 class="campaign-title">Orthodox Mission in Guatemala</h3>
-              <p class="campaign-loc">Guatemala City, Guatemala</p>
-              <p class="campaign-text">Bringing the Gospel and practical help to families in need.</p>
-              <div class="progress-row"><strong>$22,810</strong><span>of $40,000 &middot; 57%</span></div>
-              <div class="progress"><span style="width:57%"></span></div>
-              <a class="campaign-btn" href="/donor/login">View Campaign</a>
-            </div>
-          </article>
+        <div class="results-meta">Showing <span id="resultsCount">0</span> communities</div>
+      </div>
+      <div class="finder-card">
+        <div class="parish-list" id="parishList" aria-label="Registered community list">
+          <div style="grid-column:1 / -1;padding:1.5rem;text-align:center;color:var(--stone);">Loading registered communities...</div>
         </div>
-        <div class="campaign-slider-dots" aria-hidden="true">
-          <span class="active"></span><span></span><span></span><span></span>
+        <div class="empty-state" id="emptyState" aria-live="polite">
+          <p>No communities found.</p>
+          <span>Try a different search or filter.</span>
         </div>
       </div>
-
-      <aside class="right-rail">
-        <section class="impact">
-          <h3>Platform Impact</h3>
-          <article class="impact-item">
-            <span class="impact-badge"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M9 13h6"/><path d="M12 5V2"/></svg></span>
-            <div class="impact-metric"><strong>128</strong><span>Orthodox Organizations Live</span></div>
-            <a class="impact-link" href="/directory">View directory</a>
-          </article>
-          <article class="impact-item">
-            <span class="impact-badge"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg></span>
-            <div class="impact-metric"><strong>$3.4M</strong><span>Total Processed on AGAPAY</span></div>
-            <a class="impact-link" href="/giving">Giving volume</a>
-          </article>
-          <article class="impact-item">
-            <span class="impact-badge"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20c.7-3 2.7-4.5 5-4.5"/><path d="M16 15.5c2.3 0 4.3 1.5 5 4.5"/></svg></span>
-            <div class="impact-metric"><strong>36</strong><span>States with Active Communities</span></div>
-            <a class="impact-link" href="/vision">See roadmap</a>
-          </article>
-        </section>
-
-        <section class="easy">
-          <h3>Make Giving Easy</h3>
-          <article class="easy-item">
-            <span class="easy-icon"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 10h8"/><path d="M9 14h6"/></svg></span>
-            <div class="easy-copy"><strong>One Secure Account</strong><span>Give once or manage recurring donations.</span></div>
-            <span class="easy-arrow">&rsaquo;</span>
-          </article>
-          <article class="easy-item">
-            <span class="easy-icon"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg></span>
-            <div class="easy-copy"><strong>Support What Matters</strong><span>Choose causes closest to your heart.</span></div>
-            <span class="easy-arrow">&rsaquo;</span>
-          </article>
-          <article class="easy-item">
-            <span class="easy-icon"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M8 16V8"/><path d="M12 16V4"/><path d="M16 16v-6"/></svg></span>
-            <div class="easy-copy"><strong>See Your Impact</strong><span>Track your giving and the difference you make.</span></div>
-            <span class="easy-arrow">&rsaquo;</span>
-          </article>
-          <a class="easy-cta" href="/how-it-works">Learn more about giving &rarr;</a>
-        </section>
-      </aside>
     </section>
 
-    <section class="trust-band">
-      <article class="trust-lead">
-        <span class="trust-shield"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 2.8 8 7 10 4.2-2 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-5"/></svg></span>
+    <section class="main-section">
+      <div class="section-head">
         <div>
-          <h4>Your Giving is Secure and Trusted</h4>
-          <p>Every donation is processed securely and directed to the organizations you support.</p>
+          <h2>Make Giving Easy</h2>
+          <p>AGAPAY keeps the donor path simple while supporting the Orthodox details that matter.</p>
         </div>
-      </article>
-      <article class="trust-point"><span class="trust-point-icon"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><div><strong>Secure Payments</strong><span>Bank-level encryption</span></div></article>
-      <article class="trust-point"><span class="trust-point-icon"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 2.8 8 7 10 4.2-2 7-5.5 7-10V6l-7-3Z"/></svg></span><div><strong>Vetted Organizations</strong><span>Carefully reviewed</span></div></article>
-      <article class="trust-point"><span class="trust-point-icon"><svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M12 3v18"/><circle cx="12" cy="12" r="9"/></svg></span><div><strong>Transparent Impact</strong><span>Accountability you can trust</span></div></article>
+      </div>
+      <div class="easy-grid">
+        <article class="easy-card"><span class="easy-icon"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 10h8"/><path d="M9 14h6"/></svg></span><h3>One Secure Account</h3><p>Give once or manage saved preferences, recurring donations, and offering history from the donor dashboard.</p></article>
+        <article class="easy-card"><span class="easy-icon"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg></span><h3>Support What Matters</h3><p>Choose stewardship, candles, memorials, designated funds, campaigns, or monastery support from one place.</p></article>
+        <article class="easy-card"><span class="easy-icon"><svg viewBox="0 0 24 24"><path d="M6 3h12v18H6z"/><path d="M9 7h6"/><path d="M9 11h6"/><path d="M9 15h4"/></svg></span><h3>Names Reach the Parish</h3><p>Commemoration offerings can carry names into the parish queue instead of getting lost in a generic payment note.</p></article>
+      </div>
+    </section>
+
+    <section class="main-section">
+      <div class="section-head">
+        <div>
+          <h2>Secure and Trusted</h2>
+          <p>AGAPAY is built for Orthodox stewardship with secure payments, clear records, and reviewed communities.</p>
+        </div>
+      </div>
+      <div class="trust-wrap">
+        <article class="trust-lead"><h3>Your gift is handled with care.</h3><p>Every donation is processed through trusted payment infrastructure and directed to the organization selected by the donor.</p></article>
+        <article class="trust-card"><span class="trust-icon"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><h3>Secure Payments</h3><p>Modern payment processing with encrypted checkout flows.</p></article>
+        <article class="trust-card"><span class="trust-icon"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 2.8 8 7 10 4.2-2 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-5"/></svg></span><h3>Reviewed Communities</h3><p>Parishes and monasteries are reviewed before activation.</p></article>
+        <article class="trust-card"><span class="trust-icon"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M8 16V8"/><path d="M12 16V4"/><path d="M16 16v-6"/></svg></span><h3>Clear Records</h3><p>Donors and parishes can see gifts in their dashboards.</p></article>
+      </div>
+    </section>
+
+    <section class="scripture" aria-label="Scripture">
+      <p>"Give to the Most High as He has given to you, and with a generous eye, according to your ability. For the Lord is one who repays, and He will repay you sevenfold."</p>
+      <cite>Sirach 35:12&ndash;13</cite>
+    </section>
+
+    <section class="main-section">
+      <div class="register-cta">
+        <div>
+          <h2>Do not see your parish?</h2>
+          <p>AGAPAY is currently onboarding founding communities. Invite your parish, mission, or monastery to register.</p>
+        </div>
+        <a href="/register">Register</a>
+      </div>
     </section>
   </main>
-  <footer class="site-footer">
-    <div class="footer-wrap footer-grid">
-      <div class="footer-brand">
-        <div class="footer-lockup"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></div>
-        <p>Love how you Give.</p>
-      </div>
-      <div class="footer-col"><h4>Platform</h4><a href="/features">Solutions</a><a href="/how-it-works">How It Works</a><a href="/pricing">Pricing</a></div>
-      <div class="footer-col"><h4>Company</h4><a href="/about">About</a><a href="/why">Why AGAPAY</a><a href="/vision">Vision</a><a href="/contact">Contact</a></div>
-      <div class="footer-col"><h4>Resources</h4><a href="/donor/login">Donor Login</a><a href="/parish/login">Parish Login</a><a href="/admin/login">Admin Login</a></div>
-      <div class="footer-col"><h4>Legal</h4><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div>
-    </div>
-    <div class="footer-wrap footer-bottom"><span>&copy; 2026 AGAPAY. All rights reserved.</span><span>Built for Orthodox communities.</span></div>
-  </footer>
+
+  <script>
+    const searchInput = document.getElementById("searchInput");
+    const searchClear = document.getElementById("searchClear");
+    const parishList = document.getElementById("parishList");
+    const emptyState = document.getElementById("emptyState");
+    const resultsCount = document.getElementById("resultsCount");
+    const pills = document.querySelectorAll(".pill");
+
+    let activeFilter = "all";
+    let searchQuery = "";
+
+    function escapeHtml(value) {
+      return String(value || "").replace(/[&<>"']/g, ch => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      }[ch]));
+    }
+
+    function parishSketchImage(type) {
+      if (type === "monastery") return "/images/giving/monastery-square.png";
+      if (type === "mission") return "/images/giving/mission-church-square.png";
+      return "/images/giving/parish-church-square.png";
+    }
+
+    function renderParishCard(parish) {
+      const location = `${parish.city || ""}, ${parish.state || ""}`.replace(/^, /, "").replace(/, $/, "");
+      const badge = parish.freeForever ? '<span class="parish-badge free">Free forever</span>' : '<span class="parish-badge verified">Verified</span>';
+      const imageUrl = parish.imageUrl || parishSketchImage(parish.type);
+      const imageAlt = parish.imageAlt || `${parish.name || "Orthodox community"} sketch`;
+      return `
+        <a href="/give/form?parish=${encodeURIComponent(parish.id)}" class="parish-card"
+           data-name="${escapeHtml(parish.name)}" data-jurisdiction="${escapeHtml(parish.jurisdiction)}" data-type="${escapeHtml(parish.type)}" data-city="${escapeHtml(location)}">
+          <div class="parish-art ${escapeHtml(parish.type)}">
+            <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(imageAlt)}" loading="lazy" />
+          </div>
+          <div class="parish-info">
+            <div class="parish-name">${escapeHtml(parish.name)}</div>
+            <div class="parish-meta">
+              <span class="parish-jurisdiction">${escapeHtml(parish.jurisdictionLabel || parish.jurisdiction)}</span>
+              <span class="parish-dot"></span>
+              <span class="parish-location">${escapeHtml(location)}</span>
+              ${badge}
+            </div>
+          </div>
+          <span class="parish-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>
+        </a>
+      `;
+    }
+
+    async function loadParishes() {
+      try {
+        const response = await fetch("/api/parishes");
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Unable to load communities");
+
+        const parishes = Array.isArray(result.parishes) ? result.parishes : [];
+        const monasteries = parishes.filter(parish => parish.type === "monastery");
+        const communities = parishes.filter(parish => parish.type !== "monastery");
+
+        monasteries.sort((a, b) => a.name.localeCompare(b.name));
+        communities.sort((a, b) => {
+          if (a.type !== b.type) return a.type === "parish" ? -1 : 1;
+          return a.name.localeCompare(b.name);
+        });
+
+        parishList.innerHTML = `
+          <div class="list-divider" id="dividerMonasteries"><span>Monasteries &amp; Sketes</span></div>
+          ${monasteries.map(renderParishCard).join("")}
+          <div class="list-divider" id="dividerParishes"><span>Parishes &amp; Missions</span></div>
+          ${communities.map(renderParishCard).join("")}
+        `;
+
+        filterParishes();
+      } catch (err) {
+        parishList.innerHTML = `<div style="grid-column:1 / -1;padding:1.5rem;text-align:center;color:var(--stone);">${escapeHtml(err.message)}</div>`;
+        resultsCount.textContent = "0";
+      }
+    }
+
+    function filterParishes() {
+      const cards = parishList.querySelectorAll(".parish-card");
+      let visibleCount = 0;
+      let monasteryVisible = 0;
+      let parishVisible = 0;
+
+      cards.forEach(card => {
+        const name = card.dataset.name.toLowerCase();
+        const jurisdiction = card.dataset.jurisdiction;
+        const type = card.dataset.type;
+        const city = card.dataset.city.toLowerCase();
+
+        const matchesSearch = !searchQuery ||
+          name.includes(searchQuery) ||
+          city.includes(searchQuery) ||
+          jurisdiction.includes(searchQuery);
+
+        const matchesFilter = activeFilter === "all" ||
+          (activeFilter === "parish" && type === "parish") ||
+          (activeFilter === "monastery" && type === "monastery") ||
+          (activeFilter === "mission" && type === "mission") ||
+          jurisdiction === activeFilter;
+
+        if (matchesSearch && matchesFilter) {
+          card.style.display = "grid";
+          visibleCount++;
+          if (type === "monastery") monasteryVisible++;
+          else parishVisible++;
+        } else {
+          card.style.display = "none";
+        }
+      });
+
+      const monasteryDivider = document.getElementById("dividerMonasteries");
+      const parishDivider = document.getElementById("dividerParishes");
+      if (monasteryDivider) monasteryDivider.style.display = monasteryVisible > 0 ? "block" : "none";
+      if (parishDivider) parishDivider.style.display = parishVisible > 0 ? "block" : "none";
+      resultsCount.textContent = visibleCount;
+      emptyState.classList.toggle("visible", visibleCount === 0);
+    }
+
+    searchInput.addEventListener("input", () => {
+      searchQuery = searchInput.value.trim().toLowerCase();
+      searchClear.classList.toggle("visible", searchQuery.length > 0);
+      filterParishes();
+    });
+
+    searchClear.addEventListener("click", () => {
+      searchInput.value = "";
+      searchQuery = "";
+      searchClear.classList.remove("visible");
+      searchInput.focus();
+      filterParishes();
+    });
+
+    pills.forEach(pill => {
+      pill.addEventListener("click", () => {
+        pills.forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+        activeFilter = pill.dataset.filter;
+        filterParishes();
+      });
+    });
+
+    loadParishes();
+  </script>
 </body>
 </html>

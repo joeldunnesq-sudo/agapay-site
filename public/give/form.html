@@ -243,7 +243,7 @@
         </div>
         <span class="nav-name">AGAPAY</span>
       </a>
-      <a href="/give" class="nav-back">
+      <a href="/giving" class="nav-back">
         <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
         Back to All Parishes
       </a>
@@ -592,7 +592,7 @@
     <h2>Glory to God.</h2>
     <p class="success-parish">Your gift to <strong>St. Seraphim of Sarov Mission</strong> has been received.<br>A confirmation will be sent to your email.</p>
     <p class="success-ref" id="successRef">Reference: AGP-2026-00001</p>
-    <a href="/give">Give again</a>
+    <a href="/giving">Give again</a>
   </div>
 
   <script>
@@ -773,13 +773,13 @@
 
         const slug = parishSlugFromPath();
         if (!slug) {
-          window.location.href = '/give';
+          window.location.href = '/giving';
           return;
         }
         const parish = result.parishes.find(item => item.id === slug);
         if (!parish) {
           alert('This parish is not currently active in AGAPAY.');
-          window.location.href = '/give';
+          window.location.href = '/giving';
           return;
         }
 

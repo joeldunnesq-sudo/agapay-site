@@ -919,7 +919,7 @@ document.addEventListener("DOMContentLoaded", () => {
     nav.setAttribute("hx-boost", "false");
     nav.removeAttribute("hx-target");
   });
-  document.querySelectorAll('.sidebar-footer a[href="/"], .sidebar-footer a[href="/give"]').forEach((link) => {
+  document.querySelectorAll('.sidebar-footer a[href="/"], .sidebar-footer a[href="/give"], .sidebar-footer a[href="/giving"]').forEach((link) => {
     link.setAttribute("hx-boost", "false");
   });
   if (saved.email) {
