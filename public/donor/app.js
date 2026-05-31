@@ -422,7 +422,7 @@ function renderActiveCampaigns(parish) {
   const label = campaign.category || campaign.type || (campaign.feastId ? "Liturgical" : "Alms");
   const link = donorGiftUrl("campaign", parish, { campaign: campaign.id || campaign.feastId || campaign.name });
   const html = `
-    <a class="campaign-card ${campaign.feastId ? "campaign-gold" : "campaign-green"}" href="${escapeHtml(link)}">
+    <a class="campaign-card ${campaign.feastId ? "campaign-gold" : "campaign-navy"}" href="${escapeHtml(link)}">
       <div class="campaign-meta">
         <span class="campaign-pill">${escapeHtml(label)}</span>
         <span>${parish?.name ? escapeHtml(parish.name) : "AGAPAY"}</span>

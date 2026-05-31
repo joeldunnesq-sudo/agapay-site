@@ -460,7 +460,7 @@
           <div class="growth-stat"><strong>${moneyShort(summary.ytdDonationsCents || 0)}</strong><span>${summary.year || new Date().getFullYear()} donations</span></div>
         </div>
         <div class="growth-chart-card">
-          <div class="growth-chart-title">Parish Growth <span>Gold registered / green verified</span></div>
+          <div class="growth-chart-title">Parish Growth <span>Gold registered / navy verified</span></div>
           <div class="growth-bars">${renderGrowthBars(summary, 'registrations')}</div>
           <div class="growth-note">${summary.year || new Date().getFullYear()} monthly registration activity.</div>
         </div>
