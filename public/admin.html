@@ -114,6 +114,14 @@
       <div class="topbar">
         <div class="topbar-title" id="topbarTitle">Overview</div>
         <div style="display:flex;gap:8px;align-items:center;">
+          <div class="topbar-meta">
+            <span class="topbar-ref" id="dataAsOf">Data as of —</span>
+            <label class="auto-refresh-toggle" for="autoRefreshToggle">
+              <input id="autoRefreshToggle" type="checkbox" onchange="toggleAutoRefresh(this.checked)" />
+              Auto-refresh
+            </label>
+          </div>
+          <button class="secondary btn-sm" onclick="loadRegistrations()">Refresh</button>
           <button class="secondary btn-sm hidden" id="backToQueueBtn" onclick="collapseRegistrationDetail()">← Queue</button>
           <button class="secondary btn-sm" onclick="copyRegistrationSummary()">Copy summary</button>
           <button class="secondary btn-sm" onclick="logoutAdmin()">Log out</button>
@@ -205,11 +213,11 @@
             <strong id="bulkCount">0 selected</strong>
             <div class="btn-row">
               <button class="secondary btn-sm" onclick="bulkAction('invite')">Send dashboard invites</button>
-              <button class="secondary btn-sm" onclick="bulkAction('verify')">Mark as verified</button>
               <button class="secondary btn-sm" onclick="bulkAction('stripe')">Create Stripe links</button>
             </div>
             <button class="secondary btn-sm" style="margin-left:auto;" onclick="clearSelection()">Clear</button>
           </div>
+          <div class="bulk-results" id="bulkResults"></div>
 
           <section class="queue-card" id="registrationQueue">
           <div class="queue-header">

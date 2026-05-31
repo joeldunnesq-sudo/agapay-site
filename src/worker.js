@@ -1,4 +1,5 @@
 const ADMIN_PASSWORD_KV_KEY = "__agapay_admin_password";
+const ADMIN_SESSION_STORE_KEY = "__agapay_admin_sessions";
 const COMMEMORATION_KEY_PREFIX = "__agapay_commemoration__";
 const DONOR_KEY_PREFIX = "__agapay_donor__";
 const DONOR_OFFERING_KEY_PREFIX = "__agapay_donor_offering__";
@@ -12,6 +13,8 @@ const STRIPE_PAYMENT_INTENT_INDEX_PREFIX = "__agapay_index_payment_intent__";
 const PASSWORD_HASH_VERSION = "pbkdf2-sha256";
 const PASSWORD_HASH_ITERATIONS = 100000;
 const DONOR_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14;
+const ADMIN_SESSION_TTL_MS = 1000 * 60 * 60 * 12;
+const ADMIN_SESSION_MAX = 32;
 const STRIPE_EVENT_PROCESSING_RETRY_MS = 1000 * 60 * 10;
 
 const subscriptionTiers = [
@@ -303,6 +306,7 @@ function unauthorized() {
 function isSystemKvKey(keyName) {
   const key = String(keyName || "");
   return key === ADMIN_PASSWORD_KV_KEY
+    || key === ADMIN_SESSION_STORE_KEY
     || key.startsWith(COMMEMORATION_KEY_PREFIX)
     || key.startsWith(DONOR_KEY_PREFIX)
     || key.startsWith(DONOR_OFFERING_KEY_PREFIX)
@@ -705,6 +709,99 @@ async function hashSessionToken(token, salt) {
   return sha256Hex(`session:${salt}:${token}`);
 }
 
+function parseAdminSessionStore(value) {
+  if (!value) return { version: 1, sessions: [] };
+  try {
+    const parsed = typeof value === "string" ? JSON.parse(value) : value;
+    const sessions = Array.isArray(parsed?.sessions) ? parsed.sessions : [];
+    return { version: 1, sessions };
+  } catch {
+    return { version: 1, sessions: [] };
+  }
+}
+
+async function loadAdminSessionStore(env) {
+  if (d1(env)) {
+    return parseAdminSessionStore(await d1GetSetting(env, ADMIN_SESSION_STORE_KEY));
+  }
+  if (env.AGAPAY_REGISTRATIONS) {
+    return parseAdminSessionStore(await env.AGAPAY_REGISTRATIONS.get(ADMIN_SESSION_STORE_KEY));
+  }
+  return { version: 1, sessions: [] };
+}
+
+async function saveAdminSessionStore(env, store) {
+  const payload = JSON.stringify({
+    version: 1,
+    sessions: Array.isArray(store?.sessions) ? store.sessions : []
+  });
+  if (d1(env)) {
+    await d1SetSetting(env, ADMIN_SESSION_STORE_KEY, payload);
+    return;
+  }
+  if (env.AGAPAY_REGISTRATIONS) {
+    await env.AGAPAY_REGISTRATIONS.put(ADMIN_SESSION_STORE_KEY, payload);
+  }
+}
+
+function normalizeAdminActor(actor) {
+  const cleaned = String(actor || "").trim();
+  if (!cleaned) return "Admin";
+  return cleaned.slice(0, 80);
+}
+
+function pruneAdminSessions(sessions, nowMs = Date.now()) {
+  return sessions.filter((entry) => {
+    const expiresAtMs = Date.parse(entry?.expiresAt || "");
+    return Number.isFinite(expiresAtMs) && expiresAtMs > nowMs;
+  });
+}
+
+async function issueAdminSession(env, actor = "Admin") {
+  const nowMs = Date.now();
+  const token = generateSecret("agp_admin");
+  const sessionSalt = generateSecret("admin_salt");
+  const tokenHash = await hashSessionToken(token, sessionSalt);
+  const createdAt = new Date(nowMs).toISOString();
+  const expiresAt = new Date(nowMs + ADMIN_SESSION_TTL_MS).toISOString();
+  const store = await loadAdminSessionStore(env);
+  const sessions = pruneAdminSessions(store.sessions, nowMs);
+  sessions.push({
+    id: generateSecret("adminsess"),
+    actor: normalizeAdminActor(actor),
+    tokenHash,
+    sessionSalt,
+    createdAt,
+    expiresAt
+  });
+  sessions.sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
+  while (sessions.length > ADMIN_SESSION_MAX) sessions.shift();
+  await saveAdminSessionStore(env, { version: 1, sessions });
+  return { token, actor: normalizeAdminActor(actor), createdAt, expiresAt };
+}
+
+async function resolveAdminSession(env, token) {
+  if (!token) return null;
+  const nowMs = Date.now();
+  const store = await loadAdminSessionStore(env);
+  const active = pruneAdminSessions(store.sessions, nowMs);
+  if (active.length !== store.sessions.length) {
+    await saveAdminSessionStore(env, { version: 1, sessions: active });
+  }
+
+  for (const session of active) {
+    const submitted = await hashSessionToken(token, session.sessionSalt || "");
+    if (secureCompare(submitted, session.tokenHash || "")) {
+      return {
+        id: session.id || "",
+        actor: normalizeAdminActor(session.actor || "Admin"),
+        expiresAt: session.expiresAt
+      };
+    }
+  }
+  return null;
+}
+
 function publicDonor(donor) {
   return {
     email: donor.email || "",
@@ -904,8 +1001,47 @@ async function verifyAdminPassword(env, submitted) {
   return Boolean(env.AGAPAY_ADMIN_TOKEN && secureCompare(submitted, env.AGAPAY_ADMIN_TOKEN));
 }
 
+async function requireAdminContext(request, env) {
+  const submitted = getAdminToken(request);
+  if (!submitted) return null;
+
+  const session = await resolveAdminSession(env, submitted);
+  if (!session) return null;
+  return {
+    actor: session.actor || "Admin",
+    authType: "session",
+    expiresAt: session.expiresAt || ""
+  };
+}
+
 async function requireAdmin(request, env) {
-  return verifyAdminPassword(env, getAdminToken(request));
+  return Boolean(await requireAdminContext(request, env));
+}
+
+async function handleAdminSession(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "admin-auth", { limit: 20, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    body = {};
+  }
+
+  const password = String(body.password || "").trim();
+  if (!(await verifyAdminPassword(env, password))) return unauthorized();
+
+  const actor = normalizeAdminActor(body.actor || "Admin");
+  const session = await issueAdminSession(env, actor);
+  return json({
+    ok: true,
+    token: session.token,
+    actor: session.actor,
+    expiresAt: session.expiresAt
+  });
 }
 
 function requireFields(body, fields) {
@@ -913,6 +1049,34 @@ function requireFields(body, fields) {
     const value = body[field];
     return value === undefined || value === null || String(value).trim() === "";
   });
+}
+
+function appendAdminAudit(registration, action, actor, details = {}) {
+  const current = Array.isArray(registration?.adminAuditLog) ? registration.adminAuditLog : [];
+  const entry = {
+    id: generateSecret("audit"),
+    action: String(action || "unknown"),
+    actor: normalizeAdminActor(actor || "Admin"),
+    at: new Date().toISOString(),
+    details: details && typeof details === "object" ? details : {}
+  };
+  return {
+    ...registration,
+    adminAuditLog: [...current, entry].slice(-300)
+  };
+}
+
+function statusTimelineWithNext(currentStatus, nextStatus, existingTimeline) {
+  const timeline = Array.isArray(existingTimeline) ? [...existingTimeline] : [];
+  const normalizedNext = String(nextStatus || currentStatus || "");
+  if (!normalizedNext) return timeline;
+  const latest = timeline[timeline.length - 1];
+  if (latest?.status === normalizedNext) return timeline;
+  timeline.push({
+    status: normalizedNext,
+    at: new Date().toISOString()
+  });
+  return timeline;
 }
 
 function centsFromAmount(amount) {
@@ -3077,6 +3241,59 @@ async function handleAdminPlatformSummary(request, env) {
   });
 }
 
+async function handleAdminRegistrationGivingSummary(request, env, reference) {
+  const limited = await rateLimit(request, env, "admin-auth", { limit: 80, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!(await requireAdmin(request, env))) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const registration = await loadRegistrationByReference(env, reference);
+  if (!registration) return json({ error: "Registration not found" }, { status: 404 });
+
+  if (!registration.stripeAccountId) {
+    return json({
+      summary: {
+        dataSource: "not_connected",
+        year: new Date().getUTCFullYear(),
+        ytdCents: 0,
+        giftCount: 0,
+        lastGiftAt: "",
+        monthly: []
+      }
+    });
+  }
+
+  if (!env.STRIPE_SECRET_KEY) {
+    return json({
+      summary: {
+        dataSource: "not_configured",
+        year: new Date().getUTCFullYear(),
+        ytdCents: 0,
+        giftCount: 0,
+        lastGiftAt: "",
+        monthly: []
+      }
+    });
+  }
+
+  const result = await listYtdStripeCharges(env, registration.stripeAccountId);
+  if (!result.ok) {
+    return json(
+      { error: "Unable to load Stripe giving summary", detail: result.body?.error?.message || "Stripe request failed" },
+      { status: 502 }
+    );
+  }
+
+  const summary = summarizeCharges(result.body?.data || []);
+  return json({
+    summary: {
+      ...summary,
+      dataSource: "stripe",
+      stripeAccountId: registration.stripeAccountId
+    }
+  });
+}
+
 async function handleAdminReleaseStatus(request, env) {
   const limited = await rateLimit(request, env, "admin-auth", { limit: 60, windowSeconds: 300 });
   if (limited) return limited;
@@ -3160,10 +3377,12 @@ async function handleAdminPassword(request, env) {
   const passwordRecord = JSON.stringify(await createPasswordRecord(newPassword));
   if (d1(env)) {
     await d1SetSetting(env, ADMIN_PASSWORD_KV_KEY, passwordRecord);
+    await d1SetSetting(env, ADMIN_SESSION_STORE_KEY, JSON.stringify({ sessions: [], updatedAt: new Date().toISOString() }));
   } else {
     await env.AGAPAY_REGISTRATIONS.put(ADMIN_PASSWORD_KV_KEY, passwordRecord);
+    await env.AGAPAY_REGISTRATIONS.put(ADMIN_SESSION_STORE_KEY, JSON.stringify({ sessions: [], updatedAt: new Date().toISOString() }));
   }
-  return json({ ok: true, updatedAt: new Date().toISOString() });
+  return json({ ok: true, updatedAt: new Date().toISOString(), sessionsInvalidated: true });
 }
 
 async function handleAdminRegistrationDetail(request, env, reference) {
@@ -3174,7 +3393,8 @@ async function handleAdminRegistrationDetail(request, env, reference) {
     { limit: request.method === "PATCH" ? 30 : 80, windowSeconds: 300 }
   );
   if (limited) return limited;
-  if (!(await requireAdmin(request, env))) return unauthorized();
+  const adminContext = await requireAdminContext(request, env);
+  if (!adminContext) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   if (request.method === "GET") {
@@ -3195,6 +3415,27 @@ async function handleAdminRegistrationDetail(request, env, reference) {
     }
 
     const nextStatus = body.status || current.status;
+    const reviewedByNext = body.reviewedBy ?? current.reviewedBy ?? "";
+    const verificationSourceNext = body.verificationSource ?? current.verificationSource ?? "";
+    const bishopOrAuthorityNext = body.bishopOrAuthority ?? current.bishopOrAuthority ?? "";
+    const dioceseOrDeaneryNext = body.dioceseOrDeanery ?? current.dioceseOrDeanery ?? "";
+    if (nextStatus === "verified") {
+      const missing = [];
+      if (!String(reviewedByNext || "").trim()) missing.push("reviewedBy");
+      if (!String(verificationSourceNext || "").trim()) missing.push("verificationSource");
+      if (!String(bishopOrAuthorityNext || "").trim()) missing.push("bishopOrAuthority");
+      if (!String(dioceseOrDeaneryNext || "").trim()) missing.push("dioceseOrDeanery");
+      if (missing.length) {
+        return json(
+          {
+            error: "Canonical verification is incomplete. Fill reviewer name, verification source, bishop/authority, and diocese/deanery before marking verified.",
+            missing
+          },
+          { status: 422 }
+        );
+      }
+    }
+
     const parishId = nextStatus === "verified"
       ? current.parishId || slugify(current.parishName)
       : current.parishId;
@@ -3216,10 +3457,10 @@ async function handleAdminRegistrationDetail(request, env, reference) {
       givingStatus: body.givingStatus || current.givingStatus || (nextStatus === "verified" ? "active" : "hidden"),
       stripeAccountStatus: body.stripeAccountStatus || current.stripeAccountStatus || "not_started",
       stripeAccountId: body.stripeAccountId ?? current.stripeAccountId ?? "",
-      reviewedBy: body.reviewedBy ?? current.reviewedBy ?? "",
-      verificationSource: body.verificationSource ?? current.verificationSource ?? "",
-      bishopOrAuthority: body.bishopOrAuthority ?? current.bishopOrAuthority ?? "",
-      dioceseOrDeanery: body.dioceseOrDeanery ?? current.dioceseOrDeanery ?? "",
+      reviewedBy: reviewedByNext,
+      verificationSource: verificationSourceNext,
+      bishopOrAuthority: bishopOrAuthorityNext,
+      dioceseOrDeanery: dioceseOrDeaneryNext,
       platformFee: body.platformFee ?? current.platformFee ?? "",
       liturgicalCalendar: body.liturgicalCalendar ?? current.liturgicalCalendar ?? "julian",
       subscriptionTier: nextTier?.id || nextSubscriptionTierId,
@@ -3240,11 +3481,58 @@ async function handleAdminRegistrationDetail(request, env, reference) {
         ? new Date().toISOString()
         : current.parishDashboardTokenCreatedAt,
       reviewerNotes: body.reviewerNotes ?? current.reviewerNotes ?? "",
+      statusTimeline: statusTimelineWithNext(current.status, nextStatus, current.statusTimeline),
+      stripeStatusHistory: statusTimelineWithNext(
+        current.stripeAccountStatus || "not_started",
+        body.stripeAccountStatus || current.stripeAccountStatus || "not_started",
+        current.stripeStatusHistory
+      ),
+      subscriptionStatusHistory: statusTimelineWithNext(
+        current.subscriptionStatus || "not_started",
+        nextSubscriptionStatus,
+        current.subscriptionStatusHistory
+      ),
+      lastWorkflowEventAt: new Date().toISOString(),
       reviewedAt: new Date().toISOString(),
       publicProfileCreatedAt: nextStatus === "verified"
         ? current.publicProfileCreatedAt || new Date().toISOString()
         : current.publicProfileCreatedAt
     };
+
+    const reviewerNote = String(body.reviewerNotes || "").trim();
+    if (reviewerNote) {
+      const nextHistory = Array.isArray(current.notesHistory) ? [...current.notesHistory] : [];
+      nextHistory.push({
+        author: normalizeAdminActor(reviewedByNext || adminContext.actor),
+        text: reviewerNote,
+        createdAt: new Date().toISOString()
+      });
+      updated.notesHistory = nextHistory.slice(-200);
+    }
+
+    if (nextStatus !== current.status) {
+      updated = appendAdminAudit(updated, "status_changed", adminContext.actor, {
+        from: current.status || "pending",
+        to: nextStatus
+      });
+    }
+    if ((body.subscriptionStatus || current.subscriptionStatus || "not_started") !== (current.subscriptionStatus || "not_started")) {
+      updated = appendAdminAudit(updated, "subscription_status_changed", adminContext.actor, {
+        from: current.subscriptionStatus || "not_started",
+        to: body.subscriptionStatus || current.subscriptionStatus || "not_started"
+      });
+    }
+    if ((body.stripeAccountStatus || current.stripeAccountStatus || "not_started") !== (current.stripeAccountStatus || "not_started")) {
+      updated = appendAdminAudit(updated, "stripe_status_changed", adminContext.actor, {
+        from: current.stripeAccountStatus || "not_started",
+        to: body.stripeAccountStatus || current.stripeAccountStatus || "not_started"
+      });
+    }
+    if (reviewerNote) {
+      updated = appendAdminAudit(updated, "review_note_added", reviewedByNext || adminContext.actor, {
+        notePreview: reviewerNote.slice(0, 160)
+      });
+    }
 
     let dashboardInvite = null;
     if (body.sendDashboardInvite && nextStatus === "verified") {
@@ -3260,6 +3548,10 @@ async function handleAdminRegistrationDetail(request, env, reference) {
           ? new Date().toISOString()
           : updated.dashboardInviteEmailSentAt
       };
+      updated = appendAdminAudit(updated, "dashboard_invite_requested", adminContext.actor, {
+        emailStatus: dashboardInvite.status || "unknown",
+        recipients: dashboardInvite.recipients || []
+      });
     }
 
     await saveRegistrationRecord(env, reference, updated, current);
@@ -3365,7 +3657,8 @@ async function handleSubscriptionCheckout(request, env, reference) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const limited = await rateLimit(request, env, "admin-money-actions", { limit: 20, windowSeconds: 300 });
   if (limited) return limited;
-  if (!(await requireAdmin(request, env))) return unauthorized();
+  const adminContext = await requireAdminContext(request, env);
+  if (!adminContext) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const registration = await loadRegistrationByReference(env, reference);
@@ -3378,7 +3671,23 @@ async function handleSubscriptionCheckout(request, env, reference) {
     body = {};
   }
 
-  return createSubscriptionCheckoutForRegistration(request, env, reference, registration, body, "/admin");
+  const response = await createSubscriptionCheckoutForRegistration(request, env, reference, registration, body, "/admin");
+  let payload = null;
+  try {
+    payload = await response.clone().json();
+  } catch {
+    return response;
+  }
+  if (!response.ok || !payload?.registration) return response;
+
+  const audited = appendAdminAudit(payload.registration, "subscription_checkout_created", adminContext.actor, {
+    subscriptionTier: payload.registration.subscriptionTier || "",
+    subscriptionStatus: payload.registration.subscriptionStatus || "",
+    checkoutSessionId: payload.registration.stripeSubscriptionCheckoutSessionId || ""
+  });
+  await saveRegistrationRecord(env, reference, audited, payload.registration);
+  payload.registration = audited;
+  return json(payload, { status: response.status });
 }
 
 function parseStripeSignature(header) {
@@ -3783,7 +4092,8 @@ async function handleStripeOnboarding(request, env, reference) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const limited = await rateLimit(request, env, "admin-money-actions", { limit: 20, windowSeconds: 300 });
   if (limited) return limited;
-  if (!(await requireAdmin(request, env))) return unauthorized();
+  const adminContext = await requireAdminContext(request, env);
+  if (!adminContext) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const registration = await loadRegistrationByReference(env, reference);
@@ -3805,9 +4115,13 @@ async function handleStripeOnboarding(request, env, reference) {
     stripeOnboardingEmailDetail: email.detail || "",
     stripeOnboardingEmailSentAt: email.status === "sent" ? new Date().toISOString() : result.registration.stripeOnboardingEmailSentAt
   };
-  await saveRegistrationRecord(env, reference, updated, result.registration);
+  const audited = appendAdminAudit(updated, "stripe_onboarding_link_created", adminContext.actor, {
+    stripeAccountId: updated.stripeAccountId || "",
+    emailStatus: email.status || "unknown"
+  });
+  await saveRegistrationRecord(env, reference, audited, result.registration);
 
-  return json({ ok: true, onboardingUrl: result.onboardingUrl, email, registration: updated });
+  return json({ ok: true, onboardingUrl: result.onboardingUrl, email, registration: audited });
 }
 
 async function refreshStripeStatusForRegistration(env, reference, registration) {
@@ -3848,7 +4162,8 @@ async function handleStripeRefresh(request, env, reference) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const limited = await rateLimit(request, env, "admin-money-actions", { limit: 60, windowSeconds: 300 });
   if (limited) return limited;
-  if (!(await requireAdmin(request, env))) return unauthorized();
+  const adminContext = await requireAdminContext(request, env);
+  if (!adminContext) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const registration = await loadRegistrationByReference(env, reference);
@@ -3856,8 +4171,16 @@ async function handleStripeRefresh(request, env, reference) {
 
   const refreshed = await refreshStripeStatusForRegistration(env, reference, registration);
   if (!refreshed.ok) return json(refreshed.body, { status: refreshed.status });
+  let updated = refreshed.registration;
+  if ((registration.stripeAccountStatus || "not_started") !== (refreshed.registration.stripeAccountStatus || "not_started")) {
+    updated = appendAdminAudit(refreshed.registration, "stripe_status_refreshed", adminContext.actor, {
+      from: registration.stripeAccountStatus || "not_started",
+      to: refreshed.registration.stripeAccountStatus || "not_started"
+    });
+    await saveRegistrationRecord(env, reference, updated, refreshed.registration);
+  }
 
-  return json({ ok: true, registration: refreshed.registration });
+  return json({ ok: true, registration: updated });
 }
 
 async function handleParishStripeRefresh(request, env, parishId) {
@@ -3884,7 +4207,8 @@ async function handleDashboardInvite(request, env, reference) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const limited = await rateLimit(request, env, "admin-email-actions", { limit: 20, windowSeconds: 300 });
   if (limited) return limited;
-  if (!(await requireAdmin(request, env))) return unauthorized();
+  const adminContext = await requireAdminContext(request, env);
+  if (!adminContext) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const registration = await loadRegistrationByReference(env, reference);
@@ -3913,9 +4237,13 @@ async function handleDashboardInvite(request, env, reference) {
     dashboardInviteEmailRecipients: email.recipients || [],
     dashboardInviteEmailSentAt: email.status === "sent" ? new Date().toISOString() : withToken.dashboardInviteEmailSentAt
   };
-  await saveRegistrationRecord(env, reference, updated, withToken);
+  const audited = appendAdminAudit(updated, "dashboard_invite_requested", adminContext.actor, {
+    emailStatus: email.status || "unknown",
+    recipients: email.recipients || []
+  });
+  await saveRegistrationRecord(env, reference, audited, withToken);
 
-  return json({ ok: true, email, registration: updated });
+  return json({ ok: true, email, registration: audited });
 }
 
 async function handleParishStripeOnboarding(request, env, parishId) {
@@ -4481,6 +4809,9 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/admin/registrations") {
       return handleAdminRegistrations(request, env);
     }
+    if (url.pathname === "/api/admin/session") {
+      return handleAdminSession(request, env);
+    }
       if (request.method === "GET" && url.pathname === "/api/admin/platform-summary") {
         return handleAdminPlatformSummary(request, env);
       }
@@ -4507,6 +4838,10 @@ export default {
     if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/stripe-refresh")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/stripe-refresh", ""));
       return handleStripeRefresh(request, env, reference);
+    }
+    if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/giving-summary")) {
+      const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/giving-summary", ""));
+      return handleAdminRegistrationGivingSummary(request, env, reference);
     }
     if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/dashboard-invite")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/dashboard-invite", ""));

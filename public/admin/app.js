@@ -1,6 +1,13 @@
     let selectedReference = '';
     let registrationsCache = [];
     const adminSessionKey = 'agapay_admin_token';
+    const adminActorKey = 'agapay_admin_actor';
+    const adminNoticeKey = 'agapay_admin_notice';
+    const autoRefreshKey = 'agapay_admin_auto_refresh';
+    const givingSummaryCache = new Map();
+    let autoRefreshTimer = null;
+    let isLoadingRegistrations = false;
+    let lastDataLoadedAt = null;
 
     function token() {
       return document.getElementById('adminToken')?.value.trim() || sessionStorage.getItem(adminSessionKey) || '';
@@ -20,16 +27,100 @@
       if (input) input.value = '';
     }
 
+    function adminActor() {
+      const inline = document.getElementById('adminActor')?.value.trim();
+      if (inline) return inline;
+      return sessionStorage.getItem(adminActorKey) || 'Admin';
+    }
+
+    function setAdminNotice(message) {
+      if (!message) return;
+      try { sessionStorage.setItem(adminNoticeKey, message); } catch {}
+    }
+
+    function consumeAdminNotice() {
+      try {
+        const message = sessionStorage.getItem(adminNoticeKey) || '';
+        if (message) sessionStorage.removeItem(adminNoticeKey);
+        return message;
+      } catch {
+        return '';
+      }
+    }
+
+    function formatClock(value) {
+      if (!value) return '—';
+      const date = value instanceof Date ? value : new Date(value);
+      if (Number.isNaN(date.getTime())) return '—';
+      return new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        minute: '2-digit'
+      }).format(date);
+    }
+
+    function refreshDataAsOf() {
+      const el = document.getElementById('dataAsOf');
+      if (!el) return;
+      const stamp = lastDataLoadedAt ? formatClock(lastDataLoadedAt) : '—';
+      el.textContent = `Data as of ${stamp}`;
+    }
+
+    function isLoginPage() {
+      return Boolean(document.body?.classList.contains('admin-login-simple'));
+    }
+
+    function stopAutoRefresh() {
+      if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+      }
+    }
+
+    function toggleAutoRefresh(enabled) {
+      try { sessionStorage.setItem(autoRefreshKey, enabled ? '1' : '0'); } catch {}
+      stopAutoRefresh();
+      if (!enabled || isLoginPage()) return;
+      autoRefreshTimer = setInterval(() => {
+        if (!token() || isLoadingRegistrations) return;
+        loadRegistrations({ silent: true, preserveSelection: activeTab === 'queue' });
+      }, 90000);
+    }
+
+    function handleAuthFailure(response, payload) {
+      if (response.status !== 401) return false;
+      clearAdminSession();
+      setAdminNotice(payload?.error || 'Your admin session expired. Please log in again.');
+      if (!isLoginPage()) {
+        window.location.replace('/admin/login');
+      } else {
+        setStatus(payload?.error || 'Your admin session expired. Please log in again.', 'error');
+      }
+      return true;
+    }
+
     function restoreAdminSession() {
-      const onLoginPage = document.body?.classList.contains('admin-login-simple');
+      const onLoginPage = isLoginPage();
       const storedToken = sessionStorage.getItem(adminSessionKey) || '';
       const input = document.getElementById('adminToken');
       if (storedToken && input) input.value = storedToken;
+      refreshDataAsOf();
+      const notice = consumeAdminNotice();
+      if (notice) setStatus(notice, 'info');
+      const autoRefreshEnabled = (sessionStorage.getItem(autoRefreshKey) || '0') === '1';
+      const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+      if (autoRefreshToggle) {
+        autoRefreshToggle.checked = autoRefreshEnabled;
+      }
       if (!onLoginPage && !storedToken) {
         window.location.replace('/admin/login');
         return;
       }
+      if (onLoginPage && storedToken) {
+        window.location.replace('/admin');
+        return;
+      }
       if (!onLoginPage && storedToken) {
+        toggleAutoRefresh(autoRefreshEnabled);
         setTimeout(() => loadRegistrations(), 80);
       }
     }
@@ -37,16 +128,21 @@
     async function loginFromAdminPage(event) {
       event.preventDefault();
       const password = document.getElementById('adminToken')?.value.trim();
+      const actor = adminActor();
       const submit = event.submitter;
       if (!password) { setStatus('Enter the admin password.', 'error'); return; }
       if (submit) { submit.classList.add('loading'); submit.disabled = true; }
       try {
-        const response = await fetch('/api/admin/registrations', {
-          headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + password }
+        const response = await fetch('/api/admin/session', {
+          method: 'POST',
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password, actor })
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || 'Unable to log in');
-        saveAdminSession(password);
+        if (!result.token) throw new Error('Session token missing from response');
+        saveAdminSession(result.token);
+        try { sessionStorage.setItem(adminActorKey, result.actor || actor || 'Admin'); } catch {}
         window.location.href = '/admin';
       } catch (err) {
         setStatus(err.message, 'error');
@@ -56,6 +152,7 @@
     }
 
     function logoutAdmin() {
+      stopAutoRefresh();
       clearAdminSession();
       window.location.href = '/admin/login';
     }
@@ -119,7 +216,7 @@
 
     async function changeAdminPassword(btn) {
       if (!token()) {
-        setStatus('Enter your current admin password first.', 'error');
+        setStatus('Log in first to update the admin password.', 'error');
         return;
       }
       
@@ -149,12 +246,19 @@
           body: JSON.stringify({ newAdminPassword, confirmAdminPassword })
         });
         const result = await response.json();
+        if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.error || 'Unable to update admin password');
 
-        saveAdminSession(newAdminPassword);
         newPasswordInput.value = '';
         confirmPasswordInput.value = '';
-        setStatus('Admin password updated. Use this password for future dashboard logins.', 'success');
+        if (result.sessionsInvalidated) {
+          stopAutoRefresh();
+          clearAdminSession();
+          setAdminNotice('Admin password updated. Please log in again with the new password.');
+          window.location.href = '/admin/login';
+          return;
+        }
+        setStatus('Admin password updated successfully.', 'success');
       } catch (err) {
         setStatus(err.message, 'error');
       } finally {
@@ -380,6 +484,7 @@
       try {
         const response = await fetch('/api/admin/platform-summary', { headers: authHeaders() });
         const result = await response.json();
+        if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.error || 'Unable to load platform summary');
         renderPlatformGrowth(result.summary);
       } catch (err) {
@@ -419,30 +524,43 @@
       document.getElementById('registrationQueue')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    async function loadRegistrations() {
+    async function loadRegistrations(options = {}) {
+      const { silent = false, preserveSelection = false } = options;
       if (!token()) {
-        setStatus('Log in to load registrations.', 'error');
+        if (!silent) setStatus('Log in to load registrations.', 'error');
         return;
       }
+      if (isLoadingRegistrations) return;
+      isLoadingRegistrations = true;
 
       const btn = document.getElementById('loadBtn');
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
-      setStatus('Loading registrations...');
+      if (!silent) setStatus('Loading registrations...');
 
       try {
         const response = await fetch('/api/admin/registrations', { headers: authHeaders() });
         const result = await response.json();
+        if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.error || 'Unable to load registrations');
 
         registrationsCache = result.registrations || [];
-        collapseRegistrationDetail();
+        const hasCurrent = preserveSelection && selectedReference && registrationsCache.some(item => item.reference === selectedReference);
+        if (!hasCurrent) {
+          collapseRegistrationDetail();
+        }
         renderMetrics(registrationsCache);
         renderFilteredList();
+        if (hasCurrent) {
+          await loadDetail(selectedReference, { silent: true, noScroll: true });
+        }
         loadPlatformSummary();
-        setStatus(`Loaded ${(result.registrations || []).length} registration(s).`, 'success');
+        lastDataLoadedAt = new Date();
+        refreshDataAsOf();
+        if (!silent) setStatus(`Loaded ${(result.registrations || []).length} registration(s).`, 'success');
       } catch (err) {
-        setStatus(err.message, 'error');
+        if (!silent) setStatus(err.message, 'error');
       } finally {
+        isLoadingRegistrations = false;
         if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
       }
     }
@@ -507,17 +625,70 @@
       `;
     }
 
+    function parseDateMs(value) {
+      if (!value) return 0;
+      const ms = new Date(value).getTime();
+      return Number.isFinite(ms) ? ms : 0;
+    }
+
+    function daysSince(value) {
+      const ms = parseDateMs(value);
+      if (!ms) return 0;
+      const diff = Date.now() - ms;
+      if (diff <= 0) return 0;
+      return Math.floor(diff / (1000 * 60 * 60 * 24));
+    }
+
+    function currentWorkflowStep(reg) {
+      const status = reg.status || 'pending';
+      const stripeDone = ['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus);
+      const subscriptionDone = ['active', 'free_forever'].includes(reg.subscriptionStatus);
+      if (status === 'pending') return { key: 'review', label: 'canonical review' };
+      if (status === 'needs_more_info') return { key: 'follow_up', label: 'follow-up review' };
+      if (status !== 'verified') return { key: 'inactive', label: 'inactive status' };
+      if (reg.dashboardInviteEmailStatus !== 'sent') return { key: 'invite', label: 'dashboard invite' };
+      if (!stripeDone) return { key: 'stripe', label: 'Stripe onboarding' };
+      if (!subscriptionDone) return { key: 'subscription', label: 'subscription setup' };
+      return { key: 'complete', label: 'completed onboarding' };
+    }
+
+    function workflowLastActivityAt(reg) {
+      const candidates = [
+        reg.subscriptionUpdatedAt,
+        reg.stripeStatusUpdatedAt,
+        reg.stripeAccountUpdatedAt,
+        reg.stripeOnboardingEmailSentAt,
+        reg.dashboardInviteEmailSentAt,
+        reg.reviewedAt,
+        reg.updatedAt,
+        reg.receivedAt
+      ].filter(Boolean);
+      if (!candidates.length) return '';
+      return candidates.sort((a, b) => parseDateMs(b) - parseDateMs(a))[0] || '';
+    }
+
     function nextActionPriority(reg) {
       const status = reg.status || 'pending';
       const stripeDone = ['charges_enabled', 'payouts_enabled'].includes(reg.stripeAccountStatus);
       const subscriptionDone = ['active', 'free_forever'].includes(reg.subscriptionStatus);
+      const step = currentWorkflowStep(reg);
+      const stalledDays = daysSince(workflowLastActivityAt(reg));
 
-      if (status === 'pending') return { priority: 1, label: 'Review canonical standing' };
-      if (status === 'needs_more_info') return { priority: 2, label: 'Follow up for more info' };
+      if (status === 'verified' && reg.stripeAccountStatus === 'restricted') {
+        return { priority: 1, label: 'Stripe account regressed to restricted' };
+      }
+      if (status === 'verified' && reg.subscriptionStatus === 'past_due') {
+        return { priority: 1, label: 'Subscription is past due' };
+      }
+      if (step.key !== 'complete' && stalledDays >= 10) {
+        return { priority: 2, label: `Stalled ${stalledDays}d at ${step.label}` };
+      }
+      if (status === 'pending') return { priority: 3, label: 'Review canonical standing' };
+      if (status === 'needs_more_info') return { priority: 4, label: 'Follow up for more info' };
       if (status !== 'verified') return null;
-      if (reg.dashboardInviteEmailStatus !== 'sent') return { priority: 3, label: 'Send dashboard invite' };
-      if (!stripeDone) return { priority: 4, label: 'Connect Stripe account' };
-      if (!subscriptionDone) return { priority: 5, label: 'Set platform subscription' };
+      if (reg.dashboardInviteEmailStatus !== 'sent') return { priority: 5, label: 'Send dashboard invite' };
+      if (!stripeDone) return { priority: 6, label: 'Connect Stripe account' };
+      if (!subscriptionDone) return { priority: 7, label: 'Set platform subscription' };
       return null;
     }
 
@@ -658,7 +829,8 @@
       setStatus('Copied to clipboard.');
     }
 
-    async function loadDetail(reference) {
+    async function loadDetail(reference, options = {}) {
+      const { silent = false, noScroll = false } = options;
       selectedReference = reference;
       
       const refEl = document.getElementById('selectedReference');
@@ -668,20 +840,111 @@
       
       document.getElementById('backToQueueBtn')?.classList.remove('hidden');
       if (activeTab !== 'queue') switchTab('queue');
-      setStatus('Loading details...');
+      if (!silent) setStatus('Loading details...');
 
       try {
         const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference), { headers: authHeaders() });
         const result = await response.json();
+        if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.error || 'Unable to load registration');
 
         renderDetail(result.registration);
         renderQueueNext(result.registration);
         renderFilteredList();
-        document.getElementById('registrationDetail')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        loadRegistrationGivingSummary(reference, { force: true });
+        if (!noScroll) {
+          document.getElementById('registrationDetail')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       } catch (err) {
-        setStatus(err.message, 'error');
+        if (!silent) setStatus(err.message, 'error');
       }
+    }
+
+    function renderRegistrationGivingSummary(summary) {
+      const panel = document.getElementById('registrationGivingSummary');
+      if (!panel) return;
+      if (!summary) {
+        panel.innerHTML = '<div class="giving-summary-empty">Loading giving summary…</div>';
+        return;
+      }
+      if (summary.dataSource === 'not_connected') {
+        panel.innerHTML = '<div class="giving-summary-empty">Stripe is not connected yet for this parish.</div>';
+        return;
+      }
+      if (summary.dataSource === 'not_configured') {
+        panel.innerHTML = '<div class="giving-summary-empty">Stripe reporting is not configured on this environment.</div>';
+        return;
+      }
+      if (summary.error) {
+        panel.innerHTML = `<div class="giving-summary-empty">${escapeHtml(summary.error)}</div>`;
+        return;
+      }
+
+      panel.innerHTML = `
+        <div class="giving-summary-grid">
+          <div class="giving-summary-stat">
+            <strong>${moneyShort(summary.ytdCents || 0)}</strong>
+            <span>${summary.year || new Date().getFullYear()} received</span>
+          </div>
+          <div class="giving-summary-stat">
+            <strong>${summary.giftCount || 0}</strong>
+            <span>Total gifts</span>
+          </div>
+          <div class="giving-summary-stat">
+            <strong>${summary.lastGiftAt ? shortDate(summary.lastGiftAt) : 'No gifts yet'}</strong>
+            <span>Last gift date</span>
+          </div>
+        </div>
+      `;
+    }
+
+    async function loadRegistrationGivingSummary(reference, options = {}) {
+      const { force = false } = options;
+      const cached = givingSummaryCache.get(reference);
+      if (cached && !force) {
+        renderRegistrationGivingSummary(cached);
+        return cached;
+      }
+      renderRegistrationGivingSummary(null);
+      try {
+        const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/giving-summary', { headers: authHeaders() });
+        const result = await response.json();
+        if (handleAuthFailure(response, result)) return null;
+        if (!response.ok) throw new Error(result.detail || result.error || 'Unable to load giving summary');
+        const summary = result.summary || {};
+        givingSummaryCache.set(reference, summary);
+        renderRegistrationGivingSummary(summary);
+        return summary;
+      } catch (err) {
+        const summary = { error: err.message || 'Unable to load giving summary.' };
+        renderRegistrationGivingSummary(summary);
+        return summary;
+      }
+    }
+
+    function renderAdminAuditLog(reg) {
+      const entries = Array.isArray(reg.adminAuditLog) ? reg.adminAuditLog.slice().reverse() : [];
+      if (!entries.length) {
+        return '<div class="audit-log-empty">No admin actions logged for this registration yet.</div>';
+      }
+      return entries.map((entry) => {
+        const details = entry.details && typeof entry.details === 'object'
+          ? Object.entries(entry.details).filter(([, value]) => value !== '' && value !== null && value !== undefined)
+          : [];
+        const detailText = details.length
+          ? details.map(([key, value]) => `${readable(key)}: ${Array.isArray(value) ? value.join(', ') : value}`).join(' · ')
+          : 'No extra details.';
+        return `
+          <div class="audit-log-entry">
+            <div class="audit-log-head">
+              <strong>${escapeHtml(readable(entry.action || 'unknown'))}</strong>
+              <span>${escapeHtml(shortDate(entry.at))}</span>
+            </div>
+            <div class="audit-log-meta">By ${escapeHtml(entry.actor || 'Admin')}</div>
+            <div class="audit-log-detail">${escapeHtml(detailText)}</div>
+          </div>
+        `;
+      }).join('');
     }
 
     function renderDetail(reg) {
@@ -707,6 +970,12 @@
             <div class="step-chip ${inviteDone ? 'done' : reviewDone ? 'current' : ''}"><strong>2. Invite</strong><span>${inviteDone ? 'Dashboard invite sent.' : 'Send parish dashboard access.'}</span></div>
             <div class="step-chip ${stripeDone ? 'done' : inviteDone ? 'current' : ''}"><strong>3. Stripe</strong><span>${stripeDone ? 'Payments are enabled.' : 'Connect the parish Stripe account.'}</span></div>
             <div class="step-chip ${subscriptionDone ? 'done' : stripeDone ? 'current' : ''}"><strong>4. Subscription</strong><span>${subscriptionDone ? 'AGAPAY billing is set.' : 'Set platform subscription tier/status.'}</span></div>
+          </div>
+        </div>
+        <div class="admin-section">
+          <div class="admin-section-title">Parish Giving Snapshot</div>
+          <div class="giving-summary-panel" id="registrationGivingSummary">
+            <div class="giving-summary-empty">Loading giving summary…</div>
           </div>
         </div>
         <div class="grid">
@@ -771,7 +1040,7 @@
               </div>
               <div>
                 <label for="reviewedBy">Reviewed by</label>
-                <input id="reviewedBy" value="${escapeAttr(reg.reviewedBy)}" placeholder="Reviewer Name" />
+                <input id="reviewedBy" value="${escapeAttr(reg.reviewedBy || adminActor())}" placeholder="Reviewer Name" />
               </div>
               <div>
                 <label for="verificationSource">Verification source</label>
@@ -927,6 +1196,11 @@
           </div>
 
           <div class="admin-section">
+            <div class="admin-section-title">Admin Audit Log</div>
+            <div class="audit-log">${renderAdminAuditLog(reg)}</div>
+          </div>
+
+          <div class="admin-section">
             <div class="admin-section-title">Internal Notes</div>
             <div class="notes-history">${renderNotesHistory(reg)}</div>
             <label for="reviewerNotes">Reviewer notes</label>
@@ -1011,6 +1285,7 @@
           })
         });
         const result = await response.json();
+        if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.error || 'Unable to save review');
 
         let finalRegistration = result.registration;
@@ -1024,6 +1299,10 @@
         // Clear the notes textarea after successful save
         const notesEl = document.getElementById('reviewerNotes');
         if (notesEl) notesEl.value = '';
+        const reviewerName = document.getElementById('reviewedBy')?.value.trim();
+        if (reviewerName) {
+          try { sessionStorage.setItem(adminActorKey, reviewerName); } catch {}
+        }
 
         renderDetail(finalRegistration);
         renderQueueNext(finalRegistration);
@@ -1050,6 +1329,9 @@
         headers: authHeaders()
       });
       const invite = await inviteResponse.json();
+      if (handleAuthFailure(inviteResponse, invite)) {
+        return { registration, message: 'Auto workflow paused: session expired.' };
+      }
       if (inviteResponse.ok) {
         registration = invite.registration || registration;
         messages.push(invite.email?.status === 'sent' ? 'Dashboard invite sent.' : 'Dashboard invite prepared.');
@@ -1062,6 +1344,9 @@
         headers: authHeaders()
       });
       const stripe = await stripeResponse.json();
+      if (handleAuthFailure(stripeResponse, stripe)) {
+        return { registration, message: 'Auto workflow paused: session expired.' };
+      }
       if (stripeResponse.ok) {
         registration = stripe.registration || registration;
         messages.push(stripe.email?.status === 'sent' ? 'Stripe onboarding email sent.' : 'Stripe onboarding link created.');
@@ -1085,13 +1370,12 @@
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
       
       try {
-        await saveReview(reference, null, { sendDashboardInvite: false, skipAutoVerifiedWorkflow: true });
-
         const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/dashboard-invite', {
           method: 'POST',
           headers: authHeaders()
         });
         const result = await response.json();
+        if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.detail || result.error || 'Unable to send dashboard invite');
 
         renderDetail(result.registration);
@@ -1126,8 +1410,6 @@
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
       
       try {
-        await saveReview(reference, null, { sendDashboardInvite: false, skipAutoVerifiedWorkflow: true });
-
         const response = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/subscription-checkout', {
           method: 'POST',
           headers: {
@@ -1139,6 +1421,7 @@
           })
         });
         const result = await response.json();
+        if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.detail || result.error || 'Unable to create subscription checkout');
 
         renderDetail(result.registration);
@@ -1184,6 +1467,7 @@
           headers: authHeaders()
         });
         const result = await response.json();
+        if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.detail || result.error || 'Unable to create Stripe onboarding link');
 
         renderDetail(result.registration);
@@ -1233,6 +1517,7 @@
           headers: authHeaders()
         });
         const result = await response.json();
+        if (handleAuthFailure(response, result)) return;
         if (!response.ok) throw new Error(result.detail || result.error || 'Unable to refresh Stripe status');
 
         renderDetail(result.registration);
@@ -1319,40 +1604,72 @@
       updateBulkBar();
     }
 
+    function renderBulkResults(title, rows = []) {
+      const panel = document.getElementById('bulkResults');
+      if (!panel) return;
+      if (!rows.length) {
+        panel.classList.remove('visible');
+        panel.innerHTML = '';
+        return;
+      }
+      panel.classList.add('visible');
+      panel.innerHTML = `
+        <div class="bulk-results-head">
+          <strong>${escapeHtml(title)}</strong>
+          <button class="secondary btn-sm" onclick="renderBulkResults('', [])">Clear log</button>
+        </div>
+        <div class="bulk-results-log">
+          ${rows.map((row) => `
+            <div class="bulk-result-row ${escapeAttr(row.tone || '')}">
+              ${escapeHtml(row.message || '')}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
     async function bulkAction(action) {
       if (!selectedRefs.size) return;
       const refs = Array.from(selectedRefs);
-      const labels = { invite: 'dashboard invites', verify: 'verified status', stripe: 'Stripe onboarding links' };
-      if (!confirm(`Send ${labels[action]} to ${refs.length} parish(es)?`)) return;
+      const labels = { invite: 'dashboard invites', stripe: 'Stripe onboarding links' };
+      const label = labels[action];
+      if (!label) return;
+      if (!confirm(`Send ${label} to ${refs.length} parish(es)?`)) return;
 
-      setStatus(`Running bulk action on ${refs.length} parishes...`);
-      let done = 0, failed = 0;
+      const rows = [];
+      setStatus(`Running bulk action on ${refs.length} parish(es)...`);
+      renderBulkResults(`Running ${label}`, rows);
+      let done = 0;
+      let failed = 0;
 
       for (const ref of refs) {
         try {
           if (action === 'invite') {
             const r = await fetch('/api/admin/registrations/' + encodeURIComponent(ref) + '/dashboard-invite', { method: 'POST', headers: authHeaders() });
-            if (!r.ok) throw new Error();
-          } else if (action === 'verify') {
-            const r = await fetch('/api/admin/registrations/' + encodeURIComponent(ref), {
-              method: 'PATCH',
-              headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: 'verified' })
-            });
-            if (!r.ok) throw new Error();
+            const body = await r.json().catch(() => ({}));
+            if (handleAuthFailure(r, body)) return;
+            if (!r.ok) throw new Error(body.detail || body.error || 'Invite failed');
           } else if (action === 'stripe') {
             const r = await fetch('/api/admin/registrations/' + encodeURIComponent(ref) + '/stripe-onboarding', { method: 'POST', headers: authHeaders() });
-            if (!r.ok) throw new Error();
+            const body = await r.json().catch(() => ({}));
+            if (handleAuthFailure(r, body)) return;
+            if (!r.ok) throw new Error(body.detail || body.error || 'Stripe link failed');
           }
           done++;
-        } catch {
+          rows.push({ tone: 'success', message: `${ref}: Success` });
+        } catch (err) {
           failed++;
+          rows.push({ tone: 'error', message: `${ref}: Failed (${err.message || 'unknown error'})` });
         }
+        renderBulkResults(`Running ${label} (${done + failed}/${refs.length})`, rows);
       }
 
       clearSelection();
-      await loadRegistrations();
-      setStatus(`Bulk action complete: ${done} succeeded${failed ? ', ' + failed + ' failed' : ''}.`, failed ? 'error' : 'success');
+      await loadRegistrations({ silent: true, preserveSelection: true });
+      const summary = `Bulk action complete: ${done} succeeded${failed ? `, ${failed} failed` : ''}.`;
+      rows.push({ tone: failed ? 'error' : 'success', message: summary });
+      renderBulkResults(`${label} complete`, rows);
+      setStatus(summary, failed ? 'error' : 'success');
     }
 
     // ── EMAIL LOG ─────────────────────────────────────────────────────────

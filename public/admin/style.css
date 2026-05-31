@@ -794,9 +794,28 @@
       top: 0;
       z-index: 10;
     }
-    .topbar-title { font-family: var(--serif); color: var(--deep); font-size: 20px; font-weight: 600; }
-    .topbar-ref { color: var(--stone); font-size: 12px; }
-    .topbar-ref strong { color: var(--gold); }
+.topbar-title { font-family: var(--serif); color: var(--deep); font-size: 20px; font-weight: 600; }
+.topbar-ref { color: var(--stone); font-size: 12px; }
+.topbar-ref strong { color: var(--gold); }
+.topbar-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-right: 0.35rem;
+}
+.auto-refresh-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--stone);
+  font-size: 11px;
+  font-weight: 600;
+}
+.auto-refresh-toggle input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--forest);
+}
     .detail-wrap { flex: 1; overflow-y: auto; padding: 1.5rem 2rem 3rem; }
     .detail-empty { min-height: 410px; display: grid; place-items: center; color: var(--stone); text-align: center; }
     .detail-empty-inner { max-width: 340px; }
@@ -1527,9 +1546,125 @@
       border-bottom: 1px solid rgba(184,144,47,0.2);
       font-size: 13px; color: var(--deep);
     }
-    .bulk-bar.visible { display: flex; }
-    .bulk-bar strong { font-weight: 700; }
-    .bulk-bar .btn-row { margin: 0; gap: 0.45rem; }
+.bulk-bar.visible { display: flex; }
+.bulk-bar strong { font-weight: 700; }
+.bulk-bar .btn-row { margin: 0; gap: 0.45rem; }
+.bulk-results {
+  display: none;
+  margin: -0.35rem 0 0.75rem;
+  border: 1px solid rgba(111,106,96,0.22);
+  border-radius: 10px;
+  background: white;
+  overflow: hidden;
+}
+.bulk-results.visible { display: block; }
+.bulk-results-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.8rem;
+  background: var(--paper);
+  border-bottom: 1px solid rgba(111,106,96,0.18);
+}
+.bulk-results-head strong {
+  color: var(--deep);
+  font-size: 12px;
+  font-weight: 700;
+}
+.bulk-results-log {
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 0.35rem 0.8rem 0.55rem;
+}
+.bulk-result-row {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(111,106,96,0.1);
+  font-size: 12px;
+  color: var(--ink);
+}
+.bulk-result-row:last-child { border-bottom: none; }
+.bulk-result-row.success { color: var(--forest); }
+.bulk-result-row.error { color: #8a2929; }
+.giving-summary-panel {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fff, var(--paper));
+  padding: 0.9rem;
+}
+.giving-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+.giving-summary-stat {
+  border: 1px solid rgba(111,106,96,0.2);
+  border-radius: 10px;
+  background: white;
+  padding: 0.7rem;
+}
+.giving-summary-stat strong {
+  display: block;
+  font-family: var(--serif);
+  color: var(--deep);
+  font-size: 22px;
+  line-height: 1.1;
+}
+.giving-summary-stat span {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--stone);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+.giving-summary-empty {
+  color: var(--stone);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.audit-log {
+  display: grid;
+  gap: 0.55rem;
+}
+.audit-log-entry {
+  border: 1px solid rgba(111,106,96,0.2);
+  border-radius: 10px;
+  background: white;
+  padding: 0.65rem 0.7rem;
+}
+.audit-log-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.audit-log-head strong {
+  color: var(--deep);
+  font-size: 13px;
+}
+.audit-log-head span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.audit-log-meta {
+  margin-top: 0.2rem;
+  color: var(--stone);
+  font-size: 12px;
+  font-weight: 600;
+}
+.audit-log-detail {
+  margin-top: 0.2rem;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.audit-log-empty {
+  color: var(--stone);
+  font-size: 13px;
+  line-height: 1.6;
+}
     .queue-table th.check-col, .queue-table td.check-col { width: 36px; padding-left: 0.75rem; }
     .queue-table input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--forest); cursor: pointer; }
 
@@ -1587,7 +1722,9 @@
       .growth-body { grid-template-columns: 1fr; }
       .health-body { grid-template-columns: 1fr; }
       .full { grid-column: auto; }
-      .topbar, .detail-wrap { padding-left: 1rem; padding-right: 1rem; }
+  .topbar, .detail-wrap { padding-left: 1rem; padding-right: 1rem; }
+  .topbar-meta { display: none; }
+  .giving-summary-grid { grid-template-columns: 1fr; }
     }
 
     /* AGAPAY dashboard refresh - mirrors the donor dashboard product language. */
