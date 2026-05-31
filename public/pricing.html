@@ -268,10 +268,10 @@
       border-bottom: 1px solid var(--line);
       align-items: center;
       overflow: hidden;
-      min-height: 390px;
+      min-height: 520px;
       background:
-        radial-gradient(circle at 18% 0%, rgba(200, 162, 74, 0.11), transparent 32%),
-        linear-gradient(180deg, #FFFDF8 0%, #F8F2E7 100%);
+        radial-gradient(circle at 15% 8%, rgba(200, 162, 74, 0.14), transparent 32%),
+        linear-gradient(180deg, #F3EDE0 0%, #EFE8DA 100%);
     }
     .pricing-hero::before {
       content: "";
@@ -367,24 +367,19 @@
     .hero-btn-secondary svg, .small-btn.secondary svg { stroke: #9A6F21; }
     .hero-art {
       position: relative;
-      min-height: 350px;
+      min-height: 460px;
       display: grid;
       align-items: end;
       justify-items: end;
       margin-right: -1.4rem;
     }
     .hero-art::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, rgba(255, 253, 248, 0.92), rgba(255, 253, 248, 0.28) 36%, rgba(255, 253, 248, 0.02));
-      pointer-events: none;
-      z-index: 2;
+      content: none;
     }
     .hero-art img {
-      width: min(118%, 1040px);
+      width: min(128%, 1120px);
       object-fit: contain;
-      max-height: 420px;
+      max-height: 540px;
       opacity: 1;
       filter: sepia(0.28) saturate(0.95) brightness(1.01) contrast(1.1);
     }
@@ -891,9 +886,8 @@
       .nav-links { display: none; }
       .mobile-menu-btn { display: inline-flex; }
       .pricing-hero { grid-template-columns: 1fr; padding: 1.5rem 1.25rem; }
-      .hero-art { min-height: 0; justify-items: center; margin-right: 0; }
-      .hero-art img { max-height: 320px; }
-      .hero-art::before { background: linear-gradient(180deg, rgba(255,253,248,0), rgba(255,253,248,0.3)); }
+      .hero-art { min-height: 330px; justify-items: center; margin-right: 0; }
+      .hero-art img { max-height: 360px; }
       .pricing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .fee-banner, .lower-grid, .closing-cta { grid-template-columns: 1fr; }
       .fee-split { border: 0; border-top: 1px solid rgba(166, 159, 145, 0.24); border-bottom: 1px solid rgba(166, 159, 145, 0.24); padding: 1rem 0; }

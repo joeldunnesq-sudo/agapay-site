@@ -267,8 +267,8 @@
       padding: clamp(2rem, 4.5vw, 4.25rem);
       border-bottom: 1px solid var(--line);
       background:
-        radial-gradient(circle at 18% 0%, rgba(200, 162, 74, 0.11), transparent 32%),
-        linear-gradient(180deg, #FFFDF8 0%, #F8F2E7 100%);
+        radial-gradient(circle at 15% 8%, rgba(200, 162, 74, 0.14), transparent 32%),
+        linear-gradient(180deg, #F3EDE0 0%, #EFE8DA 100%);
       overflow: hidden;
     }
     .contact-hero::before {
@@ -283,12 +283,7 @@
       pointer-events: none;
     }
     .contact-hero::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, rgba(255,253,248,0.98) 0%, rgba(255,253,248,0.82) 34%, rgba(255,253,248,0.2) 62%, rgba(255,253,248,0) 100%);
-      pointer-events: none;
-      z-index: 1;
+      content: none;
     }
     .hero-copy {
       position: relative;
@@ -361,16 +356,16 @@
       right: -2%;
       top: 0;
       bottom: 0;
-      width: min(850px, 65vw);
-      opacity: 0.92;
+      width: min(960px, 68vw);
+      opacity: 0.94;
       z-index: 0;
     }
     .hero-art img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      object-position: center right;
-      filter: sepia(0.07) saturate(0.98);
+      object-fit: contain;
+      object-position: bottom right;
+      filter: sepia(0.07) saturate(0.98) contrast(1.04);
     }
 
     .section {
@@ -773,15 +768,12 @@
         min-height: 620px;
         align-items: start;
       }
-      .contact-hero::after {
-        background: linear-gradient(180deg, rgba(255,253,248,0.98) 0%, rgba(255,253,248,0.86) 38%, rgba(255,253,248,0.18) 100%);
-      }
       .hero-art {
         right: 0;
         top: auto;
         bottom: 0;
         width: 100%;
-        height: 58%;
+        height: 60%;
       }
       .hero-art img { object-position: center bottom; }
       .help-grid, .direct-grid, .faq-layout, .person-card, .cta-band {
