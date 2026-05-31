@@ -3,531 +3,955 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>How it Works | AGAPAY</title>
+  <title>How It Works | AGAPAY</title>
   <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
-  <meta name="description" content="How to use AGAPAY to give to your parish, light candles, submit panikhida names, support monasteries, and offer alms â€” all in one Orthodox-native platform." />
-  <meta property="og:title" content="How it Works | AGAPAY" />
-  <meta property="og:url" content="https://agapay.app/how-it-works" />
+  <meta name="description" content="See how AGAPAY makes Orthodox giving simple, meaningful, and connected to the life of the Church." />
   <meta name="theme-color" content="#061522" />
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
-
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles/numbers.css" />
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --deep:   #061522;
-      --forest: #0B2130;
-      --gold:   #C8A24A;
-      --cream:  #F3EFE6;
-      --stone:  #A69F91;
-      --ink:    #1A1A18;
-      --serif:  'Cormorant Garamond', Georgia, serif;
-      --sans:   'DM Sans', system-ui, sans-serif;
-      --r:      10px;
-      --rlg:    16px;
+      --night: #061522;
+      --night-2: #0B2130;
+      --ink: #171715;
+      --cream: #F6F1E8;
+      --paper: #FFFDF8;
+      --stone: #70695D;
+      --muted: #A69F91;
+      --gold: #C8A24A;
+      --gold-dark: #A97C25;
+      --line: rgba(166, 159, 145, 0.28);
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "DM Sans", system-ui, sans-serif;
     }
 
     html { scroll-behavior: smooth; }
-    body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; min-height: 100vh; }
-    body.nav-open { overflow: hidden; }
+    body {
+      min-height: 100vh;
+      font-family: var(--sans);
+      color: var(--ink);
+      background: var(--cream);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    body.drawer-open { overflow: hidden; }
     a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
 
-    .candle-glow { position: fixed; width: 500px; height: 500px; background: radial-gradient(circle, rgba(200,162,74,0.05) 0%, rgba(53,94,59,0.02) 40%, transparent 70%); filter: blur(60px); pointer-events: none; z-index: -1; border-radius: 50%; }
-    .candle-glow.top-left { top: -150px; left: -150px; }
-    .candle-glow.bottom-right { bottom: -150px; right: -150px; }
-
-    /* NAV */
-    nav { position: sticky; top: 0; z-index: 100; background: rgba(243,239,230,0.93); backdrop-filter: blur(12px); border-bottom: 0.5px solid rgba(166,159,145,0.35); }
-    .nav-inner { max-width: 1024px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
-    .nav-logo { display: flex; align-items: center; gap: 5px; z-index: 110; }
-    .nav-mark { width: 52px; height: 52px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-    .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
-    .nav-name em { color: var(--gold); font-style: normal; }
-    .nav-links { display: flex; align-items: center; gap: 1.25rem; }
-    .nav-links a { font-size: 14px; color: var(--forest); transition: color 0.2s; }
-    .nav-links a:hover { color: var(--ink); }
-    .nav-cta { display: inline-block; background: var(--deep); color: var(--cream) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-family: var(--sans); font-weight: 500; transition: background 0.2s; }
-    .nav-cta:hover { background: var(--forest) !important; }
-    .nav-give { display: inline-block; background: var(--gold); color: var(--deep) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-weight: 600; transition: opacity 0.2s; }
-    .nav-give:hover { opacity: 0.9; }
-    .menu-toggle { display: none; background: none; border: none; cursor: pointer; width: 44px; height: 44px; z-index: 110; flex-direction: column; align-items: center; justify-content: center; gap: 5px; }
-    .menu-toggle span { display: block; width: 22px; height: 2px; background-color: var(--deep); border-radius: 2px; transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.2s; }
-    .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-    .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
-    .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-    .mobile-nav-drawer { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background-color: var(--cream); z-index: 105; padding: 6rem 2rem 3rem; display: flex; flex-direction: column; gap: 2rem; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s; overflow-y: auto; }
-    .mobile-nav-drawer.active { opacity: 1; visibility: visible; transform: translateY(0); }
-    .mobile-drawer-links { display: flex; flex-direction: column; gap: 1.5rem; }
-    .mobile-drawer-links a { font-family: var(--serif); font-size: 24px; color: var(--deep); border-bottom: 0.5px solid rgba(166,159,145,0.15); padding-bottom: 0.75rem; }
-    .mobile-drawer-actions { margin-top: auto; display: flex; flex-direction: column; gap: 1rem; }
-    .mobile-drawer-actions .nav-cta,
-    .mobile-drawer-actions .nav-give { text-align: center; padding: 14px; font-size: 15px; width: 100%; }
-
-    /* HERO */
-    .hero { background: var(--deep); padding: 5rem 1.5rem 4rem; text-align: center; position: relative; overflow: hidden; }
-    .hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 700px; height: 300px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.11) 0%, transparent 65%); pointer-events: none; }
-    .hero-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; height: 450px; object-fit: contain; opacity: 0.09; pointer-events: none; z-index: 0; }
-    .hero-inner { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; }
-    .hero-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1.25rem; font-weight: 500; }
-    .hero h1 { font-family: var(--serif); font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 500; color: var(--cream); line-height: 1.18; letter-spacing: -0.01em; margin-bottom: 1.25rem; }
-    .hero h1 em { color: var(--gold); font-style: italic; }
-    .hero-sub { font-size: 15px; color: var(--stone); line-height: 1.85; max-width: 480px; margin: 0 auto; }
-
-    /* BODY WRAP */
-    .body-wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
-
-    /* HOW IT WORKS */
-    .how-section { padding: 4rem 0 3rem; }
-    .how-section-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); font-weight: 500; text-align: center; margin-bottom: 0.5rem; }
-    .how-section-title { font-family: var(--serif); font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 500; color: var(--deep); text-align: center; margin-bottom: 2rem; letter-spacing: -0.01em; }
-
-    /* HORIZONTAL LINEAR PROGRESSION */
-    .how-card {
-      background: white;
-      border-radius: var(--rlg);
-      border: 1.5px solid rgba(200,162,74,0.5);
-      padding: 3.5rem 2rem;
-      position: relative;
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: linear-gradient(90deg, #061522, #0B2130);
+      border-bottom: 1px solid rgba(200, 162, 74, 0.24);
+      padding: 0.95rem clamp(1rem, 2.6vw, 2.6rem);
     }
-
-    .steps-progression {
+    .nav {
+      width: min(1320px, 100%);
+      margin: 0 auto;
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      position: relative;
+      gap: 1rem;
     }
-
-    /* Horizontal gold connecting line */
-    .steps-progression::before {
-      content: '';
-      position: absolute;
-      top: 22px; /* Centers with 44px circle */
-      left: 12.5%; /* Centers on the first circle */
-      right: 12.5%; /* Centers on the last circle */
-      height: 1.5px;
-      background: rgba(200,162,74,0.4);
-      z-index: 0;
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--cream);
+      min-width: max-content;
     }
-
-    .step { 
-      flex: 1;
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      text-align: center; 
-      padding: 0 1rem;
-      position: relative; 
-      z-index: 1; 
-    }
-    
-    .step-circle {
-      width: 44px; height: 44px;
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
       border-radius: 50%;
-      background: var(--deep);
-      border: 2px solid var(--deep);
+      border: 1px solid rgba(200, 162, 74, 0.52);
+      background: rgba(6, 21, 34, 0.45);
+    }
+    .brand-mark img { width: 38px; height: 38px; object-fit: contain; }
+    .brand-name { display: flex; flex-direction: column; line-height: 1; }
+    .brand-name strong {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .brand-name span {
+      margin-top: 0.22rem;
       color: var(--gold);
-      display: flex; align-items: center; justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+      gap: clamp(0.9rem, 2vw, 2rem);
+      color: rgba(246, 241, 232, 0.9);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .nav-links a.active {
+      color: var(--gold);
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 0.36rem;
+    }
+    .nav-actions { display: flex; align-items: center; gap: 0.8rem; margin-left: 1rem; }
+    .btn-donate {
+      min-height: 44px;
+      padding: 0 1.45rem;
+      border-radius: 8px;
+      border: 1px solid rgba(200, 162, 74, 0.6);
+      color: var(--cream);
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: rgba(6, 21, 34, 0.34);
+    }
+    .btn-donate svg, .nav-avatar svg, .mobile-menu-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--gold);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .nav-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid rgba(200, 162, 74, 0.7);
+      background: rgba(6, 21, 34, 0.36);
+      display: grid;
+      place-items: center;
+    }
+    .mobile-menu-btn {
+      display: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      border: 1px solid rgba(200, 162, 74, 0.45);
+      background: rgba(6, 21, 34, 0.45);
+      color: var(--cream);
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 16, 26, 0.58);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 70;
+    }
+    .mobile-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(90vw, 380px);
+      height: 100vh;
+      background: linear-gradient(180deg, #081a2a, #061522);
+      color: var(--cream);
+      transform: translateX(105%);
+      transition: transform 0.24s ease;
+      z-index: 80;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      border-left: 1px solid rgba(200, 162, 74, 0.26);
+      box-shadow: -20px 0 45px rgba(0, 0, 0, 0.35);
+    }
+    .drawer-open .drawer-backdrop { opacity: 1; pointer-events: auto; }
+    .drawer-open .mobile-drawer { transform: translateX(0); }
+    .drawer-head {
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(200, 162, 74, 0.2);
+    }
+    .drawer-title {
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      letter-spacing: 0.04em;
+    }
+    .drawer-close {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid rgba(200, 162, 74, 0.3);
+      background: transparent;
+      color: var(--cream);
+      display: grid;
+      place-items: center;
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+    .drawer-scroll {
+      overflow-y: auto;
+      padding: 0.8rem 1rem 1.2rem;
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+    .drawer-links { display: grid; gap: 0.35rem; }
+    .drawer-links a {
+      padding: 0.6rem 0.55rem;
+      border-radius: 8px;
+      color: rgba(246, 241, 232, 0.9);
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .drawer-links a.active { background: rgba(200, 162, 74, 0.16); color: #FFE7B6; }
+    .drawer-join {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #D6AF5B, #B98832);
+      color: #0A1724;
+      font-size: 0.96rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .page {
+      width: min(1320px, calc(100% - 2rem));
+      margin: 0.95rem auto 2rem;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      box-shadow: 0 10px 38px rgba(12, 22, 32, 0.08);
+      overflow: hidden;
+    }
+
+    .hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(320px, 0.78fr) minmax(460px, 1.22fr);
+      align-items: center;
+      min-height: 500px;
+      padding: 2.2rem 2.3rem;
+      border-bottom: 1px solid var(--line);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(200, 162, 74, 0.12), transparent 34%),
+        linear-gradient(180deg, #FFFDF8 0%, #F8F2E7 100%);
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(30deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08)),
+        linear-gradient(150deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08));
+      background-size: 54px 94px;
+      opacity: 0.18;
+      pointer-events: none;
+    }
+    .hero-copy {
+      position: relative;
+      z-index: 2;
+      max-width: 540px;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.56rem;
+      color: var(--gold-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .hero h1 {
+      font-family: var(--serif);
+      color: #0A1524;
+      font-size: clamp(3rem, 5.7vw, 5.5rem);
+      line-height: 0.96;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.9rem;
+    }
+    .hero h1 span {
+      display: block;
+      color: var(--gold-dark);
+      font-style: italic;
+    }
+    .hero p {
+      color: #3F3C36;
+      font-size: 1.08rem;
+      line-height: 1.75;
+      max-width: 455px;
+    }
+    .hero-art {
+      position: absolute;
+      inset: 0 0 0 30%;
+      display: grid;
+      justify-items: end;
+      align-items: center;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .hero-art::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(255, 253, 248, 0.95) 0%, rgba(255, 253, 248, 0.68) 19%, rgba(255, 253, 248, 0.06) 52%, rgba(255, 253, 248, 0.16) 100%),
+        linear-gradient(180deg, rgba(255,253,248,0), rgba(255,253,248,0.18));
+      z-index: 2;
+    }
+    .hero-art img {
+      width: min(100%, 880px);
+      height: 100%;
+      object-fit: cover;
+      object-position: center right;
+      opacity: 0.94;
+      filter: sepia(0.34) saturate(0.96) brightness(1.03) contrast(1.05);
+    }
+
+    .process {
+      margin: 1.4rem;
+      border: 1px solid rgba(166, 159, 145, 0.3);
+      border-radius: 14px;
+      background: #FFFEFC;
+      overflow: hidden;
+      box-shadow: 0 12px 34px rgba(6, 21, 34, 0.06);
+    }
+    .step {
+      position: relative;
+      display: grid;
+      grid-template-columns: 128px minmax(200px, 260px) minmax(0, 1fr) minmax(260px, 360px);
+      min-height: 216px;
+      border-bottom: 1px solid var(--line);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 90% 50%, rgba(200, 162, 74, 0.08), transparent 30%),
+        linear-gradient(90deg, #FFFDF8, #FBF6ED);
+    }
+    .step:last-child { border-bottom: 0; }
+    .step-number {
+      font-family: var(--numeric-font, var(--serif));
+      color: #A97C25;
+      font-size: clamp(4.2rem, 7vw, 6.2rem);
+      line-height: 1;
+      font-weight: 500;
+      display: grid;
+      place-items: center;
+      padding-left: 0.6rem;
+    }
+    .step-title {
+      display: grid;
+      align-content: center;
+      padding: 1.4rem 1rem;
+    }
+    .step-title h2 {
+      font-family: var(--serif);
+      color: #081A2A;
+      font-size: clamp(2rem, 3.2vw, 3.15rem);
+      line-height: 0.98;
+      font-weight: 500;
+      margin-bottom: 0.8rem;
+    }
+    .step-title p {
+      color: #26313B;
+      font-size: 1rem;
+      line-height: 1.65;
+      max-width: 250px;
+    }
+    .step-panel {
+      display: grid;
+      align-items: center;
+      padding: 1.25rem;
+    }
+    .mini-ui {
+      width: min(100%, 380px);
+      margin: 0 auto;
+      border: 1px solid rgba(166, 159, 145, 0.3);
+      border-radius: 12px;
+      background: rgba(255, 253, 248, 0.94);
+      box-shadow: 0 14px 28px rgba(6, 21, 34, 0.08);
+      overflow: hidden;
+    }
+    .mini-ui-head {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid rgba(166, 159, 145, 0.22);
+      color: #0B2130;
       font-family: var(--serif);
       font-size: 1.25rem;
-      font-weight: 500;
-      flex-shrink: 0;
-      margin-bottom: 1.25rem;
-      box-shadow: 0 0 0 8px white; /* Creates a clean cutout effect on the line */
+      font-weight: 600;
     }
-    
-    .step-content {
+    .form-lines { display: grid; gap: 0.65rem; padding: 1rem; }
+    .input-line {
+      min-height: 40px;
+      border: 1px solid rgba(166, 159, 145, 0.28);
+      border-radius: 7px;
+      background: #FFFDF8;
+      color: #71685D;
       display: flex;
-      flex-direction: column;
-      gap: 6px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 0.8rem;
+      font-size: 0.82rem;
     }
-    
-    .step-title { font-size: 16px; font-weight: 500; color: var(--deep); }
-    .step-desc { font-size: 13px; color: var(--stone); line-height: 1.6; }
+    .mini-button {
+      min-height: 42px;
+      border-radius: 7px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #D6AF5B, #B98832);
+      color: #071522;
+      font-weight: 800;
+      font-size: 0.82rem;
+    }
+    .search-ui { padding: 0.8rem; }
+    .search-bar {
+      min-height: 44px;
+      border: 1px solid rgba(166, 159, 145, 0.28);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0 0.85rem;
+      color: #A97C25;
+      font-size: 0.84rem;
+      margin-bottom: 0.6rem;
+    }
+    .result-row {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 0.65rem;
+      align-items: center;
+      padding: 0.62rem 0.15rem;
+      border-top: 1px solid rgba(166, 159, 145, 0.18);
+    }
+    .result-mark {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      color: #A97C25;
+    }
+    .result-row strong {
+      display: block;
+      color: #071522;
+      font-size: 0.88rem;
+      line-height: 1.2;
+    }
+    .result-row span {
+      display: block;
+      color: #71685D;
+      font-size: 0.72rem;
+      margin-top: 0.16rem;
+    }
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.75rem;
+      width: min(100%, 650px);
+      margin: 0 auto;
+    }
+    .choice {
+      min-height: 110px;
+      border-right: 1px solid rgba(166, 159, 145, 0.22);
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      gap: 0.55rem;
+      text-align: center;
+      color: #081A2A;
+    }
+    .choice:last-child { border-right: 0; }
+    .choice svg {
+      width: 42px;
+      height: 42px;
+      stroke: #A97C25;
+      fill: none;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .choice span {
+      font-family: var(--serif);
+      font-size: 1.12rem;
+      font-weight: 600;
+    }
+    .checklist {
+      display: grid;
+      gap: 1rem;
+      align-content: center;
+      padding: 1.2rem 1rem;
+      color: #081A2A;
+    }
+    .check-item {
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      gap: 0.7rem;
+      align-items: start;
+      font-family: var(--serif);
+      font-size: 1.26rem;
+      line-height: 1.2;
+    }
+    .check-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1px solid #C8A24A;
+      color: #A97C25;
+      display: grid;
+      place-items: center;
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+    .step-art {
+      position: relative;
+      display: grid;
+      align-items: end;
+      justify-items: center;
+      min-height: 100%;
+      overflow: hidden;
+    }
+    .step-art::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(255,253,248,0.98), rgba(255,253,248,0.36) 28%, rgba(255,253,248,0.12) 70%, rgba(255,253,248,0.92)),
+        linear-gradient(180deg, rgba(255,253,248,0.05), rgba(255,253,248,0.88));
+      z-index: 2;
+      pointer-events: none;
+    }
+    .step-art img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      opacity: 0.78;
+      filter: sepia(0.35) saturate(0.88) brightness(1.07) contrast(1.04);
+    }
+    .step-art.compact img {
+      object-fit: contain;
+      padding: 1.1rem;
+    }
+    .step-four .step-art {
+      grid-column: 3 / 4;
+      min-height: 250px;
+    }
+    .step-four .step-art img { object-fit: cover; }
+    .step-four .checklist { grid-column: 4 / 5; }
 
-    /* SECTION DIVIDER */
-    .section-divider { border: none; border-top: 0.5px solid rgba(166,159,145,0.25); margin: 0; }
+    .final-cta {
+      position: relative;
+      margin: 0 1.4rem 1.4rem;
+      min-height: 190px;
+      display: grid;
+      grid-template-columns: 1fr 1.4fr 1fr;
+      align-items: center;
+      gap: 1rem;
+      text-align: center;
+      border: 1px solid rgba(166, 159, 145, 0.3);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #FFFEFC;
+    }
+    .cta-art {
+      position: relative;
+      height: 100%;
+      min-height: 190px;
+      overflow: hidden;
+    }
+    .cta-art::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(255,253,248,0.96), rgba(255,253,248,0.34), rgba(255,253,248,0.95));
+      z-index: 2;
+    }
+    .cta-art img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.72;
+      filter: sepia(0.34) saturate(0.9) brightness(1.05);
+    }
+    .cta-copy {
+      position: relative;
+      z-index: 3;
+      padding: 1.8rem 0.5rem;
+    }
+    .cta-copy h2 {
+      font-family: var(--serif);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #081A2A;
+      font-size: clamp(2rem, 3.4vw, 3.2rem);
+      line-height: 1.08;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+    .cta-actions {
+      display: flex;
+      justify-content: center;
+      gap: 0.9rem;
+      flex-wrap: wrap;
+    }
+    .btn-primary, .btn-secondary {
+      min-height: 46px;
+      min-width: 178px;
+      border-radius: 7px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 1.2rem;
+      font-size: 0.88rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #D6AF5B, #B98832);
+      color: #071522;
+      border: 1px solid rgba(183, 133, 46, 0.44);
+    }
+    .btn-secondary {
+      background: #FFFDF8;
+      color: #8A6620;
+      border: 1px solid rgba(183, 133, 46, 0.55);
+    }
 
-    /* WAYS TO GIVE */
-    .ways-section { padding: 4.5rem 0; }
-    .ways-section-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); font-weight: 500; text-align: center; margin-bottom: 0.5rem; }
-    .ways-section h2 { font-family: var(--serif); font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 500; color: var(--deep); text-align: center; margin-bottom: 0.75rem; letter-spacing: -0.01em; }
-    .ways-lead { font-size: 15px; color: var(--stone); text-align: center; line-height: 1.75; max-width: 520px; margin: 0 auto 3rem; }
+    .site-footer {
+      background: #05131F;
+      color: rgba(246, 241, 232, 0.74);
+      border-top: 1px solid rgba(200, 162, 74, 0.16);
+      padding: 2.5rem 0 1.4rem;
+    }
+    .footer-wrap { width: min(1320px, calc(100% - 2rem)); margin: 0 auto; }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.5fr repeat(4, minmax(0, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.6rem;
+    }
+    .footer-lockup { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.4rem; }
+    .footer-lockup img { width: 40px; height: 40px; object-fit: contain; }
+    .footer-lockup strong {
+      display: block;
+      font: 500 1.8rem/1 var(--serif);
+      color: var(--cream);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .footer-brand p { color: rgba(246, 241, 232, 0.6); line-height: 1.6; }
+    .footer-col h4 {
+      color: var(--gold);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.55rem;
+    }
+    .footer-col a {
+      display: block;
+      margin-bottom: 0.4rem;
+      color: rgba(246, 241, 232, 0.76);
+      font-size: 0.92rem;
+    }
+    .footer-bottom {
+      border-top: 1px solid rgba(200, 162, 74, 0.14);
+      padding-top: 0.95rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      font-size: 0.84rem;
+      color: rgba(246, 241, 232, 0.54);
+    }
 
-    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-    .card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 1.75rem; transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(15,45,31,0.09); }
-    .card-icon { width: 48px; height: 48px; background: rgba(200,162,74,0.1); border: 0.5px solid rgba(200,162,74,0.25); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.1rem; }
-    .card h3 { font-family: var(--serif); font-size: 1.35rem; margin-bottom: 0.5rem; color: var(--deep); font-weight: 500; }
-    .card p { font-size: 13px; color: var(--stone); line-height: 1.7; margin-bottom: 1.25rem; }
-    .card-link { color: var(--gold); font-weight: 500; font-size: 13px; transition: opacity 0.2s; display: inline-flex; align-items: center; gap: 4px; }
-    .card-link:hover { opacity: 0.75; }
-
-    /* MONASTERY NOTE */
-    .monastery-note { text-align: center; font-size: 14px; font-weight: 500; color: var(--forest); margin: 2.5rem 0; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 1rem 1.5rem; background: rgba(53,94,59,0.06); border: 0.5px solid rgba(53,94,59,0.18); border-radius: var(--r); }
-
-    /* FINAL CTA */
-    .final-cta { background: var(--deep); border-radius: var(--rlg); padding: 3.5rem 2rem; text-align: center; margin: 0 0 5rem; position: relative; overflow: hidden; }
-    .final-cta::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 500px; height: 200px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.09) 0%, transparent 65%); pointer-events: none; }
-    .final-cta h2 { font-family: var(--serif); font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 500; color: var(--cream); margin-bottom: 0.75rem; position: relative; z-index: 1; }
-    .final-cta p { color: rgba(243,239,230,0.65); max-width: 400px; margin: 0 auto 2rem; font-size: 14px; line-height: 1.8; position: relative; z-index: 1; }
-    .final-cta a { display: inline-block; background: var(--gold); color: var(--deep); padding: 15px 36px; border-radius: var(--r); font-family: var(--serif); font-style: italic; font-size: 17px; font-weight: 500; letter-spacing: 0.02em; transition: opacity 0.2s, transform 0.15s; box-shadow: 0 4px 20px rgba(200,162,74,0.3); position: relative; z-index: 1; }
-    .final-cta a:hover { opacity: 0.92; transform: translateY(-2px); }
-
-    /* SCROLL ANIMATIONS */
-    .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.55s ease, transform 0.55s ease; }
+    .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.65s ease, transform 0.65s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
-    .reveal-delay-1 { transition-delay: 0.07s; }
-    .reveal-delay-2 { transition-delay: 0.14s; }
-    .reveal-delay-3 { transition-delay: 0.21s; }
-    .reveal-delay-4 { transition-delay: 0.28s; }
-    .reveal-delay-5 { transition-delay: 0.35s; }
-    .reveal-delay-6 { transition-delay: 0.42s; } /* Added for the 6th card */
 
-    /* FOOTER */
-    footer { background: var(--deep); padding: 3.5rem 1.5rem 0; }
-    .footer-inner { max-width: 860px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 3rem; padding-bottom: 3rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
-    .footer-brand { display: flex; flex-direction: column; gap: 8px; }
-    .footer-logo { display: flex; align-items: center; gap: 8px; }
-    .footer-name { font-family: var(--serif); font-size: 32px; color: var(--cream); font-weight: 500; }
-    .footer-name em { color: var(--gold); font-style: normal; }
-    .footer-tagline { font-family: var(--serif); font-size: 16px; font-style: italic; color: rgba(243,239,230,0.7); }
-    .footer-nav { display: flex; gap: 3rem; flex-wrap: wrap; }
-    .footer-nav-group { display: flex; flex-direction: column; gap: 10px; }
-    .footer-nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin-bottom: 2px; }
-    .footer-nav-group a { font-size: 13px; color: rgba(166,159,145,0.55); transition: color 0.2s; }
-    .footer-nav-group a:hover { color: var(--cream); }
-    .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
-    .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.3); }
-
-    /* RESPONSIVE */
-    @media (max-width: 768px) {
-      .menu-toggle { display: flex; }
-      .nav-links a:not(.nav-cta):not(.nav-give) { display: none; }
-      .nav-inner .nav-cta, .nav-inner .nav-give { display: none; }
-      .cards { grid-template-columns: 1fr; }
-      .how-card { padding: 2.5rem 1.5rem; }
-      
-      /* Mobile layout for the progression timeline */
-      .steps-progression { 
-        flex-direction: column; 
-        gap: 2.5rem; 
+    @media (max-width: 1120px) {
+      .nav-links { display: none; }
+      .mobile-menu-btn { display: inline-flex; }
+      .hero { grid-template-columns: 1fr; min-height: auto; padding: 2rem 1.3rem 0; }
+      .hero-copy { max-width: 680px; }
+      .hero-art {
+        position: relative;
+        inset: auto;
+        min-height: 300px;
+        margin: 1rem -1.3rem 0;
       }
-      .steps-progression::before {
-        top: 22px;
-        bottom: 22px;
-        left: 21px; /* Centers the vertical line within the left-aligned 44px circle */
-        right: auto;
-        width: 1.5px;
-        height: auto;
+      .hero-art::before {
+        background:
+          linear-gradient(180deg, rgba(255,253,248,0.1), rgba(255,253,248,0.7) 82%, rgba(255,253,248,0.98)),
+          linear-gradient(90deg, rgba(255,253,248,0.82), rgba(255,253,248,0.08), rgba(255,253,248,0.82));
       }
+      .hero-art img { width: 100%; max-height: 360px; object-position: center; }
       .step {
-        flex-direction: row;
-        align-items: flex-start;
-        text-align: left;
-        padding: 0;
-        gap: 1.25rem;
+        grid-template-columns: 104px minmax(190px, 240px) minmax(0, 1fr);
       }
-      .step-circle {
-        margin-bottom: 0;
-        box-shadow: 0 0 0 6px white;
-      }
-      .step-content {
-        padding-top: 4px;
-      }
+      .step-art { display: none; }
+      .step-four .step-art { display: grid; grid-column: 3 / 4; }
+      .step-four .checklist { grid-column: 3 / 4; }
+      .choice-grid { grid-template-columns: repeat(3, 1fr); }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .footer-bottom { flex-direction: column; }
     }
-    
-    @media (max-width: 480px) {
-      .footer-inner { flex-direction: column; }
+
+    @media (max-width: 820px) {
+      .site-header { padding: 0.8rem 0.9rem; }
+      .brand-name strong { font-size: 1.7rem; }
+      .brand-name span { display: none; }
+      .btn-donate { min-height: 40px; padding: 0 1rem; }
+      .btn-donate span { display: none; }
+      .nav-avatar { display: none; }
+      .page { width: min(1320px, calc(100% - 1rem)); }
+      .hero h1 { font-size: clamp(2.8rem, 13vw, 4.1rem); }
+      .hero p { font-size: 1rem; }
+      .process { margin: 0.8rem; }
+      .step {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        padding: 1.1rem;
+      }
+      .step-number {
+        place-items: start;
+        padding: 0;
+        font-size: 4.4rem;
+      }
+      .step-title { padding: 0 0 1rem; }
+      .step-title p { max-width: none; }
+      .step-panel { padding: 0; }
+      .mini-ui { width: 100%; }
+      .choice-grid { grid-template-columns: 1fr 1fr; }
+      .choice { border-right: 0; border-bottom: 1px solid rgba(166, 159, 145, 0.2); }
+      .step-four .step-art { grid-column: auto; min-height: 210px; margin: 0 -1.1rem; }
+      .step-four .checklist { grid-column: auto; padding: 1rem 0 0; }
+      .final-cta {
+        margin: 0 0.8rem 0.8rem;
+        grid-template-columns: 1fr;
+      }
+      .cta-art { display: none; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-bottom { align-items: flex-start; }
     }
   </style>
-  <link rel="stylesheet" href="/styles/numbers.css" />
-  <link rel="stylesheet" href="/site-mobile-nav.css" />
-  <script src="/site-mobile-nav.js" defer></script>
 </head>
 <body>
-
-  <div class="candle-glow top-left" aria-hidden="true"></div>
-  <div class="candle-glow bottom-right" aria-hidden="true"></div>
-
-  <nav>
-    <div class="nav-inner">
-      <a href="/" class="nav-logo" aria-label="AGAPAY Home">
-        <div class="nav-mark">
-          <img src="/mark.png" alt="AGAPAY" style="width:48px;height:48px;object-fit:contain;" />
-        </div>
-        <span class="nav-name">AGAPAY</span>
+  <header class="site-header">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="/" aria-label="AGAPAY home">
+        <span class="brand-mark"><img src="/mark.png" alt="" /></span>
+        <span class="brand-name"><strong>AGAPAY</strong><span>Love how you give</span></span>
       </a>
-            <div class="nav-links">
+      <div class="nav-links">
+        <a href="/vision">Vision</a>
         <a href="/giving">Giving</a>
         <a href="/marketplace">Marketplace</a>
         <a href="/directory">Directory</a>
-        <a href="/vision">Vision</a>
-        <a href="/how-it-works">Resources</a>
-        <a href="/register" class="nav-cta">Join AGAPAY</a>
+        <a href="/how-it-works" class="active">Resources</a>
+        <a href="/about">About</a>
       </div>
-      <button class="menu-toggle" onclick="toggleMenu()" aria-label="Toggle navigation" aria-expanded="false">
-        <span></span><span></span><span></span>
+      <div class="nav-actions">
+        <a class="btn-donate" href="/donor/login"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg><span>Donate</span></a>
+        <a class="nav-avatar" href="/donor/login" aria-label="Donor account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg></a>
+      </div>
+      <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open menu">
+        <svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
       </button>
-    </div>
-  </nav>
-
-  <div class="mobile-nav-drawer" id="mobileDrawer" aria-hidden="true">
-        <div class="mobile-drawer-links">
-      <a href="/giving" onclick="toggleMenu()">Giving</a>
-      <a href="/marketplace" onclick="toggleMenu()">Marketplace</a>
-      <a href="/directory" onclick="toggleMenu()">Directory</a>
-      <a href="/vision" onclick="toggleMenu()">Vision</a>
-      <a href="/how-it-works" onclick="toggleMenu()">Resources</a>
-    </div>
-    <div class="mobile-drawer-actions">
-      <a href="/register" class="nav-cta" onclick="toggleMenu()">Join AGAPAY</a>
-    </div>
-  </div>
-
-  <header class="hero">
-    <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
-    <div class="hero-inner">
-      <div class="hero-eyebrow">How AGAPAY Works</div>
-      <h1>Give as the Church<br>has always <em>given.</em></h1>
-      <p class="hero-sub">Tithing, candles, memorials, commemorations, feast offerings, designated funds, and alms campaigns â€” all in one Orthodox-native platform.</p>
-    </div>
+    </nav>
   </header>
 
-  <main class="body-wrap">
-
-    <!-- HOW IT WORKS â€” Horizontal linear progression -->
-    <section class="how-section">
-      <div class="how-section-eyebrow reveal">Simple by design</div>
-      <h2 class="how-section-title reveal reveal-delay-1">Four steps, start to finish</h2>
-
-      <div class="how-card reveal reveal-delay-2">
-        <div class="steps-progression">
-          <div class="step">
-            <div class="step-circle">1</div>
-            <div class="step-content">
-              <div class="step-title">Choose your parish</div>
-              <div class="step-desc">Search for your community by name, jurisdiction, or location.</div>
-            </div>
-          </div>
-          <div class="step">
-            <div class="step-circle">2</div>
-            <div class="step-content">
-              <div class="step-title">Select your gift</div>
-              <div class="step-desc">Stewardship, candles, feast offering, designated fund, or commemoration.</div>
-            </div>
-          </div>
-          <div class="step">
-            <div class="step-circle">3</div>
-            <div class="step-content">
-              <div class="step-title">Add your intention</div>
-              <div class="step-desc">Submit names for the living and departed, or a note for the priest.</div>
-            </div>
-          </div>
-          <div class="step">
-            <div class="step-circle">4</div>
-            <div class="step-content">
-              <div class="step-title">Give</div>
-              <div class="step-desc">One-time or recurring. Confirmation sent instantly. Parish notified.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <hr class="section-divider" />
-
-    <!-- WAYS TO GIVE -->
-    <section class="ways-section">
-      <div class="ways-section-eyebrow reveal">Six ways to give</div>
-      <h2 class="reveal reveal-delay-1">Every gift has a home here.</h2>
-      <p class="ways-lead reveal reveal-delay-2">AGAPAY is built around the giving patterns of Orthodox life â€” not generic church technology adapted for Orthodoxy.</p>
-
-      <div class="cards">
-
-        <div class="card reveal reveal-delay-1">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="7" width="22" height="16" rx="3"/>
-              <path d="M3 11h22"/>
-              <circle cx="8" cy="17" r="1.5" fill="#C8A24A" stroke="none"/>
-              <path d="M12 17h8"/>
-            </svg>
-          </div>
-          <h3>Weekly Stewardship</h3>
-          <p>Consistent support for your parish, aligned with the liturgical rhythm of the year. Set it once and give faithfully.</p>
-          <a href="/give" class="card-link">Set up giving â†’</a>
-        </div>
-
-        <div class="card reveal reveal-delay-2">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/>
-              <path d="M14 17v7"/>
-              <path d="M11 24h6"/>
-              <circle cx="14" cy="10" r="1.5" fill="#C8A24A" stroke="none"/>
-            </svg>
-          </div>
-          <h3>Candles</h3>
-          <p>Light a physical candle in the nave for yourself or your loved ones, even when you are unable to be there in person.</p>
-          <a href="/give" class="card-link">Light a candle â†’</a>
-        </div>
-
-        <div class="card reveal reveal-delay-3">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="5" width="22" height="20" rx="3"/>
-              <path d="M3 11h22"/>
-              <path d="M9 3v4M19 3v4"/>
-              <path d="M8 16h4M8 20h8"/>
-            </svg>
-          </div>
-          <h3>Feast Day Offerings</h3>
-          <p>Honor the Theotokos, the saints, and the great feasts of the Church with a gift tied to the festal calendar.</p>
-          <a href="/give" class="card-link">Give to a feast â†’</a>
-        </div>
-
-        <div class="card reveal reveal-delay-4">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 22h20"/>
-              <path d="M6 22V14l3-2v10"/>
-              <path d="M12 22V10l3-2v14"/>
-              <path d="M18 22V6l3-2v18"/>
-            </svg>
-          </div>
-          <h3>Designated Funds</h3>
-          <p>Direct your gift to a specific purpose â€” building projects, iconostasis, clergy support, or general operations.</p>
-          <a href="/give" class="card-link">Browse funds â†’</a>
-        </div>
-
-        <div class="card reveal reveal-delay-5">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/>
-              <path d="M4 16c0 3 2 5 10 5s10-2 10-5"/>
-              <path d="M10 13c1-2 2-3 4-3s3 1 4 3"/>
-              <line x1="14" y1="7" x2="14" y2="10"/>
-              <line x1="12" y1="8" x2="16" y2="8"/>
-            </svg>
-          </div>
-          <h3>Commemorations</h3>
-          <p>Submit names of the living and departed for commemoration at the proskomedia and panikhida services.</p>
-          <a href="/give" class="card-link">Submit names â†’</a>
-        </div>
-
-        <div class="card reveal reveal-delay-6">
-          <div class="card-icon" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 24.5C14 24.5 5 18 5 11.5C5 8.5 7.5 6 10.5 6C12.5 6 13.5 7 14 8C14.5 7 15.5 6 17.5 6C20.5 6 23 8.5 23 11.5C23 18 14 24.5 14 24.5Z" />
-            </svg>
-          </div>
-          <h3>Campaigns</h3>
-          <p>Support clergy families, widows, monasteries, and emergency appeals with a designated gift or offering.</p>
-          <a href="/give" class="card-link">Support a campaign â†’</a>
-        </div>
-
-      </div>
-
-      <div class="monastery-note reveal">
-        <svg width="18" height="18" viewBox="0 0 38 38" fill="none" stroke="#0B2130" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="19" y1="2" x2="19" y2="6"/>
-          <line x1="16.5" y1="3.5" x2="21.5" y2="3.5"/>
-          <line x1="16" y1="5.5" x2="22" y2="5.5"/>
-          <path d="M19 6 C10 10 8 17 11 22 C13 26 16 27 19 27 C22 27 25 26 27 22 C30 17 28 10 19 6Z"/>
-          <line x1="12" y1="27" x2="26" y2="27"/>
-          <line x1="13" y1="29" x2="25" y2="29"/>
-        </svg>
-        Monastic donations are completely free â€” no platform fees, ever
-      </div>
-
-    </section>
-
-    <!-- FINAL CTA -->
-    <div class="final-cta reveal">
-      <h2>Ready to give?</h2>
-      <p>Find your parish and make your first offering in under two minutes.</p>
-      <a href="/give">Find your parish â†’</a>
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="mobile-drawer" id="mobileDrawer" aria-label="Mobile navigation">
+    <div class="drawer-head">
+      <strong class="drawer-title">AGAPAY</strong>
+      <button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close menu">x</button>
     </div>
+    <div class="drawer-scroll">
+      <nav class="drawer-links" aria-label="Drawer navigation">
+        <a href="/vision">Vision</a>
+        <a href="/giving">Giving</a>
+        <a href="/marketplace">Marketplace</a>
+        <a href="/directory">Directory</a>
+        <a href="/how-it-works" class="active">Resources</a>
+        <a href="/about">About</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/contact">Contact</a>
+      </nav>
+      <a class="drawer-join" href="/register">Join AGAPAY</a>
+    </div>
+  </aside>
 
+  <main class="page">
+    <section class="hero">
+      <div class="hero-copy reveal">
+        <div class="eyebrow">How AGAPAY Works</div>
+        <h1>Giving should feel like giving.<span>Not like paying a bill.</span></h1>
+        <p>AGAPAY makes Orthodox giving simple, meaningful, and connected to the life of the Church.</p>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <img src="/images/how-it-works/hero-desk-sketch.png" alt="" />
+      </div>
+    </section>
+
+    <section class="process" aria-label="How AGAPAY works">
+      <article class="step reveal">
+        <div class="step-number">01</div>
+        <div class="step-title">
+          <h2>Sign up with AGAPAY</h2>
+          <p>Create your account in just a minute.</p>
+        </div>
+        <div class="step-panel">
+          <div class="mini-ui" aria-hidden="true">
+            <div class="mini-ui-head">Create your account</div>
+            <div class="form-lines">
+              <div class="input-line">Name</div>
+              <div class="input-line">Email <span>&#8964;</span></div>
+              <div class="input-line">Password <span>&#8964;</span></div>
+              <div class="mini-button">Create Account</div>
+            </div>
+          </div>
+        </div>
+        <div class="step-art compact" aria-hidden="true">
+          <img src="/images/how-it-works/step-signup-church.png" alt="" />
+        </div>
+      </article>
+
+      <article class="step reveal">
+        <div class="step-number">02</div>
+        <div class="step-title">
+          <h2>Find your parish</h2>
+          <p>Search by name, city, jurisdiction, or location.</p>
+        </div>
+        <div class="step-panel">
+          <div class="mini-ui search-ui" aria-hidden="true">
+            <div class="search-bar">&#8981; Search for your parish, mission, or monastery...</div>
+            <div class="result-row">
+              <span class="result-mark"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 21h16"/><path d="M6 21V10l6-5 6 5v11"/><path d="M10 14h4"/><path d="M12 5V2"/></svg></span>
+              <div><strong>St. Catherine Mission</strong><span>Oklahoma City, OK &middot; ROCOR</span></div>
+              <span>&rsaquo;</span>
+            </div>
+            <div class="result-row">
+              <span class="result-mark"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 21h16"/><path d="M6 21V10l6-5 6 5v11"/><path d="M10 14h4"/><path d="M12 5V2"/></svg></span>
+              <div><strong>Holy Archangels Monastery</strong><span>Habersham, GA &middot; ROCOR</span></div>
+              <span>&rsaquo;</span>
+            </div>
+            <div class="result-row">
+              <span class="result-mark"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 21h16"/><path d="M6 21V10l6-5 6 5v11"/><path d="M10 14h4"/><path d="M12 5V2"/></svg></span>
+              <div><strong>St. George Antiochian Church</strong><span>Phoenix, AZ &middot; Antiochian Archdiocese</span></div>
+              <span>&rsaquo;</span>
+            </div>
+          </div>
+        </div>
+        <div class="step-art compact" aria-hidden="true">
+          <img src="/images/how-it-works/step-find-parish-church.png" alt="" />
+        </div>
+      </article>
+
+      <article class="step reveal">
+        <div class="step-number">03</div>
+        <div class="step-title">
+          <h2>Choose your offering</h2>
+          <p>Select the way you would like to give.</p>
+        </div>
+        <div class="step-panel">
+          <div class="choice-grid" aria-label="Offering types">
+            <div class="choice"><svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M8 21V9l4-4 4 4v12"/><path d="M10 13h4"/></svg><span>Stewardship</span></div>
+            <div class="choice"><svg viewBox="0 0 24 24"><path d="M12 3s-4 3.5-4 8a4 4 0 0 0 8 0c0-4.5-4-8-4-8Z"/><path d="M12 15v6"/><path d="M9 21h6"/></svg><span>Candles</span></div>
+            <div class="choice"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg><span>Commemorations</span></div>
+            <div class="choice"><svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M7 21V10l5-5 5 5v11"/><path d="M12 5V2"/></svg><span>Special Appeals</span></div>
+            <div class="choice"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M6 20V9l6-5 6 5v11"/><path d="M9 20v-6h6v6"/></svg><span>Building Funds</span></div>
+          </div>
+        </div>
+        <div class="step-art compact" aria-hidden="true">
+          <img src="/images/how-it-works/step-find-parish-church.png" alt="" />
+        </div>
+      </article>
+
+      <article class="step step-four reveal">
+        <div class="step-number">04</div>
+        <div class="step-title">
+          <h2>Love how you give</h2>
+          <p>Your gift supports real people and real mission in the Church.</p>
+        </div>
+        <div class="step-art" aria-hidden="true">
+          <img src="/images/how-it-works/woman-lighting-candles.png" alt="" />
+        </div>
+        <div class="checklist">
+          <div class="check-item"><span class="check-dot">&#10003;</span><span>Your parish is notified.</span></div>
+          <div class="check-item"><span class="check-dot">&#10003;</span><span>Your gift is delivered.</span></div>
+          <div class="check-item"><span class="check-dot">&#10003;</span><span>Your intentions are remembered.</span></div>
+          <div class="check-item"><span class="check-dot">&#10003;</span><span>You make a difference in the life of the Church.</span></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="final-cta reveal">
+      <div class="cta-art" aria-hidden="true"><img src="/images/how-it-works/step-find-parish-church.png" alt="" /></div>
+      <div class="cta-copy">
+        <h2>Ready to make your first offering?</h2>
+        <div class="cta-actions">
+          <a class="btn-primary" href="/donor/login">Find Your Parish</a>
+          <a class="btn-secondary" href="/register">Join AGAPAY</a>
+        </div>
+      </div>
+      <div class="cta-art" aria-hidden="true"><img src="/images/how-it-works/step-signup-church.png" alt="" /></div>
+    </section>
   </main>
 
-  <footer>
-    <div class="footer-inner">
+  <footer class="site-footer">
+    <div class="footer-wrap footer-grid">
       <div class="footer-brand">
-        <div class="footer-logo">
-          <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;">
-            <img src="/mark.png" alt="AGAPAY" style="width:48px;height:48px;object-fit:contain;" />
-          </div>
-          <span class="footer-name">AGAPAY</span>
-        </div>
-        <p class="footer-tagline">Love how you give.</p>
+        <div class="footer-lockup"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></div>
+        <p>Love how you Give.</p>
       </div>
-      <div class="footer-nav">
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Platform</div>
-          <a href="/features">Features</a>
-          <a href="/pricing">Pricing</a>
-          <a href="/why">Why AGAPAY</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Company</div>
-          <a href="/about">About</a>
-          <a href="/contact">Contact</a>
-          <a href="/register">Register parish</a>
-          <a href="/donor/login">Give now</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Legal</div>
-          <a href="/privacy">Privacy Policy</a>
-          <a href="/terms">Terms of Service</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Contact</div>
-          <a href="mailto:hello@agapay.app">hello@agapay.app</a>
-          <a href="mailto:parishes@agapay.app">parishes@agapay.app</a>
-          <a href="mailto:support@agapay.app">support@agapay.app</a>
-        </div>
-      </div>
+      <div class="footer-col"><h4>Platform</h4><a href="/giving">Giving</a><a href="/marketplace">Marketplace</a><a href="/directory">Directory</a><a href="/vision">Vision</a></div>
+      <div class="footer-col"><h4>Company</h4><a href="/about">About</a><a href="/why">Why AGAPAY</a><a href="/contact">Contact</a><a href="/register">Join AGAPAY</a></div>
+      <div class="footer-col"><h4>Resources</h4><a href="/how-it-works">How It Works</a><a href="/pricing">Pricing</a><a href="/donor/login">Donor Login</a><a href="/parish/login">Parish Login</a></div>
+      <div class="footer-col"><h4>Legal</h4><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div>
     </div>
-    <div class="footer-bottom">
-      <p>Â© 2026 AGAPAY Â· agapay.app</p>
-    </div>
+    <div class="footer-wrap footer-bottom"><span>&copy; 2026 AGAPAY. All rights reserved.</span><span>Built for Orthodox communities.</span></div>
   </footer>
 
   <script>
     const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+          observer.unobserve(entry.target);
+        }
       });
-    }, { threshold: 0.06 });
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    }, { threshold: 0.08 });
+    document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
 
-    function toggleMenu() {
-      const btn = document.querySelector('.menu-toggle');
-      const drawer = document.getElementById('mobileDrawer');
-      const isOpen = drawer.classList.contains('active');
-      btn.setAttribute('aria-expanded', !isOpen);
-      drawer.classList.toggle('active');
-      drawer.setAttribute('aria-hidden', isOpen);
-      document.body.classList.toggle('nav-open');
-    }
-    window.addEventListener('resize', () => {
-      if (window.innerWidth > 768) {
-        const btn = document.querySelector('.menu-toggle');
-        const drawer = document.getElementById('mobileDrawer');
-        if (btn) btn.setAttribute('aria-expanded', 'false');
-        if (drawer) { drawer.classList.remove('active'); drawer.setAttribute('aria-hidden', 'true'); }
-        document.body.classList.remove('nav-open');
-      }
-    });
+    const menuBtn = document.getElementById("mobileMenuBtn");
+    const drawerBackdrop = document.getElementById("drawerBackdrop");
+    const drawerCloseBtn = document.getElementById("drawerCloseBtn");
+
+    function openDrawer() { document.body.classList.add("drawer-open"); }
+    function closeDrawer() { document.body.classList.remove("drawer-open"); }
+
+    menuBtn.addEventListener("click", openDrawer);
+    drawerBackdrop.addEventListener("click", closeDrawer);
+    drawerCloseBtn.addEventListener("click", closeDrawer);
   </script>
-
 </body>
 </html>
-
-
