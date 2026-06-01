@@ -152,7 +152,8 @@
     .sidebar-status-chip { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.22rem 0.6rem; background: rgba(11,33,48,0.25); color: var(--gold); font-size: 11px; font-weight: 700; text-transform: capitalize; }
     .sidebar-status-chip.paused { background: rgba(184,144,47,0.18); color: var(--gold); }
     .sidebar-status-chip.hidden { background: rgba(111,106,96,0.2); color: var(--muted); }
-    .sidebar-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+    .sidebar-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+    .sidebar-status-metric { display: none; }
     .sidebar-metric { border: 1px solid rgba(184,144,47,0.14); border-radius: 10px; background: rgba(246,241,232,0.04); padding: 0.75rem; }
     .sidebar-metric-val { font-family: var(--serif); font-size: 23px; color: var(--cream); line-height: 1; overflow-wrap: anywhere; }
     .sidebar-metric.highlight .sidebar-metric-val { color: var(--gold); }
@@ -354,6 +355,151 @@
     .history-stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); font-weight: 600; margin-top: 4px; }
     .history-filters { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(120px,0.5fr) minmax(120px,0.5fr) auto; gap: 0.65rem; align-items: end; margin-bottom: 1rem; }
     .history-filters input, .history-filters select { background: var(--paper); border: 1px solid rgba(111,106,96,0.22); border-radius: 8px; padding: 0.6rem 0.75rem; font-size: 13px; }
+
+    .overview-status-card {
+      margin: 1rem 0;
+      border: 1px solid rgba(184,144,47,0.22);
+      border-radius: 16px;
+      background: radial-gradient(circle at 88% 12%, rgba(216,176,88,0.12), transparent 8rem), linear-gradient(180deg, white, var(--paper));
+      box-shadow: var(--shadow-sm);
+      padding: 1rem;
+    }
+    .overview-status-label,
+    .options-summary-head small {
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .overview-status-card strong {
+      display: block;
+      margin-top: 0.28rem;
+      color: var(--deep);
+      font-family: var(--serif);
+      font-size: 28px;
+      line-height: 1;
+    }
+    .overview-status-card p {
+      margin: 0.55rem 0 0;
+      max-width: 52rem;
+      color: var(--stone);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .overview-status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.9rem;
+    }
+    .overview-status-grid div {
+      border: 1px solid rgba(111,106,96,0.14);
+      border-radius: 12px;
+      background: rgba(253,251,247,0.78);
+      padding: 0.75rem;
+    }
+    .overview-status-grid span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .overview-status-grid b {
+      display: block;
+      margin-top: 0.25rem;
+      color: var(--deep);
+      font-size: 18px;
+      overflow-wrap: anywhere;
+    }
+    .options-summary-card {
+      margin-bottom: 1rem;
+      border: 1px solid rgba(184,144,47,0.24);
+      border-radius: 16px;
+      overflow: hidden;
+      background: white;
+      box-shadow: var(--shadow-sm);
+    }
+    .options-summary-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(90deg, rgba(216,176,88,0.16), rgba(11,33,48,0.06));
+    }
+    .options-summary-head span {
+      color: var(--deep);
+      font-family: var(--serif);
+      font-size: 20px;
+      line-height: 1;
+    }
+    .options-progress-row {
+      display: grid;
+      grid-template-columns: 92px minmax(130px, 1fr) 120px 120px minmax(120px, 0.8fr);
+      gap: 0.75rem;
+      align-items: center;
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid rgba(111,106,96,0.12);
+      font-size: 13px;
+    }
+    .options-progress-row:last-child { border-bottom: 0; }
+    .options-progress-row > span:first-child {
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .options-progress-row strong { color: var(--deep); }
+    .options-progress-row span { color: var(--stone); }
+    .option-progress {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(111,106,96,0.13);
+      overflow: hidden;
+    }
+    .option-progress span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--gold), var(--deep));
+    }
+    .options-progress-row small,
+    .progress-muted {
+      display: block;
+      margin-top: 0.25rem;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .giver-list { display: grid; gap: 0.75rem; }
+    .giver-card {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: center;
+      border: 1px solid rgba(111,106,96,0.14);
+      border-radius: 14px;
+      background: white;
+      padding: 0.9rem 1rem;
+    }
+    .giver-card strong,
+    .giver-card b {
+      display: block;
+      color: var(--deep);
+      font-size: 15px;
+    }
+    .giver-card span,
+    .giver-card small {
+      display: block;
+      margin-top: 0.25rem;
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.4;
+    }
 
     /* ── BULLETIN INSERT ─────────────────────────────────── */
     .bulletin-preview {
@@ -1027,7 +1173,7 @@
         bottom: 0;
         z-index: 9000;
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         width: min(100%, 480px);
         min-height: 76px;
         transform: translateX(-50%);
@@ -1044,9 +1190,9 @@
         display: grid;
         place-items: center;
         align-content: center;
-        gap: 0.2rem;
+        gap: 0.18rem;
         min-height: 76px;
-        padding: 0.35rem 0.1rem;
+        padding: 0.35rem 0.05rem;
         border-radius: 0;
         color: rgba(6,21,34,0.58);
         font-size: 10px;
@@ -1141,6 +1287,20 @@
         color: var(--deep);
         box-shadow: 0 10px 26px rgba(6,21,34,0.06);
         font-size: 15px;
+      }
+
+      .overview-status-grid,
+      .options-progress-row {
+        grid-template-columns: 1fr;
+      }
+
+      .options-progress-row {
+        gap: 0.35rem;
+      }
+
+      .giver-card {
+        align-items: flex-start;
+        flex-direction: column;
       }
     }
 

@@ -195,6 +195,7 @@ async function loadPublicParishes(selectId = "parish") {
       const donor = donorProfile();
       renderParishOptions(select, parishes, donor.defaultParishId || select.value);
     }
+    if (selectId === "parish" && typeof toggleGiftDetailFields === "function") toggleGiftDetailFields();
     return parishes;
   } catch {
     return [];
@@ -284,7 +285,7 @@ const donorGiftTypeCopy = {
     title: "Give for memorials and commemorations.",
     detailsTitle: "Memorial Offering",
     intro: "Make an offering connected to memorials, proskomedia, and parish commemoration needs.",
-    context: "After checkout, use the Commemorations page to submit living or departed names to the parish queue."
+    context: "List the living and departed names below so the parish receives them in the commemoration queue."
   },
   campaign: {
     eyebrow: "Quick Campaign Offering",
@@ -379,6 +380,74 @@ function activeParishCampaigns(parish) {
   });
 }
 
+function selectedPublicParish() {
+  const selected = document.getElementById("parish")?.value || "";
+  return (window.agapayPublicParishes || []).find((parish) => parish.id === selected) || null;
+}
+
+function campaignLabel(campaign) {
+  return campaign?.name || campaign?.campaignName || "Parish Alms Campaign";
+}
+
+function campaignGoalCents(campaign) {
+  return Number(campaign?.goalCents || campaign?.targetCents || campaign?.goalAmountCents || 0);
+}
+
+function campaignRaisedCents(campaign) {
+  return Number(campaign?.raisedCents || campaign?.amountCents || campaign?.currentCents || 0);
+}
+
+function selectedCampaign() {
+  const selected = document.getElementById("campaign")?.value || "";
+  if (!selected) return null;
+  return activeParishCampaigns(selectedPublicParish()).find((campaign) => {
+    const keys = [campaign.id, campaign.feastId, campaign.name, campaign.campaignName].filter(Boolean).map(String);
+    return keys.includes(selected);
+  }) || null;
+}
+
+function populateGiftOptionFields() {
+  const parish = selectedPublicParish();
+  const fundSelect = document.getElementById("fund");
+  if (fundSelect) {
+    const current = fundSelect.value;
+    const funds = Array.isArray(parish?.funds) ? parish.funds : [];
+    fundSelect.innerHTML = funds.length
+      ? funds.map((fund) => `<option value="${escapeHtml(fund.id || fund.name)}">${escapeHtml(fund.name || fund.id || "Designated fund")}</option>`).join("")
+      : '<option value="">No designated funds listed</option>';
+    if (current && Array.from(fundSelect.options).some((option) => option.value === current)) fundSelect.value = current;
+  }
+
+  const campaignSelect = document.getElementById("campaign");
+  if (campaignSelect) {
+    const current = campaignSelect.value;
+    const campaigns = activeParishCampaigns(parish);
+    campaignSelect.innerHTML = campaigns.length
+      ? campaigns.map((campaign) => `<option value="${escapeHtml(campaign.id || campaign.feastId || campaign.name || campaign.campaignName)}">${escapeHtml(campaignLabel(campaign))}</option>`).join("")
+      : '<option value="">No active campaigns</option>';
+    if (current && Array.from(campaignSelect.options).some((option) => option.value === current)) campaignSelect.value = current;
+  }
+}
+
+function renderCampaignChoicePreview(campaign) {
+  const target = document.getElementById("campaignPreview");
+  if (!target) return;
+  if (!campaign) {
+    target.innerHTML = '<p class="form-help">No active parish campaign is available for this church right now.</p>';
+    return;
+  }
+  const goalCents = campaignGoalCents(campaign);
+  const raisedCents = campaignRaisedCents(campaign);
+  const percent = goalCents > 0 ? Math.min(100, Math.round((raisedCents / goalCents) * 100)) : 0;
+  target.innerHTML = `
+    <div class="gift-option-preview">
+      <strong>${escapeHtml(campaignLabel(campaign))}</strong>
+      ${campaign.description ? `<span>${escapeHtml(campaign.description)}</span>` : ""}
+      ${goalCents > 0 ? `<div class="campaign-track"><span style="width:${percent}%"></span></div><small>${money(raisedCents)} of ${money(goalCents)} raised (${percent}%)</small>` : "<small>No public goal set yet.</small>"}
+    </div>
+  `;
+}
+
 function renderActiveCampaigns(parish) {
   const targets = [document.getElementById("activeCampaigns"), document.getElementById("desktopActiveCampaigns")].filter(Boolean);
   if (!targets.length) return;
@@ -459,7 +528,14 @@ function applyDonorGiveParams() {
   const giftTypeSelect = document.getElementById("giftType");
   if (parish && parishSelect) parishSelect.value = parish;
   if (giftType && giftTypeSelect) giftTypeSelect.value = giftType;
-  toggleCandleIntentionFields();
+  toggleGiftDetailFields();
+  if (params.get("campaign") && document.getElementById("campaign")) {
+    document.getElementById("campaign").value = params.get("campaign");
+    renderCampaignChoicePreview(selectedCampaign());
+  }
+  if (params.get("fund") && document.getElementById("fund")) {
+    document.getElementById("fund").value = params.get("fund");
+  }
   if (!isQuick) return;
 
   const copy = donorGiftTypeCopy[giftType] || donorGiftTypeCopy.stewardship;
@@ -485,10 +561,21 @@ function applyDonorGiveParams() {
 }
 
 function toggleCandleIntentionFields() {
+  toggleGiftDetailFields();
+}
+
+function toggleGiftDetailFields() {
   const giftType = normalizeDonorGiftType(document.getElementById("giftType")?.value);
-  const fields = document.getElementById("candleIntentionFields");
-  if (!fields) return;
-  fields.hidden = giftType !== "candles";
+  populateGiftOptionFields();
+  const candleFields = document.getElementById("candleIntentionFields");
+  const commemorationFields = document.getElementById("commemorationIntentionFields");
+  const fundFields = document.getElementById("fundFields");
+  const campaignFields = document.getElementById("campaignFields");
+  if (candleFields) candleFields.hidden = giftType !== "candles";
+  if (commemorationFields) commemorationFields.hidden = giftType !== "commemoration";
+  if (fundFields) fundFields.hidden = giftType !== "fund";
+  if (campaignFields) campaignFields.hidden = giftType !== "campaign";
+  renderCampaignChoicePreview(giftType === "campaign" ? selectedCampaign() : null);
 }
 
 async function loginFromDashboard() {
@@ -731,8 +818,16 @@ function offeringRows(offerings) {
 async function loadDonorOfferingsPage() {
   try {
     const data = await donorApi("/api/donor/offerings");
-    window.donorOfferings = data.offerings || [];
-    const summary = data.summary || {};
+    let offerings = data.offerings || [];
+    let summary = data.summary || {};
+    if (!offerings.length) {
+      try {
+        const dashboard = await donorApi("/api/donor/dashboard");
+        offerings = dashboard.recentOfferings || [];
+        summary = dashboard.summary || summary;
+      } catch {}
+    }
+    window.donorOfferings = offerings;
     const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
     setText("offeringsYtd", money(summary.ytdCents));
     setText("offeringsRecurring", String(summary.recurringCount || 0));
@@ -834,7 +929,26 @@ async function startDonorCheckout(event) {
   const name = donor.donorName || donor.householdName || session.email.split("@")[0];
   const [firstName, ...rest] = name.split(/\s+/);
   const giftType = document.getElementById("giftType")?.value;
-  const includeCandleIntentions = normalizeDonorGiftType(giftType) === "candles";
+  const normalizedGiftType = normalizeDonorGiftType(giftType);
+  const selectedFund = (window.agapayPublicParishes || [])
+    .find((parish) => parish.id === document.getElementById("parish")?.value)
+    ?.funds?.find((fund) => [fund.id, fund.name].filter(Boolean).map(String).includes(document.getElementById("fund")?.value));
+  const campaign = selectedCampaign();
+  const livingNames = normalizedGiftType === "candles"
+    ? document.getElementById("candleLivingNames")?.value || ""
+    : normalizedGiftType === "commemoration"
+      ? document.getElementById("commemorationLivingNames")?.value || ""
+      : "";
+  const departedNames = normalizedGiftType === "candles"
+    ? document.getElementById("candleDepartedNames")?.value || ""
+    : normalizedGiftType === "commemoration"
+      ? document.getElementById("commemorationDepartedNames")?.value || ""
+      : "";
+  const intentionNote = normalizedGiftType === "candles"
+    ? document.getElementById("candleIntentionNote")?.value || ""
+    : normalizedGiftType === "commemoration"
+      ? document.getElementById("commemorationIntentionNote")?.value || ""
+      : "";
   try {
     setDonorStatus("Preparing checkout...");
     const data = await donorApi("/api/create-checkout-session", {
@@ -847,10 +961,15 @@ async function startDonorCheckout(event) {
         firstName: firstName || "AGAPAY",
         lastName: rest.join(" "),
         email: session.email,
-        namesLiving: includeCandleIntentions ? document.getElementById("candleLivingNames")?.value || "" : "",
-        namesDeparted: includeCandleIntentions ? document.getElementById("candleDepartedNames")?.value || "" : "",
-        inMemoriam: includeCandleIntentions ? document.getElementById("candleIntentionNote")?.value || "" : "",
-        coverFees: true,
+        fund: normalizedGiftType === "fund" ? (selectedFund?.name || document.getElementById("fund")?.value || "") : "",
+        fundId: normalizedGiftType === "fund" ? (selectedFund?.id || document.getElementById("fund")?.value || "") : "",
+        campaign: normalizedGiftType === "campaign" ? campaignLabel(campaign) : "",
+        campaignId: normalizedGiftType === "campaign" ? (campaign?.id || campaign?.feastId || document.getElementById("campaign")?.value || "") : "",
+        campaignDescription: normalizedGiftType === "campaign" ? campaign?.description || "" : "",
+        namesLiving: livingNames,
+        namesDeparted: departedNames,
+        inMemoriam: intentionNote,
+        coverFees: document.getElementById("coverFees")?.checked !== false,
         ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
       })
     });

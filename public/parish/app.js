@@ -107,10 +107,11 @@
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', history:'Giving History', settings:'Settings', options:'Funds & Campaigns', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Campaigns', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
-    if (tab === 'history' && currentParish && !allGifts.length) loadGivingHistory();
+    if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
+    if (tab === 'givers' && allGifts.length) renderGiversPanel();
     if (tab === 'qr') renderBulletinPreview();
     document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
     if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -181,7 +182,82 @@
   function syncGivingOptionEditors() { const f=document.getElementById('fundsJson'); const c=document.getElementById('campaignsJson'); if(f) f.value=JSON.stringify(editableFunds,null,2); if(c) c.value=JSON.stringify(editableCampaigns,null,2); }
   function syncGivingOptionsFromAdvanced() { const f=document.getElementById('fundsJson'); const c=document.getElementById('campaignsJson'); editableFunds=JSON.parse(f?.value||'[]'); editableCampaigns=JSON.parse(c?.value||'[]'); }
   function fillGivingPreset(kind) { const presets=kind==='fund'?fundPresets:campaignPresets; const prefix=kind==='fund'?'fund':'campaign'; const preset=presets[document.getElementById(`${prefix}Preset`)?.value]; if(!preset) return; document.getElementById(`${prefix}Name`).value=preset.name; document.getElementById(`${prefix}Description`).value=preset.description; }
-  function addGivingOption(kind) { const prefix=kind==='fund'?'fund':'campaign'; const nameEl=document.getElementById(`${prefix}Name`); const descEl=document.getElementById(`${prefix}Description`); const name=nameEl?.value.trim(); if(!name){setStatus(`Enter a ${kind} name.`,'error');return;} const item={id:slugifyLocal(name),name,description:descEl?.value.trim()||(kind==='fund'?'Designated support for this parish.':'Parish-approved alms for this need.')}; if(kind==='fund') editableFunds.push(item); else editableCampaigns.push(item); nameEl.value=''; descEl.value=''; renderGivingOptionsEditor(); setStatus(`${kind==='fund'?'Fund':'Campaign'} added. Save when ready.`,'success'); }
+  function parseDollarsToCents(value) {
+    const amount = Number(String(value || '').replace(/[^0-9.]/g, ''));
+    return Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : 0;
+  }
+
+  function optionKeys(item = {}) {
+    return [item.id, item.feastId, item.name, item.campaignName, item.title]
+      .filter(Boolean)
+      .map(v => String(v).trim().toLowerCase());
+  }
+
+  function giftMatchesOption(gift, item, kind) {
+    const keys = new Set(optionKeys(item));
+    const giftKeys = kind === 'fund'
+      ? optionKeys({ id: gift.fundId, name: gift.fund })
+      : optionKeys({ id: gift.campaignId, name: gift.campaign, campaignName: gift.description });
+    return giftKeys.some(key => keys.has(key));
+  }
+
+  function optionProgress(item, kind) {
+    const gifts = allGifts.filter(gift => giftMatchesOption(gift, item, kind));
+    const raisedCents = gifts.reduce((sum, gift) => sum + Number(gift.amountCents || 0), 0);
+    const goalCents = kind === 'campaign' ? Number(item.goalCents || item.targetCents || item.goalAmountCents || 0) : 0;
+    return { raisedCents, goalCents, giftCount: gifts.length };
+  }
+
+  function progressMarkup(raisedCents, goalCents) {
+    if (!goalCents) return '<span class="progress-muted">No goal set</span>';
+    const pct = Math.min(100, Math.round((raisedCents / goalCents) * 100));
+    return `<div class="option-progress"><span style="width:${pct}%"></span></div><small>${pct}%</small>`;
+  }
+
+  function renderOptionsProgressSummary() {
+    const rows = [
+      ...editableFunds.map(item => ({ kind: 'fund', label: 'Fund', item })),
+      ...editableCampaigns.map(item => ({ kind: 'campaign', label: 'Campaign', item })),
+      ...editableFeastCampaigns.filter(item => item.enabled !== false).map(item => ({ kind: 'campaign', label: 'Feast campaign', item }))
+    ];
+    if (!rows.length) return '';
+    return `<div class="options-summary-card"><div class="options-summary-head"><span>Active giving options</span><small>Based on paid gifts in AGAPAY</small></div><div class="options-progress-table">${rows.map(row => {
+      const progress = optionProgress(row.item, row.kind);
+      return `<div class="options-progress-row"><span>${escapeHtml(row.label)}</span><strong>${escapeHtml(row.item.name || row.item.campaignName || row.item.id || 'Giving option')}</strong><span>${moneyFull(progress.raisedCents)} raised</span><span>${row.kind === 'campaign' && progress.goalCents ? `Goal ${moneyFull(progress.goalCents)}` : ''}</span><div>${progressMarkup(progress.raisedCents, progress.goalCents)}</div></div>`;
+    }).join('')}</div></div>`;
+  }
+
+  function renderGiversPanel() {
+    const pane = document.getElementById('giversPane');
+    if (!pane) return;
+    const groups = new Map();
+    allGifts.forEach(gift => {
+      const key = (gift.donorEmail || gift.donorName || 'anonymous').toLowerCase();
+      const existing = groups.get(key) || { name: gift.donorName || 'Anonymous giver', email: gift.donorEmail || '', giftCount: 0, totalCents: 0, recurring: false, lastGiftAt: '' };
+      existing.giftCount += 1;
+      existing.totalCents += Number(gift.amountCents || 0);
+      existing.recurring = existing.recurring || Boolean(gift.recurring);
+      const date = gift.date || gift.createdAt || '';
+      if (date && (!existing.lastGiftAt || date > existing.lastGiftAt)) existing.lastGiftAt = date;
+      groups.set(key, existing);
+    });
+    const givers = Array.from(groups.values()).sort((a, b) => b.totalCents - a.totalCents);
+    const total = givers.reduce((sum, giver) => sum + giver.totalCents, 0);
+    const recurring = givers.filter(giver => giver.recurring).length;
+    const last = givers.map(giver => giver.lastGiftAt).filter(Boolean).sort().pop();
+    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    set('giverStatCount', givers.length);
+    set('giverStatTotal', money(total));
+    set('giverStatRecurring', recurring);
+    set('giverStatLast', shortDate(last));
+    if (!givers.length) {
+      pane.innerHTML = '<div class="history-empty">No paid gifts have been recorded yet.</div>';
+      return;
+    }
+    pane.innerHTML = `<div class="giver-list">${givers.map(giver => `<article class="giver-card"><div><strong>${escapeHtml(giver.name)}</strong><span>${escapeHtml(giver.email || 'No email shown')}</span></div><div><b>${moneyFull(giver.totalCents)}</b><span>${giver.giftCount} gift${giver.giftCount === 1 ? '' : 's'}${giver.recurring ? ' · recurring' : ''}</span><small>Last gift ${escapeHtml(shortDate(giver.lastGiftAt))}</small></div></article>`).join('')}</div>`;
+  }
+
+  function addGivingOption(kind) { const prefix=kind==='fund'?'fund':'campaign'; const nameEl=document.getElementById(`${prefix}Name`); const descEl=document.getElementById(`${prefix}Description`); const name=nameEl?.value.trim(); if(!name){setStatus(`Enter a ${kind} name.`,'error');return;} const item={id:slugifyLocal(name),name,description:descEl?.value.trim()||(kind==='fund'?'Designated support for this parish.':'Parish-approved alms for this need.')}; if(kind==='campaign'){const goalCents=parseDollarsToCents(document.getElementById('campaignGoal')?.value); if(goalCents>0) item.goalCents=goalCents;} if(kind==='fund') editableFunds.push(item); else editableCampaigns.push(item); nameEl.value=''; descEl.value=''; const goalEl=document.getElementById(`${prefix}Goal`); if(goalEl) goalEl.value=''; renderGivingOptionsEditor(); setStatus(`${kind==='fund'?'Fund':'Campaign'} added. Save when ready.`,'success'); }
   function removeGivingOption(kind,i) { if(kind==='fund') editableFunds.splice(i,1); else editableCampaigns.splice(i,1); renderGivingOptionsEditor(); setStatus('Option removed. Save when ready.','success'); }
 
   // ── FEAST CAMPAIGN HELPERS ────────────────────────────────
@@ -293,6 +369,23 @@
     document.getElementById('metricFunds').textContent     = (p.funds     || []).length;
     document.getElementById('metricCampaigns').textContent = (p.campaigns || []).length;
     document.getElementById('metricStripe').textContent    = p.stripeAccountStatus || 'not_started';
+    const overviewStatus = document.getElementById('overviewGivingStatus');
+    const overviewStatusNote = document.getElementById('overviewGivingStatusNote');
+    const overviewStripe = document.getElementById('overviewStripeStatus');
+    const overviewFunds = document.getElementById('overviewFundsCount');
+    const overviewCampaigns = document.getElementById('overviewCampaignsCount');
+    if (overviewStatus) overviewStatus.textContent = statusLabel(p.givingStatus || 'active');
+    if (overviewStatusNote) {
+      const status = p.givingStatus || 'active';
+      overviewStatusNote.textContent = status === 'active'
+        ? 'Your public giving page is visible and ready to receive offerings.'
+        : status === 'paused'
+          ? 'Your giving page is paused. Donors can view it, but checkout is temporarily disabled.'
+          : 'Your giving page is hidden from public discovery.';
+    }
+    if (overviewStripe) overviewStripe.textContent = statusLabel(p.stripeAccountStatus || 'not_started');
+    if (overviewFunds) overviewFunds.textContent = (p.funds || []).length;
+    if (overviewCampaigns) overviewCampaigns.textContent = (p.campaigns || []).length;
     document.getElementById('sidebarPublicLink').href = dedicatedGivingUrl();
     document.getElementById('topbarTitle').textContent = p.parishName || 'Parish Dashboard';
     const mobileMeta = document.getElementById('topbarMobileParishMeta');
@@ -364,9 +457,10 @@
   function renderGivingOptionsEditor() {
     const pane = document.getElementById('editorPane'); if (!pane) return;
     pane.innerHTML = `
+      ${renderOptionsProgressSummary()}
       <div class="giving-options-intro">These are the choices donors see after selecting <strong>Designated Fund</strong> or <strong>Alms Campaign</strong>. Add presets or write your own.</div>
       <div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Designated funds</h3><span class="option-group-count">${editableFunds.length} shown</span></div><div class="option-list">${optionCards(editableFunds,'fund','No funds configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add a fund</div><div class="builder-grid"><select id="fundPreset" onchange="fillGivingPreset('fund')"><option value="">Choose a preset...</option>${presetOptions(fundPresets)}</select><input id="fundName" placeholder="Fund name, e.g. New Iconostasis Fund" /><textarea id="fundDescription" placeholder="Describe this fund in plain language."></textarea><button class="btn btn-ghost" onclick="addGivingOption('fund')">Add fund</button></div></div></div>
-      <div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Alms campaigns</h3><span class="option-group-count">${editableCampaigns.length} shown</span></div><div class="option-list">${optionCards(editableCampaigns,'campaign','No alms campaigns configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add an alms campaign</div><div class="builder-grid"><select id="campaignPreset" onchange="fillGivingPreset('campaign')"><option value="">Choose a preset...</option>${presetOptions(campaignPresets)}</select><input id="campaignName" placeholder="Campaign name, e.g. Support for the Petrov Family" /><textarea id="campaignDescription" placeholder="Describe the need in plain language."></textarea><button class="btn btn-ghost" onclick="addGivingOption('campaign')">Add campaign</button></div></div></div>
+      <div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Alms campaigns</h3><span class="option-group-count">${editableCampaigns.length} shown</span></div><div class="option-list">${optionCards(editableCampaigns,'campaign','No alms campaigns configured yet.')}</div><div class="option-builder"><div class="option-builder-title">Add an alms campaign</div><div class="builder-grid"><select id="campaignPreset" onchange="fillGivingPreset('campaign')"><option value="">Choose a preset...</option>${presetOptions(campaignPresets)}</select><input id="campaignName" placeholder="Campaign name, e.g. Support for the Petrov Family" /><textarea id="campaignDescription" placeholder="Describe the need in plain language."></textarea><input id="campaignGoal" type="number" min="0" step="1" placeholder="Goal amount, e.g. 45000" /><button class="btn btn-ghost" onclick="addGivingOption('campaign')">Add campaign</button></div></div></div>
       ${renderFeastCampaignSetup()}
       <details class="advanced-editor"><summary>Advanced edit (JSON)</summary><div class="editor-label-row"><label for="fundsJson">Designated funds</label><span class="editor-hint">Each item needs id, name, description</span></div><textarea id="fundsJson" spellcheck="false" onchange="syncGivingOptionsFromAdvanced()">${JSON.stringify(editableFunds,null,2)}</textarea><div style="height:0.9rem;"></div><div class="editor-label-row"><label for="campaignsJson">Alms campaigns</label><span class="editor-hint">Each item needs id, name, description</span></div><textarea id="campaignsJson" spellcheck="false" onchange="syncGivingOptionsFromAdvanced()">${JSON.stringify(editableCampaigns,null,2)}</textarea></details>
       <div class="btn-row"><button class="btn btn-gold" onclick="saveDashboard(this)">Save giving options</button><button class="btn btn-ghost" onclick="loadDashboard()">Discard changes</button></div>`;
@@ -412,6 +506,8 @@
       const fundSel = document.getElementById('histFundFilter');
       if (fundSel) { fundSel.innerHTML = '<option value="all">All funds</option>' + funds.map(f=>`<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join(''); }
       filterHistory();
+      if (currentParish) renderGivingOptionsEditor();
+      renderGiversPanel();
     } catch (err) {
       if (wrap) wrap.innerHTML = `<div class="history-empty">${escapeHtml(err.message)}</div>`;
     } finally { if (btn) { btn.classList.remove('loading'); btn.disabled = false; } }
@@ -429,6 +525,7 @@
       return matchQ && matchType && matchFund;
     });
     renderHistoryTable();
+    renderGiversPanel();
   }
 
   function renderHistoryTable() {

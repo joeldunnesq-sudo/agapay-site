@@ -35,7 +35,7 @@
       </div>
 
       <div class="sidebar-metrics">
-        <div class="sidebar-metric highlight">
+        <div class="sidebar-metric highlight sidebar-status-metric">
           <div class="sidebar-metric-val" id="metricStatus">-</div>
           <div class="sidebar-metric-label">Status</div>
         </div>
@@ -73,6 +73,10 @@
         <div class="sidebar-nav-item" onclick="switchTab('history')" id="nav-history">
           <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
           Giving History
+        </div>
+        <div class="sidebar-nav-item" onclick="switchTab('givers')" id="nav-givers">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Givers
         </div>
       </nav>
 
@@ -174,6 +178,19 @@
           </div>
         </div>
 
+        <div class="overview-status-card" id="overviewStatusCard">
+          <div>
+            <span class="overview-status-label">Giving page status</span>
+            <strong id="overviewGivingStatus">Active</strong>
+            <p id="overviewGivingStatusNote">Your giving page status appears here after the dashboard loads.</p>
+          </div>
+          <div class="overview-status-grid">
+            <div><span>Stripe</span><strong id="overviewStripeStatus">-</strong></div>
+            <div><span>Funds</span><strong id="overviewFundsCount">0</strong></div>
+            <div><span>Campaigns</span><strong id="overviewCampaignsCount">0</strong></div>
+          </div>
+        </div>
+
         <div class="insights-card">
           <div class="insights-header">
             <span class="insights-title">Giving This Year</span>
@@ -256,6 +273,27 @@
       </div>
 
       <!-- ── SETTINGS TAB ────────────────────────────────────── -->
+      <div class="tab-panel" id="tab-givers">
+        <div class="history-summary givers-summary">
+          <div class="history-stat"><div class="history-stat-val" id="giverStatCount">-</div><div class="history-stat-label">Givers</div></div>
+          <div class="history-stat"><div class="history-stat-val" id="giverStatTotal">-</div><div class="history-stat-label">Total given</div></div>
+          <div class="history-stat"><div class="history-stat-val" id="giverStatRecurring">-</div><div class="history-stat-label">Recurring donors</div></div>
+          <div class="history-stat"><div class="history-stat-val" id="giverStatLast">-</div><div class="history-stat-label">Last gift</div></div>
+        </div>
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+              Givers
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="loadGivingHistory(this)">Refresh</button>
+          </div>
+          <div class="section-body" id="giversPane">
+            <div class="history-empty">Load giving history to see donor households and gift patterns.</div>
+          </div>
+        </div>
+      </div>
+
       <div class="tab-panel" id="tab-settings">
         <div class="section-card">
           <div class="section-header">
@@ -387,6 +425,10 @@
   <button class="mobile-tab-link" type="button" data-nav-tab="history" onclick="switchTab('history')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7 6.5h14"/><path d="M7 11h14"/><path d="M7 15.5h10"/><path d="M7 20h8"/><path d="M4.5 4h19v20h-19z"/></svg>
     <span>History</span>
+  </button>
+  <button class="mobile-tab-link" type="button" data-nav-tab="givers" onclick="switchTab('givers')">
+    <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M4.5 22c.6-4 3-6 5.5-6s4.9 2 5.5 6"/><circle cx="19" cy="11" r="2.5"/><path d="M17 17c2.8.3 4.8 2 5.5 5"/></svg>
+    <span>Givers</span>
   </button>
 </nav>
 

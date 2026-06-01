@@ -2197,10 +2197,125 @@ async function findOrCreateDonorCustomer(env, parish, body) {
   return stripeFormConnectedRequest(env, "/v1/customers", customerForm, stripeAccountId);
 }
 
+function paidOffering(offering) {
+  return offering?.paymentStatus === "paid" || offering?.status === "paid" || offering?.status === "completed";
+}
+
+function giftDisplayName(offering = {}) {
+  const pieces = [offering.firstName, offering.lastName].filter(Boolean);
+  return pieces.join(" ").trim() || offering.donorName || "";
+}
+
+function publicParishGiftFromOffering(offering = {}) {
+  const living = Array.isArray(offering.living)
+    ? offering.living
+    : String(offering.namesLiving || "").split(/\n+/).map((name) => name.trim()).filter(Boolean);
+  const departed = Array.isArray(offering.departed)
+    ? offering.departed
+    : String(offering.namesDeparted || "").split(/\n+/).map((name) => name.trim()).filter(Boolean);
+  return {
+    id: offering.id || offering.checkoutSessionId || offering.paymentIntentId || "",
+    date: offering.createdAt || offering.paidAt || offering.updatedAt || "",
+    createdAt: offering.createdAt || offering.paidAt || offering.updatedAt || "",
+    amountCents: Number(offering.amountCents || 0),
+    donorName: giftDisplayName(offering),
+    donorEmail: offering.email || offering.donorEmail || "",
+    fund: offering.fund || offering.fundId || (offering.giftType === "stewardship" ? "General Operating Fund" : ""),
+    fundId: offering.fundId || offering.fund || "",
+    campaign: offering.campaign || offering.campaignId || "",
+    campaignId: offering.campaignId || offering.campaign || "",
+    description: offering.description || offering.campaignDescription || offering.inMemoriam || "",
+    giftType: offering.giftType || "offering",
+    frequency: offering.frequency || "once",
+    recurring: Boolean(offering.frequency && offering.frequency !== "once"),
+    type: offering.frequency && offering.frequency !== "once" ? "recurring" : "one_time",
+    commemorationNames: [...living, ...departed]
+  };
+}
+
+async function loadParishPaidOfferings(env, parishId, limit = 500) {
+  if (!parishId) return [];
+  if (d1(env)) {
+    const rows = await d1All(
+      env,
+      `SELECT data
+       FROM donor_offerings
+       WHERE parish_id = ?1
+         AND (payment_status = 'paid' OR status IN ('paid', 'completed'))
+       ORDER BY created_at DESC
+       LIMIT ?2`,
+      parishId,
+      limit
+    );
+    return rows.map(parseJsonRow).filter(Boolean).filter(paidOffering).map(publicParishGiftFromOffering);
+  }
+
+  if (!env.AGAPAY_REGISTRATIONS) return [];
+  const keys = await listKvKeys(env, { prefix: DONOR_OFFERING_KEY_PREFIX, limit: Math.min(limit, 5000) });
+  const gifts = [];
+  for (const key of keys) {
+    const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
+    if (!raw) continue;
+    try {
+      const offering = JSON.parse(raw);
+      if ((offering.parishId || offering.parish_id) === parishId && paidOffering(offering)) {
+        gifts.push(publicParishGiftFromOffering(offering));
+      }
+    } catch {}
+  }
+  return gifts.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, limit);
+}
+
+function normalizedOptionKeys(option = {}) {
+  return [option.id, option.feastId, option.name, option.campaignName, option.title]
+    .filter(Boolean)
+    .map((value) => String(value).trim().toLowerCase());
+}
+
+function campaignRaisedTotals(campaign, gifts) {
+  const keys = new Set(normalizedOptionKeys(campaign));
+  let raisedCents = 0;
+  let giftCount = 0;
+  gifts.forEach((gift) => {
+    const giftKeys = normalizedOptionKeys({
+      id: gift.campaignId,
+      name: gift.campaign,
+      campaignName: gift.description,
+      title: gift.giftType === "campaign" ? gift.fund : ""
+    });
+    if (gift.giftType === "campaign" && giftKeys.some((key) => keys.has(key))) {
+      raisedCents += Number(gift.amountCents || 0);
+      giftCount += 1;
+    }
+  });
+  return { raisedCents, giftCount };
+}
+
+async function enrichParishGivingOptions(env, parish) {
+  if (!parish?.id) return parish;
+  const gifts = await loadParishPaidOfferings(env, parish.id, 1000);
+  const enrichCampaign = (campaign) => {
+    const totals = campaignRaisedTotals(campaign, gifts);
+    return {
+      ...campaign,
+      name: campaign.name || campaign.campaignName || "Parish Alms Campaign",
+      goalCents: Number(campaign.goalCents || campaign.targetCents || campaign.goalAmountCents || 0),
+      raisedCents: totals.raisedCents,
+      giftCount: totals.giftCount
+    };
+  };
+  return {
+    ...parish,
+    campaigns: (parish.campaigns || []).map(enrichCampaign),
+    feastCampaigns: (parish.feastCampaigns || []).map(enrichCampaign)
+  };
+}
+
 async function handleParishes(env) {
   const dynamicParishes = await verifiedRegistrationParishes(env);
+  const enrichedParishes = await Promise.all(dynamicParishes.map((parish) => enrichParishGivingOptions(env, parish)));
 
-  return json({ parishes: dynamicParishes });
+  return json({ parishes: enrichedParishes });
 }
 
 async function loadPaidDonorOfferingPlatformTotals(env) {
@@ -2984,6 +3099,7 @@ async function handleDonorDashboard(request, env) {
   if (donor.defaultParishId) {
     const found = await findRegistrationByParishId(env, donor.defaultParishId);
     if (found) parish = parishFromRegistration(found.registration);
+    if (parish) parish = await enrichParishGivingOptions(env, parish);
   }
 
   return json({
@@ -4632,6 +4748,27 @@ async function handleParishGivingSummary(request, env, parishId) {
   });
 }
 
+async function handleParishGivingHistory(request, env, parishId) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-dashboard", { limit: 80, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const token = getBearerToken(request);
+  if (!(await verifyParishDashboardPassword(found.registration, token))) {
+    return unauthorized();
+  }
+
+  const gifts = await loadParishPaidOfferings(env, parishId, 500);
+  return json({
+    gifts,
+    generatedAt: new Date().toISOString()
+  });
+}
+
 function parishDashboardPayload(parishId, registration) {
   return {
     parishId,
@@ -4984,6 +5121,10 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-summary")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-summary", ""));
       return handleParishGivingSummary(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-history")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-history", ""));
+      return handleParishGivingHistory(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", ""));

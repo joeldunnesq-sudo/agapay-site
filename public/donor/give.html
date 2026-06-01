@@ -55,10 +55,12 @@
             <div class="quick-give-context" id="quickGiveContext" hidden></div>
             <form id="donorCheckoutForm" onsubmit="startDonorCheckout(event)">
               <div class="form-grid">
-                <div class="form-group"><label class="form-label" for="parish">Parish</label><select class="form-select" id="parish" name="parish"><option value="st-seraphim-mission">St. Seraphim of Sarov Mission</option><option value="holy-theotokos-skete">Holy Theotokos Skete</option></select></div>
+                <div class="form-group"><label class="form-label" for="parish">Parish</label><select class="form-select" id="parish" name="parish" onchange="toggleGiftDetailFields()"><option value="st-seraphim-mission">St. Seraphim of Sarov Mission</option><option value="holy-theotokos-skete">Holy Theotokos Skete</option></select></div>
                 <div class="form-group"><label class="form-label" for="frequency">Frequency</label><select class="form-select" id="frequency" name="frequency"><option value="once">One-time</option><option value="weekly">Weekly</option><option value="biweekly">Biweekly</option><option value="monthly">Monthly</option></select></div>
                 <div class="form-group"><label class="form-label" for="amount">Amount</label><input class="form-input" id="amount" name="amount" value="100" /></div>
-                <div class="form-group"><label class="form-label" for="giftType">Gift type</label><select class="form-select" id="giftType" name="giftType" onchange="toggleCandleIntentionFields()"><option value="stewardship">Stewardship</option><option value="fund">Designated Fund</option><option value="candles">Candles</option><option value="commemoration">Commemoration</option><option value="campaign">Alms Campaign</option><option value="feast">Feast Offering</option></select></div>
+                <div class="form-group"><label class="form-label" for="giftType">Gift type</label><select class="form-select" id="giftType" name="giftType" onchange="toggleGiftDetailFields()"><option value="stewardship">Stewardship</option><option value="fund">Designated Fund</option><option value="candles">Candles</option><option value="commemoration">Commemoration</option><option value="campaign">Alms Campaign</option><option value="feast">Feast Offering</option></select></div>
+                <div class="form-group full" id="fundFields" hidden><label class="form-label" for="fund">Designated fund</label><select class="form-select" id="fund" name="fund"></select></div>
+                <div class="form-group full" id="campaignFields" hidden><label class="form-label" for="campaign">Alms campaign</label><select class="form-select" id="campaign" name="campaign" onchange="renderCampaignChoicePreview(selectedCampaign())"></select><div id="campaignPreview"></div></div>
                 <div class="form-group full candle-intention-fields" id="candleIntentionFields" hidden>
                   <div class="form-grid">
                     <div class="form-group"><label class="form-label" for="candleLivingNames">Living names</label><textarea class="form-textarea" id="candleLivingNames" placeholder="One name per line"></textarea></div>
@@ -66,7 +68,15 @@
                     <div class="form-group full"><label class="form-label" for="candleIntentionNote">Candle intention</label><input class="form-input" id="candleIntentionNote" placeholder="Optional note, feast, or intention for the parish" /></div>
                   </div>
                 </div>
+                <div class="form-group full commemoration-intention-fields" id="commemorationIntentionFields" hidden>
+                  <div class="form-grid">
+                    <div class="form-group"><label class="form-label" for="commemorationLivingNames">Living names</label><textarea class="form-textarea" id="commemorationLivingNames" placeholder="One name per line"></textarea></div>
+                    <div class="form-group"><label class="form-label" for="commemorationDepartedNames">Departed names</label><textarea class="form-textarea" id="commemorationDepartedNames" placeholder="One name per line"></textarea></div>
+                    <div class="form-group full"><label class="form-label" for="commemorationIntentionNote">Commemoration note</label><input class="form-input" id="commemorationIntentionNote" placeholder="Optional memorial, feast, or instruction for the parish" /></div>
+                  </div>
+                </div>
               </div>
+              <label class="fee-toggle" for="coverFees"><input id="coverFees" type="checkbox" checked /><span><strong>Cover processing fees</strong><small>Default yes, so your parish receives the full intended gift.</small></span></label>
               <p class="form-help">This uses the live AGAPAY checkout API and records the gift under your donor account.</p>
               <div data-agapay-turnstile class="section-gap"></div>
               <div class="section-gap"><button class="btn btn-gold" type="submit">Continue to AGAPAY checkout</button></div>
