@@ -1681,6 +1681,10 @@ async function storeDonorOffering(env, offering) {
     stripeSubscriptionId: offering.stripeSubscriptionId || "",
     namesLiving: offering.namesLiving || "",
     namesDeparted: offering.namesDeparted || "",
+    emailReceiptStatus: offering.emailReceiptStatus || "",
+    emailReceiptId: offering.emailReceiptId || "",
+    emailReceiptDetail: offering.emailReceiptDetail || "",
+    emailReceiptSentAt: offering.emailReceiptSentAt || "",
     createdAt: offering.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -1782,6 +1786,19 @@ async function updateDonorOfferingByPaymentIntent(env, paymentIntentId, updates 
   };
   await env.AGAPAY_REGISTRATIONS.put(key, JSON.stringify(updated));
   return updated;
+}
+
+async function loadDonorOfferingByPaymentIntent(env, paymentIntentId) {
+  if (!hasProductionStore(env) || !paymentIntentId) return null;
+  if (d1(env)) {
+    const row = await d1First(env, "SELECT data FROM donor_offerings WHERE payment_intent_id = ?1 LIMIT 1", paymentIntentId);
+    return parseJsonRow(row);
+  }
+
+  const key = await env.AGAPAY_REGISTRATIONS.get(stripePaymentIntentIndexKey(paymentIntentId));
+  if (!key) return null;
+  const raw = await env.AGAPAY_REGISTRATIONS.get(key);
+  return raw ? JSON.parse(raw) : null;
 }
 
 async function loadDonorOfferings(env, email, limit = 100) {
@@ -2708,6 +2725,9 @@ async function handleCheckoutSessionStatus(request, env) {
     stripeSubscriptionId: session.subscription || offering.stripeSubscriptionId || "",
     completedAt: status === "completed" ? offering.completedAt || new Date().toISOString() : offering.completedAt || ""
   });
+  if (status === "completed" || paymentStatus === "paid") {
+    await sendDonationReceiptIfNeeded(env, updated || {});
+  }
 
   return json({
     ok: true,
@@ -2715,6 +2735,115 @@ async function handleCheckoutSessionStatus(request, env) {
     status: updated?.status || status,
     paymentStatus: updated?.paymentStatus || paymentStatus,
     paymentIntentId: updated?.stripePaymentIntentId || paymentIntentId || ""
+  });
+}
+
+async function handleDonorClaimCheckout(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const limited = await rateLimit(request, env, "donor-claim-checkout", { limit: 12, windowSeconds: 300 });
+  if (limited) return limited;
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const sessionId = String(body.sessionId || body.session_id || "").trim();
+  const password = String(body.password || "");
+  if (!sessionId.startsWith("cs_")) return json({ error: "A valid checkout session is required" }, { status: 422 });
+  if (password.length < 8) return json({ error: "Password must be at least 8 characters" }, { status: 422 });
+
+  const offering = await loadDonorOfferingByCheckout(env, sessionId);
+  if (!offering) return json({ error: "Checkout session is not tracked by AGAPAY" }, { status: 404 });
+
+  const parish = await findCheckoutParish(env, offering.parishId);
+  if (!parish?.stripeAccountId) {
+    return json({ error: "Parish Stripe account is not connected yet" }, { status: 422 });
+  }
+
+  let verifiedSession = null;
+  const stripe = await stripeGetConnectedRequest(
+    env,
+    `/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
+    parish.stripeAccountId
+  );
+  if (stripe.ok) {
+    verifiedSession = stripe.body || {};
+    const paymentIntentId = typeof verifiedSession.payment_intent === "string"
+      ? verifiedSession.payment_intent
+      : verifiedSession.payment_intent?.id || "";
+    const paymentStatus = verifiedSession.payment_status || offering.paymentStatus || "pending";
+    let status = offering.status || "checkout_created";
+    if (paymentStatus === "paid" || verifiedSession.status === "complete") status = "completed";
+    if (verifiedSession.status === "expired") status = "expired";
+    await updateDonorOfferingByCheckout(env, sessionId, {
+      status,
+      paymentStatus,
+      stripeCustomerId: verifiedSession.customer || offering.stripeCustomerId || "",
+      stripePaymentIntentId: paymentIntentId || offering.stripePaymentIntentId || "",
+      stripeSubscriptionId: verifiedSession.subscription || offering.stripeSubscriptionId || "",
+      completedAt: status === "completed" ? offering.completedAt || new Date().toISOString() : offering.completedAt || ""
+    });
+  }
+
+  const refreshed = await loadDonorOfferingByCheckout(env, sessionId) || offering;
+  const isPaid = refreshed.status === "completed" || refreshed.paymentStatus === "paid" || refreshed.paymentStatus === "succeeded";
+  if (!isPaid) {
+    return json({ error: "Payment is still processing. Please wait and try again in a moment." }, { status: 409 });
+  }
+
+  const donorEmail = normalizeEmail(
+    refreshed.donorEmail
+      || verifiedSession?.customer_details?.email
+      || verifiedSession?.customer_email
+      || ""
+  );
+  if (!donorEmail) return json({ error: "A donor email is required before creating an account." }, { status: 422 });
+
+  const existing = await loadDonor(env, donorEmail);
+  if (existing?.emailVerifiedAt) {
+    return json({
+      error: "A donor account already exists for this email. Please log in from the donor sign-in page.",
+      code: "account_exists"
+    }, { status: 409 });
+  }
+
+  const now = new Date().toISOString();
+  const donorNameValue = String(
+    body.donorName
+    || body.householdName
+    || refreshed.donorName
+    || existing?.donorName
+    || donorEmail.split("@")[0]
+  ).trim();
+
+  const donorBase = {
+    ...(existing || {}),
+    email: donorEmail,
+    donorName: donorNameValue,
+    householdName: donorNameValue,
+    defaultParishId: refreshed.parishId || existing?.defaultParishId || "",
+    emailVerifiedAt: now,
+    emailVerificationSalt: "",
+    emailVerificationTokenHash: "",
+    emailVerificationSentAt: "",
+    emailVerificationExpiresAt: "",
+    createdAt: existing?.createdAt || now,
+    updatedAt: now
+  };
+  const donor = await applyDonorPassword(donorBase, password);
+  const session = await issueDonorSession(env, donor);
+
+  return json({
+    ok: true,
+    token: session.token,
+    donor: publicDonor(session.donor),
+    checkoutSessionId: sessionId,
+    status: refreshed.status || "completed",
+    paymentStatus: refreshed.paymentStatus || "paid"
   });
 }
 
@@ -2757,6 +2886,78 @@ async function sendDonorVerificationEmail(env, donor, verificationUrl) {
       <p style="margin:0;font-size:12px;line-height:1.6;color:#6F6A60;">If you did not create this AGAPAY account, you can ignore this email.</p>
     `)
   });
+}
+
+function formatUsdFromCents(centsValue) {
+  return (Number(centsValue || 0) / 100).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD"
+  });
+}
+
+function offeringLabel(offering = {}) {
+  if (offering.title) return String(offering.title);
+  const giftType = String(offering.giftType || "offering").replace(/-/g, " ");
+  const parishName = offering.parishName || "your parish";
+  return `${parishName} - ${giftType}`;
+}
+
+async function sendDonorDonationReceiptEmail(env, offering = {}) {
+  const donorEmail = normalizeEmail(offering.donorEmail);
+  if (!donorEmail) return { status: "missing_recipient" };
+  const appUrl = env.AGAPAY_APP_URL || "https://agapay.app";
+  const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
+  const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
+  const donorName = htmlEscape(offering.donorName || "friend");
+  const lineItem = htmlEscape(offeringLabel(offering));
+  const parishName = htmlEscape(offering.parishName || "Orthodox parish");
+  const amount = formatUsdFromCents(offering.chargeCents || offering.amountCents || 0);
+  const donatedAt = htmlEscape(new Date(offering.completedAt || offering.createdAt || Date.now()).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }));
+  const dashboardUrl = htmlEscape(`${String(appUrl).replace(/\/+$/, "")}/donor`);
+  return sendEmail(env, {
+    from,
+    to: [donorEmail],
+    reply_to: replyTo,
+    subject: `AGAPAY receipt - ${amount} to ${offering.parishName || "your parish"}`,
+    html: agapayEmailHtml(appUrl, "Donation receipt", `
+      <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ, ${donorName}.</p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Your gift has been received successfully through AGAPAY.</p>
+      <div style="margin:0 0 20px;padding:16px 18px;border:1px solid rgba(201,162,91,0.34);border-radius:12px;background:#FDF9F0;">
+        <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Amount:</strong> ${htmlEscape(amount)}</p>
+        <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Parish:</strong> ${parishName}</p>
+        <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Offering:</strong> ${lineItem}</p>
+        <p style="margin:0;font-size:14px;color:#171715;"><strong>Date:</strong> ${donatedAt}</p>
+      </div>
+      <p style="margin:0 0 18px;font-size:14px;line-height:1.65;color:#171715;">You can view this gift in your donor dashboard and keep track of your offering history there.</p>
+      <p style="margin:0;"><a href="${dashboardUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:12px 18px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:17px;font-style:italic;font-weight:600;">Open donor dashboard</a></p>
+    `)
+  });
+}
+
+async function sendDonationReceiptIfNeeded(env, offering = {}) {
+  if (!offering) return offering;
+  if (offering.emailReceiptSentAt) return offering;
+  const paidLike = offering.status === "completed" || offering.paymentStatus === "paid" || offering.paymentStatus === "succeeded";
+  if (!paidLike) return offering;
+
+  let current = offering;
+  if (offering.checkoutSessionId) {
+    const byCheckout = await loadDonorOfferingByCheckout(env, offering.checkoutSessionId);
+    if (byCheckout) current = byCheckout;
+  } else if (offering.stripePaymentIntentId) {
+    const byIntent = await loadDonorOfferingByPaymentIntent(env, offering.stripePaymentIntentId);
+    if (byIntent) current = byIntent;
+  }
+  if (current.emailReceiptSentAt) return current;
+
+  const email = await sendDonorDonationReceiptEmail(env, current);
+  const updates = {
+    emailReceiptStatus: email.status || "unknown",
+    emailReceiptId: email.id || "",
+    emailReceiptDetail: email.detail || "",
+    emailReceiptSentAt: email.status === "sent" ? new Date().toISOString() : ""
+  };
+  return storeDonorOffering(env, { ...current, ...updates });
 }
 
 async function handleDonorSignup(request, env) {
@@ -4002,7 +4203,7 @@ async function processStripeWebhookEvent(env, event) {
       donorName: object.metadata?.donor_name || object.customer_details?.name || "",
       createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
     });
-    await updateDonorOfferingByCheckout(env, object.id, {
+    const updatedOffering = await updateDonorOfferingByCheckout(env, object.id, {
       status,
       paymentStatus,
       stripeCustomerId: object.customer || "",
@@ -4010,6 +4211,9 @@ async function processStripeWebhookEvent(env, event) {
       stripeSubscriptionId: object.subscription || "",
       completedAt: status === "completed" ? (object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()) : ""
     });
+    if (status === "completed" || paymentStatus === "paid") {
+      await sendDonationReceiptIfNeeded(env, updatedOffering || {});
+    }
   }
 
   if (event.type === "checkout.session.async_payment_failed") {
@@ -4042,12 +4246,13 @@ async function processStripeWebhookEvent(env, event) {
   }
 
   if (event.type === "payment_intent.succeeded") {
-    await updateDonorOfferingByPaymentIntent(env, object.id, {
+    const updatedOffering = await updateDonorOfferingByPaymentIntent(env, object.id, {
       status: "completed",
       paymentStatus: object.status || "succeeded",
       stripeCustomerId: object.customer || "",
       completedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
     });
+    await sendDonationReceiptIfNeeded(env, updatedOffering || {});
   }
 
   if (event.type === "payment_intent.payment_failed") {
@@ -4105,7 +4310,7 @@ async function processStripeWebhookEvent(env, event) {
       createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
     });
     if (metadata.donor_email) {
-      await storeDonorOffering(env, {
+      const storedOffering = await storeDonorOffering(env, {
         id: object.id,
         donorEmail: metadata.donor_email,
         donorName: metadata.donor_name || object.customer_name || "",
@@ -4119,11 +4324,13 @@ async function processStripeWebhookEvent(env, event) {
         status: "completed",
         paymentStatus: "paid",
         stripeCustomerId: object.customer || "",
+        stripePaymentIntentId: object.payment_intent || "",
         stripeSubscriptionId: object.subscription || "",
         namesLiving: metadata.names_living || "",
         namesDeparted: metadata.names_departed || "",
         createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
       });
+      await sendDonationReceiptIfNeeded(env, storedOffering || {});
     }
   }
 
@@ -4783,6 +4990,7 @@ function parishDashboardPayload(parishId, registration) {
     country: registration.country || "US",
     website: registration.website,
     liturgicalCalendar: registration.liturgicalCalendar || "julian",
+    patronalFeast: registration.patronalFeast || "",
     givingStatus: registration.givingStatus || "active",
     stripeAccountId: registration.stripeAccountId || "",
     stripeAccountStatus: registration.stripeAccountStatus || "not_started",
@@ -4862,6 +5070,7 @@ async function handleParishDashboard(request, env, parishId) {
       country: String(body.country ?? current.country ?? "US").trim() || "US",
       website: body.website ?? current.website ?? "",
       liturgicalCalendar: body.liturgicalCalendar || current.liturgicalCalendar || "julian",
+      patronalFeast: String(body.patronalFeast ?? current.patronalFeast ?? "").trim(),
       givingStatus: body.givingStatus || current.givingStatus || "active",
       recurringGivingEnabled: Boolean(body.recurringGivingEnabled ?? current.recurringGivingEnabled ?? true),
       candlesEnabled: Boolean(body.candlesEnabled ?? current.candlesEnabled ?? true),
@@ -5039,6 +5248,9 @@ export default {
     }
     if (url.pathname === "/api/donor/session") {
       return handleDonorSession(request, env);
+    }
+    if (url.pathname === "/api/donor/claim-checkout") {
+      return handleDonorClaimCheckout(request, env);
     }
     if (url.pathname === "/api/donor/dashboard") {
       return handleDonorDashboard(request, env);

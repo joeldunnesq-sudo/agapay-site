@@ -272,6 +272,42 @@
   function feastDateLabel(feast) { return feast.displayDate || feast.date || ''; }
   function isFeastEnabled(id) { return editableFeastCampaigns.some(f=>f.id===id&&f.enabled!==false); }
   function toggleFeastCampaign(id,checked) { const cal=document.getElementById('feastLiturgicalCalendar')?.value||currentParish?.liturgicalCalendar||'julian'; const feast=feastPresetsForCalendar(cal).find(f=>f.id===id); if(!feast) return; editableFeastCampaigns=editableFeastCampaigns.filter(f=>f.id!==id); if(checked) editableFeastCampaigns.push({id:feast.id,name:feast.name,enabled:true,campaignName:`${feast.name} Alms Campaign`,description:`Parish-approved alms connected to ${feast.name}.`}); renderGivingOptionsEditor(); setStatus(checked?`${feast.name} enabled. Save when ready.`:`${feast.name} disabled. Save when ready.`,'success'); }
+  function allFeastPresets() {
+    const cal = document.getElementById('settingsLiturgicalCalendar')?.value || currentParish?.liturgicalCalendar || 'julian';
+    return feastPresetsForCalendar(cal);
+  }
+  function syncPatronalFeastOptionsFromSettings() {
+    const select = document.getElementById('patronalFeast');
+    if (!select) return;
+    const selected = select.value || currentParish?.patronalFeast || '';
+    const calendar = document.getElementById('settingsLiturgicalCalendar')?.value || currentParish?.liturgicalCalendar || 'julian';
+    const options = allFeastPresets();
+    select.innerHTML = `<option value="">Select a patronal feast day...</option>${options.map((feast) => `<option value="${escapeHtml(feast.id)}" ${selected === feast.id ? 'selected' : ''}>${escapeHtml(feast.name)} (${escapeHtml(feastDateLabel(feast))})</option>`).join('')}`;
+  }
+  function upsertPatronalFeastCampaign(patronalFeastId, calendar) {
+    if (!patronalFeastId) return;
+    const feast = feastPresetsForCalendar(calendar).find(item => item.id === patronalFeastId)
+      || feastPresetsForCalendar(calendar === 'julian' ? 'gregorian' : 'julian').find(item => item.id === patronalFeastId)
+      || fallbackFeastPresets.find(item => item.id === patronalFeastId);
+    if (!feast) return;
+    const existing = editableFeastCampaigns.find(item => item.id === patronalFeastId);
+    if (existing) {
+      existing.name = feast.name;
+      existing.enabled = true;
+      if (!existing.campaignName) existing.campaignName = `${feast.name} Patronal Feast Campaign`;
+      if (!existing.description) existing.description = `Parish-approved alms connected to ${feast.name}.`;
+      existing.patronal = true;
+      return;
+    }
+    editableFeastCampaigns.push({
+      id: feast.id,
+      name: feast.name,
+      enabled: true,
+      patronal: true,
+      campaignName: `${feast.name} Patronal Feast Campaign`,
+      description: `Parish-approved alms connected to ${feast.name}.`
+    });
+  }
   function renderFeastCampaignSetup() {
     const cal=document.getElementById('feastLiturgicalCalendar')?.value||currentParish?.liturgicalCalendar||'julian';
     const feasts=feastPresetsForCalendar(cal);
@@ -412,7 +448,8 @@
         <div class="form-group"><label class="form-label" for="postalCode">Postal code</label><input id="postalCode" value="${escapeHtml(p.postalCode||'')}" placeholder="ZIP / postal code" /></div>
         <div class="form-group"><label class="form-label" for="country">Country</label><input id="country" value="${escapeHtml(p.country||'US')}" placeholder="Country code" /></div>
         <div class="form-group full"><label class="form-label" for="website">Website</label><input id="website" value="${escapeHtml(p.website||'')}" placeholder="https://example.org" /></div>
-        <div class="form-group full"><label class="form-label" for="settingsLiturgicalCalendar">Liturgical calendar</label><select id="settingsLiturgicalCalendar"><option value="julian" ${(p.liturgicalCalendar||'julian')==='julian'?'selected':''}>Julian / Old Calendar</option><option value="gregorian" ${p.liturgicalCalendar==='gregorian'?'selected':''}>Revised Julian / Gregorian</option></select></div>
+        <div class="form-group full"><label class="form-label" for="settingsLiturgicalCalendar">Liturgical calendar</label><select id="settingsLiturgicalCalendar" onchange="syncPatronalFeastOptionsFromSettings()"><option value="julian" ${(p.liturgicalCalendar||'julian')==='julian'?'selected':''}>Julian / Old Calendar</option><option value="gregorian" ${p.liturgicalCalendar==='gregorian'?'selected':''}>Revised Julian / Gregorian</option></select></div>
+        <div class="form-group full"><label class="form-label" for="patronalFeast">Patronal feast day</label><select id="patronalFeast"></select></div>
         <div class="form-group"><label class="form-label" for="givingStatus">Giving page status</label><select id="givingStatus"><option value="active" ${p.givingStatus==='active'?'selected':''}>Active</option><option value="paused" ${p.givingStatus==='paused'?'selected':''}>Paused</option><option value="hidden" ${p.givingStatus==='hidden'?'selected':''}>Hidden</option></select></div>
         <div class="form-group"><label class="form-label">Stripe onboarding</label><input value="${escapeHtml(p.stripeAccountStatus||'not_started')}" disabled /></div>
       </div>
@@ -444,6 +481,7 @@
         <a id="stripeOnboardingLink" href="#" target="_blank" rel="noopener">Open Stripe onboarding</a>
         <p>Stripe onboarding links are single-use. If the link expires, return here and create a new one.</p>
       </div>`;
+    syncPatronalFeastOptionsFromSettings();
 
     renderQrCode();
     editableFunds          = fallbackFundsArray(p.funds);
@@ -591,6 +629,12 @@
     const newPw = document.getElementById('newDashboardPassword')?.value.trim() || '';
     const conPw = document.getElementById('confirmDashboardPassword')?.value.trim() || '';
     if (newPw || conPw) { if (newPw.length < 8) throw new Error('Password must be at least 8 characters.'); if (newPw !== conPw) throw new Error('Passwords do not match.'); }
+    const liturgicalCalendar = document.getElementById('feastLiturgicalCalendar')?.value
+      || document.getElementById('settingsLiturgicalCalendar')?.value
+      || currentParish?.liturgicalCalendar
+      || 'julian';
+    const patronalFeast = document.getElementById('patronalFeast')?.value || '';
+    upsertPatronalFeastCampaign(patronalFeast, liturgicalCalendar);
     const body = {
       parishName:             document.getElementById('parishName')?.value,
       addressLine1:           document.getElementById('addressLine1')?.value,
@@ -600,7 +644,8 @@
       postalCode:             document.getElementById('postalCode')?.value,
       country:                document.getElementById('country')?.value,
       website:                document.getElementById('website')?.value,
-      liturgicalCalendar:     document.getElementById('feastLiturgicalCalendar')?.value || document.getElementById('settingsLiturgicalCalendar')?.value || currentParish?.liturgicalCalendar || 'julian',
+      liturgicalCalendar,
+      patronalFeast,
       givingStatus:           document.getElementById('givingStatus')?.value,
       recurringGivingEnabled: document.getElementById('recurringGivingEnabled')?.checked,
       candlesEnabled:         document.getElementById('candlesEnabled')?.checked,

@@ -209,7 +209,20 @@
     .success-state h2 { font-family: var(--serif); font-size: 2rem; font-weight: 500; color: var(--deep); margin-bottom: 0.5rem; }
     .success-state .success-parish { font-size: 14px; color: var(--stone); margin-bottom: 1.5rem; line-height: 1.7; }
     .success-state .success-ref { font-size: 12px; color: rgba(166,159,145,0.7); margin-bottom: 2rem; }
-    .success-state a { display: inline-block; background: var(--deep); color: var(--cream); padding: 12px 24px; border-radius: var(--r); font-size: 14px; font-weight: 500; font-family: var(--sans); }
+    .success-state .success-primary-cta,
+    .success-state .success-secondary-cta { display: inline-block; border-radius: var(--r); font-size: 14px; font-weight: 500; font-family: var(--sans); padding: 12px 24px; }
+    .success-state .success-primary-cta { background: var(--deep); color: var(--cream); }
+    .success-state .success-secondary-cta { background: transparent; color: var(--deep); border: 1px solid rgba(61, 74, 58, 0.24); margin-right: 10px; }
+    .donor-claim-wrap { display: none; max-width: 560px; margin: 0 auto 1.6rem; border: 1px solid rgba(61, 74, 58, 0.2); border-radius: var(--r); background: #fff; padding: 1rem; text-align: left; }
+    .donor-claim-wrap h3 { font-family: var(--serif); font-size: 1.25rem; color: var(--deep); margin-bottom: 0.4rem; }
+    .donor-claim-wrap p { font-size: 13px; color: var(--stone); margin-bottom: 0.8rem; line-height: 1.6; }
+    .donor-claim-wrap .claim-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .donor-claim-wrap .claim-btn { width: 100%; margin: 10px 0 0; }
+    .donor-claim-wrap .claim-status { margin-top: 8px; font-size: 12px; line-height: 1.6; }
+    .donor-claim-wrap .claim-status.error { color: #a33a2f; }
+    .donor-claim-wrap .claim-status.success { color: var(--forest); }
+    .donor-claim-wrap .claim-login { margin-top: 10px; font-size: 12px; }
+    .donor-claim-wrap .claim-login a { color: var(--deep); text-decoration: underline; background: transparent; padding: 0; border: 0; }
 
     /* SCROLL ANIMATIONS */
     .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease; }
@@ -223,6 +236,8 @@
       .preset-amounts { grid-template-columns: repeat(2, 1fr); }
       .form-row { grid-template-columns: 1fr; }
       .frequency-opts { flex-wrap: wrap; }
+      .donor-claim-wrap .claim-row { grid-template-columns: 1fr; }
+      .success-state .success-secondary-cta { margin-right: 0; margin-bottom: 10px; }
     }
     @media (max-width: 380px) {
       .gift-types { grid-template-columns: repeat(2, 1fr); }
@@ -592,7 +607,25 @@
     <h2>Glory to God.</h2>
     <p class="success-parish">Your gift to <strong>St. Seraphim of Sarov Mission</strong> has been received.<br>A confirmation will be sent to your email.</p>
     <p class="success-ref" id="successRef">Reference: AGP-2026-00001</p>
-    <a href="/giving">Give again</a>
+    <div class="donor-claim-wrap" id="donorClaimWrap">
+      <h3>Save this gift to your donor dashboard</h3>
+      <p>Create your AGAPAY donor password now so this donation appears in your dashboard going forward.</p>
+      <div class="claim-row">
+        <div class="form-field">
+          <label>Password</label>
+          <input id="claimDonorPassword" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
+        </div>
+        <div class="form-field">
+          <label>Confirm password</label>
+          <input id="claimDonorPasswordConfirm" type="password" autocomplete="new-password" placeholder="Re-enter password" />
+        </div>
+      </div>
+      <button class="submit-btn claim-btn" id="claimDonorBtn" onclick="claimDonorAccount()">Create donor account</button>
+      <p class="claim-status" id="claimDonorStatus"></p>
+      <p class="claim-login">Already have a donor account? <a href="/donor/login">Log in here</a>.</p>
+    </div>
+    <a class="success-secondary-cta" id="successDashboardLink" href="/donor" style="display:none;">Open donor dashboard</a>
+    <a class="success-primary-cta" href="/giving">Give again</a>
   </div>
 
   <script>
@@ -602,6 +635,7 @@
     let feeCovered = true;
     let selectedFund = 'Building & Renovation Fund';
     let selectedCampaign = 'Disaster Relief';
+    let pendingClaimSessionId = '';
     let currentParish = {
       id: '',
       name: 'AGAPAY Parish',
@@ -930,6 +964,8 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
       const sessionId = params.get('session_id');
+      pendingClaimSessionId = sessionId || '';
+      configureClaimPanel();
       if (!sessionId) {
         document.getElementById('successRef').textContent = 'Payment confirmation is processing.';
         return;
@@ -944,12 +980,91 @@
         if (!response.ok) throw new Error(result.detail || result.error || 'Confirmation is still processing');
         if (result.paymentStatus === 'paid' || result.status === 'completed') {
           document.getElementById('successRef').textContent = 'Payment confirmed: ' + result.checkoutSessionId;
+          configureClaimPanel();
           return;
         }
         document.getElementById('successRef').textContent = 'Payment status: ' + (result.paymentStatus || result.status || 'processing');
       } catch (err) {
         document.getElementById('successRef').textContent = 'Payment confirmation is still processing. Your receipt will arrive by email.';
         console.warn('AGAPAY checkout confirmation warning:', err);
+      }
+    }
+
+    function donorSessionPresent() {
+      return Boolean(localStorage.getItem('agapayDonorToken') && localStorage.getItem('agapayDonorEmail'));
+    }
+
+    function setClaimStatus(message, tone) {
+      const status = document.getElementById('claimDonorStatus');
+      if (!status) return;
+      status.textContent = message || '';
+      status.className = 'claim-status' + (tone ? ' ' + tone : '');
+    }
+
+    function configureClaimPanel() {
+      const wrap = document.getElementById('donorClaimWrap');
+      const dashboardLink = document.getElementById('successDashboardLink');
+      if (!wrap || !dashboardLink) return;
+      const signedIn = donorSessionPresent();
+      wrap.style.display = signedIn ? 'none' : 'block';
+      dashboardLink.style.display = signedIn ? 'inline-block' : 'none';
+      if (pendingClaimSessionId) {
+        dashboardLink.href = '/donor?gift_success=1&session_id=' + encodeURIComponent(pendingClaimSessionId);
+      }
+      setClaimStatus('');
+    }
+
+    async function claimDonorAccount() {
+      const password = (document.getElementById('claimDonorPassword')?.value || '').trim();
+      const confirm = (document.getElementById('claimDonorPasswordConfirm')?.value || '').trim();
+      if (!pendingClaimSessionId) {
+        setClaimStatus('Checkout session was not found. Please return to giving and try again.', 'error');
+        return;
+      }
+      if (password.length < 8) {
+        setClaimStatus('Password must be at least 8 characters.', 'error');
+        return;
+      }
+      if (password !== confirm) {
+        setClaimStatus('Passwords do not match.', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('claimDonorBtn');
+      const originalText = btn?.textContent || 'Create donor account';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Creating account...';
+      }
+      setClaimStatus('Setting up your donor dashboard...', '');
+      try {
+        const firstName = document.getElementById('firstName')?.value?.trim() || '';
+        const lastName = document.getElementById('lastName')?.value?.trim() || '';
+        const donorName = [firstName, lastName].filter(Boolean).join(' ').trim();
+        const response = await fetch('/api/donor/claim-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({
+            session_id: pendingClaimSessionId,
+            password,
+            donorName
+          })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || result.detail || 'Unable to create donor account');
+        if (result.donor?.email) localStorage.setItem('agapayDonorEmail', result.donor.email);
+        if (result.token) localStorage.setItem('agapayDonorToken', result.token);
+        if (result.donor) localStorage.setItem('agapayDonorProfile', JSON.stringify(result.donor));
+        setClaimStatus('Success. Opening your donor dashboard...', 'success');
+        window.location.href = '/donor?gift_success=1&session_id=' + encodeURIComponent(pendingClaimSessionId);
+      } catch (err) {
+        const text = String(err.message || 'Unable to create donor account right now.');
+        setClaimStatus(text, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }
       }
     }
 
