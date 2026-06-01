@@ -1,3 +1,5 @@
+import { calendarLabel, liturgicalFeastsForYear, nextLiturgicalFeast, orthodoxPascha } from "./liturgical-calendar.js";
+
 const ADMIN_PASSWORD_KV_KEY = "__agapay_admin_password";
 const ADMIN_SESSION_STORE_KEY = "__agapay_admin_sessions";
 const COMMEMORATION_KEY_PREFIX = "__agapay_commemoration__";
@@ -4744,6 +4746,26 @@ async function handleParishDashboard(request, env, parishId) {
   return json({ error: "Method not allowed" }, { status: 405 });
 }
 
+function handleLiturgicalCalendar(request) {
+  const url = new URL(request.url);
+  const year = Math.max(1900, Math.min(2199, Number(url.searchParams.get("year")) || new Date().getFullYear()));
+  const calendar = String(url.searchParams.get("calendar") || "julian").toLowerCase().includes("gregorian") ? "gregorian" : "julian";
+  const nextFrom = url.searchParams.get("from");
+  const fromDate = nextFrom && /^\d{4}-\d{2}-\d{2}$/.test(nextFrom)
+    ? new Date(`${nextFrom}T00:00:00`)
+    : new Date();
+
+  return json({
+    ok: true,
+    year,
+    calendar,
+    label: calendarLabel(calendar),
+    pascha: orthodoxPascha(year),
+    feasts: liturgicalFeastsForYear(year, calendar),
+    nextFeast: nextLiturgicalFeast(calendar, fromDate)
+  });
+}
+
 function cleanAssetRequest(request) {
   const url = new URL(request.url);
   if (url.pathname === "/") return request;
@@ -4861,6 +4883,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/security/config") {
       return handleSecurityConfig(env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/liturgical-calendar") {
+      return handleLiturgicalCalendar(request);
     }
     if (request.method === "POST" && url.pathname === "/api/registrations") return handleRegistrations(request, env);
     if (url.pathname === "/api/donor/signup") {

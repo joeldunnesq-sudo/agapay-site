@@ -4,18 +4,6 @@ const donorStore = {
   donor: "agapayDonorProfile"
 };
 
-const donorMajorFeasts = [
-  { name: "Theophany", gregorian: "01-06", julian: "01-19" },
-  { name: "Meeting of the Lord", gregorian: "02-02", julian: "02-15" },
-  { name: "Annunciation", gregorian: "03-25", julian: "04-07" },
-  { name: "Transfiguration", gregorian: "08-06", julian: "08-19" },
-  { name: "Dormition of the Theotokos", gregorian: "08-15", julian: "08-28" },
-  { name: "Nativity of the Theotokos", gregorian: "09-08", julian: "09-21" },
-  { name: "Elevation of the Cross", gregorian: "09-14", julian: "09-27" },
-  { name: "Entrance of the Theotokos", gregorian: "11-21", julian: "12-04" },
-  { name: "Nativity of Christ", gregorian: "12-25", julian: "01-07" }
-];
-
 function donorSession() {
   return {
     email: localStorage.getItem(donorStore.email) || "",
@@ -89,29 +77,20 @@ function donorDisplayName(donor) {
 
 function shortDate(value) {
   if (!value) return "No date";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
+    const [year, month, day] = String(value).split("-").map((part) => Number(part));
+    return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(year, month - 1, day));
+  }
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
 }
 
-function monthDayDate(year, monthDay) {
-  const [month, day] = String(monthDay || "01-01").split("-").map((value) => Number(value));
-  return new Date(year, month - 1, day);
-}
-
 function calendarLabel(value) {
-  return String(value || "julian").toLowerCase().includes("gregorian")
-    ? "Revised Julian / Gregorian"
-    : "Julian / Old Calendar";
+  return window.AGAPAYLiturgicalCalendar?.calendarLabel(value)
+    || (String(value || "julian").toLowerCase().includes("gregorian") ? "Revised Julian / Gregorian" : "Julian / Old Calendar");
 }
 
 function nextFeastForCalendar(calendar) {
-  const key = String(calendar || "julian").toLowerCase().includes("gregorian") ? "gregorian" : "julian";
-  const today = new Date();
-  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const candidates = donorMajorFeasts
-    .map((feast) => ({ ...feast, date: monthDayDate(start.getFullYear(), feast[key]) }))
-    .map((feast) => feast.date < start ? { ...feast, date: monthDayDate(start.getFullYear() + 1, feast[key]) } : feast)
-    .sort((a, b) => a.date - b.date);
-  return candidates[0];
+  return window.AGAPAYLiturgicalCalendar?.nextLiturgicalFeast(calendar, new Date()) || null;
 }
 
 function escapeHtml(value) {

@@ -64,16 +64,16 @@
     family:    { id:'family-hardship',  name:'Family Hardship Support',     description:'Temporary alms for rent, utilities, food, travel, or urgent family needs.' },
     monastery: { id:'monastery-support',name:'Monastery Support',           description:'Alms for monastery needs, hospitality, supplies, repairs, or monastic support.' }
   };
-  const feastPresets = [
-    { id:'nativity-theotokos', name:'Nativity of the Theotokos',   date:'Sep 8',  oldCalendarDate:'Sep 21' },
-    { id:'exaltation-cross',   name:'Exaltation of the Cross',     date:'Sep 14', oldCalendarDate:'Sep 27' },
-    { id:'entrance-theotokos', name:'Entrance of the Theotokos',   date:'Nov 21', oldCalendarDate:'Dec 4'  },
-    { id:'nativity-christ',    name:'Nativity of Christ',          date:'Dec 25', oldCalendarDate:'Jan 7'  },
-    { id:'theophany',          name:'Theophany',                   date:'Jan 6',  oldCalendarDate:'Jan 19' },
-    { id:'meeting-lord',       name:'Meeting of the Lord',         date:'Feb 2',  oldCalendarDate:'Feb 15' },
-    { id:'annunciation',       name:'Annunciation',                date:'Mar 25', oldCalendarDate:'Apr 7'  },
-    { id:'transfiguration',    name:'Transfiguration',             date:'Aug 6',  oldCalendarDate:'Aug 19' },
-    { id:'dormition',          name:'Dormition of the Theotokos',  date:'Aug 15', oldCalendarDate:'Aug 28' }
+  const fallbackFeastPresets = [
+    { id:'nativity-theotokos', name:'Nativity of the Theotokos', displayDate:'Sep 21', sourceDate:'Julian Sep 8' },
+    { id:'exaltation-cross',   name:'Exaltation of the Cross', displayDate:'Sep 27', sourceDate:'Julian Sep 14' },
+    { id:'entrance-theotokos', name:'Entrance of the Theotokos', displayDate:'Dec 4', sourceDate:'Julian Nov 21' },
+    { id:'nativity-christ',    name:'Nativity of Christ', displayDate:'Jan 7', sourceDate:'Julian Dec 25' },
+    { id:'theophany',          name:'Theophany', displayDate:'Jan 19', sourceDate:'Julian Jan 6' },
+    { id:'meeting-lord',       name:'Meeting of the Lord', displayDate:'Feb 15', sourceDate:'Julian Feb 2' },
+    { id:'annunciation',       name:'Annunciation', displayDate:'Apr 7', sourceDate:'Julian Mar 25' },
+    { id:'transfiguration',    name:'Transfiguration', displayDate:'Aug 19', sourceDate:'Julian Aug 6' },
+    { id:'dormition',          name:'Dormition of the Theotokos', displayDate:'Aug 28', sourceDate:'Julian Aug 15' }
   ];
 
   // ── TOAST ────────────────────────────────────────────────
@@ -185,13 +185,21 @@
   function removeGivingOption(kind,i) { if(kind==='fund') editableFunds.splice(i,1); else editableCampaigns.splice(i,1); renderGivingOptionsEditor(); setStatus('Option removed. Save when ready.','success'); }
 
   // ── FEAST CAMPAIGN HELPERS ────────────────────────────────
-  function calendarLabel(v) { return v==='gregorian'?'Revised Julian / Gregorian':'Julian / Old Calendar'; }
-  function feastDateLabel(feast,cal) { return cal==='gregorian'?feast.date:feast.oldCalendarDate; }
+  function calendarLabel(v) { return window.AGAPAYLiturgicalCalendar?.calendarLabel(v) || (v==='gregorian'?'Revised Julian / Gregorian':'Julian / Old Calendar'); }
+  function feastPresetsForCalendar(cal) {
+    const api = window.AGAPAYLiturgicalCalendar;
+    if (!api) return fallbackFeastPresets;
+    return api.fixedFeastsForYear(new Date().getFullYear(), cal)
+      .filter(feast => ['great', 'major'].includes(feast.rank))
+      .map(feast => ({ id:feast.id, name:feast.name, displayDate:feast.displayDate, sourceDate:feast.sourceDate }));
+  }
+  function feastDateLabel(feast) { return feast.displayDate || feast.date || ''; }
   function isFeastEnabled(id) { return editableFeastCampaigns.some(f=>f.id===id&&f.enabled!==false); }
-  function toggleFeastCampaign(id,checked) { const feast=feastPresets.find(f=>f.id===id); if(!feast) return; editableFeastCampaigns=editableFeastCampaigns.filter(f=>f.id!==id); if(checked) editableFeastCampaigns.push({id:feast.id,name:feast.name,enabled:true,campaignName:`${feast.name} Alms Campaign`,description:`Parish-approved alms connected to ${feast.name}.`}); renderGivingOptionsEditor(); setStatus(checked?`${feast.name} enabled. Save when ready.`:`${feast.name} disabled. Save when ready.`,'success'); }
+  function toggleFeastCampaign(id,checked) { const cal=document.getElementById('feastLiturgicalCalendar')?.value||currentParish?.liturgicalCalendar||'julian'; const feast=feastPresetsForCalendar(cal).find(f=>f.id===id); if(!feast) return; editableFeastCampaigns=editableFeastCampaigns.filter(f=>f.id!==id); if(checked) editableFeastCampaigns.push({id:feast.id,name:feast.name,enabled:true,campaignName:`${feast.name} Alms Campaign`,description:`Parish-approved alms connected to ${feast.name}.`}); renderGivingOptionsEditor(); setStatus(checked?`${feast.name} enabled. Save when ready.`:`${feast.name} disabled. Save when ready.`,'success'); }
   function renderFeastCampaignSetup() {
     const cal=document.getElementById('feastLiturgicalCalendar')?.value||currentParish?.liturgicalCalendar||'julian';
-    return `<div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Major feast alms campaigns</h3><span class="option-group-count">${editableFeastCampaigns.filter(f=>f.enabled!==false).length} enabled</span></div><div class="option-builder"><div class="option-builder-title">Calendar timing</div><div class="builder-grid"><select id="feastLiturgicalCalendar" onchange="renderGivingOptionsEditor()"><option value="julian" ${cal==='julian'?'selected':''}>Julian / Old Calendar</option><option value="gregorian" ${cal==='gregorian'?'selected':''}>Revised Julian / Gregorian</option></select><p class="section-note" style="margin:0;">AGAPAY will use this calendar preference to decide when feast-day alms campaigns become available.</p></div></div><div class="option-list"><div class="feast-grid">${feastPresets.map(feast=>{const enabled=isFeastEnabled(feast.id);return `<div class="feast-card ${enabled?'enabled':''}"><div><div class="feast-name">${escapeHtml(feast.name)}</div><div class="feast-meta">${escapeHtml(calendarLabel(cal))} · ${escapeHtml(feastDateLabel(feast,cal))}</div></div><label class="mini-toggle" aria-label="Toggle ${escapeHtml(feast.name)}"><input type="checkbox" ${enabled?'checked':''} onchange="toggleFeastCampaign('${escapeHtml(feast.id)}',this.checked)"/><span></span></label></div>`;}).join('')}</div></div></div>`;
+    const feasts=feastPresetsForCalendar(cal);
+    return `<div class="option-group"><div class="option-group-head"><h3 class="option-group-title">Major feast alms campaigns</h3><span class="option-group-count">${editableFeastCampaigns.filter(f=>f.enabled!==false).length} enabled</span></div><div class="option-builder"><div class="option-builder-title">Calendar timing</div><div class="builder-grid"><select id="feastLiturgicalCalendar" onchange="renderGivingOptionsEditor()"><option value="julian" ${cal==='julian'?'selected':''}>Julian / Old Calendar</option><option value="gregorian" ${cal==='gregorian'?'selected':''}>Revised Julian / Gregorian</option></select><p class="section-note" style="margin:0;">AGAPAY computes fixed feasts from this calendar and keeps Pascha-based feasts on the shared Orthodox paschalion.</p></div></div><div class="option-list"><div class="feast-grid">${feasts.map(feast=>{const enabled=isFeastEnabled(feast.id);return `<div class="feast-card ${enabled?'enabled':''}"><div><div class="feast-name">${escapeHtml(feast.name)}</div><div class="feast-meta">${escapeHtml(calendarLabel(cal))} · ${escapeHtml(feastDateLabel(feast))}</div></div><label class="mini-toggle" aria-label="Toggle ${escapeHtml(feast.name)}"><input type="checkbox" ${enabled?'checked':''} onchange="toggleFeastCampaign('${escapeHtml(feast.id)}',this.checked)"/><span></span></label></div>`;}).join('')}</div></div></div>`;
   }
 
   // ── LOAD DASHBOARD ────────────────────────────────────────
