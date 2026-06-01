@@ -258,7 +258,7 @@
         </div>
         <span class="nav-name">AGAPAY</span>
       </a>
-      <a href="/giving" class="nav-back">
+      <a href="/give" class="nav-back">
         <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
         Back to All Parishes
       </a>
@@ -625,7 +625,7 @@
       <p class="claim-login">Already have a donor account? <a href="/donor/login">Log in here</a>.</p>
     </div>
     <a class="success-secondary-cta" id="successDashboardLink" href="/donor" style="display:none;">Open donor dashboard</a>
-    <a class="success-primary-cta" href="/giving">Give again</a>
+    <a class="success-primary-cta" href="/give">Give again</a>
   </div>
 
   <script>
@@ -807,13 +807,13 @@
 
         const slug = parishSlugFromPath();
         if (!slug) {
-          window.location.href = '/giving';
+          window.location.href = '/give';
           return;
         }
         const parish = result.parishes.find(item => item.id === slug);
         if (!parish) {
           alert('This parish is not currently active in AGAPAY.');
-          window.location.href = '/giving';
+          window.location.href = '/give';
           return;
         }
 
