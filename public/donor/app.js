@@ -519,6 +519,133 @@ function renderNextFeast(parish) {
   });
 }
 
+function calendarShortDateIso(value) {
+  if (!value) return "--";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
+    const [year, month, day] = String(value).split("-").map((part) => Number(part));
+    return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(year, month - 1, day));
+  }
+  return shortDate(value);
+}
+
+function renderDonorCalendarFeasts(parish) {
+  const api = window.AGAPAYLiturgicalCalendar;
+  const grid = document.getElementById("calendarGrid");
+  if (!grid || !api) return;
+
+  const calendar = parish?.liturgicalCalendar || donorProfile()?.defaultParish?.liturgicalCalendar || donorProfile()?.liturgicalCalendar || "julian";
+  const year = new Date().getFullYear();
+  const label = api.calendarLabel(calendar);
+  const feasts = api.liturgicalFeastsForYear(year, calendar);
+  const next = api.nextLiturgicalFeast(calendar, new Date());
+  const pascha = api.orthodoxPascha(year);
+  const highlighted = feasts
+    .filter((feast) => ["great", "major", "holy-week", "bright-week", "fast"].includes(feast.rank))
+    .slice(0, 24);
+
+  setText("calendarModePill", label);
+  setText("nextFeastDate", calendarShortDateIso(next?.date));
+  setText("nextFeastName", next?.name || "No feast found.");
+  setText("paschaDate", calendarShortDateIso(pascha?.iso));
+  setText("calendarShortName", calendar === "gregorian" ? "New" : "Old");
+  setText("calendarFullName", label);
+
+  grid.innerHTML = highlighted.map((feast) => `
+    <div class="day">
+      <span class="day-number">${calendarShortDateIso(feast.date)}</span>
+      <div class="feast ${feast.rank === "great" || feast.rank === "holy-week" ? "major" : ""}">
+        ${escapeHtml(feast.name)}
+      </div>
+    </div>
+  `).join("");
+}
+
+function renderDonorCalendarPrompts(parish) {
+  const target = document.getElementById("suggestedGivingPrompts");
+  if (!target) return;
+  if (!parish) {
+    target.innerHTML = `
+      <div class="notice">
+        Sign in and select your church to load real campaign and fund prompts.
+      </div>
+    `;
+    return;
+  }
+
+  const prompts = [];
+  const nextFeast = nextFeastForCalendar(parish.liturgicalCalendar);
+  if (nextFeast?.name) {
+    prompts.push({
+      title: `${nextFeast.name} Offering`,
+      description: `Support ${parish.name || "your church"} for the upcoming feast.`,
+      href: donorGiftUrl("feast", parish, { feast: nextFeast.name })
+    });
+  }
+
+  activeParishCampaigns(parish).slice(0, 2).forEach((campaign) => {
+    const goalCents = campaignGoalCents(campaign);
+    const raisedCents = campaignRaisedCents(campaign);
+    const percent = goalCents > 0 ? Math.min(100, Math.round((raisedCents / goalCents) * 100)) : 0;
+    prompts.push({
+      title: campaignLabel(campaign),
+      description: goalCents > 0
+        ? `${money(raisedCents)} of ${money(goalCents)} raised (${percent}%).`
+        : (campaign.description || "Parish-approved alms campaign."),
+      href: donorGiftUrl("campaign", parish, { campaign: campaign.id || campaign.feastId || campaign.name })
+    });
+  });
+
+  (Array.isArray(parish.funds) ? parish.funds : []).slice(0, 2).forEach((fund) => {
+    prompts.push({
+      title: fund.name || "Designated Fund",
+      description: fund.description || "Give toward this parish fund.",
+      href: donorGiftUrl("fund", parish, { fund: fund.id || fund.name })
+    });
+  });
+
+  if (!prompts.length) {
+    target.innerHTML = `
+      <div class="notice">
+        This church has no active campaigns or designated funds listed yet.
+      </div>
+    `;
+    return;
+  }
+
+  target.innerHTML = prompts.slice(0, 4).map((prompt) => `
+    <div class="list-item">
+      <div class="list-main">
+        <strong>${escapeHtml(prompt.title)}</strong>
+        <span>${escapeHtml(prompt.description)}</span>
+      </div>
+      <a class="btn btn-ghost btn-sm" href="${escapeHtml(prompt.href)}">Give</a>
+    </div>
+  `).join("");
+}
+
+async function loadDonorCalendarPage() {
+  const session = donorSession();
+  if (!session.email || !session.token) {
+    renderDonorCalendarFeasts(null);
+    renderDonorCalendarPrompts(null);
+    return;
+  }
+  try {
+    const data = await donorApi("/api/donor/dashboard");
+    setDonorProfile(data.donor);
+    renderDonorCalendarFeasts(data.parish || null);
+    renderDonorCalendarPrompts(data.parish || null);
+  } catch (err) {
+    if (isDonorUnauthorized(err)) {
+      clearDonorSession();
+      renderDonorCalendarFeasts(null);
+      renderDonorCalendarPrompts(null);
+      return;
+    }
+    setDonorStatus(err.message, "error");
+  }
+}
+
 function applyDonorGiveParams() {
   const params = new URLSearchParams(window.location.search);
   const parish = params.get("parish");
@@ -816,27 +943,59 @@ function offeringRows(offerings) {
 }
 
 async function loadDonorOfferingsPage() {
+  const session = donorSession();
+  if (!session.email || !session.token) {
+    const list = document.getElementById("offeringList");
+    if (list) list.innerHTML = '<div class="notice">Sign in to view your live offering history.</div>';
+    setText("offeringsStatus", "Sign in");
+    return;
+  }
+
+  let dashboardData = null;
+  try {
+    dashboardData = await donorApi("/api/donor/dashboard");
+    if (dashboardData?.donor) setDonorProfile(dashboardData.donor);
+  } catch (err) {
+    if (isDonorUnauthorized(err)) {
+      clearDonorSession();
+      const list = document.getElementById("offeringList");
+      if (list) list.innerHTML = '<div class="notice">Session expired. Please sign in again.</div>';
+      setText("offeringsStatus", "Sign in");
+      return;
+    }
+  }
+
   try {
     const data = await donorApi("/api/donor/offerings");
-    let offerings = data.offerings || [];
-    let summary = data.summary || {};
+    let offerings = Array.isArray(data.offerings) ? data.offerings : [];
+    let summary = data.summary || dashboardData?.summary || {};
     if (!offerings.length) {
       try {
-        const dashboard = await donorApi("/api/donor/dashboard");
+        const dashboard = dashboardData || await donorApi("/api/donor/dashboard");
         offerings = dashboard.recentOfferings || [];
         summary = dashboard.summary || summary;
       } catch {}
     }
+    offerings = offerings
+      .map((item) => ({
+        ...item,
+        amountCents: Number(item.amountCents || 0),
+        paymentStatus: item.paymentStatus || item.status || "recorded",
+        createdAt: item.createdAt || item.updatedAt || ""
+      }))
+      .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+
     window.donorOfferings = offerings;
     const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
     setText("offeringsYtd", money(summary.ytdCents));
     setText("offeringsRecurring", String(summary.recurringCount || 0));
     setText("offeringsReceiptCount", String(summary.offeringCount || 0));
-    setText("offeringsStatus", "Live data");
+    setText("offeringsStatus", offerings.length ? "Live data" : "No data yet");
     renderDonorOfferings();
   } catch (err) {
     const list = document.getElementById("offeringList");
     if (list) list.innerHTML = `<div class="notice">${escapeHtml(err.message)} Sign in from the donor home page first.</div>`;
+    setText("offeringsStatus", "Unavailable");
   }
 }
 

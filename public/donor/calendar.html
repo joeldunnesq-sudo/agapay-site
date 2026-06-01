@@ -37,9 +37,9 @@
       <div class="page">
         <section class="hero"><div class="hero-grid"><div><div class="eyebrow">Feasts and alms prompts</div><h1>Give with the Church year.</h1><p>Feast highlights can prompt alms campaigns, memorial gifts, candles, and designated offerings tied to your parish calendar.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
         <section class="grid three section-gap">
-          <div class="metric-card"><div class="metric-label">Next feast</div><div class="metric-value" id="nextFeastDate">—</div><div class="metric-note" id="nextFeastName">Load your parish calendar.</div></div>
-          <div class="metric-card"><div class="metric-label">Pascha</div><div class="metric-value" id="paschaDate">—</div><div class="metric-note">Shared Orthodox paschalion.</div></div>
-          <div class="metric-card"><div class="metric-label">Calendar</div><div class="metric-value" id="calendarShortName">—</div><div class="metric-note" id="calendarFullName">Follows your parish preference.</div></div>
+          <div class="metric-card"><div class="metric-label">Next feast</div><div class="metric-value" id="nextFeastDate">--</div><div class="metric-note" id="nextFeastName">Load your parish calendar.</div></div>
+          <div class="metric-card"><div class="metric-label">Pascha</div><div class="metric-value" id="paschaDate">--</div><div class="metric-note">Shared Orthodox paschalion.</div></div>
+          <div class="metric-card"><div class="metric-label">Calendar</div><div class="metric-value" id="calendarShortName">--</div><div class="metric-note" id="calendarFullName">Follows your parish preference.</div></div>
         </section>
         <section class="card section-gap">
           <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 28 28"><rect x="3" y="5" width="22" height="20" rx="3"/><path d="M3 11h22"/><path d="M9 3v4M19 3v4"/><path d="M8 16h4M8 20h8"/></svg></span> Feast Highlights</div></div>
@@ -48,7 +48,14 @@
           </div>
         </section>
         <section class="grid two section-gap">
-          <div class="card"><div class="card-header"><div class="card-title">Suggested Giving Prompts</div></div><div class="card-body"><div class="list"><div class="list-item"><div class="list-main"><strong>Ascension Alms</strong><span>Support parish benevolence in honor of the feast.</span></div><a class="btn btn-ghost btn-sm" href="/donor/give">Give</a></div><div class="list-item"><div class="list-main"><strong>Apostles Fast Food Pantry</strong><span>Recurring weekly alms during the fast.</span></div><a class="btn btn-ghost btn-sm" href="/donor/give">Give</a></div></div></div></div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Suggested Giving Prompts</div></div>
+            <div class="card-body">
+              <div class="list" id="suggestedGivingPrompts">
+                <div class="notice">Loading parish campaigns and funds...</div>
+              </div>
+            </div>
+          </div>
           <div class="card"><div class="card-header"><div class="card-title">Calendar Notes</div></div><div class="card-body"><div class="notice">Fixed feasts follow your parish's calendar setting. Pascha, Holy Week, Ascension, Pentecost, and other moveable feasts use the shared Orthodox paschalion.</div></div></div>
         </section>
       </div>
@@ -62,59 +69,9 @@
     </main>
   </div>
   <script>
-    function calendarCivilDate(iso) {
-      const [year, month, day] = String(iso || "").split("-").map((part) => Number(part));
-      return new Date(year, month - 1, day);
-    }
-
-    function calendarShortDate(iso) {
-      if (!iso) return "—";
-      return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(calendarCivilDate(iso));
-    }
-
-    function donorCalendarPreference() {
-      const profile = typeof donorProfile === "function" ? donorProfile() : null;
-      return profile?.defaultParish?.liturgicalCalendar || profile?.liturgicalCalendar || "julian";
-    }
-
-    function renderCalendar() {
-      const api = window.AGAPAYLiturgicalCalendar;
-      const grid = document.getElementById("calendarGrid");
-      if (!grid || !api) return;
-
-      const calendar = donorCalendarPreference();
-      const year = new Date().getFullYear();
-      const label = api.calendarLabel(calendar);
-      const feasts = api.liturgicalFeastsForYear(year, calendar);
-      const next = api.nextLiturgicalFeast(calendar, new Date());
-      const pascha = api.orthodoxPascha(year);
-      const highlighted = feasts
-        .filter((feast) => ["great", "major", "holy-week", "bright-week", "fast"].includes(feast.rank))
-        .slice(0, 24);
-
-      document.getElementById("calendarModePill").textContent = label;
-      document.getElementById("nextFeastDate").textContent = calendarShortDate(next?.date);
-      document.getElementById("nextFeastName").textContent = next?.name || "No feast found.";
-      document.getElementById("paschaDate").textContent = calendarShortDate(pascha?.iso);
-      document.getElementById("calendarShortName").textContent = calendar === "gregorian" ? "New" : "Old";
-      document.getElementById("calendarFullName").textContent = label;
-
-      grid.innerHTML = highlighted.map((feast) => `
-        <div class="day">
-          <span class="day-number">${calendarShortDate(feast.date)}</span>
-          <div class="feast ${feast.rank === "great" || feast.rank === "holy-week" ? "major" : ""}">
-            ${feast.name}
-          </div>
-        </div>
-      `).join("");
-    }
-
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", renderCalendar);
-    } else {
-      renderCalendar();
-    }
+    document.addEventListener("DOMContentLoaded", () => {
+      if (typeof loadDonorCalendarPage === "function") loadDonorCalendarPage();
+    });
   </script>
 </body>
 </html>
-
