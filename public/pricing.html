@@ -259,19 +259,14 @@
       overflow: hidden;
     }
 
+    /* REVISED HERO CSS */
     .pricing-hero {
       position: relative;
-      display: grid;
-      grid-template-columns: minmax(330px, 0.88fr) minmax(460px, 1.12fr);
-      gap: 1rem;
-      padding: 2rem 2.2rem;
-      border-bottom: 1px solid var(--line);
-      align-items: center;
       overflow: hidden;
-      min-height: 520px;
       background:
         radial-gradient(circle at 15% 8%, rgba(200, 162, 74, 0.14), transparent 32%),
         linear-gradient(180deg, #F3EDE0 0%, #EFE8DA 100%);
+      border-bottom: 1px solid var(--line);
     }
     .pricing-hero::before {
       content: "";
@@ -284,7 +279,40 @@
       opacity: 0.22;
       pointer-events: none;
     }
-    .pricing-hero > * { position: relative; z-index: 1; }
+    .hero-art {
+      position: absolute;
+      right: -1.5rem;
+      bottom: 0;
+      width: min(74vw, 1080px);
+      height: 100%;
+      background-image: url("/images/pricing/alms-box-hero.png");
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: bottom right;
+      pointer-events: none;
+      
+      /* Blend Mode Fix */
+      filter: saturate(0) brightness(1.1) contrast(1.2);
+      mix-blend-mode: multiply;
+      -webkit-mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%);
+      mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%);
+      z-index: 1;
+    }
+    .hero-inner {
+      position: relative;
+      z-index: 2;
+      min-height: 480px;
+      padding: clamp(2rem, 4vw, 4rem) clamp(1.6rem, 4vw, 3.4rem);
+      display: grid;
+      grid-template-columns: minmax(320px, 560px) minmax(0, 1fr);
+      align-items: center;
+      gap: 2rem;
+    }
+    .hero-copy {
+      position: relative;
+      z-index: 3;
+      max-width: 540px;
+    }
     .hero-copy .eyebrow, .section-kicker {
       display: inline-flex;
       align-items: center;
@@ -305,23 +333,25 @@
       stroke-linecap: round;
       stroke-linejoin: round;
     }
+    
+    /* Synced Typography */
     .hero-copy h1 {
       font-family: var(--serif);
       color: #0A1524;
-      font-size: clamp(3.2rem, 7vw, 6rem);
-      line-height: 0.9;
+      font-size: clamp(3.1rem, 6.2vw, 5.1rem);
+      line-height: 0.96;
       font-weight: 500;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      margin-bottom: 0.65rem;
+      letter-spacing: -0.01em;
+      margin-bottom: 0;
     }
     .hero-copy h2 {
       font-family: var(--serif);
-      color: #A75F10;
-      font-size: clamp(1.45rem, 2.4vw, 2.15rem);
+      color: var(--gold-dark);
+      font-size: clamp(3.1rem, 6.2vw, 5.1rem);
       font-style: italic;
       font-weight: 500;
-      line-height: 1.1;
+      line-height: 0.96;
+      letter-spacing: -0.01em;
       margin-bottom: 1.1rem;
     }
     .hero-copy p {
@@ -331,6 +361,7 @@
       max-width: 540px;
       margin-bottom: 1.25rem;
     }
+    
     .hero-actions { display: flex; align-items: center; gap: 0.95rem; flex-wrap: wrap; }
     .hero-btn-primary, .hero-btn-secondary, .small-btn {
       min-height: 46px;
@@ -365,24 +396,6 @@
     }
     .hero-btn-primary svg, .small-btn.primary svg { stroke: var(--gold); }
     .hero-btn-secondary svg, .small-btn.secondary svg { stroke: #9A6F21; }
-    .hero-art {
-      position: relative;
-      min-height: 460px;
-      display: grid;
-      align-items: end;
-      justify-items: end;
-      margin-right: -1.4rem;
-    }
-    .hero-art::before {
-      content: none;
-    }
-    .hero-art img {
-      width: min(128%, 1120px);
-      object-fit: contain;
-      max-height: 540px;
-      opacity: 1;
-      filter: sepia(0.28) saturate(0.95) brightness(1.01) contrast(1.1);
-    }
 
     .pricing-content {
       padding: 2rem 2rem 2.4rem;
@@ -882,12 +895,14 @@
       font-size: 0.84rem;
     }
 
+    /* Synced Responsive Rules */
     @media (max-width: 1160px) {
       .nav-links { display: none; }
       .mobile-menu-btn { display: inline-flex; }
-      .pricing-hero { grid-template-columns: 1fr; padding: 1.5rem 1.25rem; }
-      .hero-art { min-height: 330px; justify-items: center; margin-right: 0; }
-      .hero-art img { max-height: 360px; }
+      .hero-inner { grid-template-columns: 1fr; min-height: 480px; align-items: start; padding-bottom: 4rem; }
+      .hero-art { width: min(112vw, 940px); right: -22%; bottom: 0; opacity: 0.84; }
+      .hero-copy { max-width: 680px; }
+      
       .pricing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .fee-banner, .lower-grid, .closing-cta { grid-template-columns: 1fr; }
       .fee-split { border: 0; border-top: 1px solid rgba(166, 159, 145, 0.24); border-bottom: 1px solid rgba(166, 159, 145, 0.24); padding: 1rem 0; }
@@ -901,14 +916,23 @@
       .btn-donate { min-height: 40px; padding: 0 1rem; }
       .btn-donate span { display: none; }
       .page { width: min(100% - 1rem, 1320px); margin-top: 0.55rem; }
-      .pricing-hero { min-height: 0; }
-      .hero-copy h1 { font-size: clamp(3rem, 14vw, 4.5rem); letter-spacing: 0.08em; }
+      
+      .hero-inner { min-height: 400px; padding: 2rem 1.25rem 4rem; }
+      .hero-copy h1, .hero-copy h2 { font-size: clamp(2.9rem, 13vw, 4.3rem); }
+      .hero-art { width: 140vw; right: -52%; bottom: 0; opacity: 0.7; }
       .hero-actions, .hero-btn-primary, .hero-btn-secondary { width: 100%; }
+      
       .pricing-content { padding: 1.2rem 0.8rem 1.5rem; }
       .pricing-grid, .calculator, .faq-grid { grid-template-columns: 1fr; }
       .calc-results { border-left: 0; border-top: 1px solid rgba(166, 159, 145, 0.24); }
       .closing-actions { min-width: 0; }
       .footer-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 520px) {
+      .hero-inner { min-height: 380px; padding: 2rem 1rem 5rem; }
+      .hero-copy h1 { margin-bottom: 0; }
+      .hero-copy h2 { margin-bottom: 0.7rem; }
+      .hero-art { width: 158vw; right: -66%; bottom: 0; opacity: 0.62; }
     }
   </style>
 </head>
@@ -959,18 +983,18 @@
 
   <main class="page">
     <section class="pricing-hero">
-      <div class="hero-copy">
-        <div class="eyebrow"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 21h8"/></svg>Pricing</div>
-        <h1>Pricing</h1>
-        <h2>Honest fees. Nothing hidden.</h2>
-        <p>Transparent pricing for missions, parishes, monasteries, cathedrals, and dioceses - built so Orthodox communities can give, receive, and steward with confidence.</p>
-        <div class="hero-actions">
-          <a class="hero-btn-primary" href="/register"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-8 0v2"/><circle cx="12" cy="7" r="4"/><path d="M4 21h16"/></svg>Request early access</a>
-          <a class="hero-btn-secondary" href="#calculator"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 11h2"/><path d="M14 11h2"/><path d="M8 15h2"/><path d="M14 15h2"/></svg>Calculate your fees</a>
+      <div class="hero-art" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <div class="eyebrow"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 21h8"/></svg>Pricing</div>
+          <h1>Pricing</h1>
+          <h2>Honest fees. Nothing hidden.</h2>
+          <p>Transparent pricing for missions, parishes, monasteries, cathedrals, and dioceses - built so Orthodox communities can give, receive, and steward with confidence.</p>
+          <div class="hero-actions">
+            <a class="hero-btn-primary" href="/register"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-8 0v2"/><circle cx="12" cy="7" r="4"/><path d="M4 21h16"/></svg>Request early access</a>
+            <a class="hero-btn-secondary" href="#calculator"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 11h2"/><path d="M14 11h2"/><path d="M8 15h2"/><path d="M14 15h2"/></svg>Calculate your fees</a>
+          </div>
         </div>
-      </div>
-      <div class="hero-art">
-        <img src="/images/pricing/alms-box-hero.png" alt="Donation box sketch" />
       </div>
     </section>
 
