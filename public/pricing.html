@@ -262,11 +262,17 @@
     /* REVISED HERO CSS */
     .pricing-hero {
       position: relative;
+      display: grid;
+      grid-template-columns: minmax(330px, 0.88fr) minmax(460px, 1.12fr);
+      gap: 1rem;
+      padding: 2rem 2.2rem;
+      border-bottom: 1px solid var(--line);
+      align-items: center;
       overflow: hidden;
+      min-height: 520px;
       background:
         radial-gradient(circle at 15% 8%, rgba(200, 162, 74, 0.14), transparent 32%),
         linear-gradient(180deg, #F3EDE0 0%, #EFE8DA 100%);
-      border-bottom: 1px solid var(--line);
     }
     .pricing-hero::before {
       content: "";
@@ -334,24 +340,24 @@
       stroke-linejoin: round;
     }
     
-    /* Synced Typography */
+    /* Restored Canonical Typography */
     .hero-copy h1 {
       font-family: var(--serif);
       color: #0A1524;
-      font-size: clamp(3.1rem, 6.2vw, 5.1rem);
-      line-height: 0.96;
+      font-size: clamp(3.2rem, 7vw, 6rem);
+      line-height: 0.9;
       font-weight: 500;
-      letter-spacing: -0.01em;
-      margin-bottom: 0;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.65rem;
     }
     .hero-copy h2 {
       font-family: var(--serif);
-      color: var(--gold-dark);
-      font-size: clamp(3.1rem, 6.2vw, 5.1rem);
+      color: #A75F10;
+      font-size: clamp(1.45rem, 2.4vw, 2.15rem);
       font-style: italic;
       font-weight: 500;
-      line-height: 0.96;
-      letter-spacing: -0.01em;
+      line-height: 1.1;
       margin-bottom: 1.1rem;
     }
     .hero-copy p {
@@ -759,13 +765,15 @@
       align-content: start;
       gap: 1rem;
     }
+    
+    /* BLEND MODE SKETCH FIXES */
     .value-card img {
       margin-top: auto;
       width: 100%;
       max-height: 210px;
       object-fit: contain;
-      opacity: 0.9;
-      filter: sepia(0.35) saturate(0.8) contrast(1.04);
+      filter: saturate(0) brightness(1.1) contrast(1.2);
+      mix-blend-mode: multiply;
     }
 
     .faq-section {
@@ -826,13 +834,16 @@
       align-items: center;
       padding: 1rem 1.25rem;
     }
+    
+    /* BLEND MODE SKETCH FIXES */
     .closing-cta img {
       height: 120px;
       width: 100%;
       object-fit: contain;
-      opacity: 0.9;
-      filter: sepia(0.3) saturate(0.86) contrast(1.04);
+      filter: saturate(0) brightness(1.1) contrast(1.2);
+      mix-blend-mode: multiply;
     }
+    
     .closing-actions { display: grid; gap: 0.7rem; min-width: 230px; }
 
     .site-footer {
@@ -899,10 +910,9 @@
     @media (max-width: 1160px) {
       .nav-links { display: none; }
       .mobile-menu-btn { display: inline-flex; }
-      .hero-inner { grid-template-columns: 1fr; min-height: 480px; align-items: start; padding-bottom: 4rem; }
-      .hero-art { width: min(112vw, 940px); right: -22%; bottom: 0; opacity: 0.84; }
-      .hero-copy { max-width: 680px; }
-      
+      .pricing-hero { grid-template-columns: 1fr; padding: 1.5rem 1.25rem; }
+      .hero-art { min-height: 330px; justify-items: center; margin-right: 0; }
+      .hero-art img { max-height: 360px; }
       .pricing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .fee-banner, .lower-grid, .closing-cta { grid-template-columns: 1fr; }
       .fee-split { border: 0; border-top: 1px solid rgba(166, 159, 145, 0.24); border-bottom: 1px solid rgba(166, 159, 145, 0.24); padding: 1rem 0; }
@@ -918,8 +928,8 @@
       .page { width: min(100% - 1rem, 1320px); margin-top: 0.55rem; }
       
       .hero-inner { min-height: 400px; padding: 2rem 1.25rem 4rem; }
-      .hero-copy h1, .hero-copy h2 { font-size: clamp(2.9rem, 13vw, 4.3rem); }
-      .hero-art { width: 140vw; right: -52%; bottom: 0; opacity: 0.7; }
+      .hero-copy h1 { font-size: clamp(3rem, 14vw, 4.5rem); letter-spacing: 0.08em; }
+      .hero-art { width: 140vw; right: -52%; }
       .hero-actions, .hero-btn-primary, .hero-btn-secondary { width: 100%; }
       
       .pricing-content { padding: 1.2rem 0.8rem 1.5rem; }
@@ -932,7 +942,7 @@
       .hero-inner { min-height: 380px; padding: 2rem 1rem 5rem; }
       .hero-copy h1 { margin-bottom: 0; }
       .hero-copy h2 { margin-bottom: 0.7rem; }
-      .hero-art { width: 158vw; right: -66%; bottom: 0; opacity: 0.62; }
+      .hero-art { width: 158vw; right: -66%; }
     }
   </style>
 </head>
