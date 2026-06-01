@@ -1,3 +1,10 @@
+It really is a powerful design trick! By standardizing that `saturate(0)` and `mix-blend-mode: multiply` combination, we can strip the mismatched warm tones out of every sketch on the page and force them to inherit the page's natural background color.
+
+I have updated the CSS for the step-by-step images (`.step-art img`) and the call-to-action images (`.cta-art img`) at the bottom of the page. I also removed their forced `opacity` values so that the multiply blending effect is crisp and fully legible.
+
+Here is your updated, fully unified "How It Works" page:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -247,16 +254,11 @@
 
     .hero {
       position: relative;
-      display: grid;
-      grid-template-columns: minmax(320px, 0.78fr) minmax(460px, 1.22fr);
-      align-items: center;
-      min-height: 500px;
-      padding: 2.2rem 2.3rem;
-      border-bottom: 1px solid var(--line);
       overflow: hidden;
       background:
         radial-gradient(circle at 15% 8%, rgba(200, 162, 74, 0.14), transparent 32%),
         linear-gradient(180deg, #F3EDE0 0%, #EFE8DA 100%);
+      border-bottom: 1px solid var(--line);
     }
     .hero::before {
       content: "";
@@ -269,9 +271,38 @@
       opacity: 0.18;
       pointer-events: none;
     }
-    .hero-copy {
+    .hero-art {
+      position: absolute;
+      right: -1.5rem;
+      bottom: 0;
+      width: min(74vw, 1080px);
+      height: 100%;
+      background-image: url("/images/how-it-works/hero-desk-sketch.png");
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: bottom right;
+      pointer-events: none;
+      
+      /* Blend Mode Magic */
+      filter: saturate(0) brightness(1.1) contrast(1.2);
+      mix-blend-mode: multiply;
+      -webkit-mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%);
+      mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%);
+      z-index: 1;
+    }
+    .hero-inner {
       position: relative;
       z-index: 2;
+      min-height: 480px;
+      padding: clamp(2rem, 4vw, 4rem) clamp(1.6rem, 4vw, 3.4rem);
+      display: grid;
+      grid-template-columns: minmax(320px, 560px) minmax(0, 1fr);
+      align-items: center;
+      gap: 2rem;
+    }
+    .hero-copy {
+      position: relative;
+      z-index: 3;
       max-width: 540px;
     }
     .eyebrow {
@@ -285,45 +316,25 @@
       font-weight: 700;
       margin-bottom: 1rem;
     }
-    .hero h1 {
+    .hero-copy h1 {
       font-family: var(--serif);
       color: #0A1524;
-      font-size: clamp(3rem, 5.7vw, 5.5rem);
+      font-size: clamp(3.1rem, 6.2vw, 5.1rem);
       line-height: 0.96;
       font-weight: 500;
       letter-spacing: -0.01em;
       margin-bottom: 0.9rem;
     }
-    .hero h1 span {
-      display: block;
+    .hero-copy h1 em {
       color: var(--gold-dark);
       font-style: italic;
+      font-weight: 500;
     }
-    .hero p {
+    .hero-copy p {
       color: #3F3C36;
       font-size: 1.08rem;
       line-height: 1.75;
       max-width: 455px;
-    }
-    .hero-art {
-      position: absolute;
-      inset: 0 0 0 34%;
-      display: grid;
-      justify-items: end;
-      align-items: end;
-      pointer-events: none;
-      z-index: 1;
-    }
-    .hero-art::before {
-      content: none;
-    }
-    .hero-art img {
-      width: min(116%, 1020px);
-      height: 100%;
-      object-fit: contain;
-      object-position: bottom right;
-      opacity: 0.94;
-      filter: sepia(0.34) saturate(0.96) brightness(1.03) contrast(1.05);
     }
 
     .process {
@@ -538,14 +549,17 @@
       z-index: 2;
       pointer-events: none;
     }
-    .step-art img {
+
+    /* ALL SKETCH IMAGES BLEND MODE FIX */
+    .step-art img, .cta-art img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       object-position: center;
-      opacity: 0.78;
-      filter: sepia(0.35) saturate(0.88) brightness(1.07) contrast(1.04);
+      filter: saturate(0) brightness(1.1) contrast(1.2);
+      mix-blend-mode: multiply;
     }
+
     .step-art.compact img {
       object-fit: contain;
       padding: 1.1rem;
@@ -554,7 +568,6 @@
       grid-column: 3 / 4;
       min-height: 250px;
     }
-    .step-four .step-art img { object-fit: cover; }
     .step-four .checklist { grid-column: 4 / 5; }
 
     .final-cta {
@@ -583,13 +596,6 @@
       inset: 0;
       background: linear-gradient(90deg, rgba(255,253,248,0.96), rgba(255,253,248,0.34), rgba(255,253,248,0.95));
       z-index: 2;
-    }
-    .cta-art img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      opacity: 0.72;
-      filter: sepia(0.34) saturate(0.9) brightness(1.05);
     }
     .cta-copy {
       position: relative;
@@ -685,21 +691,14 @@
     .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.65s ease, transform 0.65s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
 
-    @media (max-width: 1120px) {
+    @media (max-width: 1180px) {
       .nav-links { display: none; }
       .mobile-menu-btn { display: inline-flex; }
-      .hero { grid-template-columns: 1fr; min-height: auto; padding: 2rem 1.3rem 0; }
+      .hero-inner { grid-template-columns: 1fr; min-height: 480px; align-items: start; padding-bottom: 4rem; }
+      .hero-art { width: min(112vw, 940px); right: -22%; bottom: 0; opacity: 0.84; }
       .hero-copy { max-width: 680px; }
-      .hero-art {
-        position: relative;
-        inset: auto;
-        min-height: 340px;
-        margin: 1rem -1.3rem 0;
-      }
-      .hero-art img { width: 100%; max-height: 390px; object-position: center bottom; }
-      .step {
-        grid-template-columns: 104px minmax(190px, 240px) minmax(0, 1fr);
-      }
+      
+      .step { grid-template-columns: 104px minmax(190px, 240px) minmax(0, 1fr); }
       .step-art { display: none; }
       .step-four .step-art { display: grid; grid-column: 3 / 4; }
       .step-four .checklist { grid-column: 3 / 4; }
@@ -716,19 +715,15 @@
       .btn-donate span { display: none; }
       .nav-avatar { display: none; }
       .page { width: min(1320px, calc(100% - 1rem)); }
-      .hero h1 { font-size: clamp(2.8rem, 13vw, 4.1rem); }
-      .hero p { font-size: 1rem; }
+      
+      .hero-inner { min-height: 400px; padding: 2rem 1.25rem 4rem; }
+      .hero-copy h1 { font-size: clamp(2.9rem, 13vw, 4.3rem); }
+      .hero-art { width: 140vw; right: -52%; bottom: 0; opacity: 0.7; }
+      .hero-copy p { font-size: 1rem; }
+      
       .process { margin: 0.8rem; }
-      .step {
-        grid-template-columns: 1fr;
-        min-height: auto;
-        padding: 1.1rem;
-      }
-      .step-number {
-        place-items: start;
-        padding: 0;
-        font-size: 4.4rem;
-      }
+      .step { grid-template-columns: 1fr; min-height: auto; padding: 1.1rem; }
+      .step-number { place-items: start; padding: 0; font-size: 4.4rem; }
       .step-title { padding: 0 0 1rem; }
       .step-title p { max-width: none; }
       .step-panel { padding: 0; }
@@ -737,13 +732,17 @@
       .choice { border-right: 0; border-bottom: 1px solid rgba(166, 159, 145, 0.2); }
       .step-four .step-art { grid-column: auto; min-height: 210px; margin: 0 -1.1rem; }
       .step-four .checklist { grid-column: auto; padding: 1rem 0 0; }
-      .final-cta {
-        margin: 0 0.8rem 0.8rem;
-        grid-template-columns: 1fr;
-      }
+      .final-cta { margin: 0 0.8rem 0.8rem; grid-template-columns: 1fr; }
       .cta-art { display: none; }
       .footer-grid { grid-template-columns: 1fr; }
       .footer-bottom { align-items: flex-start; }
+    }
+    
+    @media (max-width: 520px) {
+      .hero-inner { min-height: 380px; padding: 2rem 1rem 5rem; }
+      .hero-copy h1 { margin-bottom: 0.7rem; }
+      .hero-copy p { font-size: 0.95rem; }
+      .hero-art { width: 158vw; right: -66%; bottom: 0; opacity: 0.62; }
     }
   </style>
 </head>
@@ -795,13 +794,13 @@
 
   <main class="page">
     <section class="hero">
-      <div class="hero-copy reveal">
-        <div class="eyebrow">How AGAPAY Works</div>
-        <h1>Giving should feel like giving.<span>Not like paying a bill.</span></h1>
-        <p>AGAPAY makes Orthodox giving simple, meaningful, and connected to the life of the Church.</p>
-      </div>
-      <div class="hero-art" aria-hidden="true">
-        <img src="/images/how-it-works/hero-desk-sketch.png" alt="" />
+      <div class="hero-art" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <div class="hero-copy reveal">
+          <div class="eyebrow">How AGAPAY Works</div>
+          <h1>Giving should feel like giving.<br /><em>Not like paying a bill.</em></h1>
+          <p>AGAPAY makes Orthodox giving simple, meaningful, and connected to the life of the Church.</p>
+        </div>
       </div>
     </section>
 
@@ -948,3 +947,5 @@
   </script>
 </body>
 </html>
+
+```
