@@ -11,357 +11,860 @@
   <link rel="icon" type="image/png" sizes="512x512" href="favicons/android-chrome-512x512.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
   <meta name="theme-color" content="#061522" />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/site-chrome.css" />
-  <script src="/site-chrome.js" defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet" />
   <style>
-      :root {
-      --deep:   #061522;
-      --forest: #0B2130;
-      --gold:   #C8A24A;
-      --cream:   #F6F1E8;
-      --stone:   #6F6A60;
-      --ink:     #171715;
-      --white:   #FFFFFF;
-    
-      --serif:   'Cormorant Garamond', Georgia, serif;
-      --sans:    'DM Sans', system-ui, sans-serif;
-    
-      --r:       10px;
-      --rlg:     16px;
+    :root {
+      --ink:       #061522;
+      --ink-light: #0e2437;
+      --ink-mid:   #1a3650;
+      --gold:      #b8924a;
+      --gold-light:#d4aa6a;
+      --gold-faint:#f5edd8;
+      --cream:     #faf7f2;
+      --warm-white:#fff9f2;
+      --text:      #1c1008;
+      --text-mid:  #3d2e1e;
+      --text-soft: #6b5c4a;
+      --rule:      rgba(184,146,74,0.25);
+      --rule-light:rgba(184,146,74,0.12);
     }
 
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
 
     body {
-      font-family: var(--sans);
       background: var(--cream);
-      color: var(--ink);
-      line-height: 1.8;
-      -webkit-text-size-adjust: 100%;
+      color: var(--text);
+      font-family: 'Crimson Pro', 'EB Garamond', Georgia, serif;
+      font-size: 18px;
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .content-container {
+    /* ── HEADER ─────────────────────────────────────── */
+    .site-header {
+      background: var(--ink);
+      padding: 0 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(184,146,74,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    .site-header a {
+      color: var(--gold-light);
+      text-decoration: none;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-family: 'Crimson Pro', serif;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .site-header a:hover { opacity: 1; }
+    .site-header .wordmark {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      color: var(--gold);
+      text-transform: uppercase;
+    }
+
+    /* ── HERO ────────────────────────────────────────── */
+    .hero {
+      background: var(--ink);
+      padding: 5rem 2rem 4rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 100%, rgba(184,146,74,0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 20% 0%, rgba(184,146,74,0.05) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-cross {
+      display: block;
+      margin: 0 auto 1.5rem;
+      color: var(--gold);
+      opacity: 0.6;
+      font-size: 1.5rem;
+      letter-spacing: 0.3em;
+    }
+    .hero h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 300;
+      color: var(--warm-white);
+      letter-spacing: 0.04em;
+      line-height: 1.15;
+      margin-bottom: 0.75rem;
+    }
+    .hero-sub {
+      font-family: 'Crimson Pro', serif;
+      font-size: 1rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+      opacity: 0.75;
+      margin-bottom: 2rem;
+    }
+    .hero-meta {
+      font-size: 0.9rem;
+      color: rgba(250,247,242,0.45);
+      letter-spacing: 0.05em;
+    }
+    .hero-rule {
+      width: 60px;
+      height: 1px;
+      background: var(--gold);
+      opacity: 0.4;
+      margin: 1.5rem auto 0;
+    }
+
+    /* ── LAYOUT ──────────────────────────────────────── */
+    .page-body {
       max-width: 860px;
       margin: 0 auto;
-      padding: 3rem 1.5rem 4rem;
+      padding: 0 2rem 6rem;
     }
 
-    nav { margin-bottom: 2.5rem; }
-    nav a { display: inline-block; padding: 10px 0; font-weight: 500; color: var(--deep); text-decoration: none; font-size: 14px; }
-    nav a:hover { color: var(--forest); }
-
-    h1 { font-family: var(--serif); color: var(--deep); font-size: clamp(2rem, 8vw, 2.5rem); margin-bottom: 0.5rem; }
-    .last-updated { font-size: 13px; color: var(--stone); margin-bottom: 2rem; }
-    h2 { font-family: var(--serif); color: var(--deep); margin-top: 2.5rem; margin-bottom: 1rem; font-size: clamp(1.3rem, 5vw, 1.5rem); border-bottom: 0.5px solid rgba(166,159,145,0.3); padding-bottom: 0.5rem; }
-    p { color: #2D2B28; margin-bottom: 1rem; font-size: 15px; }
-    li { color: #2D2B28; margin-bottom: 0.6rem; font-size: 15px; }
-    strong { color: var(--deep); }
-    ul { margin-bottom: 1.5rem; padding-left: 1.5rem; }
-    a { color: var(--forest); }
-    a:hover { color: var(--deep); }
-
-    .notice {
-      background: rgba(15,45,31,0.05);
-      padding: 1.25rem 1.5rem;
-      border-left: 4px solid var(--deep);
-      font-size: 13.5px;
-      margin-bottom: 2rem;
-      border-radius: 0 8px 8px 0;
+    /* ── INTRO BAND ──────────────────────────────────── */
+    .intro-band {
+      background: var(--ink-light);
+      color: rgba(250,247,242,0.88);
+      padding: 2rem 2.5rem;
+      border-left: 3px solid var(--gold);
+      margin: 3rem 0;
+      font-size: 1rem;
+      line-height: 1.7;
+      position: relative;
     }
-    .notice strong { color: var(--deep); }
-
-    /* TABLE OF CONTENTS — card grid */
-    .toc { margin-bottom: 2.5rem; }
-    .toc-title {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--stone);
+    .intro-band strong {
+      color: var(--gold-light);
       font-weight: 500;
-      margin-bottom: 1rem;
+    }
+
+    /* ── TOC ─────────────────────────────────────────── */
+    .toc {
+      background: var(--warm-white);
+      border: 1px solid var(--rule);
+      padding: 2rem 2.5rem;
+      margin: 2.5rem 0 3.5rem;
+    }
+    .toc-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .toc-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--rule);
     }
     .toc-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.35rem 2rem;
+      list-style: none;
     }
-    .toc-item {
+    .toc-grid li a {
+      color: var(--text-mid);
+      text-decoration: none;
+      font-size: 0.92rem;
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      transition: color 0.15s;
+      line-height: 1.5;
+    }
+    .toc-grid li a:hover { color: var(--gold); }
+    .toc-grid li a .num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.78rem;
+      color: var(--gold);
+      opacity: 0.65;
+      min-width: 1.4em;
+    }
+
+    /* ── SECTIONS ────────────────────────────────────── */
+    .section {
+      margin-bottom: 3.5rem;
+      padding-top: 1rem;
+    }
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--rule-light);
+    }
+    .section-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.78rem;
+      color: var(--gold);
+      opacity: 0.65;
+      letter-spacing: 0.06em;
+      padding-top: 0.35rem;
+      min-width: 2rem;
+    }
+    .section h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.3rem, 2.5vw, 1.65rem);
+      font-weight: 400;
+      color: var(--ink);
+      letter-spacing: 0.01em;
+      line-height: 1.25;
+    }
+    .section p {
+      margin-bottom: 1rem;
+      color: var(--text-mid);
+    }
+    .section p:last-child { margin-bottom: 0; }
+
+    /* ── LISTS ───────────────────────────────────────── */
+    .section ul {
+      list-style: none;
+      margin: 1rem 0;
+      padding: 0;
+    }
+    .section ul li {
+      padding: 0.5rem 0 0.5rem 1.5rem;
+      position: relative;
+      color: var(--text-mid);
+      border-bottom: 1px solid var(--rule-light);
+    }
+    .section ul li:last-child { border-bottom: none; }
+    .section ul li::before {
+      content: '†';
+      position: absolute;
+      left: 0;
+      color: var(--gold);
+      opacity: 0.5;
+      font-size: 0.8rem;
+      top: 0.65rem;
+    }
+    .section ul li strong {
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    /* ── CALLOUT BOXES ───────────────────────────────── */
+    .callout {
+      padding: 1.25rem 1.5rem;
+      margin: 1.25rem 0;
+      font-size: 0.95rem;
+    }
+    .callout-warning {
+      background: #fdf8ee;
+      border-left: 3px solid var(--gold);
+      color: var(--text-mid);
+    }
+    .callout-important {
+      background: #f0f4f8;
+      border-left: 3px solid var(--ink-mid);
+      color: var(--text-mid);
+    }
+    .callout-canonical {
+      background: var(--ink);
+      border-left: 3px solid var(--gold);
+      color: rgba(250,247,242,0.85);
+    }
+    .callout-canonical strong { color: var(--gold-light); }
+    .callout strong { font-weight: 500; }
+
+    /* ── DEFINITIONS ─────────────────────────────────── */
+    .definition-block {
+      background: var(--warm-white);
+      border: 1px solid var(--rule);
+      padding: 1.5rem;
+      margin: 1.25rem 0;
+    }
+    .definition-block dt {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.05rem;
+      color: var(--ink);
+      margin-bottom: 0.25rem;
+      font-style: italic;
+    }
+    .definition-block dd {
+      color: var(--text-mid);
+      font-size: 0.93rem;
+      margin-left: 0;
+      margin-bottom: 0.75rem;
+      line-height: 1.6;
+    }
+    .definition-block dd:last-child { margin-bottom: 0; }
+
+    /* ── LINKS ───────────────────────────────────────── */
+    a { color: var(--gold); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .section a { border-bottom: 1px solid rgba(184,146,74,0.3); }
+    .section a:hover { border-bottom-color: var(--gold); text-decoration: none; }
+
+    /* ── LEGAL NOTICE ────────────────────────────────── */
+    .legal-notice {
+      background: var(--ink-light);
+      border: 1px solid rgba(184,146,74,0.2);
+      padding: 2rem 2.5rem;
+      margin: 4rem 0 2rem;
+      color: rgba(250,247,242,0.7);
+      font-size: 0.88rem;
+      line-height: 1.65;
+    }
+    .legal-notice strong { color: var(--gold-light); }
+    .legal-notice-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.75rem;
+    }
+
+    /* ── FOOTER ──────────────────────────────────────── */
+    .site-footer {
+      background: var(--ink);
+      color: rgba(250,247,242,0.5);
+      padding: 3rem 2rem;
+      text-align: center;
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+    }
+    .site-footer .mark {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      color: var(--gold);
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 0.35rem;
+    }
+    .site-footer .tagline {
+      font-style: italic;
+      color: rgba(250,247,242,0.35);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 1.5rem;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .footer-links a { color: rgba(250,247,242,0.45); font-size: 0.82rem; }
+    .footer-links a:hover { color: var(--gold); text-decoration: none; }
+    .footer-copy { color: rgba(250,247,242,0.25); font-size: 0.78rem; }
+
+    /* ── PROGRESS BAR ────────────────────────────────── */
+    #reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 2px;
+      background: var(--gold);
+      width: 0%;
+      z-index: 200;
+      transition: width 0.1s linear;
+    }
+
+    /* ── JUMP TO TOP ─────────────────────────────────── */
+    .back-top {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--ink);
+      border: 1px solid rgba(184,146,74,0.35);
+      color: var(--gold);
+      width: 40px;
+      height: 40px;
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      background: white;
-      border: 0.5px solid rgba(166,159,145,0.35);
-      border-radius: 10px;
-      text-decoration: none;
-      color: var(--ink);
-      font-size: 14px;
-      transition: border-color 0.15s;
+      justify-content: center;
+      font-size: 1rem;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 99;
     }
-    .toc-item:hover { border-color: rgba(166,159,145,0.7); color: var(--ink); }
-    .toc-num {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--stone);
-      min-width: 20px;
-      flex-shrink: 0;
+    .back-top.visible { opacity: 1; }
+
+    /* ── RESPONSIVE ──────────────────────────────────── */
+    @media (max-width: 600px) {
+      .page-body { padding: 0 1.25rem 4rem; }
+      .toc { padding: 1.5rem; }
+      .intro-band { padding: 1.5rem; }
+      .toc-grid { grid-template-columns: 1fr; }
+      .site-header { padding: 0 1.25rem; }
     }
-
-    .disclaimer {
-      background: rgba(200,162,74,0.1);
-      padding: 1.25rem 1.5rem;
-      border-left: 4px solid var(--gold);
-      font-size: 13.5px;
-      margin: 3rem 0 0;
-      border-radius: 0 8px 8px 0;
-      color: var(--stone);
-    }
-    .disclaimer strong { color: #8B6B1F; }
-
-    /* FOOTER */
-    footer { background: var(--deep); padding: 3.5rem 1.5rem 0; width: 100%; }
-    .footer-inner { max-width: 860px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 3rem; padding-bottom: 3rem; border-bottom: 0.5px solid rgba(166,159,145,0.15); }
-    .footer-brand { display: flex; flex-direction: column; gap: 8px; }
-    .footer-logo { display: flex; align-items: center; gap: 8px; }
-    .footer-name { font-family: var(--serif); font-size: 32px; color: var(--cream); font-weight: 500; }
-    .footer-name em { color: var(--gold); font-style: normal; }
-    .footer-tagline { font-family: var(--serif); font-size: 16px; font-style: italic; color: var(--cream); margin-bottom: 4px; }
-    .footer-tagline-sub { font-family: var(--serif); font-size: 13px; font-style: italic; color: rgba(166,159,145,0.4); }
-    .footer-nav { display: flex; gap: 3rem; flex-wrap: wrap; }
-    .footer-nav-group { display: flex; flex-direction: column; gap: 10px; }
-    .footer-nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); font-weight: 500; margin-bottom: 2px; }
-    .footer-nav-group a { font-size: 13px; color: rgba(166,159,145,0.7); transition: color 0.2s; text-decoration: none; }
-    .footer-nav-group a:hover { color: var(--cream); }
-    .footer-bottom { max-width: 860px; margin: 0 auto; padding: 1.25rem 0; text-align: center; }
-    .footer-bottom p { font-size: 12px; color: rgba(166,159,145,0.4); }
-
-    @media (max-width: 560px) { .toc-grid { grid-template-columns: 1fr; } }
-    @media (max-width: 480px) { .footer-inner { flex-direction: column; } }
   </style>
-  <link rel="stylesheet" href="/styles/numbers.css" />
 </head>
 <body>
 
-  <div class="content-container">
-    <nav><a href="/">← Back to AGAPAY</a></nav>
+<div id="reading-progress"></div>
 
-    <h1>Terms of Service</h1>
-    <p class="last-updated">Last Updated: May 21, 2026</p>
+<!-- HEADER -->
+<header class="site-header">
+  <a href="https://agapay.app/">← Back to AGAPAY</a>
+  <span class="wordmark">AGAPAY</span>
+  <a href="https://agapay.app/privacy">Privacy Policy</a>
+</header>
 
-    <div class="notice">
-      <strong>Binding Agreement:</strong> By accessing agapay.app or using the AGAPAY platform in any capacity, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree, you must discontinue use of the platform immediately.
+<!-- HERO -->
+<div class="hero">
+  <span class="hero-cross">✦ &nbsp; ✦ &nbsp; ✦</span>
+  <h1>Terms of Service</h1>
+  <p class="hero-sub">AGAPAY &nbsp;·&nbsp; agapay.app</p>
+  <p class="hero-meta">Last Updated: May 21, 2026 &nbsp;·&nbsp; Effective: May 21, 2026</p>
+  <div class="hero-rule"></div>
+</div>
+
+<!-- PAGE BODY -->
+<main class="page-body">
+
+  <!-- BINDING NOTICE -->
+  <div class="intro-band">
+    <strong>Binding Agreement.</strong> By accessing agapay.app or using the AGAPAY platform in any capacity — as a donor, parish administrator, clergy member, monastery representative, or visitor — you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. <strong>If you do not agree, you must discontinue use of the platform immediately.</strong>
+  </div>
+
+  <!-- TOC -->
+  <nav class="toc" aria-label="Table of Contents">
+    <div class="toc-title">Contents</div>
+    <ol class="toc-grid">
+      <li><a href="#acceptance"><span class="num">01</span>Acceptance of Terms</a></li>
+      <li><a href="#definitions"><span class="num">02</span>Definitions</a></li>
+      <li><a href="#eligibility"><span class="num">03</span>Eligibility &amp; Registration</a></li>
+      <li><a href="#services"><span class="num">04</span>Nature of Services</a></li>
+      <li><a href="#canonical"><span class="num">05</span>Canonical Verification</a></li>
+      <li><a href="#donations"><span class="num">06</span>Donations &amp; Refunds</a></li>
+      <li><a href="#fees"><span class="num">07</span>Fees &amp; Payment Processing</a></li>
+      <li><a href="#tax"><span class="num">08</span>Tax Status &amp; Charitable Giving</a></li>
+      <li><a href="#privacy"><span class="num">09</span>Privacy &amp; Data</a></li>
+      <li><a href="#conduct"><span class="num">10</span>User Conduct &amp; Content</a></li>
+      <li><a href="#liturgical"><span class="num">11</span>Liturgical Data &amp; Memorials</a></li>
+      <li><a href="#ip"><span class="num">12</span>Intellectual Property</a></li>
+      <li><a href="#termination"><span class="num">13</span>Suspension &amp; Termination</a></li>
+      <li><a href="#warranties"><span class="num">14</span>Disclaimer of Warranties</a></li>
+      <li><a href="#liability"><span class="num">15</span>Limitation of Liability</a></li>
+      <li><a href="#indemnification"><span class="num">16</span>Indemnification</a></li>
+      <li><a href="#updates"><span class="num">17</span>Updates to These Terms</a></li>
+      <li><a href="#arbitration"><span class="num">18</span>Dispute Resolution</a></li>
+      <li><a href="#governing"><span class="num">19</span>Governing Law</a></li>
+      <li><a href="#contact"><span class="num">20</span>Contact Us</a></li>
+    </ol>
+  </nav>
+
+
+  <!-- § 1 ACCEPTANCE -->
+  <section class="section" id="acceptance">
+    <div class="section-header">
+      <span class="section-num">§ 1</span>
+      <h2>Acceptance of Terms</h2>
     </div>
+    <p>These Terms of Service ("Terms") constitute a legally binding agreement between you — whether an individual donor, parish administrator, clergy member, or monastery representative ("User," "you," or "your") — and AGAPAY ("we," "us," or "our"). By registering an account, making a donation, visiting, or otherwise accessing the AGAPAY platform, you agree to these Terms in full.</p>
+    <p>If you are accessing AGAPAY on behalf of a parish, monastery, skete, or other religious organization, you represent that you have actual authority to bind that organization to these Terms and that you are acting within the scope of your authorization.</p>
+    <p>These Terms incorporate by reference AGAPAY's <a href="https://agapay.app/privacy">Privacy Policy</a>, which governs our collection, use, and disclosure of your personal information.</p>
+  </section>
 
-    <div class="toc">
-      <div class="toc-title">Contents</div>
-      <div class="toc-grid">
-        <a href="#acceptance" class="toc-item"><span class="toc-num">1</span>Acceptance of Terms</a>
-        <a href="#eligibility" class="toc-item"><span class="toc-num">2</span>Eligibility &amp; Registration</a>
-        <a href="#services" class="toc-item"><span class="toc-num">3</span>Nature of Services</a>
-        <a href="#canonical" class="toc-item"><span class="toc-num">4</span>Canonical Verification</a>
-        <a href="#donations" class="toc-item"><span class="toc-num">5</span>Donations &amp; Refunds</a>
-        <a href="#fees" class="toc-item"><span class="toc-num">6</span>Fees &amp; Payment Processing</a>
-        <a href="#tax" class="toc-item"><span class="toc-num">7</span>Tax Status &amp; Charitable Giving</a>
-        <a href="#conduct" class="toc-item"><span class="toc-num">8</span>User Conduct &amp; Content</a>
-        <a href="#liturgical" class="toc-item"><span class="toc-num">9</span>Liturgical Data &amp; Memorials</a>
-        <a href="#ip" class="toc-item"><span class="toc-num">10</span>Intellectual Property</a>
-        <a href="#termination" class="toc-item"><span class="toc-num">11</span>Suspension &amp; Termination</a>
-        <a href="#warranties" class="toc-item"><span class="toc-num">12</span>Disclaimer of Warranties</a>
-        <a href="#liability" class="toc-item"><span class="toc-num">13</span>Limitation of Liability</a>
-        <a href="#indemnification" class="toc-item"><span class="toc-num">14</span>Indemnification</a>
-        <a href="#updates" class="toc-item"><span class="toc-num">15</span>Updates to These Terms</a>
-        <a href="#arbitration" class="toc-item"><span class="toc-num">16</span>Dispute Resolution</a>
-        <a href="#governing" class="toc-item"><span class="toc-num">17</span>Governing Law</a>
-        <a href="#contact" class="toc-item"><span class="toc-num">18</span>Contact Us</a>
-      </div>
+
+  <!-- § 2 DEFINITIONS (new) -->
+  <section class="section" id="definitions">
+    <div class="section-header">
+      <span class="section-num">§ 2</span>
+      <h2>Definitions</h2>
     </div>
+    <p>For clarity throughout these Terms, the following definitions apply:</p>
+    <dl class="definition-block">
+      <dt>"Platform"</dt>
+      <dd>The AGAPAY website, web application, APIs, and all services accessible at agapay.app and related subdomains.</dd>
+      <dt>"Organization"</dt>
+      <dd>Any Orthodox Christian parish, mission, monastery, skete, or related canonical religious entity that registers on the Platform.</dd>
+      <dt>"Donor"</dt>
+      <dd>Any individual who uses the Platform to make a charitable contribution to an Organization.</dd>
+      <dt>"Administrator"</dt>
+      <dd>A person authorized by an Organization to manage that Organization's account on the Platform, including clergy, parish council members, or monastery administrators.</dd>
+      <dt>"Transaction"</dt>
+      <dd>Any financial contribution, donation, or payment processed through the Platform, including associated platform and processing fees.</dd>
+      <dt>"Commemoration" or "Memorial Submission"</dt>
+      <dd>Names or intentions submitted by a Donor through the Platform for liturgical commemoration by an Organization's clergy.</dd>
+      <dt>"Stripe"</dt>
+      <dd>Stripe, Inc., AGAPAY's third-party payment processor, whose own terms of service govern payment processing.</dd>
+    </dl>
+  </section>
 
-    <h2 id="acceptance">1. Acceptance of Terms</h2>
-    <p>These Terms of Service ("Terms") constitute a legally binding agreement between you — whether an individual donor, parish administrator, clergy member, or monastery representative ("User") — and AGAPAY ("we," "us," or "our"). By registering an account, making a donation, or otherwise accessing the AGAPAY platform, you agree to these Terms in full.</p>
-    <p>If you are accessing AGAPAY on behalf of a parish, monastery, or other religious organization, you represent that you have authority to bind that organization to these Terms.</p>
 
-    <h2 id="eligibility">2. Eligibility &amp; Account Registration</h2>
+  <!-- § 3 ELIGIBILITY -->
+  <section class="section" id="eligibility">
+    <div class="section-header">
+      <span class="section-num">§ 3</span>
+      <h2>Eligibility &amp; Account Registration</h2>
+    </div>
     <ul>
-      <li><strong>Age:</strong> You must be at least 18 years of age to create an account or make a donation through AGAPAY. By using the platform, you represent that you meet this requirement.</li>
-      <li><strong>Organizational accounts:</strong> Parish and monastery accounts may only be created by an authorized representative — typically a priest, parish council officer, or monastery administrator — acting within the scope of their authority.</li>
-      <li><strong>Accurate information:</strong> You agree to provide accurate, current, and complete information during registration and to keep that information updated. AGAPAY reserves the right to suspend or terminate accounts based on inaccurate or misleading registration information.</li>
-      <li><strong>Account security:</strong> You are responsible for maintaining the security of your account credentials and for all activity that occurs under your account. Notify us immediately at hello@agapay.app if you suspect unauthorized access.</li>
+      <li><strong>Age requirement.</strong> You must be at least 18 years of age to create an account or make a donation through AGAPAY. By using the Platform, you represent and warrant that you meet this requirement.</li>
+      <li><strong>Organizational accounts.</strong> Parish and monastery accounts may only be created by an authorized representative — typically a priest, parish council officer, or monastery administrator — with actual authority to bind the Organization.</li>
+      <li><strong>Accurate information.</strong> You agree to provide accurate, current, and complete information during registration and to keep that information updated promptly. AGAPAY reserves the right to suspend or terminate accounts based on inaccurate, incomplete, or misleading registration information.</li>
+      <li><strong>One account per Organization.</strong> Each Organization may maintain only one active AGAPAY account. Creation of duplicate accounts is prohibited without prior written consent from AGAPAY.</li>
+      <li><strong>Account security.</strong> You are solely responsible for maintaining the confidentiality of your account credentials and for all activity that occurs under your account. Notify AGAPAY immediately at <a href="mailto:hello@agapay.app">hello@agapay.app</a> if you suspect unauthorized access, credential compromise, or any breach of account security.</li>
+      <li><strong>Non-transferability.</strong> Your account and any rights granted under these Terms are personal to you and may not be transferred, sold, or assigned to any other person or entity without AGAPAY's prior written consent.</li>
     </ul>
+  </section>
 
-    <h2 id="services">3. Nature of Services</h2>
-    <p>AGAPAY provides a technology platform to facilitate financial contributions to Orthodox Christian parishes, monasteries, sketes, and related religious organizations in the United States. AGAPAY is a technology facilitator and payment intermediary — not a charitable organization, bank, money transmitter, or financial advisor.</p>
-    <p>AGAPAY operates exclusively within the United States. We do not facilitate international transactions. All funds are processed and held in US dollars through our payment processor, Stripe, Inc.</p>
-    <p>AGAPAY reserves the right to modify, suspend, or discontinue any feature of the platform at any time with reasonable notice to registered users.</p>
 
-    <h2 id="canonical">4. Canonical Verification</h2>
-    <p>A distinctive feature of AGAPAY is our commitment to serving only communities in canonical standing within recognized Orthodox jurisdictions. By registering a parish or monastery on AGAPAY, the registering representative represents and warrants that:</p>
+  <!-- § 4 SERVICES -->
+  <section class="section" id="services">
+    <div class="section-header">
+      <span class="section-num">§ 4</span>
+      <h2>Nature of Services</h2>
+    </div>
+    <p>AGAPAY provides a technology platform to facilitate financial contributions to Orthodox Christian parishes, monasteries, sketes, and related religious organizations in the United States. AGAPAY is a <strong>technology facilitator and payment intermediary</strong> — not a charitable organization, bank, money transmitter, trust company, or financial advisor.</p>
+    <div class="callout callout-important">
+      <strong>Geographic limitation.</strong> AGAPAY operates exclusively within the United States. We do not facilitate international transactions. All funds are processed and held in US dollars through Stripe, Inc.
+    </div>
+    <p>AGAPAY does not hold, pool, or commingle donor funds. All donations flow directly through Stripe Connect to the recipient Organization's connected Stripe account. AGAPAY collects its platform fee at the time of transaction as a separate application fee.</p>
+    <p>AGAPAY reserves the right to modify, suspend, or discontinue any feature of the Platform at any time. For material feature changes, AGAPAY will provide reasonable advance notice to registered Organizations.</p>
+  </section>
+
+
+  <!-- § 5 CANONICAL VERIFICATION -->
+  <section class="section" id="canonical">
+    <div class="section-header">
+      <span class="section-num">§ 5</span>
+      <h2>Canonical Verification</h2>
+    </div>
+    <div class="callout callout-canonical">
+      <strong>AGAPAY serves only canonically recognized Orthodox communities.</strong> This is a foundational commitment of our platform and a material condition of participation.
+    </div>
+    <p>By registering a parish or monastery on AGAPAY, the registering Administrator represents, warrants, and covenants that:</p>
     <ul>
-      <li>The community is in good canonical standing within a recognized Holy Orthodox jurisdiction operating in the United States.</li>
-      <li>The representative has authority to register the community and bind it to these Terms.</li>
-      <li>The community will promptly notify AGAPAY of any change in canonical status.</li>
+      <li>The Organization is in good canonical standing within a recognized Holy Orthodox jurisdiction operating in the United States.</li>
+      <li>The Administrator has actual authority to register the Organization and to bind it to these Terms.</li>
+      <li>The Organization is validly constituted under applicable state nonprofit or religious corporation law (or is a recognized part of a registered ecclesiastical entity).</li>
+      <li>The Organization will promptly notify AGAPAY — within five (5) business days — of any change in canonical status, including suspension, excommunication, or jurisdictional transfer.</li>
     </ul>
-    <p>AGAPAY reserves the right to verify canonical standing through independent inquiry and to suspend or terminate any account where canonical standing cannot be confirmed or has been lost. Misrepresentation of canonical status is grounds for immediate termination and may result in additional legal action.</p>
+    <p>AGAPAY reserves the right to verify canonical standing through independent inquiry and to suspend or terminate any account where canonical standing cannot be confirmed, is disputed, or has been lost. <strong>Misrepresentation of canonical status is grounds for immediate termination</strong> and may result in additional civil or equitable legal action.</p>
+  </section>
 
-    <h2 id="donations">5. Donations &amp; Refunds</h2>
+
+  <!-- § 6 DONATIONS & REFUNDS -->
+  <section class="section" id="donations">
+    <div class="section-header">
+      <span class="section-num">§ 6</span>
+      <h2>Donations &amp; Refunds</h2>
+    </div>
     <ul>
-      <li><strong>Voluntary and irrevocable:</strong> All donations processed through AGAPAY are made voluntarily and are irrevocable once submitted. AGAPAY does not provide refunds for completed charitable donations except where required by applicable law or to correct a documented processing error.</li>
-      <li><strong>Processing errors:</strong> If you believe a transaction was processed in error — including duplicate charges or incorrect amounts — contact us at hello@agapay.app within thirty (30) days of the transaction. We will investigate and, where appropriate, initiate a correction.</li>
-      <li><strong>Chargebacks:</strong> You agree not to initiate chargebacks for legitimate charitable donations. Fraudulent or unjustified chargebacks may result in account suspension and recovery of associated costs, including processor fees, from the initiating party.</li>
-      <li><strong>Currency:</strong> All transactions are processed in US dollars. AGAPAY does not support foreign currency donations.</li>
+      <li><strong>Voluntary and irrevocable.</strong> All donations processed through AGAPAY are made voluntarily and are generally irrevocable once submitted. This reflects the nature of charitable giving and Stripe's processing architecture. AGAPAY does not provide refunds for completed charitable donations except where required by applicable law or to correct a documented processing error.</li>
+      <li><strong>Processing errors.</strong> If you believe a Transaction was processed in error — including duplicate charges, incorrect amounts, or unauthorized transactions — contact AGAPAY at <a href="mailto:hello@agapay.app">hello@agapay.app</a> within thirty (30) calendar days of the transaction date. AGAPAY will investigate in good faith and, where a processing error is confirmed, initiate appropriate corrective action, which may include a refund or credit, at AGAPAY's discretion.</li>
+      <li><strong>Chargeback policy.</strong> You agree not to initiate chargebacks with your card issuer for legitimate voluntary charitable donations. Fraudulent, bad-faith, or unjustified chargebacks may result in immediate account suspension, recovery of associated costs (including processor fees and dispute fees) from the initiating party, and referral to appropriate legal authorities where fraud is suspected.</li>
+      <li><strong>No guarantee of liturgical performance.</strong> A donation made in connection with a memorial or commemoration submission is a charitable gift to the recipient Organization. AGAPAY does not guarantee, warrant, or represent that any specific liturgical act will be performed by any clergy member or Organization. All liturgical matters remain within the sole discretion of the recipient parish or monastery.</li>
+      <li><strong>Currency.</strong> All Transactions are processed in US dollars. AGAPAY does not support foreign currency donations.</li>
     </ul>
+  </section>
 
-    <h2 id="fees">6. Platform Fees &amp; Payment Processing</h2>
-    <p>AGAPAY charges platform fees to parishes and missions as disclosed on our <a href="/pricing">Pricing page</a>. Monasteries and sketes are permanently exempt from monthly platform fees. Transaction fees apply to all accounts as disclosed at the time of registration and on the Pricing page.</p>
+
+  <!-- § 7 FEES -->
+  <section class="section" id="fees">
+    <div class="section-header">
+      <span class="section-num">§ 7</span>
+      <h2>Platform Fees &amp; Payment Processing</h2>
+    </div>
+    <p>AGAPAY charges platform fees as disclosed on our <a href="https://agapay.app/pricing">Pricing page</a>, which is incorporated into these Terms by reference. Monasteries and sketes are permanently exempt from monthly subscription fees; transaction fees apply to all accounts.</p>
     <ul>
-      <li><strong>Stripe processing:</strong> Payment processing is provided by Stripe, Inc. By using AGAPAY, you agree to Stripe's <a href="https://stripe.com/legal" target="_blank" rel="noopener">Terms of Service</a>. Stripe fees are separate from and in addition to AGAPAY's platform fees.</li>
-      <li><strong>Donor fee coverage:</strong> At checkout, donors are offered the option to cover all platform and processing fees voluntarily. When a donor elects to cover fees, the recipient parish or monastery receives the full intended gift amount.</li>
-      <li><strong>Fee changes:</strong> AGAPAY may modify its fee structure with at least thirty (30) days written notice to affected registered organizations. Continued use of the platform after the effective date of a fee change constitutes acceptance of the new fee structure.</li>
+      <li><strong>Stripe processing.</strong> Payment processing is provided by Stripe, Inc. By using AGAPAY, you agree to Stripe's <a href="https://stripe.com/legal" target="_blank" rel="noopener">Terms of Service</a> and <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Privacy Policy</a>. Stripe fees are separate from and in addition to AGAPAY's platform fees.</li>
+      <li><strong>Application fee structure.</strong> AGAPAY collects its platform fee as an application fee applied at the time of each Transaction via Stripe Connect. AGAPAY is not a party to the direct charitable relationship between Donor and Organization.</li>
+      <li><strong>Donor fee coverage.</strong> At checkout, Donors are offered the option to voluntarily cover all platform and processing fees. When a Donor elects fee coverage, the recipient Organization receives the full intended gift amount. This election is voluntary and does not alter the Donor's charitable intent.</li>
+      <li><strong>Fee changes.</strong> AGAPAY may modify its fee structure with at least thirty (30) days' prior written notice to affected registered Organizations via email. Continued use of the Platform after the effective date of a fee change constitutes acceptance of the revised fee structure.</li>
+      <li><strong>Disputed fees.</strong> If you dispute a Platform fee, you must notify AGAPAY in writing within sixty (60) days of the charge. Fee disputes not raised within this period are waived.</li>
     </ul>
+  </section>
 
-    <h2 id="tax">7. Tax Status &amp; Charitable Giving</h2>
-    <p><strong>AGAPAY is a facilitator, not a tax-exempt entity.</strong> AGAPAY does not independently verify or guarantee the 501(c)(3) tax-exempt status of any parish, monastery, or organization registered on the platform. The deductibility of any donation for federal or state income tax purposes depends entirely on the tax status of the recipient organization.</p>
+
+  <!-- § 8 TAX STATUS -->
+  <section class="section" id="tax">
+    <div class="section-header">
+      <span class="section-num">§ 8</span>
+      <h2>Tax Status &amp; Charitable Giving</h2>
+    </div>
+    <div class="callout callout-warning">
+      <strong>AGAPAY is a technology facilitator, not a tax-exempt entity.</strong> AGAPAY does not independently verify, certify, or guarantee the 501(c)(3) status or tax-exempt standing of any Organization on the Platform.
+    </div>
+    <p>The deductibility of any donation for federal or state income tax purposes depends entirely on the tax status of the recipient Organization and the applicable law in your jurisdiction. AGAPAY makes no representations regarding the tax treatment of any specific donation.</p>
     <ul>
-      <li>Donors are responsible for independently verifying the tax-exempt status of recipient organizations through the IRS Tax Exempt Organization Search at <a href="https://www.irs.gov/charities-non-profits/tax-exempt-organization-search" target="_blank" rel="noopener">irs.gov</a>.</li>
-      <li>AGAPAY will provide transaction records to donors upon request. These records may be used to substantiate charitable contributions for tax purposes, but AGAPAY makes no representation regarding their legal sufficiency for any particular tax situation.</li>
-      <li>You should consult a qualified tax advisor regarding the deductibility of any specific donation.</li>
+      <li><strong>Donor responsibility.</strong> Donors are solely responsible for independently verifying the tax-exempt status of recipient Organizations. The IRS Tax Exempt Organization Search tool is available at <a href="https://www.irs.gov/charities-non-profits/tax-exempt-organization-search" target="_blank" rel="noopener">irs.gov</a>.</li>
+      <li><strong>Transaction records.</strong> AGAPAY will provide Donors with transaction records upon request. These records may be used to substantiate charitable contributions, but AGAPAY makes no representation regarding their legal sufficiency for any particular tax situation or jurisdiction.</li>
+      <li><strong>Organization responsibility.</strong> Organizations are solely responsible for their own compliance with IRS requirements, state charity registration requirements, and any other applicable tax law. AGAPAY is not responsible for an Organization's failure to maintain tax-exempt status.</li>
+      <li><strong>Consult a professional.</strong> You should consult a qualified tax advisor or CPA regarding the deductibility of any specific donation and any applicable reporting requirements.</li>
     </ul>
+  </section>
 
-    <h2 id="conduct">8. User Conduct &amp; Content</h2>
-    <p>You agree to use the AGAPAY platform only for lawful purposes and in a manner consistent with these Terms. You agree not to:</p>
+
+  <!-- § 9 PRIVACY (new full section) -->
+  <section class="section" id="privacy">
+    <div class="section-header">
+      <span class="section-num">§ 9</span>
+      <h2>Privacy &amp; Data</h2>
+    </div>
+    <p>The collection, use, and protection of your personal information is governed by AGAPAY's <a href="https://agapay.app/privacy">Privacy Policy</a>, which is incorporated into these Terms by reference. By using the Platform, you consent to the data practices described in the Privacy Policy.</p>
     <ul>
-      <li>Use the platform for any fraudulent, deceptive, or unauthorized purpose.</li>
-      <li>Submit false, misleading, or defamatory content in any field, including memorial names, intentions, or messages.</li>
-      <li>Attempt to gain unauthorized access to any part of the platform or any other user's account.</li>
-      <li>Use the platform to harass, threaten, or harm any individual or organization.</li>
-      <li>Violate any applicable federal, state, or local law or regulation in connection with your use of the platform.</li>
-      <li>Attempt to reverse engineer, decompile, or otherwise extract the source code of any part of the platform.</li>
+      <li><strong>Donor data.</strong> Personal information collected from Donors — including name, email address, and payment data — is used solely to process Transactions, provide account services, issue records, and communicate regarding your use of the Platform. AGAPAY does not sell Donor personal information to third parties.</li>
+      <li><strong>Organization data.</strong> Organizations and Administrators consent to AGAPAY retaining Transaction records, account information, and communication logs for a period of not less than seven (7) years as required for financial recordkeeping compliance.</li>
+      <li><strong>Memorial names.</strong> Names submitted for liturgical commemoration are transmitted to the designated clergy of the recipient Organization and retained by AGAPAY to support year-end donor records. AGAPAY treats memorial names as sensitive personal data and does not share them beyond the intended recipient Organization.</li>
+      <li><strong>Payment data.</strong> AGAPAY does not store full payment card numbers. All payment data is handled directly by Stripe in accordance with PCI-DSS standards.</li>
     </ul>
-    <p>AGAPAY reserves the right to remove any content and suspend or terminate any account that violates these conduct standards, with or without prior notice.</p>
+  </section>
 
-    <h2 id="liturgical">9. Liturgical Data &amp; Memorial Submissions</h2>
+
+  <!-- § 10 CONDUCT -->
+  <section class="section" id="conduct">
+    <div class="section-header">
+      <span class="section-num">§ 10</span>
+      <h2>User Conduct &amp; Acceptable Use</h2>
+    </div>
+    <p>You agree to use the AGAPAY Platform only for lawful purposes and in a manner consistent with these Terms. The following conduct is expressly prohibited:</p>
+    <ul>
+      <li>Using the Platform for any fraudulent, deceptive, unauthorized, or criminal purpose.</li>
+      <li>Submitting false, misleading, defamatory, or harassing content in any field, including memorial names, intentions, organizational descriptions, or messages.</li>
+      <li>Attempting to gain unauthorized access to any part of the Platform, any other user's account, or AGAPAY's backend infrastructure.</li>
+      <li>Using the Platform to harass, threaten, defame, or harm any individual or organization.</li>
+      <li>Violating any applicable federal, state, or local law or regulation in connection with your use of the Platform, including anti-money-laundering (AML) and know-your-customer (KYC) laws.</li>
+      <li>Attempting to reverse engineer, decompile, disassemble, scrape, or otherwise extract the source code or database contents of any part of the Platform without written authorization.</li>
+      <li>Introducing viruses, malware, or any malicious code into the Platform or its infrastructure.</li>
+      <li>Using automated scripts, bots, or other tools to access or interact with the Platform in an unauthorized manner.</li>
+      <li>Registering an Organization that is not in canonical Orthodox standing, or that is not a bona fide religious Organization.</li>
+    </ul>
+    <p>AGAPAY reserves the right to remove any content and suspend or terminate any account that violates these standards, with or without prior notice, at AGAPAY's sole discretion.</p>
+  </section>
+
+
+  <!-- § 11 LITURGICAL DATA -->
+  <section class="section" id="liturgical">
+    <div class="section-header">
+      <span class="section-num">§ 11</span>
+      <h2>Liturgical Data &amp; Memorial Submissions</h2>
+    </div>
     <p>AGAPAY offers the ability to submit names for liturgical commemoration — including memorial lists for the proskomedia, panikhida, and parastas — in connection with a charitable offering. By submitting names through this feature:</p>
     <ul>
-      <li>You represent that you have the right and consent to submit the names of living or deceased persons for liturgical commemoration.</li>
-      <li>You understand that AGAPAY transmits these names to the designated priest or clergy of the recipient parish and that AGAPAY does not itself perform or guarantee any liturgical function.</li>
-      <li>You understand that the clergy's receipt of and response to submitted names is within the discretion of the parish or monastery, not AGAPAY.</li>
-      <li>You agree not to submit names in a manner intended to harass, defame, or harm any individual.</li>
+      <li>You represent that you have the right and, where applicable, the consent to submit the names of living or deceased persons for liturgical commemoration by the designated Organization.</li>
+      <li>You understand that AGAPAY transmits these names to the designated priest or clergy of the recipient parish or monastery, and that AGAPAY does not itself perform, schedule, guarantee, or supervise any liturgical function.</li>
+      <li>You understand and agree that the clergy's receipt of, scheduling of, and response to submitted names is entirely within the discretion of the recipient Organization, and that AGAPAY has no control over or responsibility for any liturgical acts or omissions.</li>
+      <li>You agree not to submit names in a manner intended to harass, defame, mock, or harm any individual or community.</li>
+      <li>You understand that AGAPAY may retain submitted names to generate year-end commemorations records for Donors and to provide Administrators with ongoing access to current and historical commemoration lists.</li>
     </ul>
+  </section>
 
-    <h2 id="ip">10. Intellectual Property</h2>
-    <p>All content, branding, design, code, copy, and features of the AGAPAY platform — including but not limited to the AGAPAY name, logo, tagline ("Love where you give."), and the platform's visual identity — are the exclusive property of AGAPAY and are protected by applicable intellectual property laws.</p>
-    <p>You are granted a limited, non-exclusive, non-transferable license to access and use the platform for its intended purpose. You may not reproduce, distribute, modify, or create derivative works from any AGAPAY content without express written permission.</p>
 
-    <h2 id="termination">11. Suspension &amp; Termination</h2>
-    <p>AGAPAY may suspend or terminate your account or access to the platform at any time, with or without cause, including but not limited to:</p>
+  <!-- § 12 IP -->
+  <section class="section" id="ip">
+    <div class="section-header">
+      <span class="section-num">§ 12</span>
+      <h2>Intellectual Property</h2>
+    </div>
+    <p>All content, branding, design, software, code, copy, and features of the AGAPAY Platform — including but not limited to the AGAPAY name, logo, tagline (<em>"Love how you give."</em>), visual identity, and the Platform's functional architecture — are the exclusive property of AGAPAY and are protected by applicable United States and international intellectual property laws, including copyright, trademark, and trade secret law.</p>
+    <p>You are granted a limited, non-exclusive, non-sublicensable, revocable, non-transferable license to access and use the Platform solely for its intended purpose in accordance with these Terms. This license does not convey title or ownership of any AGAPAY intellectual property.</p>
+    <p>You may not reproduce, distribute, publicly display, modify, adapt, translate, create derivative works from, sell, or otherwise exploit any AGAPAY content or intellectual property without prior express written permission from AGAPAY.</p>
+    <p>By submitting any content to the Platform (including Organization names, descriptions, or communications), you grant AGAPAY a non-exclusive, royalty-free, perpetual license to use, display, and transmit that content for the sole purpose of providing the Platform's services.</p>
+  </section>
+
+
+  <!-- § 13 TERMINATION -->
+  <section class="section" id="termination">
+    <div class="section-header">
+      <span class="section-num">§ 13</span>
+      <h2>Suspension &amp; Termination</h2>
+    </div>
+    <p>AGAPAY may suspend or terminate your account or access to the Platform at any time, with or without cause and with or without notice, including but not limited to:</p>
     <ul>
-      <li>Violation of these Terms or applicable law.</li>
-      <li>Loss of canonical standing by a registered parish or monastery.</li>
-      <li>Fraudulent, deceptive, or abusive use of the platform.</li>
-      <li>Non-payment of applicable platform fees after reasonable notice.</li>
+      <li>Violation of these Terms or any applicable law or regulation.</li>
+      <li>Loss of, dispute over, or inability to confirm canonical standing by a registered Organization.</li>
+      <li>Fraudulent, deceptive, or abusive use of the Platform.</li>
+      <li>Non-payment of applicable Platform fees after thirty (30) days' written notice of delinquency.</li>
+      <li>Any action that AGAPAY reasonably believes poses a risk to the Platform, its users, or third parties.</li>
     </ul>
-    <p>Registered organizations may also terminate their account at any time by contacting hello@agapay.app. Termination does not relieve any party of obligations arising prior to the effective date of termination, including outstanding fees or data retention obligations.</p>
+    <p>Registered Organizations may terminate their account at any time by providing written notice to <a href="mailto:hello@agapay.app">hello@agapay.app</a>. Termination will be processed within ten (10) business days of receipt. Termination does not relieve any party of obligations arising prior to the effective termination date, including outstanding fees, data retention requirements, or indemnification obligations.</p>
+    <p>Upon termination, AGAPAY will retain Transaction records, donation history, and account data for a minimum of seven (7) years in accordance with standard financial recordkeeping practices. Donors may request a copy of their Transaction history prior to account closure.</p>
+  </section>
 
-    <h2 id="warranties">12. Disclaimer of Warranties</h2>
-    <p>The AGAPAY platform is provided on an <strong>"AS IS" and "AS AVAILABLE"</strong> basis without warranty of any kind. To the fullest extent permitted by applicable law, AGAPAY expressly disclaims all warranties, whether express, implied, statutory, or otherwise, including:</p>
+
+  <!-- § 14 WARRANTIES -->
+  <section class="section" id="warranties">
+    <div class="section-header">
+      <span class="section-num">§ 14</span>
+      <h2>Disclaimer of Warranties</h2>
+    </div>
+    <div class="callout callout-important">
+      THE FOLLOWING DISCLAIMER IS A MATERIAL PART OF THE AGREEMENT BETWEEN YOU AND AGAPAY. PLEASE READ CAREFULLY.
+    </div>
+    <p>The AGAPAY Platform is provided on an <strong>"AS IS" and "AS AVAILABLE"</strong> basis, without warranty of any kind. To the fullest extent permitted by applicable law, AGAPAY expressly disclaims all warranties, whether express, implied, statutory, or otherwise, including without limitation:</p>
     <ul>
-      <li>Implied warranties of merchantability, fitness for a particular purpose, and non-infringement.</li>
-      <li>Any warranty that the platform will be uninterrupted, error-free, or free of viruses or other harmful components.</li>
-      <li>Any warranty regarding the accuracy, completeness, or reliability of any content on the platform.</li>
+      <li>Implied warranties of merchantability, fitness for a particular purpose, title, and non-infringement.</li>
+      <li>Any warranty that the Platform will be uninterrupted, timely, secure, error-free, or free of viruses or other harmful components.</li>
+      <li>Any warranty regarding the accuracy, completeness, reliability, or timeliness of any content on the Platform, including Organization information, canonical status representations, or tax-exempt status claims.</li>
+      <li>Any warranty regarding the outcome of any liturgical commemoration submitted through the Platform.</li>
     </ul>
+    <p>Some jurisdictions do not allow the exclusion of certain implied warranties. To the extent such warranties cannot be disclaimed under applicable law, AGAPAY's liability for such warranties is limited to the minimum extent required by law.</p>
+  </section>
 
-    <h2 id="liability">13. Limitation of Liability</h2>
-    <p>To the fullest extent permitted by applicable law, AGAPAY shall not be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages — including loss of revenue, loss of data, or business interruption — arising out of or related to your use of or inability to use the platform, even if AGAPAY has been advised of the possibility of such damages.</p>
-    <p>AGAPAY's total cumulative liability to you for any claims arising under these Terms shall not exceed the greater of (a) the total fees paid by you to AGAPAY in the twelve (12) months preceding the claim, or (b) one hundred dollars ($100.00).</p>
 
-    <h2 id="indemnification">14. Indemnification</h2>
-    <p>You agree to indemnify, defend, and hold harmless AGAPAY and its officers, directors, employees, and agents from and against any and all claims, damages, losses, costs, and expenses (including reasonable attorneys' fees) arising out of or related to:</p>
+  <!-- § 15 LIABILITY -->
+  <section class="section" id="liability">
+    <div class="section-header">
+      <span class="section-num">§ 15</span>
+      <h2>Limitation of Liability</h2>
+    </div>
+    <div class="callout callout-important">
+      THE FOLLOWING LIMITATION IS A MATERIAL PART OF THE AGREEMENT BETWEEN YOU AND AGAPAY.
+    </div>
+    <p>To the fullest extent permitted by applicable law, AGAPAY and its officers, directors, employees, agents, licensors, and service providers shall not be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages of any kind — including but not limited to loss of revenue, loss of profits, loss of data, loss of goodwill, or business interruption — arising out of or related to:</p>
     <ul>
-      <li>Your use of the platform in violation of these Terms.</li>
-      <li>Any content you submit to the platform, including memorial names and messages.</li>
-      <li>Your misrepresentation of canonical standing or organizational authority.</li>
-      <li>Any fraudulent chargeback initiated by you.</li>
-      <li>Your violation of any applicable law or the rights of any third party.</li>
+      <li>Your use of or inability to use the Platform.</li>
+      <li>Any Transactions processed through the Platform.</li>
+      <li>Any unauthorized access to or alteration of your transmissions or data.</li>
+      <li>Any conduct or content of any third party on the Platform, including other Users or Organizations.</li>
+      <li>Any liturgical act performed or not performed in connection with a memorial submission.</li>
     </ul>
+    <p>This limitation applies regardless of whether AGAPAY has been advised of the possibility of such damages and regardless of the theory of liability — contract, tort (including negligence), strict liability, or otherwise.</p>
+    <p><strong>Aggregate cap.</strong> AGAPAY's total cumulative liability to you for any and all claims arising under or related to these Terms shall not exceed the greater of: (a) the total fees paid by you to AGAPAY in the twelve (12) months immediately preceding the claim giving rise to liability; or (b) one hundred dollars ($100.00).</p>
+    <p>Some jurisdictions do not allow the exclusion or limitation of certain damages. In such jurisdictions, AGAPAY's liability is limited to the maximum extent permitted by law.</p>
+  </section>
 
-    <h2 id="updates">15. Updates to These Terms</h2>
+
+  <!-- § 16 INDEMNIFICATION -->
+  <section class="section" id="indemnification">
+    <div class="section-header">
+      <span class="section-num">§ 16</span>
+      <h2>Indemnification</h2>
+    </div>
+    <p>You agree to indemnify, defend, and hold harmless AGAPAY and its officers, directors, employees, contractors, agents, licensors, and successors from and against any and all third-party claims, damages, losses, liabilities, costs, and expenses (including reasonable attorneys' fees and court costs) arising out of or related to:</p>
+    <ul>
+      <li>Your use of the Platform in violation of these Terms or applicable law.</li>
+      <li>Any content you submit to the Platform, including memorial names, messages, or organizational descriptions.</li>
+      <li>Your misrepresentation of canonical standing, organizational authority, or any other material fact.</li>
+      <li>Any fraudulent, bad-faith, or unjustified chargeback initiated by you.</li>
+      <li>Your violation of any applicable law, regulation, or the rights of any third party.</li>
+      <li>Any breach of your representations and warranties under these Terms.</li>
+    </ul>
+    <p>AGAPAY reserves the right, at its own expense, to assume exclusive defense and control of any matter subject to indemnification by you, in which case you agree to cooperate with AGAPAY's defense of such claim.</p>
+  </section>
+
+
+  <!-- § 17 UPDATES -->
+  <section class="section" id="updates">
+    <div class="section-header">
+      <span class="section-num">§ 17</span>
+      <h2>Updates to These Terms</h2>
+    </div>
     <p>AGAPAY may update these Terms from time to time to reflect changes in our services, applicable law, or business practices. When we make material changes, we will:</p>
     <ul>
       <li>Post the updated Terms on this page with a revised "Last Updated" date.</li>
-      <li>Send email notice to registered parish and monastery administrators at least thirty (30) days before material changes take effect.</li>
-      <li>Display a prominent notice on the platform for at least thirty (30) days following the update.</li>
+      <li>Send email notice to registered parish and monastery Administrators at least thirty (30) days before material changes take effect.</li>
+      <li>Display a prominent notice on the Platform for at least thirty (30) days following any material update.</li>
     </ul>
-    <p>Your continued use of the platform after the effective date of updated Terms constitutes your acceptance. If you do not agree to the updated Terms, you must discontinue use and may terminate your account before the effective date.</p>
+    <p>Non-material changes (such as typographical corrections, clarifications, or updates to contact information) may be made without advance notice and will be effective upon posting.</p>
+    <p>Your continued use of the Platform after the effective date of updated Terms constitutes your acceptance of the revised Terms. If you do not agree to the updated Terms, you must discontinue use and may terminate your account before the effective date by contacting <a href="mailto:hello@agapay.app">hello@agapay.app</a>.</p>
+  </section>
 
-    <h2 id="arbitration">16. Dispute Resolution &amp; Arbitration</h2>
-    <p>Any dispute, claim, or controversy arising out of or relating to these Terms or your use of the AGAPAY platform shall be resolved as follows:</p>
+
+  <!-- § 18 ARBITRATION -->
+  <section class="section" id="arbitration">
+    <div class="section-header">
+      <span class="section-num">§ 18</span>
+      <h2>Dispute Resolution &amp; Arbitration</h2>
+    </div>
+    <p>Any dispute, claim, or controversy arising out of or relating to these Terms or your use of the AGAPAY Platform shall be resolved exclusively as follows:</p>
     <ul>
-      <li><strong>Informal resolution first:</strong> Before initiating any formal proceeding, you agree to contact AGAPAY at hello@agapay.app and make a good-faith effort to resolve the dispute informally. AGAPAY will respond within thirty (30) days.</li>
-      <li><strong>Binding arbitration:</strong> If informal resolution fails, any dispute shall be resolved by binding arbitration administered in <strong>Lubbock, Texas</strong>, under the rules of the American Arbitration Association (AAA). The arbitrator's decision shall be final and binding and may be entered as a judgment in any court of competent jurisdiction.</li>
-      <li><strong>Class action waiver:</strong> You and AGAPAY agree that each may bring claims only in an individual capacity, and not as a plaintiff or class member in any purported class, collective, or representative proceeding.</li>
-      <li><strong>Exceptions:</strong> Either party may seek emergency injunctive relief from a court of competent jurisdiction to prevent irreparable harm pending arbitration.</li>
+      <li><strong>Informal resolution first.</strong> Before initiating any formal proceeding, you agree to contact AGAPAY at <a href="mailto:hello@agapay.app">hello@agapay.app</a> and make a good-faith effort to resolve the dispute informally. AGAPAY will acknowledge receipt within five (5) business days and respond substantively within thirty (30) days.</li>
+      <li><strong>Binding arbitration.</strong> If informal resolution fails after sixty (60) days, any unresolved dispute shall be finally resolved by binding arbitration administered in <strong>Lubbock, Texas</strong>, under the Commercial Arbitration Rules of the American Arbitration Association (AAA) then in effect. The arbitration shall be conducted in English before a single arbitrator. The arbitrator's written award shall be final and binding and may be entered as a judgment in any court of competent jurisdiction.</li>
+      <li><strong>Costs.</strong> The party initiating arbitration is responsible for paying the applicable AAA filing fee. Each party shall bear its own attorneys' fees unless the arbitrator determines that a claim or defense was frivolous, in which case the arbitrator may award fees to the prevailing party.</li>
+      <li><strong>Class action waiver.</strong> YOU AND AGAPAY AGREE THAT EACH MAY BRING CLAIMS AGAINST THE OTHER ONLY IN AN INDIVIDUAL CAPACITY, AND NOT AS A PLAINTIFF OR CLASS MEMBER IN ANY PURPORTED CLASS, COLLECTIVE, CONSOLIDATED, OR REPRESENTATIVE PROCEEDING. The arbitrator may not consolidate more than one person's claims and may not preside over any class or representative proceeding.</li>
+      <li><strong>Exceptions.</strong> Either party may seek emergency injunctive or other equitable relief from a court of competent jurisdiction to prevent irreparable harm pending the conclusion of arbitration, without waiving the right to arbitrate the underlying dispute.</li>
     </ul>
+  </section>
 
-    <h2 id="governing">17. Governing Law</h2>
-    <p>These Terms are governed by and construed in accordance with the laws of the <strong>State of Texas</strong>, without regard to its conflict of law provisions. To the extent any dispute is not subject to arbitration, you consent to the exclusive jurisdiction of the state and federal courts located in Lubbock County, Texas.</p>
 
-    <h2 id="contact">18. Contact Us</h2>
-    <p>If you have questions or concerns about these Terms, please contact us:</p>
+  <!-- § 19 GOVERNING LAW -->
+  <section class="section" id="governing">
+    <div class="section-header">
+      <span class="section-num">§ 19</span>
+      <h2>Governing Law</h2>
+    </div>
+    <p>These Terms are governed by and construed in accordance with the laws of the <strong>State of Texas</strong>, without regard to its conflict of law provisions or choice of law rules. The United Nations Convention on Contracts for the International Sale of Goods does not apply to these Terms.</p>
+    <p>To the extent any dispute is determined to be outside the scope of the arbitration clause in § 18, you consent to the exclusive personal jurisdiction of the state and federal courts located in Lubbock County, Texas, and waive any objection to such jurisdiction or venue.</p>
+  </section>
+
+
+  <!-- § 20 CONTACT -->
+  <section class="section" id="contact">
+    <div class="section-header">
+      <span class="section-num">§ 20</span>
+      <h2>Contact Us</h2>
+    </div>
+    <p>If you have questions, concerns, or legal notices regarding these Terms, please contact AGAPAY at:</p>
     <ul>
-      <li><strong>Email:</strong> <a href="mailto:hello@agapay.app">hello@agapay.app</a></li>
+      <li><strong>General inquiries:</strong> <a href="mailto:hello@agapay.app">hello@agapay.app</a></li>
+      <li><strong>Parish support:</strong> <a href="mailto:parishes@agapay.app">parishes@agapay.app</a></li>
+      <li><strong>Technical support:</strong> <a href="mailto:support@agapay.app">support@agapay.app</a></li>
       <li><strong>Platform:</strong> <a href="https://agapay.app">agapay.app</a></li>
     </ul>
-    <p>We will respond to all inquiries within thirty (30) days of receipt.</p>
+    <p>AGAPAY will respond to all legal inquiries within thirty (30) days of receipt. For urgent matters, please include "LEGAL — URGENT" in your email subject line.</p>
+  </section>
 
-    <div class="disclaimer">
-      <strong>Attorney Review Recommended:</strong> These Terms of Service represent a good-faith effort to address common legal requirements for a US-based payment facilitation platform as of May 2026. They have not been reviewed by licensed legal counsel. Before processing live financial transactions, AGAPAY strongly recommends having this document reviewed and finalized by a Texas attorney familiar with payment platform law, UCC Article 4A, and applicable federal financial regulations including the Electronic Fund Transfer Act (EFTA). Requirements vary and may change.
-    </div>
+
+  <!-- ATTORNEY NOTICE -->
+  <div class="legal-notice">
+    <div class="legal-notice-title">Attorney Review Notice</div>
+    These Terms of Service represent a good-faith effort to address common legal requirements for a US-based payment facilitation platform as of May 2026. <strong>They have not been reviewed by licensed legal counsel.</strong> Before processing live financial transactions, AGAPAY strongly recommends having this document reviewed and finalized by a Texas attorney familiar with payment platform law, UCC Article 4A, the Electronic Fund Transfer Act (EFTA), applicable state money transmission laws, and IRS charitable giving regulations. Requirements may vary by jurisdiction and may change.
   </div>
 
-  <footer>
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <div class="footer-logo">
-          <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;">
-            <img src="/mark.png" alt="AGAPAY" style="width:48px;height:48px;object-fit:contain;" />
-          </div>
-          <span class="footer-name">AGAPAY</span>
-        </div>
-        <p class="footer-tagline">Love how you give.</p>
-      </div>
-      <div class="footer-nav">
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Platform</div>
-          <a href="/features">Features</a>
-          <a href="/pricing">Pricing</a>
-          <a href="/why">Why AGAPAY</a>
-          <a href="/donor/login">Give now</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Company</div>
-          <a href="/about">About</a>
-          <a href="/contact">Contact</a>
-          <a href="/register">Register parish</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Legal</div>
-          <a href="/privacy">Privacy Policy</a>
-          <a href="/terms">Terms of Service</a>
-        </div>
-        <div class="footer-nav-group">
-          <div class="footer-nav-label">Contact</div>
-          <a href="mailto:hello@agapay.app">hello@agapay.app</a>
-          <a href="mailto:parishes@agapay.app">parishes@agapay.app</a>
-          <a href="mailto:support@agapay.app">support@agapay.app</a>
-        </div>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p>© 2026 AGAPAY · agapay.app</p>
-    </div>
-  </footer>
+</main>
 
+<!-- FOOTER -->
+<footer class="site-footer">
+  <span class="mark">AGAPAY</span>
+  <span class="tagline">Love how you give.</span>
+  <nav class="footer-links">
+    <a href="https://agapay.app/features">Features</a>
+    <a href="https://agapay.app/pricing">Pricing</a>
+    <a href="https://agapay.app/why">Why AGAPAY</a>
+    <a href="https://agapay.app/about">About</a>
+    <a href="https://agapay.app/privacy">Privacy Policy</a>
+    <a href="https://agapay.app/terms">Terms of Service</a>
+    <a href="https://agapay.app/contact">Contact</a>
+    <a href="https://agapay.app/register">Register Parish</a>
+  </nav>
+  <p class="footer-copy">© 2026 AGAPAY · agapay.app · All rights reserved.</p>
+</footer>
+
+<!-- BACK TO TOP -->
+<div class="back-top" id="backTop" title="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</div>
+
+<script>
+  // Reading progress bar
+  const bar = document.getElementById('reading-progress');
+  window.addEventListener('scroll', () => {
+    const total = document.body.scrollHeight - window.innerHeight;
+    bar.style.width = (window.scrollY / total * 100) + '%';
+    document.getElementById('backTop').classList.toggle('visible', window.scrollY > 400);
+  }, { passive: true });
+</script>
 </body>
 </html>
-
-
