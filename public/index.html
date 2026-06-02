@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AGAPAY - Love How You Give</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="favicons/android-chrome-192x192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="favicons/android-chrome-512x512.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
-  <meta name="description" content="AGAPAY builds trusted online infrastructure for Orthodox churches, ministries, schools, businesses, and families." />
+  <meta name="description" content="AGAPAY builds trusted online giving infrastructure for Orthodox parishes and monasteries." />
   <meta property="og:title" content="AGAPAY - Love How You Give" />
   <meta property="og:description" content="Trusted, values-aligned giving technology for Orthodox communities." />
   <meta property="og:url" content="https://agapay.app" />
@@ -390,6 +390,7 @@
       display: grid;
       gap: 1.3rem;
       overflow: visible;
+      align-content: center;
     }
     .ecosystem-item {
       position: relative;
@@ -532,8 +533,9 @@
       display: grid;
       grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr);
       min-height: 430px;
-      background: var(--night);
-      color: var(--cream);
+      background: var(--cream);
+      color: var(--ink);
+      border-top: 1px solid var(--line);
     }
     .mission-copy {
       padding: clamp(3.5rem, 7vw, 6rem) clamp(1.25rem, 6vw, 6rem);
@@ -541,19 +543,19 @@
       flex-direction: column;
       justify-content: center;
       background:
-        radial-gradient(circle at 18% 20%, rgba(200, 162, 74, 0.13), transparent 18rem),
-        var(--night);
+        radial-gradient(circle at 18% 20%, rgba(200, 162, 74, 0.1), transparent 18rem),
+        var(--cream);
     }
-    .mission-copy h2 { color: var(--cream); max-width: 720px; }
+    .mission-copy h2 { color: var(--night); max-width: 720px; }
     .mission-copy p {
       margin-top: 1.25rem;
       max-width: 760px;
-      color: rgba(246, 241, 232, 0.8);
+      color: var(--stone);
       line-height: 1.75;
     }
     .mission-copy a {
       margin-top: 1.6rem;
-      color: var(--gold);
+      color: var(--gold-dark);
       font-family: var(--serif);
       font-size: 1.08rem;
       font-style: italic;
@@ -568,50 +570,9 @@
       filter: saturate(0.92) contrast(1.04);
     }
 
-    .testimonials {
-      background:
-        radial-gradient(circle at 50% 100%, rgba(200, 162, 74, 0.12), transparent 22rem),
-        var(--cream);
-    }
-    .testimonials .eyebrow { text-align: center; }
-    .quote-grid {
-      margin-top: 2rem;
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 1.4rem;
-    }
-    .quote {
-      background: rgba(255, 255, 255, 0.58);
-      border: 1px solid rgba(169, 124, 37, 0.25);
-      border-radius: 7px;
-      padding: 1.6rem;
-      min-height: 205px;
-      box-shadow: 0 16px 40px rgba(6, 21, 34, 0.05);
-    }
-    .quote-mark {
-      color: var(--gold-dark);
-      font-family: var(--serif);
-      font-size: 3.3rem;
-      line-height: 0.7;
-    }
-    .quote p {
-      color: var(--ink);
-      line-height: 1.68;
-      margin-bottom: 1.4rem;
-    }
-    .quote strong {
-      display: block;
-      font-size: 0.75rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .quote span {
-      color: var(--stone);
-      font-size: 0.82rem;
-    }
-
     .join {
       color: var(--cream);
+      border-top: 1px solid rgba(200, 162, 74, 0.28);
       background:
         linear-gradient(90deg, rgba(6, 21, 34, 0.98), rgba(6, 21, 34, 0.88)),
         radial-gradient(circle at 0 50%, rgba(200, 162, 74, 0.12), transparent 24rem),
@@ -693,7 +654,6 @@
       .ecosystem,
       .trust-grid,
       .mission-band,
-      .quote-grid,
       .join-grid {
         grid-template-columns: 1fr;
       }
@@ -788,10 +748,10 @@
       </a>
       <div class="nav-links">
         <a href="/vision">Vision</a>
-        <a href="/give">Giving</a>
-        <a href="/marketplace">Marketplace</a>
-        <a href="/directory">Directory</a>
-        <a href="/how-it-works">Resources</a>
+        <a href="/features">Features</a>
+        <a href="/how-it-works">How it Works</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/about">About</a>
         <a href="/register" class="nav-cta">Join AGAPAY</a>
       </div>
     </nav>
@@ -803,7 +763,7 @@
         <div class="hero-copy">
           <h1>Orthodox Giving <span>Lives Here</span></h1>
           <div class="hero-rule" aria-hidden="true"></div>
-          <p>AGAPAY provides modern financial software for Orthodox churches, ministries, schools, businesses, and the faithful - helping Orthodox communities give, transact, and grow together.</p>
+          <p>AGAPAY is purpose-built giving software for Orthodox parishes and monasteries - helping communities receive offerings, remember the living and the departed, and steward their gifts with clarity.</p>
           <div class="hero-actions">
             <a class="btn btn-gold" href="/register">Join AGAPAY</a>
             <a class="btn btn-outline" href="/why">Why AGAPAY Exists</a>
@@ -816,11 +776,11 @@
           </div>
           <div class="hero-trust-item">
             <svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M8 12l3 3 5-6"/></svg>
-            <span><strong>Trusted by Orthodox Organizations</strong><br />Serving institutions nationwide.</span>
+            <span><strong>Canonically Minded</strong><br />Communities reviewed before activation.</span>
           </div>
           <div class="hero-trust-item">
             <svg viewBox="0 0 24 24"><path d="M12 21v-8"/><path d="M8 17h8"/><path d="M5 21h14"/><circle cx="12" cy="7" r="4"/></svg>
-            <span><strong>Dedicated Support</strong><br />People who understand the mission</span>
+            <span><strong>Dedicated Support</strong><br />People who understand the mission.</span>
           </div>
           <div class="hero-trust-item">
             <svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 13h8"/><path d="M9 21h6"/></svg>
@@ -834,10 +794,10 @@
       <div class="section-inner problem-grid">
         <div class="problem-copy">
           <div class="eyebrow">THE PROBLEM</div>
-          <h2>Our communities deserve better online infrastructure.</h2>
-          <p class="lead">For too long, Orthodox churches, ministries, schools, and businesses have relied on disconnected financial platforms built without their communities in mind.</p>
+          <h2>Our communities deserve better giving infrastructure.</h2>
+          <p class="lead">For too long, Orthodox parishes and monasteries have relied on disconnected giving platforms built without their communities in mind.</p>
           <p class="lead">High fees, fragmented tools, and value-neutral systems weaken long-term stewardship and pull resources away from the institutions that sustain Orthodox life.</p>
-          <strong>AGAPAY was created to provide a modern, trusted financial ecosystem designed specifically for Orthodox communities.</strong>
+          <strong>AGAPAY was created to provide a modern, trusted giving platform designed specifically for Orthodox communities.</strong>
         </div>
         <div class="problem-list">
           <div class="problem-item">
@@ -846,11 +806,11 @@
           </div>
           <div class="problem-item">
             <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M9 12l2 2 4-5"/></svg></div>
-            <div><h3>Values Don't Align</h3><p>Most financial technology providers were never built with Orthodox institutions, stewardship, or culture in mind.</p></div>
+            <div><h3>Values Don't Align</h3><p>Most giving platforms were never built with Orthodox parishes, stewardship, or liturgical life in mind.</p></div>
           </div>
           <div class="problem-item">
             <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M4 21h16"/><path d="M6 21V10l6-5 6 5v11"/><path d="M10 21v-6h4v6"/><path d="M12 3v4"/><path d="M10 5h4"/></svg></div>
-            <div><h3>Fragmented Infrastructure</h3><p>Orthodox organizations deserve modern software designed specifically for their unique needs and mission.</p></div>
+            <div><h3>Fragmented Tools</h3><p>Orthodox communities deserve giving software designed specifically for their needs - offerings, candles, and commemorations in one place.</p></div>
           </div>
         </div>
       </div>
@@ -860,51 +820,36 @@
       <div class="section-inner">
         <div class="solution-head">
           <div class="eyebrow">THE SOLUTION</div>
-          <h2>Building the transactional home of the Orthodoxy in America</h2>
-          <p>AGAPAY connects Orthodox churches, ministries, schools, businesses, monasteries, and faithful families through modern software designed for giving, stewardship, commerce, and support.</p>
+          <h2>Giving built around Orthodox life.</h2>
+          <p>AGAPAY brings offerings, candles, designated funds, campaigns, and commemorations together in one platform - shaped around the parish, the monastery, and the faithful who support them.</p>
         </div>
         <div class="ecosystem">
           <div class="spoke-canvas" aria-hidden="true">
             <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-              <path class="spoke-main" d="M34 24 H40" />
-              <path class="spoke-main" d="M34 50 H42" />
-              <path class="spoke-main" d="M34 76 H40" />
-              <path class="spoke-main" d="M66 24 H60" />
-              <path class="spoke-main" d="M66 50 H58" />
-              <path class="spoke-main" d="M66 76 H60" />
+              <path class="spoke-main" d="M34 30 H42" />
+              <path class="spoke-main" d="M34 70 H42" />
+              <path class="spoke-main" d="M66 30 H58" />
+              <path class="spoke-main" d="M66 70 H58" />
 
-              <path class="spoke-angled" d="M40 24 L44 37" />
-              <path class="spoke-angled" d="M40 76 L44 63" />
-              <path class="spoke-angled" d="M60 24 L56 37" />
-              <path class="spoke-angled" d="M60 76 L56 63" />
+              <path class="spoke-angled" d="M42 30 L47 45" />
+              <path class="spoke-angled" d="M42 70 L47 55" />
+              <path class="spoke-angled" d="M58 30 L53 45" />
+              <path class="spoke-angled" d="M58 70 L53 55" />
 
-              <path class="spoke-main" d="M44 37 H46.5" />
-              <path class="spoke-main" d="M44 50 H46.5" />
-              <path class="spoke-main" d="M44 63 H46.5" />
-              <path class="spoke-main" d="M53.5 37 H56" />
-              <path class="spoke-main" d="M53.5 50 H56" />
-              <path class="spoke-main" d="M53.5 63 H56" />
-
-              <circle class="spoke-dot" cx="34" cy="24" r="0.55" />
-              <circle class="spoke-dot" cx="34" cy="50" r="0.55" />
-              <circle class="spoke-dot" cx="34" cy="76" r="0.55" />
-              <circle class="spoke-dot" cx="66" cy="24" r="0.55" />
-              <circle class="spoke-dot" cx="66" cy="50" r="0.55" />
-              <circle class="spoke-dot" cx="66" cy="76" r="0.55" />
+              <circle class="spoke-dot" cx="34" cy="30" r="0.6" />
+              <circle class="spoke-dot" cx="34" cy="70" r="0.6" />
+              <circle class="spoke-dot" cx="66" cy="30" r="0.6" />
+              <circle class="spoke-dot" cx="66" cy="70" r="0.6" />
             </svg>
           </div>
           <div class="ecosystem-side">
             <div class="ecosystem-item">
               <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M4 21h16"/><path d="M6 21V10l6-5 6 5v11"/><path d="M9 21v-6h6v6"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div>
-              <div><h3>Churches &amp; Parishes</h3><p>Manage giving, events, stewardship, and parish support through one unified platform.</p></div>
-            </div>
-            <div class="ecosystem-item">
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M4 19.5V5a2 2 0 0 1 2-2h6v18H6a2 2 0 0 0-2 2"/><path d="M20 19.5V5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 1 2 2"/></svg></div>
-              <div><h3>Schools &amp; Academies</h3><p>Simplify tuition, fundraising, and family payments through modern financial workflows.</p></div>
+              <div><h3>Parishes &amp; Missions</h3><p>Receive stewardship, candle offerings, designated funds, and campaigns through one unified platform.</p></div>
             </div>
             <div class="ecosystem-item">
               <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M7 21V9l5-5 5 5v12"/><path d="M10 21v-5h4v5"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div>
-              <div><h3>Monasteries</h3><p>Receive donations and support your sacred mission through trusted digital giving tools.</p></div>
+              <div><h3>Monasteries</h3><p>Receive donations and support your sacred mission through trusted digital giving tools - with no monthly platform fee, ever.</p></div>
             </div>
           </div>
 
@@ -919,16 +864,12 @@
 
           <div class="ecosystem-side">
             <div class="ecosystem-item right">
-              <div><h3>Ministries &amp; Nonprofits</h3><p>Raise support, engage donors, and expand your mission with tools built for Orthodox organizations.</p></div>
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 21V3"/><path d="M8 7h8"/><path d="M9 11h6"/><path d="M6 21h12"/></svg></div>
-            </div>
-            <div class="ecosystem-item right">
-              <div><h3>Orthodox Businesses</h3><p>Accept payments and participate in an ecosystem aligned with Orthodox values and communities.</p></div>
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M4 10h16"/><path d="M5 10l1-5h12l1 5"/><path d="M6 10v9h12v-9"/><path d="M9 19v-5h6v5"/></svg></div>
-            </div>
-            <div class="ecosystem-item right">
-              <div><h3>Faithful Donors</h3><p>Give confidently to Orthodox causes, institutions, and ministries through one connected platform.</p></div>
+              <div><h3>Faithful Donors</h3><p>Give confidently to your parish or monastery, and submit names of the living and the departed for commemoration.</p></div>
               <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-8 0"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/><path d="M19 8a3 3 0 0 1 2 3"/><path d="M3 11a3 3 0 0 1 2-3"/></svg></div>
+            </div>
+            <div class="ecosystem-item right">
+              <div><h3>Commemorations</h3><p>Names submitted with a gift reach your priest each week, so the living and the departed are remembered at the altar.</p></div>
+              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 13h8"/></svg></div>
             </div>
           </div>
         </div>
@@ -941,12 +882,12 @@
         <div class="trust-copy">
           <div class="eyebrow">BUILT ON TRUST</div>
           <h2>Secure. Reliable. Transparent.</h2>
-          <p class="lead">AGAPAY combines modern financial technology with dedicated support and values-aligned service you can trust. Designed to support Orthodox institutions with clarity, security, and long-term stability.</p>
+          <p class="lead">AGAPAY combines modern giving technology with dedicated support and values-aligned service you can trust - designed to support Orthodox communities with clarity, security, and long-term stability.</p>
         </div>
-        <div class="trust-badge"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/></svg><span>Enterprise-Grade Security<br />Modern encryption and secure transaction infrastructure.</span></div>
-        <div class="trust-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v10"/><path d="M9 10c0-1.4 1.2-2.2 3-2.2s3 .8 3 2.2c0 3-6 1.4-6 4.2 0 1.4 1.2 2.2 3 2.2s3-.8 3-2.2"/></svg><span>Transparent Pricing<br />Straightforward pricing with no hidden surprises.</span></div>
-        <div class="trust-badge"><svg viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M4 14h4v6H4z"/><path d="M16 14h4v6h-4z"/></svg><span>Dedicated Support<br />Real people who understand Orthodox organizations and communities.</span></div>
-        <div class="trust-badge"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Reliable Infrastructure<br />Dependable systems designed for Orthodox organizations of every size.</span></div>
+        <div class="trust-badge"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/></svg><span>Secure by Design<br />Modern encryption and trusted payment infrastructure.</span></div>
+        <div class="trust-badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v10"/><path d="M9 10c0-1.4 1.2-2.2 3-2.2s3 .8 3 2.2c0 3-6 1.4-6 4.2 0 1.4 1.2 2.2 3 2.2s3-.8 3-2.2"/></svg><span>Transparent Pricing<br />Clear, published pricing with no hidden surprises.</span></div>
+        <div class="trust-badge"><svg viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M4 14h4v6H4z"/><path d="M16 14h4v6h-4z"/></svg><span>Dedicated Support<br />Real people who understand Orthodox communities.</span></div>
+        <div class="trust-badge"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Canonical Review<br />Communities are reviewed before they can receive gifts.</span></div>
       </div>
     </section>
 
@@ -954,36 +895,10 @@
       <div class="mission-copy">
         <div class="eyebrow">OUR MISSION</div>
         <h2>Strengthening Orthodox life through faithful stewardship.</h2>
-        <p>AGAPAY exists to help Orthodox communities build durable institutions, support meaningful work, and strengthen the bonds between churches, ministries, businesses, and the faithful. We believe financial tools should strengthen communities - not extract from them.</p>
+        <p>AGAPAY exists to help Orthodox communities build durable institutions, support meaningful work, and strengthen the bonds between parishes, monasteries, and the faithful. We believe giving tools should strengthen communities - not extract from them.</p>
         <a href="/about">Learn About Our Mission</a>
       </div>
       <div class="mission-image" role="img" aria-label="Orthodox faithful gathered inside a parish church"></div>
-    </section>
-
-    <section class="section testimonials">
-      <div class="section-inner">
-        <div class="eyebrow">TRUSTED BY ORTHODOX LEADERS</div>
-        <div class="quote-grid">
-          <article class="quote">
-            <div class="quote-mark">"</div>
-            <p>AGAPAY finally feels like a platform built for our community rather than adapted to it.</p>
-            <strong>Parish Administrator</strong>
-            <span></span>
-          </article>
-          <article class="quote">
-            <div class="quote-mark">"</div>
-            <p>We wanted modern giving tools without sacrificing alignment with our Orthodox values and mission.</p>
-            <strong>Orthodox Ministry Director</strong>
-            <span></span>
-          </article>
-          <article class="quote">
-            <div class="quote-mark">"</div>
-            <p>AGAPAY understands the unique needs of Orthodox organizations in a way other platforms simply do not.</p>
-            <strong>Orthodox Business Owner</strong>
-            <span></span>
-          </article>
-        </div>
-      </div>
     </section>
 
     <section class="section join">
@@ -992,7 +907,7 @@
           <div>
             <div class="eyebrow">Join Us</div>
             <h2>Join the future of Orthodox giving.</h2>
-            <p>Whether you serve a parish, ministry, monastery, school, business, or nonprofit, AGAPAY is building the online infrastructure to help Orthodox communities thrive together.</p>
+            <p>Whether you serve a parish, mission, or monastery, AGAPAY is building the giving infrastructure to help Orthodox communities thrive together.</p>
             <div class="join-actions">
               <a class="btn btn-gold" href="/register">Join AGAPAY</a>
               <a class="btn btn-outline" href="/contact">Schedule a Demo</a>
@@ -1001,19 +916,19 @@
           <div class="join-features">
             <div class="join-feature">
               <div class="icon-ring"><svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 4.5h6"/><path d="M9 10l1.5 1.5L13 9"/><path d="M9 14l1.5 1.5L13 13"/><path d="M14.5 10h2.5"/><path d="M14.5 14h2.5"/></svg></div>
-              <div><h3>Easy Onboarding</h3><p>Get set up quickly with personalized guidance.</p></div>
+              <div><h3>Easy Onboarding</h3><p>Get set up with personalized guidance.</p></div>
             </div>
             <div class="join-feature">
               <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M9 12l2 2 4-5"/></svg></div>
               <div><h3>Dedicated Support</h3><p>Real people who understand your mission.</p></div>
             </div>
             <div class="join-feature">
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M9 10c0-1.4 1.2-2.2 3-2.2s3 .8 3 2.2c0 3-6 1.4-6 4.2 0 1.4 1.2 2.2 3 2.2s3-.8 3-2.2"/></svg></div>
-              <div><h3>Competitive Rates</h3><p>Fair, transparent pricing with no surprises.</p></div>
+              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 13h8"/></svg></div>
+              <div><h3>Commemorations</h3><p>Living and departed names reach your priest each week.</p></div>
             </div>
             <div class="join-feature">
               <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M7 21V9l5-5 5 5v12"/><path d="M10 21v-5h4v5"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div>
-              <div><h3>Kingdom Impact</h3><p>Every transaction helps strengthen our community.</p></div>
+              <div><h3>Kingdom Impact</h3><p>Every gift helps strengthen our community.</p></div>
             </div>
           </div>
         </div>
@@ -1031,4 +946,3 @@
   </main>
 </body>
 </html>
-
