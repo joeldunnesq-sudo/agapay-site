@@ -678,6 +678,227 @@
       font-size: 0.82rem;
     }
 
+
+    /* BEAUTIFIED WHY PAGE BODY */
+    .orthodox-difference {
+      background:
+        radial-gradient(circle at 8% 0%, rgba(200, 162, 74, 0.10), transparent 34%),
+        linear-gradient(180deg, #FFFDF8 0%, #F7EFE3 100%);
+    }
+
+    .difference-layout {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.28fr);
+      gap: clamp(2rem, 5vw, 4rem);
+      align-items: start;
+    }
+
+    .difference-copy {
+      position: sticky;
+      top: 110px;
+    }
+
+    .difference-cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .difference-card {
+      position: relative;
+      border: 1px solid rgba(200, 162, 74, 0.28);
+      border-radius: 16px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,251,244,0.94)),
+        radial-gradient(circle at 14% 0%, rgba(200,162,74,0.12), transparent 44%);
+      padding: 1.35rem;
+      min-height: 210px;
+      box-shadow: 0 14px 30px rgba(6, 21, 34, 0.055);
+    }
+
+    .difference-card.large {
+      grid-column: span 2;
+      min-height: 240px;
+      padding: 1.7rem;
+      background:
+        linear-gradient(135deg, rgba(255,253,248,0.92), rgba(246,241,232,0.96)),
+        radial-gradient(circle at 8% 10%, rgba(200,162,74,0.18), transparent 42%);
+    }
+
+    .card-number {
+      display: block;
+      font-family: var(--serif);
+      color: rgba(169, 124, 37, 0.56);
+      font-size: 2.6rem;
+      line-height: 0.85;
+      margin-bottom: 1rem;
+    }
+
+    .difference-card h3 {
+      font-family: var(--serif);
+      color: var(--night);
+      font-size: 1.55rem;
+      font-weight: 500;
+      line-height: 1.05;
+      margin-bottom: 0.65rem;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .difference-card p {
+      color: var(--stone);
+      font-size: 0.94rem;
+      line-height: 1.68;
+    }
+
+    .refined-quote {
+      padding: clamp(3rem, 6vw, 5rem) clamp(1rem, 3vw, 2.5rem);
+    }
+
+    .refined-quote .quote-inner {
+      max-width: 860px;
+    }
+
+    .refined-quote .quote-inner p {
+      font-size: clamp(1.8rem, 4vw, 3rem);
+    }
+
+    .refined-comparison {
+      background:
+        linear-gradient(180deg, #F7EFE3 0%, #FFFDF8 100%);
+    }
+
+    .comparison-layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.9fr) minmax(360px, 1.1fr);
+      gap: clamp(1.6rem, 4vw, 3rem);
+      align-items: start;
+    }
+
+    .comparison-panel {
+      border: 1px solid rgba(200,162,74,0.32);
+      border-radius: 18px;
+      overflow: hidden;
+      background: rgba(255,253,248,0.82);
+      box-shadow: 0 16px 34px rgba(6,21,34,0.06);
+    }
+
+    .comparison-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      align-items: center;
+      padding: 1rem 1.1rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .comparison-row:last-child {
+      border-bottom: none;
+    }
+
+    .comparison-row span {
+      color: var(--night);
+      font-size: 0.96rem;
+      line-height: 1.5;
+    }
+
+    .comparison-row strong {
+      color: var(--gold-dark);
+      font-size: 0.76rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .pricing-note {
+      margin-top: 1.5rem;
+      border-left: 2px solid var(--gold);
+      padding: 1rem 0 1rem 1.4rem;
+      max-width: 920px;
+    }
+
+    .pricing-note h3 {
+      font-family: var(--serif);
+      color: var(--night);
+      font-size: 1.8rem;
+      font-weight: 500;
+      margin-bottom: 0.4rem;
+    }
+
+    .pricing-note p {
+      color: var(--stone);
+      line-height: 1.72;
+      max-width: 820px;
+    }
+
+    .founding-vision {
+      background:
+        radial-gradient(circle at 92% 18%, rgba(200,162,74,0.12), transparent 34%),
+        linear-gradient(180deg, #FFFDF8 0%, #F6F1E8 100%);
+    }
+
+    .vision-card {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.95fr) minmax(320px, 1.05fr);
+      gap: clamp(1.5rem, 4vw, 3rem);
+      align-items: center;
+      border: 1px solid rgba(200,162,74,0.34);
+      border-radius: 18px;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.84), rgba(255,251,244,0.94)),
+        radial-gradient(circle at 5% 15%, rgba(200,162,74,0.12), transparent 36%);
+      padding: clamp(1.4rem, 4vw, 2.4rem);
+      box-shadow: 0 18px 38px rgba(6, 21, 34, 0.06);
+    }
+
+    .vision-points {
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .vision-points div {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1rem;
+      background: rgba(255,253,248,0.78);
+    }
+
+    .vision-points strong {
+      display: block;
+      font-family: var(--serif);
+      color: var(--gold-dark);
+      font-size: 2rem;
+      font-weight: 500;
+      line-height: 1;
+      margin-bottom: 0.35rem;
+    }
+
+    .vision-points span {
+      color: var(--stone);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 980px) {
+      .difference-layout,
+      .comparison-layout,
+      .vision-card {
+        grid-template-columns: 1fr;
+      }
+
+      .difference-copy {
+        position: static;
+      }
+
+      .difference-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .difference-card.large {
+        grid-column: span 1;
+      }
+    }
+
     @media (max-width: 980px) {
       .nav-links, .nav-actions { display: none; }
       .mobile-menu-btn { display: flex; }
@@ -773,99 +994,136 @@
        <div class="hero-art" aria-label="Why hero artwork" role="img"></div>
     </section>
 
-    <section class="section">
-      <div class="section-inner section-grid">
-        <div>
-          <div class="section-kicker"><svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-5"/></svg>What sets us apart</div>
-          <h2>Things a general platform isn't built to do.</h2>
-          <p class="section-lead">These aren't features added to court Orthodox parishes. They're the reason AGAPAY exists.</p>
+
+    <!-- ORTHODOX DIFFERENCE -->
+    <section class="section orthodox-difference">
+      <div class="section-inner difference-layout">
+        <div class="difference-copy">
+          <div class="section-kicker">
+            <svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M5 21h14"/></svg>
+            What sets us apart
+          </div>
+          <h2>Built from inside Orthodox life.</h2>
+          <p class="section-lead">
+            AGAPAY was not adapted for the Church after the fact. It was built from within the Tradition — for the nave, the candle stand, the treasurer’s desk, the priest’s commemoration list, and the life of the parish.
+          </p>
         </div>
-        <div class="feature-grid">
-          <article class="feature-card">
-            <div class="icon-round"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M5 21h14"/></svg></div>
-            <h3>Built from within the Tradition</h3>
-            <p>AGAPAY is being built by a tonsured Reader of ROCOR - not a fintech company entering the religious market. Every decision is shaped by someone who lives this life from the inside.</p>
+
+        <div class="difference-cards">
+          <article class="difference-card large">
+            <span class="card-number">01</span>
+            <h3>Liturgical by design</h3>
+            <p>Campaigns follow the Orthodox calendar — Nativity, Theophany, Great Lent, Pascha, Soul Saturdays, patronal feasts — with both Julian and Gregorian calendars supported.</p>
           </article>
-          <article class="feature-card">
-            <div class="icon-round"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M4 10h16"/><path d="M9 15h.01"/><path d="M15 15h.01"/></svg></div>
-            <h3>The liturgical calendar is native</h3>
-            <p>Both Julian and Gregorian calendars are supported, and giving campaigns follow the festal cycle - Nativity, Theophany, Great Lent, Pascha, Soul Saturdays - rather than generic seasonal windows.</p>
+
+          <article class="difference-card">
+            <span class="card-number">02</span>
+            <h3>Commemorations reach the priest</h3>
+            <p>Memorial offerings are formatted and routed toward the priest’s preparation, so names are not lost in a spreadsheet.</p>
           </article>
-          <article class="feature-card">
-            <div class="icon-round"><svg viewBox="0 0 24 24"><path d="M6 4h12v16H6z"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h3"/></svg></div>
-            <h3>Commemoration lists reach the priest</h3>
-            <p>When a parishioner submits a memorial offering, the names are formatted and routed toward the priest's proskomedia preparation - designed so they aren't lost in a spreadsheet.</p>
-          </article>
-          <article class="feature-card">
-            <div class="icon-round"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v5c0 4.6-2.8 8-7 9-4.2-1-7-4.4-7-9V7l7-4z"/><path d="M9 12l2 2 4-5"/></svg></div>
+
+          <article class="difference-card">
+            <span class="card-number">03</span>
             <h3>Canonical standing is reviewed</h3>
-            <p>Every parish and monastery is reviewed for canonical standing before activation, so a gift through AGAPAY reaches a recognized community.</p>
+            <p>Every parish and monastery is reviewed before activation, so gifts reach recognized Orthodox communities.</p>
           </article>
-          <article class="feature-card">
-            <div class="icon-round"><svg viewBox="0 0 24 24"><path d="M5 20h14"/><path d="M7 20V9l5-5 5 5v11"/><path d="M10 20v-6h4v6"/></svg></div>
-            <h3>Monasteries pay no monthly fee</h3>
-            <p>Monasteries and sketes carry no monthly platform fee. This was decided at founding and isn't a promotion; standard transaction fees still apply, but the monthly subscription is free, permanently.</p>
+
+          <article class="difference-card">
+            <span class="card-number">04</span>
+            <h3>Monasteries are honored</h3>
+            <p>Monasteries and sketes carry no monthly platform fee — permanently, by conviction. Standard transaction fees still apply.</p>
           </article>
-          <article class="feature-card">
-            <div class="icon-round"><svg viewBox="0 0 24 24"><path d="M6 3v18"/><path d="M6 5h10l-1 4 1 4H6"/></svg></div>
-            <h3>Month-to-month, no lock-ins</h3>
-            <p>No annual contracts, no cancellation penalties, no multi-year commitments. A platform should earn a parish's trust each month.</p>
+
+          <article class="difference-card">
+            <span class="card-number">05</span>
+            <h3>No long-term lock-ins</h3>
+            <p>No annual contracts. No cancellation penalties. A platform should earn a parish’s trust each month.</p>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="quote-band">
+    <!-- QUOTE BAND -->
+    <section class="quote-band refined-quote">
       <div class="quote-inner">
-        <p>"The Church does not give because she is asked. She gives because she loves. AGAPAY is built around that truth."</p>
+        <p>“The Church does not give because she is asked. She gives because she loves.”</p>
         <cite>AGAPAY founding principle</cite>
       </div>
     </section>
 
-    <section class="section comparison">
-      <div class="section-inner">
-        <div class="section-kicker"><svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>An honest comparison</div>
-        <h2>General platforms are capable. They simply were not built for Orthodox liturgical life.</h2>
-        <p class="section-lead">General church-giving platforms like Tithe.ly and Pushpay are capable and widely used. Here's the honest difference, focused on what actually sets AGAPAY apart rather than on rates, which vary by plan and change over time.</p>
-        <div class="comparison-body">
-          <ul class="distinct-list" aria-label="What's distinct about AGAPAY">
-            <li><span>1</span><strong>Proskomedia commemoration routing</strong> - not offered by general platforms.</li>
-            <li><span>2</span><strong>Julian and Gregorian, feast-aware giving</strong> - not offered by general platforms.</li>
-            <li><span>3</span><strong>Canonical verification for every community</strong> - not offered by general platforms.</li>
-            <li><span>4</span><strong>Monasteries free monthly, by conviction</strong> - general platforms apply standard pricing.</li>
-            <li><span>5</span><strong>Month-to-month</strong> - no long-term contract required.</li>
-            <li><span>6</span><strong>Built from within Orthodoxy</strong> by a tonsured Reader.</li>
-          </ul>
-          <aside class="transparent-card">
-            <h3>Where we're transparent</h3>
-            <p>AGAPAY's pricing is $49 / $99 per month plus 5% + $0.30 per transaction. General platforms may advertise a lower per-transaction card rate or a free base tier; we've chosen to fold platform value into a simple, predictable structure rather than gate features behind higher monthly plans.</p>
-            <p style="margin-top:0.85rem;">Compare total cost for your parish's size and decide what fits. For exact competitor pricing and payout terms, check their current published rates - these change.</p>
-          </aside>
+    <!-- HONEST COMPARISON -->
+    <section class="section comparison refined-comparison">
+      <div class="section-inner comparison-layout">
+        <div>
+          <div class="section-kicker">
+            <svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
+            An honest comparison
+          </div>
+          <h2>General platforms are capable. They simply were not built for Orthodox liturgical life.</h2>
+          <p class="section-lead">
+            Tithe.ly, Pushpay, and similar platforms can serve churches well. AGAPAY is different because it was built around the actual rhythms, obligations, and forms of Orthodox parish life.
+          </p>
         </div>
+
+        <div class="comparison-panel">
+          <div class="comparison-row">
+            <span>Proskomedia commemoration routing</span>
+            <strong>AGAPAY</strong>
+          </div>
+          <div class="comparison-row">
+            <span>Julian and Gregorian calendar support</span>
+            <strong>AGAPAY</strong>
+          </div>
+          <div class="comparison-row">
+            <span>Feast-aware giving campaigns</span>
+            <strong>AGAPAY</strong>
+          </div>
+          <div class="comparison-row">
+            <span>Canonical verification before activation</span>
+            <strong>AGAPAY</strong>
+          </div>
+          <div class="comparison-row">
+            <span>No monthly platform fee for monasteries</span>
+            <strong>AGAPAY</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-inner pricing-note">
+        <h3>Transparent by design.</h3>
+        <p>
+          AGAPAY’s pricing is simple: $49 / $99 per month plus 5% + $0.30 per transaction. General platforms may advertise lower card rates or free base tiers, but often vary by plan, feature access, or payout terms. Compare total cost for your parish’s size and decide what fits.
+        </p>
       </div>
     </section>
 
-    <section class="section">
-      <div class="section-inner">
-        <div class="section-kicker"><svg viewBox="0 0 24 24"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-5"/><path d="M12 16V8"/><path d="M16 16v-9"/></svg>The platform</div>
-        <h2>What AGAPAY is building toward.</h2>
-        <p class="section-lead">AGAPAY is in its founding stage - onboarding its first parishes ahead of public launch. It serves Orthodox communities across the United States only, keeping stewardship funds domestic and within U.S. compliance.</p>
-        <div class="stats-row">
-          <article class="stat-card">
-            <div class="stat-number">50</div>
-            <h3>Available in all states</h3>
-            <p>Open to every Orthodox parish and monastery in the United States.</p>
-          </article>
-          <article class="stat-card">
-            <div class="stat-number">$0</div>
-            <h3>Monthly for monasteries</h3>
-            <p>Monasteries and sketes remain free monthly, permanently, by conviction.</p>
-          </article>
-          <article class="stat-card">
-            <div class="stat-number">5+</div>
-            <h3>Major jurisdictions</h3>
-            <p>Open to canonical communities across major jurisdictions, including GOA, Antiochian, OCA, ROCOR, Serbian, and others.</p>
-          </article>
+    <!-- FOUNDING VISION -->
+    <section class="section founding-vision">
+      <div class="section-inner vision-card">
+        <div>
+          <div class="section-kicker">
+            <svg viewBox="0 0 24 24"><path d="M5 20h14"/><path d="M7 20V9l5-5 5 5v11"/><path d="M10 20v-6h4v6"/></svg>
+            What AGAPAY is building toward
+          </div>
+          <h2>A financial home for Orthodox communities.</h2>
+          <p class="section-lead">
+            AGAPAY is in its founding stage — onboarding its first parishes ahead of public launch. It serves Orthodox communities across the United States only, keeping stewardship funds domestic and within U.S. compliance.
+          </p>
+        </div>
+
+        <div class="vision-points">
+          <div>
+            <strong>50 states</strong>
+            <span>Open to Orthodox communities across the United States.</span>
+          </div>
+          <div>
+            <strong>$0 monthly</strong>
+            <span>For monasteries and sketes, permanently.</span>
+          </div>
+          <div>
+            <strong>Canonical communities</strong>
+            <span>Built for recognized Orthodox parishes, missions, and monasteries.</span>
+          </div>
         </div>
       </div>
     </section>
