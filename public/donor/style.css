@@ -810,6 +810,63 @@ body.donor-login-simple {
   min-height: 46px;
 }
 
+.pwa-install-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.9rem;
+  align-items: center;
+  border: 1px solid rgba(200, 162, 74, 0.32);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 90% 10%, rgba(200, 162, 74, 0.16), transparent 44%),
+    linear-gradient(145deg, rgba(6, 21, 34, 0.98), rgba(11, 33, 48, 0.96));
+  color: var(--cream);
+  padding: 1rem;
+  box-shadow: 0 16px 36px rgba(6, 21, 34, 0.16);
+}
+
+.pwa-install-kicker {
+  display: block;
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pwa-install-card h2 {
+  margin: 0.25rem 0 0;
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.pwa-install-card p {
+  margin-top: 0.4rem;
+  color: rgba(246, 241, 232, 0.78);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.pwa-install-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 0.55rem;
+}
+
+.pwa-install-actions .btn {
+  min-height: 40px;
+  justify-content: center;
+}
+
+.pwa-install-actions .btn-ghost {
+  background: rgba(246, 241, 232, 0.08);
+  border-color: rgba(200, 162, 74, 0.28);
+  color: var(--cream);
+}
+
 @media (max-width: 520px) {
   .donor-auth-page {
     align-items: start;
@@ -828,6 +885,18 @@ body.donor-login-simple {
 
   .donor-auth-actions {
     grid-template-columns: 1fr;
+  }
+
+  .pwa-install-card {
+    grid-template-columns: 1fr;
+  }
+
+  .pwa-install-actions {
+    justify-content: stretch;
+  }
+
+  .pwa-install-actions .btn {
+    flex: 1 1 140px;
   }
 }
 

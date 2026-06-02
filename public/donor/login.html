@@ -5,12 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Donor Login | AGAPAY</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+  <meta name="theme-color" content="#061522" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="AGAPAY" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css" />
   <script src="/donor/app.js" defer></script>
+  <script src="/donor/pwa-install.js" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
 </head>
 <body class="donor-login-simple">
@@ -28,6 +36,19 @@
           <p>Log in after verifying your email to view giving history, manage commemorations, and give through AGAPAY.</p>
         </div>
       </div>
+
+      <section class="pwa-install-card" id="pwaInstallCard" hidden aria-live="polite">
+        <div class="pwa-install-copy">
+          <span class="pwa-install-kicker">Home screen shortcut</span>
+          <h2>Install AGAPAY</h2>
+          <p>Open your donor login like an app, with the AGAPAY icon on your phone.</p>
+          <p id="pwaIosInstructions" hidden>On iPhone, tap Share, then Add to Home Screen.</p>
+        </div>
+        <div class="pwa-install-actions">
+          <button class="btn btn-gold" type="button" id="pwaInstallButton" hidden>Install AGAPAY</button>
+          <button class="btn btn-ghost" type="button" id="pwaInstallDismiss">Not now</button>
+        </div>
+      </section>
 
       <form class="donor-auth-card" onsubmit="loginFromPage(event)">
         <h2>Login</h2>

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -92,7 +92,7 @@
     .step-circle { width: 32px; height: 32px; min-width: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; font-family: var(--sans); transition: all 0.3s ease; border: 1.5px solid rgba(166,159,145,0.4); background: white; color: var(--stone); }
     .step-circle.active { background: var(--deep); color: var(--cream); border-color: var(--deep); }
     .step-circle.complete { background: var(--forest); color: var(--cream); border-color: var(--forest); font-size: 0; }
-    .step-circle.complete::after { content: 'âœ“'; font-size: 13px; }
+    .step-circle.complete::after { content: '✓'; font-size: 13px; }
     .step-line { flex: 1; height: 1.5px; background: rgba(166,159,145,0.3); transition: background 0.3s ease; }
     .step-line.complete { background: var(--forest); }
     .progress-labels { display: flex; justify-content: space-between; }
@@ -249,6 +249,11 @@
   <link rel="stylesheet" href="/site-chrome.css" />
   <script src="/site-chrome.js" defer></script>
   <script src="/site-mobile-nav.js" defer></script>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="AGAPAY" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 </head>
 <body>
 
@@ -452,7 +457,7 @@
 
         <div class="form-nav">
           <div></div>
-          <button class="btn-next" onclick="goToStep(2)">Continue â†’</button>
+          <button class="btn-next" onclick="goToStep(2)">Continue →</button>
         </div>
       </div>
     </div>
@@ -510,18 +515,18 @@
 
         <div class="form-group">
           <label for="notes">Anything else we should know?</label>
-          <textarea id="notes" placeholder="Tell us about your community, your current giving process, or any questions you haveâ€¦"></textarea>
+          <textarea id="notes" placeholder="Tell us about your community, your current giving process, or any questions you have…"></textarea>
           <span class="form-hint">Optional. Goes directly to the founder.</span>
         </div>
 
         <div class="form-nav">
-          <button class="btn-back" onclick="goToStep(1)">â† Back</button>
-          <button class="btn-next" onclick="goToStep(3)">Review â†’</button>
+          <button class="btn-back" onclick="goToStep(1)">← Back</button>
+          <button class="btn-next" onclick="goToStep(3)">Review →</button>
         </div>
       </div>
     </div>
 
-    <!-- STEP 3 â€” REVIEW -->
+    <!-- STEP 3 — REVIEW -->
     <div class="step-panel" id="step-3">
       <div class="form-card">
         <div class="form-card-title">Review &amp; submit</div>
@@ -546,8 +551,8 @@
         <div data-agapay-turnstile style="margin-top:1rem;"></div>
 
         <div class="form-nav" style="margin-top:1.5rem;">
-          <button class="btn-back" onclick="goToStep(2)">â† Back</button>
-          <button class="btn-submit" id="submitBtn" onclick="handleSubmit()">Submit registration â†’</button>
+          <button class="btn-back" onclick="goToStep(2)">← Back</button>
+          <button class="btn-submit" id="submitBtn" onclick="handleSubmit()">Submit registration →</button>
         </div>
       </div>
     </div>
@@ -555,7 +560,7 @@
     <!-- SENDING STATE -->
     <div class="sending-state" id="sendingState">
       <div class="spinner"></div>
-      <p>Sending your registrationâ€¦</p>
+      <p>Sending your registration…</p>
     </div>
 
     <!-- SUCCESS STATE -->
@@ -610,13 +615,13 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>Â© 2026 AGAPAY Â· agapay.app</p>
+      <p>© 2026 AGAPAY · agapay.app</p>
     </div>
   </footer>
 
   <script src="/security.js"></script>
   <script>
-    // â”€â”€â”€ STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── STATE ───────────────────────────────────────────────
     let currentStep = 1;
     let communityType = 'Parish';
     const requiredMark = '<span class="required">*</span>';
@@ -763,7 +768,7 @@
       showOrganizationFlow(defaultType || 'Parish');
     }
 
-    // â”€â”€â”€ COMMUNITY TYPE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── COMMUNITY TYPE ──────────────────────────────────────
     function selectType(btn) {
       document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
@@ -797,7 +802,7 @@
       document.getElementById('agreementText').innerHTML = `${config.agreement} I have read and agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.`;
     }
 
-    // â”€â”€â”€ STEP NAVIGATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── STEP NAVIGATION ─────────────────────────────────────
     function goToStep(step) {
       if (step > currentStep && !validateStep(currentStep)) return;
 
@@ -819,7 +824,7 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // â”€â”€â”€ VALIDATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── VALIDATION ──────────────────────────────────────────
     function validateStep(step) {
       const config = activeTypeConfig();
       if (step === 1) {
@@ -844,7 +849,7 @@
       return true;
     }
 
-    // â”€â”€â”€ BUILD REVIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── BUILD REVIEW ─────────────────────────────────────────
     function buildReview() {
       const config = activeTypeConfig();
       const address = [
@@ -881,7 +886,7 @@
       if (reviewName) reviewName.textContent = document.getElementById('parishName').value;
     }
 
-    // â”€â”€â”€ SUBMIT via AGAPAY API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── SUBMIT via AGAPAY API ────────────────────────────────
     async function handleSubmit() {
       if (!document.getElementById('agreeTerms').checked) {
         alert('Please confirm authorization and agree to the Terms of Service before submitting.');
@@ -949,7 +954,7 @@
       }
     }
 
-    // â”€â”€â”€ MOBILE NAV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── MOBILE NAV ───────────────────────────────────────────
     function toggleMenu() {
       const btn    = document.querySelector('.menu-toggle');
       const drawer = document.getElementById('mobileDrawer');

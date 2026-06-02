@@ -746,7 +746,7 @@ async function loginFromPage(event) {
     });
     saveDonorSession(data);
     setDonorStatus("Signed in. Opening your donor dashboard...", "success");
-    window.location.href = "/donor";
+    window.location.href = "/donor/dashboard";
   } catch (err) {
     clearDonorSession();
     setDonorStatus(err.message, "error");

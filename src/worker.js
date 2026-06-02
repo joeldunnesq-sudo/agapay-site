@@ -5491,6 +5491,10 @@ function cleanAssetRequest(request) {
     url.pathname = "/donor/index.html";
     return new Request(url, request);
   }
+  if (url.pathname === "/donor/dashboard") {
+    url.pathname = "/donor/index.html";
+    return new Request(url, request);
+  }
   if (url.pathname.startsWith("/donor/") && !url.pathname.includes(".")) {
     url.pathname = `${url.pathname}.html`;
     return new Request(url, request);
