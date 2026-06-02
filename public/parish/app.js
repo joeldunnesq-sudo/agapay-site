@@ -425,13 +425,6 @@
     if (overviewCampaigns) overviewCampaigns.textContent = (p.campaigns || []).length;
     document.getElementById('sidebarPublicLink').href = dedicatedGivingUrl();
     document.getElementById('topbarTitle').textContent = p.parishName || 'Parish Dashboard';
-    const mobileMeta = document.getElementById('topbarMobileParishMeta');
-    if (mobileMeta) mobileMeta.textContent = parishMeta || 'Parish dashboard';
-    const mobileStatus = document.getElementById('topbarMobileStatus');
-    if (mobileStatus) {
-      mobileStatus.textContent = statusLabel(p.givingStatus || 'active');
-      mobileStatus.className = 'topbar-status-pill ' + (p.givingStatus || 'active');
-    }
     const commIcon = document.getElementById('commemorationCommunityIcon');
     if (commIcon) commIcon.innerHTML = communityMarkIcon(p);
     const overviewEmpty = document.getElementById('overviewEmpty');

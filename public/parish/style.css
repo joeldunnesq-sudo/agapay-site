@@ -796,7 +796,6 @@
       display: none;
     }
 
-    .topbar-mobile-meta,
     .mobile-page-actions {
       display: none;
     }
@@ -1042,46 +1041,6 @@
 
       .topbar-actions {
         display: none;
-      }
-
-      .topbar-mobile-meta {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-top: 0.45rem;
-        color: var(--stone);
-        font-size: 13px;
-        line-height: 1.35;
-      }
-
-      .topbar-status-pill {
-        display: inline-flex;
-        align-items: center;
-        min-height: 28px;
-        border: 1px solid rgba(11,33,48,0.28);
-        border-radius: 999px;
-        background: rgba(11,33,48,0.12);
-        color: var(--deep);
-        padding: 0.22rem 0.65rem;
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .topbar-status-pill.paused,
-      .topbar-status-pill.pending {
-        border-color: rgba(184,144,47,0.38);
-        background: rgba(184,144,47,0.16);
-        color: #6f4f09;
-      }
-
-      .topbar-status-pill.hidden,
-      .topbar-status-pill.cancelled {
-        border-color: rgba(111,106,96,0.24);
-        background: rgba(111,106,96,0.1);
-        color: var(--stone);
       }
 
       .sidebar-profile .sidebar-status-chip {
