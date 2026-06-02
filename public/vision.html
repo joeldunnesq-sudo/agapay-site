@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vision | AGAPAY</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="favicons/android-chrome-192x192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="favicons/android-chrome-512x512.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
   <meta name="theme-color" content="#061522" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -88,15 +88,7 @@
       font-size: 0.86rem;
       font-weight: 600;
     }
-    .nav-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-      color: var(--cream);
-      font-size: 0.86rem;
-      font-weight: 700;
-    }
-    .nav-login { color: var(--gold); }
+    .nav-links a.active { color: var(--gold); }
     .nav-cta {
       display: inline-flex;
       align-items: center;
@@ -115,7 +107,7 @@
     }
 
     .hero{background:var(--deep);color:var(--cream);position:relative;overflow:hidden;min-height:650px;display:grid;align-items:center}
-    .hero::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,21,34,.98) 0%,rgba(6,21,34,.9) 34%,rgba(6,21,34,.38) 72%,rgba(6,21,34,.78) 100%),linear-gradient(0deg,rgba(6,21,34,.88),rgba(6,21,34,.1) 52%,rgba(6,21,34,.48)),url("images/vision/fresco-vault.jpg") center right/cover no-repeat;filter:saturate(.95) contrast(1.08);z-index:1}
+    .hero::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,21,34,.98) 0%,rgba(6,21,34,.9) 34%,rgba(6,21,34,.38) 72%,rgba(6,21,34,.78) 100%),linear-gradient(0deg,rgba(6,21,34,.88),rgba(6,21,34,.1) 52%,rgba(6,21,34,.48)),url("/images/vision/fresco-vault.jpg") center right/cover no-repeat;filter:saturate(.95) contrast(1.08);z-index:1}
     .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 70% 26%,rgba(216,176,88,.24),transparent 25rem),radial-gradient(circle at 20% 22%,rgba(200,162,74,.13),transparent 20rem);pointer-events:none;z-index:1}
     .hero-grid{min-height:650px;position:relative;z-index:2;padding-top:100px;display:grid;align-items:center}
     .hero-copy{padding:4.6rem 2.5rem 4rem .2rem;align-self:center;max-width:580px}
@@ -141,21 +133,25 @@
 
     .phase-section{background:linear-gradient(180deg,#07192A,#061522);color:var(--cream);padding:3.8rem 0 4.2rem}
     .phase-heading{text-align:center;margin-bottom:2rem}
-    .phase-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
-    .phase-card{background:rgba(255,255,255,.95);color:var(--ink);border:1px solid rgba(166,159,145,.4);border-radius:12px;padding:1.3rem;position:relative;overflow:hidden}
+    .phase-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+    .phase-card{background:rgba(255,255,255,.95);color:var(--ink);border:1px solid rgba(166,159,145,.4);border-radius:12px;padding:1.5rem;position:relative;overflow:hidden}
     .phase-card>*{position:relative;z-index:2}
     .phase-num{width:38px;height:38px;border-radius:50%;border:2px solid var(--gold);display:grid;place-items:center;font-family:var(--numeric-font,var(--serif));font-variant-numeric:lining-nums tabular-nums;font-weight:700;background:#fff;margin-bottom:.85rem}
     .phase-label{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--stone);margin-bottom:.35rem;font-weight:600}
+    .phase-status{display:inline-block;margin-bottom:.55rem;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;padding:.2rem .5rem;border-radius:999px}
+    .phase-status.live{color:#1f6b3b;background:rgba(33,129,67,.12);border:1px solid rgba(33,129,67,.3)}
+    .phase-status.next{color:#9a6f21;background:rgba(200,162,74,.12);border:1px solid rgba(200,162,74,.36)}
     .phase-card h4{font:500 2.1rem/1.08 var(--serif);color:var(--deep);margin-bottom:.6rem}
     .phase-card p{color:#4e4a42;line-height:1.65;margin-bottom:.8rem}
     .phase-list{list-style:none;display:grid;gap:.35rem}
     .phase-list li{font-size:.95rem;color:#3f3a32;padding-left:1.15rem;position:relative}
-    .phase-list li::before{content:"•";position:absolute;left:0;color:var(--gold);font-weight:700}
+    .phase-list li::before{content:"\2022";position:absolute;left:0;color:var(--gold);font-weight:700}
     .phase-photo{position:absolute;top:0;right:0;width:52%;height:52%;z-index:1;background-size:cover;background-position:center;opacity:.34;mask-image:linear-gradient(to left,rgba(0,0,0,.9),rgba(0,0,0,0));pointer-events:none}
     .phase-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(255,255,255,.7))}
-    .phase-1 .phase-photo{background-image:url("images/vision/icon-hands.jpg")}
-    .phase-2 .phase-photo{background-image:url("images/vision/church-exterior.jpg")}
-    .phase-3 .phase-photo{background-image:url("images/vision/hero-incense.jpg")}
+    .phase-1 .phase-photo{background-image:url("/images/vision/icon-hands.jpg")}
+    .phase-2 .phase-photo{background-image:url("/images/vision/church-exterior.jpg")}
+    .phase-3 .phase-photo{background-image:url("/images/vision/hero-incense.jpg")}
+    .phase-4 .phase-photo{background-image:url("/images/vision/church-exterior.jpg")}
 
     .ecosystem{position:relative;padding:5rem 0;background:linear-gradient(180deg,#fffdf8,#f8f1e6);overflow:hidden}
     .ecosystem::before{content:"";position:absolute;left:-7rem;bottom:-8rem;width:24rem;height:24rem;border:1px solid rgba(200,162,74,.18);border-radius:50%;background:radial-gradient(circle,rgba(200,162,74,.08),transparent 64%);pointer-events:none}
@@ -191,7 +187,7 @@
       line-height:1.55;
       font-weight:600;
     }
-    .mission-photo{background:url("images/vision/one_faith_one-mission_one platform.png") center/contain no-repeat}
+    .mission-photo{background:url("/images/vision/one_faith_one-mission_one platform.png") center/contain no-repeat}
 
     .final-cta{background:var(--paper);border-top:1px solid var(--line);padding:2.2rem 0}
     .cta-shell{
@@ -234,7 +230,7 @@
 
     @media (max-width:1020px){
       .hero{min-height:620px}
-      .hero::before{background:linear-gradient(180deg,rgba(6,21,34,.96),rgba(6,21,34,.76)),linear-gradient(90deg,rgba(6,21,34,.92),rgba(6,21,34,.22)),url("images/vision/fresco-vault.jpg") center/cover no-repeat}
+      .hero::before{background:linear-gradient(180deg,rgba(6,21,34,.96),rgba(6,21,34,.76)),linear-gradient(90deg,rgba(6,21,34,.92),rgba(6,21,34,.22)),url("/images/vision/fresco-vault.jpg") center/cover no-repeat}
       .hero-grid,.mission-grid,.phase-cards,.values-grid{grid-template-columns:1fr}
       .hero-grid{min-height:620px;padding-top:94px}
       .hero-copy,.mission-copy{padding-right:0}
@@ -267,11 +263,11 @@
         <span class="brand-name"><strong>AGAPAY</strong><span>Love how you give</span></span>
       </a>
       <div class="nav-links">
-        <a href="/vision">Vision</a>
-        <a href="/give">Giving</a>
-        <a href="/marketplace">Marketplace</a>
-        <a href="/directory">Directory</a>
-        <a href="/how-it-works">Resources</a>
+        <a class="active" href="/vision">Vision</a>
+        <a href="/features">Features</a>
+        <a href="/how-it-works">How it Works</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/about">About</a>
         <a href="/register" class="nav-cta">Join AGAPAY</a>
       </div>
     </nav>
@@ -280,24 +276,25 @@
     <section class="hero">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <h1>Building the Online home for all things Orthodox.</h1>
-          <p>AGAPAY exists to strengthen Orthodox communities through modern financial infrastructure rooted in shared faith, stewardship, and long-term institutional support.</p>
-          <p>We believe Orthodox churches, ministries, schools, businesses, monasteries, and faithful families deserve tools built specifically for the life of the Church.</p>
+          <h1>Building the online home for all things Orthodox.</h1>
+          <p>AGAPAY exists to strengthen Orthodox communities through modern giving infrastructure rooted in shared faith, stewardship, and long-term institutional support.</p>
+          <p>We believe Orthodox parishes, monasteries, and the faithful deserve tools built specifically for the life of the Church &mdash; with a vision that grows to serve the wider Orthodox world over time.</p>
         </div>
         <div class="hero-image" role="img" aria-label="Orthodox fresco interior"></div>
       </div>
     </section>
 
     <section class="values"><div class="wrap values-grid">
-      <article class="value"><div class="value-head"><div class="value-icon"><svg viewBox="0 0 24 24"><path d="M4 21h16"/><path d="M6 21V10l6-5 6 5v11"/><path d="M9 21v-6h6v6"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div><div class="eyebrow">Why AGAPAY Exists</div></div><h3>Orthodox communities deserve infrastructure built for them.</h3><p>AGAPAY was created to build a connected financial ecosystem that helps Orthodox institutions grow stronger together.</p></article>
-      <article class="value"><div class="value-head"><div class="value-icon"><svg viewBox="0 0 24 24"><circle cx="7" cy="9" r="3"/><circle cx="17" cy="9" r="3"/><path d="M2.5 20c.8-2.8 2.8-4.2 5.5-4.2"/><path d="M16 15.8c2.7 0 4.7 1.4 5.5 4.2"/></svg></div><div class="eyebrow">The Challenge</div></div><h3>Orthodox institutions are digitally fragmented.</h3><p>Financial activity leaves the ecosystem. Resources become scattered. Communities remain disconnected.</p></article>
-      <article class="value"><div class="value-head"><div class="value-icon"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10"/><path d="M12 8v6"/><path d="M9 11h6"/></svg></div><div class="eyebrow">Our Response</div></div><h3>A unified ecosystem built on faith, trust, and stewardship.</h3><p>AGAPAY creates modern infrastructure to help Orthodox life become more connected, sustainable, and resilient.</p></article>
+      <article class="value"><div class="value-head"><div class="value-icon"><svg viewBox="0 0 24 24"><path d="M4 21h16"/><path d="M6 21V10l6-5 6 5v11"/><path d="M9 21v-6h6v6"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div><div class="eyebrow">Why AGAPAY Exists</div></div><h3>Orthodox communities deserve infrastructure built for them.</h3><p>AGAPAY was created to build a connected giving platform that helps Orthodox institutions grow stronger together.</p></article>
+      <article class="value"><div class="value-head"><div class="value-icon"><svg viewBox="0 0 24 24"><circle cx="7" cy="9" r="3"/><circle cx="17" cy="9" r="3"/><path d="M2.5 20c.8-2.8 2.8-4.2 5.5-4.2"/><path d="M16 15.8c2.7 0 4.7 1.4 5.5 4.2"/></svg></div><div class="eyebrow">The Challenge</div></div><h3>Orthodox institutions are digitally fragmented.</h3><p>Financial activity leaves the community. Resources become scattered. Communities remain disconnected.</p></article>
+      <article class="value"><div class="value-head"><div class="value-icon"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10"/><path d="M12 8v6"/><path d="M9 11h6"/></svg></div><div class="eyebrow">Our Response</div></div><h3>A unified platform built on faith, trust, and stewardship.</h3><p>AGAPAY creates modern infrastructure to help Orthodox life become more connected, sustainable, and resilient.</p></article>
     </div></section>
 
-    <section class="phase-section"><div class="wrap"><div class="phase-heading"><div class="eyebrow">The Three-Phase Vision</div></div><div class="phase-cards">
-      <article class="phase-card phase-1"><div class="phase-photo" aria-hidden="true"></div><div class="phase-num">1</div><div class="phase-label">Phase One</div><h4>Orthodox Giving Infrastructure</h4><p>The first phase focuses on building modern software for Orthodox churches and parishes.</p><ul class="phase-list"><li>Digital giving and stewardship tools</li><li>Recurring donations</li><li>Parish fundraising and event payments</li><li>Financial management integrations</li><li>Donor engagement tools</li></ul></article>
-      <article class="phase-card phase-2"><div class="phase-photo" aria-hidden="true"></div><div class="phase-num">2</div><div class="phase-label">Phase Two</div><h4>The Orthodox Marketplace</h4><p>The second phase expands into an Orthodox marketplace where businesses, monasteries, and creators connect directly with the faithful.</p><ul class="phase-list"><li>Orthodox businesses and monastery goods</li><li>Books, icons, and sacred art</li><li>Vestments and church supplies</li><li>Handcrafted and digital products</li><li>Events and pilgrimage services</li></ul></article>
-      <article class="phase-card phase-3"><div class="phase-photo" aria-hidden="true"></div><div class="phase-num">3</div><div class="phase-label">Phase Three</div><h4>Ministries, Nonprofits, &amp; Schools</h4><p>The third phase extends infrastructure support for ministries, nonprofits, schools, and mission-driven Orthodox organizations.</p><ul class="phase-list"><li>Fundraising and donor management</li><li>Tuition and payment systems</li><li>Grant and sponsorship support</li><li>Event registration and engagement</li><li>Mission support and giving networks</li></ul></article>
+    <section class="phase-section"><div class="wrap"><div class="phase-heading"><div class="eyebrow">The Phased Vision</div></div><div class="phase-cards">
+      <article class="phase-card phase-1"><div class="phase-photo" aria-hidden="true"></div><div class="phase-num">1</div><div class="phase-label">Phase One</div><span class="phase-status live">Live Today</span><h4>Orthodox Giving Infrastructure</h4><p>The foundation: modern giving software built around the real life of an Orthodox parish and monastery.</p><ul class="phase-list"><li>Online giving and recurring stewardship</li><li>Candles lit for the living and the departed</li><li>Commemorations delivered to the priest each week</li><li>Designated funds and parish campaigns</li><li>Donor and parish dashboards</li><li>Annual giving statements</li></ul></article>
+      <article class="phase-card phase-2"><div class="phase-photo" aria-hidden="true"></div><div class="phase-num">2</div><div class="phase-label">Phase Two</div><span class="phase-status next">On the Roadmap</span><h4>The Orthodox Marketplace</h4><p>A marketplace where Orthodox businesses, monasteries, and creators connect directly with the faithful.</p><ul class="phase-list"><li>Orthodox businesses and monastery goods</li><li>Books, icons, and sacred art</li><li>Vestments and church supplies</li><li>Handcrafted and digital products</li><li>Events and pilgrimage services</li></ul></article>
+      <article class="phase-card phase-3"><div class="phase-photo" aria-hidden="true"></div><div class="phase-num">3</div><div class="phase-label">Phase Three</div><span class="phase-status next">On the Roadmap</span><h4>Directory &amp; Resources</h4><p>A comprehensive directory of Orthodox churches and businesses, paired with a growing library of resources for parishes and the faithful.</p><ul class="phase-list"><li>Searchable directory of Orthodox churches</li><li>Directory of Orthodox-owned businesses</li><li>Jurisdiction and location discovery</li><li>Stewardship and onboarding resources</li><li>Guides for parishes and donors</li></ul></article>
+      <article class="phase-card phase-4"><div class="phase-photo" aria-hidden="true"></div><div class="phase-num">4</div><div class="phase-label">Phase Four</div><span class="phase-status next">On the Roadmap</span><h4>Ministries, Nonprofits, &amp; Schools</h4><p>Extending infrastructure support to ministries, nonprofits, schools, and mission-driven Orthodox organizations.</p><ul class="phase-list"><li>Fundraising and donor management</li><li>Tuition and payment systems</li><li>Grant and sponsorship support</li><li>Event registration and engagement</li><li>Mission support and giving networks</li></ul></article>
     </div></div></section>
 
     <section class="ecosystem">
@@ -309,8 +306,8 @@
               <h2>One platform for Orthodox life.</h2>
             </div>
             <div class="eco-copy">
-              <p><strong>AGAPAY is poised to become the unified home for Orthodox life in America.</strong> Giving, commerce, ministry support, and discovery should bolster one another rather than existing in disconnected tools.</p>
-              <p>Our ecosystem is built so parishes, monasteries, schools, ministries, businesses, and faithful families can all participate in one values-aligned network designed around trust, stewardship, and long-term Orthodox flourishing.</p>
+              <p><strong>AGAPAY aims to become the unified home for Orthodox life in America.</strong> Giving, commerce, ministry support, and discovery should bolster one another rather than existing in disconnected tools.</p>
+              <p>Our vision is built so parishes, monasteries, schools, ministries, businesses, and faithful families can all participate in one values-aligned network designed around trust, stewardship, and long-term Orthodox flourishing.</p>
             </div>
           </div>
 
@@ -343,13 +340,13 @@
         <div class="cta-shell">
           <div class="cta-row">
             <div class="cta-left">
-              <div class="cta-mark" aria-hidden="true"><img src="mark.png" alt="" /></div>
+              <div class="cta-mark" aria-hidden="true"><img src="/mark.png" alt="" /></div>
               <h3>Join us as we build the future of Orthodox giving.</h3>
             </div>
-            <p class="cta-copy">Whether you are a parish, ministry, business, school, monastery, or faithful supporter, AGAPAY is building a platform designed to strengthen Orthodox life through modern, values-aligned infrastructure.</p>
+            <p class="cta-copy">Whether you serve a parish, mission, or monastery, AGAPAY is building a platform designed to strengthen Orthodox life through modern, values-aligned giving infrastructure.</p>
             <div class="cta-buttons">
               <a href="/register" class="btn btn-gold">Join AGAPAY</a>
-              <a href="/how-it-works" class="btn btn-outline">Explore the Vision</a>
+              <a href="/how-it-works" class="btn btn-outline">How It Works</a>
             </div>
           </div>
         </div>
@@ -359,15 +356,15 @@
   <footer class="site-footer">
     <div class="wrap footer-grid">
       <div class="footer-brand">
-        <div class="footer-lockup"><img src="mark.png" alt="" /><strong>AGAPAY</strong></div>
-        <p>Love how you Give.</p>
+        <div class="footer-lockup"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></div>
+        <p>Love how you give.</p>
       </div>
-      <div class="footer-col"><h4>Platform</h4><a href="/features">Solutions</a><a href="/how-it-works">How It Works</a><a href="/pricing">Pricing</a></div>
+      <div class="footer-col"><h4>Platform</h4><a href="/features">Features</a><a href="/how-it-works">How It Works</a><a href="/pricing">Pricing</a></div>
       <div class="footer-col"><h4>Company</h4><a href="/about">About</a><a href="/why">Why AGAPAY</a><a href="/vision">Vision</a><a href="/contact">Contact</a></div>
-      <div class="footer-col"><h4>Resources</h4><a href="/donor/login">Donor Login</a><a href="/parish/login">Parish Login</a><a href="/admin/login">Admin Login</a></div>
+      <div class="footer-col"><h4>Account</h4><a href="/donor/login">Donor Login</a><a href="/parish/login">Parish Login</a><a href="/admin/login">Admin Login</a></div>
       <div class="footer-col"><h4>Legal</h4><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div>
     </div>
-    <div class="wrap footer-bottom"><span>© 2026 AGAPAY. All rights reserved.</span><span>Built for Orthodox communities.</span></div>
+    <div class="wrap footer-bottom"><span>&copy; 2026 AGAPAY. All rights reserved.</span><span>Built for Orthodox communities.</span></div>
   </footer>
 </body>
 </html>
