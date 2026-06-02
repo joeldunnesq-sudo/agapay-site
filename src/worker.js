@@ -1597,8 +1597,8 @@ async function loadCommemorationEntries(env, parishId, startDate, endDate) {
 async function storeCommemorationEntry(env, sourceId, metadata = {}, fallback = {}) {
   if (!hasProductionStore(env)) return null;
   const parishId = metadata.parish_id || fallback.parishId || "";
-  const living = splitSubmittedNames(metadata.names_living);
-  const departed = splitSubmittedNames(metadata.names_departed);
+  const living = splitSubmittedNames(metadata.names_living || fallback.namesLiving || "");
+  const departed = splitSubmittedNames(metadata.names_departed || fallback.namesDeparted || "");
   if (!parishId || (!living.length && !departed.length)) return null;
 
   const entry = {
@@ -1617,6 +1617,45 @@ async function storeCommemorationEntry(env, sourceId, metadata = {}, fallback = 
   };
 
   return saveCommemorationEntry(env, entry);
+}
+
+function commemorationSourceIdFromOffering(offering = {}) {
+  return offering.checkoutSessionId
+    || offering.stripePaymentIntentId
+    || offering.id
+    || crypto.randomUUID();
+}
+
+async function ensureCommemorationEntryFromOffering(env, offering = {}, overrides = {}) {
+  const giftType = String(overrides.giftType || offering.giftType || "").toLowerCase();
+  if (giftType !== "commemoration") return null;
+
+  return storeCommemorationEntry(
+    env,
+    commemorationSourceIdFromOffering({ ...offering, ...overrides }),
+    {
+      parish_id: overrides.parishId || offering.parishId || "",
+      parish_name: overrides.parishName || offering.parishName || "",
+      donor_email: overrides.donorEmail || offering.donorEmail || "",
+      donor_name: overrides.donorName || offering.donorName || "",
+      gift_type: giftType,
+      frequency: overrides.frequency || offering.frequency || "once",
+      names_living: overrides.namesLiving || offering.namesLiving || "",
+      names_departed: overrides.namesDeparted || offering.namesDeparted || ""
+    },
+    {
+      parishId: overrides.parishId || offering.parishId || "",
+      parishName: overrides.parishName || offering.parishName || "",
+      donorEmail: overrides.donorEmail || offering.donorEmail || "",
+      donorName: overrides.donorName || offering.donorName || "",
+      giftType,
+      frequency: overrides.frequency || offering.frequency || "once",
+      amountCents: Number(overrides.amountCents ?? offering.amountCents ?? 0),
+      namesLiving: overrides.namesLiving || offering.namesLiving || "",
+      namesDeparted: overrides.namesDeparted || offering.namesDeparted || "",
+      createdAt: overrides.createdAt || offering.createdAt || new Date().toISOString()
+    }
+  );
 }
 
 async function saveCommemorationEntry(env, entry) {
@@ -2727,6 +2766,9 @@ async function handleCheckoutSessionStatus(request, env) {
     completedAt: status === "completed" ? offering.completedAt || new Date().toISOString() : offering.completedAt || ""
   });
   if (status === "completed" || paymentStatus === "paid") {
+    await ensureCommemorationEntryFromOffering(env, updated || offering, {
+      createdAt: session.created ? new Date(session.created * 1000).toISOString() : offering.createdAt || new Date().toISOString()
+    });
     await sendDonationReceiptIfNeeded(env, updated || {});
   }
 
@@ -4198,12 +4240,6 @@ async function processStripeWebhookEvent(env, event) {
   if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
     const paymentStatus = object.payment_status || "paid";
     const status = paymentStatus === "paid" || object.mode === "subscription" ? "completed" : "pending";
-    await storeCommemorationEntry(env, object.id, object.metadata || {}, {
-      amountCents: object.amount_total || object.amount_subtotal || 0,
-      donorEmail: object.metadata?.donor_email || object.customer_details?.email || object.customer_email || "",
-      donorName: object.metadata?.donor_name || object.customer_details?.name || "",
-      createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
-    });
     const updatedOffering = await updateDonorOfferingByCheckout(env, object.id, {
       status,
       paymentStatus,
@@ -4213,6 +4249,20 @@ async function processStripeWebhookEvent(env, event) {
       completedAt: status === "completed" ? (object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()) : ""
     });
     if (status === "completed" || paymentStatus === "paid") {
+      await ensureCommemorationEntryFromOffering(env, updatedOffering || {}, {
+        checkoutSessionId: object.id,
+        id: object.id,
+        parishId: object.metadata?.parish_id || updatedOffering?.parishId || "",
+        parishName: object.metadata?.parish_name || updatedOffering?.parishName || "",
+        donorEmail: object.metadata?.donor_email || object.customer_details?.email || object.customer_email || updatedOffering?.donorEmail || "",
+        donorName: object.metadata?.donor_name || object.customer_details?.name || updatedOffering?.donorName || "",
+        giftType: object.metadata?.gift_type || updatedOffering?.giftType || "",
+        frequency: object.metadata?.frequency || updatedOffering?.frequency || "once",
+        amountCents: object.amount_total || object.amount_subtotal || updatedOffering?.amountCents || 0,
+        namesLiving: object.metadata?.names_living || updatedOffering?.namesLiving || "",
+        namesDeparted: object.metadata?.names_departed || updatedOffering?.namesDeparted || "",
+        createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
+      });
       await sendDonationReceiptIfNeeded(env, updatedOffering || {});
     }
   }
@@ -4304,12 +4354,6 @@ async function processStripeWebhookEvent(env, event) {
 
   if (event.type === "invoice.payment_succeeded" || event.type === "invoice.paid") {
     const metadata = object.subscription_details?.metadata || object.lines?.data?.[0]?.metadata || object.metadata || {};
-    await storeCommemorationEntry(env, object.id, metadata, {
-      amountCents: object.amount_paid || 0,
-      donorEmail: metadata.donor_email || object.customer_email || object.customer_details?.email || "",
-      donorName: metadata.donor_name || object.customer_name || "",
-      createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
-    });
     if (metadata.donor_email) {
       const storedOffering = await storeDonorOffering(env, {
         id: object.id,
@@ -4327,6 +4371,19 @@ async function processStripeWebhookEvent(env, event) {
         stripeCustomerId: object.customer || "",
         stripePaymentIntentId: object.payment_intent || "",
         stripeSubscriptionId: object.subscription || "",
+        namesLiving: metadata.names_living || "",
+        namesDeparted: metadata.names_departed || "",
+        createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
+      });
+      await ensureCommemorationEntryFromOffering(env, storedOffering || {}, {
+        id: object.id,
+        parishId: metadata.parish_id || "",
+        parishName: metadata.parish_name || "",
+        donorEmail: metadata.donor_email || object.customer_email || object.customer_details?.email || "",
+        donorName: metadata.donor_name || object.customer_name || "",
+        giftType: metadata.gift_type || "recurring",
+        frequency: metadata.frequency || "recurring",
+        amountCents: object.amount_paid || 0,
         namesLiving: metadata.names_living || "",
         namesDeparted: metadata.names_departed || "",
         createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()

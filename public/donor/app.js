@@ -1081,6 +1081,14 @@ function donorDefaultParish() {
   return (window.agapayPublicParishes || []).find((parish) => parish.id === donor.defaultParishId) || donor.defaultParish || null;
 }
 
+function primeCommemorationParishDisplay() {
+  const donor = donorProfile();
+  const parish =
+    donorDefaultParish()
+    || (donor?.defaultParishId ? { id: donor.defaultParishId, name: donor.defaultParishName || donor.defaultParishId } : null);
+  renderCommemorationParish(parish);
+}
+
 function renderCommemorationParish(parish) {
   const display = document.getElementById("commemorationParishDisplay");
   const hidden = document.getElementById("commemorationParishId");
@@ -1093,9 +1101,11 @@ function renderCommemorationParish(parish) {
 }
 
 async function loadDonorCommemorationsPage() {
+  primeCommemorationParishDisplay();
   try {
     const parishData = await donorApi("/api/parishes", { headers: { Accept: "application/json" } });
     window.agapayPublicParishes = parishData.parishes || [];
+    primeCommemorationParishDisplay();
   } catch {}
   try {
     const dashboard = await donorApi("/api/donor/dashboard");
