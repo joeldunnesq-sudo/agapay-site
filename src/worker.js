@@ -1604,6 +1604,7 @@ async function storeCommemorationEntry(env, sourceId, metadata = {}, fallback = 
   const entry = {
     id: sourceId || crypto.randomUUID(),
     parishId,
+    parishName: metadata.parish_name || fallback.parishName || "",
     sourceId: sourceId || "",
     giftType: metadata.gift_type || fallback.giftType || "commemoration",
     frequency: metadata.frequency || fallback.frequency || "once",

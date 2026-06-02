@@ -1025,22 +1025,87 @@ function searchOfferings() {
   renderDonorOfferings();
 }
 
+function commemorationWeekStart(date = new Date()) {
+  const end = new Date(date);
+  const start = new Date(end);
+  start.setDate(start.getDate() - 7);
+  return start;
+}
+
+function isCurrentWeekCommemoration(item, weekStart = commemorationWeekStart(), now = new Date()) {
+  const created = new Date(item?.createdAt || item?.updatedAt || 0);
+  return !Number.isNaN(created.getTime()) && created >= weekStart && created <= now;
+}
+
+function commemorationEntriesForDisplay(entries) {
+  const now = new Date();
+  const weekStart = commemorationWeekStart(now);
+  const year = now.getFullYear();
+  const sorted = [...entries].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+  return {
+    thisWeek: sorted.filter((item) => isCurrentWeekCommemoration(item, weekStart, now)),
+    thisYear: sorted.filter((item) => !isCurrentWeekCommemoration(item, weekStart, now) && new Date(item.createdAt || 0).getFullYear() === year),
+    older: sorted.filter((item) => !isCurrentWeekCommemoration(item, weekStart, now) && new Date(item.createdAt || 0).getFullYear() !== year)
+  };
+}
+
+function commemorationRow(item, tone = "pending") {
+  const living = (item.living || []).join(", ") || "None";
+  const departed = (item.departed || []).join(", ") || "None";
+  const parish = item.parishName
+    || (window.agapayPublicParishes || []).find((entry) => entry.id === item.parishId)?.name
+    || item.parishId
+    || donorProfile()?.defaultParishId
+    || "Parish";
+  return `<div class="list-item"><div class="list-main"><strong>${escapeHtml(item.giftType || "Commemoration")}</strong><span>${escapeHtml(parish)} - ${shortDate(item.createdAt)}</span><span>Living: ${escapeHtml(living)}</span><span>Departed: ${escapeHtml(departed)}</span><span class="status-pill ${tone}">${tone === "success" ? "submitted this week" : "queued for Saturday"}</span></div></div>`;
+}
+
+function commemorationSection(title, entries, tone) {
+  if (!entries.length) return "";
+  return `<div class="section-gap"><div class="form-label" style="margin-bottom:10px;">${escapeHtml(title)}</div>${entries.map((item) => commemorationRow(item, tone)).join("")}</div>`;
+}
+
 function commemorationRows(entries) {
   if (!entries.length) return '<div class="notice">No commemoration submissions have been recorded yet.</div>';
-  return entries.map((item) => {
-    const living = (item.living || []).join(", ") || "None";
-    const departed = (item.departed || []).join(", ") || "None";
-    return `<div class="list-item"><div class="list-main"><strong>${escapeHtml(item.giftType || "Commemoration")}</strong><span>${escapeHtml(item.parishId || "Parish")} - ${shortDate(item.createdAt)}</span><span>Living: ${escapeHtml(living)}</span><span>Departed: ${escapeHtml(departed)}</span><span class="status-pill pending">queued for Saturday</span></div></div>`;
-  }).join("");
+  const grouped = commemorationEntriesForDisplay(entries);
+  return [
+    commemorationSection("Submitted this week", grouped.thisWeek, "success"),
+    commemorationSection("Earlier this year", grouped.thisYear, "pending"),
+    commemorationSection("Older commemorations", grouped.older, "pending")
+  ].join("") || '<div class="notice">No commemoration submissions have been recorded yet.</div>';
+}
+
+function donorDefaultParish() {
+  const donor = donorProfile();
+  if (!donor?.defaultParishId) return null;
+  return (window.agapayPublicParishes || []).find((parish) => parish.id === donor.defaultParishId) || donor.defaultParish || null;
+}
+
+function renderCommemorationParish(parish) {
+  const display = document.getElementById("commemorationParishDisplay");
+  const hidden = document.getElementById("commemorationParishId");
+  if (display) {
+    display.textContent = parish
+      ? [parish.name, [parish.city, parish.state].filter(Boolean).join(", ")].filter(Boolean).join(" - ")
+      : "Choose your parish in Settings before submitting commemorations.";
+  }
+  if (hidden) hidden.value = parish?.id || "";
 }
 
 async function loadDonorCommemorationsPage() {
-  await loadPublicParishes("parish");
   try {
+    const parishData = await donorApi("/api/parishes", { headers: { Accept: "application/json" } });
+    window.agapayPublicParishes = parishData.parishes || [];
+  } catch {}
+  try {
+    const dashboard = await donorApi("/api/donor/dashboard");
+    if (dashboard?.donor) setDonorProfile(dashboard.donor);
+    renderCommemorationParish(dashboard?.parish || donorDefaultParish());
     const data = await donorApi("/api/donor/commemorations");
     const list = document.getElementById("commemorationList");
     if (list) list.innerHTML = commemorationRows(data.entries || []);
   } catch (err) {
+    renderCommemorationParish(donorDefaultParish());
     const list = document.getElementById("commemorationList");
     if (list) list.innerHTML = `<div class="notice">${escapeHtml(err.message)} Sign in from the donor home page first.</div>`;
   }
@@ -1052,26 +1117,43 @@ function linesFromField(id) {
 
 async function submitCommemoration(event) {
   event.preventDefault();
-  const living = linesFromField("living");
-  const departed = linesFromField("departed");
+  const living = linesFromField("commemorationLivingNames");
+  const departed = linesFromField("commemorationDepartedNames");
+  const parishId = document.getElementById("commemorationParishId")?.value || donorProfile()?.defaultParishId || "";
+  const amount = document.getElementById("amount")?.value || "5";
   if (!living.length && !departed.length) {
     setDonorStatus("Add at least one living or departed name.", "error");
     return;
   }
+  if (!parishId) {
+    setDonorStatus("Choose your parish in Settings before submitting commemorations.", "error");
+    return;
+  }
   try {
-    await donorApi("/api/donor/commemorations", {
+    setDonorStatus("Preparing commemoration checkout...");
+    const session = donorSession();
+    const donor = donorProfile();
+    const name = donor.donorName || donor.householdName || session.email.split("@")[0];
+    const [firstName, ...rest] = name.split(/\s+/);
+    const data = await donorApi("/api/create-checkout-session", {
       method: "POST",
       body: JSON.stringify({
-        parishId: document.getElementById("parish")?.value,
-        giftType: document.getElementById("offering")?.value || "commemoration",
+        parishId,
+        giftType: "commemoration",
+        amount,
+        frequency: "once",
+        firstName: firstName || "AGAPAY",
+        lastName: rest.join(" "),
+        email: session.email,
         namesLiving: living.join("\n"),
         namesDeparted: departed.join("\n"),
-        note: document.getElementById("note")?.value || ""
+        inMemoriam: document.getElementById("commemorationIntentionNote")?.value || "",
+        coverFees: document.getElementById("coverFees")?.checked !== false,
+        ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
       })
     });
-    event.target.reset();
-    setDonorStatus("Names added to the parish commemoration queue.", "success");
-    await loadDonorCommemorationsPage();
+    if (data.url) window.location.href = data.url;
+    else setDonorStatus(data.message || "Checkout is not available yet.", "error");
   } catch (err) {
     setDonorStatus(err.message, "error");
   }
