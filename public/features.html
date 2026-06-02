@@ -151,6 +151,9 @@
     .community-card { border: 1px solid var(--line); border-radius: 16px; background: var(--paper); overflow: hidden; box-shadow: 0 12px 28px rgba(6, 21, 34, 0.06); display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); align-items: stretch; }
     .community-art { background-size: cover; background-position: center; filter: sepia(0.12) contrast(1.03); min-height: 320px; }
     .community-art.placeholder { min-height: 320px; }
+    .community-art { background-size: cover; background-position: center; filter: sepia(0.12) contrast(1.03); min-height: 320px; mix-blend-mode: multiply; -webkit-mask-image: radial-gradient(ellipse at center, black 60%, transparent 100%);
+      mask-image: radial-gradient(ellipse at center, black 60%, transparent 100%);
+    }
     .community-body { padding: 1.8rem clamp(1.2rem, 3vw, 2.2rem); }
     .toggle { display: inline-grid; grid-auto-flow: column; gap: 0; border: 1px solid rgba(200, 162, 74, 0.45); border-radius: 999px; padding: 0.25rem; margin-bottom: 1.4rem; background: rgba(255, 253, 248, 0.7); }
     .toggle button { border: none; background: transparent; cursor: pointer; padding: 0.5rem 1.4rem; border-radius: 999px; font-family: var(--sans); font-size: 0.86rem; font-weight: 700; color: var(--stone); letter-spacing: 0.03em; }
