@@ -132,21 +132,25 @@ body.agp-shell-ready {
   position: relative;
 }
 
-.agp-signin-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  min-height: 42px;
-  padding: 0 0.95rem;
-  border-radius: 8px;
-  border: 1px solid rgba(200, 162, 74, 0.35);
-  background: rgba(255, 255, 255, 0.02);
-  color: var(--agp-cream);
-  font-size: 0.84rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+.nav-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 162, 74, 0.7);
+  background: rgba(6, 21, 34, 0.36);
+  display: grid;
+  place-items: center;
   cursor: pointer;
+}
+
+.nav-avatar svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--agp-gold);
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .agp-signin-menu {

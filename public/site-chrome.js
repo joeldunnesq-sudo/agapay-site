@@ -79,7 +79,12 @@
           <div class="agp-actions">
             <a class="agp-give-btn" href="/donor/login">Give</a>
             <div class="agp-signin" data-agp-signin>
-              <button class="agp-signin-btn" type="button" aria-haspopup="true" aria-expanded="false">Sign in &#9662;</button>
+              <button class="nav-avatar" type="button" aria-label="Sign in" aria-haspopup="true" aria-expanded="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="8" r="4"></circle>
+                  <path d="M4 21c1.8-4 4.5-6 8-6s6.2 2 8 6"></path>
+                </svg>
+              </button>
               <div class="agp-signin-menu" role="menu">
                 ${signInItems}
               </div>
@@ -186,7 +191,7 @@
   function bindInteractions() {
     const signIn = document.querySelector("[data-agp-signin]");
     if (signIn) {
-      const btn = signIn.querySelector(".agp-signin-btn");
+      const btn = signIn.querySelector(".nav-avatar");
       if (btn) {
         btn.addEventListener("click", function () {
           const open = signIn.classList.toggle("open");
