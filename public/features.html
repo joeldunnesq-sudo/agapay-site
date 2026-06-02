@@ -45,12 +45,10 @@
     img { max-width: 100%; display: block; }
     svg { display: block; }
 
-    /* candle glow ambiance */
     .candle-glow { position: fixed; width: 500px; height: 500px; background: radial-gradient(circle, rgba(200,162,74,0.05) 0%, rgba(11,33,48,0.02) 40%, transparent 70%); filter: blur(60px); pointer-events: none; z-index: 0; border-radius: 50%; }
     .candle-glow.top-left { top: -150px; left: -150px; }
     .candle-glow.bottom-right { bottom: -150px; right: -150px; }
 
-    /* HEADER / NAV */
     .site-header { position: sticky; top: 0; z-index: 100; background: linear-gradient(90deg, #061522, #0B2130); border-bottom: 1px solid rgba(200, 162, 74, 0.24); padding: 0.95rem clamp(1rem, 2.6vw, 2.6rem); }
     .nav { width: min(1320px, 100%); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
     .brand { display: flex; align-items: center; gap: 0.75rem; color: var(--cream); min-width: max-content; }
@@ -87,10 +85,8 @@
     .drawer-divider { height: 1px; background: rgba(200,162,74,0.2); margin: 0.4rem 0; }
     .drawer-join { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 8px; background: linear-gradient(135deg, #D6AF5B, #B98832); color: #0A1724; font-size: 0.96rem; font-weight: 700; letter-spacing: 0.02em; }
 
-    /* PAGE SHELL */
     .page { width: min(1320px, calc(100% - 2rem)); margin: 0.95rem auto 2rem; border: 1px solid var(--line); background: var(--paper); box-shadow: 0 10px 38px rgba(12, 22, 32, 0.08); overflow: hidden; position: relative; z-index: 1; }
 
-    /* HERO */
     .feat-hero { position: relative; display: grid; grid-template-columns: minmax(320px, 0.78fr) minmax(480px, 1.22fr); align-items: center; gap: 1.5rem; min-height: 480px; padding: 2.8rem 2.6rem; border-bottom: 1px solid var(--line); overflow: hidden; background: radial-gradient(circle at 12% 10%, rgba(200, 162, 74, 0.12), transparent 34%), linear-gradient(180deg, var(--parchment) 0%, var(--parchment-2) 100%); }
     .feat-hero > * { position: relative; z-index: 1; }
     .kicker { display: inline-flex; align-items: center; gap: 0.56rem; color: var(--gold-dark); text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.74rem; font-weight: 800; margin-bottom: 0.9rem; }
@@ -99,11 +95,9 @@
     .hero-copy h2 { color: var(--gold-dark); font-family: var(--serif); font-style: italic; font-weight: 500; font-size: clamp(1.5rem, 2.9vw, 2.05rem); line-height: 1.14; margin-bottom: 1rem; }
     .hero-rule { width: 64px; height: 2px; background: linear-gradient(90deg, var(--gold), transparent); margin: 0 0 1.3rem; }
     .hero-copy p { max-width: 440px; color: var(--ink); font-size: 1rem; line-height: 1.75; margin-bottom: 0.9rem; }
-    .hero-art { align-self: stretch; min-height: 420px; background-image: url("/images/features/features-hero.png"); background-size: contain; background-repeat: no-repeat; background-position: center right; filter: saturate(0) brightness(1.1) contrast(1.2); mix-blend-mode: multiply; -webkit-mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%);
-    mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%); }
+    .hero-art { align-self: stretch; min-height: 420px; background-image: url("/images/features/features-hero.png"); background-size: contain; background-repeat: no-repeat; background-position: center right; filter: saturate(0) brightness(1.1) contrast(1.2); mix-blend-mode: multiply; -webkit-mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%); mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%); }
     .hero-art.placeholder, .ph { background: repeating-linear-gradient(45deg, rgba(166,159,145,0.10) 0 14px, rgba(166,159,145,0.04) 14px 28px); border: 1px dashed rgba(166,159,145,0.5); border-radius: 12px; display: grid; place-items: center; color: var(--muted); font-size: 0.8rem; letter-spacing: 0.04em; text-align: center; padding: 1rem; }
 
-    /* SECTION SCAFFOLD */
     .section { padding: clamp(2.4rem, 5vw, 4.4rem) clamp(1rem, 3vw, 2.6rem); border-bottom: 1px solid var(--line); }
     .section-inner { width: min(1160px, 100%); margin: 0 auto; }
     .section-head { text-align: center; margin-bottom: 2.2rem; }
@@ -111,25 +105,42 @@
     .section-cross { color: var(--gold); font-size: 1.1rem; margin: 0.5rem 0; }
     .section-head p { color: var(--stone); font-size: 1rem; line-height: 1.7; max-width: 640px; margin: 0.4rem auto 0; }
 
-    /* THREE MODES */
     .modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
-    .mode-card { border: 1px solid var(--line); border-radius: 14px; background: var(--paper); overflow: hidden; box-shadow: 0 10px 24px rgba(6, 21, 34, 0.05); display: flex; flex-direction: column; }
-    .mode-art { aspect-ratio: 4 / 3; width: 100%; background-size: cover; background-position: center; filter: sepia(0.12) contrast(1.03); }
-    .mode-art.placeholder { aspect-ratio: 4 / 3; }
-    .mode-body { padding: 1.3rem 1.3rem 1.5rem; }
-    .mode-body h3 { font-family: var(--serif); color: var(--night); font-size: 1.55rem; font-weight: 500; margin-bottom: 0.3rem; }
-    .mode-tag { color: var(--gold-dark); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; margin-bottom: 0.9rem; }
+    .mode-card { border: 1px solid var(--line); border-radius: 14px; background: var(--paper); overflow: hidden; box-shadow: 0 10px 24px rgba(6, 21, 34, 0.05); display: flex; flex-direction: column; border-top: 2px solid var(--gold); }
+    .mode-card-header { padding: 1.6rem 1.3rem 0; display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+    .mode-icon { width: 44px; height: 44px; border-radius: 10px; background: linear-gradient(135deg, rgba(200,162,74,0.15), rgba(200,162,74,0.06)); border: 1px solid rgba(200,162,74,0.25); display: grid; place-items: center; flex-shrink: 0; }
+    .mode-icon svg { width: 22px; height: 22px; stroke: var(--gold-dark); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .mode-icon-label { padding-top: 0.2rem; }
+    .mode-icon-label h3 { font-family: var(--serif); color: var(--night); font-size: 1.55rem; font-weight: 500; line-height: 1.1; margin-bottom: 0.2rem; }
+    .mode-body { padding: 0 1.3rem 1.5rem; flex: 1; }
+    .mode-tag { color: var(--gold-dark); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; margin-bottom: 1rem; text-transform: uppercase; }
     .mode-list { list-style: none; display: grid; gap: 0.55rem; }
     .mode-list li { display: grid; grid-template-columns: 20px 1fr; gap: 0.55rem; align-items: start; color: var(--stone); font-size: 0.9rem; line-height: 1.5; }
     .check { width: 18px; height: 18px; margin-top: 0.15rem; }
     .check svg { width: 18px; height: 18px; stroke: var(--gold-dark); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-    /* PULLQUOTE */
+    /* ── HOW IT WORKS — visual timeline ─────────────────── */
+    .hiw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(200, 162, 74, 0.12); margin-top: 0.5rem; }
+    .hiw-card { background: rgba(6, 21, 34, 0.55); padding: 2rem 1.75rem; position: relative; }
+    .hiw-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, rgba(200,162,74,0.6), transparent); }
+    .hiw-card:nth-child(2)::before { background: linear-gradient(90deg, rgba(200,162,74,0.3), transparent); }
+    .hiw-card:nth-child(3)::before { background: linear-gradient(90deg, rgba(200,162,74,0.3), transparent); }
+    .hiw-card:nth-child(4)::before { background: linear-gradient(90deg, rgba(200,162,74,0.5), transparent); }
+    .hiw-card:nth-child(5)::before { background: linear-gradient(90deg, rgba(200,162,74,0.2), transparent); }
+    .hiw-card:nth-child(6)::before { background: linear-gradient(90deg, rgba(200,162,74,0.4), transparent); }
+    .hiw-card-top { display: flex; align-items: center; gap: 0.9rem; margin-bottom: 0.8rem; }
+    .hiw-num { font-family: var(--serif); font-size: 2.6rem; font-weight: 400; color: var(--gold); opacity: 0.22; line-height: 1; min-width: 2rem; }
+    .hiw-icon { width: 38px; height: 38px; border-radius: 8px; background: rgba(200, 162, 74, 0.1); border: 1px solid rgba(200, 162, 74, 0.22); display: grid; place-items: center; flex-shrink: 0; }
+    .hiw-icon svg { width: 18px; height: 18px; stroke: var(--gold); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; opacity: 0.85; }
+    .hiw-card h3 { font-family: var(--serif); font-size: 1.2rem; color: var(--cream); font-weight: 500; margin-bottom: 0.45rem; line-height: 1.25; }
+    .hiw-card p { font-size: 0.88rem; color: rgba(246, 241, 232, 0.58); line-height: 1.65; }
+    .hiw-card p strong { color: rgba(246, 241, 232, 0.82); font-weight: 600; }
+    @media (max-width: 680px) { .hiw-grid { grid-template-columns: 1fr; } }
+
     .pullquote { border-left: 2px solid var(--gold); padding: 0.75rem 0 0.75rem 1.75rem; max-width: 760px; margin: 2.6rem auto 0; }
     .pullquote p { font-family: var(--serif); font-size: clamp(1.2rem, 2vw, 1.55rem); font-style: italic; color: var(--night); line-height: 1.6; }
     .pullquote cite { display: block; font-size: 0.75rem; color: var(--stone); font-style: normal; margin-top: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; }
 
-    /* LITURGICAL */
     .liturgical { background: linear-gradient(180deg, #FFFDF8, #F5EEE1); }
     .calendar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; }
     .cal-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 1.25rem; }
@@ -137,7 +148,6 @@
     .cal-card h4 { font-family: var(--serif); font-size: 1.25rem; font-weight: 500; color: var(--night); margin-bottom: 0.3rem; }
     .cal-card p { font-size: 0.84rem; color: var(--stone); line-height: 1.6; }
 
-    /* COMMUNITIES */
     .community-card { border: 1px solid var(--line); border-radius: 16px; background: var(--paper); overflow: hidden; box-shadow: 0 12px 28px rgba(6, 21, 34, 0.06); display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); align-items: stretch; }
     .community-art { background-size: cover; background-position: center; filter: sepia(0.12) contrast(1.03); min-height: 320px; }
     .community-art.placeholder { min-height: 320px; }
@@ -151,82 +161,32 @@
     .community-panel .mode-list li { font-size: 0.95rem; }
     .fee-note { margin-top: 1.1rem; padding: 0.85rem 1rem; border-radius: 10px; background: rgba(200, 162, 74, 0.1); border: 1px solid rgba(200, 162, 74, 0.3); color: var(--stone); font-size: 0.85rem; line-height: 1.55; }
 
-    /* SIMPLIFIED SETUP */
-    .setup-flow {
-      max-width: 980px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1rem;
-    }
-    .setup-card {
-      text-align: center;
-      padding: 1.5rem 1rem;
-      border: 1px solid rgba(200, 162, 74, 0.26);
-      border-radius: 14px;
-      background: rgba(255, 253, 248, 0.06);
-      min-height: 176px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-    }
-    .setup-num {
-      width: 38px;
-      height: 38px;
-      margin: 0 auto 0.8rem;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #D6AF5B, #B98832);
-      color: #061522;
-      display: grid;
-      place-items: center;
-      font-family: var(--serif);
-      font-size: 1.15rem;
-      font-weight: 700;
-    }
-    .setup-card h3 {
-      color: var(--cream);
-      font-size: 1rem;
-      margin-bottom: 0.35rem;
-    }
-    .setup-card p {
-      color: rgba(246, 241, 232, 0.72);
-      font-size: 0.88rem;
-      line-height: 1.55;
-      max-width: 170px;
-      margin: 0 auto;
-    }
+    .setup-flow { max-width: 980px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .setup-card { text-align: center; padding: 1.5rem 1rem; border: 1px solid rgba(200, 162, 74, 0.26); border-radius: 14px; background: rgba(255, 253, 248, 0.06); min-height: 176px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+    .setup-num { width: 38px; height: 38px; margin: 0 auto 0.8rem; border-radius: 50%; background: linear-gradient(135deg, #D6AF5B, #B98832); color: #061522; display: grid; place-items: center; font-family: var(--serif); font-size: 1.15rem; font-weight: 700; }
+    .setup-card h3 { color: var(--cream); font-size: 1rem; margin-bottom: 0.35rem; }
+    .setup-card p { color: rgba(246, 241, 232, 0.72); font-size: 0.88rem; line-height: 1.55; max-width: 170px; margin: 0 auto; }
     .steps-cta { text-align: center; margin-top: 1.8rem; }
     .setup-link { display: inline-flex; align-items: center; gap: 0.5rem; border: 1px solid rgba(200, 162, 74, 0.5); border-radius: 8px; padding: 0.7rem 1.1rem; color: var(--gold-dark); font-size: 0.84rem; font-weight: 700; letter-spacing: 0.04em; }
     .setup-link svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-    @media (max-width: 760px) {
-      .setup-flow { grid-template-columns: 1fr 1fr; }
-    }
-    @media (max-width: 480px) {
-      .setup-flow { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 760px) { .setup-flow { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 480px) { .setup-flow { grid-template-columns: 1fr; } }
 
-    /* navy band wrapper for the how-it-works section */
     .howitworks--navy { position: relative; background: linear-gradient(90deg, #071724, #0C2739); border-bottom: 1px solid rgba(200, 162, 74, 0.28); overflow: hidden; }
     .howitworks--navy::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 18%, rgba(200, 162, 74, 0.12), transparent 52%); pointer-events: none; }
     .howitworks--navy .section-inner { position: relative; z-index: 1; }
     .howitworks--navy .section-head h2 { color: var(--cream); }
     .howitworks--navy .section-head p { color: rgba(246, 241, 232, 0.78); }
-    .howitworks--navy .step { border-bottom-color: rgba(200, 162, 74, 0.18); }
-    .howitworks--navy .step h3 { color: var(--cream); }
-    .howitworks--navy .step p { color: rgba(246, 241, 232, 0.72); }
     .howitworks--navy .setup-link { border-color: rgba(200, 162, 74, 0.6); color: #FFE7B6; background: rgba(6, 21, 34, 0.34); }
     .howitworks--navy .setup-card h3 { color: var(--cream); }
     .howitworks--navy .setup-card p { color: rgba(246, 241, 232, 0.72); }
 
-    /* CLOSING CTA */
     .closing-cta { display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: center; width: min(1160px, 100%); margin: 0 auto; border: 1px solid rgba(200, 162, 74, 0.36); border-radius: 14px; background: linear-gradient(90deg, rgba(255,255,255,0.86), rgba(255,251,244,0.94)), radial-gradient(circle at 5% 20%, rgba(200,162,74,0.12), transparent 34%); padding: clamp(1.4rem, 3vw, 2rem); }
     .closing-cta h2 { font-family: var(--serif); color: var(--night); font-size: clamp(1.7rem, 3.6vw, 2.5rem); font-weight: 500; line-height: 1.08; margin-bottom: 0.4rem; }
     .closing-cta p { color: var(--stone); line-height: 1.6; max-width: 520px; }
     .btn-primary { min-height: 52px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 0 1.6rem; font-weight: 800; font-size: 0.9rem; letter-spacing: 0.05em; text-transform: uppercase; background: linear-gradient(135deg, #D6AF5B, #B98832); color: #0A1724; white-space: nowrap; }
     .btn-primary svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 
-    /* REVEAL */
     .reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.6s ease, transform 0.6s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
     .reveal-delay-1 { transition-delay: 0.08s; }
@@ -234,7 +194,6 @@
     .reveal-delay-3 { transition-delay: 0.24s; }
     @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
 
-    /* FOOTER */
     .site-footer { background: linear-gradient(90deg, #061522, #0B2130); color: var(--cream); padding: 2.4rem clamp(1rem, 2.6vw, 2.6rem) 1.2rem; position: relative; z-index: 1; }
     .footer-inner { width: min(1320px, 100%); margin: 0 auto; }
     .footer-grid { display: grid; grid-template-columns: minmax(240px, 1.2fr) repeat(4, minmax(120px, 0.5fr)); gap: 2rem; padding-bottom: 1.8rem; border-bottom: 1px solid rgba(200, 162, 74, 0.18); }
@@ -248,7 +207,6 @@
     .footer-col a { display: block; color: rgba(246, 241, 232, 0.72); font-size: 0.9rem; margin-bottom: 0.52rem; }
     .footer-bottom { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-top: 1.2rem; color: rgba(246, 241, 232, 0.58); font-size: 0.82rem; }
 
-    /* RESPONSIVE */
     @media (max-width: 980px) {
       .nav-links, .nav-actions { display: none; }
       .mobile-menu-btn { display: flex; }
@@ -268,6 +226,99 @@
       .footer-grid { grid-template-columns: 1fr; }
       .footer-bottom { display: grid; }
     }
+
+    /* ── NEW: TRUST / MONEY MOVES SECTION ─────────────── */
+    .trust-section { background: linear-gradient(90deg, #071724, #0C2739); border-bottom: 1px solid rgba(200, 162, 74, 0.28); position: relative; overflow: hidden; }
+    .trust-section::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 80% 50%, rgba(200, 162, 74, 0.08), transparent 55%); pointer-events: none; }
+    .trust-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; position: relative; z-index: 1; }
+    .trust-main { padding: 0 3rem 0 0; border-right: 1px solid rgba(200, 162, 74, 0.15); }
+    .trust-eyebrow { font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); opacity: 0.75; margin-bottom: 0.9rem; font-weight: 700; }
+    .trust-main h2 { font-family: var(--serif); font-size: clamp(1.8rem, 3.5vw, 2.8rem); font-weight: 400; color: var(--cream); line-height: 1.15; margin-bottom: 1rem; }
+    .trust-main h2 em { font-style: italic; color: #D6AF5B; }
+    .trust-main p { color: rgba(246, 241, 232, 0.65); font-size: 0.97rem; line-height: 1.72; margin-bottom: 0.85rem; }
+    .trust-main strong { color: rgba(246, 241, 232, 0.9); font-weight: 600; }
+    .trust-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(200, 162, 74, 0.1); border: 1px solid rgba(200, 162, 74, 0.28); padding: 0.38rem 0.85rem; font-size: 0.8rem; color: #D6AF5B; letter-spacing: 0.04em; margin-top: 0.25rem; font-weight: 600; }
+    .trust-badge::before { content: "✓"; color: var(--gold); }
+    .trust-compare { padding: 0 0 0 3rem; display: flex; flex-direction: column; justify-content: center; gap: 1.1rem; }
+    .trust-compare-label { font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(246, 241, 232, 0.28); font-weight: 700; margin-bottom: 0.1rem; }
+
+    /* flow cards */
+    .flow-card { border-radius: 12px; padding: 1.25rem 1.4rem 1.1rem; position: relative; overflow: hidden; }
+    .flow-card.flow-bad { background: rgba(180, 50, 50, 0.08); border: 1px solid rgba(200, 80, 80, 0.18); }
+    .flow-card.flow-good { background: rgba(200, 162, 74, 0.07); border: 1px solid rgba(200, 162, 74, 0.28); }
+    .flow-card.flow-good::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 90% 0%, rgba(200,162,74,0.1), transparent 65%); pointer-events: none; }
+    .flow-card-label { font-size: 0.64rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; margin-bottom: 0.9rem; display: flex; align-items: center; gap: 0.5rem; }
+    .flow-card-label::after { content: ""; flex: 1; height: 1px; opacity: 0.3; }
+    .flow-bad .flow-card-label { color: rgba(255, 130, 130, 0.7); }
+    .flow-bad .flow-card-label::after { background: rgba(255, 130, 130, 0.4); }
+    .flow-good .flow-card-label { color: var(--gold); }
+    .flow-good .flow-card-label::after { background: var(--gold); }
+
+    /* node row */
+    .flow-nodes { display: flex; align-items: center; gap: 0; margin-bottom: 0.8rem; }
+    .fnode { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; flex-shrink: 0; }
+    .fnode-pill { padding: 0.32rem 0.85rem; border-radius: 999px; font-family: var(--serif); font-size: 0.92rem; font-weight: 500; white-space: nowrap; }
+    .flow-bad .fnode-pill { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: rgba(246,241,232,0.65); }
+    .flow-bad .fnode-pill.danger { background: rgba(200,50,50,0.14); border-color: rgba(220,80,80,0.35); color: rgba(255,160,160,0.85); }
+    .flow-good .fnode-pill { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: rgba(246,241,232,0.65); }
+    .flow-good .fnode-pill.hero { background: rgba(200,162,74,0.18); border-color: rgba(200,162,74,0.55); color: #E8C675; font-weight: 600; }
+    .fnode-sub { font-size: 0.62rem; color: rgba(246,241,232,0.3); letter-spacing: 0.04em; }
+    .flow-bad .fnode-pill.danger + .fnode-sub { color: rgba(255,130,130,0.45); }
+
+    /* connector lines between nodes */
+    .fconn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.2rem; padding: 0 0.3rem; padding-bottom: 1.1rem; /* aligns with pill center */ }
+    .fconn-line { height: 1px; width: 100%; position: relative; }
+    .flow-bad .fconn-line { background: rgba(200,80,80,0.25); }
+    .flow-good .fconn-line { background: linear-gradient(90deg, rgba(200,162,74,0.2), rgba(200,162,74,0.6), rgba(200,162,74,0.2)); }
+    .fconn-arrow { font-size: 0.6rem; margin-top: -2px; }
+    .flow-bad .fconn-arrow { color: rgba(200,80,80,0.4); }
+    .flow-good .fconn-arrow { color: rgba(200,162,74,0.7); }
+    .fconn-label { font-size: 0.6rem; color: rgba(246,241,232,0.25); letter-spacing: 0.04em; margin-top: 0.15rem; white-space: nowrap; }
+    .flow-bad .fconn-label { color: rgba(255,130,130,0.35); }
+    .flow-good .fconn-label { color: rgba(200,162,74,0.5); }
+
+    /* hold warning banner */
+    .flow-hold-bar { display: flex; align-items: center; gap: 0.55rem; background: rgba(180,50,50,0.1); border: 1px solid rgba(200,70,70,0.2); border-radius: 6px; padding: 0.45rem 0.75rem; font-size: 0.78rem; color: rgba(255,140,140,0.7); }
+    .flow-hold-bar svg { width: 13px; height: 13px; stroke: rgba(255,130,130,0.6); fill: none; stroke-width: 2; stroke-linecap: round; flex-shrink: 0; }
+
+    /* instant tag */
+    .flow-instant-bar { display: flex; align-items: center; gap: 0.55rem; background: rgba(200,162,74,0.08); border: 1px solid rgba(200,162,74,0.22); border-radius: 6px; padding: 0.45rem 0.75rem; font-size: 0.78rem; color: rgba(200,162,74,0.75); }
+    .flow-instant-bar svg { width: 13px; height: 13px; stroke: rgba(200,162,74,0.7); fill: none; stroke-width: 2; stroke-linecap: round; flex-shrink: 0; }
+
+    /* trust pills row */
+    .trust-pills { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .trust-pill { display: inline-flex; align-items: center; gap: 0.38rem; background: rgba(200, 162, 74, 0.08); border: 1px solid rgba(200, 162, 74, 0.22); border-radius: 999px; padding: 0.3rem 0.75rem; font-size: 0.76rem; color: rgba(200,162,74,0.8); font-weight: 600; letter-spacing: 0.02em; }
+    .trust-pill svg { width: 11px; height: 11px; stroke: var(--gold); fill: none; stroke-width: 2.2; stroke-linecap: round; flex-shrink: 0; }
+
+    /* stripe row */
+    .trust-security-row { display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap; }
+    .stripe-badge-link { display: inline-block; line-height: 0; opacity: 0.65; transition: opacity 0.2s; }
+    .stripe-badge-link:hover { opacity: 1; }
+    .stripe-badge-img { height: 24px; width: auto; display: block; }
+    .trust-divider { width: 1px; height: 18px; background: rgba(200, 162, 74, 0.2); }
+    .pci-label { font-size: 0.72rem; color: rgba(246, 241, 232, 0.28); font-style: italic; }
+
+    .trust-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(200, 162, 74, 0.1); border: 1px solid rgba(200, 162, 74, 0.28); padding: 0.38rem 0.85rem; font-size: 0.8rem; color: #D6AF5B; letter-spacing: 0.04em; margin-top: 0.25rem; font-weight: 600; }
+    .trust-badge::before { content: "✓"; color: var(--gold); }
+
+    @media (max-width: 780px) {
+      .trust-grid { grid-template-columns: 1fr; gap: 2rem; }
+      .trust-main { padding: 0; border-right: none; padding-bottom: 2rem; border-bottom: 1px solid rgba(200, 162, 74, 0.15); }
+      .trust-compare { padding: 0; }
+    }
+
+    /* ── NEW: QUOTE BAND ───────────────────────────────── */
+    .quote-band { background: linear-gradient(90deg, #071724, #0C2739); border-bottom: 1px solid rgba(200, 162, 74, 0.28); position: relative; overflow: hidden; }
+    .quote-band::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 100%, rgba(200, 162, 74, 0.09) 0%, transparent 65%); pointer-events: none; }
+    .quote-band-inner { position: relative; z-index: 1; text-align: center; max-width: 760px; margin: 0 auto; }
+    .quote-band-inner blockquote { font-family: var(--serif); font-size: clamp(1.3rem, 2.8vw, 1.9rem); font-style: italic; color: rgba(246, 241, 232, 0.82); font-weight: 400; line-height: 1.45; margin-bottom: 1rem; }
+    .quote-band-inner cite { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); opacity: 0.6; font-style: normal; }
+    .quote-cross { color: var(--gold); opacity: 0.45; font-size: 1rem; margin-bottom: 1rem; letter-spacing: 0.3em; }
+
+    /* ── NEW: LITURGICAL (styled to match) ─────────────── */
+    /* uses existing .liturgical + .calendar-grid + .cal-card, no changes needed */
+
+    /* ── NEW: HOW IT WORKS — visual 2×3 grid ────────────── */
   </style>
 </head>
 <body>
@@ -335,7 +386,7 @@
 
   <main class="page">
 
-    <!-- HERO -->
+    <!-- HERO (unchanged) -->
     <section class="feat-hero">
       <div class="hero-copy">
         <div class="kicker"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 21h8"/></svg> The Platform</div>
@@ -348,7 +399,100 @@
       <div class="hero-art" aria-label="Features hero artwork" role="img"></div>
     </section>
 
-    <!-- THREE MODES -->
+    <!-- HOW YOUR MONEY ACTUALLY MOVES (new) -->
+    <section class="section trust-section">
+      <div class="section-inner">
+        <div class="trust-grid">
+
+          <div class="trust-main reveal">
+            <div class="trust-eyebrow">How your money actually moves</div>
+            <h2>Donations go <em>directly</em><br>to your church.</h2>
+            <p>Most giving platforms collect your donation into their own account first — then disburse it to the church on their schedule. For a window of time, <strong>they hold your money.</strong> That introduces custody risk, disbursement delays, and regulatory complexity none of us want.</p>
+            <p>AGAPAY uses Stripe Connect's direct charge architecture — meaning your gift flows straight to the parish's or monastery's own Stripe account at the moment you give. AGAPAY collects its small platform fee at the same instant, as a pass-through. <strong>We never touch your principal.</strong></p>
+            <p>This isn't a technical detail. It's a commitment: your stewardship belongs to the Church, not to a platform.</p>
+            <div class="trust-badge">AGAPAY is not a money transmitter</div>
+          </div>
+
+          <div class="trust-compare reveal reveal-delay-1">
+            <div class="trust-compare-label">The difference, visualized</div>
+
+            <!-- MOST PLATFORMS -->
+            <div class="flow-card flow-bad">
+              <div class="flow-card-label">Most giving platforms</div>
+              <div class="flow-nodes">
+                <div class="fnode">
+                  <div class="fnode-pill">Donor</div>
+                  <div class="fnode-sub">gives</div>
+                </div>
+                <div class="fconn">
+                  <div class="fconn-line"></div>
+                  <div class="fconn-arrow">▶</div>
+                </div>
+                <div class="fnode">
+                  <div class="fnode-pill danger">Platform holds</div>
+                  <div class="fnode-sub">24 – 72 hrs</div>
+                </div>
+                <div class="fconn">
+                  <div class="fconn-line"></div>
+                  <div class="fconn-arrow">▶</div>
+                  <div class="fconn-label">later</div>
+                </div>
+                <div class="fnode">
+                  <div class="fnode-pill">Church</div>
+                  <div class="fnode-sub">receives</div>
+                </div>
+              </div>
+              <div class="flow-hold-bar">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Your money sits in someone else's account
+              </div>
+            </div>
+
+            <!-- AGAPAY -->
+            <div class="flow-card flow-good">
+              <div class="flow-card-label">AGAPAY</div>
+              <div class="flow-nodes">
+                <div class="fnode">
+                  <div class="fnode-pill">Donor</div>
+                  <div class="fnode-sub">gives</div>
+                </div>
+                <div class="fconn">
+                  <div class="fconn-line"></div>
+                  <div class="fconn-arrow">▶</div>
+                  <div class="fconn-label">instantly</div>
+                </div>
+                <div class="fnode">
+                  <div class="fnode-pill hero">Church</div>
+                  <div class="fnode-sub">receives</div>
+                </div>
+              </div>
+              <div class="flow-instant-bar">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                Direct to the Church's own Stripe account — no middleman
+              </div>
+            </div>
+
+            <!-- TRUST PILLS -->
+            <div class="trust-pills">
+              <span class="trust-pill"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>No custody risk</span>
+              <span class="trust-pill"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>No disbursement delays</span>
+              <span class="trust-pill"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>No platform-held float</span>
+            </div>
+
+            <div class="trust-security-row">
+              <a href="https://stripe.com" target="_blank" rel="noopener" class="stripe-badge-link" title="Payments secured by Stripe">
+                <img src="https://images.stripeassets.com/fzn2n1nzq965/4M6d6BSWzlgsrJx8rdZb0I/733f37ef69b5ca1d3d33e127184f4ce4/Powered_by_Stripe.svg" alt="Powered by Stripe" class="stripe-badge-img" />
+              </a>
+              <div class="trust-divider"></div>
+              <span class="pci-label">PCI-DSS Level 1</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- THREE GIVING MODES (new cards, same structure your file uses) -->
     <section class="section">
       <div class="section-inner">
         <div class="section-head">
@@ -359,24 +503,36 @@
         <div class="modes">
 
           <article class="mode-card reveal">
-            <div class="mode-art placeholder" role="img" aria-label="Illustration of a stewardship ledger">Stewardship illustration<br>/images/features/mode-stewardship.png</div>
+            <div class="mode-card-header">
+              <div class="mode-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              </div>
+              <div class="mode-icon-label">
+                <h3>Regular Stewardship</h3>
+              </div>
+            </div>
             <div class="mode-body">
-              <h3>Regular Stewardship</h3>
               <div class="mode-tag">Faithful. Recurring. Foundational.</div>
               <ul class="mode-list">
                 <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Weekly and monthly recurring pledges</li>
                 <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Annual stewardship campaigns</li>
                 <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Liturgical calendar timing &mdash; Great Lent, Pascha, Nativity</li>
-                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Giving statements for tax purposes</li>
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Automatic giving statements for tax purposes</li>
                 <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Parishioner giving history and pledge tracking</li>
               </ul>
             </div>
           </article>
 
           <article class="mode-card reveal reveal-delay-1">
-            <div class="mode-art placeholder" role="img" aria-label="Illustration of designated funds plans">Designated Funds illustration<br>/images/features/mode-funds.png</div>
+            <div class="mode-card-header">
+              <div class="mode-icon">
+                <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+              </div>
+              <div class="mode-icon-label">
+                <h3>Designated Funds</h3>
+              </div>
+            </div>
             <div class="mode-body">
-              <h3>Designated Funds</h3>
               <div class="mode-tag">Purposeful. Transparent. Permanent.</div>
               <ul class="mode-list">
                 <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Building and renovation funds</li>
@@ -389,9 +545,15 @@
           </article>
 
           <article class="mode-card reveal reveal-delay-2">
-            <div class="mode-art placeholder" role="img" aria-label="Illustration of a relief appeal">Campaigns illustration<br>/images/features/mode-campaigns.png</div>
+            <div class="mode-card-header">
+              <div class="mode-icon">
+                <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <div class="mode-icon-label">
+                <h3>Campaign Giving</h3>
+              </div>
+            </div>
             <div class="mode-body">
-              <h3>Campaign Giving</h3>
               <div class="mode-tag">Urgent. Time-bound. Verified.</div>
               <ul class="mode-list">
                 <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Disaster and emergency relief appeals</li>
@@ -405,14 +567,19 @@
 
         </div>
 
-        <div class="pullquote reveal">
-          <p>"The Church does not give because she is asked. She gives because she loves. AGAPAY is built around that truth."</p>
-          <cite>AGAPAY founding principle</cite>
+        <!-- QUOTE in navy blue band -->
+        <div class="quote-band section reveal" style="margin: 2.6rem -2.6rem -4.4rem; padding: clamp(2.4rem,5vw,3.5rem) clamp(1rem,3vw,2.6rem);">
+          <div class="quote-band-inner">
+            <div class="quote-cross">&#10013; &nbsp; &#10013; &nbsp; &#10013;</div>
+            <blockquote>"The Church does not give because she is asked. She gives because she loves. AGAPAY is built around that truth."</blockquote>
+            <cite>AGAPAY founding principle</cite>
+          </div>
         </div>
+
       </div>
     </section>
 
-    <!-- LITURGICAL -->
+    <!-- LITURGICAL CALENDAR -->
     <section class="section liturgical">
       <div class="section-inner">
         <div class="section-head">
@@ -428,12 +595,12 @@
           <div class="cal-card reveal"><div class="cal-season">Soul Saturdays</div><h4>Panikhida memorials</h4><p>Flagged throughout the year. Memorial donations routed to the priest's queue.</p></div>
           <div class="cal-card reveal reveal-delay-1"><div class="cal-season">Dormition Fast</div><h4>Dormition of the Theotokos</h4><p>Aug 15 / 28 &mdash; elevated priority for Theotokos parishes.</p></div>
           <div class="cal-card reveal reveal-delay-2"><div class="cal-season">Apostles' Fast</div><h4>Ss. Peter &amp; Paul</h4><p>June 29 / July 12 &mdash; configurable per parish patron.</p></div>
-          <div class="cal-card reveal reveal-delay-3"><div class="cal-season">Your feast</div><h4>Patronal feast day</h4><p>Set your own patron saint. AGAPAY builds the campaign around it.</p></div>
+          <div class="cal-card reveal reveal-delay-3" style="background:linear-gradient(135deg,#FDF6E8,#F5EEE1); border-color:rgba(200,162,74,0.4);"><div class="cal-season">Your feast</div><h4>Patronal feast day</h4><p>Set your own patron saint. AGAPAY builds the campaign around it.</p></div>
         </div>
       </div>
     </section>
 
-    <!-- COMMUNITIES -->
+    <!-- COMMUNITIES (your original, unchanged) -->
     <section class="section">
       <div class="section-inner">
         <div class="section-head">
@@ -478,39 +645,83 @@
       </div>
     </section>
 
-    <!-- HOW IT WORKS / SIMPLIFIED SETUP -->
+    <!-- HOW IT WORKS (new 6-step version inside navy band) -->
     <section class="section howitworks--navy">
       <div class="section-inner">
         <div class="section-head">
-          <h2 class="reveal">Setup Takes Less Than An Hour</h2>
-          <div class="section-cross">&#10013;</div>
-          <p class="reveal reveal-delay-1">AGAPAY is designed for parish councils, not software teams. If you can send an email, you can launch AGAPAY.</p>
+          <h2 class="reveal">From registration to first offering<br>in under an hour.</h2>
+          <div class="section-cross" style="color:var(--gold);">&#10013;</div>
+          <p class="reveal reveal-delay-1">Designed for parish councils, not software teams. If you can send an email, you can set up AGAPAY.</p>
         </div>
 
-        <div class="setup-flow">
-          <div class="setup-card reveal">
-            <div class="setup-num">1</div>
-            <h3>Register</h3>
-            <p>Apply for parish or monastery activation.</p>
+        <div class="hiw-grid">
+
+          <div class="hiw-card reveal">
+            <div class="hiw-card-top">
+              <div class="hiw-num">1</div>
+              <div class="hiw-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 21h8"/></svg>
+              </div>
+            </div>
+            <h3>Register with AGAPAY</h3>
+            <p>A priest or parish council administrator submits a registration request. We verify <strong>canonical standing</strong> before activation — ensuring only legitimate Orthodox communities use the platform.</p>
           </div>
 
-          <div class="setup-card reveal reveal-delay-1">
-            <div class="setup-num">2</div>
-            <h3>Configure</h3>
-            <p>Set up your calendar, feast days, and offerings.</p>
+          <div class="hiw-card reveal reveal-delay-1">
+            <div class="hiw-card-top">
+              <div class="hiw-num">2</div>
+              <div class="hiw-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="M4.22 4.22l2.12 2.12"/><path d="M17.66 17.66l2.12 2.12"/><path d="M2 12h3"/><path d="M19 12h3"/><path d="M4.22 19.78l2.12-2.12"/><path d="M17.66 6.34l2.12-2.12"/></svg>
+              </div>
+            </div>
+            <h3>Configure your parish profile</h3>
+            <p>Set your jurisdiction, calendar (Julian or Gregorian), patronal feast, and offering types. <strong>ROCOR, GOA, Antiochian</strong> — every jurisdiction and language supported.</p>
           </div>
 
-          <div class="setup-card reveal reveal-delay-2">
-            <div class="setup-num">3</div>
-            <h3>Share</h3>
-            <p>Send your dedicated giving link to the faithful.</p>
+          <div class="hiw-card reveal reveal-delay-2">
+            <div class="hiw-card-top">
+              <div class="hiw-num">3</div>
+              <div class="hiw-icon">
+                <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+              </div>
+            </div>
+            <h3>Connect your Stripe account</h3>
+            <p>Your parish connects its own Stripe account — or creates one in minutes. From this moment, <strong>all donations flow directly to you</strong>. AGAPAY never holds your funds.</p>
           </div>
 
-          <div class="setup-card reveal reveal-delay-3">
-            <div class="setup-num">4</div>
-            <h3>Receive</h3>
-            <p>Stewardship, memorials, candles, funds, and campaigns flow in one place.</p>
+          <div class="hiw-card reveal reveal-delay-3">
+            <div class="hiw-card-top">
+              <div class="hiw-num">4</div>
+              <div class="hiw-icon">
+                <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              </div>
+            </div>
+            <h3>Share with your parishioners</h3>
+            <p>Every parish receives a clean, dedicated giving page. Share it in your <strong>bulletin, from the ambo, or via email</strong>. No app download required for donors.</p>
           </div>
+
+          <div class="hiw-card reveal">
+            <div class="hiw-card-top">
+              <div class="hiw-num">5</div>
+              <div class="hiw-icon">
+                <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+            </div>
+            <h3>Names go to the priest automatically</h3>
+            <p>Memorial and candle offerings are formatted and sent directly to the <strong>priest's commemoration queue</strong> — ready for the proskomedia. Nothing is lost, nothing overlooked.</p>
+          </div>
+
+          <div class="hiw-card reveal reveal-delay-1">
+            <div class="hiw-card-top">
+              <div class="hiw-num">6</div>
+              <div class="hiw-icon">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              </div>
+            </div>
+            <h3>Treasurer sees everything, clearly</h3>
+            <p>Every offering is categorized, dated, and attributed. <strong>Exportable reports, annual giving statements</strong> — generated automatically at year end. Nothing to reconcile manually.</p>
+          </div>
+
         </div>
 
         <div class="steps-cta">
@@ -521,7 +732,7 @@
       </div>
     </section>
 
-    <!-- CLOSING CTA -->
+    <!-- CLOSING CTA (unchanged) -->
     <section class="section" style="border-bottom:none;">
       <div class="closing-cta reveal">
         <div>
@@ -546,6 +757,11 @@
             <span class="fl-name"><strong>AGAPAY</strong><span class="fl-tag">Love how you give</span></span>
           </div>
           <p>Building the financial home of the Orthodox world.</p>
+          <div style="margin-top:1rem;">
+            <a href="https://stripe.com" target="_blank" rel="noopener" class="stripe-badge-link" title="Payments secured by Stripe" style="opacity:0.45;">
+              <img src="https://images.stripeassets.com/fzn2n1nzq965/4M6d6BSWzlgsrJx8rdZb0I/733f37ef69b5ca1d3d33e127184f4ce4/Powered_by_Stripe.svg" alt="Powered by Stripe" class="stripe-badge-img" />
+            </a>
+          </div>
         </div>
         <nav class="footer-col" aria-label="Platform">
           <h4>Platform</h4>
@@ -574,7 +790,7 @@
       </div>
       <div class="footer-bottom">
         <span>&copy; 2026 AGAPAY. All rights reserved.</span>
-        <span>Built for Orthodox communities.</span>
+        <span>Donations flow directly to the Church &mdash; always.</span>
       </div>
     </div>
   </footer>
@@ -614,7 +830,6 @@
     }
     window.switchCommunity = switchCommunity;
 
-    // scroll reveal
     const io = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) { entry.target.classList.add("visible"); io.unobserve(entry.target); }
