@@ -216,6 +216,7 @@
       place-items: center;
       font-size: 1.2rem;
       line-height: 1;
+      cursor: pointer;
     }
     .drawer-scroll {
       overflow-y: auto;
@@ -351,6 +352,7 @@
     }
     .btn-primary svg, .btn-secondary svg { width: 17px; height: 17px; stroke-width: 1.8; }
     .btn-primary:hover, .btn-secondary:hover { transform: translateY(-1px); }
+
     .hero-art {
       position: absolute;
       right: -2%;
@@ -359,14 +361,34 @@
       width: min(960px, 68vw);
       opacity: 0.94;
       z-index: 0;
+      mix-blend-mode: multiply;
+      -webkit-mask-image: radial-gradient(ellipse 80% 80% at 60% 50%, black 40%, transparent 100%);
+      mask-image: radial-gradient(ellipse 80% 80% at 60% 50%, black 40%, transparent 100%);
     }
     .hero-art img {
       width: 100%;
       height: 100%;
       object-fit: contain;
       object-position: bottom right;
-      filter: sepia(0.07) saturate(0.98) contrast(1.04);
+      filter: saturate(0) sepia(0.12) contrast(1.1) brightness(1.05);
     }
+
+    /* ── HOVER EFFECTS ── */
+    .help-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+    .help-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 16px 36px rgba(200, 162, 74, 0.12);
+      border-color: rgba(200, 162, 74, 0.45);
+    }
+    
+    /* ── SCROLL REVEALS ── */
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.65s ease, transform 0.65s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
 
     .section {
       padding: clamp(2.2rem, 4.5vw, 4.4rem) clamp(1rem, 3vw, 2.3rem);
@@ -876,7 +898,7 @@
 
   <main class="page">
     <section class="contact-hero">
-      <div class="hero-copy">
+      <div class="hero-copy reveal">
         <div class="eyebrow"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M8 6h8"/><path d="M7 10h10"/></svg>Contact AGAPAY</div>
         <h1>Questions? <span>Let's talk.</span></h1>
         <p>Whether you're a parish priest, treasurer, monastery, ministry leader, or business owner, we'd love to hear from you.</p>
@@ -899,24 +921,24 @@
 
     <section class="section">
       <div class="section-inner">
-        <div class="section-title">
+        <div class="section-title reveal">
           <h2>How Can We Help?</h2>
           <div class="cross">+</div>
         </div>
         <div class="help-grid">
-          <article class="help-card">
+          <article class="help-card reveal">
             <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M5 20h14"/><path d="M7 20V9l5-5 5 5v11"/><path d="M10 20v-6h4v6"/><path d="M12 2v5"/><path d="M9.5 4.5h5"/></svg></div>
             <h3>Register a Parish</h3>
             <p>Questions about onboarding your parish or monastery.</p>
             <a class="learn-link" href="/register">Learn more -></a>
           </article>
-          <article class="help-card">
+          <article class="help-card reveal reveal-delay-1">
             <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 13v-2a8 8 0 0 1 16 0v2"/><path d="M18 19a4 4 0 0 1-4 4h-2"/><path d="M4 13h3v6H4z"/><path d="M17 13h3v6h-3z"/></svg></div>
             <h3>Platform Support</h3>
             <p>Need help with giving, donations, campaigns, or accounts.</p>
             <a class="learn-link" href="mailto:support@agapay.app">Learn more -></a>
           </article>
-          <article class="help-card">
+          <article class="help-card reveal reveal-delay-2">
             <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M8 12l2.5 2.5a3 3 0 0 0 4.2 0L22 7"/><path d="M2 7l7.3 7.5"/><path d="M7 7h4l2 2h4"/><path d="M2 7l4-4 5 5"/><path d="M22 7l-4-4-4 4"/></svg></div>
             <h3>Partnership Inquiry</h3>
             <p>Schools, ministries, dioceses, businesses, and organizations.</p>
@@ -927,7 +949,7 @@
     </section>
 
     <section class="section">
-      <div class="section-inner direct-grid">
+      <div class="section-inner direct-grid reveal">
         <div>
           <div class="eyebrow"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg>Reach Us Directly</div>
           <div class="direct-list">
@@ -955,7 +977,7 @@
     </section>
 
     <section class="section" id="message">
-      <div class="section-inner">
+      <div class="section-inner reveal">
         <div class="section-title">
           <h2>Send a Message</h2>
           <div class="cross">+</div>
@@ -999,7 +1021,7 @@
     </section>
 
     <section class="section">
-      <div class="section-inner faq-layout">
+      <div class="section-inner faq-layout reveal">
         <div>
           <div class="eyebrow"><svg viewBox="0 0 24 24"><path d="M9.09 9a3 3 0 1 1 5.82 1c0 2-3 2-3 4"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>Frequently Asked Questions</div>
           <div class="faq-list">
@@ -1026,7 +1048,7 @@
     </section>
 
     <section class="section">
-      <div class="section-inner person-card">
+      <div class="section-inner person-card reveal">
         <figure class="person-photo">
           <img src="/joel.jpg" alt="Joel Dunn" />
         </figure>
@@ -1044,7 +1066,7 @@
     </section>
 
     <section class="section">
-      <div class="section-inner cta-band">
+      <div class="section-inner cta-band reveal">
         <div>
           <h2>Ready to bring AGAPAY<br />to your community?</h2>
           <p>Founding parishes receive preferred onboarding and direct founder support.</p>
@@ -1126,6 +1148,18 @@
       const status = document.getElementById("formStatus");
       if (status) status.classList.add("visible");
     }
+
+    // Intersection Observer for scroll animations
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) { 
+          entry.target.classList.add("visible"); 
+          io.unobserve(entry.target); 
+        }
+      });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.05 });
+    
+    document.querySelectorAll(".reveal").forEach(el => io.observe(el));
   </script>
 </body>
 </html>
