@@ -4920,6 +4920,208 @@ async function listYtdStripeCharges(env, stripeAccountId) {
   return { ok: true, body: { data: charges } };
 }
 
+async function listRecentStripePayouts(env, stripeAccountId, limit = 10) {
+  const payouts = [];
+  let startingAfter = "";
+  let pages = 0;
+
+  do {
+    const params = new URLSearchParams({
+      limit: String(Math.min(100, Math.max(1, limit - payouts.length)))
+    });
+    if (startingAfter) params.set("starting_after", startingAfter);
+
+    const result = await stripeGetConnectedRequest(env, `/v1/payouts?${params.toString()}`, stripeAccountId);
+    if (!result.ok) return result;
+
+    const data = Array.isArray(result.body.data) ? result.body.data : [];
+    payouts.push(...data);
+    startingAfter = data.length ? data[data.length - 1].id : "";
+    pages += 1;
+
+    if (!result.body.has_more || !startingAfter || payouts.length >= limit || pages >= 5) break;
+  } while (true);
+
+  return { ok: true, body: { data: payouts.slice(0, limit) } };
+}
+
+async function listStripeBalanceTransactionsForPayout(env, stripeAccountId, payoutId, limit = 100) {
+  const transactions = [];
+  let startingAfter = "";
+  let pages = 0;
+
+  do {
+    const params = new URLSearchParams({
+      payout: payoutId,
+      limit: String(Math.min(100, Math.max(1, limit - transactions.length)))
+    });
+    if (startingAfter) params.set("starting_after", startingAfter);
+
+    const result = await stripeGetConnectedRequest(env, `/v1/balance_transactions?${params.toString()}`, stripeAccountId);
+    if (!result.ok) return result;
+
+    const data = Array.isArray(result.body.data) ? result.body.data : [];
+    transactions.push(...data);
+    startingAfter = data.length ? data[data.length - 1].id : "";
+    pages += 1;
+
+    if (!result.body.has_more || !startingAfter || transactions.length >= limit || pages >= 5) break;
+  } while (true);
+
+  return { ok: true, body: { data: transactions.slice(0, limit) } };
+}
+
+async function handleParishPayoutDiagnostics(request, env, parishId) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-dashboard", { limit: 80, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const token = getBearerToken(request);
+  if (!(await verifyParishDashboardPassword(found.registration, token))) {
+    return unauthorized();
+  }
+
+  if (!found.registration.stripeAccountId) {
+    return json({
+      parishId,
+      available: false,
+      reason: "Stripe is not connected for this parish."
+    });
+  }
+
+  const stripeAccountId = found.registration.stripeAccountId;
+  const payoutsResult = await listRecentStripePayouts(env, stripeAccountId, 5);
+  if (!payoutsResult.ok) {
+    return json({
+      parishId,
+      stripeAccountId,
+      available: false,
+      payoutsRequest: {
+        ok: false,
+        status: payoutsResult.status,
+        error: payoutsResult.body?.error?.message || "Unknown Stripe error"
+      }
+    }, { status: 502 });
+  }
+
+  const payouts = payoutsResult.body.data || [];
+  const diagnostics = {
+    parishId,
+    stripeAccountId,
+    payoutsRequest: {
+      ok: true,
+      count: payouts.length
+    },
+    payouts: payouts.map((payout) => ({
+      id: payout.id,
+      status: payout.status,
+      amount: payout.amount,
+      arrivalDate: payout.arrival_date || 0,
+      created: payout.created || 0,
+      currency: payout.currency || "usd"
+    })),
+    balanceTransactionsRequest: null,
+    samplePayoutTransactions: [],
+    matchedOfferings: [],
+    traceability: {
+      chargeLinkedTransactionCount: 0,
+      paymentIntentLinkedOfferingCount: 0,
+      notes: []
+    }
+  };
+
+  if (!payouts.length) {
+    diagnostics.traceability.notes.push("Stripe returned no payouts for this connected account yet.");
+    return json(diagnostics);
+  }
+
+  const samplePayout = payouts[0];
+  const balanceResult = await listStripeBalanceTransactionsForPayout(env, stripeAccountId, samplePayout.id, 100);
+  if (!balanceResult.ok) {
+    diagnostics.balanceTransactionsRequest = {
+      ok: false,
+      payoutId: samplePayout.id,
+      status: balanceResult.status,
+      error: balanceResult.body?.error?.message || "Unknown Stripe error"
+    };
+    return json(diagnostics, { status: 502 });
+  }
+
+  diagnostics.balanceTransactionsRequest = {
+    ok: true,
+    payoutId: samplePayout.id,
+    count: balanceResult.body.data?.length || 0
+  };
+
+  const transactions = balanceResult.body.data || [];
+  const chargeIds = new Set();
+  const paymentIntentIds = new Set();
+  const matchedOfferings = [];
+
+  for (const transaction of transactions) {
+    const sourceId = typeof transaction.source === "string"
+      ? transaction.source
+      : transaction.source?.id || "";
+    if (sourceId.startsWith("ch_")) chargeIds.add(sourceId);
+    if (sourceId.startsWith("pi_")) paymentIntentIds.add(sourceId);
+  }
+
+  for (const chargeId of chargeIds) {
+    const chargeResult = await stripeGetConnectedRequest(env, `/v1/charges/${encodeURIComponent(chargeId)}`, stripeAccountId);
+    if (!chargeResult.ok) continue;
+    const paymentIntentId = typeof chargeResult.body.payment_intent === "string"
+      ? chargeResult.body.payment_intent
+      : chargeResult.body.payment_intent?.id || "";
+    if (paymentIntentId) paymentIntentIds.add(paymentIntentId);
+  }
+
+  for (const paymentIntentId of paymentIntentIds) {
+    const offering = await loadDonorOfferingByPaymentIntent(env, paymentIntentId);
+    if (offering && !matchedOfferings.some((item) => item.id === offering.id)) matchedOfferings.push(offering);
+  }
+
+  diagnostics.samplePayoutTransactions = transactions.map((transaction) => ({
+    id: transaction.id,
+    type: transaction.type,
+    amount: transaction.amount,
+    fee: transaction.fee,
+    net: transaction.net,
+    source: typeof transaction.source === "string" ? transaction.source : transaction.source?.id || "",
+    reportingCategory: transaction.reporting_category || "",
+    availableOn: transaction.available_on || 0,
+    created: transaction.created || 0
+  }));
+  diagnostics.matchedOfferings = matchedOfferings.map((offering) => ({
+    id: offering.id,
+    donorName: offering.donorName || "",
+    donorEmail: offering.donorEmail || "",
+    amountCents: offering.amountCents || 0,
+    chargeCents: offering.chargeCents || offering.amountCents || 0,
+    agapayFeeCents: offering.agapayFeeCents || 0,
+    estimatedStripeFeeCents: offering.estimatedStripeFeeCents || 0,
+    giftType: offering.giftType || "",
+    fund: offering.fund || "",
+    campaign: offering.campaign || "",
+    paymentIntentId: offering.stripePaymentIntentId || "",
+    checkoutSessionId: offering.checkoutSessionId || ""
+  }));
+  diagnostics.traceability.chargeLinkedTransactionCount = chargeIds.size;
+  diagnostics.traceability.paymentIntentLinkedOfferingCount = matchedOfferings.length;
+  if (chargeIds.size) diagnostics.traceability.notes.push("Sample payout balance transactions include charge ids in `source`.");
+  if (paymentIntentIds.size) diagnostics.traceability.notes.push("Charge lookups yielded payment intent ids that can be compared against AGAPAY donor_offerings.");
+  if (matchedOfferings.length) {
+    diagnostics.traceability.notes.push("At least some payout line items can be matched back to AGAPAY donor_offerings records.");
+  } else {
+    diagnostics.traceability.notes.push("No AGAPAY donor_offerings records matched the sampled payout transaction sources yet.");
+  }
+
+  return json(diagnostics);
+}
+
 function summarizeCharges(charges) {
   const now = new Date();
   const year = now.getUTCFullYear();
@@ -5427,6 +5629,10 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-history")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-history", ""));
       return handleParishGivingHistory(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/payout-diagnostics")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/payout-diagnostics", ""));
+      return handleParishPayoutDiagnostics(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", ""));
