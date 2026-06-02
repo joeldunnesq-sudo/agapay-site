@@ -15,13 +15,6 @@
     { href: "/admin/login", label: "Admin Login" }
   ];
 
-  const FUNNEL_FLOW = {
-    "/vision": { title: "Vision", next: { href: "/why", label: "Continue to Why AGAPAY" } },
-    "/why": { title: "Why AGAPAY", next: { href: "/features", label: "Continue to Features" } },
-    "/features": { title: "Features", next: { href: "/how-it-works", label: "Continue to How It Works" } },
-    "/how-it-works": { title: "How It Works", next: { href: "/register", label: "Continue to Register" } }
-  };
-
   function activeKeyFromPath() {
     if (path === "/vision" || path.endsWith("/vision.html")) return "vision";
     if (path === "/features" || path.endsWith("/features.html")) return "features";
@@ -166,28 +159,6 @@
     `;
   }
 
-  function maybeInjectFunnel(footerNode) {
-    let key = "";
-    if (path === "/vision" || path.endsWith("/vision.html")) key = "/vision";
-    if (path === "/why" || path.endsWith("/why.html")) key = "/why";
-    if (path === "/features" || path.endsWith("/features.html")) key = "/features";
-    if (path === "/how-it-works" || path.endsWith("/how-it-works.html")) key = "/how-it-works";
-    if (!key || !FUNNEL_FLOW[key]) return;
-
-    const flow = FUNNEL_FLOW[key];
-    const funnel = document.createElement("section");
-    funnel.className = "agp-funnel-strip";
-    funnel.setAttribute("data-agp-funnel", "true");
-    funnel.innerHTML = `
-      <div class="agp-funnel-wrap">
-        <p class="agp-funnel-copy"><strong>${flow.title}</strong> is step ${Object.keys(FUNNEL_FLOW).indexOf(key) + 1} in the journey.</p>
-        <a class="agp-funnel-link" href="${flow.next.href}">${flow.next.label}</a>
-      </div>
-    `;
-
-    footerNode.parentNode.insertBefore(funnel, footerNode);
-  }
-
   function bindInteractions() {
     const signIn = document.querySelector("[data-agp-signin]");
     if (signIn) {
@@ -234,13 +205,9 @@
     const oldFooter = firstExistingFooter();
     if (oldFooter) {
       oldFooter.insertAdjacentHTML("beforebegin", footerHtml);
-      const newFooter = oldFooter.previousElementSibling;
       oldFooter.remove();
-      maybeInjectFunnel(newFooter);
     } else {
       document.body.insertAdjacentHTML("beforeend", footerHtml);
-      const newFooter = document.querySelector("[data-agp-site-footer]");
-      if (newFooter) maybeInjectFunnel(newFooter);
     }
 
     document.body.classList.add("agp-shell-ready");
