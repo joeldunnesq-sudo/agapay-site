@@ -1,7 +1,7 @@
 {
   "name": "AGAPAY",
   "short_name": "AGAPAY",
-  "description": "Lve how you give.",
+  "description": "Love how you give.",
   "start_url": "/donor/login?source=pwa",
   "scope": "/",
   "display": "standalone",
