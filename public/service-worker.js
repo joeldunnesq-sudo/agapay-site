@@ -1,4 +1,4 @@
-const AGAPAY_CACHE = "agapay-static-v1";
+const AGAPAY_CACHE = "agapay-static-v2";
 
 const STATIC_ASSETS = [
   "/donor/login",
@@ -10,9 +10,10 @@ const STATIC_ASSETS = [
   "/manifest.webmanifest",
   "/mark.png",
   "/favicons/favicon-32x32.png",
-  "/favicons/apple-touch-icon.png",
-  "/favicons/android-chrome-192x192.png",
-  "/favicons/android-chrome-512x512.png"
+  "/images/app/apple-touch-icon.png",
+  "/images/app/icon-192.png",
+  "/images/app/icon-512.png",
+  "/images/app/icon-512-maskable.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -55,6 +56,7 @@ function shouldBypassCache(request) {
 function isStaticShellAsset(pathname) {
   return STATIC_ASSETS.includes(pathname)
     || pathname.startsWith("/favicons/")
+    || pathname.startsWith("/images/app/")
     || pathname.startsWith("/styles/")
     || pathname === "/manifest.webmanifest"
     || pathname === "/mark.png";

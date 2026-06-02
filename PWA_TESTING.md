@@ -10,7 +10,7 @@ AGAPAY includes a donor-facing Progressive Web App shell so donors can add a hom
    - `name` and `short_name` are `AGAPAY`.
    - `start_url` is `/donor/login?source=pwa`.
    - `display` is `standalone`.
-   - Icons load from `/favicons/apple-touch-icon.png`, `/favicons/android-chrome-192x192.png`, and `/favicons/android-chrome-512x512.png`.
+   - Icons load from `/images/app/apple-touch-icon.png`, `/images/app/icon-192.png`, and `/images/app/icon-512.png`.
 
 ## Android / Chrome install prompt
 
@@ -28,7 +28,7 @@ Browsers do not allow websites to install shortcuts silently. The native prompt 
 2. Confirm the AGAPAY install card explains: "Tap Share, then Add to Home Screen."
 3. Tap Safari's **Share** button.
 4. Choose **Add to Home Screen**.
-5. Confirm the icon uses the AGAPAY favicon/logo asset.
+5. Confirm the icon uses the AGAPAY app icon asset from `/images/app`.
 
 iOS Safari does not support the Android-style install prompt, so this remains a manual donor action.
 
