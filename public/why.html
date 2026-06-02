@@ -330,17 +330,15 @@
       font-size: 1rem;
       line-height: 1.75;
     }
-    .hero-art {
-      min-height: 500px;
-      align-self: stretch;
-      background-image: url("/images/why/why-hero-offering.png");
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: bottom right;
-      filter: sepia(0.16) saturate(0.96) contrast(1.05);
-      opacity: 0.94;
-    }
-
+  
+   .hero-art { 
+     align-self: stretch; min-height: 420px; 
+     background-image: url("/images/features/features-hero.png"); 
+     background-size: contain; background-repeat: no-repeat; 
+     background-position: center right; filter: saturate(0) brightness(1.1) contrast(1.2); 
+     mix-blend-mode: multiply; 
+     -webkit-mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%); mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%); }
+  
     .section {
       padding: clamp(2.3rem, 5vw, 4.6rem) clamp(1rem, 3vw, 2.5rem);
       border-bottom: 1px solid var(--line);
@@ -772,7 +770,7 @@
         <h2>Built for the nave. Not the megachurch.</h2>
         <p>Most giving platforms were built for large, corporate-style ministries, then adapted outward. AGAPAY started somewhere different - inside the Tradition, built by someone who knows the difference between a panikhida and a parastas.</p>
       </div>
-      <div class="hero-art" aria-label="Orthodox parishioner placing an offering in church"></div>
+       <div class="hero-art" aria-label="Why hero artwork" role="img"></div>
     </section>
 
     <section class="section">
