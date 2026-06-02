@@ -1,4 +1,4 @@
-const AGAPAY_CACHE = "agapay-static-v2";
+const AGAPAY_CACHE = "agapay-static-v3";
 
 const STATIC_ASSETS = [
   "/donor/login",
@@ -82,12 +82,13 @@ self.addEventListener("fetch", (event) => {
 
   if (isStaticShellAsset(url.pathname)) {
     event.respondWith(
-      caches.match(request)
-        .then((cached) => cached || fetch(request).then((response) => {
+      fetch(request)
+        .then((response) => {
           const clone = response.clone();
           caches.open(AGAPAY_CACHE).then((cache) => cache.put(request, clone));
           return response;
-        }))
+        })
+        .catch(() => caches.match(request))
     );
   }
 });

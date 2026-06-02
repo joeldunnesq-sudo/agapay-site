@@ -837,7 +837,6 @@ async function loadDonorDashboardPage() {
     const data = await donorApi("/api/donor/dashboard");
     setDonorProfile(data.donor);
     const summary = data.summary || {};
-    const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
     setText("metricMonth", money(summary.monthCents));
     setText("metricYtd", money(summary.ytdCents));
     setText("metricOfferings", String(summary.offeringCount || 0));
@@ -986,7 +985,6 @@ async function loadDonorOfferingsPage() {
       .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
 
     window.donorOfferings = offerings;
-    const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
     setText("offeringsYtd", money(summary.ytdCents));
     setText("offeringsRecurring", String(summary.recurringCount || 0));
     setText("offeringsReceiptCount", String(summary.offeringCount || 0));
@@ -1102,6 +1100,7 @@ function renderCommemorationParish(parish) {
 
 async function loadDonorCommemorationsPage() {
   primeCommemorationParishDisplay();
+  const list = document.getElementById("commemorationList");
   try {
     const parishData = await donorApi("/api/parishes", { headers: { Accept: "application/json" } });
     window.agapayPublicParishes = parishData.parishes || [];
@@ -1112,11 +1111,13 @@ async function loadDonorCommemorationsPage() {
     if (dashboard?.donor) setDonorProfile(dashboard.donor);
     renderCommemorationParish(dashboard?.parish || donorDefaultParish());
     const data = await donorApi("/api/donor/commemorations");
-    const list = document.getElementById("commemorationList");
-    if (list) list.innerHTML = commemorationRows(data.entries || []);
+    const entries = Array.isArray(data.entries) && data.entries.length
+      ? data.entries
+      : dashboard.recentCommemorations || [];
+    if (list) list.innerHTML = commemorationRows(entries);
+    if (!entries.length && list) list.innerHTML = '<div class="notice">No commemoration submissions have been recorded yet. Paid commemoration gifts will appear here after checkout completes.</div>';
   } catch (err) {
     renderCommemorationParish(donorDefaultParish());
-    const list = document.getElementById("commemorationList");
     if (list) list.innerHTML = `<div class="notice">${escapeHtml(err.message)} Sign in from the donor home page first.</div>`;
   }
 }

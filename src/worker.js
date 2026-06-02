@@ -1896,6 +1896,57 @@ async function loadDonorCommemorations(env, email, limit = 100) {
   return entries.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
 }
 
+function paidCommemorationOfferingWithNames(offering = {}) {
+  const giftType = String(offering.giftType || "").toLowerCase();
+  if (giftType !== "commemoration") return false;
+  const isPaid = offering.status === "completed"
+    || offering.status === "paid"
+    || offering.paymentStatus === "paid"
+    || offering.paymentStatus === "succeeded";
+  if (!isPaid) return false;
+  return Boolean(splitSubmittedNames(offering.namesLiving).length || splitSubmittedNames(offering.namesDeparted).length);
+}
+
+async function repairMissingDonorCommemorationsFromOfferings(env, email, offerings = []) {
+  const paidCommemorations = offerings.filter(paidCommemorationOfferingWithNames);
+  if (!paidCommemorations.length) return [];
+
+  const existing = await loadDonorCommemorations(env, email, Math.max(1000, paidCommemorations.length + 100));
+  const existingSources = new Set(existing.map((entry) => entry.sourceId || entry.id).filter(Boolean));
+  const repaired = [];
+
+  for (const offering of paidCommemorations) {
+    const sourceId = commemorationSourceIdFromOffering(offering);
+    if (existingSources.has(sourceId)) continue;
+    const entry = await ensureCommemorationEntryFromOffering(env, offering, {
+      id: sourceId,
+      checkoutSessionId: offering.checkoutSessionId || "",
+      parishId: offering.parishId || "",
+      parishName: offering.parishName || "",
+      donorEmail: offering.donorEmail || email || "",
+      donorName: offering.donorName || "",
+      giftType: "commemoration",
+      frequency: offering.frequency || "once",
+      amountCents: offering.amountCents || 0,
+      namesLiving: offering.namesLiving || "",
+      namesDeparted: offering.namesDeparted || "",
+      createdAt: offering.completedAt || offering.createdAt || new Date().toISOString()
+    });
+    if (entry) {
+      existingSources.add(entry.sourceId || entry.id);
+      repaired.push(entry);
+    }
+  }
+
+  return repaired;
+}
+
+async function loadReconciledDonorCommemorations(env, email, offerings = null, limit = 100) {
+  const donorOfferings = offerings || await loadDonorOfferings(env, email, Math.max(limit, 100));
+  await repairMissingDonorCommemorationsFromOfferings(env, email, donorOfferings);
+  return loadDonorCommemorations(env, email, limit);
+}
+
 function donorSummaryFromOfferings(offerings, commemorations = []) {
   const now = new Date();
   const year = now.getUTCFullYear();
@@ -3337,7 +3388,7 @@ async function handleDonorDashboard(request, env) {
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
 
   const offerings = await loadDonorOfferings(env, donor.email, 100);
-  const commemorations = await loadDonorCommemorations(env, donor.email, 100);
+  const commemorations = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
   const summary = donorSummaryFromOfferings(offerings, commemorations);
   let parish = null;
   if (donor.defaultParishId) {
@@ -3360,7 +3411,8 @@ async function handleDonorOfferings(request, env) {
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
   const offerings = await loadDonorOfferings(env, donor.email, 100);
-  return json({ offerings, summary: donorSummaryFromOfferings(offerings, await loadDonorCommemorations(env, donor.email, 100)) });
+  const commemorations = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
+  return json({ offerings, summary: donorSummaryFromOfferings(offerings, commemorations) });
 }
 
 async function handleDonorCommemorations(request, env) {
@@ -3368,7 +3420,8 @@ async function handleDonorCommemorations(request, env) {
   if (!donor) return unauthorized();
 
   if (request.method === "GET") {
-    const entries = await loadDonorCommemorations(env, donor.email, 100);
+    const offerings = await loadDonorOfferings(env, donor.email, 100);
+    const entries = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
     return json({ entries });
   }
 
@@ -4302,6 +4355,20 @@ async function processStripeWebhookEvent(env, event) {
       paymentStatus: object.status || "succeeded",
       stripeCustomerId: object.customer || "",
       completedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
+    });
+    await ensureCommemorationEntryFromOffering(env, updatedOffering || {}, {
+      id: updatedOffering?.checkoutSessionId || updatedOffering?.stripePaymentIntentId || object.id,
+      stripePaymentIntentId: object.id,
+      parishId: updatedOffering?.parishId || object.metadata?.parish_id || "",
+      parishName: updatedOffering?.parishName || object.metadata?.parish_name || "",
+      donorEmail: updatedOffering?.donorEmail || object.metadata?.donor_email || "",
+      donorName: updatedOffering?.donorName || object.metadata?.donor_name || "",
+      giftType: updatedOffering?.giftType || object.metadata?.gift_type || "",
+      frequency: updatedOffering?.frequency || object.metadata?.frequency || "once",
+      amountCents: updatedOffering?.amountCents || object.amount_received || object.amount || 0,
+      namesLiving: updatedOffering?.namesLiving || object.metadata?.names_living || "",
+      namesDeparted: updatedOffering?.namesDeparted || object.metadata?.names_departed || "",
+      createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
     });
     await sendDonationReceiptIfNeeded(env, updatedOffering || {});
   }
