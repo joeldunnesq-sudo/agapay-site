@@ -4971,6 +4971,31 @@ async function listStripeBalanceTransactionsForPayout(env, stripeAccountId, payo
   return { ok: true, body: { data: transactions.slice(0, limit) } };
 }
 
+async function listRecentStripeBalanceTransactions(env, stripeAccountId, limit = 25) {
+  const transactions = [];
+  let startingAfter = "";
+  let pages = 0;
+
+  do {
+    const params = new URLSearchParams({
+      limit: String(Math.min(100, Math.max(1, limit - transactions.length)))
+    });
+    if (startingAfter) params.set("starting_after", startingAfter);
+
+    const result = await stripeGetConnectedRequest(env, `/v1/balance_transactions?${params.toString()}`, stripeAccountId);
+    if (!result.ok) return result;
+
+    const data = Array.isArray(result.body.data) ? result.body.data : [];
+    transactions.push(...data);
+    startingAfter = data.length ? data[data.length - 1].id : "";
+    pages += 1;
+
+    if (!result.body.has_more || !startingAfter || transactions.length >= limit || pages >= 5) break;
+  } while (true);
+
+  return { ok: true, body: { data: transactions.slice(0, limit) } };
+}
+
 async function handleParishPayoutDiagnostics(request, env, parishId) {
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
   const limited = await rateLimit(request, env, "parish-dashboard", { limit: 80, windowSeconds: 300 });
@@ -5036,6 +5061,81 @@ async function handleParishPayoutDiagnostics(request, env, parishId) {
 
   if (!payouts.length) {
     diagnostics.traceability.notes.push("Stripe returned no payouts for this connected account yet.");
+
+    const recentBalanceResult = await listRecentStripeBalanceTransactions(env, stripeAccountId, 25);
+    if (!recentBalanceResult.ok) {
+      diagnostics.balanceTransactionsRequest = {
+        ok: false,
+        status: recentBalanceResult.status,
+        error: recentBalanceResult.body?.error?.message || "Unknown Stripe error"
+      };
+      diagnostics.traceability.notes.push("Recent balance transactions could not be listed, so charge traceability remains unverified.");
+      return json(diagnostics);
+    }
+
+    diagnostics.balanceTransactionsRequest = {
+      ok: true,
+      mode: "recent",
+      count: recentBalanceResult.body.data?.length || 0
+    };
+
+    const recentTransactions = recentBalanceResult.body.data || [];
+    const chargeIds = new Set();
+    const paymentIntentIds = new Set();
+    const matchedOfferings = [];
+
+    for (const transaction of recentTransactions) {
+      const sourceId = typeof transaction.source === "string"
+        ? transaction.source
+        : transaction.source?.id || "";
+      if (sourceId.startsWith("ch_")) chargeIds.add(sourceId);
+      if (sourceId.startsWith("pi_")) paymentIntentIds.add(sourceId);
+    }
+
+    for (const chargeId of chargeIds) {
+      const chargeResult = await stripeGetConnectedRequest(env, `/v1/charges/${encodeURIComponent(chargeId)}`, stripeAccountId);
+      if (!chargeResult.ok) continue;
+      const paymentIntentId = typeof chargeResult.body.payment_intent === "string"
+        ? chargeResult.body.payment_intent
+        : chargeResult.body.payment_intent?.id || "";
+      if (paymentIntentId) paymentIntentIds.add(paymentIntentId);
+    }
+
+    for (const paymentIntentId of paymentIntentIds) {
+      const offering = await loadDonorOfferingByPaymentIntent(env, paymentIntentId);
+      if (offering && !matchedOfferings.some((item) => item.id === offering.id)) matchedOfferings.push(offering);
+    }
+
+    diagnostics.samplePayoutTransactions = recentTransactions.map((transaction) => ({
+      id: transaction.id,
+      type: transaction.type,
+      amount: transaction.amount,
+      fee: transaction.fee,
+      net: transaction.net,
+      source: typeof transaction.source === "string" ? transaction.source : transaction.source?.id || "",
+      reportingCategory: transaction.reporting_category || "",
+      availableOn: transaction.available_on || 0,
+      created: transaction.created || 0
+    }));
+    diagnostics.matchedOfferings = matchedOfferings.map((offering) => ({
+      id: offering.id,
+      donorName: offering.donorName || "",
+      donorEmail: offering.donorEmail || "",
+      amountCents: offering.amountCents || 0,
+      chargeCents: offering.chargeCents || offering.amountCents || 0,
+      agapayFeeCents: offering.agapayFeeCents || 0,
+      estimatedStripeFeeCents: offering.estimatedStripeFeeCents || 0,
+      giftType: offering.giftType || "",
+      fund: offering.fund || "",
+      campaign: offering.campaign || "",
+      paymentIntentId: offering.stripePaymentIntentId || "",
+      checkoutSessionId: offering.checkoutSessionId || ""
+    }));
+    diagnostics.traceability.chargeLinkedTransactionCount = chargeIds.size;
+    diagnostics.traceability.paymentIntentLinkedOfferingCount = matchedOfferings.length;
+    if (chargeIds.size) diagnostics.traceability.notes.push("Recent balance transactions include charge ids in `source`.");
+    if (paymentIntentIds.size) diagnostics.traceability.notes.push("Charge lookups yielded payment intent ids that can be compared against AGAPAY donor_offerings.");
+    if (matchedOfferings.length) diagnostics.traceability.notes.push("Recent balance transactions can be matched back to AGAPAY donor_offerings records.");
     return json(diagnostics);
   }
 
