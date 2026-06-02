@@ -406,10 +406,6 @@
     const chip = document.getElementById('sidebarStatusChip');
     chip.textContent = p.givingStatus || 'active';
     chip.className   = 'sidebar-status-chip ' + (p.givingStatus || 'active');
-    document.getElementById('metricStatus').textContent    = p.givingStatus    || 'active';
-    document.getElementById('metricFunds').textContent     = (p.funds     || []).length;
-    document.getElementById('metricCampaigns').textContent = (p.campaigns || []).length;
-    document.getElementById('metricStripe').textContent    = p.stripeAccountStatus || 'not_started';
     const overviewStatus = document.getElementById('overviewGivingStatus');
     const overviewStatusNote = document.getElementById('overviewGivingStatusNote');
     const overviewStripe = document.getElementById('overviewStripeStatus');

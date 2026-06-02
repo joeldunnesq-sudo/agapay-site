@@ -139,7 +139,7 @@
     .sidebar-name { font-family: var(--serif); font-size: 25px; font-weight: 500; color: var(--cream); }
     .sidebar-name em { color: var(--gold); font-style: normal; }
     .sidebar-pill { display: inline-flex; border: 1px solid rgba(184,144,47,0.32); border-radius: 999px; padding: 0.22rem 0.65rem; color: var(--gold); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; position: relative; z-index: 1; }
-    .sidebar-auth, .sidebar-profile, .sidebar-metrics { padding: 1rem 1.25rem; border-bottom: 1px solid rgba(184,144,47,0.11); }
+    .sidebar-auth, .sidebar-profile { padding: 1rem 1.25rem; border-bottom: 1px solid rgba(184,144,47,0.11); }
     .sidebar-auth { display: grid; gap: 0.7rem; }
     .sidebar-auth label { color: var(--gold); font-size: 10px; letter-spacing: 0.1em; margin-bottom: 0.35rem; }
     .sidebar input { background: rgba(246,241,232,0.06); border: 1px solid rgba(184,144,47,0.18); color: var(--cream); padding: 0.62rem 0.7rem; font-size: 12px; }
@@ -152,12 +152,6 @@
     .sidebar-status-chip { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.22rem 0.6rem; background: rgba(11,33,48,0.25); color: var(--gold); font-size: 11px; font-weight: 700; text-transform: capitalize; }
     .sidebar-status-chip.paused { background: rgba(184,144,47,0.18); color: var(--gold); }
     .sidebar-status-chip.hidden { background: rgba(111,106,96,0.2); color: var(--muted); }
-    .sidebar-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
-    .sidebar-status-metric { display: none; }
-    .sidebar-metric { border: 1px solid rgba(184,144,47,0.14); border-radius: 10px; background: rgba(246,241,232,0.04); padding: 0.75rem; }
-    .sidebar-metric-val { font-family: var(--serif); font-size: 23px; color: var(--cream); line-height: 1; overflow-wrap: anywhere; }
-    .sidebar-metric.highlight .sidebar-metric-val { color: var(--gold); }
-    .sidebar-metric-label { margin-top: 0.25rem; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
     .sidebar-nav { padding: 0.75rem 0; border-bottom: 1px solid rgba(184,144,47,0.1); }
     .sidebar-nav-item { display: flex; align-items: center; gap: 10px; padding: 0.65rem 1.25rem; color: rgba(246,241,232,0.62); font-size: 13px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
     .sidebar-nav-item:hover { background: rgba(184,144,47,0.06); color: var(--cream); padding-left: 1.45rem; }
@@ -657,7 +651,6 @@
       .sidebar-header,
       .sidebar-auth,
       .sidebar-profile,
-      .sidebar-metrics,
       .sidebar-links {
         padding-left: 1rem;
         padding-right: 1rem;
@@ -779,7 +772,6 @@
         grid-template-columns: 1fr;
       }
       .sidebar-nav,
-      .sidebar-metrics,
       .form-grid,
       .toggle-row,
       .insight-stats,
@@ -927,8 +919,7 @@
       }
 
       .sidebar-auth,
-      .sidebar-profile,
-      .sidebar-metrics {
+      .sidebar-profile {
         width: min(100%, 520px);
         margin: 0 auto;
       }
@@ -1027,35 +1018,6 @@
       .sidebar-nav,
       .sidebar-links {
         display: none !important;
-      }
-
-      .sidebar-metrics {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 0.45rem;
-        margin-top: 0.85rem;
-        margin-bottom: 0.3rem;
-        padding: 1rem;
-        border: 0;
-        border-radius: 18px;
-        background:
-          radial-gradient(circle at 82% 34%, rgba(184,144,47,0.14), transparent 7.5rem),
-          linear-gradient(145deg, #061522, #0B2130);
-        box-shadow: 0 13px 28px rgba(6,21,34,0.19);
-      }
-
-      .sidebar-metric {
-        border-color: rgba(246,241,232,0.14);
-        background: rgba(255,255,255,0.05);
-        padding: 0.65rem 0.45rem;
-        text-align: center;
-      }
-
-      .sidebar-metric-val {
-        font-size: 20px;
-      }
-
-      .sidebar-metric-label {
-        font-size: 9px;
       }
 
       .content {
@@ -1305,10 +1267,6 @@
     }
 
     @media (max-width: 430px) {
-      .sidebar-metrics {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
       .mobile-tab-link {
         font-size: 9px;
       }
