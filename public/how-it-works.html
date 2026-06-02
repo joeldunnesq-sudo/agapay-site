@@ -20,159 +20,206 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --night: #061522;
-      --night-2: #0B2130;
-      --ink: #171715;
-      --cream: #F6F1E8;
-      --paper: #FFFDF8;
-      --parchment: #F3EDE0;
-      --parchment-2: #EFE8DA;
-      --stone: #70695D;
-      --muted: #A69F91;
-      --gold: #C8A24A;
-      --gold-dark: #A97C25;
-      --line: rgba(166, 159, 145, 0.28);
+      --night: #061522; --night-2: #0B2130; --ink: #171715;
+      --cream: #F6F1E8; --paper: #FFFDF8;
+      --parchment: #F3EDE0; --parchment-2: #EFE8DA;
+      --stone: #70695D; --muted: #A69F91;
+      --gold: #C8A24A; --gold-dark: #A97C25;
+      --line: rgba(166,159,145,0.28);
       --serif: "Cormorant Garamond", Georgia, serif;
       --sans: "DM Sans", system-ui, sans-serif;
     }
     html { scroll-behavior: smooth; }
-    body { min-height: 100vh; font-family: var(--sans); color: var(--ink); background: var(--cream); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
-    body.drawer-open { overflow: hidden; }
-    a { color: inherit; text-decoration: none; }
-    img { display: block; max-width: 100%; }
-    svg { display: block; }
+    body { min-height:100vh; font-family:var(--sans); color:var(--ink); background:var(--cream); -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+    body.drawer-open { overflow:hidden; }
+    a { color:inherit; text-decoration:none; }
+    img { display:block; max-width:100%; }
+    svg { display:block; }
 
-    /* HEADER / NAV (canonical) */
-    .site-header { position: sticky; top: 0; z-index: 100; background: linear-gradient(90deg, #061522, #0B2130); border-bottom: 1px solid rgba(200, 162, 74, 0.24); padding: 0.95rem clamp(1rem, 2.6vw, 2.6rem); }
-    .nav { width: min(1320px, 100%); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-    .brand { display: flex; align-items: center; gap: 0.75rem; color: var(--cream); min-width: max-content; }
-    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(200, 162, 74, 0.52); background: rgba(6, 21, 34, 0.45); }
-    .brand-mark img { width: 38px; height: 38px; object-fit: contain; }
-    .brand-name { display: flex; flex-direction: column; line-height: 1; }
-    .brand-name strong { font-family: var(--serif); font-size: 2rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
-    .brand-name span { margin-top: 0.22rem; color: var(--gold); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
-    .nav-links { display: flex; align-items: center; margin-left: auto; gap: clamp(0.9rem, 2vw, 2rem); color: rgba(246, 241, 232, 0.9); font-size: 0.9rem; font-weight: 600; }
-    .nav-links a.active { color: var(--gold); border-bottom: 2px solid var(--gold); padding-bottom: 0.36rem; }
-    .nav-actions { display: flex; align-items: center; gap: 0.8rem; margin-left: 1rem; position: relative; }
-    .btn-donate { min-height: 44px; padding: 0 1.45rem; border-radius: 8px; border: 1px solid rgba(200, 162, 74, 0.6); color: var(--cream); font-size: 0.95rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.45rem; background: rgba(6, 21, 34, 0.34); }
-    .btn-donate svg { width: 18px; height: 18px; stroke: var(--gold); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-    .signin-wrap { position: relative; }
-    .nav-avatar { width: 44px; height: 44px; border-radius: 999px; border: 1px solid rgba(200, 162, 74, 0.7); background: rgba(6, 21, 34, 0.36); display: grid; place-items: center; cursor: pointer; }
-    .nav-avatar svg { width: 18px; height: 18px; stroke: var(--gold); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-    .signin-menu { position: absolute; top: calc(100% + 0.5rem); right: 0; background: var(--night-2); border: 1px solid rgba(200, 162, 74, 0.3); border-radius: 10px; padding: 0.4rem; min-width: 180px; box-shadow: 0 16px 36px rgba(0,0,0,0.4); display: none; z-index: 120; }
-    .signin-menu.open { display: grid; gap: 0.15rem; }
-    .signin-menu a { padding: 0.6rem 0.7rem; border-radius: 7px; font-size: 0.9rem; font-weight: 600; color: rgba(246, 241, 232, 0.88); }
-    .signin-menu a:hover { background: rgba(200, 162, 74, 0.16); color: #FFE7B6; }
-    .mobile-menu-btn { display: none; width: 44px; height: 44px; border-radius: 10px; border: 1px solid rgba(200, 162, 74, 0.45); background: rgba(6, 21, 34, 0.45); color: var(--cream); align-items: center; justify-content: center; padding: 0; cursor: pointer; }
-    .mobile-menu-btn svg { width: 22px; height: 22px; stroke: var(--cream); fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-    .drawer-backdrop { position: fixed; inset: 0; background: rgba(5, 16, 26, 0.58); opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 110; }
-    .mobile-drawer { position: fixed; top: 0; right: 0; width: min(90vw, 380px); height: 100vh; background: linear-gradient(180deg, #081a2a, #061522); color: var(--cream); transform: translateX(105%); transition: transform 0.24s ease; z-index: 115; display: grid; grid-template-rows: auto 1fr; border-left: 1px solid rgba(200, 162, 74, 0.26); box-shadow: -20px 0 45px rgba(0, 0, 0, 0.35); }
-    .drawer-open .drawer-backdrop { opacity: 1; pointer-events: auto; }
-    .drawer-open .mobile-drawer { transform: translateX(0); }
-    .drawer-head { padding: 1rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(200, 162, 74, 0.2); }
-    .drawer-title { font-family: var(--serif); font-size: 1.4rem; letter-spacing: 0.04em; }
-    .drawer-close { width: 34px; height: 34px; border-radius: 8px; border: 1px solid rgba(200, 162, 74, 0.3); background: transparent; color: var(--cream); display: grid; place-items: center; font-size: 1.2rem; line-height: 1; cursor: pointer; }
-    .drawer-scroll { overflow-y: auto; padding: 0.8rem 1rem 1.2rem; display: grid; gap: 1rem; align-content: start; }
-    .drawer-links { display: grid; gap: 0.35rem; }
-    .drawer-links a { padding: 0.6rem 0.55rem; border-radius: 8px; color: rgba(246, 241, 232, 0.9); font-size: 0.95rem; font-weight: 600; }
-    .drawer-links a.active { background: rgba(200, 162, 74, 0.16); color: #FFE7B6; }
-    .drawer-divider { height: 1px; background: rgba(200,162,74,0.2); margin: 0.4rem 0; }
-    .drawer-join { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 8px; background: linear-gradient(135deg, #D6AF5B, #B98832); color: #0A1724; font-size: 0.96rem; font-weight: 700; letter-spacing: 0.02em; }
+    /* ── NAV (unchanged) ──────────────────────────────────── */
+    .site-header { position:sticky; top:0; z-index:100; background:linear-gradient(90deg,#061522,#0B2130); border-bottom:1px solid rgba(200,162,74,.24); padding:.95rem clamp(1rem,2.6vw,2.6rem); }
+    .nav { width:min(1320px,100%); margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+    .brand { display:flex; align-items:center; gap:.75rem; color:var(--cream); min-width:max-content; }
+    .brand-mark { width:42px; height:42px; display:grid; place-items:center; border-radius:50%; border:1px solid rgba(200,162,74,.52); background:rgba(6,21,34,.45); }
+    .brand-mark img { width:38px; height:38px; object-fit:contain; }
+    .brand-name { display:flex; flex-direction:column; line-height:1; }
+    .brand-name strong { font-family:var(--serif); font-size:2rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; }
+    .brand-name span { margin-top:.22rem; color:var(--gold); font-size:.6rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; }
+    .nav-links { display:flex; align-items:center; margin-left:auto; gap:clamp(.9rem,2vw,2rem); color:rgba(246,241,232,.9); font-size:.9rem; font-weight:600; }
+    .nav-links a.active { color:var(--gold); border-bottom:2px solid var(--gold); padding-bottom:.36rem; }
+    .nav-actions { display:flex; align-items:center; gap:.8rem; margin-left:1rem; position:relative; }
+    .btn-donate { min-height:44px; padding:0 1.45rem; border-radius:8px; border:1px solid rgba(200,162,74,.6); color:var(--cream); font-size:.95rem; font-weight:600; display:inline-flex; align-items:center; gap:.45rem; background:rgba(6,21,34,.34); }
+    .btn-donate svg { width:18px; height:18px; stroke:var(--gold); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    .signin-wrap { position:relative; }
+    .nav-avatar { width:44px; height:44px; border-radius:999px; border:1px solid rgba(200,162,74,.7); background:rgba(6,21,34,.36); display:grid; place-items:center; cursor:pointer; }
+    .nav-avatar svg { width:18px; height:18px; stroke:var(--gold); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    .signin-menu { position:absolute; top:calc(100% + .5rem); right:0; background:var(--night-2); border:1px solid rgba(200,162,74,.3); border-radius:10px; padding:.4rem; min-width:180px; box-shadow:0 16px 36px rgba(0,0,0,.4); display:none; z-index:120; }
+    .signin-menu.open { display:grid; gap:.15rem; }
+    .signin-menu a { padding:.6rem .7rem; border-radius:7px; font-size:.9rem; font-weight:600; color:rgba(246,241,232,.88); }
+    .signin-menu a:hover { background:rgba(200,162,74,.16); color:#FFE7B6; }
+    .mobile-menu-btn { display:none; width:44px; height:44px; border-radius:10px; border:1px solid rgba(200,162,74,.45); background:rgba(6,21,34,.45); color:var(--cream); align-items:center; justify-content:center; padding:0; cursor:pointer; }
+    .mobile-menu-btn svg { width:22px; height:22px; stroke:var(--cream); fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+    .drawer-backdrop { position:fixed; inset:0; background:rgba(5,16,26,.58); opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:110; }
+    .mobile-drawer { position:fixed; top:0; right:0; width:min(90vw,380px); height:100vh; background:linear-gradient(180deg,#081a2a,#061522); color:var(--cream); transform:translateX(105%); transition:transform .24s ease; z-index:115; display:grid; grid-template-rows:auto 1fr; border-left:1px solid rgba(200,162,74,.26); box-shadow:-20px 0 45px rgba(0,0,0,.35); }
+    .drawer-open .drawer-backdrop { opacity:1; pointer-events:auto; }
+    .drawer-open .mobile-drawer { transform:translateX(0); }
+    .drawer-head { padding:1rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(200,162,74,.2); }
+    .drawer-title { font-family:var(--serif); font-size:1.4rem; letter-spacing:.04em; }
+    .drawer-close { width:34px; height:34px; border-radius:8px; border:1px solid rgba(200,162,74,.3); background:transparent; color:var(--cream); display:grid; place-items:center; font-size:1.2rem; line-height:1; cursor:pointer; }
+    .drawer-scroll { overflow-y:auto; padding:.8rem 1rem 1.2rem; display:grid; gap:1rem; align-content:start; }
+    .drawer-links { display:grid; gap:.35rem; }
+    .drawer-links a { padding:.6rem .55rem; border-radius:8px; color:rgba(246,241,232,.9); font-size:.95rem; font-weight:600; }
+    .drawer-links a.active { background:rgba(200,162,74,.16); color:#FFE7B6; }
+    .drawer-divider { height:1px; background:rgba(200,162,74,.2); margin:.4rem 0; }
+    .drawer-join { display:inline-flex; align-items:center; justify-content:center; min-height:44px; border-radius:8px; background:linear-gradient(135deg,#D6AF5B,#B98832); color:#0A1724; font-size:.96rem; font-weight:700; letter-spacing:.02em; }
 
-    .page { width: min(1320px, calc(100% - 2rem)); margin: 0.95rem auto 2rem; border: 1px solid var(--line); background: var(--paper); box-shadow: 0 10px 38px rgba(12, 22, 32, 0.08); overflow: hidden; }
+    .page { width:min(1320px,calc(100% - 2rem)); margin:.95rem auto 2rem; border:1px solid var(--line); background:var(--paper); box-shadow:0 10px 38px rgba(12,22,32,.08); overflow:hidden; }
 
-    /* HERO */
-    .hero { position: relative; display: grid; grid-template-columns: minmax(330px, 0.88fr) minmax(460px, 1.12fr); gap: 1rem; padding: 2rem 2.2rem; border-bottom: 1px solid var(--line); align-items: center; overflow: hidden; min-height: 520px; background: radial-gradient(circle at 15% 8%, rgba(200, 162, 74, 0.14), transparent 32%), linear-gradient(180deg, var(--parchment) 0%, var(--parchment-2) 100%); }
-    .hero::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(30deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08)), linear-gradient(150deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08)); background-size: 54px 94px; opacity: 0.22; pointer-events: none; }
-    .hero > * { position: relative; z-index: 1; }
-    .hero-copy { position: relative; z-index: 3; max-width: 540px; }
-    .eyebrow { display: inline-flex; align-items: center; gap: 0.56rem; color: var(--gold-dark); text-transform: uppercase; letter-spacing: 0.11em; font-size: 0.76rem; font-weight: 800; margin-bottom: 0.72rem; }
-    .hero-copy h1 { font-family: var(--serif); color: #0A1524; font-size: clamp(3.2rem, 7vw, 6rem); line-height: 0.9; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.65rem; }
-    .hero-copy h2 { font-family: var(--serif); color: var(--gold-dark); font-size: clamp(1.45rem, 2.4vw, 2.15rem); font-style: italic; font-weight: 500; line-height: 1.1; margin-bottom: 1.1rem; }
-    .hero-copy p { color: #4D4A44; font-size: 1.03rem; line-height: 1.68; max-width: 540px; margin-bottom: 1.25rem; }
-    .hero-art { position: relative; min-height: 460px; display: grid; align-items: end; justify-items: end; margin-right: -1.4rem; }
-    .hero-art img { width: min(128%, 1120px); object-fit: contain; max-height: 540px; filter: saturate(0) brightness(1.1) contrast(1.2); mix-blend-mode: multiply; -webkit-mask-image: radial-gradient(ellipse 85% 80% at 50% 65%, black 40%, transparent 95%); mask-image: radial-gradient(ellipse 85% 80% at 50% 65%, black 40%, transparent 95%); }
+    /* ── HERO (unchanged) ─────────────────────────────────── */
+    .hero { position:relative; display:grid; grid-template-columns:minmax(330px,.88fr) minmax(460px,1.12fr); gap:1rem; padding:2rem 2.2rem; border-bottom:1px solid var(--line); align-items:center; overflow:hidden; min-height:520px; background:radial-gradient(circle at 15% 8%,rgba(200,162,74,.14),transparent 32%),linear-gradient(180deg,var(--parchment) 0%,var(--parchment-2) 100%); }
+    .hero::before { content:""; position:absolute; inset:0; background-image:linear-gradient(30deg,rgba(166,159,145,.08) 12%,transparent 12.5%,transparent 87%,rgba(166,159,145,.08) 87.5%,rgba(166,159,145,.08)),linear-gradient(150deg,rgba(166,159,145,.08) 12%,transparent 12.5%,transparent 87%,rgba(166,159,145,.08) 87.5%,rgba(166,159,145,.08)); background-size:54px 94px; opacity:.22; pointer-events:none; }
+    .hero > * { position:relative; z-index:1; }
+    .hero-copy { position:relative; z-index:3; max-width:540px; }
+    .eyebrow { display:inline-flex; align-items:center; gap:.56rem; color:var(--gold-dark); text-transform:uppercase; letter-spacing:.11em; font-size:.76rem; font-weight:800; margin-bottom:.72rem; }
+    .hero-copy h1 { font-family:var(--serif); color:#0A1524; font-size:clamp(3.2rem,7vw,6rem); line-height:.9; font-weight:500; letter-spacing:.12em; text-transform:uppercase; margin-bottom:.65rem; }
+    .hero-copy h2 { font-family:var(--serif); color:var(--gold-dark); font-size:clamp(1.45rem,2.4vw,2.15rem); font-style:italic; font-weight:500; line-height:1.1; margin-bottom:1.1rem; }
+    .hero-copy p { color:#4D4A44; font-size:1.03rem; line-height:1.68; max-width:540px; margin-bottom:1.25rem; }
+    .hero-art { position:relative; min-height:460px; display:grid; align-items:end; justify-items:end; margin-right:-1.4rem; }
+    .hero-art img { width:min(128%,1120px); object-fit:contain; max-height:540px; filter:saturate(0) brightness(1.1) contrast(1.2); mix-blend-mode:multiply; -webkit-mask-image:radial-gradient(ellipse 85% 80% at 50% 65%,black 40%,transparent 95%); mask-image:radial-gradient(ellipse 85% 80% at 50% 65%,black 40%,transparent 95%); }
 
-    /* INTRO band above the Z steps — navy break between hero and body */
-    .process-intro { position: relative; text-align: center; padding: clamp(2.6rem, 5vw, 4rem) 1.5rem; overflow: hidden; background: linear-gradient(90deg, #071724, #0C2739); border-top: 1px solid rgba(200, 162, 74, 0.28); border-bottom: 1px solid rgba(200, 162, 74, 0.28); }
-    .process-intro::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 30%, rgba(200, 162, 74, 0.14), transparent 55%); pointer-events: none; }
-    .process-intro > * { position: relative; z-index: 1; }
-    .process-intro .eyebrow { justify-content: center; color: var(--gold); }
-    .process-intro h2 { font-family: var(--serif); color: var(--cream); font-size: clamp(1.9rem, 3.4vw, 2.8rem); font-weight: 500; line-height: 1.1; }
-    .process-intro .cross { color: var(--gold); font-size: 1.1rem; margin-top: 0.4rem; }
+    /* ── PROCESS INTRO ────────────────────────────────────── */
+    .process-intro { position:relative; background:linear-gradient(100deg,#071724,#0C2739); border-top:1px solid rgba(200,162,74,.28); border-bottom:1px solid rgba(200,162,74,.28); padding:clamp(3rem,5vw,4.5rem) 1.5rem; text-align:center; overflow:hidden; }
+    .process-intro::before { content:""; position:absolute; inset:0; background:radial-gradient(ellipse 80% 70% at 50% 110%,rgba(200,162,74,.13) 0%,transparent 65%),radial-gradient(ellipse 40% 50% at 15% 0%,rgba(200,162,74,.06) 0%,transparent 55%); pointer-events:none; }
+    .process-intro > * { position:relative; z-index:1; }
+    .pi-eyebrow { font-size:.68rem; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); opacity:.75; font-weight:700; display:flex; align-items:center; justify-content:center; gap:.75rem; margin-bottom:1rem; }
+    .pi-eyebrow::before,.pi-eyebrow::after { content:""; width:28px; height:1px; background:var(--gold); opacity:.35; }
+    .process-intro h2 { font-family:var(--serif); color:var(--cream); font-size:clamp(2rem,4vw,3.2rem); font-weight:300; line-height:1.1; margin-bottom:.5rem; }
+    .process-intro h2 em { font-style:italic; color:#D6AF5B; }
+    .process-intro .pi-sub { color:rgba(246,241,232,.48); font-size:.97rem; max-width:440px; margin:0 auto 2rem; line-height:1.65; }
+    .pi-steps { display:inline-flex; align-items:center; background:rgba(255,255,255,.04); border:1px solid rgba(200,162,74,.18); border-radius:999px; padding:.5rem 1.4rem; gap:.5rem; }
+    .pi-dot { width:28px; height:28px; border-radius:50%; border:1px solid rgba(200,162,74,.35); display:grid; place-items:center; font-family:var(--serif); font-size:.85rem; color:rgba(246,241,232,.4); }
+    .pi-line { width:22px; height:1px; background:rgba(200,162,74,.2); }
 
-    /* Z-PATTERN STEPS — parchment background so multiply-blended sketches fold in (same recipe as the working hero) */
-    .zsteps { padding: 2.5rem clamp(1rem, 3vw, 2.4rem); display: grid; gap: clamp(1.5rem, 3vw, 2.6rem); position: relative; background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-2) 100%); border-bottom: 1px solid var(--line); }
-    .zstep { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: clamp(1.5rem, 4vw, 3.5rem); }
-    .zstep-art { position: relative; display: grid; place-items: center; min-height: 300px; }
-    .zstep-art img { width: 100%; max-height: 360px; object-fit: contain; filter: saturate(0) brightness(1.1) contrast(1.2); mix-blend-mode: multiply; -webkit-mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%); mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%); }
-    .zstep-copy { max-width: 420px; }
-    .zstep:nth-child(even) .zstep-art { order: 2; }
-    .zstep:nth-child(even) .zstep-copy { order: 1; justify-self: end; }
-    .zstep-num { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; border: 1px solid rgba(200, 162, 74, 0.5); background: rgba(200, 162, 74, 0.08); color: var(--gold-dark); font-family: var(--serif); font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; }
-    .zstep-copy h3 { font-family: var(--serif); color: #081A2A; font-size: clamp(1.9rem, 3vw, 2.6rem); line-height: 1.02; font-weight: 500; margin-bottom: 0.7rem; }
-    .zstep-copy p { color: var(--stone); font-size: 1.02rem; line-height: 1.7; }
-    .zstep-copy .substep { margin-top: 1rem; display: grid; gap: 0.5rem; }
-    .zstep-copy .substep .pill { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #2A333B; }
-    .zstep-copy .substep .pill svg { width: 18px; height: 18px; stroke: var(--gold-dark); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
-    /* step 4 checklist */
-    .checklist { margin-top: 1rem; display: grid; gap: 0.7rem; }
-    .check-item { display: grid; grid-template-columns: 24px 1fr; gap: 0.65rem; align-items: start; font-family: var(--serif); font-size: 1.2rem; color: #081A2A; line-height: 1.25; }
-    .check-dot { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--gold); color: var(--gold-dark); display: grid; place-items: center; font-family: var(--sans); font-size: 0.74rem; font-weight: 800; margin-top: 0.15rem; }
+    /* ── STEPS CONTAINER ──────────────────────────────────── */
+    .steps-body { background:var(--parchment); border-bottom:1px solid var(--line); }
 
-    /* FINAL CTA */
-    .final-cta { margin: 0 1.4rem 1.4rem; padding: clamp(2rem, 4vw, 3rem); text-align: center; border: 1px solid rgba(200, 162, 74, 0.34); border-radius: 14px; background: linear-gradient(180deg, #FFFDF8, #F6EFE2); }
-    .final-cta h2 { font-family: var(--serif); color: #081A2A; font-size: clamp(1.9rem, 3.4vw, 2.9rem); line-height: 1.06; font-weight: 500; margin-bottom: 1.2rem; }
-    .cta-actions { display: flex; justify-content: center; gap: 0.9rem; flex-wrap: wrap; }
-    .btn-primary, .btn-secondary { min-height: 48px; min-width: 188px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; padding: 0 1.4rem; font-size: 0.88rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
-    .btn-primary { background: linear-gradient(135deg, #D6AF5B, #B98832); color: #071522; border: 1px solid rgba(183, 133, 46, 0.44); }
-    .btn-secondary { background: #FFFDF8; color: #8A6620; border: 1px solid rgba(183, 133, 46, 0.55); }
+    /* ── STEP LAYOUT ──────────────────────────────────────── */
+    /* Steps alternate: light (parchment) / navy */
+    .step { display:grid; grid-template-columns:1fr 1fr; min-height:480px; position:relative; }
+    .step + .step { border-top:1px solid var(--line); }
+    .step.step-navy { background:linear-gradient(105deg,#071724 55%,#0C2739 100%); }
+    .step.step-navy + .step { border-top:1px solid rgba(200,162,74,.18); }
+    .step.step-navy::after { content:""; position:absolute; inset:0; background:radial-gradient(circle at 85% 40%,rgba(200,162,74,.08),transparent 55%); pointer-events:none; }
 
-    /* FOOTER (canonical) */
-    .site-footer { background: linear-gradient(90deg, #061522, #0B2130); color: var(--cream); padding: 2.4rem clamp(1rem, 2.6vw, 2.6rem) 1.2rem; }
-    .footer-inner { width: min(1320px, 100%); margin: 0 auto; }
-    .footer-grid { display: grid; grid-template-columns: minmax(240px, 1.2fr) repeat(4, minmax(120px, 0.5fr)); gap: 2rem; padding-bottom: 1.8rem; border-bottom: 1px solid rgba(200, 162, 74, 0.18); }
-    .footer-lockup { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.7rem; }
-    .footer-lockup img { width: 48px; height: 48px; border: 1px solid rgba(200, 162, 74, 0.45); border-radius: 50%; object-fit: contain; }
-    .footer-lockup .fl-name { display: flex; flex-direction: column; line-height: 1; }
-    .footer-lockup strong { font-family: var(--serif); font-size: 1.7rem; font-weight: 500; letter-spacing: 0.08em; }
-    .footer-lockup .fl-tag { color: var(--gold); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 0.25rem; }
-    .footer-brand p { color: rgba(246, 241, 232, 0.74); line-height: 1.6; max-width: 300px; font-size: 0.9rem; }
-    .footer-col h4 { color: var(--gold); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 0.85rem; }
-    .footer-col a { display: block; color: rgba(246, 241, 232, 0.72); font-size: 0.9rem; margin-bottom: 0.52rem; }
-    .footer-bottom { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-top: 1.2rem; color: rgba(246, 241, 232, 0.58); font-size: 0.82rem; }
+    /* copy side */
+    .step-copy { padding:clamp(3rem,5.5vw,5rem) clamp(2rem,4vw,4rem); display:flex; flex-direction:column; justify-content:center; position:relative; z-index:1; }
+    .step-badge { display:inline-flex; align-items:center; gap:.7rem; margin-bottom:1.3rem; }
+    .step-num { width:42px; height:42px; border-radius:50%; display:grid; place-items:center; font-family:var(--serif); font-size:1.2rem; font-weight:600; flex-shrink:0; }
+    .step:not(.step-navy) .step-num { border:1px solid rgba(200,162,74,.45); background:rgba(200,162,74,.08); color:var(--gold-dark); }
+    .step.step-navy .step-num { border:1px solid rgba(200,162,74,.4); background:rgba(200,162,74,.1); color:#D6AF5B; }
+    .step-label { font-size:.65rem; letter-spacing:.2em; text-transform:uppercase; font-weight:700; }
+    .step:not(.step-navy) .step-label { color:var(--gold-dark); opacity:.65; }
+    .step.step-navy .step-label { color:var(--gold); opacity:.6; }
+    .step-copy h3 { font-family:var(--serif); font-size:clamp(2.1rem,3.2vw,3rem); font-weight:500; line-height:1.02; margin-bottom:.8rem; }
+    .step:not(.step-navy) .step-copy h3 { color:#081A2A; }
+    .step.step-navy .step-copy h3 { color:var(--cream); }
+    .step-rule { width:44px; height:2px; background:linear-gradient(90deg,var(--gold),transparent); margin-bottom:1rem; }
+    .step-copy p { font-size:1rem; line-height:1.72; }
+    .step:not(.step-navy) .step-copy p { color:var(--stone); }
+    .step.step-navy .step-copy p { color:rgba(246,241,232,.6); }
 
-    .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.65s ease, transform 0.65s ease; }
-    .reveal.visible { opacity: 1; transform: translateY(0); }
-    @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+    /* visual side */
+    .step-visual { position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    /* ghost big numeral watermark */
+    .step-visual-num { position:absolute; font-family:var(--serif); font-size:clamp(10rem,18vw,16rem); font-weight:600; line-height:1; pointer-events:none; user-select:none; }
+    .step:not(.step-navy) .step-visual-num { color:rgba(166,159,145,.1); bottom:-1.5rem; right:1.5rem; }
+    .step.step-navy .step-visual-num { color:rgba(200,162,74,.07); bottom:-1.5rem; left:1.5rem; }
+    /* SVG illustration wrapper */
+    .step-svg { position:relative; z-index:1; width:100%; max-width:360px; padding:2rem; }
+    .step-svg svg { width:100%; height:auto; }
 
-    @media (max-width: 1180px) {
-      .nav-links, .nav-actions { display: none; }
-      .mobile-menu-btn { display: inline-flex; }
-      .hero { grid-template-columns: 1fr; padding: 1.5rem 1.25rem; min-height: auto; }
-      .hero-art { min-height: 330px; justify-items: center; margin-right: 0; }
-      .hero-art img { max-height: 360px; }
-      .hero-copy { max-width: 680px; }
-      .footer-grid { grid-template-columns: 1fr 1fr; }
-      .footer-bottom { flex-direction: column; }
+    /* even steps: copy left, visual right (default) */
+    /* odd steps: visual left, copy right */
+    .step:nth-child(odd) .step-copy { order:2; }
+    .step:nth-child(odd) .step-visual { order:1; }
+    .step:nth-child(even) .step-copy { order:1; }
+    .step:nth-child(even) .step-visual { order:2; }
+
+    /* offering pills (step 3) */
+    .offering-grid { margin-top:1.4rem; display:grid; grid-template-columns:1fr 1fr; gap:.55rem; }
+    .offering-pill { display:flex; align-items:flex-start; gap:.6rem; padding:.7rem .85rem; border-radius:10px; font-size:.88rem; line-height:1.4; }
+    .step:not(.step-navy) .offering-pill { background:rgba(166,159,145,.1); border:1px solid var(--line); color:#2A333B; }
+    .step.step-navy .offering-pill { background:rgba(200,162,74,.07); border:1px solid rgba(200,162,74,.2); color:rgba(246,241,232,.72); }
+    .offering-pill svg { width:16px; height:16px; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; margin-top:.15rem; }
+    .step:not(.step-navy) .offering-pill svg { stroke:var(--gold-dark); }
+    .step.step-navy .offering-pill svg { stroke:var(--gold); opacity:.8; }
+    .offering-pill span { font-size:.82rem; }
+
+    /* checklist (step 4) */
+    .checklist { margin-top:1.3rem; display:grid; gap:.75rem; }
+    .check-item { display:flex; align-items:flex-start; gap:.75rem; }
+    .check-dot { width:24px; height:24px; border-radius:50%; flex-shrink:0; border:1px solid rgba(200,162,74,.55); background:rgba(200,162,74,.12); display:grid; place-items:center; font-family:var(--sans); font-size:.68rem; font-weight:800; color:var(--gold); margin-top:.1rem; }
+    .check-item p { font-family:var(--serif); font-size:1.15rem; color:var(--cream); line-height:1.35; }
+
+    /* ── FINAL CTA ────────────────────────────────────────── */
+    .final-cta { position:relative; margin:1.5rem; padding:clamp(2.5rem,5vw,4rem) clamp(1.5rem,4vw,3rem); border-radius:16px; border:1px solid rgba(200,162,74,.28); overflow:hidden; text-align:center; background:linear-gradient(135deg,#071724 0%,#0C2739 100%); }
+    .final-cta::before { content:""; position:absolute; inset:0; background:radial-gradient(ellipse 80% 70% at 50% 110%,rgba(200,162,74,.15) 0%,transparent 65%),radial-gradient(ellipse 40% 40% at 8% 0%,rgba(200,162,74,.07) 0%,transparent 55%); pointer-events:none; }
+    .final-cta > * { position:relative; z-index:1; }
+    .cta-cross { color:var(--gold); opacity:.38; font-size:1rem; letter-spacing:.35em; margin-bottom:1.2rem; }
+    .final-cta h2 { font-family:var(--serif); color:var(--cream); font-size:clamp(2rem,4vw,3rem); font-weight:300; line-height:1.1; margin-bottom:.6rem; }
+    .final-cta h2 em { font-style:italic; color:#D6AF5B; }
+    .final-cta p { color:rgba(246,241,232,.48); font-size:1rem; max-width:420px; margin:0 auto 2rem; line-height:1.65; }
+    .cta-actions { display:flex; justify-content:center; gap:.9rem; flex-wrap:wrap; }
+    .btn-primary { min-height:50px; min-width:188px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; padding:0 1.6rem; font-size:.88rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; background:linear-gradient(135deg,#D6AF5B,#B98832); color:#071522; border:none; }
+    .btn-secondary { min-height:50px; min-width:188px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; padding:0 1.6rem; font-size:.88rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; background:transparent; color:rgba(246,241,232,.72); border:1px solid rgba(200,162,74,.35); transition:border-color .2s,color .2s; }
+    .btn-secondary:hover { border-color:rgba(200,162,74,.65); color:#D6AF5B; }
+
+    /* ── FOOTER (unchanged) ───────────────────────────────── */
+    .site-footer { background:linear-gradient(90deg,#061522,#0B2130); color:var(--cream); padding:2.4rem clamp(1rem,2.6vw,2.6rem) 1.2rem; }
+    .footer-inner { width:min(1320px,100%); margin:0 auto; }
+    .footer-grid { display:grid; grid-template-columns:minmax(240px,1.2fr) repeat(4,minmax(120px,.5fr)); gap:2rem; padding-bottom:1.8rem; border-bottom:1px solid rgba(200,162,74,.18); }
+    .footer-lockup { display:flex; align-items:center; gap:.75rem; margin-bottom:.7rem; }
+    .footer-lockup img { width:48px; height:48px; border:1px solid rgba(200,162,74,.45); border-radius:50%; object-fit:contain; }
+    .footer-lockup .fl-name { display:flex; flex-direction:column; line-height:1; }
+    .footer-lockup strong { font-family:var(--serif); font-size:1.7rem; font-weight:500; letter-spacing:.08em; }
+    .footer-lockup .fl-tag { color:var(--gold); font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; margin-top:.25rem; }
+    .footer-brand p { color:rgba(246,241,232,.74); line-height:1.6; max-width:300px; font-size:.9rem; }
+    .footer-col h4 { color:var(--gold); font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; margin-bottom:.85rem; }
+    .footer-col a { display:block; color:rgba(246,241,232,.72); font-size:.9rem; margin-bottom:.52rem; }
+    .footer-bottom { display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; padding-top:1.2rem; color:rgba(246,241,232,.58); font-size:.82rem; }
+
+    /* ── REVEAL ───────────────────────────────────────────── */
+    .reveal { opacity:0; transform:translateY(20px); transition:opacity .65s ease,transform .65s ease; }
+    .reveal.visible { opacity:1; transform:translateY(0); }
+    @media (prefers-reduced-motion:reduce) { .reveal { opacity:1; transform:none; transition:none; } }
+
+    /* ── RESPONSIVE ───────────────────────────────────────── */
+    @media (max-width:1180px) {
+      .nav-links,.nav-actions { display:none; }
+      .mobile-menu-btn { display:inline-flex; }
+      .hero { grid-template-columns:1fr; padding:1.5rem 1.25rem; min-height:auto; }
+      .hero-art { min-height:330px; justify-items:center; margin-right:0; }
+      .hero-art img { max-height:360px; }
+      .footer-grid { grid-template-columns:1fr 1fr; }
     }
-    @media (max-width: 760px) {
-      .site-header { padding: 0.8rem 0.9rem; }
-      .brand-name strong { font-size: 1.7rem; }
-      .brand-name span { display: none; }
-      .page { width: min(1320px, calc(100% - 1rem)); }
-      .hero-copy h1 { font-size: clamp(2.9rem, 13vw, 4.3rem); }
-      .hero-copy p { font-size: 1rem; }
-      /* collapse Z-pattern to single column, art always on top */
-      .zstep { grid-template-columns: 1fr; gap: 1rem; text-align: center; }
-      .zstep-art { min-height: 240px; order: 0 !important; }
-      .zstep-copy { order: 1 !important; justify-self: center !important; max-width: 520px; }
-      .zstep-num { margin-left: auto; margin-right: auto; }
-      .zstep-copy .substep .pill, .check-item { justify-content: center; text-align: left; }
-      .checklist { justify-items: center; }
-      .final-cta { margin: 0 0.8rem 0.8rem; }
-      .footer-grid { grid-template-columns: 1fr; }
-      .footer-bottom { display: grid; }
+    @media (max-width:860px) {
+      .step { grid-template-columns:1fr; min-height:auto; }
+      .step:nth-child(odd) .step-copy,
+      .step:nth-child(even) .step-copy { order:2; padding:2rem 1.5rem 2.5rem; }
+      .step:nth-child(odd) .step-visual,
+      .step:nth-child(even) .step-visual { order:1; min-height:220px; padding:1.5rem; }
+      .step-visual-num { font-size:8rem; }
+      .offering-grid { grid-template-columns:1fr; }
+      .final-cta { margin:1rem; }
+      .pi-steps { display:none; }
+    }
+    @media (max-width:760px) {
+      .site-header { padding:.8rem .9rem; }
+      .brand-name strong { font-size:1.7rem; }
+      .brand-name span { display:none; }
+      .page { width:min(1320px,calc(100% - 1rem)); }
+      .footer-grid { grid-template-columns:1fr; }
+      .footer-bottom { display:grid; }
     }
   </style>
 </head>
@@ -219,7 +266,7 @@
       <button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close menu">&times;</button>
     </div>
     <div class="drawer-scroll">
-      <nav class="drawer-links" aria-label="Drawer navigation">
+      <nav class="drawer-links">
         <a href="/vision">Vision</a>
         <a href="/features">Features</a>
         <a class="active" href="/how-it-works">How it Works</a>
@@ -237,6 +284,8 @@
   </aside>
 
   <main class="page">
+
+    <!-- HERO (unchanged) -->
     <section class="hero">
       <div class="hero-copy reveal">
         <div class="eyebrow">How AGAPAY Works</div>
@@ -249,71 +298,214 @@
       </div>
     </section>
 
+    <!-- PROCESS INTRO BAND -->
     <div class="process-intro reveal">
-      <div class="eyebrow">Four simple steps</div>
-      <h2>From first visit to first offering.</h2>
-      <div class="cross">&#10013;</div>
+      <div class="pi-eyebrow">Four simple steps</div>
+      <h2>From first visit to <em>first offering.</em></h2>
+      <p class="pi-sub">No app to download. No setup fees. Just your parish, your gift, and the life of the Church.</p>
+      <div class="pi-steps" aria-hidden="true">
+        <div class="pi-dot">1</div><div class="pi-line"></div>
+        <div class="pi-dot">2</div><div class="pi-line"></div>
+        <div class="pi-dot">3</div><div class="pi-line"></div>
+        <div class="pi-dot">4</div>
+      </div>
     </div>
 
-    <section class="zsteps" aria-label="How AGAPAY works">
+    <div class="steps-body">
 
-      <article class="zstep reveal">
-        <div class="zstep-art" aria-hidden="true"><img src="/images/how-it-works/step-signup-church.png" alt="" /></div>
-        <div class="zstep-copy">
-          <div class="zstep-num">1</div>
-          <h3>Sign up with AGAPAY</h3>
-          <p>Create your account in about a minute. No app to download, no setup fees &mdash; just your name and email to begin.</p>
+      <!-- ── STEP 1: SIGN UP — parchment, SVG visual right ── -->
+      <article class="step reveal">
+        <div class="step-copy">
+          <div class="step-badge">
+            <div class="step-num">1</div>
+            <span class="step-label">Create your account</span>
+          </div>
+          <h3>Start in a minute.</h3>
+          <div class="step-rule"></div>
+          <p>Just your name and email to begin. No app to download, no setup fee, no credit card required. Your giving history, intentions, and commemorations follow you wherever your parish is.</p>
         </div>
-      </article>
-
-      <article class="zstep reveal">
-        <div class="zstep-art" aria-hidden="true"><img src="/images/how-it-works/step-find-parish-church.png" alt="" /></div>
-        <div class="zstep-copy">
-          <div class="zstep-num">2</div>
-          <h3>Find your parish</h3>
-          <p>Search by name, city, jurisdiction, or location to find your parish, mission, or monastery &mdash; across every canonical jurisdiction.</p>
-        </div>
-      </article>
-
-      <article class="zstep reveal">
-        <div class="zstep-art" aria-hidden="true"><img src="/images/how-it-works/step-find-parish-church.png" alt="" /></div>
-        <div class="zstep-copy">
-          <div class="zstep-num">3</div>
-          <h3>Choose your offering</h3>
-          <p>Select the way you would like to give &mdash; each shaped around the life of the Church:</p>
-          <div class="substep">
-            <span class="pill"><svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M8 21V9l4-4 4 4v12"/><path d="M10 13h4"/></svg> Stewardship &amp; recurring gifts</span>
-            <span class="pill"><svg viewBox="0 0 24 24"><path d="M12 3s-4 3.5-4 8a4 4 0 0 0 8 0c0-4.5-4-8-4-8Z"/><path d="M12 15v6"/><path d="M9 21h6"/></svg> Candles for the living and the departed</span>
-            <span class="pill"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg> Commemorations for the living and the departed</span>
-            <span class="pill"><svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M7 21V10l5-5 5 5v11"/><path d="M12 5V2"/></svg> Special appeals &amp; building funds</span>
+        <div class="step-visual">
+          <div class="step-visual-num" aria-hidden="true">1</div>
+          <div class="step-svg">
+            <!-- SVG: a simple account/envelope + person icon -->
+            <svg viewBox="0 0 320 260" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <!-- soft glow -->
+              <ellipse cx="160" cy="130" rx="130" ry="105" fill="rgba(200,162,74,0.06)"/>
+              <!-- envelope body -->
+              <rect x="48" y="80" width="224" height="140" rx="12" stroke="rgba(200,162,74,0.45)" stroke-width="1.5" fill="rgba(200,162,74,0.05)"/>
+              <!-- envelope flap lines -->
+              <polyline points="48,80 160,158 272,80" stroke="rgba(200,162,74,0.4)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+              <!-- person silhouette, centred -->
+              <circle cx="160" cy="105" r="22" stroke="rgba(200,162,74,0.55)" stroke-width="1.5" fill="rgba(200,162,74,0.08)"/>
+              <path d="M120 170 c0-22 18-38 40-38 s40 16 40 38" stroke="rgba(200,162,74,0.45)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+              <!-- checkmark in bottom-right corner -->
+              <circle cx="248" cy="196" r="18" fill="rgba(200,162,74,0.15)" stroke="rgba(200,162,74,0.5)" stroke-width="1.2"/>
+              <polyline points="240,196 246,202 257,190" stroke="rgba(200,162,74,0.85)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- decorative dots -->
+              <circle cx="72" cy="200" r="3" fill="rgba(200,162,74,0.25)"/>
+              <circle cx="88" cy="214" r="2" fill="rgba(200,162,74,0.15)"/>
+              <circle cx="60" cy="216" r="1.5" fill="rgba(200,162,74,0.15)"/>
+            </svg>
           </div>
         </div>
       </article>
 
-      <article class="zstep reveal">
-        <div class="zstep-art" aria-hidden="true"><img src="/images/how-it-works/woman-lighting-candles.png" alt="" /></div>
-        <div class="zstep-copy">
-          <div class="zstep-num">4</div>
-          <h3>Love how you give</h3>
-          <p>Your gift supports real people and real mission in the Church.</p>
+      <!-- ── STEP 2: FIND YOUR PARISH — navy, SVG visual left ── -->
+      <article class="step step-navy reveal">
+        <div class="step-visual">
+          <div class="step-visual-num" aria-hidden="true">2</div>
+          <div class="step-svg">
+            <!-- SVG: a pin on a map grid with an Orthodox cross -->
+            <svg viewBox="0 0 320 260" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <!-- glow -->
+              <ellipse cx="160" cy="130" rx="130" ry="105" fill="rgba(200,162,74,0.05)"/>
+              <!-- map grid lines -->
+              <line x1="60" y1="70" x2="60" y2="210" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <line x1="110" y1="70" x2="110" y2="210" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <line x1="160" y1="70" x2="160" y2="210" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <line x1="210" y1="70" x2="210" y2="210" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <line x1="260" y1="70" x2="260" y2="210" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <line x1="50" y1="100" x2="270" y2="100" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <line x1="50" y1="140" x2="270" y2="140" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <line x1="50" y1="180" x2="270" y2="180" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <!-- map pin -->
+              <path d="M160 60 C145 60 132 73 132 88 C132 108 160 138 160 138 C160 138 188 108 188 88 C188 73 175 60 160 60 Z" stroke="rgba(200,162,74,0.7)" stroke-width="1.5" fill="rgba(200,162,74,0.12)"/>
+              <!-- Orthodox cross inside pin -->
+              <line x1="160" y1="74" x2="160" y2="102" stroke="rgba(200,162,74,0.9)" stroke-width="2" stroke-linecap="round"/>
+              <line x1="151" y1="82" x2="169" y2="82" stroke="rgba(200,162,74,0.9)" stroke-width="2" stroke-linecap="round"/>
+              <line x1="153" y1="91" x2="167" y2="91" stroke="rgba(200,162,74,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+              <!-- small secondary pins -->
+              <circle cx="100" cy="155" r="5" stroke="rgba(200,162,74,0.3)" stroke-width="1" fill="rgba(200,162,74,0.06)"/>
+              <circle cx="215" cy="125" r="4" stroke="rgba(200,162,74,0.2)" stroke-width="1" fill="rgba(200,162,74,0.04)"/>
+              <circle cx="240" cy="170" r="3.5" stroke="rgba(200,162,74,0.2)" stroke-width="1" fill="rgba(200,162,74,0.04)"/>
+              <!-- pulse rings around main pin -->
+              <circle cx="160" cy="88" r="34" stroke="rgba(200,162,74,0.12)" stroke-width="1" fill="none"/>
+              <circle cx="160" cy="88" r="48" stroke="rgba(200,162,74,0.07)" stroke-width="1" fill="none"/>
+            </svg>
+          </div>
+        </div>
+        <div class="step-copy">
+          <div class="step-badge">
+            <div class="step-num">2</div>
+            <span class="step-label">Find your parish</span>
+          </div>
+          <h3>Every canonical jurisdiction.</h3>
+          <div class="step-rule"></div>
+          <p>Search by name, city, jurisdiction, or location. ROCOR, OCA, Antiochian, GOA, ACROD &mdash; every canonically recognized Orthodox community in America. If they are on AGAPAY, you will find them.</p>
+        </div>
+      </article>
+
+      <!-- ── STEP 3: CHOOSE YOUR OFFERING — parchment, SVG visual right ── -->
+      <article class="step reveal">
+        <div class="step-copy">
+          <div class="step-badge">
+            <div class="step-num">3</div>
+            <span class="step-label">Choose your offering</span>
+          </div>
+          <h3>Give the way the Church gives.</h3>
+          <div class="step-rule"></div>
+          <p>Each offering is shaped around how Orthodox Christians actually give &mdash; not a generic payment form pretending to understand stewardship.</p>
+          <div class="offering-grid">
+            <div class="offering-pill">
+              <svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M8 21V9l4-4 4 4v12"/><path d="M10 13h4"/></svg>
+              <span>Stewardship &amp; tithes</span>
+            </div>
+            <div class="offering-pill">
+              <svg viewBox="0 0 24 24"><path d="M12 3s-4 3.5-4 8a4 4 0 0 0 8 0c0-4.5-4-8-4-8Z"/><path d="M12 15v6"/><path d="M9 21h6"/></svg>
+              <span>Candle offerings</span>
+            </div>
+            <div class="offering-pill">
+              <svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
+              <span>Commemorations</span>
+            </div>
+            <div class="offering-pill">
+              <svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M7 21V10l5-5 5 5v11"/></svg>
+              <span>Building funds</span>
+            </div>
+          </div>
+        </div>
+        <div class="step-visual">
+          <div class="step-visual-num" aria-hidden="true">3</div>
+          <div class="step-svg">
+            <!-- SVG: a scroll / offering list with a candle -->
+            <svg viewBox="0 0 320 260" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <ellipse cx="160" cy="130" rx="130" ry="105" fill="rgba(200,162,74,0.05)"/>
+              <!-- parchment scroll -->
+              <rect x="72" y="52" width="150" height="170" rx="6" stroke="rgba(169,124,37,0.45)" stroke-width="1.5" fill="rgba(200,162,74,0.06)"/>
+              <!-- scroll curl top -->
+              <ellipse cx="147" cy="52" rx="75" ry="9" stroke="rgba(169,124,37,0.35)" stroke-width="1.2" fill="rgba(200,162,74,0.08)"/>
+              <!-- scroll curl bottom -->
+              <ellipse cx="147" cy="222" rx="75" ry="9" stroke="rgba(169,124,37,0.35)" stroke-width="1.2" fill="rgba(200,162,74,0.08)"/>
+              <!-- list lines -->
+              <line x1="95" y1="88" x2="200" y2="88" stroke="rgba(169,124,37,0.4)" stroke-width="1.2" stroke-linecap="round"/>
+              <line x1="95" y1="108" x2="185" y2="108" stroke="rgba(169,124,37,0.3)" stroke-width="1" stroke-linecap="round"/>
+              <line x1="95" y1="128" x2="190" y2="128" stroke="rgba(169,124,37,0.3)" stroke-width="1" stroke-linecap="round"/>
+              <line x1="95" y1="148" x2="178" y2="148" stroke="rgba(169,124,37,0.3)" stroke-width="1" stroke-linecap="round"/>
+              <line x1="95" y1="168" x2="183" y2="168" stroke="rgba(169,124,37,0.25)" stroke-width="1" stroke-linecap="round"/>
+              <!-- check dots on list items -->
+              <circle cx="85" cy="88" r="4" fill="rgba(200,162,74,0.3)" stroke="rgba(200,162,74,0.6)" stroke-width="1"/>
+              <circle cx="85" cy="108" r="4" fill="rgba(200,162,74,0.15)" stroke="rgba(200,162,74,0.35)" stroke-width="1"/>
+              <circle cx="85" cy="128" r="4" fill="rgba(200,162,74,0.15)" stroke="rgba(200,162,74,0.35)" stroke-width="1"/>
+              <!-- candle right side -->
+              <rect x="224" y="120" width="22" height="80" rx="4" stroke="rgba(200,162,74,0.5)" stroke-width="1.3" fill="rgba(200,162,74,0.08)"/>
+              <!-- wick -->
+              <line x1="235" y1="120" x2="235" y2="110" stroke="rgba(200,162,74,0.6)" stroke-width="1.5" stroke-linecap="round"/>
+              <!-- flame -->
+              <path d="M235 110 C230 104 227 96 235 90 C243 96 240 104 235 110Z" fill="rgba(200,162,74,0.4)" stroke="rgba(200,162,74,0.7)" stroke-width="1"/>
+              <!-- glow halo around flame -->
+              <ellipse cx="235" cy="97" rx="12" ry="14" fill="rgba(200,162,74,0.06)"/>
+              <!-- wax drips -->
+              <path d="M224 168 Q222 176 224 182" stroke="rgba(200,162,74,0.3)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+              <path d="M246 175 Q248 183 246 188" stroke="rgba(200,162,74,0.25)" stroke-width="1" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </article>
+
+      <!-- ── STEP 4: LOVE HOW YOU GIVE — navy, full-width (no art) ── -->
+      <article class="step step-navy reveal" style="grid-template-columns:1fr; min-height:auto;">
+        <div class="step-copy" style="max-width:820px; margin:0 auto; align-items:flex-start; padding:clamp(3rem,5vw,5rem) clamp(2rem,4vw,4rem);">
+          <div class="step-badge">
+            <div class="step-num">4</div>
+            <span class="step-label">Your gift arrives</span>
+          </div>
+          <h3>Love how you give.</h3>
+          <div class="step-rule"></div>
+          <p style="max-width:560px;">Your gift supports real people and real mission. Here is what happens the moment you give:</p>
           <div class="checklist">
-            <div class="check-item"><span class="check-dot">&#10003;</span><span>Your parish is notified.</span></div>
-            <div class="check-item"><span class="check-dot">&#10003;</span><span>Your gift is delivered.</span></div>
-            <div class="check-item"><span class="check-dot">&#10003;</span><span>Your intentions are remembered &mdash; commemorations reach your priest each week.</span></div>
-            <div class="check-item"><span class="check-dot">&#10003;</span><span>You make a difference in the life of the Church.</span></div>
+            <div class="check-item">
+              <span class="check-dot">&#10003;</span>
+              <p>Your parish is notified instantly &mdash; the gift arrives directly in their account.</p>
+            </div>
+            <div class="check-item">
+              <span class="check-dot">&#10003;</span>
+              <p>No platform holds your money. It goes straight to the Church, the moment you give it.</p>
+            </div>
+            <div class="check-item">
+              <span class="check-dot">&#10003;</span>
+              <p>Your commemorations are queued for the priest &mdash; the living and the departed, remembered at the proskomedia.</p>
+            </div>
+            <div class="check-item">
+              <span class="check-dot">&#10003;</span>
+              <p>Your giving record follows you. Year-end statements, all in one place.</p>
+            </div>
           </div>
         </div>
       </article>
 
-    </section>
+    </div><!-- end steps-body -->
 
+    <!-- FINAL CTA -->
     <section class="final-cta reveal">
-      <h2>Ready to make your first offering?</h2>
+      <div class="cta-cross">&#10013; &nbsp; &#10013; &nbsp; &#10013;</div>
+      <h2>Ready to make your <em>first offering?</em></h2>
+      <p>Find your parish and give in minutes &mdash; or register your community to receive the gifts of the faithful.</p>
       <div class="cta-actions">
         <a class="btn-primary" href="/give">Find Your Parish</a>
         <a class="btn-secondary" href="/register">Register Your Parish</a>
       </div>
     </section>
+
   </main>
 
   <footer class="site-footer">
@@ -369,7 +561,6 @@
     mobileMenuBtn && mobileMenuBtn.addEventListener("click", () => setDrawer(true));
     drawerBackdrop && drawerBackdrop.addEventListener("click", () => setDrawer(false));
     drawerCloseBtn && drawerCloseBtn.addEventListener("click", () => setDrawer(false));
-
     const signinBtn = document.getElementById("signinBtn");
     const signinMenu = document.getElementById("signinMenu");
     signinBtn && signinBtn.addEventListener("click", (e) => {
@@ -381,12 +572,11 @@
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") { setDrawer(false); signinMenu && signinMenu.classList.remove("open"); }
     });
-
     const io = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) { entry.target.classList.add("visible"); io.unobserve(entry.target); }
       });
-    }, { threshold: 0.12 });
+    }, { threshold: 0.08 });
     document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
   </script>
 </body>
