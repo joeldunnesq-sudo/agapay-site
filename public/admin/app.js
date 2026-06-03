@@ -724,9 +724,9 @@
     }
 
     function renderFilteredList() {
-      const query = document.getElementById('searchInput').value.trim().toLowerCase();
-      const status = document.getElementById('statusFilter').value;
-      const sort = document.getElementById('sortOrder').value;
+      const query = (document.getElementById('searchInputMain')?.value || '').trim().toLowerCase();
+      const status = document.getElementById('statusFilterMain')?.value || 'all';
+      const sort = document.getElementById('sortOrderMain')?.value || 'newest';
 
       let filtered = registrationsCache.filter((item) => {
         const haystack = [
@@ -1552,32 +1552,8 @@
       const titles = { overview: 'Overview', queue: 'Registration Queue', settings: 'Settings' };
       const titleEl = document.getElementById('topbarTitle');
       if (titleEl) titleEl.textContent = titles[tab] || 'Admin Console';
-      // Show/hide sidebar filters (only relevant on queue tab)
-      const sf = document.querySelector('.sidebar-filters');
-      if (sf) sf.style.display = tab === 'queue' ? '' : 'none';
-      // Sync inline filters when entering queue tab
-      if (tab === 'queue') syncInlineFilters();
       document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
       if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function syncInlineFilters() {
-      const sm = document.getElementById('searchInputMain');
-      const fm = document.getElementById('statusFilterMain');
-      const om = document.getElementById('sortOrderMain');
-      if (sm) sm.value = document.getElementById('searchInput').value;
-      if (fm) fm.value = document.getElementById('statusFilter').value;
-      if (om) om.value = document.getElementById('sortOrder').value;
-    }
-
-    function syncFilter(type, value) {
-      if (type === 'search') {
-        document.getElementById('searchInput').value = value;
-      } else if (type === 'status') {
-        document.getElementById('statusFilter').value = value;
-      } else if (type === 'sort') {
-        document.getElementById('sortOrder').value = value;
-      }
     }
 
     // ── BULK ACTIONS ──────────────────────────────────────────────────────
