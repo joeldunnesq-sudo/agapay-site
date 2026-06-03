@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Why AGAPAY | Built for the Nave</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="favicons/android-chrome-192x192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="favicons/android-chrome-512x512.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
   <meta name="description" content="AGAPAY is being built from within Orthodox life, with liturgical calendars, commemoration routing, canonical review, and transparent pricing for Orthodox communities." />
   <meta property="og:title" content="Why AGAPAY" />
@@ -330,26 +330,20 @@
       font-size: 1rem;
       line-height: 1.75;
     }
-  
-   .hero-art { 
-     align-self: stretch; min-height: 420px; 
-     background-image: url("/images/why/why-hero-offering.png"); 
-     background-size: contain; background-repeat: no-repeat; 
-     background-position: center right; filter: saturate(0) brightness(1.1) contrast(1.2); 
-     mix-blend-mode: multiply; 
+
+   .hero-art {
+     align-self: stretch; min-height: 420px;
+     background-image: url("/images/why/why-hero-offering.png");
+     background-size: contain; background-repeat: no-repeat;
+     background-position: center right; filter: saturate(0) brightness(1.1) contrast(1.2);
+     mix-blend-mode: multiply;
      -webkit-mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%); mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%); }
-  
+
     .section {
       padding: clamp(2.3rem, 5vw, 4.6rem) clamp(1rem, 3vw, 2.5rem);
       border-bottom: 1px solid var(--line);
     }
     .section-inner { width: min(1160px, 100%); margin: 0 auto; }
-    .section-grid {
-      display: grid;
-      grid-template-columns: minmax(250px, 0.72fr) minmax(0, 1.28fr);
-      gap: clamp(1.6rem, 4vw, 3.4rem);
-      align-items: start;
-    }
     .section-kicker {
       display: inline-flex;
       align-items: center;
@@ -374,63 +368,6 @@
       font-size: 1rem;
       line-height: 1.75;
       max-width: 620px;
-    }
-
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.9rem;
-    }
-    .feature-card {
-      position: relative;
-      min-height: 210px;
-      padding: 1.2rem;
-      border: 1px solid rgba(200, 162, 74, 0.28);
-      border-radius: 12px;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 251, 244, 0.92)),
-        radial-gradient(circle at 12% 0%, rgba(200, 162, 74, 0.12), transparent 45%);
-      box-shadow: 0 10px 24px rgba(6, 21, 34, 0.04);
-    }
-    .feature-card::before {
-      content: "";
-      position: absolute;
-      inset: 0 0 auto 0;
-      height: 3px;
-      background: linear-gradient(90deg, var(--gold), #184a2b);
-      border-radius: 12px 12px 0 0;
-    }
-    .icon-round {
-      width: 46px;
-      height: 46px;
-      border: 1px solid rgba(200, 162, 74, 0.45);
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      color: var(--gold-dark);
-      background: rgba(255, 253, 248, 0.68);
-      margin-bottom: 0.85rem;
-    }
-    .icon-round svg {
-      width: 24px;
-      height: 24px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.65;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .feature-card h3 {
-      color: var(--night);
-      font-size: 0.98rem;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      margin-bottom: 0.55rem;
-    }
-    .feature-card p {
-      color: var(--stone);
-      font-size: 0.93rem;
-      line-height: 1.65;
     }
 
     .quote-band {
@@ -470,99 +407,6 @@
       letter-spacing: 0.14em;
       text-transform: uppercase;
       font-style: normal;
-    }
-
-    .comparison {
-      background: linear-gradient(180deg, #FFFDF8, #F7EFE3);
-    }
-    .comparison-body {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.82fr);
-      gap: 1rem;
-      margin-top: 1.6rem;
-    }
-    .distinct-list {
-      list-style: none;
-      display: grid;
-      gap: 0.7rem;
-    }
-    .distinct-list li {
-      display: grid;
-      grid-template-columns: 34px 1fr;
-      gap: 0.65rem;
-      align-items: start;
-      padding: 0.9rem;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.76);
-      color: var(--night);
-      font-size: 0.96rem;
-      line-height: 1.55;
-    }
-    .distinct-list span {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      color: var(--gold-dark);
-      background: rgba(200, 162, 74, 0.13);
-      border: 1px solid rgba(200, 162, 74, 0.35);
-      font-family: var(--serif);
-      font-size: 1.15rem;
-    }
-    .transparent-card {
-      border: 1px solid rgba(200, 162, 74, 0.34);
-      border-radius: 12px;
-      background: var(--paper);
-      padding: 1.3rem;
-      align-self: start;
-      box-shadow: 0 14px 26px rgba(6, 21, 34, 0.05);
-    }
-    .transparent-card h3 {
-      font-family: var(--serif);
-      color: var(--night);
-      font-size: 1.7rem;
-      font-weight: 500;
-      margin-bottom: 0.7rem;
-    }
-    .transparent-card p {
-      color: var(--stone);
-      font-size: 0.95rem;
-      line-height: 1.72;
-    }
-
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.9rem;
-      margin-top: 1.6rem;
-    }
-    .stat-card {
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.76);
-      padding: 1.3rem;
-      min-height: 170px;
-    }
-    .stat-number {
-      color: var(--gold-dark);
-      font-family: var(--serif);
-      font-size: clamp(2.4rem, 5vw, 4rem);
-      line-height: 0.9;
-      margin-bottom: 0.7rem;
-    }
-    .stat-card h3 {
-      color: var(--night);
-      font-size: 0.92rem;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      margin-bottom: 0.45rem;
-    }
-    .stat-card p {
-      color: var(--stone);
-      font-size: 0.92rem;
-      line-height: 1.6;
     }
 
     .closing-cta {
@@ -678,32 +522,25 @@
       font-size: 0.82rem;
     }
 
-
-    /* BEAUTIFIED WHY PAGE BODY */
+    /* ORTHODOX DIFFERENCE */
     .orthodox-difference {
       background:
         radial-gradient(circle at 8% 0%, rgba(200, 162, 74, 0.10), transparent 34%),
         linear-gradient(180deg, #FFFDF8 0%, #F7EFE3 100%);
     }
-
     .difference-layout {
       display: grid;
       grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.28fr);
       gap: clamp(2rem, 5vw, 4rem);
       align-items: start;
     }
-
-    .difference-copy {
-      position: sticky;
-      top: 110px;
-    }
-
+    .difference-copy { position: sticky; top: 110px; }
+    .difference-copy .section-lead + .section-lead { margin-top: 1.15rem; }
     .difference-cards {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1rem;
     }
-
     .difference-card {
       position: relative;
       border: 1px solid rgba(200, 162, 74, 0.28);
@@ -715,7 +552,6 @@
       min-height: 210px;
       box-shadow: 0 14px 30px rgba(6, 21, 34, 0.055);
     }
-
     .difference-card.large {
       grid-column: span 2;
       min-height: 240px;
@@ -724,7 +560,6 @@
         linear-gradient(135deg, rgba(255,253,248,0.92), rgba(246,241,232,0.96)),
         radial-gradient(circle at 8% 10%, rgba(200,162,74,0.18), transparent 42%);
     }
-
     .card-number {
       display: block;
       font-family: var(--serif);
@@ -733,7 +568,6 @@
       line-height: 0.85;
       margin-bottom: 1rem;
     }
-
     .difference-card h3 {
       font-family: var(--serif);
       color: var(--night);
@@ -744,79 +578,115 @@
       text-transform: none;
       letter-spacing: 0;
     }
-
     .difference-card p {
       color: var(--stone);
       font-size: 0.94rem;
       line-height: 1.68;
     }
 
-    .refined-quote {
-      padding: clamp(3rem, 6vw, 5rem) clamp(1rem, 3vw, 2.5rem);
-    }
+    .refined-quote { padding: clamp(3rem, 6vw, 5rem) clamp(1rem, 3vw, 2.5rem); }
+    .refined-quote .quote-inner { max-width: 860px; }
+    .refined-quote .quote-inner p { font-size: clamp(1.8rem, 4vw, 3rem); }
 
-    .refined-quote .quote-inner {
-      max-width: 860px;
-    }
-
-    .refined-quote .quote-inner p {
-      font-size: clamp(1.8rem, 4vw, 3rem);
-    }
-
+    /* HONEST COMPARISON - redesigned as a true two-column capability table */
     .refined-comparison {
-      background:
-        linear-gradient(180deg, #F7EFE3 0%, #FFFDF8 100%);
+      background: linear-gradient(180deg, #F7EFE3 0%, #FFFDF8 100%);
     }
-
-    .comparison-layout {
-      display: grid;
-      grid-template-columns: minmax(280px, 0.9fr) minmax(360px, 1.1fr);
-      gap: clamp(1.6rem, 4vw, 3rem);
-      align-items: start;
+    .comparison-head {
+      max-width: 760px;
+      margin-bottom: 1.8rem;
     }
-
-    .comparison-panel {
-      border: 1px solid rgba(200,162,74,0.32);
+    .compare-table {
+      border: 1px solid rgba(200, 162, 74, 0.32);
       border-radius: 18px;
       overflow: hidden;
-      background: rgba(255,253,248,0.82);
-      box-shadow: 0 16px 34px rgba(6,21,34,0.06);
+      background: rgba(255, 253, 248, 0.92);
+      box-shadow: 0 16px 36px rgba(6, 21, 34, 0.07);
     }
-
-    .comparison-row {
+    .compare-table-head {
       display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 1rem;
-      align-items: center;
-      padding: 1rem 1.1rem;
-      border-bottom: 1px solid var(--line);
+      grid-template-columns: minmax(0, 1.5fr) minmax(110px, 0.7fr) minmax(110px, 0.7fr);
+      align-items: stretch;
+      background: linear-gradient(90deg, #071724, #0C2739);
+      color: var(--cream);
     }
-
-    .comparison-row:last-child {
-      border-bottom: none;
-    }
-
-    .comparison-row span {
-      color: var(--night);
-      font-size: 0.96rem;
-      line-height: 1.5;
-    }
-
-    .comparison-row strong {
-      color: var(--gold-dark);
-      font-size: 0.76rem;
+    .compare-table-head > div {
+      padding: 1rem 1.15rem;
+      font-size: 0.7rem;
+      font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      white-space: nowrap;
+      display: flex;
+      align-items: center;
+    }
+    .compare-table-head .col-feature { color: rgba(246, 241, 232, 0.78); }
+    .compare-table-head .col-agapay {
+      justify-content: center;
+      text-align: center;
+      color: #F0D38A;
+      border-left: 1px solid rgba(200, 162, 74, 0.28);
+      background: rgba(200, 162, 74, 0.08);
+    }
+    .compare-table-head .col-other {
+      justify-content: center;
+      text-align: center;
+      color: rgba(246, 241, 232, 0.7);
+      border-left: 1px solid rgba(200, 162, 74, 0.16);
+    }
+    .compare-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(110px, 0.7fr) minmax(110px, 0.7fr);
+      align-items: center;
+      border-top: 1px solid var(--line);
+    }
+    .compare-row:nth-child(even) { background: rgba(246, 241, 232, 0.38); }
+    .compare-feature {
+      padding: 0.95rem 1.15rem;
+      color: var(--night);
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+    .compare-cell {
+      padding: 0.95rem 0.6rem;
+      align-self: stretch;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-left: 1px solid var(--line);
+    }
+    .compare-cell.agapay { background: rgba(200, 162, 74, 0.07); }
+    .check-yes {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: rgba(33, 129, 67, 0.12);
+      border: 1px solid rgba(33, 129, 67, 0.34);
+    }
+    .check-yes svg { width: 15px; height: 15px; stroke: #1f6b3b; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+    .check-no {
+      width: 22px; height: 2px; border-radius: 2px;
+      background: rgba(112, 105, 93, 0.42);
+      display: block;
+    }
+    .check-varies {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--stone);
+      text-align: center; line-height: 1.3;
+    }
+    .compare-foot {
+      padding: 0.85rem 1.15rem;
+      border-top: 1px solid var(--line);
+      background: rgba(246, 241, 232, 0.5);
+      color: var(--stone);
+      font-size: 0.8rem;
+      line-height: 1.55;
     }
 
     .pricing-note {
-      margin-top: 1.5rem;
+      margin-top: 1.6rem;
       border-left: 2px solid var(--gold);
       padding: 1rem 0 1rem 1.4rem;
       max-width: 920px;
     }
-
     .pricing-note h3 {
       font-family: var(--serif);
       color: var(--night);
@@ -824,87 +694,85 @@
       font-weight: 500;
       margin-bottom: 0.4rem;
     }
-
-    .pricing-note p {
-      color: var(--stone);
-      line-height: 1.72;
-      max-width: 820px;
-    }
+    .pricing-note p { color: var(--stone); line-height: 1.72; max-width: 820px; }
 
     .founding-vision {
       background:
-        radial-gradient(circle at 92% 18%, rgba(200,162,74,0.12), transparent 34%),
-        linear-gradient(180deg, #FFFDF8 0%, #F6F1E8 100%);
+        radial-gradient(circle at 92% 18%, rgba(200,162,74,0.16), transparent 36%),
+        linear-gradient(180deg, #071724 0%, #061522 100%);
+      color: var(--cream);
     }
-
+    .founding-vision .section-kicker { color: #E0BD6B; }
+    .founding-vision h2 { color: var(--cream); }
+    .founding-vision .section-lead { color: rgba(246, 241, 232, 0.84); }
+    .vision-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1.4rem;
+      min-height: 46px;
+      padding: 0 1.35rem;
+      border-radius: 8px;
+      border: 1px solid rgba(200, 162, 74, 0.6);
+      background: rgba(200, 162, 74, 0.08);
+      color: #F0D38A;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: background 0.18s ease, transform 0.18s ease;
+    }
+    .vision-btn:hover { background: rgba(200, 162, 74, 0.16); transform: translateY(-1px); }
+    .vision-btn svg {
+      width: 17px;
+      height: 17px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
     .vision-card {
       display: grid;
       grid-template-columns: minmax(280px, 0.95fr) minmax(320px, 1.05fr);
       gap: clamp(1.5rem, 4vw, 3rem);
       align-items: center;
-      border: 1px solid rgba(200,162,74,0.34);
+      border: 1px solid rgba(200,162,74,0.32);
       border-radius: 18px;
       background:
-        linear-gradient(90deg, rgba(255,255,255,0.84), rgba(255,251,244,0.94)),
-        radial-gradient(circle at 5% 15%, rgba(200,162,74,0.12), transparent 36%);
+        linear-gradient(90deg, rgba(255,255,255,0.05), rgba(200,162,74,0.04)),
+        rgba(6, 21, 34, 0.4);
       padding: clamp(1.4rem, 4vw, 2.4rem);
-      box-shadow: 0 18px 38px rgba(6, 21, 34, 0.06);
+      box-shadow: 0 18px 38px rgba(0, 0, 0, 0.28);
     }
-
-    .vision-points {
-      display: grid;
-      gap: 0.9rem;
-    }
-
+    .vision-points { display: grid; gap: 0.9rem; }
     .vision-points div {
-      border: 1px solid var(--line);
+      border: 1px solid rgba(200, 162, 74, 0.26);
       border-radius: 14px;
       padding: 1rem;
-      background: rgba(255,253,248,0.78);
+      background: rgba(246, 241, 232, 0.04);
     }
-
     .vision-points strong {
       display: block;
       font-family: var(--serif);
-      color: var(--gold-dark);
+      color: #E0BD6B;
       font-size: 2rem;
       font-weight: 500;
       line-height: 1;
       margin-bottom: 0.35rem;
     }
-
-    .vision-points span {
-      color: var(--stone);
-      font-size: 0.92rem;
-      line-height: 1.55;
-    }
+    .vision-points span { color: rgba(246, 241, 232, 0.72); font-size: 0.92rem; line-height: 1.55; }
 
     @media (max-width: 980px) {
       .difference-layout,
-      .comparison-layout,
       .vision-card {
         grid-template-columns: 1fr;
       }
-
-      .difference-copy {
-        position: static;
-      }
-
-      .difference-copy .section-lead {
-        max-width: 620px;
-      }
-
-      .difference-copy .section-lead + .section-lead {
-        margin-top: 1.15rem;
-      }
-
-      .difference-cards {
-        grid-template-columns: 1fr;
-      }
-
-      .difference-card.large {
-        grid-column: span 1;
-      }
+      .difference-copy { position: static; }
+      .difference-copy .section-lead { max-width: 620px; }
+      .difference-copy .section-lead + .section-lead { margin-top: 1.15rem; }
+      .difference-cards { grid-template-columns: 1fr; }
+      .difference-card.large { grid-column: span 1; }
     }
 
     @media (max-width: 980px) {
@@ -918,8 +786,6 @@
       }
       .hero-art { min-height: 390px; background-position: center bottom; }
       .hero-copy h1 { font-size: clamp(3rem, 15vw, 5rem); }
-      .section-grid, .comparison-body { grid-template-columns: 1fr; }
-      .feature-grid, .stats-row { grid-template-columns: 1fr; }
       .closing-cta { grid-template-columns: 1fr; text-align: center; }
       .cta-mark { margin: 0 auto; }
       .cta-actions { width: 100%; min-width: 0; }
@@ -934,8 +800,11 @@
       .brand-mark img { width: 34px; height: 34px; }
       .hero-art { min-height: 330px; opacity: 0.9; }
       .section { padding: 2.2rem 1rem; }
-      .feature-card { min-height: 0; }
-      .distinct-list li { grid-template-columns: 1fr; }
+      .compare-table-head, .compare-row {
+        grid-template-columns: minmax(0, 1.4fr) 64px 64px;
+      }
+      .compare-table-head > div { padding: 0.75rem 0.55rem; font-size: 0.58rem; letter-spacing: 0.06em; }
+      .compare-feature { padding: 0.8rem 0.6rem; font-size: 0.88rem; }
       .footer-grid { grid-template-columns: 1fr; }
       .footer-bottom { display: grid; }
     }
@@ -955,11 +824,10 @@
       </a>
       <div class="nav-links">
         <a href="/vision">Vision</a>
-        <a href="/give">Giving</a>
-        <a href="/marketplace">Marketplace</a>
-        <a href="/directory">Directory</a>
-        <a href="/how-it-works">Resources</a>
-        <a class="active" href="/why">About</a>
+        <a href="/features">Features</a>
+        <a href="/how-it-works">How it Works</a>
+        <a href="/pricing">Pricing</a>
+        <a class="active" href="/about">About</a>
       </div>
       <div class="nav-actions">
         <a class="btn-donate" href="/register">
@@ -980,17 +848,15 @@
   <aside class="mobile-drawer" aria-label="Mobile navigation">
     <div class="drawer-head">
       <div class="drawer-title">AGAPAY</div>
-      <button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close navigation">x</button>
+      <button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close navigation">&times;</button>
     </div>
     <div class="drawer-scroll">
       <nav class="drawer-links">
         <a href="/vision">Vision</a>
-        <a href="/give">Giving</a>
-        <a href="/marketplace">Marketplace</a>
-        <a href="/directory">Directory</a>
-        <a href="/how-it-works">Resources</a>
-        <a class="active" href="/why">About</a>
+        <a href="/features">Features</a>
+        <a href="/how-it-works">How it Works</a>
         <a href="/pricing">Pricing</a>
+        <a class="active" href="/about">About</a>
       </nav>
       <a class="drawer-join" href="/register">Join AGAPAY</a>
     </div>
@@ -1007,38 +873,34 @@
        <div class="hero-art" aria-label="Why hero artwork" role="img"></div>
     </section>
 
-
     <!-- ORTHODOX DIFFERENCE -->
     <section class="section orthodox-difference">
       <div class="section-inner difference-layout">
-      <div class="difference-copy">
-  <div class="section-kicker">
-    <svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M5 21h14"/></svg>
-    What sets us apart
-  </div>
-
-  <h2>Built from inside Orthodox life.</h2>
-
-  <p class="section-lead">
-    AGAPAY was not adapted for Orthodoxy after the fact. It began where Orthodox giving actually begins — in the nave, before the candle stand, at the priest’s commemoration list, around the parish council table, and in the quiet labor of faithful people trying to build something that will outlive them.
-  </p>
-
-  <p class="section-lead">
-    Every part of the platform is shaped by that world. The feasts and fasts are not marketing seasons. Memorial names are not form submissions. A monastery is not a nonprofit brand. A parish is not a customer segment. These are living members of the Body of Christ, and the tools that serve them should understand that.
-  </p>
-</div>
+        <div class="difference-copy">
+          <div class="section-kicker">
+            <svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M5 21h14"/></svg>
+            What sets us apart
+          </div>
+          <h2>Built from inside Orthodox life.</h2>
+          <p class="section-lead">
+            AGAPAY was not adapted for Orthodoxy after the fact. It began where Orthodox giving actually begins &mdash; in the nave, before the candle stand, at the priest&rsquo;s commemoration list, around the parish council table, and in the quiet labor of faithful people trying to build something that will outlive them.
+          </p>
+          <p class="section-lead">
+            Every part of the platform is shaped by that world. The feasts and fasts are not marketing seasons. Memorial names are not form submissions. A monastery is not a nonprofit brand. A parish is not a customer segment. These are living members of the Body of Christ, and the tools that serve them should understand that.
+          </p>
+        </div>
 
         <div class="difference-cards">
           <article class="difference-card large">
             <span class="card-number">01</span>
             <h3>Liturgical by design</h3>
-            <p>Campaigns follow the Orthodox calendar — Nativity, Theophany, Great Lent, Pascha, Soul Saturdays, patronal feasts — with both Julian and Gregorian calendars supported.</p>
+            <p>Campaigns follow the Orthodox calendar &mdash; Nativity, Theophany, Great Lent, Pascha, Soul Saturdays, patronal feasts &mdash; with both Julian and Gregorian calendars supported.</p>
           </article>
 
           <article class="difference-card">
             <span class="card-number">02</span>
             <h3>Commemorations reach the priest</h3>
-            <p>Memorial offerings are formatted and routed toward the priest’s preparation, so names are not lost in a spreadsheet.</p>
+            <p>Memorial offerings are formatted and routed toward the priest&rsquo;s preparation, so names are not lost in a spreadsheet.</p>
           </article>
 
           <article class="difference-card">
@@ -1050,13 +912,13 @@
           <article class="difference-card">
             <span class="card-number">04</span>
             <h3>Monasteries are honored</h3>
-            <p>Monasteries and sketes carry no monthly platform fee — permanently, by conviction. Standard transaction fees still apply.</p>
+            <p>Monasteries and sketes carry no monthly platform fee &mdash; permanently, by conviction. Standard transaction fees still apply.</p>
           </article>
 
           <article class="difference-card">
             <span class="card-number">05</span>
             <h3>No long-term lock-ins</h3>
-            <p>No annual contracts. No cancellation penalties. A platform should earn a parish’s trust each month.</p>
+            <p>No annual contracts. No cancellation penalties. A platform should earn a parish&rsquo;s trust each month.</p>
           </article>
         </div>
       </div>
@@ -1065,54 +927,79 @@
     <!-- QUOTE BAND -->
     <section class="quote-band refined-quote">
       <div class="quote-inner">
-        <p>“The Church does not give because she is asked. She gives because she loves.”</p>
+        <p>&ldquo;The Church does not give because she is asked. She gives because she loves.&rdquo;</p>
         <cite>AGAPAY founding principle</cite>
       </div>
     </section>
 
     <!-- HONEST COMPARISON -->
-    <section class="section comparison refined-comparison">
-      <div class="section-inner comparison-layout">
-        <div>
+    <section class="section refined-comparison">
+      <div class="section-inner">
+        <div class="comparison-head">
           <div class="section-kicker">
-            <svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
             An honest comparison
           </div>
-          <h2>General platforms are capable. They simply were not built for Orthodox liturgical life.</h2>
+          <h2>Capable platforms exist. None were built for Orthodox liturgical life.</h2>
           <p class="section-lead">
-            Tithe.ly, Pushpay, and similar platforms can serve churches well. AGAPAY is different because it was built around the actual rhythms, obligations, and forms of Orthodox parish life.
+            General church-giving platforms can serve a parish&rsquo;s basic needs well. The difference is not raw capability &mdash; it is what the platform was shaped around. Here is an honest look at where AGAPAY is purpose-built and where general platforms vary.
           </p>
         </div>
 
-        <div class="comparison-panel">
-          <div class="comparison-row">
-            <span>Proskomedia commemoration routing</span>
-            <strong>AGAPAY</strong>
+        <div class="compare-table" role="table" aria-label="AGAPAY compared with general giving platforms">
+          <div class="compare-table-head" role="row">
+            <div class="col-feature" role="columnheader">Capability</div>
+            <div class="col-agapay" role="columnheader">AGAPAY</div>
+            <div class="col-other" role="columnheader">General platforms</div>
           </div>
-          <div class="comparison-row">
-            <span>Julian and Gregorian calendar support</span>
-            <strong>AGAPAY</strong>
+
+          <div class="compare-row" role="row">
+            <div class="compare-feature" role="cell">Commemoration names routed toward the priest&rsquo;s preparation</div>
+            <div class="compare-cell agapay" role="cell"><span class="check-yes" aria-label="Yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span></div>
+            <div class="compare-cell" role="cell"><span class="check-no" role="img" aria-label="No"></span></div>
           </div>
-          <div class="comparison-row">
-            <span>Feast-aware giving campaigns</span>
-            <strong>AGAPAY</strong>
+
+          <div class="compare-row" role="row">
+            <div class="compare-feature" role="cell">Julian and Gregorian (Old &amp; New Calendar) support</div>
+            <div class="compare-cell agapay" role="cell"><span class="check-yes" aria-label="Yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span></div>
+            <div class="compare-cell" role="cell"><span class="check-no" role="img" aria-label="No"></span></div>
           </div>
-          <div class="comparison-row">
-            <span>Canonical verification before activation</span>
-            <strong>AGAPAY</strong>
+
+          <div class="compare-row" role="row">
+            <div class="compare-feature" role="cell">Giving campaigns aligned to Orthodox feasts and fasts</div>
+            <div class="compare-cell agapay" role="cell"><span class="check-yes" aria-label="Yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span></div>
+            <div class="compare-cell" role="cell"><span class="check-varies">Generic only</span></div>
           </div>
-          <div class="comparison-row">
-            <span>No monthly platform fee for monasteries</span>
-            <strong>AGAPAY</strong>
+
+          <div class="compare-row" role="row">
+            <div class="compare-feature" role="cell">Canonical standing reviewed before a community can receive gifts</div>
+            <div class="compare-cell agapay" role="cell"><span class="check-yes" aria-label="Yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span></div>
+            <div class="compare-cell" role="cell"><span class="check-no" role="img" aria-label="No"></span></div>
+          </div>
+
+          <div class="compare-row" role="row">
+            <div class="compare-feature" role="cell">No monthly platform fee for monasteries and sketes</div>
+            <div class="compare-cell agapay" role="cell"><span class="check-yes" aria-label="Yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span></div>
+            <div class="compare-cell" role="cell"><span class="check-varies">Varies</span></div>
+          </div>
+
+          <div class="compare-row" role="row">
+            <div class="compare-feature" role="cell">Online card processing &amp; recurring giving</div>
+            <div class="compare-cell agapay" role="cell"><span class="check-yes" aria-label="Yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span></div>
+            <div class="compare-cell" role="cell"><span class="check-yes" aria-label="Yes"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span></div>
+          </div>
+
+          <div class="compare-foot" role="row">
+            &ldquo;General platforms&rdquo; refers to common church-giving tools as a category, not any single provider. Capabilities and pricing differ by plan; confirm current details directly with each provider.
           </div>
         </div>
-      </div>
 
-      <div class="section-inner pricing-note">
-        <h3>Transparent by design.</h3>
-        <p>
-          AGAPAY’s pricing is simple: $49 / $99 per month plus 5% + $0.30 per transaction. General platforms may advertise lower card rates or free base tiers, but often vary by plan, feature access, or payout terms. Compare total cost for your parish’s size and decide what fits.
-        </p>
+        <div class="pricing-note">
+          <h3>Transparent by design.</h3>
+          <p>
+            AGAPAY&rsquo;s pricing is simple: $49 or $99 per month depending on parish size, plus 5% + $0.30 per transaction. Some general platforms advertise lower card rates or a free base tier, but terms often vary by plan, feature access, or payout timing. We encourage every parish to compare total cost for its own size and decide what fits.
+          </p>
+        </div>
       </div>
     </section>
 
@@ -1124,10 +1011,14 @@
             <svg viewBox="0 0 24 24"><path d="M5 20h14"/><path d="M7 20V9l5-5 5 5v11"/><path d="M10 20v-6h4v6"/></svg>
             What AGAPAY is building toward
           </div>
-          <h2>A financial home for Orthodox communities.</h2>
+          <h2>A giving home for Orthodox communities.</h2>
           <p class="section-lead">
-            AGAPAY is in its founding stage — onboarding its first parishes ahead of public launch. It serves Orthodox communities across the United States only, keeping stewardship funds domestic and within U.S. compliance.
+            AGAPAY is in its founding stage &mdash; onboarding its first parishes ahead of public launch. It serves Orthodox communities across the United States only, keeping stewardship funds domestic and within U.S. compliance.
           </p>
+          <a class="vision-btn" href="/vision">
+            See the full vision
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+          </a>
         </div>
 
         <div class="vision-points">
@@ -1137,7 +1028,7 @@
           </div>
           <div>
             <strong>$0 monthly</strong>
-            <span>For monasteries and sketes, permanently.</span>
+            <span>For monasteries and sketes, permanently. Standard transaction fees still apply.</span>
           </div>
           <div>
             <strong>Canonical communities</strong>
@@ -1147,12 +1038,12 @@
       </div>
     </section>
 
-    <section class="section">
+    <section class="section" style="border-bottom:none;">
       <div class="closing-cta">
         <div class="cta-mark"><img src="/mark.png" alt="" /></div>
         <div>
           <h2>Ready to bring your parish onto AGAPAY?</h2>
-          <p>Founding parishes receive preferred pricing and direct access to the founder. Register today, or see full pricing to find the right tier.</p>
+          <p>Founding parishes receive preferred onboarding and direct access to the founder. Register today, or see full pricing to find the right tier.</p>
         </div>
         <div class="cta-actions">
           <a class="btn-primary" href="/register">Register your parish</a>
@@ -1167,31 +1058,30 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <div class="footer-lockup"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></div>
-          <p>Building the financial home of the Orthodox world.</p>
+          <p>Love how you give.</p>
         </div>
         <nav class="footer-col" aria-label="Platform">
           <h4>Platform</h4>
-          <a href="/give">Giving</a>
-          <a href="/marketplace">Marketplace</a>
-          <a href="/directory">Directory</a>
-          <a href="/vision">Vision</a>
-        </nav>
-        <nav class="footer-col" aria-label="Resources">
-          <h4>Resources</h4>
+          <a href="/features">Features</a>
           <a href="/how-it-works">How It Works</a>
           <a href="/pricing">Pricing</a>
+        </nav>
+        <nav class="footer-col" aria-label="Company">
+          <h4>Company</h4>
+          <a href="/about">About</a>
           <a href="/why">Why AGAPAY</a>
+          <a href="/vision">Vision</a>
           <a href="/contact">Contact</a>
         </nav>
         <nav class="footer-col" aria-label="Legal">
           <h4>Legal</h4>
-          <a href="/terms">Terms of Service</a>
           <a href="/privacy">Privacy Policy</a>
+          <a href="/terms">Terms of Service</a>
         </nav>
       </div>
       <div class="footer-bottom">
-        <span>© 2026 AGAPAY. All rights reserved.</span>
-        <span>Love how you give.</span>
+        <span>&copy; 2026 AGAPAY. All rights reserved.</span>
+        <span>Built for Orthodox communities.</span>
       </div>
     </div>
   </footer>
@@ -1203,11 +1093,11 @@
     const drawerCloseBtn = document.getElementById("drawerCloseBtn");
     function setDrawer(open) {
       body.classList.toggle("drawer-open", open);
-      mobileMenuBtn?.setAttribute("aria-expanded", open ? "true" : "false");
+      if (mobileMenuBtn) mobileMenuBtn.setAttribute("aria-expanded", open ? "true" : "false");
     }
-    mobileMenuBtn?.addEventListener("click", () => setDrawer(true));
-    drawerBackdrop?.addEventListener("click", () => setDrawer(false));
-    drawerCloseBtn?.addEventListener("click", () => setDrawer(false));
+    if (mobileMenuBtn) mobileMenuBtn.addEventListener("click", () => setDrawer(true));
+    if (drawerBackdrop) drawerBackdrop.addEventListener("click", () => setDrawer(false));
+    if (drawerCloseBtn) drawerCloseBtn.addEventListener("click", () => setDrawer(false));
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") setDrawer(false);
     });
