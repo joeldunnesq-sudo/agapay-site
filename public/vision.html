@@ -27,15 +27,16 @@
     .wrap{width:min(1220px,calc(100% - 2.25rem));margin:0 auto}
 
     .site-header {
-      position: absolute;
+      position: sticky;
       top: 0;
-      left: 0;
-      right: 0;
       z-index: 20;
-      padding: 1.25rem clamp(1rem, 3vw, 3rem);
+      padding: 0.95rem clamp(1rem, 2.6vw, 2.6rem);
+      background: linear-gradient(90deg, #061522, #0B2130);
+      border-bottom: 1px solid rgba(200, 162, 74, 0.24);
     }
     .nav {
-      max-width: 1240px;
+      width: min(1320px, 100%);
+      max-width: 1320px;
       margin: 0 auto;
       display: flex;
       align-items: center;
@@ -50,15 +51,15 @@
       min-width: max-content;
     }
     .brand-mark {
-      width: 52px;
-      height: 52px;
+      width: 42px;
+      height: 42px;
       display: grid;
       place-items: center;
       border: 1px solid rgba(200, 162, 74, 0.55);
       border-radius: 50%;
       background: rgba(6, 21, 34, 0.34);
     }
-    .brand-mark img { width: 48px; height: 48px; object-fit: contain; }
+    .brand-mark img { width: 38px; height: 38px; object-fit: contain; }
     .brand-name {
       display: flex;
       flex-direction: column;
@@ -66,7 +67,7 @@
     }
     .brand-name strong {
       font-family: var(--serif);
-      font-size: 2.05rem;
+      font-size: 2rem;
       font-weight: 500;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -106,15 +107,67 @@
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
     }
 
-    .hero{background:var(--deep);color:var(--cream);position:relative;overflow:hidden;min-height:650px;display:grid;align-items:center}
-    .hero::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,21,34,.98) 0%,rgba(6,21,34,.9) 34%,rgba(6,21,34,.38) 72%,rgba(6,21,34,.78) 100%),linear-gradient(0deg,rgba(6,21,34,.88),rgba(6,21,34,.1) 52%,rgba(6,21,34,.48)),url("/images/vision/fresco-vault.jpg") center right/cover no-repeat;filter:saturate(.95) contrast(1.08);z-index:1}
-    .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 70% 26%,rgba(216,176,88,.24),transparent 25rem),radial-gradient(circle at 20% 22%,rgba(200,162,74,.13),transparent 20rem);pointer-events:none;z-index:1}
-    .hero-grid{min-height:650px;position:relative;z-index:2;padding-top:100px;display:grid;align-items:center}
-    .hero-copy{padding:4.6rem 2.5rem 4rem .2rem;align-self:center;max-width:580px}
+    .hero{
+      background:
+        radial-gradient(circle at 18% 0%, rgba(200, 162, 74, 0.11), transparent 32%),
+        linear-gradient(180deg, #FFFDF8 0%, #F8F2E7 100%);
+      color:var(--ink);
+      position:relative;
+      overflow:hidden;
+      min-height:560px;
+      display:grid;
+      align-items:center;
+      border-bottom:1px solid var(--line);
+    }
+    .hero::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background-image:
+        linear-gradient(30deg, rgba(166, 159, 145, 0.07) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.07) 87.5%, rgba(166, 159, 145, 0.07)),
+        linear-gradient(150deg, rgba(166, 159, 145, 0.07) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.07) 87.5%, rgba(166, 159, 145, 0.07));
+      background-size:54px 94px;
+      opacity:.18;
+      pointer-events:none;
+      z-index:1;
+    }
+    .hero::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at 76% 28%, rgba(200,162,74,.14), transparent 22rem),
+        linear-gradient(90deg, rgba(255,253,248,.9) 0%, rgba(255,253,248,.45) 44%, rgba(255,253,248,0) 72%);
+      pointer-events:none;
+      z-index:1;
+    }
+    .hero-grid{
+      min-height:560px;
+      position:relative;
+      z-index:2;
+      display:grid;
+      grid-template-columns:minmax(320px, 0.82fr) minmax(420px, 1.18fr);
+      gap:2rem;
+      align-items:center;
+      padding:clamp(2.4rem, 4vw, 4rem) 0;
+    }
+    .hero-copy{padding:2rem 1rem 2rem .2rem;align-self:center;max-width:580px}
     .eyebrow{color:var(--gold);text-transform:uppercase;font-size:.78rem;letter-spacing:.12em;font-weight:600;margin-bottom:.8rem}
-    .hero h1{font:500 clamp(2.3rem,5vw,4.1rem)/1.05 var(--serif);max-width:520px;margin-bottom:1.15rem}
-    .hero p{max-width:540px;color:rgba(246,241,232,.88);line-height:1.75;font-size:1.02rem;margin-bottom:.9rem}
-    .hero-image{display:none}
+    .hero h1{font:500 clamp(2.7rem,5.6vw,5rem)/.98 var(--serif);color:#0A1524;max-width:620px;margin-bottom:1.05rem}
+    .hero p{max-width:560px;color:#4D4A44;line-height:1.75;font-size:1.03rem;margin-bottom:.9rem}
+    .hero-image{
+      align-self:stretch;
+      min-height:460px;
+      background-image:url("/images/vision/agapay-hub-and-spoke.png");
+      background-size:contain;
+      background-repeat:no-repeat;
+      background-position:center right;
+      filter:sepia(.22) saturate(.9) contrast(1.04);
+      mix-blend-mode:multiply;
+      opacity:.95;
+      -webkit-mask-image:radial-gradient(ellipse at center, black 66%, transparent 96%);
+      mask-image:radial-gradient(ellipse at center, black 66%, transparent 96%);
+    }
 
     .values{background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
     .values-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -151,7 +204,7 @@
     .phase-1 .phase-photo{background-image:url("/images/vision/icon-hands.jpg")}
     .phase-2 .phase-photo{background-image:url("/images/vision/church-exterior.jpg")}
     .phase-3 .phase-photo{background-image:url("/images/vision/hero-incense.jpg")}
-    .phase-4 .phase-photo{background-image:url("/images/vision/church-exterior.jpg")}
+    .phase-4 .phase-photo{background-image:url("/images/vision/fresco-vault.jpg");background-position:center}
 
     .ecosystem{position:relative;padding:5rem 0;background:linear-gradient(180deg,#fffdf8,#f8f1e6);overflow:hidden}
     .ecosystem::before{content:"";position:absolute;left:-7rem;bottom:-8rem;width:24rem;height:24rem;border:1px solid rgba(200,162,74,.18);border-radius:50%;background:radial-gradient(circle,rgba(200,162,74,.08),transparent 64%);pointer-events:none}
@@ -229,12 +282,12 @@
     .footer-bottom{border-top:1px solid rgba(200,162,74,.14);padding-top:.95rem;display:flex;justify-content:space-between;gap:1rem;font-size:.84rem;color:rgba(246,241,232,.54)}
 
     @media (max-width:1020px){
-      .hero{min-height:620px}
-      .hero::before{background:linear-gradient(180deg,rgba(6,21,34,.96),rgba(6,21,34,.76)),linear-gradient(90deg,rgba(6,21,34,.92),rgba(6,21,34,.22)),url("/images/vision/fresco-vault.jpg") center/cover no-repeat}
+      .hero{min-height:auto}
       .hero-grid,.mission-grid,.phase-cards,.values-grid{grid-template-columns:1fr}
-      .hero-grid{min-height:620px;padding-top:94px}
+      .hero-grid{min-height:auto;padding:2.2rem 0 2.8rem}
       .hero-copy,.mission-copy{padding-right:0}
-      .hero-image,.mission-photo{min-height:300px}
+      .hero-image{min-height:340px;background-position:center;background-size:contain}
+      .mission-photo{min-height:300px}
       .eco-layout{grid-template-columns:1fr;gap:1.4rem}
       .eco-statement{gap:1rem}
       .eco-copy{max-width:none}
@@ -276,11 +329,12 @@
     <section class="hero">
       <div class="wrap hero-grid">
         <div class="hero-copy">
+          <div class="eyebrow">Our Vision</div>
           <h1>Building the online home for all things Orthodox.</h1>
           <p>AGAPAY exists to strengthen Orthodox communities through modern giving infrastructure rooted in shared faith, stewardship, and long-term institutional support.</p>
           <p>We believe Orthodox parishes, monasteries, and the faithful deserve tools built specifically for the life of the Church &mdash; with a vision that grows to serve the wider Orthodox world over time.</p>
         </div>
-        <div class="hero-image" role="img" aria-label="Orthodox fresco interior"></div>
+        <div class="hero-image" role="img" aria-label="AGAPAY hub and spoke Orthodox ecosystem illustration"></div>
       </div>
     </section>
 
