@@ -1896,14 +1896,90 @@ async function loadDonorCommemorations(env, email, limit = 100) {
   return entries.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
 }
 
+function paidOfferingStatus(offering = {}) {
+  const status = String(offering.status || "").toLowerCase();
+  const paymentStatus = String(offering.paymentStatus || "").toLowerCase();
+  return status === "paid"
+    || status === "completed"
+    || paymentStatus === "paid"
+    || paymentStatus === "succeeded";
+}
+
+function normalizedCheckoutPaymentStatus(session = {}, fallback = "pending") {
+  if (session.payment_status === "paid" || session.status === "complete") return "paid";
+  if (session.status === "expired") return session.payment_status || "unpaid";
+  return session.payment_status || fallback || "pending";
+}
+
+function checkoutPaymentIntentId(session = {}) {
+  return typeof session.payment_intent === "string"
+    ? session.payment_intent
+    : session.payment_intent?.id || "";
+}
+
+async function refreshDonorOfferingFromStripeCheckout(env, offering = {}) {
+  if (!offering.checkoutSessionId || paidOfferingStatus(offering)) return offering;
+
+  const parish = await findCheckoutParish(env, offering.parishId);
+  if (!parish?.stripeAccountId) return offering;
+
+  const stripe = await stripeGetConnectedRequest(
+    env,
+    `/v1/checkout/sessions/${encodeURIComponent(offering.checkoutSessionId)}`,
+    parish.stripeAccountId
+  );
+  if (!stripe.ok) return offering;
+
+  const session = stripe.body || {};
+  const paymentStatus = normalizedCheckoutPaymentStatus(session, offering.paymentStatus);
+  let status = offering.status || "checkout_created";
+  if (paymentStatus === "paid" || session.status === "complete") status = "completed";
+  if (session.status === "expired") status = "expired";
+
+  const updated = await updateDonorOfferingByCheckout(env, offering.checkoutSessionId, {
+    status,
+    paymentStatus,
+    stripeCustomerId: session.customer || offering.stripeCustomerId || "",
+    stripePaymentIntentId: checkoutPaymentIntentId(session) || offering.stripePaymentIntentId || "",
+    stripeSubscriptionId: session.subscription || offering.stripeSubscriptionId || "",
+    completedAt: status === "completed" ? offering.completedAt || new Date().toISOString() : offering.completedAt || ""
+  });
+
+  if (status === "completed" || paymentStatus === "paid") {
+    await ensureCommemorationEntryFromOffering(env, updated || offering, {
+      createdAt: session.created ? new Date(session.created * 1000).toISOString() : offering.createdAt || new Date().toISOString()
+    });
+    await sendDonationReceiptIfNeeded(env, updated || offering);
+  }
+
+  return updated || offering;
+}
+
+async function reconcilePendingDonorOfferings(env, offerings = [], limit = 8) {
+  const reconciled = [];
+  let checked = 0;
+
+  for (const offering of offerings) {
+    if (
+      checked < limit
+      && offering.checkoutSessionId
+      && !paidOfferingStatus(offering)
+      && !["failed", "expired", "cancelled", "refunded"].includes(String(offering.paymentStatus || offering.status || "").toLowerCase())
+    ) {
+      checked += 1;
+      reconciled.push(await refreshDonorOfferingFromStripeCheckout(env, offering));
+    } else {
+      reconciled.push(offering);
+    }
+  }
+
+  return reconciled.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+}
+
 function paidCommemorationOfferingWithNames(offering = {}) {
   const giftType = String(offering.giftType || "").toLowerCase();
   if (giftType !== "commemoration") return false;
-  const isPaid = offering.status === "completed"
-    || offering.status === "paid"
-    || offering.paymentStatus === "paid"
-    || offering.paymentStatus === "succeeded";
-  if (!isPaid) return false;
+  if (!paidOfferingStatus(offering)) return false;
   return Boolean(splitSubmittedNames(offering.namesLiving).length || splitSubmittedNames(offering.namesDeparted).length);
 }
 
@@ -1952,7 +2028,7 @@ function donorSummaryFromOfferings(offerings, commemorations = []) {
   const year = now.getUTCFullYear();
   const month = now.getUTCMonth();
   const ytd = offerings.filter((item) => new Date(item.createdAt || 0).getUTCFullYear() === year);
-  const paid = ytd.filter((item) => item.paymentStatus === "paid" || item.status === "paid" || item.status === "completed");
+  const paid = ytd.filter(paidOfferingStatus);
   const recurring = offerings.filter((item) => item.frequency && item.frequency !== "once");
   const ytdCents = paid.reduce((sum, item) => sum + Number(item.amountCents || 0), 0);
   const monthCents = paid
@@ -2306,7 +2382,7 @@ async function findOrCreateDonorCustomer(env, parish, body) {
 }
 
 function paidOffering(offering) {
-  return offering?.paymentStatus === "paid" || offering?.status === "paid" || offering?.status === "completed";
+  return paidOfferingStatus(offering);
 }
 
 function giftDisplayName(offering = {}) {
@@ -2349,7 +2425,7 @@ async function loadParishPaidOfferings(env, parishId, limit = 500) {
       `SELECT data
        FROM donor_offerings
        WHERE parish_id = ?1
-         AND (payment_status = 'paid' OR status IN ('paid', 'completed'))
+         AND (payment_status IN ('paid', 'succeeded') OR status IN ('paid', 'completed'))
        ORDER BY created_at DESC
        LIMIT ?2`,
       parishId,
@@ -2434,7 +2510,7 @@ async function loadPaidDonorOfferingPlatformTotals(env) {
          COUNT(*) AS gift_count,
          COALESCE(SUM(CAST(json_extract(data, '$.amountCents') AS INTEGER)), 0) AS total_given_cents
        FROM donor_offerings
-       WHERE payment_status = 'paid' OR status IN ('paid', 'completed')`
+       WHERE payment_status IN ('paid', 'succeeded') OR status IN ('paid', 'completed')`
     );
     return {
       giftCount: Number(row?.gift_count || 0),
@@ -2452,7 +2528,7 @@ async function loadPaidDonorOfferingPlatformTotals(env) {
     if (!raw) continue;
     try {
       const offering = JSON.parse(raw);
-      if (offering.paymentStatus === "paid" || offering.status === "paid" || offering.status === "completed") {
+      if (paidOfferingStatus(offering)) {
         giftCount += 1;
         totalGivenCents += Number(offering.amountCents || 0);
       }
@@ -2800,10 +2876,8 @@ async function handleCheckoutSessionStatus(request, env) {
   }
 
   const session = stripe.body || {};
-  const paymentIntentId = typeof session.payment_intent === "string"
-    ? session.payment_intent
-    : session.payment_intent?.id || "";
-  const paymentStatus = session.payment_status || offering.paymentStatus || "pending";
+  const paymentIntentId = checkoutPaymentIntentId(session);
+  const paymentStatus = normalizedCheckoutPaymentStatus(session, offering.paymentStatus);
   let status = offering.status || "checkout_created";
   if (paymentStatus === "paid" || session.status === "complete") status = "completed";
   if (session.status === "expired") status = "expired";
@@ -2866,10 +2940,8 @@ async function handleDonorClaimCheckout(request, env) {
   );
   if (stripe.ok) {
     verifiedSession = stripe.body || {};
-    const paymentIntentId = typeof verifiedSession.payment_intent === "string"
-      ? verifiedSession.payment_intent
-      : verifiedSession.payment_intent?.id || "";
-    const paymentStatus = verifiedSession.payment_status || offering.paymentStatus || "pending";
+    const paymentIntentId = checkoutPaymentIntentId(verifiedSession);
+    const paymentStatus = normalizedCheckoutPaymentStatus(verifiedSession, offering.paymentStatus);
     let status = offering.status || "checkout_created";
     if (paymentStatus === "paid" || verifiedSession.status === "complete") status = "completed";
     if (verifiedSession.status === "expired") status = "expired";
@@ -3387,7 +3459,7 @@ async function handleDonorDashboard(request, env) {
 
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
 
-  const offerings = await loadDonorOfferings(env, donor.email, 100);
+  const offerings = await reconcilePendingDonorOfferings(env, await loadDonorOfferings(env, donor.email, 100));
   const commemorations = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
   const summary = donorSummaryFromOfferings(offerings, commemorations);
   let parish = null;
@@ -3410,7 +3482,7 @@ async function handleDonorOfferings(request, env) {
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
-  const offerings = await loadDonorOfferings(env, donor.email, 100);
+  const offerings = await reconcilePendingDonorOfferings(env, await loadDonorOfferings(env, donor.email, 100));
   const commemorations = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
   return json({ offerings, summary: donorSummaryFromOfferings(offerings, commemorations) });
 }
@@ -3420,7 +3492,7 @@ async function handleDonorCommemorations(request, env) {
   if (!donor) return unauthorized();
 
   if (request.method === "GET") {
-    const offerings = await loadDonorOfferings(env, donor.email, 100);
+    const offerings = await reconcilePendingDonorOfferings(env, await loadDonorOfferings(env, donor.email, 100));
     const entries = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
     return json({ entries });
   }
@@ -4352,7 +4424,7 @@ async function processStripeWebhookEvent(env, event) {
   if (event.type === "payment_intent.succeeded") {
     const updatedOffering = await updateDonorOfferingByPaymentIntent(env, object.id, {
       status: "completed",
-      paymentStatus: object.status || "succeeded",
+      paymentStatus: "paid",
       stripeCustomerId: object.customer || "",
       completedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
     });
