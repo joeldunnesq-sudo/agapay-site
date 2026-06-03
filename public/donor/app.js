@@ -1,7 +1,8 @@
 const donorStore = {
   email: "agapayDonorEmail",
   token: "agapayDonorToken",
-  donor: "agapayDonorProfile"
+  donor: "agapayDonorProfile",
+  cachePrefix: "agapayDonorCache"
 };
 
 function donorSession() {
@@ -54,6 +55,39 @@ function setText(id, value) {
 
 function isDonorUnauthorized(err) {
   return err?.status === 401 || String(err?.message || "").toLowerCase() === "unauthorized";
+}
+
+function donorCacheEmail() {
+  return String(donorSession().email || donorProfile()?.email || "").trim().toLowerCase();
+}
+
+function donorCacheKey(name) {
+  return `${donorStore.cachePrefix}:${donorCacheEmail()}:${name}`;
+}
+
+function readDonorCache(name) {
+  const email = donorCacheEmail();
+  if (!email) return null;
+  try {
+    const cached = JSON.parse(localStorage.getItem(donorCacheKey(name)) || "null");
+    return cached?.email === email ? cached.data : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeDonorCache(name, data) {
+  const email = donorCacheEmail();
+  if (!email || !data) return;
+  try {
+    localStorage.setItem(donorCacheKey(name), JSON.stringify({
+      email,
+      savedAt: new Date().toISOString(),
+      data
+    }));
+  } catch {
+    // Cache is only for instant paint; ignore storage pressure or privacy mode.
+  }
 }
 
 function money(cents) {
@@ -187,10 +221,18 @@ function showGuestDonorDashboard() {
 async function loadPublicParishes(selectId = "parish") {
   const select = document.getElementById(selectId);
   if (!select) return [];
+  const cached = readDonorCache("parishes");
+  if (Array.isArray(cached?.parishes) && cached.parishes.length) {
+    window.agapayPublicParishes = cached.parishes;
+    const donor = donorProfile();
+    renderParishOptions(select, cached.parishes, donor.defaultParishId || select.value);
+    if (selectId === "parish" && typeof toggleGiftDetailFields === "function") toggleGiftDetailFields();
+  }
   try {
     const data = await donorApi("/api/parishes", { headers: { Accept: "application/json" } });
     const parishes = data.parishes || [];
     window.agapayPublicParishes = parishes;
+    writeDonorCache("parishes", { parishes });
     if (parishes.length) {
       const donor = donorProfile();
       renderParishOptions(select, parishes, donor.defaultParishId || select.value);
@@ -835,6 +877,16 @@ async function loadDonorDashboardPage() {
   }
   try {
     const data = await donorApi("/api/donor/dashboard");
+    writeDonorCache("dashboard", data);
+    if (data.recentOfferings) {
+      writeDonorCache("offerings", {
+        offerings: data.recentOfferings,
+        summary: data.summary || {}
+      });
+    }
+    if (data.recentCommemorations) {
+      writeDonorCache("commemorations", { entries: data.recentCommemorations });
+    }
     setDonorProfile(data.donor);
     const summary = data.summary || {};
     setText("metricMonth", money(summary.monthCents));
@@ -941,6 +993,30 @@ function offeringRows(offerings) {
   `).join("");
 }
 
+function renderOfferingsPayload(payload = {}, fallbackDashboard = null, statusText = "Live data") {
+  let offerings = Array.isArray(payload.offerings) ? payload.offerings : [];
+  let summary = payload.summary || fallbackDashboard?.summary || {};
+  if (!offerings.length && Array.isArray(fallbackDashboard?.recentOfferings)) {
+    offerings = fallbackDashboard.recentOfferings;
+  }
+  offerings = offerings
+    .map((item) => ({
+      ...item,
+      amountCents: Number(item.amountCents || 0),
+      paymentStatus: item.paymentStatus || item.status || "recorded",
+      createdAt: item.createdAt || item.updatedAt || ""
+    }))
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+
+  window.donorOfferings = offerings;
+  setText("offeringsYtd", money(summary.ytdCents));
+  setText("offeringsRecurring", String(summary.recurringCount || 0));
+  setText("offeringsReceiptCount", String(summary.offeringCount || offerings.length || 0));
+  setText("offeringsStatus", offerings.length ? statusText : "No data yet");
+  renderDonorOfferings();
+  return { offerings, summary };
+}
+
 async function loadDonorOfferingsPage() {
   const session = donorSession();
   if (!session.email || !session.token) {
@@ -950,10 +1026,32 @@ async function loadDonorOfferingsPage() {
     return;
   }
 
-  let dashboardData = null;
+  const cachedDashboard = readDonorCache("dashboard");
+  const cachedOfferings = readDonorCache("offerings");
+  if (cachedOfferings || cachedDashboard) {
+    renderOfferingsPayload(cachedOfferings || {}, cachedDashboard, "Refreshing...");
+  }
+
   try {
-    dashboardData = await donorApi("/api/donor/dashboard");
+    const [offeringsResult, dashboardResult] = await Promise.allSettled([
+      donorApi("/api/donor/offerings"),
+      donorApi("/api/donor/dashboard")
+    ]);
+
+    if (offeringsResult.status === "rejected" && isDonorUnauthorized(offeringsResult.reason)) {
+      throw offeringsResult.reason;
+    }
+    if (dashboardResult.status === "rejected" && isDonorUnauthorized(dashboardResult.reason)) {
+      throw dashboardResult.reason;
+    }
+
+    const dashboardData = dashboardResult.status === "fulfilled" ? dashboardResult.value : cachedDashboard;
+    const offeringsData = offeringsResult.status === "fulfilled" ? offeringsResult.value : cachedOfferings;
+    if (!offeringsData && !dashboardData) throw offeringsResult.reason || dashboardResult.reason || new Error("Unable to load offerings");
     if (dashboardData?.donor) setDonorProfile(dashboardData.donor);
+    if (dashboardResult.status === "fulfilled") writeDonorCache("dashboard", dashboardData);
+    const rendered = renderOfferingsPayload(offeringsData || {}, dashboardData, "Live data");
+    writeDonorCache("offerings", rendered);
   } catch (err) {
     if (isDonorUnauthorized(err)) {
       clearDonorSession();
@@ -962,35 +1060,6 @@ async function loadDonorOfferingsPage() {
       setText("offeringsStatus", "Sign in");
       return;
     }
-  }
-
-  try {
-    const data = await donorApi("/api/donor/offerings");
-    let offerings = Array.isArray(data.offerings) ? data.offerings : [];
-    let summary = data.summary || dashboardData?.summary || {};
-    if (!offerings.length) {
-      try {
-        const dashboard = dashboardData || await donorApi("/api/donor/dashboard");
-        offerings = dashboard.recentOfferings || [];
-        summary = dashboard.summary || summary;
-      } catch {}
-    }
-    offerings = offerings
-      .map((item) => ({
-        ...item,
-        amountCents: Number(item.amountCents || 0),
-        paymentStatus: item.paymentStatus || item.status || "recorded",
-        createdAt: item.createdAt || item.updatedAt || ""
-      }))
-      .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
-
-    window.donorOfferings = offerings;
-    setText("offeringsYtd", money(summary.ytdCents));
-    setText("offeringsRecurring", String(summary.recurringCount || 0));
-    setText("offeringsReceiptCount", String(summary.offeringCount || 0));
-    setText("offeringsStatus", offerings.length ? "Live data" : "No data yet");
-    renderDonorOfferings();
-  } catch (err) {
     const list = document.getElementById("offeringList");
     if (list) list.innerHTML = `<div class="notice">${escapeHtml(err.message)} Sign in from the donor home page first.</div>`;
     setText("offeringsStatus", "Unavailable");
@@ -1098,25 +1167,70 @@ function renderCommemorationParish(parish) {
   if (hidden) hidden.value = parish?.id || "";
 }
 
+function renderCommemorationsPayload(payload = {}, fallbackDashboard = null) {
+  const entries = Array.isArray(payload.entries) && payload.entries.length
+    ? payload.entries
+    : fallbackDashboard?.recentCommemorations || [];
+  const list = document.getElementById("commemorationList");
+  if (list) {
+    list.innerHTML = entries.length
+      ? commemorationRows(entries)
+      : '<div class="notice">No commemoration submissions have been recorded yet. Paid commemoration gifts will appear here after checkout completes.</div>';
+  }
+  return { entries };
+}
+
 async function loadDonorCommemorationsPage() {
+  const session = donorSession();
   primeCommemorationParishDisplay();
   const list = document.getElementById("commemorationList");
-  try {
-    const parishData = await donorApi("/api/parishes", { headers: { Accept: "application/json" } });
-    window.agapayPublicParishes = parishData.parishes || [];
+  if (!session.email || !session.token) {
+    if (list) list.innerHTML = '<div class="notice">Sign in to view your commemoration history.</div>';
+    return;
+  }
+
+  const cachedParishes = readDonorCache("parishes");
+  if (Array.isArray(cachedParishes?.parishes)) {
+    window.agapayPublicParishes = cachedParishes.parishes;
     primeCommemorationParishDisplay();
-  } catch {}
+  }
+  const cachedDashboard = readDonorCache("dashboard");
+  const cachedCommemorations = readDonorCache("commemorations");
+  if (cachedDashboard?.donor) setDonorProfile(cachedDashboard.donor);
+  if (cachedDashboard?.parish) renderCommemorationParish(cachedDashboard.parish);
+  if (cachedCommemorations || cachedDashboard) renderCommemorationsPayload(cachedCommemorations || {}, cachedDashboard);
+
   try {
-    const dashboard = await donorApi("/api/donor/dashboard");
+    const [parishesResult, dashboardResult, commemorationsResult] = await Promise.allSettled([
+      donorApi("/api/parishes", { headers: { Accept: "application/json" } }),
+      donorApi("/api/donor/dashboard"),
+      donorApi("/api/donor/commemorations")
+    ]);
+
+    if (dashboardResult.status === "rejected" && isDonorUnauthorized(dashboardResult.reason)) throw dashboardResult.reason;
+    if (commemorationsResult.status === "rejected" && isDonorUnauthorized(commemorationsResult.reason)) throw commemorationsResult.reason;
+
+    if (parishesResult.status === "fulfilled") {
+      window.agapayPublicParishes = parishesResult.value.parishes || [];
+      writeDonorCache("parishes", { parishes: window.agapayPublicParishes });
+      primeCommemorationParishDisplay();
+    }
+
+    const dashboard = dashboardResult.status === "fulfilled" ? dashboardResult.value : cachedDashboard;
     if (dashboard?.donor) setDonorProfile(dashboard.donor);
     renderCommemorationParish(dashboard?.parish || donorDefaultParish());
-    const data = await donorApi("/api/donor/commemorations");
-    const entries = Array.isArray(data.entries) && data.entries.length
-      ? data.entries
-      : dashboard.recentCommemorations || [];
-    if (list) list.innerHTML = commemorationRows(entries);
-    if (!entries.length && list) list.innerHTML = '<div class="notice">No commemoration submissions have been recorded yet. Paid commemoration gifts will appear here after checkout completes.</div>';
+    if (dashboardResult.status === "fulfilled") writeDonorCache("dashboard", dashboard);
+
+    const commemorations = commemorationsResult.status === "fulfilled" ? commemorationsResult.value : cachedCommemorations;
+    if (!commemorations && !dashboard) throw commemorationsResult.reason || dashboardResult.reason || new Error("Unable to load commemorations");
+    const rendered = renderCommemorationsPayload(commemorations || {}, dashboard);
+    writeDonorCache("commemorations", rendered);
   } catch (err) {
+    if (isDonorUnauthorized(err)) {
+      clearDonorSession();
+      if (list) list.innerHTML = '<div class="notice">Session expired. Please sign in again.</div>';
+      return;
+    }
     renderCommemorationParish(donorDefaultParish());
     if (list) list.innerHTML = `<div class="notice">${escapeHtml(err.message)} Sign in from the donor home page first.</div>`;
   }
