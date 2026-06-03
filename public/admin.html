@@ -129,7 +129,7 @@
           </div>
           <button class="secondary btn-sm" onclick="loadRegistrations()">Refresh</button>
           <button class="secondary btn-sm hidden" id="backToQueueBtn" onclick="collapseRegistrationDetail()">← Queue</button>
-          <button class="secondary btn-sm" onclick="copyRegistrationSummary()">Copy summary</button>
+          <button class="secondary btn-sm hidden" id="copySummaryBtn" onclick="copyRegistrationSummary()">Copy summary</button>
           <button class="secondary btn-sm" onclick="logoutAdmin()">Log out</button>
         </div>
       </div>
@@ -177,7 +177,14 @@
               <div class="health-title">Onboarding Health</div>
               <div class="health-subtitle">A quick view of where parish onboarding is getting stuck.</div>
             </div>
-            <div class="health-readiness"><strong id="healthReadyPercent">0%</strong>Ready</div>
+            <div class="health-readiness" aria-label="0 percent ready">
+              <svg class="health-ring" viewBox="0 0 44 44" aria-hidden="true">
+                <circle class="health-ring-track" cx="22" cy="22" r="18"></circle>
+                <circle class="health-ring-fill" id="healthReadyRing" cx="22" cy="22" r="18" pathLength="100"></circle>
+              </svg>
+              <strong id="healthReadyPercent">0%</strong>
+              <span>Ready</span>
+            </div>
           </div>
           <div class="health-body" id="onboardingHealthPane">
             <div class="health-item"><strong>0</strong><span>Awaiting review</span><p>Canonical standing still needs a decision.</p></div>
@@ -260,7 +267,7 @@
               </div>
             </div>
             <div class="section-body">
-              <p style="margin:0 0 1rem;color:var(--stone);font-size:13px;line-height:1.65;">Manage the admin console session and security settings. Passwords must be at least 12 characters.</p>
+              <p style="margin:0 0 1rem;color:var(--stone);font-size: 13px;line-height:1.65;">Manage the admin console session and security settings. Passwords must be at least 12 characters.</p>
               <div class="form-grid">
                 <div>
                   <label for="newAdminPassword">New password</label>

@@ -519,6 +519,7 @@
       }
       
       document.getElementById('backToQueueBtn')?.classList.add('hidden');
+      document.getElementById('copySummaryBtn')?.classList.add('hidden');
       document.getElementById('registrationDetail').innerHTML = '';
       renderFilteredList();
       document.getElementById('registrationQueue')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -616,6 +617,10 @@
 
       const readyEl = document.getElementById('healthReadyPercent');
       if (readyEl) readyEl.textContent = `${readyPercent}%`;
+      const ringEl = document.getElementById('healthReadyRing');
+      if (ringEl) ringEl.style.strokeDasharray = `${readyPercent} 100`;
+      const readinessEl = document.querySelector('.health-readiness');
+      if (readinessEl) readinessEl.setAttribute('aria-label', `${readyPercent} percent ready`);
 
       pane.innerHTML = `
         <div class="health-item"><strong>${awaitingReview}</strong><span>Awaiting review</span><p>Canonical standing still needs a decision.</p></div>
@@ -839,6 +844,7 @@
       }
       
       document.getElementById('backToQueueBtn')?.classList.remove('hidden');
+      document.getElementById('copySummaryBtn')?.classList.remove('hidden');
       if (activeTab !== 'queue') switchTab('queue');
       if (!silent) setStatus('Loading details...');
 
@@ -1093,7 +1099,7 @@
               <input id="autoDashboardInvite" type="checkbox" ${reg.status === 'verified' && reg.dashboardInviteEmailStatus === 'sent' ? '' : 'checked'} />
               Email dashboard invite when saving a verified parish
             </label>
-            <p style="margin:0.65rem 0 0; color:var(--stone); font-size:12px; line-height:1.55;">
+            <p style="margin:0.65rem 0 0; color:var(--stone); font-size: 11px; line-height:1.55;">
               The invite email goes to the priest and treasurer with the dashboard link, parish ID, and temporary token.
             </p>
             <div class="toggle-row" style="margin-top:0.75rem;">
@@ -1183,7 +1189,7 @@
               <a id="stripeOnboardingLink" href="#" target="_blank" rel="noopener">Open Stripe onboarding</a>
               <p id="stripeLinkHelp">This creates or opens a Standard connected Stripe account for the parish. Send this link to the parish treasurer if they should complete onboarding themselves.</p>
             </div>
-            <p style="margin:0.65rem 0 0; color:var(--stone); font-size:12px; line-height:1.55;">
+            <p style="margin:0.65rem 0 0; color:var(--stone); font-size: 11px; line-height:1.55;">
               Onboarding links are single-use. If a link expires or the parish returns later, create a fresh one.
             </p>
           </div>
