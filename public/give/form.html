@@ -176,6 +176,15 @@
     .fee-toggle-track::after { content: ''; position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
     .fee-toggle input:checked + .fee-toggle-track { background: var(--forest); }
     .fee-toggle input:checked + .fee-toggle-track::after { transform: translateX(20px); }
+    .payment-section { margin-bottom: 2rem; }
+    .payment-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+    .payment-choice { display: flex; align-items: flex-start; gap: 0.65rem; border: 1px solid rgba(184,144,47,0.28); border-radius: var(--r); background: rgba(255,253,248,0.76); padding: 0.95rem 1rem; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s, background 0.2s; }
+    .payment-choice:has(input:checked) { border-color: rgba(184,144,47,0.72); background: rgba(200,162,74,0.12); box-shadow: 0 8px 20px rgba(6,21,34,0.08); }
+    .payment-choice input { margin-top: 0.18rem; accent-color: var(--gold); }
+    .payment-choice strong, .payment-choice small { display: block; }
+    .payment-choice strong { color: var(--deep); font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .payment-choice small { margin-top: 0.2rem; color: var(--stone); font-size: 12px; line-height: 1.45; }
+    .payment-choice.disabled { opacity: 0.52; cursor: not-allowed; }
     .fee-text { flex: 1; }
     .fee-text strong { font-size: 14px; font-weight: 500; color: var(--ink); display: block; margin-bottom: 3px; }
     .fee-text p { font-size: 12px; color: var(--stone); line-height: 1.6; }
@@ -235,6 +244,7 @@
       .parish-avatar-lg { width: 132px; height: 132px; border-radius: 18px; }
       .preset-amounts { grid-template-columns: repeat(2, 1fr); }
       .form-row { grid-template-columns: 1fr; }
+      .payment-choice-grid { grid-template-columns: 1fr; }
       .frequency-opts { flex-wrap: wrap; }
       .donor-claim-wrap .claim-row { grid-template-columns: 1fr; }
       .success-state .success-secondary-cta { margin-right: 0; margin-bottom: 10px; }
@@ -538,9 +548,24 @@
       </div>
     </div>
 
+    <!-- PAYMENT METHOD -->
+    <div class="payment-section reveal reveal-delay-2">
+      <div class="section-label">Step 4 - Payment method</div>
+      <div class="payment-choice-grid">
+        <label class="payment-choice" for="paymentCard">
+          <input type="radio" id="paymentCard" name="paymentMethod" value="card" checked onchange="selectPaymentMethod(this.value)" />
+          <span><strong>Card or wallet</strong><small>Fastest option. Apple Pay and Google Pay appear when your device and Stripe settings support them.</small></span>
+        </label>
+        <label class="payment-choice" id="paymentAchChoice" for="paymentAch">
+          <input type="radio" id="paymentAch" name="paymentMethod" value="ach" onchange="selectPaymentMethod(this.value)" />
+          <span><strong>Bank account</strong><small>Lower processing cost for one-time gifts. Bank gifts may take several business days to settle.</small></span>
+        </label>
+      </div>
+    </div>
+
     <!-- DONOR DETAILS -->
     <div class="donor-section reveal reveal-delay-2">
-      <div class="section-label" id="donorStepLabel">Step 4 — Your information</div>
+      <div class="section-label" id="donorStepLabel">Step 5 — Your information</div>
       <div class="form-row">
         <div class="form-group">
           <label for="firstName">First name</label>
@@ -638,6 +663,7 @@
     let selectedType = 'stewardship';
     let selectedAmount = 50;
     let selectedFreq = 'once';
+    let selectedPaymentMethod = 'card';
     let feeCovered = true;
     let selectedFund = 'Building & Renovation Fund';
     let selectedCampaign = 'Disaster Relief';
@@ -655,6 +681,9 @@
     const AGAPAY_FIXED = 0.30;
     const STRIPE_RATE = 0.029;
     const STRIPE_FIXED = 0.30;
+    const ACH_RATE = 0.008;
+    const ACH_CAP_CENTS = 500;
+    const ACH_AGAPAY_RATE = 0.021;
 
     function cents(value) {
       return Math.max(0, Math.round((Number(value) || 0) * 100));
@@ -669,6 +698,11 @@
       return Math.max(0, Math.round(chargeCents * STRIPE_RATE + STRIPE_FIXED * 100));
     }
 
+    function estimateStripeAchFeeCents(chargeCents) {
+      if (!Number.isFinite(chargeCents) || chargeCents <= 0) return 0;
+      return Math.max(0, Math.min(ACH_CAP_CENTS, Math.round(chargeCents * ACH_RATE)));
+    }
+
     function grossUpForStripeProcessingFeeCents(netAmountCents) {
       if (!Number.isFinite(netAmountCents) || netAmountCents <= 0) return 0;
       let chargeCents = Math.max(netAmountCents, Math.ceil((netAmountCents + (STRIPE_FIXED * 100)) / (1 - STRIPE_RATE)));
@@ -679,7 +713,17 @@
       return chargeCents;
     }
 
-    function feeModel(amountCents, feeCovered, recurring) {
+    function grossUpForAchFeeCents(netAmountCents, agapayFeeCents) {
+      const targetAfterStripe = netAmountCents + Math.max(0, agapayFeeCents || 0);
+      let chargeCents = Math.max(targetAfterStripe, Math.ceil(targetAfterStripe / (1 - ACH_RATE)));
+      while (chargeCents - estimateStripeAchFeeCents(chargeCents) < targetAfterStripe) chargeCents += 1;
+      while (chargeCents > targetAfterStripe && ((chargeCents - 1) - estimateStripeAchFeeCents(chargeCents - 1) >= targetAfterStripe)) {
+        chargeCents -= 1;
+      }
+      return chargeCents;
+    }
+
+    function feeModel(amountCents, feeCovered, recurring, paymentMethod = 'card') {
       if (recurring) {
         const donorTotalCents = feeCovered ? grossUpForStripeProcessingFeeCents(amountCents) : amountCents;
         const stripeFeeCents = estimateStripeProcessingFeeCents(donorTotalCents);
@@ -687,6 +731,19 @@
           feeLabel: 'processing fees',
           feeCents: Math.max(0, donorTotalCents - amountCents),
           parishReceivesCents: feeCovered ? amountCents : Math.max(0, amountCents - stripeFeeCents),
+          donorTotalCents
+        };
+      }
+
+      if (paymentMethod === 'ach') {
+        const agapayFeeCents = Math.round(amountCents * ACH_AGAPAY_RATE);
+        const donorTotalCents = feeCovered ? grossUpForAchFeeCents(amountCents, agapayFeeCents) : amountCents;
+        const stripeFeeCents = estimateStripeAchFeeCents(donorTotalCents);
+        const feeCents = stripeFeeCents + agapayFeeCents;
+        return {
+          feeLabel: 'bank transfer fees',
+          feeCents: feeCovered ? Math.max(0, donorTotalCents - amountCents) : feeCents,
+          parishReceivesCents: feeCovered ? amountCents : Math.max(0, amountCents - feeCents),
           donorTotalCents
         };
       }
@@ -874,7 +931,27 @@
       btn.classList.add('selected');
       selectedFreq = btn.dataset.freq;
       document.getElementById('recurringNote').style.display = selectedFreq !== 'once' ? 'block' : 'none';
+      syncPaymentMethodAvailability();
       updateSummary();
+    }
+
+    function selectPaymentMethod(value) {
+      selectedPaymentMethod = value === 'ach' ? 'ach' : 'card';
+      updateSummary();
+    }
+
+    function syncPaymentMethodAvailability() {
+      const recurring = selectedFreq !== 'once';
+      const achRadio = document.getElementById('paymentAch');
+      const cardRadio = document.getElementById('paymentCard');
+      const achChoice = document.getElementById('paymentAchChoice');
+      if (!achRadio || !cardRadio || !achChoice) return;
+      achRadio.disabled = recurring;
+      achChoice.classList.toggle('disabled', recurring);
+      if (recurring && achRadio.checked) {
+        cardRadio.checked = true;
+        selectedPaymentMethod = 'card';
+      }
     }
 
     // NAMES TABS
@@ -893,7 +970,8 @@
       feeCovered = document.getElementById('feeCoverage').checked;
       const amountCents = cents(selectedAmount || 0);
       const recurring = selectedFreq !== 'once';
-      const model = feeModel(amountCents, feeCovered, recurring);
+      syncPaymentMethodAvailability();
+      const model = feeModel(amountCents, feeCovered, recurring, selectedPaymentMethod);
       const fees = Number(dollars(model.feeCents));
       const parishReceives = Number(dollars(model.parishReceivesCents));
       const donorTotal = Number(dollars(model.donorTotalCents));
@@ -918,12 +996,14 @@
       document.getElementById('summaryFee').textContent = feeCovered ? '+$' + fees.toFixed(2) : '-$' + fees.toFixed(2);
       document.getElementById('summaryTotal').textContent = '$' + donorTotal.toFixed(2);
       document.getElementById('summaryFeeRow').style.opacity = '1';
-      if (feeTitle) feeTitle.textContent = recurring ? 'Cover the processing fees' : 'Cover the platform fees';
+      if (feeTitle) feeTitle.textContent = recurring ? 'Cover the processing fees' : selectedPaymentMethod === 'ach' ? 'Cover the lower bank-transfer fees' : 'Cover the platform fees';
       if (feeCopy) {
         if (recurring) {
           feeCopy.textContent = feeCovered
             ? `When you cover the fees, ${currentParish.name} receives the full recurring gift. AGAPAY does not add a platform fee to renewals.`
             : `Recurring gifts only pass through Stripe processing costs. AGAPAY does not add a platform fee to renewals.`;
+        } else if (selectedPaymentMethod === 'ach') {
+          feeCopy.textContent = `Bank account gifts cost less than cards and may take several business days to settle.`;
         } else {
           feeCopy.textContent = `When you cover the fees, ${currentParish.name} receives your full gift â€” nothing deducted.`;
         }
@@ -1104,6 +1184,7 @@
             campaignDescription: document.getElementById('campaignDescription').value.trim(),
             namesLiving: document.getElementById('namesLiving').value.trim(),
             namesDeparted: document.getElementById('namesDeparted').value.trim(),
+            paymentMethod: selectedPaymentMethod,
             coverFees: document.getElementById('feeCoverage').checked,
             firstName,
             lastName,

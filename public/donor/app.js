@@ -1240,6 +1240,11 @@ function linesFromField(id) {
   return (document.getElementById(id)?.value || "").split(/\n+/).map((value) => value.trim()).filter(Boolean);
 }
 
+function selectedDonorPaymentMethod(frequency = "once") {
+  const value = document.querySelector('input[name="paymentMethod"]:checked')?.value || "card";
+  return value === "ach" ? "ach" : "card";
+}
+
 async function submitCommemoration(event) {
   event.preventDefault();
   const living = linesFromField("commemorationLivingNames");
@@ -1273,6 +1278,7 @@ async function submitCommemoration(event) {
         namesLiving: living.join("\n"),
         namesDeparted: departed.join("\n"),
         inMemoriam: document.getElementById("commemorationIntentionNote")?.value || "",
+        paymentMethod: selectedDonorPaymentMethod("once"),
         coverFees: document.getElementById("coverFees")?.checked !== false,
         ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
       })
@@ -1317,13 +1323,19 @@ async function startDonorCheckout(event) {
       : "";
   try {
     setDonorStatus("Preparing checkout...");
+    const frequency = document.getElementById("frequency")?.value || "once";
+    const paymentMethod = selectedDonorPaymentMethod(frequency);
+    if (frequency !== "once" && paymentMethod === "ach") {
+      setDonorStatus("Bank account gifts are available for one-time gifts. Choose card or wallet for recurring giving.", "error");
+      return;
+    }
     const data = await donorApi("/api/create-checkout-session", {
       method: "POST",
       body: JSON.stringify({
         parishId: document.getElementById("parish")?.value,
         giftType,
         amount: document.getElementById("amount")?.value,
-        frequency: document.getElementById("frequency")?.value || "once",
+        frequency,
         firstName: firstName || "AGAPAY",
         lastName: rest.join(" "),
         email: session.email,
@@ -1335,6 +1347,7 @@ async function startDonorCheckout(event) {
         namesLiving: livingNames,
         namesDeparted: departedNames,
         inMemoriam: intentionNote,
+        paymentMethod,
         coverFees: document.getElementById("coverFees")?.checked !== false,
         ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
       })

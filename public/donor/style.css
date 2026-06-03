@@ -190,6 +190,51 @@ button, input, select, textarea { font: inherit; }
   line-height: 1.45;
 }
 
+.payment-method-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.55rem;
+}
+
+.payment-method-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  border: 1px solid rgba(184, 144, 47, 0.25);
+  border-radius: var(--r);
+  background: rgba(255, 253, 248, 0.8);
+  padding: 0.8rem;
+  cursor: pointer;
+}
+
+.payment-method-card:has(input:checked) {
+  border-color: rgba(184, 144, 47, 0.72);
+  background: rgba(200, 162, 74, 0.12);
+}
+
+.payment-method-card input {
+  margin-top: 0.15rem;
+  accent-color: var(--gold);
+}
+
+.payment-method-card strong,
+.payment-method-card small {
+  display: block;
+}
+
+.payment-method-card strong {
+  color: var(--deep);
+  font-size: 13px;
+}
+
+.payment-method-card small {
+  margin-top: 0.15rem;
+  color: var(--stone);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .gift-option-preview {
   display: grid;
   gap: 0.35rem;
@@ -930,6 +975,7 @@ body.donor-login-simple {
 
 @media (max-width: 720px) {
   body { overflow-x: hidden; }
+  .payment-method-options { grid-template-columns: 1fr; }
   .brand { padding: 1rem; }
   .brand-mark { width: 38px; height: 38px; }
   .brand-mark img { width: 32px; height: 32px; }

@@ -1092,6 +1092,11 @@ function estimateStripeProcessingFeeCents(chargeCents) {
   return Math.max(0, Math.round(chargeCents * 0.029 + 30));
 }
 
+function estimateStripeAchFeeCents(chargeCents) {
+  if (!Number.isFinite(chargeCents) || chargeCents <= 0) return 0;
+  return Math.max(0, Math.min(500, Math.round(chargeCents * 0.008)));
+}
+
 function grossUpForStripeProcessingFeeCents(netAmountCents) {
   if (!Number.isFinite(netAmountCents) || netAmountCents <= 0) return 0;
   let chargeCents = Math.max(
@@ -1108,7 +1113,29 @@ function grossUpForStripeProcessingFeeCents(netAmountCents) {
   return chargeCents;
 }
 
-function checkoutFinancials(amountCents, coverFees, recurring) {
+function grossUpForAchFeeCents(netAmountCents, agapayFeeCents) {
+  if (!Number.isFinite(netAmountCents) || netAmountCents <= 0) return 0;
+  const targetAfterStripe = netAmountCents + Math.max(0, Number(agapayFeeCents) || 0);
+  let chargeCents = Math.max(targetAfterStripe, Math.ceil(targetAfterStripe / (1 - 0.008)));
+  while (chargeCents - estimateStripeAchFeeCents(chargeCents) < targetAfterStripe) chargeCents += 1;
+  while (
+    chargeCents > targetAfterStripe
+    && (chargeCents - 1) - estimateStripeAchFeeCents(chargeCents - 1) >= targetAfterStripe
+  ) {
+    chargeCents -= 1;
+  }
+  return chargeCents;
+}
+
+function checkoutPaymentMethod(value, recurring) {
+  const method = String(value || "card").toLowerCase().trim();
+  if (recurring) return "card";
+  if (["ach", "bank", "bank_account", "us_bank_account"].includes(method)) return "ach";
+  return "card";
+}
+
+function checkoutFinancials(amountCents, coverFees, recurring, paymentMethod = "card") {
+  const method = checkoutPaymentMethod(paymentMethod, recurring);
   const totalTransactionFeeCents = Math.round(amountCents * 0.05 + 30);
   if (recurring) {
     const chargeCents = coverFees
@@ -1122,13 +1149,27 @@ function checkoutFinancials(amountCents, coverFees, recurring) {
     };
   }
 
+  if (method === "ach") {
+    const agapayFeeCents = Math.round(amountCents * 0.021);
+    const chargeCents = coverFees ? grossUpForAchFeeCents(amountCents, agapayFeeCents) : amountCents;
+    const estimatedStripeFeeCents = estimateStripeAchFeeCents(chargeCents);
+    return {
+      chargeCents,
+      estimatedStripeFeeCents,
+      agapayFeeCents,
+      totalTransactionFeeCents: estimatedStripeFeeCents + agapayFeeCents,
+      paymentMethod: method
+    };
+  }
+
   const chargeCents = coverFees ? amountCents + totalTransactionFeeCents : amountCents;
   const estimatedStripeFeeCents = estimateStripeProcessingFeeCents(chargeCents);
   return {
     chargeCents,
     estimatedStripeFeeCents,
     agapayFeeCents: Math.max(0, totalTransactionFeeCents - estimatedStripeFeeCents),
-    totalTransactionFeeCents
+    totalTransactionFeeCents,
+    paymentMethod: method
   };
 }
 
@@ -2715,8 +2756,9 @@ async function handleCheckout(request, env) {
   const {
     chargeCents,
     estimatedStripeFeeCents,
-    agapayFeeCents
-  } = checkoutFinancials(amountCents, Boolean(body.coverFees), recurring);
+    agapayFeeCents,
+    paymentMethod
+  } = checkoutFinancials(amountCents, Boolean(body.coverFees), recurring, body.paymentMethod);
   const giftLabel = String(body.giftType).replace(/-/g, " ");
   const normalizedDonorName = donorName(body);
   const customer = await findOrCreateDonorCustomer(env, parish, body);
@@ -2746,6 +2788,7 @@ async function handleCheckout(request, env) {
     charge_cents: String(chargeCents),
     agapay_fee_cents: String(agapayFeeCents),
     estimated_stripe_fee_cents: String(estimatedStripeFeeCents),
+    payment_method: paymentMethod,
     cover_fees: body.coverFees ? "true" : "false",
     names_living: body.namesLiving || "",
     names_departed: body.namesDeparted || ""
@@ -2761,6 +2804,8 @@ async function handleCheckout(request, env) {
     "line_items[0][price_data][product_data][name]": `${parish.name} - ${giftLabel}`,
     "line_items[0][price_data][unit_amount]": String(chargeCents)
   });
+
+  form.set("payment_method_types[0]", paymentMethod === "ach" ? "us_bank_account" : "card");
 
   for (const [key, value] of Object.entries(checkoutMetadata)) {
     form.set(`metadata[${key}]`, value);
@@ -2820,6 +2865,7 @@ async function handleCheckout(request, env) {
     chargeCents,
     agapayFeeCents,
     estimatedStripeFeeCents,
+    paymentMethod,
     coverFees: Boolean(body.coverFees),
     status: "checkout_created",
     paymentStatus: "pending",
