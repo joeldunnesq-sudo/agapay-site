@@ -111,9 +111,11 @@
     .hero {
       position: relative;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
       background:
-        radial-gradient(circle at 18% 0%, rgba(200, 162, 74, 0.11), transparent 32%),
-        linear-gradient(180deg, #FFFDF8 0%, #F8F2E7 100%);
+        radial-gradient(circle at 15% 8%, rgba(200, 162, 74, 0.14), transparent 32%),
+        linear-gradient(180deg, #F3EDE0 0%, #EFE8DA 100%);
       border-bottom: 1px solid var(--line);
     }
     .hero::before {
@@ -121,32 +123,14 @@
       position: absolute;
       inset: 0;
       background-image:
-        linear-gradient(30deg, rgba(166, 159, 145, 0.07) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.07) 87.5%, rgba(166, 159, 145, 0.07)),
-        linear-gradient(150deg, rgba(166, 159, 145, 0.07) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.07) 87.5%, rgba(166, 159, 145, 0.07));
+        linear-gradient(30deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08)),
+        linear-gradient(150deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08));
       background-size: 54px 94px;
       opacity: 0.18;
       pointer-events: none;
       z-index: 1;
     }
-    .hero-art {
-      position: absolute;
-      right: -2rem;
-      bottom: -1rem;
-      width: min(75vw, 1150px);
-      height: 105%;
-      background-image: url("/images/vision/agapay-hub-and-spoke.png");
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center right;
-      pointer-events: none;
-      
-      /* Blend Mode Fix */
-      filter: saturate(0) brightness(1.15) contrast(1.2);
-      mix-blend-mode: multiply;
-      -webkit-mask-image: radial-gradient(ellipse 85% 85% at center, black 40%, transparent 95%);
-      mask-image: radial-gradient(ellipse 85% 85% at center, black 40%, transparent 95%);
-      z-index: 1;
-    }
+    
     .hero-grid {
       position: relative;
       z-index: 2;
@@ -157,22 +141,40 @@
       align-items: center;
       gap: 2rem;
     }
+    
     .hero-copy {
       position: relative;
       z-index: 3;
       max-width: 600px;
       padding: 0;
     }
+    
+    .hero-art {
+      position: absolute;
+      right: -2rem;
+      bottom: -1rem;
+      width: min(60vw, 850px);
+      height: 105%;
+      background-image: url("/images/vision/agapay-hub-and-spoke.png");
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center right;
+      pointer-events: none;
+      filter: saturate(0) brightness(1.15) contrast(1.2);
+      mix-blend-mode: multiply;
+      -webkit-mask-image: radial-gradient(ellipse 85% 85% at center, black 40%, transparent 95%);
+      mask-image: radial-gradient(ellipse 85% 85% at center, black 40%, transparent 95%);
+      z-index: 1;
+    }
+
     .eyebrow {
-      color: var(--gold);
+      color: var(--gold-dark);
       text-transform: uppercase;
       font-size: .78rem;
       letter-spacing: .12em;
-      font-weight: 600;
+      font-weight: 800;
       margin-bottom: .8rem;
     }
-
-    /* Fixed Canonical Hero Typography */
     .hero-copy h1 {
       font-family: var(--serif);
       color: #0A1524;
@@ -312,8 +314,20 @@
 
     /* Synced Responsive Rules */
     @media (max-width:1020px){
-      .hero-grid { grid-template-columns: 1fr; min-height: 440px; align-items: start; padding-bottom: 4rem; }
-      .hero-art { width: min(120vw, 940px); right: -15%; bottom: 0; opacity: 0.8; }
+      .nav-links, .nav-actions { display: none; }
+      .hero-grid { grid-template-columns: 1fr; min-height: auto; padding-bottom: 2rem; }
+      
+      /* Mobile Hero Stacking */
+      .hero-art { 
+        position: relative; 
+        right: auto; 
+        bottom: auto; 
+        width: 100%; 
+        height: 360px; 
+        background-position: center; 
+        -webkit-mask-image: radial-gradient(ellipse 90% 90% at center, black 40%, transparent 95%);
+        mask-image: radial-gradient(ellipse 90% 90% at center, black 40%, transparent 95%);
+      }
       .hero-copy { max-width: 680px; }
       
       .mission-grid,.phase-cards,.values-grid{grid-template-columns:1fr}
@@ -325,7 +339,6 @@
       .cta-row{grid-template-columns:1fr}
       .cta-left{align-items:flex-start}
       .cta-copy{max-width:none}
-      .nav-links{display:none}
       .footer-grid{grid-template-columns:1fr 1fr}
       .footer-bottom{flex-direction:column}
     }
@@ -337,8 +350,8 @@
       .brand-mark { width: 38px; height: 38px; }
       .brand-mark img { width: 34px; height: 34px; }
       
-      .hero-grid { padding: 2rem 0 5rem; min-height: 380px; }
-      .hero-art { width: 158vw; right: -66%; opacity: 0.62; }
+      .hero-grid { padding: 2rem 0 2rem; min-height: auto; }
+      .hero-art { height: 280px; }
       .hero-copy h1 { font-size: clamp(3rem, 15vw, 5rem); }
       .hero-copy h2 { font-size: clamp(1.8rem, 8vw, 2.5rem); }
       
@@ -375,7 +388,6 @@
   
   <main>
     <section class="hero">
-      <div class="hero-art" aria-label="AGAPAY hub and spoke Orthodox ecosystem illustration" role="img"></div>
       <div class="wrap hero-grid">
         <div class="hero-copy">
           <div class="eyebrow">Our Vision</div>
@@ -385,6 +397,7 @@
           <p>We believe Orthodox parishes, monasteries, and the faithful deserve tools built specifically for the life of the Church &mdash; with a vision that grows to serve the wider Orthodox world over time.</p>
         </div>
       </div>
+      <div class="hero-art" aria-label="AGAPAY hub and spoke Orthodox ecosystem illustration" role="img"></div>
     </section>
 
     <section class="values"><div class="wrap values-grid">
