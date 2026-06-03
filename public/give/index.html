@@ -175,6 +175,31 @@
       background: rgba(255, 253, 248, 0.62);
     }
 
+    .offering-principle {
+      padding: 1.05rem clamp(1.2rem, 4vw, 3.4rem);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 1rem;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 253, 248, 0.86);
+    }
+    .offering-principle p {
+      font-family: var(--serif);
+      color: var(--night);
+      font-size: clamp(1.2rem, 2vw, 1.65rem);
+      line-height: 1.25;
+      font-style: italic;
+    }
+    .offering-principle span {
+      color: var(--gold-dark);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
     /* REVISED: Search bar styling designed to sit inside the main section */
     .directory-search {
       margin-bottom: 1.5rem;
@@ -767,6 +792,8 @@
       .impact-row { grid-template-columns: 42px minmax(0, 1fr); }
       .impact-link { grid-column: 2; justify-self: start; margin-top: -0.3rem; }
       .easy-line { grid-template-columns: 38px minmax(0, 1fr) auto; }
+      .offering-principle { grid-template-columns: 1fr; }
+      .offering-principle span { white-space: normal; }
       .filters { gap: 0.35rem; }
       .pill { padding: 0.42rem 0.68rem; font-size: 0.7rem; }
     }
@@ -804,6 +831,11 @@
       <article class="cause-tab"><span class="cause-icon"><svg viewBox="0 0 24 24"><path d="M12 3c2 3 3 5 3 7a3 3 0 0 1-6 0c0-2 1-4 3-7Z"/><path d="M12 13v8"/><path d="M9 21h6"/></svg></span><div><div class="cause-title">Candles</div><div class="cause-sub">Prayer intentions</div></div></article>
       <article class="cause-tab"><span class="cause-icon"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M8 16V8"/><path d="M12 16V4"/><path d="M16 16v-6"/></svg></span><div><div class="cause-title">Campaigns</div><div class="cause-sub">Parish needs</div></div></article>
       <article class="cause-tab"><span class="cause-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg></span><div><div class="cause-title">All Causes</div><div class="cause-sub">One giving home</div></div></article>
+    </section>
+
+    <section class="offering-principle" aria-label="AGAPAY offering principle">
+      <p>"A digital offering should carry the same reverence as lighting a candle."</p>
+      <span>Intentional giving for an intentional life.</span>
     </section>
 
     <section class="main-section" id="find-community">
@@ -914,7 +946,7 @@
         </div>
       </div>
       <div class="trust-wrap">
-        <article class="trust-lead"><h3>Your gift is handled with care.</h3><p>Every donation is processed through trusted payment infrastructure and directed to the organization selected by the donor.</p></article>
+        <article class="trust-lead"><h3>Your gift is handled with care.</h3><p>Every donation is processed through trusted payment infrastructure and directed to the organization selected by the donor. We do not fund budgets; we sustain missions.</p></article>
         <article class="trust-card"><span class="trust-icon"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><h3>Secure Payments</h3><p>Modern payment processing with encrypted checkout flows.</p></article>
         <article class="trust-card"><span class="trust-icon"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 2.8 8 7 10 4.2-2 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-5"/></svg></span><h3>Reviewed Communities</h3><p>Parishes and monasteries are reviewed before activation.</p></article>
         <article class="trust-card"><span class="trust-icon"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M8 16V8"/><path d="M12 16V4"/><path d="M16 16v-6"/></svg></span><h3>Clear Records</h3><p>Donors and parishes can see gifts in their dashboards.</p></article>
