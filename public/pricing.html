@@ -130,6 +130,12 @@
     .input-row { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0.55rem; border: 1px solid rgba(166, 159, 145, 0.28); border-radius: 9px; background: #fff; padding: 0.45rem 0.65rem; max-width: 190px; }
     .input-row span { color: var(--gold-dark); font-family: var(--serif); font-size: 1.1rem; font-weight: 700; }
     .input-row input { width: 100%; border: 0; outline: 0; color: var(--night); font-family: var(--serif); font-size: 1.1rem; font-weight: 700; background: transparent; }
+    .payment-method-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.62rem; margin-top: 0.25rem; }
+    .payment-method-card { border: 1px solid rgba(166, 159, 145, 0.3); border-radius: 10px; background: rgba(255, 253, 248, 0.82); padding: 0.72rem 0.78rem; display: grid; grid-template-columns: auto 1fr; gap: 0.55rem; align-items: start; cursor: pointer; transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease; }
+    .payment-method-card:has(input:checked) { border-color: rgba(200, 162, 74, 0.72); background: rgba(200, 162, 74, 0.1); box-shadow: 0 8px 18px rgba(6, 21, 34, 0.06); }
+    .payment-method-card input { margin-top: 0.18rem; accent-color: var(--gold-dark); }
+    .payment-method-card strong { display: block; color: var(--night); font-size: 0.86rem; line-height: 1.25; }
+    .payment-method-card small { display: block; margin-top: 0.18rem; color: #657078; font-size: 0.74rem; line-height: 1.45; }
     .calc-assumption { margin-top: 0.75rem; color: #667078; font-size: 0.82rem; line-height: 1.5; }
     .slider-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.65rem; color: var(--night); font-size: 0.84rem; font-weight: 800; }
     .slider-head output { min-width: 86px; border: 1px solid rgba(166, 159, 145, 0.28); border-radius: 8px; padding: 0.35rem 0.5rem; background: #fff; text-align: center; font-family: var(--serif); font-size: 1.1rem; }
@@ -194,6 +200,7 @@
       .hero-actions, .hero-btn-primary, .hero-btn-secondary { width: 100%; }
       .pricing-content { padding: 1.2rem 0.8rem 1.5rem; }
       .pricing-grid, .calculator, .faq-grid { grid-template-columns: 1fr; }
+      .payment-method-grid { grid-template-columns: 1fr; }
       .calc-results { border-left: 0; border-top: 1px solid rgba(166, 159, 145, 0.24); }
       .closing-actions { min-width: 0; }
       .footer-grid { grid-template-columns: 1fr; }
@@ -353,17 +360,17 @@
         <div class="fee-main">
           <div class="fee-badge">%</div>
           <div>
-            <h2>One clear transaction fee.</h2>
-            <p>Standard donation transactions are 5% + $0.30.</p>
+            <h2>Two clear payment paths.</h2>
+            <p>Card and wallet gifts use the standard 5% + $0.30 model. Bank account gifts cost less, but can take several business days to process and may delay payout timing.</p>
           </div>
         </div>
         <div class="fee-split">
-          <div class="fee-line"><strong>2.9% + $0.30</strong><span>Estimated Stripe online processing</span></div>
-          <div class="fee-line"><strong>2.1%</strong><span>Estimated AGAPAY platform share</span></div>
+          <div class="fee-line"><strong>Card</strong><span>5% + $0.30 total, including estimated Stripe card processing and AGAPAY platform share.</span></div>
+          <div class="fee-line"><strong>ACH</strong><span>Estimated 0.8% Stripe bank processing, capped at $5, plus a 2.1% AGAPAY platform share.</span></div>
         </div>
         <div class="fee-note">
           <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/><path d="M8 14h8"/><path d="M12 10v8"/></svg>
-          <p>Every gift belongs to the Church, not the platform. We are stewards of the transfer, not custodians of the principal.</p>
+          <p>Card and wallet gifts are fastest. Bank account gifts are useful for larger one-time gifts, but Stripe must verify and settle the bank transfer before funds become available for payout.</p>
         </div>
       </aside>
 
@@ -371,7 +378,7 @@
         <section class="calculator" aria-label="Fee calculator">
           <div class="calc-controls">
             <h2>See what your parish actually receives.</h2>
-            <p>Adjust monthly giving, the average gift size, and donor fee coverage to understand your true net deposit.</p>
+            <p>Adjust monthly giving, the average gift size, payment method, and donor fee coverage to understand your true net deposit.</p>
             <div class="slider-group">
               <div class="slider-head"><label for="volumeRange">Monthly gift volume</label><output id="volumeDisplay">$20,000</output></div>
               <input type="range" id="volumeRange" min="2000" max="50000" step="1000" value="20000" />
@@ -381,6 +388,13 @@
               <div class="input-row"><span>$</span><input id="averageGiftInput" type="number" min="5" max="5000" step="5" value="75" inputmode="decimal" /></div>
               <p class="calc-assumption" id="giftAssumption">Assuming about 267 gifts per month at a $75 average gift. The $0.30 component uses this estimated gift count.</p>
             </div>
+            <div class="input-group">
+              <label>Payment method</label>
+              <div class="payment-method-grid" role="radiogroup" aria-label="Payment method for calculator">
+                <label class="payment-method-card"><input type="radio" name="calcPaymentMethod" value="card" checked /><span><strong>Card or wallet</strong><small>Fastest. Includes Apple Pay and Google Pay when available.</small></span></label>
+                <label class="payment-method-card"><input type="radio" name="calcPaymentMethod" value="ach" /><span><strong>Bank account</strong><small>Lower cost for one-time gifts; slower processing and payout availability.</small></span></label>
+              </div>
+            </div>
             <div class="slider-group">
               <div class="slider-head"><label for="coverageRange">Donor fee coverage</label><output id="coverageDisplay">75%</output></div>
               <input type="range" id="coverageRange" min="0" max="100" step="5" value="75" />
@@ -389,12 +403,13 @@
           <div class="calc-results">
             <div class="result-row"><span>Total gifts</span><strong id="grossDisplay">$20,000.00</strong></div>
             <div class="result-row negative"><span>Total estimated fees</span><strong id="feeDisplay">-$1,080.10</strong></div>
-            <div class="result-row muted"><span>Stripe portion of total fees</span><strong id="stripeDisplay">-$660.10</strong></div>
+            <div class="result-row muted"><span id="stripeLabel">Stripe portion of total fees</span><strong id="stripeDisplay">-$660.10</strong></div>
             <div class="result-row muted"><span>AGAPAY portion of total fees</span><strong id="agapayDisplay">-$420.00</strong></div>
             <div class="result-row positive"><span>Donor-covered offset</span><strong id="coveredDisplay">+$810.08</strong></div>
             <div class="result-row negative"><span>Parish-absorbed fees</span><strong id="parishFeesDisplay">-$270.02</strong></div>
             <div class="result-row net"><span>Net deposited</span><strong id="netDisplay">$19,729.98</strong></div>
             <div class="result-row muted"><span>Reconciliation</span><strong id="reconcileDisplay">$20,000.00 - $270.02 = $19,729.98</strong></div>
+            <div class="result-row muted"><span>Payout timing</span><strong id="timingDisplay">Fastest</strong></div>
             <div class="result-row positive"><span>Effective yield</span><strong id="yieldDisplay">98.65%</strong></div>
           </div>
         </section>
@@ -415,15 +430,15 @@
         <div class="faq-grid">
           <article class="faq">
             <button type="button" aria-expanded="false">Is AGAPAY free for monasteries? <span>+</span></button>
-            <p>Monasteries, sketes, and convents pay no monthly platform fee. Donation transactions still use the standard 5% + $0.30 model unless a cathedral or diocese agreement says otherwise.</p>
+            <p>Monasteries, sketes, and convents pay no monthly platform fee. Card and wallet donations use the standard 5% + $0.30 model; bank account gifts use the lower ACH estimate shown in the calculator unless a cathedral or diocese agreement says otherwise.</p>
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">Are there setup fees or contracts? <span>+</span></button>
             <p>No setup fees, no annual lock-in, and no cancellation penalties. Standard tiers are month to month.</p>
           </article>
           <article class="faq">
-            <button type="button" aria-expanded="false">How does the 5% + $0.30 fee work? <span>+</span></button>
-            <p>The standard donation transaction fee is 5% + $0.30 per gift. Stripe's estimated online processing is 2.9% + $0.30, and AGAPAY receives the remaining estimated 2.1% platform share. The calculator uses an average gift size to estimate the number of gifts.</p>
+            <button type="button" aria-expanded="false">How do card and bank fees work? <span>+</span></button>
+            <p>Card and wallet gifts use the standard 5% + $0.30 model. Bank account gifts estimate Stripe ACH processing at 0.8%, capped at $5, plus a 2.1% AGAPAY platform share. Bank gifts can take several business days to process before payout.</p>
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">How does AGAPAY verify canonical standing? <span>+</span></button>
@@ -431,7 +446,7 @@
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">Can donors cover fees? <span>+</span></button>
-            <p>Yes. Donors can choose to cover transaction fees at checkout, helping the parish receive the full intended gift.</p>
+            <p>Yes. Donors can choose to cover transaction fees at checkout, helping the parish receive the full intended gift. For bank account gifts, the lower cost comes with slower settlement and payout availability.</p>
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">Which jurisdictions does AGAPAY serve? <span>+</span></button>
@@ -532,38 +547,78 @@
     const volumeRange = document.getElementById("volumeRange");
     const coverageRange = document.getElementById("coverageRange");
     const averageGiftInput = document.getElementById("averageGiftInput");
+    const paymentMethodInputs = document.querySelectorAll('input[name="calcPaymentMethod"]');
     const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const wholeMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
     function formatCents(cents) { return money.format((Number(cents) || 0) / 100); }
+    function achStripeFeeCents(chargeCents) {
+      return Math.min(500, Math.max(0, Math.round((Number(chargeCents) || 0) * 0.008)));
+    }
+    function grossUpAchGiftCents(intendedGiftCents) {
+      const agapayFeeCents = Math.round(intendedGiftCents * 0.021);
+      const targetAfterStripe = intendedGiftCents + agapayFeeCents;
+      let chargeCents = targetAfterStripe + achStripeFeeCents(targetAfterStripe);
+      while (chargeCents - achStripeFeeCents(chargeCents) < targetAfterStripe) chargeCents += 1;
+      return { chargeCents, stripeFeeCents: achStripeFeeCents(chargeCents), agapayFeeCents };
+    }
+    function selectedPaymentMethod() {
+      return document.querySelector('input[name="calcPaymentMethod"]:checked')?.value === "ach" ? "ach" : "card";
+    }
     function updateCalculator() {
       const monthlyVolume = Number(volumeRange.value || 0);
       const monthlyCents = Math.round(monthlyVolume * 100);
       const coverageRate = Number(coverageRange.value || 0) / 100;
       const averageGift = Math.max(5, Number(averageGiftInput && averageGiftInput.value || 75));
       const transactions = Math.max(1, Math.round(monthlyVolume / averageGift));
-      const totalFeeCents = Math.round(monthlyCents * 0.05) + (transactions * 30);
-      const estimatedStripeCents = Math.round(monthlyCents * 0.029) + (transactions * 30);
-      const estimatedAgapayCents = Math.max(0, totalFeeCents - estimatedStripeCents);
-      const donorCoveredCents = Math.round(totalFeeCents * coverageRate);
-      const parishFeeCents = totalFeeCents - donorCoveredCents;
+      const method = selectedPaymentMethod();
+      const averageGiftCents = Math.round(averageGift * 100);
+      let totalFeeCents;
+      let estimatedStripeCents;
+      let estimatedAgapayCents;
+      let donorCoveredCents;
+      let parishFeeCents;
+      if (method === "ach") {
+        const coveredTransactions = Math.round(transactions * coverageRate);
+        const uncoveredTransactions = Math.max(0, transactions - coveredTransactions);
+        const coveredGift = grossUpAchGiftCents(averageGiftCents);
+        const uncoveredStripePerGift = achStripeFeeCents(averageGiftCents);
+        const uncoveredAgapayPerGift = Math.round(averageGiftCents * 0.021);
+        donorCoveredCents = Math.round((coveredGift.chargeCents - averageGiftCents) * coveredTransactions);
+        const uncoveredFeeCents = (uncoveredStripePerGift + uncoveredAgapayPerGift) * uncoveredTransactions;
+        parishFeeCents = Math.round(uncoveredFeeCents);
+        estimatedStripeCents = Math.round((coveredGift.stripeFeeCents * coveredTransactions) + (uncoveredStripePerGift * uncoveredTransactions));
+        estimatedAgapayCents = Math.round((coveredGift.agapayFeeCents * coveredTransactions) + (uncoveredAgapayPerGift * uncoveredTransactions));
+        totalFeeCents = donorCoveredCents + parishFeeCents;
+      } else {
+        totalFeeCents = Math.round(monthlyCents * 0.05) + (transactions * 30);
+        estimatedStripeCents = Math.round(monthlyCents * 0.029) + (transactions * 30);
+        estimatedAgapayCents = Math.max(0, totalFeeCents - estimatedStripeCents);
+        donorCoveredCents = Math.round(totalFeeCents * coverageRate);
+        parishFeeCents = totalFeeCents - donorCoveredCents;
+      }
       const netCents = monthlyCents - parishFeeCents;
       const yieldPercent = monthlyCents > 0 ? (netCents / monthlyCents) * 100 : 0;
       document.getElementById("volumeDisplay").textContent = wholeMoney.format(monthlyVolume);
       document.getElementById("coverageDisplay").textContent = `${Math.round(coverageRate * 100)}%`;
-      document.getElementById("giftAssumption").textContent = `Assuming about ${transactions.toLocaleString("en-US")} gifts per month at a ${wholeMoney.format(averageGift)} average gift. The $0.30 component uses this estimated gift count.`;
+      document.getElementById("giftAssumption").textContent = method === "ach"
+        ? `Assuming about ${transactions.toLocaleString("en-US")} one-time bank gifts per month at a ${wholeMoney.format(averageGift)} average gift. ACH processing time can delay payout availability.`
+        : `Assuming about ${transactions.toLocaleString("en-US")} card or wallet gifts per month at a ${wholeMoney.format(averageGift)} average gift. The $0.30 component uses this estimated gift count.`;
       document.getElementById("grossDisplay").textContent = formatCents(monthlyCents);
       document.getElementById("feeDisplay").textContent = `-${formatCents(totalFeeCents)}`;
       document.getElementById("coveredDisplay").textContent = `+${formatCents(donorCoveredCents)}`;
+      document.getElementById("stripeLabel").textContent = method === "ach" ? "Stripe ACH portion of total fees" : "Stripe card portion of total fees";
       document.getElementById("stripeDisplay").textContent = `-${formatCents(estimatedStripeCents)}`;
       document.getElementById("agapayDisplay").textContent = `-${formatCents(estimatedAgapayCents)}`;
       document.getElementById("parishFeesDisplay").textContent = `-${formatCents(parishFeeCents)}`;
       document.getElementById("netDisplay").textContent = formatCents(netCents);
       document.getElementById("reconcileDisplay").textContent = `${formatCents(monthlyCents)} - ${formatCents(parishFeeCents)} = ${formatCents(netCents)}`;
+      document.getElementById("timingDisplay").textContent = method === "ach" ? "Slower bank settlement" : "Fastest";
       document.getElementById("yieldDisplay").textContent = `${yieldPercent.toFixed(2)}%`;
     }
     volumeRange && volumeRange.addEventListener("input", updateCalculator);
     coverageRange && coverageRange.addEventListener("input", updateCalculator);
     averageGiftInput && averageGiftInput.addEventListener("input", updateCalculator);
+    paymentMethodInputs.forEach((input) => input.addEventListener("change", updateCalculator));
     updateCalculator();
   </script>
 </body>
