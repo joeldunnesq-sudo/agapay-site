@@ -7,8 +7,8 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="favicons/android-chrome-192x192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="favicons/android-chrome-512x512.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
   <meta name="description" content="AGAPAY was built from within the Orthodox Tradition to help parishes thrive and leave our children an inheritance of faithful stewardship." />
   <meta property="og:title" content="About AGAPAY" />
@@ -114,7 +114,7 @@
       border-bottom: 2px solid var(--gold);
       padding-bottom: 0.36rem;
     }
-    .nav-actions { display: flex; align-items: center; gap: 0.8rem; margin-left: 1rem; }
+    .nav-actions { display: flex; align-items: center; gap: 0.8rem; margin-left: 1rem; position: relative; }
     .btn-donate {
       min-height: 44px;
       padding: 0 1.45rem;
@@ -137,6 +137,7 @@
       stroke-linecap: round;
       stroke-linejoin: round;
     }
+    .signin-wrap { position: relative; }
     .nav-avatar {
       width: 44px;
       height: 44px;
@@ -145,7 +146,12 @@
       background: rgba(6, 21, 34, 0.36);
       display: grid;
       place-items: center;
+      cursor: pointer;
     }
+    .signin-menu { position: absolute; top: calc(100% + 0.5rem); right: 0; background: var(--night-2); border: 1px solid rgba(200, 162, 74, 0.3); border-radius: 10px; padding: 0.4rem; min-width: 180px; box-shadow: 0 16px 36px rgba(0,0,0,0.4); display: none; z-index: 120; }
+    .signin-menu.open { display: grid; gap: 0.15rem; }
+    .signin-menu a { padding: 0.6rem 0.7rem; border-radius: 7px; font-size: 0.9rem; font-weight: 600; color: rgba(246, 241, 232, 0.88); }
+    .signin-menu a:hover { background: rgba(200, 162, 74, 0.16); color: #FFE7B6; }
     .mobile-menu-btn {
       display: none;
       width: 44px;
@@ -157,6 +163,7 @@
       align-items: center;
       justify-content: center;
       padding: 0;
+      cursor: pointer;
     }
     .mobile-menu-btn svg {
       width: 22px;
@@ -167,6 +174,7 @@
       stroke-linecap: round;
       stroke-linejoin: round;
     }
+
     .drawer-backdrop {
       position: fixed;
       inset: 0;
@@ -217,6 +225,7 @@
       place-items: center;
       font-size: 1.2rem;
       line-height: 1;
+      cursor: pointer;
     }
     .drawer-scroll {
       overflow-y: auto;
@@ -258,29 +267,114 @@
       box-shadow: 0 10px 38px rgba(12, 22, 32, 0.08);
       overflow: hidden;
     }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 15% 8%, rgba(200, 162, 74, 0.14), transparent 32%),
+        linear-gradient(180deg, #F3EDE0 0%, #EFE8DA 100%);
+      border-bottom: 1px solid var(--line);
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(30deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08)),
+        linear-gradient(150deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08));
+      background-size: 54px 94px;
+      opacity: 0.18;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    .hero-art {
+      position: absolute;
+      right: -2rem;
+      bottom: -1rem;
+      width: min(75vw, 1150px);
+      height: 105%;
+      background-image: url("/images/about/family-hero.png");
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center right;
+      pointer-events: none;
+      
+      filter: saturate(0) brightness(1.15) contrast(1.2);
+      mix-blend-mode: multiply;
+      -webkit-mask-image: radial-gradient(ellipse 85% 80% at 50% 65%, black 40%, transparent 95%);
+      mask-image: radial-gradient(ellipse 85% 80% at 50% 65%, black 40%, transparent 95%);
+      z-index: 1;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 2;
+      min-height: 480px;
+      padding: clamp(2.5rem, 5vw, 4.5rem) clamp(1.6rem, 4vw, 3.4rem);
+      display: grid;
+      grid-template-columns: minmax(320px, 600px) minmax(0, 1fr);
+      align-items: center;
+      gap: 2rem;
+    }
+    .hero-copy {
+      position: relative;
+      z-index: 3;
+      max-width: 600px;
+    }
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.56rem;
+      color: var(--gold-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.11em;
+      font-size: 0.76rem;
+      font-weight: 800;
+      margin-bottom: 0.72rem;
+    }
+    .kicker svg, .section-kicker svg {
+      width: 21px;
+      height: 21px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .hero-copy h1 {
+      font-family: var(--serif);
+      color: var(--night);
+      font-size: clamp(3rem, 5.7vw, 5.5rem);
+      line-height: 0.96;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.2rem;
+    }
+    .hero-copy h2 {
+      font-family: var(--serif);
+      color: var(--gold-dark);
+      font-size: clamp(2.1rem, 4vw, 3.4rem);
+      font-style: italic;
+      font-weight: 500;
+      line-height: 1.1;
+      margin-bottom: 1.05rem;
+    }
+    .hero-copy p {
+      max-width: 560px;
+      color: #4D4A44;
+      line-height: 1.75;
+      font-size: 1.03rem;
+      margin-bottom: .9rem;
+    }
+
     .section {
       padding: clamp(2.3rem, 5vw, 4.8rem) clamp(1rem, 3vw, 2.5rem);
       border-bottom: 1px solid var(--line);
     }
     .section-inner { width: min(1160px, 100%); margin: 0 auto; }
-    .kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: var(--gold-dark);
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      font-size: 0.76rem;
-      font-weight: 800;
-      margin-bottom: 0.75rem;
-    }
-    .kicker svg, .icon-line svg, .value-icon svg {
-      stroke: currentColor;
-      fill: none;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .kicker svg { width: 21px; height: 21px; stroke-width: 1.7; }
     .section h2 {
       font-family: var(--serif);
       color: var(--night);
@@ -293,64 +387,6 @@
       color: var(--stone);
       font-size: 1rem;
       line-height: 1.75;
-    }
-
-    .about-hero {
-      position: relative;
-      display: grid;
-      grid-template-columns: minmax(320px, 0.78fr) minmax(420px, 1.22fr);
-      gap: clamp(1.5rem, 4vw, 3rem);
-      align-items: center;
-      min-height: 520px;
-      padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 4vw, 4rem);
-      border-bottom: 1px solid var(--line);
-      background:
-        radial-gradient(circle at 15% 8%, rgba(200, 162, 74, 0.14), transparent 32%),
-        linear-gradient(180deg, #F3EDE0 0%, #EFE8DA 100%);
-      overflow: hidden;
-    }
-    .about-hero::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(30deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08)),
-        linear-gradient(150deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08));
-      background-size: 54px 94px;
-      opacity: 0.18;
-      pointer-events: none;
-    }
-    .about-hero > * { position: relative; z-index: 1; }
-    .about-hero h1 {
-      font-family: var(--serif);
-      color: var(--night);
-      font-size: clamp(3rem, 7vw, 5.4rem);
-      line-height: 0.98;
-      font-weight: 500;
-      margin-bottom: 1rem;
-    }
-    .about-hero h1 span { color: var(--gold-dark); display: block; }
-    .about-hero p {
-      max-width: 560px;
-      color: var(--night);
-      font-size: 1.03rem;
-      line-height: 1.78;
-    }
-    .hero-photo {
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid rgba(200, 162, 74, 0.28);
-      box-shadow: 0 20px 45px rgba(6, 21, 34, 0.11);
-      min-height: 380px;
-      background: #e7e1d5;
-    }
-    .hero-photo img {
-      width: 100%;
-      height: 100%;
-      min-height: 380px;
-      object-fit: cover;
-      object-position: center;
-      filter: sepia(0.08) saturate(0.94);
     }
 
     .founders {
@@ -450,7 +486,8 @@
 
     .two-col {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.85fr);
+      /* Change this line: */
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
       gap: clamp(1.5rem, 4vw, 3rem);
       align-items: center;
     }
@@ -461,9 +498,11 @@
       box-shadow: 0 16px 35px rgba(6, 21, 34, 0.08);
       background: #e8e0d3;
     }
+    
     .image-panel img {
       width: 100%;
-      min-height: 420px;
+      height: auto;         /* Add this */
+      aspect-ratio: 4 / 3;  /* Replace min-height: 420px with this */
       object-fit: cover;
       object-position: center;
     }
@@ -842,13 +881,14 @@
       .nav-links, .nav-actions { display: none; }
       .mobile-menu-btn { display: flex; }
       .page { width: 100%; margin: 0; border-left: none; border-right: none; }
-      .about-hero, .founders, .two-col, .closing,
-      .success-row, .commit-join {
+      
+      .hero-inner { grid-template-columns: 1fr; min-height: 440px; align-items: start; padding-bottom: 4rem; }
+      .hero-art { width: min(120vw, 940px); right: -15%; bottom: 0; opacity: 0.8; }
+      .hero-copy { max-width: 680px; }
+
+      .founders, .two-col, .closing, .success-row, .commit-join {
         grid-template-columns: 1fr;
       }
-      .about-hero { min-height: 0; }
-      .hero-photo { min-height: 280px; }
-      .hero-photo img { min-height: 280px; }
       .image-panel img, .closing-photo img { min-height: 340px; }
       .values-grid, .belief-grid { grid-template-columns: 1fr; }
       .serve-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -863,9 +903,12 @@
       .brand-name span { font-size: 0.52rem; }
       .brand-mark { width: 38px; height: 38px; }
       .brand-mark img { width: 34px; height: 34px; }
+      
+      .hero-inner { padding: 2rem 1.25rem 5rem; min-height: 380px; }
+      .hero-art { width: 158vw; right: -66%; opacity: 0.62; }
+      .hero-copy h1 { font-size: clamp(3rem, 15vw, 5rem); }
+      
       .section { padding: 2.2rem 1rem; }
-      .about-hero { padding: 2rem 1rem; }
-      .about-hero h1 { font-size: clamp(2.5rem, 13vw, 4rem); }
       .belief-card { grid-template-columns: 1fr; justify-items: center; text-align: center; }
       .serve-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .success-photo { min-height: 220px; }
@@ -900,9 +943,16 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
           Join AGAPAY
         </a>
-        <a class="nav-avatar" href="/donor/login" aria-label="Log in">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.8-4 4.5-6 8-6s6.2 2 8 6"/></svg>
-        </a>
+        <div class="signin-wrap">
+          <button class="nav-avatar" id="signinBtn" aria-label="Sign in" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.8-4 4.5-6 8-6s6.2 2 8 6"/></svg>
+          </button>
+          <div class="signin-menu" id="signinMenu" role="menu">
+            <a href="/donor/login">Donor Login</a>
+            <a href="/parish/login">Parish Login</a>
+            <a href="/admin/login">Admin Login</a>
+          </div>
+        </div>
       </div>
       <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open navigation" aria-expanded="false">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
@@ -931,15 +981,16 @@
   </aside>
 
   <main class="page">
-    <section class="about-hero">
-      <div>
-        <div class="kicker"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 21h8"/></svg>About AGAPAY</div>
-        <h1>Cementing Orthodoxy <span>into the American land.</span></h1>
-        <p>AGAPAY wasn't born in a boardroom to capture a market. It was built from within the Tradition - to help Orthodox parishes thrive, and to leave our children an inheritance of faithful stewardship.</p>
+    <section class="hero">
+      <div class="hero-art" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <div class="kicker"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 21h8"/></svg>About AGAPAY</div>
+          <h1>Cementing Orthodoxy</h1>
+          <h2>Into the American land.</h2>
+          <p>AGAPAY wasn't born in a boardroom to capture a market. It was built from within the Tradition - to help Orthodox parishes thrive, and to leave our children an inheritance of faithful stewardship.</p>
+        </div>
       </div>
-      <figure class="hero-photo">
-        <img src="/family.jpg" alt="Joel Dunn and his family" />
-      </figure>
     </section>
 
     <section class="section">
@@ -1147,16 +1198,32 @@
     const mobileMenuBtn = document.getElementById("mobileMenuBtn");
     const drawerBackdrop = document.getElementById("drawerBackdrop");
     const drawerCloseBtn = document.getElementById("drawerCloseBtn");
+
     function setDrawer(open) {
       body.classList.toggle("drawer-open", open);
       mobileMenuBtn?.setAttribute("aria-expanded", open ? "true" : "false");
     }
+    
     mobileMenuBtn?.addEventListener("click", () => setDrawer(true));
     drawerBackdrop?.addEventListener("click", () => setDrawer(false));
     drawerCloseBtn?.addEventListener("click", () => setDrawer(false));
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") setDrawer(false);
+    
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { 
+        setDrawer(false); 
+        const signinMenu = document.getElementById("signinMenu");
+        signinMenu && signinMenu.classList.remove("open"); 
+      }
     });
+
+    const signinBtn = document.getElementById("signinBtn");
+    const signinMenu = document.getElementById("signinMenu");
+    signinBtn && signinBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = signinMenu.classList.toggle("open");
+      signinBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    document.addEventListener("click", () => signinMenu && signinMenu.classList.remove("open"));
   </script>
 </body>
 </html>
