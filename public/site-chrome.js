@@ -7,7 +7,8 @@
     { href: "/vision", label: "Vision", key: "vision" },
     { href: "/features", label: "Features", key: "features" },
     { href: "/pricing", label: "Pricing", key: "pricing" },
-    { href: "/how-it-works", label: "How it Works", key: "how" }
+    { href: "/how-it-works", label: "How it Works", key: "how" },
+    { href: "/about", label: "About", key: "about" }
   ];
 
   const SIGN_IN_LINKS = [
@@ -16,11 +17,12 @@
   ];
 
   function activeKeyFromPath() {
-    if (path === "/why" || path.endsWith("/why.html") || path === "/about" || path.endsWith("/about.html") || path === "/contact" || path.endsWith("/contact.html")) return "why";
+    if (path === "/why" || path.endsWith("/why.html")) return "why";
     if (path === "/vision" || path.endsWith("/vision.html")) return "vision";
     if (path === "/features" || path.endsWith("/features.html") || path === "/directory" || path.endsWith("/directory.html") || path === "/marketplace" || path.endsWith("/marketplace.html")) return "features";
     if (path === "/pricing" || path.endsWith("/pricing.html")) return "pricing";
     if (path === "/how-it-works" || path.endsWith("/how-it-works.html")) return "how";
+    if (path === "/about" || path.endsWith("/about.html") || path === "/contact" || path.endsWith("/contact.html")) return "about";
     if (path === "/giving" || path.endsWith("/giving/index.html") || path.startsWith("/giving/") || path === "/give" || path.endsWith("/give/index.html") || path.startsWith("/give/")) return "give";
     return "";
   }
@@ -168,7 +170,11 @@
       if (mobileMenuBtn) mobileMenuBtn.setAttribute("aria-expanded", open ? "true" : "false");
     }
 
-    if (mobileMenuBtn) mobileMenuBtn.addEventListener("click", function () { setDrawer(!body.classList.contains("drawer-open")); });
+    if (mobileMenuBtn) mobileMenuBtn.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setDrawer(!body.classList.contains("drawer-open"));
+    }, true);
     if (drawerBackdrop) drawerBackdrop.addEventListener("click", function () { setDrawer(false); });
     if (drawerCloseBtn) drawerCloseBtn.addEventListener("click", function () { setDrawer(false); });
 
