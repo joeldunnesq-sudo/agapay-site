@@ -5776,6 +5776,11 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    if (request.method === "GET" && url.pathname === "/index.html") {
+      url.pathname = "/";
+      return Response.redirect(url.toString(), 301);
+    }
+
     if (request.method === "GET" && (url.pathname === "/give.html" || url.pathname === "/giving" || url.pathname === "/giving/" || url.pathname === "/giving/index.html")) {
       url.pathname = "/give";
       return Response.redirect(url.toString(), 301);
