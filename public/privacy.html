@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -7,8 +7,8 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="favicons/android-chrome-192x192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="favicons/android-chrome-512x512.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
   <meta name="theme-color" content="#061522" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -43,40 +43,7 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── HEADER ─────────────────────────────────────── */
-    .site-header {
-      background: var(--ink);
-      padding: 0 2rem;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      border-bottom: 1px solid rgba(184,146,74,0.2);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 56px;
-    }
-    .site-header a {
-      color: var(--gold-light);
-      text-decoration: none;
-      font-size: 0.85rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      font-family: 'Crimson Pro', serif;
-      opacity: 0.8;
-      transition: opacity 0.2s;
-    }
-    .site-header a:hover { opacity: 1; }
-    .site-header .wordmark {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 1.25rem;
-      font-weight: 600;
-      letter-spacing: 0.18em;
-      color: var(--gold);
-      text-transform: uppercase;
-    }
-
-    /* ── HERO ────────────────────────────────────────── */
+    /* ?????? HERO ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????? */
     .hero {
       background: var(--ink);
       padding: 5rem 2rem 4rem;
@@ -132,14 +99,14 @@
       margin: 1.5rem auto 0;
     }
 
-    /* ── LAYOUT ──────────────────────────────────────── */
+    /* â”€â”€ LAYOUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .page-body {
       max-width: 860px;
       margin: 0 auto;
       padding: 0 2rem 6rem;
     }
 
-    /* ── INTRO BAND ──────────────────────────────────── */
+    /* â”€â”€ INTRO BAND â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .intro-band {
       background: var(--ink-light);
       color: rgba(250,247,242,0.88);
@@ -151,7 +118,7 @@
     }
     .intro-band strong { color: var(--gold-light); font-weight: 500; }
 
-    /* ── TOC ─────────────────────────────────────────── */
+    /* â”€â”€ TOC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .toc {
       background: var(--warm-white);
       border: 1px solid var(--rule);
@@ -200,7 +167,7 @@
       min-width: 1.4em;
     }
 
-    /* ── SECTIONS ────────────────────────────────────── */
+    /* â”€â”€ SECTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .section {
       margin-bottom: 3.5rem;
       padding-top: 1rem;
@@ -233,7 +200,7 @@
     .section p { margin-bottom: 1rem; color: var(--text-mid); }
     .section p:last-child { margin-bottom: 0; }
 
-    /* ── LISTS ───────────────────────────────────────── */
+    /* â”€â”€ LISTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .section ul {
       list-style: none;
       margin: 1rem 0;
@@ -247,7 +214,7 @@
     }
     .section ul li:last-child { border-bottom: none; }
     .section ul li::before {
-      content: '†';
+      content: 'â€ ';
       position: absolute;
       left: 0;
       color: var(--gold);
@@ -257,7 +224,7 @@
     }
     .section ul li strong { color: var(--ink); font-weight: 500; }
 
-    /* ── ROLE CARDS ──────────────────────────────────── */
+    /* â”€â”€ ROLE CARDS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .role-cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -291,7 +258,7 @@
       margin: 0;
     }
 
-    /* ── DATA TABLE ──────────────────────────────────── */
+    /* â”€â”€ DATA TABLE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .data-table {
       width: 100%;
       border-collapse: collapse;
@@ -320,7 +287,7 @@
     }
     .data-table tbody td:first-child { color: var(--ink); font-weight: 500; }
 
-    /* ── PROVIDER CARDS ──────────────────────────────── */
+    /* â”€â”€ PROVIDER CARDS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .provider-list { margin: 1.25rem 0; }
     .provider-item {
       display: flex;
@@ -358,7 +325,7 @@
     }
     .provider-link { font-size: 0.82rem; color: var(--gold); }
 
-    /* ── RIGHTS GRID ─────────────────────────────────── */
+    /* â”€â”€ RIGHTS GRID â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .rights-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -384,7 +351,7 @@
       margin: 0;
     }
 
-    /* ── RETENTION TABLE ─────────────────────────────── */
+    /* â”€â”€ RETENTION TABLE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .retention-rows { margin: 1.25rem 0; }
     .retention-row {
       display: grid;
@@ -404,7 +371,7 @@
       letter-spacing: 0.04em;
     }
 
-    /* ── CALLOUTS ────────────────────────────────────── */
+    /* â”€â”€ CALLOUTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .callout {
       padding: 1.25rem 1.5rem;
       margin: 1.25rem 0;
@@ -428,13 +395,13 @@
     .callout-affirm strong { color: var(--gold-light); }
     .callout strong { font-weight: 500; }
 
-    /* ── LINKS ───────────────────────────────────────── */
+    /* â”€â”€ LINKS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     a { color: var(--gold); text-decoration: none; }
     a:hover { text-decoration: underline; }
     .section a { border-bottom: 1px solid rgba(184,146,74,0.3); }
     .section a:hover { border-bottom-color: var(--gold); text-decoration: none; }
 
-    /* ── SECURITY ITEMS ──────────────────────────────── */
+    /* â”€â”€ SECURITY ITEMS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .security-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -457,7 +424,7 @@
       display: block;
     }
 
-    /* ── LEGAL NOTICE ────────────────────────────────── */
+    /* â”€â”€ LEGAL NOTICE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .legal-notice {
       background: var(--ink-light);
       border: 1px solid rgba(184,146,74,0.2);
@@ -477,7 +444,7 @@
       margin-bottom: 0.75rem;
     }
 
-    /* ── FOOTER ──────────────────────────────────────── */
+    /* â”€â”€ FOOTER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .site-footer {
       background: var(--ink);
       color: rgba(250,247,242,0.5);
@@ -513,7 +480,7 @@
     .footer-links a:hover { color: var(--gold); text-decoration: none; }
     .footer-copy { color: rgba(250,247,242,0.25); font-size: 0.78rem; }
 
-    /* ── PROGRESS / BACK TO TOP ──────────────────────── */
+    /* â”€â”€ PROGRESS / BACK TO TOP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     #reading-progress {
       position: fixed;
       top: 0; left: 0;
@@ -541,7 +508,7 @@
     }
     .back-top.visible { opacity: 1; }
 
-    /* ── RESPONSIVE ──────────────────────────────────── */
+    /* â”€â”€ RESPONSIVE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     @media (max-width: 600px) {
       .page-body { padding: 0 1.25rem 4rem; }
       .toc, .intro-band, .legal-notice { padding: 1.5rem; }
@@ -556,24 +523,18 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="AGAPAY" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="/site-chrome.css" />
+  <script src="/site-chrome.js" defer></script>
 </head>
 <body>
 
 <div id="reading-progress"></div>
-
-<!-- HEADER -->
-<header class="site-header">
-  <a href="https://agapay.app/">← Back to AGAPAY</a>
-  <span class="wordmark">AGAPAY</span>
-  <a href="https://agapay.app/terms">Terms of Service</a>
-</header>
-
 <!-- HERO -->
 <div class="hero">
-  <span class="hero-ornament">✦ &nbsp; ✦ &nbsp; ✦</span>
+  <span class="hero-ornament">âœ¦ &nbsp; âœ¦ &nbsp; âœ¦</span>
   <h1>Privacy Policy</h1>
-  <p class="hero-sub">AGAPAY &nbsp;·&nbsp; agapay.app</p>
-  <p class="hero-meta">Last Updated: May 21, 2026 &nbsp;·&nbsp; Effective: May 21, 2026</p>
+  <p class="hero-sub">AGAPAY &nbsp;Â·&nbsp; agapay.app</p>
+  <p class="hero-meta">Last Updated: May 21, 2026 &nbsp;Â·&nbsp; Effective: May 21, 2026</p>
   <div class="hero-rule"></div>
 </div>
 
@@ -608,10 +569,10 @@
   </nav>
 
 
-  <!-- § 1 ROLES -->
+  <!-- Â§ 1 ROLES -->
   <section class="section" id="roles">
     <div class="section-header">
-      <span class="section-num">§ 1</span>
+      <span class="section-num">Â§ 1</span>
       <h2>Definitions &amp; Roles</h2>
     </div>
     <p>Understanding who controls and who processes your data is foundational to this policy. Under applicable US and international privacy frameworks, the following roles apply on the AGAPAY platform:</p>
@@ -636,10 +597,10 @@
   </section>
 
 
-  <!-- § 2 INFORMATION WE COLLECT -->
+  <!-- Â§ 2 INFORMATION WE COLLECT -->
   <section class="section" id="information">
     <div class="section-header">
-      <span class="section-num">§ 2</span>
+      <span class="section-num">Â§ 2</span>
       <h2>Information We Collect</h2>
     </div>
     <p>We collect only the information necessary to provide the platform's services. The categories of personal data we collect are:</p>
@@ -670,7 +631,7 @@
         <tr>
           <td>Payment Instrument Data</td>
           <td>Card type, last four digits, expiration (tokenized)</td>
-          <td>Processed directly by Stripe — AGAPAY does not store full card numbers</td>
+          <td>Processed directly by Stripe â€” AGAPAY does not store full card numbers</td>
         </tr>
         <tr>
           <td>Liturgical / Memorial Data</td>
@@ -700,26 +661,26 @@
   </section>
 
 
-  <!-- § 3 LEGAL BASIS (new) -->
+  <!-- Â§ 3 LEGAL BASIS (new) -->
   <section class="section" id="legal-basis">
     <div class="section-header">
-      <span class="section-num">§ 3</span>
+      <span class="section-num">Â§ 3</span>
       <h2>Legal Basis for Processing</h2>
     </div>
     <p>AGAPAY processes personal data on the following legal bases under applicable law:</p>
     <ul>
-      <li><strong>Contractual necessity.</strong> Processing required to fulfill our obligations to you under our Terms of Service — including processing donations, transmitting memorial names to clergy, and providing account services.</li>
-      <li><strong>Legal obligation.</strong> Processing required to comply with applicable law — including IRS record-keeping requirements for charitable organizations (7-year retention of financial records), anti-money-laundering obligations, and applicable state charity registration laws.</li>
-      <li><strong>Legitimate interests.</strong> Processing necessary for AGAPAY's legitimate business interests where not overridden by your privacy rights — including platform security, fraud prevention, and aggregate analytics to improve the platform.</li>
+      <li><strong>Contractual necessity.</strong> Processing required to fulfill our obligations to you under our Terms of Service â€” including processing donations, transmitting memorial names to clergy, and providing account services.</li>
+      <li><strong>Legal obligation.</strong> Processing required to comply with applicable law â€” including IRS record-keeping requirements for charitable organizations (7-year retention of financial records), anti-money-laundering obligations, and applicable state charity registration laws.</li>
+      <li><strong>Legitimate interests.</strong> Processing necessary for AGAPAY's legitimate business interests where not overridden by your privacy rights â€” including platform security, fraud prevention, and aggregate analytics to improve the platform.</li>
       <li><strong>Consent.</strong> Where required by applicable law, we obtain your consent before processing your data for specific purposes (such as marketing communications). You may withdraw consent at any time by contacting <a href="mailto:hello@agapay.app">hello@agapay.app</a>, without affecting the lawfulness of prior processing.</li>
     </ul>
   </section>
 
 
-  <!-- § 4 DATA USAGE -->
+  <!-- Â§ 4 DATA USAGE -->
   <section class="section" id="usage">
     <div class="section-header">
-      <span class="section-num">§ 4</span>
+      <span class="section-num">Â§ 4</span>
       <h2>How We Use Your Data</h2>
     </div>
     <p>We collect and process personal data solely for the following purposes, and we do not use your data for any purpose incompatible with those listed here without your consent:</p>
@@ -738,15 +699,15 @@
   </section>
 
 
-  <!-- § 5 COOKIES -->
+  <!-- Â§ 5 COOKIES -->
   <section class="section" id="cookies">
     <div class="section-header">
-      <span class="section-num">§ 5</span>
+      <span class="section-num">Â§ 5</span>
       <h2>Cookies &amp; Tracking Technologies</h2>
     </div>
     <p>AGAPAY uses a minimal, purposeful set of cookies and similar technologies to operate the platform. We do not use cookies for cross-site behavioral advertising or third-party ad targeting.</p>
     <ul>
-      <li><strong>Essential cookies.</strong> Required for the platform to function — session management, authentication tokens, CSRF protection, and security-related state. These cannot be disabled without impairing platform functionality. They are first-party only and expire at session end or within 30 days.</li>
+      <li><strong>Essential cookies.</strong> Required for the platform to function â€” session management, authentication tokens, CSRF protection, and security-related state. These cannot be disabled without impairing platform functionality. They are first-party only and expire at session end or within 30 days.</li>
       <li><strong>Analytics.</strong> We use Cloudflare Web Analytics, a privacy-preserving tool that does not use cookies, fingerprinting, or cross-site tracking to collect personally identifiable data. Analytics data is aggregate and anonymized. No user-level behavioral profiles are created.</li>
       <li><strong>No advertising cookies.</strong> AGAPAY does not serve advertisements and does not place or permit third-party advertising, retargeting, or behavioral tracking cookies on our platform. We do not use Google Analytics, Meta Pixel, or comparable advertising tools.</li>
     </ul>
@@ -755,10 +716,10 @@
   </section>
 
 
-  <!-- § 6 THIRD PARTIES -->
+  <!-- Â§ 6 THIRD PARTIES -->
   <section class="section" id="third-parties">
     <div class="section-header">
-      <span class="section-num">§ 6</span>
+      <span class="section-num">Â§ 6</span>
       <h2>Third-Party Service Providers</h2>
     </div>
     <p>AGAPAY shares limited personal data with the following service providers, each engaged under contractual data protection obligations. We conduct due diligence on providers' privacy and security practices before engagement.</p>
@@ -768,7 +729,7 @@
         <div class="provider-info">
           <div class="provider-name">Stripe, Inc.</div>
           <div class="provider-desc">Payment processing and financial data handling. Stripe collects, processes, and stores payment instrument data under its own Privacy Policy and PCI-DSS Level 1 compliance framework. AGAPAY does not receive or store full card numbers or banking credentials. Data shared: name, email, transaction amounts.</div>
-          <a class="provider-link" href="https://stripe.com/privacy" target="_blank" rel="noopener">stripe.com/privacy →</a>
+          <a class="provider-link" href="https://stripe.com/privacy" target="_blank" rel="noopener">stripe.com/privacy â†’</a>
         </div>
       </div>
       <div class="provider-item">
@@ -776,7 +737,7 @@
         <div class="provider-info">
           <div class="provider-name">Cloudflare, Inc.</div>
           <div class="provider-desc">DNS resolution, content delivery network (CDN), DDoS protection, and privacy-preserving web analytics. Cloudflare processes IP addresses and technical request metadata as traffic passes through its network infrastructure. Cloudflare Web Analytics does not use cookies or fingerprinting. Data shared: IP addresses, request metadata (automatically, as part of network routing).</div>
-          <a class="provider-link" href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">cloudflare.com/privacypolicy →</a>
+          <a class="provider-link" href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">cloudflare.com/privacypolicy â†’</a>
         </div>
       </div>
       <div class="provider-item">
@@ -784,7 +745,7 @@
         <div class="provider-info">
           <div class="provider-name">MailerLite</div>
           <div class="provider-desc">Email list management for parishes and prospective users who voluntarily subscribe to AGAPAY communications. MailerLite processes name and email address for this purpose only. Transactional emails (receipts, notifications) may be sent via this infrastructure. Data shared: name, email address (subscribers only).</div>
-          <a class="provider-link" href="https://www.mailerlite.com/legal/privacy-policy" target="_blank" rel="noopener">mailerlite.com/legal/privacy-policy →</a>
+          <a class="provider-link" href="https://www.mailerlite.com/legal/privacy-policy" target="_blank" rel="noopener">mailerlite.com/legal/privacy-policy â†’</a>
         </div>
       </div>
       <div class="provider-item">
@@ -792,21 +753,21 @@
         <div class="provider-info">
           <div class="provider-name">GitHub Pages</div>
           <div class="provider-desc">Static frontend hosting for the AGAPAY web application. GitHub Pages may log IP addresses and request metadata as part of standard web server operation. No personal data beyond standard request logs is shared with GitHub for this purpose.</div>
-          <a class="provider-link" href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub Privacy Statement →</a>
+          <a class="provider-link" href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub Privacy Statement â†’</a>
         </div>
       </div>
     </div>
-    <p>We do not share personal data with any party beyond those listed above, except as required by law (see § 7 below).</p>
+    <p>We do not share personal data with any party beyond those listed above, except as required by law (see Â§ 7 below).</p>
   </section>
 
 
-  <!-- § 7 SHARING & DISCLOSURE (new) -->
+  <!-- Â§ 7 SHARING & DISCLOSURE (new) -->
   <section class="section" id="sharing">
     <div class="section-header">
-      <span class="section-num">§ 7</span>
+      <span class="section-num">Â§ 7</span>
       <h2>Data Sharing &amp; Disclosure</h2>
     </div>
-    <p>Beyond the service providers listed in § 6, AGAPAY may share your personal data only in the following limited circumstances:</p>
+    <p>Beyond the service providers listed in Â§ 6, AGAPAY may share your personal data only in the following limited circumstances:</p>
     <ul>
       <li><strong>With your Organization.</strong> Donor transaction records, memorial submissions, and giving history are shared with the registered administrator(s) of the recipient Organization. This sharing is inherent to the platform's purpose and is the basis on which you donate through AGAPAY.</li>
       <li><strong>Legal process.</strong> We may disclose personal data in response to a valid subpoena, court order, or other legal process, or when required by applicable law or regulation. Where legally permitted, we will notify affected users before disclosure.</li>
@@ -820,10 +781,10 @@
   </section>
 
 
-  <!-- § 8 RETENTION -->
+  <!-- Â§ 8 RETENTION -->
   <section class="section" id="retention">
     <div class="section-header">
-      <span class="section-num">§ 8</span>
+      <span class="section-num">Â§ 8</span>
       <h2>Data Retention</h2>
     </div>
     <p>We retain personal data only for as long as necessary to fulfill the purposes for which it was collected, or as required by applicable law. The following retention periods apply:</p>
@@ -857,14 +818,14 @@
         <span class="retention-period">3 years from last communication</span>
       </div>
     </div>
-    <p>Upon expiration of the applicable retention period, data is securely deleted or irreversibly anonymized using industry-standard methods. You may request early deletion of non-legally-required data under § 10–11 below.</p>
+    <p>Upon expiration of the applicable retention period, data is securely deleted or irreversibly anonymized using industry-standard methods. You may request early deletion of non-legally-required data under Â§ 10â€“11 below.</p>
   </section>
 
 
-  <!-- § 9 SECURITY -->
+  <!-- Â§ 9 SECURITY -->
   <section class="section" id="security">
     <div class="section-header">
-      <span class="section-num">§ 9</span>
+      <span class="section-num">Â§ 9</span>
       <h2>Security</h2>
     </div>
     <p>AGAPAY employs administrative, technical, and physical safeguards designed to protect your personal data against unauthorized access, disclosure, alteration, or destruction.</p>
@@ -898,10 +859,10 @@
   </section>
 
 
-  <!-- § 10 CALIFORNIA -->
+  <!-- Â§ 10 CALIFORNIA -->
   <section class="section" id="california">
     <div class="section-header">
-      <span class="section-num">§ 10</span>
+      <span class="section-num">Â§ 10</span>
       <h2>California Privacy Rights (CCPA / CPRA)</h2>
     </div>
     <p>If you are a California resident, the California Consumer Privacy Act (CCPA) as amended by the California Privacy Rights Act (CPRA) affords you the following rights regarding your personal information:</p>
@@ -928,7 +889,7 @@
       </div>
       <div class="right-item">
         <div class="right-item-title">Right to Non-Discrimination</div>
-        <p>We will not discriminate against you — in pricing, service quality, or otherwise — for exercising any CCPA/CPRA right.</p>
+        <p>We will not discriminate against you â€” in pricing, service quality, or otherwise â€” for exercising any CCPA/CPRA right.</p>
       </div>
     </div>
     <p>To exercise any California privacy right, submit a verifiable written request to <a href="mailto:hello@agapay.app">hello@agapay.app</a> with subject line "California Privacy Request." We will verify your identity before processing any request and respond within <strong>45 days</strong> as required by law, with a possible 45-day extension for complex requests with prior notice.</p>
@@ -936,10 +897,10 @@
   </section>
 
 
-  <!-- § 11 TEXAS -->
+  <!-- Â§ 11 TEXAS -->
   <section class="section" id="texas">
     <div class="section-header">
-      <span class="section-num">§ 11</span>
+      <span class="section-num">Â§ 11</span>
       <h2>Texas Privacy Rights (TDPSA)</h2>
     </div>
     <p>If you are a Texas resident, the Texas Data Privacy and Security Act (TDPSA), effective July 1, 2024, affords you the following rights regarding your personal data:</p>
@@ -970,23 +931,23 @@
   </section>
 
 
-  <!-- § 12 CHILDREN -->
+  <!-- Â§ 12 CHILDREN -->
   <section class="section" id="children">
     <div class="section-header">
-      <span class="section-num">§ 12</span>
+      <span class="section-num">Â§ 12</span>
       <h2>Children's Privacy (COPPA)</h2>
     </div>
-    <p>AGAPAY is not directed to children under the age of 13, and we do not knowingly collect personal information from children under 13 in violation of the Children's Online Privacy Protection Act (COPPA). Our platform is intended for use by adults — parish administrators, clergy, and adult donors — on behalf of their communities.</p>
+    <p>AGAPAY is not directed to children under the age of 13, and we do not knowingly collect personal information from children under 13 in violation of the Children's Online Privacy Protection Act (COPPA). Our platform is intended for use by adults â€” parish administrators, clergy, and adult donors â€” on behalf of their communities.</p>
     <p>If you believe we have inadvertently collected personal information from a child under 13, please contact us immediately at <a href="mailto:hello@agapay.app">hello@agapay.app</a>. We will promptly investigate and delete such information from our records.</p>
     <p>If you are between the ages of 13 and 17, you must obtain verifiable parental or guardian consent before submitting any personal information through this platform. By submitting information, you represent that you have obtained such consent.</p>
     <p>Memorial names submitted for liturgical commemoration may include the names of minors; this data is treated with the same protections as all personal data under this policy, and is transmitted only to the designated clergy of the recipient Organization.</p>
   </section>
 
 
-  <!-- § 13 UPDATES -->
+  <!-- Â§ 13 UPDATES -->
   <section class="section" id="updates">
     <div class="section-header">
-      <span class="section-num">§ 13</span>
+      <span class="section-num">Â§ 13</span>
       <h2>Policy Updates &amp; Notification</h2>
     </div>
     <p>We may update this Privacy Policy from time to time to reflect changes in our data practices, applicable law, or platform features. When we make material changes, we will:</p>
@@ -995,15 +956,15 @@
       <li>Send email notification to parish and monastery Administrators registered on the platform at least <strong>30 days</strong> before material changes take effect.</li>
       <li>Display a prominent notice on the AGAPAY platform for at least 30 days following any material update.</li>
     </ul>
-    <p>Non-material changes — such as typographical corrections, clarifications that do not change our practices, or updated contact information — may be made without advance notice and will be effective upon posting.</p>
+    <p>Non-material changes â€” such as typographical corrections, clarifications that do not change our practices, or updated contact information â€” may be made without advance notice and will be effective upon posting.</p>
     <p>Your continued use of the AGAPAY platform following notice of material changes constitutes your acceptance of the updated policy. If you do not agree, you may terminate your account before the effective date by contacting <a href="mailto:hello@agapay.app">hello@agapay.app</a>.</p>
   </section>
 
 
-  <!-- § 14 DISPUTE RESOLUTION -->
+  <!-- Â§ 14 DISPUTE RESOLUTION -->
   <section class="section" id="arbitration">
     <div class="section-header">
-      <span class="section-num">§ 14</span>
+      <span class="section-num">Â§ 14</span>
       <h2>Dispute Resolution &amp; Arbitration</h2>
     </div>
     <p>Any dispute arising out of or relating to this Privacy Policy or AGAPAY's handling of your personal data shall be resolved as follows:</p>
@@ -1017,15 +978,15 @@
   </section>
 
 
-  <!-- § 15 CONTACT -->
+  <!-- Â§ 15 CONTACT -->
   <section class="section" id="contact">
     <div class="section-header">
-      <span class="section-num">§ 15</span>
+      <span class="section-num">Â§ 15</span>
       <h2>Contact &amp; Privacy Requests</h2>
     </div>
     <p>For privacy-related questions, concerns, data access requests, or to exercise any right described in this policy, please contact AGAPAY at:</p>
     <ul>
-      <li><strong>Privacy requests:</strong> <a href="mailto:hello@agapay.app">hello@agapay.app</a> — include "Privacy Request" or your applicable right (e.g., "California Privacy Request") in the subject line</li>
+      <li><strong>Privacy requests:</strong> <a href="mailto:hello@agapay.app">hello@agapay.app</a> â€” include "Privacy Request" or your applicable right (e.g., "California Privacy Request") in the subject line</li>
       <li><strong>Parish support:</strong> <a href="mailto:parishes@agapay.app">parishes@agapay.app</a></li>
       <li><strong>Technical support:</strong> <a href="mailto:support@agapay.app">support@agapay.app</a></li>
       <li><strong>Platform:</strong> <a href="https://agapay.app">agapay.app</a></li>
@@ -1043,23 +1004,7 @@
 </main>
 
 <!-- FOOTER -->
-<footer class="site-footer">
-  <span class="mark">AGAPAY</span>
-  <span class="tagline">Love how you give.</span>
-  <nav class="footer-links">
-    <a href="https://agapay.app/features">Features</a>
-    <a href="https://agapay.app/pricing">Pricing</a>
-    <a href="https://agapay.app/why">Why AGAPAY</a>
-    <a href="https://agapay.app/about">About</a>
-    <a href="https://agapay.app/privacy">Privacy Policy</a>
-    <a href="https://agapay.app/terms">Terms of Service</a>
-    <a href="https://agapay.app/contact">Contact</a>
-    <a href="https://agapay.app/register">Register Parish</a>
-  </nav>
-  <p class="footer-copy">© 2026 AGAPAY · agapay.app · All rights reserved.</p>
-</footer>
-
-<div class="back-top" id="backTop" title="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</div>
+<div class="back-top" id="backTop" title="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">â†‘</div>
 
 <script>
   const bar = document.getElementById('reading-progress');
@@ -1071,3 +1016,6 @@
 </script>
 </body>
 </html>
+
+
+

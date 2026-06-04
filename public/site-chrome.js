@@ -1,156 +1,152 @@
 (function () {
   const path = (window.location.pathname || "/").toLowerCase();
+  if (/^\/(?:admin|parish|donor)(?:\/|$)/.test(path)) return;
 
   const PRIMARY_LINKS = [
+    { href: "/why", label: "Why AGAPAY", key: "why" },
     { href: "/vision", label: "Vision", key: "vision" },
     { href: "/features", label: "Features", key: "features" },
-    { href: "/how-it-works", label: "How it Works", key: "how-it-works" },
     { href: "/pricing", label: "Pricing", key: "pricing" },
-    { href: "/about", label: "About", key: "about" }
+    { href: "/how-it-works", label: "How it Works", key: "how" }
   ];
 
   const SIGN_IN_LINKS = [
     { href: "/donor/login", label: "Donor Login" },
-    { href: "/parish/login", label: "Parish Login" },
-    { href: "/admin/login", label: "Admin Login" }
+    { href: "/parish/login", label: "Parish Login" }
   ];
 
   function activeKeyFromPath() {
+    if (path === "/why" || path.endsWith("/why.html") || path === "/about" || path.endsWith("/about.html") || path === "/contact" || path.endsWith("/contact.html")) return "why";
     if (path === "/vision" || path.endsWith("/vision.html")) return "vision";
-    if (path === "/features" || path.endsWith("/features.html")) return "features";
-    if (path === "/how-it-works" || path.endsWith("/how-it-works.html")) return "how-it-works";
+    if (path === "/features" || path.endsWith("/features.html") || path === "/directory" || path.endsWith("/directory.html") || path === "/marketplace" || path.endsWith("/marketplace.html")) return "features";
     if (path === "/pricing" || path.endsWith("/pricing.html")) return "pricing";
-    if (path === "/about" || path.endsWith("/about.html")) return "about";
+    if (path === "/how-it-works" || path.endsWith("/how-it-works.html")) return "how";
+    if (path === "/give" || path.endsWith("/give/index.html") || path.startsWith("/give/")) return "give";
     return "";
   }
 
   function firstExistingHeader() {
-    let node = document.querySelector("header.site-header, header[data-site-header], nav.site-header");
-    if (node) return node;
-
-    node = document.querySelector("body > nav");
-    if (node) return node;
-
-    return null;
+    return document.querySelector("header.site-header, header[data-site-header], nav.site-header, body > header");
   }
 
   function firstExistingFooter() {
-    let node = document.querySelector("footer.site-footer, footer[data-site-footer]");
-    if (node) return node;
-
-    const all = document.querySelectorAll("body > footer");
-    if (all.length) return all[all.length - 1];
-
+    const footer = document.querySelector("footer.site-footer, footer[data-site-footer], body > footer");
+    if (footer) return footer;
     return null;
   }
 
+  function navLink(item, activeKey) {
+    const active = item.key === activeKey ? "active" : "";
+    const current = item.key === activeKey ? ' aria-current="page"' : "";
+    return `<a class="${active}" href="${item.href}"${current}>${item.label}</a>`;
+  }
+
+  function shellIcon(id) {
+    return `<svg aria-hidden="true"><use href="/images/icons/agapay-icons.svg#${id}"></use></svg>`;
+  }
+
   function buildHeader(activeKey) {
-    const linkMarkup = PRIMARY_LINKS.map((item) => {
-      const current = item.key === activeKey ? ' aria-current="page"' : "";
-      return `<a href="${item.href}"${current}>${item.label}</a>`;
-    }).join("");
-
-    const signInItems = SIGN_IN_LINKS.map((item) =>
-      `<a href="${item.href}">${item.label}</a>`
-    ).join("");
-
     return `
-      <header class="agp-site-header" data-agp-site-header>
-        <div class="agp-nav-wrap">
-          <a class="agp-brand" href="/" aria-label="AGAPAY home">
-            <span class="agp-brand-mark"><img src="/mark.png" alt="AGAPAY mark" /></span>
-            <span class="agp-brand-wordmark">
+      <header class="site-header" data-shell="canonical">
+        <nav class="nav" aria-label="Primary navigation">
+          <a class="brand" href="/" aria-label="AGAPAY home">
+            <span class="brand-mark"><img src="/mark.png" alt="" /></span>
+            <span class="brand-name">
               <strong>AGAPAY</strong>
               <span>Love how you give</span>
             </span>
           </a>
 
-          <nav class="agp-desktop-links" aria-label="Primary">
-            ${linkMarkup}
-          </nav>
+          <div class="nav-links">
+            ${PRIMARY_LINKS.map((item) => navLink(item, activeKey)).join("")}
+          </div>
 
-          <div class="agp-actions">
-            <a class="agp-give-btn" href="/donor/login">Give</a>
-            <div class="agp-signin" data-agp-signin>
-              <button class="nav-avatar" type="button" aria-label="Sign in" aria-haspopup="true" aria-expanded="false">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="8" r="4"></circle>
-                  <path d="M4 21c1.8-4 4.5-6 8-6s6.2 2 8 6"></path>
-                </svg>
+          <div class="nav-actions">
+            <a class="btn-donate ${activeKey === "give" ? "active" : ""}" href="/give">
+              ${shellIcon("heart-give")}
+              Give
+            </a>
+
+            <div class="signin-wrap">
+              <button class="nav-avatar" id="signinBtn" type="button" aria-label="Sign in" aria-expanded="false">
+                ${shellIcon("user")}
               </button>
-              <div class="agp-signin-menu" role="menu">
-                ${signInItems}
+              <div class="signin-menu" id="signinMenu" role="menu">
+                ${SIGN_IN_LINKS.map((item) => `<a href="${item.href}">${item.label}</a>`).join("")}
               </div>
             </div>
-            <button class="agp-mobile-toggle" type="button" aria-label="Open menu" aria-expanded="false" data-agp-mobile-toggle>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <line x1="4" y1="7" x2="20" y2="7"></line>
-                <line x1="4" y1="12" x2="20" y2="12"></line>
-                <line x1="4" y1="17" x2="20" y2="17"></line>
-              </svg>
-            </button>
           </div>
-        </div>
 
-        <div class="agp-mobile-menu" data-agp-mobile-menu>
-          ${linkMarkup}
-          <details class="agp-mobile-signin">
-            <summary>Sign in &#9662;</summary>
-            <div class="agp-mobile-signin-links">
-              ${signInItems}
-            </div>
-          </details>
-        </div>
+          <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open navigation" aria-expanded="false">
+            ${shellIcon("menu")}
+          </button>
+        </nav>
       </header>
+
+      <div class="drawer-backdrop" data-shell="canonical" id="drawerBackdrop"></div>
+      <aside class="mobile-drawer" data-shell="canonical" id="mobileDrawer" aria-label="Mobile navigation">
+        <div class="drawer-head">
+          <strong class="drawer-title">AGAPAY</strong>
+          <button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close menu">
+            ${shellIcon("close")}
+          </button>
+        </div>
+        <div class="drawer-scroll">
+          <nav class="drawer-links" aria-label="Drawer navigation">
+            ${PRIMARY_LINKS.map((item) => navLink(item, activeKey)).join("")}
+          </nav>
+          <a class="drawer-join" href="/give">
+            ${shellIcon("heart-give")}
+            Give
+          </a>
+          <div class="drawer-divider"></div>
+          <nav class="drawer-links" aria-label="Sign in options">
+            ${SIGN_IN_LINKS.map((item) => `<a href="${item.href}">${item.label}</a>`).join("")}
+          </nav>
+        </div>
+      </aside>
     `;
   }
 
   function buildFooter() {
     return `
-      <footer class="agp-site-footer" data-agp-site-footer>
-        <div class="agp-footer-wrap">
-          <div class="agp-footer-grid">
-            <div class="agp-footer-brand">
-              <a class="agp-brand" href="/" aria-label="AGAPAY home">
-                <span class="agp-brand-mark"><img src="/mark.png" alt="AGAPAY mark" /></span>
-                <span class="agp-brand-wordmark">
+      <footer class="site-footer" data-shell="canonical">
+        <div class="footer-inner">
+          <div class="footer-grid">
+            <div class="footer-brand">
+              <div class="footer-lockup">
+                <img src="/mark.png" alt="" />
+                <span class="fl-name">
                   <strong>AGAPAY</strong>
-                  <span>Love how you give</span>
+                  <span class="fl-tag">Love how you give</span>
                 </span>
-              </a>
-              <p class="agp-footer-tagline">Love how you give.</p>
+              </div>
             </div>
-
-            <div class="agp-footer-col">
+            <nav class="footer-col" aria-label="Platform">
               <h4>Platform</h4>
               <a href="/features">Features</a>
               <a href="/how-it-works">How it Works</a>
               <a href="/pricing">Pricing</a>
-            </div>
-
-            <div class="agp-footer-col">
+            </nav>
+            <nav class="footer-col" aria-label="Company">
               <h4>Company</h4>
               <a href="/about">About</a>
               <a href="/why">Why AGAPAY</a>
               <a href="/vision">Vision</a>
               <a href="/contact">Contact</a>
-            </div>
-
-            <div class="agp-footer-col">
+            </nav>
+            <nav class="footer-col" aria-label="Account">
               <h4>Account</h4>
               <a href="/donor/login">Donor Login</a>
               <a href="/parish/login">Parish Login</a>
-              <a href="/admin/login">Admin Login</a>
-            </div>
-
-            <div class="agp-footer-col">
+            </nav>
+            <nav class="footer-col" aria-label="Legal">
               <h4>Legal</h4>
               <a href="/privacy">Privacy Policy</a>
               <a href="/terms">Terms of Service</a>
-            </div>
+            </nav>
           </div>
-
-          <div class="agp-footer-bottom">
+          <div class="footer-bottom">
             <span>&copy; 2026 AGAPAY. All rights reserved.</span>
             <span>Built for Orthodox communities.</span>
           </div>
@@ -160,41 +156,70 @@
   }
 
   function bindInteractions() {
-    const signIn = document.querySelector("[data-agp-signin]");
-    if (signIn) {
-      const btn = signIn.querySelector(".nav-avatar");
-      if (btn) {
-        btn.addEventListener("click", function () {
-          const open = signIn.classList.toggle("open");
-          btn.setAttribute("aria-expanded", open ? "true" : "false");
-        });
-      }
-      document.addEventListener("click", function (event) {
-        if (!signIn.contains(event.target)) {
-          signIn.classList.remove("open");
-          if (btn) btn.setAttribute("aria-expanded", "false");
-        }
+    const body = document.body;
+    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+    const drawerBackdrop = document.getElementById("drawerBackdrop");
+    const drawerCloseBtn = document.getElementById("drawerCloseBtn");
+    const signinBtn = document.getElementById("signinBtn");
+    const signinMenu = document.getElementById("signinMenu");
+
+    function setDrawer(open) {
+      body.classList.toggle("drawer-open", open);
+      if (mobileMenuBtn) mobileMenuBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    if (mobileMenuBtn) mobileMenuBtn.addEventListener("click", function () { setDrawer(true); });
+    if (drawerBackdrop) drawerBackdrop.addEventListener("click", function () { setDrawer(false); });
+    if (drawerCloseBtn) drawerCloseBtn.addEventListener("click", function () { setDrawer(false); });
+
+    document.querySelectorAll("#mobileDrawer a").forEach(function (anchor) {
+      anchor.addEventListener("click", function () { setDrawer(false); });
+    });
+
+    if (signinBtn && signinMenu) {
+      signinBtn.addEventListener("click", function (event) {
+        event.stopPropagation();
+        const open = signinMenu.classList.toggle("open");
+        signinBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+
+      document.addEventListener("click", function () {
+        signinMenu.classList.remove("open");
+        signinBtn.setAttribute("aria-expanded", "false");
       });
     }
 
-    const menuToggle = document.querySelector("[data-agp-mobile-toggle]");
-    const mobileMenu = document.querySelector("[data-agp-mobile-menu]");
-    if (menuToggle && mobileMenu) {
-      menuToggle.addEventListener("click", function () {
-        const open = mobileMenu.classList.toggle("open");
-        menuToggle.setAttribute("aria-expanded", open ? "true" : "false");
-      });
-    }
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        setDrawer(false);
+        if (signinMenu) signinMenu.classList.remove("open");
+        if (signinBtn) signinBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
+
+  function removeLegacyMobileChrome() {
+    document.querySelectorAll(".site-mobile-drawer-backdrop, .site-mobile-drawer, .mobile-nav-drawer").forEach(function (node) {
+      node.remove();
+    });
+
+    document.querySelectorAll(".drawer-backdrop, .mobile-drawer").forEach(function (node) {
+      if (node.id === "drawerBackdrop" || node.id === "mobileDrawer") return;
+      node.remove();
+    });
   }
 
   document.addEventListener("DOMContentLoaded", function () {
     if (document.body && document.body.dataset.noSiteChrome === "true") return;
 
+    removeLegacyMobileChrome();
+
     const activeKey = activeKeyFromPath();
     const headerHtml = buildHeader(activeKey);
     const footerHtml = buildFooter();
-
     const oldHeader = firstExistingHeader();
+    const oldFooter = firstExistingFooter();
+
     if (oldHeader) {
       oldHeader.insertAdjacentHTML("beforebegin", headerHtml);
       oldHeader.remove();
@@ -202,7 +227,6 @@
       document.body.insertAdjacentHTML("afterbegin", headerHtml);
     }
 
-    const oldFooter = firstExistingFooter();
     if (oldFooter) {
       oldFooter.insertAdjacentHTML("beforebegin", footerHtml);
       oldFooter.remove();

@@ -16,9 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles/numbers.css" />
-  <link rel="stylesheet" href="/site-chrome.css" />
-  <script src="/site-chrome.js" defer></script>
-  <style>
+<style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -843,127 +841,16 @@
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""
   />
-  <link rel="stylesheet" href="/site-mobile-nav.css" />
-  <script src="/site-mobile-nav.js" defer></script>
   <link rel="manifest" href="/manifest.webmanifest" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="AGAPAY" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="/site-chrome.css" />
+  <script src="/site-chrome.js" defer></script>
 </head>
 <body>
-  <header class="site-header">
-    <nav class="nav" aria-label="Main navigation">
-      <a class="brand" href="/" aria-label="AGAPAY home">
-        <span class="brand-mark"><img src="/mark.png" alt="" /></span>
-        <span class="brand-name"><strong>AGAPAY</strong><span>Love how you give</span></span>
-      </a>
-      <div class="nav-links">
-        <a href="/vision">Vision</a>
-        <a href="/give">Giving</a>
-        <a href="/marketplace">Marketplace</a>
-        <a href="/directory" class="active">Directory</a>
-        <a href="/how-it-works">Resources</a>
-        <a href="/about">About</a>
-      </div>
-      <div class="nav-actions">
-        <a class="btn-donate" href="/register">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-          <span>List Your Organization</span>
-        </a>
-        <a class="nav-avatar" href="/donor/login" aria-label="Donor login">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
-        </a>
-      </div>
-    </nav>
-  </header>
-
-  <main class="page">
-    <section class="directory-hero">
-      <img class="hero-sketch" src="/images/directory/church-sketch-directory.png" alt="" />
-      <div class="hero-inner">
-        <div class="eyebrow">
-          <svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 9h14"/><path d="M12 2c0 3-1.8 4.8-4.5 4.8"/><path d="M12 2c0 3 1.8 4.8 4.5 4.8"/></svg>
-          AGAPAY Directory
-        </div>
-        <h1>Find Orthodox Life Near You</h1>
-        <p>Discover churches, businesses, ministries, schools, and monasteries in your community and around the world.</p>
-
-        <form class="search-panel">
-          <label class="search-field">
-            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
-            <input type="search" placeholder="Search by name, category, or keyword..." aria-label="Search by name, category, or keyword" />
-          </label>
-          <label class="location-field">
-            <svg viewBox="0 0 24 24"><path d="M12 21s7-5.7 7-12a7 7 0 1 0-14 0c0 6.3 7 12 7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg>
-            <select aria-label="Location">
-              <option>Dallas, TX</option>
-              <option>San Antonio, TX</option>
-              <option>Atlanta, GA</option>
-              <option>Chicago, IL</option>
-            </select>
-          </label>
-          <button class="search-button" type="submit">Search</button>
-        </form>
-
-        <div class="category-strip" aria-label="Directory categories">
-          <article class="category-card">
-            <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M9 13h6"/><path d="M12 5V2"/></svg>
-            <div><strong>Churches</strong><span>2,531 listings</span></div>
-          </article>
-          <article class="category-card">
-            <svg viewBox="0 0 24 24"><path d="M4 10h16"/><path d="M5 10l1-5h12l1 5"/><path d="M6 10v10h12V10"/><path d="M9 20v-5h6v5"/></svg>
-            <div><strong>Businesses</strong><span>1,230 listings</span></div>
-          </article>
-          <article class="category-card">
-            <svg viewBox="0 0 24 24"><path d="M4 5c3-1 5-1 8 1v14c-3-2-5-2-8-1V5Z"/><path d="M20 5c-3-1-5-1-8 1v14c3-2 5-2 8-1V5Z"/></svg>
-            <div><strong>Schools</strong><span>418 listings</span></div>
-          </article>
-          <article class="category-card">
-            <svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 9h14"/></svg>
-            <div><strong>Ministries</strong><span>731 listings</span></div>
-          </article>
-          <article class="category-card">
-            <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 21v-7a6 6 0 0 1 12 0v7"/><path d="M12 8V3"/></svg>
-            <div><strong>Monasteries</strong><span>169 listings</span></div>
-          </article>
-          <article class="category-card">
-            <svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20a5 5 0 0 1 10 0"/><path d="M11 20a5 5 0 0 1 10 0"/></svg>
-            <div><strong>Services</strong><span>534 listings</span></div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="directory-workspace" aria-label="Directory search results">
-      <aside class="filter-rail">
-        <div class="filter-head"><h2>Filters</h2><button type="button">Reset</button></div>
-        <div class="filter-group">
-          <h3>Category</h3>
-          <label class="check-row"><input type="checkbox" checked /> Churches (2,531)</label>
-          <label class="check-row"><input type="checkbox" /> Businesses (1,230)</label>
-          <label class="check-row"><input type="checkbox" /> Schools (418)</label>
-          <label class="check-row"><input type="checkbox" /> Ministries (731)</label>
-          <label class="check-row"><input type="checkbox" /> Monasteries (169)</label>
-          <label class="check-row"><input type="checkbox" /> Services (534)</label>
-        </div>
-        <div class="filter-group">
-          <h3>Location</h3>
-          <select class="filter-select"><option>Within 50 miles</option><option>Within 100 miles</option><option>Anywhere</option></select>
-          <select class="filter-select"><option>Dallas, TX</option><option>San Antonio, TX</option><option>Chicago, IL</option></select>
-        </div>
-        <div class="filter-group">
-          <h3>Denomination</h3>
-          <select class="filter-select"><option>All Denominations</option><option>Greek Orthodox</option><option>OCA</option><option>Antiochian</option><option>ROCOR</option></select>
-        </div>
-        <div class="filter-group">
-          <h3>Jurisdiction</h3>
-          <select class="filter-select"><option>All Jurisdictions</option><option>Canonical Orthodox Churches</option><option>Orthodox nonprofits</option><option>Orthodox-owned businesses</option></select>
-        </div>
-        <button class="apply-button" type="button">Apply Filters</button>
-      </aside>
-
-      <section class="results-pane">
+<section class="results-pane">
         <div class="results-head">
           <span>Showing 1-25 of 2,531 results</span>
           <label>Sort by: <select class="sort-select"><option>Recently Added</option><option>Nearest</option><option>A-Z</option></select></label>
@@ -1060,21 +947,7 @@
       </article>
     </section>
   </main>
-
-  <footer class="site-footer">
-    <div class="footer-wrap footer-grid">
-      <div class="footer-brand">
-        <div class="footer-lockup"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></div>
-        <p>Love how you Give.</p>
-      </div>
-      <div class="footer-col"><h4>Platform</h4><a href="/features">Solutions</a><a href="/how-it-works">How It Works</a><a href="/pricing">Pricing</a></div>
-      <div class="footer-col"><h4>Company</h4><a href="/about">About</a><a href="/why">Why AGAPAY</a><a href="/vision">Vision</a><a href="/contact">Contact</a></div>
-      <div class="footer-col"><h4>Resources</h4><a href="/donor/login">Donor Login</a><a href="/parish/login">Parish Login</a><a href="/admin/login">Admin Login</a></div>
-      <div class="footer-col"><h4>Legal</h4><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div>
-    </div>
-    <div class="footer-wrap footer-bottom"><span>&copy; 2026 AGAPAY. All rights reserved.</span><span>Built for Orthodox communities.</span></div>
-  </footer>
-  <script
+<script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""
@@ -1140,3 +1013,5 @@
   </script>
 </body>
 </html>
+
+

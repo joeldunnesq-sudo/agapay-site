@@ -18,9 +18,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles/numbers.css" />
-  <link rel="stylesheet" href="/site-chrome.css" />
-  <script src="/site-chrome.js" defer></script>
-  <style>
+<style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --night: #061522;
@@ -814,55 +812,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="AGAPAY" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="/site-chrome.css" />
+  <script src="/site-chrome.js" defer></script>
 </head>
 <body>
-  <header class="site-header">
-    <nav class="nav" aria-label="Primary navigation">
-      <a class="brand" href="/" aria-label="AGAPAY home">
-        <span class="brand-mark"><img src="/mark.png" alt="" /></span>
-        <span class="brand-name"><strong>AGAPAY</strong><span>Love how you give</span></span>
-      </a>
-      <div class="nav-links">
-        <a href="/vision">Vision</a>
-        <a href="/features">Features</a>
-        <a href="/how-it-works">How it Works</a>
-        <a href="/pricing">Pricing</a>
-        <a class="active" href="/about">About</a>
-      </div>
-      <div class="nav-actions">
-        <a class="btn-donate" href="/register">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-          Join AGAPAY
-        </a>
-        <a class="nav-avatar" href="/donor/login" aria-label="Log in">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.8-4 4.5-6 8-6s6.2 2 8 6"/></svg>
-        </a>
-      </div>
-      <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open navigation" aria-expanded="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
-      </button>
-    </nav>
-  </header>
-
-  <div class="drawer-backdrop" id="drawerBackdrop"></div>
-  <aside class="mobile-drawer" aria-label="Mobile navigation">
-    <div class="drawer-head">
-      <div class="drawer-title">AGAPAY</div>
-      <button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close navigation">&times;</button>
-    </div>
-    <div class="drawer-scroll">
-      <nav class="drawer-links">
-        <a href="/vision">Vision</a>
-        <a href="/features">Features</a>
-        <a href="/how-it-works">How it Works</a>
-        <a href="/pricing">Pricing</a>
-        <a class="active" href="/about">About</a>
-      </nav>
-      <a class="drawer-join" href="/register">Join AGAPAY</a>
-    </div>
-  </aside>
-
-  <main class="page">
+<main class="page">
     <section class="why-hero">
       <div class="hero-copy">
         <div class="kicker"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 21h8"/></svg> Why AGAPAY</div>
@@ -1052,41 +1006,7 @@
       </div>
     </section>
   </main>
-
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <div class="footer-lockup"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></div>
-          <p>Love how you give.</p>
-        </div>
-        <nav class="footer-col" aria-label="Platform">
-          <h4>Platform</h4>
-          <a href="/features">Features</a>
-          <a href="/how-it-works">How It Works</a>
-          <a href="/pricing">Pricing</a>
-        </nav>
-        <nav class="footer-col" aria-label="Company">
-          <h4>Company</h4>
-          <a href="/about">About</a>
-          <a href="/why">Why AGAPAY</a>
-          <a href="/vision">Vision</a>
-          <a href="/contact">Contact</a>
-        </nav>
-        <nav class="footer-col" aria-label="Legal">
-          <h4>Legal</h4>
-          <a href="/privacy">Privacy Policy</a>
-          <a href="/terms">Terms of Service</a>
-        </nav>
-      </div>
-      <div class="footer-bottom">
-        <span>&copy; 2026 AGAPAY. All rights reserved.</span>
-        <span>Built for Orthodox communities.</span>
-      </div>
-    </div>
-  </footer>
-
-  <script>
+<script>
     const body = document.body;
     const mobileMenuBtn = document.getElementById("mobileMenuBtn");
     const drawerBackdrop = document.getElementById("drawerBackdrop");
@@ -1104,3 +1024,5 @@
   </script>
 </body>
 </html>
+
+

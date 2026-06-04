@@ -14,9 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/site-chrome.css" />
-  <script src="/site-chrome.js" defer></script>
-  <style>
+<style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root{
       --deep:#061522; --gold:#C8A24A; --cream:#F6F1E8; --paper:#FFFDF8; --ink:#171715; --stone:#6F6A60; --line:rgba(166,159,145,.3);
@@ -25,87 +23,6 @@
     body{font-family:var(--sans);background:var(--cream);color:var(--ink);-webkit-font-smoothing:antialiased}
     a{text-decoration:none;color:inherit}
     .wrap{width:min(1220px,calc(100% - 2.25rem));margin:0 auto}
-
-    .site-header {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      padding: 0.95rem clamp(1rem, 2.6vw, 2.6rem);
-      background: linear-gradient(90deg, #061522, #0B2130);
-      border-bottom: 1px solid rgba(200, 162, 74, 0.24);
-    }
-    .nav {
-      width: min(1320px, 100%);
-      max-width: 1320px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      color: var(--cream);
-      min-width: max-content;
-    }
-    .brand-mark {
-      width: 42px;
-      height: 42px;
-      display: grid;
-      place-items: center;
-      border: 1px solid rgba(200, 162, 74, 0.55);
-      border-radius: 50%;
-      background: rgba(6, 21, 34, 0.34);
-    }
-    .brand-mark img { width: 38px; height: 38px; object-fit: contain; }
-    .brand-name {
-      display: flex;
-      flex-direction: column;
-      line-height: 1;
-    }
-    .brand-name strong {
-      font-family: var(--serif);
-      font-size: 2rem;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .brand-name span {
-      margin-top: 0.2rem;
-      color: var(--gold);
-      font-size: 0.6rem;
-      font-weight: 500;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-    .nav-links {
-      display: flex;
-      align-items: center;
-      margin-left: auto;
-      gap: clamp(1rem, 2.5vw, 2.4rem);
-      color: rgba(246, 241, 232, 0.86);
-      font-size: 0.86rem;
-      font-weight: 600;
-    }
-    .nav-links a.active { color: var(--gold); }
-    .nav-cta {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 46px;
-      padding: 0 1.45rem;
-      border-radius: 5px;
-      color: var(--deep);
-      font-family: var(--serif);
-      font-size: 1.08rem;
-      font-style: italic;
-      font-weight: 500;
-      letter-spacing: 0.03em;
-      background: linear-gradient(135deg, #D6AF5B, #B98832);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
-    }
 
     /* REVISED HERO CSS */
     .hero {
@@ -360,32 +277,15 @@
     }
   </style>
   <link rel="stylesheet" href="/styles/numbers.css" />
-  <link rel="stylesheet" href="/site-mobile-nav.css" />
-  <script src="/site-mobile-nav.js" defer></script>
   <link rel="manifest" href="/manifest.webmanifest" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="AGAPAY" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="/site-chrome.css" />
+  <script src="/site-chrome.js" defer></script>
 </head>
 <body>
-  <header class="site-header">
-    <nav class="nav" aria-label="Main navigation">
-      <a class="brand" href="/" aria-label="AGAPAY home">
-        <span class="brand-mark"><img src="/mark.png" alt="" /></span>
-        <span class="brand-name"><strong>AGAPAY</strong><span>Love how you give</span></span>
-      </a>
-      <div class="nav-links">
-        <a class="active" href="/vision">Vision</a>
-        <a href="/features">Features</a>
-        <a href="/how-it-works">How it Works</a>
-        <a href="/pricing">Pricing</a>
-        <a href="/about">About</a>
-        <a href="/register" class="nav-cta">Join AGAPAY</a>
-      </div>
-    </nav>
-  </header>
-  
   <main>
     <section class="hero">
       <div class="wrap hero-grid">
@@ -469,18 +369,7 @@
       </div>
     </section>
   </main>
-  <footer class="site-footer">
-    <div class="wrap footer-grid">
-      <div class="footer-brand">
-        <div class="footer-lockup"><img src="/mark.png" alt="" /><strong>AGAPAY</strong></div>
-        <p>Love how you give.</p>
-      </div>
-      <div class="footer-col"><h4>Platform</h4><a href="/features">Features</a><a href="/how-it-works">How It Works</a><a href="/pricing">Pricing</a></div>
-      <div class="footer-col"><h4>Company</h4><a href="/about">About</a><a href="/why">Why AGAPAY</a><a href="/vision">Vision</a><a href="/contact">Contact</a></div>
-      <div class="footer-col"><h4>Account</h4><a href="/donor/login">Donor Login</a><a href="/parish/login">Parish Login</a><a href="/admin/login">Admin Login</a></div>
-      <div class="footer-col"><h4>Legal</h4><a href="/privacy">Privacy Policy</a><a href="/terms">Terms of Service</a></div>
-    </div>
-    <div class="wrap footer-bottom"><span>&copy; 2026 AGAPAY. All rights reserved.</span><span>Built for Orthodox communities.</span></div>
-  </footer>
 </body>
 </html>
+
+
