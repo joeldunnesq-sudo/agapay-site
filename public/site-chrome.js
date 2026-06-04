@@ -21,12 +21,12 @@
     if (path === "/features" || path.endsWith("/features.html") || path === "/directory" || path.endsWith("/directory.html") || path === "/marketplace" || path.endsWith("/marketplace.html")) return "features";
     if (path === "/pricing" || path.endsWith("/pricing.html")) return "pricing";
     if (path === "/how-it-works" || path.endsWith("/how-it-works.html")) return "how";
-    if (path === "/give" || path.endsWith("/give/index.html") || path.startsWith("/give/")) return "give";
+    if (path === "/giving" || path.endsWith("/giving/index.html") || path.startsWith("/giving/") || path === "/give" || path.endsWith("/give/index.html") || path.startsWith("/give/")) return "give";
     return "";
   }
 
   function firstExistingHeader() {
-    return document.querySelector("header.site-header, header[data-site-header], nav.site-header, body > header");
+    return document.querySelector("header.site-header, header[data-site-header], nav.site-header, body > nav");
   }
 
   function firstExistingFooter() {
@@ -62,7 +62,7 @@
           </div>
 
           <div class="nav-actions">
-            <a class="btn-donate ${activeKey === "give" ? "active" : ""}" href="/give">
+            <a class="btn-donate ${activeKey === "give" ? "active" : ""}" href="/giving">
               ${shellIcon("heart-give")}
               Give
             </a>
@@ -95,7 +95,7 @@
           <nav class="drawer-links" aria-label="Drawer navigation">
             ${PRIMARY_LINKS.map((item) => navLink(item, activeKey)).join("")}
           </nav>
-          <a class="drawer-join" href="/give">
+          <a class="drawer-join" href="/giving">
             ${shellIcon("heart-give")}
             Give
           </a>
@@ -168,7 +168,7 @@
       if (mobileMenuBtn) mobileMenuBtn.setAttribute("aria-expanded", open ? "true" : "false");
     }
 
-    if (mobileMenuBtn) mobileMenuBtn.addEventListener("click", function () { setDrawer(true); });
+    if (mobileMenuBtn) mobileMenuBtn.addEventListener("click", function () { setDrawer(!body.classList.contains("drawer-open")); });
     if (drawerBackdrop) drawerBackdrop.addEventListener("click", function () { setDrawer(false); });
     if (drawerCloseBtn) drawerCloseBtn.addEventListener("click", function () { setDrawer(false); });
 

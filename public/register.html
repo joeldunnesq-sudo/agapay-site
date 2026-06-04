@@ -10,18 +10,18 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
-  <meta name="description" content="Join AGAPAY as a donor, parish, business, ministry, school, monastery, or mission." />
+  <meta name="description" content="Register a canonical Orthodox mission, parish, or cathedral with AGAPAY." />
   <link rel="canonical" href="https://agapay.app/register" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="AGAPAY" />
   <meta property="og:title" content="Register | AGAPAY" />
-  <meta property="og:description" content="Choose your path into AGAPAY as an individual, family, parish, monastery, mission, school, ministry, or Orthodox business." />
+  <meta property="og:description" content="Register a canonical Orthodox mission, parish, or cathedral with AGAPAY." />
   <meta property="og:url" content="https://agapay.app/register" />
   <meta property="og:image" content="https://agapay.app/images/app/icon-512.png" />
   <meta property="og:image:alt" content="AGAPAY logo" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="Register | AGAPAY" />
-  <meta name="twitter:description" content="Choose your path into AGAPAY as an individual, family, parish, monastery, mission, school, ministry, or Orthodox business." />
+  <meta name="twitter:description" content="Register a canonical Orthodox mission, parish, or cathedral with AGAPAY." />
   <meta name="twitter:image" content="https://agapay.app/images/app/icon-512.png" />
   <meta name="theme-color" content="#061522" />
 
@@ -170,6 +170,9 @@
     .type-btn { padding: 10px; background: var(--cream); border: 0.5px solid rgba(166,159,145,0.4); border-radius: var(--r); font-size: 13px; font-weight: 500; font-family: var(--sans); color: var(--stone); cursor: pointer; transition: all 0.15s; text-align: center; }
     .type-btn:hover { border-color: var(--gold); color: var(--ink); }
     .type-btn.selected { background: var(--deep); color: var(--cream); border-color: var(--deep); }
+    .type-btn.coming-soon { cursor: not-allowed; opacity: 0.62; background: rgba(246,241,232,0.58); color: rgba(111,106,96,0.82); }
+    .type-btn.coming-soon:hover { transform: none; border-color: rgba(166,159,145,0.4); color: rgba(111,106,96,0.82); background: rgba(246,241,232,0.58); }
+    .type-btn small { display: block; margin-top: 3px; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); font-weight: 700; }
     .conditional-hidden { display: none !important; }
 
     /* DIVIDERS */
@@ -279,7 +282,7 @@
         <span class="nav-name">AGAPAY</span>
       </a>
              <div class="nav-links">
-        <a href="/give">Giving</a>
+        <a href="/giving">Giving</a>
         <a href="/marketplace">Marketplace</a>
         <a href="/directory">Directory</a>
         <a href="/vision">Vision</a>
@@ -294,7 +297,7 @@
 
   <div class="mobile-nav-drawer" id="mobileDrawer" aria-hidden="true">
         <div class="mobile-drawer-links">
-      <a href="/give" onclick="toggleMenu()">Giving</a>
+      <a href="/giving" onclick="toggleMenu()">Giving</a>
       <a href="/marketplace" onclick="toggleMenu()">Marketplace</a>
       <a href="/directory" onclick="toggleMenu()">Directory</a>
       <a href="/vision" onclick="toggleMenu()">Vision</a>
@@ -310,7 +313,7 @@
     <div class="hero-inner">
       <div class="hero-eyebrow">Registration</div>
       <h1>Join the AGAPAY<br><em>ecosystem.</em></h1>
-      <p class="hero-sub">Start as a donor or register an Orthodox organization. We personally review each organization profile before activation. Built for the faithful, not the platform.</p>
+      <p class="hero-sub">Register a canonical Orthodox mission, parish, or cathedral. We personally review each community before activation. Built for the faithful, not the platform.</p>
     </div>
   </header>
 
@@ -318,16 +321,12 @@
 
     <div class="entry-card-wrap" id="registrationEntry">
       <div class="entry-card">
-        <h2 class="entry-title">Who are you registering?</h2>
-        <p class="entry-sub">Choose your path. Individuals and families create donor accounts. Organizations continue into a guided AGAPAY onboarding form.</p>
+        <h2 class="entry-title">Register your Orthodox community</h2>
+        <p class="entry-sub">AGAPAY is currently onboarding missions, parishes, and cathedrals. Marketplace, ministries, schools, and additional organization types are coming soon.</p>
         <div class="entry-grid binary">
-          <button class="entry-option donor" type="button" onclick="startDonorRegistration()">
-            <strong>Individual / Family</strong>
-            <span>Create your donor account, choose your parish, and manage giving.</span>
-          </button>
           <button class="entry-option" type="button" onclick="startOrganizationRegistration('Parish')">
-            <strong>Organization</strong>
-            <span>Register a parish, monastery, business, ministry, school, mission, or other Orthodox organization.</span>
+            <strong>Begin registration</strong>
+            <span>Continue into the guided AGAPAY onboarding form.</span>
           </button>
         </div>
       </div>
@@ -367,11 +366,10 @@
             <button class="type-btn" data-type="Mission" onclick="selectType(this)">Mission</button>
             <button class="type-btn selected" data-type="Parish" onclick="selectType(this)">Parish</button>
             <button class="type-btn" data-type="Cathedral" onclick="selectType(this)">Cathedral</button>
-            <button class="type-btn" data-type="Monastery / Skete" onclick="selectType(this)">Monastery</button>
-            <button class="type-btn" data-type="Business" onclick="selectType(this)">Business</button>
-            <button class="type-btn" data-type="Ministry / Nonprofit" onclick="selectType(this)">Ministry</button>
-            <button class="type-btn" data-type="School / Academy" onclick="selectType(this)">School</button>
-            <button class="type-btn" data-type="Other Orthodox Organization" onclick="selectType(this)">Other</button>
+            <button class="type-btn coming-soon" data-type="Monastery / Skete" type="button" aria-disabled="true" disabled>Monastery <small>Coming soon</small></button>
+            <button class="type-btn coming-soon" data-type="Business" type="button" aria-disabled="true" disabled>Business <small>Coming soon</small></button>
+            <button class="type-btn coming-soon" data-type="Ministry / Nonprofit" type="button" aria-disabled="true" disabled>Ministry <small>Coming soon</small></button>
+            <button class="type-btn coming-soon" data-type="School / Academy" type="button" aria-disabled="true" disabled>School <small>Coming soon</small></button>
           </div>
         </div>
 
@@ -780,6 +778,7 @@
 
     // ─── COMMUNITY TYPE ──────────────────────────────────────
     function selectType(btn) {
+      if (!btn || btn.disabled || btn.getAttribute('aria-disabled') === 'true') return;
       document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       communityType = btn.dataset.type;
@@ -985,7 +984,7 @@
     });
 
     updateDynamicForm();
-    showRegistrationEntry();
+    showOrganizationFlow('Parish');
   </script>
 
 </body>

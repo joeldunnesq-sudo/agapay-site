@@ -34,6 +34,10 @@ body.agp-shell-ready {
   grid-template-columns: auto 1fr auto auto;
   align-items: center;
   gap: 1rem;
+  position: static;
+  background: transparent;
+  border: 0;
+  backdrop-filter: none;
 }
 
 .site-header[data-shell="canonical"] .brand {
@@ -106,6 +110,20 @@ body.agp-shell-ready {
   padding: 0.4rem 0;
 }
 
+.site-header[data-shell="canonical"] .nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.62rem;
+  height: 2px;
+  background: linear-gradient(90deg, var(--agp-gold), rgba(214, 175, 91, 0.18));
+  opacity: 0;
+  transform: scaleX(0.45);
+  transform-origin: center;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
 .site-header[data-shell="canonical"] .nav-links a.active,
 .site-header[data-shell="canonical"] .nav-links a:hover {
   color: #FFE4A4;
@@ -113,13 +131,8 @@ body.agp-shell-ready {
 
 .site-header[data-shell="canonical"] .nav-links a.active::after,
 .site-header[data-shell="canonical"] .nav-links a:hover::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1.05rem;
-  height: 2px;
-  background: linear-gradient(90deg, var(--agp-gold), rgba(214, 175, 91, 0.18));
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 .site-header[data-shell="canonical"] .nav-actions {
@@ -134,13 +147,13 @@ body.agp-shell-ready {
   padding: 0 1.4rem;
   border-radius: 8px;
   border: 1px solid rgba(200, 162, 74, 0.6);
-  color: var(--agp-cream);
+  color: #061522;
   font-size: 0.95rem;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(6, 21, 34, 0.34);
+  background: linear-gradient(135deg, #D6AF5B, #B98832);
   text-decoration: none;
   transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
@@ -148,15 +161,15 @@ body.agp-shell-ready {
 .site-header[data-shell="canonical"] .btn-donate:hover,
 .site-header[data-shell="canonical"] .btn-donate.active {
   transform: translateY(-1px);
-  background: linear-gradient(135deg, rgba(214, 175, 91, 0.16), rgba(214, 175, 91, 0.08));
+  background: linear-gradient(135deg, #E5C56D, #C89538);
   border-color: rgba(214, 175, 91, 0.82);
-  color: #FFF2CB;
+  color: #061522;
 }
 
 .site-header[data-shell="canonical"] .btn-donate svg {
   width: 18px;
   height: 18px;
-  stroke: var(--agp-gold);
+  stroke: #061522;
   fill: none;
   stroke-width: 1.8;
   stroke-linecap: round;
@@ -496,6 +509,12 @@ body.drawer-open {
   .site-header[data-shell="canonical"] .brand-name strong,
   .site-footer[data-shell="canonical"] .fl-name strong {
     font-size: 1.7rem;
+  }
+
+  .site-header[data-shell="canonical"] .mobile-menu-btn,
+  .nav-avatar {
+    width: 40px;
+    height: 40px;
   }
 
   .site-footer[data-shell="canonical"] .footer-inner {
