@@ -15,6 +15,16 @@ body.agp-shell-ready {
   font-family: var(--agp-sans);
 }
 
+body:not(.agp-shell-ready):not([data-no-site-chrome="true"])::before {
+  content: "";
+  display: block;
+  min-height: 84px;
+  background:
+    linear-gradient(180deg, rgba(6, 21, 34, 0.98), rgba(6, 21, 34, 0.94)),
+    radial-gradient(circle at 18% 0%, rgba(214, 175, 91, 0.14), transparent 34%);
+  border-bottom: 1px solid rgba(200, 162, 74, 0.16);
+}
+
 .site-header[data-shell="canonical"] {
   position: sticky;
   top: 0;
@@ -512,6 +522,10 @@ body.drawer-open {
 }
 
 @media (max-width: 640px) {
+  body:not(.agp-shell-ready):not([data-no-site-chrome="true"])::before {
+    min-height: 76px;
+  }
+
   .site-header[data-shell="canonical"] .nav {
     width: min(100%, calc(100% - 1rem));
     min-height: 76px;
