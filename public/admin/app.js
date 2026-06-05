@@ -539,12 +539,20 @@
       if (!silent) setStatus('Loading registrations...');
 
       try {
-        const response = await fetch('/api/admin/registrations', { headers: authHeaders() });
-        const result = await response.json();
-        if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to load registrations');
+        const loaded = [];
+        let cursor = '';
+        do {
+          const params = new URLSearchParams({ limit: '250' });
+          if (cursor) params.set('cursor', cursor);
+          const response = await fetch('/api/admin/registrations?' + params.toString(), { headers: authHeaders() });
+          const result = await response.json();
+          if (handleAuthFailure(response, result)) return;
+          if (!response.ok) throw new Error(result.error || 'Unable to load registrations');
+          loaded.push(...(result.registrations || []));
+          cursor = result.cursor || '';
+        } while (cursor);
 
-        registrationsCache = result.registrations || [];
+        registrationsCache = loaded;
         const hasCurrent = preserveSelection && selectedReference && registrationsCache.some(item => item.reference === selectedReference);
         if (!hasCurrent) {
           collapseRegistrationDetail();
@@ -557,7 +565,7 @@
         loadPlatformSummary();
         lastDataLoadedAt = new Date();
         refreshDataAsOf();
-        if (!silent) setStatus(`Loaded ${(result.registrations || []).length} registration(s).`, 'success');
+        if (!silent) setStatus(`Loaded ${registrationsCache.length} registration(s).`, 'success');
       } catch (err) {
         if (!silent) setStatus(err.message, 'error');
       } finally {

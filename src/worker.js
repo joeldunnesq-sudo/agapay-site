@@ -454,6 +454,14 @@ function parseJsonRow(row) {
   return JSON.parse(row.data);
 }
 
+function safeParseJsonRow(row) {
+  try {
+    return parseJsonRow(row);
+  } catch {
+    return null;
+  }
+}
+
 async function d1First(env, sql, ...params) {
   if (!d1(env)) return null;
   return d1(env).prepare(sql).bind(...params).first();
@@ -463,6 +471,34 @@ async function d1All(env, sql, ...params) {
   if (!d1(env)) return [];
   const result = await d1(env).prepare(sql).bind(...params).all();
   return result.results || [];
+}
+
+function clampListLimit(value, defaultLimit = 50, maxLimit = 250) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return defaultLimit;
+  return Math.min(maxLimit, Math.max(1, Math.floor(parsed)));
+}
+
+function encodeListCursor(row = {}) {
+  const payload = {
+    receivedAt: row.received_at || row.receivedAt || "",
+    reference: row.reference || ""
+  };
+  if (!payload.receivedAt || !payload.reference) return "";
+  return btoa(JSON.stringify(payload)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function decodeListCursor(cursor) {
+  if (!cursor) return null;
+  try {
+    const normalized = String(cursor).replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+    const payload = JSON.parse(atob(padded));
+    if (!payload?.receivedAt || !payload?.reference) return null;
+    return payload;
+  } catch {
+    return null;
+  }
 }
 
 async function d1Run(env, sql, ...params) {
@@ -2198,6 +2234,7 @@ function communitySketchAlt(type) {
 }
 
 function parishFromRegistration(registration) {
+  if (!registration) return null;
   const id = registration.parishId || slugify(registration.parishName);
   if (!id || registration.status !== "verified") return null;
   if (registration.givingStatus && registration.givingStatus !== "active") return null;
@@ -2325,23 +2362,67 @@ async function loadRegistrationByReference(env, reference) {
   return registration;
 }
 
-async function verifiedRegistrationParishes(env) {
+async function loadVerifiedRegistrationParishPage(env, options = {}) {
+  const limit = clampListLimit(options.limit, 100, 250);
+  const cursor = decodeListCursor(options.cursor);
+  const query = String(options.query || options.q || "").trim().toLowerCase();
+  const type = String(options.type || "").trim().toLowerCase();
+  const jurisdiction = String(options.jurisdiction || "").trim().toLowerCase();
+
   if (d1(env)) {
+    const where = ["status = 'verified'"];
+    const params = [];
+
+    if (cursor) {
+      where.push("(received_at < ? OR (received_at = ? AND reference < ?))");
+      params.push(cursor.receivedAt, cursor.receivedAt, cursor.reference);
+    }
+    if (query) {
+      where.push(`(
+        LOWER(COALESCE(json_extract(data, '$.parishName'), '')) LIKE ?
+        OR LOWER(COALESCE(json_extract(data, '$.city'), '')) LIKE ?
+        OR LOWER(COALESCE(json_extract(data, '$.state'), '')) LIKE ?
+        OR LOWER(COALESCE(json_extract(data, '$.jurisdiction'), '')) LIKE ?
+      )`);
+      const like = `%${query}%`;
+      params.push(like, like, like, like);
+    }
+    if (type) {
+      where.push("LOWER(COALESCE(json_extract(data, '$.communityType'), '')) LIKE ?");
+      params.push(`%${type}%`);
+    }
+    if (jurisdiction) {
+      where.push("LOWER(COALESCE(json_extract(data, '$.jurisdiction'), '')) LIKE ?");
+      params.push(`%${jurisdiction}%`);
+    }
+
     const rows = await d1All(
       env,
-      "SELECT data FROM registrations WHERE status = 'verified' ORDER BY received_at DESC LIMIT 1000"
+      `SELECT reference, received_at, data
+       FROM registrations
+       WHERE ${where.join(" AND ")}
+       ORDER BY received_at DESC, reference DESC
+       LIMIT ?`,
+      ...params,
+      limit + 1
     );
-    if (rows.length) {
-      return rows
-        .map(parseJsonRow)
-        .map(parishFromRegistration)
-        .filter(Boolean);
-    }
+    const pageRows = rows.slice(0, limit);
+    const parishes = pageRows
+      .map(safeParseJsonRow)
+      .map(parishFromRegistration)
+      .filter(Boolean);
+    return {
+      parishes,
+      cursor: rows.length > limit ? encodeListCursor(pageRows[pageRows.length - 1]) : null,
+      hasMore: rows.length > limit,
+      limit,
+      source: "d1"
+    };
   }
 
-  if (!env.AGAPAY_REGISTRATIONS) return [];
+  if (!env.AGAPAY_REGISTRATIONS) return { parishes: [], cursor: null, hasMore: false, limit, source: "none" };
 
-  const keys = await listKvKeys(env, { limit: 1000 });
+  const keys = await listKvKeys(env, { limit });
   const verified = [];
 
   for (const key of keys) {
@@ -2356,7 +2437,12 @@ async function verifiedRegistrationParishes(env) {
     }
   }
 
-  return verified;
+  return { parishes: verified, cursor: null, hasMore: false, limit, source: "kv" };
+}
+
+async function verifiedRegistrationParishes(env, options = {}) {
+  const page = await loadVerifiedRegistrationParishPage(env, options);
+  return page.parishes;
 }
 
 async function findRegistrationByParishId(env, parishId) {
@@ -2764,11 +2850,24 @@ async function enrichParishGivingOptions(env, parish) {
   };
 }
 
-async function handleParishes(env) {
-  const dynamicParishes = await verifiedRegistrationParishes(env);
-  const enrichedParishes = await Promise.all(dynamicParishes.map((parish) => enrichParishGivingOptions(env, parish)));
+async function handleParishes(request, env) {
+  const url = new URL(request.url);
+  const page = await loadVerifiedRegistrationParishPage(env, {
+    limit: url.searchParams.get("limit"),
+    cursor: url.searchParams.get("cursor"),
+    q: url.searchParams.get("q") || url.searchParams.get("search"),
+    type: url.searchParams.get("type"),
+    jurisdiction: url.searchParams.get("jurisdiction")
+  });
+  const enrichedParishes = await Promise.all(page.parishes.map((parish) => enrichParishGivingOptions(env, parish)));
 
-  return json({ parishes: enrichedParishes });
+  return json({
+    parishes: enrichedParishes,
+    cursor: page.cursor,
+    hasMore: page.hasMore,
+    limit: page.limit,
+    source: page.source
+  });
 }
 
 async function loadPaidDonorOfferingPlatformTotals(env) {
@@ -2823,7 +2922,8 @@ async function handlePublicPlatformSummary(env) {
     });
   }
 
-  const parishes = await verifiedRegistrationParishes(env);
+  const verifiedRegistrations = await loadAllRegistrations(env, { status: "verified" });
+  const parishes = verifiedRegistrations.map(parishFromRegistration).filter(Boolean);
   const donationTotals = await loadPaidDonorOfferingPlatformTotals(env);
   const activeCampaigns = parishes.reduce((total, parish) => {
     const campaigns = Array.isArray(parish.campaigns) ? parish.campaigns : [];
@@ -3848,48 +3948,86 @@ async function handleDonorCommemorations(request, env) {
   return json({ ok: true, entry }, { status: 201 });
 }
 
-async function handleAdminRegistrations(request, env) {
-  const limited = await rateLimit(request, env, "admin-auth", { limit: 20, windowSeconds: 300 });
-  if (limited) return limited;
-  if (!(await requireAdmin(request, env))) return unauthorized();
-  if (!hasProductionStore(env)) {
-    return missingProductionStoreResponse();
-  }
+function adminRegistrationSummary(registration = {}, fallbackReference = "") {
+  registration = registration || {};
+  return {
+    reference: registration.reference || fallbackReference || "",
+    status: registration.status || "pending",
+    parishName: registration.parishName || "",
+    communityType: registration.communityType || "",
+    liturgicalCalendar: registration.liturgicalCalendar || "julian",
+    jurisdiction: registration.jurisdiction || "",
+    city: registration.city || "",
+    state: registration.state || "",
+    priestEmail: registration.priestEmail || "",
+    treasurerEmail: registration.treasurerEmail || "",
+    givingStatus: registration.givingStatus || "active",
+    subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
+    subscriptionStatus: registration.subscriptionStatus || "not_started",
+    stripeAccountStatus: registration.stripeAccountStatus || "not_started",
+    dashboardInviteEmailStatus: registration.dashboardInviteEmailStatus || "",
+    adminNotificationEmailStatus: registration.adminNotificationEmailStatus || "",
+    receivedAt: registration.receivedAt || ""
+  };
+}
+
+async function loadAdminRegistrationPage(env, options = {}) {
+  const limit = clampListLimit(options.limit, 100, 250);
+  const cursor = decodeListCursor(options.cursor);
+  const status = String(options.status || "").trim().toLowerCase();
+  const query = String(options.query || options.q || "").trim().toLowerCase();
 
   if (d1(env)) {
-    const rows = await d1All(env, "SELECT data FROM registrations ORDER BY received_at DESC LIMIT 1000");
-    if (rows.length) {
-      const registrations = rows.map((row) => {
-        try {
-          const registration = parseJsonRow(row);
-          return {
-            reference: registration.reference || "",
-            status: registration.status || "pending",
-            parishName: registration.parishName || "",
-            communityType: registration.communityType || "",
-            liturgicalCalendar: registration.liturgicalCalendar || "julian",
-            jurisdiction: registration.jurisdiction || "",
-            city: registration.city || "",
-            state: registration.state || "",
-            priestEmail: registration.priestEmail || "",
-            treasurerEmail: registration.treasurerEmail || "",
-            givingStatus: registration.givingStatus || "active",
-            subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
-            subscriptionStatus: registration.subscriptionStatus || "not_started",
-            stripeAccountStatus: registration.stripeAccountStatus || "not_started",
-            dashboardInviteEmailStatus: registration.dashboardInviteEmailStatus || "",
-            adminNotificationEmailStatus: registration.adminNotificationEmailStatus || "",
-            receivedAt: registration.receivedAt || ""
-          };
-        } catch {
-          return { reference: "", status: "unreadable" };
-        }
-      });
-      return json({ registrations, cursor: null, source: "d1" });
+    const where = [];
+    const params = [];
+    if (status && status !== "all") {
+      where.push("status = ?");
+      params.push(status);
     }
+    if (cursor) {
+      where.push("(received_at < ? OR (received_at = ? AND reference < ?))");
+      params.push(cursor.receivedAt, cursor.receivedAt, cursor.reference);
+    }
+    if (query) {
+      where.push(`(
+        LOWER(COALESCE(json_extract(data, '$.parishName'), '')) LIKE ?
+        OR LOWER(COALESCE(json_extract(data, '$.city'), '')) LIKE ?
+        OR LOWER(COALESCE(json_extract(data, '$.state'), '')) LIKE ?
+        OR LOWER(COALESCE(json_extract(data, '$.jurisdiction'), '')) LIKE ?
+        OR LOWER(COALESCE(json_extract(data, '$.priestEmail'), '')) LIKE ?
+        OR LOWER(COALESCE(json_extract(data, '$.treasurerEmail'), '')) LIKE ?
+      )`);
+      const like = `%${query}%`;
+      params.push(like, like, like, like, like, like);
+    }
+    const rows = await d1All(
+      env,
+      `SELECT reference, received_at, data
+       FROM registrations
+       ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+       ORDER BY received_at DESC, reference DESC
+       LIMIT ?`,
+      ...params,
+      limit + 1
+    );
+    const pageRows = rows.slice(0, limit);
+    const registrations = pageRows.map((row) => {
+      try {
+        return adminRegistrationSummary(safeParseJsonRow(row), row.reference);
+      } catch {
+        return { reference: row.reference || "", status: "unreadable" };
+      }
+    });
+    return {
+      registrations,
+      cursor: rows.length > limit ? encodeListCursor(pageRows[pageRows.length - 1]) : null,
+      hasMore: rows.length > limit,
+      limit,
+      source: "d1"
+    };
   }
 
-  const keys = await listKvKeys(env, { limit: 1000 });
+  const keys = await listKvKeys(env, { limit });
   const registrations = [];
 
   for (const key of keys) {
@@ -3898,47 +4036,88 @@ async function handleAdminRegistrations(request, env) {
     if (!raw) continue;
     try {
       const registration = JSON.parse(raw);
-      registrations.push({
-        reference: registration.reference || key.name,
-        status: registration.status || "pending",
-        parishName: registration.parishName || "",
-        communityType: registration.communityType || "",
-        liturgicalCalendar: registration.liturgicalCalendar || "julian",
-        jurisdiction: registration.jurisdiction || "",
-        city: registration.city || "",
-        state: registration.state || "",
-        priestEmail: registration.priestEmail || "",
-        treasurerEmail: registration.treasurerEmail || "",
-        givingStatus: registration.givingStatus || "active",
-        subscriptionTier: registration.subscriptionTier || defaultSubscriptionTier(registration),
-        subscriptionStatus: registration.subscriptionStatus || "not_started",
-        stripeAccountStatus: registration.stripeAccountStatus || "not_started",
-        dashboardInviteEmailStatus: registration.dashboardInviteEmailStatus || "",
-        adminNotificationEmailStatus: registration.adminNotificationEmailStatus || "",
-        receivedAt: registration.receivedAt || ""
-      });
+      if (status && status !== "all" && registration.status !== status) continue;
+      if (query) {
+        const haystack = [
+          registration.parishName,
+          registration.city,
+          registration.state,
+          registration.jurisdiction,
+          registration.priestEmail,
+          registration.treasurerEmail
+        ].filter(Boolean).join(" ").toLowerCase();
+        if (!haystack.includes(query)) continue;
+      }
+      registrations.push(adminRegistrationSummary(registration, key.name));
     } catch {
       registrations.push({ reference: key.name, status: "unreadable" });
     }
   }
 
   registrations.sort((a, b) => String(b.receivedAt).localeCompare(String(a.receivedAt)));
-  return json({ registrations, cursor: null });
+  return { registrations, cursor: null, hasMore: false, limit, source: "kv" };
 }
 
-async function loadAllRegistrations(env) {
-  if (d1(env)) {
-    const rows = await d1All(env, "SELECT data FROM registrations ORDER BY received_at DESC LIMIT 1000");
-    if (rows.length) return rows.map(parseJsonRow).filter(Boolean);
+async function handleAdminRegistrations(request, env) {
+  const limited = await rateLimit(request, env, "admin-auth", { limit: 20, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!(await requireAdmin(request, env))) return unauthorized();
+  if (!hasProductionStore(env)) {
+    return missingProductionStoreResponse();
   }
 
-  return loadAllKvRegistrations(env);
+  const url = new URL(request.url);
+  const page = await loadAdminRegistrationPage(env, {
+    limit: url.searchParams.get("limit"),
+    cursor: url.searchParams.get("cursor"),
+    status: url.searchParams.get("status"),
+    q: url.searchParams.get("q") || url.searchParams.get("search")
+  });
+  return json(page);
 }
 
-async function loadAllKvRegistrations(env) {
+async function loadAllRegistrations(env, options = {}) {
+  const hardLimit = clampListLimit(options.hardLimit, 10000, 25000);
+  if (d1(env)) {
+    const registrations = [];
+    let cursor = "";
+    do {
+      const decoded = decodeListCursor(cursor);
+      const where = [];
+      const params = [];
+      if (options.status) {
+        where.push("status = ?");
+        params.push(options.status);
+      }
+      if (decoded) {
+        where.push("(received_at < ? OR (received_at = ? AND reference < ?))");
+        params.push(decoded.receivedAt, decoded.receivedAt, decoded.reference);
+      }
+      const rows = await d1All(
+        env,
+        `SELECT reference, received_at, data
+         FROM registrations
+         ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+         ORDER BY received_at DESC, reference DESC
+         LIMIT ?`,
+        ...params,
+        501
+      );
+      const pageRows = rows.slice(0, 500);
+      registrations.push(...pageRows.map(safeParseJsonRow).filter(Boolean));
+      if (registrations.length >= hardLimit) return registrations.slice(0, hardLimit);
+      cursor = rows.length > 500 ? encodeListCursor(pageRows[pageRows.length - 1]) : "";
+    } while (cursor);
+    return registrations;
+  }
+
+  return loadAllKvRegistrations(env, { hardLimit });
+}
+
+async function loadAllKvRegistrations(env, options = {}) {
   if (!env.AGAPAY_REGISTRATIONS) return [];
 
-  const keys = await listKvKeys(env, { limit: 1000 });
+  const keys = await listKvKeys(env, { limit: options.hardLimit || 10000 });
   const registrations = [];
 
   for (const key of keys) {
@@ -4018,7 +4197,6 @@ async function handleAdminPlatformSummary(request, env) {
   if (!(await requireAdmin(request, env))) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
-  const registrations = await loadAllRegistrations(env);
   const now = new Date();
   const year = now.getUTCFullYear();
   const monthly = Array.from({ length: 12 }, (_, index) => ({
@@ -4035,18 +4213,61 @@ async function handleAdminPlatformSummary(request, env) {
   let connectedStripeAccounts = 0;
   const connected = [];
 
-  for (const registration of registrations) {
-    totalRegistered += 1;
-    if (registration.status === "verified") totalVerified += 1;
-    if (registration.stripeAccountId) {
-      connectedStripeAccounts += 1;
-      connected.push(registration);
+  if (d1(env)) {
+    const totals = await d1First(
+      env,
+      `SELECT
+         COUNT(*) AS total_registered,
+         SUM(CASE WHEN status = 'verified' THEN 1 ELSE 0 END) AS total_verified,
+         SUM(CASE WHEN COALESCE(stripe_account_id, '') != '' THEN 1 ELSE 0 END) AS connected_stripe_accounts
+       FROM registrations`
+    );
+    totalRegistered = Number(totals?.total_registered || 0);
+    totalVerified = Number(totals?.total_verified || 0);
+    connectedStripeAccounts = Number(totals?.connected_stripe_accounts || 0);
+
+    const monthRows = await d1All(
+      env,
+      `SELECT
+         CAST(strftime('%m', received_at) AS INTEGER) AS month,
+         COUNT(*) AS registered,
+         SUM(CASE WHEN status = 'verified' THEN 1 ELSE 0 END) AS verified
+       FROM registrations
+       WHERE received_at >= ?1 AND received_at < ?2
+       GROUP BY month`,
+      `${year}-01-01T00:00:00.000Z`,
+      `${year + 1}-01-01T00:00:00.000Z`
+    );
+    for (const row of monthRows) {
+      const target = monthly[Number(row.month || 0) - 1];
+      if (!target) continue;
+      target.registered = Number(row.registered || 0);
+      target.verified = Number(row.verified || 0);
     }
 
-    const received = registration.receivedAt ? new Date(registration.receivedAt) : null;
-    if (received && !Number.isNaN(received.getTime()) && received.getUTCFullYear() === year) {
-      monthly[received.getUTCMonth()].registered += 1;
-      if (registration.status === "verified") monthly[received.getUTCMonth()].verified += 1;
+    const connectedRows = await d1All(
+      env,
+      `SELECT data FROM registrations
+       WHERE COALESCE(stripe_account_id, '') != ''
+       ORDER BY received_at DESC, reference DESC
+       LIMIT 2000`
+    );
+    connected.push(...connectedRows.map(safeParseJsonRow).filter(Boolean));
+  } else {
+    const registrations = await loadAllRegistrations(env);
+    for (const registration of registrations) {
+      totalRegistered += 1;
+      if (registration.status === "verified") totalVerified += 1;
+      if (registration.stripeAccountId) {
+        connectedStripeAccounts += 1;
+        connected.push(registration);
+      }
+
+      const received = registration.receivedAt ? new Date(registration.receivedAt) : null;
+      if (received && !Number.isNaN(received.getTime()) && received.getUTCFullYear() === year) {
+        monthly[received.getUTCMonth()].registered += 1;
+        if (registration.status === "verified") monthly[received.getUTCMonth()].verified += 1;
+      }
     }
   }
 
@@ -4151,8 +4372,32 @@ async function handleAdminReleaseStatus(request, env) {
   if (limited) return limited;
   if (!(await requireAdmin(request, env))) return unauthorized();
 
-  const registrations = hasProductionStore(env) ? await loadAllRegistrations(env) : [];
-  const verified = registrations.filter((registration) => registration.status === "verified");
+  let registrationCount = 0;
+  let verifiedCount = 0;
+  let stripeReadyCount = 0;
+  let subscriptionReadyCount = 0;
+  if (hasProductionStore(env) && d1(env)) {
+    const row = await d1First(
+      env,
+      `SELECT
+         COUNT(*) AS registration_count,
+         SUM(CASE WHEN status = 'verified' THEN 1 ELSE 0 END) AS verified_count,
+         SUM(CASE WHEN status = 'verified' AND json_extract(data, '$.stripeAccountStatus') IN ('charges_enabled', 'payouts_enabled') THEN 1 ELSE 0 END) AS stripe_ready_count,
+         SUM(CASE WHEN status = 'verified' AND json_extract(data, '$.subscriptionStatus') IN ('active', 'free_forever') THEN 1 ELSE 0 END) AS subscription_ready_count
+       FROM registrations`
+    );
+    registrationCount = Number(row?.registration_count || 0);
+    verifiedCount = Number(row?.verified_count || 0);
+    stripeReadyCount = Number(row?.stripe_ready_count || 0);
+    subscriptionReadyCount = Number(row?.subscription_ready_count || 0);
+  } else if (hasProductionStore(env)) {
+    const registrations = await loadAllRegistrations(env);
+    const verified = registrations.filter((registration) => registration.status === "verified");
+    registrationCount = registrations.length;
+    verifiedCount = verified.length;
+    stripeReadyCount = verified.filter((registration) => stripeReady(registration)).length;
+    subscriptionReadyCount = verified.filter((registration) => subscriptionReady(registration)).length;
+  }
   const storedAdminPassword = d1(env)
     ? await d1GetSetting(env, ADMIN_PASSWORD_KV_KEY)
     : env.AGAPAY_REGISTRATIONS
@@ -4174,10 +4419,10 @@ async function handleAdminReleaseStatus(request, env) {
       appUrlConfigured: Boolean(env.AGAPAY_APP_URL),
       turnstileConfigured: Boolean(env.TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET_KEY),
       adminPasswordConfigured: Boolean(storedAdminPassword || env.AGAPAY_ADMIN_TOKEN),
-      registrationCount: registrations.length,
-      verifiedCount: verified.length,
-      stripeReadyCount: verified.filter((registration) => stripeReady(registration)).length,
-      subscriptionReadyCount: verified.filter((registration) => subscriptionReady(registration)).length
+      registrationCount,
+      verifiedCount,
+      stripeReadyCount,
+      subscriptionReadyCount
     }
   });
 }
@@ -6060,13 +6305,13 @@ function formatCommemorationNames(entries, field) {
 }
 
 async function sendWeeklyCommemorationEmails(env, scheduledTime) {
-  const registrations = await loadAllRegistrations(env);
+  const registrations = await loadAllRegistrations(env, { status: "verified" });
   const appUrl = env.AGAPAY_APP_URL || "https://agapay.app";
   const { start, end } = weekWindow(new Date(scheduledTime || Date.now()));
 
   const results = [];
   for (const registration of registrations) {
-    if (registration.status !== "verified" || !registration.parishId || !registration.priestEmail) continue;
+    if (!registration.parishId || !registration.priestEmail) continue;
     const entries = await loadCommemorationEntries(env, registration.parishId, start, end);
     const email = await sendEmail(env, {
       from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
@@ -6131,7 +6376,7 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/stripe/webhook") {
       return handleStripeWebhook(request, env);
     }
-    if (request.method === "GET" && url.pathname === "/api/parishes") return handleParishes(env);
+    if (request.method === "GET" && url.pathname === "/api/parishes") return handleParishes(request, env);
     if (request.method === "GET" && url.pathname === "/api/platform/summary") return handlePublicPlatformSummary(env);
     if (request.method === "GET" && url.pathname === "/api/subscription-tiers") {
       return json({ tiers: publicSubscriptionTiers() });

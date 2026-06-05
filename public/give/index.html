@@ -1056,13 +1056,24 @@
       `;
     }
 
-    async function loadParishes() {
-      try {
-        const response = await fetch("/api/parishes");
+    async function fetchAllParishes() {
+      const parishes = [];
+      let cursor = "";
+      do {
+        const params = new URLSearchParams({ limit: "250" });
+        if (cursor) params.set("cursor", cursor);
+        const response = await fetch("/api/parishes?" + params.toString());
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Unable to load communities");
+        parishes.push(...(Array.isArray(result.parishes) ? result.parishes : []));
+        cursor = result.cursor || "";
+      } while (cursor);
+      return parishes;
+    }
 
-        const parishes = Array.isArray(result.parishes) ? result.parishes : [];
+    async function loadParishes() {
+      try {
+        const parishes = await fetchAllParishes();
         const monasteries = parishes.filter(parish => parish.type === "monastery");
         const communities = parishes.filter(parish => parish.type !== "monastery");
 

@@ -856,6 +856,21 @@
       if (el) el.textContent = value;
     }
 
+    async function fetchAllParishes() {
+      const parishes = [];
+      let cursor = '';
+      do {
+        const params = new URLSearchParams({ limit: '250' });
+        if (cursor) params.set('cursor', cursor);
+        const response = await fetch('/api/parishes?' + params.toString());
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to load parish');
+        parishes.push(...(result.parishes || []));
+        cursor = result.cursor || '';
+      } while (cursor);
+      return parishes;
+    }
+
     function renderFunds(funds) {
       const fundOptions = document.querySelector('.fund-options');
       if (!fundOptions || !funds || !funds.length) return;
@@ -875,16 +890,13 @@
 
     async function loadCurrentParish() {
       try {
-        const response = await fetch('/api/parishes');
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Unable to load parish');
-
         const slug = parishSlugFromPath();
         if (!slug) {
           window.location.href = '/give';
           return;
         }
-        const parish = result.parishes.find(item => item.id === slug);
+        const parishes = await fetchAllParishes();
+        const parish = parishes.find(item => item.id === slug);
         if (!parish) {
           alert('This parish is not currently active in AGAPAY.');
           window.location.href = '/give';

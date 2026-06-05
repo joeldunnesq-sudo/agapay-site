@@ -229,8 +229,7 @@ async function loadPublicParishes(selectId = "parish") {
     if (selectId === "parish" && typeof toggleGiftDetailFields === "function") toggleGiftDetailFields();
   }
   try {
-    const data = await donorApi("/api/parishes", { headers: { Accept: "application/json" } });
-    const parishes = data.parishes || [];
+    const parishes = await fetchPublicParishes();
     window.agapayPublicParishes = parishes;
     writeDonorCache("parishes", { parishes });
     if (parishes.length) {
@@ -242,6 +241,19 @@ async function loadPublicParishes(selectId = "parish") {
   } catch {
     return [];
   }
+}
+
+async function fetchPublicParishes() {
+  const parishes = [];
+  let cursor = "";
+  do {
+    const params = new URLSearchParams({ limit: "250" });
+    if (cursor) params.set("cursor", cursor);
+    const data = await donorApi(`/api/parishes?${params.toString()}`, { headers: { Accept: "application/json" } });
+    parishes.push(...(data.parishes || []));
+    cursor = data.cursor || "";
+  } while (cursor);
+  return parishes;
 }
 
 function parishOptionLabel(parish) {
@@ -1225,7 +1237,7 @@ async function loadDonorCommemorationsPage() {
 
   try {
     const [parishesResult, dashboardResult, commemorationsResult] = await Promise.allSettled([
-      donorApi("/api/parishes", { headers: { Accept: "application/json" } }),
+      fetchPublicParishes(),
       donorApi("/api/donor/dashboard"),
       donorApi("/api/donor/commemorations")
     ]);
@@ -1234,7 +1246,7 @@ async function loadDonorCommemorationsPage() {
     if (commemorationsResult.status === "rejected" && isDonorUnauthorized(commemorationsResult.reason)) throw commemorationsResult.reason;
 
     if (parishesResult.status === "fulfilled") {
-      window.agapayPublicParishes = parishesResult.value.parishes || [];
+      window.agapayPublicParishes = parishesResult.value || [];
       writeDonorCache("parishes", { parishes: window.agapayPublicParishes });
       primeCommemorationParishDisplay();
     }
