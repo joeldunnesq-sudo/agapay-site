@@ -4,7 +4,7 @@
 
   const links = [
     { href: "/vision", label: "Vision" },
-    { href: "/give", label: "Giving" },
+    { href: "/giving", label: "Giving" },
     { href: "/marketplace", label: "Marketplace" },
     { href: "/directory", label: "Directory" },
     { href: "/how-it-works", label: "Resources" },

@@ -3891,61 +3891,10 @@ async function handleDonorCommemorations(request, env) {
     return json({ entries });
   }
 
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  const limited = await rateLimit(request, env, "donor-commemorations", { limit: 20, windowSeconds: 300 });
-  if (limited) return limited;
-
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parishId = body.parishId || donor.defaultParishId;
-  const living = splitSubmittedNames(body.namesLiving);
-  const departed = splitSubmittedNames(body.namesDeparted);
-  if (!parishId) return json({ error: "Parish is required" }, { status: 422 });
-  if (!living.length && !departed.length) return json({ error: "At least one living or departed name is required" }, { status: 422 });
-
-  const parish = await findCheckoutParish(env, parishId);
-  if (!parish || parish.status !== "verified") return json({ error: "Verified parish not found" }, { status: 404 });
-
-  const entry = await storeCommemorationEntry(env, crypto.randomUUID(), {
-    parish_id: parish.id,
-    parish_name: parish.name || "",
-    donor_email: donor.email,
-    donor_name: donor.donorName || donor.householdName || "",
-    gift_type: body.giftType || "commemoration",
-    frequency: "once",
-    names_living: body.namesLiving || "",
-    names_departed: body.namesDeparted || ""
-  }, {
-    parishId: parish.id,
-    donorEmail: donor.email,
-    donorName: donor.donorName || donor.householdName || "",
-    giftType: body.giftType || "commemoration",
-    amountCents: 0
-  });
-
-  await storeDonorOffering(env, {
-    id: `commemoration-${entry.id}`,
-    donorEmail: donor.email,
-    donorName: donor.donorName || donor.householdName || "",
-    parishId: parish.id,
-    parishName: parish.name,
-    giftType: body.giftType || "commemoration",
-    title: `${parish.name} - commemoration submission`,
-    amountCents: 0,
-    chargeCents: 0,
-    status: "queued",
-    paymentStatus: "no_payment_required",
-    namesLiving: body.namesLiving || "",
-    namesDeparted: body.namesDeparted || "",
-    createdAt: entry.createdAt
-  });
-
-  return json({ ok: true, entry }, { status: 201 });
+  return json(
+    { error: "Commemoration submissions now require checkout", detail: "Use /api/create-checkout-session with giftType=commemoration so names are attached to a paid offering." },
+    { status: 405 }
+  );
 }
 
 function adminRegistrationSummary(registration = {}, fallbackReference = "") {
@@ -6239,7 +6188,7 @@ function cleanAssetRequest(request) {
     url.pathname = "/parish/dashboard.html";
     return new Request(url, request);
   }
-  if (url.pathname === "/give" || url.pathname === "/give/") {
+  if (url.pathname === "/give" || url.pathname === "/give/" || url.pathname === "/giving" || url.pathname === "/giving/") {
     url.pathname = "/give/index.html";
     return new Request(url, request);
   }
@@ -6263,7 +6212,15 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/parish-giving.html";
     return new Request(url, request);
   }
+  if (url.pathname === "/giving/parish-giving") {
+    url.pathname = "/give/parish-giving.html";
+    return new Request(url, request);
+  }
   if (url.pathname === "/give/recurring-donations") {
+    url.pathname = "/give/recurring-donations.html";
+    return new Request(url, request);
+  }
+  if (url.pathname === "/giving/recurring-donations") {
     url.pathname = "/give/recurring-donations.html";
     return new Request(url, request);
   }
@@ -6271,7 +6228,15 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/fundraising.html";
     return new Request(url, request);
   }
+  if (url.pathname === "/giving/fundraising") {
+    url.pathname = "/give/fundraising.html";
+    return new Request(url, request);
+  }
   if (url.pathname === "/give/event-payments") {
+    url.pathname = "/give/event-payments.html";
+    return new Request(url, request);
+  }
+  if (url.pathname === "/giving/event-payments") {
     url.pathname = "/give/event-payments.html";
     return new Request(url, request);
   }
@@ -6352,24 +6317,24 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
-    if (request.method === "GET" && (url.pathname === "/give.html" || url.pathname === "/giving" || url.pathname === "/giving/" || url.pathname === "/giving/index.html")) {
-      url.pathname = "/give";
+    if (request.method === "GET" && (url.pathname === "/give" || url.pathname === "/give/" || url.pathname === "/give.html" || url.pathname === "/giving/index.html")) {
+      url.pathname = "/giving";
       return Response.redirect(url.toString(), 301);
     }
-    if (request.method === "GET" && (url.pathname === "/giving/parish-giving" || url.pathname === "/giving/parish-giving.html")) {
-      url.pathname = "/give/parish-giving";
+    if (request.method === "GET" && (url.pathname === "/give/parish-giving" || url.pathname === "/give/parish-giving.html" || url.pathname === "/giving/parish-giving.html")) {
+      url.pathname = "/giving/parish-giving";
       return Response.redirect(url.toString(), 301);
     }
-    if (request.method === "GET" && (url.pathname === "/giving/recurring-donations" || url.pathname === "/giving/recurring-donations.html")) {
-      url.pathname = "/give/recurring-donations";
+    if (request.method === "GET" && (url.pathname === "/give/recurring-donations" || url.pathname === "/give/recurring-donations.html" || url.pathname === "/giving/recurring-donations.html")) {
+      url.pathname = "/giving/recurring-donations";
       return Response.redirect(url.toString(), 301);
     }
-    if (request.method === "GET" && (url.pathname === "/giving/fundraising" || url.pathname === "/giving/fundraising.html")) {
-      url.pathname = "/give/fundraising";
+    if (request.method === "GET" && (url.pathname === "/give/fundraising" || url.pathname === "/give/fundraising.html" || url.pathname === "/giving/fundraising.html")) {
+      url.pathname = "/giving/fundraising";
       return Response.redirect(url.toString(), 301);
     }
-    if (request.method === "GET" && (url.pathname === "/giving/event-payments" || url.pathname === "/giving/event-payments.html")) {
-      url.pathname = "/give/event-payments";
+    if (request.method === "GET" && (url.pathname === "/give/event-payments" || url.pathname === "/give/event-payments.html" || url.pathname === "/giving/event-payments.html")) {
+      url.pathname = "/giving/event-payments";
       return Response.redirect(url.toString(), 301);
     }
 
