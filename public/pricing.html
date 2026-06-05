@@ -117,16 +117,19 @@
     .tier-features li .ck svg { width: 16px; height: 16px; stroke: var(--gold-dark); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
     .tier-card .small-btn { margin-top: auto; width: 100%; min-height: 42px; font-size: 0.75rem; }
 
-    .fee-banner { margin-top: 1.25rem; border: 1px solid rgba(200, 162, 74, 0.42); border-radius: 14px; background: rgba(255, 253, 248, 0.86); display: grid; grid-template-columns: 1.35fr 1fr 1.05fr; gap: 1rem; align-items: center; padding: 1.1rem 1.25rem; }
+    .fee-banner { margin-top: 1.25rem; border: 1px solid rgba(200, 162, 74, 0.42); border-radius: 14px; background: linear-gradient(135deg, rgba(255, 253, 248, 0.94), rgba(248, 242, 231, 0.82)); display: grid; grid-template-columns: minmax(270px, 0.88fr) minmax(420px, 1.2fr) minmax(260px, 0.82fr); gap: 1rem; align-items: stretch; padding: 1.1rem 1.25rem; box-shadow: 0 12px 30px rgba(6, 21, 34, 0.06); }
     .fee-main { display: grid; grid-template-columns: auto 1fr; gap: 0.9rem; align-items: center; }
     .fee-badge { width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center; background: var(--night); color: var(--gold); border: 2px solid var(--gold); font-family: var(--serif); font-size: 2rem; box-shadow: 0 8px 22px rgba(6, 21, 34, 0.14); }
     .fee-main h2 { font-family: var(--serif); color: var(--night); font-size: clamp(1.8rem, 3vw, 2.45rem); line-height: 1.04; font-weight: 600; }
     .fee-main p, .fee-note p { color: #34434B; line-height: 1.55; font-size: 0.96rem; }
-    .fee-split { border-left: 1px solid rgba(166, 159, 145, 0.28); border-right: 1px solid rgba(166, 159, 145, 0.28); padding: 0 1rem; display: grid; gap: 0.6rem; }
-    .fee-line { display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: 0.5rem; color: #273640; font-size: 0.85rem; line-height: 1.35; }
-    .fee-line strong { font-family: var(--serif); color: var(--gold-dark); font-size: 1.12rem; white-space: nowrap; }
-    .fee-note { display: grid; grid-template-columns: auto 1fr; gap: 0.8rem; align-items: center; }
+    .fee-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+    .fee-line { border: 1px solid rgba(200, 162, 74, 0.28); border-radius: 12px; background: rgba(255, 253, 248, 0.76); padding: 0.86rem; display: grid; align-content: start; gap: 0.34rem; color: #273640; font-size: 0.88rem; line-height: 1.38; min-height: 100%; }
+    .fee-line strong { font-family: var(--serif); color: var(--night); font-size: 1.22rem; line-height: 1.05; }
+    .fee-line .fee-label { color: var(--gold-dark); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+    .fee-line small { color: #5A646C; font-size: 0.77rem; line-height: 1.45; }
+    .fee-note { border-left: 1px solid rgba(166, 159, 145, 0.24); padding-left: 1rem; display: grid; grid-template-columns: auto 1fr; gap: 0.8rem; align-items: center; }
     .fee-note svg { width: 52px; height: 52px; stroke: #A5792B; fill: none; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; }
+    .fee-note strong { display: block; color: var(--night); font-family: var(--serif); font-size: 1.12rem; line-height: 1.15; margin-bottom: 0.18rem; }
 
     .lower-grid { margin-top: 1.25rem; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr); gap: 1rem; }
     .calculator, .value-card { border: 1px solid rgba(166, 159, 145, 0.34); border-radius: 14px; background: rgba(255, 253, 248, 0.92); box-shadow: 0 10px 26px rgba(6, 21, 34, 0.06); overflow: hidden; }
@@ -197,7 +200,8 @@
       .hero-art { min-height: 300px; order: 2; background-position: center; margin-top: 0.5rem; }
       .pricing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .fee-banner, .lower-grid, .closing-cta { grid-template-columns: 1fr; }
-      .fee-split { border: 0; border-top: 1px solid rgba(166, 159, 145, 0.24); border-bottom: 1px solid rgba(166, 159, 145, 0.24); padding: 1rem 0; }
+      .fee-split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .fee-note { border-left: 0; border-top: 1px solid rgba(166, 159, 145, 0.24); padding: 1rem 0 0; }
       .footer-grid { grid-template-columns: 1fr 1fr; }
       .footer-bottom { flex-direction: column; }
     }
@@ -210,6 +214,9 @@
       .hero-actions, .hero-btn-primary, .hero-btn-secondary { width: 100%; }
       .pricing-content { padding: 1.2rem 0.8rem 1.5rem; }
       .pricing-grid, .calculator, .faq-grid { grid-template-columns: 1fr; }
+      .fee-main { grid-template-columns: 1fr; }
+      .fee-badge { width: 58px; height: 58px; font-size: 1.6rem; }
+      .fee-split { grid-template-columns: 1fr; }
       .payment-method-grid { grid-template-columns: 1fr; }
       .calc-results { border-left: 0; border-top: 1px solid rgba(166, 159, 145, 0.24); }
       .closing-actions { min-width: 0; }
@@ -313,17 +320,27 @@
         <div class="fee-main">
           <div class="fee-badge">%</div>
           <div>
-            <h2>Two clear payment paths.</h2>
-            <p>Card, wallet, and Instant Bank Payment gifts use AGAPAY's simple 5% + $0.30 total donation fee. Instant Bank Payments through Link use Stripe's 2.6% + $0.30 processing rate and can affect payout timing while bank payments settle.</p>
+            <h2>Two ways to give. One clear fee model.</h2>
+            <p>Every donation uses AGAPAY's simple 5% + $0.30 total fee. Donors can give by card or wallet, or by Instant Bank Payment through Link.</p>
           </div>
         </div>
         <div class="fee-split">
-          <div class="fee-line"><strong>Card</strong><span>5% + $0.30 total, including estimated Stripe card processing of about 2.9% + $0.30 and the AGAPAY platform share.</span></div>
-          <div class="fee-line"><strong>Instant Bank</strong><span>5% + $0.30 total, including Stripe Instant Bank Payments via Link at 2.6% + $0.30 and the remaining AGAPAY platform share.</span></div>
+          <div class="fee-line">
+            <span class="fee-label">Card & wallet</span>
+            <strong>Familiar, fast checkout</strong>
+            <span>Includes cards, Apple Pay, and Google Pay when available.</span>
+            <small>Stripe processing estimate: 2.9% + $0.30. AGAPAY receives the remaining platform share inside the 5% + $0.30 total.</small>
+          </div>
+          <div class="fee-line">
+            <span class="fee-label">Instant Bank Payment</span>
+            <strong>Lower Stripe processing</strong>
+            <span>Powered by Link for donors who prefer verified bank payment.</span>
+            <small>Stripe processing estimate: 2.6% + $0.30. Settlement and parish payout timing can differ while the bank payment clears.</small>
+          </div>
         </div>
         <div class="fee-note">
-          <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/><path d="M8 14h8"/><path d="M12 10v8"/></svg>
-          <p>Instant Bank Payments are confirmed immediately through Link, but Stripe settlement and payout timing can still differ from card and wallet gifts.</p>
+          <svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5 20V9l7-5 7 5v11"/><path d="M8 12h5"/><path d="M8 16h4"/><circle cx="17" cy="16" r="4"/><path d="M17 14v2l1.5 1"/></svg>
+          <p><strong>Transparent at checkout.</strong> Donors can choose whether to cover fees. Treasurers see the Stripe processing portion and the AGAPAY platform fee clearly in reporting.</p>
         </div>
       </aside>
 
