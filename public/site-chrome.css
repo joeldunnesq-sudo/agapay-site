@@ -260,7 +260,7 @@ body.agp-shell-ready {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.22s ease;
-  z-index: 109;
+  z-index: 210;
 }
 
 body.drawer-open .drawer-backdrop[data-shell="canonical"] {
@@ -289,7 +289,7 @@ body.drawer-open .drawer-backdrop[data-shell="canonical"] {
   transform: translateX(105%);
   transition: transform 0.24s ease;
   overflow: hidden;
-  z-index: 110;
+  z-index: 220;
 }
 
 body.drawer-open .mobile-drawer[data-shell="canonical"] {
