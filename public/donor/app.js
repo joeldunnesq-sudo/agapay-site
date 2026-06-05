@@ -869,44 +869,62 @@ async function verifyDonorEmail() {
   }
 }
 
+function cacheDonorDashboardPayload(data) {
+  if (!data) return;
+  writeDonorCache("dashboard", data);
+  if (data.recentOfferings) {
+    writeDonorCache("offerings", {
+      offerings: data.recentOfferings,
+      summary: data.summary || {}
+    });
+  }
+  if (data.recentCommemorations) {
+    writeDonorCache("commemorations", { entries: data.recentCommemorations });
+  }
+}
+
+function renderDonorDashboardPayload(data) {
+  if (!data) return;
+  setDonorProfile(data.donor);
+  const summary = data.summary || {};
+  const parish = data.parish || null;
+  const recentOfferings = data.recentOfferings || [];
+
+  setText("metricMonth", money(summary.monthCents));
+  setText("metricYtd", money(summary.ytdCents));
+  setText("metricOfferings", String(summary.offeringCount || 0));
+  setText("metricCommemorations", String(summary.commemorationCount || 0));
+  setText("metricRecurring", String(summary.recurringCount || 0));
+  setText("donorParishName", parish?.name || "Choose a church in Settings");
+  setText("desktopMetricMonth", money(summary.monthCents));
+  setText("desktopMetricYtd", money(summary.ytdCents));
+  setText("desktopMetricOfferings", String(summary.offeringCount || 0));
+  setText("desktopMetricCommemorations", String(summary.commemorationCount || 0));
+  setText("desktopParishName", parish?.name || "Choose a church in Settings to personalize your dashboard.");
+
+  updateQuickGiveLinks(parish);
+  renderActiveCampaigns(parish);
+  renderNextFeast(parish);
+
+  const recent = document.getElementById("recentOfferings");
+  if (recent) recent.innerHTML = offeringRows(recentOfferings);
+  const desktopRecent = document.getElementById("desktopRecentOfferings");
+  if (desktopRecent) desktopRecent.innerHTML = offeringRows(recentOfferings);
+}
+
 async function loadDonorDashboardPage() {
   const session = donorSession();
   if (!session.email || !session.token) {
     showGuestDonorDashboard();
     return;
   }
+  const cachedDashboard = readDonorCache("dashboard");
+  if (cachedDashboard) renderDonorDashboardPayload(cachedDashboard);
   try {
     const data = await donorApi("/api/donor/dashboard");
-    writeDonorCache("dashboard", data);
-    if (data.recentOfferings) {
-      writeDonorCache("offerings", {
-        offerings: data.recentOfferings,
-        summary: data.summary || {}
-      });
-    }
-    if (data.recentCommemorations) {
-      writeDonorCache("commemorations", { entries: data.recentCommemorations });
-    }
-    setDonorProfile(data.donor);
-    const summary = data.summary || {};
-    setText("metricMonth", money(summary.monthCents));
-    setText("metricYtd", money(summary.ytdCents));
-    setText("metricOfferings", String(summary.offeringCount || 0));
-    setText("metricCommemorations", String(summary.commemorationCount || 0));
-    setText("metricRecurring", String(summary.recurringCount || 0));
-    setText("donorParishName", data.parish?.name || "Choose a church in Settings");
-    setText("desktopMetricMonth", money(summary.monthCents));
-    setText("desktopMetricYtd", money(summary.ytdCents));
-    setText("desktopMetricOfferings", String(summary.offeringCount || 0));
-    setText("desktopMetricCommemorations", String(summary.commemorationCount || 0));
-    setText("desktopParishName", data.parish?.name || "Choose a church in Settings to personalize your dashboard.");
-    updateQuickGiveLinks(data.parish);
-    renderActiveCampaigns(data.parish);
-    renderNextFeast(data.parish);
-    const recent = document.getElementById("recentOfferings");
-    if (recent) recent.innerHTML = offeringRows(data.recentOfferings || []);
-    const desktopRecent = document.getElementById("desktopRecentOfferings");
-    if (desktopRecent) desktopRecent.innerHTML = offeringRows(data.recentOfferings || []);
+    cacheDonorDashboardPayload(data);
+    renderDonorDashboardPayload(data);
+    setDonorStatus("");
   } catch (err) {
     if (isDonorUnauthorized(err)) {
       clearDonorSession();
