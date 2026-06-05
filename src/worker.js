@@ -1094,7 +1094,7 @@ function estimateStripeProcessingFeeCents(chargeCents) {
 
 function estimateStripeAchFeeCents(chargeCents) {
   if (!Number.isFinite(chargeCents) || chargeCents <= 0) return 0;
-  return Math.max(0, Math.min(500, Math.round(chargeCents * 0.008)));
+  return Math.max(0, Math.round(chargeCents * 0.026 + 30));
 }
 
 function grossUpForStripeProcessingFeeCents(netAmountCents) {
@@ -1116,7 +1116,7 @@ function grossUpForStripeProcessingFeeCents(netAmountCents) {
 function grossUpForAchFeeCents(netAmountCents, agapayFeeCents) {
   if (!Number.isFinite(netAmountCents) || netAmountCents <= 0) return 0;
   const targetAfterStripe = netAmountCents + Math.max(0, Number(agapayFeeCents) || 0);
-  let chargeCents = Math.max(targetAfterStripe, Math.ceil(targetAfterStripe / (1 - 0.008)));
+  let chargeCents = Math.max(targetAfterStripe, Math.ceil((targetAfterStripe + 30) / (1 - 0.026)));
   while (chargeCents - estimateStripeAchFeeCents(chargeCents) < targetAfterStripe) chargeCents += 1;
   while (
     chargeCents > targetAfterStripe
@@ -1150,14 +1150,14 @@ function checkoutFinancials(amountCents, coverFees, recurring, paymentMethod = "
   }
 
   if (method === "ach") {
-    const agapayFeeCents = Math.round(amountCents * 0.021);
-    const chargeCents = coverFees ? grossUpForAchFeeCents(amountCents, agapayFeeCents) : amountCents;
+    const chargeCents = coverFees ? amountCents + totalTransactionFeeCents : amountCents;
     const estimatedStripeFeeCents = estimateStripeAchFeeCents(chargeCents);
+    const agapayFeeCents = Math.max(0, totalTransactionFeeCents - estimatedStripeFeeCents);
     return {
       chargeCents,
       estimatedStripeFeeCents,
       agapayFeeCents,
-      totalTransactionFeeCents: estimatedStripeFeeCents + agapayFeeCents,
+      totalTransactionFeeCents,
       paymentMethod: method
     };
   }
@@ -1170,6 +1170,41 @@ function checkoutFinancials(amountCents, coverFees, recurring, paymentMethod = "
     agapayFeeCents: Math.max(0, totalTransactionFeeCents - estimatedStripeFeeCents),
     totalTransactionFeeCents,
     paymentMethod: method
+  };
+}
+
+function numericCents(value) {
+  const number = Number(value || 0);
+  return Number.isFinite(number) ? Math.round(number) : 0;
+}
+
+function offeringFeeBreakdown(offering = {}) {
+  const giftAmountCents = numericCents(offering.giftAmountCents || offering.amountCents);
+  const chargeCents = numericCents(offering.chargeCents || offering.amountChargedCents || giftAmountCents);
+  const stripeFeeCents = numericCents(offering.stripeFeeCents || offering.estimatedStripeFeeCents);
+  const agapayFeeCents = numericCents(offering.agapayFeeCents);
+  const totalFeeCents = numericCents(offering.totalFeeCents || stripeFeeCents + agapayFeeCents);
+  const coverFees = Boolean(offering.coverFees);
+  const donorCoveredFeeCents = coverFees
+    ? numericCents(offering.donorCoveredFeeCents || Math.max(0, chargeCents - giftAmountCents))
+    : 0;
+  const parishNetCents = Math.max(
+    0,
+    numericCents(
+      offering.parishNetCents
+      || offering.netCents
+      || (coverFees ? giftAmountCents : giftAmountCents - totalFeeCents)
+    )
+  );
+  return {
+    giftAmountCents,
+    chargeCents,
+    stripeFeeCents,
+    agapayFeeCents,
+    totalFeeCents,
+    donorCoveredFeeCents,
+    parishNetCents,
+    coverFees
   };
 }
 
@@ -1735,6 +1770,7 @@ async function storeDonorOffering(env, offering) {
   if (!hasProductionStore(env) || !offering?.donorEmail) return null;
   const email = normalizeEmail(offering.donorEmail);
   const id = offering.id || crypto.randomUUID();
+  const fees = offeringFeeBreakdown(offering);
   const record = {
     id,
     donorEmail: email,
@@ -1748,11 +1784,17 @@ async function storeDonorOffering(env, offering) {
     feastDescription: offering.feastDescription || "",
     inMemoriam: offering.inMemoriam || "",
     frequency: offering.frequency || "once",
-    amountCents: Number(offering.amountCents || 0),
-    chargeCents: Number(offering.chargeCents || offering.amountCents || 0),
-    agapayFeeCents: Number(offering.agapayFeeCents || 0),
-    estimatedStripeFeeCents: Number(offering.estimatedStripeFeeCents || 0),
-    coverFees: Boolean(offering.coverFees),
+    paymentMethod: offering.paymentMethod || "",
+    amountCents: fees.giftAmountCents,
+    giftAmountCents: fees.giftAmountCents,
+    chargeCents: fees.chargeCents,
+    stripeFeeCents: fees.stripeFeeCents,
+    estimatedStripeFeeCents: fees.stripeFeeCents,
+    agapayFeeCents: fees.agapayFeeCents,
+    totalFeeCents: fees.totalFeeCents,
+    parishNetCents: fees.parishNetCents,
+    donorCoveredFeeCents: fees.donorCoveredFeeCents,
+    coverFees: fees.coverFees,
     status: offering.status || "checkout_created",
     paymentStatus: offering.paymentStatus || "pending",
     checkoutSessionId: offering.checkoutSessionId || "",
@@ -2071,22 +2113,52 @@ function donorSummaryFromOfferings(offerings, commemorations = []) {
   const ytd = offerings.filter((item) => new Date(item.createdAt || 0).getUTCFullYear() === year);
   const paid = ytd.filter(paidOfferingStatus);
   const recurring = offerings.filter((item) => item.frequency && item.frequency !== "once");
-  const ytdCents = paid.reduce((sum, item) => sum + Number(item.amountCents || 0), 0);
+  const ytdCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).giftAmountCents, 0);
+  const parishNetYtdCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).parishNetCents, 0);
+  const feeSavingsCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).donorCoveredFeeCents, 0);
+  const feeCoveredCount = paid.filter((item) => offeringFeeBreakdown(item).coverFees).length;
   const monthCents = paid
     .filter((item) => {
       const created = new Date(item.createdAt || 0);
       return created.getUTCFullYear() === year && created.getUTCMonth() === month;
     })
-    .reduce((sum, item) => sum + Number(item.amountCents || 0), 0);
+    .reduce((sum, item) => sum + offeringFeeBreakdown(item).giftAmountCents, 0);
+  const parishNetMonthCents = paid
+    .filter((item) => {
+      const created = new Date(item.createdAt || 0);
+      return created.getUTCFullYear() === year && created.getUTCMonth() === month;
+    })
+    .reduce((sum, item) => sum + offeringFeeBreakdown(item).parishNetCents, 0);
   return {
     year,
     ytdCents,
     monthCents,
+    parishNetYtdCents,
+    parishNetMonthCents,
+    feeSavingsCents,
+    feeCoveragePercent: paid.length ? Math.round((feeCoveredCount / paid.length) * 100) : 0,
     offeringCount: ytd.length,
     paidOfferingCount: paid.length,
     recurringCount: recurring.length,
     commemorationCount: commemorations.reduce((sum, entry) => sum + (entry.living?.length || 0) + (entry.departed?.length || 0), 0),
     lastOfferingAt: offerings[0]?.createdAt || ""
+  };
+}
+
+function publicDonorOffering(offering = {}) {
+  const fees = offeringFeeBreakdown(offering);
+  return {
+    ...offering,
+    amountCents: fees.giftAmountCents,
+    giftAmountCents: fees.giftAmountCents,
+    chargeCents: fees.chargeCents,
+    parishNetCents: fees.parishNetCents,
+    stripeFeeCents: fees.stripeFeeCents,
+    estimatedStripeFeeCents: fees.stripeFeeCents,
+    agapayFeeCents: fees.agapayFeeCents,
+    totalFeeCents: fees.totalFeeCents,
+    donorCoveredFeeCents: fees.donorCoveredFeeCents,
+    coverFees: fees.coverFees
   };
 }
 
@@ -2438,11 +2510,21 @@ function publicParishGiftFromOffering(offering = {}) {
   const departed = Array.isArray(offering.departed)
     ? offering.departed
     : String(offering.namesDeparted || "").split(/\n+/).map((name) => name.trim()).filter(Boolean);
+  const fees = offeringFeeBreakdown(offering);
   return {
     id: offering.id || offering.checkoutSessionId || offering.paymentIntentId || "",
     date: offering.createdAt || offering.paidAt || offering.updatedAt || "",
     createdAt: offering.createdAt || offering.paidAt || offering.updatedAt || "",
-    amountCents: Number(offering.amountCents || 0),
+    amountCents: fees.parishNetCents,
+    giftAmountCents: fees.giftAmountCents,
+    chargeCents: fees.chargeCents,
+    parishNetCents: fees.parishNetCents,
+    stripeFeeCents: fees.stripeFeeCents,
+    estimatedStripeFeeCents: fees.stripeFeeCents,
+    agapayFeeCents: fees.agapayFeeCents,
+    totalFeeCents: fees.totalFeeCents,
+    donorCoveredFeeCents: fees.donorCoveredFeeCents,
+    coverFees: fees.coverFees,
     donorName: giftDisplayName(offering),
     donorEmail: offering.email || offering.donorEmail || "",
     fund: offering.fund || offering.fundId || (offering.giftType === "stewardship" ? "General Operating Fund" : ""),
@@ -3269,9 +3351,24 @@ async function sendDonorDonationReceiptEmail(env, offering = {}) {
   const donorName = htmlEscape(offering.donorName || "friend");
   const lineItem = htmlEscape(offeringLabel(offering));
   const parishName = htmlEscape(offering.parishName || "Orthodox parish");
-  const amount = formatUsdFromCents(offering.chargeCents || offering.amountCents || 0);
+  const fees = offeringFeeBreakdown(offering);
+  const amount = formatUsdFromCents(fees.giftAmountCents);
+  const chargeAmount = formatUsdFromCents(fees.chargeCents);
+  const parishReceived = formatUsdFromCents(fees.parishNetCents);
+  const totalFees = formatUsdFromCents(fees.totalFeeCents);
+  const donorCovered = formatUsdFromCents(fees.donorCoveredFeeCents);
+  const stripeReference = htmlEscape(offering.stripePaymentIntentId || offering.checkoutSessionId || offering.id || "");
   const donatedAt = htmlEscape(new Date(offering.completedAt || offering.createdAt || Date.now()).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }));
   const dashboardUrl = htmlEscape(`${String(appUrl).replace(/\/+$/, "")}/donor`);
+  const feeDetail = fees.coverFees
+    ? `<p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Fees covered by you:</strong> ${htmlEscape(donorCovered)}</p>
+       <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Parish received:</strong> ${htmlEscape(parishReceived)}</p>`
+    : `<p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Processing and AGAPAY fees deducted:</strong> ${htmlEscape(totalFees)}</p>
+       <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Parish received:</strong> ${htmlEscape(parishReceived)}</p>`;
+  const coverFeesNote = fees.coverFees ? "" : `
+      <p style="margin:0 0 18px;padding:13px 15px;border-left:3px solid #C9A25B;background:#FFF8EA;font-size:14px;line-height:1.65;color:#171715;">
+        Next time, you can choose to cover the processing fees so ${parishName} receives the full intended gift.
+      </p>`;
   return sendEmail(env, {
     from,
     to: [donorEmail],
@@ -3281,11 +3378,15 @@ async function sendDonorDonationReceiptEmail(env, offering = {}) {
       <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ, ${donorName}.</p>
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Your gift has been received successfully through AGAPAY.</p>
       <div style="margin:0 0 20px;padding:16px 18px;border:1px solid rgba(201,162,91,0.34);border-radius:12px;background:#FDF9F0;">
-        <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Amount:</strong> ${htmlEscape(amount)}</p>
+        <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Your gift:</strong> ${htmlEscape(amount)}</p>
+        <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Amount charged:</strong> ${htmlEscape(chargeAmount)}</p>
+        ${feeDetail}
         <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Parish:</strong> ${parishName}</p>
         <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Offering:</strong> ${lineItem}</p>
-        <p style="margin:0;font-size:14px;color:#171715;"><strong>Date:</strong> ${donatedAt}</p>
+        <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Date:</strong> ${donatedAt}</p>
+        ${stripeReference ? `<p style="margin:0;font-size:12px;color:#6F6A60;"><strong>Stripe reference:</strong> ${stripeReference}</p>` : ""}
       </div>
+      ${coverFeesNote}
       <p style="margin:0 0 18px;font-size:14px;line-height:1.65;color:#171715;">You can view this gift in your donor dashboard and keep track of your offering history there.</p>
       <p style="margin:0;"><a href="${dashboardUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:12px 18px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:17px;font-style:italic;font-weight:600;">Open donor dashboard</a></p>
     `)
@@ -3652,6 +3753,7 @@ async function handleDonorDashboard(request, env) {
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
 
   const offerings = await reconcilePendingDonorOfferings(env, await loadDonorOfferings(env, donor.email, 100));
+  const publicOfferings = offerings.map(publicDonorOffering);
   const commemorations = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
   const summary = donorSummaryFromOfferings(offerings, commemorations);
   let parish = null;
@@ -3665,7 +3767,7 @@ async function handleDonorDashboard(request, env) {
     donor: publicDonor(donor),
     parish,
     summary,
-    recentOfferings: offerings.slice(0, 5),
+    recentOfferings: publicOfferings.slice(0, 5),
     recentCommemorations: commemorations.slice(0, 5)
   });
 }
@@ -3676,7 +3778,7 @@ async function handleDonorOfferings(request, env) {
   if (!donor) return unauthorized();
   const offerings = await reconcilePendingDonorOfferings(env, await loadDonorOfferings(env, donor.email, 100));
   const commemorations = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
-  return json({ offerings, summary: donorSummaryFromOfferings(offerings, commemorations) });
+  return json({ offerings: offerings.map(publicDonorOffering), summary: donorSummaryFromOfferings(offerings, commemorations) });
 }
 
 async function handleDonorCommemorations(request, env) {
@@ -4575,7 +4677,7 @@ async function processStripeWebhookEvent(env, event) {
         donorName: object.metadata?.donor_name || object.customer_details?.name || updatedOffering?.donorName || "",
         giftType: object.metadata?.gift_type || updatedOffering?.giftType || "",
         frequency: object.metadata?.frequency || updatedOffering?.frequency || "once",
-        amountCents: object.amount_total || object.amount_subtotal || updatedOffering?.amountCents || 0,
+        amountCents: numericCents(object.metadata?.amount_cents) || updatedOffering?.amountCents || object.amount_subtotal || object.amount_total || 0,
         namesLiving: object.metadata?.names_living || updatedOffering?.namesLiving || "",
         namesDeparted: object.metadata?.names_departed || updatedOffering?.namesDeparted || "",
         createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
@@ -5260,6 +5362,7 @@ async function listYtdStripeCharges(env, stripeAccountId) {
       limit: "100",
       "created[gte]": String(startOfYearUnix())
     });
+    params.append("expand[]", "data.balance_transaction");
     if (startingAfter) params.set("starting_after", startingAfter);
 
     const result = await stripeGetConnectedRequest(env, `/v1/charges?${params.toString()}`, stripeAccountId);
@@ -5589,6 +5692,10 @@ function summarizeCharges(charges) {
   }));
   const givers = new Set();
   let ytdCents = 0;
+  let grossGiftCents = 0;
+  let donorCoveredFeeCents = 0;
+  let feesAbsorbedCents = 0;
+  let coverFeesCount = 0;
   let giftCount = 0;
   let lastGiftAt = "";
 
@@ -5598,13 +5705,37 @@ function summarizeCharges(charges) {
     const created = new Date((charge.created || 0) * 1000);
     if (created.getUTCFullYear() !== year) continue;
 
-    const netCents = Math.max(0, Number(charge.amount_captured || charge.amount || 0) - Number(charge.amount_refunded || 0));
+    const chargeCents = numericCents(charge.amount_captured || charge.amount);
+    const refundedCents = numericCents(charge.amount_refunded);
+    const metadataGiftCents = numericCents(charge.metadata?.amount_cents);
+    const coverFees = String(charge.metadata?.cover_fees || "").toLowerCase() === "true";
+    const paymentMethod = charge.metadata?.payment_method || "";
+    const balanceTransaction = typeof charge.balance_transaction === "object" ? charge.balance_transaction : null;
+    const agapayFeeCents = numericCents(charge.application_fee_amount || charge.metadata?.agapay_fee_cents);
+    const balanceFeeCents = balanceTransaction ? numericCents(balanceTransaction.fee) : 0;
+    const stripeFeeCents = balanceTransaction
+      ? Math.max(0, balanceFeeCents - agapayFeeCents)
+      : paymentMethod === "ach"
+        ? estimateStripeAchFeeCents(chargeCents)
+        : estimateStripeProcessingFeeCents(chargeCents);
+    const totalFeeCents = Math.max(0, stripeFeeCents + agapayFeeCents);
+    const giftCents = metadataGiftCents || Math.max(0, chargeCents - (coverFees ? totalFeeCents : 0));
+    const netCents = balanceTransaction
+      ? Math.max(0, numericCents(balanceTransaction.net) - refundedCents)
+      : Math.max(0, chargeCents - refundedCents - totalFeeCents);
     if (!netCents) continue;
 
     const monthIndex = created.getUTCMonth();
     monthly[monthIndex].amountCents += netCents;
     monthly[monthIndex].giftCount += 1;
     ytdCents += netCents;
+    grossGiftCents += giftCents;
+    if (coverFees) {
+      coverFeesCount += 1;
+      donorCoveredFeeCents += Math.max(0, chargeCents - giftCents);
+    } else {
+      feesAbsorbedCents += totalFeeCents;
+    }
     giftCount += 1;
 
     const giverKey = charge.billing_details?.email || charge.receipt_email || charge.customer || charge.payment_method || charge.id;
@@ -5616,6 +5747,10 @@ function summarizeCharges(charges) {
     year,
     currency: "usd",
     ytdCents,
+    grossGiftCents,
+    donorCoveredFeeCents,
+    feesAbsorbedCents,
+    feeCoveragePercent: giftCount ? Math.round((coverFeesCount / giftCount) * 100) : 0,
     giftCount,
     giverCount: givers.size,
     averageGiftCents: giftCount ? Math.round(ytdCents / giftCount) : 0,

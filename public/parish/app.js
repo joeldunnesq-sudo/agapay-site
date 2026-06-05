@@ -520,7 +520,8 @@
     const monthly = summary.monthly || [];
     const maxAmount = Math.max(...monthly.map(m => m.amountCents || 0), 1);
     const bars = monthly.map((m, i) => { const h = Math.max(4, Math.round(((m.amountCents||0)/maxAmount)*190)); return `<div class="chart-bar-wrap" title="${escapeHtml(m.label)}: ${money(m.amountCents||0)}"><div class="chart-bar" style="height:${h}px;animation-delay:${i*0.04}s"></div><div class="chart-label">${escapeHtml(m.label)}</div></div>`; }).join('');
-    pane.innerHTML = `<div class="insights-layout"><div class="insights-hero"><div class="insights-label">${summary.year||new Date().getFullYear()} YTD giving</div><div class="insights-total">${money(summary.ytdCents||0)}</div><div class="insights-meta">Last gift: ${escapeHtml(shortDate(summary.lastGiftAt))}</div><div class="insight-stats"><div class="insight-stat"><strong>${summary.giftCount||0}</strong><span>Gifts</span></div><div class="insight-stat"><strong>${summary.giverCount||0}</strong><span>Givers</span></div><div class="insight-stat"><strong>${money(summary.averageGiftCents||0)}</strong><span>Avg gift</span></div></div></div><div class="chart-card"><div class="insights-label" style="color:var(--muted);">Monthly giving level</div><div class="chart-bars">${bars}</div><div class="chart-note">${escapeHtml(summary.note||'Based on successful Stripe charges for this connected parish account.')}</div></div></div>`;
+    const coverage = Math.max(0, Math.min(100, Number(summary.feeCoveragePercent || 0)));
+    pane.innerHTML = `<div class="insights-layout"><div class="insights-hero"><div class="insights-label">${summary.year||new Date().getFullYear()} net received</div><div class="insights-total">${money(summary.ytdCents||0)}</div><div class="insights-meta">Gross gifts: ${money(summary.grossGiftCents||summary.ytdCents||0)} / Last gift: ${escapeHtml(shortDate(summary.lastGiftAt))}</div><div class="insight-stats"><div class="insight-stat"><strong>${summary.giftCount||0}</strong><span>Gifts</span></div><div class="insight-stat"><strong>${summary.giverCount||0}</strong><span>Givers</span></div><div class="insight-stat"><strong>${money(summary.averageGiftCents||0)}</strong><span>Avg net gift</span></div></div><div class="fee-coverage-card"><div class="fee-coverage-ring" style="--pct:${coverage};"><span>${coverage}%</span></div><div><strong>Donors covering fees</strong><span>${money(summary.donorCoveredFeeCents||0)} kept with the parish this year.</span></div></div></div><div class="chart-card"><div class="insights-label" style="color:var(--muted);">Monthly net giving</div><div class="chart-bars">${bars}</div><div class="chart-note">${escapeHtml(summary.note||'Based on successful Stripe charges for this connected parish account, less Stripe processing and AGAPAY platform fees.')}</div></div></div>`;
   }
 
   async function loadRecurringHealth(btn) {
@@ -624,7 +625,7 @@
 
   function renderHistoryTable() {
     // Summary stats
-    const total    = filteredGifts.reduce((s, g) => s + (g.amountCents || 0), 0);
+    const total    = filteredGifts.reduce((s, g) => s + ((g.parishNetCents ?? g.amountCents) || 0), 0);
     const avg      = filteredGifts.length ? Math.round(total / filteredGifts.length) : 0;
     const recurring = filteredGifts.filter(g => g.recurring).length;
     document.getElementById('histStatTotal').textContent     = filteredGifts.length;
@@ -641,7 +642,8 @@
     const rows = filteredGifts.map(g => `
       <tr>
         <td>${escapeHtml(fullDate(g.date || g.createdAt))}</td>
-        <td><span class="history-amount">${moneyFull(g.amountCents)}</span></td>
+        <td><span class="history-amount">${moneyFull((g.parishNetCents ?? g.amountCents) || 0)}</span><span class="history-subamount">Gift ${moneyFull((g.giftAmountCents ?? g.amountCents) || 0)}</span></td>
+        <td><span class="history-fee ${g.coverFees ? 'covered' : 'absorbed'}">${g.coverFees ? 'Covered' : '-' + moneyFull(g.totalFeeCents || 0)}</span></td>
         <td>${g.donorName ? escapeHtml(g.donorName) : '<span style="color:var(--muted)">Anonymous</span>'}</td>
         <td>${g.donorEmail ? escapeHtml(g.donorEmail) : '—'}</td>
         <td><span class="history-fund">${escapeHtml(g.fund || g.fundId || 'General')}</span></td>
@@ -653,7 +655,7 @@
       <div class="history-table-wrap">
         <table class="history-table">
           <thead><tr>
-            <th>Date</th><th>Amount</th><th>Donor</th><th>Email</th><th>Fund</th><th>Type</th><th>Commemorations</th>
+            <th>Date</th><th>Parish received</th><th>Fees</th><th>Donor</th><th>Email</th><th>Fund</th><th>Type</th><th>Commemorations</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
@@ -663,10 +665,13 @@
   // ── CSV EXPORT ────────────────────────────────────────────
   function exportHistoryCsv() {
     if (!filteredGifts.length) { setStatus('No gifts to export. Load history first.','error'); return; }
-    const headers = ['Date','Amount','Donor Name','Donor Email','Fund','Type','Commemorations'];
+    const headers = ['Date','Parish Received','Gift Amount','Fees','Fees Covered By Donor','Donor Name','Donor Email','Fund','Type','Commemorations'];
     const rows = filteredGifts.map(g => [
       fullDate(g.date || g.createdAt),
-      ((g.amountCents || 0) / 100).toFixed(2),
+      (((g.parishNetCents ?? g.amountCents) || 0) / 100).toFixed(2),
+      (((g.giftAmountCents ?? g.amountCents) || 0) / 100).toFixed(2),
+      ((g.totalFeeCents || 0) / 100).toFixed(2),
+      g.coverFees ? 'Yes' : 'No',
       g.donorName || 'Anonymous',
       g.donorEmail || '',
       g.fund || g.fundId || 'General',

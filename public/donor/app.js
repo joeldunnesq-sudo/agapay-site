@@ -890,14 +890,14 @@ function renderDonorDashboardPayload(data) {
   const parish = data.parish || null;
   const recentOfferings = data.recentOfferings || [];
 
-  setText("metricMonth", money(summary.monthCents));
-  setText("metricYtd", money(summary.ytdCents));
+  setText("metricMonth", money(summary.parishNetMonthCents ?? summary.monthCents));
+  setText("metricYtd", money(summary.parishNetYtdCents ?? summary.ytdCents));
   setText("metricOfferings", String(summary.offeringCount || 0));
   setText("metricCommemorations", String(summary.commemorationCount || 0));
   setText("metricRecurring", String(summary.recurringCount || 0));
   setText("donorParishName", parish?.name || "Choose a church in Settings");
-  setText("desktopMetricMonth", money(summary.monthCents));
-  setText("desktopMetricYtd", money(summary.ytdCents));
+  setText("desktopMetricMonth", money(summary.parishNetMonthCents ?? summary.monthCents));
+  setText("desktopMetricYtd", money(summary.parishNetYtdCents ?? summary.ytdCents));
   setText("desktopMetricOfferings", String(summary.offeringCount || 0));
   setText("desktopMetricCommemorations", String(summary.commemorationCount || 0));
   setText("desktopParishName", parish?.name || "Choose a church in Settings to personalize your dashboard.");
@@ -1004,9 +1004,10 @@ function offeringRows(offerings) {
       <div class="list-main">
         <strong>${escapeHtml(item.fund || item.campaign || item.title || item.giftType || "AGAPAY offering")}</strong>
         <span>${escapeHtml(item.parishName || item.parishId || "Parish")} - ${shortDate(item.createdAt)}</span>
+        <span>${item.coverFees ? "Fees covered" : `Parish received ${money(item.parishNetCents ?? item.amountCents)}`}</span>
         <span class="status-pill ${item.paymentStatus === "pending" ? "pending" : ""}">${escapeHtml(item.paymentStatus || item.status || "recorded")}</span>
       </div>
-      <div class="list-amount">${money(item.amountCents)}</div>
+      <div class="list-amount">${money(item.amountCents)}<small>${item.coverFees ? `charged ${money(item.chargeCents || item.amountCents)}` : `fees ${money(item.totalFeeCents || 0)}`}</small></div>
     </div>
   `).join("");
 }
@@ -1021,13 +1022,17 @@ function renderOfferingsPayload(payload = {}, fallbackDashboard = null, statusTe
     .map((item) => ({
       ...item,
       amountCents: Number(item.amountCents || 0),
+      parishNetCents: Number(item.parishNetCents ?? item.amountCents ?? 0),
+      giftAmountCents: Number(item.giftAmountCents ?? item.amountCents ?? 0),
+      chargeCents: Number(item.chargeCents ?? item.amountCents ?? 0),
+      totalFeeCents: Number(item.totalFeeCents || 0),
       paymentStatus: item.paymentStatus || item.status || "recorded",
       createdAt: item.createdAt || item.updatedAt || ""
     }))
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
 
   window.donorOfferings = offerings;
-  setText("offeringsYtd", money(summary.ytdCents));
+  setText("offeringsYtd", money(summary.parishNetYtdCents ?? summary.ytdCents));
   setText("offeringsRecurring", String(summary.recurringCount || 0));
   setText("offeringsReceiptCount", String(summary.offeringCount || offerings.length || 0));
   setText("offeringsStatus", offerings.length ? statusText : "No data yet");

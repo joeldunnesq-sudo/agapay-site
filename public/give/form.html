@@ -693,9 +693,7 @@
     const AGAPAY_FIXED = 0.30;
     const STRIPE_RATE = 0.029;
     const STRIPE_FIXED = 0.30;
-    const ACH_RATE = 0.008;
-    const ACH_CAP_CENTS = 500;
-    const ACH_AGAPAY_RATE = 0.021;
+    const ACH_RATE = 0.026;
 
     function cents(value) {
       return Math.max(0, Math.round((Number(value) || 0) * 100));
@@ -712,7 +710,7 @@
 
     function estimateStripeAchFeeCents(chargeCents) {
       if (!Number.isFinite(chargeCents) || chargeCents <= 0) return 0;
-      return Math.max(0, Math.min(ACH_CAP_CENTS, Math.round(chargeCents * ACH_RATE)));
+      return Math.max(0, Math.round(chargeCents * ACH_RATE + STRIPE_FIXED * 100));
     }
 
     function grossUpForStripeProcessingFeeCents(netAmountCents) {
@@ -727,7 +725,7 @@
 
     function grossUpForAchFeeCents(netAmountCents, agapayFeeCents) {
       const targetAfterStripe = netAmountCents + Math.max(0, agapayFeeCents || 0);
-      let chargeCents = Math.max(targetAfterStripe, Math.ceil(targetAfterStripe / (1 - ACH_RATE)));
+      let chargeCents = Math.max(targetAfterStripe, Math.ceil((targetAfterStripe + (STRIPE_FIXED * 100)) / (1 - ACH_RATE)));
       while (chargeCents - estimateStripeAchFeeCents(chargeCents) < targetAfterStripe) chargeCents += 1;
       while (chargeCents > targetAfterStripe && ((chargeCents - 1) - estimateStripeAchFeeCents(chargeCents - 1) >= targetAfterStripe)) {
         chargeCents -= 1;
@@ -748,9 +746,10 @@
       }
 
       if (paymentMethod === 'ach') {
-        const agapayFeeCents = Math.round(amountCents * ACH_AGAPAY_RATE);
-        const donorTotalCents = feeCovered ? grossUpForAchFeeCents(amountCents, agapayFeeCents) : amountCents;
+        const totalFeeCents = Math.round(amountCents * AGAPAY_RATE + AGAPAY_FIXED * 100);
+        const donorTotalCents = feeCovered ? amountCents + totalFeeCents : amountCents;
         const stripeFeeCents = estimateStripeAchFeeCents(donorTotalCents);
+        const agapayFeeCents = Math.max(0, totalFeeCents - stripeFeeCents);
         const feeCents = stripeFeeCents + agapayFeeCents;
         return {
           feeLabel: 'bank transfer fees',
