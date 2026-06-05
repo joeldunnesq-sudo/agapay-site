@@ -2491,6 +2491,152 @@ async function loadParishPaidOfferings(env, parishId, limit = 500) {
   return gifts.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, limit);
 }
 
+function recurringOfferingStatus(offering = {}) {
+  const status = String(offering.status || "").toLowerCase();
+  const paymentStatus = String(offering.paymentStatus || "").toLowerCase();
+  if (["failed", "payment_failed", "past_due"].includes(status) || ["failed", "past_due"].includes(paymentStatus)) return "failed";
+  if (["cancelled", "canceled"].includes(status) || ["cancelled", "canceled"].includes(paymentStatus)) return "cancelled";
+  if (paidOfferingStatus(offering)) return "active";
+  return "pending";
+}
+
+function recurringHealthGroupKey(offering = {}) {
+  return offering.stripeSubscriptionId
+    || offering.stripe_subscription_id
+    || [
+      normalizeEmail(offering.donorEmail || offering.email || ""),
+      offering.frequency || "recurring",
+      offering.amountCents || "",
+      offering.giftType || "",
+      offering.fund || "",
+      offering.campaign || ""
+    ].join("|");
+}
+
+function recurringExpectedDays(frequency = "") {
+  const normalized = String(frequency || "").toLowerCase();
+  if (normalized === "weekly") return 10;
+  if (normalized === "biweekly") return 24;
+  if (normalized === "quarterly") return 110;
+  if (normalized === "yearly" || normalized === "annual") return 400;
+  return 45;
+}
+
+async function loadParishRecurringOfferings(env, parishId, limit = 1000) {
+  if (!parishId) return [];
+  if (d1(env)) {
+    const rows = await d1All(
+      env,
+      `SELECT data
+       FROM donor_offerings
+       WHERE parish_id = ?1
+         AND (
+           COALESCE(stripe_subscription_id, '') != ''
+           OR COALESCE(json_extract(data, '$.frequency'), 'once') != 'once'
+         )
+       ORDER BY created_at DESC
+       LIMIT ?2`,
+      parishId,
+      limit
+    );
+    return rows.map(parseJsonRow).filter(Boolean);
+  }
+
+  if (!env.AGAPAY_REGISTRATIONS) return [];
+  const keys = await listKvKeys(env, { prefix: DONOR_OFFERING_KEY_PREFIX, limit: Math.min(limit, 5000) });
+  const offerings = [];
+  for (const key of keys) {
+    const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
+    if (!raw) continue;
+    try {
+      const offering = JSON.parse(raw);
+      if (
+        (offering.parishId || offering.parish_id) === parishId
+        && (offering.stripeSubscriptionId || (offering.frequency && offering.frequency !== "once"))
+      ) {
+        offerings.push(offering);
+      }
+    } catch {}
+  }
+  return offerings.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || ""))).slice(0, limit);
+}
+
+function summarizeParishRecurringHealth(records = []) {
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const groups = new Map();
+
+  for (const offering of records) {
+    const key = recurringHealthGroupKey(offering);
+    if (!key) continue;
+    const status = recurringOfferingStatus(offering);
+    const dateValue = offering.completedAt || offering.failedAt || offering.updatedAt || offering.createdAt || "";
+    const timestamp = dateValue ? new Date(dateValue) : null;
+    const group = groups.get(key) || {
+      key,
+      donorName: giftDisplayName(offering) || offering.donorName || "Anonymous donor",
+      donorEmail: offering.donorEmail || offering.email || "",
+      amountCents: Number(offering.amountCents || 0),
+      frequency: offering.frequency || "recurring",
+      giftType: offering.giftType || "recurring",
+      fund: offering.fund || offering.campaign || offering.title || "",
+      stripeSubscriptionId: offering.stripeSubscriptionId || "",
+      lastPaidAt: "",
+      lastFailureAt: "",
+      failureMessage: ""
+    };
+
+    if (!group.stripeSubscriptionId && offering.stripeSubscriptionId) group.stripeSubscriptionId = offering.stripeSubscriptionId;
+    if (!group.donorEmail && offering.donorEmail) group.donorEmail = offering.donorEmail;
+    if (!group.fund && (offering.fund || offering.campaign || offering.title)) group.fund = offering.fund || offering.campaign || offering.title;
+    if (!group.amountCents && offering.amountCents) group.amountCents = Number(offering.amountCents || 0);
+
+    if (status === "active" && timestamp && (!group.lastPaidAt || timestamp > new Date(group.lastPaidAt))) {
+      group.lastPaidAt = timestamp.toISOString();
+      group.amountCents = Number(offering.amountCents || group.amountCents || 0);
+    }
+    if ((status === "failed" || status === "cancelled") && timestamp && (!group.lastFailureAt || timestamp > new Date(group.lastFailureAt))) {
+      group.lastFailureAt = timestamp.toISOString();
+      group.failureMessage = offering.failureMessage || (status === "cancelled" ? "Recurring gift cancelled." : "Recurring payment failed.");
+    }
+
+    groups.set(key, group);
+  }
+
+  const rows = Array.from(groups.values()).map((group) => {
+    const paidAt = group.lastPaidAt ? new Date(group.lastPaidAt) : null;
+    const failureAt = group.lastFailureAt ? new Date(group.lastFailureAt) : null;
+    const expectedDays = recurringExpectedDays(group.frequency);
+    const daysSincePaid = paidAt ? Math.floor((now.getTime() - paidAt.getTime()) / 86400000) : null;
+    const recoveredAfterFailure = Boolean(paidAt && failureAt && paidAt > failureAt);
+    const failedThisMonth = Boolean(failureAt && failureAt >= monthStart && !recoveredAfterFailure);
+    const lapsed = Boolean(!failedThisMonth && (!paidAt || daysSincePaid > expectedDays));
+    return {
+      ...group,
+      status: failedThisMonth ? "failed" : lapsed ? "lapsed" : "active",
+      daysSincePaid,
+      expectedDays
+    };
+  });
+
+  rows.sort((a, b) => {
+    const order = { failed: 0, lapsed: 1, active: 2 };
+    return (order[a.status] ?? 9) - (order[b.status] ?? 9)
+      || String(b.lastFailureAt || b.lastPaidAt || "").localeCompare(String(a.lastFailureAt || a.lastPaidAt || ""));
+  });
+
+  return {
+    activeCount: rows.filter((row) => row.status === "active").length,
+    failedThisMonthCount: rows.filter((row) => row.status === "failed").length,
+    lapsedCount: rows.filter((row) => row.status === "lapsed").length,
+    monthlyRecurringCents: rows
+      .filter((row) => row.status === "active")
+      .reduce((sum, row) => sum + Number(row.amountCents || 0), 0),
+    generatedAt: now.toISOString(),
+    rows
+  };
+}
+
 function normalizedOptionKeys(option = {}) {
   return [option.id, option.feastId, option.name, option.campaignName, option.title]
     .filter(Boolean)
@@ -4623,6 +4769,31 @@ async function processStripeWebhookEvent(env, event) {
 
   if (event.type === "invoice.payment_failed" || event.type === "invoice.payment_action_required") {
     const subscriptionId = object.subscription || "";
+    const metadata = object.subscription_details?.metadata || object.lines?.data?.[0]?.metadata || object.metadata || {};
+    if (metadata.donor_email) {
+      await storeDonorOffering(env, {
+        id: object.id,
+        donorEmail: metadata.donor_email,
+        donorName: metadata.donor_name || object.customer_name || "",
+        parishId: metadata.parish_id || "",
+        parishName: metadata.parish_name || "",
+        giftType: metadata.gift_type || "recurring",
+        title: metadata.gift_type ? String(metadata.gift_type).replace(/-/g, " ") : "Recurring AGAPAY offering",
+        frequency: metadata.frequency || "recurring",
+        amountCents: object.amount_due || object.amount_remaining || object.total || 0,
+        chargeCents: object.amount_due || object.amount_remaining || object.total || 0,
+        status: "failed",
+        paymentStatus: "failed",
+        stripeCustomerId: object.customer || "",
+        stripePaymentIntentId: object.payment_intent || "",
+        stripeSubscriptionId: subscriptionId,
+        namesLiving: metadata.names_living || "",
+        namesDeparted: metadata.names_departed || "",
+        failureMessage: object.last_finalization_error?.message || "Recurring payment failed.",
+        failedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString(),
+        createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
+      });
+    }
     const found = await findRegistrationByStripeSubscriptionId(env, subscriptionId);
     if (found) {
       await updateSubscriptionRecord(env, found.key, {
@@ -5521,6 +5692,26 @@ async function handleParishGivingHistory(request, env, parishId) {
   });
 }
 
+async function handleParishRecurringHealth(request, env, parishId) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-dashboard", { limit: 80, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const token = getBearerToken(request);
+  if (!(await verifyParishDashboardPassword(found.registration, token))) {
+    return unauthorized();
+  }
+
+  const records = await loadParishRecurringOfferings(env, parishId, 1000);
+  return json({
+    health: summarizeParishRecurringHealth(records)
+  });
+}
+
 function parishDashboardPayload(parishId, registration) {
   return {
     parishId,
@@ -5923,6 +6114,10 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/giving-history")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/giving-history", ""));
       return handleParishGivingHistory(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/recurring-health")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/recurring-health", ""));
+      return handleParishRecurringHealth(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/payout-diagnostics")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/payout-diagnostics", ""));

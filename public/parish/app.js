@@ -336,6 +336,7 @@
       saveSession();
       renderDashboard();
       loadGivingSummary();
+      loadRecurringHealth();
       loadCommemorations();
     } catch (err) { setStatus(err.message,'error'); }
     finally {
@@ -520,6 +521,67 @@
     const maxAmount = Math.max(...monthly.map(m => m.amountCents || 0), 1);
     const bars = monthly.map((m, i) => { const h = Math.max(4, Math.round(((m.amountCents||0)/maxAmount)*190)); return `<div class="chart-bar-wrap" title="${escapeHtml(m.label)}: ${money(m.amountCents||0)}"><div class="chart-bar" style="height:${h}px;animation-delay:${i*0.04}s"></div><div class="chart-label">${escapeHtml(m.label)}</div></div>`; }).join('');
     pane.innerHTML = `<div class="insights-layout"><div class="insights-hero"><div class="insights-label">${summary.year||new Date().getFullYear()} YTD giving</div><div class="insights-total">${money(summary.ytdCents||0)}</div><div class="insights-meta">Last gift: ${escapeHtml(shortDate(summary.lastGiftAt))}</div><div class="insight-stats"><div class="insight-stat"><strong>${summary.giftCount||0}</strong><span>Gifts</span></div><div class="insight-stat"><strong>${summary.giverCount||0}</strong><span>Givers</span></div><div class="insight-stat"><strong>${money(summary.averageGiftCents||0)}</strong><span>Avg gift</span></div></div></div><div class="chart-card"><div class="insights-label" style="color:var(--muted);">Monthly giving level</div><div class="chart-bars">${bars}</div><div class="chart-note">${escapeHtml(summary.note||'Based on successful Stripe charges for this connected parish account.')}</div></div></div>`;
+  }
+
+  async function loadRecurringHealth(btn) {
+    const pane = document.getElementById('recurringHealthPane');
+    if (!currentParish || !pane) return;
+    if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+    pane.innerHTML = '<div class="recurring-health-empty">Checking recurring giving health...</div>';
+    try {
+      const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/recurring-health', { headers: authHeaders() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || data.error || 'Unable to load recurring giving health');
+      renderRecurringHealth(data.health || {});
+    } catch (err) {
+      pane.innerHTML = `<div class="recurring-health-empty">${escapeHtml(err.message)}</div>`;
+    } finally {
+      if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+    }
+  }
+
+  function recurringStatusLabel(status) {
+    if (status === 'failed') return 'Failed this month';
+    if (status === 'lapsed') return 'Lapsed';
+    return 'Active';
+  }
+
+  function recurringDateLabel(row) {
+    if (row.status === 'failed' && row.lastFailureAt) return `Failed ${shortDate(row.lastFailureAt)}`;
+    if (row.lastPaidAt) return `Last paid ${shortDate(row.lastPaidAt)}`;
+    return 'No completed gift recorded';
+  }
+
+  function renderRecurringHealth(health) {
+    const pane = document.getElementById('recurringHealthPane');
+    if (!pane) return;
+    const rows = Array.isArray(health.rows) ? health.rows : [];
+    const needsAttention = rows.filter(row => row.status === 'failed' || row.status === 'lapsed').slice(0, 6);
+    const activeCount = Number(health.activeCount || 0);
+    const failedCount = Number(health.failedThisMonthCount || 0);
+    const lapsedCount = Number(health.lapsedCount || 0);
+    const list = needsAttention.length ? needsAttention.map(row => `
+      <div class="recurring-health-row ${escapeHtml(row.status || 'active')}">
+        <div>
+          <strong>${escapeHtml(row.donorName || 'Anonymous donor')}</strong>
+          <span>${escapeHtml([row.donorEmail, row.fund || row.giftType || 'Recurring gift'].filter(Boolean).join(' / '))}</span>
+        </div>
+        <div class="recurring-health-row-meta">
+          <b>${money(row.amountCents || 0)}</b>
+          <span>${escapeHtml(recurringDateLabel(row))}</span>
+        </div>
+        <span class="recurring-health-status ${escapeHtml(row.status || 'active')}">${escapeHtml(recurringStatusLabel(row.status))}</span>
+      </div>`).join('') : '<div class="recurring-health-empty success">No failed or lapsed recurring gifts need attention right now.</div>';
+
+    pane.innerHTML = `
+      <div class="recurring-health-grid">
+        <div class="recurring-health-stat active"><strong>${activeCount}</strong><span>Active recurring gifts</span></div>
+        <div class="recurring-health-stat failed"><strong>${failedCount}</strong><span>Failed this month</span></div>
+        <div class="recurring-health-stat lapsed"><strong>${lapsedCount}</strong><span>Lapsed or overdue</span></div>
+        <div class="recurring-health-stat value"><strong>${money(health.monthlyRecurringCents || 0)}</strong><span>Expected recurring amount</span></div>
+      </div>
+      <div class="recurring-health-note">Failed payments are recorded from Stripe recurring invoice events. Lapsed gifts are recurring gifts whose last successful payment is older than the expected giving interval.</div>
+      <div class="recurring-health-list">${list}</div>`;
   }
 
   // ── GIVING HISTORY ────────────────────────────────────────

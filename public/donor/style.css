@@ -100,6 +100,27 @@ button, input, select, textarea { font: inherit; }
 }
 
 .brand-mark img { width: 37px; height: 37px; object-fit: contain; }
+.dashboard-home-mark {
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+.dashboard-home-mark:hover {
+  border-color: rgba(200, 162, 74, 0.72);
+  background: rgba(200, 162, 74, 0.2);
+  transform: translateY(-1px);
+}
+.dashboard-home-cue {
+  border: 1px solid rgba(200, 162, 74, 0.42);
+  border-radius: 999px;
+  padding: 0.18rem 0.48rem;
+  color: var(--gold);
+  background: rgba(200, 162, 74, 0.1);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 .brand-name { font-family: var(--serif); font-size: 26px; color: var(--cream); font-weight: 500; }
 .brand-name em { color: var(--gold); font-style: normal; }
 
