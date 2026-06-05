@@ -215,7 +215,7 @@
     });
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
+  function initSiteChrome() {
     if (document.body && document.body.dataset.noSiteChrome === "true") return;
 
     removeLegacyMobileChrome();
@@ -242,5 +242,11 @@
 
     document.body.classList.add("agp-shell-ready");
     bindInteractions();
-  });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initSiteChrome, { once: true });
+  } else {
+    initSiteChrome();
+  }
 })();
