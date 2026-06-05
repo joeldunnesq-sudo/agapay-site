@@ -129,6 +129,11 @@ body.agp-shell-ready {
   color: #FFE4A4;
 }
 
+.site-header[data-shell="canonical"] .nav-links a.active {
+  border-bottom: 2px solid var(--agp-gold);
+  padding-bottom: 0.36rem;
+}
+
 .site-header[data-shell="canonical"] .nav-links a.active::after,
 .site-header[data-shell="canonical"] .nav-links a:hover::after {
   opacity: 1;

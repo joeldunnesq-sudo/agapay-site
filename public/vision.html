@@ -99,6 +99,9 @@
     }
 
     .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.56rem;
       color: var(--gold-dark);
       text-transform: uppercase;
       font-size: .78rem;
@@ -106,10 +109,18 @@
       font-weight: 800;
       margin-bottom: .8rem;
      }
+    .eyebrow svg {
+      width: 21px;
+      height: 21px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
   
     .hero-copy h1 { font-family: var(--serif); color: #0A1524; font-size: clamp(3.2rem, 7vw, 6rem); line-height: 0.9; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.65rem; }
     .hero-copy h2 { font-family: var(--serif); color: var(--gold-dark); font-size: clamp(1.45rem, 2.4vw, 2.15rem); font-style: italic; font-weight: 500; line-height: 1.1; margin-bottom: 1.1rem; }
-     }
     .hero-copy p {
       max-width: 560px;
       color: #4D4A44;
@@ -291,7 +302,7 @@
     <section class="hero">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <div class="eyebrow">OUR VISION</div>
+          <div class="eyebrow"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 21h8"/></svg>Our Vision</div>
           <h1>THE ONLINE HOME</h1>
           <h2>for all things Orthodox.</h2>
           <p>AGAPAY exists to strengthen Orthodox communities through modern giving infrastructure rooted in shared faith, stewardship, and long-term institutional support. We believe Orthodox parishes, monasteries, and the faithful deserve tools built specifically for the life of the Church &mdash; with a vision that grows to serve the wider Orthodox world over time.</p>
