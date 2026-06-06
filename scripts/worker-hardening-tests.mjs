@@ -425,8 +425,8 @@ async function withMockFetch(handler, run) {
       assert.equal(init.headers["Stripe-Account"], "acct_connected_recurring");
       const form = new URLSearchParams(init.body);
       assert.equal(form.get("mode"), "subscription");
-      assert.equal(form.get("line_items[0][price_data][unit_amount]"), "2606");
-      assert.equal(form.get("subscription_data[application_fee_percent]"), null);
+      assert.equal(form.get("line_items[0][price_data][unit_amount]"), "2655");
+      assert.equal(form.get("subscription_data[application_fee_percent]"), "1.8079");
       assert.equal(form.get("payment_intent_data[application_fee_amount]"), null);
       return new Response(JSON.stringify({
         id: "cs_recurring_test",
@@ -457,8 +457,9 @@ async function withMockFetch(handler, run) {
   assert.ok(offeringRaw);
   const offering = JSON.parse(offeringRaw);
   assert.equal(offering.amountCents, 2500);
-  assert.equal(offering.chargeCents, 2606);
-  assert.equal(offering.agapayFeeCents, 0);
+  assert.equal(offering.chargeCents, 2655);
+  assert.equal(offering.agapayFeeCents, 48);
+  assert.equal(offering.estimatedStripeFeeCents, 107);
   assert.equal(offering.stripeCustomerId, "cus_recurring_test");
 }
 

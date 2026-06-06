@@ -62,8 +62,9 @@ assert.ok(worker.includes("X-AGAPAY-Donor-Email"), "Worker should accept AGAPAY 
 assert.ok(worker.includes("handleAdminReleaseStatus"), "Worker should expose a release-status report");
 assert.ok(worker.includes("STRIPE_WEBHOOK_SECRET_CONNECT"), "Worker should support a separate Connect webhook signing secret");
 assert.ok(worker.includes("handleParishStripeRefresh"), "Worker should let parishes refresh Stripe Connect status");
-assert.ok(worker.includes("grossUpForStripeProcessingFeeCents"), "Worker should gross up recurring donations only for Stripe processing");
-assert.ok(!worker.includes("subscription_data[application_fee_percent]"), "Worker should not apply recurring AGAPAY application fee percentages");
+assert.ok(worker.includes("checkoutFinancials("), "Worker should centralize donation fee calculations");
+assert.ok(worker.includes("subscription_data[application_fee_percent]"), "Worker should apply AGAPAY donation fees to recurring donor gifts");
+assert.ok(worker.includes("Parish SaaS subscription billing is created in a separate flow"), "Worker should keep parish subscription billing separate from donation fees");
 
 if (process.env.AGAPAY_BASE_URL) {
   const baseUrl = process.env.AGAPAY_BASE_URL.replace(/\/+$/, "");

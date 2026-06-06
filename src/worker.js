@@ -1232,13 +1232,15 @@ function checkoutFinancials(amountCents, coverFees, recurring, paymentMethod = "
   const totalTransactionFeeCents = Math.round(amountCents * 0.05 + 30);
   if (recurring) {
     const chargeCents = coverFees
-      ? grossUpForStripeProcessingFeeCents(amountCents)
+      ? amountCents + totalTransactionFeeCents
       : amountCents;
+    const estimatedStripeFeeCents = estimateStripeProcessingFeeCents(chargeCents);
     return {
       chargeCents,
-      estimatedStripeFeeCents: estimateStripeProcessingFeeCents(chargeCents),
-      agapayFeeCents: 0,
-      totalTransactionFeeCents
+      estimatedStripeFeeCents,
+      agapayFeeCents: Math.max(0, totalTransactionFeeCents - estimatedStripeFeeCents),
+      totalTransactionFeeCents,
+      paymentMethod: method
     };
   }
 
@@ -1272,21 +1274,21 @@ function numericCents(value) {
 }
 
 function offeringFeeBreakdown(offering = {}) {
-  const giftAmountCents = numericCents(offering.giftAmountCents || offering.amountCents);
-  const chargeCents = numericCents(offering.chargeCents || offering.amountChargedCents || giftAmountCents);
-  const stripeFeeCents = numericCents(offering.stripeFeeCents || offering.estimatedStripeFeeCents);
+  const giftAmountCents = numericCents(offering.giftAmountCents ?? offering.amountCents);
+  const chargeCents = numericCents(offering.chargeCents ?? offering.amountChargedCents ?? giftAmountCents);
+  const stripeFeeCents = numericCents(offering.stripeFeeCents ?? offering.estimatedStripeFeeCents);
   const agapayFeeCents = numericCents(offering.agapayFeeCents);
-  const totalFeeCents = numericCents(offering.totalFeeCents || stripeFeeCents + agapayFeeCents);
+  const totalFeeCents = numericCents(offering.totalFeeCents ?? stripeFeeCents + agapayFeeCents);
   const coverFees = Boolean(offering.coverFees);
   const donorCoveredFeeCents = coverFees
-    ? numericCents(offering.donorCoveredFeeCents || Math.max(0, chargeCents - giftAmountCents))
+    ? numericCents(offering.donorCoveredFeeCents ?? Math.max(0, chargeCents - giftAmountCents))
     : 0;
   const parishNetCents = Math.max(
     0,
     numericCents(
       offering.parishNetCents
-      || offering.netCents
-      || (coverFees ? giftAmountCents : giftAmountCents - totalFeeCents)
+      ?? offering.netCents
+      ?? (coverFees ? Math.max(0, chargeCents - totalFeeCents) : giftAmountCents - totalFeeCents)
     )
   );
   return {
@@ -1895,12 +1897,17 @@ async function storeDonorOffering(env, offering) {
     stripeCustomerId: offering.stripeCustomerId || "",
     stripePaymentIntentId: offering.stripePaymentIntentId || "",
     stripeSubscriptionId: offering.stripeSubscriptionId || "",
+    stripeChargeId: offering.stripeChargeId || "",
+    stripeBalanceTransactionId: offering.stripeBalanceTransactionId || "",
+    stripeFeeSource: offering.stripeFeeSource || "",
     namesLiving: offering.namesLiving || "",
     namesDeparted: offering.namesDeparted || "",
     emailReceiptStatus: offering.emailReceiptStatus || "",
     emailReceiptId: offering.emailReceiptId || "",
     emailReceiptDetail: offering.emailReceiptDetail || "",
     emailReceiptSentAt: offering.emailReceiptSentAt || "",
+    completedAt: offering.completedAt || "",
+    feeReconciledAt: offering.feeReconciledAt || "",
     createdAt: offering.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -2093,6 +2100,88 @@ function checkoutPaymentIntentId(session = {}) {
     : session.payment_intent?.id || "";
 }
 
+function stripeObjectId(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return value.id || "";
+}
+
+function stripeObjectMetadata(...objects) {
+  return objects.reduce((metadata, object) => ({
+    ...metadata,
+    ...(object?.metadata || {})
+  }), {});
+}
+
+function booleanFromStripeMetadata(value, fallback = false) {
+  if (typeof value === "boolean") return value;
+  const normalized = String(value || "").trim().toLowerCase();
+  if (["true", "1", "yes", "on"].includes(normalized)) return true;
+  if (["false", "0", "no", "off"].includes(normalized)) return false;
+  return Boolean(fallback);
+}
+
+async function stripePaymentIntentFinancialUpdates(env, paymentIntentId, parishId, fallback = {}) {
+  if (!paymentIntentId || !parishId) return {};
+  const parish = await findCheckoutParish(env, parishId);
+  if (!parish?.stripeAccountId) return {};
+
+  const paymentIntent = await stripeGetConnectedRequest(
+    env,
+    `/v1/payment_intents/${encodeURIComponent(paymentIntentId)}?expand[]=latest_charge.balance_transaction`,
+    parish.stripeAccountId
+  );
+  if (!paymentIntent.ok) return {};
+
+  const intent = paymentIntent.body || {};
+  let charge = typeof intent.latest_charge === "object" ? intent.latest_charge : null;
+  const chargeId = stripeObjectId(intent.latest_charge);
+  if (!charge && chargeId) {
+    const chargeResult = await stripeGetConnectedRequest(
+      env,
+      `/v1/charges/${encodeURIComponent(chargeId)}?expand[]=balance_transaction`,
+      parish.stripeAccountId
+    );
+    if (chargeResult.ok) charge = chargeResult.body || null;
+  }
+
+  const metadata = stripeObjectMetadata(fallback, intent, charge);
+  const balanceTransaction = typeof charge?.balance_transaction === "object" ? charge.balance_transaction : null;
+  const giftAmountCents = numericCents(metadata.amount_cents)
+    || numericCents(fallback.giftAmountCents ?? fallback.amountCents)
+    || numericCents(intent.amount_received || intent.amount);
+  const chargeCents = numericCents(charge?.amount || intent.amount_received || intent.amount || fallback.chargeCents || giftAmountCents);
+  const agapayFeeCents = numericCents(charge?.application_fee_amount ?? metadata.agapay_fee_cents ?? fallback.agapayFeeCents);
+  const balanceFeeCents = numericCents(balanceTransaction?.fee);
+  const stripeFeeCents = balanceFeeCents
+    ? Math.max(0, balanceFeeCents - agapayFeeCents)
+    : numericCents(fallback.stripeFeeCents ?? fallback.estimatedStripeFeeCents);
+  const totalFeeCents = numericCents(balanceFeeCents || stripeFeeCents + agapayFeeCents);
+  const coverFees = booleanFromStripeMetadata(metadata.cover_fees, fallback.coverFees);
+  const donorCoveredFeeCents = coverFees ? Math.max(0, chargeCents - giftAmountCents) : 0;
+  const balanceNetCents = numericCents(balanceTransaction?.net);
+  const parishNetCents = balanceNetCents || Math.max(0, chargeCents - totalFeeCents);
+  const paymentMethod = charge?.payment_method_details?.type || fallback.paymentMethod || "";
+
+  return {
+    amountCents: giftAmountCents,
+    giftAmountCents,
+    chargeCents,
+    stripeFeeCents,
+    estimatedStripeFeeCents: stripeFeeCents,
+    agapayFeeCents,
+    totalFeeCents,
+    donorCoveredFeeCents,
+    parishNetCents,
+    coverFees,
+    paymentMethod,
+    stripeChargeId: charge?.id || fallback.stripeChargeId || "",
+    stripeBalanceTransactionId: balanceTransaction?.id || fallback.stripeBalanceTransactionId || "",
+    stripeFeeSource: balanceTransaction ? "balance_transaction" : "estimated",
+    feeReconciledAt: new Date().toISOString()
+  };
+}
+
 async function refreshDonorOfferingFromStripeCheckout(env, offering = {}) {
   if (!offering.checkoutSessionId || paidOfferingStatus(offering)) return offering;
 
@@ -2111,14 +2200,19 @@ async function refreshDonorOfferingFromStripeCheckout(env, offering = {}) {
   let status = offering.status || "checkout_created";
   if (paymentStatus === "paid" || session.status === "complete") status = "completed";
   if (session.status === "expired") status = "expired";
+  const paymentIntentId = checkoutPaymentIntentId(session) || offering.stripePaymentIntentId || "";
+  const feeUpdates = status === "completed" || paymentStatus === "paid"
+    ? await stripePaymentIntentFinancialUpdates(env, paymentIntentId, offering.parishId, offering)
+    : {};
 
   const updated = await updateDonorOfferingByCheckout(env, offering.checkoutSessionId, {
     status,
     paymentStatus,
     stripeCustomerId: session.customer || offering.stripeCustomerId || "",
-    stripePaymentIntentId: checkoutPaymentIntentId(session) || offering.stripePaymentIntentId || "",
+    stripePaymentIntentId: paymentIntentId,
     stripeSubscriptionId: session.subscription || offering.stripeSubscriptionId || "",
-    completedAt: status === "completed" ? offering.completedAt || new Date().toISOString() : offering.completedAt || ""
+    completedAt: status === "completed" ? offering.completedAt || new Date().toISOString() : offering.completedAt || "",
+    ...feeUpdates
   });
 
   if (status === "completed" || paymentStatus === "paid") {
@@ -3142,6 +3236,7 @@ async function handleCheckout(request, env) {
     chargeCents,
     estimatedStripeFeeCents,
     agapayFeeCents,
+    totalTransactionFeeCents,
     paymentMethod
   } = checkoutFinancials(amountCents, Boolean(body.coverFees), recurring, body.paymentMethod);
   const giftLabel = String(body.giftType).replace(/-/g, " ");
@@ -3173,6 +3268,7 @@ async function handleCheckout(request, env) {
     charge_cents: String(chargeCents),
     agapay_fee_cents: String(agapayFeeCents),
     estimated_stripe_fee_cents: String(estimatedStripeFeeCents),
+    total_fee_cents: String(totalTransactionFeeCents),
     payment_method: paymentMethod,
     cover_fees: body.coverFees ? "true" : "false",
     names_living: body.namesLiving || "",
@@ -3201,10 +3297,12 @@ async function handleCheckout(request, env) {
     }
   }
 
-  // AGAPAY's 5% + $0.30 fee applies to one-time donations only. Recurring
-  // gifts intentionally omit a Connect application fee so Stripe renewals do
-  // not drift away from the published pricing model.
-  if (!recurring) {
+  // AGAPAY's 5% + $0.30 fee applies to donations, including recurring
+  // donations. Parish SaaS subscription billing is created in a separate flow
+  // and does not use this donation application-fee logic.
+  if (recurring && agapayFeeCents > 0 && chargeCents > 0) {
+    form.set("subscription_data[application_fee_percent]", ((agapayFeeCents / chargeCents) * 100).toFixed(4));
+  } else if (!recurring) {
     form.set("payment_intent_data[application_fee_amount]", String(agapayFeeCents));
   }
 
@@ -3312,6 +3410,9 @@ async function handleCheckoutSessionStatus(request, env) {
   let status = offering.status || "checkout_created";
   if (paymentStatus === "paid" || session.status === "complete") status = "completed";
   if (session.status === "expired") status = "expired";
+  const feeUpdates = status === "completed" || paymentStatus === "paid"
+    ? await stripePaymentIntentFinancialUpdates(env, paymentIntentId, offering.parishId, offering)
+    : {};
 
   const updated = await updateDonorOfferingByCheckout(env, sessionId, {
     status,
@@ -3319,7 +3420,8 @@ async function handleCheckoutSessionStatus(request, env) {
     stripeCustomerId: session.customer || offering.stripeCustomerId || "",
     stripePaymentIntentId: paymentIntentId || offering.stripePaymentIntentId || "",
     stripeSubscriptionId: session.subscription || offering.stripeSubscriptionId || "",
-    completedAt: status === "completed" ? offering.completedAt || new Date().toISOString() : offering.completedAt || ""
+    completedAt: status === "completed" ? offering.completedAt || new Date().toISOString() : offering.completedAt || "",
+    ...feeUpdates
   });
   if (status === "completed" || paymentStatus === "paid") {
     await ensureCommemorationEntryFromOffering(env, updated || offering, {
@@ -3376,13 +3478,17 @@ async function handleDonorClaimCheckout(request, env) {
     let status = offering.status || "checkout_created";
     if (paymentStatus === "paid" || verifiedSession.status === "complete") status = "completed";
     if (verifiedSession.status === "expired") status = "expired";
+    const feeUpdates = status === "completed" || paymentStatus === "paid"
+      ? await stripePaymentIntentFinancialUpdates(env, paymentIntentId, offering.parishId, offering)
+      : {};
     await updateDonorOfferingByCheckout(env, sessionId, {
       status,
       paymentStatus,
       stripeCustomerId: verifiedSession.customer || offering.stripeCustomerId || "",
       stripePaymentIntentId: paymentIntentId || offering.stripePaymentIntentId || "",
       stripeSubscriptionId: verifiedSession.subscription || offering.stripeSubscriptionId || "",
-      completedAt: status === "completed" ? offering.completedAt || new Date().toISOString() : offering.completedAt || ""
+      completedAt: status === "completed" ? offering.completedAt || new Date().toISOString() : offering.completedAt || "",
+      ...feeUpdates
     });
   }
 
@@ -4972,13 +5078,24 @@ async function processStripeWebhookEvent(env, event) {
   if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
     const paymentStatus = object.payment_status || "paid";
     const status = paymentStatus === "paid" || object.mode === "subscription" ? "completed" : "pending";
+    const existingOffering = object.id ? await loadDonorOfferingByCheckout(env, object.id) : null;
+    const paymentIntentId = checkoutPaymentIntentId(object);
+    const feeUpdates = status === "completed" && paymentIntentId
+      ? await stripePaymentIntentFinancialUpdates(
+        env,
+        paymentIntentId,
+        object.metadata?.parish_id || existingOffering?.parishId || "",
+        existingOffering || object.metadata || {}
+      )
+      : {};
     const updatedOffering = await updateDonorOfferingByCheckout(env, object.id, {
       status,
       paymentStatus,
       stripeCustomerId: object.customer || "",
-      stripePaymentIntentId: object.payment_intent || "",
+      stripePaymentIntentId: paymentIntentId || "",
       stripeSubscriptionId: object.subscription || "",
-      completedAt: status === "completed" ? (object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()) : ""
+      completedAt: status === "completed" ? (object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()) : "",
+      ...feeUpdates
     });
     if (status === "completed" || paymentStatus === "paid") {
       await ensureCommemorationEntryFromOffering(env, updatedOffering || {}, {
@@ -5029,11 +5146,19 @@ async function processStripeWebhookEvent(env, event) {
   }
 
   if (event.type === "payment_intent.succeeded") {
+    const existingOffering = await loadDonorOfferingByPaymentIntent(env, object.id);
+    const feeUpdates = await stripePaymentIntentFinancialUpdates(
+      env,
+      object.id,
+      object.metadata?.parish_id || existingOffering?.parishId || "",
+      existingOffering || object.metadata || {}
+    );
     const updatedOffering = await updateDonorOfferingByPaymentIntent(env, object.id, {
       status: "completed",
       paymentStatus: "paid",
       stripeCustomerId: object.customer || "",
-      completedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
+      completedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString(),
+      ...feeUpdates
     });
     await ensureCommemorationEntryFromOffering(env, updatedOffering || {}, {
       id: updatedOffering?.checkoutSessionId || updatedOffering?.stripePaymentIntentId || object.id,
@@ -5101,6 +5226,26 @@ async function processStripeWebhookEvent(env, event) {
   if (event.type === "invoice.payment_succeeded" || event.type === "invoice.paid") {
     const metadata = object.subscription_details?.metadata || object.lines?.data?.[0]?.metadata || object.metadata || {};
     if (metadata.donor_email) {
+      const paymentIntentId = stripeObjectId(object.payment_intent);
+      const giftAmountCents = numericCents(metadata.amount_cents) || numericCents(object.amount_paid);
+      const feeUpdates = paymentIntentId
+        ? await stripePaymentIntentFinancialUpdates(
+          env,
+          paymentIntentId,
+          metadata.parish_id || "",
+          {
+            amountCents: giftAmountCents,
+            giftAmountCents,
+            chargeCents: numericCents(metadata.charge_cents) || numericCents(object.amount_paid),
+            stripeFeeCents: numericCents(metadata.estimated_stripe_fee_cents),
+            estimatedStripeFeeCents: numericCents(metadata.estimated_stripe_fee_cents),
+            agapayFeeCents: numericCents(metadata.agapay_fee_cents),
+            totalFeeCents: numericCents(metadata.total_fee_cents),
+            coverFees: booleanFromStripeMetadata(metadata.cover_fees, false),
+            paymentMethod: metadata.payment_method || ""
+          }
+        )
+        : {};
       const storedOffering = await storeDonorOffering(env, {
         id: object.id,
         donorEmail: metadata.donor_email,
@@ -5110,16 +5255,24 @@ async function processStripeWebhookEvent(env, event) {
         giftType: metadata.gift_type || "recurring",
         title: metadata.gift_type ? String(metadata.gift_type).replace(/-/g, " ") : "Recurring AGAPAY offering",
         frequency: metadata.frequency || "recurring",
-        amountCents: object.amount_paid || 0,
-        chargeCents: object.amount_paid || 0,
+        amountCents: giftAmountCents,
+        giftAmountCents,
+        chargeCents: numericCents(metadata.charge_cents) || numericCents(object.amount_paid),
+        stripeFeeCents: numericCents(metadata.estimated_stripe_fee_cents),
+        estimatedStripeFeeCents: numericCents(metadata.estimated_stripe_fee_cents),
+        agapayFeeCents: numericCents(metadata.agapay_fee_cents),
+        totalFeeCents: numericCents(metadata.total_fee_cents),
+        coverFees: booleanFromStripeMetadata(metadata.cover_fees, false),
+        paymentMethod: metadata.payment_method || "",
         status: "completed",
         paymentStatus: "paid",
         stripeCustomerId: object.customer || "",
-        stripePaymentIntentId: object.payment_intent || "",
+        stripePaymentIntentId: paymentIntentId,
         stripeSubscriptionId: object.subscription || "",
         namesLiving: metadata.names_living || "",
         namesDeparted: metadata.names_departed || "",
-        createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
+        createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString(),
+        ...feeUpdates
       });
       await ensureCommemorationEntryFromOffering(env, storedOffering || {}, {
         id: object.id,
@@ -5129,7 +5282,7 @@ async function processStripeWebhookEvent(env, event) {
         donorName: metadata.donor_name || object.customer_name || "",
         giftType: metadata.gift_type || "recurring",
         frequency: metadata.frequency || "recurring",
-        amountCents: object.amount_paid || 0,
+        amountCents: giftAmountCents,
         namesLiving: metadata.names_living || "",
         namesDeparted: metadata.names_departed || "",
         createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()

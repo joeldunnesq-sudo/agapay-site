@@ -37,9 +37,9 @@ assert.ok(worker.includes("PARISH_ID_INDEX_PREFIX"), "worker should maintain KV 
 assert.ok(worker.includes("handleAdminRebuildIndexes"), "worker should expose an admin-only index rebuild endpoint");
 assert.ok(worker.includes("handleAdminReleaseStatus"), "worker should expose an admin release status endpoint");
 assert.ok(worker.includes('url.pathname === "/api/admin/release-status"'), "worker should route the admin release status endpoint");
-assert.ok(worker.includes("checkoutFinancials("), "worker should centralize checkout fee calculations");
-assert.ok(worker.includes("grossUpForStripeProcessingFeeCents("), "worker should gross up recurring donations only for Stripe processing when requested");
-assert.ok(!worker.includes("subscription_data[application_fee_percent]"), "worker should not apply AGAPAY application fee percentages to recurring donor gifts");
+assert.ok(worker.includes("checkoutFinancials("), "worker should centralize donation fee calculations");
+assert.ok(worker.includes("subscription_data[application_fee_percent]"), "worker should apply AGAPAY donation fees to recurring donor gifts");
+assert.ok(worker.includes("Parish SaaS subscription billing is created in a separate flow"), "worker should keep parish subscription billing separate from donation fees");
 assert.ok(worker.includes("/api/checkout-session-status"), "worker should expose checkout return reconciliation");
 assert.ok(worker.includes("session_id={CHECKOUT_SESSION_ID}"), "Stripe success URLs should include the Checkout session id");
 assert.ok(worker.includes("/donor?gift_success=1"), "authenticated donor checkouts should return to the donor dashboard");
