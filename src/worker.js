@@ -17,6 +17,8 @@ const PASSWORD_HASH_ITERATIONS = 100000;
 const DONOR_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14;
 const ADMIN_SESSION_TTL_MS = 1000 * 60 * 60 * 12;
 const ADMIN_SESSION_MAX = 32;
+const PARISH_SESSION_TTL_MS = 1000 * 60 * 60 * 12;
+const PARISH_SESSION_MAX = 16;
 const STRIPE_EVENT_PROCESSING_RETRY_MS = 1000 * 60 * 10;
 
 const subscriptionTiers = [
@@ -942,6 +944,61 @@ async function applyParishDashboardPassword(registration, password, { temporary 
     parishDashboardTokenCreatedAt: registration.parishDashboardTokenCreatedAt || new Date().toISOString(),
     parishDashboardTokenUpdatedAt: new Date().toISOString()
   };
+}
+
+function pruneParishDashboardSessions(sessions, nowMs = Date.now()) {
+  return (Array.isArray(sessions) ? sessions : []).filter((entry) => {
+    const expiresAtMs = Date.parse(entry?.expiresAt || "");
+    return Number.isFinite(expiresAtMs) && expiresAtMs > nowMs;
+  });
+}
+
+async function issueParishDashboardSession(registration) {
+  const nowMs = Date.now();
+  const token = generateSecret("agp_parish");
+  const sessionSalt = generateSecret("parish_salt");
+  const tokenHash = await hashSessionToken(token, sessionSalt);
+  const createdAt = new Date(nowMs).toISOString();
+  const expiresAt = new Date(nowMs + PARISH_SESSION_TTL_MS).toISOString();
+  const sessions = pruneParishDashboardSessions(registration?.parishDashboardSessions, nowMs);
+  sessions.push({
+    id: generateSecret("parishsess"),
+    tokenHash,
+    sessionSalt,
+    createdAt,
+    expiresAt
+  });
+  sessions.sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
+  while (sessions.length > PARISH_SESSION_MAX) sessions.shift();
+
+  return {
+    token,
+    createdAt,
+    expiresAt,
+    registration: {
+      ...registration,
+      parishDashboardSessions: sessions
+    }
+  };
+}
+
+async function resolveParishDashboardSession(registration, token) {
+  if (!registration || !token) return null;
+  const active = pruneParishDashboardSessions(registration.parishDashboardSessions);
+  for (const session of active) {
+    const submitted = await hashSessionToken(token, session.sessionSalt || "");
+    if (secureCompare(submitted, session.tokenHash || "")) {
+      return {
+        id: session.id || "",
+        expiresAt: session.expiresAt || ""
+      };
+    }
+  }
+  return null;
+}
+
+async function verifyParishDashboardBearer(registration, token) {
+  return Boolean(await resolveParishDashboardSession(registration, token));
 }
 
 async function migrateDonorEmailReferences(env, oldEmail, newEmail) {
@@ -5299,7 +5356,7 @@ async function handleParishStripeRefresh(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
 
   const token = getBearerToken(request);
-  if (!(await verifyParishDashboardPassword(found.registration, token))) {
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
 
@@ -5362,7 +5419,7 @@ async function handleParishStripeOnboarding(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
 
   const token = getBearerToken(request);
-  if (!(await verifyParishDashboardPassword(found.registration, token))) {
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
   if (found.registration.status !== "verified") {
@@ -5391,7 +5448,7 @@ async function handleParishSubscriptionCheckout(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
 
   const token = getBearerToken(request);
-  if (!(await verifyParishDashboardPassword(found.registration, token))) {
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
   if (found.registration.status !== "verified") {
@@ -5425,7 +5482,7 @@ async function handleParishSubscriptionRefresh(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
 
   const token = getBearerToken(request);
-  if (!(await verifyParishDashboardPassword(found.registration, token))) {
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
 
@@ -5493,7 +5550,7 @@ async function handleParishSubscriptionPortal(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
 
   const token = getBearerToken(request);
-  if (!(await verifyParishDashboardPassword(found.registration, token))) {
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
 
@@ -5531,7 +5588,7 @@ async function handleParishCommemorations(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
 
   const token = getBearerToken(request);
-  if (!(await verifyParishDashboardPassword(found.registration, token))) {
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
 
@@ -5659,7 +5716,7 @@ async function handleParishPayoutDiagnostics(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
 
   const token = getBearerToken(request);
-  if (!(await verifyParishDashboardPassword(found.registration, token))) {
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
 
@@ -5963,7 +6020,7 @@ async function handleParishGivingSummary(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
 
   const token = getBearerToken(request);
-  if (!(await verifyParishDashboardPassword(found.registration, token))) {
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
 
@@ -6010,7 +6067,7 @@ async function handleParishGivingHistory(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
 
   const token = getBearerToken(request);
-  if (!(await verifyParishDashboardPassword(found.registration, token))) {
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
 
@@ -6031,7 +6088,7 @@ async function handleParishRecurringHealth(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
 
   const token = getBearerToken(request);
-  if (!(await verifyParishDashboardPassword(found.registration, token))) {
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
 
@@ -6097,7 +6154,7 @@ async function handleParishDashboard(request, env, parishId) {
   if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
 
   const token = getBearerToken(request);
-  if (!(await verifyParishDashboardPassword(found.registration, token))) {
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return unauthorized();
   }
 
@@ -6146,15 +6203,59 @@ async function handleParishDashboard(request, env, parishId) {
       parishUpdatedAt: new Date().toISOString()
     };
 
+    let nextSession = null;
     if (requestedPassword) {
       updated = await applyParishDashboardPassword(updated, requestedPassword, { temporary: false });
+      updated = {
+        ...updated,
+        parishDashboardSessions: []
+      };
+      nextSession = await issueParishDashboardSession(updated);
+      updated = nextSession.registration;
     }
 
     await saveRegistrationRecord(env, found.key, updated, current);
-    return json({ ok: true, parish: updated });
+    return json({
+      ok: true,
+      parish: updated,
+      token: nextSession?.token || "",
+      expiresAt: nextSession?.expiresAt || ""
+    });
   }
 
   return json({ error: "Method not allowed" }, { status: 405 });
+}
+
+async function handleParishSession(request, env, parishId) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-auth", { limit: 20, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    body = {};
+  }
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const password = String(body.password || "").trim();
+  if (!(await verifyParishDashboardPassword(found.registration, password))) {
+    return unauthorized();
+  }
+
+  const session = await issueParishDashboardSession(found.registration);
+  await saveRegistrationRecord(env, found.key, session.registration, found.registration);
+
+  return json({
+    ok: true,
+    token: session.token,
+    expiresAt: session.expiresAt,
+    parish: parishDashboardPayload(parishId, session.registration)
+  });
 }
 
 function handleLiturgicalCalendar(request) {
@@ -6427,6 +6528,10 @@ export default {
     if (url.pathname.startsWith("/api/admin/registrations/")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", ""));
       return handleAdminRegistrationDetail(request, env, reference);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/session")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/session", ""));
+      return handleParishSession(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stripe-onboarding")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stripe-onboarding", ""));

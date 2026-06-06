@@ -7,16 +7,19 @@
   let activeTab         = 'giving';
   let allGifts          = [];   // full history cache
   let filteredGifts     = [];   // filtered view
+  const parishSessionStorageKey = 'agapay_parish_session_token';
+  const legacyParishTokenStorageKey = 'agapay_parish_token';
 
   // ── SESSION PERSISTENCE ──────────────────────────────────
   (function restoreSession() {
     try {
       const isDashboardPage = Boolean(document.getElementById('setupWizardPane'));
       const id    = sessionStorage.getItem('agapay_parish_id');
-      const token = sessionStorage.getItem('agapay_parish_token');
+      const token = sessionStorage.getItem(parishSessionStorageKey);
       const parishIdField = document.getElementById('parishId');
       const parishTokenField = document.getElementById('parishToken');
       const urlParish = new URLSearchParams(window.location.search).get('parish');
+      sessionStorage.removeItem(legacyParishTokenStorageKey);
       if (isDashboardPage && (!id || !token)) {
         const suffix = urlParish || id;
         window.location.replace('/parish/login' + (suffix ? `?parish=${encodeURIComponent(suffix)}` : ''));
@@ -34,14 +37,16 @@
   function saveSession() {
     try {
       sessionStorage.setItem('agapay_parish_id',    document.getElementById('parishId').value.trim());
-      sessionStorage.setItem('agapay_parish_token', document.getElementById('parishToken').value.trim());
+      sessionStorage.setItem(parishSessionStorageKey, document.getElementById('parishToken').value.trim());
+      sessionStorage.removeItem(legacyParishTokenStorageKey);
     } catch {}
   }
 
   function logoutParish() {
     try {
       sessionStorage.removeItem('agapay_parish_id');
-      sessionStorage.removeItem('agapay_parish_token');
+      sessionStorage.removeItem(parishSessionStorageKey);
+      sessionStorage.removeItem(legacyParishTokenStorageKey);
     } catch {}
     window.location.href = '/parish/login';
   }
@@ -141,13 +146,17 @@
     if (!parishId || !password) { setStatus('Enter the parish ID and password.','error'); return; }
     if (submit) { submit.classList.add('loading'); submit.disabled = true; }
     try {
-      const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(parishId), {
-        headers: { 'Accept':'application/json', 'Authorization':'Bearer ' + password }
+      const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(parishId) + '/session', {
+        method: 'POST',
+        headers: { 'Accept':'application/json', 'Content-Type':'application/json' },
+        body: JSON.stringify({ password })
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Unable to log in');
+      if (!data.token) throw new Error('Login succeeded but no session token was returned.');
       sessionStorage.setItem('agapay_parish_id', parishId);
-      sessionStorage.setItem('agapay_parish_token', password);
+      sessionStorage.setItem(parishSessionStorageKey, data.token);
+      sessionStorage.removeItem(legacyParishTokenStorageKey);
       window.location.href = '/parish/dashboard?parish=' + encodeURIComponent(parishId);
     } catch (err) {
       setStatus(err.message,'error');
@@ -727,7 +736,7 @@
       const res  = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId), { method:'PATCH', headers:{...authHeaders(),'Content-Type':'application/json'}, body:JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) { setStatus(data.error || 'Unable to save dashboard.','error'); return; }
-      if (body.newDashboardPassword) { document.getElementById('parishToken').value = body.newDashboardPassword; saveSession(); }
+      if (body.newDashboardPassword && data.token) { document.getElementById('parishToken').value = data.token; saveSession(); }
       setStatus(body.newDashboardPassword ? 'Settings saved. Password updated.' : 'Parish settings saved.', 'success');
       await loadDashboard();
     } catch (err) { setStatus(err.message,'error'); }
