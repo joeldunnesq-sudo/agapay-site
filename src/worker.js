@@ -3938,6 +3938,68 @@ async function handleDonorOfferings(request, env) {
   return json({ offerings: offerings.map(publicDonorOffering), summary: donorSummaryFromOfferings(offerings, commemorations) });
 }
 
+async function handleDonorSubscriptionPortal(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "donor-money-actions", { limit: 10, windowSeconds: 300 });
+  if (limited) return limited;
+
+  const donor = await requireDonor(request, env);
+  if (!donor) return unauthorized();
+
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    body = {};
+  }
+
+  const requestedParishId = String(body.parishId || donor.defaultParishId || "").trim();
+  const offerings = await reconcilePendingDonorOfferings(env, await loadDonorOfferings(env, donor.email, 100));
+  const recurringOfferings = offerings
+    .filter((offering) => offering.stripeCustomerId && offering.parishId && offering.frequency && offering.frequency !== "once")
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+
+  const selectedOffering = recurringOfferings.find((offering) => requestedParishId && offering.parishId === requestedParishId)
+    || recurringOfferings[0];
+
+  if (!selectedOffering) {
+    return json(
+      { error: "No recurring gifts found", detail: "Create a recurring gift before opening subscription management." },
+      { status: 422 }
+    );
+  }
+
+  const found = await findRegistrationByParishId(env, selectedOffering.parishId);
+  const stripeAccountId = found?.registration?.stripeAccountId || "";
+  if (!stripeAccountId) {
+    return json(
+      { error: "Parish Stripe account unavailable", detail: "This parish is not currently connected for Stripe subscription management." },
+      { status: 422 }
+    );
+  }
+
+  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+  const form = new URLSearchParams({
+    customer: selectedOffering.stripeCustomerId,
+    return_url: `${String(appUrl).replace(/\/+$/, "")}/donor/offerings`
+  });
+
+  const session = await stripeFormConnectedRequest(env, "/v1/billing_portal/sessions", form, stripeAccountId);
+  if (!session.ok) {
+    return json(
+      { error: "Stripe billing portal failed", detail: session.body.error?.message || "Unknown Stripe error" },
+      { status: 502 }
+    );
+  }
+
+  return json({
+    ok: true,
+    portalUrl: session.body.url,
+    parishId: selectedOffering.parishId,
+    parishName: selectedOffering.parishName || found?.registration?.parishName || ""
+  });
+}
+
 async function handleDonorCommemorations(request, env) {
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
@@ -6480,6 +6542,9 @@ export default {
     }
     if (url.pathname === "/api/donor/offerings") {
       return handleDonorOfferings(request, env);
+    }
+    if (url.pathname === "/api/donor/subscription-portal") {
+      return handleDonorSubscriptionPortal(request, env);
     }
     if (url.pathname === "/api/donor/commemorations") {
       return handleDonorCommemorations(request, env);

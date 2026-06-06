@@ -733,6 +733,54 @@ h1 { margin-top: 0.25rem; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 0.98
 .status-pill.pending { background: var(--gold-soft); color: #7a5c17; }
 .status-pill.wine { background: var(--wine-soft); color: var(--wine); }
 
+.card-copy {
+  color: var(--stone);
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 0.85rem;
+}
+
+.recurring-management-card {
+  border-top: 3px solid var(--gold);
+}
+
+.recurring-management-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.recurring-management-row,
+.recurring-management-empty {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  align-items: center;
+  border: 1px solid rgba(184, 144, 47, 0.22);
+  border-radius: var(--r);
+  background: linear-gradient(90deg, rgba(200, 162, 74, 0.1), rgba(255, 255, 255, 0.76));
+  padding: 0.85rem;
+}
+
+.recurring-management-row strong,
+.recurring-management-empty strong {
+  display: block;
+  color: var(--deep);
+  font-size: 14px;
+}
+
+.recurring-management-row span,
+.recurring-management-empty span {
+  display: block;
+  margin-top: 0.22rem;
+  color: var(--stone);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.recurring-management-empty {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -984,6 +1032,15 @@ body.donor-login-simple {
   .form-grid, .quick-amounts { grid-template-columns: 1fr 1fr; }
   .list-item { grid-template-columns: 1fr; }
   .list-amount { text-align: left; }
+  .recurring-management-row,
+  .recurring-management-empty {
+    grid-template-columns: 1fr;
+  }
+  .recurring-management-row .btn,
+  .recurring-management-empty .btn {
+    width: 100%;
+    justify-content: center;
+  }
   .calendar-grid { display: block; border: 0; background: transparent; }
   .day-head { display: none; }
   .day {

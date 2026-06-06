@@ -38,7 +38,7 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/donor/give"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg> Make another gift</a></div>
     </aside>
     <main class="content donor-mobile-content">
-      <div class="topbar"><div class="topbar-title">My Offerings</div><div class="topbar-actions"><button class="btn btn-ghost btn-sm" type="button" onclick="filterOfferings('all')">All</button><button class="btn btn-ghost btn-sm" type="button" onclick="filterOfferings('recurring')">Recurring</button><button class="btn btn-ghost btn-sm" type="button" onclick="filterOfferings('commemoration')">Commemorations</button></div></div>
+      <div class="topbar"><div class="topbar-title">My Offerings</div><div class="topbar-actions"><button class="btn btn-gold btn-sm" type="button" onclick="openDonorRecurringPortal()">Manage recurring</button><button class="btn btn-ghost btn-sm" type="button" onclick="filterOfferings('all')">All</button><button class="btn btn-ghost btn-sm" type="button" onclick="filterOfferings('recurring')">Recurring</button><button class="btn btn-ghost btn-sm" type="button" onclick="filterOfferings('commemoration')">Commemorations</button></div></div>
       <div class="page">
         <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
         <section class="hero"><div class="hero-grid"><div><div class="eyebrow">History and receipts</div><h1>Every gift in one clear place.</h1><p>Filter by purpose, view status, and prepare annual stewardship summaries for your household records.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
@@ -46,6 +46,15 @@
           <div class="metric-card"><div class="metric-label">Total this year</div><div class="metric-value" id="offeringsYtd">$0</div><div class="metric-note">Paid gifts from live KV history.</div></div>
           <div class="metric-card"><div class="metric-label">Recurring gifts</div><div class="metric-value" id="offeringsRecurring">0</div><div class="metric-note">Recurring checkout records.</div></div>
           <div class="metric-card"><div class="metric-label">Receipts</div><div class="metric-value" id="offeringsReceiptCount">0</div><div class="metric-note">Recorded offerings for this account.</div></div>
+        </section>
+        <section class="card section-gap recurring-management-card">
+          <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/><path d="M17 15l2 2 3-4"/></svg></span> Manage Recurring Giving</div><span class="status-pill" id="recurringManageStatus">Secure portal</span></div>
+          <div class="card-body">
+            <p class="card-copy">Change payment methods, update recurring amounts, or cancel recurring gifts in Stripe's secure donor portal.</p>
+            <div class="recurring-management-list" id="recurringManagementList">
+              <div class="notice">Sign in to load recurring giving management.</div>
+            </div>
+          </div>
         </section>
         <section class="card section-gap">
           <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></span> Offering History</div><span class="status-pill" id="offeringsStatus">Sign in</span></div>

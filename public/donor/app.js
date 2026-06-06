@@ -1048,6 +1048,7 @@ function renderOfferingsPayload(payload = {}, fallbackDashboard = null, statusTe
   setText("offeringsRecurring", String(summary.recurringCount || 0));
   setText("offeringsReceiptCount", String(summary.offeringCount || offerings.length || 0));
   setText("offeringsStatus", offerings.length ? statusText : "No data yet");
+  renderRecurringManagement(offerings);
   renderDonorOfferings();
   return { offerings, summary };
 }
@@ -1115,6 +1116,84 @@ function renderDonorOfferings() {
     return matchesType && JSON.stringify(item).toLowerCase().includes(query);
   });
   list.innerHTML = offeringRows(rows);
+}
+
+function recurringManagementItems(offerings = []) {
+  const seen = new Set();
+  return offerings
+    .filter((item) => item.parishId && item.stripeCustomerId && item.frequency && item.frequency !== "once")
+    .map((item) => ({
+      parishId: item.parishId,
+      parishName: item.parishName || item.parishId || "Parish",
+      title: item.fund || item.campaign || item.title || item.giftType || "Recurring gift",
+      amountCents: Number(item.amountCents || 0),
+      frequency: item.frequency || "recurring",
+      createdAt: item.createdAt || ""
+    }))
+    .filter((item) => {
+      const key = item.parishId;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function renderRecurringManagement(offerings = []) {
+  const list = document.getElementById("recurringManagementList");
+  if (!list) return;
+  const items = recurringManagementItems(offerings);
+  setText("recurringManageStatus", items.length ? `${items.length} parish${items.length === 1 ? "" : "es"}` : "No recurring gifts");
+  if (!items.length) {
+    list.innerHTML = `
+      <div class="recurring-management-empty">
+        <strong>No recurring gifts yet.</strong>
+        <span>When you create a recurring offering, you will be able to manage, change, or cancel it here.</span>
+        <a class="btn btn-gold btn-sm" href="/donor/give?frequency=monthly">Start recurring gift</a>
+      </div>
+    `;
+    return;
+  }
+  list.innerHTML = items.map((item) => {
+    const encodedParishId = encodeURIComponent(item.parishId);
+    return `
+    <article class="recurring-management-row">
+      <div>
+        <strong>${escapeHtml(item.parishName)}</strong>
+        <span>${escapeHtml(item.title)} · ${money(item.amountCents)} · ${escapeHtml(item.frequency)}</span>
+      </div>
+      <button class="btn btn-gold btn-sm" type="button" onclick="openDonorRecurringPortal(decodeURIComponent('${encodedParishId}'), this)">Manage</button>
+    </article>
+  `;
+  }).join("");
+}
+
+async function openDonorRecurringPortal(parishId = "", button = null) {
+  const session = donorSession();
+  if (!session.email || !session.token) {
+    setDonorStatus("Log in to manage recurring giving.", "error");
+    window.location.href = "/donor/login";
+    return;
+  }
+  const win = window.open("", "_blank");
+  if (button) button.disabled = true;
+  setDonorStatus("Opening secure recurring gift management...");
+  try {
+    const data = await donorApi("/api/donor/subscription-portal", {
+      method: "POST",
+      body: JSON.stringify({ parishId })
+    });
+    if (win) {
+      win.location.href = data.portalUrl;
+    } else {
+      window.location.href = data.portalUrl;
+    }
+    setDonorStatus("Recurring gift management opened.", "success");
+  } catch (err) {
+    if (win) win.close();
+    setDonorStatus(err.message || "Unable to open recurring gift management.", "error");
+  } finally {
+    if (button) button.disabled = false;
+  }
 }
 
 function filterOfferings(type) {
