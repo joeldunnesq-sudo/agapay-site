@@ -37,6 +37,15 @@
     body{font-family:var(--sans);background:var(--cream);color:var(--ink);-webkit-font-smoothing:antialiased}
     a{text-decoration:none;color:inherit}
     .wrap{width:min(1220px,calc(100% - 2.25rem));margin:0 auto}
+    .page{
+      width:min(1320px,calc(100% - 2rem));
+      margin:.95rem auto 2rem;
+      border:1px solid var(--line);
+      background:var(--paper);
+      box-shadow:0 10px 38px rgba(12,22,32,.08);
+      overflow:hidden;
+    }
+    .page .wrap{width:min(1220px,calc(100% - 2.25rem))}
 
     /* REVISED HERO CSS */
     .hero {
@@ -273,11 +282,7 @@
     }
     
     @media (max-width: 620px) {
-      .site-header { padding: 0.75rem 1rem; }
-      .brand-name strong { font-size: 1.45rem; }
-      .brand-name span { font-size: 0.52rem; }
-      .brand-mark { width: 38px; height: 38px; }
-      .brand-mark img { width: 34px; height: 34px; }
+      .page { width: min(100%, calc(100% - 1rem)); margin: 0.5rem auto 1.5rem; }
       
       .hero-grid { padding: 2rem 0 2rem; min-height: auto; }
       .hero-art { height: 280px; }
@@ -298,7 +303,7 @@
   <script src="/site-chrome.js" defer></script>
 </head>
 <body>
-  <main>
+  <main class="page">
     <section class="hero">
       <div class="wrap hero-grid">
         <div class="hero-copy">

@@ -204,6 +204,69 @@
     });
   }
 
+  function initPageReveal(activeKey) {
+    if (!["why", "vision", "features", "pricing", "how", "about"].includes(activeKey)) return;
+
+    const selectors = [
+      ".hero-copy",
+      ".hero-art",
+      ".feat-hero > *",
+      ".pricing-hero > *",
+      ".values .value",
+      ".phase-card",
+      ".eco-statement",
+      ".eco-trust-item",
+      ".mission-copy",
+      ".mission-photo",
+      ".cta-shell",
+      ".section",
+      ".comparison",
+      ".stat-card",
+      ".feature-card",
+      ".tier-card",
+      ".fee-banner",
+      ".lower-grid > *",
+      ".faq-section",
+      ".closing-cta",
+      ".belief-card",
+      ".story-card",
+      ".need-card",
+      ".vision-card",
+      ".founder-card"
+    ];
+
+    const targets = Array.from(document.querySelectorAll(selectors.join(",")))
+      .filter((element) => !element.closest(".site-header, .site-footer, .mobile-drawer"))
+      .filter((element, index, list) => list.indexOf(element) === index);
+
+    if (!targets.length) return;
+
+    targets.forEach((element, index) => {
+      if (!element.classList.contains("reveal")) {
+        element.classList.add("agp-reveal");
+        if (index % 4) element.classList.add(`agp-reveal-delay-${index % 4}`);
+      }
+    });
+
+    const revealTargets = targets.filter((element) => element.classList.contains("agp-reveal"));
+    if (!revealTargets.length) return;
+
+    if (!("IntersectionObserver" in window)) {
+      revealTargets.forEach((element) => element.classList.add("is-visible"));
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.08, rootMargin: "0px 0px -6% 0px" });
+
+    revealTargets.forEach((element) => observer.observe(element));
+  }
+
   function removeLegacyMobileChrome() {
     document.querySelectorAll(".site-mobile-drawer-backdrop, .site-mobile-drawer, .mobile-nav-drawer").forEach(function (node) {
       node.remove();
@@ -241,6 +304,7 @@
     }
 
     document.body.classList.add("agp-shell-ready");
+    initPageReveal(activeKey);
     bindInteractions();
   }
 
