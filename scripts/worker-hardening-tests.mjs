@@ -754,4 +754,146 @@ async function withMockFetch(handler, run) {
   assert.equal(updated.stripePaymentIntentId, "pi_async_failed");
 }
 
+{
+  const testEnv = env();
+  const offeringKey = "__agapay_donor_offering__faithful@example.com:off_refund";
+  await testEnv.AGAPAY_REGISTRATIONS.put(offeringKey, JSON.stringify({
+    id: "off_refund",
+    donorEmail: "faithful@example.com",
+    parishId: "st-test",
+    status: "completed",
+    paymentStatus: "paid",
+    amountCents: 5000,
+    chargeCents: 5150,
+    stripePaymentIntentId: "pi_test_refund"
+  }));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_payment_intent__pi_test_refund", offeringKey);
+
+  const partial = await postStripeWebhook(testEnv, {
+    id: "evt_charge_partially_refunded",
+    type: "charge.refunded",
+    data: {
+      object: {
+        id: "ch_test_partial_refund",
+        payment_intent: "pi_test_refund",
+        amount: 5150,
+        amount_refunded: 1500
+      }
+    }
+  });
+  assert.equal(partial.status, 200);
+  const partiallyRefunded = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(offeringKey));
+  assert.equal(partiallyRefunded.status, "partially_refunded");
+  assert.equal(partiallyRefunded.paymentStatus, "partially_refunded");
+  assert.equal(partiallyRefunded.refundedCents, 1500);
+  assert.ok(partiallyRefunded.refundedAt);
+
+  const full = await postStripeWebhook(testEnv, {
+    id: "evt_charge_fully_refunded",
+    type: "charge.refunded",
+    data: {
+      object: {
+        id: "ch_test_full_refund",
+        payment_intent: "pi_test_refund",
+        amount: 5150,
+        amount_refunded: 5150
+      }
+    }
+  });
+  assert.equal(full.status, 200);
+  const fullyRefunded = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(offeringKey));
+  assert.equal(fullyRefunded.status, "refunded");
+  assert.equal(fullyRefunded.paymentStatus, "refunded");
+  assert.equal(fullyRefunded.refundedCents, 5150);
+}
+
+{
+  const testEnv = env();
+  const offeringKey = "__agapay_donor_offering__faithful@example.com:off_dispute";
+  await testEnv.AGAPAY_REGISTRATIONS.put(offeringKey, JSON.stringify({
+    id: "off_dispute",
+    donorEmail: "faithful@example.com",
+    parishId: "st-test",
+    status: "completed",
+    paymentStatus: "paid",
+    stripePaymentIntentId: "pi_test_dispute"
+  }));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_payment_intent__pi_test_dispute", offeringKey);
+
+  const opened = await postStripeWebhook(testEnv, {
+    id: "evt_charge_dispute_created",
+    type: "charge.dispute.created",
+    data: {
+      object: {
+        id: "dp_test_created",
+        payment_intent: "pi_test_dispute",
+        amount: 5150,
+        reason: "fraudulent",
+        status: "needs_response",
+        created: 1760000000
+      }
+    }
+  });
+  assert.equal(opened.status, 200);
+  const disputed = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(offeringKey));
+  assert.equal(disputed.status, "disputed");
+  assert.equal(disputed.paymentStatus, "disputed");
+  assert.equal(disputed.disputedCents, 5150);
+  assert.equal(disputed.disputeReason, "fraudulent");
+  assert.ok(disputed.disputedAt);
+
+  const lost = await postStripeWebhook(testEnv, {
+    id: "evt_charge_dispute_closed_lost",
+    type: "charge.dispute.closed",
+    data: {
+      object: {
+        id: "dp_test_closed_lost",
+        payment_intent: "pi_test_dispute",
+        amount: 5150,
+        status: "lost",
+        created: 1760003600
+      }
+    }
+  });
+  assert.equal(lost.status, 200);
+  const disputeLost = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(offeringKey));
+  assert.equal(disputeLost.status, "dispute_closed");
+  assert.equal(disputeLost.paymentStatus, "dispute_closed");
+  assert.equal(disputeLost.disputeStatus, "lost");
+  assert.ok(disputeLost.disputeClosedAt);
+}
+
+{
+  const testEnv = env();
+  const offeringKey = "__agapay_donor_offering__faithful@example.com:off_dispute_won";
+  await testEnv.AGAPAY_REGISTRATIONS.put(offeringKey, JSON.stringify({
+    id: "off_dispute_won",
+    donorEmail: "faithful@example.com",
+    parishId: "st-test",
+    status: "disputed",
+    paymentStatus: "disputed",
+    stripePaymentIntentId: "pi_test_dispute_won"
+  }));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_payment_intent__pi_test_dispute_won", offeringKey);
+
+  const won = await postStripeWebhook(testEnv, {
+    id: "evt_charge_dispute_closed_won",
+    type: "charge.dispute.closed",
+    data: {
+      object: {
+        id: "dp_test_closed_won",
+        payment_intent: "pi_test_dispute_won",
+        amount: 5150,
+        status: "won",
+        created: 1760007200
+      }
+    }
+  });
+  assert.equal(won.status, 200);
+  const disputeWon = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(offeringKey));
+  assert.equal(disputeWon.status, "completed");
+  assert.equal(disputeWon.paymentStatus, "paid");
+  assert.equal(disputeWon.disputeStatus, "won");
+}
+
 console.log("AGAPAY Worker hardening tests passed.");

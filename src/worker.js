@@ -5208,6 +5208,7 @@ async function processStripeWebhookEvent(env, event) {
       status: "disputed",
       paymentStatus: "disputed",
       stripeDisputeId: object.id || "",
+      disputedCents: object.amount || 0,
       disputeReason: object.reason || "",
       disputedAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
     });
