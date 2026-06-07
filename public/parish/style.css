@@ -1,4 +1,5 @@
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     :root {
       --deep-hero: #061522;
       --deep-hero-2: #0B2130;
