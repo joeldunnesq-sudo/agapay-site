@@ -318,22 +318,26 @@
       stroke: currentColor;
       stroke-width: 1.7;
     }
+    
     .hero-copy h1 {
       font-family: var(--serif);
       color: var(--night);
-      font-size: clamp(3.4rem, 6.4vw, 5.35rem);
+      font-size: clamp(3rem, 5.7vw, 5.5rem);
       line-height: 0.96;
       font-weight: 500;
-      margin-bottom: 1rem;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.2rem;
     }
-    .hero-copy h1 span { display: block; color: var(--gold-dark); }
-    .hero-copy p {
-      color: var(--night);
-      font-size: 1.04rem;
-      line-height: 1.75;
-      margin-bottom: 1rem;
-      max-width: 400px;
-    }
+    .hero-copy h2 {
+      font-family: var(--serif);
+      color: var(--gold-dark);
+      font-size: clamp(2.1rem, 4vw, 3.4rem);
+      font-style: italic;
+      font-weight: 500;
+      line-height: 1.1;
+      margin-bottom: 1.05rem;
+	}
+    
     .hero-actions { position: relative; z-index: 4; display: flex; flex-wrap: wrap; gap: 0.9rem; margin-top: 1.35rem; }
     .btn-primary, .btn-secondary {
       min-height: 46px;
@@ -901,7 +905,8 @@
     <section class="contact-hero">
       <div class="hero-copy reveal">
         <div class="eyebrow"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M8 7h8"/><path d="M6 12h12"/><path d="M8 16l8 2"/></svg>Contact AGAPAY</div>
-        <h1>QUESTIONS? <span>Let's talk.</span></h1>
+        <h1>QUESTIONS?</h1>
+		<h2>Let's talk.</h2>
         <p>Whether you're a parish priest, treasurer, monastery, ministry leader, or business owner, we'd love to hear from you.</p>
         <p>We're intentionally building AGAPAY with direct founder involvement and personal support.</p>
         <div class="hero-actions">
