@@ -54,6 +54,24 @@ async function json(response) {
   return response.json();
 }
 
+async function adminSession(testEnv, password = "root-admin-token-for-tests") {
+  const response = await worker.fetch(request("/api/admin/session", {
+    method: "POST",
+    body: { password, actor: "Test Admin" }
+  }), testEnv);
+  assert.equal(response.status, 200);
+  return json(response);
+}
+
+async function parishSession(testEnv, parishId, password) {
+  const response = await worker.fetch(request(`/api/parish/dashboard/${parishId}/session`, {
+    method: "POST",
+    body: { password }
+  }), testEnv);
+  assert.equal(response.status, 200);
+  return json(response);
+}
+
 async function stripeSignature(payload, secret) {
   const timestamp = Math.floor(Date.now() / 1000);
   const key = await crypto.subtle.importKey(
@@ -140,6 +158,75 @@ async function withMockFetch(handler, run) {
 
 {
   const testEnv = env();
+  const signup = await worker.fetch(request("/api/donor/signup", {
+    method: "POST",
+    body: {
+      donorName: "Reset Member",
+      email: "reset-member@example.com",
+      password: "original-password",
+      parishId: "st-test"
+    }
+  }), testEnv);
+  assert.equal(signup.status, 201);
+  const donorKey = "__agapay_donor__reset-member@example.com";
+  const donor = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(donorKey));
+  await testEnv.AGAPAY_REGISTRATIONS.put(donorKey, JSON.stringify({
+    ...donor,
+    emailVerifiedAt: new Date().toISOString()
+  }));
+
+  const login = await worker.fetch(request("/api/donor/login", {
+    method: "POST",
+    body: { email: "reset-member@example.com", password: "original-password" }
+  }), testEnv);
+  assert.equal(login.status, 200);
+  const loginBody = await json(login);
+  assert.ok(loginBody.token);
+
+  const resetRequest = await worker.fetch(request("/api/donor/password-reset-request", {
+    method: "POST",
+    body: { email: "reset-member@example.com" }
+  }), testEnv);
+  assert.equal(resetRequest.status, 200);
+  const resetBody = await json(resetRequest);
+  assert.match(resetBody.resetUrl, /\/donor\/login\?reset=1/);
+  const resetToken = new URL(resetBody.resetUrl).searchParams.get("token");
+  assert.ok(resetToken);
+
+  const confirm = await worker.fetch(request("/api/donor/password-reset-confirm", {
+    method: "POST",
+    body: {
+      email: "reset-member@example.com",
+      token: resetToken,
+      newPassword: "new-secure-password",
+      confirmPassword: "new-secure-password"
+    }
+  }), testEnv);
+  assert.equal(confirm.status, 200);
+
+  const oldSession = await worker.fetch(request("/api/donor/dashboard", {
+    headers: {
+      Authorization: `Bearer ${loginBody.token}`,
+      "X-AgaPay-Donor-Email": "reset-member@example.com"
+    }
+  }), testEnv);
+  assert.equal(oldSession.status, 401);
+
+  const oldPassword = await worker.fetch(request("/api/donor/login", {
+    method: "POST",
+    body: { email: "reset-member@example.com", password: "original-password" }
+  }), testEnv);
+  assert.equal(oldPassword.status, 401);
+
+  const newPassword = await worker.fetch(request("/api/donor/login", {
+    method: "POST",
+    body: { email: "reset-member@example.com", password: "new-secure-password" }
+  }), testEnv);
+  assert.equal(newPassword.status, 200);
+}
+
+{
+  const testEnv = env();
   const registration = {
     reference: "AGP-REG-TEST",
     status: "verified",
@@ -151,9 +238,11 @@ async function withMockFetch(handler, run) {
   };
   await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
 
+  const bootstrapSession = await adminSession(testEnv);
+
   const passwordUpdate = await worker.fetch(request("/api/admin/password", {
     method: "PATCH",
-    headers: { Authorization: "Bearer root-admin-token-for-tests" },
+    headers: { Authorization: `Bearer ${bootstrapSession.token}` },
     body: {
       newAdminPassword: "new-secure-admin-password",
       confirmAdminPassword: "new-secure-admin-password"
@@ -163,17 +252,91 @@ async function withMockFetch(handler, run) {
   const adminPassword = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get("__agapay_admin_password"));
   assert.equal(adminPassword.version, "pbkdf2-sha256");
 
+  const invalidatedBootstrapSession = await worker.fetch(request("/api/admin/rebuild-indexes", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${bootstrapSession.token}` }
+  }), testEnv);
+  assert.equal(invalidatedBootstrapSession.status, 401);
+
+  const rotatedSession = await adminSession(testEnv, "new-secure-admin-password");
+
   const rebuild = await worker.fetch(request("/api/admin/rebuild-indexes", {
     method: "POST",
-    headers: { Authorization: "Bearer new-secure-admin-password" }
+    headers: { Authorization: `Bearer ${rotatedSession.token}` }
   }), testEnv);
   assert.equal(rebuild.status, 200);
   assert.equal(await testEnv.AGAPAY_REGISTRATIONS.get("__agapay_index_parish_id__st-test"), "AGP-REG-TEST");
 
+  const parishLogin = await parishSession(testEnv, "st-test", "temporary-password");
+
   const parish = await worker.fetch(request("/api/parish/dashboard/st-test", {
-    headers: { Authorization: "Bearer temporary-password" }
+    headers: { Authorization: `Bearer ${parishLogin.token}` }
   }), testEnv);
   assert.equal(parish.status, 200);
+}
+
+{
+  const testEnv = env();
+  const registration = {
+    reference: "AGP-REG-RESET",
+    status: "verified",
+    parishId: "st-reset",
+    parishName: "St. Reset Orthodox Church",
+    communityType: "parish",
+    givingStatus: "active",
+    priestEmail: "priest@st-reset.test",
+    treasurerEmail: "treasurer@st-reset.test",
+    parishDashboardToken: "original-parish-password"
+  };
+  await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
+
+  const wrongContact = await worker.fetch(request("/api/parish/password-reset-request", {
+    method: "POST",
+    body: { parishId: "st-reset", email: "stranger@example.com" }
+  }), testEnv);
+  assert.equal(wrongContact.status, 200);
+  assert.equal((await json(wrongContact)).resetUrl, undefined);
+  let stored = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(registration.reference));
+  assert.equal(stored.parishPasswordResetTokenHash, undefined);
+
+  const session = await parishSession(testEnv, "st-reset", "original-parish-password");
+  const resetRequest = await worker.fetch(request("/api/parish/password-reset-request", {
+    method: "POST",
+    body: { parishId: "st-reset", email: "treasurer@st-reset.test" }
+  }), testEnv);
+  assert.equal(resetRequest.status, 200);
+  const resetBody = await json(resetRequest);
+  assert.match(resetBody.resetUrl, /\/parish\/login\?reset=1/);
+  const resetToken = new URL(resetBody.resetUrl).searchParams.get("token");
+  assert.ok(resetToken);
+
+  const confirm = await worker.fetch(request("/api/parish/password-reset-confirm", {
+    method: "POST",
+    body: {
+      parishId: "st-reset",
+      token: resetToken,
+      newPassword: "new-parish-password",
+      confirmPassword: "new-parish-password"
+    }
+  }), testEnv);
+  assert.equal(confirm.status, 200);
+  stored = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(registration.reference));
+  assert.equal(stored.parishPasswordResetTokenHash, "");
+  assert.deepEqual(stored.parishDashboardSessions, []);
+
+  const oldBearer = await worker.fetch(request("/api/parish/dashboard/st-reset", {
+    headers: { Authorization: `Bearer ${session.token}` }
+  }), testEnv);
+  assert.equal(oldBearer.status, 401);
+
+  const oldPassword = await worker.fetch(request("/api/parish/dashboard/st-reset/session", {
+    method: "POST",
+    body: { password: "original-parish-password" }
+  }), testEnv);
+  assert.equal(oldPassword.status, 401);
+
+  const newPassword = await parishSession(testEnv, "st-reset", "new-parish-password");
+  assert.ok(newPassword.token);
 }
 
 {
@@ -376,6 +539,28 @@ async function withMockFetch(handler, run) {
         payment_intent: "pi_reconcile"
       }), { status: 200 });
     }
+    if (href.endsWith("/v1/payment_intents/pi_reconcile?expand[]=latest_charge.balance_transaction")) {
+      assert.equal(init.headers["Stripe-Account"], "acct_connected_reconcile");
+      return new Response(JSON.stringify({
+        id: "pi_reconcile",
+        amount_received: 2655,
+        latest_charge: {
+          id: "ch_reconcile",
+          amount: 2655,
+          application_fee_amount: 48,
+          payment_method_details: { type: "card" },
+          balance_transaction: {
+            id: "txn_reconcile",
+            fee: 107,
+            net: 2608
+          }
+        },
+        metadata: {
+          amount_cents: "2500",
+          cover_fees: "true"
+        }
+      }), { status: 200 });
+    }
     throw new Error(`Unexpected fetch ${href}`);
   }, async () => {
     const response = await worker.fetch(request("/api/checkout-session-status?session_id=cs_reconcile"), testEnv);
@@ -391,6 +576,8 @@ async function withMockFetch(handler, run) {
   assert.equal(offering.paymentStatus, "paid");
   assert.equal(offering.stripeCustomerId, "cus_reconcile");
   assert.equal(offering.stripePaymentIntentId, "pi_reconcile");
+  assert.equal(offering.stripeFeeSource, "balance_transaction");
+  assert.equal(offering.paymentMethod, "card");
 }
 
 {
@@ -465,8 +652,9 @@ async function withMockFetch(handler, run) {
 
 {
   const testEnv = env();
+  const session = await adminSession(testEnv);
   const releaseStatus = await worker.fetch(request("/api/admin/release-status", {
-    headers: { Authorization: "Bearer root-admin-token-for-tests" }
+    headers: { Authorization: `Bearer ${session.token}` }
   }), testEnv);
   assert.equal(releaseStatus.status, 200);
   const body = await json(releaseStatus);
@@ -494,6 +682,7 @@ async function withMockFetch(handler, run) {
     subscriptionStatus: "active"
   }));
   await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_parish_id__st-parish-refresh", reference);
+  const session = await parishSession(testEnv, "st-parish-refresh", "refresh-password");
 
   await withMockFetch(async (url, init = {}) => {
     const href = String(url);
@@ -514,7 +703,7 @@ async function withMockFetch(handler, run) {
   }, async () => {
     const response = await worker.fetch(request("/api/parish/dashboard/st-parish-refresh/stripe-refresh", {
       method: "POST",
-      headers: { Authorization: "Bearer refresh-password" }
+      headers: { Authorization: `Bearer ${session.token}` }
     }), testEnv);
     assert.equal(response.status, 200);
     const body = await json(response);
@@ -662,7 +851,7 @@ async function withMockFetch(handler, run) {
   assert.equal(response.status, 200);
   const updated = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(offeringKey));
   assert.equal(updated.status, "completed");
-  assert.equal(updated.paymentStatus, "succeeded");
+  assert.equal(updated.paymentStatus, "paid");
   assert.equal(updated.stripeCustomerId, "cus_test");
 }
 
@@ -696,6 +885,148 @@ async function withMockFetch(handler, run) {
   assert.equal(updated.status, "failed");
   assert.equal(updated.paymentStatus, "unpaid");
   assert.equal(updated.stripePaymentIntentId, "pi_async_failed");
+}
+
+{
+  const testEnv = env();
+  const offeringKey = "__agapay_donor_offering__faithful@example.com:off_refund";
+  await testEnv.AGAPAY_REGISTRATIONS.put(offeringKey, JSON.stringify({
+    id: "off_refund",
+    donorEmail: "faithful@example.com",
+    parishId: "st-test",
+    status: "completed",
+    paymentStatus: "paid",
+    amountCents: 5000,
+    chargeCents: 5150,
+    stripePaymentIntentId: "pi_test_refund"
+  }));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_payment_intent__pi_test_refund", offeringKey);
+
+  const partial = await postStripeWebhook(testEnv, {
+    id: "evt_charge_partially_refunded",
+    type: "charge.refunded",
+    data: {
+      object: {
+        id: "ch_test_partial_refund",
+        payment_intent: "pi_test_refund",
+        amount: 5150,
+        amount_refunded: 1500
+      }
+    }
+  });
+  assert.equal(partial.status, 200);
+  const partiallyRefunded = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(offeringKey));
+  assert.equal(partiallyRefunded.status, "partially_refunded");
+  assert.equal(partiallyRefunded.paymentStatus, "partially_refunded");
+  assert.equal(partiallyRefunded.refundedCents, 1500);
+  assert.ok(partiallyRefunded.refundedAt);
+
+  const full = await postStripeWebhook(testEnv, {
+    id: "evt_charge_fully_refunded",
+    type: "charge.refunded",
+    data: {
+      object: {
+        id: "ch_test_full_refund",
+        payment_intent: "pi_test_refund",
+        amount: 5150,
+        amount_refunded: 5150
+      }
+    }
+  });
+  assert.equal(full.status, 200);
+  const fullyRefunded = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(offeringKey));
+  assert.equal(fullyRefunded.status, "refunded");
+  assert.equal(fullyRefunded.paymentStatus, "refunded");
+  assert.equal(fullyRefunded.refundedCents, 5150);
+}
+
+{
+  const testEnv = env();
+  const offeringKey = "__agapay_donor_offering__faithful@example.com:off_dispute";
+  await testEnv.AGAPAY_REGISTRATIONS.put(offeringKey, JSON.stringify({
+    id: "off_dispute",
+    donorEmail: "faithful@example.com",
+    parishId: "st-test",
+    status: "completed",
+    paymentStatus: "paid",
+    stripePaymentIntentId: "pi_test_dispute"
+  }));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_payment_intent__pi_test_dispute", offeringKey);
+
+  const opened = await postStripeWebhook(testEnv, {
+    id: "evt_charge_dispute_created",
+    type: "charge.dispute.created",
+    data: {
+      object: {
+        id: "dp_test_created",
+        payment_intent: "pi_test_dispute",
+        amount: 5150,
+        reason: "fraudulent",
+        status: "needs_response",
+        created: 1760000000
+      }
+    }
+  });
+  assert.equal(opened.status, 200);
+  const disputed = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(offeringKey));
+  assert.equal(disputed.status, "disputed");
+  assert.equal(disputed.paymentStatus, "disputed");
+  assert.equal(disputed.disputedCents, 5150);
+  assert.equal(disputed.disputeReason, "fraudulent");
+  assert.ok(disputed.disputedAt);
+
+  const lost = await postStripeWebhook(testEnv, {
+    id: "evt_charge_dispute_closed_lost",
+    type: "charge.dispute.closed",
+    data: {
+      object: {
+        id: "dp_test_closed_lost",
+        payment_intent: "pi_test_dispute",
+        amount: 5150,
+        status: "lost",
+        created: 1760003600
+      }
+    }
+  });
+  assert.equal(lost.status, 200);
+  const disputeLost = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(offeringKey));
+  assert.equal(disputeLost.status, "dispute_closed");
+  assert.equal(disputeLost.paymentStatus, "dispute_closed");
+  assert.equal(disputeLost.disputeStatus, "lost");
+  assert.ok(disputeLost.disputeClosedAt);
+}
+
+{
+  const testEnv = env();
+  const offeringKey = "__agapay_donor_offering__faithful@example.com:off_dispute_won";
+  await testEnv.AGAPAY_REGISTRATIONS.put(offeringKey, JSON.stringify({
+    id: "off_dispute_won",
+    donorEmail: "faithful@example.com",
+    parishId: "st-test",
+    status: "disputed",
+    paymentStatus: "disputed",
+    stripePaymentIntentId: "pi_test_dispute_won"
+  }));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_payment_intent__pi_test_dispute_won", offeringKey);
+
+  const won = await postStripeWebhook(testEnv, {
+    id: "evt_charge_dispute_closed_won",
+    type: "charge.dispute.closed",
+    data: {
+      object: {
+        id: "dp_test_closed_won",
+        payment_intent: "pi_test_dispute_won",
+        amount: 5150,
+        status: "won",
+        created: 1760007200
+      }
+    }
+  });
+  assert.equal(won.status, 200);
+  const disputeWon = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(offeringKey));
+  assert.equal(disputeWon.status, "completed");
+  assert.equal(disputeWon.paymentStatus, "paid");
+  assert.equal(disputeWon.disputeStatus, "won");
 }
 
 console.log("AGAPAY Worker hardening tests passed.");

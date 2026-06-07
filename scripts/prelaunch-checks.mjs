@@ -9,7 +9,7 @@ assert.equal(workerSyntax.status, 0, workerSyntax.stderr || "Worker syntax check
 
 const publicRoutes = [
   "public/index.html",
-  "public/giving/index.html",
+  "public/give/index.html",
   "public/marketplace.html",
   "public/directory.html",
   "public/vision.html",

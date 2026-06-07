@@ -166,6 +166,104 @@
   }
 
   // ── HELPERS ──────────────────────────────────────────────
+  function showParishAuthForm(formId) {
+    ['parishLoginForm', 'parishResetRequestForm', 'parishResetConfirmForm'].forEach((id) => {
+      const form = document.getElementById(id);
+      if (form) form.hidden = id !== formId;
+    });
+  }
+
+  function showParishLogin() {
+    showParishAuthForm('parishLoginForm');
+  }
+
+  function showParishPasswordReset() {
+    const parishId = document.getElementById('parishId')?.value.trim();
+    const resetId = document.getElementById('parishResetId');
+    if (parishId && resetId) resetId.value = parishId;
+    showParishAuthForm('parishResetRequestForm');
+  }
+
+  async function requestParishPasswordReset(event) {
+    event.preventDefault();
+    const parishId = document.getElementById('parishResetId')?.value.trim();
+    const email = document.getElementById('parishResetEmail')?.value.trim();
+    const submit = event.submitter;
+    if (!parishId || !email) { setStatus('Enter the parish ID and contact email.','error'); return; }
+    if (submit) { submit.classList.add('loading'); submit.disabled = true; }
+    try {
+      const res = await fetch('/api/parish/password-reset-request', {
+        method: 'POST',
+        headers: { 'Accept':'application/json', 'Content-Type':'application/json' },
+        body: JSON.stringify({ parishId, email })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to request reset link');
+      setStatus('If that parish contact is registered, a reset link has been sent.','success');
+      if (data.resetUrl) {
+        const actions = document.getElementById('parishResetRequestForm')?.querySelector('.parish-auth-actions');
+        if (actions && !document.getElementById('parishTestResetLink')) {
+          const link = document.createElement('a');
+          link.id = 'parishTestResetLink';
+          link.href = data.resetUrl;
+          link.textContent = 'Open test reset link';
+          link.className = 'btn btn-ghost';
+          actions.appendChild(link);
+        }
+      }
+    } catch (err) {
+      setStatus(err.message,'error');
+    } finally {
+      if (submit) { submit.classList.remove('loading'); submit.disabled = false; }
+    }
+  }
+
+  async function confirmParishPasswordReset(event) {
+    event.preventDefault();
+    const parishId = document.getElementById('parishResetConfirmId')?.value.trim();
+    const token = document.getElementById('parishResetToken')?.value.trim();
+    const newPassword = document.getElementById('parishNewPassword')?.value;
+    const confirmPassword = document.getElementById('parishConfirmPassword')?.value;
+    const submit = event.submitter;
+    if (!parishId || !token || !newPassword) { setStatus('Enter the parish ID and new password.','error'); return; }
+    if (newPassword !== confirmPassword) { setStatus('Passwords do not match.','error'); return; }
+    if (submit) { submit.classList.add('loading'); submit.disabled = true; }
+    try {
+      const res = await fetch('/api/parish/password-reset-confirm', {
+        method: 'POST',
+        headers: { 'Accept':'application/json', 'Content-Type':'application/json' },
+        body: JSON.stringify({ parishId, token, newPassword, confirmPassword })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to update password');
+      sessionStorage.removeItem('agapay_parish_id');
+      sessionStorage.removeItem(parishSessionStorageKey);
+      sessionStorage.removeItem(legacyParishTokenStorageKey);
+      const parishIdField = document.getElementById('parishId');
+      if (parishIdField) parishIdField.value = parishId;
+      showParishAuthForm('parishLoginForm');
+      setStatus('Password updated. Please log in with your new password.','success');
+    } catch (err) {
+      setStatus(err.message,'error');
+    } finally {
+      if (submit) { submit.classList.remove('loading'); submit.disabled = false; }
+    }
+  }
+
+  function initParishPasswordResetPage() {
+    const resetParams = new URLSearchParams(window.location.search);
+    const token = resetParams.get('token') || '';
+    const parishId = resetParams.get('parish') || '';
+    if (!token && resetParams.get('reset') !== '1') return;
+    const tokenField = document.getElementById('parishResetToken');
+    const confirmId = document.getElementById('parishResetConfirmId');
+    const requestId = document.getElementById('parishResetId');
+    if (tokenField) tokenField.value = token;
+    if (confirmId) confirmId.value = parishId;
+    if (requestId) requestId.value = parishId;
+    showParishAuthForm(token ? 'parishResetConfirmForm' : 'parishResetRequestForm');
+  }
+
   function fallbackFunds(v)     { return JSON.stringify(v && v.length ? v : [{ id:'general', name:'General Operating Fund', description:'Utilities, supplies, ministries, and day-to-day parish needs.' }], null, 2); }
   function fallbackCampaigns(v) { return JSON.stringify(v && v.length ? v : [{ id:'alms', name:'Alms Campaign', description:'Parish-approved alms for a specific need.' }], null, 2); }
   function fallbackFundsArray(v)     { return JSON.parse(fallbackFunds(v)); }
@@ -902,3 +1000,4 @@
   const params = new URLSearchParams(window.location.search);
   const parishIdField = document.getElementById('parishId');
   if (params.get('parish') && parishIdField) parishIdField.value = params.get('parish');
+  initParishPasswordResetPage();

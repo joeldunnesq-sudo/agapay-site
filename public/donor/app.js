@@ -807,6 +807,100 @@ async function loginFromPage(event) {
   }
 }
 
+function showDonorAuthForm(formId) {
+  ["donorLoginForm", "donorResetRequestForm", "donorResetConfirmForm"].forEach((id) => {
+    const form = document.getElementById(id);
+    if (form) form.hidden = id !== formId;
+  });
+}
+
+function showDonorLogin() {
+  showDonorAuthForm("donorLoginForm");
+  setDonorStatus("", "");
+}
+
+function showDonorPasswordReset() {
+  const email = document.getElementById("donorEmail")?.value.trim();
+  const resetEmail = document.getElementById("donorResetEmail");
+  if (email && resetEmail) resetEmail.value = email;
+  showDonorAuthForm("donorResetRequestForm");
+  setDonorStatus("", "");
+}
+
+async function requestDonorPasswordReset(event) {
+  event.preventDefault();
+  const email = document.getElementById("donorResetEmail")?.value.trim();
+  if (!email) {
+    setDonorStatus("Enter your email address.", "error");
+    return;
+  }
+  setDonorStatus("Sending reset link...");
+  try {
+    const data = await donorApi("/api/donor/password-reset-request", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
+    });
+    setDonorStatus("If that email is verified, a reset link has been sent.", "success");
+    if (data.resetUrl) {
+      const actions = document.getElementById("donorResetRequestForm")?.querySelector(".donor-auth-actions");
+      if (actions) {
+        const link = document.getElementById("donorTestResetLink") || document.createElement("a");
+        link.id = "donorTestResetLink";
+        link.href = data.resetUrl;
+        link.textContent = "Open test reset link";
+        link.className = "btn btn-ghost";
+        if (!link.parentElement) actions.appendChild(link);
+      }
+    }
+  } catch (err) {
+    setDonorStatus(err.message, "error");
+  }
+}
+
+async function confirmDonorPasswordReset(event) {
+  event.preventDefault();
+  const email = document.getElementById("donorResetConfirmEmail")?.value.trim();
+  const token = document.getElementById("donorResetToken")?.value.trim();
+  const newPassword = document.getElementById("donorNewPassword")?.value;
+  const confirmPassword = document.getElementById("donorConfirmPassword")?.value;
+  if (!email || !token || !newPassword) {
+    setDonorStatus("Enter your email and new password.", "error");
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    setDonorStatus("Passwords do not match.", "error");
+    return;
+  }
+  setDonorStatus("Updating password...");
+  try {
+    await donorApi("/api/donor/password-reset-confirm", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ email, token, newPassword, confirmPassword })
+    });
+    clearDonorSession();
+    const loginEmail = document.getElementById("donorEmail");
+    if (loginEmail) loginEmail.value = email;
+    showDonorAuthForm("donorLoginForm");
+    setDonorStatus("Password updated. Please log in with your new password.", "success");
+  } catch (err) {
+    setDonorStatus(err.message, "error");
+  }
+}
+
+function initDonorPasswordResetPage() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token") || "";
+  const email = params.get("email") || "";
+  if (!token && params.get("reset") !== "1") return;
+  const tokenField = document.getElementById("donorResetToken");
+  const emailField = document.getElementById("donorResetConfirmEmail");
+  if (tokenField) tokenField.value = token;
+  if (emailField) emailField.value = email;
+  showDonorAuthForm(token ? "donorResetConfirmForm" : "donorResetRequestForm");
+}
+
 async function signupFromPage(event) {
   event.preventDefault();
   const donorName = document.getElementById("donorName")?.value.trim();
@@ -1531,4 +1625,5 @@ document.addEventListener("DOMContentLoaded", () => {
   updateDonorAuthState();
   const emailInput = document.getElementById("donorEmail");
   if (emailInput && donorSession().email) emailInput.value = donorSession().email;
+  initDonorPasswordResetPage();
 });
