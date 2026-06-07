@@ -54,6 +54,24 @@ async function json(response) {
   return response.json();
 }
 
+async function adminSession(testEnv, password = "root-admin-token-for-tests") {
+  const response = await worker.fetch(request("/api/admin/session", {
+    method: "POST",
+    body: { password, actor: "Test Admin" }
+  }), testEnv);
+  assert.equal(response.status, 200);
+  return json(response);
+}
+
+async function parishSession(testEnv, parishId, password) {
+  const response = await worker.fetch(request(`/api/parish/dashboard/${parishId}/session`, {
+    method: "POST",
+    body: { password }
+  }), testEnv);
+  assert.equal(response.status, 200);
+  return json(response);
+}
+
 async function stripeSignature(payload, secret) {
   const timestamp = Math.floor(Date.now() / 1000);
   const key = await crypto.subtle.importKey(
@@ -151,9 +169,11 @@ async function withMockFetch(handler, run) {
   };
   await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
 
+  const bootstrapSession = await adminSession(testEnv);
+
   const passwordUpdate = await worker.fetch(request("/api/admin/password", {
     method: "PATCH",
-    headers: { Authorization: "Bearer root-admin-token-for-tests" },
+    headers: { Authorization: `Bearer ${bootstrapSession.token}` },
     body: {
       newAdminPassword: "new-secure-admin-password",
       confirmAdminPassword: "new-secure-admin-password"
@@ -163,15 +183,25 @@ async function withMockFetch(handler, run) {
   const adminPassword = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get("__agapay_admin_password"));
   assert.equal(adminPassword.version, "pbkdf2-sha256");
 
+  const invalidatedBootstrapSession = await worker.fetch(request("/api/admin/rebuild-indexes", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${bootstrapSession.token}` }
+  }), testEnv);
+  assert.equal(invalidatedBootstrapSession.status, 401);
+
+  const rotatedSession = await adminSession(testEnv, "new-secure-admin-password");
+
   const rebuild = await worker.fetch(request("/api/admin/rebuild-indexes", {
     method: "POST",
-    headers: { Authorization: "Bearer new-secure-admin-password" }
+    headers: { Authorization: `Bearer ${rotatedSession.token}` }
   }), testEnv);
   assert.equal(rebuild.status, 200);
   assert.equal(await testEnv.AGAPAY_REGISTRATIONS.get("__agapay_index_parish_id__st-test"), "AGP-REG-TEST");
 
+  const parishLogin = await parishSession(testEnv, "st-test", "temporary-password");
+
   const parish = await worker.fetch(request("/api/parish/dashboard/st-test", {
-    headers: { Authorization: "Bearer temporary-password" }
+    headers: { Authorization: `Bearer ${parishLogin.token}` }
   }), testEnv);
   assert.equal(parish.status, 200);
 }
@@ -376,6 +406,28 @@ async function withMockFetch(handler, run) {
         payment_intent: "pi_reconcile"
       }), { status: 200 });
     }
+    if (href.endsWith("/v1/payment_intents/pi_reconcile?expand[]=latest_charge.balance_transaction")) {
+      assert.equal(init.headers["Stripe-Account"], "acct_connected_reconcile");
+      return new Response(JSON.stringify({
+        id: "pi_reconcile",
+        amount_received: 2655,
+        latest_charge: {
+          id: "ch_reconcile",
+          amount: 2655,
+          application_fee_amount: 48,
+          payment_method_details: { type: "card" },
+          balance_transaction: {
+            id: "txn_reconcile",
+            fee: 107,
+            net: 2608
+          }
+        },
+        metadata: {
+          amount_cents: "2500",
+          cover_fees: "true"
+        }
+      }), { status: 200 });
+    }
     throw new Error(`Unexpected fetch ${href}`);
   }, async () => {
     const response = await worker.fetch(request("/api/checkout-session-status?session_id=cs_reconcile"), testEnv);
@@ -391,6 +443,8 @@ async function withMockFetch(handler, run) {
   assert.equal(offering.paymentStatus, "paid");
   assert.equal(offering.stripeCustomerId, "cus_reconcile");
   assert.equal(offering.stripePaymentIntentId, "pi_reconcile");
+  assert.equal(offering.stripeFeeSource, "balance_transaction");
+  assert.equal(offering.paymentMethod, "card");
 }
 
 {
@@ -465,8 +519,9 @@ async function withMockFetch(handler, run) {
 
 {
   const testEnv = env();
+  const session = await adminSession(testEnv);
   const releaseStatus = await worker.fetch(request("/api/admin/release-status", {
-    headers: { Authorization: "Bearer root-admin-token-for-tests" }
+    headers: { Authorization: `Bearer ${session.token}` }
   }), testEnv);
   assert.equal(releaseStatus.status, 200);
   const body = await json(releaseStatus);
@@ -494,6 +549,7 @@ async function withMockFetch(handler, run) {
     subscriptionStatus: "active"
   }));
   await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_parish_id__st-parish-refresh", reference);
+  const session = await parishSession(testEnv, "st-parish-refresh", "refresh-password");
 
   await withMockFetch(async (url, init = {}) => {
     const href = String(url);
@@ -514,7 +570,7 @@ async function withMockFetch(handler, run) {
   }, async () => {
     const response = await worker.fetch(request("/api/parish/dashboard/st-parish-refresh/stripe-refresh", {
       method: "POST",
-      headers: { Authorization: "Bearer refresh-password" }
+      headers: { Authorization: `Bearer ${session.token}` }
     }), testEnv);
     assert.equal(response.status, 200);
     const body = await json(response);
@@ -662,7 +718,7 @@ async function withMockFetch(handler, run) {
   assert.equal(response.status, 200);
   const updated = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(offeringKey));
   assert.equal(updated.status, "completed");
-  assert.equal(updated.paymentStatus, "succeeded");
+  assert.equal(updated.paymentStatus, "paid");
   assert.equal(updated.stripeCustomerId, "cus_test");
 }
 
