@@ -300,8 +300,9 @@
     }
 
     .causes-nav {
-      display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
       border-top: 1px solid var(--line);
       border-bottom: 1px solid var(--line);
       background: #fff;
@@ -756,6 +757,7 @@
       .finder-layout { grid-template-columns: 1fr; }
       .giving-rail { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
       .causes-nav {
+        display: grid; /* Added to maintain the horizontal mobile scrolling behavior */
         grid-auto-flow: column;
         grid-auto-columns: minmax(210px, 1fr);
         overflow-x: auto;
@@ -1181,5 +1183,3 @@
   </script>
 </body>
 </html>
-
-
