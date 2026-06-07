@@ -1628,6 +1628,40 @@ async function sendDashboardInvite(env, appUrl, registration) {
   return { ...email, recipients };
 }
 
+async function sendParishPasswordResetEmail(env, appUrl, registration, resetUrl, recipients) {
+  const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
+  const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
+  const parishName = htmlEscape(registration.parishName || "your parish");
+  const parishId = htmlEscape(registration.parishId || slugify(registration.parishName));
+  const safeResetUrl = htmlEscape(resetUrl);
+
+  return sendEmail(env, {
+    from,
+    to: recipients,
+    reply_to: replyTo,
+    subject: `Reset AGAPAY parish dashboard password for ${registration.parishName || "your parish"}`,
+    html: agapayEmailHtml(appUrl, "Reset parish dashboard password", `
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">A password reset was requested for <strong>${parishName}</strong>.</p>
+      <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Parish ID:</strong> ${parishId}</p>
+        <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Reset link:</strong> <a href="${safeResetUrl}" style="color:#0A365B;text-decoration:underline;">${safeResetUrl}</a></p>
+      </div>
+      <p style="margin:0 0 24px;"><a href="${safeResetUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Reset parish password</a></p>
+      <p style="margin:0;font-size:12px;line-height:1.6;color:#6F6A60;">If you did not request this, ignore this email. The link expires in 1 hour.</p>
+    `),
+    text: [
+      "Reset parish dashboard password",
+      "",
+      `Parish: ${registration.parishName || ""}`,
+      `Parish ID: ${registration.parishId || slugify(registration.parishName)}`,
+      `Open this link to choose a new password: ${resetUrl}`,
+      "",
+      "If you did not request this, ignore this email. The link expires in 1 hour."
+    ].join("\n")
+  });
+}
+
 async function sendAdminRegistrationNotice(env, appUrl, registration) {
   const to = env.AGAPAY_REGISTRATION_NOTIFY_EMAIL || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   if (!to) return { status: "missing_recipient" };
@@ -3589,6 +3623,128 @@ async function sendDonorVerificationEmail(env, donor, verificationUrl) {
       <p style="margin:0;font-size:12px;line-height:1.6;color:#6F6A60;">If you did not create this AGAPAY account, you can ignore this email.</p>
     `)
   });
+}
+
+async function sendDonorPasswordResetEmail(env, donor, resetUrl) {
+  const appUrl = env.AGAPAY_APP_URL || "https://agapay.app";
+  const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
+  const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
+  const safeUrl = htmlEscape(resetUrl);
+  const name = htmlEscape(donor.donorName || donor.householdName || "friend");
+
+  return sendEmail(env, {
+    from,
+    to: [donor.email],
+    reply_to: replyTo,
+    subject: "Reset your AGAPAY donor password",
+    html: agapayEmailHtml(appUrl, "Reset your donor password", `
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ, ${name}.</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Use this secure link to choose a new password for your AGAPAY donor dashboard.</p>
+      <p style="margin:0 0 24px;"><a href="${safeUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Reset donor password</a></p>
+      <p style="margin:0;font-size:12px;line-height:1.6;color:#6F6A60;">If you did not request this, ignore this email. The link expires in 1 hour.</p>
+    `),
+    text: [
+      "Reset your AGAPAY donor password",
+      "",
+      `Open this link to choose a new password: ${resetUrl}`,
+      "",
+      "If you did not request this, ignore this email. The link expires in 1 hour."
+    ].join("\n")
+  });
+}
+
+async function handleDonorPasswordResetRequest(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const limited = await rateLimit(request, env, "donor-password-reset-request", { limit: 6, windowSeconds: 300 });
+  if (limited) return limited;
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const email = normalizeEmail(body.email);
+  if (!email) return json({ error: "Email is required" }, { status: 422 });
+
+  const generic = { ok: true, message: "If a verified donor account exists for that email, a reset link has been sent." };
+  const donor = await loadDonor(env, email);
+  if (!donor?.emailVerifiedAt) return json(generic);
+
+  const resetToken = generateSecret("donor_reset");
+  const resetSalt = generateSecret("donor_reset_salt");
+  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+  const resetUrl = `${String(appUrl).replace(/\/+$/, "")}/donor/login?reset=1&email=${encodeURIComponent(email)}&token=${encodeURIComponent(resetToken)}`;
+  const updated = {
+    ...donor,
+    passwordResetSalt: resetSalt,
+    passwordResetTokenHash: await sha256Hex(`${resetSalt}:${resetToken}`),
+    passwordResetSentAt: new Date().toISOString(),
+    passwordResetExpiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  const emailResult = await sendDonorPasswordResetEmail(env, updated, resetUrl);
+  updated.passwordResetEmailStatus = emailResult.status || "";
+  updated.passwordResetEmailDetail = emailResult.detail || "";
+  await saveDonor(env, updated);
+
+  return json({
+    ...generic,
+    email: { status: emailResult.status || "unknown", detail: emailResult.detail || "" },
+    resetUrl: emailResult.status === "not_configured" ? resetUrl : undefined
+  });
+}
+
+async function handleDonorPasswordResetConfirm(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const limited = await rateLimit(request, env, "donor-password-reset-confirm", { limit: 10, windowSeconds: 300 });
+  if (limited) return limited;
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const email = normalizeEmail(body.email);
+  const token = String(body.token || "");
+  const newPassword = String(body.newPassword || body.password || "").trim();
+  const confirmPassword = String(body.confirmPassword || body.newPassword || body.password || "").trim();
+  if (!email || !token) return json({ error: "Email and reset token are required" }, { status: 422 });
+  if (newPassword.length < 8) return json({ error: "Password must be at least 8 characters" }, { status: 422 });
+  if (newPassword !== confirmPassword) return json({ error: "Passwords do not match" }, { status: 422 });
+
+  const donor = await loadDonor(env, email);
+  if (!donor?.emailVerifiedAt) return unauthorized();
+  if (!donor.passwordResetSalt || !donor.passwordResetTokenHash) {
+    return json({ error: "Reset link is missing or expired. Please request a new link." }, { status: 410 });
+  }
+  if (donor.passwordResetExpiresAt && new Date(donor.passwordResetExpiresAt).getTime() < Date.now()) {
+    return json({ error: "Reset link expired. Please request a new link." }, { status: 410 });
+  }
+  const submittedHash = await sha256Hex(`${donor.passwordResetSalt}:${token}`);
+  if (!secureCompare(submittedHash, donor.passwordResetTokenHash)) return unauthorized();
+
+  const reset = await applyDonorPassword({
+    ...donor,
+    passwordResetSalt: "",
+    passwordResetTokenHash: "",
+    passwordResetSentAt: "",
+    passwordResetExpiresAt: "",
+    passwordResetEmailStatus: "",
+    passwordResetEmailDetail: "",
+    sessionSalt: "",
+    sessionTokenHash: "",
+    sessionExpiresAt: "",
+    updatedAt: new Date().toISOString()
+  }, newPassword);
+  await saveDonor(env, reset);
+  return json({ ok: true, updatedAt: reset.passwordUpdatedAt || new Date().toISOString() });
 }
 
 function formatUsdFromCents(centsValue) {
@@ -6474,6 +6630,112 @@ async function handleParishSession(request, env, parishId) {
   });
 }
 
+async function handleParishPasswordResetRequest(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-password-reset-request", { limit: 6, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const parishId = String(body.parishId || "").trim();
+  const email = normalizeEmail(body.email);
+  if (!parishId || !email) return json({ error: "Parish ID and email are required" }, { status: 422 });
+
+  const generic = { ok: true, message: "If that parish and contact email match our records, a reset link has been sent." };
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json(generic);
+
+  const registration = found.registration;
+  const contactEmails = Array.from(new Set([
+    normalizeEmail(registration.priestEmail),
+    normalizeEmail(registration.treasurerEmail)
+  ].filter(Boolean)));
+  if (!contactEmails.includes(email)) return json(generic);
+
+  const resetToken = generateSecret("parish_reset");
+  const resetSalt = generateSecret("parish_reset_salt");
+  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+  const resetUrl = `${String(appUrl).replace(/\/+$/, "")}/parish/login?reset=1&parish=${encodeURIComponent(registration.parishId || parishId)}&token=${encodeURIComponent(resetToken)}`;
+  const updated = {
+    ...registration,
+    parishPasswordResetSalt: resetSalt,
+    parishPasswordResetTokenHash: await sha256Hex(`${resetSalt}:${resetToken}`),
+    parishPasswordResetSentAt: new Date().toISOString(),
+    parishPasswordResetExpiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    parishUpdatedAt: new Date().toISOString()
+  };
+
+  const emailResult = await sendParishPasswordResetEmail(env, appUrl, updated, resetUrl, contactEmails);
+  updated.parishPasswordResetEmailStatus = emailResult.status || "";
+  updated.parishPasswordResetEmailDetail = emailResult.detail || "";
+  await saveRegistrationRecord(env, found.key, updated, registration);
+
+  return json({
+    ...generic,
+    email: { status: emailResult.status || "unknown", detail: emailResult.detail || "" },
+    resetUrl: emailResult.status === "not_configured" ? resetUrl : undefined
+  });
+}
+
+async function handleParishPasswordResetConfirm(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-password-reset-confirm", { limit: 10, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const parishId = String(body.parishId || "").trim();
+  const token = String(body.token || "");
+  const newPassword = String(body.newPassword || body.password || "").trim();
+  const confirmPassword = String(body.confirmPassword || body.newPassword || body.password || "").trim();
+  if (!parishId || !token) return json({ error: "Parish ID and reset token are required" }, { status: 422 });
+  if (newPassword.length < 8) return json({ error: "Dashboard password must be at least 8 characters." }, { status: 422 });
+  if (newPassword !== confirmPassword) return json({ error: "Dashboard passwords do not match." }, { status: 422 });
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return unauthorized();
+  const current = found.registration;
+  if (!current.parishPasswordResetSalt || !current.parishPasswordResetTokenHash) {
+    return json({ error: "Reset link is missing or expired. Please request a new link." }, { status: 410 });
+  }
+  if (current.parishPasswordResetExpiresAt && new Date(current.parishPasswordResetExpiresAt).getTime() < Date.now()) {
+    return json({ error: "Reset link expired. Please request a new link." }, { status: 410 });
+  }
+  const submittedHash = await sha256Hex(`${current.parishPasswordResetSalt}:${token}`);
+  if (!secureCompare(submittedHash, current.parishPasswordResetTokenHash)) return unauthorized();
+
+  let updated = await applyParishDashboardPassword({
+    ...current,
+    parishPasswordResetSalt: "",
+    parishPasswordResetTokenHash: "",
+    parishPasswordResetSentAt: "",
+    parishPasswordResetExpiresAt: "",
+    parishPasswordResetEmailStatus: "",
+    parishPasswordResetEmailDetail: "",
+    parishDashboardSessions: [],
+    parishUpdatedAt: new Date().toISOString()
+  }, newPassword, { temporary: false });
+  updated = {
+    ...updated,
+    parishDashboardSessions: []
+  };
+  await saveRegistrationRecord(env, found.key, updated, current);
+
+  return json({ ok: true, updatedAt: updated.parishDashboardTokenUpdatedAt || new Date().toISOString() });
+}
+
 function handleLiturgicalCalendar(request) {
   const url = new URL(request.url);
   const year = Math.max(1900, Math.min(2199, Number(url.searchParams.get("year")) || new Date().getFullYear()));
@@ -6679,6 +6941,12 @@ export default {
     if (url.pathname === "/api/donor/login") {
       return handleDonorLogin(request, env);
     }
+    if (url.pathname === "/api/donor/password-reset-request") {
+      return handleDonorPasswordResetRequest(request, env);
+    }
+    if (url.pathname === "/api/donor/password-reset-confirm") {
+      return handleDonorPasswordResetConfirm(request, env);
+    }
     if (url.pathname === "/api/donor/verify") {
       return handleDonorVerify(request, env);
     }
@@ -6747,6 +7015,12 @@ export default {
     if (url.pathname.startsWith("/api/admin/registrations/")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", ""));
       return handleAdminRegistrationDetail(request, env, reference);
+    }
+    if (url.pathname === "/api/parish/password-reset-request") {
+      return handleParishPasswordResetRequest(request, env);
+    }
+    if (url.pathname === "/api/parish/password-reset-confirm") {
+      return handleParishPasswordResetConfirm(request, env);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/session")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/session", ""));

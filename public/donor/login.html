@@ -50,7 +50,7 @@
         </div>
       </section>
 
-      <form class="donor-auth-card" onsubmit="loginFromPage(event)">
+      <form class="donor-auth-card" id="donorLoginForm" onsubmit="loginFromPage(event)">
         <h2>Login</h2>
         <div class="form-group">
           <label class="form-label" for="donorEmail">Email</label>
@@ -63,6 +63,40 @@
         <div class="donor-auth-actions">
           <button class="btn btn-gold" type="submit">Log in</button>
           <a class="btn btn-ghost" href="/donor/signup">Sign up</a>
+          <button class="btn btn-ghost" type="button" onclick="showDonorPasswordReset()">Forgot password?</button>
+        </div>
+      </form>
+
+      <form class="donor-auth-card" id="donorResetRequestForm" onsubmit="requestDonorPasswordReset(event)" hidden>
+        <h2>Reset password</h2>
+        <div class="form-group">
+          <label class="form-label" for="donorResetEmail">Email</label>
+          <input class="form-input" id="donorResetEmail" type="email" autocomplete="email" placeholder="you@example.com" />
+        </div>
+        <div class="donor-auth-actions">
+          <button class="btn btn-gold" type="submit">Send reset link</button>
+          <button class="btn btn-ghost" type="button" onclick="showDonorLogin()">Back to login</button>
+        </div>
+      </form>
+
+      <form class="donor-auth-card" id="donorResetConfirmForm" onsubmit="confirmDonorPasswordReset(event)" hidden>
+        <h2>Choose new password</h2>
+        <input id="donorResetToken" type="hidden" />
+        <div class="form-group">
+          <label class="form-label" for="donorResetConfirmEmail">Email</label>
+          <input class="form-input" id="donorResetConfirmEmail" type="email" autocomplete="email" placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="donorNewPassword">New password</label>
+          <input class="form-input" id="donorNewPassword" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="donorConfirmPassword">Confirm password</label>
+          <input class="form-input" id="donorConfirmPassword" type="password" autocomplete="new-password" placeholder="Re-enter new password" />
+        </div>
+        <div class="donor-auth-actions">
+          <button class="btn btn-gold" type="submit">Update password</button>
+          <button class="btn btn-ghost" type="button" onclick="showDonorLogin()">Back to login</button>
         </div>
       </form>
     </section>

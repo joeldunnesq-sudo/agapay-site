@@ -158,6 +158,75 @@ async function withMockFetch(handler, run) {
 
 {
   const testEnv = env();
+  const signup = await worker.fetch(request("/api/donor/signup", {
+    method: "POST",
+    body: {
+      donorName: "Reset Member",
+      email: "reset-member@example.com",
+      password: "original-password",
+      parishId: "st-test"
+    }
+  }), testEnv);
+  assert.equal(signup.status, 201);
+  const donorKey = "__agapay_donor__reset-member@example.com";
+  const donor = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(donorKey));
+  await testEnv.AGAPAY_REGISTRATIONS.put(donorKey, JSON.stringify({
+    ...donor,
+    emailVerifiedAt: new Date().toISOString()
+  }));
+
+  const login = await worker.fetch(request("/api/donor/login", {
+    method: "POST",
+    body: { email: "reset-member@example.com", password: "original-password" }
+  }), testEnv);
+  assert.equal(login.status, 200);
+  const loginBody = await json(login);
+  assert.ok(loginBody.token);
+
+  const resetRequest = await worker.fetch(request("/api/donor/password-reset-request", {
+    method: "POST",
+    body: { email: "reset-member@example.com" }
+  }), testEnv);
+  assert.equal(resetRequest.status, 200);
+  const resetBody = await json(resetRequest);
+  assert.match(resetBody.resetUrl, /\/donor\/login\?reset=1/);
+  const resetToken = new URL(resetBody.resetUrl).searchParams.get("token");
+  assert.ok(resetToken);
+
+  const confirm = await worker.fetch(request("/api/donor/password-reset-confirm", {
+    method: "POST",
+    body: {
+      email: "reset-member@example.com",
+      token: resetToken,
+      newPassword: "new-secure-password",
+      confirmPassword: "new-secure-password"
+    }
+  }), testEnv);
+  assert.equal(confirm.status, 200);
+
+  const oldSession = await worker.fetch(request("/api/donor/dashboard", {
+    headers: {
+      Authorization: `Bearer ${loginBody.token}`,
+      "X-AgaPay-Donor-Email": "reset-member@example.com"
+    }
+  }), testEnv);
+  assert.equal(oldSession.status, 401);
+
+  const oldPassword = await worker.fetch(request("/api/donor/login", {
+    method: "POST",
+    body: { email: "reset-member@example.com", password: "original-password" }
+  }), testEnv);
+  assert.equal(oldPassword.status, 401);
+
+  const newPassword = await worker.fetch(request("/api/donor/login", {
+    method: "POST",
+    body: { email: "reset-member@example.com", password: "new-secure-password" }
+  }), testEnv);
+  assert.equal(newPassword.status, 200);
+}
+
+{
+  const testEnv = env();
   const registration = {
     reference: "AGP-REG-TEST",
     status: "verified",
@@ -204,6 +273,70 @@ async function withMockFetch(handler, run) {
     headers: { Authorization: `Bearer ${parishLogin.token}` }
   }), testEnv);
   assert.equal(parish.status, 200);
+}
+
+{
+  const testEnv = env();
+  const registration = {
+    reference: "AGP-REG-RESET",
+    status: "verified",
+    parishId: "st-reset",
+    parishName: "St. Reset Orthodox Church",
+    communityType: "parish",
+    givingStatus: "active",
+    priestEmail: "priest@st-reset.test",
+    treasurerEmail: "treasurer@st-reset.test",
+    parishDashboardToken: "original-parish-password"
+  };
+  await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
+
+  const wrongContact = await worker.fetch(request("/api/parish/password-reset-request", {
+    method: "POST",
+    body: { parishId: "st-reset", email: "stranger@example.com" }
+  }), testEnv);
+  assert.equal(wrongContact.status, 200);
+  assert.equal((await json(wrongContact)).resetUrl, undefined);
+  let stored = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(registration.reference));
+  assert.equal(stored.parishPasswordResetTokenHash, undefined);
+
+  const session = await parishSession(testEnv, "st-reset", "original-parish-password");
+  const resetRequest = await worker.fetch(request("/api/parish/password-reset-request", {
+    method: "POST",
+    body: { parishId: "st-reset", email: "treasurer@st-reset.test" }
+  }), testEnv);
+  assert.equal(resetRequest.status, 200);
+  const resetBody = await json(resetRequest);
+  assert.match(resetBody.resetUrl, /\/parish\/login\?reset=1/);
+  const resetToken = new URL(resetBody.resetUrl).searchParams.get("token");
+  assert.ok(resetToken);
+
+  const confirm = await worker.fetch(request("/api/parish/password-reset-confirm", {
+    method: "POST",
+    body: {
+      parishId: "st-reset",
+      token: resetToken,
+      newPassword: "new-parish-password",
+      confirmPassword: "new-parish-password"
+    }
+  }), testEnv);
+  assert.equal(confirm.status, 200);
+  stored = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(registration.reference));
+  assert.equal(stored.parishPasswordResetTokenHash, "");
+  assert.deepEqual(stored.parishDashboardSessions, []);
+
+  const oldBearer = await worker.fetch(request("/api/parish/dashboard/st-reset", {
+    headers: { Authorization: `Bearer ${session.token}` }
+  }), testEnv);
+  assert.equal(oldBearer.status, 401);
+
+  const oldPassword = await worker.fetch(request("/api/parish/dashboard/st-reset/session", {
+    method: "POST",
+    body: { password: "original-parish-password" }
+  }), testEnv);
+  assert.equal(oldPassword.status, 401);
+
+  const newPassword = await parishSession(testEnv, "st-reset", "new-parish-password");
+  assert.ok(newPassword.token);
 }
 
 {
