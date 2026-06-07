@@ -7,6 +7,7 @@ AGAPAY_FROM_EMAIL = "AGAPAY <onboarding@agapay.app>"
 AGAPAY_REPLY_TO_EMAIL = "support@agapay.app"
 AGAPAY_REGISTRATION_NOTIFY_EMAIL = "hello@agapay.app"
 AGAPAY_APP_URL = "https://agapay.app"
+TURNSTILE_SITE_KEY = "0x4AAAAAADgGWu1JfBKOSH_g"
 
 [triggers]
 crons = ["0 14 * * 6"]
