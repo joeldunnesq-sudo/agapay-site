@@ -54,6 +54,12 @@
                   <select class="form-select" id="parish" data-placeholder="Choose my parish"><option value="">Choose my parish</option></select>
                   <p class="form-help">Pick the church you usually give to. You can switch churches anytime from donor settings.</p>
                 </div>
+                <div class="form-group full"><label class="form-label" for="addressLine1">Street Address</label><input class="form-input" id="addressLine1" autocomplete="address-line1" placeholder="123 Main St" /></div>
+                <div class="form-group"><label class="form-label" for="addressLine2">Apt / Unit <span class="form-label-optional">(optional)</span></label><input class="form-input" id="addressLine2" autocomplete="address-line2" placeholder="Apt 4B" /></div>
+                <div class="form-group"><label class="form-label" for="city">City</label><input class="form-input" id="city" autocomplete="address-level2" placeholder="City" /></div>
+                <div class="form-group"><label class="form-label" for="state">State</label><input class="form-input" id="state" autocomplete="address-level1" placeholder="NY" maxlength="2" /></div>
+                <div class="form-group"><label class="form-label" for="postalCode">ZIP Code</label><input class="form-input" id="postalCode" autocomplete="postal-code" placeholder="10001" /></div>
+                <div class="form-group"><label class="form-label" for="country">Country</label><input class="form-input" id="country" autocomplete="country" placeholder="US" value="US" maxlength="2" /></div>
               </div>
               <p class="form-help">AGAPAY will email you a verification link. Your dashboard opens after your email is verified.</p>
               <div data-agapay-turnstile class="section-gap"></div>
