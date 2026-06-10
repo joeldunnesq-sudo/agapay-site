@@ -922,6 +922,12 @@ async function signupFromPage(event) {
         email,
         password,
         parishId,
+        addressLine1: document.getElementById("addressLine1")?.value.trim() || "",
+        addressLine2: document.getElementById("addressLine2")?.value.trim() || "",
+        city: document.getElementById("city")?.value.trim() || "",
+        state: document.getElementById("state")?.value.trim() || "",
+        postalCode: document.getElementById("postalCode")?.value.trim() || "",
+        country: document.getElementById("country")?.value.trim() || "US",
         ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
       })
     });
@@ -1075,6 +1081,12 @@ async function saveDonorSettings(event) {
     email: document.getElementById("settingsEmail")?.value.trim(),
     contactPhone: document.getElementById("settingsPhone")?.value.trim(),
     defaultParishId: document.getElementById("defaultParishId")?.value,
+    addressLine1: document.getElementById("settingsAddressLine1")?.value.trim() || "",
+    addressLine2: document.getElementById("settingsAddressLine2")?.value.trim() || "",
+    city: document.getElementById("settingsCity")?.value.trim() || "",
+    state: document.getElementById("settingsState")?.value.trim() || "",
+    postalCode: document.getElementById("settingsPostalCode")?.value.trim() || "",
+    country: document.getElementById("settingsCountry")?.value.trim() || "US",
     currentPassword: document.getElementById("currentPassword")?.value,
     newPassword: document.getElementById("newPassword")?.value
   };
