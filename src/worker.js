@@ -9,7 +9,7 @@ const DONOR_CHECKOUT_INDEX_PREFIX = "__agapay_checkout_offering__";
 const RATE_LIMIT_PREFIX = "__agapay_rate_limit__";
 const STRIPE_EVENT_PREFIX = "__agapay_stripe_event__";
 const PARISH_ID_INDEX_PREFIX = "__agapay_index_parish_id__";
-const STRIPE_ACCOUNT_INDEX_PREFIX = "__agapay_index_stripe_account__";
+const STRIPE_ACCOUNT_INDEX_PREFIX = "__agapay_index_stripe_account__";h
 const STRIPE_SUBSCRIPTION_INDEX_PREFIX = "__agapay_index_stripe_subscription__";
 const STRIPE_PAYMENT_INTENT_INDEX_PREFIX = "__agapay_index_payment_intent__";
 const PASSWORD_HASH_VERSION = "pbkdf2-sha256";
@@ -849,6 +849,12 @@ function publicDonor(donor) {
     householdName: donor.householdName || donor.donorName || "",
     contactPhone: donor.contactPhone || "",
     defaultParishId: donor.defaultParishId || "",
+    addressLine1: donor.addressLine1 || "",
+    addressLine2: donor.addressLine2 || "",
+    city: donor.city || "",
+    state: donor.state || "",
+    postalCode: donor.postalCode || "",
+    country: donor.country || "",
     emailVerifiedAt: donor.emailVerifiedAt || "",
     createdAt: donor.createdAt || "",
     updatedAt: donor.updatedAt || "",
@@ -3322,6 +3328,7 @@ async function handleCheckout(request, env) {
     success_url: successUrl,
     cancel_url: cancelUrl,
     customer: customer.body.id,
+    billing_address_collection: "required",
     "line_items[0][quantity]": "1",
     "line_items[0][price_data][currency]": "usd",
     "line_items[0][price_data][product_data][name]": `${parish.name} - ${giftLabel}`,
@@ -3891,6 +3898,12 @@ async function handleDonorSignup(request, env) {
     donorName: donorNameValue,
     householdName: body.householdName || donorNameValue,
     defaultParishId: body.parishId || body.defaultParishId || existing?.defaultParishId || "",
+    addressLine1: body.addressLine1 || existing?.addressLine1 || "",
+    addressLine2: body.addressLine2 || existing?.addressLine2 || "",
+    city: body.city || existing?.city || "",
+    state: body.state || existing?.state || "",
+    postalCode: body.postalCode || existing?.postalCode || "",
+    country: body.country || existing?.country || "",
     emailVerifiedAt: "",
     emailVerificationSalt: verificationSalt,
     emailVerificationTokenHash: await sha256Hex(`${verificationSalt}:${verificationToken}`),
@@ -4144,6 +4157,12 @@ async function handleDonorDashboard(request, env) {
       householdName: body.householdName ?? donor.householdName,
       contactPhone: body.contactPhone ?? body.phone ?? donor.contactPhone ?? "",
       defaultParishId: body.defaultParishId ?? body.parishId ?? donor.defaultParishId,
+      addressLine1: body.addressLine1 ?? donor.addressLine1 ?? "",
+      addressLine2: body.addressLine2 ?? donor.addressLine2 ?? "",
+      city: body.city ?? donor.city ?? "",
+      state: body.state ?? donor.state ?? "",
+      postalCode: body.postalCode ?? donor.postalCode ?? "",
+      country: body.country ?? donor.country ?? "",
       updatedAt: new Date().toISOString()
     };
 
@@ -5277,6 +5296,25 @@ async function processStripeWebhookEvent(env, event) {
         createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
       });
       await sendDonationReceiptIfNeeded(env, updatedOffering || {});
+
+      // Backfill donor address from Stripe billing details if not yet stored
+      const donorEmailForAddr = object.metadata?.donor_email || object.customer_details?.email || "";
+      const stripeAddr = object.customer_details?.address;
+      if (donorEmailForAddr && stripeAddr?.line1) {
+        const donorForAddr = await loadDonor(env, donorEmailForAddr);
+        if (donorForAddr && !donorForAddr.addressLine1) {
+          await saveDonor(env, {
+            ...donorForAddr,
+            addressLine1: stripeAddr.line1 || "",
+            addressLine2: stripeAddr.line2 || "",
+            city: stripeAddr.city || "",
+            state: stripeAddr.state || "",
+            postalCode: stripeAddr.postal_code || "",
+            country: stripeAddr.country || "",
+            updatedAt: new Date().toISOString()
+          });
+        }
+      }
     }
   }
 
@@ -6516,7 +6554,8 @@ function parishDashboardPayload(parishId, registration) {
     commemorationsEnabled: registration.commemorationsEnabled ?? true,
     funds: Array.isArray(registration.funds) ? registration.funds : [],
     campaigns: Array.isArray(registration.campaigns) ? registration.campaigns : [],
-    feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
+    feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : [],
+    ein: registration.ein || ""
   };
 }
 
@@ -6580,6 +6619,7 @@ async function handleParishDashboard(request, env, parishId) {
       funds: Array.isArray(body.funds) ? body.funds : current.funds,
       campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
       feastCampaigns: Array.isArray(body.feastCampaigns) ? body.feastCampaigns : current.feastCampaigns,
+      ein: String(body.ein ?? current.ein ?? "").trim().replace(/[^0-9-]/g, ""),
       parishUpdatedAt: new Date().toISOString()
     };
 
