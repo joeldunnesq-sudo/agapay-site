@@ -1066,6 +1066,12 @@ async function loadDonorSettingsPage() {
     setValue("settingsEmail", donor.email);
     setValue("settingsPhone", donor.contactPhone);
     setValue("defaultParishId", donor.defaultParishId);
+    setValue("settingsAddressLine1", donor.addressLine1);
+    setValue("settingsAddressLine2", donor.addressLine2);
+    setValue("settingsCity", donor.city);
+    setValue("settingsState", donor.state);
+    setValue("settingsPostalCode", donor.postalCode);
+    setValue("settingsCountry", donor.country || "US");
     const parishName = document.getElementById("settingsParishName");
     if (parishName) parishName.textContent = data.parish?.name || "Choose a parish below";
   } catch (err) {
