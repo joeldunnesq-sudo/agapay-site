@@ -855,6 +855,8 @@ function publicDonor(donor) {
     state: donor.state || "",
     postalCode: donor.postalCode || "",
     country: donor.country || "",
+    pledgeAmountCents: donor.pledgeAmountCents || 0,
+    pledgeYear: donor.pledgeYear || "",
     emailVerifiedAt: donor.emailVerifiedAt || "",
     createdAt: donor.createdAt || "",
     updatedAt: donor.updatedAt || "",
@@ -4163,6 +4165,8 @@ async function handleDonorDashboard(request, env) {
       state: body.state ?? donor.state ?? "",
       postalCode: body.postalCode ?? donor.postalCode ?? "",
       country: body.country ?? donor.country ?? "",
+      pledgeAmountCents: body.pledgeAmountCents != null ? Number(body.pledgeAmountCents) : (donor.pledgeAmountCents || 0),
+      pledgeYear: body.pledgeYear != null ? String(body.pledgeYear) : (donor.pledgeYear || ""),
       updatedAt: new Date().toISOString()
     };
 
