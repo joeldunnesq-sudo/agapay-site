@@ -152,7 +152,7 @@ function setDonorProfile(donor) {
   const profileMeta = document.getElementById("profileMeta");
   if (profileName) profileName.textContent = name;
   if (profileMeta) profileMeta.textContent = donor.defaultParishId ? `${donor.email} - ${donor.defaultParishId}` : donor.email || "Faithful account loaded";
-  document.querySelectorAll(".mobile-avatar").forEach((avatar) => {
+  document.querySelectorAll(".mobile-avatar, .desktop-avatar").forEach((avatar) => {
     avatar.textContent = donorInitials(donor);
   });
   const greeting = document.getElementById("greeting");
