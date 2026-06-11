@@ -1394,6 +1394,117 @@ body.donor-home {
   text-decoration: none;
 }
 
+
+/* ── PLEDGE TRACKER ─────────────────────────────────────────── */
+.pledge-tracker-card {
+  position: relative;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #061522, #0B2130);
+  border: 1px solid rgba(200, 162, 74, 0.22);
+  color: white;
+  padding: 1.1rem 1.7rem 1.25rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 8px 20px rgba(6, 21, 34, 0.15);
+}
+.pledge-tracker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+}
+.pledge-tracker-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(246, 241, 232, 0.68);
+}
+.pledge-tracker-edit {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+  text-decoration: none;
+  opacity: 0.85;
+}
+.pledge-tracker-edit:hover { opacity: 1; }
+.pledge-bar-track {
+  width: 100%;
+  height: 10px;
+  background: rgba(246, 241, 232, 0.1);
+  border-radius: 100px;
+  overflow: hidden;
+  margin-bottom: 0.55rem;
+}
+.pledge-bar-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, #C8A24A, #e8c56a);
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+.pledge-bar-fill::after {
+  content: "";
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 6px;
+  background: rgba(255,255,255,0.4);
+  border-radius: 100px;
+  filter: blur(2px);
+}
+.pledge-bar-fill.pledge-complete { background: linear-gradient(90deg, #3a8a5a, #5ab07a); }
+.pledge-tracker-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+}
+.pledge-tracker-meta span:first-child { color: rgba(246,241,232,0.7); }
+.pledge-tracker-meta span:nth-child(2) { font-weight: 800; color: var(--gold); font-size: 12px; }
+.pledge-tracker-meta span:last-child { color: rgba(246,241,232,0.5); }
+.desktop-pledge-tracker {
+  margin-bottom: 1.25rem;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #061522, #0B2130);
+  border: 1px solid rgba(200, 162, 74, 0.22);
+  padding: 1.1rem 1.5rem 1.25rem;
+  box-shadow: 0 8px 20px rgba(6, 21, 34, 0.12);
+}
+.desktop-pledge-inner { max-width: 560px; }
+.desktop-pledge-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+.desktop-pledge-label span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(246, 241, 232, 0.68);
+}
+.desktop-pledge-edit { font-size: 11px; font-weight: 600; color: var(--gold); text-decoration: none; opacity: 0.85; }
+.desktop-pledge-edit:hover { opacity: 1; }
+.desktop-pledge-bar-track {
+  width: 100%;
+  height: 10px;
+  background: rgba(246, 241, 232, 0.1);
+  border-radius: 100px;
+  overflow: hidden;
+  margin-bottom: 0.55rem;
+}
+.desktop-pledge-bar-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, #C8A24A, #e8c56a);
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.desktop-pledge-bar-fill.pledge-complete { background: linear-gradient(90deg, #3a8a5a, #5ab07a); }
+.desktop-pledge-meta { display: flex; align-items: center; gap: 1rem; font-size: 12px; }
+.desktop-pledge-meta span:first-child { color: rgba(246,241,232,0.7); }
+.desktop-pledge-meta span:nth-child(2) { font-weight: 800; color: var(--gold); }
+.desktop-pledge-meta span:last-child { color: rgba(246,241,232,0.5); }
+
 .quick-give-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
