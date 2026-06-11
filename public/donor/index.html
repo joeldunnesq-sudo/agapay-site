@@ -70,7 +70,8 @@
 
       <section class="donor-desktop-home">
         <div class="desktop-hero">
-          <div>
+          <a class="desktop-hero-mark" href="/" aria-label="AGAPAY home" hx-boost="false"><img src="/mark.png" alt="" /></a>
+          <div class="desktop-hero-copy">
             <div class="eyebrow">AGAPAY - Love how you give</div>
             <h1 id="desktopGreeting">Welcome, Faithful Member</h1>
             <p id="desktopParishName">Sign in to load your church, giving history, and saved offering preferences.</p>
@@ -79,31 +80,34 @@
             <a class="btn btn-gold" href="/donor/give">Make an Offering</a>
             <a class="btn btn-ghost" href="/donor/settings">Change Church</a>
           </div>
+          <a class="desktop-avatar" href="/donor/settings" aria-label="Open settings">FM</a>
         </div>
         <div class="notice desktop-status" id="desktopDonorStatus" style="display:none;"></div>
 
-        <div class="desktop-pledge-tracker" id="desktopPledgeTracker" hidden>
-          <div class="desktop-pledge-inner">
-            <div class="desktop-pledge-label">
-              <span id="desktopPledgeTitle">Annual Pledge</span>
-              <a href="/donor/settings#pledge" class="desktop-pledge-edit">Edit pledge</a>
-            </div>
-            <div class="desktop-pledge-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="desktopPledgeBarTrack">
-              <div class="desktop-pledge-bar-fill" id="desktopPledgeBarFill" style="width:0%"></div>
-            </div>
-            <div class="desktop-pledge-meta">
-              <span id="desktopPledgeRaised">$0 given</span>
-              <span id="desktopPledgePct">0%</span>
-              <span id="desktopPledgeGoal">of $0 pledge</span>
+        <div class="desktop-dashboard-top">
+          <div class="desktop-pledge-tracker" id="desktopPledgeTracker" hidden>
+            <div class="desktop-pledge-inner">
+              <div class="desktop-pledge-label">
+                <span id="desktopPledgeTitle">Annual Pledge</span>
+                <a href="/donor/settings#pledge" class="desktop-pledge-edit">Edit pledge</a>
+              </div>
+              <div class="desktop-pledge-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="desktopPledgeBarTrack">
+                <div class="desktop-pledge-bar-fill" id="desktopPledgeBarFill" style="width:0%"></div>
+              </div>
+              <div class="desktop-pledge-meta">
+                <span id="desktopPledgeRaised">$0 given</span>
+                <span id="desktopPledgePct">0%</span>
+                <span id="desktopPledgeGoal">of $0 pledge</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="desktop-metrics-grid">
-          <div class="metric-card"><div class="metric-label">This month</div><div class="metric-value" id="desktopMetricMonth">$0</div><div class="metric-note">Giving through AGAPAY this month.</div></div>
-          <div class="metric-card"><div class="metric-label">This year</div><div class="metric-value" id="desktopMetricYtd">$0</div><div class="metric-note">Year-to-date offerings.</div></div>
-          <div class="metric-card"><div class="metric-label">Offerings</div><div class="metric-value" id="desktopMetricOfferings">0</div><div class="metric-note">Recorded gifts and checkout activity.</div></div>
-          <div class="metric-card"><div class="metric-label">Names</div><div class="metric-value" id="desktopMetricCommemorations">0</div><div class="metric-note">Commemoration submissions.</div></div>
+          <div class="desktop-metrics-grid">
+            <div class="metric-card"><div class="metric-label">This month</div><div class="metric-value" id="desktopMetricMonth">$0</div><div class="metric-note">Giving through AGAPAY this month.</div></div>
+            <div class="metric-card"><div class="metric-label">This year</div><div class="metric-value" id="desktopMetricYtd">$0</div><div class="metric-note">Year-to-date offerings.</div></div>
+            <div class="metric-card"><div class="metric-label">Offerings</div><div class="metric-value" id="desktopMetricOfferings">0</div><div class="metric-note">Recorded gifts and checkout activity.</div></div>
+            <div class="metric-card"><div class="metric-label">Names</div><div class="metric-value" id="desktopMetricCommemorations">0</div><div class="metric-note">Commemoration submissions.</div></div>
+          </div>
         </div>
 
         <div class="desktop-dashboard-grid">
