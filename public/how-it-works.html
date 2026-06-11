@@ -221,7 +221,10 @@
     .install { position:relative; margin:1.5rem; padding:clamp(2.5rem,5vw,4rem) clamp(1.5rem,4vw,3rem); border-radius:16px; border:1px solid rgba(200,162,74,.28); overflow:hidden; background:linear-gradient(180deg,var(--parchment) 0%,var(--parchment-2) 100%); }
     .install::before { content:""; position:absolute; inset:0; background:radial-gradient(ellipse 60% 60% at 90% 0%,rgba(200,162,74,.12) 0%,transparent 60%); pointer-events:none; }
     .install > * { position:relative; z-index:1; }
-    .install-head { text-align:center; max-width:560px; margin:0 auto 1.8rem; }
+    .install-head { max-width:520px; }
+    .install-inner { display:grid; grid-template-columns:1fr auto; gap:clamp(2rem,5vw,4rem); align-items:center; }
+    .install-phone-img { width:clamp(200px,28vw,300px); height:auto; border-radius:16px; display:block; box-shadow:0 24px 60px rgba(6,21,34,0.28); }
+    @media(max-width:680px){ .install-inner { grid-template-columns:1fr; } .install-phone-img { width:200px; margin:0 auto; } }
     .phone-mockup-wrap { display:flex; justify-content:center; margin:0 auto 2rem; }
     .phone-mockup-wrap svg { width:200px; height:auto; filter:drop-shadow(0 20px 40px rgba(6,21,34,0.22)); }
     .install-eyebrow { display:inline-flex; align-items:center; gap:.5rem; color:var(--gold-dark); text-transform:uppercase; letter-spacing:.16em; font-size:.7rem; font-weight:800; margin-bottom:.85rem; }
@@ -451,169 +454,84 @@
 
     <!-- PWA INSTALL -->
     <section class="install reveal" id="install">
-      <div class="install-head">
-        <div class="install-eyebrow">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>
-          Add AGAPAY to your phone
-        </div>
-        <h2>Your giving, a tap away.</h2>
-        <p>Add our web-based app to your home screen for quick access to your giving, intentions, and commemorations. It opens straight from your browser &mdash; no app store, no download.</p>
-      </div>
-
-      <div class="phone-mockup-wrap" aria-hidden="true">
-        <svg width="100%" viewBox="0 0 680 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AGAPAY donor dashboard on a phone showing $240 this month and $1,840 this year">
-          <title>AGAPAY donor dashboard on a phone</title>
-          <defs>
-            <clipPath id="sc2"><rect x="210" y="66" width="260" height="530" rx="4"/></clipPath>
-            <linearGradient id="phoneshell" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#111118"/><stop offset="100%" stop-color="#0a0a10"/></linearGradient>
-          </defs>
-          <rect x="196" y="18" width="288" height="714" rx="44" fill="url(#phoneshell)" stroke="#28283a" stroke-width="1.5"/>
-          <rect x="199" y="21" width="282" height="708" rx="42" fill="none" stroke="#36364a" stroke-width="0.6"/>
-          <rect x="200" y="22" width="280" height="706" rx="41" fill="#0c0c14"/>
-          <rect x="293" y="28" width="94" height="22" rx="11" fill="#0a0a10"/>
-          <rect x="184" y="168" width="7" height="48" rx="3.5" fill="#1c1c26"/>
-          <rect x="184" y="226" width="7" height="48" rx="3.5" fill="#1c1c26"/>
-          <rect x="489" y="196" width="7" height="72" rx="3.5" fill="#1c1c26"/>
-          <g clip-path="url(#sc2)">
-            <rect x="210" y="66" width="260" height="530" fill="#F0EAD8"/>
-            <text x="340" y="90" font-family="system-ui,sans-serif" font-size="7.5" fill="#8a8070" letter-spacing="0.12em" text-anchor="middle">AGAPAY – LOVE HOW YOU GIVE</text>
-            <circle cx="234" cy="112" r="15" fill="#F0EAD8" stroke="#c8a24a" stroke-width="0.6" opacity="0.6"/>
-            <line x1="234" y1="102" x2="234" y2="122" stroke="#c8a24a" stroke-width="1.4" stroke-linecap="round"/>
-            <line x1="228" y1="107" x2="240" y2="107" stroke="#c8a24a" stroke-width="1.4" stroke-linecap="round"/>
-            <line x1="229" y1="111" x2="239" y2="111" stroke="#c8a24a" stroke-width="1" stroke-linecap="round"/>
-            <text x="257" y="105" font-family="Georgia,serif" font-size="17" font-weight="700" fill="#171510">Welcome, Joel</text>
-            <text x="257" y="124" font-family="Georgia,serif" font-size="17" font-weight="700" fill="#171510">Dunn</text>
-            <text x="257" y="139" font-family="system-ui,sans-serif" font-size="8.5" fill="#6a6258">St. Nicholas Orthodox Church</text>
-            <text x="257" y="153" font-family="system-ui,sans-serif" font-size="8.5" fill="#b8922c" font-weight="600">Change church</text>
-            <circle cx="449" cy="116" r="22" fill="#0f1e2c"/>
-            <text x="449" y="121" font-family="system-ui,sans-serif" font-size="12" font-weight="600" fill="#e8d9b8" text-anchor="middle">JD</text>
-            <rect x="218" y="168" width="244" height="96" rx="10" fill="#0e1d2c"/>
-            <text x="234" y="188" font-family="system-ui,sans-serif" font-size="7.5" font-weight="700" fill="#8a9aaa" letter-spacing="0.1em">THIS MONTH</text>
-            <text x="234" y="214" font-family="Georgia,serif" font-size="26" font-weight="700" fill="#F0EAD8">$240</text>
-            <line x1="342" y1="180" x2="342" y2="224" stroke="#2a4055" stroke-width="0.8"/>
-            <text x="356" y="188" font-family="system-ui,sans-serif" font-size="7.5" font-weight="700" fill="#8a9aaa" letter-spacing="0.1em">THIS YEAR</text>
-            <text x="356" y="214" font-family="Georgia,serif" font-size="26" font-weight="700" fill="#F0EAD8">$1,840</text>
-            <text x="432" y="252" font-family="Georgia,serif" font-size="52" fill="#0a1a28" text-anchor="middle" opacity="0.7">✝</text>
-            <rect x="228" y="228" width="130" height="26" rx="13" fill="none" stroke="#c8a24a" stroke-width="1.2"/>
-            <text x="293" y="244" font-family="system-ui,sans-serif" font-size="8.5" font-weight="600" fill="#c8a24a" text-anchor="middle">Make an Offering  &#8594;</text>
-            <text x="218" y="282" font-family="Georgia,serif" font-size="15" font-weight="700" fill="#171510">Quick Give</text>
-            <rect x="218" y="290" width="56" height="62" rx="8" fill="#FDFAF3" stroke="#ddd6c4" stroke-width="0.6"/>
-            <rect x="239" y="305" width="14" height="10" rx="1" fill="none" stroke="#171510" stroke-width="1.2"/>
-            <path d="M237 305 L246 298 L255 305" fill="none" stroke="#171510" stroke-width="1.2" stroke-linejoin="round"/>
-            <rect x="243" y="309" width="6" height="6" rx="0.5" fill="none" stroke="#171510" stroke-width="1"/>
-            <line x1="246" y1="296" x2="246" y2="293" stroke="#171510" stroke-width="1.2" stroke-linecap="round"/>
-            <line x1="243" y1="295" x2="249" y2="295" stroke="#171510" stroke-width="1" stroke-linecap="round"/>
-            <text x="246" y="361" font-family="system-ui,sans-serif" font-size="8" font-weight="600" fill="#171510" text-anchor="middle">Parish</text>
-            <rect x="280" y="290" width="56" height="62" rx="8" fill="#FDFAF3" stroke="#ddd6c4" stroke-width="0.6"/>
-            <rect x="305" y="308" width="6" height="16" rx="0.5" fill="none" stroke="#171510" stroke-width="1.2"/>
-            <path d="M308 308 C310 304 306 300 308 297 C309 300 312 303 309 308Z" fill="none" stroke="#171510" stroke-width="1"/>
-            <text x="308" y="361" font-family="system-ui,sans-serif" font-size="8" font-weight="600" fill="#171510" text-anchor="middle">Candle</text>
-            <rect x="342" y="290" width="56" height="62" rx="8" fill="#FDFAF3" stroke="#ddd6c4" stroke-width="0.6"/>
-            <path d="M358 318 L358 308 Q370 300 382 308 L382 318 Z" fill="none" stroke="#171510" stroke-width="1.2"/>
-            <text x="370" y="361" font-family="system-ui,sans-serif" font-size="8" font-weight="600" fill="#171510" text-anchor="middle">Memorial</text>
-            <rect x="404" y="290" width="56" height="62" rx="8" fill="#FDFAF3" stroke="#ddd6c4" stroke-width="0.6"/>
-            <path d="M432 313 C432 310 428 306 424 309 C421 312 424 318 432 323 C440 318 443 312 440 309 C436 306 432 310 432 313Z" fill="none" stroke="#171510" stroke-width="1.2"/>
-            <text x="432" y="361" font-family="system-ui,sans-serif" font-size="8" font-weight="600" fill="#171510" text-anchor="middle">Campaigns</text>
-            <text x="218" y="378" font-family="Georgia,serif" font-size="13" font-weight="700" fill="#171510">AGAPAY Products</text>
-            <rect x="218" y="386" width="244" height="68" rx="8" fill="#0e1d2c"/>
-            <rect x="226" y="394" width="52" height="14" rx="7" fill="#2a4a28"/>
-            <text x="252" y="404" font-family="system-ui,sans-serif" font-size="7" font-weight="700" fill="#6abf6a" text-anchor="middle" letter-spacing="0.06em">LIVE NOW</text>
-            <text x="226" y="420" font-family="Georgia,serif" font-size="12" font-weight="700" fill="#F0EAD8">AGAPAY Giving</text>
-            <text x="226" y="434" font-family="system-ui,sans-serif" font-size="8" fill="#8a9aaa">Donations, memorials, candles, giving history.</text>
-            <rect x="218" y="460" width="244" height="50" rx="8" fill="#F6F1E6" stroke="#ddd6c4" stroke-width="0.6"/>
-            <rect x="226" y="468" width="68" height="14" rx="7" fill="#efe6cc"/>
-            <text x="260" y="478" font-family="system-ui,sans-serif" font-size="7" font-weight="700" fill="#a07830" text-anchor="middle" letter-spacing="0.06em">COMING SOON</text>
-            <text x="226" y="496" font-family="system-ui,sans-serif" font-size="8" fill="#8a8070">AGAPAY Marketplace</text>
-            <rect x="210" y="517" width="260" height="79" fill="#FDFAF3"/>
-            <rect x="210" y="517" width="260" height="0.8" fill="#ddd6c4"/>
-            <rect x="227" y="527" width="14" height="10" rx="1" fill="none" stroke="#171510" stroke-width="1.4"/>
-            <path d="M225 527 L234 519 L243 527" fill="none" stroke="#171510" stroke-width="1.4" stroke-linejoin="round"/>
-            <rect x="231" y="532" width="6" height="5" fill="#171510" rx="0.5"/>
-            <text x="234" y="550" font-family="system-ui,sans-serif" font-size="7.5" font-weight="700" fill="#171510" text-anchor="middle">Home</text>
-            <rect x="234" y="554" width="14" height="3" rx="1.5" fill="#171510"/>
-            <rect x="272" y="527" width="16" height="12" rx="2" fill="none" stroke="#8a8070" stroke-width="1.2"/>
-            <line x1="280" y1="522" x2="280" y2="527" stroke="#8a8070" stroke-width="1.2" stroke-linecap="round"/>
-            <line x1="276" y1="532" x2="284" y2="532" stroke="#8a8070" stroke-width="0.8"/>
-            <text x="280" y="550" font-family="system-ui,sans-serif" font-size="7.5" fill="#8a8070" text-anchor="middle">Give</text>
-            <rect x="318" y="527" width="16" height="12" rx="2" fill="none" stroke="#8a8070" stroke-width="1.2"/>
-            <line x1="321" y1="524" x2="321" y2="529" stroke="#8a8070" stroke-width="1.2" stroke-linecap="round"/>
-            <line x1="331" y1="524" x2="331" y2="529" stroke="#8a8070" stroke-width="1.2" stroke-linecap="round"/>
-            <line x1="318" y1="532" x2="334" y2="532" stroke="#8a8070" stroke-width="0.8"/>
-            <text x="326" y="550" font-family="system-ui,sans-serif" font-size="7.5" fill="#8a8070" text-anchor="middle">Calendar</text>
-            <rect x="363" y="535" width="3" height="4" rx="0.5" fill="#8a8070"/>
-            <rect x="368" y="531" width="3" height="8" rx="0.5" fill="#8a8070"/>
-            <rect x="373" y="528" width="3" height="11" rx="0.5" fill="#8a8070"/>
-            <text x="370" y="550" font-family="system-ui,sans-serif" font-size="7.5" fill="#8a8070" text-anchor="middle">History</text>
-            <circle cx="420" cy="532" r="4" fill="none" stroke="#8a8070" stroke-width="1.2"/>
-            <circle cx="420" cy="532" r="1.5" fill="#8a8070"/>
-            <text x="420" y="550" font-family="system-ui,sans-serif" font-size="7.5" fill="#8a8070" text-anchor="middle">Settings</text>
-            <rect x="296" y="571" width="88" height="4" rx="2" fill="#2a2a38"/>
-          </g>
-          <rect x="196" y="18" width="288" height="714" rx="44" fill="none" stroke="#222230" stroke-width="1"/>
-        </svg>
-      </div>
-
-      <div class="os-toggle-wrap">
-        <div class="os-toggle" role="tablist" aria-label="Choose your device">
-          <button class="os-btn" id="osAndroidBtn" role="tab" aria-selected="false" aria-controls="panelAndroid">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path class="logo-line" d="M7.2 8.5h9.6c.8 0 1.4.6 1.4 1.4v5.8c0 .8-.6 1.4-1.4 1.4H7.2c-.8 0-1.4-.6-1.4-1.4V9.9c0-.8.6-1.4 1.4-1.4Z"/><path class="logo-line" d="M8.3 8 6.9 5.7M15.7 8l1.4-2.3M9 17.1v2.7M15 17.1v2.7M4.1 10.2v5.3M19.9 10.2v5.3"/><circle cx="9.6" cy="11.4" r=".55"/><circle cx="14.4" cy="11.4" r=".55"/></svg>
-            Android
-          </button>
-          <button class="os-btn" id="osAppleBtn" role="tab" aria-selected="false" aria-controls="panelApple">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.08ZM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25Z"/></svg>
-            iPhone &amp; iPad
-          </button>
-        </div>
-      </div>
-
-      <!-- ANDROID PANEL -->
-      <div class="os-panel" id="panelAndroid" role="tabpanel" aria-labelledby="osAndroidBtn">
-        <div class="install-steps">
-          <div class="install-step">
-            <span class="isn">1</span>
-            <p>Tap <strong>Install AGAPAY</strong> below. Your browser will ask to add our web-based app to your home screen.</p>
+      <div class="install-inner">
+        <div>
+        <div class="install-head">
+          <div class="install-eyebrow">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>
+            Add AGAPAY to your phone
           </div>
-          <div class="install-step">
-            <span class="isn">2</span>
-            <p>Confirm <strong>Install</strong>, and the AGAPAY icon appears with your other apps.</p>
-          </div>
-          <div class="install-step">
-            <span class="isn">3</span>
-            <p>Open it anytime to give, light a candle, or submit names for commemoration.</p>
+          <h2>Your giving, a tap away.</h2>
+          <p>Add our web-based app to your home screen for quick access to your giving, intentions, and commemorations. It opens straight from your browser &mdash; no app store, no download.</p>
+        </div>
+  
+        <div class="os-toggle-wrap">
+          <div class="os-toggle" role="tablist" aria-label="Choose your device">
+            <button class="os-btn" id="osAndroidBtn" role="tab" aria-selected="false" aria-controls="panelAndroid">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path class="logo-line" d="M7.2 8.5h9.6c.8 0 1.4.6 1.4 1.4v5.8c0 .8-.6 1.4-1.4 1.4H7.2c-.8 0-1.4-.6-1.4-1.4V9.9c0-.8.6-1.4 1.4-1.4Z"/><path class="logo-line" d="M8.3 8 6.9 5.7M15.7 8l1.4-2.3M9 17.1v2.7M15 17.1v2.7M4.1 10.2v5.3M19.9 10.2v5.3"/><circle cx="9.6" cy="11.4" r=".55"/><circle cx="14.4" cy="11.4" r=".55"/></svg>
+              Android
+            </button>
+            <button class="os-btn" id="osAppleBtn" role="tab" aria-selected="false" aria-controls="panelApple">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.08ZM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25Z"/></svg>
+              iPhone &amp; iPad
+            </button>
           </div>
         </div>
-        <div class="install-cta">
-          <button class="btn-install" id="androidInstallBtn">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Install AGAPAY
-          </button>
-          <p class="install-note">If your browser doesn&rsquo;t prompt automatically, it will open AGAPAY so you can choose &ldquo;Add to Home screen&rdquo; from the browser menu.</p>
-        </div>
-      </div>
-
-      <!-- APPLE PANEL -->
-      <div class="os-panel" id="panelApple" role="tabpanel" aria-labelledby="osAppleBtn">
-        <div class="install-steps">
-          <div class="install-step">
-            <span class="isn">1</span>
-            <p>Open AGAPAY in <strong>Safari</strong> (iPhone and iPad can add our web-based app from Safari).</p>
+  
+        <!-- ANDROID PANEL -->
+        <div class="os-panel" id="panelAndroid" role="tabpanel" aria-labelledby="osAndroidBtn">
+          <div class="install-steps">
+            <div class="install-step">
+              <span class="isn">1</span>
+              <p>Tap <strong>Install AGAPAY</strong> below. Your browser will ask to add our web-based app to your home screen.</p>
+            </div>
+            <div class="install-step">
+              <span class="isn">2</span>
+              <p>Confirm <strong>Install</strong>, and the AGAPAY icon appears with your other apps.</p>
+            </div>
+            <div class="install-step">
+              <span class="isn">3</span>
+              <p>Open it anytime to give, light a candle, or submit names for commemoration.</p>
+            </div>
           </div>
-          <div class="install-step">
-            <span class="isn">2</span>
-            <p>Tap the <strong>Share</strong> button
-              <svg class="ios-share" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>
-              at the bottom of the screen.</p>
-          </div>
-          <div class="install-step">
-            <span class="isn">3</span>
-            <p>Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>. The AGAPAY icon appears with your other apps.</p>
+          <div class="install-cta">
+            <button class="btn-install" id="androidInstallBtn">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Install AGAPAY
+            </button>
+            <p class="install-note">If your browser doesn&rsquo;t prompt automatically, it will open AGAPAY so you can choose &ldquo;Add to Home screen&rdquo; from the browser menu.</p>
           </div>
         </div>
-        <div class="install-cta">
-          <span class="ios-callout">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
-            On iPhone &amp; iPad, use Safari&rsquo;s Share menu &mdash; Apple doesn&rsquo;t allow a one-tap install button.
-          </span>
+  
+        <!-- APPLE PANEL -->
+        <div class="os-panel" id="panelApple" role="tabpanel" aria-labelledby="osAppleBtn">
+          <div class="install-steps">
+            <div class="install-step">
+              <span class="isn">1</span>
+              <p>Open AGAPAY in <strong>Safari</strong> (iPhone and iPad can add our web-based app from Safari).</p>
+            </div>
+            <div class="install-step">
+              <span class="isn">2</span>
+              <p>Tap the <strong>Share</strong> button
+                <svg class="ios-share" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>
+                at the bottom of the screen.</p>
+            </div>
+            <div class="install-step">
+              <span class="isn">3</span>
+              <p>Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>. The AGAPAY icon appears with your other apps.</p>
+            </div>
+          </div>
+          <div class="install-cta">
+            <span class="ios-callout">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+              On iPhone &amp; iPad, use Safari&rsquo;s Share menu &mdash; Apple doesn&rsquo;t allow a one-tap install button.
+            </span>
+          </div>
+        </div>
+  
+        </div>
+        <div>
+          <img src="/images/app-phone-mockup.png" alt="AGAPAY faithful dashboard on a phone" class="install-phone-img" loading="lazy" width="320" height="693" />
         </div>
       </div>
     </section>
