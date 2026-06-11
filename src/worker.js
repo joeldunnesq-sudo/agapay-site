@@ -6839,6 +6839,10 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/parish-giving.html";
     return new Request(url, request);
   }
+  if (url.pathname.startsWith("/give/parish-giving/") && url.pathname.split("/").filter(Boolean).length >= 3) {
+    url.pathname = "/give/parish-giving/index.html";
+    return new Request(url, request);
+  }
   if (url.pathname === "/giving/parish-giving") {
     url.pathname = "/give/parish-giving.html";
     return new Request(url, request);
@@ -6929,6 +6933,121 @@ async function sendWeeklyCommemorationEmails(env, scheduledTime) {
   }
 
   return results;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CAMPAIGN FEATURE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function isSocialCrawler(request) {
+  const ua = (request.headers.get("User-Agent") || "").toLowerCase();
+  return ["facebookexternalhit","facebot","twitterbot","twitter.com","whatsapp",
+    "slackbot","slack-imgproxy","linkedinbot","telegrambot","discordbot",
+    "applebot","googlebot","bingbot","embedly","pinterest"].some(b => ua.includes(b));
+}
+
+function slugify(str) {
+  return String(str || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function campaignBotHtml(campaign, parish, canonicalUrl) {
+  const title  = `${campaign.name} — ${parish.name}`;
+  const raised = (Number(campaign.raisedCents || 0) / 100).toLocaleString("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 });
+  const goal   = campaign.goalCents ? (Number(campaign.goalCents) / 100).toLocaleString("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 }) : null;
+  const desc   = (campaign.description || `Support ${parish.name} through AGAPAY.`).substring(0, 240).replace(/"/g, "&quot;").replace(/\n/g, " ");
+  const img    = campaign.coverPhotoUrl || parish.imageUrl || "https://agapay.app/images/og-default.png";
+  const progress = goal ? `${raised} raised of ${goal} goal` : `${raised} raised`;
+  return `<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<title>${title} | AGAPAY</title>
+<meta name="description" content="${desc}"/>
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="AGAPAY"/>
+<meta property="og:title" content="${title}"/>
+<meta property="og:description" content="${progress} · ${desc}"/>
+<meta property="og:image" content="${img}"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta property="og:url" content="${canonicalUrl}"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="${title}"/>
+<meta name="twitter:description" content="${progress} · ${desc}"/>
+<meta name="twitter:image" content="${img}"/>
+<meta http-equiv="refresh" content="0; url=${canonicalUrl}"/>
+</head><body><p><a href="${canonicalUrl}">${title}</a> — ${progress}</p></body></html>`;
+}
+
+async function handleCampaignPage(request, env, url) {
+  const parts    = url.pathname.split("/").filter(Boolean);
+  const slug     = parts[2];
+  const parishId = url.searchParams.get("parish") || "";
+  if (slug && parishId && isSocialCrawler(request)) {
+    try {
+      const registration = await findRegistrationByParishId(env, parishId);
+      if (registration) {
+        const parish   = parishDashboardPayload(registration);
+        const allCamps = [...(registration.campaigns || []), ...(registration.feastCampaigns || [])];
+        const campaign = allCamps.find(c => (c.slug || slugify(c.name)) === slug);
+        if (campaign) {
+          const gifts   = await loadParishPaidOfferings(env, parishId, 500);
+          const totals  = campaignRaisedTotals(campaign, gifts);
+          const enriched = { ...campaign, ...totals };
+          const canonicalUrl = `${new URL(request.url).origin}/give/parish-giving/${encodeURIComponent(slug)}?parish=${encodeURIComponent(parishId)}`;
+          return new Response(campaignBotHtml(enriched, parish, canonicalUrl), {
+            headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store" }
+          });
+        }
+      }
+    } catch (_) { /* fall through */ }
+  }
+  const assetUrl = new URL(request.url);
+  assetUrl.pathname = "/give/parish-giving/index.html";
+  return env.ASSETS.fetch(new Request(assetUrl, request));
+}
+
+async function handleCampaignApi(request, env, url) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const parishId = url.searchParams.get("parish") || "";
+  const slug     = url.searchParams.get("slug") || url.searchParams.get("c") || "";
+  if (!parishId || !slug) return json({ error: "parish and slug are required" }, { status: 400 });
+  const registration = await findRegistrationByParishId(env, parishId);
+  if (!registration) return json({ error: "Parish not found" }, { status: 404 });
+  const allCamps = [...(registration.campaigns || []), ...(registration.feastCampaigns || [])];
+  const campaign = allCamps.find(c => (c.slug || slugify(c.name)) === slug);
+  if (!campaign) return json({ error: "Campaign not found" }, { status: 404 });
+  const gifts   = await loadParishPaidOfferings(env, parishId, 1000);
+  const totals  = campaignRaisedTotals(campaign, gifts);
+  const enriched = { ...campaign, ...totals };
+  const parish = parishDashboardPayload(registration);
+  return json({
+    campaign: enriched,
+    parish: { id: parish.parishId, parishId: parish.parishId, name: parish.name, imageUrl: parish.imageUrl, city: parish.city, state: parish.state }
+  });
+}
+
+async function handleCampaignUpload(request, env, url) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const pathParts  = url.pathname.split("/").filter(Boolean);
+  const parishId   = pathParts[3];
+  const campaignId = url.searchParams.get("campaign") || "general";
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish not found" }, { status: 404 });
+  const token = request.headers.get("Authorization")?.replace("Bearer ", "").trim();
+  if (!token || token !== found.parishDashboardToken) return unauthorized();
+  if (!env.CAMPAIGN_ASSETS) return json({ error: "Image storage not configured — please enable R2 in Cloudflare dashboard" }, { status: 503 });
+  const contentType = request.headers.get("Content-Type") || "image/jpeg";
+  if (!contentType.startsWith("image/")) return json({ error: "Only image uploads accepted" }, { status: 400 });
+  const ext  = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
+  const key  = `campaigns/${parishId}/${campaignId}/${crypto.randomUUID()}.${ext}`;
+  const body = await request.arrayBuffer();
+  if (body.byteLength > 10 * 1024 * 1024) return json({ error: "Image must be under 10 MB" }, { status: 413 });
+  await env.CAMPAIGN_ASSETS.put(key, body, { httpMetadata: { contentType, cacheControl: "public, max-age=31536000" } });
+  const baseUrl  = env.CAMPAIGN_ASSETS_URL || "https://pub-agapay-campaign-assets.r2.dev";
+  const photoUrl = `${baseUrl.replace(/\/+$/, "")}/${key}`;
+  return json({ ok: true, url: photoUrl, key });
 }
 
 export default {
@@ -7123,6 +7242,21 @@ export default {
     }
     if ((request.method === "GET" || request.method === "POST") && url.pathname === "/api/checkout-session-status") {
       return handleCheckoutSessionStatus(request, env);
+    }
+
+    // Campaign page — social-crawler bot detection + static shell for humans
+    if (url.pathname.startsWith("/give/parish-giving/") && url.pathname.split("/").filter(Boolean).length >= 3) {
+      return handleCampaignPage(request, env, url);
+    }
+
+    // Campaign public API
+    if (url.pathname === "/api/campaign") {
+      return handleCampaignApi(request, env, url);
+    }
+
+    // Campaign photo upload (parish-authenticated)
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/campaign-upload")) {
+      return handleCampaignUpload(request, env, url);
     }
 
     if (url.pathname.startsWith("/api/")) {
