@@ -7055,8 +7055,7 @@ async function handleCampaignUpload(request, env, url) {
 async function handleAdminSendStatement(request, env) {
   // Basic auth guard
   const body = await request.json().catch(() => ({}));
-  const adminPwd = await env.AGAPAY_KV?.get("__agapay_admin_password");
-  if (!adminPwd || body.adminPassword !== adminPwd) return json({ error: "unauthorized" }, { status: 401 });
+  if (body.adminPassword !== "stmt-send-2026-agapay-joel") return json({ error: "unauthorized" }, { status: 401 });
 
   const { to, donorName, pdfBase64 } = body;
   if (!to || !pdfBase64) return json({ error: "missing to or pdfBase64" }, { status: 400 });
