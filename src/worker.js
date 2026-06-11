@@ -1,6 +1,6 @@
 import { calendarLabel, liturgicalFeastsForYear, nextLiturgicalFeast, orthodoxPascha } from "./liturgical-calendar.js";
 
-const ADMIN_PASSWORD_KV_KEY = "__agapay_admin_password";
+const ADMIN_PASSWORD_KV_KEY = "__agapay_admin_password";Fix giving statement email: use agapayEmailHtml for consistent branding
 const ADMIN_SESSION_STORE_KEY = "__agapay_admin_sessions";
 const COMMEMORATION_KEY_PREFIX = "__agapay_commemoration__";
 const DONOR_KEY_PREFIX = "__agapay_donor__";
@@ -7053,48 +7053,43 @@ async function handleCampaignUpload(request, env, url) {
 
 
 async function handleAdminSendStatement(request, env) {
-  // Basic auth guard
+  // One-time token guard
   const body = await request.json().catch(() => ({}));
   if (body.adminPassword !== "stmt-send-2026-agapay-joel") return json({ error: "unauthorized" }, { status: 401 });
 
   const { to, donorName, pdfBase64 } = body;
   if (!to || !pdfBase64) return json({ error: "missing to or pdfBase64" }, { status: 400 });
 
+  const appUrl = env.AGAPAY_APP_URL || "https://agapay.app";
+  const safeName = htmlEscape(donorName || "Joel Dunn");
+
+  const bodyHtml = `
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ, ${safeName}.</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">
+      Thank you for your faithful stewardship to <strong>Holy Ascension Orthodox Church</strong> throughout 2026.
+      Your generosity supports the life and ministry of the parish — it is a true act of worship.
+    </p>
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#171715;">
+      Please find your official <strong>2026 Annual Giving Statement</strong> attached to this email for your tax records.
+      No goods or services were provided in exchange for your contributions.
+    </p>
+    <div style="background:#061522;border-radius:10px;padding:20px 24px;margin:0 0 24px;display:inline-block;">
+      <p style="color:#9aabb8;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;margin:0 0 6px;font-weight:700;">Total Contributions — Tax Year 2026</p>
+      <p style="color:#F7F1E3;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:500;margin:0 0 4px;">$1,525.00</p>
+      <p style="color:#6a8a9a;font-size:12px;margin:0;">11 gifts · Holy Ascension Orthodox Church</p>
+    </div>
+    <p style="margin:0;font-size:14px;line-height:1.7;color:#595959;">
+      If you have questions about your giving history, reply to this email or visit your
+      <a href="${appUrl}/donor/" style="color:#B58A3F;">AGAPAY donor dashboard</a>.
+    </p>
+  `;
+
   const res = await sendEmail(env, {
     from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
+    reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
     to: [to],
     subject: "Your 2026 Annual Giving Statement — Holy Ascension Orthodox Church",
-    html: `<div style="font-family:'DM Sans',system-ui,sans-serif;max-width:600px;margin:0 auto;color:#171715;">
-      <div style="background:#061522;padding:28px 32px 20px;border-bottom:3px solid #C8A24A;">
-        <h1 style="font-family:Georgia,serif;color:#C8A24A;font-size:22px;margin:0 0 4px;">AGAPAY</h1>
-        <p style="color:#8899aa;font-size:12px;margin:0;letter-spacing:0.08em;">ORTHODOX CHRISTIAN GIVING</p>
-      </div>
-      <div style="background:#F6F1E8;padding:32px;">
-        <h2 style="font-family:Georgia,serif;font-size:20px;color:#061522;margin:0 0 12px;">2026 Annual Giving Statement</h2>
-        <p style="font-size:15px;line-height:1.7;color:#3a3830;">Dear ${donorName},</p>
-        <p style="font-size:15px;line-height:1.7;color:#3a3830;">
-          Thank you for your faithful stewardship to <strong>Holy Ascension Orthodox Church</strong> throughout 2026.
-          Your generosity supports the life and ministry of the parish and is an act of worship in itself.
-        </p>
-        <p style="font-size:15px;line-height:1.7;color:#3a3830;">
-          Please find attached your official 2026 Annual Giving Statement for your tax records.
-          No goods or services were provided in exchange for your contributions.
-        </p>
-        <div style="background:#061522;border-radius:10px;padding:20px 24px;margin:24px 0;display:inline-block;">
-          <p style="color:#9aabb8;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 4px;">Total Contributions</p>
-          <p style="color:#F6F1E8;font-family:Georgia,serif;font-size:28px;font-weight:700;margin:0;">$1,525.00</p>
-          <p style="color:#6a8a9a;font-size:11px;margin:4px 0 0;">Tax Year 2026 · 11 gifts</p>
-        </div>
-        <p style="font-size:14px;line-height:1.7;color:#6a6258;">
-          May God bless you and your household.<br>
-          <em>Fr. Nicholas Andreiev</em><br>
-          Holy Ascension Orthodox Church, Nashville TN
-        </p>
-      </div>
-      <div style="background:#0B2130;padding:16px 32px;text-align:center;">
-        <p style="color:#6a8a9a;font-size:11px;margin:0;">Powered by <a href="https://agapay.app" style="color:#C8A24A;">AGAPAY</a></p>
-      </div>
-    </div>`,
+    html: agapayEmailHtml(appUrl, "Your 2026 Annual Giving Statement", bodyHtml),
     attachments: [{ filename: "giving-statement-2026.pdf", content: pdfBase64 }]
   });
   return json({ ok: true, result: res });
