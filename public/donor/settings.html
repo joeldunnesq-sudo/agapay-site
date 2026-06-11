@@ -81,6 +81,16 @@
                 <div class="form-group"><label class="form-label" for="settingsPostalCode">ZIP Code</label><input class="form-input" id="settingsPostalCode" autocomplete="postal-code" placeholder="10001" /></div>
                 <div class="form-group"><label class="form-label" for="settingsCountry">Country</label><input class="form-input" id="settingsCountry" autocomplete="country" placeholder="US" maxlength="2" /></div>
               </div>
+              <div class="section-divider"><span>Annual Pledge</span></div>
+              <div class="form-group" style="max-width:280px;">
+                <label class="form-label" for="pledgeAmount">Pledge amount</label>
+                <div style="position:relative;">
+                  <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--stone);font-size:0.9rem;pointer-events:none;">$</span>
+                  <input class="form-input" id="pledgeAmount" type="number" min="0" step="50" placeholder="e.g. 2400" style="padding-left:1.75rem;" />
+                </div>
+                <p class="form-help" style="margin-top:6px;">Your annual stewardship pledge in dollars. Only you can see this — it drives the progress bar on your dashboard home screen.</p>
+              </div>
+
               <div class="section-divider"><span>Password</span></div>
               <div class="form-grid">
                 <div class="form-group"><label class="form-label" for="currentPassword">Current password</label><input class="form-input" id="currentPassword" type="password" autocomplete="current-password" placeholder="Required for email or password changes" /></div>
