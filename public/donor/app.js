@@ -800,10 +800,13 @@ async function loginFromPage(event) {
     });
     saveDonorSession(data);
     setDonorStatus("Signed in. Opening your donor dashboard...", "success");
-    window.location.href = "/donor/dashboard";
+    window.location.href = "/donor/";
   } catch (err) {
     clearDonorSession();
-    setDonorStatus(err.message, "error");
+    const message = isDonorUnauthorized(err)
+      ? "We could not sign you in with that email and password. Check your password or use Forgot password."
+      : err.message;
+    setDonorStatus(message, "error");
   }
 }
 
@@ -900,6 +903,38 @@ function initDonorPasswordResetPage() {
   if (emailField) emailField.value = email;
   showDonorAuthForm(token ? "donorResetConfirmForm" : "donorResetRequestForm");
 }
+
+function initDonorLoginPageControls() {
+  if (window.__agapayDonorLoginControlsReady) return;
+  const loginForm = document.getElementById("donorLoginForm");
+  const resetRequestForm = document.getElementById("donorResetRequestForm");
+  const resetConfirmForm = document.getElementById("donorResetConfirmForm");
+  if (!loginForm && !resetRequestForm && !resetConfirmForm) return;
+  window.__agapayDonorLoginControlsReady = true;
+
+  loginForm?.addEventListener("submit", loginFromPage);
+  resetRequestForm?.addEventListener("submit", requestDonorPasswordReset);
+  resetConfirmForm?.addEventListener("submit", confirmDonorPasswordReset);
+
+  document.querySelectorAll("[data-donor-auth-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const view = button.getAttribute("data-donor-auth-view");
+      if (view === "reset") showDonorPasswordReset();
+      if (view === "login") showDonorLogin();
+    });
+  });
+}
+
+window.loginFromPage = loginFromPage;
+window.showDonorLogin = showDonorLogin;
+window.showDonorPasswordReset = showDonorPasswordReset;
+window.requestDonorPasswordReset = requestDonorPasswordReset;
+window.confirmDonorPasswordReset = confirmDonorPasswordReset;
+
+document.addEventListener("DOMContentLoaded", () => {
+  initDonorLoginPageControls();
+  initDonorPasswordResetPage();
+});
 
 async function signupFromPage(event) {
   event.preventDefault();

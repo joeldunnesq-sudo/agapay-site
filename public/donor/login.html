@@ -50,7 +50,7 @@
         </div>
       </section>
 
-      <form class="donor-auth-card" id="donorLoginForm" onsubmit="loginFromPage(event)">
+      <form class="donor-auth-card" id="donorLoginForm">
         <h2>Login</h2>
         <div class="form-group">
           <label class="form-label" for="donorEmail">Email</label>
@@ -63,11 +63,11 @@
         <div class="donor-auth-actions">
           <button class="btn btn-gold" type="submit">Log in</button>
           <a class="btn btn-ghost" href="/donor/signup">Sign up</a>
-          <button class="btn btn-ghost" type="button" onclick="showDonorPasswordReset()">Forgot password?</button>
+          <button class="btn btn-ghost" type="button" data-donor-auth-view="reset">Forgot password?</button>
         </div>
       </form>
 
-      <form class="donor-auth-card" id="donorResetRequestForm" onsubmit="requestDonorPasswordReset(event)" hidden>
+      <form class="donor-auth-card" id="donorResetRequestForm" hidden>
         <h2>Reset password</h2>
         <div class="form-group">
           <label class="form-label" for="donorResetEmail">Email</label>
@@ -75,11 +75,11 @@
         </div>
         <div class="donor-auth-actions">
           <button class="btn btn-gold" type="submit">Send reset link</button>
-          <button class="btn btn-ghost" type="button" onclick="showDonorLogin()">Back to login</button>
+          <button class="btn btn-ghost" type="button" data-donor-auth-view="login">Back to login</button>
         </div>
       </form>
 
-      <form class="donor-auth-card" id="donorResetConfirmForm" onsubmit="confirmDonorPasswordReset(event)" hidden>
+      <form class="donor-auth-card" id="donorResetConfirmForm" hidden>
         <h2>Choose new password</h2>
         <input id="donorResetToken" type="hidden" />
         <div class="form-group">
@@ -96,10 +96,143 @@
         </div>
         <div class="donor-auth-actions">
           <button class="btn btn-gold" type="submit">Update password</button>
-          <button class="btn btn-ghost" type="button" onclick="showDonorLogin()">Back to login</button>
+          <button class="btn btn-ghost" type="button" data-donor-auth-view="login">Back to login</button>
         </div>
       </form>
     </section>
   </main>
+  <script>
+    (() => {
+      const status = document.getElementById("donorStatus");
+      const loginForm = document.getElementById("donorLoginForm");
+      const resetRequestForm = document.getElementById("donorResetRequestForm");
+      const resetConfirmForm = document.getElementById("donorResetConfirmForm");
+
+      function setStatus(message, tone = "info") {
+        if (!status) return;
+        status.textContent = message || "";
+        status.className = message ? `notice ${tone}` : "notice";
+        status.style.display = message ? "block" : "none";
+      }
+
+      function showForm(form) {
+        if (loginForm) loginForm.hidden = form !== "login";
+        if (resetRequestForm) resetRequestForm.hidden = form !== "reset";
+        if (resetConfirmForm) resetConfirmForm.hidden = form !== "confirm";
+        setStatus("");
+      }
+
+      async function postJson(url, body) {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || data.detail || "AGAPAY request failed");
+        return data;
+      }
+
+      document.querySelectorAll("[data-donor-auth-view]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const view = button.getAttribute("data-donor-auth-view");
+          if (view === "reset") {
+            const email = document.getElementById("donorEmail")?.value.trim();
+            const resetEmail = document.getElementById("donorResetEmail");
+            if (email && resetEmail) resetEmail.value = email;
+            showForm("reset");
+          }
+          if (view === "login") showForm("login");
+        });
+      });
+
+      loginForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const email = document.getElementById("donorEmail")?.value.trim();
+        const password = document.getElementById("donorPassword")?.value;
+        if (!email || !password) {
+          setStatus("Enter your email and password.", "error");
+          return;
+        }
+        setStatus("Signing you in...");
+        try {
+          const data = await postJson("/api/donor/login", { email, password });
+          if (data.token) localStorage.setItem("agapayDonorToken", data.token);
+          if (data.donor?.email) localStorage.setItem("agapayDonorEmail", data.donor.email);
+          if (data.donor) localStorage.setItem("agapayDonorProfile", JSON.stringify(data.donor));
+          setStatus("Signed in. Opening your donor dashboard...", "success");
+          window.location.href = "/donor/";
+        } catch (error) {
+          localStorage.removeItem("agapayDonorToken");
+          setStatus(error.message === "Unauthorized"
+            ? "We could not sign you in with that email and password. Check your password or use Forgot password."
+            : error.message, "error");
+        }
+      });
+
+      resetRequestForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const email = document.getElementById("donorResetEmail")?.value.trim();
+        if (!email) {
+          setStatus("Enter your email address.", "error");
+          return;
+        }
+        setStatus("Sending reset link...");
+        try {
+          const data = await postJson("/api/donor/password-reset-request", { email });
+          setStatus("If that email is verified, a reset link has been sent.", "success");
+          if (data.resetUrl) {
+            const actions = resetRequestForm.querySelector(".donor-auth-actions");
+            const link = document.getElementById("donorTestResetLink") || document.createElement("a");
+            link.id = "donorTestResetLink";
+            link.href = data.resetUrl;
+            link.textContent = "Open test reset link";
+            link.className = "btn btn-ghost";
+            if (!link.parentElement) actions.appendChild(link);
+          }
+        } catch (error) {
+          setStatus(error.message, "error");
+        }
+      });
+
+      resetConfirmForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const email = document.getElementById("donorResetConfirmEmail")?.value.trim();
+        const token = document.getElementById("donorResetToken")?.value.trim();
+        const newPassword = document.getElementById("donorNewPassword")?.value;
+        const confirmPassword = document.getElementById("donorConfirmPassword")?.value;
+        if (!email || !token || !newPassword) {
+          setStatus("Enter your email and new password.", "error");
+          return;
+        }
+        if (newPassword !== confirmPassword) {
+          setStatus("Passwords do not match.", "error");
+          return;
+        }
+        setStatus("Updating password...");
+        try {
+          await postJson("/api/donor/password-reset-confirm", { email, token, newPassword, confirmPassword });
+          document.getElementById("donorEmail").value = email;
+          showForm("login");
+          setStatus("Password updated. Please log in with your new password.", "success");
+        } catch (error) {
+          setStatus(error.message, "error");
+        }
+      });
+
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get("token") || "";
+      const email = params.get("email") || "";
+      if (token || params.get("reset") === "1") {
+        const tokenField = document.getElementById("donorResetToken");
+        const emailField = document.getElementById("donorResetConfirmEmail");
+        if (tokenField) tokenField.value = token;
+        if (emailField) emailField.value = email;
+        showForm(token ? "confirm" : "reset");
+      }
+
+      window.__agapayDonorLoginControlsReady = true;
+    })();
+  </script>
 </body>
 </html>
