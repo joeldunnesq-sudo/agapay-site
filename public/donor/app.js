@@ -1014,6 +1014,7 @@ function renderDonorDashboardPayload(data) {
   setText("desktopMetricCommemorations", String(summary.commemorationCount || 0));
   setText("desktopParishName", parish?.name || "Choose a church in Settings to personalize your dashboard.");
 
+  renderPledgeTracker(data.donor);
   updateQuickGiveLinks(parish);
   renderActiveCampaigns(parish);
   renderNextFeast(parish);
@@ -1066,6 +1067,10 @@ async function loadDonorSettingsPage() {
     setValue("settingsEmail", donor.email);
     setValue("settingsPhone", donor.contactPhone);
     setValue("defaultParishId", donor.defaultParishId);
+    const pledgeEl = document.getElementById("pledgeAmount");
+    if (pledgeEl && donor.pledgeAmountCents) pledgeEl.value = (donor.pledgeAmountCents / 100).toFixed(0);
+    const pledgeYearEl = document.getElementById("pledgeYear");
+    if (pledgeYearEl && donor.pledgeYear) pledgeYearEl.value = donor.pledgeYear;
     setValue("settingsAddressLine1", donor.addressLine1);
     setValue("settingsAddressLine2", donor.addressLine2);
     setValue("settingsCity", donor.city);
@@ -1087,6 +1092,8 @@ async function saveDonorSettings(event) {
     email: document.getElementById("settingsEmail")?.value.trim(),
     contactPhone: document.getElementById("settingsPhone")?.value.trim(),
     defaultParishId: document.getElementById("defaultParishId")?.value,
+    pledgeAmountCents: Math.round((parseFloat(document.getElementById("pledgeAmount")?.value || "0") || 0) * 100),
+    pledgeYear: document.getElementById("pledgeYear")?.value || "",
     addressLine1: document.getElementById("settingsAddressLine1")?.value.trim() || "",
     addressLine2: document.getElementById("settingsAddressLine2")?.value.trim() || "",
     city: document.getElementById("settingsCity")?.value.trim() || "",
@@ -1645,3 +1652,60 @@ document.addEventListener("DOMContentLoaded", () => {
   if (emailInput && donorSession().email) emailInput.value = donorSession().email;
   initDonorPasswordResetPage();
 });
+
+
+// ── PLEDGE TRACKER ────────────────────────────────────────────────────────
+function renderPledgeTracker(donor) {
+  if (!donor) return;
+  const pledgeCents = Number(donor.pledgeAmountCents || 0);
+  const pledgeYear  = donor.pledgeYear || String(new Date().getFullYear());
+  const ytdCents    = (() => {
+    // Read YTD from the already-rendered metric text
+    const el = document.getElementById("metricYtd");
+    if (!el) return 0;
+    const raw = el.textContent.replace(/[^0-9.]/g, "");
+    return Math.round(parseFloat(raw || "0") * 100);
+  })();
+
+  // Mobile tracker
+  const mobileCard = document.getElementById("pledgeTrackerCard");
+  if (mobileCard) {
+    if (!pledgeCents) { mobileCard.hidden = true; return; }
+    mobileCard.hidden = false;
+    const pct  = Math.min(100, Math.round((ytdCents / pledgeCents) * 100));
+    const fill = document.getElementById("pledgeBarFill");
+    const track = document.getElementById("pledgeBarTrack");
+    if (fill)  { setTimeout(() => { fill.style.width = pct + "%"; }, 120); fill.classList.toggle("pledge-complete", pct >= 100); }
+    if (track) track.setAttribute("aria-valuenow", pct);
+    const label = document.getElementById("pledgeTrackerLabel");
+    if (label) label.textContent = pledgeYear + " Annual Pledge";
+    const raised = document.getElementById("pledgeRaised");
+    if (raised) raised.textContent = money(ytdCents) + " given";
+    const pctEl = document.getElementById("pledgePct");
+    if (pctEl)  pctEl.textContent = pct + "%";
+    const goal = document.getElementById("pledgeGoal");
+    if (goal)   goal.textContent = "of " + money(pledgeCents) + " pledge";
+    const editLink = mobileCard.querySelector(".pledge-tracker-edit");
+    if (editLink) editLink.href = "/donor/settings#pledge";
+  }
+
+  // Desktop tracker
+  const desktopCard = document.getElementById("desktopPledgeTracker");
+  if (desktopCard) {
+    if (!pledgeCents) { desktopCard.hidden = true; return; }
+    desktopCard.hidden = false;
+    const pct  = Math.min(100, Math.round((ytdCents / pledgeCents) * 100));
+    const fill = document.getElementById("desktopPledgeBarFill");
+    const track = document.getElementById("desktopPledgeBarTrack");
+    if (fill)  { setTimeout(() => { fill.style.width = pct + "%"; }, 120); fill.classList.toggle("pledge-complete", pct >= 100); }
+    if (track) track.setAttribute("aria-valuenow", pct);
+    const title = document.getElementById("desktopPledgeTitle");
+    if (title) title.textContent = pledgeYear + " Annual Pledge";
+    const raised = document.getElementById("desktopPledgeRaised");
+    if (raised) raised.textContent = money(ytdCents) + " given";
+    const pctEl = document.getElementById("desktopPledgePct");
+    if (pctEl)  pctEl.textContent = pct + "%";
+    const goal = document.getElementById("desktopPledgeGoal");
+    if (goal)   goal.textContent = "of " + money(pledgeCents) + " pledge";
+  }
+}
