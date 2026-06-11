@@ -150,6 +150,239 @@
     .pullquote p { font-family: var(--serif); font-size: clamp(1.2rem, 2vw, 1.55rem); font-style: italic; color: var(--night); line-height: 1.6; }
     .pullquote cite { display: block; font-size: 0.75rem; color: var(--stone); font-style: normal; margin-top: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; }
 
+    .giving-engine {
+      position: relative;
+      overflow: hidden;
+      color: var(--cream);
+      background:
+        radial-gradient(circle at 50% 40%, rgba(200, 162, 74, 0.18), transparent 26rem),
+        linear-gradient(120deg, #061522, #0B2130 58%, #071724);
+    }
+    .giving-engine::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(90deg, transparent 0 90px, rgba(200, 162, 74, 0.055) 90px 91px),
+        radial-gradient(circle at 16% 16%, rgba(246, 241, 232, 0.08), transparent 18rem);
+      pointer-events: none;
+    }
+    .engine-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(280px, 0.82fr) minmax(360px, 1.18fr);
+      gap: clamp(1.5rem, 5vw, 4rem);
+      align-items: center;
+    }
+    .engine-copy h2 {
+      color: var(--cream);
+      font-family: var(--serif);
+      font-size: clamp(2.2rem, 4.6vw, 4rem);
+      font-weight: 500;
+      line-height: 1;
+      margin-bottom: 1rem;
+    }
+    .engine-copy p {
+      color: rgba(246, 241, 232, 0.72);
+      line-height: 1.72;
+      max-width: 520px;
+    }
+    .engine-tabs {
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 1.55rem;
+    }
+    .engine-tab {
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      gap: 0.85rem;
+      align-items: center;
+      min-height: 64px;
+      padding: 0.75rem;
+      border: 1px solid rgba(200, 162, 74, 0.18);
+      border-radius: var(--r);
+      color: rgba(246, 241, 232, 0.72);
+      background: rgba(246, 241, 232, 0.035);
+      text-align: left;
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+    .engine-tab:hover,
+    .engine-tab[aria-selected="true"] {
+      transform: translateY(-2px);
+      border-color: rgba(200, 162, 74, 0.48);
+      background: rgba(200, 162, 74, 0.1);
+    }
+    .engine-tab b {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      color: #061522;
+      background: linear-gradient(135deg, #D6AF5B, #B98832);
+      font-family: var(--serif);
+      font-size: 1.2rem;
+    }
+    .engine-tab strong {
+      display: block;
+      color: var(--cream);
+      font-family: var(--serif);
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+    .engine-tab span {
+      display: block;
+      margin-top: 0.14rem;
+      font-size: 0.84rem;
+      line-height: 1.38;
+    }
+    .engine-console {
+      position: relative;
+      min-height: 480px;
+      border: 1px solid rgba(200, 162, 74, 0.28);
+      border-radius: 16px;
+      background: rgba(255, 253, 248, 0.94);
+      box-shadow: 0 28px 90px rgba(0, 0, 0, 0.32);
+      overflow: hidden;
+    }
+    .engine-console::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 82% 8%, rgba(200, 162, 74, 0.2), transparent 16rem);
+      pointer-events: none;
+    }
+    .console-header {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.05rem 1.15rem;
+      border-bottom: 1px solid var(--line);
+      color: var(--night);
+    }
+    .console-header span {
+      color: var(--gold-dark);
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .console-header strong {
+      display: block;
+      margin-top: 0.1rem;
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+    .console-live {
+      color: #355A34;
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+    .console-live::before {
+      content: "";
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin-right: 0.44rem;
+      border-radius: 50%;
+      background: #6D8A44;
+      box-shadow: 0 0 0 5px rgba(109, 138, 68, 0.14);
+    }
+    .console-body {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 1rem;
+      padding: 1.15rem;
+      color: var(--ink);
+    }
+    .engine-metrics {
+      display: grid;
+      gap: 0.75rem;
+    }
+    .engine-metric {
+      min-height: 112px;
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: linear-gradient(180deg, #FFFDF8, rgba(246, 241, 232, 0.8));
+    }
+    .engine-metric span {
+      display: block;
+      margin-bottom: 0.45rem;
+      color: var(--stone);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+    .engine-metric strong {
+      display: block;
+      font-family: var(--serif);
+      color: var(--night);
+      font-size: 2rem;
+      line-height: 1;
+      font-weight: 600;
+    }
+    .engine-preview {
+      display: grid;
+      align-content: stretch;
+      gap: 0.75rem;
+    }
+    .engine-chart {
+      height: 174px;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      align-items: end;
+      gap: 0.45rem;
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(6, 21, 34, 0.045);
+    }
+    .engine-chart span {
+      min-height: 16px;
+      border-radius: 7px 7px 2px 2px;
+      background: linear-gradient(180deg, #D6AF5B, #A97C25);
+      transform-origin: bottom;
+      animation: engine-bar 0.55s ease both;
+    }
+    @keyframes engine-bar {
+      from { transform: scaleY(0.26); opacity: 0.35; }
+      to { transform: scaleY(1); opacity: 1; }
+    }
+    .engine-action {
+      padding: 1rem;
+      border: 1px solid rgba(200, 162, 74, 0.32);
+      border-radius: 12px;
+      background: rgba(200, 162, 74, 0.09);
+      color: var(--stone);
+      line-height: 1.55;
+    }
+    .engine-action strong {
+      display: block;
+      color: var(--night);
+      font-family: var(--serif);
+      font-size: 1.35rem;
+      font-weight: 500;
+    }
+    @media (max-width: 980px) {
+      .engine-grid,
+      .console-body {
+        grid-template-columns: 1fr;
+      }
+      .engine-console {
+        min-height: auto;
+      }
+    }
+
     .liturgical { background: linear-gradient(180deg, #FFFDF8, #F5EEE1); }
     .calendar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; }
     .cal-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 1.25rem; }
@@ -534,6 +767,56 @@
       </div>
     </section>
 
+    <section class="section giving-engine" aria-labelledby="engine-title">
+      <div class="section-inner engine-grid">
+        <div class="engine-copy">
+          <div class="eyebrow">The giving engine</div>
+          <h2 id="engine-title">One platform, many Orthodox acts of generosity.</h2>
+          <p>AGAPAY’s feature set is organized around the way Orthodox communities actually give: stewardship, candles, memorials, feast days, monastery support, and designated funds.</p>
+          <div class="engine-tabs" role="tablist" aria-label="Feature preview">
+            <button class="engine-tab" type="button" role="tab" aria-selected="true" data-engine="stewardship">
+              <b>1</b><span><strong>Stewardship</strong>Recurring support, donor records, and clean parish reporting.</span>
+            </button>
+            <button class="engine-tab" type="button" role="tab" aria-selected="false" data-engine="commemorations">
+              <b>2</b><span><strong>Commemorations</strong>Living and departed names routed clearly for parish use.</span>
+            </button>
+            <button class="engine-tab" type="button" role="tab" aria-selected="false" data-engine="feasts">
+              <b>3</b><span><strong>Feast Campaigns</strong>Liturgical calendars, patronal feasts, and seasonal giving.</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="engine-console" aria-label="Interactive feature console">
+          <div class="console-header">
+            <div>
+              <span>Preview mode</span>
+              <strong id="engineTitle">Stewardship</strong>
+            </div>
+            <div class="console-live">Active</div>
+          </div>
+          <div class="console-body">
+            <div class="engine-metrics">
+              <div class="engine-metric">
+                <span id="engineMetricOneLabel">Monthly giving</span>
+                <strong id="engineMetricOne">$18,420</strong>
+              </div>
+              <div class="engine-metric">
+                <span id="engineMetricTwoLabel">Households</span>
+                <strong id="engineMetricTwo">142</strong>
+              </div>
+            </div>
+            <div class="engine-preview">
+              <div class="engine-chart" id="engineChart" aria-hidden="true"></div>
+              <div class="engine-action">
+                <strong id="engineActionTitle">Receipt batch ready</strong>
+                <span id="engineActionCopy">Treasurers can review categorized gifts and send donor records without rebuilding spreadsheets.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- LITURGICAL CALENDAR -->
     <section class="section liturgical">
       <div class="section-inner">
@@ -743,6 +1026,71 @@
       });
     }, { rootMargin: "0px 0px -8% 0px", threshold: 0.06 });
     document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+
+    const engineModes = {
+      stewardship: {
+        title: "Stewardship",
+        oneLabel: "Monthly giving",
+        one: "$18,420",
+        twoLabel: "Households",
+        two: "142",
+        actionTitle: "Receipt batch ready",
+        actionCopy: "Treasurers can review categorized gifts and send donor records without rebuilding spreadsheets.",
+        bars: [36, 44, 58, 50, 66, 72, 64, 78, 88, 74, 92, 84]
+      },
+      commemorations: {
+        title: "Commemorations",
+        oneLabel: "Names submitted",
+        one: "96",
+        twoLabel: "Memorial gifts",
+        two: "$4,650",
+        actionTitle: "Priest queue prepared",
+        actionCopy: "Names of the living and departed stay attached to the offering and can be routed clearly for parish use.",
+        bars: [24, 38, 46, 62, 48, 70, 56, 82, 68, 76, 90, 72]
+      },
+      feasts: {
+        title: "Feast Campaigns",
+        oneLabel: "Active appeals",
+        one: "8",
+        twoLabel: "Seasonal support",
+        two: "$12,870",
+        actionTitle: "Liturgical timing set",
+        actionCopy: "Campaigns can follow Nativity, Theophany, Great Lent, Pascha, patronal feasts, and your parish calendar.",
+        bars: [18, 28, 40, 52, 66, 80, 72, 58, 46, 62, 78, 88]
+      }
+    };
+
+    const engineTabs = Array.from(document.querySelectorAll(".engine-tab"));
+    const engineTitle = document.getElementById("engineTitle");
+    const engineMetricOneLabel = document.getElementById("engineMetricOneLabel");
+    const engineMetricOne = document.getElementById("engineMetricOne");
+    const engineMetricTwoLabel = document.getElementById("engineMetricTwoLabel");
+    const engineMetricTwo = document.getElementById("engineMetricTwo");
+    const engineActionTitle = document.getElementById("engineActionTitle");
+    const engineActionCopy = document.getElementById("engineActionCopy");
+    const engineChart = document.getElementById("engineChart");
+
+    function renderEngine(mode) {
+      const data = engineModes[mode];
+      if (!data || !engineChart) return;
+      engineTabs.forEach(tab => tab.setAttribute("aria-selected", String(tab.dataset.engine === mode)));
+      engineTitle.textContent = data.title;
+      engineMetricOneLabel.textContent = data.oneLabel;
+      engineMetricOne.textContent = data.one;
+      engineMetricTwoLabel.textContent = data.twoLabel;
+      engineMetricTwo.textContent = data.two;
+      engineActionTitle.textContent = data.actionTitle;
+      engineActionCopy.textContent = data.actionCopy;
+      engineChart.replaceChildren(...data.bars.map((height, index) => {
+        const bar = document.createElement("span");
+        bar.style.height = `${height}%`;
+        bar.style.animationDelay = `${index * 28}ms`;
+        return bar;
+      }));
+    }
+
+    engineTabs.forEach(tab => tab.addEventListener("click", () => renderEngine(tab.dataset.engine)));
+    renderEngine("stewardship");
   </script>
 </body>
 </html>

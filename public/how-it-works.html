@@ -111,6 +111,32 @@
     .pi-dot { width:28px; height:28px; border-radius:50%; border:1px solid rgba(200,162,74,.35); display:grid; place-items:center; font-family:var(--serif); font-size:.85rem; color:rgba(246,241,232,.4); }
     .pi-line { width:22px; height:1px; background:rgba(200,162,74,.2); }
 
+    .guided-flow { position:relative; background:linear-gradient(180deg,#FFFDF8,#F3EDE0); border-bottom:1px solid var(--line); padding:clamp(2.8rem,5vw,4.6rem) clamp(1rem,3vw,2.4rem); overflow:hidden; }
+    .guided-flow::before { content:""; position:absolute; inset:0; background:radial-gradient(circle at 80% 18%,rgba(200,162,74,.16),transparent 22rem),repeating-linear-gradient(90deg,transparent 0 86px,rgba(6,21,34,.035) 86px 87px); pointer-events:none; }
+    .guided-inner { position:relative; z-index:1; width:min(1120px,100%); margin:0 auto; display:grid; grid-template-columns:minmax(270px,.86fr) minmax(360px,1.14fr); gap:clamp(1.5rem,5vw,4rem); align-items:center; }
+    .guided-copy h2 { font-family:var(--serif); color:var(--night); font-size:clamp(2.2rem,4.6vw,3.7rem); line-height:1; font-weight:500; margin-bottom:.9rem; }
+    .guided-copy p { color:var(--stone); line-height:1.72; max-width:520px; }
+    .guided-tabs { display:grid; gap:.65rem; margin-top:1.45rem; }
+    .guided-tab { display:grid; grid-template-columns:36px 1fr; gap:.8rem; align-items:center; min-height:62px; padding:.72rem; border:1px solid var(--line); border-radius:12px; background:rgba(255,253,248,.68); color:var(--stone); text-align:left; cursor:pointer; transition:transform .2s ease,border-color .2s ease,background .2s ease; }
+    .guided-tab:hover,.guided-tab[aria-selected="true"] { transform:translateY(-2px); border-color:rgba(200,162,74,.56); background:rgba(200,162,74,.12); }
+    .guided-tab b { display:grid; place-items:center; width:36px; height:36px; border-radius:50%; color:#061522; background:linear-gradient(135deg,#D6AF5B,#B98832); font-family:var(--serif); font-size:1.1rem; }
+    .guided-tab strong { display:block; color:var(--night); font-family:var(--serif); font-size:1.15rem; font-weight:500; }
+    .guided-tab span { display:block; margin-top:.12rem; font-size:.83rem; line-height:1.38; }
+    .guided-panel { min-height:420px; border:1px solid rgba(166,159,145,.36); border-radius:16px; background:rgba(255,253,248,.92); box-shadow:0 24px 70px rgba(6,21,34,.14); overflow:hidden; }
+    .guided-panel-head { display:flex; justify-content:space-between; gap:1rem; padding:1.1rem 1.2rem; border-bottom:1px solid var(--line); }
+    .guided-panel-head span { color:var(--gold-dark); font-size:.7rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
+    .guided-panel-head strong { display:block; margin-top:.12rem; color:var(--night); font-family:var(--serif); font-size:1.55rem; font-weight:500; }
+    .guided-status { align-self:center; color:#3f5e33; font-size:.8rem; font-weight:800; white-space:nowrap; }
+    .guided-status::before { content:""; display:inline-block; width:8px; height:8px; margin-right:.42rem; border-radius:50%; background:#6f8d44; box-shadow:0 0 0 5px rgba(111,141,68,.14); }
+    .guided-panel-body { display:grid; gap:.8rem; padding:1.1rem; }
+    .guided-list { display:grid; gap:.65rem; }
+    .guided-row { display:grid; grid-template-columns:26px 1fr; gap:.7rem; align-items:start; padding:.8rem; border:1px solid var(--line); border-radius:10px; background:rgba(246,241,232,.56); color:var(--stone); line-height:1.5; }
+    .guided-row i { display:grid; place-items:center; width:26px; height:26px; border-radius:50%; background:rgba(200,162,74,.18); color:var(--gold-dark); font-style:normal; font-weight:900; }
+    .guided-row strong { display:block; color:var(--night); font-family:var(--serif); font-size:1.14rem; font-weight:500; }
+    .guided-progress { height:10px; overflow:hidden; border-radius:999px; background:rgba(166,159,145,.22); }
+    .guided-progress span { display:block; height:100%; width:33%; border-radius:inherit; background:linear-gradient(90deg,#D6AF5B,#A97C25); transition:width .25s ease; }
+    @media (max-width:900px){ .guided-inner { grid-template-columns:1fr; } .guided-panel { min-height:auto; } }
+
     /* STEPS */
     .steps-body { background:var(--parchment); border-bottom:1px solid var(--line); }
     .step { display:grid; grid-template-columns:1fr 1fr; min-height:480px; position:relative; }
@@ -292,6 +318,34 @@
         <div class="pi-dot">4</div>
       </div>
     </div>
+
+    <section class="guided-flow" aria-labelledby="guided-title">
+      <div class="guided-inner">
+        <div class="guided-copy">
+          <div class="eyebrow">Launch path</div>
+          <h2 id="guided-title">A premium giving flow without software-team complexity.</h2>
+          <p>From first visit to first offering, AGAPAY keeps the path calm and legible for parishioners while preserving the details that matter to parish life.</p>
+          <div class="guided-tabs" role="tablist" aria-label="Giving flow preview">
+            <button class="guided-tab" type="button" role="tab" aria-selected="true" data-flow="discover"><b>1</b><span><strong>Discover</strong>Find the parish, mission, or monastery you want to support.</span></button>
+            <button class="guided-tab" type="button" role="tab" aria-selected="false" data-flow="offer"><b>2</b><span><strong>Offer</strong>Choose stewardship, candles, memorials, or designated gifts.</span></button>
+            <button class="guided-tab" type="button" role="tab" aria-selected="false" data-flow="remember"><b>3</b><span><strong>Remember</strong>Keep names, receipts, and giving history organized.</span></button>
+          </div>
+        </div>
+        <div class="guided-panel">
+          <div class="guided-panel-head">
+            <div>
+              <span>Current phase</span>
+              <strong id="guidedPhase">Discover</strong>
+            </div>
+            <div class="guided-status" id="guidedStatus">Ready</div>
+          </div>
+          <div class="guided-panel-body">
+            <div class="guided-progress" aria-hidden="true"><span id="guidedProgress"></span></div>
+            <div class="guided-list" id="guidedList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <div class="steps-body">
 
@@ -577,6 +631,63 @@
       });
     }, { threshold: 0.08 });
     document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+
+    const guidedFlows = {
+      discover: {
+        phase: "Discover",
+        status: "Ready",
+        progress: "33%",
+        rows: [
+          ["1", "Search confidently", "Find your parish, monastery, or mission by name, city, jurisdiction, or location."],
+          ["2", "Verify the community", "Canonical review keeps the giving environment trustworthy."],
+          ["3", "Continue without friction", "No app download required for the donor’s first gift."]
+        ]
+      },
+      offer: {
+        phase: "Offer",
+        status: "Giving",
+        progress: "66%",
+        rows: [
+          ["1", "Choose the purpose", "Stewardship, candles, memorials, building funds, and feast-day campaigns stay distinct."],
+          ["2", "Add names when needed", "Living and departed names can remain attached to commemorative gifts."],
+          ["3", "Give once or recurring", "Donors can support a single need or establish an ongoing rhythm."]
+        ]
+      },
+      remember: {
+        phase: "Remember",
+        status: "Complete",
+        progress: "100%",
+        rows: [
+          ["1", "Receipts are preserved", "Giving history remains available for donors and reporting."],
+          ["2", "Parish records stay clean", "Treasurers can see categorized gifts without rebuilding the data."],
+          ["3", "Prayer stays connected", "Commemorations and offerings stay tied to the life of the Church."]
+        ]
+      }
+    };
+
+    const guidedTabs = Array.from(document.querySelectorAll(".guided-tab"));
+    const guidedPhase = document.getElementById("guidedPhase");
+    const guidedStatus = document.getElementById("guidedStatus");
+    const guidedProgress = document.getElementById("guidedProgress");
+    const guidedList = document.getElementById("guidedList");
+
+    function renderGuidedFlow(mode) {
+      const flow = guidedFlows[mode];
+      if (!flow || !guidedList) return;
+      guidedTabs.forEach(tab => tab.setAttribute("aria-selected", String(tab.dataset.flow === mode)));
+      guidedPhase.textContent = flow.phase;
+      guidedStatus.textContent = flow.status;
+      guidedProgress.style.width = flow.progress;
+      guidedList.replaceChildren(...flow.rows.map(([number, title, copy]) => {
+        const row = document.createElement("div");
+        row.className = "guided-row";
+        row.innerHTML = `<i>${number}</i><span><strong>${title}</strong>${copy}</span>`;
+        return row;
+      }));
+    }
+
+    guidedTabs.forEach(tab => tab.addEventListener("click", () => renderGuidedFlow(tab.dataset.flow)));
+    renderGuidedFlow("discover");
 
     // ── PWA install section ───────────────────────────────
     (function () {

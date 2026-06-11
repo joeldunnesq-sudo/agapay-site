@@ -100,6 +100,23 @@
     .hero-btn-secondary svg, .small-btn.secondary svg { stroke: #9A6F21; }
     .hero-art { align-self: stretch; min-height: 420px; background-image: url("/images/pricing/alms-box-hero.png"); background-size: contain; background-repeat: no-repeat; background-position: center right; filter: saturate(0) brightness(1.1) contrast(1.2); mix-blend-mode: multiply; -webkit-mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%); mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%); }
 
+    .pricing-clarity { position:relative; overflow:hidden; border-bottom:1px solid rgba(200,162,74,.28); background:linear-gradient(100deg,#071724,#0C2739); color:var(--cream); padding:clamp(1.4rem,3vw,2rem); }
+    .pricing-clarity::before { content:""; position:absolute; inset:0; background:radial-gradient(circle at 78% 20%,rgba(200,162,74,.16),transparent 20rem),repeating-linear-gradient(90deg,transparent 0 90px,rgba(200,162,74,.045) 90px 91px); pointer-events:none; }
+    .clarity-inner { position:relative; z-index:1; width:min(1160px,100%); margin:0 auto; display:grid; grid-template-columns:minmax(240px,.76fr) minmax(360px,1.24fr); gap:clamp(1rem,4vw,3rem); align-items:center; }
+    .clarity-copy h2 { font-family:var(--serif); font-size:clamp(1.9rem,3.5vw,3rem); font-weight:500; line-height:1.05; margin-bottom:.5rem; }
+    .clarity-copy p { color:rgba(246,241,232,.68); line-height:1.65; max-width:470px; }
+    .clarity-panel { border:1px solid rgba(200,162,74,.26); border-radius:14px; background:rgba(246,241,232,.06); overflow:hidden; }
+    .clarity-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:rgba(200,162,74,.2); }
+    .clarity-tab { min-height:52px; border:0; color:rgba(246,241,232,.68); background:#071724; cursor:pointer; font-weight:800; letter-spacing:.03em; }
+    .clarity-tab[aria-selected="true"] { color:#071724; background:linear-gradient(135deg,#D6AF5B,#B98832); }
+    .clarity-body { display:grid; grid-template-columns:.9fr 1.1fr; gap:1rem; align-items:center; padding:1.15rem; }
+    .clarity-stat { padding:1rem; border:1px solid rgba(200,162,74,.2); border-radius:12px; background:rgba(6,21,34,.28); }
+    .clarity-stat span { display:block; color:rgba(246,241,232,.52); font-size:.7rem; letter-spacing:.13em; text-transform:uppercase; font-weight:800; margin-bottom:.4rem; }
+    .clarity-stat strong { display:block; color:var(--gold); font-family:var(--serif); font-size:2.6rem; line-height:1; font-weight:500; }
+    .clarity-detail strong { display:block; color:var(--cream); font-family:var(--serif); font-size:1.55rem; font-weight:500; margin-bottom:.35rem; }
+    .clarity-detail p { color:rgba(246,241,232,.7); line-height:1.6; }
+    @media (max-width:860px){ .clarity-inner,.clarity-body{grid-template-columns:1fr;} .clarity-tabs{grid-template-columns:1fr;} }
+
     .pricing-content { padding: 2rem 2rem 2.4rem; background: linear-gradient(180deg, rgba(255, 253, 248, 0.82), rgba(246, 241, 232, 0.72)); }
     .pricing-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; align-items: stretch; }
     .tier-card { position: relative; border: 1px solid rgba(166, 159, 145, 0.35); border-radius: 16px; background: rgba(255, 253, 248, 0.94); padding: 1.25rem 1.05rem 1.05rem; box-shadow: 0 12px 30px rgba(6, 21, 34, 0.06); display: grid; gap: 0.8rem; }
@@ -246,6 +263,33 @@
         </div>
       </div>
       <div class="hero-art" aria-hidden="true"></div>
+    </section>
+
+    <section class="pricing-clarity" aria-labelledby="clarity-title">
+      <div class="clarity-inner">
+        <div class="clarity-copy">
+          <div class="section-kicker">Pricing clarity</div>
+          <h2 id="clarity-title">No mystery between the gift and the deposit.</h2>
+          <p>AGAPAY makes the subscription, transaction fee, and donor-covered fee option understandable before anyone starts giving.</p>
+        </div>
+        <div class="clarity-panel">
+          <div class="clarity-tabs" role="tablist" aria-label="Pricing clarity preview">
+            <button class="clarity-tab" type="button" role="tab" aria-selected="true" data-clarity="subscription">Monthly tier</button>
+            <button class="clarity-tab" type="button" role="tab" aria-selected="false" data-clarity="transaction">Donation fee</button>
+            <button class="clarity-tab" type="button" role="tab" aria-selected="false" data-clarity="covered">Donor-covered</button>
+          </div>
+          <div class="clarity-body">
+            <div class="clarity-stat">
+              <span id="clarityLabel">Parish plan</span>
+              <strong id="clarityValue">$99</strong>
+            </div>
+            <div class="clarity-detail">
+              <strong id="clarityTitle">Predictable monthly cost</strong>
+              <p id="clarityCopy">Parishes can budget around a clear monthly platform tier, then use the calculator below to model donation volume and fee coverage.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="pricing-content" aria-label="Pricing plans">
@@ -471,6 +515,42 @@
         button.setAttribute("aria-expanded", open ? "true" : "false");
       });
     });
+
+    const clarityContent = {
+      subscription: {
+        label: "Parish plan",
+        value: "$99",
+        title: "Predictable monthly cost",
+        copy: "Parishes can budget around a clear monthly platform tier, then use the calculator below to model donation volume and fee coverage."
+      },
+      transaction: {
+        label: "Total donation fee",
+        value: "5%",
+        title: "Simple transaction model",
+        copy: "Every gift uses the same 5% + $0.30 total donation fee, with Stripe processing and the AGAPAY platform share shown clearly."
+      },
+      covered: {
+        label: "Donor option",
+        value: "100%",
+        title: "Donors can cover fees",
+        copy: "When donors choose to cover fees, the parish receives more of the intended gift while the donor sees the impact clearly at checkout."
+      }
+    };
+    const clarityTabs = Array.from(document.querySelectorAll(".clarity-tab"));
+    const clarityLabel = document.getElementById("clarityLabel");
+    const clarityValue = document.getElementById("clarityValue");
+    const clarityTitle = document.getElementById("clarityTitle");
+    const clarityCopy = document.getElementById("clarityCopy");
+    function renderClarity(mode) {
+      const content = clarityContent[mode];
+      if (!content || !clarityLabel) return;
+      clarityTabs.forEach(tab => tab.setAttribute("aria-selected", String(tab.dataset.clarity === mode)));
+      clarityLabel.textContent = content.label;
+      clarityValue.textContent = content.value;
+      clarityTitle.textContent = content.title;
+      clarityCopy.textContent = content.copy;
+    }
+    clarityTabs.forEach(tab => tab.addEventListener("click", () => renderClarity(tab.dataset.clarity)));
 
     const volumeRange = document.getElementById("volumeRange");
     const coverageRange = document.getElementById("coverageRange");
