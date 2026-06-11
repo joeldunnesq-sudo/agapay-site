@@ -323,9 +323,15 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
-      const donor = donorProfile();
-      const name = donorDisplayName(donor);
-      document.getElementById("greeting").textContent = name ? `Welcome, ${name}` : "Welcome, Faithful Member";
+      // Pre-fill greeting from cached profile if we have a name — never show "Faithful Member" pre-emptively
+      const cached = donorProfile();
+      const cachedName = donorDisplayName(cached);
+      if (cachedName && cachedName !== "Faithful Member") {
+        const g1 = document.getElementById("greeting");
+        const g2 = document.getElementById("desktopGreeting");
+        if (g1) g1.textContent = `Welcome, ${cachedName}`;
+        if (g2) g2.textContent = `Welcome, ${cachedName}`;
+      }
       await handleDonorCheckoutReturn();
       await loadDonorDashboardPage();
     });
