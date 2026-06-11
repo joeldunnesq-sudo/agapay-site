@@ -8,6 +8,7 @@ AGAPAY_REPLY_TO_EMAIL = "support@agapay.app"
 AGAPAY_REGISTRATION_NOTIFY_EMAIL = "hello@agapay.app"
 AGAPAY_APP_URL = "https://agapay.app"
 TURNSTILE_SITE_KEY = "0x4AAAAAADgGWu1JfBKOSH_g"
+CAMPAIGN_ASSETS_URL = "https://pub-agapay-campaign-assets.r2.dev"
 
 [triggers]
 crons = ["0 14 * * 6"]
@@ -24,3 +25,7 @@ id = "c0c630d2699a4d42a72db927c6341707"
 binding = "AGAPAY_DB"
 database_name = "agapay-production"
 database_id = "24f514a6-6904-425b-a4c8-b3584b23c0be"
+
+[[r2_buckets]]
+binding = "CAMPAIGN_ASSETS"
+bucket_name = "agapay-campaign-assets"
