@@ -2712,3 +2712,198 @@ body.donor-mobile-page {
   }
 }
 
+@media (min-width: 901px) {
+  .desktop-dashboard-top {
+    grid-template-columns: minmax(390px, 0.95fr) minmax(520px, 1.05fr);
+  }
+
+  .desktop-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-height: 220px;
+  }
+
+  .desktop-metrics-grid .metric-card {
+    min-height: 110px;
+    padding: 1.35rem 1.55rem;
+  }
+
+  .desktop-metrics-grid .metric-card + .metric-card {
+    border-left: 0;
+  }
+
+  .desktop-metrics-grid .metric-card:nth-child(even) {
+    border-left: 1px solid rgba(246, 241, 232, 0.13);
+  }
+
+  .desktop-metrics-grid .metric-card:nth-child(n + 3) {
+    border-top: 1px solid rgba(246, 241, 232, 0.13);
+  }
+
+  .desktop-metrics-grid .metric-value {
+    margin-top: 0.36rem;
+    font-size: clamp(2.15rem, 3.4vw, 3.25rem);
+  }
+
+  .desktop-metrics-grid .metric-note {
+    max-width: 18rem;
+    margin-top: 0.38rem;
+  }
+
+  .desktop-metrics-grid .metric-card:nth-child(3),
+  .desktop-metrics-grid .metric-card:nth-child(4) {
+    align-content: start;
+  }
+
+  .desktop-metrics-grid .metric-card:nth-child(3) .metric-value,
+  .desktop-metrics-grid .metric-card:nth-child(4) .metric-value {
+    font-size: clamp(1.9rem, 2.6vw, 2.6rem);
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1280px) {
+  .desktop-dashboard-top {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 901px) {
+  .donor-desktop-home {
+    padding-top: 1rem;
+  }
+
+  .desktop-hero {
+    grid-template-columns: auto minmax(0, 1fr) auto auto !important;
+    min-height: 0;
+    gap: 1rem;
+    padding: 1.25rem 1.45rem !important;
+  }
+
+  .desktop-hero-mark {
+    width: 58px;
+    height: 58px;
+  }
+
+  .desktop-hero-mark img {
+    width: 52px;
+    height: 52px;
+  }
+
+  .desktop-hero h1 {
+    max-width: 15ch;
+    font-size: clamp(2.45rem, 4.6vw, 4.15rem) !important;
+    letter-spacing: 0;
+  }
+
+  .desktop-hero p {
+    margin-top: 0.38rem;
+    font-size: 14px;
+  }
+
+  .desktop-hero-actions {
+    align-self: center;
+    flex-wrap: nowrap;
+    min-width: max-content;
+  }
+
+  .desktop-hero-actions .btn {
+    min-height: 48px;
+    border-radius: 12px;
+    padding-inline: 1.25rem;
+    font-size: 14px;
+  }
+
+  .desktop-avatar {
+    width: 54px;
+    height: 54px;
+    font-size: 17px;
+  }
+
+  .desktop-dashboard-top {
+    grid-template-columns: minmax(390px, 0.82fr) minmax(560px, 1.18fr) !important;
+    gap: 1rem;
+  }
+
+  .desktop-pledge-tracker {
+    min-height: 198px;
+    padding: 1.45rem 1.55rem;
+  }
+
+  .desktop-metrics-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0 !important;
+    min-height: 198px;
+  }
+
+  .desktop-metrics-grid .metric-card {
+    min-width: 0;
+    min-height: 99px !important;
+    align-content: center;
+    padding: 1.15rem 1.35rem !important;
+  }
+
+  .desktop-metrics-grid .metric-card:nth-child(even) {
+    border-left: 1px solid rgba(246, 241, 232, 0.13) !important;
+  }
+
+  .desktop-metrics-grid .metric-card:nth-child(n + 3) {
+    border-top: 1px solid rgba(246, 241, 232, 0.13) !important;
+  }
+
+  .desktop-metrics-grid .metric-label {
+    font-size: 10px;
+  }
+
+  .desktop-metrics-grid .metric-value {
+    font-size: clamp(2.2rem, 3vw, 3.1rem) !important;
+    white-space: nowrap;
+  }
+
+  .desktop-metrics-grid .metric-note {
+    max-width: 20rem;
+    font-size: 11.5px;
+    line-height: 1.35;
+  }
+
+  .desktop-panel-head {
+    padding: 0.9rem 1.15rem;
+  }
+
+  .desktop-panel-head h2 {
+    font-size: 25px;
+  }
+
+  .desktop-quick-grid {
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .desktop-quick-card {
+    min-height: 126px;
+  }
+
+  .desktop-quick-card strong {
+    font-size: 19px;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1380px) {
+  .desktop-hero {
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+  }
+
+  .desktop-hero-actions {
+    grid-column: 2 / 3;
+    justify-content: flex-start;
+  }
+
+  .desktop-avatar {
+    grid-column: 3 / 4;
+    grid-row: 1 / 2;
+  }
+
+  .desktop-dashboard-top {
+    grid-template-columns: 1fr !important;
+  }
+}
+
