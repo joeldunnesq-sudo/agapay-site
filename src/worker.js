@@ -1,6 +1,6 @@
 import { calendarLabel, liturgicalFeastsForYear, nextLiturgicalFeast, orthodoxPascha } from "./liturgical-calendar.js";
 
-const ADMIN_PASSWORD_KV_KEY = "__agapay_admin_password";Fix giving statement email: use agapayEmailHtml for consistent branding
+const ADMIN_PASSWORD_KV_KEY = "__agapay_admin_password";
 const ADMIN_SESSION_STORE_KEY = "__agapay_admin_sessions";
 const COMMEMORATION_KEY_PREFIX = "__agapay_commemoration__";
 const DONOR_KEY_PREFIX = "__agapay_donor__";
