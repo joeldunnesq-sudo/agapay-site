@@ -1103,10 +1103,6 @@ async function loadDonorSettingsPage() {
     setValue("settingsPhone", donor.contactPhone);
     setValue("defaultParishId", donor.defaultParishId);
     const pledgeEl = document.getElementById("pledgeAmount");
-    if (pledgeEl && donor.pledgeAmountCents) pledgeEl.value = (donor.pledgeAmountCents / 100).toFixed(0);
-    const pledgeYearEl = document.getElementById("pledgeYear");
-    if (pledgeYearEl && donor.pledgeYear) pledgeYearEl.value = donor.pledgeYear;
-    const pledgeEl = document.getElementById("pledgeAmount");
     if (pledgeEl) pledgeEl.value = donor.pledgeAmountCents ? (donor.pledgeAmountCents / 100).toFixed(0) : "";
     setValue("settingsAddressLine1", donor.addressLine1);
     setValue("settingsAddressLine2", donor.addressLine2);
