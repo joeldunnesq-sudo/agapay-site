@@ -1071,6 +1071,8 @@ async function loadDonorSettingsPage() {
     if (pledgeEl && donor.pledgeAmountCents) pledgeEl.value = (donor.pledgeAmountCents / 100).toFixed(0);
     const pledgeYearEl = document.getElementById("pledgeYear");
     if (pledgeYearEl && donor.pledgeYear) pledgeYearEl.value = donor.pledgeYear;
+    const pledgeEl = document.getElementById("pledgeAmount");
+    if (pledgeEl) pledgeEl.value = donor.pledgeAmountCents ? (donor.pledgeAmountCents / 100).toFixed(0) : "";
     setValue("settingsAddressLine1", donor.addressLine1);
     setValue("settingsAddressLine2", donor.addressLine2);
     setValue("settingsCity", donor.city);
@@ -1093,7 +1095,7 @@ async function saveDonorSettings(event) {
     contactPhone: document.getElementById("settingsPhone")?.value.trim(),
     defaultParishId: document.getElementById("defaultParishId")?.value,
     pledgeAmountCents: Math.round((parseFloat(document.getElementById("pledgeAmount")?.value || "0") || 0) * 100),
-    pledgeYear: document.getElementById("pledgeYear")?.value || "",
+    pledgeYear: String(new Date().getFullYear()),
     addressLine1: document.getElementById("settingsAddressLine1")?.value.trim() || "",
     addressLine2: document.getElementById("settingsAddressLine2")?.value.trim() || "",
     city: document.getElementById("settingsCity")?.value.trim() || "",
@@ -1658,7 +1660,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function renderPledgeTracker(donor) {
   if (!donor) return;
   const pledgeCents = Number(donor.pledgeAmountCents || 0);
-  const pledgeYear  = donor.pledgeYear || String(new Date().getFullYear());
+  const pledgeYear  = String(new Date().getFullYear());
   const ytdCents    = (() => {
     // Read YTD from the already-rendered metric text
     const el = document.getElementById("metricYtd");
