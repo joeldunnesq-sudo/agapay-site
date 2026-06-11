@@ -158,8 +158,13 @@
         try {
           const data = await postJson("/api/donor/login", { email, password });
           if (data.token) localStorage.setItem("agapayDonorToken", data.token);
-          if (data.donor?.email) localStorage.setItem("agapayDonorEmail", data.donor.email);
-          if (data.donor) localStorage.setItem("agapayDonorProfile", JSON.stringify(data.donor));
+          // Always save the email — use the typed email as fallback if API omits it
+          const donorEmail = data.donor?.email || email;
+          localStorage.setItem("agapayDonorEmail", donorEmail);
+          if (data.donor) {
+            const profile = { ...data.donor, email: donorEmail };
+            localStorage.setItem("agapayDonorProfile", JSON.stringify(profile));
+          }
           setStatus("Signed in. Opening your donor dashboard...", "success");
           window.location.href = "/donor/";
         } catch (error) {
