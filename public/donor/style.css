@@ -2825,8 +2825,27 @@ body.donor-mobile-page {
   }
 
   .desktop-pledge-tracker {
+    position: relative;
     min-height: 152px;
     padding: 1.35rem 1.55rem 1.45rem;
+    overflow: hidden;
+  }
+
+  .desktop-pledge-tracker::after {
+    content: "";
+    position: absolute;
+    right: 1.55rem;
+    bottom: 0.85rem;
+    width: 112px;
+    height: 112px;
+    background: url("/mark.png") center / contain no-repeat;
+    opacity: 0.055;
+    pointer-events: none;
+  }
+
+  .desktop-pledge-inner {
+    position: relative;
+    z-index: 1;
   }
 
   .desktop-metrics-grid {
