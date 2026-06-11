@@ -6947,9 +6947,6 @@ function isSocialCrawler(request) {
     "applebot","googlebot","bingbot","embedly","pinterest"].some(b => ua.includes(b));
 }
 
-function slugify(str) {
-  return String(str || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
 
 function campaignBotHtml(campaign, parish, canonicalUrl) {
   const title  = `${campaign.name} — ${parish.name}`;
