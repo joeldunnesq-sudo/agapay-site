@@ -7051,6 +7051,56 @@ async function handleCampaignUpload(request, env, url) {
   return json({ ok: true, url: photoUrl, key });
 }
 
+
+async function handleAdminSendStatement(request, env) {
+  // Basic auth guard
+  const body = await request.json().catch(() => ({}));
+  const adminPwd = await env.AGAPAY_KV?.get("__agapay_admin_password");
+  if (!adminPwd || body.adminPassword !== adminPwd) return json({ error: "unauthorized" }, { status: 401 });
+
+  const { to, donorName, pdfBase64 } = body;
+  if (!to || !pdfBase64) return json({ error: "missing to or pdfBase64" }, { status: 400 });
+
+  const res = await sendEmail(env, {
+    from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
+    to: [to],
+    subject: "Your 2026 Annual Giving Statement — Holy Ascension Orthodox Church",
+    html: `<div style="font-family:'DM Sans',system-ui,sans-serif;max-width:600px;margin:0 auto;color:#171715;">
+      <div style="background:#061522;padding:28px 32px 20px;border-bottom:3px solid #C8A24A;">
+        <h1 style="font-family:Georgia,serif;color:#C8A24A;font-size:22px;margin:0 0 4px;">AGAPAY</h1>
+        <p style="color:#8899aa;font-size:12px;margin:0;letter-spacing:0.08em;">ORTHODOX CHRISTIAN GIVING</p>
+      </div>
+      <div style="background:#F6F1E8;padding:32px;">
+        <h2 style="font-family:Georgia,serif;font-size:20px;color:#061522;margin:0 0 12px;">2026 Annual Giving Statement</h2>
+        <p style="font-size:15px;line-height:1.7;color:#3a3830;">Dear ${donorName},</p>
+        <p style="font-size:15px;line-height:1.7;color:#3a3830;">
+          Thank you for your faithful stewardship to <strong>Holy Ascension Orthodox Church</strong> throughout 2026.
+          Your generosity supports the life and ministry of the parish and is an act of worship in itself.
+        </p>
+        <p style="font-size:15px;line-height:1.7;color:#3a3830;">
+          Please find attached your official 2026 Annual Giving Statement for your tax records.
+          No goods or services were provided in exchange for your contributions.
+        </p>
+        <div style="background:#061522;border-radius:10px;padding:20px 24px;margin:24px 0;display:inline-block;">
+          <p style="color:#9aabb8;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 4px;">Total Contributions</p>
+          <p style="color:#F6F1E8;font-family:Georgia,serif;font-size:28px;font-weight:700;margin:0;">$1,525.00</p>
+          <p style="color:#6a8a9a;font-size:11px;margin:4px 0 0;">Tax Year 2026 · 11 gifts</p>
+        </div>
+        <p style="font-size:14px;line-height:1.7;color:#6a6258;">
+          May God bless you and your household.<br>
+          <em>Fr. Nicholas Andreiev</em><br>
+          Holy Ascension Orthodox Church, Nashville TN
+        </p>
+      </div>
+      <div style="background:#0B2130;padding:16px 32px;text-align:center;">
+        <p style="color:#6a8a9a;font-size:11px;margin:0;">Powered by <a href="https://agapay.app" style="color:#C8A24A;">AGAPAY</a></p>
+      </div>
+    </div>`,
+    attachments: [{ filename: "giving-statement-2026.pdf", content: pdfBase64 }]
+  });
+  return json({ ok: true, result: res });
+}
+
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(sendWeeklyCommemorationEmails(env, event.scheduledTime));
@@ -7258,6 +7308,11 @@ export default {
     // Campaign photo upload (parish-authenticated)
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/campaign-upload")) {
       return handleCampaignUpload(request, env, url);
+    }
+
+    // TEMP: admin giving statement send (protected by admin password)
+    if (url.pathname === "/api/admin/send-statement" && request.method === "POST") {
+      return handleAdminSendStatement(request, env);
     }
 
     if (url.pathname.startsWith("/api/")) {
