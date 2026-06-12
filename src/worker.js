@@ -9,7 +9,7 @@ const DONOR_CHECKOUT_INDEX_PREFIX = "__agapay_checkout_offering__";
 const RATE_LIMIT_PREFIX = "__agapay_rate_limit__";
 const STRIPE_EVENT_PREFIX = "__agapay_stripe_event__";
 const PARISH_ID_INDEX_PREFIX = "__agapay_index_parish_id__";
-const STRIPE_ACCOUNT_INDEX_PREFIX = "__agapay_index_stripe_account__";
+const STRIPE_ACCOUNT_INDEX_PREFIX = "__agapay_ihndex_stripe_account__";
 const STRIPE_SUBSCRIPTION_INDEX_PREFIX = "__agapay_index_stripe_subscription__";
 const STRIPE_PAYMENT_INTENT_INDEX_PREFIX = "__agapay_index_payment_intent__";
 const PASSWORD_HASH_VERSION = "pbkdf2-sha256";
@@ -2352,6 +2352,11 @@ function donorSummaryFromOfferings(offerings, commemorations = []) {
   const recurring = offerings.filter((item) => item.frequency && item.frequency !== "once");
   const ytdCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).giftAmountCents, 0);
   const parishNetYtdCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).parishNetCents, 0);
+    const stewardshipPaid = paid.filter((item) => {
+          const gt = String(item.giftType || "").toLowerCase();
+          return gt === "stewardship" || gt === "" || gt === "offering" || gt === "recurring";
+    });
+    const stewardshipYtdCents = stewardshipPaid.reduce((sum, item) => sum + offeringFeeBreakdown(item).giftAmountCents, 0);
   const feeSavingsCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).donorCoveredFeeCents, 0);
   const feeCoveredCount = paid.filter((item) => offeringFeeBreakdown(item).coverFees).length;
   const monthCents = paid
@@ -2373,6 +2378,7 @@ function donorSummaryFromOfferings(offerings, commemorations = []) {
     parishNetYtdCents,
     parishNetMonthCents,
     feeSavingsCents,
+    stewardshipYtdCents,
     feeCoveragePercent: paid.length ? Math.round((feeCoveredCount / paid.length) * 100) : 0,
     offeringCount: ytd.length,
     paidOfferingCount: paid.length,
