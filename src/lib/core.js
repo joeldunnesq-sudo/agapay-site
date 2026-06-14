@@ -686,6 +686,17 @@ function toHex(buffer) {
   return Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+export function secureCompare(a, b) {
+  const left = String(a || "");
+  const right = String(b || "");
+  if (left.length !== right.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < left.length; i += 1) {
+    mismatch |= left.charCodeAt(i) ^ right.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
 export async function sha256Hex(value) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(value || "")));
   return toHex(digest);
