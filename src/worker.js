@@ -1535,6 +1535,31 @@ async function sendEmail(env, message) {
   }
 }
 
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+async function publicAssetBase64(appUrl, pathname) {
+  const baseUrl = String(appUrl || "https://agapay.app").replace(/\/+$/, "");
+  const response = await fetch(`${baseUrl}${pathname}`);
+  if (!response.ok) throw new Error(`Unable to load attachment asset: ${pathname}`);
+  return arrayBufferToBase64(await response.arrayBuffer());
+}
+
+async function onboardingGuidePdfContent(appUrl, fallbackBase64 = "") {
+  try {
+    return await publicAssetBase64(appUrl, "/docs/AGAPAY-Stripe-Setup-Guide.pdf");
+  } catch {
+    return fallbackBase64;
+  }
+}
+
 async function sendTreasurerStripeInvite(env, appUrl, registration) {
   const to = registration.treasurerEmail || registration.priestEmail || "";
   if (!to) return { status: "missing_recipient" };
@@ -1582,7 +1607,7 @@ async function sendTreasurerStripeInvite(env, appUrl, registration) {
     attachments: [
       {
         filename: "AGAPAY-Stripe-Setup-Guide.pdf",
-        content: onboardingPdfB64
+        content: await onboardingGuidePdfContent(appUrl, onboardingPdfB64)
       }
     ]
   });
