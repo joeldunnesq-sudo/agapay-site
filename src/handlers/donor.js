@@ -29,6 +29,15 @@ import {
   verifyTurnstileIfConfigured,
 } from "../lib/core.js";
 
+import {
+  checkoutPaymentIntentId,
+  offeringFeeBreakdown,
+  requireDonor,
+  sendEmail,
+  stripeFormConnectedRequest,
+  stripeGetConnectedRequest,
+} from "./parish.js";
+
 export async function handleDonorClaimCheckout(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
