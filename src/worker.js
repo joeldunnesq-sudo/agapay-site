@@ -6794,6 +6794,204 @@ async function handleParishPasswordResetConfirm(request, env) {
   return json({ ok: true, updatedAt: updated.parishDashboardTokenUpdatedAt || new Date().toISOString() });
 }
 
+function normalizeSmsKeyword(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function smsXmlResponse(message, init = {}) {
+  const escaped = String(message || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return new Response(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escaped}</Message></Response>`, {
+    status: init.status || 200,
+    headers: {
+      "Content-Type": "text/xml; charset=utf-8",
+      ...(init.headers || {})
+    }
+  });
+}
+
+function smsWebhookSecret(request, env) {
+  const url = new URL(request.url);
+  return request.headers.get("X-AGAPAY-SMS-Secret")
+    || request.headers.get("X-SignalWire-Webhook-Secret")
+    || url.searchParams.get("secret")
+    || "";
+}
+
+function textToGiveUrl(appUrl, row = {}) {
+  const url = new URL("/give/form", String(appUrl || "https://agapay.app").replace(/\/+$/, ""));
+  url.searchParams.set("parish", row.parish_id || "");
+  url.searchParams.set("utm_source", "sms");
+  url.searchParams.set("keyword", row.keyword || "");
+
+  const destinationType = String(row.destination_type || "fund").toLowerCase();
+  const destinationId = row.destination_id || row.fund_id || "";
+  if (destinationType === "fund" && destinationId) {
+    url.searchParams.set("fund", destinationId);
+  } else if (destinationType === "campaign" && destinationId) {
+    url.searchParams.set("giftType", "campaign");
+    url.searchParams.set("campaign", destinationId);
+  } else if (destinationType === "feast" && destinationId) {
+    url.searchParams.set("giftType", "feast");
+    url.searchParams.set("feast", destinationId);
+  }
+
+  return url.toString();
+}
+
+async function handleSignalWireSmsWebhook(request, env) {
+  if (request.method !== "POST") return smsXmlResponse("Text-to-Give accepts SMS messages only.", { status: 405 });
+  if (!env.SMS_WEBHOOK_SECRET) return smsXmlResponse("AGAPAY Text-to-Give is not active yet.");
+  if (!secureCompare(smsWebhookSecret(request, env), env.SMS_WEBHOOK_SECRET)) {
+    return smsXmlResponse("AGAPAY could not verify this text message.", { status: 401 });
+  }
+  if (!d1(env)) return smsXmlResponse("AGAPAY Text-to-Give is temporarily unavailable. Please try again later.");
+
+  const limited = await rateLimit(request, env, "sms-webhook", { limit: 120, windowSeconds: 60 });
+  if (limited) return smsXmlResponse("AGAPAY Text-to-Give is busy. Please try again in a moment.");
+
+  let body = {};
+  try {
+    body = Object.fromEntries(new URLSearchParams(await request.text()));
+  } catch {
+    return smsXmlResponse("We could not process your message. Please try again.");
+  }
+
+  const keyword = normalizeSmsKeyword(body.Body || body.body || body.Message || "");
+  if (!keyword) return smsXmlResponse("Text your parish keyword to give. Contact your parish if you need the keyword.");
+
+  const row = await d1First(
+    env,
+    `SELECT sk.id, sk.keyword, sk.parish_id, sk.destination_type, sk.destination_id, sk.fund_id, sk.label, r.data
+     FROM sms_keywords sk
+     LEFT JOIN registrations r ON r.parish_id = sk.parish_id
+     WHERE sk.keyword = ?1 AND sk.is_active = 1
+     LIMIT 1`,
+    keyword
+  );
+
+  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+  if (!row) {
+    return smsXmlResponse(`Thank you for your desire to give. We did not recognize "${keyword}". Find your parish here: ${String(appUrl).replace(/\/+$/, "")}/giving`);
+  }
+
+  let parish = {};
+  try {
+    parish = JSON.parse(row.data || "{}");
+  } catch {
+    parish = {};
+  }
+
+  const parishName = parish.parishName || parish.name || "your parish";
+  const label = row.label || (row.destination_type === "parish" ? "general giving" : row.destination_type || "giving");
+  const giveUrl = textToGiveUrl(appUrl, row);
+  return smsXmlResponse(`Glory to Jesus Christ! Give to ${parishName} (${label}) here: ${giveUrl}`);
+}
+
+async function requireParishDashboardBearer(request, env, parishId) {
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return null;
+  const token = getBearerToken(request);
+  if (!(await verifyParishDashboardBearer(found.registration, token))) return null;
+  return found;
+}
+
+async function handleParishSmsKeywords(request, env, parishId) {
+  const limited = await rateLimit(request, env, "parish-sms-keywords", { limit: 40, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!d1(env)) return json({ error: "AGAPAY_DB D1 binding is not configured" }, { status: 500 });
+
+  const found = await requireParishDashboardBearer(request, env, parishId);
+  if (!found) return unauthorized();
+
+  const url = new URL(request.url);
+
+  if (request.method === "GET") {
+    const result = await d1(env)
+      .prepare(
+        `SELECT id, keyword, parish_id, destination_type, destination_id, fund_id, label, is_active, created_at, updated_at
+         FROM sms_keywords
+         WHERE parish_id = ?1
+         ORDER BY created_at DESC`
+      )
+      .bind(parishId)
+      .all();
+    return json({ keywords: result.results || [] });
+  }
+
+  if (request.method === "POST") {
+    let body = {};
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const keyword = normalizeSmsKeyword(body.keyword);
+    const destinationType = String(body.destinationType || body.destination_type || (body.fund_id || body.fundId ? "fund" : "parish")).trim().toLowerCase();
+    const destinationId = String(body.destinationId || body.destination_id || body.fundId || body.fund_id || parishId).trim();
+    const label = String(body.label || "").trim().slice(0, 80);
+
+    if (!keyword) return json({ error: "Keyword is required" }, { status: 422 });
+    if (keyword.length < 3) return json({ error: "Keyword must be at least 3 characters" }, { status: 422 });
+    if (keyword.length > 32) return json({ error: "Keyword must be 32 characters or fewer" }, { status: 422 });
+    if (!["parish", "fund", "campaign", "feast"].includes(destinationType)) {
+      return json({ error: "Destination type must be parish, fund, campaign, or feast" }, { status: 422 });
+    }
+    if (!destinationId) return json({ error: "Destination is required" }, { status: 422 });
+
+    const existing = await d1First(env, "SELECT id, parish_id FROM sms_keywords WHERE keyword = ?1 LIMIT 1", keyword);
+    if (existing) {
+      return json(
+        { error: `Keyword "${keyword}" is already reserved. Try including your parish name, e.g. STNICHOLAS or STNICKBUILD.` },
+        { status: 409 }
+      );
+    }
+
+    const now = new Date().toISOString();
+    await d1Run(
+      env,
+      `INSERT INTO sms_keywords (parish_id, destination_type, destination_id, fund_id, label, keyword, is_active, created_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7, ?7)`,
+      parishId,
+      destinationType,
+      destinationId,
+      destinationType === "fund" ? destinationId : "",
+      label,
+      keyword,
+      now
+    );
+
+    const created = await d1First(
+      env,
+      `SELECT id, keyword, parish_id, destination_type, destination_id, fund_id, label, is_active, created_at, updated_at
+       FROM sms_keywords
+       WHERE parish_id = ?1 AND keyword = ?2
+       LIMIT 1`,
+      parishId,
+      keyword
+    );
+    return json({ keyword: created }, { status: 201 });
+  }
+
+  if (request.method === "DELETE") {
+    const parts = url.pathname.split("/").filter(Boolean);
+    const keywordId = parts[parts.length - 1];
+    if (!keywordId || keywordId === "sms-keywords") return json({ error: "Keyword id is required" }, { status: 422 });
+    const row = await d1First(env, "SELECT id FROM sms_keywords WHERE id = ?1 AND parish_id = ?2 LIMIT 1", keywordId, parishId);
+    if (!row) return json({ error: "Keyword not found" }, { status: 404 });
+    await d1Run(env, "DELETE FROM sms_keywords WHERE id = ?1 AND parish_id = ?2", keywordId, parishId);
+    return json({ ok: true });
+  }
+
+  return json({ error: "Method not allowed" }, { status: 405 });
+}
+
 function handleLiturgicalCalendar(request) {
   const url = new URL(request.url);
   const year = Math.max(1900, Math.min(2199, Number(url.searchParams.get("year")) || new Date().getFullYear()));
@@ -7138,6 +7336,9 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/stripe/webhook") {
       return handleStripeWebhook(request, env);
     }
+    if (request.method === "POST" && url.pathname === "/api/webhooks/sms") {
+      return handleSignalWireSmsWebhook(request, env);
+    }
     if (request.method === "GET" && url.pathname === "/api/parishes") return handleParishes(request, env);
     if (request.method === "GET" && url.pathname === "/api/platform/summary") return handlePublicPlatformSummary(env);
     if (request.method === "GET" && url.pathname === "/api/subscription-tiers") {
@@ -7239,6 +7440,10 @@ export default {
     }
     if (url.pathname === "/api/parish/password-reset-confirm") {
       return handleParishPasswordResetConfirm(request, env);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/sms-keywords")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").split("/")[0]);
+      return handleParishSmsKeywords(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/session")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/session", ""));
