@@ -7147,6 +7147,18 @@ export default {
       return json({ error: "Not found" }, { status: 404 });
     }
 
+    // Redirect bare .html URLs to their canonical extensionless form (e.g. /features.html → /features).
+    // This prevents Google from indexing both variants and resolves GSC "Alternate page with proper canonical tag".
+    if (
+      request.method === "GET" &&
+      url.pathname.endsWith(".html") &&
+      url.pathname !== "/index.html"
+    ) {
+      const canonical = url.pathname.slice(0, -5);
+      url.pathname = canonical;
+      return Response.redirect(url.toString(), 301);
+    }
+
     return env.ASSETS.fetch(cleanAssetRequest(request));
   }
 };
