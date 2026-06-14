@@ -1,6 +1,3 @@
-// src/handlers/stripe.js
-// Stripe webhook, onboarding, subscription checkout, and refresh handlers.
-
 import {
   claimStripeEvent,
   finishStripeEvent,
@@ -13,11 +10,36 @@ import {
 
 import {
   absoluteWebsiteUrl,
+  appendAdminAudit,
+  booleanFromStripeMetadata,
+  checkoutPaymentIntentId,
+  donorName,
+  ensureCommemorationEntryFromOffering,
+  findRegistrationByStripeAccountId,
+  findRegistrationByStripeSubscriptionId,
+  loadDonorOfferingByCheckout,
+  loadDonorOfferingByPaymentIntent,
+  loadRegistrationByReference,
+  numericCents,
+  requireAdminContext,
+  saveRegistrationRecord,
+  sendTreasurerStripeInvite,
+  slugify,
+  storeDonorOffering,
   stripeAccountStatus,
   stripeFormRequest,
   stripeGetRequest,
+  stripeObjectId,
+  stripePaymentIntentFinancialUpdates,
   subscriptionTier,
+  updateDonorOfferingByCheckout,
+  updateDonorOfferingByPaymentIntent,
 } from "./parish.js";
+
+// src/handlers/stripe.js
+// Stripe webhook, onboarding, subscription checkout, and refresh handlers.
+
+
 
 export async function handleSubscriptionCheckout(request, env, reference) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });

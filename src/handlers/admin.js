@@ -1,14 +1,8 @@
-// src/handlers/admin.js
-// Admin registrations, platform summary, password, and management handlers.
-
 import {
   ADMIN_PASSWORD_KV_KEY,
   ADMIN_SESSION_STORE_KEY,
-  COMMEMORATION_KEY_PREFIX,
-  DONOR_KEY_PREFIX,
-  DONOR_OFFERING_KEY_PREFIX,
-  STRIPE_EVENT_PREFIX,
   clampListLimit,
+  COMMEMORATION_KEY_PREFIX,
   createPasswordRecord,
   d1,
   d1All,
@@ -17,13 +11,15 @@ import {
   d1Run,
   d1SetSetting,
   decodeListCursor,
+  DONOR_KEY_PREFIX,
+  DONOR_OFFERING_KEY_PREFIX,
   donorCheckoutIndexKey,
   donorOfferingKey,
   encodeListCursor,
   generateSecret,
   hasProductionStore,
-  isSystemKvKey,
   issueAdminSession,
+  isSystemKvKey,
   json,
   listKvKeys,
   missingProductionStoreResponse,
@@ -33,7 +29,9 @@ import {
   parseJsonRow,
   rateLimit,
   recordStripeEvent,
+  safeParseJsonRow,
   saveDonor,
+  STRIPE_EVENT_PREFIX,
   stripeAccountIndexKey,
   stripePaymentIntentIndexKey,
   stripeSubscriptionIndexKey,
@@ -43,12 +41,30 @@ import {
 import {
   appendAdminAudit,
   defaultSubscriptionTier,
+  generateDashboardToken,
+  listYtdStripeCharges,
+  loadRegistrationByReference,
+  monthLabel,
   requireAdmin,
   requireAdminContext,
+  saveCommemorationEntry,
+  saveRegistrationRecord,
+  sendDashboardInvite,
+  slugify,
   statusTimelineWithNext,
+  storeDonorOffering,
+  stripeAccountStatus,
   stripeFormRequest,
+  stripeReady,
+  subscriptionReady,
   subscriptionTier,
+  summarizeCharges,
 } from "./parish.js";
+
+// src/handlers/admin.js
+// Admin registrations, platform summary, password, and management handlers.
+
+
 
 export async function handleAdminRegistrations(request, env) {
   const limited = await rateLimit(request, env, "admin-auth", { limit: 20, windowSeconds: 300 });

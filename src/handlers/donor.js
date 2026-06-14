@@ -1,18 +1,15 @@
-// src/handlers/donor.js
-// Donor session, dashboard, offerings, commemorations, and password handlers.
-
 import {
-  DONOR_SESSION_TTL_MS,
   applyDonorPassword,
   clampListLimit,
   d1,
   d1All,
   decodeListCursor,
   deleteDonor,
+  DONOR_SESSION_TTL_MS,
   encodeListCursor,
   generateSecret,
-  hasProductionStore,
   hashSessionToken,
+  hasProductionStore,
   isSystemKvKey,
   json,
   listKvKeys,
@@ -30,13 +27,39 @@ import {
 } from "../lib/core.js";
 
 import {
+  agapayEmailHtml,
   checkoutPaymentIntentId,
+  defaultSubscriptionTier,
+  donorSummaryFromOfferings,
+  enrichParishGivingOptions,
+  findCheckoutParish,
+  findRegistrationByParishId,
+  htmlEscape,
+  loadDonorOfferingByCheckout,
+  loadDonorOfferingByPaymentIntent,
+  loadDonorOfferings,
+  loadReconciledDonorCommemorations,
+  migrateDonorEmailReferences,
+  normalizedCheckoutPaymentStatus,
   offeringFeeBreakdown,
+  parishFromRegistration,
+  publicDonorOffering,
+  reconcilePendingDonorOfferings,
   requireDonor,
   sendEmail,
+  storeDonorOffering,
+  stripeAccountStatus,
   stripeFormConnectedRequest,
   stripeGetConnectedRequest,
+  stripePaymentIntentFinancialUpdates,
+  subscriptionTier,
+  updateDonorOfferingByCheckout,
 } from "./parish.js";
+
+// src/handlers/donor.js
+// Donor session, dashboard, offerings, commemorations, and password handlers.
+
+
 
 export async function handleDonorClaimCheckout(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
