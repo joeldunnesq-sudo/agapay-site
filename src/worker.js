@@ -104,26 +104,6 @@ import {
 } from "./handlers/parish.js";
 
 
-const ADMIN_PASSWORD_KV_KEY = "__agapay_admin_password";
-const ADMIN_SESSION_STORE_KEY = "__agapay_admin_sessions";
-const COMMEMORATION_KEY_PREFIX = "__agapay_commemoration__";
-const DONOR_KEY_PREFIX = "__agapay_donor__";
-const DONOR_OFFERING_KEY_PREFIX = "__agapay_donor_offering__";
-const DONOR_CHECKOUT_INDEX_PREFIX = "__agapay_checkout_offering__";
-const RATE_LIMIT_PREFIX = "__agapay_rate_limit__";
-const STRIPE_EVENT_PREFIX = "__agapay_stripe_event__";
-const PARISH_ID_INDEX_PREFIX = "__agapay_index_parish_id__";
-const STRIPE_ACCOUNT_INDEX_PREFIX = "__agapay_index_stripe_account__";
-const STRIPE_SUBSCRIPTION_INDEX_PREFIX = "__agapay_index_stripe_subscription__";
-const STRIPE_PAYMENT_INTENT_INDEX_PREFIX = "__agapay_index_payment_intent__";
-const PASSWORD_HASH_VERSION = "pbkdf2-sha256";
-const PASSWORD_HASH_ITERATIONS = 100000;
-const DONOR_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14;
-const ADMIN_SESSION_TTL_MS = 1000 * 60 * 60 * 12;
-const ADMIN_SESSION_MAX = 32;
-const PARISH_SESSION_TTL_MS = 1000 * 60 * 60 * 12;
-const PARISH_SESSION_MAX = 16;
-const STRIPE_EVENT_PROCESSING_RETRY_MS = 1000 * 60 * 10;
 
 const subscriptionTiers = [
   {
