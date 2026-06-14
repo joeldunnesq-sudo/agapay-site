@@ -62,6 +62,10 @@ import {
   verifyTurnstileIfConfigured,
 } from "../lib/core.js";
 
+function d1(env) {
+  return env.AGAPAY_DB || env.DB || null;
+}
+
 export async function verifyParishDashboardBearer(registration, token) {
   return Boolean(await resolveParishDashboardSession(registration, token));
 }
