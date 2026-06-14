@@ -16,7 +16,7 @@ crons = ["0 14 * * 6"]
 [assets]
 directory = "./public"
 binding = "ASSETS"
-run_worker_first = true
+run_worker_first = ["/**.html"]
 
 [[kv_namespaces]]
 binding = "AGAPAY_REGISTRATIONS"
