@@ -6913,7 +6913,7 @@ async function handleSignalWireSmsWebhook(request, env) {
   const parishName = parish.parishName || parish.name || "your parish";
   const label = row.label || (row.destination_type === "parish" ? "general giving" : row.destination_type || "giving");
   const giveUrl = textToGiveUrl(appUrl, row);
-  return smsXmlResponse(`Glory to Jesus Christ! Give to ${parishName} (${label}) here: ${giveUrl}`);
+  return smsXmlResponse(`Give to ${parishName} (${label}) here: ${giveUrl}`);
 }
 
 async function requireParishDashboardBearer(request, env, parishId) {
