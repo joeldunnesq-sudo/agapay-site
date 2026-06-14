@@ -364,7 +364,7 @@ function donorNavIcon(kind) {
     calendar: '<svg viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="5" width="22" height="20" rx="3"/><path d="M3 11h22"/><path d="M9 3v4M19 3v4"/><path d="M8 16h4M8 20h8"/></svg>',
     history: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M4 22h20"/><path d="M6 22V14l3-2v10"/><path d="M12 22V10l3-2v14"/><path d="M18 22V6l3-2v18"/></svg>',
     commemorations: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/><path d="M4 16c0 3 2 5 10 5s10-2 10-5"/><path d="M10 13c1-2 2-3 4-3s3 1 4 3"/><line x1="14" y1="7" x2="14" y2="10"/><line x1="12" y1="8" x2="16" y2="8"/></svg>',
-    profile: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 24.5C14 24.5 5 18 5 11.5C5 8.5 7.5 6 10.5 6C12.5 6 13.5 7 14 8C14.5 7 15.5 6 17.5 6C20.5 6 23 8.5 23 11.5C23 18 14 24.5 14 24.5Z"/></svg>'
+    profile: '<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="3"/><path d="M22 14a1.9 1.9 0 0 0 .38 2.1l.07.07a2.3 2.3 0 0 1-3.25 3.25l-.07-.07A1.9 1.9 0 0 0 17 19a1.9 1.9 0 0 0-1.15 1.74V21a2.3 2.3 0 0 1-4.6 0v-.1A1.9 1.9 0 0 0 10 19a1.9 1.9 0 0 0-2.1.38l-.07.07a2.3 2.3 0 0 1-3.25-3.25l.07-.07A1.9 1.9 0 0 0 5 14a1.9 1.9 0 0 0-1.74-1.15H3a2.3 2.3 0 0 1 0-4.6h.1A1.9 1.9 0 0 0 5 7a1.9 1.9 0 0 0-.38-2.1l-.07-.07a2.3 2.3 0 0 1 3.25-3.25l.07.07A1.9 1.9 0 0 0 10 2a1.9 1.9 0 0 0 1.15-1.74V.1a2.3 2.3 0 0 1 4.6 0v.1A1.9 1.9 0 0 0 17 2a1.9 1.9 0 0 0 2.1-.38l.07-.07a2.3 2.3 0 0 1 3.25 3.25l-.07.07A1.9 1.9 0 0 0 23 7a1.9 1.9 0 0 0 1.74 1.15H25a2.3 2.3 0 0 1 0 4.6h-.1A1.9 1.9 0 0 0 23 14z"/></svg>'
   };
   return icons[kind] || icons.home;
 }
