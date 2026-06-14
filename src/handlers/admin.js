@@ -41,6 +41,10 @@ import {
 } from "../lib/core.js";
 
 import {
+  loadAdminRegistrationPage,
+} from "./donor.js";
+
+import {
   appendAdminAudit,
   defaultSubscriptionTier,
   generateDashboardToken,
