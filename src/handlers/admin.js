@@ -27,10 +27,12 @@ import {
   normalizeEmail,
   parishIdIndexKey,
   parseJsonRow,
+  parsePasswordRecord,
   rateLimit,
   recordStripeEvent,
   safeParseJsonRow,
   saveDonor,
+  verifyPasswordRecord,
   STRIPE_EVENT_PREFIX,
   stripeAccountIndexKey,
   stripePaymentIntentIndexKey,
@@ -451,6 +453,40 @@ export async function handleAdminRebuildIndexes(request, env) {
   }
 
   return json({ ok: true, indexed, rebuiltAt: new Date().toISOString() });
+}
+
+export async function handleAdminSession(request, env) {
+  const limited = await rateLimit(request, env, "admin-auth", { limit: 20, windowSeconds: 300 });
+  if (limited) return limited;
+  if (request.method === "DELETE") {
+    return json({ ok: true });
+  }
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const password = String(body.password || body.adminPassword || "").trim();
+  if (!password) return unauthorized();
+
+  let valid = false;
+  if (hasProductionStore(env)) {
+    const stored = d1(env)
+      ? await d1GetSetting(env, ADMIN_PASSWORD_KV_KEY)
+      : await env.AGAPAY_REGISTRATIONS?.get(ADMIN_PASSWORD_KV_KEY);
+    const parsed = parsePasswordRecord(stored);
+    if (parsed) valid = await verifyPasswordRecord(password, parsed);
+  }
+  if (!valid && env.AGAPAY_ADMIN_TOKEN && password === env.AGAPAY_ADMIN_TOKEN) valid = true;
+  if (!valid && env.AGAPAY_ADMIN_PASSWORD && password === env.AGAPAY_ADMIN_PASSWORD) valid = true;
+  if (!valid) return unauthorized();
+
+  const session = await issueAdminSession(env, "Admin");
+  return json({ ok: true, ...session });
 }
 
 export async function handleAdminPassword(request, env) {

@@ -121,6 +121,7 @@ import {
 
 import {
   handleAdminRegistrations,
+  handleAdminSession,
   handleAdminMigrateKvToD1,
   handleAdminPlatformSummary,
   handleAdminRegistrationGivingSummary,
