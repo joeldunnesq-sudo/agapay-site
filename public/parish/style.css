@@ -300,6 +300,43 @@
     .text-give-fund { display: inline-flex; align-items: center; border: 1px solid rgba(200,162,74,0.36); border-radius: 6px; background: rgba(200,162,74,0.12); color: var(--deep); padding: 0.26rem 0.58rem; font-size: 12px; font-weight: 700; }
     .text-give-status { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--deep); font-size: 12px; font-weight: 700; white-space: nowrap; }
     .text-give-status i { width: 7px; height: 7px; border-radius: 999px; background: #22c55e; }
+
+    /* QR tools tab */
+    .qr-tools-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 340px); gap: 1rem; align-items: stretch; margin-bottom: 1rem; border: 1px solid rgba(200,162,74,0.3); border-radius: 16px; background: linear-gradient(135deg, var(--deep), var(--forest)); color: var(--cream); box-shadow: 0 18px 42px rgba(6,21,34,0.16); overflow: hidden; }
+    .qr-tools-copy { padding: 1.55rem 1.65rem; align-self: center; }
+    .qr-tools-eyebrow { color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+    .qr-tools-copy h1 { margin: 0.25rem 0 0; color: var(--cream); font-family: var(--serif); font-size: clamp(2.1rem, 5vw, 3.35rem); font-weight: 500; line-height: 1; }
+    .qr-tools-copy p { max-width: 680px; margin: 0.65rem 0 0; color: rgba(246,241,232,0.72); font-size: 14px; line-height: 1.6; }
+    .qr-tools-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 1.1rem; }
+    .qr-tools-preview-card { display: grid; align-content: center; justify-items: center; gap: 0.75rem; padding: 1.25rem; background: radial-gradient(circle at 50% 20%, rgba(200,162,74,0.18), transparent 64%), rgba(255,255,255,0.055); border-left: 1px solid rgba(246,241,232,0.12); }
+    .qr-tools-code-frame { width: min(100%, 220px); aspect-ratio: 1; display: grid; place-items: center; border: 1px solid rgba(200,162,74,0.28); border-radius: 18px; background: #fff; padding: 0.8rem; box-shadow: 0 18px 36px rgba(6,21,34,0.24); }
+    .qr-tools-code-frame .qr-code { width: 100%; height: 100%; border: 0; background: transparent; padding: 0; }
+    .qr-tools-code-frame svg { width: 100%; height: 100%; display: block; }
+    .qr-tools-preview-note { max-width: 230px; color: rgba(246,241,232,0.64); font-size: 11px; line-height: 1.45; text-align: center; }
+    .qr-tools-link-card { display: grid; grid-template-columns: minmax(180px, 0.45fr) minmax(0, 1fr); gap: 1rem; align-items: center; margin-bottom: 1rem; border: 1px solid var(--line); border-radius: 14px; background: white; padding: 1rem 1.15rem; box-shadow: var(--soft-shadow); }
+    .qr-tools-link-card span { display: block; color: var(--gold); font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+    .qr-tools-link-card strong { display: block; margin-top: 0.25rem; color: var(--deep); font-family: var(--serif); font-size: 1.25rem; font-weight: 600; line-height: 1.15; }
+    .qr-tools-link-card input { background: var(--paper); font-size: 13px; }
+    .qr-tools-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.85rem; margin-bottom: 1rem; }
+    .qr-tools-use-card { border: 1px solid var(--line); border-radius: 14px; background: white; padding: 1rem; box-shadow: var(--soft-shadow); }
+    .qr-tools-use-card h3 { margin: 0.75rem 0 0; color: var(--deep); font-family: var(--serif); font-size: 1.25rem; line-height: 1.1; }
+    .qr-tools-use-card p { margin: 0.45rem 0 0; color: var(--stone); font-size: 12px; line-height: 1.55; }
+    .qr-code-branded .agapay-qr-badge text { paint-order: stroke; stroke: rgba(255,253,249,0.4); stroke-width: 0.4; }
+
+    /* Shared feature-tab polish for Campaigns and Funds */
+    .feature-tab-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 340px); gap: 1rem; align-items: stretch; margin-bottom: 1rem; border: 1px solid rgba(200,162,74,0.28); border-radius: 16px; background: linear-gradient(135deg, rgba(255,255,255,0.94), rgba(253,251,247,0.78)); box-shadow: var(--soft-shadow); overflow: hidden; }
+    .feature-tab-hero > div:first-child { padding: 1.45rem 1.55rem; }
+    .feature-tab-eyebrow { color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+    .feature-tab-hero h1 { margin: 0.25rem 0 0; color: var(--deep); font-family: var(--serif); font-size: clamp(2.05rem, 5vw, 3.25rem); font-weight: 500; line-height: 1; }
+    .feature-tab-hero p { max-width: 680px; margin: 0.6rem 0 0; color: var(--stone); font-size: 14px; line-height: 1.6; }
+    .feature-tab-summary { display: grid; align-content: center; padding: 1.25rem; background: linear-gradient(145deg, var(--deep), var(--forest)); color: var(--cream); }
+    .feature-tab-summary span { color: var(--gold); font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+    .feature-tab-summary strong { display: block; margin-top: 0.35rem; color: var(--cream); font-family: var(--serif); font-size: 1.45rem; font-weight: 500; line-height: 1.1; }
+    .feature-tab-summary p { margin-top: 0.55rem; color: rgba(246,241,232,0.72); font-size: 12px; line-height: 1.55; }
+    .feature-guide-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.85rem; margin-bottom: 1rem; }
+    .feature-guide-card { border: 1px solid var(--line); border-radius: 14px; background: white; padding: 1rem; box-shadow: var(--soft-shadow); }
+    .feature-guide-card h3 { margin: 0.75rem 0 0; color: var(--deep); font-family: var(--serif); font-size: 1.25rem; line-height: 1.1; }
+    .feature-guide-card p { margin: 0.45rem 0 0; color: var(--stone); font-size: 12px; line-height: 1.55; }
     .qr-feature-copy { color: var(--stone); font-size: 13px; line-height: 1.55; margin: 0; }
     .qr-feature-actions { min-width: 260px; }
     /* Setup wizard */
@@ -1178,7 +1215,12 @@
       .text-give-header,
       .text-give-launch,
       .text-give-grid,
-      .text-give-form-grid {
+      .text-give-form-grid,
+      .qr-tools-hero,
+      .qr-tools-link-card,
+      .qr-tools-grid,
+      .feature-tab-hero,
+      .feature-guide-grid {
         grid-template-columns: 1fr;
       }
 
@@ -1205,6 +1247,31 @@
       .text-give-table th,
       .text-give-table td {
         padding: 0.75rem;
+      }
+
+      .qr-tools-copy,
+      .qr-tools-preview-card {
+        padding: 1rem;
+      }
+
+      .qr-tools-preview-card {
+        border-left: 0;
+        border-top: 1px solid rgba(246,241,232,0.12);
+      }
+
+      .qr-tools-code-frame {
+        width: min(100%, 210px);
+      }
+
+      .qr-tools-actions,
+      .qr-copy-row {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .feature-tab-hero > div:first-child,
+      .feature-tab-summary {
+        padding: 1rem;
       }
 
       .option-group-head,

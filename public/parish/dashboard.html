@@ -320,6 +320,37 @@
 
       <!-- ── FUNDS & CAMPAIGNS TAB ───────────────────────────── -->
       <div class="tab-panel" id="tab-options">
+        <div class="feature-tab-hero funds-feature-hero">
+          <div>
+            <div class="feature-tab-eyebrow">Giving Architecture</div>
+            <h1>Funds &amp; Campaigns</h1>
+            <p>Shape the destinations donors see on your giving page: standing funds for ongoing stewardship, campaigns for urgent needs, and feast-day options for liturgical giving.</p>
+          </div>
+          <div class="feature-tab-summary">
+            <span>Best practice</span>
+            <strong>Keep giving choices clear</strong>
+            <p>Use a few stable funds, then create campaigns for time-bound needs that deserve their own story.</p>
+          </div>
+        </div>
+
+        <div class="feature-guide-grid">
+          <div class="feature-guide-card">
+            <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 12h8"/></svg></div>
+            <h3>Funds</h3>
+            <p>Use for recurring parish destinations like stewardship, building, benevolence, candles, or missions.</p>
+          </div>
+          <div class="feature-guide-card">
+            <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg></div>
+            <h3>Campaigns</h3>
+            <p>Use for focused needs with a clear goal, story, timeline, and shareable public page.</p>
+          </div>
+          <div class="feature-guide-card">
+            <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/></svg></div>
+            <h3>Feast Days</h3>
+            <p>Connect almsgiving to patronal feasts and liturgical moments without cluttering the main form.</p>
+          </div>
+        </div>
+
         <div class="section-card">
           <div class="section-header">
             <div class="section-title">
@@ -340,6 +371,37 @@
 
       <!-- ═══════════════════════════════════════════ CAMPAIGNS TAB ══ -->
       <div class="tab-panel" id="tab-campaigns">
+        <div class="feature-tab-hero campaigns-feature-hero">
+          <div>
+            <div class="feature-tab-eyebrow">Public Giving Stories</div>
+            <h1>Campaigns</h1>
+            <p>Create focused, shareable campaigns for alms, building needs, priest support, disaster relief, feast-day giving, and other parish-approved needs.</p>
+          </div>
+          <div class="feature-tab-summary">
+            <span>Campaign playbook</span>
+            <strong>Tell donors what changes</strong>
+            <p>The best campaigns name the need, show the goal, and make the next faithful step obvious.</p>
+          </div>
+        </div>
+
+        <div class="feature-guide-grid">
+          <div class="feature-guide-card">
+            <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M8 19V9"/><path d="M12 19V5"/><path d="M16 19v-7"/></svg></div>
+            <h3>Set a clear goal</h3>
+            <p>Use goals when the parish can name a specific target. Leave open-ended for ongoing alms.</p>
+          </div>
+          <div class="feature-guide-card">
+            <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <h3>Post updates</h3>
+            <p>Short progress updates help donors see the campaign is alive and stewarded carefully.</p>
+          </div>
+          <div class="feature-guide-card">
+            <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg></div>
+            <h3>Share everywhere</h3>
+            <p>Campaign links work well in email, parish groups, social posts, and QR code materials.</p>
+          </div>
+        </div>
+
         <div class="section-card" id="campaignListCard">
           <div class="section-header">
             <div class="section-title">
@@ -415,6 +477,56 @@
 
       <!-- ── QR CODE & LINK TAB ──────────────────────────────── -->
       <div class="tab-panel" id="tab-qr">
+        <div class="qr-tools-hero">
+          <div class="qr-tools-copy">
+            <div class="qr-tools-eyebrow">Parish Giving Access</div>
+            <h1>QR Code &amp; Giving Link</h1>
+            <p>Share a branded AGAPAY QR code in bulletins, welcome cards, emails, and narthex signage so parishioners can reach your giving page in seconds.</p>
+            <div class="qr-tools-actions">
+              <button class="btn btn-gold" onclick="copyGivingLink()">Copy giving link</button>
+              <button class="btn btn-ghost" onclick="downloadQrPng()">Download QR PNG</button>
+              <button class="btn btn-ghost" onclick="downloadQrSvg()">Download QR SVG</button>
+            </div>
+          </div>
+          <div class="qr-tools-preview-card">
+            <div class="qr-tools-code-frame">
+              <div class="qr-code qr-code-branded" id="qrCodeHeroPreview" aria-label="Giving page QR code preview">
+                <span style="font-size:11px;color:var(--stone);text-align:center;line-height:1.5;">Load dashboard<br>to generate QR</span>
+              </div>
+            </div>
+            <div class="qr-tools-preview-note">Centered AGAPAY branding uses high-error-correction QR generation.</div>
+          </div>
+        </div>
+
+        <div class="qr-tools-link-card">
+          <div>
+            <span>Direct giving URL</span>
+            <strong>Use anywhere your parish communicates</strong>
+          </div>
+          <div class="qr-copy-row">
+            <input id="qrGivingUrlInput" value="" placeholder="Load dashboard to generate" readonly />
+            <button class="btn btn-ghost" onclick="copyGivingLink()">Copy</button>
+          </div>
+        </div>
+
+        <div class="qr-tools-grid">
+          <div class="qr-tools-use-card">
+            <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></div>
+            <h3>Sunday Bulletin</h3>
+            <p>Add the QR insert to weekly bulletins, welcome packets, table cards, and printed announcements.</p>
+          </div>
+          <div class="qr-tools-use-card">
+            <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></div>
+            <h3>Narthex Signage</h3>
+            <p>Place the branded QR code near candles, donation boxes, feast-day tables, and campaign displays.</p>
+          </div>
+          <div class="qr-tools-use-card">
+            <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg></div>
+            <h3>Email &amp; Social</h3>
+            <p>Copy the direct giving link into newsletters, parish emails, and campaign updates.</p>
+          </div>
+        </div>
+
         <div class="section-card">
           <div class="section-header">
             <div class="section-title">

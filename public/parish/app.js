@@ -849,14 +849,24 @@
 
   // ── QR CODE ───────────────────────────────────────────────
   function renderQrCode() {
-    const targets = ['qrCode','qrCodeHero','bulletinQrCode'].map(id=>document.getElementById(id)).filter(Boolean);
-    const inputs  = ['givingUrlInput','givingUrlHeroInput'].map(id=>document.getElementById(id)).filter(Boolean);
+    const targets = ['qrCode','qrCodeHero','qrCodeHeroPreview','bulletinQrCode'].map(id=>document.getElementById(id)).filter(Boolean);
+    const inputs  = ['givingUrlInput','givingUrlHeroInput','qrGivingUrlInput'].map(id=>document.getElementById(id)).filter(Boolean);
     const url     = dedicatedGivingUrl();
     inputs.forEach(inp => { inp.value = url; });
     if (!url || typeof qrcode === 'undefined') { targets.forEach(t => { t.innerHTML = '<span style="font-size:11px;color:var(--stone);text-align:center;line-height:1.5;">Load dashboard<br>to generate QR</span>'; }); currentQrSvg = ''; return; }
-    const qr = qrcode(0,'M'); qr.addData(url); qr.make();
-    currentQrSvg = qr.createSvgTag(5,3).replace(/<svg /,'<svg role="img" aria-label="AGAPAY giving QR code" ').replace(/fill="#000000"/g,'fill="#061522"');
+    const qr = qrcode(0,'H'); qr.addData(url); qr.make();
+    const rawSvg = qr.createSvgTag(5,3).replace(/<svg /,'<svg role="img" aria-label="AGAPAY giving QR code" ').replace(/fill="#000000"/g,'fill="#061522"');
+    currentQrSvg = brandQrSvg(rawSvg);
     targets.forEach(t => { t.innerHTML = currentQrSvg; });
+  }
+
+  function brandQrSvg(svg) {
+    const badge = `
+      <g class="agapay-qr-badge" aria-hidden="true">
+        <rect x="34%" y="44.5%" width="32%" height="11%" rx="2.5%" fill="#FFFDF9" stroke="#C8A24A" stroke-width="1.4"/>
+        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="DM Sans, Arial, sans-serif" font-size="4.1%" font-weight="800" letter-spacing="1.2" fill="#061522">AGAPAY</text>
+      </g>`;
+    return svg.replace('</svg>', `${badge}</svg>`);
   }
 
   async function copyGivingLink() { const url=dedicatedGivingUrl(); if(!url){setStatus('Load a parish first.','error');return;} await navigator.clipboard.writeText(url); setStatus('Giving page link copied.','success'); }
