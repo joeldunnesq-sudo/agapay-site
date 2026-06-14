@@ -2,6 +2,7 @@
 // Parish handlers and shared helpers (Stripe, donor, admin extracted to own files).
 
 import {
+  toHex,
   ADMIN_PASSWORD_KV_KEY,
   COMMEMORATION_KEY_PREFIX,
   DONOR_OFFERING_KEY_PREFIX,
