@@ -51,6 +51,7 @@ import {
   resolveParishDashboardSession,
   safeParseJsonRow,
   saveDonor,
+  secureCompare,
   sha256Hex,
   stripeAccountIndexKey,
   stripePaymentIntentIndexKey,
@@ -64,6 +65,14 @@ import {
 
 function d1(env) {
   return env.AGAPAY_DB || env.DB || null;
+}
+
+function subscriptionTiers() {
+  return [
+    { key: "starter", name: "Starter", monthlyPrice: 99, annualPrice: 999 },
+    { key: "growth", name: "Growth", monthlyPrice: 199, annualPrice: 1999 },
+    { key: "cathedral", name: "Cathedral", monthlyPrice: 399, annualPrice: 3999 }
+  ];
 }
 
 export async function verifyParishDashboardBearer(registration, token) {
