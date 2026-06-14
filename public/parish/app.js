@@ -120,7 +120,7 @@
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Campaigns', campaigns:'Campaigns', text:'Text-to-Give', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds', campaigns:'Campaigns', text:'Text-to-Give', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
@@ -449,6 +449,7 @@
       loadGivingSummary();
       loadRecurringHealth();
       loadCommemorations();
+      loadGivingHistory();
     } catch (err) { setStatus(err.message,'error'); }
     finally {
       if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
@@ -707,6 +708,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || data.error || 'Unable to load giving history');
       allGifts = data.gifts || [];
+      renderCandleGiving();
       // Populate fund filter
       const funds = [...new Set(allGifts.map(g => g.fund || g.fundId || 'General').filter(Boolean))];
       const fundSel = document.getElementById('histFundFilter');
@@ -863,8 +865,8 @@
   function brandQrSvg(svg) {
     const badge = `
       <g class="agapay-qr-badge" aria-hidden="true">
-        <rect x="34%" y="44.5%" width="32%" height="11%" rx="2.5%" fill="#FFFDF9" stroke="#C8A24A" stroke-width="1.4"/>
-        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="DM Sans, Arial, sans-serif" font-size="4.1%" font-weight="800" letter-spacing="1.2" fill="#061522">AGAPAY</text>
+        <circle cx="50%" cy="50%" r="10.5%" fill="#FFFDF9" stroke="#C8A24A" stroke-width="1.4"/>
+        <image href="/mark.png" x="41.5%" y="41.5%" width="17%" height="17%" preserveAspectRatio="xMidYMid meet"/>
       </g>`;
     return svg.replace('</svg>', `${badge}</svg>`);
   }
@@ -1011,6 +1013,82 @@
   }
 
   // ── URL PARAM AUTO-FILL ───────────────────────────────────
+  function candleGiftSignals(gift = {}) {
+    return [
+      gift.giftType,
+      gift.fund,
+      gift.fundId,
+      gift.campaign,
+      gift.campaignId,
+      gift.description,
+      gift.label,
+      gift.memo,
+      gift.note
+    ].filter(Boolean).join(' ').toLowerCase();
+  }
+
+  function isCandleGift(gift) {
+    const text = candleGiftSignals(gift);
+    return /\bcandle|candles|vigil|intention|intentions\b/.test(text);
+  }
+
+  function giftNames(gift = {}) {
+    const buckets = [
+      gift.commemorationNames,
+      gift.names,
+      gift.namesLiving,
+      gift.namesDeparted,
+      gift.living,
+      gift.departed
+    ];
+    return buckets
+      .flatMap(value => Array.isArray(value) ? value : String(value || '').split(/[,;\n]+/))
+      .map(name => String(name || '').trim())
+      .filter(Boolean);
+  }
+
+  function renderCandleGiving() {
+    const pane = document.getElementById('candleGivingPane');
+    if (!pane) return;
+    const gifts = allGifts.filter(isCandleGift);
+    if (!gifts.length) {
+      pane.innerHTML = '<div class="candle-empty">No candle gifts found yet. Candle activity will appear here once donors choose a candle or candle-related fund.</div>';
+      return;
+    }
+    const totalCents = gifts.reduce((sum, gift) => sum + Number(gift.parishNetCents || gift.amountCents || 0), 0);
+    const names = gifts.flatMap(giftNames);
+    const recentRows = gifts.slice(0, 6).map(gift => {
+      const namesForGift = giftNames(gift);
+      const donor = gift.donorName || gift.name || gift.donorEmail || 'Anonymous donor';
+      return `<div class="candle-gift-row">
+        <div>
+          <strong>${escapeHtml(donor)}</strong>
+          <span>${escapeHtml(shortDate(gift.createdAt || gift.date || gift.paidAt))}${namesForGift.length ? ` · ${namesForGift.length} name${namesForGift.length === 1 ? '' : 's'}` : ' · no names attached'}</span>
+        </div>
+        <b>${money(gift.parishNetCents || gift.amountCents || 0)}</b>
+      </div>`;
+    }).join('');
+    const namesPreview = names.length
+      ? names.slice(0, 14).map(name => `<span>${escapeHtml(name)}</span>`).join('')
+      : '<em>No candle names attached yet.</em>';
+    pane.innerHTML = `<div class="candle-giving-layout">
+      <div class="candle-giving-total">
+        <span>Candle gifts</span>
+        <strong>${money(totalCents)}</strong>
+        <p>${gifts.length} candle gift${gifts.length === 1 ? '' : 's'} recorded through AGAPAY.</p>
+      </div>
+      <div class="candle-giving-names">
+        <span>Names attached</span>
+        <strong>${names.length}</strong>
+        <div class="candle-name-cloud">${namesPreview}</div>
+      </div>
+      <div class="candle-giving-recent">
+        <span>Recent candle activity</span>
+        ${recentRows}
+      </div>
+    </div>`;
+  }
+
   const params = new URLSearchParams(window.location.search);
   const parishIdField = document.getElementById('parishId');
   if (params.get('parish') && parishIdField) parishIdField.value = params.get('parish');

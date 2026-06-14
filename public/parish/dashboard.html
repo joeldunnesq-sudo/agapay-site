@@ -49,7 +49,7 @@
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('options')" id="nav-options">
           <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-          Funds &amp; Campaigns
+          Funds
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('campaigns')" id="nav-campaigns">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
@@ -131,7 +131,7 @@
                 <p>Manage parish giving settings, campaigns, QR links, and recurring donation tools.</p>
                 <div class="btn-row">
                   <button class="btn btn-gold btn-sm" type="button" onclick="switchTab('settings')">Open settings</button>
-                  <button class="btn btn-ghost btn-sm" type="button" onclick="switchTab('options')">Edit funds & campaigns</button>
+                  <button class="btn btn-ghost btn-sm" type="button" onclick="switchTab('options')">Edit funds</button>
                 </div>
               </article>
               <article class="platform-access-item soon" aria-label="Marketplace coming soon">
@@ -207,6 +207,19 @@
           </div>
           <div class="section-body" id="recurringHealthPane">
             <p class="section-note">Load your dashboard to see active, failed, and lapsed recurring gifts.</p>
+          </div>
+        </div>
+
+        <div class="section-card candle-giving-card">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-4.5 5-10 5-10z"/><path d="M9 21h6"/></svg></div>
+              Candle Giving
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="loadGivingHistory(this)">Refresh</button>
+          </div>
+          <div class="section-body" id="candleGivingPane">
+            <p class="section-note">Load giving history to see candle gifts, candle totals, and names attached to candle intentions.</p>
           </div>
         </div>
 
@@ -318,18 +331,18 @@
         </div>
       </div>
 
-      <!-- ── FUNDS & CAMPAIGNS TAB ───────────────────────────── -->
+      <!-- ── FUNDS TAB ───────────────────────────── -->
       <div class="tab-panel" id="tab-options">
         <div class="feature-tab-hero funds-feature-hero">
           <div>
             <div class="feature-tab-eyebrow">Giving Architecture</div>
-            <h1>Funds &amp; Campaigns</h1>
-            <p>Shape the destinations donors see on your giving page: standing funds for ongoing stewardship, campaigns for urgent needs, and feast-day options for liturgical giving.</p>
+            <h1>Funds</h1>
+            <p>Shape the standing destinations donors see on your giving page for tithes, candles, building needs, clergy support, and ongoing parish stewardship.</p>
           </div>
           <div class="feature-tab-summary">
             <span>Best practice</span>
-            <strong>Keep giving choices clear</strong>
-            <p>Use a few stable funds, then create campaigns for time-bound needs that deserve their own story.</p>
+            <strong>Keep fund choices stable</strong>
+            <p>Use this tab for evergreen parish destinations. Use Campaigns for time-bound appeals with their own story and goal.</p>
           </div>
         </div>
 
@@ -719,6 +732,10 @@
   <button class="mobile-tab-link" type="button" data-nav-tab="options" onclick="switchTab('options')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7 8h14"/><path d="M7 14h14"/><path d="M7 20h14"/><circle cx="4.5" cy="8" r="1"/><circle cx="4.5" cy="14" r="1"/><circle cx="4.5" cy="20" r="1"/></svg>
     <span>Funds</span>
+  </button>
+  <button class="mobile-tab-link" type="button" data-nav-tab="campaigns" onclick="switchTab('campaigns')">
+    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 4l2.4 7.1H24l-6.1 4.4 2.3 7.1L14 18.2l-6.2 4.4 2.3-7.1L4 11.1h7.6z"/></svg>
+    <span>Campaigns</span>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="qr" onclick="switchTab('qr')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="5" y="5" width="6" height="6"/><rect x="17" y="5" width="6" height="6"/><rect x="5" y="17" width="6" height="6"/><path d="M17 17h2v2h-2zM21 17h2v2h-2zM17 21h2v2h-2zM21 21h2v2h-2z"/></svg>
