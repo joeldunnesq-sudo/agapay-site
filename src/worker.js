@@ -103,6 +103,32 @@ import {
   handleParishPasswordResetConfirm,
 } from "./handlers/parish.js";
 
+import {
+  handleDonorClaimCheckout,
+  handleDonorSession,
+  handleDonorPasswordResetRequest,
+  handleDonorPasswordResetConfirm,
+  handleDonorSignup,
+  handleDonorLogin,
+  handleDonorVerify,
+  handleDonorVerifyPage,
+  handleDonorDashboard,
+  handleDonorOfferings,
+  handleDonorSubscriptionPortal,
+  handleDonorCommemorations,
+} from "./handlers/donor.js";
+
+import {
+  handleAdminRegistrations,
+  handleAdminMigrateKvToD1,
+  handleAdminPlatformSummary,
+  handleAdminRegistrationGivingSummary,
+  handleAdminReleaseStatus,
+  handleAdminRebuildIndexes,
+  handleAdminPassword,
+  handleAdminRegistrationDetail,
+} from "./handlers/admin.js";
+
 
 
 const subscriptionTiers = [
