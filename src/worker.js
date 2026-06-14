@@ -99,6 +99,7 @@ import {
   handleParishRecurringHealth,
   handleParishDashboard,
   handleParishSession,
+  handleParishes,
   handleParishPasswordResetRequest,
   handleParishPasswordResetConfirm,
 } from "./handlers/parish.js";
