@@ -129,6 +129,13 @@ import {
   handleAdminRegistrationDetail,
 } from "./handlers/admin.js";
 
+import {
+  handleSubscriptionCheckout,
+  handleStripeWebhook,
+  handleStripeOnboarding,
+  handleStripeRefresh,
+} from "./handlers/stripe.js";
+
 
 
 const subscriptionTiers = [
