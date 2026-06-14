@@ -44,6 +44,7 @@ import {
   hasProductionStore,
   hashPassword,
   hashSessionToken,
+  handleSecurityConfig,
   isSystemKvKey,
   issueAdminSession,
   issueParishDashboardSession,
@@ -100,6 +101,10 @@ import {
   handleParishDashboard,
   handleParishSession,
   handleParishes,
+  handlePublicPlatformSummary,
+  handleRegistrations,
+  handleCheckout,
+  handleCheckoutSessionStatus,
   handleParishPasswordResetRequest,
   handleParishPasswordResetConfirm,
 } from "./handlers/parish.js";
