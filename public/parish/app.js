@@ -1027,6 +1027,7 @@ function renderCampaignList(parish) {
     const slug   = c.slug || slugifyCampaign(c.name);
     const pageUrl = '/give/parish-giving/' + encodeURIComponent(slug) + '?parish=' + encodeURIComponent(parish.parishId);
     const s = statusMap[c.status] || statusMap.active;
+    const campaignId = String(c.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     return '<div class="campaign-list-item" style="border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem;margin-bottom:10px;background:var(--paper);">' +
       '<div style="display:flex;align-items:flex-start;gap:8px;">' +
       '<div style="flex:1;min-width:0;">' +
@@ -1042,7 +1043,7 @@ function renderCampaignList(parish) {
       '</div>' +
       '<div style="display:flex;gap:6px;flex-shrink:0;margin-left:12px;">' +
       '<a href="' + pageUrl + '" target="_blank" class="btn btn-ghost btn-sm" title="View public page">&#8599; View</a>' +
-      '<button class="btn btn-ghost btn-sm" onclick="editCampaign('' + c.id + '')" title="Edit">Edit</button>' +
+      '<button class="btn btn-ghost btn-sm" onclick="editCampaign(\'' + campaignId + '\')" title="Edit">Edit</button>' +
       '</div></div></div>';
   }).join('');
 }
