@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Text-to-Give Settings | AGAPAY Parish Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── AGAPAY Design Tokens ───────────────────────────────────────── */
+    :root {
+      --navy:        #061522;
+      --navy-mid:    #0D1F3C;
+      --navy-soft:   #142845;
+      --gold:        #C9A84C;
+      --gold-light:  #e4c97a;
+      --gold-pale:   #f5ecd3;
+      --cream:       #F9F5EE;
+      --white:       #ffffff;
+      --muted:       #6b7280;
+      --border:      #ddd6ca;
+      --radius:      10px;
+      --font-serif:  'Cormorant Garamond', Georgia, serif;
+      --font-sans:   'DM Sans', system-ui, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--cream);
+      color: var(--navy);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────────────── */
+    .shell {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: 100vh;
+    }
+    .sidebar {
+      background: var(--navy);
+      padding: 2rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+    .sidebar-brand { display: flex; align-items: center; gap: 0.6rem; }
+    .sidebar-brand img { width: 28px; height: 28px; }
+    .sidebar-brand-name { color: var(--white); font-weight: 700; letter-spacing: 0.08em; font-size: 13px; }
+    .sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .sidebar-nav a {
+      display: flex; align-items: center; gap: 0.6rem;
+      color: rgba(255,255,255,0.6); text-decoration: none;
+      padding: 0.5rem 0.75rem; border-radius: 6px;
+      font-size: 13px; font-weight: 500; transition: all 0.15s;
+    }
+    .sidebar-nav a:hover { color: var(--white); background: rgba(255,255,255,0.07); }
+    .sidebar-nav a.active { color: var(--gold); background: rgba(201,168,76,0.12); }
+    .sidebar-nav svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
+
+    .main { padding: 2.5rem 3rem; max-width: 860px; }
+
+    /* ── Page header ─────────────────────────────────────────────────── */
+    .eyebrow {
+      font-family: var(--font-sans);
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 0.5rem;
+    }
+    .page-title {
+      font-family: var(--font-serif);
+      font-size: 2.4rem; font-weight: 500; line-height: 1.15;
+      color: var(--navy); margin-bottom: 0.5rem;
+    }
+    .page-desc { color: var(--muted); max-width: 520px; font-size: 14px; }
+    .page-header { margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+
+    /* ── Coming Soon Banner ──────────────────────────────────────────── */
+    .coming-soon-banner {
+      background: linear-gradient(135deg, var(--navy-mid) 0%, var(--navy-soft) 100%);
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: var(--radius);
+      padding: 1.5rem 2rem;
+      display: flex; align-items: flex-start; gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .coming-soon-icon {
+      flex-shrink: 0; width: 48px; height: 48px;
+      background: rgba(201,168,76,0.15);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .coming-soon-icon svg { width: 24px; height: 24px; stroke: var(--gold); fill: none; stroke-width: 1.8; }
+    .coming-soon-body { flex: 1; }
+    .coming-soon-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--gold);
+      margin-bottom: 0.35rem;
+    }
+    .coming-soon-title {
+      color: var(--white); font-family: var(--font-serif);
+      font-size: 1.35rem; font-weight: 500; margin-bottom: 0.4rem;
+    }
+    .coming-soon-text { color: rgba(255,255,255,0.65); font-size: 13px; line-height: 1.55; }
+
+    /* ── Frosted overlay wrapper ─────────────────────────────────────── */
+    .locked-region {
+      position: relative;
+    }
+    .locked-region .lock-veil {
+      position: absolute; inset: 0; z-index: 10;
+      background: rgba(249,245,238,0.55);
+      backdrop-filter: blur(2px);
+      border-radius: var(--radius);
+      cursor: not-allowed;
+    }
+    .locked-region .lock-veil-badge {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--navy);
+      color: var(--gold);
+      padding: 0.5rem 1.25rem;
+      border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; white-space: nowrap;
+      display: flex; align-items: center; gap: 0.5rem;
+      box-shadow: 0 4px 20px rgba(6,21,34,0.3);
+    }
+    .locked-region .lock-veil-badge svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+
+    /* ── Card ────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-header-left { display: flex; align-items: center; gap: 0.75rem; }
+    .card-icon {
+      width: 36px; height: 36px;
+      background: var(--gold-pale);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .card-icon svg { width: 18px; height: 18px; stroke: var(--gold); fill: none; stroke-width: 1.8; }
+    .card-title { font-weight: 600; font-size: 14px; color: var(--navy); }
+    .card-subtitle { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .card-body { padding: 1.5rem; }
+
+    /* ── Form ────────────────────────────────────────────────────────── */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--navy); letter-spacing: 0.03em; }
+    .form-input, .form-select {
+      width: 100%;
+      padding: 0.6rem 0.85rem;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      color: var(--navy);
+      background: var(--white);
+      transition: border-color 0.15s;
+      appearance: none;
+    }
+    .form-input:focus, .form-select:focus {
+      outline: none; border-color: var(--navy-mid);
+    }
+    .form-input:disabled, .form-select:disabled {
+      background: #f3f3f3; color: var(--muted); cursor: not-allowed;
+    }
+    .form-help { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .form-prefix { position: relative; }
+    .form-prefix-symbol {
+      position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%);
+      font-size: 13px; color: var(--muted); pointer-events: none;
+    }
+    .form-prefix .form-input { padding-left: 1.75rem; }
+
+    /* ── Keyword table ───────────────────────────────────────────────── */
+    .keyword-table { width: 100%; border-collapse: collapse; }
+    .keyword-table th {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--muted);
+      padding: 0.6rem 1rem; text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .keyword-table td {
+      padding: 0.85rem 1rem; border-bottom: 1px solid var(--border);
+      font-size: 13px; color: var(--navy); vertical-align: middle;
+    }
+    .keyword-table tr:last-child td { border-bottom: none; }
+    .keyword-chip {
+      display: inline-flex; align-items: center;
+      background: var(--navy); color: var(--gold-light);
+      font-family: 'Courier New', monospace;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+      padding: 0.25rem 0.65rem; border-radius: 4px;
+    }
+    .fund-badge {
+      display: inline-flex; align-items: center;
+      background: var(--gold-pale); color: var(--navy);
+      font-size: 11px; font-weight: 600;
+      padding: 0.2rem 0.55rem; border-radius: 4px; border: 1px solid var(--gold);
+    }
+    .active-dot {
+      display: inline-block; width: 7px; height: 7px;
+      background: #22c55e; border-radius: 50; margin-right: 6px;
+    }
+    .status-text { font-size: 12px; color: var(--muted); display: flex; align-items: center; }
+
+    /* ── Phone number preview ────────────────────────────────────────── */
+    .phone-preview {
+      background: linear-gradient(135deg, #f0efe8 0%, #e8e4d8 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+    .phone-number-display {
+      font-family: var(--font-serif);
+      font-size: 2rem; font-weight: 500; color: var(--navy);
+      letter-spacing: 0.02em; margin-bottom: 0.35rem;
+    }
+    .phone-number-note { font-size: 12px; color: var(--muted); }
+    .sms-preview-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    .sms-bubble-row { display: flex; flex-direction: column; gap: 0.4rem; }
+    .sms-bubble-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+    .sms-bubble {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px 12px 12px 2px;
+      padding: 0.65rem 0.85rem;
+      font-size: 13px; line-height: 1.5; color: var(--navy);
+    }
+    .sms-bubble.outgoing {
+      background: var(--navy); color: rgba(255,255,255,0.9);
+      border-radius: 12px 12px 2px 12px; align-self: flex-end;
+    }
+    .sms-link { color: var(--gold-light); text-decoration: underline; }
+
+    /* ── Buttons ─────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.55rem 1.1rem; border-radius: 7px;
+      font-family: var(--font-sans); font-size: 13px; font-weight: 600;
+      cursor: pointer; border: none; text-decoration: none;
+      transition: all 0.15s;
+    }
+    .btn-gold { background: var(--gold); color: var(--navy); }
+    .btn-gold:hover { background: var(--gold-light); }
+    .btn-ghost { background: transparent; color: var(--navy); border: 1.5px solid var(--border); }
+    .btn-danger-ghost { background: transparent; color: #dc2626; border: 1.5px solid #fca5a5; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+
+    /* ── Section gap ─────────────────────────────────────────────────── */
+    .section-gap { margin-bottom: 2rem; }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Sidebar (matches parish dashboard pattern) -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="20" cy="20" r="19" stroke="#C9A84C" stroke-width="1.5"/>
+        <path d="M20 8 L20 32 M10 20 L30 20" stroke="#C9A84C" stroke-width="1.5"/>
+      </svg>
+      <span class="sidebar-brand-name">AGAPAY</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#">
+        <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+        Dashboard
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="4"/></svg>
+        Giving History
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        Payouts
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Donors
+      </a>
+      <a href="#" class="active">
+        <svg viewBox="0 0 24 24"><path d="M22 16.92V19a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3 4.18 2 2 0 0 1 5 2h2.09a2 2 0 0 1 2 1.72c.13 1 .37 1.96.71 2.89a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.93.34 1.9.58 2.89.71A2 2 0 0 1 22 16.92z"/></svg>
+        Text-to-Give
+      </a>
+      <a href="#">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33"/></svg>
+        Settings
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main">
+    <header class="page-header">
+      <div class="eyebrow">Parish Dashboard</div>
+      <h1 class="page-title">Text-to-Give</h1>
+      <p class="page-desc">Map SMS keywords to specific funds so parishioners can give by texting a single word to your parish number.</p>
+    </header>
+
+    <!-- Coming Soon Banner -->
+    <div class="coming-soon-banner section-gap">
+      <div class="coming-soon-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="coming-soon-body">
+        <div class="coming-soon-label">Coming Soon</div>
+        <div class="coming-soon-title">Text-to-Give is launching soon</div>
+        <div class="coming-soon-text">
+          The backend is fully built and ready. We're finalizing SignalWire telecom registration before activating dedicated parish numbers. 
+          Preview the feature below — your keyword routes will be live the moment we flip the switch.
+        </div>
+      </div>
+    </div>
+
+    <!-- Dedicated Number Preview -->
+    <div class="card section-gap">
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24"><path d="M22 16.92V19a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3 4.18 2 2 0 0 1 5 2h2.09a2 2 0 0 1 2 1.72c.13 1 .37 1.96.71 2.89"/></svg>
+          </div>
+          <div>
+            <div class="card-title">Your Parish Number</div>
+            <div class="card-subtitle">Assigned when telecom registration completes</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="phone-preview">
+          <div class="phone-number-display">(XXX) XXX-XXXX</div>
+          <div class="phone-number-note">A dedicated number will be assigned to your parish upon launch.</div>
+          <div class="sms-preview-wrap">
+            <div class="sms-bubble-row">
+              <div class="sms-bubble-label">Parishioner texts</div>
+              <div class="sms-bubble outgoing">STEWARDSHIP</div>
+            </div>
+            <div class="sms-bubble-row">
+              <div class="sms-bubble-label">AGAPAY replies</div>
+              <div class="sms-bubble">Glory to Jesus Christ! Click here to complete your stewardship gift: <span class="sms-link">agapay.app/give/st-nicholas</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Keyword Routes — locked -->
+    <div class="locked-region section-gap">
+      <div class="lock-veil">
+        <div class="lock-veil-badge">
+          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Activates at launch
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+            </div>
+            <div>
+              <div class="card-title">Add Keyword Route</div>
+              <div class="card-subtitle">Map a keyword to a fund</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Keyword</label>
+              <input class="form-input" type="text" placeholder="e.g. STEWARDSHIP" disabled value="STEWARDSHIP" />
+              <div class="form-help">Letters and numbers only, 20 characters max. Not case-sensitive.</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fund</label>
+              <select class="form-select" disabled>
+                <option>General Stewardship</option>
+                <option>Building Fund</option>
+                <option>Missions</option>
+              </select>
+              <div class="form-help">Parishioners will be sent to this fund's giving page.</div>
+            </div>
+          </div>
+          <button class="btn btn-gold" disabled>
+            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Add keyword
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+            </div>
+            <div>
+              <div class="card-title">Keyword Routes</div>
+              <div class="card-subtitle">3 keywords configured</div>
+            </div>
+          </div>
+        </div>
+        <table class="keyword-table">
+          <thead>
+            <tr>
+              <th>Keyword</th>
+              <th>Fund</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="keyword-chip">STEWARDSHIP</span></td>
+              <td><span class="fund-badge">General Stewardship</span></td>
+              <td><span class="status-text"><span class="active-dot"></span>Active</span></td>
+              <td style="color:var(--muted);font-size:12px;">Jun 1, 2026</td>
+              <td><button class="btn btn-danger-ghost" style="padding:0.3rem 0.7rem;font-size:12px;" disabled>Remove</button></td>
+            </tr>
+            <tr>
+              <td><span class="keyword-chip">BUILDING</span></td>
+              <td><span class="fund-badge">Building Fund</span></td>
+              <td><span class="status-text"><span class="active-dot"></span>Active</span></td>
+              <td style="color:var(--muted);font-size:12px;">Jun 1, 2026</td>
+              <td><button class="btn btn-danger-ghost" style="padding:0.3rem 0.7rem;font-size:12px;" disabled>Remove</button></td>
+            </tr>
+            <tr>
+              <td><span class="keyword-chip">MISSIONS</span></td>
+              <td><span class="fund-badge">Missions</span></td>
+              <td><span class="status-text"><span class="active-dot"></span>Active</span></td>
+              <td style="color:var(--muted);font-size:12px;">Jun 3, 2026</td>
+              <td><button class="btn btn-danger-ghost" style="padding:0.3rem 0.7rem;font-size:12px;" disabled>Remove</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>
