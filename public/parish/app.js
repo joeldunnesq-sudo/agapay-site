@@ -572,6 +572,13 @@
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="openSubscriptionPortal(this)">Manage or cancel subscription</button>
       </div>
+      <div class="section-divider"><span>Stripe account</span></div>
+      <p class="section-note">Manage your parish Stripe account — update bank account details, payout schedule, business information, and view your full transaction history directly in Stripe.</p>
+      <div class="btn-row">
+        ${p.stripeAccountId && p.stripeChargesEnabled
+          ? `<a class="btn btn-ghost" href="https://dashboard.stripe.com" target="_blank" rel="noopener">Manage Stripe account ↗</a>`
+          : `<button class="btn btn-ghost" disabled title="Complete Stripe onboarding to access your Stripe account">Stripe account not yet active</button>`}
+      </div>
       <div class="section-divider"><span>Feature toggles</span></div>
       <div class="toggle-row">
         <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(p.recurringGivingEnabled??true)?'checked':''} /> Recurring giving</label>
