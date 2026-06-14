@@ -258,6 +258,48 @@
     .qr-feature-code svg { width: 100%; height: 100%; display: block; }
     .qr-feature-kicker { color: var(--gold); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.35rem; }
     .qr-feature-title { font-family: var(--serif); color: var(--deep); font-size: 24px; line-height: 1.05; font-weight: 600; margin: 0 0 0.35rem; }
+
+    /* Text-to-Give dashboard tab */
+    .text-give-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: center; margin-bottom: 1.25rem; padding: 1.4rem 1.6rem; border: 1px solid rgba(184,144,47,0.2); border-radius: 16px; background: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(253,251,247,0.78)); box-shadow: var(--soft-shadow); }
+    .text-give-eyebrow { color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+    .text-give-header h1 { margin: 0.2rem 0 0; color: var(--deep); font-family: var(--serif); font-size: clamp(2.1rem, 5vw, 3.4rem); font-weight: 500; line-height: 1; }
+    .text-give-header p { max-width: 720px; margin: 0.55rem 0 0; color: var(--stone); font-size: 14px; line-height: 1.6; }
+    .text-give-header-mark { width: 72px; height: 72px; display: grid; place-items: center; border-radius: 999px; background: var(--deep); color: var(--gold); box-shadow: 0 16px 34px rgba(6,21,34,0.16); }
+    .text-give-header-mark svg { width: 34px; height: 34px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .text-give-launch { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1rem; align-items: start; margin-bottom: 1rem; padding: 1.35rem 1.5rem; border: 1px solid rgba(200,162,74,0.32); border-radius: 14px; background: linear-gradient(135deg, var(--deep), var(--forest)); color: var(--cream); box-shadow: 0 18px 42px rgba(6,21,34,0.16); }
+    .text-give-launch-icon { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 999px; background: rgba(200,162,74,0.15); color: var(--gold); }
+    .text-give-launch-icon svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .text-give-launch span { color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+    .text-give-launch h2 { margin: 0.25rem 0 0; color: var(--cream); font-family: var(--serif); font-size: 1.45rem; font-weight: 500; line-height: 1.15; }
+    .text-give-launch p { margin: 0.45rem 0 0; color: rgba(246,241,232,0.7); font-size: 13px; line-height: 1.6; }
+    .text-give-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 1rem; align-items: stretch; margin-bottom: 1rem; }
+    .text-give-card { border: 1px solid var(--line); border-radius: 14px; background: white; box-shadow: var(--soft-shadow); overflow: hidden; }
+    .text-give-card-head { display: flex; align-items: center; gap: 0.75rem; padding: 1.1rem 1.25rem; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, #fff, var(--paper)); }
+    .text-give-card-head h3 { margin: 0; color: var(--deep); font-family: var(--serif); font-size: 1.3rem; font-weight: 600; line-height: 1.1; }
+    .text-give-card-head p { margin: 0.15rem 0 0; color: var(--stone); font-size: 12px; line-height: 1.4; }
+    .text-give-phone-card { padding-bottom: 1.25rem; }
+    .text-give-phone-number { margin: 1.25rem 1.25rem 0; border: 1px solid rgba(200,162,74,0.34); border-radius: 12px; background: var(--paper); color: var(--deep); font-family: var(--serif); font-size: clamp(2rem, 4vw, 3rem); line-height: 1; text-align: center; padding: 1.1rem; }
+    .text-give-sms-preview { display: grid; gap: 0.8rem; margin: 1rem 1.25rem 0; }
+    .text-give-sms-row { display: grid; gap: 0.35rem; }
+    .text-give-sms-row span { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+    .text-give-sms-row strong { width: fit-content; max-width: 92%; border-radius: 16px 16px 16px 4px; background: rgba(6,21,34,0.08); color: var(--deep); padding: 0.7rem 0.85rem; font-size: 13px; line-height: 1.45; }
+    .text-give-sms-row strong.outgoing { justify-self: end; border-radius: 16px 16px 4px 16px; background: var(--deep); color: var(--cream); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: 0.06em; }
+    .text-give-routing-card { position: relative; }
+    .text-give-locked-region { position: relative; padding: 1.25rem; }
+    .text-give-lock-veil { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; border-radius: 0 0 14px 14px; background: rgba(249,245,238,0.58); backdrop-filter: blur(2px); }
+    .text-give-lock-veil span { display: inline-flex; align-items: center; gap: 0.45rem; border-radius: 999px; background: var(--deep); color: var(--gold); padding: 0.55rem 1rem; font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; box-shadow: 0 8px 24px rgba(6,21,34,0.24); }
+    .text-give-lock-veil svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .text-give-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; margin-bottom: 0.9rem; }
+    .text-give-form-grid input:disabled, .text-give-form-grid select:disabled { background: #f4f1eb; color: var(--stone); cursor: not-allowed; }
+    .text-give-table-wrap { overflow-x: auto; }
+    .text-give-table { width: 100%; border-collapse: collapse; }
+    .text-give-table th { padding: 0.8rem 1rem; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-align: left; text-transform: uppercase; white-space: nowrap; }
+    .text-give-table td { padding: 0.95rem 1rem; border-bottom: 1px solid var(--line); color: var(--stone); font-size: 13px; vertical-align: middle; }
+    .text-give-table tr:last-child td { border-bottom: 0; }
+    .text-give-keyword { display: inline-flex; align-items: center; border-radius: 6px; background: var(--deep); color: var(--gold); padding: 0.34rem 0.62rem; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; }
+    .text-give-fund { display: inline-flex; align-items: center; border: 1px solid rgba(200,162,74,0.36); border-radius: 6px; background: rgba(200,162,74,0.12); color: var(--deep); padding: 0.26rem 0.58rem; font-size: 12px; font-weight: 700; }
+    .text-give-status { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--deep); font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .text-give-status i { width: 7px; height: 7px; border-radius: 999px; background: #22c55e; }
     .qr-feature-copy { color: var(--stone); font-size: 13px; line-height: 1.55; margin: 0; }
     .qr-feature-actions { min-width: 260px; }
     /* Setup wizard */
@@ -1131,6 +1173,38 @@
       .commemoration-list,
       .insight-stats {
         grid-template-columns: 1fr;
+      }
+
+      .text-give-header,
+      .text-give-launch,
+      .text-give-grid,
+      .text-give-form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .text-give-header {
+        padding: 1.1rem;
+      }
+
+      .text-give-header-mark {
+        display: none;
+      }
+
+      .text-give-launch {
+        padding: 1rem;
+      }
+
+      .text-give-card-head {
+        align-items: flex-start;
+      }
+
+      .text-give-phone-number {
+        font-size: 2rem;
+      }
+
+      .text-give-table th,
+      .text-give-table td {
+        padding: 0.75rem;
       }
 
       .option-group-head,

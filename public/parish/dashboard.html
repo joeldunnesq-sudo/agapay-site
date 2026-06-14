@@ -480,61 +480,115 @@
 
       <!-- ── TEXT-TO-GIVE TAB ─────────────────────────────── -->
       <div class="tab-panel" id="tab-text">
-        <div class="section-card">
-          <div class="section-header">
-            <div class="section-title">
-              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92V19a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3 4.18 2 2 0 0 1 5 2h2.09a2 2 0 0 1 2 1.72c.13 1 .37 1.96.71 2.89a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.93.34 1.9.58 2.89.71A2 2 0 0 1 22 16.92z"/></svg></div>
-              Text-to-Give
-            </div>
+        <div class="text-give-header">
+          <div>
+            <div class="text-give-eyebrow">Parish Dashboard</div>
+            <h1>Text-to-Give</h1>
+            <p>Reserve globally unique SMS keywords that route donors from the shared AGAPAY number to the right parish, fund, campaign, and Stripe-powered giving link.</p>
           </div>
-          <div class="section-body">
-            <p class="section-note">Map globally unique SMS keywords to your parish, funds, and campaigns so donors can text the shared AGAPAY giving number and receive the correct Stripe-powered giving link.</p>
-            <div class="platform-access-item live" style="margin-top:1rem;">
-              <span class="platform-access-kicker">Coming soon</span>
-              <h3>Text-to-Give is launching soon</h3>
-              <p>AGAPAY will use one shared giving number for all parishes. Each parish will reserve unique keywords so incoming texts route to the correct parish, fund, campaign, and connected Stripe checkout.</p>
-            </div>
+          <div class="text-give-header-mark">
+            <svg viewBox="0 0 24 24"><path d="M22 16.92V19a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3 4.18 2 2 0 0 1 5 2h2.09a2 2 0 0 1 2 1.72c.13 1 .37 1.96.71 2.89a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.93.34 1.9.58 2.89.71A2 2 0 0 1 22 16.92z"/></svg>
           </div>
         </div>
 
-        <div class="section-card">
-          <div class="section-header">
-            <div class="section-title">
+        <div class="text-give-launch">
+          <div class="text-give-launch-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div>
+            <span>Coming Soon</span>
+            <h2>Shared-number Text-to-Give is almost ready</h2>
+            <p>The backend is wired for one AGAPAY number and globally unique parish keywords. Once telecom/API setup is active, donors can text a keyword and receive the correct giving link.</p>
+          </div>
+        </div>
+
+        <div class="text-give-grid">
+          <section class="text-give-card text-give-phone-card">
+            <div class="text-give-card-head">
               <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92V19a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3 4.18 2 2 0 0 1 5 2h2.09a2 2 0 0 1 2 1.72c.13 1 .37 1.96.71 2.89"/></svg></div>
-              Shared Number Preview
-            </div>
-          </div>
-          <div class="section-body">
-            <div class="overview-status-card">
               <div>
-                <span class="overview-status-label">AGAPAY shared text number</span>
-                <strong>(XXX) XXX-XXXX</strong>
-                <p>One AGAPAY number will receive texts for all parishes. The keyword determines which parish and giving destination should receive the donor.</p>
-              </div>
-              <div class="overview-status-grid">
-                <div><span>Parishioner texts</span><strong>STNICHOLAS</strong></div>
-                <div><span>AGAPAY replies</span><strong>Parish giving link</strong></div>
+                <h3>Shared AGAPAY Number</h3>
+                <p>Assigned when telecom registration is complete</p>
               </div>
             </div>
-          </div>
+            <div class="text-give-phone-number">(XXX) XXX-XXXX</div>
+            <div class="text-give-sms-preview">
+              <div class="text-give-sms-row">
+                <span>Parishioner texts</span>
+                <strong class="outgoing">STNICHOLAS</strong>
+              </div>
+              <div class="text-give-sms-row">
+                <span>AGAPAY replies</span>
+                <strong>Glory to Jesus Christ! Give to St. Nicholas here: agapay.app/give/form?parish=...</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="text-give-card text-give-routing-card">
+            <div class="text-give-card-head">
+              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 12h8"/><path d="M12 8v8"/></svg></div>
+              <div>
+                <h3>Add Keyword Route</h3>
+                <p>Keyword editing activates at launch</p>
+              </div>
+            </div>
+            <div class="text-give-locked-region">
+              <div class="text-give-lock-veil">
+                <span>
+                  <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  Activates at launch
+                </span>
+              </div>
+              <div class="text-give-form-grid">
+                <label>Keyword<input value="STNICKBUILD" disabled></label>
+                <label>Destination<select disabled><option>Building Fund</option><option>Main parish giving page</option><option>Active campaign</option></select></label>
+              </div>
+              <button class="btn btn-gold" type="button" disabled>Add keyword</button>
+            </div>
+          </section>
         </div>
 
-        <div class="section-card">
-          <div class="section-header">
-            <div class="section-title">
-              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 12h8"/><path d="M12 8v8"/></svg></div>
-              Keyword Routes
+        <section class="text-give-card">
+          <div class="text-give-card-head">
+            <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></div>
+            <div>
+              <h3>Keyword Routes</h3>
+              <p>Keywords must be unique across all AGAPAY parishes</p>
             </div>
           </div>
-          <div class="section-body">
-            <p class="section-note">Keyword editing activates at launch. Keywords must be unique across AGAPAY, so parish-specific names work better than generic terms like BUILDING or MISSIONS.</p>
-            <div class="grid three" style="margin-top:1rem;">
-              <div class="metric-card"><div class="metric-label">Primary keyword</div><div class="metric-value" style="font-size:24px;">STNICHOLAS</div><div class="metric-note">Main parish giving page</div></div>
-              <div class="metric-card"><div class="metric-label">Fund keyword</div><div class="metric-value" style="font-size:24px;">STNICKBUILD</div><div class="metric-note">Building Fund checkout</div></div>
-              <div class="metric-card"><div class="metric-label">Campaign keyword</div><div class="metric-value" style="font-size:24px;">STNICKALMS</div><div class="metric-note">Active alms campaign</div></div>
-            </div>
+          <div class="text-give-table-wrap">
+            <table class="text-give-table">
+              <thead>
+                <tr>
+                  <th>Keyword</th>
+                  <th>Destination</th>
+                  <th>Status</th>
+                  <th>Preview</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="text-give-keyword">STNICHOLAS</span></td>
+                  <td><span class="text-give-fund">Main parish page</span></td>
+                  <td><span class="text-give-status"><i></i>Active soon</span></td>
+                  <td>Routes to the parish giving form</td>
+                </tr>
+                <tr>
+                  <td><span class="text-give-keyword">STNICKBUILD</span></td>
+                  <td><span class="text-give-fund">Building Fund</span></td>
+                  <td><span class="text-give-status"><i></i>Active soon</span></td>
+                  <td>Prefills the fund destination</td>
+                </tr>
+                <tr>
+                  <td><span class="text-give-keyword">STNICKALMS</span></td>
+                  <td><span class="text-give-fund">Alms Campaign</span></td>
+                  <td><span class="text-give-status"><i></i>Active soon</span></td>
+                  <td>Routes to an active campaign</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        </div>
+        </section>
       </div>
 
     </div><!-- /detail-wrap -->

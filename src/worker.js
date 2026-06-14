@@ -6844,6 +6844,29 @@ function textToGiveUrl(appUrl, row = {}) {
   return url.toString();
 }
 
+function textGiveDestinationMatches(registration = {}, parishId = "", destinationType = "parish", destinationId = "") {
+  const normalizedId = normalizeSmsKeyword(destinationId);
+  if (destinationType === "parish") return !normalizedId || normalizedId === normalizeSmsKeyword(parishId);
+
+  const matchesOption = (item = {}) => {
+    const values = [item.id, item.feastId, item.name, item.campaignName, item.title]
+      .filter(Boolean)
+      .map(normalizeSmsKeyword);
+    return values.includes(normalizedId);
+  };
+
+  if (destinationType === "fund") {
+    return (registration.funds || []).some(matchesOption);
+  }
+  if (destinationType === "campaign") {
+    return [...(registration.campaigns || []), ...(registration.feastCampaigns || [])].some(matchesOption);
+  }
+  if (destinationType === "feast") {
+    return (registration.feastCampaigns || []).some(matchesOption);
+  }
+  return false;
+}
+
 async function handleSignalWireSmsWebhook(request, env) {
   if (request.method !== "POST") return smsXmlResponse("Text-to-Give accepts SMS messages only.", { status: 405 });
   if (!env.SMS_WEBHOOK_SECRET) return smsXmlResponse("AGAPAY Text-to-Give is not active yet.");
@@ -6944,6 +6967,9 @@ async function handleParishSmsKeywords(request, env, parishId) {
       return json({ error: "Destination type must be parish, fund, campaign, or feast" }, { status: 422 });
     }
     if (!destinationId) return json({ error: "Destination is required" }, { status: 422 });
+    if (!textGiveDestinationMatches(found.registration, parishId, destinationType, destinationId)) {
+      return json({ error: "That keyword destination does not belong to this parish" }, { status: 422 });
+    }
 
     const existing = await d1First(env, "SELECT id, parish_id FROM sms_keywords WHERE keyword = ?1 LIMIT 1", keyword);
     if (existing) {
@@ -6954,18 +6980,28 @@ async function handleParishSmsKeywords(request, env, parishId) {
     }
 
     const now = new Date().toISOString();
-    await d1Run(
-      env,
-      `INSERT INTO sms_keywords (parish_id, destination_type, destination_id, fund_id, label, keyword, is_active, created_at, updated_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7, ?7)`,
-      parishId,
-      destinationType,
-      destinationId,
-      destinationType === "fund" ? destinationId : "",
-      label,
-      keyword,
-      now
-    );
+    try {
+      await d1Run(
+        env,
+        `INSERT INTO sms_keywords (parish_id, destination_type, destination_id, fund_id, label, keyword, is_active, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7, ?7)`,
+        parishId,
+        destinationType,
+        destinationId,
+        destinationType === "fund" ? destinationId : "",
+        label,
+        keyword,
+        now
+      );
+    } catch (error) {
+      if (String(error?.message || "").toLowerCase().includes("unique")) {
+        return json(
+          { error: `Keyword "${keyword}" is already reserved. Try including your parish name, e.g. STNICHOLAS or STNICKBUILD.` },
+          { status: 409 }
+        );
+      }
+      throw error;
+    }
 
     const created = await d1First(
       env,
