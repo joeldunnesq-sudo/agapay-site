@@ -120,7 +120,7 @@
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Campaigns', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Campaigns', campaigns:'Campaigns', text:'Text-to-Give', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
