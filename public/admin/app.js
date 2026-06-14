@@ -1006,7 +1006,7 @@
           ${field('AGAPAY Alert Email', reg.adminNotificationEmailStatus)}
           ${field('Dashboard Invite Recipients', Array.isArray(reg.dashboardInviteEmailRecipients) ? reg.dashboardInviteEmailRecipients.join(', ') : '', 'full')}
           ${field('Public Parish ID', reg.parishId)}
-          ${field('Parish Dashboard Token', reg.parishDashboardToken ? 'Set' : 'Not set')}
+          ${field('Parish Dashboard Password', (reg.parishDashboardToken || reg.parishDashboardPasswordRecord) ? 'Set' : 'Not set')}
           ${field('Received', reg.receivedAt)}
           ${field('Reviewed', reg.reviewedAt)}
           ${field('Community', reg.parishName)}
@@ -1337,21 +1337,6 @@
     async function runAutoVerifiedWorkflow(reference) {
       const messages = [];
       let registration = null;
-
-      const inviteResponse = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/dashboard-invite', {
-        method: 'POST',
-        headers: authHeaders()
-      });
-      const invite = await inviteResponse.json();
-      if (handleAuthFailure(inviteResponse, invite)) {
-        return { registration, message: 'Auto workflow paused: session expired.' };
-      }
-      if (inviteResponse.ok) {
-        registration = invite.registration || registration;
-        messages.push(invite.email?.status === 'sent' ? 'Dashboard invite sent.' : 'Dashboard invite prepared.');
-      } else {
-        messages.push(`Dashboard invite skipped: ${invite.detail || invite.error || 'unknown error'}.`);
-      }
 
       const stripeResponse = await fetch('/api/admin/registrations/' + encodeURIComponent(reference) + '/stripe-onboarding', {
         method: 'POST',

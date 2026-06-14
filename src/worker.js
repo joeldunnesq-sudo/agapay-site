@@ -1607,7 +1607,7 @@ async function sendTreasurerStripeInvite(env, appUrl, registration) {
     attachments: [
       {
         filename: "AGAPAY-Stripe-Setup-Guide.pdf",
-        content: await onboardingGuidePdfContent(appUrl, onboardingPdfB64)
+        content: onboardingPdfB64
       }
     ]
   });
@@ -1627,18 +1627,20 @@ async function sendDashboardInvite(env, appUrl, registration) {
   const parishName = htmlEscape(registration.parishName || "your parish");
   const token = htmlEscape(registration.parishDashboardToken || "");
   const safeDashboardUrl = htmlEscape(dashboardUrl);
+  const resourceGuideUrl = htmlEscape(`${String(appUrl || "https://agapay.app").replace(/\/+$/, "")}/docs/AGAPAY-Stripe-Setup-Guide.pdf`);
 
   const email = await sendEmail(env, {
     from,
     to: recipients,
     reply_to: replyTo,
-    subject: `AGAPAY dashboard access for ${registration.parishName || "your parish"}`,
-    html: agapayEmailHtml(appUrl, "Your AGAPAY parish dashboard", `
+    subject: `Welcome to AGAPAY — ${registration.parishName || "your parish"}`,
+    html: agapayEmailHtml(appUrl, "Welcome to AGAPAY", `
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
-      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;"><strong>${parishName}</strong> has been verified for AGAPAY. You can now access the parish dashboard to manage your giving page, funds, campaigns, billing, and Stripe onboarding.</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Thank you for registering <strong>${parishName}</strong> with AGAPAY. We have received your signup and created your parish dashboard access so you can begin reviewing your parish profile while AGAPAY completes canonical verification.</p>
       <div style="background:#061522;border:1px solid rgba(201,162,91,0.42);border-radius:12px;padding:18px 18px;margin:0 0 22px;">
-        <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#C9A25B;font-weight:700;">Next step</p>
-        <p style="margin:0;font-size:15px;line-height:1.7;color:#F6F1E8;"><strong>Please choose your AGAPAY tier and complete billing first.</strong> Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.</p>
+        <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#C9A25B;font-weight:700;">What happens next</p>
+        <p style="margin:0 0 10px;font-size:15px;line-height:1.7;color:#F6F1E8;">AGAPAY will review your registration and confirm canonical standing before your public giving page is activated.</p>
+        <p style="margin:0;font-size:14px;line-height:1.6;color:rgba(246,241,232,0.76);">After verification, you will receive a follow-up email titled <strong>Getting started with AGAPAY</strong> with the next steps for setting up your parish Stripe account.</p>
       </div>
       <p style="margin:0 0 24px;"><a href="${safeDashboardUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open parish dashboard</a></p>
       <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
@@ -1647,22 +1649,27 @@ async function sendDashboardInvite(env, appUrl, registration) {
         <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Parish ID:</strong> ${htmlEscape(parishId)}</p>
         <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Temporary password:</strong> ${token}</p>
       </div>
-      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">After opening the dashboard, enter the parish ID and temporary password. The setup card will walk you through billing first, then Stripe onboarding.</p>
-      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">This temporary password gives access to your AGAPAY parish dashboard. Please keep it private.</p>
+      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">After opening the dashboard, enter the parish ID and temporary password above. Your public giving page and payment setup remain pending until AGAPAY verification is complete.</p>
+      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">You can also review this AGAPAY parish resource while you wait: <a href="${resourceGuideUrl}" style="color:#0A365B;text-decoration:underline;">Open parish resource PDF</a>.</p>
+      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">Please keep this temporary password private. You can change it from the parish dashboard after signing in.</p>
     `),
     text: [
-      "Your AGAPAY parish dashboard",
+      "Welcome to AGAPAY",
       "",
-      `${registration.parishName || "Your parish"} has been verified for AGAPAY.`,
-      "Please choose your AGAPAY tier and complete billing first. Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.",
+      `Thank you for registering ${registration.parishName || "your parish"} with AGAPAY.`,
+      "We have received your signup and created your parish dashboard access so you can begin reviewing your parish profile while AGAPAY completes canonical verification.",
+      "",
+      "After verification, you will receive a follow-up email titled Getting started with AGAPAY with next steps for setting up your parish Stripe account.",
       "",
       `Dashboard: ${dashboardUrl}`,
       `Parish ID: ${parishId}`,
       `Temporary password: ${registration.parishDashboardToken || ""}`,
       "",
-      "After opening the dashboard, enter the parish ID and temporary password. The setup card will walk you through billing first, then Stripe onboarding.",
+      "Your public giving page and payment setup remain pending until AGAPAY verification is complete.",
       "",
-      "This temporary password gives access to your AGAPAY parish dashboard. Please keep it private."
+      `Parish resource PDF: ${resourceGuideUrl}`,
+      "",
+      "Please keep this temporary password private. You can change it from the parish dashboard after signing in."
     ].join("\n")
   });
 
@@ -3226,10 +3233,13 @@ async function handleRegistrations(request, env) {
   }
 
   const reference = `AGP-REG-${Date.now().toString(36).toUpperCase()}`;
+  const parishId = slugify(body.parishName);
+  const parishDashboardToken = generateDashboardToken();
   const subscriptionTierId = body.subscriptionTier || defaultSubscriptionTier(body);
   const tier = subscriptionTier(subscriptionTierId) || subscriptionTier(defaultSubscriptionTier(body));
-  const registration = {
+  const registration = await applyParishDashboardPassword({
     reference,
+    parishId,
     status: "pending",
     receivedAt: new Date().toISOString(),
     canonicalVerification: "pending_review",
@@ -3238,14 +3248,23 @@ async function handleRegistrations(request, env) {
     subscriptionStatus: tier?.monthlyCents === 0 ? "free_forever" : "not_started",
     subscriptionMonthlyCents: tier?.monthlyCents ?? null,
     subscriptionTierLabel: tier?.label || ""
-  };
+  }, parishDashboardToken, { temporary: true });
 
   if (env.AGAPAY_REGISTRATIONS) {
     await saveRegistrationRecord(env, reference, registration);
     const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+    const welcome = await sendDashboardInvite(env, appUrl, {
+      ...registration,
+      parishDashboardToken
+    });
     const notice = await sendAdminRegistrationNotice(env, appUrl, registration);
     await saveRegistrationRecord(env, reference, {
       ...registration,
+      dashboardInviteEmailStatus: welcome.status,
+      dashboardInviteEmailId: welcome.id || "",
+      dashboardInviteEmailDetail: welcome.detail || "",
+      dashboardInviteEmailRecipients: welcome.recipients || [],
+      dashboardInviteEmailSentAt: welcome.status === "sent" ? new Date().toISOString() : "",
       adminNotificationEmailStatus: notice.status,
       adminNotificationEmailId: notice.id || "",
       adminNotificationEmailDetail: notice.detail || "",
@@ -4930,10 +4949,10 @@ async function handleAdminRegistrationDetail(request, env, reference) {
       : current.parishId;
     const requestedDashboardToken = body.parishDashboardToken !== undefined
       ? String(body.parishDashboardToken || "").trim()
+      : "";
+    const parishDashboardToken = requestedDashboardToken
+      ? requestedDashboardToken
       : String(current.parishDashboardToken || "").trim();
-    const parishDashboardToken = nextStatus === "verified" && !requestedDashboardToken
-      ? generateDashboardToken()
-      : requestedDashboardToken;
     const nextSubscriptionTierId = body.subscriptionTier || current.subscriptionTier || defaultSubscriptionTier(current);
     const nextTier = subscriptionTier(nextSubscriptionTierId) || subscriptionTier(defaultSubscriptionTier(current));
     const nextSubscriptionStatus = nextTier?.monthlyCents === 0
@@ -4965,7 +4984,9 @@ async function handleAdminRegistrationDetail(request, env, reference) {
       campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
       feastCampaigns: Array.isArray(body.feastCampaigns) ? body.feastCampaigns : current.feastCampaigns,
       parishDashboardToken,
-      parishDashboardTokenTemporary: Boolean(parishDashboardToken),
+      parishDashboardTokenTemporary: requestedDashboardToken
+        ? true
+        : Boolean(current.parishDashboardTokenTemporary ?? parishDashboardToken),
       parishDashboardTokenCreatedAt: parishDashboardToken && parishDashboardToken !== current.parishDashboardToken
         ? new Date().toISOString()
         : current.parishDashboardTokenCreatedAt,
@@ -4987,6 +5008,10 @@ async function handleAdminRegistrationDetail(request, env, reference) {
         ? current.publicProfileCreatedAt || new Date().toISOString()
         : current.publicProfileCreatedAt
     };
+
+    if (requestedDashboardToken) {
+      updated = await applyParishDashboardPassword(updated, requestedDashboardToken, { temporary: true });
+    }
 
     const reviewerNote = String(body.reviewerNotes || "").trim();
     if (reviewerNote) {
@@ -5688,7 +5713,6 @@ async function createStripeOnboardingSession(request, env, reference, registrati
 
   const updated = {
     ...registration,
-    parishDashboardToken: registration.parishDashboardToken || crypto.randomUUID(),
     stripeAccountId,
     stripeAccountStatus: stripeAccountStatus(stripeAccount),
     stripeChargesEnabled: Boolean(stripeAccount.charges_enabled),
@@ -5830,21 +5854,17 @@ async function handleDashboardInvite(request, env, reference) {
   const registration = await loadRegistrationByReference(env, reference);
   if (!registration) return json({ error: "Registration not found" }, { status: 404 });
 
-  if (registration.status !== "verified") {
-    return json({ error: "Verify the parish before sending a dashboard invite" }, { status: 422 });
-  }
-
-  const parishDashboardToken = registration.parishDashboardToken || generateDashboardToken();
-  const withToken = {
+  const parishDashboardToken = generateDashboardToken();
+  const withToken = await applyParishDashboardPassword({
     ...registration,
-    parishId: registration.parishId || slugify(registration.parishName),
-    parishDashboardToken,
-    parishDashboardTokenTemporary: true,
-    parishDashboardTokenCreatedAt: registration.parishDashboardTokenCreatedAt || new Date().toISOString()
-  };
+    parishId: registration.parishId || slugify(registration.parishName)
+  }, parishDashboardToken, { temporary: true });
 
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const email = await sendDashboardInvite(env, appUrl, withToken);
+  const email = await sendDashboardInvite(env, appUrl, {
+    ...withToken,
+    parishDashboardToken
+  });
   const updated = {
     ...withToken,
     dashboardInviteEmailStatus: email.status,
@@ -5857,7 +5877,7 @@ async function handleDashboardInvite(request, env, reference) {
     emailStatus: email.status || "unknown",
     recipients: email.recipients || []
   });
-  await saveRegistrationRecord(env, reference, audited, withToken);
+  await saveRegistrationRecord(env, reference, audited, registration);
 
   return json({ ok: true, email, registration: audited });
 }
