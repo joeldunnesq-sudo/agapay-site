@@ -2243,8 +2243,7 @@ export async function handlePublicPlatformSummary(env) {
     });
   }
 
-  const verifiedRegistrations = await loadAllRegistrations(env, { status: "verified" });
-  const parishes = verifiedRegistrations.map(parishFromRegistration).filter(Boolean);
+  const parishes = await verifiedRegistrationParishes(env, { limit: 10000 });
   const donationTotals = await loadPaidDonorOfferingPlatformTotals(env);
   const activeCampaigns = parishes.reduce((total, parish) => {
     const campaigns = Array.isArray(parish.campaigns) ? parish.campaigns : [];

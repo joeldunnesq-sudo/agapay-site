@@ -102,6 +102,7 @@ import {
   handleParishSession,
   handleParishes,
   handlePublicPlatformSummary,
+  publicSubscriptionTiers,
   handleRegistrations,
   handleCheckout,
   handleCheckoutSessionStatus,
@@ -127,6 +128,7 @@ import {
 import {
   handleAdminRegistrations,
   handleAdminSession,
+  loadAllRegistrations,
   handleAdminMigrateKvToD1,
   handleAdminPlatformSummary,
   handleAdminRegistrationGivingSummary,
