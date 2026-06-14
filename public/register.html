@@ -561,7 +561,7 @@
       </div>
       <h2>Glory to God.</h2>
       <p class="success-parish" id="successParishName"></p>
-      <p>Your registration has been received and sent directly to the founder. You will hear from us at <strong id="successEmail"></strong> within one business day.</p>
+      <p>Your registration has been received. You will hear from us at <strong>onboarding@agapay.app</strong> within one business day.</p>
       <p style="margin-top:0.5rem;">A confirmation has been sent to your email address.</p>
       <p class="success-ref" id="successRef"></p>
       <div class="success-actions">
@@ -893,7 +893,7 @@
 
         document.getElementById('sendingState').classList.remove('visible');
         document.getElementById('successParishName').textContent = parishName + ' has been received.';
-        document.getElementById('successEmail').textContent = priestEmail;
+
         document.getElementById('successRef').textContent = 'Reference: ' + result.reference;
         document.getElementById('successState').classList.add('visible');
         window.scrollTo({ top: 0, behavior: 'smooth' });

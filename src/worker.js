@@ -9,7 +9,7 @@ const DONOR_CHECKOUT_INDEX_PREFIX = "__agapay_checkout_offering__";
 const RATE_LIMIT_PREFIX = "__agapay_rate_limit__";
 const STRIPE_EVENT_PREFIX = "__agapay_stripe_event__";
 const PARISH_ID_INDEX_PREFIX = "__agapay_index_parish_id__";
-const STRIPE_ACCOUNT_INDEX_PREFIX = "__agapay_ihndex_stripe_account__";
+const STRIPE_ACCOUNT_INDEX_PREFIX = "__agapay_index_stripe_account__";
 const STRIPE_SUBSCRIPTION_INDEX_PREFIX = "__agapay_index_stripe_subscription__";
 const STRIPE_PAYMENT_INTENT_INDEX_PREFIX = "__agapay_index_payment_intent__";
 const PASSWORD_HASH_VERSION = "pbkdf2-sha256";
@@ -849,14 +849,6 @@ function publicDonor(donor) {
     householdName: donor.householdName || donor.donorName || "",
     contactPhone: donor.contactPhone || "",
     defaultParishId: donor.defaultParishId || "",
-    addressLine1: donor.addressLine1 || "",
-    addressLine2: donor.addressLine2 || "",
-    city: donor.city || "",
-    state: donor.state || "",
-    postalCode: donor.postalCode || "",
-    country: donor.country || "",
-    pledgeAmountCents: donor.pledgeAmountCents || 0,
-    pledgeYear: donor.pledgeYear || "",
     emailVerifiedAt: donor.emailVerifiedAt || "",
     createdAt: donor.createdAt || "",
     updatedAt: donor.updatedAt || "",
@@ -1535,31 +1527,6 @@ async function sendEmail(env, message) {
   }
 }
 
-function arrayBufferToBase64(buffer) {
-  const bytes = new Uint8Array(buffer);
-  const chunkSize = 0x8000;
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-  }
-  return btoa(binary);
-}
-
-async function publicAssetBase64(appUrl, pathname) {
-  const baseUrl = String(appUrl || "https://agapay.app").replace(/\/+$/, "");
-  const response = await fetch(`${baseUrl}${pathname}`);
-  if (!response.ok) throw new Error(`Unable to load attachment asset: ${pathname}`);
-  return arrayBufferToBase64(await response.arrayBuffer());
-}
-
-async function onboardingGuidePdfContent(appUrl, fallbackBase64 = "") {
-  try {
-    return await publicAssetBase64(appUrl, "/docs/AGAPAY-Stripe-Setup-Guide.pdf");
-  } catch {
-    return fallbackBase64;
-  }
-}
-
 async function sendTreasurerStripeInvite(env, appUrl, registration) {
   const to = registration.treasurerEmail || registration.priestEmail || "";
   if (!to) return { status: "missing_recipient" };
@@ -1627,20 +1594,18 @@ async function sendDashboardInvite(env, appUrl, registration) {
   const parishName = htmlEscape(registration.parishName || "your parish");
   const token = htmlEscape(registration.parishDashboardToken || "");
   const safeDashboardUrl = htmlEscape(dashboardUrl);
-  const resourceGuideUrl = htmlEscape(`${String(appUrl || "https://agapay.app").replace(/\/+$/, "")}/docs/AGAPAY-Stripe-Setup-Guide.pdf`);
 
   const email = await sendEmail(env, {
     from,
     to: recipients,
     reply_to: replyTo,
-    subject: `Welcome to AGAPAY — ${registration.parishName || "your parish"}`,
-    html: agapayEmailHtml(appUrl, "Welcome to AGAPAY", `
+    subject: `AGAPAY dashboard access for ${registration.parishName || "your parish"}`,
+    html: agapayEmailHtml(appUrl, "Your AGAPAY parish dashboard", `
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
-      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Thank you for registering <strong>${parishName}</strong> with AGAPAY. We have received your signup and created your parish dashboard access so you can begin reviewing your parish profile while AGAPAY completes canonical verification.</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;"><strong>${parishName}</strong> has been verified for AGAPAY. You can now access the parish dashboard to manage your giving page, funds, campaigns, billing, and Stripe onboarding.</p>
       <div style="background:#061522;border:1px solid rgba(201,162,91,0.42);border-radius:12px;padding:18px 18px;margin:0 0 22px;">
-        <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#C9A25B;font-weight:700;">What happens next</p>
-        <p style="margin:0 0 10px;font-size:15px;line-height:1.7;color:#F6F1E8;">AGAPAY will review your registration and confirm canonical standing before your public giving page is activated.</p>
-        <p style="margin:0;font-size:14px;line-height:1.6;color:rgba(246,241,232,0.76);">After verification, you will receive a follow-up email titled <strong>Getting started with AGAPAY</strong> with the next steps for setting up your parish Stripe account.</p>
+        <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#C9A25B;font-weight:700;">Next step</p>
+        <p style="margin:0;font-size:15px;line-height:1.7;color:#F6F1E8;"><strong>Please choose your AGAPAY tier and complete billing first.</strong> Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.</p>
       </div>
       <p style="margin:0 0 24px;"><a href="${safeDashboardUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open parish dashboard</a></p>
       <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
@@ -1649,27 +1614,22 @@ async function sendDashboardInvite(env, appUrl, registration) {
         <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Parish ID:</strong> ${htmlEscape(parishId)}</p>
         <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Temporary password:</strong> ${token}</p>
       </div>
-      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">After opening the dashboard, enter the parish ID and temporary password above. Your public giving page and payment setup remain pending until AGAPAY verification is complete.</p>
-      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">You can also review this AGAPAY parish resource while you wait: <a href="${resourceGuideUrl}" style="color:#0A365B;text-decoration:underline;">Open parish resource PDF</a>.</p>
-      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">Please keep this temporary password private. You can change it from the parish dashboard after signing in.</p>
+      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">After opening the dashboard, enter the parish ID and temporary password. The setup card will walk you through billing first, then Stripe onboarding.</p>
+      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">This temporary password gives access to your AGAPAY parish dashboard. Please keep it private.</p>
     `),
     text: [
-      "Welcome to AGAPAY",
+      "Your AGAPAY parish dashboard",
       "",
-      `Thank you for registering ${registration.parishName || "your parish"} with AGAPAY.`,
-      "We have received your signup and created your parish dashboard access so you can begin reviewing your parish profile while AGAPAY completes canonical verification.",
-      "",
-      "After verification, you will receive a follow-up email titled Getting started with AGAPAY with next steps for setting up your parish Stripe account.",
+      `${registration.parishName || "Your parish"} has been verified for AGAPAY.`,
+      "Please choose your AGAPAY tier and complete billing first. Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.",
       "",
       `Dashboard: ${dashboardUrl}`,
       `Parish ID: ${parishId}`,
       `Temporary password: ${registration.parishDashboardToken || ""}`,
       "",
-      "Your public giving page and payment setup remain pending until AGAPAY verification is complete.",
+      "After opening the dashboard, enter the parish ID and temporary password. The setup card will walk you through billing first, then Stripe onboarding.",
       "",
-      `Parish resource PDF: ${resourceGuideUrl}`,
-      "",
-      "Please keep this temporary password private. You can change it from the parish dashboard after signing in."
+      "This temporary password gives access to your AGAPAY parish dashboard. Please keep it private."
     ].join("\n")
   });
 
@@ -1706,6 +1666,58 @@ async function sendParishPasswordResetEmail(env, appUrl, registration, resetUrl,
       `Open this link to choose a new password: ${resetUrl}`,
       "",
       "If you did not request this, ignore this email. The link expires in 1 hour."
+    ].join("\n")
+  });
+}
+
+
+async function sendRegistrationConfirmation(env, appUrl, registration) {
+  const to = registration.priestEmail || registration.treasurerEmail || "";
+  if (!to) return { status: "missing_recipient" };
+
+  const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
+  const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
+  const parishName = htmlEscape(registration.parishName || "your community");
+  const reference = htmlEscape(registration.reference || "");
+  const tier = subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration));
+  const tierLabel = htmlEscape(subscriptionTierSummary(tier));
+
+  return sendEmail(env, {
+    from,
+    to: [to],
+    reply_to: replyTo,
+    subject: `AGAPAY registration received — ${registration.parishName || registration.reference}`,
+    html: agapayEmailHtml(appUrl, "Registration received", `
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Thank you for registering <strong>${parishName}</strong> with AGAPAY. We have received your application and will personally review it for canonical standing before activation. You will hear from us within one business day.</p>
+      <div style="background:#061522;border:1px solid rgba(201,162,91,0.42);border-radius:12px;padding:20px;margin:0 0 24px;">
+        <p style="margin:0 0 6px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#C9A25B;font-weight:700;">Your registration summary</p>
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#F6F1E8;"><strong style="color:#C9A25B;">Reference number:</strong> ${reference}</p>
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#F6F1E8;"><strong style="color:#C9A25B;">Community:</strong> ${parishName}</p>
+        <p style="margin:0;font-size:14px;line-height:1.6;color:#F6F1E8;"><strong style="color:#C9A25B;">Subscription tier:</strong> ${tierLabel}</p>
+      </div>
+      <p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#171715;">Please save your reference number. If you have questions about your registration status, email <a href="mailto:onboarding@agapay.app" style="color:#0A365B;">onboarding@agapay.app</a> and include it in your message.</p>
+      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">Once your community is verified, you will receive a second email with your parish dashboard credentials and next steps for connecting your Stripe account.</p>
+    `),
+    text: [
+      "Registration received — AGAPAY",
+      "",
+      "Glory to Jesus Christ!",
+      "",
+      `Thank you for registering ${registration.parishName || ""} with AGAPAY.`,
+      "We have received your application and will personally review it for canonical standing before activation.",
+      "You will hear from us within one business day.",
+      "",
+      "YOUR REGISTRATION SUMMARY",
+      `Reference number: ${registration.reference || ""}`,
+      `Community: ${registration.parishName || ""}`,
+      `Subscription tier: ${subscriptionTierSummary(tier)}`,
+      "",
+      "Please save your reference number. If you have questions about your registration status,",
+      "email onboarding@agapay.app and include it in your message.",
+      "",
+      "Once your community is verified, you will receive a second email with your parish dashboard",
+      "credentials and next steps for connecting your Stripe account."
     ].join("\n")
   });
 }
@@ -2384,11 +2396,6 @@ function donorSummaryFromOfferings(offerings, commemorations = []) {
   const recurring = offerings.filter((item) => item.frequency && item.frequency !== "once");
   const ytdCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).giftAmountCents, 0);
   const parishNetYtdCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).parishNetCents, 0);
-    const stewardshipPaid = paid.filter((item) => {
-          const gt = String(item.giftType || "").toLowerCase();
-          return gt === "stewardship" || gt === "" || gt === "offering" || gt === "recurring";
-    });
-    const stewardshipYtdCents = stewardshipPaid.reduce((sum, item) => sum + offeringFeeBreakdown(item).giftAmountCents, 0);
   const feeSavingsCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).donorCoveredFeeCents, 0);
   const feeCoveredCount = paid.filter((item) => offeringFeeBreakdown(item).coverFees).length;
   const monthCents = paid
@@ -2410,7 +2417,6 @@ function donorSummaryFromOfferings(offerings, commemorations = []) {
     parishNetYtdCents,
     parishNetMonthCents,
     feeSavingsCents,
-    stewardshipYtdCents,
     feeCoveragePercent: paid.length ? Math.round((feeCoveredCount / paid.length) * 100) : 0,
     offeringCount: ytd.length,
     paidOfferingCount: paid.length,
@@ -3233,13 +3239,10 @@ async function handleRegistrations(request, env) {
   }
 
   const reference = `AGP-REG-${Date.now().toString(36).toUpperCase()}`;
-  const parishId = slugify(body.parishName);
-  const parishDashboardToken = generateDashboardToken();
   const subscriptionTierId = body.subscriptionTier || defaultSubscriptionTier(body);
   const tier = subscriptionTier(subscriptionTierId) || subscriptionTier(defaultSubscriptionTier(body));
-  const registration = await applyParishDashboardPassword({
+  const registration = {
     reference,
-    parishId,
     status: "pending",
     receivedAt: new Date().toISOString(),
     canonicalVerification: "pending_review",
@@ -3248,27 +3251,24 @@ async function handleRegistrations(request, env) {
     subscriptionStatus: tier?.monthlyCents === 0 ? "free_forever" : "not_started",
     subscriptionMonthlyCents: tier?.monthlyCents ?? null,
     subscriptionTierLabel: tier?.label || ""
-  }, parishDashboardToken, { temporary: true });
+  };
 
   if (env.AGAPAY_REGISTRATIONS) {
     await saveRegistrationRecord(env, reference, registration);
     const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-    const welcome = await sendDashboardInvite(env, appUrl, {
-      ...registration,
-      parishDashboardToken
-    });
-    const notice = await sendAdminRegistrationNotice(env, appUrl, registration);
+    const [notice, confirmation] = await Promise.all([
+      sendAdminRegistrationNotice(env, appUrl, registration),
+      sendRegistrationConfirmation(env, appUrl, registration)
+    ]);
     await saveRegistrationRecord(env, reference, {
       ...registration,
-      dashboardInviteEmailStatus: welcome.status,
-      dashboardInviteEmailId: welcome.id || "",
-      dashboardInviteEmailDetail: welcome.detail || "",
-      dashboardInviteEmailRecipients: welcome.recipients || [],
-      dashboardInviteEmailSentAt: welcome.status === "sent" ? new Date().toISOString() : "",
       adminNotificationEmailStatus: notice.status,
       adminNotificationEmailId: notice.id || "",
       adminNotificationEmailDetail: notice.detail || "",
-      adminNotificationEmailSentAt: notice.status === "sent" ? new Date().toISOString() : ""
+      adminNotificationEmailSentAt: notice.status === "sent" ? new Date().toISOString() : "",
+      confirmationEmailStatus: confirmation.status,
+      confirmationEmailId: confirmation.id || "",
+      confirmationEmailSentAt: confirmation.status === "sent" ? new Date().toISOString() : ""
     }, registration);
   }
 
@@ -3380,7 +3380,6 @@ async function handleCheckout(request, env) {
     success_url: successUrl,
     cancel_url: cancelUrl,
     customer: customer.body.id,
-    billing_address_collection: "required",
     "line_items[0][quantity]": "1",
     "line_items[0][price_data][currency]": "usd",
     "line_items[0][price_data][product_data][name]": `${parish.name} - ${giftLabel}`,
@@ -3950,12 +3949,6 @@ async function handleDonorSignup(request, env) {
     donorName: donorNameValue,
     householdName: body.householdName || donorNameValue,
     defaultParishId: body.parishId || body.defaultParishId || existing?.defaultParishId || "",
-    addressLine1: body.addressLine1 || existing?.addressLine1 || "",
-    addressLine2: body.addressLine2 || existing?.addressLine2 || "",
-    city: body.city || existing?.city || "",
-    state: body.state || existing?.state || "",
-    postalCode: body.postalCode || existing?.postalCode || "",
-    country: body.country || existing?.country || "",
     emailVerifiedAt: "",
     emailVerificationSalt: verificationSalt,
     emailVerificationTokenHash: await sha256Hex(`${verificationSalt}:${verificationToken}`),
@@ -4209,14 +4202,6 @@ async function handleDonorDashboard(request, env) {
       householdName: body.householdName ?? donor.householdName,
       contactPhone: body.contactPhone ?? body.phone ?? donor.contactPhone ?? "",
       defaultParishId: body.defaultParishId ?? body.parishId ?? donor.defaultParishId,
-      addressLine1: body.addressLine1 ?? donor.addressLine1 ?? "",
-      addressLine2: body.addressLine2 ?? donor.addressLine2 ?? "",
-      city: body.city ?? donor.city ?? "",
-      state: body.state ?? donor.state ?? "",
-      postalCode: body.postalCode ?? donor.postalCode ?? "",
-      country: body.country ?? donor.country ?? "",
-      pledgeAmountCents: body.pledgeAmountCents != null ? Number(body.pledgeAmountCents) : (donor.pledgeAmountCents || 0),
-      pledgeYear: body.pledgeYear != null ? String(body.pledgeYear) : (donor.pledgeYear || ""),
       updatedAt: new Date().toISOString()
     };
 
@@ -4949,10 +4934,10 @@ async function handleAdminRegistrationDetail(request, env, reference) {
       : current.parishId;
     const requestedDashboardToken = body.parishDashboardToken !== undefined
       ? String(body.parishDashboardToken || "").trim()
-      : "";
-    const parishDashboardToken = requestedDashboardToken
-      ? requestedDashboardToken
       : String(current.parishDashboardToken || "").trim();
+    const parishDashboardToken = nextStatus === "verified" && !requestedDashboardToken
+      ? generateDashboardToken()
+      : requestedDashboardToken;
     const nextSubscriptionTierId = body.subscriptionTier || current.subscriptionTier || defaultSubscriptionTier(current);
     const nextTier = subscriptionTier(nextSubscriptionTierId) || subscriptionTier(defaultSubscriptionTier(current));
     const nextSubscriptionStatus = nextTier?.monthlyCents === 0
@@ -4984,9 +4969,7 @@ async function handleAdminRegistrationDetail(request, env, reference) {
       campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
       feastCampaigns: Array.isArray(body.feastCampaigns) ? body.feastCampaigns : current.feastCampaigns,
       parishDashboardToken,
-      parishDashboardTokenTemporary: requestedDashboardToken
-        ? true
-        : Boolean(current.parishDashboardTokenTemporary ?? parishDashboardToken),
+      parishDashboardTokenTemporary: Boolean(parishDashboardToken),
       parishDashboardTokenCreatedAt: parishDashboardToken && parishDashboardToken !== current.parishDashboardToken
         ? new Date().toISOString()
         : current.parishDashboardTokenCreatedAt,
@@ -5008,10 +4991,6 @@ async function handleAdminRegistrationDetail(request, env, reference) {
         ? current.publicProfileCreatedAt || new Date().toISOString()
         : current.publicProfileCreatedAt
     };
-
-    if (requestedDashboardToken) {
-      updated = await applyParishDashboardPassword(updated, requestedDashboardToken, { temporary: true });
-    }
 
     const reviewerNote = String(body.reviewerNotes || "").trim();
     if (reviewerNote) {
@@ -5356,25 +5335,6 @@ async function processStripeWebhookEvent(env, event) {
         createdAt: object.created ? new Date(object.created * 1000).toISOString() : new Date().toISOString()
       });
       await sendDonationReceiptIfNeeded(env, updatedOffering || {});
-
-      // Backfill donor address from Stripe billing details if not yet stored
-      const donorEmailForAddr = object.metadata?.donor_email || object.customer_details?.email || "";
-      const stripeAddr = object.customer_details?.address;
-      if (donorEmailForAddr && stripeAddr?.line1) {
-        const donorForAddr = await loadDonor(env, donorEmailForAddr);
-        if (donorForAddr && !donorForAddr.addressLine1) {
-          await saveDonor(env, {
-            ...donorForAddr,
-            addressLine1: stripeAddr.line1 || "",
-            addressLine2: stripeAddr.line2 || "",
-            city: stripeAddr.city || "",
-            state: stripeAddr.state || "",
-            postalCode: stripeAddr.postal_code || "",
-            country: stripeAddr.country || "",
-            updatedAt: new Date().toISOString()
-          });
-        }
-      }
     }
   }
 
@@ -5713,6 +5673,7 @@ async function createStripeOnboardingSession(request, env, reference, registrati
 
   const updated = {
     ...registration,
+    parishDashboardToken: registration.parishDashboardToken || crypto.randomUUID(),
     stripeAccountId,
     stripeAccountStatus: stripeAccountStatus(stripeAccount),
     stripeChargesEnabled: Boolean(stripeAccount.charges_enabled),
@@ -5854,17 +5815,21 @@ async function handleDashboardInvite(request, env, reference) {
   const registration = await loadRegistrationByReference(env, reference);
   if (!registration) return json({ error: "Registration not found" }, { status: 404 });
 
-  const parishDashboardToken = generateDashboardToken();
-  const withToken = await applyParishDashboardPassword({
+  if (registration.status !== "verified") {
+    return json({ error: "Verify the parish before sending a dashboard invite" }, { status: 422 });
+  }
+
+  const parishDashboardToken = registration.parishDashboardToken || generateDashboardToken();
+  const withToken = {
     ...registration,
-    parishId: registration.parishId || slugify(registration.parishName)
-  }, parishDashboardToken, { temporary: true });
+    parishId: registration.parishId || slugify(registration.parishName),
+    parishDashboardToken,
+    parishDashboardTokenTemporary: true,
+    parishDashboardTokenCreatedAt: registration.parishDashboardTokenCreatedAt || new Date().toISOString()
+  };
 
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const email = await sendDashboardInvite(env, appUrl, {
-    ...withToken,
-    parishDashboardToken
-  });
+  const email = await sendDashboardInvite(env, appUrl, withToken);
   const updated = {
     ...withToken,
     dashboardInviteEmailStatus: email.status,
@@ -5877,7 +5842,7 @@ async function handleDashboardInvite(request, env, reference) {
     emailStatus: email.status || "unknown",
     recipients: email.recipients || []
   });
-  await saveRegistrationRecord(env, reference, audited, registration);
+  await saveRegistrationRecord(env, reference, audited, withToken);
 
   return json({ ok: true, email, registration: audited });
 }
@@ -6609,8 +6574,7 @@ function parishDashboardPayload(parishId, registration) {
     commemorationsEnabled: registration.commemorationsEnabled ?? true,
     funds: Array.isArray(registration.funds) ? registration.funds : [],
     campaigns: Array.isArray(registration.campaigns) ? registration.campaigns : [],
-    feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : [],
-    ein: registration.ein || ""
+    feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
   };
 }
 
@@ -6674,7 +6638,6 @@ async function handleParishDashboard(request, env, parishId) {
       funds: Array.isArray(body.funds) ? body.funds : current.funds,
       campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
       feastCampaigns: Array.isArray(body.feastCampaigns) ? body.feastCampaigns : current.feastCampaigns,
-      ein: String(body.ein ?? current.ein ?? "").trim().replace(/[^0-9-]/g, ""),
       parishUpdatedAt: new Date().toISOString()
     };
 
@@ -6839,240 +6802,6 @@ async function handleParishPasswordResetConfirm(request, env) {
   return json({ ok: true, updatedAt: updated.parishDashboardTokenUpdatedAt || new Date().toISOString() });
 }
 
-function normalizeSmsKeyword(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-}
-
-function smsXmlResponse(message, init = {}) {
-  const escaped = String(message || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-  return new Response(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escaped}</Message></Response>`, {
-    status: init.status || 200,
-    headers: {
-      "Content-Type": "text/xml; charset=utf-8",
-      ...(init.headers || {})
-    }
-  });
-}
-
-function smsWebhookSecret(request, env) {
-  const url = new URL(request.url);
-  return request.headers.get("X-AGAPAY-SMS-Secret")
-    || request.headers.get("X-SignalWire-Webhook-Secret")
-    || url.searchParams.get("secret")
-    || "";
-}
-
-function textToGiveUrl(appUrl, row = {}) {
-  const url = new URL("/give/form", String(appUrl || "https://agapay.app").replace(/\/+$/, ""));
-  url.searchParams.set("parish", row.parish_id || "");
-  url.searchParams.set("utm_source", "sms");
-  url.searchParams.set("keyword", row.keyword || "");
-
-  const destinationType = String(row.destination_type || "fund").toLowerCase();
-  const destinationId = row.destination_id || row.fund_id || "";
-  if (destinationType === "fund" && destinationId) {
-    url.searchParams.set("fund", destinationId);
-  } else if (destinationType === "campaign" && destinationId) {
-    url.searchParams.set("giftType", "campaign");
-    url.searchParams.set("campaign", destinationId);
-  } else if (destinationType === "feast" && destinationId) {
-    url.searchParams.set("giftType", "feast");
-    url.searchParams.set("feast", destinationId);
-  }
-
-  return url.toString();
-}
-
-function textGiveDestinationMatches(registration = {}, parishId = "", destinationType = "parish", destinationId = "") {
-  const normalizedId = normalizeSmsKeyword(destinationId);
-  if (destinationType === "parish") return !normalizedId || normalizedId === normalizeSmsKeyword(parishId);
-
-  const matchesOption = (item = {}) => {
-    const values = [item.id, item.feastId, item.name, item.campaignName, item.title]
-      .filter(Boolean)
-      .map(normalizeSmsKeyword);
-    return values.includes(normalizedId);
-  };
-
-  if (destinationType === "fund") {
-    return (registration.funds || []).some(matchesOption);
-  }
-  if (destinationType === "campaign") {
-    return [...(registration.campaigns || []), ...(registration.feastCampaigns || [])].some(matchesOption);
-  }
-  if (destinationType === "feast") {
-    return (registration.feastCampaigns || []).some(matchesOption);
-  }
-  return false;
-}
-
-async function handleSignalWireSmsWebhook(request, env) {
-  if (request.method !== "POST") return smsXmlResponse("Text-to-Give accepts SMS messages only.", { status: 405 });
-  if (!env.SMS_WEBHOOK_SECRET) return smsXmlResponse("AGAPAY Text-to-Give is not active yet.");
-  if (!secureCompare(smsWebhookSecret(request, env), env.SMS_WEBHOOK_SECRET)) {
-    return smsXmlResponse("AGAPAY could not verify this text message.", { status: 401 });
-  }
-  if (!d1(env)) return smsXmlResponse("AGAPAY Text-to-Give is temporarily unavailable. Please try again later.");
-
-  const limited = await rateLimit(request, env, "sms-webhook", { limit: 120, windowSeconds: 60 });
-  if (limited) return smsXmlResponse("AGAPAY Text-to-Give is busy. Please try again in a moment.");
-
-  let body = {};
-  try {
-    body = Object.fromEntries(new URLSearchParams(await request.text()));
-  } catch {
-    return smsXmlResponse("We could not process your message. Please try again.");
-  }
-
-  const keyword = normalizeSmsKeyword(body.Body || body.body || body.Message || "");
-  if (!keyword) return smsXmlResponse("Text your parish keyword to give. Contact your parish if you need the keyword.");
-
-  const row = await d1First(
-    env,
-    `SELECT sk.id, sk.keyword, sk.parish_id, sk.destination_type, sk.destination_id, sk.fund_id, sk.label, r.data
-     FROM sms_keywords sk
-     LEFT JOIN registrations r ON r.parish_id = sk.parish_id
-     WHERE sk.keyword = ?1 AND sk.is_active = 1
-     LIMIT 1`,
-    keyword
-  );
-
-  const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  if (!row) {
-    return smsXmlResponse(`Thank you for your desire to give. We did not recognize "${keyword}". Find your parish here: ${String(appUrl).replace(/\/+$/, "")}/giving`);
-  }
-
-  let parish = {};
-  try {
-    parish = JSON.parse(row.data || "{}");
-  } catch {
-    parish = {};
-  }
-
-  const parishName = parish.parishName || parish.name || "your parish";
-  const label = row.label || (row.destination_type === "parish" ? "general giving" : row.destination_type || "giving");
-  const giveUrl = textToGiveUrl(appUrl, row);
-  return smsXmlResponse(`Give to ${parishName} (${label}) here: ${giveUrl}`);
-}
-
-async function requireParishDashboardBearer(request, env, parishId) {
-  const found = await findRegistrationByParishId(env, parishId);
-  if (!found) return null;
-  const token = getBearerToken(request);
-  if (!(await verifyParishDashboardBearer(found.registration, token))) return null;
-  return found;
-}
-
-async function handleParishSmsKeywords(request, env, parishId) {
-  const limited = await rateLimit(request, env, "parish-sms-keywords", { limit: 40, windowSeconds: 300 });
-  if (limited) return limited;
-  if (!d1(env)) return json({ error: "AGAPAY_DB D1 binding is not configured" }, { status: 500 });
-
-  const found = await requireParishDashboardBearer(request, env, parishId);
-  if (!found) return unauthorized();
-
-  const url = new URL(request.url);
-
-  if (request.method === "GET") {
-    const result = await d1(env)
-      .prepare(
-        `SELECT id, keyword, parish_id, destination_type, destination_id, fund_id, label, is_active, created_at, updated_at
-         FROM sms_keywords
-         WHERE parish_id = ?1
-         ORDER BY created_at DESC`
-      )
-      .bind(parishId)
-      .all();
-    return json({ keywords: result.results || [] });
-  }
-
-  if (request.method === "POST") {
-    let body = {};
-    try {
-      body = await request.json();
-    } catch {
-      return json({ error: "Invalid JSON body" }, { status: 400 });
-    }
-
-    const keyword = normalizeSmsKeyword(body.keyword);
-    const destinationType = String(body.destinationType || body.destination_type || (body.fund_id || body.fundId ? "fund" : "parish")).trim().toLowerCase();
-    const destinationId = String(body.destinationId || body.destination_id || body.fundId || body.fund_id || parishId).trim();
-    const label = String(body.label || "").trim().slice(0, 80);
-
-    if (!keyword) return json({ error: "Keyword is required" }, { status: 422 });
-    if (keyword.length < 3) return json({ error: "Keyword must be at least 3 characters" }, { status: 422 });
-    if (keyword.length > 32) return json({ error: "Keyword must be 32 characters or fewer" }, { status: 422 });
-    if (!["parish", "fund", "campaign", "feast"].includes(destinationType)) {
-      return json({ error: "Destination type must be parish, fund, campaign, or feast" }, { status: 422 });
-    }
-    if (!destinationId) return json({ error: "Destination is required" }, { status: 422 });
-    if (!textGiveDestinationMatches(found.registration, parishId, destinationType, destinationId)) {
-      return json({ error: "That keyword destination does not belong to this parish" }, { status: 422 });
-    }
-
-    const existing = await d1First(env, "SELECT id, parish_id FROM sms_keywords WHERE keyword = ?1 LIMIT 1", keyword);
-    if (existing) {
-      return json(
-        { error: `Keyword "${keyword}" is already reserved. Try including your parish name, e.g. STNICHOLAS or STNICKBUILD.` },
-        { status: 409 }
-      );
-    }
-
-    const now = new Date().toISOString();
-    try {
-      await d1Run(
-        env,
-        `INSERT INTO sms_keywords (parish_id, destination_type, destination_id, fund_id, label, keyword, is_active, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7, ?7)`,
-        parishId,
-        destinationType,
-        destinationId,
-        destinationType === "fund" ? destinationId : "",
-        label,
-        keyword,
-        now
-      );
-    } catch (error) {
-      if (String(error?.message || "").toLowerCase().includes("unique")) {
-        return json(
-          { error: `Keyword "${keyword}" is already reserved. Try including your parish name, e.g. STNICHOLAS or STNICKBUILD.` },
-          { status: 409 }
-        );
-      }
-      throw error;
-    }
-
-    const created = await d1First(
-      env,
-      `SELECT id, keyword, parish_id, destination_type, destination_id, fund_id, label, is_active, created_at, updated_at
-       FROM sms_keywords
-       WHERE parish_id = ?1 AND keyword = ?2
-       LIMIT 1`,
-      parishId,
-      keyword
-    );
-    return json({ keyword: created }, { status: 201 });
-  }
-
-  if (request.method === "DELETE") {
-    const parts = url.pathname.split("/").filter(Boolean);
-    const keywordId = parts[parts.length - 1];
-    if (!keywordId || keywordId === "sms-keywords") return json({ error: "Keyword id is required" }, { status: 422 });
-    const row = await d1First(env, "SELECT id FROM sms_keywords WHERE id = ?1 AND parish_id = ?2 LIMIT 1", keywordId, parishId);
-    if (!row) return json({ error: "Keyword not found" }, { status: 404 });
-    await d1Run(env, "DELETE FROM sms_keywords WHERE id = ?1 AND parish_id = ?2", keywordId, parishId);
-    return json({ ok: true });
-  }
-
-  return json({ error: "Method not allowed" }, { status: 405 });
-}
-
 function handleLiturgicalCalendar(request) {
   const url = new URL(request.url);
   const year = Math.max(1900, Math.min(2199, Number(url.searchParams.get("year")) || new Date().getFullYear()));
@@ -7126,10 +6855,6 @@ function cleanAssetRequest(request) {
   }
   if (url.pathname === "/give/parish-giving") {
     url.pathname = "/give/parish-giving.html";
-    return new Request(url, request);
-  }
-  if (url.pathname.startsWith("/give/parish-giving/") && url.pathname.split("/").filter(Boolean).length >= 3) {
-    url.pathname = "/give/parish-giving/index.html";
     return new Request(url, request);
   }
   if (url.pathname === "/giving/parish-giving") {
@@ -7224,162 +6949,6 @@ async function sendWeeklyCommemorationEmails(env, scheduledTime) {
   return results;
 }
 
-
-// ═══════════════════════════════════════════════════════════════════════════
-// CAMPAIGN FEATURE
-// ═══════════════════════════════════════════════════════════════════════════
-
-function isSocialCrawler(request) {
-  const ua = (request.headers.get("User-Agent") || "").toLowerCase();
-  return ["facebookexternalhit","facebot","twitterbot","twitter.com","whatsapp",
-    "slackbot","slack-imgproxy","linkedinbot","telegrambot","discordbot",
-    "applebot","googlebot","bingbot","embedly","pinterest"].some(b => ua.includes(b));
-}
-
-
-function campaignBotHtml(campaign, parish, canonicalUrl) {
-  const title  = `${campaign.name} — ${parish.name}`;
-  const raised = (Number(campaign.raisedCents || 0) / 100).toLocaleString("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 });
-  const goal   = campaign.goalCents ? (Number(campaign.goalCents) / 100).toLocaleString("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 }) : null;
-  const desc   = (campaign.description || `Support ${parish.name} through AGAPAY.`).substring(0, 240).replace(/"/g, "&quot;").replace(/\n/g, " ");
-  const img    = campaign.coverPhotoUrl || parish.imageUrl || "https://agapay.app/images/og-default.png";
-  const progress = goal ? `${raised} raised of ${goal} goal` : `${raised} raised`;
-  return `<!DOCTYPE html>
-<html lang="en"><head>
-<meta charset="UTF-8"/>
-<title>${title} | AGAPAY</title>
-<meta name="description" content="${desc}"/>
-<meta property="og:type" content="website"/>
-<meta property="og:site_name" content="AGAPAY"/>
-<meta property="og:title" content="${title}"/>
-<meta property="og:description" content="${progress} · ${desc}"/>
-<meta property="og:image" content="${img}"/>
-<meta property="og:image:width" content="1200"/>
-<meta property="og:image:height" content="630"/>
-<meta property="og:url" content="${canonicalUrl}"/>
-<meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:title" content="${title}"/>
-<meta name="twitter:description" content="${progress} · ${desc}"/>
-<meta name="twitter:image" content="${img}"/>
-<meta http-equiv="refresh" content="0; url=${canonicalUrl}"/>
-</head><body><p><a href="${canonicalUrl}">${title}</a> — ${progress}</p></body></html>`;
-}
-
-async function handleCampaignPage(request, env, url) {
-  const parts    = url.pathname.split("/").filter(Boolean);
-  const slug     = parts[2];
-  const parishId = url.searchParams.get("parish") || "";
-  if (slug && parishId && isSocialCrawler(request)) {
-    try {
-      const registration = await findRegistrationByParishId(env, parishId);
-      if (registration) {
-        const parish   = parishDashboardPayload(registration);
-        const allCamps = [...(registration.campaigns || []), ...(registration.feastCampaigns || [])];
-        const campaign = allCamps.find(c => (c.slug || slugify(c.name)) === slug);
-        if (campaign) {
-          const gifts   = await loadParishPaidOfferings(env, parishId, 500);
-          const totals  = campaignRaisedTotals(campaign, gifts);
-          const enriched = { ...campaign, ...totals };
-          const canonicalUrl = `${new URL(request.url).origin}/give/parish-giving/${encodeURIComponent(slug)}?parish=${encodeURIComponent(parishId)}`;
-          return new Response(campaignBotHtml(enriched, parish, canonicalUrl), {
-            headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store" }
-          });
-        }
-      }
-    } catch (_) { /* fall through */ }
-  }
-  const assetUrl = new URL(request.url);
-  assetUrl.pathname = "/give/parish-giving/index.html";
-  return env.ASSETS.fetch(new Request(assetUrl, request));
-}
-
-async function handleCampaignApi(request, env, url) {
-  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
-  const parishId = url.searchParams.get("parish") || "";
-  const slug     = url.searchParams.get("slug") || url.searchParams.get("c") || "";
-  if (!parishId || !slug) return json({ error: "parish and slug are required" }, { status: 400 });
-  const registration = await findRegistrationByParishId(env, parishId);
-  if (!registration) return json({ error: "Parish not found" }, { status: 404 });
-  const allCamps = [...(registration.campaigns || []), ...(registration.feastCampaigns || [])];
-  const campaign = allCamps.find(c => (c.slug || slugify(c.name)) === slug);
-  if (!campaign) return json({ error: "Campaign not found" }, { status: 404 });
-  const gifts   = await loadParishPaidOfferings(env, parishId, 1000);
-  const totals  = campaignRaisedTotals(campaign, gifts);
-  const enriched = { ...campaign, ...totals };
-  const parish = parishDashboardPayload(registration);
-  return json({
-    campaign: enriched,
-    parish: { id: parish.parishId, parishId: parish.parishId, name: parish.name, imageUrl: parish.imageUrl, city: parish.city, state: parish.state }
-  });
-}
-
-async function handleCampaignUpload(request, env, url) {
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
-  const pathParts  = url.pathname.split("/").filter(Boolean);
-  const parishId   = pathParts[3];
-  const campaignId = url.searchParams.get("campaign") || "general";
-  const found = await findRegistrationByParishId(env, parishId);
-  if (!found) return json({ error: "Parish not found" }, { status: 404 });
-  const token = request.headers.get("Authorization")?.replace("Bearer ", "").trim();
-  if (!token || token !== found.parishDashboardToken) return unauthorized();
-  if (!env.CAMPAIGN_ASSETS) return json({ error: "Image storage not configured — please enable R2 in Cloudflare dashboard" }, { status: 503 });
-  const contentType = request.headers.get("Content-Type") || "image/jpeg";
-  if (!contentType.startsWith("image/")) return json({ error: "Only image uploads accepted" }, { status: 400 });
-  const ext  = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
-  const key  = `campaigns/${parishId}/${campaignId}/${crypto.randomUUID()}.${ext}`;
-  const body = await request.arrayBuffer();
-  if (body.byteLength > 10 * 1024 * 1024) return json({ error: "Image must be under 10 MB" }, { status: 413 });
-  await env.CAMPAIGN_ASSETS.put(key, body, { httpMetadata: { contentType, cacheControl: "public, max-age=31536000" } });
-  const baseUrl  = env.CAMPAIGN_ASSETS_URL || "https://pub-agapay-campaign-assets.r2.dev";
-  const photoUrl = `${baseUrl.replace(/\/+$/, "")}/${key}`;
-  return json({ ok: true, url: photoUrl, key });
-}
-
-
-async function handleAdminSendStatement(request, env) {
-  // One-time token guard
-  const body = await request.json().catch(() => ({}));
-  if (body.adminPassword !== "stmt-send-2026-agapay-joel") return json({ error: "unauthorized" }, { status: 401 });
-
-  const { to, donorName, pdfBase64 } = body;
-  if (!to || !pdfBase64) return json({ error: "missing to or pdfBase64" }, { status: 400 });
-
-  const appUrl = env.AGAPAY_APP_URL || "https://agapay.app";
-  const safeName = htmlEscape(donorName || "Joel Dunn");
-
-  const bodyHtml = `
-    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ, ${safeName}.</p>
-    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">
-      Thank you for your faithful stewardship to <strong>Holy Ascension Orthodox Church</strong> throughout 2026.
-      Your generosity supports the life and ministry of the parish — it is a true act of worship.
-    </p>
-    <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#171715;">
-      Please find your official <strong>2026 Annual Giving Statement</strong> attached to this email for your tax records.
-      No goods or services were provided in exchange for your contributions.
-    </p>
-    <div style="background:#061522;border-radius:10px;padding:20px 24px;margin:0 0 24px;display:inline-block;">
-      <p style="color:#9aabb8;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;margin:0 0 6px;font-weight:700;">Total Contributions — Tax Year 2026</p>
-      <p style="color:#F7F1E3;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:500;margin:0 0 4px;">$1,525.00</p>
-      <p style="color:#6a8a9a;font-size:12px;margin:0;">11 gifts · Holy Ascension Orthodox Church</p>
-    </div>
-    <p style="margin:0;font-size:14px;line-height:1.7;color:#595959;">
-      If you have questions about your giving history, reply to this email or visit your
-      <a href="${appUrl}/donor/" style="color:#B58A3F;">AGAPAY donor dashboard</a>.
-    </p>
-  `;
-
-  const res = await sendEmail(env, {
-    from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
-    reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
-    to: [to],
-    subject: "Your 2026 Annual Giving Statement — Holy Ascension Orthodox Church",
-    html: agapayEmailHtml(appUrl, "Your 2026 Annual Giving Statement", bodyHtml),
-    attachments: [{ filename: "giving-statement-2026.pdf", content: pdfBase64 }]
-  });
-  return json({ ok: true, result: res });
-}
-
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(sendWeeklyCommemorationEmails(env, event.scheduledTime));
@@ -7416,9 +6985,6 @@ export default {
 
     if (request.method === "POST" && url.pathname === "/api/stripe/webhook") {
       return handleStripeWebhook(request, env);
-    }
-    if (request.method === "POST" && url.pathname === "/api/webhooks/sms") {
-      return handleSignalWireSmsWebhook(request, env);
     }
     if (request.method === "GET" && url.pathname === "/api/parishes") return handleParishes(request, env);
     if (request.method === "GET" && url.pathname === "/api/platform/summary") return handlePublicPlatformSummary(env);
@@ -7522,10 +7088,6 @@ export default {
     if (url.pathname === "/api/parish/password-reset-confirm") {
       return handleParishPasswordResetConfirm(request, env);
     }
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/sms-keywords")) {
-      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").split("/")[0]);
-      return handleParishSmsKeywords(request, env, parishId);
-    }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/session")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/session", ""));
       return handleParishSession(request, env, parishId);
@@ -7579,26 +7141,6 @@ export default {
     }
     if ((request.method === "GET" || request.method === "POST") && url.pathname === "/api/checkout-session-status") {
       return handleCheckoutSessionStatus(request, env);
-    }
-
-    // Campaign page — social-crawler bot detection + static shell for humans
-    if (url.pathname.startsWith("/give/parish-giving/") && url.pathname.split("/").filter(Boolean).length >= 3) {
-      return handleCampaignPage(request, env, url);
-    }
-
-    // Campaign public API
-    if (url.pathname === "/api/campaign") {
-      return handleCampaignApi(request, env, url);
-    }
-
-    // Campaign photo upload (parish-authenticated)
-    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/campaign-upload")) {
-      return handleCampaignUpload(request, env, url);
-    }
-
-    // TEMP: admin giving statement send (protected by admin password)
-    if (url.pathname === "/api/admin/send-statement" && request.method === "POST") {
-      return handleAdminSendStatement(request, env);
     }
 
     if (url.pathname.startsWith("/api/")) {
