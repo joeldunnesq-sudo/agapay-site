@@ -42,7 +42,7 @@ import {
 
 import {
   loadAdminRegistrationPage,
-} from "./donor.js";
+} from "../lib/registrations.js";
 
 import {
   appendAdminAudit,

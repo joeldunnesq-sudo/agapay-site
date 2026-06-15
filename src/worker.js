@@ -126,9 +126,12 @@ import {
 } from "./handlers/donor.js";
 
 import {
+  loadAllRegistrations,
+} from "./lib/registrations.js";
+
+import {
   handleAdminRegistrations,
   handleAdminSession,
-  loadAllRegistrations,
   handleAdminMigrateKvToD1,
   handleAdminPlatformSummary,
   handleAdminRegistrationGivingSummary,
