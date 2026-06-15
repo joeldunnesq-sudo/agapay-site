@@ -45,6 +45,11 @@ import {
 } from "../lib/registrations.js";
 
 import {
+  monthLabel,
+  slugify,
+} from "../lib/format.js";
+
+import {
   defaultSubscriptionTier,
   subscriptionReady,
   subscriptionTier,
@@ -55,13 +60,11 @@ import {
   generateDashboardToken,
   listYtdStripeCharges,
   loadRegistrationByReference,
-  monthLabel,
   requireAdmin,
   requireAdminContext,
   saveCommemorationEntry,
   saveRegistrationRecord,
   sendDashboardInvite,
-  slugify,
   statusTimelineWithNext,
   storeDonorOffering,
   stripeAccountStatus,

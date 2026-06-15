@@ -14,6 +14,10 @@ import {
 
 import {
   absoluteWebsiteUrl,
+  slugify,
+} from "../lib/format.js";
+
+import {
   appendAdminAudit,
   booleanFromStripeMetadata,
   checkoutPaymentIntentId,
@@ -28,7 +32,6 @@ import {
   requireAdminContext,
   saveRegistrationRecord,
   sendTreasurerStripeInvite,
-  slugify,
   storeDonorOffering,
   stripeAccountStatus,
   stripeFormRequest,

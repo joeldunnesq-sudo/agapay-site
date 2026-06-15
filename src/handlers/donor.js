@@ -33,12 +33,19 @@ import {
 
 import {
   agapayEmailHtml,
+  sendEmail,
+} from "../lib/email.js";
+
+import {
+  htmlEscape,
+} from "../lib/format.js";
+
+import {
   checkoutPaymentIntentId,
   donorSummaryFromOfferings,
   enrichParishGivingOptions,
   findCheckoutParish,
   findRegistrationByParishId,
-  htmlEscape,
   loadDonorOfferingByCheckout,
   loadDonorOfferingByPaymentIntent,
   loadDonorOfferings,
@@ -50,7 +57,6 @@ import {
   publicDonorOffering,
   reconcilePendingDonorOfferings,
   requireDonor,
-  sendEmail,
   storeDonorOffering,
   stripeAccountStatus,
   stripeFormConnectedRequest,

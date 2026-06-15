@@ -4,6 +4,8 @@ import path from "node:path";
 const root = process.cwd();
 const sourceFiles = [
   "src/lib/core.js",
+  "src/lib/email.js",
+  "src/lib/format.js",
   "src/lib/registrations.js",
   "src/handlers/parish.js",
   "src/handlers/donor.js",
