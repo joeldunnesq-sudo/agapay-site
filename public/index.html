@@ -383,7 +383,11 @@
     const canvas = document.querySelector("#sacredCanvas");
 
     async function startSacredScene() {
-      if (!canvas || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      if (
+        !canvas ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+        window.matchMedia("(max-width: 720px)").matches
+      ) return;
 
       try {
         const [{ default: gsap }, THREE] = await Promise.all([
@@ -569,7 +573,23 @@
       }
     }
 
-    (typeof requestIdleCallback !== 'undefined' ? requestIdleCallback : (cb) => setTimeout(cb, 200))(startSacredScene);
+    function scheduleSacredScene() {
+      const start = () => {
+        if ("requestIdleCallback" in window) {
+          window.requestIdleCallback(() => startSacredScene(), { timeout: 2500 });
+        } else {
+          window.setTimeout(() => startSacredScene(), 1200);
+        }
+      };
+
+      if (document.readyState === "complete") {
+        start();
+      } else {
+        window.addEventListener("load", start, { once: true });
+      }
+    }
+
+    scheduleSacredScene();
   </script>
 </body>
 </html>
