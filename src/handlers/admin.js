@@ -45,8 +45,13 @@ import {
 } from "../lib/registrations.js";
 
 import {
-  appendAdminAudit,
   defaultSubscriptionTier,
+  subscriptionReady,
+  subscriptionTier,
+} from "../lib/subscriptions.js";
+
+import {
+  appendAdminAudit,
   generateDashboardToken,
   listYtdStripeCharges,
   loadRegistrationByReference,
@@ -62,8 +67,6 @@ import {
   stripeAccountStatus,
   stripeFormRequest,
   stripeReady,
-  subscriptionReady,
-  subscriptionTier,
   summarizeCharges,
 } from "./parish.js";
 

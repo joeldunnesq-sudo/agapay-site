@@ -9,6 +9,10 @@ import {
 } from "../lib/core.js";
 
 import {
+  subscriptionTier,
+} from "../lib/subscriptions.js";
+
+import {
   absoluteWebsiteUrl,
   appendAdminAudit,
   booleanFromStripeMetadata,
@@ -31,7 +35,6 @@ import {
   stripeGetRequest,
   stripeObjectId,
   stripePaymentIntentFinancialUpdates,
-  subscriptionTier,
   updateDonorOfferingByCheckout,
   updateDonorOfferingByPaymentIntent,
 } from "./parish.js";

@@ -27,9 +27,13 @@ import {
 } from "../lib/core.js";
 
 import {
+  defaultSubscriptionTier,
+  subscriptionTier,
+} from "../lib/subscriptions.js";
+
+import {
   agapayEmailHtml,
   checkoutPaymentIntentId,
-  defaultSubscriptionTier,
   donorSummaryFromOfferings,
   enrichParishGivingOptions,
   findCheckoutParish,
@@ -52,7 +56,6 @@ import {
   stripeFormConnectedRequest,
   stripeGetConnectedRequest,
   stripePaymentIntentFinancialUpdates,
-  subscriptionTier,
   updateDonorOfferingByCheckout,
 } from "./parish.js";
 
