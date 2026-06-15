@@ -18,9 +18,17 @@ import {
 } from "../lib/format.js";
 
 import {
-  appendAdminAudit,
   booleanFromStripeMetadata,
   checkoutPaymentIntentId,
+  numericCents,
+  stripeAccountStatus,
+  stripeFormRequest,
+  stripeGetRequest,
+  stripeObjectId,
+} from "../lib/stripe-connect.js";
+
+import {
+  appendAdminAudit,
   donorName,
   ensureCommemorationEntryFromOffering,
   findRegistrationByStripeAccountId,
@@ -28,15 +36,10 @@ import {
   loadDonorOfferingByCheckout,
   loadDonorOfferingByPaymentIntent,
   loadRegistrationByReference,
-  numericCents,
   requireAdminContext,
   saveRegistrationRecord,
   sendTreasurerStripeInvite,
   storeDonorOffering,
-  stripeAccountStatus,
-  stripeFormRequest,
-  stripeGetRequest,
-  stripeObjectId,
   stripePaymentIntentFinancialUpdates,
   updateDonorOfferingByCheckout,
   updateDonorOfferingByPaymentIntent,
@@ -45,6 +48,11 @@ import {
 // src/handlers/stripe.js
 // Stripe webhook, onboarding, subscription checkout, and refresh handlers.
 
+
+async function sendDonationReceiptIfNeeded(env, offering = {}) {
+  const donorModule = await import("./donor.js");
+  return donorModule.sendDonationReceiptIfNeeded(env, offering);
+}
 
 
 export async function handleSubscriptionCheckout(request, env, reference) {

@@ -56,9 +56,16 @@ import {
 } from "../lib/subscriptions.js";
 
 import {
+  listYtdStripeCharges,
+  stripeAccountStatus,
+  stripeFormRequest,
+  stripeReady,
+  summarizeCharges,
+} from "../lib/stripe-connect.js";
+
+import {
   appendAdminAudit,
   generateDashboardToken,
-  listYtdStripeCharges,
   loadRegistrationByReference,
   requireAdmin,
   requireAdminContext,
@@ -67,10 +74,6 @@ import {
   sendDashboardInvite,
   statusTimelineWithNext,
   storeDonorOffering,
-  stripeAccountStatus,
-  stripeFormRequest,
-  stripeReady,
-  summarizeCharges,
 } from "./parish.js";
 
 // src/handlers/admin.js

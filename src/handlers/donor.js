@@ -20,6 +20,7 @@ import {
   rateLimit,
   safeParseJsonRow,
   saveDonor,
+  secureCompare,
   sha256Hex,
   unauthorized,
   verifyDonorPassword,
@@ -42,6 +43,13 @@ import {
 
 import {
   checkoutPaymentIntentId,
+  normalizedCheckoutPaymentStatus,
+  stripeAccountStatus,
+  stripeFormConnectedRequest,
+  stripeGetConnectedRequest,
+} from "../lib/stripe-connect.js";
+
+import {
   donorSummaryFromOfferings,
   enrichParishGivingOptions,
   findCheckoutParish,
@@ -51,16 +59,12 @@ import {
   loadDonorOfferings,
   loadReconciledDonorCommemorations,
   migrateDonorEmailReferences,
-  normalizedCheckoutPaymentStatus,
   offeringFeeBreakdown,
   parishFromRegistration,
   publicDonorOffering,
   reconcilePendingDonorOfferings,
   requireDonor,
   storeDonorOffering,
-  stripeAccountStatus,
-  stripeFormConnectedRequest,
-  stripeGetConnectedRequest,
   stripePaymentIntentFinancialUpdates,
   updateDonorOfferingByCheckout,
 } from "./parish.js";
