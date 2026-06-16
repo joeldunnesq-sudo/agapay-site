@@ -737,6 +737,16 @@ export async function handleDonorDashboard(request, env) {
       householdName: body.householdName ?? donor.householdName,
       contactPhone: body.contactPhone ?? body.phone ?? donor.contactPhone ?? "",
       defaultParishId: body.defaultParishId ?? body.parishId ?? donor.defaultParishId,
+      pledgeAmountCents: Number.isFinite(Number(body.pledgeAmountCents))
+        ? Math.max(0, Math.round(Number(body.pledgeAmountCents)))
+        : Number(donor.pledgeAmountCents || 0),
+      pledgeYear: body.pledgeYear ?? donor.pledgeYear ?? "",
+      addressLine1: body.addressLine1 ?? donor.addressLine1 ?? "",
+      addressLine2: body.addressLine2 ?? donor.addressLine2 ?? "",
+      city: body.city ?? donor.city ?? "",
+      state: body.state ?? donor.state ?? "",
+      postalCode: body.postalCode ?? donor.postalCode ?? "",
+      country: body.country ?? donor.country ?? "",
       updatedAt: new Date().toISOString()
     };
 
