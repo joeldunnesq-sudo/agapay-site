@@ -4561,6 +4561,98 @@ body.donor-home {
   background: rgba(240, 247, 238, 0.88);
 }
 
+.locked-product-card {
+  min-height: 22rem;
+}
+
+.locked-card-preview {
+  position: relative;
+  display: grid;
+  gap: 0.9rem;
+  filter: blur(2.4px);
+  opacity: 0.72;
+  user-select: none;
+  pointer-events: none;
+}
+
+.locked-product-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.5), transparent 13rem),
+    linear-gradient(180deg, rgba(255, 253, 248, 0.1), rgba(255, 253, 248, 0.42));
+  pointer-events: none;
+}
+
+.coming-soon-ribbon {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 3;
+  border: 1px solid rgba(255, 253, 248, 0.52);
+  border-radius: 999px;
+  padding: 0.42rem 0.78rem;
+  background: rgba(6, 21, 34, 0.88);
+  color: #fffdf8;
+  font-family: var(--sans);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 14px 28px rgba(6, 21, 34, 0.16);
+}
+
+.locked-data-list {
+  display: grid;
+  gap: 0.62rem;
+  margin-top: 0.15rem;
+}
+
+.locked-data-list div {
+  display: grid;
+  gap: 0.12rem;
+  border: 1px solid rgba(159, 47, 47, 0.14);
+  border-radius: 12px;
+  padding: 0.72rem 0.82rem;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.directory-preview-list div {
+  border-color: rgba(92, 62, 117, 0.14);
+}
+
+.locked-data-list span,
+.locked-data-list small {
+  color: rgba(6, 21, 34, 0.56);
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.locked-data-list strong {
+  color: var(--navy);
+  font-family: var(--sans);
+  font-size: 0.93rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.locked-data-list small {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.locked-product-card .my-agapay-waitlist-form {
+  z-index: 4;
+  margin-top: 0.25rem;
+}
+
 @media (max-width: 900px) {
   .donor-home .donor-home-topbar {
     flex-direction: row;

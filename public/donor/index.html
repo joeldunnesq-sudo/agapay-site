@@ -127,15 +127,23 @@
         </div>
 
         <div class="my-agapay-coming-grid" aria-label="Coming AGAPAY products">
-          <article class="ag-product-card soon-card market-card">
-            <div class="my-agapay-product-head">
-              <span class="my-agapay-product-icon market-icon"><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 13H7z"/><path d="M9 8a3 3 0 0 1 6 0"/><path d="M9 13h6"/></svg></span>
-              <div>
-                <h2>Marketplace</h2>
-                <span class="coming-pill">Coming soon</span>
+          <article class="ag-product-card soon-card market-card locked-product-card">
+            <div class="coming-soon-ribbon">Coming Soon</div>
+            <div class="locked-card-preview" aria-hidden="true">
+              <div class="my-agapay-product-head">
+                <span class="my-agapay-product-icon market-icon"><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 13H7z"/><path d="M9 8a3 3 0 0 1 6 0"/><path d="M9 13h6"/></svg></span>
+                <div>
+                  <h2>Marketplace</h2>
+                  <span class="coming-pill">Order hub</span>
+                </div>
+              </div>
+              <p>Trusted Orthodox goods from artisans, monasteries, and makers.</p>
+              <div class="locked-data-list">
+                <div><span>Recent purchase</span><strong>Beeswax tapers from Holy Cross</strong><small>Arrives Friday</small></div>
+                <div><span>Tracking</span><strong>USPS 9400 1000 0000</strong><small>Out for delivery</small></div>
+                <div><span>Saved shop</span><strong>Dunn Icon Workshop</strong><small>3 new items</small></div>
               </div>
             </div>
-            <p>Trusted Orthodox goods from artisans, monasteries, and makers.</p>
             <form class="my-agapay-waitlist-form" data-waitlist-product="marketplace">
               <label class="sr-only" for="marketplaceWaitlistEmail">Email for Marketplace waitlist</label>
               <input id="marketplaceWaitlistEmail" type="email" name="email" autocomplete="email" placeholder="Email address" required />
@@ -144,15 +152,23 @@
             </form>
           </article>
 
-          <article class="ag-product-card soon-card directory-card">
-            <div class="my-agapay-product-head">
-              <span class="my-agapay-product-icon directory-icon"><svg viewBox="0 0 24 24"><path d="M12 3l8 6v12H4V9z"/><path d="M9 21v-7h6v7"/><path d="M8 10h8"/><path d="M12 6v8"/></svg></span>
-              <div>
-                <h2>Directory</h2>
-                <span class="coming-pill">Coming soon</span>
+          <article class="ag-product-card soon-card directory-card locked-product-card">
+            <div class="coming-soon-ribbon">Coming Soon</div>
+            <div class="locked-card-preview" aria-hidden="true">
+              <div class="my-agapay-product-head">
+                <span class="my-agapay-product-icon directory-icon"><svg viewBox="0 0 24 24"><path d="M12 3l8 6v12H4V9z"/><path d="M9 21v-7h6v7"/><path d="M8 10h8"/><path d="M12 6v8"/></svg></span>
+                <div>
+                  <h2>Directory</h2>
+                  <span class="coming-pill">Local verified</span>
+                </div>
+              </div>
+              <p>Find Orthodox parishes, monasteries, schools, and services near you.</p>
+              <div class="locked-data-list directory-preview-list">
+                <div><span>Near St. Fiacre</span><strong>St. Catherine Mission</strong><small>Parish - 4.2 miles</small></div>
+                <div><span>Verified business</span><strong>Dunn Icon Workshop</strong><small>Icons and sacred gifts</small></div>
+                <div><span>Monastery</span><strong>Holy Archangel Monastery</strong><small>Prayer, goods, retreats</small></div>
               </div>
             </div>
-            <p>Find Orthodox parishes, monasteries, schools, and services.</p>
             <form class="my-agapay-waitlist-form" data-waitlist-product="directory">
               <label class="sr-only" for="directoryWaitlistEmail">Email for Directory waitlist</label>
               <input id="directoryWaitlistEmail" type="email" name="email" autocomplete="email" placeholder="Email address" required />
