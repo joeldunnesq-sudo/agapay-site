@@ -1,0 +1,355 @@
+/* public/styles/stewardship-packet.css */
+/* Print-optimised styles for the annual meeting packet */
+
+:root {
+  --packet-gold: #8B6914;
+  --packet-dark: #1a1a2e;
+  --packet-gray: #555;
+  --packet-light: #f8f8f6;
+  --font-serif: "Georgia", "Times New Roman", serif;
+  --font-sans: "Helvetica Neue", Arial, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans);
+  color: #222;
+  background: #fff;
+  font-size: 11pt;
+  line-height: 1.55;
+}
+
+/* Preview toolbar (screen only) */
+.preview-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #1a2332;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  padding: .75rem 1.5rem;
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+}
+
+.preview-toolbar .btn {
+  display: inline-flex;
+  align-items: center;
+  padding: .45rem 1rem;
+  border-radius: 6px;
+  font-size: .85rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  font-family: var(--font-sans);
+}
+
+.preview-toolbar .btn-primary { background: #c8972a; color: #000; }
+.preview-toolbar .btn-secondary { background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,.2); }
+.preview-toolbar .btn-ghost { background: transparent; color: #94a3b8; border: 1px solid rgba(255,255,255,.15); }
+
+/* ── Packet container ─────────────────────────────────────────── */
+.packet-container {
+  max-width: 8.5in;
+  margin: 0 auto;
+  padding: .5in;
+}
+
+@media print {
+  .preview-toolbar { display: none !important; }
+  .packet-container { padding: 0; max-width: none; margin: 0; }
+  body { font-size: 11pt; }
+}
+
+/* ── Cover page ───────────────────────────────────────────────── */
+.packet-cover {
+  min-height: 9in;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4px double var(--packet-gold);
+  padding: 1.5in .75in;
+  margin-bottom: .5in;
+  text-align: center;
+}
+
+@media print {
+  .packet-cover { page-break-after: always; min-height: 10in; border: 4px double var(--packet-gold); }
+}
+
+.cover-content {
+  max-width: 5.5in;
+}
+
+.cover-jurisdiction {
+  font-family: var(--font-sans);
+  font-size: 10pt;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--packet-gray);
+  margin-bottom: .5rem;
+}
+
+.cover-parish {
+  font-family: var(--font-serif);
+  font-size: 28pt;
+  font-weight: normal;
+  color: var(--packet-dark);
+  line-height: 1.2;
+  margin-bottom: 1rem;
+}
+
+.cover-rule {
+  width: 3in;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--packet-gold), transparent);
+  margin: 1rem auto;
+}
+
+.cover-title {
+  font-family: var(--font-serif);
+  font-size: 18pt;
+  font-weight: normal;
+  color: var(--packet-gold);
+  margin-bottom: .5rem;
+}
+
+.cover-year {
+  font-size: 12pt;
+  color: var(--packet-gray);
+  margin-bottom: 1.5rem;
+}
+
+.cover-details {
+  font-size: 11pt;
+  color: var(--packet-gray);
+  line-height: 1.8;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+}
+
+/* ── Section styles ───────────────────────────────────────────── */
+.packet-section {
+  margin-bottom: 1in;
+  padding-bottom: .5in;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.packet-section:last-of-type {
+  border-bottom: none;
+}
+
+@media print {
+  .page-break { page-break-before: always; }
+}
+
+.packet-section h2 {
+  font-family: var(--font-serif);
+  font-size: 15pt;
+  font-weight: normal;
+  color: var(--packet-dark);
+  border-bottom: 2px solid var(--packet-gold);
+  padding-bottom: .3rem;
+  margin-bottom: .75rem;
+}
+
+.packet-section h3 {
+  font-size: 12pt;
+  font-weight: 600;
+  margin-top: .75rem;
+  margin-bottom: .35rem;
+  color: var(--packet-dark);
+}
+
+.packet-section p {
+  margin-bottom: .5rem;
+  color: #333;
+}
+
+/* ── Agenda ───────────────────────────────────────────────────── */
+.agenda-list {
+  list-style: none;
+  counter-reset: agenda;
+  padding: 0;
+}
+
+.agenda-list li {
+  counter-increment: agenda;
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  padding: .45rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 11pt;
+}
+
+.agenda-list li::before {
+  content: counter(agenda) ".";
+  font-weight: 700;
+  color: var(--packet-gold);
+  min-width: 1.5rem;
+  flex-shrink: 0;
+}
+
+.agenda-list .duration {
+  color: var(--packet-gray);
+  font-size: 9.5pt;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── Reports ──────────────────────────────────────────────────── */
+.report-body p {
+  margin-bottom: .6rem;
+  text-align: justify;
+}
+
+/* ── Financial table ──────────────────────────────────────────── */
+.fin-table {
+  width: 100%;
+  max-width: 400px;
+  border-collapse: collapse;
+  font-size: 11pt;
+  margin-bottom: .5rem;
+}
+
+.fin-table th {
+  text-align: left;
+  padding: .4rem .5rem;
+  font-weight: 500;
+  color: var(--packet-gray);
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.fin-table td {
+  text-align: right;
+  padding: .4rem .5rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.fin-table .net-row th,
+.fin-table .net-row td {
+  font-weight: 700;
+  border-top: 2px solid var(--packet-gold);
+  border-bottom: 2px solid var(--packet-gold);
+  color: var(--packet-dark);
+}
+
+.fin-notes {
+  font-size: 10pt;
+  color: var(--packet-gray);
+  font-style: italic;
+  margin-top: .5rem;
+}
+
+/* ── Restricted funds table ───────────────────────────────────── */
+.funds-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+}
+
+.funds-table th {
+  background: var(--packet-light);
+  padding: .4rem .5rem;
+  text-align: right;
+  font-weight: 600;
+  font-size: 9pt;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--packet-gray);
+  border: 1px solid #ddd;
+}
+
+.funds-table th:first-child { text-align: left; }
+
+.funds-table td {
+  padding: .4rem .5rem;
+  border: 1px solid #e8e8e8;
+  text-align: right;
+}
+
+.funds-table td:first-child { text-align: left; }
+
+.funds-table tr:nth-child(even) td { background: #fafafa; }
+
+/* ── Nominees ─────────────────────────────────────────────────── */
+.nominees-list {
+  list-style: none;
+  padding: 0;
+  columns: 2;
+  column-gap: 1in;
+}
+
+.nominees-list li {
+  padding: .4rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  break-inside: avoid;
+}
+
+/* ── Resolutions ──────────────────────────────────────────────── */
+.resolution-item {
+  margin-bottom: .75rem;
+  padding: .75rem;
+  background: #fafafa;
+  border-left: 3px solid var(--packet-gold);
+  border-radius: 0 4px 4px 0;
+}
+
+.resolved-text {
+  font-size: 10.5pt;
+  color: #333;
+  border: none;
+  padding: .35rem 0 0;
+  margin: .35rem 0 0;
+  font-style: normal;
+}
+
+/* ── Sign-in sheet ────────────────────────────────────────────── */
+.signin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+  margin-top: .5rem;
+}
+
+.signin-table th {
+  padding: .4rem .5rem;
+  background: var(--packet-light);
+  font-weight: 600;
+  font-size: 9pt;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--packet-gray);
+  border: 1px solid #ddd;
+}
+
+.signin-table td {
+  height: .38in;
+  border: 1px solid #ddd;
+  padding: 0 .5rem;
+  font-size: 8.5pt;
+  color: var(--packet-gray);
+}
+
+/* ── Footer ───────────────────────────────────────────────────── */
+.packet-footer {
+  text-align: center;
+  font-size: 8.5pt;
+  color: #aaa;
+  margin-top: 1in;
+  padding-top: .5rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+@page {
+  margin: .75in;
+  @bottom-right {
+    content: counter(page);
+    font-size: 9pt;
+    color: #aaa;
+  }
+}
