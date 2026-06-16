@@ -761,6 +761,9 @@ export async function createSubscriptionCheckoutForRegistration(request, env, re
   const checkoutForm = new URLSearchParams({
     mode: "subscription",
     customer: stripeCustomerId,
+    "automatic_tax[enabled]": "true",
+    billing_address_collection: "required",
+    "customer_update[address]": "auto",
     success_url: `${appUrl}${returnPath}${returnSeparator}subscription_return=${encodeURIComponent(reference)}`,
     cancel_url: `${appUrl}${returnPath}${returnSeparator}subscription_cancel=${encodeURIComponent(reference)}`,
     client_reference_id: reference,
@@ -780,6 +783,7 @@ export async function createSubscriptionCheckoutForRegistration(request, env, re
     checkoutForm.set("line_items[0][price_data][currency]", "usd");
     checkoutForm.set("line_items[0][price_data][unit_amount]", String(tier.monthlyCents));
     checkoutForm.set("line_items[0][price_data][recurring][interval]", "month");
+    checkoutForm.set("line_items[0][price_data][tax_behavior]", "exclusive");
     checkoutForm.set("line_items[0][price_data][product_data][name]", `AGAPAY ${tier.label} Subscription`);
     checkoutForm.set("line_items[0][price_data][product_data][description]", tier.description);
   }

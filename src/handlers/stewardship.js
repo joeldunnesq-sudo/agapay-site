@@ -1035,6 +1035,9 @@ export async function handleParishStewardshipSubscribe(request, env, parishId) {
   const session = await stripePlatformPost(env, "/checkout/sessions", {
     customer: customerId,
     mode: "subscription",
+    "automatic_tax[enabled]": "true",
+    billing_address_collection: "required",
+    "customer_update[address]": "auto",
     "line_items[0][price]": priceId,
     "line_items[0][quantity]": "1",
     "subscription_data[trial_period_days]": "14",
@@ -1259,6 +1262,9 @@ export async function handleStewardshipSubscribe(request, env) {
   const session = await stripePlatformPost(env, "/checkout/sessions", {
     customer: customerId,
     mode: "subscription",
+    "automatic_tax[enabled]": "true",
+    billing_address_collection: "required",
+    "customer_update[address]": "auto",
     "line_items[0][price]": priceId,
     "line_items[0][quantity]": "1",
     "subscription_data[trial_period_days]": "14",
