@@ -11,7 +11,7 @@
   ];
 
   const SIGN_IN_LINKS = [
-    { href: "/donor/login", label: "Stewardship Dashboard" },
+    { href: "/donor/login", label: "My AGAPAY Dashboard" },
     { href: "/parish/login", label: "Organization Dashboard" }
   ];
 
@@ -163,7 +163,7 @@
             </nav>
             <nav class="footer-col" aria-label="Account">
               <h4>Account</h4>
-              <a href="/donor/login">Stewardship Dashboard</a>
+              <a href="/donor/login">My AGAPAY</a>
               <a href="/parish/login">Organization Dashboard</a>
             </nav>
             <nav class="footer-col" aria-label="Legal">

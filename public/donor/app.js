@@ -197,6 +197,15 @@ function showGuestDonorDashboard() {
   setText("profileMeta", "Sign in to load live giving history");
   setText("greeting", "Welcome, Faithful Member");
   setText("desktopGreeting", "Welcome, Faithful Member");
+  setText("myAgapayGreetingName", "Faithful Member");
+  setText("myAgapayDefaultParish", "Choose a church in Settings");
+  setText("myAgapayLearnFeast", "Open calendar");
+  setText("myAgapayRecurringCount", "0 Active");
+  setText("myAgapayRecentAmount", "$0");
+  setText("myAgapayGivingMonth", "$0");
+  setText("myAgapaySnapshotMonth", "$0");
+  setText("myAgapaySnapshotRecurring", "0");
+  setText("myAgapaySnapshotCommemorations", "0");
   setText("donorParishName", "");
   setText("desktopParishName", "Sign in to load your church, giving history, and saved offering preferences.");
   setText("metricMonth", "$0");
@@ -212,6 +221,16 @@ function showGuestDonorDashboard() {
   if (recent) recent.innerHTML = "";
   const desktopRecent = document.getElementById("desktopRecentOfferings");
   if (desktopRecent) desktopRecent.innerHTML = "";
+  const myAgapayActivity = document.getElementById("myAgapayActivity");
+  if (myAgapayActivity) {
+    myAgapayActivity.innerHTML = `
+      <div class="my-agapay-activity-item">
+        <span class="activity-dot">+</span>
+        <div><strong>Sign in to load your AGAPAY activity</strong><span>Your giving, learning, and organization updates will appear here.</span></div>
+        <a class="activity-amount" href="/donor/login">Log in</a>
+      </div>
+    `;
+  }
   renderActiveCampaigns(null);
   renderNextFeast(null);
   updateQuickGiveLinks(null);
@@ -1030,12 +1049,74 @@ function cacheDonorDashboardPayload(data) {
   }
 }
 
+function renderMyAgapayDashboard(data) {
+  const donor = data?.donor || {};
+  const summary = data?.summary || {};
+  const parish = data?.parish || null;
+  const recentOfferings = Array.isArray(data?.recentOfferings) ? data.recentOfferings : [];
+  const monthCents = summary.parishNetMonthCents ?? summary.monthCents;
+  const ytdCents = summary.parishNetYtdCents ?? summary.ytdCents;
+  const latestOffering = recentOfferings[0] || null;
+  const feast = parish ? nextFeastForCalendar(parish.calendar) : null;
+
+  setText("myAgapayGreetingName", donorDisplayName(donor));
+  setText("myAgapayDefaultParish", parish?.name || "Choose a church in Settings");
+  setText("myAgapayLearnFeast", feast?.name || "Open calendar");
+  setText("myAgapayRecurringCount", `${summary.recurringCount || 0} Active`);
+  setText("myAgapayRecentAmount", latestOffering ? money(latestOffering.amountCents) : money(ytdCents));
+  setText("myAgapayGivingMonth", money(monthCents));
+  setText("myAgapaySnapshotMonth", money(monthCents));
+  setText("myAgapaySnapshotRecurring", String(summary.recurringCount || 0));
+  setText("myAgapaySnapshotCommemorations", String(summary.commemorationCount || 0));
+
+  const activity = document.getElementById("myAgapayActivity");
+  if (!activity) return;
+
+  const offeringActivities = recentOfferings.slice(0, 4).map((offering) => ({
+    glyph: "G",
+    title: `Donation to ${offering.parishName || parish?.name || "your parish"}`,
+    meta: `${offering.giftType || "Offering"} - ${shortDate(offering.createdAt)}`,
+    value: money(offering.amountCents),
+    href: "/donor/offerings"
+  }));
+
+  const fallbackActivities = [
+    {
+      glyph: "L",
+      title: "AGAPAY Learn is ready",
+      meta: "Open your Orthodox homeschool dashboard",
+      value: "View",
+      href: "/learn/app"
+    },
+    {
+      glyph: "C",
+      title: `${summary.commemorationCount || 0} commemorations recorded`,
+      meta: "Names submitted through AGAPAY",
+      value: "View",
+      href: "/donor/commemorations"
+    }
+  ];
+
+  const activities = offeringActivities.length
+    ? offeringActivities.concat(fallbackActivities).slice(0, 5)
+    : fallbackActivities;
+
+  activity.innerHTML = activities.map((item) => `
+    <div class="my-agapay-activity-item">
+      <span class="activity-dot">${escapeHtml(item.glyph)}</span>
+      <div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.meta)}</span></div>
+      <a class="activity-amount" href="${escapeHtml(item.href)}">${escapeHtml(item.value)}</a>
+    </div>
+  `).join("");
+}
+
 function renderDonorDashboardPayload(data) {
   if (!data) return;
   setDonorProfile(data.donor);
   const summary = data.summary || {};
   const parish = data.parish || null;
   const recentOfferings = data.recentOfferings || [];
+  renderMyAgapayDashboard(data);
 
   setText("metricMonth", money(summary.parishNetMonthCents ?? summary.monthCents));
   setText("metricYtd", money(summary.parishNetYtdCents ?? summary.ytdCents));
