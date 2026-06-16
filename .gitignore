@@ -1,0 +1,11 @@
+node_modules/
+package-lock.json
+
+# Local scratch files created during Codex/Claude iterations
+index-script-snippet.txt
+tmp-*/
+
+# Local logs and environment files
+*.log
+.env
+.env.*

@@ -152,6 +152,11 @@ import {
 } from "./handlers/stripe.js";
 
 import {
+  handleParishStewardshipBillingPortal,
+  handleParishStewardshipMeetingDetail,
+  handleParishStewardshipMeetings,
+  handleParishStewardshipSubscribe,
+  handleParishStewardshipSummary,
   handleStewardshipHome,
   handleStewardshipSubscribe,
   handleStewardshipBilling,
@@ -163,6 +168,18 @@ import {
   handleStewardshipMeetingPdf,
   handleStewardshipWebhook,
 } from "./handlers/stewardship.js";
+
+import {
+  handleLearnBooks,
+  handleLearnCoOp,
+  handleLearnDashboard,
+  handleLearnFormation,
+  handleLearnMeta,
+  handleLearnOnboarding,
+  handleLearnPlanner,
+  handleLearnPrintCenter,
+  handleLearnReports,
+} from "./learn/handlers.js";
 
 
 
@@ -429,6 +446,14 @@ function handleLiturgicalCalendar(request) {
 function cleanAssetRequest(request) {
   const url = new URL(request.url);
   if (url.pathname === "/") return request;
+  if (url.pathname === "/learn" || url.pathname === "/learn/") {
+    url.pathname = "/learn/index.html";
+    return new Request(url, request);
+  }
+  if (url.pathname.startsWith("/learn/") && !url.pathname.includes(".")) {
+    url.pathname = `${url.pathname}.html`;
+    return new Request(url, request);
+  }
   if (url.pathname === "/admin") {
     url.pathname = "/admin.html";
     return new Request(url, request);
@@ -487,6 +512,18 @@ function cleanAssetRequest(request) {
   }
   if (url.pathname === "/giving/event-payments") {
     url.pathname = "/give/event-payments.html";
+    return new Request(url, request);
+  }
+  if (url.pathname === "/giving/features") {
+    url.pathname = "/features.html";
+    return new Request(url, request);
+  }
+  if (url.pathname === "/giving/how-it-works") {
+    url.pathname = "/how-it-works.html";
+    return new Request(url, request);
+  }
+  if (url.pathname === "/giving/pricing") {
+    url.pathname = "/pricing.html";
     return new Request(url, request);
   }
   if (url.pathname === "/give/find_parish") {
@@ -603,6 +640,33 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/liturgical-calendar") {
       return handleLiturgicalCalendar(request);
+    }
+    if (request.method === "GET" && url.pathname === "/api/learn/meta") {
+      return handleLearnMeta(env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/learn/dashboard") {
+      return handleLearnDashboard(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/learn/planner") {
+      return handleLearnPlanner(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/learn/print-center") {
+      return handleLearnPrintCenter(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/learn/formation") {
+      return handleLearnFormation(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/learn/books") {
+      return handleLearnBooks(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/learn/reports") {
+      return handleLearnReports(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/learn/co-op") {
+      return handleLearnCoOp(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/learn/onboarding") {
+      return handleLearnOnboarding(request, env);
     }
     if (request.method === "POST" && url.pathname === "/api/registrations") return handleRegistrations(request, env);
     if (url.pathname === "/api/donor/signup") {
@@ -735,6 +799,28 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/payout-diagnostics")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/payout-diagnostics", ""));
       return handleParishPayoutDiagnostics(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship", ""));
+      return handleParishStewardshipSummary(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/subscribe")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/subscribe", ""));
+      return handleParishStewardshipSubscribe(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/billing-portal")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/billing-portal", ""));
+      return handleParishStewardshipBillingPortal(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/meetings")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/meetings", ""));
+      return handleParishStewardshipMeetings(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/stewardship/meetings/")) {
+      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/stewardship/meetings/");
+      const parishId = decodeURIComponent(parts[0] || "");
+      const meetingId = decodeURIComponent(parts[1] || "");
+      return handleParishStewardshipMeetingDetail(request, env, parishId, meetingId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", ""));

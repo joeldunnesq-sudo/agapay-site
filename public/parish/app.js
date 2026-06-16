@@ -10,6 +10,7 @@
   let campaignPhotos    = [];
   let allGifts          = [];   // full history cache
   let filteredGifts     = [];   // filtered view
+  let stewardshipState   = { loaded: false, stewardship: null, meetings: [], selectedMeeting: null };
   const parishSessionStorageKey = 'agapay_parish_session_token';
   const legacyParishTokenStorageKey = 'agapay_parish_token';
 
@@ -120,12 +121,13 @@
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds', campaigns:'Campaigns', text:'Text-to-Give', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
     if (tab === 'givers' && allGifts.length) renderGiversPanel();
     if (tab === 'qr') renderBulletinPreview();
+    if (tab === 'stewardship') loadStewardshipPanel();
     document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
     if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -280,6 +282,386 @@
   function shortDate(v) { if (!v) return 'No gifts yet'; return new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric'}).format(new Date(v)); }
   function fullDate(v)  { if (!v) return '—'; return new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(new Date(v)); }
   function escapeHtml(v) { return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function escapeAttr(v) { return escapeHtml(v).replace(/'/g,'&#39;'); }
+  function isoDateLabel(value) {
+    if (!value) return 'Not set';
+    const raw = String(value);
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(raw + 'T12:00:00') : new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
+  }
+
+  function stewardshipApi(path = '') {
+    if (!currentParish?.parishId) throw new Error('Load a parish first.');
+    return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/stewardship' + path;
+  }
+
+  async function loadStewardshipPanel(force = false) {
+    const status = document.getElementById('stewardshipStatusLabel');
+    const planPane = document.getElementById('stewardshipPlanPane');
+    const meetingsPane = document.getElementById('stewardshipMeetingsPane');
+    if (!planPane || !meetingsPane) return;
+    if (!currentParish) {
+      if (status) status.textContent = 'Not loaded';
+      planPane.innerHTML = '<p class="muted">Load your parish dashboard to view Stewardship access.</p>';
+      meetingsPane.innerHTML = '<p class="muted">Load your parish dashboard to view annual meeting packets.</p>';
+      return;
+    }
+    if (stewardshipState.loaded && !force) {
+      renderStewardshipPanel();
+      return;
+    }
+    planPane.innerHTML = '<p class="muted">Loading Stewardship...</p>';
+    meetingsPane.innerHTML = '<p class="muted">Loading annual meeting packets...</p>';
+    try {
+      const res = await fetch(stewardshipApi(), { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to load Stewardship.');
+      stewardshipState = {
+        loaded: true,
+        stewardship: data.stewardship || null,
+        meetings: data.meetings || [],
+        subscribePlans: data.subscribePlans || [],
+        setupRequired: Boolean(data.setupRequired),
+        selectedMeeting: stewardshipState.selectedMeeting
+      };
+      renderStewardshipPanel();
+    } catch (err) {
+      if (status) status.textContent = 'Error';
+      planPane.innerHTML = `<p class="muted error-text">${escapeHtml(err.message)}</p>`;
+      meetingsPane.innerHTML = '<p class="muted">Annual meeting packets could not be loaded.</p>';
+    }
+  }
+
+  function renderStewardshipPanel() {
+    const status = document.getElementById('stewardshipStatusLabel');
+    const planPane = document.getElementById('stewardshipPlanPane');
+    const meetingsPane = document.getElementById('stewardshipMeetingsPane');
+    if (!planPane || !meetingsPane) return;
+    const stewardship = stewardshipState.stewardship || { status:'no_subscription', active:false };
+    if (status) status.textContent = statusLabel(stewardship.status || 'no_subscription');
+    const active = Boolean(stewardship.active);
+    if (stewardshipState.setupRequired) {
+      planPane.innerHTML = `
+        <div class="stewardship-status-banner">
+          <strong>Database setup required</strong>
+          <span>Run the Stewardship D1 migration before creating annual meeting packets.</span>
+        </div>`;
+      meetingsPane.innerHTML = `
+        <div class="stewardship-empty">
+          <strong>Stewardship tables are not installed yet.</strong>
+          <span>Apply <code>migrations/0003_stewardship.sql</code> to enable this module.</span>
+        </div>`;
+      return;
+    }
+    const period = stewardship.currentPeriodEnd ? isoDateLabel(Number(stewardship.currentPeriodEnd) * 1000) : '';
+    const planCards = (stewardshipState.subscribePlans || []).map(plan => `
+      <button class="stewardship-plan-option" type="button" onclick="startStewardshipSubscription('${escapeAttr(plan.id)}', this)">
+        <strong>${escapeHtml(plan.label)}</strong>
+        <span>${escapeHtml(plan.priceLabel)}</span>
+        <small>${escapeHtml(plan.trialLabel || '14-day free trial')}</small>
+      </button>
+    `).join('');
+    planPane.innerHTML = active ? `
+      <div class="stewardship-status-banner active">
+        <strong>${escapeHtml(statusLabel(stewardship.status))}</strong>
+        <span>${period ? `Current period ends ${escapeHtml(period)}.` : 'Your Stewardship workspace is active.'}</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-gold" type="button" onclick="openStewardshipBilling(this)">Manage billing</button>
+        <button class="btn btn-ghost" type="button" onclick="loadStewardshipPanel(true)">Refresh status</button>
+      </div>
+    ` : `
+      <div class="stewardship-status-banner">
+        <strong>${escapeHtml(statusLabel(stewardship.status || 'no_subscription'))}</strong>
+        <span>Subscribe to unlock annual meeting packets and stewardship records.</span>
+      </div>
+      <div class="stewardship-plan-options">${planCards}</div>
+    `;
+
+    if (!active) {
+      meetingsPane.innerHTML = `
+        <div class="stewardship-empty">
+          <strong>Stewardship is ready when you are.</strong>
+          <span>Start a monthly or annual plan to create annual meeting packets inside this dashboard.</span>
+        </div>`;
+      return;
+    }
+
+    const rows = (stewardshipState.meetings || []).map(meeting => `
+      <tr>
+        <td><strong>${escapeHtml(meeting.title || 'Annual Meeting')}</strong><span>${escapeHtml(meeting.location || 'No location set')}</span></td>
+        <td>${escapeHtml(String(meeting.fiscalYear || ''))}</td>
+        <td>${escapeHtml(isoDateLabel(meeting.meetingDate))}</td>
+        <td><span class="status-pill">${escapeHtml(statusLabel(meeting.status || 'draft'))}</span></td>
+        <td class="table-actions">
+          <button class="btn btn-ghost btn-sm" type="button" onclick="editStewardshipMeeting('${escapeAttr(meeting.id)}')">Edit</button>
+          <a class="btn btn-ghost btn-sm" href="${escapeAttr(stewardshipPreviewUrl(meeting.id))}" target="_blank" rel="noopener">Preview</a>
+        </td>
+      </tr>
+    `).join('');
+    meetingsPane.innerHTML = rows ? `
+      <div class="stewardship-table-wrap">
+        <table class="stewardship-table">
+          <thead><tr><th>Packet</th><th>Year</th><th>Date</th><th>Status</th><th></th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    ` : `
+      <div class="stewardship-empty">
+        <strong>No annual meeting packets yet.</strong>
+        <span>Create your first packet to organize agendas, reports, finances, nominees, and resolutions.</span>
+        <button class="btn btn-gold" type="button" onclick="newStewardshipMeeting()">Create first packet</button>
+      </div>`;
+  }
+
+  function stewardshipPreviewUrl(meetingId, suffix = 'preview') {
+    const token = document.getElementById('parishToken')?.value.trim() || sessionStorage.getItem(parishSessionStorageKey) || '';
+    const url = new URL('/parish/stewardship/annual-meetings/' + encodeURIComponent(meetingId) + '/' + suffix, window.location.origin);
+    url.searchParams.set('parishId', currentParish?.parishId || '');
+    url.searchParams.set('t', token);
+    return url.pathname + url.search;
+  }
+
+  async function startStewardshipSubscription(plan, btn) {
+    if (!currentParish) { setStatus('Load a parish first.','error'); return; }
+    if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+    try {
+      const res = await fetch(stewardshipApi('/subscribe'), {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type':'application/json' },
+        body: JSON.stringify({ plan })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to start Stewardship checkout.');
+      if (data.checkoutUrl) window.location.href = data.checkoutUrl;
+    } catch (err) {
+      setStatus(err.message, 'error');
+      if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+    }
+  }
+
+  async function openStewardshipBilling(btn) {
+    if (!currentParish) { setStatus('Load a parish first.','error'); return; }
+    if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+    try {
+      const res = await fetch(stewardshipApi('/billing-portal'), { method:'POST', headers:authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to open Stewardship billing.');
+      if (data.portalUrl) window.location.href = data.portalUrl;
+    } catch (err) {
+      setStatus(err.message, 'error');
+      if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+    }
+  }
+
+  function emptyStewardshipMeeting() {
+    const year = new Date().getFullYear();
+    return {
+      id: '',
+      title: `${year} Annual Parish Meeting`,
+      fiscalYear: year,
+      meetingDate: '',
+      meetingTime: '',
+      location: '',
+      parishNameOverride: currentParish?.parishName || '',
+      jurisdiction: '',
+      address: '',
+      status: 'draft',
+      agendaItems: [{ title:'Opening prayer', durationMinutes:5 }, { title:'Reports', durationMinutes:30 }, { title:'Financial review', durationMinutes:20 }],
+      reports: [{ reportType:'priest', title:'Rector Report', body:'' }, { reportType:'treasurer', title:'Treasurer Report', body:'' }],
+      financialSummary: { totalIncomeCents:0, totalExpenseCents:0, netCents:0, notes:'' },
+      restrictedFunds: [],
+      nominees: [],
+      resolutions: []
+    };
+  }
+
+  function newStewardshipMeeting() {
+    if (!currentParish) { setStatus('Load a parish first.','error'); return; }
+    if (!stewardshipState.stewardship?.active) { setStatus('Subscribe to Stewardship before creating packets.','error'); return; }
+    stewardshipState.selectedMeeting = emptyStewardshipMeeting();
+    renderStewardshipEditor();
+  }
+
+  async function editStewardshipMeeting(meetingId) {
+    if (!meetingId) return;
+    try {
+      const card = document.getElementById('stewardshipEditorCard');
+      const pane = document.getElementById('stewardshipEditorPane');
+      if (card) card.hidden = false;
+      if (pane) pane.innerHTML = '<p class="muted">Loading packet...</p>';
+      const res = await fetch(stewardshipApi('/meetings/' + encodeURIComponent(meetingId)), { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to load packet.');
+      stewardshipState.selectedMeeting = data.meeting;
+      renderStewardshipEditor();
+    } catch (err) {
+      setStatus(err.message, 'error');
+    }
+  }
+
+  function closeStewardshipEditor() {
+    stewardshipState.selectedMeeting = null;
+    const card = document.getElementById('stewardshipEditorCard');
+    if (card) card.hidden = true;
+  }
+
+  function stewardshipRepeaterRows(type, items) {
+    const rows = items && items.length ? items : [{}];
+    return rows.map((item, index) => {
+      if (type === 'agenda') return `<div class="stewardship-repeat-row" data-row-type="agenda">
+        <input type="text" data-field="title" value="${escapeAttr(item.title)}" placeholder="Agenda item" />
+        <input type="number" data-field="durationMinutes" value="${escapeAttr(item.durationMinutes)}" placeholder="Minutes" />
+        <button class="btn btn-ghost btn-sm" type="button" onclick="removeStewardshipRow(this)">Remove</button>
+      </div>`;
+      if (type === 'report') return `<div class="stewardship-repeat-row" data-row-type="report">
+        <select data-field="reportType">
+          ${['priest','warden','treasurer','stewardship','ministry','custom'].map(t=>`<option value="${t}" ${item.reportType===t?'selected':''}>${statusLabel(t)}</option>`).join('')}
+        </select>
+        <input type="text" data-field="title" value="${escapeAttr(item.title)}" placeholder="Report title" />
+        <textarea data-field="body" rows="3" placeholder="Report notes">${escapeHtml(item.body)}</textarea>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="removeStewardshipRow(this)">Remove</button>
+      </div>`;
+      if (type === 'fund') return `<div class="stewardship-repeat-row" data-row-type="fund">
+        <input type="text" data-field="fundName" value="${escapeAttr(item.fundName)}" placeholder="Fund name" />
+        <input type="number" data-field="beginningBalance" value="${Number(item.beginningBalanceCents||0)/100 || ''}" placeholder="Beginning $" />
+        <input type="number" data-field="totalReceived" value="${Number(item.totalReceivedCents||0)/100 || ''}" placeholder="Received $" />
+        <input type="number" data-field="totalDisbursed" value="${Number(item.totalDisbursedCents||0)/100 || ''}" placeholder="Disbursed $" />
+        <input type="number" data-field="endingBalance" value="${Number(item.endingBalanceCents||0)/100 || ''}" placeholder="Ending $" />
+        <button class="btn btn-ghost btn-sm" type="button" onclick="removeStewardshipRow(this)">Remove</button>
+      </div>`;
+      if (type === 'nominee') return `<div class="stewardship-repeat-row" data-row-type="nominee">
+        <input type="text" data-field="fullName" value="${escapeAttr(item.fullName)}" placeholder="Nominee name" />
+        <input type="text" data-field="position" value="${escapeAttr(item.position)}" placeholder="Position" />
+        <button class="btn btn-ghost btn-sm" type="button" onclick="removeStewardshipRow(this)">Remove</button>
+      </div>`;
+      return `<div class="stewardship-repeat-row" data-row-type="resolution">
+        <input type="text" data-field="title" value="${escapeAttr(item.title)}" placeholder="Resolution title" />
+        <textarea data-field="resolvedText" rows="3" placeholder="Resolved text">${escapeHtml(item.resolvedText)}</textarea>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="removeStewardshipRow(this)">Remove</button>
+      </div>`;
+    }).join('');
+  }
+
+  function renderStewardshipEditor() {
+    const meeting = stewardshipState.selectedMeeting || emptyStewardshipMeeting();
+    const card = document.getElementById('stewardshipEditorCard');
+    const pane = document.getElementById('stewardshipEditorPane');
+    const title = document.getElementById('stewardshipEditorTitle');
+    if (!card || !pane) return;
+    card.hidden = false;
+    if (title) title.textContent = meeting.id ? 'Edit Annual Meeting Packet' : 'New Annual Meeting Packet';
+    const income = Number(meeting.financialSummary?.totalIncomeCents || 0) / 100;
+    const expense = Number(meeting.financialSummary?.totalExpenseCents || 0) / 100;
+    pane.innerHTML = `
+      <form class="stewardship-native-form" id="stewardshipMeetingForm" onsubmit="saveStewardshipMeeting(event, 'draft')">
+        <div class="stewardship-form-grid">
+          <label>Title<input name="title" value="${escapeAttr(meeting.title)}" required /></label>
+          <label>Fiscal year<input name="fiscalYear" type="number" value="${escapeAttr(meeting.fiscalYear)}" required /></label>
+          <label>Meeting date<input name="meetingDate" type="date" value="${escapeAttr(meeting.meetingDate)}" /></label>
+          <label>Meeting time<input name="meetingTime" type="time" value="${escapeAttr(meeting.meetingTime)}" /></label>
+          <label>Location<input name="location" value="${escapeAttr(meeting.location)}" /></label>
+          <label>Jurisdiction<input name="jurisdiction" value="${escapeAttr(meeting.jurisdiction)}" /></label>
+        </div>
+        <label>Address<textarea name="address" rows="2">${escapeHtml(meeting.address)}</textarea></label>
+        <div class="stewardship-editor-section"><div><h3>Agenda</h3><button class="btn btn-ghost btn-sm" type="button" onclick="addStewardshipRow('agenda')">Add item</button></div><div id="stewardshipAgendaRows">${stewardshipRepeaterRows('agenda', meeting.agendaItems)}</div></div>
+        <div class="stewardship-editor-section"><div><h3>Reports</h3><button class="btn btn-ghost btn-sm" type="button" onclick="addStewardshipRow('report')">Add report</button></div><div id="stewardshipReportRows">${stewardshipRepeaterRows('report', meeting.reports)}</div></div>
+        <div class="stewardship-editor-section"><div><h3>Financial summary</h3></div><div class="stewardship-form-grid">
+          <label>Total income<input name="totalIncome" type="number" step="0.01" value="${income || ''}" /></label>
+          <label>Total expenses<input name="totalExpense" type="number" step="0.01" value="${expense || ''}" /></label>
+          <label>Notes<textarea name="financialNotes" rows="2">${escapeHtml(meeting.financialSummary?.notes || '')}</textarea></label>
+        </div></div>
+        <div class="stewardship-editor-section"><div><h3>Restricted funds</h3><button class="btn btn-ghost btn-sm" type="button" onclick="addStewardshipRow('fund')">Add fund</button></div><div id="stewardshipFundRows">${stewardshipRepeaterRows('fund', meeting.restrictedFunds)}</div></div>
+        <div class="stewardship-editor-section"><div><h3>Nominees</h3><button class="btn btn-ghost btn-sm" type="button" onclick="addStewardshipRow('nominee')">Add nominee</button></div><div id="stewardshipNomineeRows">${stewardshipRepeaterRows('nominee', meeting.nominees)}</div></div>
+        <div class="stewardship-editor-section"><div><h3>Resolutions</h3><button class="btn btn-ghost btn-sm" type="button" onclick="addStewardshipRow('resolution')">Add resolution</button></div><div id="stewardshipResolutionRows">${stewardshipRepeaterRows('resolution', meeting.resolutions)}</div></div>
+        <div class="btn-row">
+          <button class="btn btn-gold" type="submit">Save draft</button>
+          <button class="btn btn-ghost" type="button" onclick="saveStewardshipMeeting(event, 'ready')">Mark ready</button>
+          ${meeting.id ? `<a class="btn btn-ghost" href="${escapeAttr(stewardshipPreviewUrl(meeting.id))}" target="_blank" rel="noopener">Preview</a><a class="btn btn-ghost" href="${escapeAttr(stewardshipPreviewUrl(meeting.id, 'pdf'))}" target="_blank" rel="noopener">Print/PDF</a>` : ''}
+        </div>
+      </form>`;
+    card.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  function addStewardshipRow(type) {
+    const target = document.getElementById({ agenda:'stewardshipAgendaRows', report:'stewardshipReportRows', fund:'stewardshipFundRows', nominee:'stewardshipNomineeRows', resolution:'stewardshipResolutionRows' }[type]);
+    if (!target) return;
+    target.insertAdjacentHTML('beforeend', stewardshipRepeaterRows(type, [{}]));
+  }
+
+  function removeStewardshipRow(btn) {
+    const row = btn?.closest('.stewardship-repeat-row');
+    const parent = row?.parentElement;
+    if (!row || !parent) return;
+    if (parent.querySelectorAll('.stewardship-repeat-row').length <= 1) {
+      row.querySelectorAll('input, textarea').forEach(input => input.value = '');
+      return;
+    }
+    row.remove();
+  }
+
+  function readStewardshipRows(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return [];
+    return [...container.querySelectorAll('.stewardship-repeat-row')].map(row => {
+      const item = {};
+      row.querySelectorAll('[data-field]').forEach(input => { item[input.dataset.field] = input.value.trim(); });
+      return item;
+    }).filter(item => Object.values(item).some(Boolean));
+  }
+
+  function dollarsToNumber(value) {
+    const amount = Number(String(value || '').replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(amount) ? amount : 0;
+  }
+
+  async function saveStewardshipMeeting(event, status = 'draft') {
+    event?.preventDefault?.();
+    const form = document.getElementById('stewardshipMeetingForm');
+    if (!form) return;
+    const fd = new FormData(form);
+    const meeting = stewardshipState.selectedMeeting || {};
+    const body = {
+      title: fd.get('title'),
+      fiscalYear: fd.get('fiscalYear'),
+      meetingDate: fd.get('meetingDate'),
+      meetingTime: fd.get('meetingTime'),
+      location: fd.get('location'),
+      jurisdiction: fd.get('jurisdiction'),
+      address: fd.get('address'),
+      status,
+      agendaItems: readStewardshipRows('stewardshipAgendaRows'),
+      reports: readStewardshipRows('stewardshipReportRows'),
+      financialSummary: {
+        totalIncome: dollarsToNumber(fd.get('totalIncome')),
+        totalExpense: dollarsToNumber(fd.get('totalExpense')),
+        notes: fd.get('financialNotes')
+      },
+      restrictedFunds: readStewardshipRows('stewardshipFundRows'),
+      nominees: readStewardshipRows('stewardshipNomineeRows'),
+      resolutions: readStewardshipRows('stewardshipResolutionRows')
+    };
+    const method = meeting.id ? 'PATCH' : 'POST';
+    const path = meeting.id ? '/meetings/' + encodeURIComponent(meeting.id) : '/meetings';
+    try {
+      const res = await fetch(stewardshipApi(path), {
+        method,
+        headers: { ...authHeaders(), 'Content-Type':'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to save packet.');
+      stewardshipState.selectedMeeting = data.meeting;
+      stewardshipState.loaded = false;
+      setStatus('Stewardship packet saved.','success');
+      await loadStewardshipPanel(true);
+      stewardshipState.selectedMeeting = data.meeting;
+      renderStewardshipEditor();
+    } catch (err) {
+      setStatus(err.message, 'error');
+    }
+  }
 
   // ── GIVING OPTIONS HELPERS ────────────────────────────────
   function optionCards(items, kind, emptyText) {
@@ -450,6 +832,8 @@
       loadRecurringHealth();
       loadCommemorations();
       loadGivingHistory();
+      stewardshipState.loaded = false;
+      if (activeTab === 'stewardship') loadStewardshipPanel(true);
     } catch (err) { setStatus(err.message,'error'); }
     finally {
       if (btn) { btn.classList.remove('loading'); btn.disabled = false; }

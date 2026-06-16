@@ -53,6 +53,17 @@ async function requireParishContext(request, env) {
   return { ok: true, registration: found.registration };
 }
 
+async function requireParishApiContext(request, env, parishId) {
+  const token = getBearerToken(request);
+  if (!parishId || !token) return { ok: false, response: unauthorized() };
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return { ok: false, response: json({ error: "Parish not found" }, { status: 404 }) };
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
+    return { ok: false, response: unauthorized() };
+  }
+  return { ok: true, registration: found.registration };
+}
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 export const STEWARDSHIP_PRODUCT_KEY = "stewardship";
@@ -68,6 +79,18 @@ export function stewardshipStatus(registration) {
 
 export function hasStewardshipAccess(registration) {
   return ACTIVE_STATES.has(stewardshipStatus(registration));
+}
+
+function stewardshipPublicStatus(registration) {
+  return {
+    status: stewardshipStatus(registration),
+    active: hasStewardshipAccess(registration),
+    cancelAtPeriodEnd: Boolean(registration?.stewardshipCancelAtPeriodEnd),
+    currentPeriodEnd: registration?.stewardshipPeriodEnd || null,
+    trialEnd: registration?.stewardshipTrialEnd || null,
+    customerConfigured: Boolean(registration?.stewardshipStripeCustomerId),
+    subscriptionConfigured: Boolean(registration?.stewardshipStripeSubscriptionId)
+  };
 }
 
 // Stripe platform requests (uses STRIPE_SECRET_KEY from env, not the parish's connected account)
@@ -103,7 +126,7 @@ function paywallHtml(registration, env) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AGAPAY Stewardship</title>
   <link rel="stylesheet" href="${base}/site-chrome.css" />
-  <link rel="stylesheet" href="${base}/styles/parish-dashboard.css" />
+  <link rel="stylesheet" href="${base}/parish/style.css" />
   <style>
     .paywall { max-width: 720px; margin: 0 auto; padding: 3rem 1.5rem; }
     .paywall-hero { text-align: center; margin-bottom: 3rem; }
@@ -176,6 +199,7 @@ function paywallHtml(registration, env) {
       </ul>
     </div>
   </div>
+  ${stewardshipSessionScript()}
 </body>
 </html>`;
 }
@@ -210,7 +234,7 @@ function stewardshipHomeHtml(registration, meetings, env) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Stewardship — AGAPAY</title>
   <link rel="stylesheet" href="${base}/site-chrome.css" />
-  <link rel="stylesheet" href="${base}/styles/parish-dashboard.css" />
+  <link rel="stylesheet" href="${base}/parish/style.css" />
   <link rel="stylesheet" href="${base}/styles/stewardship.css" />
 </head>
 <body class="dashboard-body">
@@ -249,6 +273,7 @@ function stewardshipHomeHtml(registration, meetings, env) {
       </section>
     </main>
   </div>
+  ${stewardshipSessionScript()}
 </body>
 </html>`;
 }
@@ -269,7 +294,7 @@ function billingHtml(registration, subscription, env) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Stewardship Billing — AGAPAY</title>
   <link rel="stylesheet" href="${base}/site-chrome.css" />
-  <link rel="stylesheet" href="${base}/styles/parish-dashboard.css" />
+  <link rel="stylesheet" href="${base}/parish/style.css" />
   <link rel="stylesheet" href="${base}/styles/stewardship.css" />
 </head>
 <body class="dashboard-body">
@@ -303,6 +328,7 @@ function billingHtml(registration, subscription, env) {
       </div>
     </main>
   </div>
+  ${stewardshipSessionScript()}
 </body>
 </html>`;
 }
@@ -372,7 +398,7 @@ function annualMeetingFormHtml(registration, meeting, agendaItems, reports, fina
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${escHtml(title)} — AGAPAY</title>
   <link rel="stylesheet" href="${base}/site-chrome.css" />
-  <link rel="stylesheet" href="${base}/styles/parish-dashboard.css" />
+  <link rel="stylesheet" href="${base}/parish/style.css" />
   <link rel="stylesheet" href="${base}/styles/stewardship.css" />
 </head>
 <body class="dashboard-body">
@@ -527,6 +553,7 @@ function annualMeetingFormHtml(registration, meeting, agendaItems, reports, fina
       }
     });
   </script>
+  ${stewardshipSessionScript()}
 </body>
 </html>`;
 }
@@ -713,6 +740,7 @@ function packetPreviewHtml(registration, meeting, agendaItems, reports, financia
     // Auto-trigger print dialog for PDF download
     if (window.location.hash === '#print') window.print();
   </script>`}
+  ${!isPdf ? stewardshipSessionScript() : ""}
 </body>
 </html>`;
 }
@@ -745,6 +773,33 @@ function escHtml(s) {
 
 function escAttr(s) {
   return String(s || "").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+function stewardshipSessionScript() {
+  return `<script>
+    (function () {
+      var qs = window.location.search || "";
+      if (!qs) return;
+      function withSession(value) {
+        try {
+          var url = new URL(value, window.location.origin);
+          if (url.origin !== window.location.origin || !url.pathname.startsWith("/parish/stewardship")) return value;
+          var current = new URLSearchParams(qs);
+          if (!url.searchParams.get("parishId") && current.get("parishId")) url.searchParams.set("parishId", current.get("parishId"));
+          if (!url.searchParams.get("t") && current.get("t")) url.searchParams.set("t", current.get("t"));
+          return url.pathname + url.search + url.hash;
+        } catch {
+          return value;
+        }
+      }
+      document.querySelectorAll("a[href^='/parish/stewardship']").forEach(function (link) {
+        link.setAttribute("href", withSession(link.getAttribute("href")));
+      });
+      document.querySelectorAll("form[action^='/parish/stewardship']").forEach(function (form) {
+        form.setAttribute("action", withSession(form.getAttribute("action")));
+      });
+    })();
+  </script>`;
 }
 
 function centsToDisplay(cents) {
@@ -783,7 +838,358 @@ async function parseFormBody(request) {
   return result;
 }
 
+async function parseJsonBody(request) {
+  try {
+    return await request.json();
+  } catch {
+    return null;
+  }
+}
+
+function centsFromApi(value) {
+  if (value === null || value === undefined || value === "") return 0;
+  return Math.round(Number(value) * 100) || 0;
+}
+
+function apiFormFromMeetingPayload(payload = {}) {
+  const agendaItems = Array.isArray(payload.agendaItems) ? payload.agendaItems : [];
+  const reports = Array.isArray(payload.reports) ? payload.reports : [];
+  const restrictedFunds = Array.isArray(payload.restrictedFunds) ? payload.restrictedFunds : [];
+  const nominees = Array.isArray(payload.nominees) ? payload.nominees : [];
+  const resolutions = Array.isArray(payload.resolutions) ? payload.resolutions : [];
+  const financialSummary = payload.financialSummary || {};
+  return {
+    title: payload.title || "Annual Meeting",
+    fiscal_year: payload.fiscalYear || payload.fiscal_year || new Date().getFullYear(),
+    meeting_date: payload.meetingDate || payload.meeting_date || "",
+    meeting_time: payload.meetingTime || payload.meeting_time || "",
+    location: payload.location || "",
+    parish_name_override: payload.parishNameOverride || payload.parish_name_override || "",
+    jurisdiction: payload.jurisdiction || "",
+    address: payload.address || "",
+    action: payload.status === "ready" || payload.action === "ready" ? "ready" : "save",
+    agenda_id: agendaItems.map((item) => item.id || ""),
+    agenda_title: agendaItems.map((item) => item.title || ""),
+    agenda_duration: agendaItems.map((item) => item.durationMinutes || item.duration_minutes || ""),
+    report_id: reports.map((item) => item.id || ""),
+    report_type: reports.map((item) => item.reportType || item.report_type || "stewardship"),
+    report_title: reports.map((item) => item.title || ""),
+    report_body: reports.map((item) => item.body || ""),
+    fin_income: financialSummary.totalIncome ?? financialSummary.total_income ?? "",
+    fin_expense: financialSummary.totalExpense ?? financialSummary.total_expense ?? "",
+    fin_notes: financialSummary.notes || "",
+    fund_id: restrictedFunds.map((item) => item.id || ""),
+    fund_name: restrictedFunds.map((item) => item.fundName || item.fund_name || ""),
+    fund_begin: restrictedFunds.map((item) => item.beginningBalance ?? item.beginning_balance ?? ""),
+    fund_received: restrictedFunds.map((item) => item.totalReceived ?? item.total_received ?? ""),
+    fund_disbursed: restrictedFunds.map((item) => item.totalDisbursed ?? item.total_disbursed ?? ""),
+    fund_ending: restrictedFunds.map((item) => item.endingBalance ?? item.ending_balance ?? ""),
+    nominee_id: nominees.map((item) => item.id || ""),
+    nominee_name: nominees.map((item) => item.fullName || item.full_name || ""),
+    nominee_position: nominees.map((item) => item.position || ""),
+    resolution_id: resolutions.map((item) => item.id || ""),
+    resolution_title: resolutions.map((item) => item.title || ""),
+    resolution_resolved: resolutions.map((item) => item.resolvedText || item.resolved_text || item.body || "")
+  };
+}
+
+function publicMeeting(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    title: row.title || "",
+    fiscalYear: Number(row.fiscal_year) || new Date().getFullYear(),
+    meetingDate: row.meeting_date || "",
+    meetingTime: row.meeting_time || "",
+    location: row.location || "",
+    parishNameOverride: row.parish_name_override || "",
+    jurisdiction: row.jurisdiction || "",
+    address: row.address || "",
+    status: row.status || "draft",
+    createdAt: row.created_at || "",
+    updatedAt: row.updated_at || ""
+  };
+}
+
+function publicMeetingDetails(meeting, agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions) {
+  return {
+    ...publicMeeting(meeting),
+    agendaItems: (agendaItems || []).map((item) => ({
+      id: item.id,
+      title: item.title || "",
+      description: item.description || "",
+      durationMinutes: item.duration_minutes || ""
+    })),
+    reports: (reports || []).map((item) => ({
+      id: item.id,
+      reportType: item.report_type || "stewardship",
+      title: item.title || "",
+      body: item.body || ""
+    })),
+    financialSummary: financialSummary ? {
+      totalIncomeCents: financialSummary.total_income_cents || 0,
+      totalExpenseCents: financialSummary.total_expense_cents || 0,
+      netCents: financialSummary.net_cents || 0,
+      notes: financialSummary.notes || ""
+    } : {
+      totalIncomeCents: 0,
+      totalExpenseCents: 0,
+      netCents: 0,
+      notes: ""
+    },
+    restrictedFunds: (restrictedFunds || []).map((item) => ({
+      id: item.id,
+      fundName: item.fund_name || "",
+      beginningBalanceCents: item.beginning_balance_cents || 0,
+      totalReceivedCents: item.total_received_cents || 0,
+      totalDisbursedCents: item.total_disbursed_cents || 0,
+      endingBalanceCents: item.ending_balance_cents || 0,
+      notes: item.notes || ""
+    })),
+    nominees: (nominees || []).map((item) => ({
+      id: item.id,
+      fullName: item.full_name || "",
+      position: item.position || "",
+      bio: item.bio || ""
+    })),
+    resolutions: (resolutions || []).map((item) => ({
+      id: item.id,
+      title: item.title || "",
+      body: item.body || "",
+      resolvedText: item.resolved_text || ""
+    }))
+  };
+}
+
+function isMissingStewardshipSchema(error) {
+  return /stewardship_annual_meetings|no such table|not found/i.test(String(error?.message || error || ""));
+}
+
 // ─── Route handlers ───────────────────────────────────────────────────────────
+
+export async function handleParishStewardshipSummary(request, env, parishId) {
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const ctx = await requireParishApiContext(request, env, parishId);
+  if (!ctx.ok) return ctx.response;
+  const { registration } = ctx;
+  let meetings = [];
+  let setupRequired = false;
+  try {
+    meetings = await d1All(env, `
+      SELECT id, title, fiscal_year, meeting_date, status, created_at, updated_at
+      FROM stewardship_annual_meetings
+      WHERE parish_id = ?
+      ORDER BY fiscal_year DESC, created_at DESC
+      LIMIT 50
+    `, [registration.parishId]);
+  } catch (error) {
+    if (!isMissingStewardshipSchema(error)) throw error;
+    setupRequired = true;
+  }
+
+  return json({
+    ok: true,
+    stewardship: stewardshipPublicStatus(registration),
+    setupRequired,
+    meetings: (meetings || []).map(publicMeeting),
+    subscribePlans: [
+      { id: "monthly", label: "Monthly", priceLabel: "$39/mo", trialLabel: "14-day free trial" },
+      { id: "annual", label: "Annual", priceLabel: "$399/yr", trialLabel: "Save $69 annually" }
+    ]
+  });
+}
+
+export async function handleParishStewardshipSubscribe(request, env, parishId) {
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const ctx = await requireParishApiContext(request, env, parishId);
+  if (!ctx.ok) return ctx.response;
+  const { registration } = ctx;
+
+  const limited = await rateLimit(request, env, "stewardship-subscribe", { limit: 5, windowSeconds: 60 });
+  if (limited) return limited;
+
+  const body = await parseJsonBody(request);
+  if (!body) return json({ error: "Invalid JSON body" }, { status: 400 });
+  const plan = body.plan === "annual" ? "annual" : "monthly";
+  const priceId = plan === "annual"
+    ? env.STEWARDSHIP_STRIPE_PRICE_ANNUAL
+    : env.STEWARDSHIP_STRIPE_PRICE_MONTHLY;
+  if (!priceId) {
+    return json({ error: "Stewardship pricing is not configured yet." }, { status: 500 });
+  }
+
+  const base = absoluteWebsiteUrl(env);
+  let customerId = registration.stewardshipStripeCustomerId;
+  if (!customerId) {
+    const customer = await stripePlatformPost(env, "/customers", {
+      email: registration.email || registration.contactEmail || "",
+      name: registration.parishName || registration.name || "",
+      metadata: { parish_id: registration.parishId },
+    });
+    if (customer.error) return json({ error: customer.error?.message || "Could not create billing customer." }, { status: 500 });
+    customerId = customer.id;
+    registration.stewardshipStripeCustomerId = customerId;
+    await saveRegistrationRecord(env, registration);
+  }
+
+  const session = await stripePlatformPost(env, "/checkout/sessions", {
+    customer: customerId,
+    mode: "subscription",
+    "line_items[0][price]": priceId,
+    "line_items[0][quantity]": "1",
+    "subscription_data[trial_period_days]": "14",
+    "subscription_data[metadata][parish_id]": registration.parishId,
+    "metadata[parish_id]": registration.parishId,
+    "metadata[product_key]": STEWARDSHIP_PRODUCT_KEY,
+    success_url: base + "/parish/dashboard?tab=stewardship&subscribed=1",
+    cancel_url: base + "/parish/dashboard?tab=stewardship",
+  });
+
+  if (session.error || !session.url) {
+    return json({ error: session.error?.message || "Could not create checkout session." }, { status: 500 });
+  }
+  return json({ ok: true, checkoutUrl: session.url });
+}
+
+export async function handleParishStewardshipBillingPortal(request, env, parishId) {
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const ctx = await requireParishApiContext(request, env, parishId);
+  if (!ctx.ok) return ctx.response;
+  const { registration } = ctx;
+
+  const customerId = registration.stewardshipStripeCustomerId;
+  if (!customerId) return json({ error: "No Stewardship billing customer found." }, { status: 400 });
+
+  const portal = await stripePlatformPost(env, "/billing_portal/sessions", {
+    customer: customerId,
+    return_url: absoluteWebsiteUrl(env) + "/parish/dashboard?tab=stewardship",
+  });
+  if (portal.error || !portal.url) {
+    return json({ error: portal.error?.message || "Could not open billing portal." }, { status: 500 });
+  }
+  return json({ ok: true, portalUrl: portal.url });
+}
+
+export async function handleParishStewardshipMeetings(request, env, parishId) {
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const ctx = await requireParishApiContext(request, env, parishId);
+  if (!ctx.ok) return ctx.response;
+  const { registration } = ctx;
+  if (!hasStewardshipAccess(registration)) {
+    return json({ error: "Stewardship subscription required.", stewardship: stewardshipPublicStatus(registration) }, { status: 402 });
+  }
+
+  if (request.method === "GET") {
+    let meetings = [];
+    try {
+      meetings = await d1All(env, `
+        SELECT *
+        FROM stewardship_annual_meetings
+        WHERE parish_id = ?
+        ORDER BY fiscal_year DESC, created_at DESC
+        LIMIT 50
+      `, [registration.parishId]);
+    } catch (error) {
+      if (!isMissingStewardshipSchema(error)) throw error;
+      return json({ ok: false, error: "Stewardship database tables are not installed yet.", setupRequired: true }, { status: 503 });
+    }
+    return json({ ok: true, meetings: (meetings || []).map(publicMeeting) });
+  }
+
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const body = await parseJsonBody(request);
+  if (!body) return json({ error: "Invalid JSON body" }, { status: 400 });
+  const form = apiFormFromMeetingPayload(body);
+  const meetingId = await newId();
+  const now = new Date().toISOString();
+
+  await d1Run(env, `
+    INSERT INTO stewardship_annual_meetings
+      (id, parish_id, title, fiscal_year, meeting_date, meeting_time, location,
+       parish_name_override, jurisdiction, address, status, created_by, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `, [
+    meetingId, registration.parishId,
+    form.title || "Annual Meeting",
+    parseInt(form.fiscal_year) || new Date().getFullYear(),
+    form.meeting_date || null,
+    form.meeting_time || null,
+    form.location || null,
+    form.parish_name_override || null,
+    form.jurisdiction || null,
+    form.address || null,
+    form.action === "ready" ? "ready" : "draft",
+    null,
+    now, now,
+  ]);
+
+  await saveMeetingSubRecords(env, meetingId, form);
+  return handleParishStewardshipMeetingDetail(request, env, parishId, meetingId);
+}
+
+export async function handleParishStewardshipMeetingDetail(request, env, parishId, meetingId) {
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const ctx = await requireParishApiContext(request, env, parishId);
+  if (!ctx.ok) return ctx.response;
+  const { registration } = ctx;
+  if (!hasStewardshipAccess(registration)) {
+    return json({ error: "Stewardship subscription required.", stewardship: stewardshipPublicStatus(registration) }, { status: 402 });
+  }
+
+  const meeting = await d1First(env,
+    "SELECT * FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
+    [meetingId, registration.parishId]
+  );
+  if (!meeting) return json({ error: "Meeting not found" }, { status: 404 });
+
+  if (request.method === "GET") {
+    const [agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions] =
+      await loadMeetingSubRecords(env, meetingId);
+    return json({
+      ok: true,
+      meeting: publicMeetingDetails(meeting, agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions)
+    });
+  }
+
+  if (request.method !== "PATCH") return json({ error: "Method not allowed" }, { status: 405 });
+  const body = await parseJsonBody(request);
+  if (!body) return json({ error: "Invalid JSON body" }, { status: 400 });
+  const form = apiFormFromMeetingPayload(body);
+  const now = new Date().toISOString();
+
+  await d1Run(env, `
+    UPDATE stewardship_annual_meetings SET
+      title = ?, fiscal_year = ?, meeting_date = ?, meeting_time = ?, location = ?,
+      parish_name_override = ?, jurisdiction = ?, address = ?,
+      status = ?, updated_at = ?
+    WHERE id = ? AND parish_id = ?
+  `, [
+    form.title || meeting.title,
+    parseInt(form.fiscal_year) || meeting.fiscal_year,
+    form.meeting_date || null,
+    form.meeting_time || null,
+    form.location || null,
+    form.parish_name_override || null,
+    form.jurisdiction || null,
+    form.address || null,
+    form.action === "ready" ? "ready" : "draft",
+    now,
+    meetingId, registration.parishId,
+  ]);
+  await deleteMeetingSubRecords(env, meetingId);
+  await saveMeetingSubRecords(env, meetingId, form);
+
+  const updated = await d1First(env,
+    "SELECT * FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
+    [meetingId, registration.parishId]
+  );
+  const [agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions] =
+    await loadMeetingSubRecords(env, meetingId);
+  return json({
+    ok: true,
+    meeting: publicMeetingDetails(updated, agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions)
+  });
+}
 
 // GET /parish/stewardship
 export async function handleStewardshipHome(request, env) {

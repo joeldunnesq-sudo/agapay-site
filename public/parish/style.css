@@ -1615,6 +1615,263 @@
       }
     }
 
+    .stewardship-native-hero {
+      margin-bottom: 1rem;
+    }
+
+    .stewardship-native-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(280px, 0.7fr);
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .stewardship-status-banner {
+      display: grid;
+      gap: 0.35rem;
+      padding: 1rem;
+      border: 1px solid rgba(201, 162, 91, 0.24);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.62);
+      margin-bottom: 1rem;
+    }
+
+    .stewardship-status-banner.active {
+      background: rgba(214, 175, 91, 0.12);
+      border-color: rgba(201, 162, 91, 0.42);
+    }
+
+    .stewardship-status-banner strong,
+    .stewardship-empty strong {
+      color: var(--deep);
+      font-family: var(--serif);
+      font-size: 1.55rem;
+      font-weight: 500;
+      line-height: 1;
+    }
+
+    .stewardship-status-banner span,
+    .stewardship-empty span,
+    .stewardship-tool-list span {
+      color: var(--stone);
+      line-height: 1.5;
+    }
+
+    .stewardship-plan-options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .stewardship-plan-option {
+      display: grid;
+      gap: 0.2rem;
+      min-height: 104px;
+      padding: 1rem;
+      text-align: left;
+      border: 1px solid rgba(201, 162, 91, 0.32);
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(244,240,230,0.78));
+      color: var(--deep);
+      cursor: pointer;
+    }
+
+    .stewardship-plan-option strong {
+      font-size: 1rem;
+    }
+
+    .stewardship-plan-option span {
+      color: var(--gold);
+      font-family: var(--serif);
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+
+    .stewardship-tool-list {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .stewardship-tool-list > div {
+      display: grid;
+      gap: 0.25rem;
+      padding-bottom: 0.9rem;
+      border-bottom: 1px solid rgba(201, 162, 91, 0.18);
+    }
+
+    .stewardship-tool-list > div:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .stewardship-empty {
+      display: grid;
+      place-items: center;
+      gap: 0.55rem;
+      padding: 2rem;
+      text-align: center;
+      border: 1px dashed rgba(201, 162, 91, 0.34);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.52);
+    }
+
+    .stewardship-table-wrap {
+      overflow-x: auto;
+    }
+
+    .stewardship-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+    }
+
+    .stewardship-table th,
+    .stewardship-table td {
+      padding: 0.9rem;
+      border-bottom: 1px solid rgba(201, 162, 91, 0.18);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .stewardship-table th {
+      color: var(--stone);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .stewardship-table td span {
+      display: block;
+      color: var(--stone);
+      font-size: 0.9rem;
+      margin-top: 0.2rem;
+    }
+
+    .status-pill {
+      display: inline-flex !important;
+      width: fit-content;
+      padding: 0.24rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(201, 162, 91, 0.16);
+      color: var(--deep) !important;
+      font-size: 0.74rem !important;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 0.45rem;
+      justify-content: flex-end;
+    }
+
+    .stewardship-editor-card[hidden] {
+      display: none;
+    }
+
+    .stewardship-native-form {
+      display: grid;
+      gap: 1.2rem;
+    }
+
+    .stewardship-native-form label,
+    .stewardship-form-grid label {
+      display: grid;
+      gap: 0.35rem;
+      color: var(--stone);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .stewardship-native-form input,
+    .stewardship-native-form textarea,
+    .stewardship-native-form select {
+      width: 100%;
+      min-height: 42px;
+      padding: 0.7rem 0.8rem;
+      border: 1px solid rgba(201, 162, 91, 0.24);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.72);
+      color: var(--deep);
+      font: inherit;
+      letter-spacing: 0;
+      text-transform: none;
+      box-sizing: border-box;
+    }
+
+    .stewardship-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.9rem;
+    }
+
+    .stewardship-editor-section {
+      display: grid;
+      gap: 0.8rem;
+      padding: 1rem;
+      border: 1px solid rgba(201, 162, 91, 0.18);
+      border-radius: 8px;
+      background: rgba(244,240,230,0.36);
+    }
+
+    .stewardship-editor-section > div:first-child {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .stewardship-editor-section h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 1.45rem;
+      font-weight: 500;
+    }
+
+    .stewardship-repeat-row {
+      display: grid;
+      grid-template-columns: minmax(160px, 1fr) minmax(90px, 0.35fr) auto;
+      gap: 0.6rem;
+      align-items: start;
+      margin-bottom: 0.65rem;
+    }
+
+    #stewardshipReportRows .stewardship-repeat-row,
+    #stewardshipResolutionRows .stewardship-repeat-row {
+      grid-template-columns: minmax(120px, 0.28fr) minmax(160px, 0.4fr) minmax(220px, 1fr) auto;
+    }
+
+    #stewardshipFundRows .stewardship-repeat-row {
+      grid-template-columns: minmax(160px, 1fr) repeat(4, minmax(90px, 0.45fr)) auto;
+    }
+
+    #stewardshipNomineeRows .stewardship-repeat-row {
+      grid-template-columns: minmax(160px, 1fr) minmax(140px, 0.7fr) auto;
+    }
+
+    .error-text {
+      color: #9f1d1d;
+    }
+
+    @media (max-width: 960px) {
+      .stewardship-native-grid,
+      .stewardship-form-grid,
+      .stewardship-plan-options {
+        grid-template-columns: 1fr;
+      }
+
+      .stewardship-repeat-row,
+      #stewardshipReportRows .stewardship-repeat-row,
+      #stewardshipResolutionRows .stewardship-repeat-row,
+      #stewardshipFundRows .stewardship-repeat-row,
+      #stewardshipNomineeRows .stewardship-repeat-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 430px) {
       .mobile-tab-link {
         font-size: 9px;

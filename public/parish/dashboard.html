@@ -59,6 +59,10 @@
           <svg viewBox="0 0 24 24"><path d="M22 16.92V19a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3 4.18 2 2 0 0 1 5 2h2.09a2 2 0 0 1 2 1.72c.13 1 .37 1.96.71 2.89a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.93.34 1.9.58 2.89.71A2 2 0 0 1 22 16.92z"/></svg>
           Text-to-Give
         </div>
+        <div class="sidebar-nav-item" onclick="switchTab('stewardship')" id="nav-stewardship">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
+          Stewardship
+        </div>
         <div class="sidebar-nav-item" onclick="switchTab('qr')" id="nav-qr">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="19" y="14" width="2" height="2"/><rect x="14" y="19" width="2" height="2"/><rect x="18" y="18" width="3" height="3"/></svg>
           QR Code &amp; Link
@@ -626,6 +630,83 @@
         </div>
       </div>
 
+      <!-- ── STEWARDSHIP TAB ─────────────────────────────────── -->
+      <div class="tab-panel" id="tab-stewardship">
+        <div class="feature-tab-hero stewardship-native-hero">
+          <div>
+            <div class="feature-tab-kicker">Paid add-on module</div>
+            <h2>AGAPAY Stewardship</h2>
+            <p>Annual meeting packets, parish council records, restricted fund reporting, and faithful parish administration tools nested inside your Organization Dashboard.</p>
+          </div>
+          <div class="feature-tab-summary">
+            <span>Subscription module</span>
+            <strong id="stewardshipStatusLabel">Not loaded</strong>
+            <button class="btn btn-gold btn-sm" type="button" onclick="loadStewardshipPanel(true)">Refresh</button>
+          </div>
+        </div>
+
+        <div class="stewardship-native-grid">
+          <section class="section-card stewardship-plan-card" id="stewardshipPlanCard">
+            <div class="section-header">
+              <div class="section-title">
+                <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-5"/></svg></div>
+                Subscription
+              </div>
+            </div>
+            <div class="section-body" id="stewardshipPlanPane">
+              <p class="muted">Load the dashboard to view Stewardship access.</p>
+            </div>
+          </section>
+
+          <section class="section-card stewardship-tools-card">
+            <div class="section-header">
+              <div class="section-title">
+                <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></div>
+                Stewardship Tools
+              </div>
+            </div>
+            <div class="section-body stewardship-tool-list">
+              <div>
+                <strong>Annual meeting packets</strong>
+                <span>Agenda, reports, finances, nominees, and resolutions.</span>
+              </div>
+              <div>
+                <strong>Restricted fund snapshots</strong>
+                <span>Track beginning balance, received, disbursed, and ending balance.</span>
+              </div>
+              <div>
+                <strong>Print-ready packets</strong>
+                <span>Generate a packet preview and print-to-PDF from the dashboard.</span>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="section-card stewardship-meetings-card">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></div>
+              Annual Meeting Packets
+            </div>
+            <button class="btn btn-gold btn-sm" type="button" onclick="newStewardshipMeeting()">New packet</button>
+          </div>
+          <div class="section-body" id="stewardshipMeetingsPane">
+            <p class="muted">Load the dashboard to view annual meeting packets.</p>
+          </div>
+        </section>
+
+        <section class="section-card stewardship-editor-card" id="stewardshipEditorCard" hidden>
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></div>
+              <span id="stewardshipEditorTitle">Annual Meeting Packet</span>
+            </div>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="closeStewardshipEditor()">Close</button>
+          </div>
+          <div class="section-body stewardship-editor-body" id="stewardshipEditorPane"></div>
+        </section>
+      </div>
+
       <!-- ── TEXT-TO-GIVE TAB ─────────────────────────────── -->
       <div class="tab-panel" id="tab-text">
         <div class="text-give-header">
@@ -767,6 +848,10 @@
   <button class="mobile-tab-link" type="button" data-nav-tab="text" onclick="switchTab('text')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M23 19.8v2.4a1.8 1.8 0 0 1-2 1.8A17.8 17.8 0 0 1 5 8a1.8 1.8 0 0 1 1.8-2h2.4a1.8 1.8 0 0 1 1.8 1.55c.12.9.34 1.78.65 2.6a1.8 1.8 0 0 1-.4 1.9l-1.1 1.1a14.4 14.4 0 0 0 5.4 5.4l1.1-1.1a1.8 1.8 0 0 1 1.9-.4c.82.31 1.7.53 2.6.65A1.8 1.8 0 0 1 23 19.8Z"/></svg>
     <span>Text</span>
+  </button>
+  <button class="mobile-tab-link" type="button" data-nav-tab="stewardship" onclick="switchTab('stewardship')">
+    <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 5h16v18H6z"/><path d="M10 10h8"/><path d="M10 14h8"/><path d="M10 18h5"/></svg>
+    <span>Steward</span>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="settings" onclick="switchTab('settings')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="3"/><path d="M14 5v3"/><path d="M14 20v3"/><path d="M5 14h3"/><path d="M20 14h3"/><path d="m7.6 7.6 2.1 2.1"/><path d="m18.3 18.3 2.1 2.1"/><path d="m20.4 7.6-2.1 2.1"/><path d="m9.7 18.3-2.1 2.1"/></svg>
