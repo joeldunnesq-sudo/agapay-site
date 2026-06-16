@@ -4587,3 +4587,66 @@ body.donor-home {
   }
 }
 
+/* My AGAPAY requested utility/sidebar color refinements. */
+.donor-home-topbar-brand .topbar-title,
+.donor-home .donor-home-topbar .donor-home-topbar-brand .topbar-title {
+  color: #fffdf8;
+}
+
+.donor-home-topbar-brand small {
+  color: rgba(246, 241, 232, 0.78);
+}
+
+.donor-home-account-chip,
+.donor-home .donor-home-topbar [data-auth-required].btn-ghost {
+  border-color: rgba(201, 162, 91, 0.32);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fffdf8;
+}
+
+.donor-home-account-chip strong,
+.donor-home-account-chip small {
+  color: #fffdf8;
+}
+
+.donor-home-account-chip small {
+  opacity: 0.76;
+}
+
+.donor-home-mini-avatar {
+  background: #c9a25b;
+  color: #061522;
+}
+
+.soon-card .market-icon,
+.market-icon {
+  color: #9f2f2f;
+}
+
+.market-card {
+  background:
+    linear-gradient(145deg, rgba(255, 240, 237, 0.96), rgba(255, 252, 246, 0.9)),
+    var(--paper);
+}
+
+.my-agapay-action.market-action {
+  background: #9f2f2f;
+  box-shadow: 0 12px 24px rgba(159, 47, 47, 0.18);
+}
+
+@media (min-width: 901px) {
+  .donor-home-sidebar .unified-brand .brand-mark {
+    display: none;
+  }
+
+  .donor-home-sidebar .unified-brand {
+    padding-top: 1.35rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .donor-home-topbar-brand small {
+    display: none;
+  }
+}
+
