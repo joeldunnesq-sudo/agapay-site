@@ -67,7 +67,7 @@
 
           <div class="nav-actions">
             <a class="btn-donate ${activeKey === "give" ? "active" : ""}" href="/register">
-              ${shellIcon("heart-give")}
+              ${shellIcon("giving-hand")}
               Get Started
             </a>
 
@@ -100,7 +100,7 @@
             ${PRIMARY_LINKS.map((item) => navLink(item, activeKey)).join("")}
           </nav>
           <a class="drawer-join" href="/register">
-            ${shellIcon("heart-give")}
+            ${shellIcon("giving-hand")}
             Get Started
           </a>
           <div class="drawer-divider"></div>

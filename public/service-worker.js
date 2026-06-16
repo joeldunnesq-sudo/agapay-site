@@ -1,4 +1,4 @@
-const AGAPAY_CACHE = "agapay-static-v3";
+const AGAPAY_CACHE = "agapay-static-v4";
 
 const STATIC_ASSETS = [
   "/donor/login",
@@ -39,6 +39,7 @@ function shouldBypassCache(request) {
   if (url.pathname.startsWith("/api/")) return true;
   if (url.pathname.startsWith("/admin")) return true;
   if (url.pathname.startsWith("/parish")) return true;
+  if (url.pathname.startsWith("/my-agapay")) return true;
 
   // Donor dashboard pages and API-backed pages are intentionally network-only.
   // The PWA only caches the unauthenticated login shell and static assets so no
