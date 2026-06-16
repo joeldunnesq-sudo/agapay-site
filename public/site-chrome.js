@@ -4,7 +4,7 @@
 
   const PRIMARY_LINKS = [
     { href: "/giving", label: "AGAPAY Giving", key: "give" },
-    { href: "/learn/pricing", label: "AGAPAY Learn", key: "learn" },
+    { href: "/learn", label: "AGAPAY Learn", key: "learn" },
     { href: "/marketplace", label: "Marketplace", key: "marketplace" },
     { href: "/directory", label: "Directory", key: "directory" },
     { href: "/about", label: "About", key: "about" }
@@ -129,7 +129,7 @@
             <nav class="footer-col" aria-label="Platform">
               <h4>Platform</h4>
               <a href="/giving">AGAPAY Giving</a>
-              <a href="/learn/pricing">AGAPAY Learn</a>
+              <a href="/learn">AGAPAY Learn</a>
               <a href="/marketplace">Marketplace</a>
               <a href="/directory">Directory</a>
             </nav>
