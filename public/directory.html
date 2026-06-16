@@ -1,74 +1,45 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Directory | AGAPAY</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
-  <link rel="shortcut icon" href="/favicons/favicon.ico" />
-  <meta name="description" content="Find Orthodox churches, businesses, ministries, schools, monasteries, and services through the AGAPAY Directory." />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AGAPAY Directory Waitlist</title>
+  <meta name="description" content="Join the AGAPAY Directory waitlist for Orthodox parishes, monasteries, schools, ministries, and trusted local resources." />
   <link rel="canonical" href="https://agapay.app/directory" />
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="AGAPAY" />
-  <meta property="og:title" content="Directory | AGAPAY" />
-  <meta property="og:description" content="Discover Orthodox churches, monasteries, ministries, schools, businesses, and services across America." />
-  <meta property="og:url" content="https://agapay.app/directory" />
-  <meta property="og:image" content="https://agapay.app/images/directory/church-sketch-directory.png" />
-  <meta property="og:image:alt" content="Orthodox church sketch used on the AGAPAY directory page" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Directory | AGAPAY" />
-  <meta name="twitter:description" content="Discover Orthodox churches, monasteries, ministries, schools, businesses, and services across America." />
-  <meta name="twitter:image" content="https://agapay.app/images/directory/church-sketch-directory.png" />
-  <meta name="theme-color" content="#061522" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles/numbers.css" />
-<style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
     :root {
-      --night: #061522;
-      --night-2: #0B2130;
-      --ink: #171715;
-      --cream: #F6F1E8;
+      --navy: #061522;
+      --navy-2: #0B2130;
       --paper: #FFFDF8;
-      --stone: #70695D;
-      --muted: #A69F91;
-      --gold: #C8A24A;
-      --gold-dark: #A97C25;
-      --line: rgba(166, 159, 145, 0.28);
+      --cream: #F6F1E8;
+      --gold: #C9A25B;
+      --ink: #171715;
+      --muted: #70695D;
+      --line: rgba(201, 162, 91, 0.3);
       --serif: "Cormorant Garamond", Georgia, serif;
-      --sans: "DM Sans", system-ui, sans-serif;
-      --r: 10px;
+      --sans: "DM Sans", Arial, sans-serif;
     }
-
-    html { scroll-behavior: smooth; }
+    * { box-sizing: border-box; }
     body {
-      min-height: 100vh;
-      font-family: var(--sans);
-      color: var(--ink);
+      margin: 0;
       background: var(--cream);
-      -webkit-font-smoothing: antialiased;
+      color: var(--ink);
+      font-family: var(--sans);
     }
-    a { color: inherit; text-decoration: none; }
-    img { display: block; max-width: 100%; }
-    button, input, select { font: inherit; }
-
-    .site-header {
-      position: sticky;
-      top: 0;
-      z-index: 40;
-      background: linear-gradient(90deg, #061522, #0B2130);
-      border-bottom: 1px solid rgba(200, 162, 74, 0.24);
-      padding: 0.95rem clamp(1rem, 2.6vw, 2.6rem);
+    a { color: inherit; }
+    .top {
+      background: linear-gradient(135deg, var(--navy), var(--navy-2));
+      color: var(--paper);
+      border-bottom: 1px solid rgba(201, 162, 91, 0.44);
     }
-    .nav {
-      width: min(1320px, 100%);
+    .top-inner {
+      width: min(1180px, calc(100% - 2rem));
+      min-height: 76px;
       margin: 0 auto;
       display: flex;
       align-items: center;
@@ -76,954 +47,233 @@
       gap: 1rem;
     }
     .brand {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 0.75rem;
-      color: var(--cream);
-      min-width: max-content;
+      text-decoration: none;
     }
-    .brand-mark {
-      width: 42px;
-      height: 42px;
+    .brand img { width: 42px; height: 42px; }
+    .brand strong {
+      display: block;
+      color: var(--gold);
+      font-family: var(--serif);
+      font-size: 1.55rem;
+      letter-spacing: 0.12em;
+    }
+    .brand span {
+      display: block;
+      margin-top: -0.25rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    nav {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    nav a { text-decoration: none; opacity: 0.86; }
+    main {
+      min-height: calc(100vh - 76px);
       display: grid;
       place-items: center;
-      border-radius: 50%;
-      border: 1px solid rgba(200, 162, 74, 0.52);
-      background: rgba(6, 21, 34, 0.45);
+      padding: 3rem 1rem;
+      background:
+        radial-gradient(circle at 80% 12%, rgba(201, 162, 91, 0.2), transparent 30%),
+        linear-gradient(180deg, rgba(255, 253, 248, 0.82), rgba(246, 241, 232, 0.96));
     }
-    .brand-mark img { width: 38px; height: 38px; object-fit: contain; }
-    .brand-name { display: flex; flex-direction: column; line-height: 1; }
-    .brand-name strong {
+    .shell {
+      width: min(1120px, 100%);
+      display: grid;
+      gap: 1rem;
+    }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      gap: 2rem;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: clamp(1.25rem, 4vw, 3rem);
+      background: rgba(255, 253, 248, 0.9);
+      box-shadow: 0 24px 70px rgba(6, 21, 34, 0.14);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -3rem;
+      bottom: -3rem;
+      width: 23rem;
+      height: 23rem;
+      background: url("/images/directory/church-sketch-directory.png") center / contain no-repeat;
+      opacity: 0.14;
+      pointer-events: none;
+    }
+    .copy, .card { position: relative; z-index: 1; }
+    .eyebrow {
+      color: #9b711f;
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    h1 {
+      max-width: 760px;
+      margin: 0.55rem 0 0;
+      color: var(--navy);
+      font-family: var(--serif);
+      font-size: clamp(3rem, 10vw, 6.2rem);
+      line-height: 0.92;
+      letter-spacing: 0;
+    }
+    .lead {
+      max-width: 610px;
+      margin: 1rem 0 0;
+      color: var(--muted);
+      font-size: 1.06rem;
+      line-height: 1.65;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.65rem;
+      margin-top: 1.35rem;
+      padding: 0;
+      list-style: none;
+    }
+    .features li {
+      display: flex;
+      gap: 0.55rem;
+      color: rgba(6, 21, 34, 0.78);
+      font-weight: 700;
+    }
+    .features li::before { content: "+"; color: var(--gold); font-weight: 900; }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 1rem;
+      background: linear-gradient(180deg, #fff, rgba(246, 241, 232, 0.88));
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+    }
+    .card h2 {
+      margin: 0;
+      color: var(--navy);
       font-family: var(--serif);
       font-size: 2rem;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      line-height: 1;
     }
-    .brand-name span {
-      margin-top: 0.22rem;
-      color: var(--gold);
-      font-size: 0.6rem;
-      font-weight: 600;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
+    .card p {
+      margin: 0.45rem 0 1rem;
+      color: var(--muted);
+      line-height: 1.5;
     }
-    .nav-links {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: clamp(0.9rem, 2vw, 2rem);
-      color: rgba(246, 241, 232, 0.9);
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-    .nav-links a.active {
-      color: var(--gold);
-      border-bottom: 2px solid var(--gold);
-      padding-bottom: 0.36rem;
-    }
-    .nav-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-      margin-left: 1rem;
-    }
-    .btn-donate {
-      min-height: 44px;
-      padding: 0 1.45rem;
-      border-radius: 8px;
-      border: 1px solid rgba(200, 162, 74, 0.6);
-      color: var(--cream);
-      font-size: 0.95rem;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      background: rgba(6, 21, 34, 0.34);
-    }
-    .btn-donate svg, .nav-avatar svg {
-      width: 18px;
-      height: 18px;
-      stroke: var(--gold);
-      fill: none;
-      stroke-width: 1.8;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .nav-avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 999px;
-      border: 1px solid rgba(200, 162, 74, 0.7);
-      background: rgba(6, 21, 34, 0.36);
+    form {
       display: grid;
-      place-items: center;
-    }
-
-    .page {
-      width: min(1320px, calc(100% - 2rem));
-      margin: 0.95rem auto 2rem;
-      background: var(--paper);
-      box-shadow: 0 0 0 1px rgba(166, 159, 145, 0.16);
-    }
-
-    .directory-hero {
-      position: relative;
-      overflow: hidden;
-      padding: 2.2rem clamp(1rem, 4vw, 4rem) 1.6rem;
-      border-bottom: 1px solid var(--line);
-      background:
-        radial-gradient(circle at 15% 8%, rgba(200, 162, 74, 0.14), transparent 32%),
-        linear-gradient(180deg, #F3EDE0 0%, #EFE8DA 100%);
-    }
-    .directory-hero::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(30deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08)),
-        linear-gradient(150deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08));
-      background-size: 54px 94px;
-      opacity: 0.22;
-      pointer-events: none;
-    }
-    .hero-sketch {
-      position: absolute;
-      right: -1.2rem;
-      bottom: -2.4rem;
-      width: min(46vw, 640px);
-      opacity: 0.3;
-      filter: sepia(0.52) saturate(0.86) contrast(1.04);
-      pointer-events: none;
-    }
-    .hero-inner {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      justify-items: center;
-      text-align: center;
-    }
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.55rem;
-      color: var(--gold-dark);
-      font-size: 0.95rem;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-    }
-    .eyebrow svg {
-      width: 24px;
-      height: 24px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.7;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .directory-hero h1 {
-      margin-top: 0.65rem;
-      font-family: var(--serif);
-      font-size: clamp(3.1rem, 6vw, 5.1rem);
-      font-weight: 500;
-      line-height: 0.94;
-      letter-spacing: 0;
-      color: #061522;
-    }
-    .directory-hero p {
-      margin-top: 0.8rem;
-      max-width: 660px;
-      color: #4B4B47;
-      font-size: 1.05rem;
-      line-height: 1.6;
-    }
-
-    .search-panel {
-      width: min(800px, 100%);
-      margin-top: 1.45rem;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 220px auto;
-      align-items: stretch;
-      border: 1px solid rgba(166, 159, 145, 0.34);
-      border-radius: 9px;
-      overflow: hidden;
-      background: rgba(255, 253, 248, 0.82);
-      box-shadow: 0 18px 40px rgba(6, 21, 34, 0.08);
-    }
-    .search-field,
-    .location-field {
-      min-height: 56px;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0 1rem;
-      color: var(--stone);
-      background: rgba(255, 253, 248, 0.86);
-    }
-    .search-field { border-right: 1px solid rgba(166, 159, 145, 0.28); }
-    .search-field svg,
-    .location-field svg {
-      width: 20px;
-      height: 20px;
-      flex: 0 0 auto;
-      stroke: var(--gold-dark);
-      fill: none;
-      stroke-width: 1.8;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .search-field input,
-    .location-field select {
-      width: 100%;
-      border: 0;
-      outline: 0;
-      background: transparent;
-      color: var(--ink);
-      font-size: 0.92rem;
-    }
-    .location-field select {
-      appearance: none;
-      font-weight: 600;
-      background-image: linear-gradient(45deg, transparent 50%, var(--gold-dark) 50%), linear-gradient(135deg, var(--gold-dark) 50%, transparent 50%);
-      background-position: calc(100% - 10px) 50%, calc(100% - 5px) 50%;
-      background-size: 5px 5px, 5px 5px;
-      background-repeat: no-repeat;
-      padding-right: 1rem;
-    }
-    .search-button {
-      min-width: 136px;
-      border: 0;
-      background: #061522;
-      color: var(--gold);
-      font-size: 0.86rem;
-      font-weight: 800;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      cursor: pointer;
-    }
-
-    .category-strip {
-      position: relative;
-      z-index: 1;
-      width: min(1210px, 100%);
-      margin-top: 1.25rem;
-      display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: 0.9rem;
-    }
-    .category-card {
-      min-height: 84px;
-      display: flex;
-      align-items: center;
-      gap: 0.9rem;
-      padding: 1rem;
-      border: 1px solid rgba(166, 159, 145, 0.24);
-      border-radius: 8px;
-      background: rgba(255, 253, 248, 0.76);
-      box-shadow: 0 8px 20px rgba(6, 21, 34, 0.04);
-    }
-    .category-card svg {
-      width: 36px;
-      height: 36px;
-      flex: 0 0 auto;
-      stroke: var(--gold-dark);
-      fill: none;
-      stroke-width: 1.7;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .category-card strong {
-      display: block;
-      color: #061522;
-      font-size: 0.82rem;
-      font-weight: 800;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-    }
-    .category-card span {
-      display: block;
-      margin-top: 0.2rem;
-      color: var(--stone);
-      font-size: 0.78rem;
-    }
-
-    .directory-workspace {
-      display: grid;
-      grid-template-columns: 265px minmax(450px, 1fr) minmax(420px, 1.05fr);
-      min-height: 570px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .filter-rail {
-      background: linear-gradient(180deg, #061522, #0B2130);
-      color: rgba(246, 241, 232, 0.9);
-      padding: 1.55rem 1.5rem;
-      border-radius: 0 8px 8px 0;
-      margin: 0 0 2rem;
-      align-self: start;
-      box-shadow: 0 18px 38px rgba(6, 21, 34, 0.24);
-    }
-    .filter-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-bottom: 1.1rem;
-    }
-    .filter-head h2 {
-      color: var(--gold);
-      font-size: 0.86rem;
-      font-weight: 800;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-    }
-    .filter-head h2::after {
-      content: "";
-      display: inline-block;
-      width: 92px;
-      height: 1px;
-      margin-left: 0.7rem;
-      vertical-align: middle;
-      background: var(--gold-dark);
-    }
-    .filter-head button {
-      border: 0;
-      background: transparent;
-      color: var(--gold);
-      cursor: pointer;
-      font-size: 0.78rem;
-    }
-    .filter-group {
-      padding: 1rem 0;
-      border-bottom: 1px solid rgba(200, 162, 74, 0.28);
-    }
-    .filter-group h3 {
-      margin-bottom: 0.75rem;
-      color: var(--gold);
-      font-size: 0.68rem;
-      font-weight: 800;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-    }
-    .check-row {
-      display: flex;
-      align-items: center;
-      gap: 0.55rem;
-      margin: 0.48rem 0;
-      font-size: 0.82rem;
-    }
-    .check-row input {
-      width: 16px;
-      height: 16px;
-      accent-color: var(--gold);
-    }
-    .filter-select {
-      width: 100%;
-      min-height: 38px;
-      margin-bottom: 0.65rem;
-      padding: 0 0.8rem;
-      border: 1px solid rgba(200, 162, 74, 0.5);
-      border-radius: 5px;
-      background: rgba(6, 21, 34, 0.34);
-      color: var(--cream);
-      outline: none;
-    }
-    .apply-button {
-      width: 100%;
-      min-height: 44px;
-      margin-top: 1rem;
-      border: 0;
-      border-radius: 6px;
-      background: linear-gradient(135deg, #D6AF5B, #B98832);
-      color: #061522;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      cursor: pointer;
-    }
-
-    .results-pane {
-      padding: 1.35rem 1.2rem 2rem;
-      background: linear-gradient(180deg, #FFFDF8, #F7F0E5);
-    }
-    .results-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-bottom: 1rem;
-      color: #061522;
-      font-size: 0.84rem;
-    }
-    .sort-select {
-      border: 0;
-      background: transparent;
-      color: #061522;
-      font-weight: 700;
-      outline: none;
-    }
-    .listing-stack {
-      display: flex;
-      flex-direction: column;
       gap: 0.7rem;
     }
-    .listing-card {
-      display: grid;
-      grid-template-columns: 104px minmax(0, 1fr) auto;
-      gap: 0.85rem;
-      align-items: center;
-      padding: 0.72rem;
-      border: 1px solid rgba(166, 159, 145, 0.24);
-      border-radius: 8px;
-      background: rgba(255, 253, 248, 0.92);
-      box-shadow: 0 10px 22px rgba(6, 21, 34, 0.04);
+    input {
+      width: 100%;
+      min-height: 52px;
+      border: 1px solid rgba(6, 21, 34, 0.15);
+      border-radius: 10px;
+      padding: 0 0.9rem;
+      background: #fff;
+      color: var(--navy);
+      font: inherit;
     }
-    .listing-card img {
-      width: 104px;
-      height: 86px;
-      border-radius: 6px;
-      object-fit: cover;
-    }
-    .listing-card h3 {
-      font-family: var(--serif);
-      color: #061522;
-      font-size: 1.35rem;
-      font-weight: 600;
-      line-height: 1.05;
-    }
-    .listing-meta {
-      margin-top: 0.25rem;
-      color: var(--stone);
-      font-size: 0.78rem;
-    }
-    .listing-copy {
-      margin-top: 0.32rem;
-      color: #4B4B47;
-      font-size: 0.78rem;
-      line-height: 1.45;
-    }
-    .listing-tag {
-      display: inline-flex;
-      margin-top: 0.45rem;
-      padding: 0.22rem 0.48rem;
-      border-radius: 5px;
-      background: rgba(200, 162, 74, 0.13);
-      color: #5F4312;
-      font-size: 0.65rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .listing-actions {
-      display: grid;
-      justify-items: end;
-      gap: 1.1rem;
-      min-width: 120px;
-    }
-    .heart {
+    button {
+      min-height: 52px;
       border: 0;
-      background: transparent;
-      color: var(--gold-dark);
-      cursor: pointer;
-    }
-    .heart svg {
-      width: 18px;
-      height: 18px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.7;
-    }
-    .profile-button {
-      min-height: 36px;
+      border-radius: 10px;
       padding: 0 1rem;
-      border: 1px solid rgba(169, 124, 37, 0.55);
-      border-radius: 5px;
-      background: transparent;
-      color: #7B5415;
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+      background: linear-gradient(135deg, var(--gold), #b8862f);
+      color: var(--navy);
       cursor: pointer;
-      white-space: nowrap;
+      font: inherit;
+      font-weight: 900;
     }
-    .pagination {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      margin-top: 1.25rem;
-      color: #061522;
-      font-size: 0.85rem;
-    }
-    .pagination .current {
-      width: 26px;
-      height: 26px;
-      display: grid;
-      place-items: center;
-      border-radius: 5px;
-      background: #061522;
-      color: var(--cream);
-    }
-
-    .map-pane {
-      position: relative;
-      overflow: hidden;
-      min-height: 570px;
-      background: #ECF1E8;
-      border-left: 1px solid var(--line);
-    }
-    .live-map {
-      position: absolute;
-      inset: 0;
-    }
-    .map-pane .leaflet-control-container .leaflet-control {
-      border: 1px solid rgba(166, 159, 145, 0.25);
-      box-shadow: 0 10px 22px rgba(6, 21, 34, 0.08);
-    }
-    .map-pane .leaflet-control-zoom a,
-    .map-pane .leaflet-control-attribution {
-      background: rgba(255, 253, 248, 0.92);
-      color: #061522;
-      border-color: rgba(166, 159, 145, 0.3);
-    }
-    .map-marker {
-      width: 42px;
-      height: 42px;
-      border-radius: 999px;
-      border: 2px solid rgba(255, 253, 248, 0.96);
-      background: #061522;
-      color: var(--gold);
-      display: grid;
-      place-items: center;
-      box-shadow: 0 8px 20px rgba(6, 21, 34, 0.24);
-    }
-    .map-marker svg {
-      width: 20px;
-      height: 20px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.7;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .map-controls-fallback {
-      position: absolute;
-      right: 1.5rem;
-      top: 1.8rem;
-      z-index: 2;
-      display: grid;
-      gap: 0.65rem;
-      pointer-events: none;
-    }
-    .map-control-fallback {
-      width: 36px;
-      height: 36px;
-      display: grid;
-      place-items: center;
-      border: 1px solid rgba(166, 159, 145, 0.25);
-      border-radius: 7px;
-      background: rgba(255, 253, 248, 0.92);
-      color: #061522;
-      font-weight: 800;
-      box-shadow: 0 10px 22px rgba(6, 21, 34, 0.08);
-    }
-    .map-card {
-      position: absolute;
-      right: 3rem;
-      bottom: 2.8rem;
-      z-index: 3;
-      width: 300px;
-      display: grid;
-      grid-template-columns: 58px 1fr;
-      gap: 0.85rem;
-      align-items: start;
-      padding: 1rem;
-      border: 1px solid rgba(166, 159, 145, 0.25);
-      border-radius: 8px;
-      background: rgba(255, 253, 248, 0.92);
-      box-shadow: 0 18px 40px rgba(6, 21, 34, 0.18);
-    }
-    .map-card-icon {
-      width: 58px;
-      height: 58px;
-      display: grid;
-      place-items: center;
-      border-radius: 999px;
-      background: #061522;
-      color: var(--gold);
-    }
-    .map-card-icon svg {
-      width: 30px;
-      height: 30px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.6;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .map-card h3 {
-      font-family: var(--serif);
-      font-size: 1.25rem;
-      line-height: 1.1;
-      color: #061522;
-    }
-    .map-card p {
-      margin-top: 0.24rem;
-      color: var(--stone);
-      font-size: 0.82rem;
-    }
-    .map-card a {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
+    .status {
+      min-height: 1.25rem;
       margin-top: 0.8rem;
-      color: var(--gold-dark);
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    .directory-trust {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 1rem;
-      padding: 1.45rem clamp(1rem, 4vw, 4rem);
-      background: linear-gradient(180deg, #FFFDF8, #F7F0E5);
-      border-bottom: 1px solid var(--line);
-    }
-    .trust-item {
-      display: grid;
-      grid-template-columns: 46px 1fr;
-      gap: 0.85rem;
-      align-items: center;
-    }
-    .trust-item svg {
-      width: 42px;
-      height: 42px;
-      padding: 8px;
-      border: 1px solid rgba(200, 162, 74, 0.45);
-      border-radius: 999px;
-      stroke: var(--gold-dark);
-      fill: none;
-      stroke-width: 1.7;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .trust-item strong {
-      display: block;
-      color: #061522;
+      color: #285c36;
       font-size: 0.9rem;
+      font-weight: 800;
     }
-    .trust-item span {
-      display: block;
-      margin-top: 0.18rem;
-      color: var(--stone);
-      font-size: 0.8rem;
-      line-height: 1.45;
+    .back {
+      display: inline-flex;
+      width: fit-content;
+      margin-top: 1.2rem;
+      color: var(--navy);
+      font-weight: 900;
+      text-decoration: none;
     }
-
-    .site-footer {
-      background: #05131F;
-      color: rgba(246, 241, 232, 0.74);
-      border-top: 1px solid rgba(200, 162, 74, 0.16);
-      padding: 2.5rem 0 1.4rem;
+    @media (min-width: 760px) {
+      .hero { grid-template-columns: minmax(0, 1fr) minmax(320px, 0.42fr); align-items: center; }
+      .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      form { grid-template-columns: minmax(0, 1fr) auto; }
     }
-    .footer-wrap {
-      width: min(1320px, calc(100% - 2rem));
-      margin: 0 auto;
-    }
-    .footer-grid {
-      display: grid;
-      grid-template-columns: 1.5fr repeat(4, minmax(0, 1fr));
-      gap: 1.25rem;
-      margin-bottom: 1.6rem;
-    }
-    .footer-lockup {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      margin-bottom: 0.4rem;
-    }
-    .footer-lockup img { width: 40px; height: 40px; object-fit: contain; }
-    .footer-lockup strong {
-      display: block;
-      font: 500 1.8rem/1 var(--serif);
-      color: var(--cream);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .footer-brand p {
-      color: rgba(246, 241, 232, 0.6);
-      line-height: 1.6;
-    }
-    .footer-col h4 {
-      margin-bottom: 0.8rem;
-      color: var(--gold);
-      font-size: 0.72rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-    .footer-col a {
-      display: block;
-      margin: 0.45rem 0;
-      color: rgba(246, 241, 232, 0.68);
-      font-size: 0.86rem;
-    }
-    .footer-bottom {
-      padding-top: 1rem;
-      border-top: 1px solid rgba(246, 241, 232, 0.08);
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-      color: rgba(246, 241, 232, 0.44);
-      font-size: 0.8rem;
-    }
-
-    @media (max-width: 1180px) {
-      .nav-links { display: none; }
-      .hero-sketch { width: min(46vw, 380px); }
-      .category-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .directory-workspace { grid-template-columns: 250px minmax(0, 1fr); }
-      .map-pane { grid-column: 1 / -1; min-height: 420px; border-left: 0; border-top: 1px solid var(--line); }
-      .directory-trust { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .footer-grid { grid-template-columns: 1fr 1fr; }
-      .footer-bottom { flex-direction: column; }
-    }
-    @media (max-width: 760px) {
-      .site-header { padding: 0.8rem 0.9rem; }
-      .brand-name strong { font-size: 1.65rem; }
-      .brand-name span { display: none; }
-      .btn-donate { display: none; }
-      .nav-avatar { display: none; }
-      .directory-hero { padding: 2rem 1rem 1.2rem; }
-      .hero-sketch { right: -7rem; bottom: 4.4rem; width: 430px; opacity: 0.18; }
-      .directory-hero h1 { font-size: clamp(2.7rem, 14vw, 4rem); }
-      .directory-hero p { font-size: 0.95rem; }
-      .search-panel { grid-template-columns: 1fr; }
-      .search-field,
-      .location-field { border-right: 0; border-bottom: 1px solid rgba(166, 159, 145, 0.25); }
-      .search-button { min-height: 50px; }
-      .category-strip {
-        grid-template-columns: repeat(6, 220px);
-        overflow-x: auto;
-        justify-self: stretch;
-        padding-bottom: 0.35rem;
-      }
-      .directory-workspace { grid-template-columns: 1fr; }
-      .filter-rail {
-        margin: 0;
-        border-radius: 0;
-        box-shadow: none;
-      }
-      .results-pane { padding: 1.1rem 1rem 1.4rem; }
-      .results-head { flex-direction: column; align-items: flex-start; }
-      .listing-card {
-        grid-template-columns: 84px minmax(0, 1fr);
-        align-items: start;
-      }
-      .listing-card img { width: 84px; height: 84px; }
-      .listing-card h3 { font-size: 1.12rem; }
-      .listing-actions {
-        grid-column: 1 / -1;
-        grid-template-columns: 1fr auto;
-        align-items: center;
-        justify-items: stretch;
-        min-width: 0;
-      }
-      .heart { justify-self: start; }
-      .profile-button { justify-self: end; }
-      .map-pane { min-height: 390px; }
-      .map-card {
-        left: 1rem;
-        right: 1rem;
-        bottom: 1rem;
-        width: auto;
-      }
-      .directory-trust { grid-template-columns: 1fr; }
-      .footer-grid { grid-template-columns: 1fr; }
+    @media (max-width: 640px) {
+      nav { display: none; }
+      .top-inner { width: min(100% - 1.5rem, 1180px); }
+      main { padding: 1rem 0.75rem 2rem; }
+      .brand strong { font-size: 1.25rem; }
     }
   </style>
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
-  <link rel="manifest" href="/manifest.webmanifest" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="AGAPAY" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="stylesheet" href="/site-chrome.css" />
-  <script src="/site-chrome.js" defer></script>
 </head>
 <body>
-<section class="results-pane">
-        <div class="results-head">
-          <span>Showing 1-25 of 2,531 results</span>
-          <label>Sort by: <select class="sort-select"><option>Recently Added</option><option>Nearest</option><option>A-Z</option></select></label>
+  <header class="top">
+    <div class="top-inner">
+      <a class="brand" href="/" aria-label="AGAPAY home">
+        <img src="/mark.png" alt="" />
+        <span><strong>AGAPAY</strong><span>Faith in Action. Together.</span></span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="/giving">Giving</a>
+        <a href="/learn">Learn</a>
+        <a href="/marketplace">Marketplace</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <section class="shell">
+      <div class="hero">
+        <div class="copy">
+          <div class="eyebrow">Directory waitlist</div>
+          <h1>Find Orthodox life near you.</h1>
+          <p class="lead">AGAPAY Directory is being prepared as a trusted guide to Orthodox parishes, monasteries, ministries, schools, businesses, and local resources.</p>
+          <ul class="features">
+            <li>Parishes, monasteries, and missions</li>
+            <li>Orthodox schools, ministries, and vendors</li>
+            <li>Search by location and category</li>
+            <li>Designed for faithful discovery</li>
+          </ul>
         </div>
-        <div class="listing-stack">
-          <article class="listing-card">
-            <img src="/images/vision/church-exterior.jpg" alt="St. Nicholas Greek Orthodox Church" />
-            <div>
-              <h3>St. Nicholas Greek Orthodox Church</h3>
-              <div class="listing-meta">Dallas, TX - Greek Orthodox Archdiocese</div>
-              <p class="listing-copy">A community rooted in faith and tradition.</p>
-              <span class="listing-tag">Church</span>
-            </div>
-            <div class="listing-actions">
-              <button class="heart" type="button" aria-label="Save St. Nicholas Greek Orthodox Church"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg></button>
-              <button class="profile-button" type="button">View Profile</button>
-            </div>
-          </article>
-          <article class="listing-card">
-            <img src="/images/marketplace/cathedral-night.jpg" alt="Theophany Books and Gifts" />
-            <div>
-              <h3>Theophany Books &amp; Gifts</h3>
-              <div class="listing-meta">Dallas, TX - Orthodox Christian Books &amp; Gifts</div>
-              <p class="listing-copy">Resources for your spiritual journey.</p>
-              <span class="listing-tag">Business</span>
-            </div>
-            <div class="listing-actions">
-              <button class="heart" type="button" aria-label="Save Theophany Books and Gifts"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg></button>
-              <button class="profile-button" type="button">View Profile</button>
-            </div>
-          </article>
-          <article class="listing-card">
-            <img src="/images/marketplace/interior-iconostasis.jpg" alt="St. Katherine Orthodox School" />
-            <div>
-              <h3>St. Katherine Orthodox School</h3>
-              <div class="listing-meta">Dallas, TX - Classical Orthodox Education</div>
-              <p class="listing-copy">Forming hearts and minds in Christ.</p>
-              <span class="listing-tag">School</span>
-            </div>
-            <div class="listing-actions">
-              <button class="heart" type="button" aria-label="Save St. Katherine Orthodox School"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg></button>
-              <button class="profile-button" type="button">View Profile</button>
-            </div>
-          </article>
-          <article class="listing-card">
-            <img src="/images/marketplace/gilded-censer.jpg" alt="Orthodox Christian Charities" />
-            <div>
-              <h3>Orthodox Christian Charities</h3>
-              <div class="listing-meta">Dallas, TX - Charity &amp; Humanitarian Aid</div>
-              <p class="listing-copy">Serving those in need with Christ's love.</p>
-              <span class="listing-tag">Ministry</span>
-            </div>
-            <div class="listing-actions">
-              <button class="heart" type="button" aria-label="Save Orthodox Christian Charities"><svg viewBox="0 0 24 24"><path d="m12 21-1.7-1.56C5 14.6 2 11.86 2 8.5A4.5 4.5 0 0 1 6.5 4c1.76 0 3.45.84 4.5 2.17A5.72 5.72 0 0 1 15.5 4 4.5 4.5 0 0 1 20 8.5c0 3.36-3 6.1-8.3 10.94Z"/></svg></button>
-              <button class="profile-button" type="button">View Profile</button>
-            </div>
-          </article>
-        </div>
-        <nav class="pagination" aria-label="Directory pages">
-          <span>&lt;-</span><span class="current">1</span><span>2</span><span>3</span><span>...</span><span>102</span><span>-&gt;</span>
-        </nav>
-      </section>
-
-      <section class="map-pane" aria-label="Map preview">
-        <div id="directoryMap" class="live-map"></div>
-        <div class="map-controls-fallback" aria-hidden="true"><span class="map-control-fallback">+</span><span class="map-control-fallback">-</span><span class="map-control-fallback">◎</span></div>
-        <article class="map-card">
-          <span class="map-card-icon"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M12 5V2"/></svg></span>
-          <div>
-            <h3 id="mapCardTitle">St. Nicholas Greek Orthodox Church</h3>
-            <p id="mapCardLocation">Dallas, TX</p>
-            <a href="#" id="mapCardLink">View Profile <span>-&gt;</span></a>
-          </div>
+        <article class="card">
+          <h2>Join the waitlist</h2>
+          <p>Leave your email and tell us you want early Directory updates.</p>
+          <form id="waitlistForm">
+            <input id="waitlistEmail" type="email" autocomplete="email" placeholder="you@example.com" required />
+            <button type="submit">Join Waitlist</button>
+          </form>
+          <div class="status" id="waitlistStatus" aria-live="polite"></div>
+          <a class="back" href="/">Back to AGAPAY</a>
         </article>
-      </section>
-    </section>
-
-    <section class="directory-trust">
-      <article class="trust-item">
-        <svg viewBox="0 0 24 24"><path d="M12 3 4 7v6c0 5 3.4 7.8 8 9 4.6-1.2 8-4 8-9V7l-8-4Z"/><path d="m9 12 2 2 4-5"/></svg>
-        <div><strong>Vetted Orthodox listings</strong><span>Built for trusted discovery across Orthodox communities.</span></div>
-      </article>
-      <article class="trust-item">
-        <svg viewBox="0 0 24 24"><path d="M12 21s7-5.7 7-12a7 7 0 1 0-14 0c0 6.3 7 12 7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg>
-        <div><strong>Local and national search</strong><span>Find nearby parishes or discover organizations across the country.</span></div>
-      </article>
-      <article class="trust-item">
-        <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
-        <div><strong>Clear organization profiles</strong><span>Every listing can lead people to giving, contact, and support options.</span></div>
-      </article>
-      <article class="trust-item">
-        <svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20a5 5 0 0 1 10 0"/><path d="M11 20a5 5 0 0 1 10 0"/></svg>
-        <div><strong>One connected community</strong><span>Churches, businesses, schools, ministries, and monasteries under one roof.</span></div>
-      </article>
+      </div>
     </section>
   </main>
-<script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
   <script>
-    (function initDirectoryMap() {
-      if (!window.L) return;
-      const mapRoot = document.getElementById('directoryMap');
-      if (!mapRoot) return;
-      const fallbackControls = document.querySelector('.map-controls-fallback');
-      if (fallbackControls) fallbackControls.style.display = 'none';
-
-      const listings = [
-        { name: 'St. Nicholas Greek Orthodox Church', city: 'Dallas, TX', type: 'church', lat: 32.7767, lng: -96.7970, url: '#' },
-        { name: 'Theophany Books & Gifts', city: 'Dallas, TX', type: 'business', lat: 32.8223, lng: -96.8670, url: '#' },
-        { name: 'St. Katherine Orthodox School', city: 'Dallas, TX', type: 'school', lat: 32.8458, lng: -96.7795, url: '#' },
-        { name: 'Orthodox Christian Charities', city: 'Dallas, TX', type: 'ministry', lat: 32.7357, lng: -96.6692, url: '#' },
-        { name: 'Holy Cross Monastery', city: 'Irving, TX', type: 'monastery', lat: 32.8140, lng: -96.9489, url: '#' },
-        { name: 'Orthodox Family Services', city: 'Plano, TX', type: 'service', lat: 33.0198, lng: -96.6989, url: '#' }
-      ];
-
-      const map = L.map(mapRoot, { scrollWheelZoom: false, zoomControl: true }).setView([32.84, -96.83], 9);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
-
-      const iconSvgByType = {
-        church: '<svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M12 5V2"/></svg>',
-        business: '<svg viewBox="0 0 24 24"><path d="M4 10h16"/><path d="M5 10l1-5h12l1 5"/><path d="M6 10v10h12V10"/><path d="M9 20v-5h6v5"/></svg>',
-        school: '<svg viewBox="0 0 24 24"><path d="M4 5c3-1 5-1 8 1v14c-3-2-5-2-8-1V5Z"/><path d="M20 5c-3-1-5-1-8 1v14c3-2 5-2 8-1V5Z"/></svg>',
-        ministry: '<svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 9h14"/></svg>',
-        monastery: '<svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 21v-7a6 6 0 0 1 12 0v7"/><path d="M12 8V3"/></svg>',
-        service: '<svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20a5 5 0 0 1 10 0"/><path d="M11 20a5 5 0 0 1 10 0"/></svg>'
-      };
-
-      function markerIcon(type) {
-        const html = '<span class="map-marker">' + (iconSvgByType[type] || iconSvgByType.church) + '</span>';
-        return L.divIcon({ html, className: '', iconSize: [42, 42], iconAnchor: [21, 21] });
-      }
-
-      const cardTitle = document.getElementById('mapCardTitle');
-      const cardLocation = document.getElementById('mapCardLocation');
-      const cardLink = document.getElementById('mapCardLink');
-      function setCard(item) {
-        if (!item) return;
-        if (cardTitle) cardTitle.textContent = item.name;
-        if (cardLocation) cardLocation.textContent = item.city;
-        if (cardLink) cardLink.href = item.url || '#';
-      }
-
-      const bounds = [];
-      listings.forEach((item) => {
-        const marker = L.marker([item.lat, item.lng], { icon: markerIcon(item.type) }).addTo(map);
-        marker.bindPopup('<strong>' + item.name + '</strong><br />' + item.city);
-        marker.on('click', () => setCard(item));
-        bounds.push([item.lat, item.lng]);
-      });
-      if (bounds.length) map.fitBounds(bounds, { padding: [28, 28] });
-      setCard(listings[0]);
-      setTimeout(() => map.invalidateSize(), 180);
-    })();
+    document.getElementById("waitlistForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const email = document.getElementById("waitlistEmail").value.trim();
+      if (!email || !email.includes("@")) return;
+      const subject = encodeURIComponent("AGAPAY Directory waitlist");
+      const body = encodeURIComponent(`Please add me to the AGAPAY Directory waitlist.\n\nEmail: ${email}`);
+      document.getElementById("waitlistStatus").textContent = "Opening your email app so we can add you to the waitlist.";
+      window.location.href = `mailto:hello@agapay.app?subject=${subject}&body=${body}`;
+    });
   </script>
 </body>
 </html>
-
-
