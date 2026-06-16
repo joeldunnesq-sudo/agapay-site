@@ -2,8 +2,30 @@ const donorStore = {
   email: "agapayDonorEmail",
   token: "agapayDonorToken",
   donor: "agapayDonorProfile",
-  cachePrefix: "agapayDonorCache"
+  cachePrefix: "agapayDonorCache",
+  shellVersion: "agapayDonorShellVersion"
 };
+
+const DONOR_SHELL_VERSION = "2026-06-16-giving-hand-v2";
+
+async function refreshStaleDashboardShell() {
+  if (!("serviceWorker" in navigator) || !("caches" in window)) return;
+  if (!location.pathname.startsWith("/my-agapay") && !location.pathname.startsWith("/donor")) return;
+  if (localStorage.getItem(donorStore.shellVersion) === DONOR_SHELL_VERSION) return;
+
+  localStorage.setItem(donorStore.shellVersion, DONOR_SHELL_VERSION);
+  try {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((key) => key.startsWith("agapay-static-")).map((key) => caches.delete(key)));
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map((registration) => registration.update().catch(() => null)));
+  } catch {
+    // Cache refresh should never block the dashboard.
+  }
+  if (navigator.serviceWorker.controller) location.reload();
+}
+
+refreshStaleDashboardShell();
 
 function donorSession() {
   return {
