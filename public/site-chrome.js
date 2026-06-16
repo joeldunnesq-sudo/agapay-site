@@ -3,27 +3,29 @@
   if (/^\/(?:admin|parish|donor)(?:\/|$)/.test(path)) return;
 
   const PRIMARY_LINKS = [
-    { href: "/why", label: "Why AGAPAY", key: "why" },
-    { href: "/vision", label: "Vision", key: "vision" },
-    { href: "/features", label: "Features", key: "features" },
-    { href: "/pricing", label: "Pricing", key: "pricing" },
-    { href: "/how-it-works", label: "How it Works", key: "how" },
+    { href: "/giving", label: "AGAPAY Giving", key: "give" },
+    { href: "/learn/pricing", label: "AGAPAY Learn", key: "learn" },
+    { href: "/marketplace", label: "Marketplace", key: "marketplace" },
+    { href: "/directory", label: "Directory", key: "directory" },
     { href: "/about", label: "About", key: "about" }
   ];
 
   const SIGN_IN_LINKS = [
-    { href: "/donor/login", label: "Donor Login" },
-    { href: "/parish/login", label: "Parish Login" }
+    { href: "/donor/login", label: "Stewardship Dashboard" },
+    { href: "/parish/login", label: "Organization Dashboard" }
   ];
 
   function activeKeyFromPath() {
     if (path === "/why" || path.endsWith("/why.html")) return "why";
     if (path === "/vision" || path.endsWith("/vision.html")) return "vision";
-    if (path === "/features" || path.endsWith("/features.html") || path === "/directory" || path.endsWith("/directory.html") || path === "/marketplace" || path.endsWith("/marketplace.html")) return "features";
+    if (path === "/features" || path.endsWith("/features.html")) return "give";
     if (path === "/pricing" || path.endsWith("/pricing.html")) return "pricing";
     if (path === "/how-it-works" || path.endsWith("/how-it-works.html")) return "how";
     if (path === "/about" || path.endsWith("/about.html") || path === "/contact" || path.endsWith("/contact.html")) return "about";
     if (path === "/giving" || path.endsWith("/giving/index.html") || path.startsWith("/giving/") || path === "/give" || path.endsWith("/give/index.html") || path.startsWith("/give/")) return "give";
+    if (path === "/learn" || path === "/learn/" || path.startsWith("/learn/")) return "learn";
+    if (path === "/marketplace" || path.endsWith("/marketplace.html")) return "marketplace";
+    if (path === "/directory" || path.endsWith("/directory.html")) return "directory";
     return "";
   }
 
@@ -64,9 +66,9 @@
           </div>
 
           <div class="nav-actions">
-            <a class="btn-donate ${activeKey === "give" ? "active" : ""}" href="/giving">
+            <a class="btn-donate ${activeKey === "give" ? "active" : ""}" href="/register">
               ${shellIcon("heart-give")}
-              Give
+              Get Started
             </a>
 
             <div class="signin-wrap">
@@ -97,9 +99,9 @@
           <nav class="drawer-links" aria-label="Drawer navigation">
             ${PRIMARY_LINKS.map((item) => navLink(item, activeKey)).join("")}
           </nav>
-          <a class="drawer-join" href="/giving">
+          <a class="drawer-join" href="/register">
             ${shellIcon("heart-give")}
-            Give
+            Get Started
           </a>
           <div class="drawer-divider"></div>
           <nav class="drawer-links" aria-label="Sign in options">
@@ -126,9 +128,17 @@
             </div>
             <nav class="footer-col" aria-label="Platform">
               <h4>Platform</h4>
+              <a href="/giving">AGAPAY Giving</a>
+              <a href="/learn/pricing">AGAPAY Learn</a>
+              <a href="/marketplace">Marketplace</a>
+              <a href="/directory">Directory</a>
+            </nav>
+            <nav class="footer-col" aria-label="AGAPAY Giving">
+              <h4>Giving</h4>
               <a href="/features">Features</a>
-              <a href="/how-it-works">How it Works</a>
+              <a href="/how-it-works">How It Works</a>
               <a href="/pricing">Pricing</a>
+              <a href="/register">Register</a>
             </nav>
             <nav class="footer-col" aria-label="Company">
               <h4>Company</h4>
@@ -139,8 +149,8 @@
             </nav>
             <nav class="footer-col" aria-label="Account">
               <h4>Account</h4>
-              <a href="/donor/login">Donor Login</a>
-              <a href="/parish/login">Parish Login</a>
+              <a href="/donor/login">Stewardship Dashboard</a>
+              <a href="/parish/login">Organization Dashboard</a>
             </nav>
             <nav class="footer-col" aria-label="Legal">
               <h4>Legal</h4>
