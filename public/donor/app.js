@@ -380,17 +380,28 @@ function donorNavIcon(kind) {
   const icons = {
     home: '<svg viewBox="0 0 38 38" aria-hidden="true"><line x1="19" y1="2" x2="19" y2="5"/><line x1="17" y1="3.5" x2="21" y2="3.5"/><path d="M19 5 C15 7 13 11 14 14 C15 16 17 17 19 17 C21 17 23 16 24 14 C25 11 23 7 19 5Z"/><line x1="10" y1="6" x2="10" y2="8"/><path d="M10 8 C8 9.5 7 12 7.5 14 C8 15.5 9 16 10 16 C11 16 12 15.5 12.5 14 C13 12 12 9.5 10 8Z"/><line x1="28" y1="6" x2="28" y2="8"/><path d="M28 8 C26 9.5 25 12 25.5 14 C26 15.5 27 16 28 16 C29 16 30 15.5 30.5 14 C31 12 30 9.5 28 8Z"/><rect x="4" y="17" width="30" height="14" rx="1"/><path d="M16 31 L16 25 Q19 22 22 25 L22 31"/></svg>',
     give: '<svg viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="7" width="22" height="16" rx="3"/><path d="M3 11h22"/><circle class="icon-dot" cx="8" cy="17" r="1.5"/><path d="M12 17h8"/></svg>',
+    giving: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 24s-9-5.4-11.5-11a6 6 0 0 1 10-6.1A6 6 0 0 1 22.5 13C20 18.6 14 24 14 24z"/><path d="M14 24v-7"/></svg>',
+    learn: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 6.5A4.5 4.5 0 0 1 9.5 2H23v20H9.5A4.5 4.5 0 0 0 5 26z"/><path d="M5 6.5V26"/><path d="M10 7h8"/><path d="M10 11h7"/></svg>',
+    marketplace: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7 9h14l-1.2 15H8.2z"/><path d="M10 9a4 4 0 0 1 8 0"/><path d="M10.5 15h7"/></svg>',
+    directory: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 3.5l9 6.75V24H5V10.25z"/><path d="M10.5 24v-8h7v8"/><path d="M9.5 12h9"/><path d="M14 7.5v8.5"/></svg>',
     calendar: '<svg viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="5" width="22" height="20" rx="3"/><path d="M3 11h22"/><path d="M9 3v4M19 3v4"/><path d="M8 16h4M8 20h8"/></svg>',
     history: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M4 22h20"/><path d="M6 22V14l3-2v10"/><path d="M12 22V10l3-2v14"/><path d="M18 22V6l3-2v18"/></svg>',
     commemorations: '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/><path d="M4 16c0 3 2 5 10 5s10-2 10-5"/><path d="M10 13c1-2 2-3 4-3s3 1 4 3"/><line x1="14" y1="7" x2="14" y2="10"/><line x1="12" y1="8" x2="16" y2="8"/></svg>',
-    profile: '<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="3.25"/><path d="M14 3.5v3"/><path d="M14 21.5v3"/><path d="M3.5 14h3"/><path d="M21.5 14h3"/><path d="m6.58 6.58 2.12 2.12"/><path d="m19.3 19.3 2.12 2.12"/><path d="m21.42 6.58-2.12 2.12"/><path d="m8.7 19.3-2.12 2.12"/><circle cx="14" cy="14" r="8.25"/></svg>'
+    account: '<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="9" r="4"/><path d="M5.5 24a8.5 8.5 0 0 1 17 0"/></svg>',
+    billing: '<svg viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="7" width="22" height="14" rx="3"/><path d="M3 12h22"/><path d="M8 17h5"/></svg>',
+    profile: '<svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="9" r="4"/><path d="M5.5 24a8.5 8.5 0 0 1 17 0"/></svg>'
   };
   return icons[kind] || icons.home;
 }
 
 function donorNavKind(href) {
   const path = String(href || "");
-  if (path.includes("/settings")) return "profile";
+  if (path.includes("#giving-dashboard")) return "giving";
+  if (path.includes("/learn")) return "learn";
+  if (path.includes("/marketplace")) return "marketplace";
+  if (path.includes("/directory")) return "directory";
+  if (path.includes("#billing")) return "billing";
+  if (path.includes("/settings")) return "account";
   if (path.includes("/offerings")) return "history";
   if (path.includes("/calendar")) return "calendar";
   if (path.includes("/commemorations")) return "commemorations";
@@ -399,7 +410,7 @@ function donorNavKind(href) {
 }
 
 function applyDonorNavIcons() {
-  document.querySelectorAll(".nav a, .mobile-tabbar a").forEach((link) => {
+  document.querySelectorAll(".nav a, .mobile-tabbar a, .my-agapay-tabbar a").forEach((link) => {
     const existing = link.querySelector("svg");
     if (!existing) return;
     const wrapper = document.createElement("span");
