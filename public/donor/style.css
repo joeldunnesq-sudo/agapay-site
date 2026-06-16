@@ -4483,6 +4483,84 @@ body.donor-home {
   color: #fffdf8;
 }
 
+.soon-card .my-agapay-product-head {
+  align-items: start;
+}
+
+.soon-card .coming-pill {
+  margin-top: 0.58rem;
+  transform: translateY(0);
+}
+
+.my-agapay-waitlist-form {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.55rem;
+  margin-top: auto;
+}
+
+.my-agapay-waitlist-form input {
+  width: 100%;
+  min-height: 2.8rem;
+  border: 1px solid rgba(201, 162, 91, 0.28);
+  border-radius: 10px;
+  padding: 0.65rem 0.82rem;
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--navy);
+  font: 700 0.9rem/1.2 var(--sans);
+  outline: none;
+}
+
+.my-agapay-waitlist-form input:focus {
+  border-color: rgba(201, 162, 91, 0.72);
+  box-shadow: 0 0 0 3px rgba(201, 162, 91, 0.18);
+}
+
+.my-agapay-action.market-action,
+.my-agapay-action.directory-action {
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  color: #fffdf8;
+}
+
+.my-agapay-action.market-action {
+  background: #7b5412;
+  box-shadow: 0 12px 24px rgba(123, 84, 18, 0.18);
+}
+
+.my-agapay-action.directory-action {
+  background: #553671;
+  box-shadow: 0 12px 24px rgba(85, 54, 113, 0.18);
+}
+
+.my-agapay-action.market-action:hover,
+.my-agapay-action.directory-action:hover {
+  filter: brightness(1.05);
+}
+
+.my-agapay-action.market-action:disabled,
+.my-agapay-action.directory-action:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.waitlist-status {
+  min-height: 1.05rem;
+  margin: 0;
+  color: rgba(6, 21, 34, 0.66);
+  font-family: var(--sans);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.my-agapay-waitlist-form.is-complete input {
+  border-color: rgba(40, 92, 54, 0.3);
+  background: rgba(240, 247, 238, 0.88);
+}
+
 @media (max-width: 900px) {
   .donor-home .donor-home-topbar {
     flex-direction: row;

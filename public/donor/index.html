@@ -136,7 +136,12 @@
               </div>
             </div>
             <p>Trusted Orthodox goods from artisans, monasteries, and makers.</p>
-            <a class="my-agapay-action muted" href="/marketplace" hx-boost="false">Join Waitlist</a>
+            <form class="my-agapay-waitlist-form" data-waitlist-product="marketplace">
+              <label class="sr-only" for="marketplaceWaitlistEmail">Email for Marketplace waitlist</label>
+              <input id="marketplaceWaitlistEmail" type="email" name="email" autocomplete="email" placeholder="Email address" required />
+              <button class="my-agapay-action market-action" type="submit">Join Marketplace Waitlist</button>
+              <p class="waitlist-status" aria-live="polite"></p>
+            </form>
           </article>
 
           <article class="ag-product-card soon-card directory-card">
@@ -148,7 +153,12 @@
               </div>
             </div>
             <p>Find Orthodox parishes, monasteries, schools, and services.</p>
-            <a class="my-agapay-action muted" href="/directory" hx-boost="false">Join Waitlist</a>
+            <form class="my-agapay-waitlist-form" data-waitlist-product="directory">
+              <label class="sr-only" for="directoryWaitlistEmail">Email for Directory waitlist</label>
+              <input id="directoryWaitlistEmail" type="email" name="email" autocomplete="email" placeholder="Email address" required />
+              <button class="my-agapay-action directory-action" type="submit">Join Directory Waitlist</button>
+              <p class="waitlist-status" aria-live="polite"></p>
+            </form>
           </article>
         </div>
 
@@ -494,8 +504,41 @@
 
     window.addEventListener("hashchange", applyDonorProductView);
 
+    function attachMyAgapayWaitlists() {
+      document.querySelectorAll(".my-agapay-waitlist-form").forEach((form) => {
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const input = form.querySelector("input[name='email']");
+          const button = form.querySelector("button");
+          const status = form.querySelector(".waitlist-status");
+          const product = form.dataset.waitlistProduct;
+          const email = input?.value?.trim() || "";
+          if (!email) return;
+
+          if (button) button.disabled = true;
+          if (status) status.textContent = "Adding you to the waitlist...";
+          try {
+            const response = await fetch("/api/waitlist", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ product, email, source: "myagapay-dashboard" })
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(payload.error || "Could not join the waitlist.");
+            if (status) status.textContent = "You're on the waitlist. We'll keep you posted.";
+            form.classList.add("is-complete");
+          } catch (error) {
+            if (status) status.textContent = error?.message || "Could not join the waitlist. Please try again.";
+          } finally {
+            if (button) button.disabled = false;
+          }
+        });
+      });
+    }
+
     document.addEventListener("DOMContentLoaded", async () => {
       applyDonorProductView();
+      attachMyAgapayWaitlists();
       // Pre-fill greeting from cached profile if we have a name — never show "Faithful Member" pre-emptively
       const cached = donorProfile();
       const cachedName = donorDisplayName(cached);

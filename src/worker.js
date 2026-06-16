@@ -181,6 +181,15 @@ import {
   handleLearnReports,
 } from "./learn/handlers.js";
 
+import {
+  agapayEmailHtml,
+  sendEmail,
+} from "./lib/email.js";
+
+import {
+  htmlEscape,
+} from "./lib/format.js";
+
 
 
 const marketplaceBrowseCategories = [
@@ -420,8 +429,76 @@ function handleMarketplaceCatalog(request) {
   });
 }
 
+async function handleWaitlist(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "waitlist", { limit: 8, windowSeconds: 300 });
+  if (limited) return limited;
 
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 
+  const product = String(body.product || "").trim().toLowerCase();
+  const productLabels = {
+    marketplace: "AGAPAY Marketplace",
+    directory: "AGAPAY Directory"
+  };
+  if (!productLabels[product]) return json({ error: "Choose a valid waitlist." }, { status: 400 });
+
+  const email = normalizeEmail(body.email);
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return json({ error: "Enter a valid email address." }, { status: 400 });
+  }
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const now = new Date().toISOString();
+  const entry = {
+    product,
+    productLabel: productLabels[product],
+    email,
+    source: String(body.source || "myagapay").slice(0, 80),
+    createdAt: now,
+    updatedAt: now,
+    userAgent: request.headers.get("user-agent") || "",
+    referer: request.headers.get("referer") || ""
+  };
+  const key = `waitlist:${product}:${await sha256Hex(email)}`;
+  const value = JSON.stringify(entry);
+
+  if (d1(env)) {
+    await d1SetSetting(env, key, value);
+  } else {
+    await env.AGAPAY_REGISTRATIONS.put(key, value);
+  }
+
+  const notifyTo = env.AGAPAY_REGISTRATION_NOTIFY_EMAIL || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
+  const appUrl = env.AGAPAY_APP_URL || "https://agapay.app";
+  const emailResult = await sendEmail(env, {
+    from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
+    to: [notifyTo],
+    reply_to: email,
+    subject: `${productLabels[product]} waitlist signup`,
+    html: agapayEmailHtml(appUrl, `${productLabels[product]} waitlist`, `
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">A new person joined the <strong>${htmlEscape(productLabels[product])}</strong> waitlist.</p>
+      <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px;margin:0 0 18px;">
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Email:</strong> ${htmlEscape(email)}</p>
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Source:</strong> ${htmlEscape(entry.source)}</p>
+        <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Time:</strong> ${htmlEscape(now)}</p>
+      </div>
+    `),
+    text: `${productLabels[product]} waitlist signup\n\nEmail: ${email}\nSource: ${entry.source}\nTime: ${now}`
+  });
+
+  return json({
+    ok: true,
+    product,
+    productLabel: productLabels[product],
+    emailSent: emailResult.status === "sent"
+  });
+}
 
 function handleLiturgicalCalendar(request) {
   const url = new URL(request.url);
@@ -642,6 +719,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/marketplace/catalog") {
       return handleMarketplaceCatalog(request);
+    }
+    if (url.pathname === "/api/waitlist") {
+      return handleWaitlist(request, env);
     }
     if (request.method === "GET" && url.pathname === "/api/security/config") {
       return handleSecurityConfig(env);
