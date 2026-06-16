@@ -151,6 +151,19 @@ import {
   handleStripeRefresh,
 } from "./handlers/stripe.js";
 
+import {
+  handleStewardshipHome,
+  handleStewardshipSubscribe,
+  handleStewardshipBilling,
+  handleStewardshipBillingPortal,
+  handleStewardshipMeetingList,
+  handleStewardshipMeetingNew,
+  handleStewardshipMeetingEdit,
+  handleStewardshipMeetingPreview,
+  handleStewardshipMeetingPdf,
+  handleStewardshipWebhook,
+} from "./handlers/stewardship.js";
+
 
 
 const marketplaceBrowseCategories = [
@@ -732,6 +745,24 @@ export default {
     }
     if ((request.method === "GET" || request.method === "POST") && url.pathname === "/api/checkout-session-status") {
       return handleCheckoutSessionStatus(request, env);
+    }
+
+    // ── Stewardship module routes ─────────────────────────────────────────
+    if (url.pathname === "/parish/stewardship") return handleStewardshipHome(request, env);
+    if (request.method === "POST" && url.pathname === "/parish/stewardship/subscribe") return handleStewardshipSubscribe(request, env);
+    if (url.pathname === "/parish/stewardship/billing") return handleStewardshipBilling(request, env);
+    if (request.method === "POST" && url.pathname === "/parish/stewardship/billing-portal") return handleStewardshipBillingPortal(request, env);
+    if (url.pathname === "/parish/stewardship/annual-meetings") return handleStewardshipMeetingList(request, env);
+    if ((request.method === "GET" || request.method === "POST") && url.pathname === "/parish/stewardship/annual-meetings/new") return handleStewardshipMeetingNew(request, env);
+    if (request.method === "POST" && url.pathname === "/webhooks/stewardship") return handleStewardshipWebhook(request, env);
+    if (url.pathname.startsWith("/parish/stewardship/annual-meetings/")) {
+      const swPath = url.pathname.replace("/parish/stewardship/annual-meetings/", "");
+      const [swId, swAction] = swPath.split("/");
+      if (swId) {
+        if (swAction === "preview") return handleStewardshipMeetingPreview(request, env, swId);
+        if (swAction === "pdf") return handleStewardshipMeetingPdf(request, env, swId);
+        return handleStewardshipMeetingEdit(request, env, swId);
+      }
     }
 
     if (url.pathname.startsWith("/api/")) {
