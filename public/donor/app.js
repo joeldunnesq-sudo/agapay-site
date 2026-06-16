@@ -152,7 +152,8 @@ function setDonorProfile(donor) {
   const profileMeta = document.getElementById("profileMeta");
   if (profileName) profileName.textContent = name;
   if (profileMeta) profileMeta.textContent = donor.defaultParishId ? `${donor.email} - ${donor.defaultParishId}` : donor.email || "Faithful account loaded";
-  document.querySelectorAll(".mobile-avatar, .desktop-avatar").forEach((avatar) => {
+  setText("donorHomeTopbarName", donorDisplayName(donor));
+  document.querySelectorAll(".mobile-avatar, .desktop-avatar, .donor-home-mini-avatar").forEach((avatar) => {
     avatar.textContent = donorInitials(donor);
   });
   const greeting = document.getElementById("greeting");
@@ -195,6 +196,7 @@ function showGuestDonorDashboard() {
   setDonorStatus("");
   setText("profileName", "Faithful Account");
   setText("profileMeta", "Sign in to load live giving history");
+  setText("donorHomeTopbarName", "Faithful Member");
   setText("greeting", "Welcome, Faithful Member");
   setText("desktopGreeting", "Welcome, Faithful Member");
   setText("myAgapayGreetingName", "Faithful Member");
@@ -1766,6 +1768,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const desktopGreeting = document.getElementById("desktopGreeting");
     if (profileName) profileName.textContent = "Faithful Account";
     if (profileMeta) profileMeta.textContent = "Sign in to load live giving history";
+    setText("donorHomeTopbarName", "Faithful Member");
     if (greeting) greeting.textContent = "Welcome, Faithful Member";
     if (desktopGreeting) desktopGreeting.textContent = "Welcome, Faithful Member";
   }

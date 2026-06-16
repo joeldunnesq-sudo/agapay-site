@@ -1304,6 +1304,102 @@ body.donor-home {
   stroke-width: 1.85;
 }
 
+.donor-home .donor-home-topbar {
+  min-height: 74px;
+  border-bottom: 1px solid rgba(201, 162, 91, 0.34);
+  background:
+    radial-gradient(circle at 86% 0%, rgba(201, 162, 91, 0.18), transparent 22rem),
+    linear-gradient(135deg, #061522 0%, #09223a 100%);
+  box-shadow: 0 14px 34px rgba(6, 21, 34, 0.14);
+  color: #fffdf8;
+}
+
+.donor-home-topbar-brand {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.donor-home-topbar-brand .topbar-title {
+  color: var(--gold);
+  font-family: var(--serif);
+  font-size: 1.68rem;
+  letter-spacing: 0.12em;
+  line-height: 1;
+}
+
+.donor-home-topbar-brand span:last-child {
+  color: rgba(246, 241, 232, 0.72);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.donor-home .donor-home-topbar .topbar-actions {
+  gap: 0.8rem;
+}
+
+.donor-home .donor-home-topbar .btn-ghost {
+  border-color: rgba(246, 241, 232, 0.34);
+  color: #fffdf8;
+}
+
+.donor-home .donor-home-topbar .btn-gold {
+  box-shadow: none;
+}
+
+.donor-home-quick-action {
+  min-width: 9.5rem;
+}
+
+.donor-home-account-chip {
+  display: flex;
+  min-height: 3.05rem;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid rgba(246, 241, 232, 0.24);
+  border-radius: 999px;
+  padding: 0.32rem 0.86rem 0.32rem 0.34rem;
+  color: #fffdf8;
+  text-decoration: none;
+}
+
+.donor-home-mini-avatar {
+  display: grid;
+  width: 2.36rem;
+  height: 2.36rem;
+  place-items: center;
+  border: 1px solid rgba(201, 162, 91, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.94);
+  color: var(--navy);
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.donor-home-account-chip strong,
+.donor-home-account-chip small {
+  display: block;
+  line-height: 1.12;
+}
+
+.donor-home-account-chip strong {
+  max-width: 10rem;
+  overflow: hidden;
+  font-family: var(--sans);
+  font-size: 0.86rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.donor-home-account-chip small {
+  color: rgba(246, 241, 232, 0.68);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
 .donor-phone-stage {
   min-height: 100vh;
   display: grid;
@@ -3523,15 +3619,15 @@ body.donor-mobile-page {
   position: relative;
   display: grid;
   gap: 1rem;
-  margin-bottom: 1rem;
-  padding: 1.15rem;
+  margin: 0 0 1rem;
+  padding: 1.35rem;
   overflow: hidden;
-  border: 1px solid rgba(201, 162, 91, 0.28);
-  border-radius: 18px;
+  border: 0;
+  border-radius: 0;
   background:
-    radial-gradient(circle at 88% 10%, rgba(201, 162, 91, 0.2), transparent 30%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(246, 241, 232, 0.86));
-  box-shadow: 0 18px 44px rgba(6, 21, 34, 0.12);
+    radial-gradient(circle at 95% 4%, rgba(201, 162, 91, 0.2), transparent 22rem),
+    linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(246, 241, 232, 0.78));
+  box-shadow: inset 0 -1px 0 rgba(201, 162, 91, 0.2);
 }
 
 .my-agapay-hero::after {
@@ -3562,6 +3658,12 @@ body.donor-mobile-page {
   color: var(--navy);
 }
 
+.my-agapay-hero h1 span {
+  color: var(--gold);
+  font-size: 0.64em;
+  vertical-align: 0.12em;
+}
+
 .my-agapay-hero p {
   margin: 0;
   max-width: 34rem;
@@ -3574,11 +3676,12 @@ body.donor-mobile-page {
   display: grid;
   gap: 0.28rem;
   align-self: stretch;
-  padding: 1rem;
-  border: 1px solid rgba(201, 162, 91, 0.28);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.7);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.64);
+  padding: 1.05rem 1.15rem;
+  border: 1px solid rgba(201, 162, 91, 0.3);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 253, 248, 0.92), rgba(255, 255, 255, 0.72));
+  box-shadow: 0 16px 34px rgba(6, 21, 34, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.64);
 }
 
 .my-agapay-profile-card span,
@@ -3781,9 +3884,10 @@ body.donor-mobile-page {
 }
 
 .my-agapay-action.learn-action {
-  border-color: rgba(18, 62, 112, 0.32);
-  background: var(--navy);
+  border-color: #123e70;
+  background: #123e70;
   color: #fff;
+  box-shadow: 0 12px 24px rgba(18, 62, 112, 0.18);
 }
 
 .my-agapay-action.muted {

@@ -59,8 +59,16 @@
 
     <main class="content donor-phone-stage">
       <div class="topbar donor-home-topbar">
-        <div class="topbar-title">My AGAPAY</div>
+        <div class="donor-home-topbar-brand">
+          <span class="topbar-title">AGAPAY</span>
+          <span>Faith + Family + Community</span>
+        </div>
         <div class="topbar-actions">
+          <a class="btn btn-gold btn-sm donor-home-quick-action" href="#giving-dashboard">Quick Action</a>
+          <a class="donor-home-account-chip" href="/donor/settings" aria-label="Open account">
+            <span class="donor-home-mini-avatar">FM</span>
+            <span><strong id="donorHomeTopbarName">Faithful Member</strong><small>View Account</small></span>
+          </a>
           <a class="btn btn-ghost btn-sm" href="/donor/login" data-auth-guest>Login</a>
           <a class="btn btn-gold btn-sm" href="/donor/signup" data-auth-guest>Sign up</a>
           <button class="btn btn-ghost btn-sm" type="button" onclick="logoutDonor()" data-auth-required hidden>Log out</button>
@@ -71,7 +79,7 @@
         <div class="my-agapay-hero">
           <div class="my-agapay-hero-copy">
             <div class="eyebrow">Love + Give + Learn + Live</div>
-            <h1 id="myAgapayTitle">My AGAPAY</h1>
+            <h1 id="myAgapayTitle">My AGAPAY <span aria-hidden="true">+</span></h1>
             <p>One login. One home for your Orthodox life online.</p>
           </div>
           <div class="my-agapay-profile-card" aria-label="Account summary">
@@ -479,8 +487,6 @@
       if (giving) giving.hidden = !isGivingView;
       if (phone) phone.hidden = !isGivingView;
       document.body.classList.toggle("showing-giving-dashboard", isGivingView);
-      const title = document.querySelector(".topbar-title");
-      if (title) title.textContent = isGivingView ? "Giving Dashboard" : "My AGAPAY";
     }
 
     window.addEventListener("hashchange", applyDonorProductView);
