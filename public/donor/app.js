@@ -189,7 +189,7 @@ function clearDonorSession() {
 
 function logoutDonor() {
   clearDonorSession();
-  window.location.href = "/myagapay/login";
+  window.location.href = "/my-agapay/login";
 }
 
 function showGuestDonorDashboard() {
@@ -229,7 +229,7 @@ function showGuestDonorDashboard() {
       <div class="my-agapay-activity-item">
         <span class="activity-dot">+</span>
         <div><strong>Sign in to load your AGAPAY activity</strong><span>Your giving, learning, and organization updates will appear here.</span></div>
-        <a class="activity-amount" href="/myagapay/login">Log in</a>
+        <a class="activity-amount" href="/my-agapay/login">Log in</a>
       </div>
     `;
   }
@@ -313,7 +313,7 @@ function donorGiftUrl(giftType, parish, extra = {}) {
   Object.entries(extra).forEach(([key, value]) => {
     if (value) params.set(key, value);
   });
-  return `/donor/give?${params.toString()}`;
+  return `/my-agapay/give?${params.toString()}`;
 }
 
 function quickDonorGiftUrl(giftType, parish, extra = {}) {
@@ -590,7 +590,7 @@ function renderNextFeast(parish) {
       target.calendar.textContent = "Next Feast Day:";
       target.name.textContent = "Next feast day";
       target.date.textContent = "Sign in and select a church to see the next feast for its calendar.";
-      if (target.link) target.link.href = "/donor/give?giftType=feast";
+      if (target.link) target.link.href = "/my-agapay/give?giftType=feast";
     });
     return;
   }
@@ -832,7 +832,7 @@ async function loginFromPage(event) {
     });
     saveDonorSession(data);
     setDonorStatus("Signed in. Opening My AGAPAY...", "success");
-    window.location.href = "/myagapay/";
+    window.location.href = "/my-agapay/";
   } catch (err) {
     clearDonorSession();
     const message = isDonorUnauthorized(err)
@@ -1036,12 +1036,12 @@ async function verifyDonorEmail() {
     });
     if (!data.token) {
       setDonorStatus("Email already verified. Please log in to open My AGAPAY.", "success");
-      setTimeout(() => { window.location.href = "/myagapay/login"; }, 900);
+      setTimeout(() => { window.location.href = "/my-agapay/login"; }, 900);
       return;
     }
     saveDonorSession(data);
     setDonorStatus("Email verified. Opening My AGAPAY...", "success");
-    setTimeout(() => { window.location.href = "/myagapay"; }, 900);
+    setTimeout(() => { window.location.href = "/my-agapay"; }, 900);
   } catch (err) {
     clearDonorSession();
     setDonorStatus(err.message, "error");
@@ -1090,7 +1090,7 @@ function renderMyAgapayDashboard(data) {
     title: `Donation to ${offering.parishName || parish?.name || "your parish"}`,
     meta: `${offering.giftType || "Offering"} - ${shortDate(offering.createdAt)}`,
     value: money(offering.amountCents),
-    href: "/donor/offerings"
+    href: "/my-agapay/offerings"
   }));
 
   const fallbackActivities = [
@@ -1106,7 +1106,7 @@ function renderMyAgapayDashboard(data) {
       title: `${summary.commemorationCount || 0} commemorations recorded`,
       meta: "Names submitted through AGAPAY",
       value: "View",
-      href: "/donor/commemorations"
+      href: "/my-agapay/commemorations"
     }
   ];
 
@@ -1394,7 +1394,7 @@ function renderRecurringManagement(offerings = []) {
       <div class="recurring-management-empty">
         <strong>No recurring gifts yet.</strong>
         <span>When you create a recurring offering, you will be able to manage, change, or cancel it here.</span>
-        <a class="btn btn-gold btn-sm" href="/myagapay/give?frequency=monthly">Start recurring gift</a>
+        <a class="btn btn-gold btn-sm" href="/my-agapay/give?frequency=monthly">Start recurring gift</a>
       </div>
     `;
     return;
@@ -1417,7 +1417,7 @@ async function openDonorRecurringPortal(parishId = "", button = null) {
   const session = donorSession();
   if (!session.email || !session.token) {
     setDonorStatus("Log in to manage recurring giving.", "error");
-    window.location.href = "/myagapay/login";
+    window.location.href = "/my-agapay/login";
     return;
   }
   const win = window.open("", "_blank");
@@ -1814,7 +1814,7 @@ function renderPledgeTracker(donor) {
     const goal = document.getElementById("pledgeGoal");
     if (goal)   goal.textContent = "of " + money(pledgeCents) + " pledge";
     const editLink = mobileCard.querySelector(".pledge-tracker-edit");
-    if (editLink) editLink.href = "/donor/settings#pledge";
+    if (editLink) editLink.href = "/my-agapay/settings#pledge";
   }
 
   // Desktop tracker

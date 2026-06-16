@@ -62,7 +62,7 @@
         </div>
         <div class="donor-auth-actions">
           <button class="btn btn-gold" type="submit">Log in</button>
-          <a class="btn btn-ghost" href="/myagapay/signup">Sign up</a>
+          <a class="btn btn-ghost" href="/my-agapay/signup">Sign up</a>
           <button class="btn btn-ghost" type="button" data-donor-auth-view="reset">Forgot password?</button>
         </div>
       </form>
@@ -166,7 +166,7 @@
             localStorage.setItem("agapayDonorProfile", JSON.stringify(profile));
           }
           setStatus("Signed in. Opening My AGAPAY...", "success");
-          window.location.href = "/myagapay/";
+          window.location.href = "/my-agapay/";
         } catch (error) {
           localStorage.removeItem("agapayDonorToken");
           setStatus(error.message === "Unauthorized"

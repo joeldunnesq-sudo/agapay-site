@@ -55,7 +55,7 @@
         }
       });
       if (res.ok) {
-        window.location.replace("/myagapay/dashboard");
+        window.location.replace("/my-agapay/dashboard");
         return;
       }
       if (res.status === 401) {

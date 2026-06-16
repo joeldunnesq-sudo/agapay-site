@@ -551,8 +551,19 @@ function cleanAssetRequest(request) {
     url.pathname = "/donor/index.html";
     return new Request(url, request);
   }
-  if (url.pathname === "/myagapay" || url.pathname === "/myagapay/" || url.pathname === "/myagapay/dashboard") {
+  if (
+    url.pathname === "/my-agapay" ||
+    url.pathname === "/my-agapay/" ||
+    url.pathname === "/my-agapay/dashboard" ||
+    url.pathname === "/myagapay" ||
+    url.pathname === "/myagapay/" ||
+    url.pathname === "/myagapay/dashboard"
+  ) {
     url.pathname = "/donor/index.html";
+    return new Request(url, request);
+  }
+  if (url.pathname.startsWith("/my-agapay/") && !url.pathname.includes(".")) {
+    url.pathname = url.pathname.replace(/^\/my-agapay/, "/donor") + ".html";
     return new Request(url, request);
   }
   if (url.pathname.startsWith("/myagapay/") && !url.pathname.includes(".")) {
@@ -772,7 +783,14 @@ export default {
     if (url.pathname === "/api/donor/verify") {
       return handleDonorVerify(request, env);
     }
-    if (url.pathname === "/donor/verify" || url.pathname === "/donor/verify/" || url.pathname === "/myagapay/verify" || url.pathname === "/myagapay/verify/") {
+    if (
+      url.pathname === "/donor/verify" ||
+      url.pathname === "/donor/verify/" ||
+      url.pathname === "/my-agapay/verify" ||
+      url.pathname === "/my-agapay/verify/" ||
+      url.pathname === "/myagapay/verify" ||
+      url.pathname === "/myagapay/verify/"
+    ) {
       return handleDonorVerifyPage(request, env);
     }
     if (url.pathname === "/api/donor/session") {
