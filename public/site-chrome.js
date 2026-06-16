@@ -135,10 +135,24 @@
             </nav>
             <nav class="footer-col" aria-label="AGAPAY Giving">
               <h4>Giving</h4>
-              <a href="/features">Features</a>
-              <a href="/how-it-works">How It Works</a>
-              <a href="/pricing">Pricing</a>
+              <a href="/giving">Overview</a>
+              <a href="/giving/parish-giving">Parish Giving</a>
+              <a href="/giving/recurring-donations">Recurring Donations</a>
+              <a href="/giving/fundraising">Fundraising</a>
+              <a href="/giving/event-payments">Event Payments</a>
+              <a href="/giving/features">Features</a>
+              <a href="/giving/how-it-works">How It Works</a>
+              <a href="/giving/pricing">Pricing</a>
               <a href="/register">Register</a>
+            </nav>
+            <nav class="footer-col" aria-label="AGAPAY Learn">
+              <h4>Learn</h4>
+              <a href="/learn">Overview</a>
+              <a href="/learn/pricing">Pricing</a>
+              <a href="/learn/planner">Planner</a>
+              <a href="/learn/formation">Formation</a>
+              <a href="/learn/books">Books</a>
+              <a href="/learn/print-center">Print Center</a>
             </nav>
             <nav class="footer-col" aria-label="Company">
               <h4>Company</h4>

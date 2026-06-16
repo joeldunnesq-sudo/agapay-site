@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pricing | AGAPAY</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
+  <link rel="shortcut icon" href="/favicons/favicon.ico" />
+  <meta name="description" content="Transparent AGAPAY pricing for missions, parishes, monasteries, cathedrals, and dioceses, including card, wallet, and Instant Bank Payment giving with clear monthly tiers and predictable fees." />
+  <link rel="canonical" href="https://agapay.app/giving/pricing" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="AGAPAY" />
+  <meta property="og:title" content="Pricing | AGAPAY" />
+  <meta property="og:description" content="Honest fees, transparent tiers, and Orthodox-first stewardship pricing." />
+  <meta property="og:url" content="https://agapay.app/pricing" />
+  <meta property="og:image" content="https://agapay.app/images/pricing/alms-box-hero.png" />
+  <meta property="og:image:alt" content="Orthodox alms box sketch used on the AGAPAY pricing page" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Pricing | AGAPAY" />
+  <meta name="twitter:description" content="Honest fees, transparent tiers, and Orthodox-first stewardship pricing." />
+  <meta name="twitter:image" content="https://agapay.app/images/pricing/alms-box-hero.png" />
+  <meta name="theme-color" content="#061522" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --night: #061522; --night-2: #0B2130; --ink: #171715; --cream: #F6F1E8; --paper: #FFFDF8;
+      --parchment: #F3EDE0; --parchment-2: #EFE8DA; --stone: #70695D; --muted: #A69F91;
+      --gold: #C8A24A; --gold-dark: #A97C25; --line: rgba(166, 159, 145, 0.28);
+      --serif: "Cormorant Garamond", Georgia, serif; --sans: "DM Sans", system-ui, sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body { min-height: 100vh; font-family: var(--sans); color: var(--ink); background: var(--cream); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    body.drawer-open { overflow: hidden; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    svg { display: block; }
+
+    /* HEADER / NAV (canonical) */
+    .site-header { position: sticky; top: 0; z-index: 100; background: linear-gradient(90deg, #061522, #0B2130); border-bottom: 1px solid rgba(200, 162, 74, 0.24); padding: 0.95rem clamp(1rem, 2.6vw, 2.6rem); }
+    .nav { width: min(1320px, 100%); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .brand { display: flex; align-items: center; gap: 0.75rem; color: var(--cream); min-width: max-content; }
+    .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(200, 162, 74, 0.52); background: rgba(6, 21, 34, 0.45); }
+    .brand-mark img { width: 38px; height: 38px; object-fit: contain; }
+    .brand-name { display: flex; flex-direction: column; line-height: 1; }
+    .brand-name strong { font-family: var(--serif); font-size: 2rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+    .brand-name span { margin-top: 0.22rem; color: var(--gold); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+    .nav-links { margin-left: auto; display: flex; align-items: center; gap: clamp(0.9rem, 2vw, 2rem); color: rgba(246, 241, 232, 0.9); font-size: 0.9rem; font-weight: 600; }
+    .nav-links a.active { color: var(--gold); border-bottom: 2px solid var(--gold); padding-bottom: 0.36rem; }
+    .nav-actions { display: flex; align-items: center; gap: 0.8rem; margin-left: 1rem; position: relative; }
+    .btn-donate { min-height: 44px; padding: 0 1.45rem; border-radius: 8px; border: 1px solid rgba(200, 162, 74, 0.6); color: var(--cream); font-size: 0.95rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.45rem; background: rgba(6, 21, 34, 0.34); }
+    .btn-donate svg { width: 18px; height: 18px; stroke: var(--gold); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .signin-wrap { position: relative; }
+    .nav-avatar { width: 44px; height: 44px; border-radius: 999px; border: 1px solid rgba(200, 162, 74, 0.7); background: rgba(6, 21, 34, 0.36); display: grid; place-items: center; cursor: pointer; }
+    .nav-avatar svg { width: 18px; height: 18px; stroke: var(--gold); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .signin-menu { position: absolute; top: calc(100% + 0.5rem); right: 0; background: var(--night-2); border: 1px solid rgba(200, 162, 74, 0.3); border-radius: 10px; padding: 0.4rem; min-width: 180px; box-shadow: 0 16px 36px rgba(0,0,0,0.4); display: none; z-index: 120; }
+    .signin-menu.open { display: grid; gap: 0.15rem; }
+    .signin-menu a { padding: 0.6rem 0.7rem; border-radius: 7px; font-size: 0.9rem; font-weight: 600; color: rgba(246, 241, 232, 0.88); }
+    .signin-menu a:hover { background: rgba(200, 162, 74, 0.16); color: #FFE7B6; }
+    .mobile-menu-btn { display: none; width: 44px; height: 44px; border-radius: 10px; border: 1px solid rgba(200, 162, 74, 0.45); background: rgba(6, 21, 34, 0.45); color: var(--cream); align-items: center; justify-content: center; padding: 0; cursor: pointer; }
+    .mobile-menu-btn svg { width: 22px; height: 22px; stroke: var(--cream); fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+    .drawer-backdrop { position: fixed; inset: 0; background: rgba(5, 16, 26, 0.58); opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 110; }
+    .mobile-drawer { position: fixed; top: 0; right: 0; width: min(90vw, 380px); height: 100vh; background: linear-gradient(180deg, #081a2a, #061522); color: var(--cream); transform: translateX(105%); transition: transform 0.24s ease; z-index: 115; display: grid; grid-template-rows: auto 1fr; border-left: 1px solid rgba(200, 162, 74, 0.26); box-shadow: -20px 0 45px rgba(0, 0, 0, 0.35); }
+    .drawer-open .drawer-backdrop { opacity: 1; pointer-events: auto; }
+    .drawer-open .mobile-drawer { transform: translateX(0); }
+    .drawer-head { padding: 1rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(200, 162, 74, 0.2); }
+    .drawer-title { font-family: var(--serif); font-size: 1.4rem; letter-spacing: 0.04em; }
+    .drawer-close { width: 34px; height: 34px; border-radius: 8px; border: 1px solid rgba(200, 162, 74, 0.3); background: transparent; color: var(--cream); display: grid; place-items: center; font-size: 1.2rem; line-height: 1; cursor: pointer; }
+    .drawer-scroll { overflow-y: auto; padding: 0.8rem 1rem 1.2rem; display: grid; gap: 1rem; align-content: start; }
+    .drawer-links { display: grid; gap: 0.35rem; }
+    .drawer-links a { padding: 0.6rem 0.55rem; border-radius: 8px; color: rgba(246, 241, 232, 0.9); font-size: 0.95rem; font-weight: 600; }
+    .drawer-links a.active { background: rgba(200, 162, 74, 0.16); color: #FFE7B6; }
+    .drawer-divider { height: 1px; background: rgba(200,162,74,0.2); margin: 0.4rem 0; }
+    .drawer-join { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 8px; background: linear-gradient(135deg, #D6AF5B, #B98832); color: #0A1724; font-size: 0.96rem; font-weight: 700; letter-spacing: 0.02em; }
+
+    .page { width: min(1320px, calc(100% - 2rem)); margin: 0.95rem auto 2rem; border: 1px solid var(--line); background: var(--paper); box-shadow: 0 10px 38px rgba(12, 22, 32, 0.08); overflow: hidden; }
+
+    /* HERO — grid (image is a real cell, flows below text on mobile) */
+    .pricing-hero { position: relative; display: grid; grid-template-columns: minmax(320px, 0.82fr) minmax(420px, 1.18fr); gap: 1.5rem; padding: clamp(2rem, 4vw, 3.4rem) clamp(1.6rem, 4vw, 3rem); border-bottom: 1px solid var(--line); align-items: center; overflow: hidden; min-height: 480px; background: radial-gradient(circle at 15% 8%, rgba(200, 162, 74, 0.14), transparent 32%), linear-gradient(180deg, var(--parchment) 0%, var(--parchment-2) 100%); }
+    .pricing-hero::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(30deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08)), linear-gradient(150deg, rgba(166, 159, 145, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(166, 159, 145, 0.08) 87.5%, rgba(166, 159, 145, 0.08)); background-size: 54px 94px; opacity: 0.22; pointer-events: none; }
+    .pricing-hero > * { position: relative; z-index: 1; }
+    .hero-copy { max-width: 540px; }
+    .hero-copy .eyebrow, .section-kicker { display: inline-flex; align-items: center; gap: 0.56rem; color: var(--gold-dark); text-transform: uppercase; letter-spacing: 0.11em; font-size: 0.76rem; font-weight: 800; margin-bottom: 0.72rem; }
+    .hero-copy .eyebrow svg, .section-kicker svg { width: 21px; height: 21px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .hero-copy h1 { font-family: var(--serif); color: #0A1524; font-size: clamp(3.2rem, 7vw, 6rem); line-height: 0.9; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.65rem; }
+    .hero-copy h2 { font-family: var(--serif); color: var(--gold-dark); font-size: clamp(2.1rem, 4vw, 3.4rem); font-style: italic; font-weight: 500; line-height: 1.1; margin-bottom: 1.1rem; }
+    .hero-copy p { color: #4D4A44; font-size: 1.03rem; line-height: 1.68; max-width: 540px; margin-bottom: 1.25rem; }
+    .hero-actions { display: flex; align-items: center; gap: 0.95rem; flex-wrap: wrap; }
+    .hero-btn-primary, .hero-btn-secondary, .small-btn { min-height: 46px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; gap: 0.55rem; padding: 0 1.25rem; font-size: 0.86rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+    .hero-btn-primary, .small-btn.primary { background: linear-gradient(135deg, #061522, #0B2130); color: #F6F1E8; border: 1px solid rgba(200, 162, 74, 0.25); }
+    .hero-btn-secondary, .small-btn.secondary { color: #6F4C14; border: 1px solid rgba(200, 162, 74, 0.55); background: rgba(255, 253, 248, 0.62); }
+    .hero-btn-primary svg, .hero-btn-secondary svg, .small-btn svg { width: 17px; height: 17px; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .hero-btn-primary svg, .small-btn.primary svg { stroke: var(--gold); }
+    .hero-btn-secondary svg, .small-btn.secondary svg { stroke: #9A6F21; }
+    .hero-art { align-self: stretch; min-height: 420px; background-image: url("/images/pricing/alms-box-hero.png"); background-size: contain; background-repeat: no-repeat; background-position: center right; filter: saturate(0) brightness(1.1) contrast(1.2); mix-blend-mode: multiply; -webkit-mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%); mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%); }
+
+    .pricing-clarity { position:relative; overflow:hidden; border-bottom:1px solid rgba(200,162,74,.28); background:linear-gradient(100deg,#071724,#0C2739); color:var(--cream); padding:clamp(1.4rem,3vw,2rem); }
+    .pricing-clarity::before { content:""; position:absolute; inset:0; background:radial-gradient(circle at 78% 20%,rgba(200,162,74,.16),transparent 20rem),repeating-linear-gradient(90deg,transparent 0 90px,rgba(200,162,74,.045) 90px 91px); pointer-events:none; }
+    .clarity-inner { position:relative; z-index:1; width:min(1160px,100%); margin:0 auto; display:grid; grid-template-columns:minmax(240px,.76fr) minmax(360px,1.24fr); gap:clamp(1rem,4vw,3rem); align-items:center; }
+    .clarity-copy h2 { font-family:var(--serif); font-size:clamp(1.9rem,3.5vw,3rem); font-weight:500; line-height:1.05; margin-bottom:.5rem; }
+    .clarity-copy p { color:rgba(246,241,232,.68); line-height:1.65; max-width:470px; }
+    .clarity-panel { border:1px solid rgba(200,162,74,.26); border-radius:14px; background:rgba(246,241,232,.06); overflow:hidden; }
+    .clarity-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:rgba(200,162,74,.2); }
+    .clarity-tab { min-height:52px; border:0; color:rgba(246,241,232,.68); background:#071724; cursor:pointer; font-weight:800; letter-spacing:.03em; }
+    .clarity-tab[aria-selected="true"] { color:#071724; background:linear-gradient(135deg,#D6AF5B,#B98832); }
+    .clarity-body { display:grid; grid-template-columns:.9fr 1.1fr; gap:1rem; align-items:center; padding:1.15rem; }
+    .clarity-stat { padding:1rem; border:1px solid rgba(200,162,74,.2); border-radius:12px; background:rgba(6,21,34,.28); }
+    .clarity-stat span { display:block; color:rgba(246,241,232,.52); font-size:.7rem; letter-spacing:.13em; text-transform:uppercase; font-weight:800; margin-bottom:.4rem; }
+    .clarity-stat strong { display:block; color:var(--gold); font-family:var(--serif); font-size:2.6rem; line-height:1; font-weight:500; }
+    .clarity-detail strong { display:block; color:var(--cream); font-family:var(--serif); font-size:1.55rem; font-weight:500; margin-bottom:.35rem; }
+    .clarity-detail p { color:rgba(246,241,232,.7); line-height:1.6; }
+    @media (max-width:860px){ .clarity-inner,.clarity-body{grid-template-columns:1fr;} .clarity-tabs{grid-template-columns:1fr;} }
+
+    .pricing-content { padding: 2rem 2rem 2.4rem; background: linear-gradient(180deg, rgba(255, 253, 248, 0.82), rgba(246, 241, 232, 0.72)); }
+    .pricing-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; align-items: stretch; }
+    .tier-card { position: relative; border: 1px solid rgba(166, 159, 145, 0.35); border-radius: 16px; background: rgba(255, 253, 248, 0.94); padding: 1.25rem 1.05rem 1.05rem; box-shadow: 0 12px 30px rgba(6, 21, 34, 0.06); display: grid; gap: 0.8rem; }
+    .tier-card.featured { border-color: rgba(200, 162, 74, 0.78); box-shadow: 0 16px 34px rgba(200, 162, 74, 0.14); }
+    .popular { position: absolute; top: -0.72rem; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #D6AF5B, #B98832); color: #0B2130; border-radius: 999px; padding: 0.28rem 0.8rem; font-size: 0.68rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
+    .tier-icon { width: 62px; height: 62px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; border: 1px solid rgba(200, 162, 74, 0.36); color: #A5792B; background: rgba(200, 162, 74, 0.07); }
+    .tier-icon svg { width: 35px; height: 35px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .tier-title { text-align: center; color: #071729; text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--serif); font-weight: 600; font-size: 1.5rem; line-height: 0.98; }
+    .tier-price { text-align: center; color: var(--night); font-family: var(--serif); font-size: 2.7rem; line-height: 0.95; font-weight: 700; }
+    .tier-price span { font-family: var(--sans); font-size: 0.78rem; color: var(--gold-dark); font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
+    .tier-sub { min-height: 42px; text-align: center; color: #33404A; font-size: 0.88rem; line-height: 1.45; }
+    .tier-features { list-style: none; display: grid; gap: 0.52rem; margin-top: 0.15rem; }
+    .tier-features li { display: grid; grid-template-columns: 18px 1fr; gap: 0.42rem; color: #28323A; font-size: 0.82rem; line-height: 1.4; align-items: start; }
+    .tier-features li .ck { width: 16px; height: 16px; margin-top: 0.12rem; }
+    .tier-features li .ck svg { width: 16px; height: 16px; stroke: var(--gold-dark); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .tier-card .small-btn { margin-top: auto; width: 100%; min-height: 42px; font-size: 0.75rem; }
+
+    .fee-banner { margin-top: 1.25rem; border: 1px solid rgba(200, 162, 74, 0.42); border-radius: 14px; background: linear-gradient(135deg, rgba(255, 253, 248, 0.94), rgba(248, 242, 231, 0.82)); display: grid; grid-template-columns: minmax(270px, 0.88fr) minmax(420px, 1.2fr) minmax(260px, 0.82fr); gap: 1rem; align-items: stretch; padding: 1.1rem 1.25rem; box-shadow: 0 12px 30px rgba(6, 21, 34, 0.06); }
+    .fee-main { display: grid; grid-template-columns: auto 1fr; gap: 0.9rem; align-items: center; }
+    .fee-badge { width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center; background: var(--night); color: var(--gold); border: 2px solid var(--gold); font-family: var(--serif); font-size: 2rem; box-shadow: 0 8px 22px rgba(6, 21, 34, 0.14); }
+    .fee-main h2 { font-family: var(--serif); color: var(--night); font-size: clamp(1.8rem, 3vw, 2.45rem); line-height: 1.04; font-weight: 600; }
+    .fee-main p, .fee-note p { color: #34434B; line-height: 1.55; font-size: 0.96rem; }
+    .fee-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+    .fee-line { border: 1px solid rgba(200, 162, 74, 0.28); border-radius: 12px; background: rgba(255, 253, 248, 0.76); padding: 0.86rem; display: grid; align-content: start; gap: 0.34rem; color: #273640; font-size: 0.88rem; line-height: 1.38; min-height: 100%; }
+    .fee-line strong { font-family: var(--serif); color: var(--night); font-size: 1.22rem; line-height: 1.05; }
+    .fee-line .fee-label { color: var(--gold-dark); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+    .fee-line small { color: #5A646C; font-size: 0.77rem; line-height: 1.45; }
+    .fee-note { border-left: 1px solid rgba(166, 159, 145, 0.24); padding-left: 1rem; display: grid; grid-template-columns: auto 1fr; gap: 0.8rem; align-items: center; }
+    .fee-note svg { width: 52px; height: 52px; stroke: #A5792B; fill: none; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; }
+    .fee-note strong { display: block; color: var(--night); font-family: var(--serif); font-size: 1.12rem; line-height: 1.15; margin-bottom: 0.18rem; }
+
+    .lower-grid { margin-top: 1.25rem; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr); gap: 1rem; }
+    .calculator, .value-card { border: 1px solid rgba(166, 159, 145, 0.34); border-radius: 14px; background: rgba(255, 253, 248, 0.92); box-shadow: 0 10px 26px rgba(6, 21, 34, 0.06); overflow: hidden; }
+    .calculator { display: grid; grid-template-columns: minmax(270px, 0.96fr) minmax(290px, 1.04fr); }
+    .calc-controls, .calc-results { padding: 1.35rem; }
+    .calc-controls h2, .value-card h2, .faq-title, .closing-cta h2 { font-family: var(--serif); color: var(--night); font-size: clamp(1.7rem, 2.8vw, 2.4rem); line-height: 1.08; font-weight: 600; margin-bottom: 0.28rem; }
+    .calc-controls p, .value-card p, .closing-cta p { color: #44505A; line-height: 1.62; font-size: 0.95rem; }
+    .slider-group { margin-top: 1.35rem; }
+    .input-group { margin-top: 1.15rem; display: grid; gap: 0.55rem; }
+    .input-group label { color: var(--night); font-size: 0.84rem; font-weight: 800; }
+    .input-row { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0.55rem; border: 1px solid rgba(166, 159, 145, 0.28); border-radius: 9px; background: #fff; padding: 0.45rem 0.65rem; max-width: 190px; }
+    .input-row span { color: var(--gold-dark); font-family: var(--serif); font-size: 1.1rem; font-weight: 700; }
+    .input-row input { width: 100%; border: 0; outline: 0; color: var(--night); font-family: var(--serif); font-size: 1.1rem; font-weight: 700; background: transparent; }
+    .payment-method-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.62rem; margin-top: 0.25rem; }
+    .payment-method-card { border: 1px solid rgba(166, 159, 145, 0.3); border-radius: 10px; background: rgba(255, 253, 248, 0.82); padding: 0.72rem 0.78rem; display: grid; grid-template-columns: auto 1fr; gap: 0.55rem; align-items: start; cursor: pointer; transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease; }
+    .payment-method-card:has(input:checked) { border-color: rgba(200, 162, 74, 0.72); background: rgba(200, 162, 74, 0.1); box-shadow: 0 8px 18px rgba(6, 21, 34, 0.06); }
+    .payment-method-card input { margin-top: 0.18rem; accent-color: var(--gold-dark); }
+    .payment-method-card strong { display: block; color: var(--night); font-size: 0.86rem; line-height: 1.25; }
+    .payment-method-card small { display: block; margin-top: 0.18rem; color: #657078; font-size: 0.74rem; line-height: 1.45; }
+    .calc-assumption { margin-top: 0.75rem; color: #667078; font-size: 0.82rem; line-height: 1.5; }
+    .slider-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.65rem; color: var(--night); font-size: 0.84rem; font-weight: 800; }
+    .slider-head output { min-width: 86px; border: 1px solid rgba(166, 159, 145, 0.28); border-radius: 8px; padding: 0.35rem 0.5rem; background: #fff; text-align: center; font-family: var(--serif); font-size: 1.1rem; }
+    input[type="range"] { width: 100%; appearance: none; -webkit-appearance: none; height: 7px; border-radius: 999px; background: linear-gradient(90deg, rgba(200, 162, 74, 0.92), rgba(6, 21, 34, 0.22)); outline: none; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 21px; height: 21px; border-radius: 50%; background: var(--night); border: 3px solid var(--gold); cursor: pointer; box-shadow: 0 3px 12px rgba(6, 21, 34, 0.22); }
+    input[type="range"]::-moz-range-thumb { width: 21px; height: 21px; border-radius: 50%; background: var(--night); border: 3px solid var(--gold); cursor: pointer; }
+    .calc-results { border-left: 1px solid rgba(166, 159, 145, 0.24); display: grid; align-content: center; gap: 0.72rem; background: linear-gradient(180deg, rgba(246, 241, 232, 0.66), rgba(255, 253, 248, 0.84)); }
+    .result-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; color: #273640; border-bottom: 1px solid rgba(166, 159, 145, 0.17); padding-bottom: 0.55rem; font-size: 0.9rem; }
+    .result-row strong { font-family: var(--serif); font-size: 1.14rem; color: var(--night); white-space: nowrap; }
+    .result-row.negative strong { color: #B33A32; }
+    .result-row.positive strong { color: #218143; }
+    .result-row.muted { color: #5B656D; font-size: 0.82rem; }
+    .result-row.muted strong { color: #5B656D; font-size: 0.96rem; }
+    .result-row.net { margin-top: 0.2rem; border: 0; background: rgba(6, 21, 34, 0.06); border-radius: 10px; padding: 0.75rem 0.85rem; font-weight: 800; }
+    .value-card { position: relative; min-height: 100%; padding: 1.35rem; display: grid; align-content: start; gap: 1rem; }
+    .value-card img { margin-top: auto; width: 100%; max-height: 210px; object-fit: contain; filter: saturate(0) brightness(1.1) contrast(1.2); mix-blend-mode: multiply; }
+
+    .faq-section { margin-top: 1.35rem; border-top: 1px solid rgba(200, 162, 74, 0.3); padding-top: 1.1rem; }
+    .faq-title { text-align: center; margin-bottom: 0.95rem; }
+    .faq-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.68rem 1rem; }
+    .faq { border: 1px solid rgba(166, 159, 145, 0.3); border-radius: 10px; background: rgba(255, 253, 248, 0.82); overflow: hidden; }
+    .faq button { width: 100%; border: 0; background: transparent; padding: 0.72rem 0.95rem; font-family: var(--serif); font-size: 1.12rem; color: var(--night); display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; text-align: left; cursor: pointer; }
+    .faq button span { color: var(--gold-dark); font-family: var(--sans); }
+    .faq p { max-height: 0; overflow: hidden; color: #4B555D; font-size: 0.9rem; line-height: 1.58; padding: 0 0.95rem; transition: max-height 0.25s ease, padding-bottom 0.25s ease; }
+    .faq.open p { max-height: 240px; padding-bottom: 0.9rem; }
+
+    .closing-cta { margin-top: 1.15rem; border: 1px solid rgba(200, 162, 74, 0.36); border-radius: 14px; background: rgba(255, 253, 248, 0.92); display: grid; grid-template-columns: 1fr 1.2fr auto; gap: 1.1rem; align-items: center; padding: 1rem 1.25rem; }
+    .closing-cta img { height: 120px; width: 100%; object-fit: contain; filter: saturate(0) brightness(1.1) contrast(1.2); mix-blend-mode: multiply; }
+    .closing-actions { display: grid; gap: 0.7rem; min-width: 230px; }
+
+    /* FOOTER (canonical) */
+    .site-footer { background: linear-gradient(90deg, #061522, #0B2130); color: var(--cream); padding: 2.4rem clamp(1rem, 2.6vw, 2.6rem) 1.2rem; }
+    .footer-inner { width: min(1320px, 100%); margin: 0 auto; }
+    .footer-grid { display: grid; grid-template-columns: minmax(240px, 1.2fr) repeat(4, minmax(120px, 0.5fr)); gap: 2rem; padding-bottom: 1.8rem; border-bottom: 1px solid rgba(200, 162, 74, 0.18); }
+    .footer-lockup { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.7rem; }
+    .footer-lockup img { width: 48px; height: 48px; border: 1px solid rgba(200, 162, 74, 0.45); border-radius: 50%; object-fit: contain; }
+    .footer-lockup .fl-name { display: flex; flex-direction: column; line-height: 1; }
+    .footer-lockup strong { font-family: var(--serif); font-size: 1.7rem; font-weight: 500; letter-spacing: 0.08em; }
+    .footer-lockup .fl-tag { color: var(--gold); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 0.25rem; }
+    .footer-brand p { color: rgba(246, 241, 232, 0.74); line-height: 1.6; max-width: 300px; font-size: 0.9rem; }
+    .footer-col h4 { color: var(--gold); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 0.85rem; }
+    .footer-col a { display: block; color: rgba(246, 241, 232, 0.72); font-size: 0.9rem; margin-bottom: 0.52rem; }
+    .footer-bottom { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-top: 1.2rem; color: rgba(246, 241, 232, 0.58); font-size: 0.82rem; }
+
+    @media (max-width: 1160px) {
+      .nav-links, .nav-actions { display: none; }
+      .mobile-menu-btn { display: inline-flex; }
+      .pricing-hero { grid-template-columns: 1fr; padding: 1.6rem 1.25rem; min-height: auto; }
+      .hero-art { min-height: 300px; order: 2; background-position: center; margin-top: 0.5rem; }
+      .pricing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .fee-banner, .lower-grid, .closing-cta { grid-template-columns: 1fr; }
+      .fee-split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .fee-note { border-left: 0; border-top: 1px solid rgba(166, 159, 145, 0.24); padding: 1rem 0 0; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .footer-bottom { flex-direction: column; }
+    }
+    @media (max-width: 760px) {
+      .site-header { padding: 0.8rem 0.9rem; }
+      .brand-name strong { font-size: 1.75rem; letter-spacing: 0.07em; }
+      .brand-name span { display: none; }
+      .page { width: min(100% - 1rem, 1320px); margin-top: 0.55rem; }
+      .hero-copy h1 { font-size: clamp(3rem, 14vw, 4.5rem); letter-spacing: 0.08em; }
+      .hero-actions, .hero-btn-primary, .hero-btn-secondary { width: 100%; }
+      .pricing-content { padding: 1.2rem 0.8rem 1.5rem; }
+      .pricing-grid, .calculator, .faq-grid { grid-template-columns: 1fr; }
+      .fee-main { grid-template-columns: 1fr; }
+      .fee-badge { width: 58px; height: 58px; font-size: 1.6rem; }
+      .fee-split { grid-template-columns: 1fr; }
+      .payment-method-grid { grid-template-columns: 1fr; }
+      .calc-results { border-left: 0; border-top: 1px solid rgba(166, 159, 145, 0.24); }
+      .closing-actions { min-width: 0; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-bottom { display: grid; }
+    }
+  </style>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="AGAPAY" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="/site-chrome.css" />
+  <script src="/site-chrome.js" defer></script>
+</head>
+<body>
+<main class="page">
+    <section class="pricing-hero">
+      <div class="hero-copy">
+        <div class="eyebrow"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M8 7h8"/><path d="M6 12h12"/><path d="M8 16l8 2"/></svg>Pricing</div>
+        <h1>Simple fees</h1>
+        <h2> Nothing hidden.</h2>
+        <p>Transparent pricing for missions, parishes, monasteries, cathedrals, and dioceses &mdash; built so Orthodox communities can give, receive, and steward with confidence.</p>
+        <div class="hero-actions">
+          <a class="hero-btn-primary" href="/register"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-8 0v2"/><circle cx="12" cy="7" r="4"/><path d="M4 21h16"/></svg>Request early access</a>
+          <a class="hero-btn-secondary" href="#calculator"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 11h2"/><path d="M14 11h2"/><path d="M8 15h2"/><path d="M14 15h2"/></svg>Calculate your fees</a>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true"></div>
+    </section>
+
+    <section class="pricing-clarity" aria-labelledby="clarity-title">
+      <div class="clarity-inner">
+        <div class="clarity-copy">
+          <div class="section-kicker">Pricing clarity</div>
+          <h2 id="clarity-title">No mystery between the gift and the deposit.</h2>
+          <p>AGAPAY makes the subscription, transaction fee, and donor-covered fee option understandable before anyone starts giving.</p>
+        </div>
+        <div class="clarity-panel">
+          <div class="clarity-tabs" role="tablist" aria-label="Pricing clarity preview">
+            <button class="clarity-tab" type="button" role="tab" aria-selected="true" data-clarity="subscription">Monthly tier</button>
+            <button class="clarity-tab" type="button" role="tab" aria-selected="false" data-clarity="transaction">Donation fee</button>
+            <button class="clarity-tab" type="button" role="tab" aria-selected="false" data-clarity="covered">Donor-covered</button>
+          </div>
+          <div class="clarity-body">
+            <div class="clarity-stat">
+              <span id="clarityLabel">Parish plan</span>
+              <strong id="clarityValue">$99</strong>
+            </div>
+            <div class="clarity-detail">
+              <strong id="clarityTitle">Predictable monthly cost</strong>
+              <p id="clarityCopy">Parishes can budget around a clear monthly platform tier, then use the calculator below to model donation volume and fee coverage.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pricing-content" aria-label="Pricing plans">
+      <div class="pricing-grid">
+        <article class="tier-card">
+          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M6 20V11l3-3 3 3v9"/><path d="M12 11h6l2 2v7"/><path d="M9 8V5"/><path d="M7.8 6.5h2.4"/></svg></div>
+          <h2 class="tier-title">Mission</h2>
+          <div class="tier-price">$49 <span>/ mo</span></div>
+          <p class="tier-sub">For mission parishes and communities up to 50 giving households.</p>
+          <ul class="tier-features">
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Online giving and recurring donations</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Donor-covered fee option</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Annual giving statements</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Liturgical calendar timing</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Priest commemoration queue</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Email support</li>
+          </ul>
+          <a class="small-btn primary" href="/register">Register your mission</a>
+        </article>
+
+        <article class="tier-card featured">
+          <div class="popular">Most popular</div>
+          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M6 20V10l6-5 6 5v10"/><path d="M8 10a4 4 0 0 1 8 0"/><path d="M12 5V2"/><path d="M10.5 3.5h3"/></svg></div>
+          <h2 class="tier-title">Parish</h2>
+          <div class="tier-price">$99 <span>/ mo</span></div>
+          <p class="tier-sub">For established parishes with 51&ndash;300 giving households.</p>
+          <ul class="tier-features">
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Everything in Mission, plus</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Multi-administrator access</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Priority email support</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Enhanced reporting</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Full stewardship tools</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Dashboard invite workflow</li>
+          </ul>
+          <a class="small-btn primary" href="/register">Register your parish</a>
+        </article>
+
+        <article class="tier-card">
+          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M2.5 20h19"/><path d="M5 20V11l3-2 4-4 4 4 3 2v9"/><path d="M12 5V2"/><path d="M10.5 3.5h3"/></svg></div>
+          <h2 class="tier-title">Cathedral / Diocese</h2>
+          <div class="tier-price">Custom</div>
+          <p class="tier-sub">For 301+ households, cathedrals, and diocesan use.</p>
+          <ul class="tier-features">
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Negotiated transaction rates</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Multi-parish dashboard</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Diocese-level reporting</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>White-label options</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Dedicated account support</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>SLA options</li>
+          </ul>
+          <a class="small-btn primary" href="/contact">Contact us</a>
+        </article>
+
+         <article class="tier-card">
+          <div class="tier-icon"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M4 20V11l3-2 3 2 2-2 2 2 3-2 3 2v9"/><path d="M7 9V6"/><path d="M15 9V6"/></svg></div>
+          <h2 class="tier-title">Monastic</h2>
+          <div class="tier-price">$0 <span>/ mo</span></div>
+          <p class="tier-sub">For monasteries, sketes, and convents.</p>
+          <ul class="tier-features">
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>No monthly platform fee &mdash; ever</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Campaign and donation tools</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Commemoration lists</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Liturgical calendar</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Donor-covered fees</li>
+            <li><span class="ck"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Email support</li>
+          </ul>
+          <a class="small-btn primary" href="/register">Register your monastery</a>
+        </article>
+      </div>
+
+      <aside class="fee-banner" aria-label="Transaction fee explanation">
+        <div class="fee-main">
+          <div class="fee-badge">%</div>
+          <div>
+            <h2>Two ways to give. One clear fee model.</h2>
+            <p>Every donation uses AGAPAY's simple 5% + $0.30 total fee. Donors can give by card or wallet, or by Instant Bank Payment through Link.</p>
+          </div>
+        </div>
+        <div class="fee-split">
+          <div class="fee-line">
+            <span class="fee-label">Card & wallet</span>
+            <strong>Familiar, fast checkout</strong>
+            <span>Includes cards, Apple Pay, and Google Pay when available.</span>
+            <small>Stripe processing estimate: 2.9% + $0.30. AGAPAY receives the remaining platform share inside the 5% + $0.30 total.</small>
+          </div>
+          <div class="fee-line">
+            <span class="fee-label">Instant Bank Payment</span>
+            <strong>Lower Stripe processing</strong>
+            <span>Powered by Link for donors who prefer verified bank payment.</span>
+            <small>Stripe processing estimate: 2.6% + $0.30. Settlement and parish payout timing can differ while the bank payment clears.</small>
+          </div>
+        </div>
+        <div class="fee-note">
+          <svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5 20V9l7-5 7 5v11"/><path d="M8 12h5"/><path d="M8 16h4"/><circle cx="17" cy="16" r="4"/><path d="M17 14v2l1.5 1"/></svg>
+          <p><strong>Transparent at checkout.</strong> Donors can choose whether to cover fees. Treasurers see the Stripe processing portion and the AGAPAY platform fee clearly in reporting.</p>
+        </div>
+      </aside>
+
+      <div class="lower-grid" id="calculator">
+        <section class="calculator" aria-label="Fee calculator">
+          <div class="calc-controls">
+            <h2>See what your parish actually receives.</h2>
+            <p>Adjust monthly giving, the average gift size, payment method, and donor fee coverage to understand your true net deposit.</p>
+            <div class="slider-group">
+              <div class="slider-head"><label for="volumeRange">Monthly gift volume</label><output id="volumeDisplay">$20,000</output></div>
+              <input type="range" id="volumeRange" min="2000" max="50000" step="1000" value="20000" />
+            </div>
+            <div class="input-group">
+              <label for="averageGiftInput">Average gift size</label>
+              <div class="input-row"><span>$</span><input id="averageGiftInput" type="number" min="5" max="5000" step="5" value="75" inputmode="decimal" /></div>
+              <p class="calc-assumption" id="giftAssumption">Assuming about 267 gifts per month at a $75 average gift. The $0.30 component uses this estimated gift count.</p>
+            </div>
+            <div class="input-group">
+              <label>Payment method</label>
+              <div class="payment-method-grid" role="radiogroup" aria-label="Payment method for calculator">
+                <label class="payment-method-card"><input type="radio" name="calcPaymentMethod" value="card" checked /><span><strong>Card or wallet</strong><small>Fastest. Includes Apple Pay and Google Pay when available.</small></span></label>
+                <label class="payment-method-card"><input type="radio" name="calcPaymentMethod" value="instant_bank" /><span><strong>Instant Bank Payment</strong><small>Powered by Link; lower Stripe processing than cards, with settlement and payout timing considerations.</small></span></label>
+              </div>
+            </div>
+            <div class="slider-group">
+              <div class="slider-head"><label for="coverageRange">Donor fee coverage</label><output id="coverageDisplay">75%</output></div>
+              <input type="range" id="coverageRange" min="0" max="100" step="5" value="75" />
+            </div>
+          </div>
+          <div class="calc-results">
+            <div class="result-row"><span>Total gifts</span><strong id="grossDisplay">$20,000.00</strong></div>
+            <div class="result-row negative"><span>Total estimated fees</span><strong id="feeDisplay">-$1,080.10</strong></div>
+            <div class="result-row muted"><span id="stripeLabel">Stripe portion of total fees</span><strong id="stripeDisplay">-$660.10</strong></div>
+            <div class="result-row muted"><span>AGAPAY portion of total fees</span><strong id="agapayDisplay">-$420.00</strong></div>
+            <div class="result-row positive"><span>Donor-covered offset</span><strong id="coveredDisplay">+$810.08</strong></div>
+            <div class="result-row negative"><span>Parish-absorbed fees</span><strong id="parishFeesDisplay">-$270.02</strong></div>
+            <div class="result-row net"><span>Net deposited</span><strong id="netDisplay">$19,729.98</strong></div>
+            <div class="result-row muted"><span>Reconciliation</span><strong id="reconcileDisplay">$20,000.00 - $270.02 = $19,729.98</strong></div>
+            <div class="result-row muted"><span>Payout timing</span><strong id="timingDisplay">Fastest</strong></div>
+            <div class="result-row positive"><span>Effective yield</span><strong id="yieldDisplay">98.65%</strong></div>
+          </div>
+        </section>
+
+        <aside class="value-card">
+          <div>
+            <div class="section-kicker"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M8 7h8"/><path d="M6 12h12"/><path d="M8 16l8 2"/></svg>Orthodox stewardship</div>
+            <h2>Built for Orthodox stewardship &mdash; not generic giving.</h2>
+            <p>AGAPAY combines giving, commemorations, calendar-aware campaigns, dashboards, donor history, and parish workflows in a values-aligned platform. We give not merely to sustain a building, but to sustain the spiritual life within it.</p>
+          </div>
+          <a class="small-btn primary" href="/how-it-works">How AGAPAY works</a>
+          <img src="/images/pricing/church-tier-parish.png" alt="Parish church sketch" />
+        </aside>
+      </div>
+
+      <section class="faq-section" aria-label="Frequently asked questions">
+        <h2 class="faq-title">Frequently Asked Questions</h2>
+        <div class="faq-grid">
+          <article class="faq">
+            <button type="button" aria-expanded="false">Is AGAPAY free for monasteries? <span>+</span></button>
+            <p>Monasteries, sketes, and convents pay no monthly platform fee. Card, wallet, and Instant Bank Payment donations use AGAPAY's standard 5% + $0.30 total donation fee unless a cathedral or diocese agreement says otherwise.</p>
+          </article>
+          <article class="faq">
+            <button type="button" aria-expanded="false">Are there setup fees or contracts? <span>+</span></button>
+            <p>No setup fees, no annual lock-in, and no cancellation penalties. Standard tiers are month to month.</p>
+          </article>
+          <article class="faq">
+            <button type="button" aria-expanded="false">How do card and bank fees work? <span>+</span></button>
+            <p>Card and wallet gifts use AGAPAY's standard 5% + $0.30 total donation fee, including estimated Stripe card processing of about 2.9% + $0.30 and the AGAPAY platform share. Instant Bank Payments through Link use the same total AGAPAY donation fee, with Stripe processing estimated at 2.6% + $0.30 and AGAPAY receiving the remainder. Instant Bank Payments are confirmed immediately, but settlement and payout timing can differ from card gifts.</p>
+          </article>
+          <article class="faq">
+            <button type="button" aria-expanded="false">How does AGAPAY verify canonical standing? <span>+</span></button>
+            <p>Each parish and monastery is reviewed before activation so donors can give with confidence to recognized Orthodox communities.</p>
+          </article>
+          <article class="faq">
+            <button type="button" aria-expanded="false">Can donors cover fees? <span>+</span></button>
+            <p>Yes. Donors can choose to cover transaction fees at checkout, helping the parish receive the full intended gift. Instant Bank Payments can reduce the Stripe processing portion compared with cards, though payout timing may differ while the bank payment settles.</p>
+          </article>
+          <article class="faq">
+            <button type="button" aria-expanded="false">Which jurisdictions does AGAPAY serve? <span>+</span></button>
+            <p>AGAPAY serves canonical Orthodox jurisdictions across the United States, including GOA, Antiochian, OCA, ROCOR, Serbian, and other recognized Orthodox communities.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="closing-cta">
+        <img src="/images/pricing/church-tier-mission.png" alt="Mission church sketch" />
+        <div>
+          <h2>Ready to bring AGAPAY to your community?</h2>
+          <p>Founding parishes and monasteries receive preferred onboarding and direct founder support.</p>
+        </div>
+        <div class="closing-actions">
+          <a class="small-btn primary" href="/register">Request early access</a>
+          <a class="small-btn secondary" href="/contact">Talk with us</a>
+        </div>
+      </section>
+    </section>
+  </main>
+<script>
+    const body = document.body;
+    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+    const drawerBackdrop = document.getElementById("drawerBackdrop");
+    const drawerCloseBtn = document.getElementById("drawerCloseBtn");
+    function setDrawer(open) {
+      body.classList.toggle("drawer-open", open);
+      mobileMenuBtn && mobileMenuBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    mobileMenuBtn && mobileMenuBtn.addEventListener("click", () => setDrawer(true));
+    drawerBackdrop && drawerBackdrop.addEventListener("click", () => setDrawer(false));
+    drawerCloseBtn && drawerCloseBtn.addEventListener("click", () => setDrawer(false));
+
+    const signinBtn = document.getElementById("signinBtn");
+    const signinMenu = document.getElementById("signinMenu");
+    signinBtn && signinBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = signinMenu.classList.toggle("open");
+      signinBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    document.addEventListener("click", () => signinMenu && signinMenu.classList.remove("open"));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") { setDrawer(false); signinMenu && signinMenu.classList.remove("open"); }
+    });
+
+    document.querySelectorAll(".faq button").forEach((button) => {
+      button.addEventListener("click", () => {
+        const item = button.closest(".faq");
+        const open = !item.classList.contains("open");
+        item.classList.toggle("open", open);
+        button.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    });
+
+    const clarityContent = {
+      subscription: {
+        label: "Parish plan",
+        value: "$99",
+        title: "Predictable monthly cost",
+        copy: "Parishes can budget around a clear monthly platform tier, then use the calculator below to model donation volume and fee coverage."
+      },
+      transaction: {
+        label: "Total donation fee",
+        value: "5%",
+        title: "Simple transaction model",
+        copy: "Every gift uses the same 5% + $0.30 total donation fee, with Stripe processing and the AGAPAY platform share shown clearly."
+      },
+      covered: {
+        label: "Donor option",
+        value: "100%",
+        title: "Donors can cover fees",
+        copy: "When donors choose to cover fees, the parish receives more of the intended gift while the donor sees the impact clearly at checkout."
+      }
+    };
+    const clarityTabs = Array.from(document.querySelectorAll(".clarity-tab"));
+    const clarityLabel = document.getElementById("clarityLabel");
+    const clarityValue = document.getElementById("clarityValue");
+    const clarityTitle = document.getElementById("clarityTitle");
+    const clarityCopy = document.getElementById("clarityCopy");
+    function renderClarity(mode) {
+      const content = clarityContent[mode];
+      if (!content || !clarityLabel) return;
+      clarityTabs.forEach(tab => tab.setAttribute("aria-selected", String(tab.dataset.clarity === mode)));
+      clarityLabel.textContent = content.label;
+      clarityValue.textContent = content.value;
+      clarityTitle.textContent = content.title;
+      clarityCopy.textContent = content.copy;
+    }
+    clarityTabs.forEach(tab => tab.addEventListener("click", () => renderClarity(tab.dataset.clarity)));
+
+    const volumeRange = document.getElementById("volumeRange");
+    const coverageRange = document.getElementById("coverageRange");
+    const averageGiftInput = document.getElementById("averageGiftInput");
+    const paymentMethodInputs = document.querySelectorAll('input[name="calcPaymentMethod"]');
+    const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const wholeMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+    function formatCents(cents) { return money.format((Number(cents) || 0) / 100); }
+    function selectedPaymentMethod() {
+      return document.querySelector('input[name="calcPaymentMethod"]:checked')?.value === "instant_bank" ? "instant_bank" : "card";
+    }
+    function updateCalculator() {
+      const monthlyVolume = Number(volumeRange.value || 0);
+      const monthlyCents = Math.round(monthlyVolume * 100);
+      const coverageRate = Number(coverageRange.value || 0) / 100;
+      const averageGift = Math.max(5, Number(averageGiftInput && averageGiftInput.value || 75));
+      const transactions = Math.max(1, Math.round(monthlyVolume / averageGift));
+      const method = selectedPaymentMethod();
+      const stripeRate = method === "instant_bank" ? 0.026 : 0.029;
+      const totalFeeCents = Math.round(monthlyCents * 0.05) + (transactions * 30);
+      const estimatedStripeCents = Math.round(monthlyCents * stripeRate) + (transactions * 30);
+      const estimatedAgapayCents = Math.max(0, totalFeeCents - estimatedStripeCents);
+      const donorCoveredCents = Math.round(totalFeeCents * coverageRate);
+      const parishFeeCents = totalFeeCents - donorCoveredCents;
+      const netCents = monthlyCents - parishFeeCents;
+      const yieldPercent = monthlyCents > 0 ? (netCents / monthlyCents) * 100 : 0;
+      document.getElementById("volumeDisplay").textContent = wholeMoney.format(monthlyVolume);
+      document.getElementById("coverageDisplay").textContent = `${Math.round(coverageRate * 100)}%`;
+      document.getElementById("giftAssumption").textContent = method === "instant_bank"
+        ? `Assuming about ${transactions.toLocaleString("en-US")} Instant Bank Payment gifts per month at a ${wholeMoney.format(averageGift)} average gift. Stripe processing is estimated at 2.6% + $0.30; settlement and payout timing can differ from card gifts.`
+        : `Assuming about ${transactions.toLocaleString("en-US")} card or wallet gifts per month at a ${wholeMoney.format(averageGift)} average gift. The $0.30 component uses this estimated gift count.`;
+      document.getElementById("grossDisplay").textContent = formatCents(monthlyCents);
+      document.getElementById("feeDisplay").textContent = `-${formatCents(totalFeeCents)}`;
+      document.getElementById("coveredDisplay").textContent = `+${formatCents(donorCoveredCents)}`;
+      document.getElementById("stripeLabel").textContent = method === "instant_bank" ? "Stripe Instant Bank Payment portion of total fees" : "Stripe card portion of total fees";
+      document.getElementById("stripeDisplay").textContent = `-${formatCents(estimatedStripeCents)}`;
+      document.getElementById("agapayDisplay").textContent = `-${formatCents(estimatedAgapayCents)}`;
+      document.getElementById("parishFeesDisplay").textContent = `-${formatCents(parishFeeCents)}`;
+      document.getElementById("netDisplay").textContent = formatCents(netCents);
+      document.getElementById("reconcileDisplay").textContent = `${formatCents(monthlyCents)} - ${formatCents(parishFeeCents)} = ${formatCents(netCents)}`;
+      document.getElementById("timingDisplay").textContent = method === "instant_bank" ? "Usually 2 business days to settle" : "Fastest";
+      document.getElementById("yieldDisplay").textContent = `${yieldPercent.toFixed(2)}%`;
+    }
+    volumeRange && volumeRange.addEventListener("input", updateCalculator);
+    coverageRange && coverageRange.addEventListener("input", updateCalculator);
+    averageGiftInput && averageGiftInput.addEventListener("input", updateCalculator);
+    paymentMethodInputs.forEach((input) => input.addEventListener("change", updateCalculator));
+    updateCalculator();
+  </script>
+</body>
+</html>
+
+
+

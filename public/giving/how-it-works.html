@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How It Works | AGAPAY</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
+  <link rel="shortcut icon" href="/favicons/favicon.ico" />
+  <meta name="description" content="See how AGAPAY makes Orthodox giving simple, meaningful, and connected to the life of the Church." />
+  <link rel="canonical" href="https://agapay.app/giving/how-it-works" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="AGAPAY" />
+  <meta property="og:title" content="How It Works | AGAPAY" />
+  <meta property="og:description" content="From signup to parish search to intentional giving, see how AGAPAY keeps offerings connected to Orthodox life." />
+  <meta property="og:url" content="https://agapay.app/how-it-works" />
+  <meta property="og:image" content="https://agapay.app/images/how-it-works/hero-desk-sketch.png" />
+  <meta property="og:image:alt" content="Desk sketch showing the AGAPAY app and Orthodox devotional items" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="How It Works | AGAPAY" />
+  <meta name="twitter:description" content="From signup to parish search to intentional giving, see how AGAPAY keeps offerings connected to Orthodox life." />
+  <meta name="twitter:image" content="https://agapay.app/images/how-it-works/hero-desk-sketch.png" />
+  <meta name="theme-color" content="#061522" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --night: #061522; --night-2: #0B2130; --ink: #171715;
+      --cream: #F6F1E8; --paper: #FFFDF8;
+      --parchment: #F3EDE0; --parchment-2: #EFE8DA;
+      --stone: #70695D; --muted: #A69F91;
+      --gold: #C8A24A; --gold-dark: #A97C25;
+      --line: rgba(166,159,145,0.28);
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "DM Sans", system-ui, sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body { min-height:100vh; font-family:var(--sans); color:var(--ink); background:var(--cream); -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+    body.drawer-open { overflow:hidden; }
+    a { color:inherit; text-decoration:none; }
+    img { display:block; max-width:100%; }
+    svg { display:block; }
+
+    /* NAV */
+    .site-header { position:sticky; top:0; z-index:100; background:linear-gradient(90deg,#061522,#0B2130); border-bottom:1px solid rgba(200,162,74,.24); padding:.95rem clamp(1rem,2.6vw,2.6rem); }
+    .nav { width:min(1320px,100%); margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+    .brand { display:flex; align-items:center; gap:.75rem; color:var(--cream); min-width:max-content; }
+    .brand-mark { width:42px; height:42px; display:grid; place-items:center; border-radius:50%; border:1px solid rgba(200,162,74,.52); background:rgba(6,21,34,.45); }
+    .brand-mark img { width:38px; height:38px; object-fit:contain; }
+    .brand-name { display:flex; flex-direction:column; line-height:1; }
+    .brand-name strong { font-family:var(--serif); font-size:2rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; }
+    .brand-name span { margin-top:.22rem; color:var(--gold); font-size:.6rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; }
+    .nav-links { display:flex; align-items:center; margin-left:auto; gap:clamp(.9rem,2vw,2rem); color:rgba(246,241,232,.9); font-size:.9rem; font-weight:600; }
+    .nav-links a.active { color:var(--gold); border-bottom:2px solid var(--gold); padding-bottom:.36rem; }
+    .nav-actions { display:flex; align-items:center; gap:.8rem; margin-left:1rem; position:relative; }
+    .btn-donate { min-height:44px; padding:0 1.45rem; border-radius:8px; border:1px solid rgba(200,162,74,.6); color:var(--cream); font-size:.95rem; font-weight:600; display:inline-flex; align-items:center; gap:.45rem; background:rgba(6,21,34,.34); }
+    .btn-donate svg { width:18px; height:18px; stroke:var(--gold); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    .signin-wrap { position:relative; }
+    .nav-avatar { width:44px; height:44px; border-radius:999px; border:1px solid rgba(200,162,74,.7); background:rgba(6,21,34,.36); display:grid; place-items:center; cursor:pointer; }
+    .nav-avatar svg { width:18px; height:18px; stroke:var(--gold); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    .signin-menu { position:absolute; top:calc(100% + .5rem); right:0; background:var(--night-2); border:1px solid rgba(200,162,74,.3); border-radius:10px; padding:.4rem; min-width:180px; box-shadow:0 16px 36px rgba(0,0,0,.4); display:none; z-index:120; }
+    .signin-menu.open { display:grid; gap:.15rem; }
+    .signin-menu a { padding:.6rem .7rem; border-radius:7px; font-size:.9rem; font-weight:600; color:rgba(246,241,232,.88); }
+    .signin-menu a:hover { background:rgba(200,162,74,.16); color:#FFE7B6; }
+    .mobile-menu-btn { display:none; width:44px; height:44px; border-radius:10px; border:1px solid rgba(200,162,74,.45); background:rgba(6,21,34,.45); color:var(--cream); align-items:center; justify-content:center; padding:0; cursor:pointer; }
+    .mobile-menu-btn svg { width:22px; height:22px; stroke:var(--cream); fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+    .drawer-backdrop { position:fixed; inset:0; background:rgba(5,16,26,.58); opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:110; }
+    .mobile-drawer { position:fixed; top:0; right:0; width:min(90vw,380px); height:100vh; background:linear-gradient(180deg,#081a2a,#061522); color:var(--cream); transform:translateX(105%); transition:transform .24s ease; z-index:115; display:grid; grid-template-rows:auto 1fr; border-left:1px solid rgba(200,162,74,.26); box-shadow:-20px 0 45px rgba(0,0,0,.35); }
+    .drawer-open .drawer-backdrop { opacity:1; pointer-events:auto; }
+    .drawer-open .mobile-drawer { transform:translateX(0); }
+    .drawer-head { padding:1rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(200,162,74,.2); }
+    .drawer-title { font-family:var(--serif); font-size:1.4rem; letter-spacing:.04em; }
+    .drawer-close { width:34px; height:34px; border-radius:8px; border:1px solid rgba(200,162,74,.3); background:transparent; color:var(--cream); display:grid; place-items:center; font-size:1.2rem; line-height:1; cursor:pointer; }
+    .drawer-scroll { overflow-y:auto; padding:.8rem 1rem 1.2rem; display:grid; gap:1rem; align-content:start; }
+    .drawer-links { display:grid; gap:.35rem; }
+    .drawer-links a { padding:.6rem .55rem; border-radius:8px; color:rgba(246,241,232,.9); font-size:.95rem; font-weight:600; }
+    .drawer-links a.active { background:rgba(200,162,74,.16); color:#FFE7B6; }
+    .drawer-divider { height:1px; background:rgba(200,162,74,.2); margin:.4rem 0; }
+    .drawer-join { display:inline-flex; align-items:center; justify-content:center; min-height:44px; border-radius:8px; background:linear-gradient(135deg,#D6AF5B,#B98832); color:#0A1724; font-size:.96rem; font-weight:700; letter-spacing:.02em; }
+
+    .page { width:min(1320px,calc(100% - 2rem)); margin:.95rem auto 2rem; border:1px solid var(--line); background:var(--paper); box-shadow:0 10px 38px rgba(12,22,32,.08); overflow:hidden; }
+
+    /* HERO */
+    .hero { position:relative; display:grid; grid-template-columns:minmax(330px,.88fr) minmax(460px,1.12fr); gap:1rem; padding:2rem 2.2rem; border-bottom:1px solid var(--line); align-items:center; overflow:hidden; min-height:520px; background:radial-gradient(circle at 15% 8%,rgba(200,162,74,.14),transparent 32%),linear-gradient(180deg,var(--parchment) 0%,var(--parchment-2) 100%); }
+    .hero::before { content:""; position:absolute; inset:0; background-image:linear-gradient(30deg,rgba(166,159,145,.08) 12%,transparent 12.5%,transparent 87%,rgba(166,159,145,.08) 87.5%,rgba(166,159,145,.08)),linear-gradient(150deg,rgba(166,159,145,.08) 12%,transparent 12.5%,transparent 87%,rgba(166,159,145,.08) 87.5%,rgba(166,159,145,.08)); background-size:54px 94px; opacity:.22; pointer-events:none; }
+    .hero > * { position:relative; z-index:1; }
+    .hero-copy { position:relative; z-index:3; max-width:540px; }
+    .eyebrow { display:inline-flex; align-items:center; gap:.56rem; color:var(--gold-dark); text-transform:uppercase; letter-spacing:.11em; font-size:.76rem; font-weight:800; margin-bottom:.72rem; }
+    .eyebrow svg { width:21px; height:21px; stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+    .hero-copy h1 { font-family:var(--serif); color:#0A1524; font-size:clamp(3.2rem,7vw,6rem); line-height:.9; font-weight:500; letter-spacing:.12em; text-transform:uppercase; margin-bottom:.65rem; }
+    .hero-copy h2 { font-family:var(--serif); color:var(--gold-dark); font-size:clamp(1.45rem,2.4vw,2.15rem); font-style:italic; font-weight:500; line-height:1.1; margin-bottom:1.1rem; }
+    .hero-copy p { color:#4D4A44; font-size:1.03rem; line-height:1.68; max-width:540px; margin-bottom:1.25rem; }
+    .hero-art { align-self: stretch; min-height: 420px; background-image: url("/images/how-it-works/man-lighting-canfle.png"); background-size: contain; background-repeat: no-repeat; background-position: center right; filter: saturate(0) brightness(1.1) contrast(1.2); mix-blend-mode: multiply; -webkit-mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%); mask-image: radial-gradient(ellipse at center, black 65%, transparent 95%); }
+    .hero-art img { width:min(128%,1120px); object-fit:contain; max-height:540px; filter:saturate(0) brightness(1.1) contrast(1.2); mix-blend-mode:multiply; -webkit-mask-image:radial-gradient(ellipse 85% 80% at 50% 65%,black 40%,transparent 95%); mask-image:radial-gradient(ellipse 85% 80% at 50% 65%,black 40%,transparent 95%); }
+
+    /* PROCESS INTRO */
+    .process-intro { position:relative; background:linear-gradient(100deg,#071724,#0C2739); border-top:1px solid rgba(200,162,74,.28); border-bottom:1px solid rgba(200,162,74,.28); padding:clamp(3rem,5vw,4.5rem) 1.5rem; text-align:center; overflow:hidden; }
+    .process-intro::before { content:""; position:absolute; inset:0; background:radial-gradient(ellipse 80% 70% at 50% 110%,rgba(200,162,74,.13) 0%,transparent 65%),radial-gradient(ellipse 40% 50% at 15% 0%,rgba(200,162,74,.06) 0%,transparent 55%); pointer-events:none; }
+    .process-intro > * { position:relative; z-index:1; }
+    .pi-eyebrow { font-size:.68rem; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); opacity:.75; font-weight:700; display:flex; align-items:center; justify-content:center; gap:.75rem; margin-bottom:1rem; }
+    .pi-eyebrow::before,.pi-eyebrow::after { content:""; width:28px; height:1px; background:var(--gold); opacity:.35; }
+    .process-intro h2 { font-family:var(--serif); color:var(--cream); font-size:clamp(2rem,4vw,3.2rem); font-weight:300; line-height:1.1; margin-bottom:.5rem; }
+    .process-intro h2 em { font-style:italic; color:#D6AF5B; }
+    .process-intro .pi-sub { color:rgba(246,241,232,.48); font-size:.97rem; max-width:440px; margin:0 auto 2rem; line-height:1.65; }
+    .pi-steps { display:inline-flex; align-items:center; background:rgba(255,255,255,.04); border:1px solid rgba(200,162,74,.18); border-radius:999px; padding:.5rem 1.4rem; gap:.5rem; }
+    .pi-dot { width:28px; height:28px; border-radius:50%; border:1px solid rgba(200,162,74,.35); display:grid; place-items:center; font-family:var(--serif); font-size:.85rem; color:rgba(246,241,232,.4); }
+    .pi-line { width:22px; height:1px; background:rgba(200,162,74,.2); }
+
+    .guided-flow { position:relative; background:linear-gradient(180deg,#FFFDF8,#F3EDE0); border-bottom:1px solid var(--line); padding:clamp(2.8rem,5vw,4.6rem) clamp(1rem,3vw,2.4rem); overflow:hidden; }
+    .guided-flow::before { content:""; position:absolute; inset:0; background:radial-gradient(circle at 80% 18%,rgba(200,162,74,.16),transparent 22rem),repeating-linear-gradient(90deg,transparent 0 86px,rgba(6,21,34,.035) 86px 87px); pointer-events:none; }
+    .guided-inner { position:relative; z-index:1; width:min(1120px,100%); margin:0 auto; display:grid; grid-template-columns:minmax(270px,.86fr) minmax(360px,1.14fr); gap:clamp(1.5rem,5vw,4rem); align-items:center; }
+    .guided-copy h2 { font-family:var(--serif); color:var(--night); font-size:clamp(2.2rem,4.6vw,3.7rem); line-height:1; font-weight:500; margin-bottom:.9rem; }
+    .guided-copy p { color:var(--stone); line-height:1.72; max-width:520px; }
+    .guided-tabs { display:grid; gap:.65rem; margin-top:1.45rem; }
+    .guided-tab { display:grid; grid-template-columns:36px 1fr; gap:.8rem; align-items:center; min-height:62px; padding:.72rem; border:1px solid var(--line); border-radius:12px; background:rgba(255,253,248,.68); color:var(--stone); text-align:left; cursor:pointer; transition:transform .2s ease,border-color .2s ease,background .2s ease; }
+    .guided-tab:hover,.guided-tab[aria-selected="true"] { transform:translateY(-2px); border-color:rgba(200,162,74,.56); background:rgba(200,162,74,.12); }
+    .guided-tab b { display:grid; place-items:center; width:36px; height:36px; border-radius:50%; color:#061522; background:linear-gradient(135deg,#D6AF5B,#B98832); font-family:var(--serif); font-size:1.1rem; }
+    .guided-tab strong { display:block; color:var(--night); font-family:var(--serif); font-size:1.15rem; font-weight:500; }
+    .guided-tab span { display:block; margin-top:.12rem; font-size:.83rem; line-height:1.38; }
+    .guided-panel { min-height:420px; border:1px solid rgba(166,159,145,.36); border-radius:16px; background:rgba(255,253,248,.92); box-shadow:0 24px 70px rgba(6,21,34,.14); overflow:hidden; }
+    .guided-panel-head { display:flex; justify-content:space-between; gap:1rem; padding:1.1rem 1.2rem; border-bottom:1px solid var(--line); }
+    .guided-panel-head span { color:var(--gold-dark); font-size:.7rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
+    .guided-panel-head strong { display:block; margin-top:.12rem; color:var(--night); font-family:var(--serif); font-size:1.55rem; font-weight:500; }
+    .guided-status { align-self:center; color:#3f5e33; font-size:.8rem; font-weight:800; white-space:nowrap; }
+    .guided-status::before { content:""; display:inline-block; width:8px; height:8px; margin-right:.42rem; border-radius:50%; background:#6f8d44; box-shadow:0 0 0 5px rgba(111,141,68,.14); }
+    .guided-panel-body { display:grid; gap:.8rem; padding:1.1rem; }
+    .guided-list { display:grid; gap:.65rem; }
+    .guided-row { display:grid; grid-template-columns:26px 1fr; gap:.7rem; align-items:start; padding:.8rem; border:1px solid var(--line); border-radius:10px; background:rgba(246,241,232,.56); color:var(--stone); line-height:1.5; }
+    .guided-row i { display:grid; place-items:center; width:26px; height:26px; border-radius:50%; background:rgba(200,162,74,.18); color:var(--gold-dark); font-style:normal; font-weight:900; }
+    .guided-row strong { display:block; color:var(--night); font-family:var(--serif); font-size:1.14rem; font-weight:500; }
+    .guided-progress { height:10px; overflow:hidden; border-radius:999px; background:rgba(166,159,145,.22); }
+    .guided-progress span { display:block; height:100%; width:33%; border-radius:inherit; background:linear-gradient(90deg,#D6AF5B,#A97C25); transition:width .25s ease; }
+    @media (max-width:900px){ .guided-inner { grid-template-columns:1fr; } .guided-panel { min-height:auto; } }
+
+    /* STEPS */
+    .steps-body { background:var(--parchment); border-bottom:1px solid var(--line); }
+    .step { display:grid; grid-template-columns:1fr 1fr; min-height:480px; position:relative; }
+    .step + .step { border-top:1px solid var(--line); }
+    .step.step-navy { background:linear-gradient(105deg,#071724 55%,#0C2739 100%); }
+    .step.step-navy + .step { border-top:1px solid rgba(200,162,74,.18); }
+    .step.step-navy::after { content:""; position:absolute; inset:0; background:radial-gradient(circle at 85% 40%,rgba(200,162,74,.08),transparent 55%); pointer-events:none; }
+    .step-copy { padding:clamp(3rem,5.5vw,5rem) clamp(2rem,4vw,4rem); display:flex; flex-direction:column; justify-content:center; position:relative; z-index:1; }
+    .step-badge { display:inline-flex; align-items:center; gap:.7rem; margin-bottom:1.3rem; }
+    .step-num { width:42px; height:42px; border-radius:50%; display:grid; place-items:center; font-family:var(--serif); font-size:1.2rem; font-weight:600; flex-shrink:0; }
+    .step:not(.step-navy) .step-num { border:1px solid rgba(200,162,74,.45); background:rgba(200,162,74,.08); color:var(--gold-dark); }
+    .step.step-navy .step-num { border:1px solid rgba(200,162,74,.4); background:rgba(200,162,74,.1); color:#D6AF5B; }
+    .step-label { font-size:.65rem; letter-spacing:.2em; text-transform:uppercase; font-weight:700; }
+    .step:not(.step-navy) .step-label { color:var(--gold-dark); opacity:.65; }
+    .step.step-navy .step-label { color:var(--gold); opacity:.6; }
+    .step-copy h3 { font-family:var(--serif); font-size:clamp(2.1rem,3.2vw,3rem); font-weight:500; line-height:1.02; margin-bottom:.8rem; }
+    .step:not(.step-navy) .step-copy h3 { color:#081A2A; }
+    .step.step-navy .step-copy h3 { color:var(--cream); }
+    .step-rule { width:44px; height:2px; background:linear-gradient(90deg,var(--gold),transparent); margin-bottom:1rem; }
+    .step-copy p { font-size:1rem; line-height:1.72; }
+    .step:not(.step-navy) .step-copy p { color:var(--stone); }
+    .step.step-navy .step-copy p { color:rgba(246,241,232,.6); }
+    .step-visual { position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .step-visual-num { position:absolute; font-family:var(--serif); font-size:clamp(10rem,18vw,16rem); font-weight:600; line-height:1; pointer-events:none; user-select:none; }
+    .step:not(.step-navy) .step-visual-num { color:rgba(166,159,145,.1); bottom:-1.5rem; right:1.5rem; }
+    .step.step-navy .step-visual-num { color:rgba(200,162,74,.07); bottom:-1.5rem; left:1.5rem; }
+    .step-svg { position:relative; z-index:1; width:100%; max-width:360px; padding:2rem; }
+    .step-svg svg { width:100%; height:auto; }
+    .step:nth-child(odd) .step-copy { order:2; }
+    .step:nth-child(odd) .step-visual { order:1; }
+    .step:nth-child(even) .step-copy { order:1; }
+    .step:nth-child(even) .step-visual { order:2; }
+    .offering-grid { margin-top:1.4rem; display:grid; grid-template-columns:1fr 1fr; gap:.55rem; }
+    .offering-pill { display:flex; align-items:flex-start; gap:.6rem; padding:.7rem .85rem; border-radius:10px; font-size:.88rem; line-height:1.4; }
+    .step:not(.step-navy) .offering-pill { background:rgba(166,159,145,.1); border:1px solid var(--line); color:#2A333B; }
+    .step.step-navy .offering-pill { background:rgba(200,162,74,.07); border:1px solid rgba(200,162,74,.2); color:rgba(246,241,232,.72); }
+    .offering-pill svg { width:16px; height:16px; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; margin-top:.15rem; }
+    .step:not(.step-navy) .offering-pill svg { stroke:var(--gold-dark); }
+    .step.step-navy .offering-pill svg { stroke:var(--gold); opacity:.8; }
+    .offering-pill span { font-size:.82rem; }
+    .checklist { margin-top:1.3rem; display:grid; gap:.75rem; }
+    .check-item { display:flex; align-items:flex-start; gap:.75rem; }
+    .check-dot { width:24px; height:24px; border-radius:50%; flex-shrink:0; border:1px solid rgba(200,162,74,.55); background:rgba(200,162,74,.12); display:grid; place-items:center; font-family:var(--sans); font-size:.68rem; font-weight:800; color:var(--gold); margin-top:.1rem; }
+    .check-item p { font-family:var(--serif); font-size:1.15rem; color:var(--cream); line-height:1.35; }
+
+    /* FINAL CTA */
+    .final-cta { position:relative; margin:1.5rem; padding:clamp(2.5rem,5vw,4rem) clamp(1.5rem,4vw,3rem); border-radius:16px; border:1px solid rgba(200,162,74,.28); overflow:hidden; text-align:center; background:linear-gradient(135deg,#071724 0%,#0C2739 100%); }
+    .final-cta::before { content:""; position:absolute; inset:0; background:radial-gradient(ellipse 80% 70% at 50% 110%,rgba(200,162,74,.15) 0%,transparent 65%),radial-gradient(ellipse 40% 40% at 8% 0%,rgba(200,162,74,.07) 0%,transparent 55%); pointer-events:none; }
+    .final-cta > * { position:relative; z-index:1; }
+    .cta-cross { color:var(--gold); opacity:.38; font-size:1rem; letter-spacing:.35em; margin-bottom:1.2rem; }
+    .final-cta h2 { font-family:var(--serif); color:var(--cream); font-size:clamp(2rem,4vw,3rem); font-weight:300; line-height:1.1; margin-bottom:.6rem; }
+    .final-cta h2 em { font-style:italic; color:#D6AF5B; }
+    .final-cta p { color:rgba(246,241,232,.48); font-size:1rem; max-width:420px; margin:0 auto 2rem; line-height:1.65; }
+    .cta-actions { display:flex; justify-content:center; gap:.9rem; flex-wrap:wrap; }
+    .btn-primary { min-height:50px; min-width:188px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; padding:0 1.6rem; font-size:.88rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; background:linear-gradient(135deg,#D6AF5B,#B98832); color:#071522; border:none; }
+    .btn-secondary { min-height:50px; min-width:188px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; padding:0 1.6rem; font-size:.88rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; background:transparent; color:rgba(246,241,232,.72); border:1px solid rgba(200,162,74,.35); transition:border-color .2s,color .2s; }
+    .btn-secondary:hover { border-color:rgba(200,162,74,.65); color:#D6AF5B; }
+
+    /* FOOTER */
+    .site-footer { background:linear-gradient(90deg,#061522,#0B2130); color:var(--cream); padding:2.4rem clamp(1rem,2.6vw,2.6rem) 1.2rem; }
+    .footer-inner { width:min(1320px,100%); margin:0 auto; }
+    .footer-grid { display:grid; grid-template-columns:minmax(240px,1.2fr) repeat(4,minmax(120px,.5fr)); gap:2rem; padding-bottom:1.8rem; border-bottom:1px solid rgba(200,162,74,.18); }
+    .footer-lockup { display:flex; align-items:center; gap:.75rem; margin-bottom:.7rem; }
+    .footer-lockup img { width:48px; height:48px; border:1px solid rgba(200,162,74,.45); border-radius:50%; object-fit:contain; }
+    .footer-lockup .fl-name { display:flex; flex-direction:column; line-height:1; }
+    .footer-lockup strong { font-family:var(--serif); font-size:1.7rem; font-weight:500; letter-spacing:.08em; }
+    .footer-lockup .fl-tag { color:var(--gold); font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; margin-top:.25rem; }
+    .footer-brand p { color:rgba(246,241,232,.74); line-height:1.6; max-width:300px; font-size:.9rem; }
+    .footer-col h4 { color:var(--gold); font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; margin-bottom:.85rem; }
+    .footer-col a { display:block; color:rgba(246,241,232,.72); font-size:.9rem; margin-bottom:.52rem; }
+    .footer-bottom { display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; padding-top:1.2rem; color:rgba(246,241,232,.58); font-size:.82rem; }
+
+    /* REVEAL */
+    .reveal { opacity:0; transform:translateY(20px); transition:opacity .65s ease,transform .65s ease; }
+    .reveal.visible { opacity:1; transform:translateY(0); }
+    @media (prefers-reduced-motion:reduce) { .reveal { opacity:1; transform:none; transition:none; } }
+
+    /* RESPONSIVE */
+    @media (max-width:1180px) {
+      .nav-links,.nav-actions { display:none; }
+      .mobile-menu-btn { display:inline-flex; }
+      .hero { grid-template-columns:1fr; padding:1.5rem 1.25rem; min-height:auto; }
+      .hero-art { min-height:330px; justify-items:center; margin-right:0; }
+      .hero-art img { max-height:360px; }
+      .footer-grid { grid-template-columns:1fr 1fr; }
+    }
+    @media (max-width:860px) {
+      .step { grid-template-columns:1fr; min-height:auto; }
+      .step:nth-child(odd) .step-copy,
+      .step:nth-child(even) .step-copy { order:2; padding:2rem 1.5rem 2.5rem; }
+      .step:nth-child(odd) .step-visual,
+      .step:nth-child(even) .step-visual { order:1; min-height:220px; padding:1.5rem; }
+      .step-visual-num { font-size:8rem; }
+      .offering-grid { grid-template-columns:1fr; }
+      .final-cta { margin:1rem; }
+      .pi-steps { display:none; }
+    }
+    @media (max-width:760px) {
+      .site-header { padding:.8rem .9rem; }
+      .brand-name strong { font-size:1.7rem; }
+      .brand-name span { display:none; }
+      .page { width:min(1320px,calc(100% - 1rem)); }
+      .footer-grid { grid-template-columns:1fr; }
+      .footer-bottom { display:grid; }
+    }
+
+    /* ── PWA INSTALL ──────────────────────────────────────── */
+    .install { position:relative; margin:1.5rem; padding:clamp(2.5rem,5vw,4rem) clamp(1.5rem,4vw,3rem); border-radius:16px; border:1px solid rgba(200,162,74,.28); overflow:hidden; background:linear-gradient(180deg,var(--parchment) 0%,var(--parchment-2) 100%); }
+    .install::before { content:""; position:absolute; inset:0; background:radial-gradient(ellipse 60% 60% at 90% 0%,rgba(200,162,74,.12) 0%,transparent 60%); pointer-events:none; }
+    .install > * { position:relative; z-index:1; }
+    .install-head { max-width:520px; }
+    .install-inner { display:grid; grid-template-columns:1fr auto; gap:clamp(2rem,5vw,4rem); align-items:center; }
+    .install-phone-img { width:clamp(200px,28vw,300px); height:auto; border-radius:16px; display:block; box-shadow:0 24px 60px rgba(6,21,34,0.28); }
+    @media(max-width:680px){ .install-inner { grid-template-columns:1fr; } .install-phone-img { width:200px; margin:0 auto; } }
+    .phone-mockup-wrap { display:flex; justify-content:center; margin:0 auto 2rem; }
+    .phone-mockup-wrap svg { width:200px; height:auto; filter:drop-shadow(0 20px 40px rgba(6,21,34,0.22)); }
+    .install-eyebrow { display:inline-flex; align-items:center; gap:.5rem; color:var(--gold-dark); text-transform:uppercase; letter-spacing:.16em; font-size:.7rem; font-weight:800; margin-bottom:.85rem; }
+    .install-eyebrow svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    .install h2 { font-family:var(--serif); color:#0A1524; font-size:clamp(2rem,4vw,3rem); font-weight:500; line-height:1.06; margin-bottom:.6rem; }
+    .install-head p { color:var(--stone); font-size:1rem; line-height:1.65; max-width:480px; margin:0 auto; }
+
+    /* OS toggle */
+    .os-toggle { display:inline-flex; margin:0 auto 1.6rem; border:1px solid rgba(200,162,74,.4); border-radius:999px; padding:.3rem; background:rgba(255,253,248,.7); gap:.25rem; }
+    .os-toggle-wrap { display:flex; justify-content:center; }
+    .os-btn { display:inline-flex; align-items:center; gap:.5rem; min-height:42px; padding:0 1.3rem; border-radius:999px; border:none; background:transparent; color:var(--stone); font-family:var(--sans); font-size:.86rem; font-weight:700; letter-spacing:.03em; cursor:pointer; transition:background .18s ease,color .18s ease; }
+    .os-btn svg { width:18px; height:18px; fill:currentColor; }
+    .os-btn svg .logo-line { fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    .os-btn.active { background:var(--night); color:var(--cream); }
+
+    /* panels */
+    .os-panel { display:none; max-width:640px; margin:0 auto; }
+    .os-panel.active { display:block; }
+    .install-steps { display:grid; gap:.75rem; margin-bottom:1.6rem; text-align:left; }
+    .install-step { display:flex; align-items:flex-start; gap:.85rem; padding:.95rem 1.1rem; border-radius:12px; border:1px solid var(--line); background:rgba(255,253,248,.72); }
+    .install-step .isn { width:28px; height:28px; border-radius:50%; flex-shrink:0; display:grid; place-items:center; font-family:var(--serif); font-size:.95rem; font-weight:600; border:1px solid rgba(200,162,74,.5); background:rgba(200,162,74,.1); color:var(--gold-dark); }
+    .install-step p { color:#2A333B; font-size:.94rem; line-height:1.5; }
+    .install-step strong { color:#0A1524; font-weight:700; }
+    .install-step .ios-share { display:inline-flex; vertical-align:-3px; width:17px; height:17px; stroke:var(--gold-dark); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; margin:0 .15rem; }
+    .install-cta { text-align:center; }
+    .btn-install { min-height:50px; min-width:220px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:.6rem; padding:0 1.7rem; font-size:.88rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; background:linear-gradient(135deg,#D6AF5B,#B98832); color:#071522; border:none; cursor:pointer; transition:transform .18s ease; }
+    .btn-install:hover { transform:translateY(-2px); }
+    .btn-install svg { width:20px; height:20px; fill:currentColor; }
+    .install-note { margin-top:.9rem; color:var(--stone); font-size:.82rem; line-height:1.5; }
+    .ios-callout { display:inline-flex; align-items:center; gap:.5rem; padding:.7rem 1.1rem; border-radius:10px; border:1px solid rgba(200,162,74,.32); background:rgba(200,162,74,.07); color:#2A333B; font-size:.9rem; font-weight:600; }
+    .ios-callout svg { width:18px; height:18px; stroke:var(--gold-dark); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+
+  </style>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="AGAPAY" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="/site-chrome.css" />
+  <script src="/site-chrome.js" defer></script>
+</head>
+<body>
+<main class="page">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-copy reveal">
+        <div class="eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18"/><path d="M8 7h8"/><path d="M6 12h12"/><path d="M8 16l8 2"/></svg>How AGAPAY Works</div>
+        <h1>For the Faithful</h1>
+        <h2>Giving should feel like giving.</h2>
+        <p>Support your parish, monastery, or mission in a few simple steps &mdash; with offerings, intentions, and commemorations shaped around Orthodox life. Frictionless giving should never mean thoughtless giving.</p>
+      </div>
+      <div class="hero-art" aria-hidden="true"></div>
+    </section>
+
+    <!-- PROCESS INTRO BAND -->
+    <div class="process-intro reveal">
+      <div class="pi-eyebrow">Four simple steps</div>
+      <h2>From first visit to <em>first offering.</em></h2>
+      <p class="pi-sub">No app to download. No setup fees. Just your parish, your gift, and the life of the Church.</p>
+      <div class="pi-steps" aria-hidden="true">
+        <div class="pi-dot">1</div><div class="pi-line"></div>
+        <div class="pi-dot">2</div><div class="pi-line"></div>
+        <div class="pi-dot">3</div><div class="pi-line"></div>
+        <div class="pi-dot">4</div>
+      </div>
+    </div>
+
+    <section class="guided-flow" aria-labelledby="guided-title">
+      <div class="guided-inner">
+        <div class="guided-copy">
+          <div class="eyebrow">Launch path</div>
+          <h2 id="guided-title">A premium giving flow without software-team complexity.</h2>
+          <p>From first visit to first offering, AGAPAY keeps the path calm and legible for parishioners while preserving the details that matter to parish life.</p>
+          <div class="guided-tabs" role="tablist" aria-label="Giving flow preview">
+            <button class="guided-tab" type="button" role="tab" aria-selected="true" data-flow="discover"><b>1</b><span><strong>Discover</strong>Find the parish, mission, or monastery you want to support.</span></button>
+            <button class="guided-tab" type="button" role="tab" aria-selected="false" data-flow="offer"><b>2</b><span><strong>Offer</strong>Choose stewardship, candles, memorials, or designated gifts.</span></button>
+            <button class="guided-tab" type="button" role="tab" aria-selected="false" data-flow="remember"><b>3</b><span><strong>Remember</strong>Keep names, receipts, and giving history organized.</span></button>
+          </div>
+        </div>
+        <div class="guided-panel">
+          <div class="guided-panel-head">
+            <div>
+              <span>Current phase</span>
+              <strong id="guidedPhase">Discover</strong>
+            </div>
+            <div class="guided-status" id="guidedStatus">Ready</div>
+          </div>
+          <div class="guided-panel-body">
+            <div class="guided-progress" aria-hidden="true"><span id="guidedProgress"></span></div>
+            <div class="guided-list" id="guidedList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="steps-body">
+
+      <!-- STEP 1 -->
+      <article class="step reveal">
+        <div class="step-copy">
+          <div class="step-badge">
+            <div class="step-num">1</div>
+            <span class="step-label">Create your account</span>
+          </div>
+          <h3>Start in a minute.</h3>
+          <div class="step-rule"></div>
+          <p>Just your name and email to begin. No app to download, no setup fee, no credit card required. Your giving history, intentions, and commemorations follow you wherever your parish is.</p>
+        </div>
+        <div class="step-visual">
+          <div class="step-visual-num" aria-hidden="true">1</div>
+          <div class="step-svg">
+            <svg viewBox="0 0 320 260" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <ellipse cx="160" cy="130" rx="130" ry="105" fill="rgba(200,162,74,0.06)"/>
+              <rect x="48" y="80" width="224" height="140" rx="12" stroke="rgba(200,162,74,0.45)" stroke-width="1.5" fill="rgba(200,162,74,0.05)"/>
+              <polyline points="48,80 160,158 272,80" stroke="rgba(200,162,74,0.4)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+              <circle cx="160" cy="105" r="22" stroke="rgba(200,162,74,0.55)" stroke-width="1.5" fill="rgba(200,162,74,0.08)"/>
+              <path d="M120 170 c0-22 18-38 40-38 s40 16 40 38" stroke="rgba(200,162,74,0.45)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+              <circle cx="248" cy="196" r="18" fill="rgba(200,162,74,0.15)" stroke="rgba(200,162,74,0.5)" stroke-width="1.2"/>
+              <polyline points="240,196 246,202 257,190" stroke="rgba(200,162,74,0.85)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="72" cy="200" r="3" fill="rgba(200,162,74,0.25)"/>
+              <circle cx="88" cy="214" r="2" fill="rgba(200,162,74,0.15)"/>
+              <circle cx="60" cy="216" r="1.5" fill="rgba(200,162,74,0.15)"/>
+            </svg>
+          </div>
+        </div>
+      </article>
+
+      <!-- STEP 2 -->
+      <article class="step step-navy reveal">
+        <div class="step-visual">
+          <div class="step-visual-num" aria-hidden="true">2</div>
+          <div class="step-svg">
+            <svg viewBox="0 0 320 260" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <ellipse cx="160" cy="130" rx="130" ry="105" fill="rgba(200,162,74,0.05)"/>
+              <line x1="60" y1="70" x2="60" y2="210" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <line x1="110" y1="70" x2="110" y2="210" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <line x1="160" y1="70" x2="160" y2="210" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <line x1="210" y1="70" x2="210" y2="210" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <line x1="260" y1="70" x2="260" y2="210" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <line x1="50" y1="100" x2="270" y2="100" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <line x1="50" y1="140" x2="270" y2="140" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <line x1="50" y1="180" x2="270" y2="180" stroke="rgba(200,162,74,0.12)" stroke-width="1"/>
+              <path d="M160 60 C145 60 132 73 132 88 C132 108 160 138 160 138 C160 138 188 108 188 88 C188 73 175 60 160 60 Z" stroke="rgba(200,162,74,0.7)" stroke-width="1.5" fill="rgba(200,162,74,0.12)"/>
+              <line x1="160" y1="74" x2="160" y2="102" stroke="rgba(200,162,74,0.9)" stroke-width="2" stroke-linecap="round"/>
+              <line x1="151" y1="82" x2="169" y2="82" stroke="rgba(200,162,74,0.9)" stroke-width="2" stroke-linecap="round"/>
+              <line x1="153" y1="91" x2="167" y2="91" stroke="rgba(200,162,74,0.7)" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="100" cy="155" r="5" stroke="rgba(200,162,74,0.3)" stroke-width="1" fill="rgba(200,162,74,0.06)"/>
+              <circle cx="215" cy="125" r="4" stroke="rgba(200,162,74,0.2)" stroke-width="1" fill="rgba(200,162,74,0.04)"/>
+              <circle cx="240" cy="170" r="3.5" stroke="rgba(200,162,74,0.2)" stroke-width="1" fill="rgba(200,162,74,0.04)"/>
+              <circle cx="160" cy="88" r="34" stroke="rgba(200,162,74,0.12)" stroke-width="1" fill="none"/>
+              <circle cx="160" cy="88" r="48" stroke="rgba(200,162,74,0.07)" stroke-width="1" fill="none"/>
+            </svg>
+          </div>
+        </div>
+        <div class="step-copy">
+          <div class="step-badge">
+            <div class="step-num">2</div>
+            <span class="step-label">Find your parish</span>
+          </div>
+          <h3>Every canonical jurisdiction.</h3>
+          <div class="step-rule"></div>
+          <p>Search by name, city, jurisdiction, or location. ROCOR, OCA, Antiochian, GOA, ACROD &mdash; every canonically recognized Orthodox community in America. If they are on AGAPAY, you will find them.</p>
+        </div>
+      </article>
+
+      <!-- STEP 3 -->
+      <article class="step reveal">
+        <div class="step-copy">
+          <div class="step-badge">
+            <div class="step-num">3</div>
+            <span class="step-label">Choose your offering</span>
+          </div>
+          <h3>Give the way the Church gives.</h3>
+          <div class="step-rule"></div>
+          <p>Each offering is shaped around how Orthodox Christians actually give &mdash; not a generic payment form pretending to understand stewardship. Intentionality matters.</p>
+          <div class="offering-grid">
+            <div class="offering-pill">
+              <svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M8 21V9l4-4 4 4v12"/><path d="M10 13h4"/></svg>
+              <span>Stewardship &amp; tithes</span>
+            </div>
+            <div class="offering-pill">
+              <svg viewBox="0 0 24 24"><path d="M12 3s-4 3.5-4 8a4 4 0 0 0 8 0c0-4.5-4-8-4-8Z"/><path d="M12 15v6"/><path d="M9 21h6"/></svg>
+              <span>Candle offerings</span>
+            </div>
+            <div class="offering-pill">
+              <svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
+              <span>Commemorations</span>
+            </div>
+            <div class="offering-pill">
+              <svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M7 21V10l5-5 5 5v11"/></svg>
+              <span>Building funds</span>
+            </div>
+          </div>
+        </div>
+        <div class="step-visual">
+          <div class="step-visual-num" aria-hidden="true">3</div>
+          <div class="step-svg">
+            <svg viewBox="0 0 320 260" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <ellipse cx="160" cy="130" rx="130" ry="105" fill="rgba(200,162,74,0.05)"/>
+              <rect x="72" y="52" width="150" height="170" rx="6" stroke="rgba(169,124,37,0.45)" stroke-width="1.5" fill="rgba(200,162,74,0.06)"/>
+              <ellipse cx="147" cy="52" rx="75" ry="9" stroke="rgba(169,124,37,0.35)" stroke-width="1.2" fill="rgba(200,162,74,0.08)"/>
+              <ellipse cx="147" cy="222" rx="75" ry="9" stroke="rgba(169,124,37,0.35)" stroke-width="1.2" fill="rgba(200,162,74,0.08)"/>
+              <line x1="95" y1="88" x2="200" y2="88" stroke="rgba(169,124,37,0.4)" stroke-width="1.2" stroke-linecap="round"/>
+              <line x1="95" y1="108" x2="185" y2="108" stroke="rgba(169,124,37,0.3)" stroke-width="1" stroke-linecap="round"/>
+              <line x1="95" y1="128" x2="190" y2="128" stroke="rgba(169,124,37,0.3)" stroke-width="1" stroke-linecap="round"/>
+              <line x1="95" y1="148" x2="178" y2="148" stroke="rgba(169,124,37,0.3)" stroke-width="1" stroke-linecap="round"/>
+              <line x1="95" y1="168" x2="183" y2="168" stroke="rgba(169,124,37,0.25)" stroke-width="1" stroke-linecap="round"/>
+              <circle cx="85" cy="88" r="4" fill="rgba(200,162,74,0.3)" stroke="rgba(200,162,74,0.6)" stroke-width="1"/>
+              <circle cx="85" cy="108" r="4" fill="rgba(200,162,74,0.15)" stroke="rgba(200,162,74,0.35)" stroke-width="1"/>
+              <circle cx="85" cy="128" r="4" fill="rgba(200,162,74,0.15)" stroke="rgba(200,162,74,0.35)" stroke-width="1"/>
+              <rect x="224" y="120" width="22" height="80" rx="4" stroke="rgba(200,162,74,0.5)" stroke-width="1.3" fill="rgba(200,162,74,0.08)"/>
+              <line x1="235" y1="120" x2="235" y2="110" stroke="rgba(200,162,74,0.6)" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M235 110 C230 104 227 96 235 90 C243 96 240 104 235 110Z" fill="rgba(200,162,74,0.4)" stroke="rgba(200,162,74,0.7)" stroke-width="1"/>
+              <ellipse cx="235" cy="97" rx="12" ry="14" fill="rgba(200,162,74,0.06)"/>
+              <path d="M224 168 Q222 176 224 182" stroke="rgba(200,162,74,0.3)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+              <path d="M246 175 Q248 183 246 188" stroke="rgba(200,162,74,0.25)" stroke-width="1" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </article>
+
+      <!-- STEP 4 -->
+      <article class="step step-navy reveal" style="grid-template-columns:1fr; min-height:auto;">
+        <div class="step-copy" style="max-width:820px; margin:0 auto; align-items:flex-start; padding:clamp(3rem,5vw,5rem) clamp(2rem,4vw,4rem);">
+          <div class="step-badge">
+            <div class="step-num">4</div>
+            <span class="step-label">Your gift arrives</span>
+          </div>
+          <h3>Love how you give.</h3>
+          <div class="step-rule"></div>
+          <p style="max-width:560px;">An offering is never a transaction. It is an act of worship. Your gift supports real people and real mission.</p>
+          <div class="checklist">
+            <div class="check-item">
+              <span class="check-dot">&#10003;</span>
+              <p>Your parish is notified instantly &mdash; the gift arrives directly in their account.</p>
+            </div>
+            <div class="check-item">
+              <span class="check-dot">&#10003;</span>
+              <p>No platform holds your money. It goes straight to the Church, the moment you give it.</p>
+            </div>
+            <div class="check-item">
+              <span class="check-dot">&#10003;</span>
+              <p>Your commemorations are queued for the priest &mdash; the living and the departed, remembered at the proskomedia.</p>
+            </div>
+            <div class="check-item">
+              <span class="check-dot">&#10003;</span>
+              <p>Your giving record follows you. Year-end statements, all in one place.</p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+    </div><!-- end steps-body -->
+
+    <!-- PWA INSTALL -->
+    <section class="install reveal" id="install">
+      <div class="install-inner">
+        <div>
+        <div class="install-head">
+          <div class="install-eyebrow">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>
+            Add AGAPAY to your phone
+          </div>
+          <h2>Your giving, a tap away.</h2>
+          <p>Add our web-based app to your home screen for quick access to your giving, intentions, and commemorations. It opens straight from your browser &mdash; no app store, no download.</p>
+        </div>
+  
+        <div class="os-toggle-wrap">
+          <div class="os-toggle" role="tablist" aria-label="Choose your device">
+            <button class="os-btn" id="osAndroidBtn" role="tab" aria-selected="false" aria-controls="panelAndroid">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path class="logo-line" d="M7.2 8.5h9.6c.8 0 1.4.6 1.4 1.4v5.8c0 .8-.6 1.4-1.4 1.4H7.2c-.8 0-1.4-.6-1.4-1.4V9.9c0-.8.6-1.4 1.4-1.4Z"/><path class="logo-line" d="M8.3 8 6.9 5.7M15.7 8l1.4-2.3M9 17.1v2.7M15 17.1v2.7M4.1 10.2v5.3M19.9 10.2v5.3"/><circle cx="9.6" cy="11.4" r=".55"/><circle cx="14.4" cy="11.4" r=".55"/></svg>
+              Android
+            </button>
+            <button class="os-btn" id="osAppleBtn" role="tab" aria-selected="false" aria-controls="panelApple">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.08ZM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25Z"/></svg>
+              iPhone &amp; iPad
+            </button>
+          </div>
+        </div>
+  
+        <!-- ANDROID PANEL -->
+        <div class="os-panel" id="panelAndroid" role="tabpanel" aria-labelledby="osAndroidBtn">
+          <div class="install-steps">
+            <div class="install-step">
+              <span class="isn">1</span>
+              <p>Tap <strong>Install AGAPAY</strong> below. Your browser will ask to add our web-based app to your home screen.</p>
+            </div>
+            <div class="install-step">
+              <span class="isn">2</span>
+              <p>Confirm <strong>Install</strong>, and the AGAPAY icon appears with your other apps.</p>
+            </div>
+            <div class="install-step">
+              <span class="isn">3</span>
+              <p>Open it anytime to give, light a candle, or submit names for commemoration.</p>
+            </div>
+          </div>
+          <div class="install-cta">
+            <button class="btn-install" id="androidInstallBtn">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Install AGAPAY
+            </button>
+            <p class="install-note">If your browser doesn&rsquo;t prompt automatically, it will open AGAPAY so you can choose &ldquo;Add to Home screen&rdquo; from the browser menu.</p>
+          </div>
+        </div>
+  
+        <!-- APPLE PANEL -->
+        <div class="os-panel" id="panelApple" role="tabpanel" aria-labelledby="osAppleBtn">
+          <div class="install-steps">
+            <div class="install-step">
+              <span class="isn">1</span>
+              <p>Open AGAPAY in <strong>Safari</strong> (iPhone and iPad can add our web-based app from Safari).</p>
+            </div>
+            <div class="install-step">
+              <span class="isn">2</span>
+              <p>Tap the <strong>Share</strong> button
+                <svg class="ios-share" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>
+                at the bottom of the screen.</p>
+            </div>
+            <div class="install-step">
+              <span class="isn">3</span>
+              <p>Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>. The AGAPAY icon appears with your other apps.</p>
+            </div>
+          </div>
+          <div class="install-cta">
+            <span class="ios-callout">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+              On iPhone &amp; iPad, use Safari&rsquo;s Share menu &mdash; Apple doesn&rsquo;t allow a one-tap install button.
+            </span>
+          </div>
+        </div>
+  
+        </div>
+        <div>
+          <img src="/images/app-phone-mockup.png" alt="AGAPAY donor dashboard on a phone" class="install-phone-img" loading="lazy" width="320" height="693" />
+        </div>
+      </div>
+    </section>
+
+    <!-- FINAL CTA -->
+    <section class="final-cta reveal">
+      <div class="cta-cross">&#10013; &nbsp; &#10013; &nbsp; &#10013;</div>
+      <h2>Ready to make your <em>first offering?</em></h2>
+      <p>Find your parish and give in minutes &mdash; or register your community to receive the gifts of the faithful.</p>
+      <div class="cta-actions">
+        <a class="btn-primary" href="/giving">Find Your Parish</a>
+        <a class="btn-secondary" href="/register">Register Your Parish</a>
+      </div>
+    </section>
+
+  </main>
+<script>
+    const body = document.body;
+    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+    const drawerBackdrop = document.getElementById("drawerBackdrop");
+    const drawerCloseBtn = document.getElementById("drawerCloseBtn");
+    function setDrawer(open) {
+      body.classList.toggle("drawer-open", open);
+      mobileMenuBtn && mobileMenuBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    mobileMenuBtn && mobileMenuBtn.addEventListener("click", () => setDrawer(true));
+    drawerBackdrop && drawerBackdrop.addEventListener("click", () => setDrawer(false));
+    drawerCloseBtn && drawerCloseBtn.addEventListener("click", () => setDrawer(false));
+    const signinBtn = document.getElementById("signinBtn");
+    const signinMenu = document.getElementById("signinMenu");
+    signinBtn && signinBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = signinMenu.classList.toggle("open");
+      signinBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    document.addEventListener("click", () => signinMenu && signinMenu.classList.remove("open"));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { setDrawer(false); signinMenu && signinMenu.classList.remove("open"); }
+    });
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) { entry.target.classList.add("visible"); io.unobserve(entry.target); }
+      });
+    }, { threshold: 0.08 });
+    document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+
+    const guidedFlows = {
+      discover: {
+        phase: "Discover",
+        status: "Ready",
+        progress: "33%",
+        rows: [
+          ["1", "Search confidently", "Find your parish, monastery, or mission by name, city, jurisdiction, or location."],
+          ["2", "Verify the community", "Canonical review keeps the giving environment trustworthy."],
+          ["3", "Continue without friction", "No app download required for the donor’s first gift."]
+        ]
+      },
+      offer: {
+        phase: "Offer",
+        status: "Giving",
+        progress: "66%",
+        rows: [
+          ["1", "Choose the purpose", "Stewardship, candles, memorials, building funds, and feast-day campaigns stay distinct."],
+          ["2", "Add names when needed", "Living and departed names can remain attached to commemorative gifts."],
+          ["3", "Give once or recurring", "Donors can support a single need or establish an ongoing rhythm."]
+        ]
+      },
+      remember: {
+        phase: "Remember",
+        status: "Complete",
+        progress: "100%",
+        rows: [
+          ["1", "Receipts are preserved", "Giving history remains available for donors and reporting."],
+          ["2", "Parish records stay clean", "Treasurers can see categorized gifts without rebuilding the data."],
+          ["3", "Prayer stays connected", "Commemorations and offerings stay tied to the life of the Church."]
+        ]
+      }
+    };
+
+    const guidedTabs = Array.from(document.querySelectorAll(".guided-tab"));
+    const guidedPhase = document.getElementById("guidedPhase");
+    const guidedStatus = document.getElementById("guidedStatus");
+    const guidedProgress = document.getElementById("guidedProgress");
+    const guidedList = document.getElementById("guidedList");
+
+    function renderGuidedFlow(mode) {
+      const flow = guidedFlows[mode];
+      if (!flow || !guidedList) return;
+      guidedTabs.forEach(tab => tab.setAttribute("aria-selected", String(tab.dataset.flow === mode)));
+      guidedPhase.textContent = flow.phase;
+      guidedStatus.textContent = flow.status;
+      guidedProgress.style.width = flow.progress;
+      guidedList.replaceChildren(...flow.rows.map(([number, title, copy]) => {
+        const row = document.createElement("div");
+        row.className = "guided-row";
+        row.innerHTML = `<i>${number}</i><span><strong>${title}</strong>${copy}</span>`;
+        return row;
+      }));
+    }
+
+    guidedTabs.forEach(tab => tab.addEventListener("click", () => renderGuidedFlow(tab.dataset.flow)));
+    renderGuidedFlow("discover");
+
+    // ── PWA install section ───────────────────────────────
+    (function () {
+      const androidBtn = document.getElementById("osAndroidBtn");
+      const appleBtn = document.getElementById("osAppleBtn");
+      const panelAndroid = document.getElementById("panelAndroid");
+      const panelApple = document.getElementById("panelApple");
+      const androidInstallBtn = document.getElementById("androidInstallBtn");
+      const ANDROID_URL = "https://agapay.app/donor/login?source=pwa";
+      if (!androidBtn || !appleBtn) return;
+
+      function selectOS(os) {
+        const isApple = os === "apple";
+        androidBtn.classList.toggle("active", !isApple);
+        appleBtn.classList.toggle("active", isApple);
+        androidBtn.setAttribute("aria-selected", !isApple ? "true" : "false");
+        appleBtn.setAttribute("aria-selected", isApple ? "true" : "false");
+        panelAndroid.classList.toggle("active", !isApple);
+        panelApple.classList.toggle("active", isApple);
+      }
+
+      androidBtn.addEventListener("click", () => selectOS("android"));
+      appleBtn.addEventListener("click", () => selectOS("apple"));
+
+      // Auto-detect: show the visitor's OS first
+      const ua = navigator.userAgent || "";
+      const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      selectOS(isIOS ? "apple" : "android");
+
+      // Capture the Android/Chrome install prompt
+      let deferredPrompt = null;
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+      });
+
+      if (androidInstallBtn) {
+        androidInstallBtn.addEventListener("click", async () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            try { await deferredPrompt.userChoice; } catch (_) {}
+            deferredPrompt = null;
+          } else {
+            // Fallback: open the app so the user can add it from the browser menu
+            window.open(ANDROID_URL, "_blank", "noopener");
+          }
+        });
+      }
+    })();
+
+  </script>
+</body>
+</html>
+
+
+

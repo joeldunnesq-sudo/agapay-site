@@ -6,592 +6,752 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
-  <title>AGAPAY | Orthodox Giving Lives Here</title>
-  <meta name="description" content="AGAPAY builds trusted financial infrastructure for Orthodox parishes, ministries, schools, businesses, and faithful families through values-aligned giving and tithe technology." />
+  <title>AGAPAY | One Orthodox Platform</title>
+  <meta name="description" content="AGAPAY unites Orthodox giving, homeschool planning, marketplace tools, and local directory resources in one trusted platform." />
   <link rel="canonical" href="https://agapay.app/" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="AGAPAY" />
-  <meta property="og:title" content="AGAPAY | Orthodox Giving Lives Here" />
-  <meta property="og:description" content= "The trusted Orthodox tithing, donation, almsgiving, stewardship, and financial platform." />
-  <meta property="og:url" content="https://agapay.app" />
-  <meta property="og:image" content="https://agapay.app/pantocrator.png" />
-  <meta property="og:image:alt" content="Christ Pantocrator icon beneath a domed Orthodox church interior" />
+  <meta property="og:title" content="AGAPAY | One Orthodox Platform" />
+  <meta property="og:description" content="One Orthodox platform. Many ways to serve, learn, and grow together." />
+  <meta property="og:url" content="https://agapay.app/" />
+  <meta property="og:image" content="https://agapay.app/images/home/platform-family-sketch.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="AGAPAY | Orthodox Giving Lives Here" />
-  <meta name="twitter:description" content="The trusted Orthodox tithing, donation, almsgiving, stewardship, and financial platform." />
-  <meta name="twitter:image" content="https://agapay.app/pantocrator.png" />
   <meta name="theme-color" content="#061522" />
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="preload" as="image" href="/images/home/pantocrator-hero.webp" type="image/webp" fetchpriority="high" />
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" /></noscript>
-
-  <link rel="stylesheet" href="/styles/index.css" />
-  <link rel="stylesheet" href="/styles/numbers.css" />
-<link rel="manifest" href="/manifest.webmanifest" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="AGAPAY" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="preload" as="image" href="/images/home/platform-family-sketch.png" fetchpriority="high" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" /></noscript>
+  <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="stylesheet" href="/site-chrome.css" />
+  <style>
+    :root {
+      --platform-navy: #061522;
+      --platform-blue: #0B2130;
+      --platform-gold: #C89A3C;
+      --platform-gold-soft: #E3C573;
+      --platform-paper: #FFF9EE;
+      --platform-cream: #F5EAD8;
+      --platform-ink: #071827;
+      --platform-muted: #5C554B;
+      --platform-line: rgba(126, 94, 44, 0.22);
+      --platform-serif: "Cormorant Garamond", Georgia, serif;
+      --platform-sans: "DM Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      color: var(--platform-ink);
+      background:
+        radial-gradient(circle at 22% 0%, rgba(200, 154, 60, 0.16), transparent 32rem),
+        linear-gradient(180deg, #FFFDF8 0%, #F6EBD9 100%);
+      font-family: var(--platform-sans);
+    }
+
+    main {
+      overflow: hidden;
+    }
+
+    .platform-section {
+      padding: clamp(4rem, 7vw, 7rem) 0;
+    }
+
+    .platform-inner {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      color: var(--platform-gold);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.19em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-family: var(--platform-serif);
+      font-weight: 600;
+      letter-spacing: 0;
+      margin: 0;
+    }
+
+    p {
+      line-height: 1.65;
+    }
+
+    .platform-hero {
+      min-height: calc(100vh - 84px);
+      display: grid;
+      align-items: stretch;
+      background:
+        linear-gradient(90deg, rgba(255, 249, 238, 0.98) 0%, rgba(255, 249, 238, 0.88) 38%, rgba(255, 249, 238, 0.14) 72%),
+        url("/images/home/platform-family-sketch.png") center right / contain no-repeat,
+        linear-gradient(180deg, #FFFDF8, #F6EAD8);
+      border-bottom: 1px solid var(--platform-line);
+      position: relative;
+    }
+
+    .platform-hero::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 10rem;
+      background: linear-gradient(180deg, transparent, rgba(246, 234, 216, 0.88));
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(18rem, 0.82fr) 1fr;
+      align-items: center;
+      gap: clamp(2rem, 6vw, 6rem);
+      padding: clamp(4rem, 8vw, 7rem) 0 clamp(3rem, 6vw, 5rem);
+    }
+
+    .hero-copy {
+      max-width: 38rem;
+    }
+
+    .hero-copy h1 {
+      font-size: clamp(4.1rem, 8vw, 7.8rem);
+      line-height: 0.86;
+      color: var(--platform-ink);
+    }
+
+    .hero-copy h1 span {
+      color: #9B712D;
+    }
+
+    .hero-copy p {
+      max-width: 34rem;
+      margin: 1.4rem 0 0;
+      color: #2F2B25;
+      font-size: clamp(1.05rem, 1.7vw, 1.25rem);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .platform-btn {
+      min-height: 48px;
+      padding: 0 1.45rem;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      font-weight: 800;
+      border: 1px solid rgba(111, 81, 35, 0.28);
+    }
+
+    .platform-btn.primary {
+      background: linear-gradient(135deg, #D5AC54, #B77C2F);
+      color: #071827;
+      box-shadow: 0 16px 34px rgba(116, 78, 22, 0.2);
+    }
+
+    .platform-btn.secondary {
+      background: rgba(255, 253, 248, 0.72);
+      color: var(--platform-ink);
+    }
+
+    .hero-pill-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+      margin-top: 3rem;
+    }
+
+    .hero-pill {
+      display: grid;
+      gap: 0.5rem;
+      align-content: start;
+      color: #221D17;
+      font-size: 0.92rem;
+      font-weight: 800;
+    }
+
+    .hero-pill svg,
+    .trust-item svg,
+    .product-icon svg {
+      width: 34px;
+      height: 34px;
+      stroke: var(--platform-gold);
+      fill: none;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .device-stage {
+      align-self: end;
+      min-height: 28rem;
+      position: relative;
+    }
+
+    .platform-window {
+      position: absolute;
+      right: 2rem;
+      bottom: 0;
+      width: min(44rem, 86%);
+      border-radius: 14px 14px 8px 8px;
+      border: 10px solid #111;
+      background: #FDF6E8;
+      box-shadow: 0 34px 80px rgba(6, 21, 34, 0.34);
+      overflow: hidden;
+    }
+
+    .window-bar {
+      background: #061522;
+      color: var(--platform-gold);
+      padding: 0.55rem 0.8rem;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+    }
+
+    .window-grid {
+      display: grid;
+      grid-template-columns: 8rem 1fr;
+      min-height: 19rem;
+    }
+
+    .window-side {
+      background: #061522;
+      padding: 1rem;
+      display: grid;
+      gap: 0.55rem;
+      align-content: start;
+    }
+
+    .window-side span {
+      height: 9px;
+      border-radius: 999px;
+      background: rgba(246, 241, 232, 0.16);
+    }
+
+    .window-main {
+      padding: 1.2rem;
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .window-card {
+      border: 1px solid rgba(126, 94, 44, 0.16);
+      background: rgba(255, 253, 248, 0.82);
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 10px 24px rgba(6, 21, 34, 0.06);
+    }
+
+    .window-tiles {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.8rem;
+    }
+
+    .window-tile {
+      aspect-ratio: 1.1;
+      border: 1px solid rgba(126, 94, 44, 0.14);
+      border-radius: 10px;
+      background: #FFF9EE;
+      display: grid;
+      place-items: center;
+      color: #9B712D;
+      font-weight: 900;
+    }
+
+    .phone-card {
+      position: absolute;
+      right: 0;
+      bottom: -1.2rem;
+      width: 13.5rem;
+      border: 9px solid #101010;
+      border-radius: 2rem;
+      background: #FFF9EE;
+      box-shadow: 0 24px 58px rgba(6, 21, 34, 0.36);
+      padding: 1rem;
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .phone-card strong {
+      font-family: var(--platform-serif);
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+
+    .phone-give {
+      background: #C89A3C;
+      color: #071827;
+      border-radius: 8px;
+      padding: 0.75rem;
+      text-align: center;
+      font-weight: 900;
+    }
+
+    .section-heading {
+      max-width: 46rem;
+      margin: 0 auto 2.25rem;
+      text-align: center;
+    }
+
+    .section-heading h2 {
+      margin-top: 0.55rem;
+      font-size: clamp(2.45rem, 5vw, 4rem);
+      line-height: 0.95;
+    }
+
+    .section-heading p {
+      margin: 0.8rem auto 0;
+      color: var(--platform-muted);
+      font-size: 1.05rem;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+
+    .product-card {
+      min-height: 23rem;
+      padding: 1.35rem;
+      border: 1px solid var(--platform-line);
+      border-radius: 10px;
+      background: rgba(255, 253, 248, 0.8);
+      box-shadow: 0 18px 42px rgba(74, 54, 25, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .product-card.featured {
+      color: var(--platform-cream);
+      background:
+        radial-gradient(circle at top right, rgba(200, 154, 60, 0.2), transparent 16rem),
+        linear-gradient(160deg, #061522, #092238);
+      border-color: rgba(200, 154, 60, 0.44);
+    }
+
+    .product-card h3 {
+      font-size: 2.2rem;
+      line-height: 0.92;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .product-card p {
+      margin: 0;
+      color: inherit;
+    }
+
+    .product-card ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.5rem;
+      color: inherit;
+      font-size: 0.95rem;
+    }
+
+    .product-card li::before {
+      content: "✓";
+      color: var(--platform-gold);
+      margin-right: 0.5rem;
+      font-weight: 900;
+    }
+
+    .product-card .platform-btn {
+      margin-top: auto;
+      width: 100%;
+    }
+
+    .soon {
+      display: inline-flex;
+      width: fit-content;
+      padding: 0.2rem 0.45rem;
+      border-radius: 999px;
+      background: rgba(200, 154, 60, 0.18);
+      color: #8A6426;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .scripture-band {
+      background:
+        linear-gradient(90deg, rgba(6, 21, 34, 0.98), rgba(6, 21, 34, 0.7)),
+        url("/images/about/family-hands-prayer.webp") center / cover;
+      color: var(--platform-cream);
+      padding: clamp(3rem, 5vw, 4.4rem) 0;
+    }
+
+    .scripture-band blockquote {
+      margin: 0;
+      max-width: 56rem;
+      font-family: var(--platform-serif);
+      font-size: clamp(1.8rem, 4vw, 3.3rem);
+      line-height: 1.02;
+    }
+
+    .scripture-band cite {
+      display: block;
+      margin-top: 1rem;
+      color: var(--platform-gold-soft);
+      font-style: normal;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .trust-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 1rem;
+    }
+
+    .trust-item {
+      text-align: center;
+      padding: 1rem 0.7rem;
+      border-right: 1px solid var(--platform-line);
+    }
+
+    .trust-item:last-child {
+      border-right: 0;
+    }
+
+    .trust-item h3 {
+      margin-top: 0.8rem;
+      font-family: var(--platform-sans);
+      font-size: 0.95rem;
+      line-height: 1.18;
+    }
+
+    .trust-item p {
+      margin: 0.45rem 0 0;
+      color: var(--platform-muted);
+      font-size: 0.86rem;
+      line-height: 1.42;
+    }
+
+    .learn-band {
+      background: rgba(255, 253, 248, 0.58);
+      border-top: 1px solid var(--platform-line);
+      border-bottom: 1px solid var(--platform-line);
+    }
+
+    .learn-links {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.8rem;
+      margin-top: 1.7rem;
+    }
+
+    .learn-links a {
+      border: 1px solid var(--platform-line);
+      border-radius: 10px;
+      padding: 1rem;
+      color: var(--platform-ink);
+      background: rgba(255, 253, 248, 0.78);
+      text-decoration: none;
+      font-weight: 900;
+      box-shadow: 0 12px 30px rgba(74, 54, 25, 0.06);
+    }
+
+    .cta-strip {
+      padding: clamp(3rem, 5vw, 4rem) 0;
+      background:
+        radial-gradient(circle at right bottom, rgba(200, 154, 60, 0.18), transparent 24rem),
+        #F6EAD8;
+      border-top: 1px solid var(--platform-line);
+    }
+
+    .cta-inner {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .cta-inner h2 {
+      font-size: clamp(2.2rem, 4vw, 3.4rem);
+    }
+
+    .cta-inner p {
+      margin: 0.4rem 0 0;
+      color: var(--platform-muted);
+    }
+
+    @media (max-width: 980px) {
+      .platform-hero {
+        min-height: auto;
+        background:
+          linear-gradient(180deg, rgba(255, 249, 238, 0.98), rgba(255, 249, 238, 0.78)),
+          url("/images/home/platform-family-sketch.png") center top / 130% auto no-repeat,
+          linear-gradient(180deg, #FFFDF8, #F6EAD8);
+      }
+
+      .hero-content {
+        grid-template-columns: 1fr;
+        padding-top: clamp(18rem, 46vw, 27rem);
+      }
+
+      .device-stage {
+        display: none;
+      }
+
+      .hero-pill-row,
+      .product-grid,
+      .trust-grid,
+      .learn-links {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .trust-item {
+        border-right: 0;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero-content {
+        padding-top: clamp(14rem, 60vw, 21rem);
+      }
+
+      .hero-copy h1 {
+        font-size: clamp(3.2rem, 16vw, 4.6rem);
+      }
+
+      .hero-pill-row,
+      .product-grid,
+      .trust-grid,
+      .learn-links,
+      .cta-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-actions {
+        display: grid;
+      }
+    }
+  </style>
   <script src="/site-chrome.js" defer></script>
 </head>
 <body>
-<main>
-    <section class="hero">
-      <video class="hero-video" autoplay muted loop playsinline poster="/images/home/pantocrator-hero.webp" aria-hidden="true">
-        <source src="/videos/candlelight-church.mp4" type="video/mp4" />
-      </video>
-      <div class="hero-candlelight" aria-hidden="true"></div>
-      <canvas class="sacred-canvas" id="sacredCanvas" aria-hidden="true"></canvas>
-      <div class="hero-inner">
+  <main>
+    <section class="platform-hero" aria-labelledby="platform-title">
+      <div class="hero-content">
         <div class="hero-copy">
-          <h1>Orthodox Giving <span>Lives Here</span></h1>
-          <div class="hero-rule" aria-hidden="true"></div>
-          <p>AGAPAY is purpose-built giving software for Orthodox parishes and monasteries - helping communities receive offerings, remember the living and the departed, and steward their gifts with clarity.</p>
+          <div class="eyebrow">Orthodox First</div>
+          <h1 id="platform-title">One Orthodox Platform. <span>Many Ways to Serve, Learn, and Grow Together.</span></h1>
+          <p>AGAPAY unites Orthodox families, parishes, and communities in one place, making it easier to give, learn, connect, and support one another.</p>
           <div class="hero-actions">
-            <a class="btn btn-gold" href="/register">Join AGAPAY</a>
-            <a class="btn btn-outline" href="/why">Why AGAPAY Exists</a>
+            <a class="platform-btn primary" href="/giving">Explore the Platform</a>
+            <a class="platform-btn secondary" href="/giving/how-it-works">How It Works</a>
           </div>
-          <div class="hero-note">Built for stewardship, commemorations, candles, offerings, and the daily work of sustaining Orthodox life.</div>
+          <div class="hero-pill-row" aria-label="AGAPAY commitments">
+            <div class="hero-pill">
+              <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M12 7v10"/><path d="M8 11h8"/></svg>
+              Orthodox First
+            </div>
+            <div class="hero-pill">
+              <svg viewBox="0 0 24 24"><path d="M7 20v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M4 20v-1a3 3 0 0 1 3-3"/><path d="M20 20v-1a3 3 0 0 0-3-3"/></svg>
+              Built for Real Families
+            </div>
+            <div class="hero-pill">
+              <svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M6 20V9l6-4 6 4v11"/><path d="M9 20v-6h6v6"/><path d="M12 5V2"/><path d="M10 3h4"/></svg>
+              Supporting Parishes
+            </div>
+            <div class="hero-pill">
+              <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.4 5.4 0 0 0-7.6 0L12 5.8l-1.2-1.2a5.4 5.4 0 1 0-7.6 7.6L12 21l8.8-8.8a5.4 5.4 0 0 0 0-7.6z"/></svg>
+              Strengthening Community
+            </div>
+          </div>
         </div>
-        <div class="hero-trust" aria-label="AGAPAY trust points">
-          <div class="hero-trust-item is-active" data-focus-title="Secure giving" data-focus-copy="Modern payment infrastructure, careful records, and trust-first workflows for real parish giving.">
-            <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-5"/></svg>
-            <span><strong>Secure &amp; Compliant</strong><br />Built for trusted stewardship.</span>
-          </div>
-          <div class="hero-trust-item" data-focus-title="Canonical care" data-focus-copy="Communities are reviewed before activation so donors know where their gifts are going.">
-            <svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M8 12l3 3 5-6"/></svg>
-            <span><strong>Canonically Minded</strong><br />Communities reviewed before activation.</span>
-          </div>
-          <div class="hero-trust-item" data-focus-title="Human support" data-focus-copy="Real help for onboarding, donor questions, parish workflows, and the practical details of launch.">
-            <svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M8 12l3 3 5-6"/></svg>
-            <span><strong>Dedicated Support</strong><br />People who understand the mission.</span>
-          </div>
-          <div class="hero-trust-item" data-focus-title="Orthodox by design" data-focus-copy="Built around offerings, candles, commemorations, stewardship, and the communities that sustain Orthodox life.">
-           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"> <path d="M12 2v20"/> <path d="M9 6h6"/> <path d="M5 10h14"/> <path d="M9 15L15 19"/> </svg>
-            <span><strong>Built by Orthodox Christians</strong><br />For Orthodox Christians.</span>
-          </div>
-        </div>
-        <div class="hero-focus" aria-live="polite">
-          <strong id="heroFocusTitle">Secure giving:</strong>
-          <span id="heroFocusCopy">Modern payment infrastructure, careful records, and trust-first workflows for real parish giving.</span>
-        </div>
-      </div>
-    </section>
 
-    <section class="section interactive" aria-labelledby="interactive-title">
-      <div class="section-inner interactive-grid">
-        <div class="interactive-copy">
-          <div class="eyebrow">Premium Giving Experience</div>
-          <h2 id="interactive-title">Let every gift feel clear, intentional, and beautifully received.</h2>
-          <p class="lead">AGAPAY can help a parish show donors the real impact of steady stewardship while keeping the administrative side calm and organized.</p>
-        </div>
-        <div class="amount-playground" aria-label="Interactive giving impact calculator">
-          <div class="playground-head">
-            <div>
-              <span>Impact preview</span>
-              <strong id="impactAmount">$100 monthly gift</strong>
-            </div>
-            <div>
-              <span>Households</span>
-              <strong id="impactFamilies">85</strong>
-            </div>
-          </div>
-          <div class="amount-grid" aria-label="Choose monthly gift amount">
-            <button class="amount-button" type="button" data-amount="50">$50</button>
-            <button class="amount-button" type="button" data-amount="100" aria-pressed="true">$100</button>
-            <button class="amount-button" type="button" data-amount="150">$150</button>
-            <button class="amount-button" type="button" data-amount="250">$250</button>
-          </div>
-          <div class="playground-slider">
-            <label for="households">Participating households <span id="householdLabel">85</span></label>
-            <input id="households" type="range" min="20" max="250" value="85" />
-          </div>
-          <div class="playground-result" aria-live="polite">
-            <div class="result-card">
-              <span>Monthly</span>
-              <strong id="monthlyImpact">$8,500</strong>
-            </div>
-            <div class="result-card">
-              <span>Annual</span>
-              <strong id="annualImpact">$102,000</strong>
-            </div>
-            <div class="result-card">
-              <span>Receipts</span>
-              <strong id="receiptImpact">85</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section problem" id="why">
-      <div class="section-inner problem-grid">
-        <div class="problem-copy">
-          <div class="eyebrow">THE PROBLEM</div>
-          <h2>Our communities deserve better giving infrastructure.</h2>
-          <p class="lead">For too long, Orthodox parishes and monasteries have relied on disconnected giving platforms built without their communities in mind.</p>
-          <p class="lead">High fees, fragmented tools, and value-neutral systems weaken long-term stewardship and pull resources away from the institutions that sustain Orthodox life.</p>
-          <strong>AGAPAY was created to provide a modern, trusted giving platform designed specifically for Orthodox communities.</strong>
-        </div>
-        <div class="problem-list">
-          <div class="problem-item">
-            <div class="icon-ring"><svg class="dollar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"> <circle cx="12" cy="12" r="8"/> <path d="M12 7v10"/> <path d="M15 8h-5a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4h-5"/> </svg></div>
-            <div><h3>Fees Leave Our Communities</h3><p>Too much Orthodox giving disappears into platforms with no connection to the communities they serve.</p></div>
-          </div>
-          <div class="problem-item">
-            <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M9 12l2 2 4-5"/></svg></div>
-            <div><h3>Values Don't Align</h3><p>Most giving platforms were never built with Orthodox parishes, stewardship, or liturgical life in mind.</p></div>
-          </div>
-          <div class="problem-item">
-            <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M4 21h16"/><path d="M6 21V10l6-5 6 5v11"/><path d="M10 21v-6h4v6"/><path d="M12 3v4"/><path d="M10 5h4"/></svg></div>
-            <div><h3>Fragmented Tools</h3><p>Orthodox communities deserve giving software designed specifically for their needs - offerings, candles, and commemorations in one place.</p></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section solution">
-      <div class="section-inner">
-        <div class="solution-aura" aria-hidden="true"></div>
-        <div class="solution-head">
-          <div class="eyebrow">THE SOLUTION</div>
-          <h2>Giving built around Orthodox life.</h2>
-          <p>AGAPAY brings offerings, candles, designated funds, campaigns, and commemorations together in one platform - shaped around the parish, the monastery, and the faithful who support them.</p>
-        </div>
-        <div class="ecosystem" data-active="parishes">
-          <div class="spoke-canvas" aria-hidden="true">
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-              <path class="spoke-main spoke-parishes" d="M34 30 H42" />
-              <path class="spoke-main spoke-monasteries" d="M34 70 H42" />
-              <path class="spoke-main spoke-donors" d="M66 30 H58" />
-              <path class="spoke-main spoke-commemorations" d="M66 70 H58" />
-
-              <path class="spoke-angled spoke-parishes" d="M42 30 L47 45" />
-              <path class="spoke-angled spoke-monasteries" d="M42 70 L47 55" />
-              <path class="spoke-angled spoke-donors" d="M58 30 L53 45" />
-              <path class="spoke-angled spoke-commemorations" d="M58 70 L53 55" />
-
-              <circle class="spoke-dot" cx="34" cy="30" r="0.6" />
-              <circle class="spoke-dot" cx="34" cy="70" r="0.6" />
-              <circle class="spoke-dot" cx="66" cy="30" r="0.6" />
-              <circle class="spoke-dot" cx="66" cy="70" r="0.6" />
-            </svg>
-          </div>
-          <div class="ecosystem-side">
-            <div class="ecosystem-item is-active" tabindex="0" data-solution="parishes" data-title="Parishes & Missions" data-copy="One place for stewardship, candles, designated funds, and campaigns, with records that stay clear for parish leaders.">
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M4 21h16"/><path d="M6 21V10l6-5 6 5v11"/><path d="M9 21v-6h6v6"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div>
-              <div><h3>Parishes &amp; Missions</h3><p>Receive stewardship, candle offerings, designated funds, and campaigns through one unified platform.</p></div>
-            </div>
-            <div class="ecosystem-item" tabindex="0" data-solution="monasteries" data-title="Monasteries" data-copy="A simple, trustworthy way for benefactors to sustain sacred hospitality, prayer, building needs, and daily monastery life.">
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M7 21V9l5-5 5 5v12"/><path d="M10 21v-5h4v5"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div>
-              <div><h3>Monasteries</h3><p>Receive donations and support your sacred mission through trusted digital giving tools - with no monthly platform fee, ever.</p></div>
-            </div>
-          </div>
-
-          <div class="ecosystem-center">
-            <div class="center-medallion">
-              <div>
-                <img src="/mark.png" alt="" />
-                <span>AGAPAY</span>
+        <div class="device-stage" aria-hidden="true">
+          <div class="platform-window">
+            <div class="window-bar">AGAPAY PLATFORM</div>
+            <div class="window-grid">
+              <div class="window-side">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+              </div>
+              <div class="window-main">
+                <div class="window-card"><strong>Welcome home.</strong><br />Let your household build faith for today.</div>
+                <div class="window-tiles">
+                  <div class="window-tile">Give</div>
+                  <div class="window-tile">Learn</div>
+                  <div class="window-tile">Find</div>
+                  <div class="window-tile">Plan</div>
+                  <div class="window-tile">Print</div>
+                  <div class="window-tile">Serve</div>
+                </div>
               </div>
             </div>
           </div>
-
-          <div class="ecosystem-side">
-            <div class="ecosystem-item right" tabindex="0" data-solution="donors" data-title="Faithful Donors" data-copy="A donor experience that feels calm, secure, and intentionally Orthodox, from recurring gifts to giving history.">
-              <div><h3>Faithful Donors</h3><p>Give confidently to your parish or monastery, and submit names of the living and the departed for commemoration.</p></div>
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-8 0"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/><path d="M19 8a3 3 0 0 1 2 3"/><path d="M3 11a3 3 0 0 1 2-3"/></svg></div>
-            </div>
-            <div class="ecosystem-item right" tabindex="0" data-solution="commemorations" data-title="Commemorations" data-copy="Names offered with gifts can reach the parish each week, keeping generosity tied to prayer and remembrance.">
-              <div><h3>Commemorations</h3><p>Names submitted with a gift reach your priest each week, so the living and the departed are remembered at the altar.</p></div>
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 13h8"/></svg></div>
-            </div>
+          <div class="phone-card">
+            <strong>St. Andrew Orthodox Church</strong>
+            <span>Giving with Faith and Joy.</span>
+            <div class="phone-give">Make a Donation</div>
           </div>
-        </div>
-        <div class="solution-focus" aria-live="polite">
-          <strong id="solutionFocusTitle">Parishes &amp; Missions</strong>
-          <span id="solutionFocusCopy">One place for stewardship, candles, designated funds, and campaigns, with records that stay clear for parish leaders.</span>
-        </div>
-        <p class="solution-foot">Together, we strengthen the institutions that sustain Orthodox life.</p>
-      </div>
-    </section>
-
-    <section class="trust-band">
-      <div class="trust-grid">
-        <div class="trust-copy">
-          <div class="eyebrow">BUILT ON TRUST</div>
-          <h2>Secure. Reliable. Transparent.</h2>
-          <p class="lead">AGAPAY combines modern giving technology with dedicated support and values-aligned service you can trust - designed to support Orthodox communities with clarity, security, and long-term stability. Stewardship without the middleman.</p>
-        </div>
-        <div class="trust-badge"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/></svg><span>Secure by Design<br />Modern encryption and trusted payment infrastructure.</span></div>
-        <div class="trust-badge"><svg class="dollar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="8"/> <path d="M12 7v10"/> <path d="M15 8h-5a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4h-5"/> </svg><span>Transparent Pricing<br />Clear, published pricing with no hidden surprises.</span></div>
-        <div class="trust-badge"><svg viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M4 14h4v6H4z"/><path d="M16 14h4v6h-4z"/></svg><span>Dedicated Support<br />Real people who understand Orthodox communities.</span></div>
-        <div class="trust-badge"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Canonical Review<br />Communities are reviewed before they can receive gifts.</span></div>
-      </div>
-    </section>
-
-    <section class="mission-band">
-      <div class="mission-copy">
-        <div class="eyebrow">OUR MISSION</div>
-        <h2>Strengthening Orthodox life through faithful stewardship.</h2>
-        <p>AGAPAY exists to help Orthodox communities build durable institutions, support meaningful work, and strengthen the bonds between parishes, monasteries, and the faithful. We believe true stewardship builds a foundation that outlasts our lifetime.</p>
-        <a href="/about">Learn About Our Mission</a>
-      </div>
-      <div class="mission-image" role="img" aria-label="Orthodox faithful gathered inside a parish church">
-        <div class="mission-smoke" aria-hidden="true">
-          <span class="smoke-wisp"></span>
-          <span class="smoke-wisp"></span>
-          <span class="smoke-wisp"></span>
-          <span class="smoke-wisp"></span>
         </div>
       </div>
     </section>
 
-    <section class="section join">
-      <div class="section-inner">
-        <div class="join-grid">
-          <div>
-            <div class="eyebrow">Join Us</div>
-            <h2>Join the future of Orthodox giving.</h2>
-            <p>Whether you serve a parish, mission, or monastery, AGAPAY is building the giving infrastructure to help Orthodox communities thrive together.</p>
-            <div class="join-actions">
-              <a class="btn btn-gold" href="/register">Join AGAPAY</a>
-              <a class="btn btn-outline" href="/contact">Schedule a Demo</a>
-            </div>
+    <section class="platform-section" aria-labelledby="products-title">
+      <div class="platform-inner">
+        <div class="section-heading">
+          <div class="eyebrow">Four Parts. One Mission.</div>
+          <h2 id="products-title">A Platform for the Orthodox Way of Life</h2>
+          <p>Whether you are looking to support your parish, teach your children, find trusted Orthodox goods, or connect with local resources, AGAPAY is here.</p>
+        </div>
+
+        <div class="product-grid">
+          <article class="product-card featured">
+            <div class="product-icon"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M6 20V9l6-4 6 4v11"/><path d="M12 5V2"/><path d="M10 3h4"/></svg></div>
+            <h3>AGAPAY Giving</h3>
+            <p>Give to your parish, support ministries, and offer with purpose.</p>
+            <ul>
+              <li>One-time and recurring gifts</li>
+              <li>Memorials and commemorations</li>
+              <li>Campaigns and special projects</li>
+              <li>Secure and transparent</li>
+            </ul>
+            <a class="platform-btn primary" href="/giving">Give with Faith</a>
+          </article>
+
+          <article class="product-card">
+            <div class="product-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/></svg></div>
+            <h3>AGAPAY Learn</h3>
+            <p>Orthodox homeschool planning shaped by the Church year.</p>
+            <ul>
+              <li>Liturgical calendar integration</li>
+              <li>Household and child planning</li>
+              <li>Grace Mode for real life</li>
+              <li>Printables, reports, and transcripts</li>
+            </ul>
+            <a class="platform-btn primary" href="/learn">Plan Your Homeschool</a>
+          </article>
+
+          <article class="product-card">
+            <span class="soon">Coming soon</span>
+            <div class="product-icon"><svg viewBox="0 0 24 24"><path d="M4 10h16"/><path d="M5 10l1-5h12l1 5"/><path d="M6 10v9h12v-9"/><path d="M9 19v-5h6v5"/></svg></div>
+            <h3>AGAPAY Marketplace</h3>
+            <p>Buy and sell Orthodox goods from trusted artisans and businesses.</p>
+            <ul>
+              <li>Faithful products</li>
+              <li>Support Orthodox makers</li>
+              <li>Built for our community</li>
+            </ul>
+            <a class="platform-btn secondary" href="/marketplace">Join the Waitlist</a>
+          </article>
+
+          <article class="product-card">
+            <span class="soon">Coming soon</span>
+            <div class="product-icon"><svg viewBox="0 0 24 24"><path d="M12 21s7-5.4 7-11a7 7 0 0 0-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2"/></svg></div>
+            <h3>AGAPAY Directory</h3>
+            <p>Find Orthodox parishes, monasteries, schools, and trusted resources.</p>
+            <ul>
+              <li>Search by location</li>
+              <li>Parishes and ministries</li>
+              <li>Businesses and services</li>
+            </ul>
+            <a class="platform-btn secondary" href="/directory">Join the Waitlist</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="scripture-band" aria-label="Scripture">
+      <div class="platform-inner">
+        <blockquote>“As each has received a gift, use it to serve one another, as good stewards of God's varied grace.”</blockquote>
+        <cite>1 Peter 4:10</cite>
+      </div>
+    </section>
+
+    <section class="platform-section" aria-labelledby="trust-title">
+      <div class="platform-inner">
+        <div class="section-heading">
+          <h2 id="trust-title">Why Families and Communities Trust AGAPAY</h2>
+        </div>
+        <div class="trust-grid">
+          <div class="trust-item">
+            <svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M9 6h6"/><path d="M5 10h14"/></svg>
+            <h3>Rooted in the Orthodox Faith</h3>
+            <p>Everything we build starts with Christ and His Church.</p>
           </div>
-          <div class="join-features">
-            <div class="join-feature">
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 4.5h6"/><path d="M9 10l1.5 1.5L13 9"/><path d="M9 14l1.5 1.5L13 13"/><path d="M14.5 10h2.5"/><path d="M14.5 14h2.5"/></svg></div>
-              <div><h3>Easy Onboarding</h3><p>Get set up with personalized guidance.</p></div>
-            </div>
-            <div class="join-feature">
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7l7-4z"/><path d="M9 12l2 2 4-5"/></svg></div>
-              <div><h3>Dedicated Support</h3><p>Real people who understand your mission.</p></div>
-            </div>
-            <div class="join-feature">
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 13h8"/></svg></div>
-              <div><h3>Commemorations</h3><p>Living and departed names reach your priest each week.</p></div>
-            </div>
-            <div class="join-feature">
-              <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M5 21h14"/><path d="M7 21V9l5-5 5 5v12"/><path d="M10 21v-5h4v5"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div>
-              <div><h3>Kingdom Impact</h3><p>Every gift helps strengthen our community.</p></div>
-            </div>
+          <div class="trust-item">
+            <svg viewBox="0 0 24 24"><path d="M7 20v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <h3>For Real Life, Not Perfect Life</h3>
+            <p>Built for large families, hard seasons, and the beauty between.</p>
+          </div>
+          <div class="trust-item">
+            <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.4 5.4 0 0 0-7.6 0L12 5.8l-1.2-1.2a5.4 5.4 0 1 0-7.6 7.6L12 21l8.8-8.8a5.4 5.4 0 0 0 0-7.6z"/></svg>
+            <h3>Supporting Parishes and Monasteries</h3>
+            <p>Technology that strengthens stewardship and builds up the Body of Christ.</p>
+          </div>
+          <div class="trust-item">
+            <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/></svg>
+            <h3>Secure and Respectful</h3>
+            <p>Your information, privacy, and donations are protected.</p>
+          </div>
+          <div class="trust-item">
+            <svg viewBox="0 0 24 24"><path d="M12 21c-4-2-7-5-7-9a7 7 0 0 1 14 0c0 4-3 7-7 9z"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>
+            <h3>Built for Community</h3>
+            <p>A platform that connects, serves, and grows together.</p>
+          </div>
+          <div class="trust-item">
+            <svg viewBox="0 0 24 24"><path d="M20 4c-6 1-10 5-12 12"/><path d="M4 20c5-1 9-4 12-9"/><path d="M9 15c2 0 4 .5 6 2"/></svg>
+            <h3>Growing for the Future</h3>
+            <p>More tools are coming to serve you and the Orthodox Church.</p>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section class="platform-section learn-band" aria-labelledby="learn-title">
+      <div class="platform-inner">
+        <div class="section-heading">
+          <div class="eyebrow">AGAPAY Learn</div>
+          <h2 id="learn-title">Planning, formation, and records for Orthodox homeschool life.</h2>
+          <p>Explore the public Learn pages and the app sections already taking shape.</p>
+        </div>
+        <div class="learn-links">
+          <a href="/learn">Learn Overview</a>
+          <a href="/learn/pricing">Learn Pricing</a>
+          <a href="/learn/planner">Planner</a>
+          <a href="/learn/formation">Formation</a>
+          <a href="/learn/books">Books</a>
+          <a href="/learn/print-center">Print Center</a>
+          <a href="/learn/reports">Reports</a>
+          <a href="/learn/app">Open Learn App</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-strip" aria-labelledby="platform-cta">
+      <div class="platform-inner cta-inner">
+        <div>
+          <h2 id="platform-cta">Ready to get started?</h2>
+          <p>Explore the tools designed to help you give, learn, connect, and build up the Orthodox community.</p>
+        </div>
+        <a class="platform-btn primary" href="/giving">Explore AGAPAY Giving</a>
       </div>
     </section>
   </main>
-  <script>
-    const heroVideo = document.querySelector(".hero-video");
-    if (heroVideo) {
-      heroVideo.addEventListener("canplay", () => {
-        heroVideo.classList.add("is-loaded");
-      }, { once: true });
-    }
-
-    const currency = new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0
-    });
-
-    const heroTrustItems = Array.from(document.querySelectorAll(".hero-trust-item"));
-    const heroFocusTitle = document.querySelector("#heroFocusTitle");
-    const heroFocusCopy = document.querySelector("#heroFocusCopy");
-
-    function setHeroFocus(item) {
-      if (!item || !heroFocusTitle || !heroFocusCopy) return;
-      heroTrustItems.forEach((trustItem) => trustItem.classList.toggle("is-active", trustItem === item));
-      heroFocusTitle.textContent = `${item.dataset.focusTitle}:`;
-      heroFocusCopy.textContent = item.dataset.focusCopy;
-    }
-
-    heroTrustItems.forEach((item) => {
-      item.setAttribute("tabindex", "0");
-      item.addEventListener("mouseenter", () => setHeroFocus(item));
-      item.addEventListener("focus", () => setHeroFocus(item));
-    });
-
-    const ecosystem = document.querySelector(".ecosystem");
-    const ecosystemItems = Array.from(document.querySelectorAll(".ecosystem-item"));
-    const solutionFocusTitle = document.querySelector("#solutionFocusTitle");
-    const solutionFocusCopy = document.querySelector("#solutionFocusCopy");
-
-    function setSolutionFocus(item) {
-      if (!ecosystem || !item || !solutionFocusTitle || !solutionFocusCopy) return;
-      ecosystem.dataset.active = item.dataset.solution;
-      ecosystem.classList.add("has-active");
-      ecosystemItems.forEach((ecosystemItem) => {
-        ecosystemItem.classList.toggle("is-active", ecosystemItem === item);
-      });
-      solutionFocusTitle.textContent = item.dataset.title;
-      solutionFocusCopy.textContent = item.dataset.copy;
-    }
-
-    ecosystemItems.forEach((item) => {
-      item.addEventListener("mouseenter", () => setSolutionFocus(item));
-      item.addEventListener("focus", () => setSolutionFocus(item));
-      item.addEventListener("click", () => setSolutionFocus(item));
-    });
-
-    const amountButtons = Array.from(document.querySelectorAll(".amount-button"));
-    const households = document.querySelector("#households");
-    const impactAmount = document.querySelector("#impactAmount");
-    const impactFamilies = document.querySelector("#impactFamilies");
-    const householdLabel = document.querySelector("#householdLabel");
-    const monthlyImpact = document.querySelector("#monthlyImpact");
-    const annualImpact = document.querySelector("#annualImpact");
-    const receiptImpact = document.querySelector("#receiptImpact");
-    let selectedAmount = 100;
-
-    function updateImpact() {
-      if (!households) return;
-      const familyCount = Number(households.value);
-      impactAmount.textContent = `${currency.format(selectedAmount)} monthly gift`;
-      impactFamilies.textContent = familyCount;
-      householdLabel.textContent = familyCount;
-      monthlyImpact.textContent = currency.format(selectedAmount * familyCount);
-      annualImpact.textContent = currency.format(selectedAmount * familyCount * 12);
-      receiptImpact.textContent = familyCount;
-    }
-
-    amountButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        selectedAmount = Number(button.dataset.amount);
-        amountButtons.forEach((item) => {
-          item.setAttribute("aria-pressed", String(item === button));
-        });
-        updateImpact();
-      });
-    });
-
-    if (households) {
-      households.addEventListener("input", updateImpact);
-      updateImpact();
-    }
-  </script>
-  <script type="module">
-    const canvas = document.querySelector("#sacredCanvas");
-
-    async function startSacredScene() {
-      if (
-        !canvas ||
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
-        window.matchMedia("(max-width: 720px)").matches
-      ) return;
-
-      try {
-        const [{ default: gsap }, THREE] = await Promise.all([
-          import("https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js"),
-          import("https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js")
-        ]);
-
-        const hero = document.querySelector(".hero");
-        const renderer = new THREE.WebGLRenderer({
-          canvas,
-          alpha: true,
-          antialias: true,
-          powerPreference: "high-performance"
-        });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
-
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(44, 1, 0.1, 100);
-        camera.position.z = 9;
-
-        const mobile = window.matchMedia("(max-width: 720px)").matches;
-        const particleCount = mobile ? 90 : 180;
-        const positions = new Float32Array(particleCount * 3);
-        const colors = new Float32Array(particleCount * 3);
-        const gold = new THREE.Color("#D9B461");
-        const ember = new THREE.Color("#A97C25");
-        const cream = new THREE.Color("#F6F1E8");
-
-        for (let index = 0; index < particleCount; index += 1) {
-          const i = index * 3;
-          positions[i] = (Math.random() - 0.5) * (mobile ? 9 : 13);
-          positions[i + 1] = (Math.random() - 0.52) * 7;
-          positions[i + 2] = (Math.random() - 0.5) * 4;
-
-          const color = index % 5 === 0 ? cream : gold.clone().lerp(ember, Math.random() * 0.65);
-          colors[i] = color.r;
-          colors[i + 1] = color.g;
-          colors[i + 2] = color.b;
-        }
-
-        const particleGeometry = new THREE.BufferGeometry();
-        particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-        particleGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-
-        const particleMaterial = new THREE.PointsMaterial({
-          size: mobile ? 0.045 : 0.055,
-          transparent: true,
-          opacity: 0.76,
-          vertexColors: true,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending
-        });
-
-        const particles = new THREE.Points(particleGeometry, particleMaterial);
-        scene.add(particles);
-
-        const ringGroup = new THREE.Group();
-        scene.add(ringGroup);
-
-        const ringMaterial = new THREE.LineBasicMaterial({
-          color: "#C8A24A",
-          transparent: true,
-          opacity: mobile ? 0.16 : 0.26,
-          blending: THREE.AdditiveBlending
-        });
-
-        function addArc(radius, start, length, yOffset) {
-          const points = [];
-          const segments = 72;
-          for (let step = 0; step <= segments; step += 1) {
-            const angle = start + (length * step) / segments;
-            points.push(new THREE.Vector3(
-              Math.cos(angle) * radius,
-              Math.sin(angle) * radius + yOffset,
-              -0.6
-            ));
-          }
-          const geometry = new THREE.BufferGeometry().setFromPoints(points);
-          const line = new THREE.Line(geometry, ringMaterial);
-          ringGroup.add(line);
-        }
-
-        addArc(mobile ? 2.2 : 3.1, 0.2, 1.25, 0.1);
-        addArc(mobile ? 2.7 : 3.75, 2.65, 1.05, -0.18);
-        addArc(mobile ? 1.65 : 2.35, 4.4, 1.2, 0.24);
-        ringGroup.position.x = mobile ? 1.7 : 3.1;
-        ringGroup.position.y = mobile ? 0.7 : 0.2;
-
-        const mouse = { x: 0, y: 0 };
-        window.addEventListener("pointermove", (event) => {
-          mouse.x = (event.clientX / window.innerWidth - 0.5) * 0.5;
-          mouse.y = (event.clientY / window.innerHeight - 0.5) * 0.35;
-        }, { passive: true });
-
-        function resize() {
-          const rect = hero.getBoundingClientRect();
-          renderer.setSize(rect.width, rect.height, false);
-          camera.aspect = rect.width / rect.height;
-          camera.updateProjectionMatrix();
-        }
-
-        window.addEventListener("resize", resize, { passive: true });
-        resize();
-
-        gsap.from(".hero-copy > *", {
-          y: 22,
-          opacity: 0,
-          duration: 1.05,
-          ease: "power3.out",
-          stagger: 0.12
-        });
-        gsap.from(".hero-trust-item", {
-          y: 16,
-          opacity: 0,
-          duration: 0.8,
-          ease: "power2.out",
-          stagger: 0.08,
-          delay: 0.45
-        });
-        gsap.from(".amount-playground", {
-          y: 36,
-          opacity: 0,
-          duration: 0.95,
-          ease: "power3.out",
-          scrollTrigger: undefined
-        });
-        gsap.from(".solution-head, .ecosystem-item, .center-medallion, .solution-focus", {
-          y: 24,
-          opacity: 0,
-          duration: 0.9,
-          ease: "power3.out",
-          stagger: 0.08,
-          delay: 0.2
-        });
-        gsap.to(".solution-aura", {
-          opacity: 0.82,
-          scale: 1.04,
-          duration: 4.8,
-          yoyo: true,
-          repeat: -1,
-          ease: "sine.inOut"
-        });
-
-        const clock = new THREE.Clock();
-        let frameId = 0;
-
-        function animate() {
-          const elapsed = clock.getElapsedTime();
-          const positionAttribute = particleGeometry.getAttribute("position");
-
-          for (let index = 0; index < particleCount; index += 1) {
-            const i = index * 3;
-            const drift = Math.sin(elapsed * 0.35 + index) * 0.0015;
-            positions[i] += drift;
-            positions[i + 1] += 0.0025 + Math.sin(elapsed + index) * 0.0009;
-            if (positions[i + 1] > 3.7) {
-              positions[i + 1] = -3.7;
-              positions[i] = (Math.random() - 0.5) * (mobile ? 9 : 13);
-            }
-          }
-
-          positionAttribute.needsUpdate = true;
-          particles.rotation.y = elapsed * 0.025 + mouse.x;
-          particles.rotation.x = mouse.y;
-          ringGroup.rotation.z = Math.sin(elapsed * 0.22) * 0.045;
-          ringGroup.rotation.y = Math.sin(elapsed * 0.18) * 0.08 + mouse.x * 0.5;
-          particleMaterial.opacity = 0.62 + Math.sin(elapsed * 1.4) * 0.08;
-          renderer.render(scene, camera);
-          frameId = requestAnimationFrame(animate);
-        }
-
-        animate();
-
-        document.addEventListener("visibilitychange", () => {
-          if (document.hidden) {
-            cancelAnimationFrame(frameId);
-            return;
-          }
-          animate();
-        });
-      } catch (error) {
-        canvas.remove();
-      }
-    }
-
-    function scheduleSacredScene() {
-      const start = () => {
-        if ("requestIdleCallback" in window) {
-          window.requestIdleCallback(() => startSacredScene(), { timeout: 2500 });
-        } else {
-          window.setTimeout(() => startSacredScene(), 1200);
-        }
-      };
-
-      if (document.readyState === "complete") {
-        start();
-      } else {
-        window.addEventListener("load", start, { once: true });
-      }
-    }
-
-    scheduleSacredScene();
-  </script>
 </body>
 </html>
-
-
