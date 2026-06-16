@@ -2,103 +2,140 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://agapay.app/</loc>
-    <lastmod>2026-06-03</lastmod>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>1.00</priority>
   </url>
   <url>
+    <loc>https://agapay.app/giving</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/learn</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/learn/pricing</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
     <loc>https://agapay.app/features</loc>
-    <lastmod>2026-06-03</lastmod>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/how-it-works</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
     <loc>https://agapay.app/pricing</loc>
-    <lastmod>2026-06-03</lastmod>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://agapay.app/why</loc>
-    <lastmod>2026-06-03</lastmod>
-    <priority>0.60</priority>
+    <loc>https://agapay.app/giving/features</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.78</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/giving/how-it-works</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.78</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/giving/pricing</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.78</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/giving/parish-giving</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.72</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/giving/recurring-donations</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.72</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/giving/fundraising</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.72</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/giving/event-payments</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.72</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/marketplace</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://agapay.app/directory</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.65</priority>
   </url>
   <url>
     <loc>https://agapay.app/about</loc>
-    <lastmod>2026-06-03</lastmod>
-    <priority>0.70</priority>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.60</priority>
   </url>
   <url>
-    <loc>https://agapay.app/how-it-works</loc>
-    <lastmod>2026-06-03</lastmod>
+    <loc>https://agapay.app/why</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.60</priority>
   </url>
   <url>
     <loc>https://agapay.app/vision</loc>
-    <lastmod>2026-06-03</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://agapay.app/giving</loc>
-    <lastmod>2026-06-03</lastmod>
-    <priority>0.80</priority>
-  </url>
-  <url>
-    <loc>https://agapay.app/learn</loc>
-    <lastmod>2026-06-15</lastmod>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://agapay.app/learn/pricing</loc>
-    <lastmod>2026-06-15</lastmod>
-    <priority>0.80</priority>
-  </url>
-  <url>
-    <loc>https://agapay.app/giving/parish-giving</loc>
-    <lastmod>2026-06-03</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://agapay.app/giving/recurring-donations</loc>
-    <lastmod>2026-06-03</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://agapay.app/giving/fundraising</loc>
-    <lastmod>2026-06-03</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://agapay.app/giving/event-payments</loc>
-    <lastmod>2026-06-03</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://agapay.app/marketplace</loc>
-    <lastmod>2026-06-03</lastmod>
-    <priority>0.70</priority>
-  </url>
-  <url>
-    <loc>https://agapay.app/directory</loc>
-    <lastmod>2026-06-03</lastmod>
-    <priority>0.70</priority>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.60</priority>
   </url>
   <url>
     <loc>https://agapay.app/contact</loc>
-    <lastmod>2026-06-03</lastmod>
-    <priority>0.60</priority>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.55</priority>
   </url>
   <url>
     <loc>https://agapay.app/register</loc>
-    <lastmod>2026-06-03</lastmod>
-    <priority>0.60</priority>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.55</priority>
   </url>
   <url>
     <loc>https://agapay.app/privacy</loc>
-    <lastmod>2026-06-03</lastmod>
-    <priority>0.60</priority>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.35</priority>
   </url>
   <url>
     <loc>https://agapay.app/terms</loc>
-    <lastmod>2026-06-03</lastmod>
-    <priority>0.60</priority>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.35</priority>
   </url>
 </urlset>
-

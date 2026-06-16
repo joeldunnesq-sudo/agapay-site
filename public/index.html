@@ -16,15 +16,32 @@
   <meta property="og:description" content="One Orthodox platform. Many ways to serve, learn, and grow together." />
   <meta property="og:url" content="https://agapay.app/" />
   <meta property="og:image" content="https://agapay.app/images/home/platform-family-sketch.png" />
+  <meta property="og:image:alt" content="An Orthodox family gathered near a church, representing the AGAPAY platform." />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="AGAPAY | One Orthodox Platform" />
+  <meta name="twitter:description" content="One Orthodox platform for giving, learning, marketplace tools, and local Orthodox discovery." />
+  <meta name="twitter:image" content="https://agapay.app/images/home/platform-family-sketch.png" />
   <meta name="theme-color" content="#061522" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preload" as="image" href="/images/home/platform-family-sketch.png" fetchpriority="high" />
+  <link rel="preload" as="image" href="/images/home/platform-family-sketch-1440.webp" type="image/webp" media="(min-width: 981px)" fetchpriority="high" />
+  <link rel="preload" as="image" href="/images/home/platform-family-sketch-960.webp" type="image/webp" media="(max-width: 980px)" fetchpriority="high" />
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" /></noscript>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/site-chrome.css" />
+  <link rel="preload" as="style" href="/site-chrome.css" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="/site-chrome.css" /></noscript>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "AGAPAY",
+      "url": "https://agapay.app/",
+      "logo": "https://agapay.app/mark.png",
+      "description": "AGAPAY unites Orthodox giving, homeschool planning, marketplace tools, and local directory resources in one trusted platform.",
+      "sameAs": []
+    }
+  </script>
   <style>
     :root {
       --platform-navy: #061522;
@@ -55,6 +72,13 @@
 
     .platform-section {
       padding: clamp(4rem, 7vw, 7rem) 0;
+    }
+
+    .platform-section,
+    .scripture-band,
+    .cta-strip {
+      content-visibility: auto;
+      contain-intrinsic-size: 1px 760px;
     }
 
     .platform-inner {
@@ -89,7 +113,7 @@
       align-items: stretch;
       background:
         linear-gradient(90deg, rgba(255, 249, 238, 0.98) 0%, rgba(255, 249, 238, 0.88) 38%, rgba(255, 249, 238, 0.14) 72%),
-        url("/images/home/platform-family-sketch.png") center right / contain no-repeat,
+        url("/images/home/platform-family-sketch-1440.webp") center right / contain no-repeat,
         linear-gradient(180deg, #FFFDF8, #F6EAD8);
       border-bottom: 1px solid var(--platform-line);
       position: relative;
@@ -395,8 +419,8 @@
 
     .scripture-band {
       background:
-        linear-gradient(90deg, rgba(6, 21, 34, 0.98), rgba(6, 21, 34, 0.7)),
-        url("/images/about/family-hands-prayer.webp") center / cover;
+        radial-gradient(circle at 78% 50%, rgba(200, 154, 60, 0.2), transparent 24rem),
+        linear-gradient(90deg, rgba(6, 21, 34, 0.98), rgba(6, 21, 34, 0.76));
       color: var(--platform-cream);
       padding: clamp(3rem, 5vw, 4.4rem) 0;
     }
@@ -502,7 +526,7 @@
         min-height: auto;
         background:
           linear-gradient(180deg, rgba(255, 249, 238, 0.98), rgba(255, 249, 238, 0.78)),
-          url("/images/home/platform-family-sketch.png") center top / 130% auto no-repeat,
+          url("/images/home/platform-family-sketch-960.webp") center top / 130% auto no-repeat,
           linear-gradient(180deg, #FFFDF8, #F6EAD8);
       }
 
@@ -732,13 +756,11 @@
         </div>
         <div class="learn-links">
           <a href="/learn">Learn Overview</a>
+          <a href="/learn#features">Features</a>
           <a href="/learn/pricing">Learn Pricing</a>
-          <a href="/learn/planner">Planner</a>
-          <a href="/learn/formation">Formation</a>
-          <a href="/learn/books">Books</a>
-          <a href="/learn/print-center">Print Center</a>
-          <a href="/learn/reports">Reports</a>
-          <a href="/learn/app">Open Learn App</a>
+          <a href="/learn/pricing#plans">Plans</a>
+          <a href="/learn/pricing#compareTitle">Compare Plans</a>
+          <a href="/learn/pricing#faqTitle">FAQ</a>
         </div>
       </div>
     </section>
