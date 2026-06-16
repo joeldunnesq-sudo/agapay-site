@@ -1140,8 +1140,6 @@ body.donor-home {
   display: none !important;
 }
 
-.my-agapay-home,
-
 .donor-phone-stage {
   min-height: 100vh;
   display: grid;
@@ -3333,6 +3331,505 @@ body.donor-mobile-page {
 
   .desktop-metrics-grid .metric-card:nth-child(n + 3) {
     border-top: 1px solid rgba(246, 241, 232, 0.13) !important;
+  }
+}
+
+/* My AGAPAY unified dashboard */
+.my-agapay-home {
+  width: min(1320px, 100%);
+  margin: 0 auto;
+  padding: 1.25rem 1rem 7rem;
+  color: var(--ink);
+}
+
+.my-agapay-home[hidden],
+.donor-phone[hidden] {
+  display: none !important;
+}
+
+.my-agapay-home .eyebrow {
+  color: var(--gold);
+}
+
+.my-agapay-hero {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1.15rem;
+  overflow: hidden;
+  border: 1px solid rgba(201, 162, 91, 0.28);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 88% 10%, rgba(201, 162, 91, 0.2), transparent 30%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(246, 241, 232, 0.86));
+  box-shadow: 0 18px 44px rgba(6, 21, 34, 0.12);
+}
+
+.my-agapay-hero::after {
+  content: "";
+  position: absolute;
+  right: -2rem;
+  top: -2rem;
+  width: 12rem;
+  height: 12rem;
+  background: url("/mark.png") center / contain no-repeat;
+  opacity: 0.045;
+  pointer-events: none;
+}
+
+.my-agapay-hero-copy,
+.my-agapay-profile-card {
+  position: relative;
+  z-index: 1;
+}
+
+.my-agapay-hero h1 {
+  margin: 0.25rem 0 0.1rem;
+  font-family: var(--serif);
+  font-size: clamp(2.7rem, 12vw, 4.8rem);
+  font-weight: 600;
+  line-height: 0.9;
+  letter-spacing: 0;
+  color: var(--navy);
+}
+
+.my-agapay-hero p {
+  margin: 0;
+  max-width: 34rem;
+  color: rgba(6, 21, 34, 0.74);
+  font-size: 1.03rem;
+  line-height: 1.45;
+}
+
+.my-agapay-profile-card {
+  display: grid;
+  gap: 0.28rem;
+  align-self: stretch;
+  padding: 1rem;
+  border: 1px solid rgba(201, 162, 91, 0.28);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.64);
+}
+
+.my-agapay-profile-card span,
+.my-agapay-profile-card small {
+  color: rgba(6, 21, 34, 0.62);
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.my-agapay-profile-card strong {
+  font-family: var(--serif);
+  font-size: 1.85rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--navy);
+}
+
+.my-agapay-live-grid,
+.my-agapay-coming-grid,
+.my-agapay-lower-grid,
+.my-agapay-snapshot-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+  margin-top: 0.9rem;
+}
+
+.ag-product-card,
+.my-agapay-panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(201, 162, 91, 0.26);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(246, 241, 232, 0.82)),
+    var(--paper);
+  box-shadow: 0 16px 38px rgba(6, 21, 34, 0.1);
+}
+
+.ag-product-card {
+  display: flex;
+  min-height: 15.5rem;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.05rem;
+}
+
+.ag-product-card::after {
+  content: "";
+  position: absolute;
+  right: -2.25rem;
+  bottom: -2.25rem;
+  width: 9rem;
+  height: 9rem;
+  background: url("/mark.png") center / contain no-repeat;
+  opacity: 0.035;
+  pointer-events: none;
+}
+
+.giving-card {
+  background:
+    linear-gradient(145deg, rgba(240, 247, 238, 0.96), rgba(255, 252, 246, 0.9)),
+    var(--paper);
+}
+
+.learn-card {
+  background:
+    linear-gradient(145deg, rgba(238, 245, 255, 0.94), rgba(255, 252, 246, 0.9)),
+    var(--paper);
+}
+
+.soon-card {
+  min-height: 13rem;
+  background:
+    linear-gradient(145deg, rgba(255, 248, 234, 0.95), rgba(255, 252, 246, 0.9)),
+    var(--paper);
+}
+
+.directory-card {
+  background:
+    linear-gradient(145deg, rgba(246, 240, 249, 0.96), rgba(255, 252, 246, 0.9)),
+    var(--paper);
+}
+
+.my-agapay-product-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: center;
+}
+
+.my-agapay-product-head h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--navy);
+}
+
+.my-agapay-product-head p,
+.soon-card > p {
+  margin: 0.25rem 0 0;
+  color: rgba(6, 21, 34, 0.66);
+  line-height: 1.42;
+}
+
+.my-agapay-product-icon {
+  display: grid;
+  width: 4.5rem;
+  height: 4.5rem;
+  place-items: center;
+  border: 1px solid rgba(201, 162, 91, 0.36);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.my-agapay-product-icon svg {
+  width: 2rem;
+  height: 2rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.giving-icon { color: #285c36; }
+.learn-icon { color: #123e70; }
+.market-icon { color: #9c6b18; }
+.directory-icon { color: #5c3e75; }
+
+.my-agapay-product-stats {
+  display: grid;
+  gap: 0.55rem;
+  margin: auto 0 0;
+  padding: 1rem 0 0;
+  border-top: 1px solid rgba(201, 162, 91, 0.24);
+}
+
+.my-agapay-product-stats div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: rgba(6, 21, 34, 0.72);
+  font-family: var(--sans);
+  font-size: 0.92rem;
+}
+
+.my-agapay-product-stats dd {
+  margin: 0;
+  color: var(--navy);
+  font-weight: 800;
+}
+
+.coming-pill {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border: 1px solid rgba(201, 162, 91, 0.42);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  background: rgba(201, 162, 91, 0.18);
+  color: #7a5416;
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.my-agapay-action {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  margin-top: auto;
+  border: 1px solid rgba(6, 21, 34, 0.18);
+  border-radius: 8px;
+  padding: 0.82rem 1rem;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--navy);
+  font-family: var(--sans);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.my-agapay-action.primary {
+  border-color: rgba(40, 92, 54, 0.32);
+  background: #285c36;
+  color: #fff;
+}
+
+.my-agapay-action.learn-action {
+  border-color: rgba(18, 62, 112, 0.32);
+  background: var(--navy);
+  color: #fff;
+}
+
+.my-agapay-action.muted {
+  color: rgba(6, 21, 34, 0.76);
+}
+
+.my-agapay-panel {
+  padding: 1rem;
+}
+
+.my-agapay-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.my-agapay-section-head h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.55rem;
+  font-weight: 600;
+  line-height: 1.05;
+  color: var(--navy);
+}
+
+.my-agapay-section-head a,
+.my-agapay-section-head span {
+  color: rgba(6, 21, 34, 0.64);
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.my-agapay-activity-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.my-agapay-activity-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid rgba(201, 162, 91, 0.18);
+}
+
+.my-agapay-activity-item:last-child {
+  border-bottom: 0;
+}
+
+.my-agapay-activity-item strong,
+.my-agapay-action-tile strong,
+.snapshot-metric strong {
+  display: block;
+  color: var(--navy);
+  font-family: var(--sans);
+  font-size: 0.9rem;
+}
+
+.my-agapay-activity-item span,
+.my-agapay-action-tile span,
+.snapshot-metric span {
+  display: block;
+  margin-top: 0.15rem;
+  color: rgba(6, 21, 34, 0.58);
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.activity-dot {
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  background: var(--gold);
+  box-shadow: 0 0 0 0.35rem rgba(201, 162, 91, 0.14);
+}
+
+.activity-amount {
+  color: #285c36;
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
+.my-agapay-action-grid,
+.snapshot-metrics {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+}
+
+.my-agapay-action-tile,
+.snapshot-metric {
+  border: 1px solid rgba(201, 162, 91, 0.22);
+  border-radius: 12px;
+  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.my-agapay-action-tile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.7rem;
+  align-items: center;
+  color: var(--navy);
+  text-decoration: none;
+}
+
+.my-agapay-action-tile::after {
+  content: ">";
+  color: var(--gold);
+  font-weight: 900;
+}
+
+.snapshot-metric {
+  text-align: center;
+}
+
+.snapshot-metric strong {
+  margin-top: 0.25rem;
+  font-family: var(--serif);
+  font-size: 2.05rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+@media (min-width: 720px) {
+  .my-agapay-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.36fr);
+    align-items: end;
+    padding: 1.45rem;
+  }
+
+  .my-agapay-live-grid,
+  .my-agapay-coming-grid,
+  .my-agapay-lower-grid,
+  .my-agapay-snapshot-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .my-agapay-action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .snapshot-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 901px) {
+  .my-agapay-home {
+    padding: 2.4rem 2.875rem 4.5rem;
+  }
+
+  .my-agapay-hero {
+    min-height: 13rem;
+    padding: 1.75rem;
+  }
+
+  .my-agapay-hero h1 {
+    font-size: 4.5rem;
+  }
+
+  .my-agapay-live-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .my-agapay-coming-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .my-agapay-lower-grid {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  }
+
+  .my-agapay-snapshot-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .my-agapay-home {
+    padding-inline: 0.85rem;
+  }
+
+  .my-agapay-hero,
+  .ag-product-card,
+  .my-agapay-panel {
+    border-radius: 14px;
+  }
+
+  .my-agapay-product-icon {
+    width: 3.8rem;
+    height: 3.8rem;
+  }
+
+  .my-agapay-product-head h2 {
+    font-size: 1.65rem;
+  }
+
+  .my-agapay-activity-item {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .activity-amount {
+    grid-column: 2 / 3;
   }
 }
 

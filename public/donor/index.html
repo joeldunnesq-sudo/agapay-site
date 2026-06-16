@@ -70,19 +70,20 @@
 
       <section class="my-agapay-home" aria-labelledby="myAgapayTitle">
         <div class="my-agapay-hero">
-          <div>
-            <div class="eyebrow">Faith + Family + Community</div>
+          <div class="my-agapay-hero-copy">
+            <div class="eyebrow">Love + Give + Learn + Live</div>
             <h1 id="myAgapayTitle">My AGAPAY</h1>
             <p>One login. One home for your Orthodox life online.</p>
           </div>
-          <div class="my-agapay-profile-card">
-            <span id="myAgapayGreetingName">Faithful Member</span>
-            <strong id="myAgapayDefaultParish">Choose a church in Settings</strong>
+          <div class="my-agapay-profile-card" aria-label="Account summary">
+            <span>Welcome</span>
+            <strong id="myAgapayGreetingName">Faithful Member</strong>
+            <small id="myAgapayDefaultParish">Choose a church in Settings</small>
           </div>
         </div>
 
-        <div class="my-agapay-product-grid">
-          <article class="my-agapay-product-card giving-card">
+        <div class="my-agapay-live-grid" aria-label="AGAPAY products">
+          <article class="ag-product-card ag-product-card-live giving-card">
             <div class="my-agapay-product-head">
               <span class="my-agapay-product-icon giving-icon"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/><path d="M12 21v-6"/></svg></span>
               <div>
@@ -98,7 +99,7 @@
             <a class="my-agapay-action primary" href="#giving-dashboard">Open Giving Dashboard <span aria-hidden="true">-&gt;</span></a>
           </article>
 
-          <article class="my-agapay-product-card learn-card">
+          <article class="ag-product-card ag-product-card-live learn-card">
             <div class="my-agapay-product-head">
               <span class="my-agapay-product-icon learn-icon"><svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg></span>
               <div>
@@ -113,8 +114,10 @@
             </dl>
             <a class="my-agapay-action learn-action" href="/learn/app" hx-boost="false">Open Learn Dashboard <span aria-hidden="true">-&gt;</span></a>
           </article>
+        </div>
 
-          <article class="my-agapay-product-card soon-card">
+        <div class="my-agapay-coming-grid" aria-label="Coming AGAPAY products">
+          <article class="ag-product-card soon-card">
             <div class="my-agapay-product-head">
               <span class="my-agapay-product-icon market-icon"><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 13H7z"/><path d="M9 8a3 3 0 0 1 6 0"/><path d="M9 13h6"/></svg></span>
               <div>
@@ -126,7 +129,7 @@
             <a class="my-agapay-action muted" href="/marketplace" hx-boost="false">Join Waitlist</a>
           </article>
 
-          <article class="my-agapay-product-card soon-card directory-card">
+          <article class="ag-product-card soon-card directory-card">
             <div class="my-agapay-product-head">
               <span class="my-agapay-product-icon directory-icon"><svg viewBox="0 0 24 24"><path d="M12 3l8 6v12H4V9z"/><path d="M9 21v-7h6v7"/><path d="M8 10h8"/><path d="M12 6v8"/></svg></span>
               <div>
@@ -462,8 +465,10 @@
       const isGivingView = window.location.hash === "#giving-dashboard";
       const home = document.querySelector(".my-agapay-home");
       const giving = document.querySelector(".donor-desktop-home");
+      const phone = document.querySelector(".donor-phone");
       if (home) home.hidden = isGivingView;
       if (giving) giving.hidden = !isGivingView;
+      if (phone) phone.hidden = !isGivingView;
       document.body.classList.toggle("showing-giving-dashboard", isGivingView);
       const title = document.querySelector(".topbar-title");
       if (title) title.textContent = isGivingView ? "Giving Dashboard" : "My AGAPAY";
