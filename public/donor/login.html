@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Donor Login | AGAPAY</title>
+  <title>My AGAPAY Login | AGAPAY</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon.png" />
@@ -32,8 +32,8 @@
         </a>
         <div>
           <div class="eyebrow">Welcome back</div>
-          <h1>Open your donor dashboard.</h1>
-          <p>Log in after verifying your email to view giving history, manage commemorations, and give through AGAPAY.</p>
+          <h1>Open My AGAPAY.</h1>
+          <p>Log in once to access your AGAPAY Giving, Learn, Marketplace, Directory, and account tools.</p>
         </div>
       </div>
 
@@ -41,7 +41,7 @@
         <div class="pwa-install-copy">
           <span class="pwa-install-kicker">Home screen shortcut</span>
           <h2>Install AGAPAY</h2>
-          <p>Open your donor login like an app, with the AGAPAY icon on your phone.</p>
+          <p>Open My AGAPAY like an app, with the AGAPAY icon on your phone.</p>
           <p id="pwaIosInstructions" hidden>On iPhone, tap Share, then Add to Home Screen.</p>
         </div>
         <div class="pwa-install-actions">
@@ -51,7 +51,7 @@
       </section>
 
       <form class="donor-auth-card" id="donorLoginForm">
-        <h2>Login</h2>
+        <h2>My AGAPAY Login</h2>
         <div class="form-group">
           <label class="form-label" for="donorEmail">Email</label>
           <input class="form-input" id="donorEmail" type="email" autocomplete="email" placeholder="you@example.com" />
@@ -62,7 +62,7 @@
         </div>
         <div class="donor-auth-actions">
           <button class="btn btn-gold" type="submit">Log in</button>
-          <a class="btn btn-ghost" href="/donor/signup">Sign up</a>
+          <a class="btn btn-ghost" href="/myagapay/signup">Sign up</a>
           <button class="btn btn-ghost" type="button" data-donor-auth-view="reset">Forgot password?</button>
         </div>
       </form>
@@ -165,8 +165,8 @@
             const profile = { ...data.donor, email: donorEmail };
             localStorage.setItem("agapayDonorProfile", JSON.stringify(profile));
           }
-          setStatus("Signed in. Opening your donor dashboard...", "success");
-          window.location.href = "/donor/";
+          setStatus("Signed in. Opening My AGAPAY...", "success");
+          window.location.href = "/myagapay/";
         } catch (error) {
           localStorage.removeItem("agapayDonorToken");
           setStatus(error.message === "Unauthorized"

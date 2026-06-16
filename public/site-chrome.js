@@ -1,6 +1,6 @@
 (function () {
   const path = (window.location.pathname || "/").toLowerCase();
-  if (/^\/(?:admin|parish|donor)(?:\/|$)/.test(path)) return;
+  if (/^\/(?:admin|parish|donor|myagapay)(?:\/|$)/.test(path)) return;
 
   const PRIMARY_LINKS = [
     { href: "/giving", label: "AGAPAY Giving", key: "give" },
@@ -11,7 +11,7 @@
   ];
 
   const SIGN_IN_LINKS = [
-    { href: "/donor/login", label: "My AGAPAY Dashboard" },
+    { href: "/myagapay/login", label: "My AGAPAY" },
     { href: "/parish/login", label: "Organization Dashboard" }
   ];
 
@@ -163,7 +163,7 @@
             </nav>
             <nav class="footer-col" aria-label="Account">
               <h4>Account</h4>
-              <a href="/donor/login">My AGAPAY</a>
+              <a href="/myagapay/login">My AGAPAY</a>
               <a href="/parish/login">Organization Dashboard</a>
             </nav>
             <nav class="footer-col" aria-label="Legal">

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Create Donor Account | AGAPAY</title>
+  <title>Create My AGAPAY Account | AGAPAY</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -25,10 +25,10 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-scroll">
-        <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home" hx-boost="false"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">Donor Account</span></div>
+        <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home" hx-boost="false"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">My AGAPAY Account</span></div>
         <nav class="nav" hx-boost="false">
-          <a href="/donor/signup" class="active"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Sign Up</a>
-          <a href="/donor/login"><svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg> Login</a>
+          <a href="/myagapay/signup" class="active"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Sign Up</a>
+          <a href="/myagapay/login"><svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg> Login</a>
           <a href="/giving"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg> Give</a>
         </nav>
         <div class="sidebar-card"><h3>Email Verification</h3><div class="mini-item"><strong>Trust first</strong><span>Every donor account must verify email before the dashboard opens.</span></div></div>
@@ -36,10 +36,10 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/" hx-boost="false"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> AGAPAY home</a></div>
     </aside>
     <main class="content">
-      <div class="topbar"><div class="topbar-title">Create Donor Account</div><div class="topbar-actions"><a class="btn btn-ghost btn-sm" href="/donor/login">Already have an account?</a></div></div>
+      <div class="topbar"><div class="topbar-title">Create My AGAPAY Account</div><div class="topbar-actions"><a class="btn btn-ghost btn-sm" href="/myagapay/login">Already have an account?</a></div></div>
       <div class="page">
         <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
-        <section class="hero"><div class="hero-grid"><div><div class="eyebrow">Account creation</div><h1>Give with a trusted donor account.</h1><p>Create your AGAPAY account, verify your email, then view offering history and submit commemorations from your dashboard.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
+        <section class="hero"><div class="hero-grid"><div><div class="eyebrow">My AGAPAY onboarding</div><h1>Create one account for the AGAPAY platform.</h1><p>Create your AGAPAY account, verify your email, then use My AGAPAY to access Giving, Learn, and future Orthodox platform tools.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
         <section class="card section-gap">
           <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span> Sign Up</div></div>
           <div class="card-body">
@@ -52,7 +52,7 @@
                   <label class="form-label" for="parish">My Parish</label>
                   <input class="form-input parish-search" id="parishSearch" placeholder="Search by parish, city, state, or jurisdiction" oninput="filterParishSelect('parishSearch','parish')" />
                   <select class="form-select" id="parish" data-placeholder="Choose my parish"><option value="">Choose my parish</option></select>
-                  <p class="form-help">Pick the church you usually give to. You can switch churches anytime from donor settings.</p>
+                  <p class="form-help">Pick the church you usually give to. You can switch churches anytime from My AGAPAY account settings.</p>
                 </div>
                 <div class="form-group full"><label class="form-label" for="addressLine1">Street Address</label><input class="form-input" id="addressLine1" autocomplete="address-line1" placeholder="123 Main St" /></div>
                 <div class="form-group"><label class="form-label" for="addressLine2">Apt / Unit <span class="form-label-optional">(optional)</span></label><input class="form-input" id="addressLine2" autocomplete="address-line2" placeholder="Apt 4B" /></div>
@@ -66,7 +66,7 @@
               <div class="section-gap"><button class="btn btn-gold" type="submit">Create account</button></div>
             </form>
             <div class="notice success section-gap" id="signupNextStep" style="display:none;">Check your email for the AGAPAY verification link, then return to log in.</div>
-            <div class="notice section-gap" id="verificationLinkBox" style="display:none;"><a id="verificationLink" href="/donor/verify">Open test verification link</a></div>
+            <div class="notice section-gap" id="verificationLinkBox" style="display:none;"><a id="verificationLink" href="/myagapay/verify">Open test verification link</a></div>
           </div>
         </section>
       </div>

@@ -189,7 +189,7 @@ function clearDonorSession() {
 
 function logoutDonor() {
   clearDonorSession();
-  window.location.href = "/donor/login";
+  window.location.href = "/myagapay/login";
 }
 
 function showGuestDonorDashboard() {
@@ -229,7 +229,7 @@ function showGuestDonorDashboard() {
       <div class="my-agapay-activity-item">
         <span class="activity-dot">+</span>
         <div><strong>Sign in to load your AGAPAY activity</strong><span>Your giving, learning, and organization updates will appear here.</span></div>
-        <a class="activity-amount" href="/donor/login">Log in</a>
+        <a class="activity-amount" href="/myagapay/login">Log in</a>
       </div>
     `;
   }
@@ -831,8 +831,8 @@ async function loginFromPage(event) {
       body: JSON.stringify({ email, password })
     });
     saveDonorSession(data);
-    setDonorStatus("Signed in. Opening your donor dashboard...", "success");
-    window.location.href = "/donor/";
+    setDonorStatus("Signed in. Opening My AGAPAY...", "success");
+    window.location.href = "/myagapay/";
   } catch (err) {
     clearDonorSession();
     const message = isDonorUnauthorized(err)
@@ -1035,13 +1035,13 @@ async function verifyDonorEmail() {
       body: JSON.stringify({ email, token })
     });
     if (!data.token) {
-      setDonorStatus("Email already verified. Please log in to open your donor dashboard.", "success");
-      setTimeout(() => { window.location.href = "/donor/login"; }, 900);
+      setDonorStatus("Email already verified. Please log in to open My AGAPAY.", "success");
+      setTimeout(() => { window.location.href = "/myagapay/login"; }, 900);
       return;
     }
     saveDonorSession(data);
-    setDonorStatus("Email verified. Opening your donor dashboard...", "success");
-    setTimeout(() => { window.location.href = "/donor"; }, 900);
+    setDonorStatus("Email verified. Opening My AGAPAY...", "success");
+    setTimeout(() => { window.location.href = "/myagapay"; }, 900);
   } catch (err) {
     clearDonorSession();
     setDonorStatus(err.message, "error");
@@ -1181,7 +1181,7 @@ async function loadDonorSettingsPage() {
   await loadPublicParishes("defaultParishId");
   const session = donorSession();
   if (!session.email || !session.token) {
-    setDonorStatus("Log in to update donor settings.", "error");
+    setDonorStatus("Log in to update My AGAPAY account settings.", "error");
     return;
   }
   try {
@@ -1239,7 +1239,7 @@ async function saveDonorSettings(event) {
     return;
   }
   try {
-    setDonorStatus("Saving donor settings...");
+    setDonorStatus("Saving My AGAPAY account settings...");
     const data = await donorApi("/api/donor/dashboard", {
       method: "PATCH",
       body: JSON.stringify(body)
@@ -1394,7 +1394,7 @@ function renderRecurringManagement(offerings = []) {
       <div class="recurring-management-empty">
         <strong>No recurring gifts yet.</strong>
         <span>When you create a recurring offering, you will be able to manage, change, or cancel it here.</span>
-        <a class="btn btn-gold btn-sm" href="/donor/give?frequency=monthly">Start recurring gift</a>
+        <a class="btn btn-gold btn-sm" href="/myagapay/give?frequency=monthly">Start recurring gift</a>
       </div>
     `;
     return;
@@ -1417,7 +1417,7 @@ async function openDonorRecurringPortal(parishId = "", button = null) {
   const session = donorSession();
   if (!session.email || !session.token) {
     setDonorStatus("Log in to manage recurring giving.", "error");
-    window.location.href = "/donor/login";
+    window.location.href = "/myagapay/login";
     return;
   }
   const win = window.open("", "_blank");

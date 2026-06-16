@@ -25,17 +25,17 @@
     <aside class="sidebar">
       <div class="sidebar-scroll">
         <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home" hx-boost="false"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">Donor Dashboard</span></div>
-        <div class="profile-panel"><div class="profile-name" id="profileName">Donor Account</div><div class="profile-meta" id="profileMeta">Sign in to load live history</div></div>
+        <div class="profile-panel"><div class="profile-name" id="profileName">My AGAPAY Account</div><div class="profile-meta" id="profileMeta">Sign in to load live history</div></div>
         <nav class="nav" hx-boost="false">
-          <a href="/donor"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg> Home</a>
-          <a href="/donor/give"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg> Give</a>
-          <a class="active" href="/donor/offerings"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg> Offerings</a>
-          <a href="/donor/commemorations"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 22h6"/></svg> Commemorations</a>
-          <a href="/donor/calendar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg> Calendar</a>
-          <a href="/donor/settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg> Account</a>
+          <a href="/myagapay"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg> Home</a>
+          <a href="/myagapay/give"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg> Give</a>
+          <a class="active" href="/myagapay/offerings"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg> Offerings</a>
+          <a href="/myagapay/commemorations"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 12h10"/><path d="M9 22h6"/></svg> Commemorations</a>
+          <a href="/myagapay/calendar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg> Calendar</a>
+          <a href="/myagapay/settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg> Account</a>
         </nav>
       </div>
-      <div class="sidebar-footer"><a class="sidebar-link" href="/donor/give"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg> Make another gift</a></div>
+      <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/give"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg> Make another gift</a></div>
     </aside>
     <main class="content donor-mobile-content">
       <div class="topbar"><div class="topbar-title">My Offerings</div><div class="topbar-actions"><button class="btn btn-gold btn-sm" type="button" onclick="openDonorRecurringPortal()">Manage recurring</button><button class="btn btn-ghost btn-sm" type="button" onclick="filterOfferings('all')">All</button><button class="btn btn-ghost btn-sm" type="button" onclick="filterOfferings('recurring')">Recurring</button><button class="btn btn-ghost btn-sm" type="button" onclick="filterOfferings('commemoration')">Commemorations</button></div></div>
@@ -68,11 +68,11 @@
         </section>
       </div>
       <nav class="mobile-tabbar" aria-label="Donor navigation">
-        <a href="/donor"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg><span>Home</span></a>
-        <a href="/donor/give"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg><span>Give</span></a>
-        <a href="/donor/calendar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg><span>Calendar</span></a>
-        <a class="active" href="/donor/offerings"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg><span>History</span></a>
-        <a href="/donor/settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><span>Account</span></a>
+        <a href="/myagapay"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg><span>Home</span></a>
+        <a href="/myagapay/give"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 8-5 5 5 0 0 1 8 5c-2 4.5-9 9-9 9z"/></svg><span>Give</span></a>
+        <a href="/myagapay/calendar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg><span>Calendar</span></a>
+        <a class="active" href="/myagapay/offerings"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg><span>History</span></a>
+        <a href="/myagapay/settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><span>Account</span></a>
       </nav>
     </main>
   </div>

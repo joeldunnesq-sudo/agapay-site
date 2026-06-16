@@ -55,7 +55,7 @@
         }
       });
       if (res.ok) {
-        window.location.replace("/donor/dashboard");
+        window.location.replace("/myagapay/dashboard");
         return;
       }
       if (res.status === 401) {

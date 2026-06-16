@@ -72,6 +72,8 @@ async function handleApi(req, res) {
 async function resolveStaticPath(urlPath) {
   let pathname = decodeURIComponent(urlPath);
   if (pathname === "/") pathname = "/index.html";
+  if (pathname === "/myagapay" || pathname === "/myagapay/" || pathname === "/myagapay/dashboard") pathname = "/donor/index.html";
+  if (pathname.startsWith("/myagapay/") && !path.extname(pathname)) pathname = pathname.replace(/^\/myagapay/, "/donor") + ".html";
   if (pathname === "/donor" || pathname === "/donor/") pathname = "/donor/index.html";
   if (pathname === "/donor/dashboard") pathname = "/donor/index.html";
   if (pathname === "/give" || pathname === "/give/" || pathname === "/giving" || pathname === "/giving/") {
