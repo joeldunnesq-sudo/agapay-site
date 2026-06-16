@@ -95,7 +95,7 @@
               <div><dt>Recent Donations</dt><dd id="myAgapayRecentAmount">$0</dd></div>
               <div><dt>This Month</dt><dd id="myAgapayGivingMonth">$0</dd></div>
             </dl>
-            <a class="my-agapay-action primary" href="/donor/give">Open Giving Dashboard <span aria-hidden="true">-&gt;</span></a>
+            <a class="my-agapay-action primary" href="#giving-dashboard">Open Giving Dashboard <span aria-hidden="true">-&gt;</span></a>
           </article>
 
           <article class="my-agapay-product-card learn-card">
@@ -200,7 +200,7 @@
         </div>
       </section>
 
-      <section class="donor-desktop-home" hidden>
+      <section class="donor-desktop-home" id="giving-dashboard">
         <div class="desktop-hero">
           <a class="desktop-hero-mark" href="/" aria-label="AGAPAY home" hx-boost="false"><img src="/mark.png" alt="" /></a>
           <div class="desktop-hero-copy">
@@ -458,7 +458,21 @@
   </div>
 
   <script>
+    function applyDonorProductView() {
+      const isGivingView = window.location.hash === "#giving-dashboard";
+      const home = document.querySelector(".my-agapay-home");
+      const giving = document.querySelector(".donor-desktop-home");
+      if (home) home.hidden = isGivingView;
+      if (giving) giving.hidden = !isGivingView;
+      document.body.classList.toggle("showing-giving-dashboard", isGivingView);
+      const title = document.querySelector(".topbar-title");
+      if (title) title.textContent = isGivingView ? "Giving Dashboard" : "My AGAPAY";
+    }
+
+    window.addEventListener("hashchange", applyDonorProductView);
+
     document.addEventListener("DOMContentLoaded", async () => {
+      applyDonorProductView();
       // Pre-fill greeting from cached profile if we have a name — never show "Faithful Member" pre-emptively
       const cached = donorProfile();
       const cachedName = donorDisplayName(cached);
@@ -470,6 +484,7 @@
       }
       await handleDonorCheckoutReturn();
       await loadDonorDashboardPage();
+      applyDonorProductView();
     });
   </script>
 </body>
