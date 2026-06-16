@@ -4105,3 +4105,407 @@ body.donor-mobile-page {
   }
 }
 
+/* My AGAPAY shell polish: match the unified dashboard reference without changing Giving panels. */
+body.donor-home {
+  background:
+    radial-gradient(circle at 86% 12%, rgba(201, 162, 91, 0.12), transparent 24rem),
+    linear-gradient(180deg, #f8f3ea 0%, #f3ecdf 100%);
+}
+
+.donor-home .donor-app-shell {
+  background: transparent;
+}
+
+.donor-home .donor-phone-stage {
+  display: flex;
+  min-width: 0;
+  min-height: 100vh;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+}
+
+.donor-home .donor-home-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  min-height: 70px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(201, 162, 91, 0.38);
+  padding: 0.72rem clamp(0.9rem, 2.5vw, 1.8rem);
+  background:
+    radial-gradient(circle at 84% 0%, rgba(201, 162, 91, 0.2), transparent 22rem),
+    linear-gradient(135deg, #061522 0%, #0a2035 62%, #101d22 100%);
+  box-shadow: 0 10px 28px rgba(6, 21, 34, 0.16);
+  color: #fffdf8;
+}
+
+.donor-home-topbar-brand {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.donor-home-topbar-brand img {
+  width: 2.35rem;
+  height: 2.35rem;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.donor-home-topbar-brand span {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.donor-home-topbar-brand .topbar-title {
+  display: block;
+  color: var(--gold);
+  font-family: var(--serif);
+  font-size: clamp(1.55rem, 4vw, 2.05rem);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 0.86;
+}
+
+.donor-home-topbar-brand small {
+  display: block;
+  color: rgba(246, 241, 232, 0.74);
+  font-family: var(--sans);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.donor-home .donor-home-topbar .topbar-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  margin-left: auto;
+}
+
+.donor-home-quick-action {
+  min-width: 9rem;
+  border-color: transparent;
+  background: var(--gold);
+  color: #061522;
+  font-weight: 900;
+}
+
+.donor-home-account-chip {
+  min-height: 2.9rem;
+  border-color: rgba(246, 241, 232, 0.24);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.donor-home-mini-avatar {
+  border-color: rgba(201, 162, 91, 0.42);
+}
+
+.donor-home-sidebar .auth-panel,
+.donor-home-sidebar .profile-panel {
+  display: none;
+}
+
+.donor-home-sidebar {
+  border-right: 1px solid rgba(201, 162, 91, 0.24);
+  background:
+    radial-gradient(circle at 50% 92%, rgba(201, 162, 91, 0.18), transparent 13rem),
+    linear-gradient(180deg, #0a2238 0%, #061522 48%, #03101d 100%);
+  color: #fffdf8;
+}
+
+.donor-home-sidebar .sidebar-scroll {
+  padding: 1.15rem 0.85rem 0.6rem;
+}
+
+.donor-home-sidebar .unified-brand {
+  align-items: center;
+  gap: 0.22rem;
+  margin-bottom: 1.45rem;
+  padding: 0.35rem 0.35rem 0.95rem;
+  text-align: center;
+}
+
+.donor-home-sidebar .unified-brand .brand-mark {
+  display: grid;
+  width: 3.65rem;
+  height: 3.65rem;
+  place-items: center;
+  margin: 0 auto 0.46rem;
+  border: 1px solid rgba(201, 162, 91, 0.22);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: none;
+}
+
+.donor-home-sidebar .unified-brand .brand-mark img {
+  width: 2.95rem;
+  height: 2.95rem;
+  object-fit: contain;
+}
+
+.donor-home-sidebar .unified-brand .brand-name {
+  color: var(--gold);
+  font-family: var(--serif);
+  font-size: 2.28rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 0.86;
+}
+
+.donor-home-sidebar .dashboard-home-cue {
+  color: rgba(246, 241, 232, 0.74);
+  font-family: var(--sans);
+  font-size: 0.55rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.donor-home-sidebar .unified-product-nav {
+  gap: 0.28rem;
+  margin-top: 0;
+}
+
+.donor-home-sidebar .unified-product-nav a {
+  min-height: 2.85rem;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 0.62rem 0.72rem;
+  color: rgba(246, 241, 232, 0.84);
+  font-family: var(--sans);
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.donor-home-sidebar .unified-product-nav a.active,
+.donor-home-sidebar .unified-product-nav a:hover {
+  border-color: rgba(201, 162, 91, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fffdf8;
+}
+
+.donor-home-sidebar .unified-product-nav svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  flex: 0 0 auto;
+}
+
+.donor-home-sidebar .unified-nav-badge {
+  padding: 0.16rem 0.36rem;
+  font-size: 0.5rem;
+}
+
+.donor-home-sidebar .unified-nav-divider {
+  margin: 0.5rem 0.7rem;
+}
+
+.unified-sidebar-signoff {
+  display: grid;
+  gap: 0.55rem;
+  place-items: center;
+  border-top: 1px solid rgba(246, 241, 232, 0.12);
+  padding: 1rem 1rem 1.2rem;
+  color: rgba(246, 241, 232, 0.82);
+  font-family: var(--serif);
+  font-size: 1rem;
+  font-style: italic;
+  text-align: center;
+}
+
+.unified-sidebar-signoff img {
+  width: 3rem;
+  height: 3rem;
+  object-fit: contain;
+  opacity: 0.72;
+}
+
+.my-agapay-home {
+  width: min(1360px, 100%);
+  padding: clamp(1.1rem, 3vw, 2.2rem) clamp(1rem, 4vw, 2.75rem) 6.5rem;
+}
+
+.my-agapay-hero {
+  align-items: center;
+  margin-bottom: 1.05rem;
+  border: 0;
+  border-radius: 0;
+  padding: clamp(0.45rem, 2vw, 1rem) 0 clamp(0.9rem, 2.4vw, 1.35rem);
+  background: transparent;
+  box-shadow: none;
+}
+
+.my-agapay-hero::after {
+  right: 0;
+  top: -1rem;
+  opacity: 0.035;
+}
+
+.my-agapay-profile-card {
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(201, 162, 91, 0.12), transparent 11rem),
+    rgba(255, 253, 248, 0.88);
+}
+
+.my-agapay-tabbar {
+  width: min(100%, 520px);
+  min-height: 76px;
+  border-radius: 20px 20px 0 0;
+}
+
+@media (min-width: 901px) {
+  .donor-home .donor-app-shell {
+    display: grid;
+    grid-template-columns: 264px minmax(0, 1fr);
+  }
+
+  .donor-home-sidebar {
+    position: sticky;
+    top: 0;
+    display: flex;
+    height: 100vh;
+  }
+
+  .donor-home .donor-home-topbar {
+    min-height: 68px;
+  }
+
+  .my-agapay-home {
+    padding-bottom: 3.25rem;
+  }
+}
+
+@media (min-width: 1180px) {
+  .my-agapay-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.28fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .donor-home .donor-home-topbar {
+    min-height: 64px;
+    padding-inline: 0.82rem;
+  }
+
+  .donor-home-topbar-brand {
+    gap: 0.46rem;
+  }
+
+  .donor-home-topbar-brand img {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .donor-home-topbar-brand .topbar-title {
+    font-size: 1.42rem;
+  }
+
+  .donor-home-topbar-brand small {
+    display: none;
+  }
+
+  .donor-home-quick-action {
+    display: none;
+  }
+
+  .donor-home-account-chip {
+    gap: 0;
+    min-height: 2.6rem;
+    padding: 0.22rem;
+  }
+
+  .donor-home-account-chip span:last-child {
+    display: none;
+  }
+
+  .donor-home-mini-avatar {
+    width: 2.12rem;
+    height: 2.12rem;
+    font-size: 0.74rem;
+  }
+
+  .donor-home .donor-home-topbar .btn-sm {
+    min-height: 2.35rem;
+    padding-inline: 0.72rem;
+    font-size: 0.78rem;
+  }
+
+  .my-agapay-home {
+    padding-top: 1rem;
+  }
+
+  .my-agapay-profile-card {
+    padding: 0.95rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .donor-home-topbar-brand img {
+    display: none;
+  }
+
+  .donor-home .donor-home-topbar .topbar-actions {
+    gap: 0.42rem;
+  }
+
+  .donor-home .donor-home-topbar [data-auth-guest].btn-gold {
+    display: none;
+  }
+}
+
+.donor-home-sidebar .dashboard-home-cue {
+  display: block;
+  width: 100%;
+  margin-top: 0.12rem;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  white-space: normal;
+}
+
+.donor-home .donor-home-topbar [data-auth-guest].btn-ghost {
+  background: transparent;
+  color: #fffdf8;
+}
+
+@media (max-width: 900px) {
+  .donor-home .donor-home-topbar {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  .donor-home .donor-home-topbar .topbar-actions {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+}
+
+@media (max-width: 430px) {
+  .donor-home .donor-home-topbar .donor-home-topbar-brand img {
+    display: block;
+    width: 1.65rem;
+    height: 1.65rem;
+  }
+
+  .donor-home .donor-home-topbar .donor-home-topbar-brand .topbar-title {
+    font-size: 1.28rem;
+  }
+}
+
