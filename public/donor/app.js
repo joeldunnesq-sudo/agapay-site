@@ -6,7 +6,7 @@ const donorStore = {
   shellVersion: "agapayDonorShellVersion"
 };
 
-const DONOR_SHELL_VERSION = "2026-06-16-giving-hand-v3";
+const DONOR_SHELL_VERSION = "2026-06-16-giving-hand-v4";
 
 async function refreshStaleDashboardShell() {
   if (!("serviceWorker" in navigator) || !("caches" in window)) return;
