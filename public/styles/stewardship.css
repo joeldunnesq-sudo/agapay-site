@@ -1,0 +1,321 @@
+/* public/styles/stewardship.css */
+/* Stewardship module styles — extends existing dashboard CSS */
+
+/* ── Page layout ─────────────────────────────────────────────── */
+.module-card {
+  background: var(--surface-2, #1a2332);
+  border: 1px solid var(--border, rgba(255,255,255,.1));
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.module-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.module-card h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.coming-soon-card {
+  opacity: .7;
+}
+
+.coming-soon-grid {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-top: .75rem;
+}
+
+.cs-item {
+  color: var(--text-muted, #94a3b8);
+  font-size: .9rem;
+  padding: .5rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+/* ── Data table ──────────────────────────────────────────────── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .9rem;
+}
+
+.data-table th {
+  text-align: left;
+  padding: .6rem .75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: .8rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table td {
+  padding: .75rem;
+  border-bottom: 1px solid var(--border, rgba(255,255,255,.06));
+  vertical-align: middle;
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+
+.data-table a {
+  color: var(--gold, #c8972a);
+  text-decoration: none;
+}
+
+.data-table a:hover { text-decoration: underline; }
+
+/* ── Status badges ───────────────────────────────────────────── */
+.status-badge {
+  display: inline-block;
+  padding: .2rem .6rem;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.status-draft    { background: rgba(148,163,184,.15); color: #94a3b8; }
+.status-ready    { background: rgba(59,130,246,.15);  color: #60a5fa; }
+.status-generated{ background: rgba(74,222,128,.15);  color: #4ade80; }
+.status-archived { background: rgba(148,163,184,.1);  color: #64748b; }
+
+/* ── Info table (billing page) ───────────────────────────────── */
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .95rem;
+}
+
+.info-table th {
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 500;
+  padding: .6rem 1rem .6rem 0;
+  width: 140px;
+  vertical-align: top;
+}
+
+.info-table td {
+  padding: .6rem 0;
+}
+
+/* ── Stewardship form ────────────────────────────────────────── */
+.stewardship-form {
+  max-width: 860px;
+}
+
+.form-section {
+  background: var(--surface-2, #1a2332);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-section h2 {
+  margin: 0 0 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.section-note {
+  color: var(--text-muted);
+  font-size: .85rem;
+  margin: -.75rem 0 1rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+.form-field span {
+  font-size: .82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.form-field--full {
+  grid-column: 1 / -1;
+}
+
+.form-input, .form-select, .form-textarea {
+  background: var(--surface-1, #111827);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: .55rem .75rem;
+  font-size: .9rem;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color .15s;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--gold, #c8972a);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.input-prefix-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-prefix {
+  position: absolute;
+  left: .75rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.input-prefix-wrap .form-input {
+  padding-left: 1.5rem;
+}
+
+/* ── Dynamic rows (agenda, reports, funds, nominees, resolutions) */
+.agenda-row, .fund-row, .nominee-row, .resolution-row {
+  display: flex;
+  gap: .5rem;
+  align-items: flex-start;
+  margin-bottom: .5rem;
+}
+
+.agenda-row .form-input:first-of-type { flex: 1; }
+
+.report-row {
+  background: var(--surface-1, #111827);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: .75rem;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.fund-row {
+  align-items: center;
+}
+
+.fund-row .form-input { flex: 1; min-width: 0; }
+
+.restricted-funds-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: .5rem;
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 0 0 .35rem;
+  margin-bottom: .25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.form-grid-5 { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: .5rem; }
+
+.nominee-row .form-input:first-of-type { flex: 2; }
+.nominee-row .form-input:last-of-type { flex: 1; }
+
+.form-actions {
+  display: flex;
+  gap: .75rem;
+  padding-top: .5rem;
+}
+
+/* ── Buttons (if not already in dashboard CSS) ───────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .6rem 1.25rem;
+  border-radius: 8px;
+  font-size: .9rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: opacity .15s, background .15s;
+  white-space: nowrap;
+}
+
+.btn:hover { opacity: .85; }
+
+.btn-primary {
+  background: var(--gold, #c8972a);
+  color: #000;
+}
+
+.btn-secondary {
+  background: var(--surface-3, #1e293b);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.btn-sm {
+  padding: .35rem .6rem;
+  font-size: .8rem;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+.remove-row {
+  color: var(--text-muted);
+  margin-top: .15rem;
+}
+
+/* ── Page header ─────────────────────────────────────────────── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.page-header h1 {
+  margin: 0 0 .2rem;
+  font-size: 1.6rem;
+  font-family: var(--font-serif, Georgia, serif);
+}
