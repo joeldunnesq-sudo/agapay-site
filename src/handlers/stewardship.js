@@ -22,11 +22,36 @@ import {
 import {
   absoluteWebsiteUrl,
   loadRegistrationByReference,
-  requireAdminContext,
   saveRegistrationRecord,
-  stripeFormRequest,
-  stripeGetRequest,
+  findRegistrationByParishId,
+  verifyParishDashboardBearer,
 } from "./parish.js";
+
+import { getBearerToken } from "../lib/core.js";
+
+// Auth for stewardship SSR pages.
+// The parish SPA links here with ?parishId=XX&t=TOKEN (token from localStorage).
+// The worker validates the token against the parish registration.
+async function requireParishContext(request, env) {
+  const url = new URL(request.url);
+  const parishId = url.searchParams.get("parishId");
+  const token = url.searchParams.get("t") || getBearerToken(request);
+  if (!parishId || !token) {
+    return { ok: false, response: new Response(
+      "<!DOCTYPE html><html><body><p>Session expired. <a href='/parish/dashboard'>Return to dashboard</a></p></body></html>",
+      { status: 401, headers: { "Content-Type": "text/html;charset=utf-8" } }
+    )};
+  }
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return { ok: false, response: new Response("Parish not found", { status: 404 }) };
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
+    return { ok: false, response: new Response(
+      "<!DOCTYPE html><html><body><p>Session expired. <a href='/parish/dashboard'>Return to dashboard</a></p></body></html>",
+      { status: 401, headers: { "Content-Type": "text/html;charset=utf-8" } }
+    )};
+  }
+  return { ok: true, registration: found.registration };
+}
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -763,7 +788,7 @@ async function parseFormBody(request) {
 // GET /parish/stewardship
 export async function handleStewardshipHome(request, env) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-  const ctx = await requireAdminContext(request, env);
+  const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
 
@@ -789,7 +814,7 @@ export async function handleStewardshipHome(request, env) {
 // POST /parish/stewardship/subscribe
 export async function handleStewardshipSubscribe(request, env) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-  const ctx = await requireAdminContext(request, env);
+  const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
 
@@ -848,7 +873,7 @@ export async function handleStewardshipSubscribe(request, env) {
 // GET /parish/stewardship/billing
 export async function handleStewardshipBilling(request, env) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-  const ctx = await requireAdminContext(request, env);
+  const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
 
@@ -860,7 +885,7 @@ export async function handleStewardshipBilling(request, env) {
 // POST /parish/stewardship/billing-portal
 export async function handleStewardshipBillingPortal(request, env) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-  const ctx = await requireAdminContext(request, env);
+  const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
 
@@ -892,7 +917,7 @@ export async function handleStewardshipMeetingList(request, env) {
 // POST /parish/stewardship/annual-meetings/new
 export async function handleStewardshipMeetingNew(request, env) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-  const ctx = await requireAdminContext(request, env);
+  const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
 
@@ -940,7 +965,7 @@ export async function handleStewardshipMeetingNew(request, env) {
 // POST /parish/stewardship/annual-meetings/:id
 export async function handleStewardshipMeetingEdit(request, env, meetingId) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-  const ctx = await requireAdminContext(request, env);
+  const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
 
@@ -998,7 +1023,7 @@ export async function handleStewardshipMeetingEdit(request, env, meetingId) {
 // GET /parish/stewardship/annual-meetings/:id/preview
 export async function handleStewardshipMeetingPreview(request, env, meetingId) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-  const ctx = await requireAdminContext(request, env);
+  const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
 
@@ -1025,7 +1050,7 @@ export async function handleStewardshipMeetingPreview(request, env, meetingId) {
 // Returns print-optimised HTML — browser/OS native print-to-PDF
 export async function handleStewardshipMeetingPdf(request, env, meetingId) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
-  const ctx = await requireAdminContext(request, env);
+  const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
 
