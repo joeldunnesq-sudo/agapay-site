@@ -57,7 +57,7 @@
             <span class="brand-mark"><img src="/mark.png" alt="" /></span>
             <span class="brand-name">
               <strong>AGAPAY</strong>
-              <span>Love how you give</span>
+              <span class="brand-tagline" aria-label="Love how you give, learn, buy, and live">Love how you <span class="flip-word" data-flip-word aria-hidden="true">GIVE</span></span>
             </span>
           </a>
 
@@ -122,7 +122,7 @@
                 <img src="/mark.png" alt="" />
                 <span class="fl-name">
                   <strong>AGAPAY</strong>
-                  <span class="fl-tag">Love how you give</span>
+                  <span class="fl-tag" aria-label="Love how you give, learn, buy, and live">Love how you <span class="flip-word" data-flip-word aria-hidden="true">GIVE</span></span>
                 </span>
               </div>
             </div>
@@ -228,6 +228,24 @@
     });
   }
 
+  function initFlipTaglines() {
+    const words = ["GIVE", "LEARN", "BUY", "LIVE"];
+    const nodes = Array.from(document.querySelectorAll("[data-flip-word]"));
+    if (!nodes.length || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let index = 0;
+    window.setInterval(() => {
+      index = (index + 1) % words.length;
+      nodes.forEach((node) => {
+        node.classList.add("is-flipping");
+        window.setTimeout(() => {
+          node.textContent = words[index];
+          node.classList.remove("is-flipping");
+        }, 190);
+      });
+    }, 1800);
+  }
+
   function initPageReveal(activeKey) {
     if (!["why", "vision", "features", "pricing", "how", "about"].includes(activeKey)) return;
 
@@ -329,6 +347,7 @@
 
     document.body.classList.add("agp-shell-ready");
     initPageReveal(activeKey);
+    initFlipTaglines();
     bindInteractions();
   }
 

@@ -97,6 +97,32 @@ body:not(.agp-shell-ready):not([data-no-site-chrome="true"])::before {
   font-weight: 700;
 }
 
+.brand-tagline,
+.fl-tag {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.34em;
+}
+
+.flip-word {
+  display: inline-block;
+  min-width: 3.85em;
+  padding: 0.04em 0.28em 0.08em;
+  border-radius: 5px;
+  color: #061522;
+  background: linear-gradient(180deg, #F1D684, #C99537);
+  box-shadow: inset 0 -1px 0 rgba(6, 21, 34, 0.3), 0 1px 0 rgba(255, 255, 255, 0.1);
+  text-align: center;
+  transform-origin: 50% 55%;
+  transition: transform 0.22s ease, opacity 0.22s ease;
+  will-change: transform, opacity;
+}
+
+.flip-word.is-flipping {
+  opacity: 0.38;
+  transform: rotateX(88deg);
+}
+
 .site-header[data-shell="canonical"] .nav-links {
   display: flex;
   align-items: center;
