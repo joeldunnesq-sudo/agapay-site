@@ -122,7 +122,6 @@
                 <img src="/mark.png" alt="" />
                 <span class="fl-name">
                   <strong>AGAPAY</strong>
-                  <span class="fl-tag" aria-label="Love how you give, learn, buy, and live">Love how you <span class="flip-word" data-flip-word aria-hidden="true">GIVE</span></span>
                 </span>
               </div>
             </div>
