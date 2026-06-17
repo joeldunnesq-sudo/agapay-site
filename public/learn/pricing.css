@@ -110,8 +110,8 @@ h3 {
 h1 {
   max-width: 11ch;
   color: var(--learn-night);
-  font-size: clamp(4.3rem, 11vw, 8.5rem);
-  line-height: 0.82;
+  font-size: clamp(3.25rem, 6.2vw, 5.8rem);
+  line-height: 0.9;
 }
 
 .hero-text {
@@ -926,7 +926,7 @@ h1 {
   }
 
   h1 {
-    font-size: clamp(4rem, 19vw, 6rem);
+    font-size: clamp(2.9rem, 14vw, 4.2rem);
   }
 
   .learn-product {
