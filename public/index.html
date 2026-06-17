@@ -29,8 +29,17 @@
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=optional" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=optional" /></noscript>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="/site-chrome.css" />
+  <link rel="preload" as="style" href="/site-chrome.css" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="/site-chrome.css" /></noscript>
   <style>
+    :root {
+      --agp-nav-bg: #061522;
+      --agp-gold: #D6AF5B;
+      --agp-cream: #F6F1E8;
+      --agp-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --agp-serif: "Cormorant Garamond", Georgia, serif;
+    }
+
     body:not(.agp-shell-ready):not([data-no-site-chrome="true"])::before {
       content: "";
       display: block;
@@ -41,9 +50,179 @@
       border-bottom: 1px solid rgba(200, 162, 74, 0.16);
     }
 
+    .site-header[data-shell="canonical"] {
+      position: sticky;
+      top: 0;
+      z-index: 120;
+      background:
+        linear-gradient(180deg, rgba(6, 21, 34, 0.98), rgba(6, 21, 34, 0.94)),
+        radial-gradient(circle at 18% 0%, rgba(214, 175, 91, 0.14), transparent 34%);
+      border-bottom: 1px solid rgba(200, 162, 74, 0.16);
+    }
+
+    .site-header[data-shell="canonical"] .nav {
+      width: min(1360px, calc(100% - 2rem));
+      min-height: 84px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .site-header[data-shell="canonical"] .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.85rem;
+      color: var(--agp-cream);
+      text-decoration: none;
+    }
+
+    .site-header[data-shell="canonical"] .brand-mark {
+      width: 52px;
+      height: 52px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid rgba(214, 175, 91, 0.32);
+      background: rgba(246, 241, 232, 0.05);
+    }
+
+    .site-header[data-shell="canonical"] .brand-mark img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .site-header[data-shell="canonical"] .brand-name {
+      display: grid;
+      gap: 0.12rem;
+    }
+
+    .site-header[data-shell="canonical"] .brand-name strong {
+      font-family: var(--agp-serif);
+      font-size: 2rem;
+      line-height: 0.9;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      color: var(--agp-cream);
+    }
+
+    .site-header[data-shell="canonical"] .brand-name span {
+      color: var(--agp-gold);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-weight: 700;
+    }
+
+    .site-header[data-shell="canonical"] .nav-links {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 1.45rem;
+      min-width: 0;
+    }
+
+    .site-header[data-shell="canonical"] .nav-links a {
+      color: rgba(246, 241, 232, 0.84);
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      padding: 0.4rem 0;
+      text-decoration: none;
+    }
+
+    .site-header[data-shell="canonical"] .nav-actions {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.85rem;
+    }
+
+    .site-header[data-shell="canonical"] .btn-donate {
+      min-height: 44px;
+      padding: 0 1.4rem;
+      border-radius: 8px;
+      border: 1px solid rgba(200, 162, 74, 0.6);
+      color: #061522;
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, #D6AF5B, #B98832);
+      text-decoration: none;
+    }
+
+    .nav-avatar,
+    .site-header[data-shell="canonical"] .mobile-menu-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+    }
+
+    .site-header[data-shell="canonical"] .mobile-menu-btn {
+      display: none;
+    }
+
+    .site-header[data-shell="canonical"] .signin-wrap {
+      position: relative;
+    }
+
+    .site-header[data-shell="canonical"] .signin-menu,
+    .drawer-backdrop,
+    .mobile-drawer {
+      display: none;
+    }
+
+    body.agp-shell-ready {
+      margin: 0;
+      font-family: var(--agp-sans);
+    }
+
+    @media (max-width: 1160px) {
+      .site-header[data-shell="canonical"] .nav {
+        grid-template-columns: auto 1fr auto;
+      }
+
+      .site-header[data-shell="canonical"] .nav-links,
+      .site-header[data-shell="canonical"] .nav-actions {
+        display: none;
+      }
+
+      .site-header[data-shell="canonical"] .mobile-menu-btn {
+        display: inline-grid;
+        justify-self: end;
+      }
+    }
+
     @media (max-width: 680px) {
       body:not(.agp-shell-ready):not([data-no-site-chrome="true"])::before {
         min-height: 76px;
+      }
+
+      .site-header[data-shell="canonical"] .nav {
+        width: min(100%, calc(100% - 1rem));
+        min-height: 76px;
+      }
+
+      .site-header[data-shell="canonical"] .brand-mark {
+        width: 46px;
+        height: 46px;
+      }
+
+      .site-header[data-shell="canonical"] .brand-name strong {
+        font-size: 1.7rem;
+      }
+
+      .nav-avatar,
+      .site-header[data-shell="canonical"] .mobile-menu-btn {
+        width: 40px;
+        height: 40px;
       }
     }
   </style>
