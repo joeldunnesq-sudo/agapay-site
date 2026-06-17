@@ -67,16 +67,10 @@ assert.ok(registerHtml.includes("requiresJurisdiction"), "registration should br
 assert.ok(registerHtml.includes("requiresWebsite"), "registration should require websites for businesses");
 
 const directoryPage = await readFile("public/directory.html", "utf8");
-assert.ok(directoryPage.includes("const listings = ["), "directory should define listing data for cards and map markers");
-assert.ok(directoryPage.includes("type: 'church'"), "directory should include church listings");
-assert.ok(directoryPage.includes("type: 'business'"), "directory should include business listings");
-assert.ok(directoryPage.includes("type: 'school'"), "directory should include school listings");
-assert.ok(directoryPage.includes("type: 'ministry'"), "directory should include ministry listings");
-assert.ok(directoryPage.includes("type: 'monastery'"), "directory should include monastery listings");
-assert.ok(directoryPage.includes("type: 'service'"), "directory should include service listings");
-assert.ok(directoryPage.includes("map.fitBounds(bounds"), "directory map should auto-fit visible listings");
-assert.ok(directoryPage.includes("setCard(listings[0])"), "directory should seed the map detail card");
-assert.ok(directoryPage.includes('id="mapCardTitle"'), "directory should render a map detail title target");
+assert.ok(directoryPage.includes("AGAPAY Directory Waitlist"), "directory should render the waitlist experience");
+assert.ok(directoryPage.includes("Join the waitlist"), "directory should invite organizations to join the waitlist");
+assert.ok(directoryPage.includes("parishes, monasteries, schools, ministries"), "directory should describe Orthodox organization coverage");
+assert.ok(directoryPage.includes("mailto:hello@agapay.app"), "directory waitlist should route signups to the AGAPAY inbox");
 
 
 const donorApp = await readFile("public/donor/app.js", "utf8");

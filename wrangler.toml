@@ -9,6 +9,7 @@ AGAPAY_REGISTRATION_NOTIFY_EMAIL = "hello@agapay.app"
 AGAPAY_APP_URL = "https://agapay.app"
 TURNSTILE_SITE_KEY = "0x4AAAAAADgGWu1JfBKOSH_g"
 CAMPAIGN_ASSETS_URL = "https://pub-a8aecb95751f49ac9b078c3e3ed378b8.r2.dev"
+AGAPAY_ENABLED_PRODUCTS = "give,learn"
 
 [triggers]
 crons = ["0 14 * * 6"]

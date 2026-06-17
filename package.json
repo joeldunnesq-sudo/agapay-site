@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node server.mjs",
     "start": "node server.mjs",
-    "check": "node --check src/worker.js && node scripts/check.mjs && node scripts/worker-hardening-tests.mjs",
+    "check": "node --check src/worker.js && node scripts/check.mjs && node scripts/check-learn.mjs && node scripts/worker-hardening-tests.mjs",
     "prelaunch": "node scripts/prelaunch-checks.mjs"
   },
   "engines": {

@@ -605,7 +605,25 @@ const dashboardDaily = {
       { id: "rhythm_3", lessonDayId: "lesson_day_today", title: "Gospel Reading", status: "completed", note: "John 6:56-69" },
       { id: "rhythm_4", lessonDayId: "lesson_day_today", title: "Troparion Practice", status: "completed", note: "Practiced" },
       { id: "rhythm_5", lessonDayId: "lesson_day_today", title: "Wednesday Fast", status: "not-started", note: "Bright Week - No Fast" }
-    ]
+    ],
+    thisDayInHistory: {
+      label: "This Day in History",
+      title: "A conversation starter for the family table",
+      year: "Seeded sample",
+      summary: "Pair a brief historical note with narration, timeline, or saint study so the dashboard becomes a little more than a checklist.",
+      sourceLabel: "AGAPAY Learn sample content"
+    },
+    googleCalendarSync: {
+      connected: false,
+      accountLabel: "No Google account connected",
+      calendarLabel: "Family school calendar",
+      syncScopeLabel: "Feast days, lessons, and read-alouds",
+      lastSyncLabel: "Never",
+      nextSyncLabel: "After authorization",
+      eventsPlanned: 0,
+      reminderLabel: "Morning prep reminder",
+      description: "Connect Google Calendar to mirror the Learn schedule into a family calendar with lesson blocks and feast days."
+    }
   }
 };
 
@@ -771,6 +789,54 @@ const orthodoxBookSuggestions = [
   { id: "suggest_feasts", title: "Feast & Seasons", subtitle: "God's Year; The Church Seasons; The Year and Our Children", accentToken: "forest" }
 ];
 
+const communityResources = [
+  {
+    id: "community_ancient_faith_kids",
+    title: "Ancient Faith Kids",
+    category: "Audio & activities",
+    subtitle: "Family-friendly stories, saints, and seasonal listening.",
+    url: "https://www.ancientfaith.com/",
+    sharedBy: "The Martin Family",
+    vetted: true
+  },
+  {
+    id: "community_oca_liturgical_resources",
+    title: "OCA Liturgical Resources",
+    category: "Church calendar",
+    subtitle: "Feast, fast, and daily rhythm materials for home planning.",
+    url: "https://www.oca.org/",
+    sharedBy: "St. Catherine Co-op",
+    vetted: true
+  },
+  {
+    id: "community_goarch_family",
+    title: "GOARCH Family Resources",
+    category: "Family discipleship",
+    subtitle: "Home prayer, feast days, and Orthodox family formation.",
+    url: "https://www.goarch.org/",
+    sharedBy: "Community post",
+    vetted: true
+  },
+  {
+    id: "community_orthodox_wiki",
+    title: "Orthodox Wiki",
+    category: "Research",
+    subtitle: "Quick saint, feast, and history references for older students.",
+    url: "https://www.orthodoxwiki.org/",
+    sharedBy: "Community post",
+    vetted: false
+  },
+  {
+    id: "community_faith_and_life",
+    title: "Faith and Life reading list",
+    category: "Living books",
+    subtitle: "Shared Orthodox homeschool reads for catechesis and narrations.",
+    url: "https://www.ancientfaith.com/",
+    sharedBy: "The Wingfeather Family",
+    vetted: true
+  }
+];
+
 const libraryBooks = [
   { id: "library_lives_saints", title: "The Lives of the Saints (4 Vol. Set)", author: "Fr. Alban Butler", category: "Saints' Lives", ageRange: "8+", orthodox: true, assignmentLabel: "Year Round", progressPercent: 78 },
   { id: "library_story_wise_man", title: "The Story of the Other Wise Man", author: "Henry Van Dyke", category: "Saints' Lives", ageRange: "8-12", orthodox: true, assignmentLabel: "Advent Term", progressPercent: 60 },
@@ -916,6 +982,7 @@ export function getLearnSeedSnapshot() {
     enrichmentBlocks,
     natureJournalEntries,
     orthodoxBookSuggestions,
+    communityResources,
     libraryBooks,
     currentReadAlouds,
     academicRecords,

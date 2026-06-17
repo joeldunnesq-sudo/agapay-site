@@ -3,10 +3,43 @@ import { createReadStream } from "node:fs";
 import { access, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import {
+  handleLearnBillingCheckout,
+  handleLearnBillingStatus,
+  handleLearnBooks,
+  handleLearnCoOp,
+  handleLearnCommunity,
+  handleLearnDashboard,
+  handleLearnFormation,
+  handleLearnGoogleCalendarCallback,
+  handleLearnGoogleCalendarConnect,
+  handleLearnGoogleCalendarPreview,
+  handleLearnGoogleCalendarStatus,
+  handleLearnHymnsProviderStatus,
+  handleLearnMeta,
+  handleLearnOnboarding,
+  handleLearnOnboardingSave,
+  handleLearnPlanner,
+  handleLearnPrintCenter,
+  handleLearnReadingsProviderStatus,
+  handleLearnReports,
+} from "./src/learn/handlers.js";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(root, "public");
 const port = Number(process.env.PORT || 3000);
+const learnEnv = {
+  AGAPAY_ENABLED_PRODUCTS: process.env.AGAPAY_ENABLED_PRODUCTS || "give,learn,learn-coop",
+  AGAPAY_PUBLIC_URL: process.env.AGAPAY_PUBLIC_URL,
+  AGAPAY_STRIPE_PRICE_LEARN_FAMILY_MONTHLY: process.env.AGAPAY_STRIPE_PRICE_LEARN_FAMILY_MONTHLY,
+  AGAPAY_STRIPE_PRICE_LEARN_FAMILY_YEARLY: process.env.AGAPAY_STRIPE_PRICE_LEARN_FAMILY_YEARLY,
+  GOOGLE_CALENDAR_CLIENT_ID: process.env.GOOGLE_CALENDAR_CLIENT_ID,
+  GOOGLE_CALENDAR_CLIENT_SECRET: process.env.GOOGLE_CALENDAR_CLIENT_SECRET,
+  AGAPAY_LEARN_TIME_ZONE: process.env.AGAPAY_LEARN_TIME_ZONE,
+  PONOMAR_HYMNS_BASE_URL: process.env.PONOMAR_HYMNS_BASE_URL,
+  PONOMAR_HYMNS_ENABLED: process.env.PONOMAR_HYMNS_ENABLED,
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY
+};
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -50,6 +83,18 @@ function cacheControlFor(filePath) {
 
 async function handleApi(req, res) {
   const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
+  function learnRequest() {
+    return new Request(`http://${req.headers.host}${req.url}`, {
+      method: req.method,
+      headers: req.headers,
+      body: req.method === "GET" || req.method === "HEAD" ? undefined : req,
+      duplex: "half"
+    });
+  }
+  async function sendResponse(response) {
+    res.writeHead(response.status, Object.fromEntries(response.headers.entries()));
+    res.end(Buffer.from(await response.arrayBuffer()));
+  }
   if (pathname === "/api/security/config") {
     res.writeHead(200, {
       "Content-Type": "application/json; charset=utf-8",
@@ -59,6 +104,82 @@ async function handleApi(req, res) {
       turnstileEnabled: Boolean(process.env.TURNSTILE_SITE_KEY),
       turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || ""
     }));
+    return true;
+  }
+  if (req.method === "GET" && pathname === "/api/learn/meta") {
+    await sendResponse(handleLearnMeta(learnEnv));
+    return true;
+  }
+  if (req.method === "GET" && pathname === "/api/learn/dashboard") {
+    await sendResponse(handleLearnDashboard(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "GET" && pathname === "/api/learn/planner") {
+    await sendResponse(handleLearnPlanner(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "GET" && pathname === "/api/learn/print-center") {
+    await sendResponse(handleLearnPrintCenter(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "GET" && pathname === "/api/learn/formation") {
+    await sendResponse(handleLearnFormation(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "GET" && pathname === "/api/learn/books") {
+    await sendResponse(handleLearnBooks(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "GET" && pathname === "/api/learn/reports") {
+    await sendResponse(handleLearnReports(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "GET" && pathname === "/api/learn/co-op") {
+    await sendResponse(handleLearnCoOp(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "GET" && pathname === "/api/learn/community") {
+    await sendResponse(handleLearnCommunity(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "GET" && pathname === "/api/learn/onboarding") {
+    await sendResponse(handleLearnOnboarding(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "POST" && pathname === "/api/learn/onboarding") {
+    await sendResponse(await handleLearnOnboardingSave(learnRequest(), learnEnv));
+    return true;
+  }
+  if (pathname === "/api/learn/google-calendar/status") {
+    await sendResponse(handleLearnGoogleCalendarStatus(learnRequest(), learnEnv));
+    return true;
+  }
+  if (pathname === "/api/learn/google-calendar/connect") {
+    await sendResponse(handleLearnGoogleCalendarConnect(learnRequest(), learnEnv));
+    return true;
+  }
+  if (pathname === "/api/learn/google-calendar/callback") {
+    await sendResponse(handleLearnGoogleCalendarCallback(learnRequest(), learnEnv));
+    return true;
+  }
+  if (pathname === "/api/learn/google-calendar/preview") {
+    await sendResponse(handleLearnGoogleCalendarPreview(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "GET" && pathname === "/api/learn/billing/status") {
+    await sendResponse(handleLearnBillingStatus(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "GET" && pathname === "/api/learn/readings/status") {
+    await sendResponse(handleLearnReadingsProviderStatus(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "GET" && pathname === "/api/learn/hymns/status") {
+    await sendResponse(handleLearnHymnsProviderStatus(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "POST" && pathname === "/api/learn/billing/checkout") {
+    await sendResponse(await handleLearnBillingCheckout(learnRequest(), learnEnv));
     return true;
   }
   const name = pathname.replace(/^\/api\//, "");
@@ -72,6 +193,8 @@ async function handleApi(req, res) {
 async function resolveStaticPath(urlPath) {
   let pathname = decodeURIComponent(urlPath);
   if (pathname === "/") pathname = "/index.html";
+  if (pathname === "/learn" || pathname === "/learn/") pathname = "/learn/index.html";
+  if (pathname.startsWith("/learn/") && !path.extname(pathname)) pathname = `${pathname}.html`;
   if (
     pathname === "/my-agapay" ||
     pathname === "/my-agapay/" ||

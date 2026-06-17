@@ -73,6 +73,16 @@ const subscriptionTiers = [
   { key: "cathedral", name: "Cathedral", monthlyPrice: 399, annualPrice: 3999 }
 ];
 
+async function sendDonationReceiptIfNeeded(env, offering = {}) {
+  const donorModule = await import("./donor.js");
+  return donorModule.sendDonationReceiptIfNeeded(env, offering);
+}
+
+async function refreshStripeStatusForRegistration(env, reference, registration) {
+  const stripeModule = await import("./stripe.js");
+  return stripeModule.refreshStripeStatusForRegistration(env, reference, registration);
+}
+
 export async function verifyParishDashboardBearer(registration, token) {
   return Boolean(await resolveParishDashboardSession(registration, token));
 }
