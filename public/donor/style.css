@@ -2656,12 +2656,12 @@ body.donor-mobile-page {
   }
 
   .giving-card {
-    border-color: rgba(54, 103, 65, 0.28);
+    border-color: rgba(201, 162, 91, 0.42);
   }
 
   .giving-card h2,
   .giving-icon {
-    color: #245632;
+    color: var(--gold);
   }
 
   .learn-card h2,
@@ -2738,8 +2738,8 @@ body.donor-mobile-page {
   }
 
   .my-agapay-action.primary {
-    background: #245632;
-    color: white;
+    background: linear-gradient(135deg, #d8b45f, #b9822e);
+    color: var(--deep);
   }
 
   .my-agapay-action.learn-action {
@@ -3873,7 +3873,7 @@ body.donor-mobile-page {
 
 .giving-card {
   background:
-    linear-gradient(145deg, rgba(240, 247, 238, 0.96), rgba(255, 252, 246, 0.9)),
+    linear-gradient(145deg, rgba(255, 247, 225, 0.96), rgba(255, 252, 246, 0.9)),
     var(--paper);
 }
 
@@ -3940,7 +3940,7 @@ body.donor-mobile-page {
   stroke-width: 1.8;
 }
 
-.giving-icon { color: #285c36; }
+.giving-icon { color: var(--gold); }
 .learn-icon { color: #123e70; }
 .market-icon { color: #9c6b18; }
 .directory-icon { color: #5c3e75; }
@@ -4005,9 +4005,10 @@ body.donor-mobile-page {
 }
 
 .my-agapay-action.primary {
-  border-color: rgba(40, 92, 54, 0.32);
-  background: #285c36;
-  color: #fff;
+  border-color: rgba(201, 162, 91, 0.72);
+  background: linear-gradient(135deg, #d8b45f, #b9822e);
+  color: var(--navy);
+  box-shadow: 0 12px 24px rgba(185, 130, 46, 0.18);
 }
 
 .my-agapay-action.learn-action {
