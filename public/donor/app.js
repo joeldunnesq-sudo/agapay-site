@@ -1122,7 +1122,7 @@ function renderMyAgapayDashboard(data) {
       title: "AGAPAY Learn is ready",
       meta: "Open your Orthodox homeschool dashboard",
       value: "View",
-      href: "/learn/app"
+      href: "/learn/dashboard"
     },
     {
       glyph: "C",
