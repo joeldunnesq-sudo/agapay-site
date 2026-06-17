@@ -158,39 +158,77 @@ function showLearnDialog(title, message, rows = []) {
 function sidebar(vm) {
   const active = vm.page.id;
   return `
-    <aside class="scroll" style="background:linear-gradient(180deg,#12294d 0%,#0c1f3b 60%,#0a1830 100%);width:264px;flex:none;display:flex;flex-direction:column;color:#f4ecd6;height:100vh;position:sticky;top:0;overflow-y:auto;">
-      <div style="padding:26px 22px 18px;">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:46px;height:46px;display:flex;align-items:center;justify-content:center;color:var(--gold2);font-size:34px;">✥</div>
-          <div style="line-height:1;">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:600;letter-spacing:.04em;color:#f4ecd6;">AGAPAY <span style="color:var(--gold2);">Learn</span></div>
-            <div style="font-size:9.5px;letter-spacing:.32em;color:var(--goldsoft);margin-top:5px;font-weight:600;">ORTHODOX HOMESCHOOL PLANNER</div>
+    <aside class="learn-product-sidebar" data-learn-sidebar>
+      <div class="learn-product-sidebar-scroll">
+        <div class="learn-product-brand">
+          <a class="learn-product-brand-mark" href="/my-agapay" aria-label="Open My AGAPAY">
+            <img src="/mark.png" alt="AGAPAY" />
+          </a>
+          <div class="learn-product-brand-copy">
+            <strong>AGAPAY</strong>
+            <span>Love + Give + Learn + Live</span>
           </div>
         </div>
-      </div>
-      <nav style="padding:8px 14px;display:flex;flex-direction:column;gap:4px;">
+        <div class="learn-product-profile">
+          <strong>${html(vm.shell.familyName || "Faithful Household")}</strong>
+          <span>${html(vm.shell.familyMeta || "AGAPAY Learn")}</span>
+        </div>
+        <div class="learn-product-label">AGAPAY Learn</div>
+        <nav class="learn-product-nav" aria-label="AGAPAY Learn">
         ${vm.shell.nav.map((item) => `
-          <a href="${item.href}" style="display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:12px 14px;border-radius:10px;text-decoration:none;font-family:inherit;transition:all .15s;${item.id === active ? "background:rgba(181,148,47,.13);border:1px solid rgba(201,162,39,.55);color:#f4ecd6;box-shadow:0 0 0 1px rgba(201,162,39,.12);" : "background:transparent;border:1px solid transparent;color:#b9c4d6;"}">
-            <span style="font-size:20px;display:inline-flex;width:24px;justify-content:center;">${item.icon}</span>
-            <span style="font-size:16.5px;letter-spacing:.01em;">${html(item.label)}</span>
+          <a class="${item.id === active ? "is-active" : ""}" href="${item.href}" ${item.id === active ? 'aria-current="page"' : ""}>
+            <span class="learn-product-nav-icon">${item.icon}</span>
+            <span>${html(item.label)}</span>
           </a>
         `).join("")}
-      </nav>
-      <div style="flex:1;min-height:40px;position:relative;overflow:hidden;">
-        <div style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);opacity:.5;color:var(--goldsoft);font-family:'Cormorant Garamond',serif;font-size:104px;line-height:.8;">⌂</div>
+        </nav>
       </div>
-      <div style="margin:0 18px 22px;border:1px solid rgba(181,148,47,.4);border-radius:10px;padding:16px 14px;text-align:center;background:rgba(255,255,255,.02);">
-        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--goldsoft);line-height:1.35;">Rooted in Christ.<br>Ordered in Love.</div>
-        <div style="color:var(--gold);font-size:12px;margin-top:8px;letter-spacing:.3em;">⸎</div>
+      <div class="learn-product-sidebar-signoff">
+        <img src="/mark.png" alt="" aria-hidden="true" />
+        <span>Faith in Action. Together.</span>
       </div>
     </aside>
+  `;
+}
+
+function globalProductNav(activeProduct = "learn") {
+  return `
+    <nav class="learn-product-tabbar" aria-label="My AGAPAY navigation">
+      <a class="${activeProduct === "home" ? "is-active" : ""}" href="/my-agapay">
+        <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+        <span>My AGAPAY</span>
+      </a>
+      <a class="${activeProduct === "giving" ? "is-active" : ""}" href="/my-agapay#giving-dashboard">
+        <svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg>
+        <span>Giving</span>
+      </a>
+      <a class="${activeProduct === "learn" ? "is-active" : ""}" href="/learn/dashboard">
+        <svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg>
+        <span>Learn</span>
+      </a>
+      <a href="/marketplace">
+        <svg viewBox="0 0 24 24"><path d="M6 8h12l-1 13H7z"/><path d="M9 8a3 3 0 0 1 6 0"/><path d="M9 13h6"/></svg>
+        <span>Market</span>
+      </a>
+      <a href="/my-agapay/settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>
+        <span>Account</span>
+      </a>
+    </nav>
   `;
 }
 
 function topbar(vm) {
   const title = vm.page.ornament ? `<span style="color:#c9a227;font-size:22px;margin:0 14px;">❦</span>${html(vm.page.title)}<span style="color:#c9a227;font-size:22px;margin:0 14px;">❦</span>` : html(vm.page.title);
   return `
-    <header style="position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:14px;padding:14px 30px;background:rgba(243,234,212,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);min-height:74px;">
+    <header class="learn-product-topbar">
+      <button class="learn-menu-button" type="button" data-learn-menu-toggle aria-label="Open Learn navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <a class="learn-mobile-brand" href="/my-agapay" aria-label="Open My AGAPAY">
+        <img src="/mark.png" alt="" />
+        <span>AGAPAY</span>
+      </a>
       <div style="flex:1;min-width:0;line-height:1.1;">
         <div style="font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;color:var(--ink);display:flex;align-items:center;">${title}</div>
         ${vm.page.subtitle ? `<div style="font-size:14.5px;color:var(--muted);margin-top:2px;">${html(vm.page.subtitle)}</div>` : ""}
@@ -214,11 +252,13 @@ function topbar(vm) {
 
 function shell(vm, body) {
   return `
-    <div style="display:flex;min-height:100vh;width:100%;font-family:'EB Garamond',Georgia,serif;color:var(--ink);background:var(--cream);${cssVars()};font-size:16px;">
+    <div class="learn-product-shell" style="${cssVars()};">
       ${sidebar(vm)}
-      <main class="scroll" style="flex:1;min-width:0;height:100vh;overflow:auto;display:flex;flex-direction:column;">
+      <div class="learn-sidebar-scrim" data-learn-sidebar-scrim></div>
+      <main class="learn-product-main scroll">
         ${topbar(vm)}
-        <div style="flex:1;padding:26px 30px 10px;">${body}</div>
+        <div class="learn-product-content">${body}</div>
+        ${globalProductNav("learn")}
       </main>
     </div>
   `;
@@ -1134,4 +1174,21 @@ async function mount() {
 
 mount().catch((error) => {
   root.innerHTML = `<section style="padding:32px;font-family:Georgia,serif;color:#6e2f2a;"><strong>Unable to load AGAPAY Learn</strong><p>${html(error.message)}</p></section>`;
+});
+
+document.addEventListener("click", (event) => {
+  const toggle = event.target.closest("[data-learn-menu-toggle]");
+  const scrim = event.target.closest("[data-learn-sidebar-scrim]");
+  const navLink = event.target.closest(".learn-product-nav a");
+  if (!toggle && !scrim && !navLink) return;
+
+  const open = toggle ? !document.body.classList.contains("learn-menu-open") : false;
+  document.body.classList.toggle("learn-menu-open", open);
+  document.querySelector("[data-learn-menu-toggle]")?.setAttribute("aria-expanded", String(open));
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  document.body.classList.remove("learn-menu-open");
+  document.querySelector("[data-learn-menu-toggle]")?.setAttribute("aria-expanded", "false");
 });
