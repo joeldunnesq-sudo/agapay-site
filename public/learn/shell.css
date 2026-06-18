@@ -215,20 +215,97 @@ body {
 .learn-product-topbar {
   position: sticky;
   top: 0;
-  z-index: 30;
+  z-index: 60;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 14px;
-  min-height: 74px;
-  padding: 14px 30px;
-  border-bottom: 1px solid var(--line);
-  background: rgba(243, 234, 212, 0.92);
-  backdrop-filter: blur(8px);
+  min-height: 70px;
+  padding: 0.72rem clamp(0.9rem, 2.5vw, 1.8rem);
+  border-bottom: 1px solid rgba(201, 162, 91, 0.38);
+  background:
+    radial-gradient(circle at 84% 0%, rgba(201, 162, 91, 0.2), transparent 22rem),
+    linear-gradient(135deg, #061522 0%, #0a2035 62%, #101d22 100%);
+  box-shadow: 0 10px 28px rgba(6, 21, 34, 0.16);
+  color: #fffdf8;
+  backdrop-filter: blur(10px);
 }
 
-.learn-menu-button,
-.learn-mobile-brand {
+.learn-menu-button {
   display: none;
+}
+
+.learn-mobile-brand {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.65rem;
+  color: #fffdf8;
+  text-decoration: none;
+}
+
+.learn-mobile-brand img {
+  width: 2.35rem;
+  height: 2.35rem;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.learn-mobile-brand span {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.learn-mobile-brand strong {
+  display: block;
+  color: #fffdf8;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(1.55rem, 4vw, 2.05rem);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 0.86;
+}
+
+.learn-mobile-brand small {
+  display: block;
+  color: rgba(246, 241, 232, 0.74);
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.learn-page-title-utility {
+  display: none;
+}
+
+.learn-utility-actions {
+  margin-left: auto;
+}
+
+.learn-utility-actions > div:first-child span:last-child,
+.learn-utility-actions a span span,
+.learn-utility-actions a span span + span {
+  color: #fffdf8 !important;
+}
+
+.learn-quick-action {
+  display: inline-flex;
+  min-height: 2.75rem;
+  min-width: 9rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: #c8a24a;
+  color: #061522 !important;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-decoration: none;
 }
 
 .learn-product-content {
@@ -290,13 +367,6 @@ body {
   .learn-product-topbar {
     min-height: 64px;
     padding: 0.62rem 0.82rem;
-    background: linear-gradient(120deg, #061522, #0b2130);
-    border-bottom-color: rgba(200, 162, 74, 0.36);
-    color: #f6f1e8;
-  }
-
-  .learn-product-topbar > div:first-of-type {
-    display: none;
   }
 
   .learn-product-topbar > div:last-child {
@@ -336,11 +406,7 @@ body {
   }
 
   .learn-mobile-brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
-    color: #f6f1e8;
-    text-decoration: none;
+    gap: 0.5rem;
   }
 
   .learn-mobile-brand img {
@@ -349,15 +415,54 @@ body {
     object-fit: contain;
   }
 
-  .learn-mobile-brand span {
-    color: #f6f1e8;
-    font-family: "Cormorant Garamond", Georgia, serif;
+  .learn-mobile-brand strong {
     font-size: 1.55rem;
-    letter-spacing: 0.08em;
+  }
+
+  .learn-mobile-brand small {
+    display: none;
   }
 
   .learn-product-content {
     padding: 1rem 0.82rem 1.5rem;
+  }
+
+  .learn-product-content [style*="grid-template-columns"],
+  .learn-product-content [style*="display:grid"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .learn-product-content [style*="display:flex"] {
+    max-width: 100%;
+    flex-wrap: wrap !important;
+  }
+
+  .learn-product-content [style*="width:108px"],
+  .learn-product-content [style*="width:130px"] {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 88px !important;
+  }
+
+  .learn-product-content [style*="font-size:38px"],
+  .learn-product-content [style*="font-size:34px"] {
+    font-size: 2rem !important;
+  }
+
+  .learn-product-content input,
+  .learn-product-content select,
+  .learn-product-content textarea,
+  .learn-product-content button {
+    max-width: 100%;
+  }
+
+  .learn-product-content [data-setup-row] {
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+  }
+
+  .learn-product-content [data-setup-row] > span:first-child {
+    justify-self: start;
   }
 
   .learn-product-tabbar {

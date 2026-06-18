@@ -3,6 +3,7 @@ import { getLearnSeedSnapshot } from "./demo-data.js";
 
 const FALLBACK_EMAIL = "demo@agapay.local";
 const FALLBACK_HOUSEHOLD_ID = "household_martin";
+const LEARN_SETUP_KV_PREFIX = "__agapay_learn_setup:";
 const devSetupSnapshots = new Map();
 
 function nowIso() {
@@ -25,6 +26,10 @@ function slug(value, fallback = "item") {
 
 function stableId(prefix, value, index = 0) {
   return `${prefix}_${slug(value, `${prefix}-${index + 1}`)}`;
+}
+
+function setupKvKey(identity) {
+  return `${LEARN_SETUP_KV_PREFIX}${identity.householdId}`;
 }
 
 function text(value, fallback = "") {
@@ -509,10 +514,16 @@ export async function loadLearnSetupSnapshot(env, request) {
   if (!d1(env)) return devSetupSnapshots.get(identity.householdId) || null;
   try {
     const row = await d1First(env, "SELECT data FROM learn_households WHERE id = ?1", identity.householdId);
-    return safeParseJsonRow(row)?.setupSnapshot || null;
+    const snapshot = safeParseJsonRow(row)?.setupSnapshot || null;
+    if (snapshot) return snapshot;
   } catch {
-    return null;
+    // Fall back to KV while Learn D1 migrations are being rolled out.
   }
+  if (env.AGAPAY_REGISTRATIONS) {
+    const stored = await env.AGAPAY_REGISTRATIONS.get(setupKvKey(identity));
+    return safeParseJsonRow(stored)?.setupSnapshot || null;
+  }
+  return null;
 }
 
 export async function getLearnSeedForRequest(env, request) {
@@ -545,28 +556,42 @@ export async function saveLearnSetup(env, request, payload) {
     setupSnapshot
   });
 
-  await d1Run(
-    env,
-    `INSERT INTO learn_households (id, slug, name, household_size, liturgical_calendar_type, pace_mode, grace_mode_active, data, created_at, updated_at)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)
-     ON CONFLICT(id) DO UPDATE SET
-       name = excluded.name,
-       household_size = excluded.household_size,
-       liturgical_calendar_type = excluded.liturgical_calendar_type,
-       pace_mode = excluded.pace_mode,
-       grace_mode_active = excluded.grace_mode_active,
-       data = excluded.data,
-       updated_at = excluded.updated_at`,
-    identity.householdId,
-    slug(setupSnapshot.household.name, identity.householdId),
-    setupSnapshot.household.name,
-    setupSnapshot.children.length,
-    setupSnapshot.preferences.calendarType,
-    setupSnapshot.preferences.paceMode,
-    setupSnapshot.preferences.graceModeActive ? 1 : 0,
-    householdData,
-    timestamp
-  );
+  try {
+    await d1Run(
+      env,
+      `INSERT INTO learn_households (id, slug, name, household_size, liturgical_calendar_type, pace_mode, grace_mode_active, data, created_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)
+       ON CONFLICT(id) DO UPDATE SET
+         name = excluded.name,
+         household_size = excluded.household_size,
+         liturgical_calendar_type = excluded.liturgical_calendar_type,
+         pace_mode = excluded.pace_mode,
+         grace_mode_active = excluded.grace_mode_active,
+         data = excluded.data,
+         updated_at = excluded.updated_at`,
+      identity.householdId,
+      slug(setupSnapshot.household.name, identity.householdId),
+      setupSnapshot.household.name,
+      setupSnapshot.children.length,
+      setupSnapshot.preferences.calendarType,
+      setupSnapshot.preferences.paceMode,
+      setupSnapshot.preferences.graceModeActive ? 1 : 0,
+      householdData,
+      timestamp
+    );
+  } catch (error) {
+    if (!env.AGAPAY_REGISTRATIONS) throw error;
+    await env.AGAPAY_REGISTRATIONS.put(setupKvKey(identity), householdData);
+    return {
+      ok: true,
+      setupSnapshot,
+      onboarding: applySetupSnapshotToSeed(getLearnSeedSnapshot(), setupSnapshot),
+      storage: "kv-fallback"
+    };
+  }
+  if (env.AGAPAY_REGISTRATIONS) {
+    await env.AGAPAY_REGISTRATIONS.put(setupKvKey(identity), householdData);
+  }
 
   await bestEffort(async () => {
     await d1Run(env, "DELETE FROM learn_child_tracks WHERE child_id IN (SELECT id FROM learn_children WHERE household_id = ?1)", identity.householdId);

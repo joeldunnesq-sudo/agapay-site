@@ -176,6 +176,7 @@ import {
   handleLearnFormation,
   handleLearnMeta,
   handleLearnOnboarding,
+  handleLearnOnboardingSave,
   handleLearnPlanner,
   handleLearnPrintCenter,
   handleLearnReports,
@@ -766,6 +767,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/learn/onboarding") {
       return handleLearnOnboarding(request, env);
+    }
+    if (request.method === "POST" && url.pathname === "/api/learn/onboarding") {
+      return handleLearnOnboardingSave(request, env);
     }
     if (request.method === "POST" && url.pathname === "/api/registrations") return handleRegistrations(request, env);
     if (url.pathname === "/api/donor/signup") {

@@ -225,18 +225,18 @@ function topbar(vm) {
       <button class="learn-menu-button" type="button" data-learn-menu-toggle aria-label="Open Learn navigation" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
-      <a class="learn-mobile-brand" href="/my-agapay" aria-label="Open My AGAPAY">
+      <a class="learn-mobile-brand learn-utility-brand" href="/my-agapay" aria-label="Open My AGAPAY">
         <img src="/mark.png" alt="" />
-        <span>AGAPAY</span>
+        <span><strong>AGAPAY</strong><small>Love how you Give + Learn + Live</small></span>
       </a>
-      <div style="flex:1;min-width:0;line-height:1.1;">
+      <div class="learn-page-title-utility" style="flex:1;min-width:0;line-height:1.1;">
         <div style="font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;color:var(--ink);display:flex;align-items:center;">${title}</div>
         ${vm.page.subtitle ? `<div style="font-size:14.5px;color:var(--muted);margin-top:2px;">${html(vm.page.subtitle)}</div>` : ""}
       </div>
-      <div style="display:flex;align-items:center;gap:18px;flex:none;">
+      <div class="learn-utility-actions" style="display:flex;align-items:center;gap:18px;flex:none;">
         <div style="display:flex;align-items:center;gap:7px;color:var(--gold);font-size:15px;"><span style="font-size:18px;">☼</span><span style="color:var(--ink);letter-spacing:.02em;">${html(vm.shell.timeLabel)}</span></div>
         <span style="color:var(--goldsoft);font-size:18px;">✥</span>
-        <button style="position:relative;background:none;border:none;cursor:pointer;color:var(--ink);font-size:20px;display:inline-flex;padding:4px;">♢<span style="position:absolute;top:-2px;right:-3px;background:var(--gold);color:#fff;font-size:10.5px;font-weight:700;min-width:16px;height:16px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;">3</span></button>
+        <a class="learn-quick-action" href="/learn/onboarding">Quick Action</a>
         <a href="/learn/onboarding" style="display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit;">
           <span style="width:40px;height:40px;border-radius:50%;background:var(--navy);border:2px solid var(--gold);color:var(--gold2);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;">${html(vm.shell.familyInitial)}</span>
           <span style="text-align:left;line-height:1.2;">
@@ -558,11 +558,18 @@ const colorChoices = [
   "#4a5a31",
   "#b5942f",
   "#4b3158",
-  "#34507a"
+  "#34507a",
+  "#7f3f2a",
+  "#2f5f5b",
+  "#7b496f",
+  "#8a6a2f",
+  "#3f4f73",
+  "#9a3f45"
 ];
 
 function setupColorSelect(label, name, value = colorChoices[0]) {
-  return `<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">${html(label)}<span style="display:flex;gap:6px;align-items:center;"><select name="${html(name)}" style="min-width:0;flex:1;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);">${colorChoices.map((color) => `<option value="${html(color)}" ${color === value ? "selected" : ""}>${html(color)}</option>`).join("")}</select><span style="width:34px;height:34px;border-radius:50%;background:${html(value)};border:1px solid var(--goldsoft);"></span></span></label>`;
+  const resolved = /^#[0-9a-f]{6}$/i.test(String(value || "")) ? value : colorChoices[0];
+  return `<label class="learn-color-field" style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">${html(label)}<span style="display:flex;gap:8px;align-items:center;"><input name="${html(name)}" type="color" value="${html(resolved)}" list="learnColorChoices" style="width:44px;height:40px;flex:0 0 auto;border:1px solid var(--line);border-radius:9px;padding:3px;background:var(--paper2);"><input name="${html(name)}Hex" type="text" value="${html(resolved)}" pattern="#[0-9A-Fa-f]{6}" style="min-width:0;flex:1;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);"><span data-color-preview style="width:34px;height:34px;border-radius:50%;background:${html(resolved)};border:1px solid var(--goldsoft);"></span></span><datalist id="learnColorChoices">${colorChoices.map((color) => `<option value="${html(color)}"></option>`).join("")}</datalist></label>`;
 }
 
 function childSetupRow(child = {}) {
@@ -921,6 +928,17 @@ function setupBlankRow(type, form) {
 function wireSetupPage() {
   const form = root.querySelector("[data-setup-form]");
   if (!form) return;
+  form.addEventListener("input", (event) => {
+    const colorField = event.target.closest(".learn-color-field");
+    if (!colorField) return;
+    const colorInput = colorField.querySelector('input[type="color"]');
+    const textInput = colorField.querySelector('input[type="text"]');
+    const preview = colorField.querySelector("[data-color-preview]");
+    if (event.target === colorInput && textInput) textInput.value = colorInput.value;
+    if (event.target === textInput && /^#[0-9a-f]{6}$/i.test(textInput.value) && colorInput) colorInput.value = textInput.value;
+    const value = /^#[0-9a-f]{6}$/i.test(textInput?.value || "") ? textInput.value : colorInput?.value;
+    if (preview && value) preview.style.background = value;
+  });
   form.addEventListener("click", (event) => {
     const removeButton = event.target.closest("[data-setup-remove-row]");
     if (removeButton) {

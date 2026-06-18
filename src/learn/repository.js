@@ -263,6 +263,19 @@ export class SeedLearnRepository {
 
   getDashboard({ calendarType = "julian", civilDate = new Date().toISOString().slice(0, 10) } = {}) {
     const resolvedCalendar = normalizeCalendarType(calendarType);
+    const hasSetup = Boolean(this.seed.setupSnapshot);
+    const household = hasSetup
+      ? this.seed.household
+      : {
+          id: "learn_household_pending",
+          name: "Your Household",
+          primaryMethod: "Homeschool",
+          liturgicalCalendarType: resolvedCalendar,
+          paceMode: "steady",
+          graceModeActive: false,
+          setupCompleted: false
+        };
+    const children = hasSetup ? this.seed.children : [];
     const liturgicalDay = this.liturgical.getDay(civilDate, resolvedCalendar)
       || buildAgapayLiturgicalDays({ calendarType: resolvedCalendar, startDate: civilDate, endDate: civilDate, seed: this.seed })[0];
     const daily = this.seed.dashboardDaily[civilDate] || {
@@ -285,16 +298,16 @@ export class SeedLearnRepository {
       }
     };
     return {
-      household: this.seed.household,
-      children: this.seed.children,
-      schoolYear: this.seed.schoolYear,
-      term: this.seed.term,
+      household,
+      children,
+      schoolYear: hasSetup ? this.seed.schoolYear : { label: "Set up your school year", startDate: "", endDate: "" },
+      term: hasSetup ? this.seed.term : { label: "No term configured", startDate: "", endDate: "" },
       cycle: {
         framework: this.seed.cycleFramework,
-        year: this.seed.cycleYear,
-        topics: this.seed.cycleTopics
+        year: hasSetup ? this.seed.cycleYear : { title: "Choose your cycle in Setup" },
+        topics: hasSetup ? this.seed.cycleTopics : []
       },
-      curriculumPackage: this.seed.curriculumPackage,
+      curriculumPackage: hasSetup ? this.seed.curriculumPackage : { title: "Setup needed" },
       paceProfile: this.seed.paceProfile,
       seasonAdjustment: this.seed.seasonAdjustment,
       calendarToggle: buildCalendarToggle(resolvedCalendar),
@@ -308,28 +321,39 @@ export class SeedLearnRepository {
         liturgicalDay,
         churchRhythms: (this.seed.setupSnapshot?.formation?.churchRhythms?.length
           ? this.seed.setupSnapshot.formation.churchRhythms
-          : daily.churchRhythms).map((entry) => ({ ...entry })),
-        householdStreamCards: buildHouseholdStreamCards(this.seed, daily),
-        childColumns: buildChildColumns(this.seed, daily)
+          : hasSetup ? daily.churchRhythms : [
+            { id: "rhythm_setup", title: "Complete Setup", status: "planned", note: "Build your household rhythm." }
+          ]).map((entry) => ({ ...entry })),
+        householdStreamCards: hasSetup ? buildHouseholdStreamCards(this.seed, daily) : [],
+        childColumns: hasSetup ? buildChildColumns(this.seed, daily) : []
       },
-      weeklySummary: this.seed.weeklySummary,
+      weeklySummary: hasSetup ? this.seed.weeklySummary : {
+        lessonsCompleted: 0,
+        lessonsPlanned: 0,
+        lessonsCompletionPercent: 0,
+        narrationsLogged: 0,
+        feastDaysAhead: 0,
+        nextFeastLabel: "Choose a calendar in Setup",
+        readAloudProgressPercent: 0,
+        readAloudTitle: "Add books in Setup"
+      },
       upcomingFeasts: this.seed.setupSnapshot?.formation?.feasts?.length
         ? this.seed.setupSnapshot.formation.feasts.map((feast) => ({ ...feast }))
         : buildUpcomingFeasts(this.seed, resolvedCalendar, addDays(civilDate, 1)),
       activeIndicators: {
         graceMode: {
-          enabled: true,
+          enabled: hasSetup,
           label: "Grace Mode",
-          detail: this.seed.seasonAdjustment.title
+          detail: hasSetup ? this.seed.seasonAdjustment.title : "Configure in Setup"
         },
-        cycle: this.seed.cycleYear.title,
-        curriculumPackage: this.seed.curriculumPackage.title
+        cycle: hasSetup ? this.seed.cycleYear.title : "Setup needed",
+        curriculumPackage: hasSetup ? this.seed.curriculumPackage.title : "No curriculum configured"
       },
       readAloud: {
-        book: this.seed.books[0],
-        assignment: this.seed.bookAssignments[0]
+        book: hasSetup ? this.seed.books[0] : null,
+        assignment: hasSetup ? this.seed.bookAssignments[0] : null
       },
-      narrationLogs: this.seed.narrationLogs.map((entry) => ({ ...entry }))
+      narrationLogs: hasSetup ? this.seed.narrationLogs.map((entry) => ({ ...entry })) : []
     };
   }
 

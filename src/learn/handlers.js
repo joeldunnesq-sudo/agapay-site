@@ -4,7 +4,7 @@ import { learnBillingCheckout, learnBillingStatus } from "./billing.js";
 import { googleCalendarCallback, googleCalendarConnect, googleCalendarPreview, googleCalendarStatus } from "./google-calendar.js";
 import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-source.js";
 import { enrichLiturgicalDayWithOrthocal, handleLearnReadingsStatus } from "./readings-source.js";
-import { createLearnRepositoryForRequest, createSeedLearnRepository } from "./repository.js";
+import { createLearnRepositoryForRequest, createSeedLearnRepository, SeedLearnRepository } from "./repository.js";
 import { saveLearnSetup } from "./setup-persistence.js";
 
 function requestedCalendarType(url) {
@@ -231,7 +231,7 @@ export async function handleLearnOnboardingSave(request, env) {
     return json({ ok: false, error: saved.error }, { status: saved.status || 500 });
   }
 
-  const repository = await createLearnRepositoryForRequest(request, env);
+  const repository = new SeedLearnRepository(saved.onboarding);
   return json({
     ok: true,
     onboarding: repository.getOnboarding(),
