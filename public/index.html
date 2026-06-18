@@ -8,18 +8,18 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
   <title>AGAPAY | One Orthodox Platform for Giving, Learning, and Community</title>
-  <meta name="description" content="AGAPAY is a unified Orthodox platform for parish tithing, family learning, trusted marketplace tools, local directory discovery, and community life." />
+  <meta name="description" content="AGAPAY is a unified Orthodox platform for giving, family learning, and community life. AGAPAY Learn is an Orthodox homeschool planning app for families with optional Google Calendar sync." />
   <link rel="canonical" href="https://agapay.app/" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="AGAPAY" />
   <meta property="og:title" content="AGAPAY | One Orthodox Platform" />
-  <meta property="og:description" content="A unified Orthodox platform for giving, learning, marketplace tools, directory discovery, and community life." />
+  <meta property="og:description" content="A unified Orthodox platform for giving, learning, marketplace tools, directory discovery, and community life. AGAPAY Learn helps families plan Orthodox homeschool days." />
   <meta property="og:url" content="https://agapay.app/" />
   <meta property="og:image" content="https://agapay.app/images/home/platform-family-sketch-1440.webp" />
   <meta property="og:image:alt" content="An Orthodox family gathered near a church, representing the AGAPAY platform." />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="AGAPAY | One Orthodox Platform" />
-  <meta name="twitter:description" content="Orthodox giving, family learning, marketplace tools, directory discovery, and community life in one trusted platform." />
+  <meta name="twitter:description" content="Orthodox giving, family learning, marketplace tools, directory discovery, and community life in one trusted platform. AGAPAY Learn is an Orthodox homeschool planning app." />
   <meta name="twitter:image" content="https://agapay.app/images/home/platform-family-sketch-1440.webp" />
   <meta name="theme-color" content="#061522" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -755,6 +755,58 @@
       line-height: 1.58;
     }
 
+    .learn-verification-section {
+      padding: clamp(3.2rem, 6vw, 5.2rem) 0;
+      background:
+        radial-gradient(circle at 16% 12%, rgba(200, 162, 74, 0.15), transparent 23rem),
+        linear-gradient(180deg, #fffdf8, #f5eddd);
+    }
+
+    .learn-verification-card {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(20rem, 1.05fr);
+      gap: clamp(1.2rem, 4vw, 3rem);
+      padding: clamp(1.5rem, 4vw, 2.6rem);
+      border: 1px solid rgba(200, 162, 74, 0.34);
+      background: rgba(255, 253, 248, 0.9);
+      box-shadow: 0 22px 62px rgba(6, 21, 34, 0.1);
+    }
+
+    .learn-verification-card h2,
+    .learn-verification-note h3 {
+      margin: 0;
+      color: var(--night);
+      font-family: var(--serif);
+      line-height: 0.96;
+    }
+
+    .learn-verification-card h2 {
+      max-width: 13ch;
+      font-size: clamp(2.4rem, 5vw, 4.4rem);
+    }
+
+    .learn-verification-card p {
+      max-width: 44rem;
+      color: var(--muted);
+      font-size: 1.1rem;
+      line-height: 1.65;
+    }
+
+    .learn-verification-note {
+      padding: clamp(1.1rem, 3vw, 1.7rem);
+      border: 1px solid rgba(6, 21, 34, 0.14);
+      border-left: 4px solid var(--gold);
+      background: rgba(246, 241, 232, 0.74);
+    }
+
+    .learn-verification-note h3 {
+      font-size: clamp(1.6rem, 3vw, 2.35rem);
+    }
+
+    .learn-verification-note .outline-btn {
+      margin-top: 0.8rem;
+    }
+
     .pillar-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1078,6 +1130,10 @@
         white-space: normal;
       }
 
+      .learn-verification-card {
+        grid-template-columns: 1fr;
+      }
+
       .split-section,
       .platform-section,
       .trust-section {
@@ -1131,7 +1187,7 @@
             Love how you
             <span class="flip-word" data-flip-word aria-live="polite">GIVE</span>
           </p>
-          <p class="hero-text">AGAPAY unites Orthodox giving, family learning, marketplace tools, and community life into one trusted home built for the Church, the household, and everything between.</p>
+          <p class="hero-text">AGAPAY unites Orthodox giving, family learning, marketplace tools, and community life into one trusted home built for the Church, the household, and everything between. AGAPAY Learn is an Orthodox homeschool planning app for families.</p>
           <div class="hero-actions">
             <a class="gold-btn" href="/give/">Start Giving</a>
             <a class="outline-btn" href="/vision">Explore the Platform</a>
@@ -1254,6 +1310,21 @@
         <div class="section-inner">
           <blockquote>As each has received a gift, use it to serve one another, as good stewards of God's varied grace.</blockquote>
           <cite>1 Peter 4:10</cite>
+        </div>
+      </section>
+
+      <section class="learn-verification-section" aria-labelledby="learnVerificationTitle">
+        <div class="section-inner learn-verification-card">
+          <div>
+            <p class="eyebrow">AGAPAY Learn</p>
+            <h2 id="learnVerificationTitle">Orthodox homeschool planning for families.</h2>
+            <p>AGAPAY Learn is an Orthodox homeschool planning app for families. Parents use AGAPAY Learn to organize lessons, terms, books, printables, reports, and liturgical calendar rhythms in one household planner.</p>
+          </div>
+          <div class="learn-verification-note">
+            <h3>Google Calendar Sync</h3>
+            <p>If a family chooses to connect Google Calendar, AGAPAY Learn asks permission only to create or sync homeschool planning events to that family's calendar. Calendar sync is optional. AGAPAY Learn does not sell Google user data and does not use Google Calendar data for advertising.</p>
+            <a class="outline-btn" href="/privacy.html">Read the Privacy Policy</a>
+          </div>
         </div>
       </section>
 
