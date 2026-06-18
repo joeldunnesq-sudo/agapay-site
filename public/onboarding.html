@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
+  <link rel="shortcut icon" href="/favicons/favicon.ico" />
+  <title>Get Started with AGAPAY | Giving, Learn, and Orthodox Community Tools</title>
+  <meta name="description" content="Choose the right AGAPAY path for your household, parish, monastery, ministry, school, or Orthodox organization." />
+  <link rel="canonical" href="https://agapay.app/onboarding" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="AGAPAY" />
+  <meta property="og:title" content="Get Started with AGAPAY" />
+  <meta property="og:description" content="Start as an individual household or register an Orthodox organization for AGAPAY Giving and platform tools." />
+  <meta property="og:url" content="https://agapay.app/onboarding" />
+  <meta property="og:image" content="https://agapay.app/images/home/platform-family-sketch-1440.webp" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Get Started with AGAPAY" />
+  <meta name="twitter:description" content="Choose the right AGAPAY path for your household or Orthodox organization." />
+  <meta name="twitter:image" content="https://agapay.app/images/home/platform-family-sketch-1440.webp" />
+  <meta name="theme-color" content="#061522" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site-chrome.css" />
+  <style>
+    :root {
+      --night: #061522;
+      --blue: #0b2130;
+      --cream: #f6f1e8;
+      --paper: #fffdf8;
+      --ink: #171715;
+      --muted: #625d53;
+      --line: rgba(166, 159, 145, 0.34);
+      --gold: #d6af5b;
+      --gold-dark: #a97c25;
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "DM Sans", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 14% 6%, rgba(214, 175, 91, 0.16), transparent 30rem),
+        linear-gradient(180deg, #fbf7ed 0%, var(--cream) 52%, #fffaf1 100%);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+
+    .onboarding-page {
+      overflow: clip;
+      min-height: 100vh;
+    }
+
+    .onboarding-hero {
+      position: relative;
+      padding: clamp(4.75rem, 8vw, 7.5rem) 1rem clamp(2.75rem, 5vw, 4.75rem);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .onboarding-hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(200, 162, 74, 0.08) 0 1px, transparent 1px) 0 0 / 56px 56px,
+        linear-gradient(180deg, rgba(255, 253, 248, 0.72), rgba(255, 253, 248, 0));
+      opacity: 0.72;
+    }
+
+    .onboarding-wrap {
+      position: relative;
+      width: min(1160px, 100%);
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      margin: 0 0 0.85rem;
+      color: var(--gold-dark);
+      font-family: var(--serif);
+      font-size: clamp(1.08rem, 2vw, 1.35rem);
+      font-style: italic;
+      letter-spacing: 0.05em;
+    }
+
+    .onboarding-hero h1 {
+      max-width: 780px;
+      margin: 0;
+      color: var(--night);
+      font-family: var(--serif);
+      font-size: clamp(3.15rem, 8vw, 6.8rem);
+      line-height: 0.9;
+      font-weight: 500;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      max-width: 650px;
+      margin: 1.2rem 0 0;
+      color: var(--muted);
+      font-size: clamp(1.06rem, 2vw, 1.24rem);
+      line-height: 1.65;
+    }
+
+    .choice-section {
+      padding: clamp(2.5rem, 5vw, 4.5rem) 1rem clamp(4rem, 7vw, 6rem);
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(1rem, 2.4vw, 1.6rem);
+      align-items: stretch;
+    }
+
+    .choice-card {
+      position: relative;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 560px;
+      overflow: hidden;
+      border: 1px solid rgba(166, 159, 145, 0.42);
+      border-radius: 10px;
+      background: rgba(255, 253, 248, 0.86);
+      box-shadow: 0 24px 70px rgba(6, 21, 34, 0.12);
+    }
+
+    .choice-card.is-organization {
+      background: linear-gradient(180deg, rgba(6, 21, 34, 0.98), rgba(11, 33, 48, 0.98));
+      color: var(--cream);
+      border-color: rgba(214, 175, 91, 0.34);
+    }
+
+    .choice-art {
+      position: relative;
+      min-height: 255px;
+      overflow: hidden;
+      background: #eadfca;
+    }
+
+    .choice-art img {
+      width: 100%;
+      height: 100%;
+      min-height: 255px;
+      object-fit: cover;
+      filter: saturate(0.9) contrast(1.03);
+    }
+
+    .choice-art::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 46%, rgba(255, 253, 248, 0.9));
+    }
+
+    .is-organization .choice-art::after {
+      background: linear-gradient(180deg, transparent 44%, rgba(6, 21, 34, 0.98));
+    }
+
+    .choice-content {
+      position: relative;
+      display: grid;
+      align-content: start;
+      gap: 1rem;
+      padding: clamp(1.35rem, 3vw, 2rem);
+    }
+
+    .choice-label {
+      width: fit-content;
+      margin: 0;
+      padding: 0.35rem 0.62rem;
+      border-radius: 999px;
+      color: var(--night);
+      background: rgba(214, 175, 91, 0.22);
+      border: 1px solid rgba(214, 175, 91, 0.38);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .is-organization .choice-label {
+      color: #ffe5a4;
+      background: rgba(214, 175, 91, 0.13);
+    }
+
+    .choice-card h2 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(2.4rem, 4.5vw, 3.65rem);
+      line-height: 0.92;
+      font-weight: 500;
+      color: var(--night);
+    }
+
+    .is-organization h2 { color: var(--cream); }
+
+    .choice-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.02rem;
+      line-height: 1.62;
+    }
+
+    .is-organization p { color: rgba(246, 241, 232, 0.76); }
+
+    .choice-list {
+      display: grid;
+      gap: 0.55rem;
+      margin: 0.25rem 0 0;
+      padding: 0;
+      list-style: none;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .choice-list li {
+      display: grid;
+      grid-template-columns: 1.1rem 1fr;
+      gap: 0.52rem;
+      align-items: start;
+    }
+
+    .choice-list li::before {
+      content: "+";
+      color: var(--gold-dark);
+      font-weight: 800;
+    }
+
+    .is-organization .choice-list { color: rgba(246, 241, 232, 0.76); }
+    .is-organization .choice-list li::before { color: var(--gold); }
+
+    .choice-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 0.35rem;
+    }
+
+    .choice-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 1.1rem;
+      border-radius: 6px;
+      border: 1px solid rgba(6, 21, 34, 0.18);
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .choice-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 32px rgba(6, 21, 34, 0.16);
+    }
+
+    .choice-button.primary {
+      color: var(--night);
+      background: linear-gradient(135deg, #d8b766, #b88934);
+      border-color: rgba(184, 137, 52, 0.65);
+    }
+
+    .choice-button.secondary {
+      color: var(--night);
+      background: rgba(255, 253, 248, 0.8);
+    }
+
+    .is-organization .choice-button.secondary {
+      color: var(--cream);
+      background: rgba(246, 241, 232, 0.08);
+      border-color: rgba(246, 241, 232, 0.26);
+    }
+
+    .onboarding-note {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1rem;
+      align-items: center;
+      margin-top: clamp(1.25rem, 3vw, 2rem);
+      padding: 1.2rem;
+      border: 1px solid rgba(166, 159, 145, 0.35);
+      border-radius: 10px;
+      background: rgba(255, 253, 248, 0.72);
+    }
+
+    .note-mark {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      color: var(--night);
+      background: rgba(214, 175, 91, 0.24);
+      font-family: var(--serif);
+      font-size: 1.8rem;
+    }
+
+    .onboarding-note p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    @media (max-width: 860px) {
+      .choice-grid { grid-template-columns: 1fr; }
+      .choice-card { min-height: 0; }
+      .onboarding-note { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .onboarding-hero {
+        padding-top: 3.5rem;
+      }
+      .choice-section {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+      }
+      .choice-actions {
+        display: grid;
+      }
+      .choice-button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="onboarding-page">
+    <section class="onboarding-hero">
+      <div class="onboarding-wrap">
+        <p class="eyebrow">Begin in the right place.</p>
+        <h1>Get started with AGAPAY.</h1>
+        <p class="hero-copy">Whether you are a faithful giver, a homeschooling family, or an Orthodox organization preparing to receive support, AGAPAY will guide you to the right next step.</p>
+      </div>
+    </section>
+
+    <section class="choice-section" aria-labelledby="onboardingChoices">
+      <div class="onboarding-wrap">
+        <div class="choice-grid" id="onboardingChoices">
+          <article class="choice-card">
+            <div class="choice-art">
+              <img src="/images/home/platform-family-sketch-960.webp" alt="Sketch of an Orthodox family gathered together" loading="eager" />
+            </div>
+            <div class="choice-content">
+              <p class="choice-label">Individuals and families</p>
+              <h2>Use AGAPAY for your household.</h2>
+              <p>Create your My AGAPAY account to give, track your offerings, use AGAPAY Learn, and manage your Orthodox family life in one place.</p>
+              <ul class="choice-list">
+                <li>Make offerings and view giving history</li>
+                <li>Use AGAPAY Learn for Orthodox homeschool planning</li>
+                <li>Keep one account as more AGAPAY products come online</li>
+              </ul>
+              <div class="choice-actions">
+                <a class="choice-button primary" href="/myagapay/signup">Create My AGAPAY Account</a>
+                <a class="choice-button secondary" href="/myagapay/login">Sign In</a>
+              </div>
+            </div>
+          </article>
+
+          <article class="choice-card is-organization">
+            <div class="choice-art">
+              <img src="/images/giving/church-sketch-hero.png" alt="Sketch of an Orthodox church" loading="eager" />
+            </div>
+            <div class="choice-content">
+              <p class="choice-label">Parishes and organizations</p>
+              <h2>Register your Orthodox organization.</h2>
+              <p>Apply for AGAPAY Giving and organization tools for your parish, mission, monastery, ministry, school, or Orthodox nonprofit.</p>
+              <ul class="choice-list">
+                <li>Receive secure online gifts through Stripe</li>
+                <li>Manage campaigns, candles, commemorations, QR codes, and text-to-give readiness</li>
+                <li>Prepare for future AGAPAY marketplace and directory tools</li>
+              </ul>
+              <div class="choice-actions">
+                <a class="choice-button primary" href="/register">Register Organization</a>
+                <a class="choice-button secondary" href="/parish/login">Organization Sign In</a>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <aside class="onboarding-note">
+          <span class="note-mark" aria-hidden="true">+</span>
+          <p>If you are unsure which path fits, start with My AGAPAY. Organization administrators can still register a parish or ministry later and manage it from the same AGAPAY ecosystem.</p>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script src="/site-chrome.js" defer></script>
+</body>
+</html>

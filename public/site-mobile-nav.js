@@ -49,7 +49,7 @@
       '<div class="drawer-head"><strong class="drawer-title">Menu</strong><button class="drawer-close" type="button" aria-label="Close menu">x</button></div>' +
       '<div class="drawer-scroll"><nav class="drawer-links" aria-label="Mobile navigation">' +
       links.map(linkHtml).join("") +
-      '</nav><a class="drawer-join" href="/register">Join AGAPAY</a></div>';
+      '</nav><a class="drawer-join" href="/onboarding">Get Started</a></div>';
     document.body.appendChild(drawer);
   } else {
     drawer.classList.add("site-mobile-drawer");

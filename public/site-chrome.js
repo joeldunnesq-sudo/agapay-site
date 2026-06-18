@@ -67,7 +67,7 @@
           </div>
 
           <div class="nav-actions">
-            <a class="btn-donate ${activeKey === "give" ? "active" : ""}" href="/register">
+            <a class="btn-donate ${activeKey === "give" ? "active" : ""}" href="/onboarding">
               ${shellIcon("giving-hand")}
               Get Started
             </a>
@@ -100,7 +100,7 @@
           <nav class="drawer-links" aria-label="Drawer navigation">
             ${PRIMARY_LINKS.map((item) => navLink(item, activeKey)).join("")}
           </nav>
-          <a class="drawer-join" href="/register">
+          <a class="drawer-join" href="/onboarding">
             ${shellIcon("giving-hand")}
             Get Started
           </a>
@@ -143,7 +143,7 @@
               <a href="/giving/features">Features</a>
               <a href="/giving/how-it-works">How It Works</a>
               <a href="/giving/pricing">Pricing</a>
-              <a href="/register">Register</a>
+              <a href="/onboarding">Get Started</a>
             </nav>
             <nav class="footer-col" aria-label="AGAPAY Learn">
               <h4>Learn</h4>

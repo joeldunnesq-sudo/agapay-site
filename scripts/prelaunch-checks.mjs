@@ -68,7 +68,7 @@ assert.ok(worker.includes("Parish SaaS subscription billing is created in a sepa
 
 if (process.env.AGAPAY_BASE_URL) {
   const baseUrl = process.env.AGAPAY_BASE_URL.replace(/\/+$/, "");
-  const routes = ["/", "/giving", "/marketplace", "/directory", "/vision", "/register"];
+  const routes = ["/", "/giving", "/marketplace", "/directory", "/vision", "/onboarding", "/register"];
   for (const route of routes) {
     const response = await fetch(`${baseUrl}${route}`);
     assert.equal(response.status, 200, `${route} should return HTTP 200`);

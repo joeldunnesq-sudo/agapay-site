@@ -2,6 +2,7 @@ const baseUrl = (process.argv[2] || "https://agapay.app").replace(/\/+$/, "");
 
 const checks = [
   { name: "home page", method: "GET", path: "/", ok: [200] },
+  { name: "onboarding page", method: "GET", path: "/onboarding", ok: [200] },
   { name: "registration page", method: "GET", path: "/register.html", ok: [200] },
   { name: "learn overview page", method: "GET", path: "/learn", ok: [200] },
   { name: "learn pricing page", method: "GET", path: "/learn/pricing", ok: [200] },
