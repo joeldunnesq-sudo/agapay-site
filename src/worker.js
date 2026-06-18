@@ -815,7 +815,7 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/learn/co-op") {
       return handleLearnCoOp(request, env);
     }
-    if (request.method === "GET" && url.pathname === "/api/learn/onboarding") {
+    if (request.method === "GET" && (url.pathname === "/api/learn/onboarding" || url.pathname === "/api/learn/setup")) {
       return handleLearnOnboarding(request, env);
     }
     if (request.method === "GET" && url.pathname === "/api/learn/billing/status") {
@@ -842,7 +842,7 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/learn/grace-mode") {
       return handleLearnGraceModeSave(request, env);
     }
-    if (request.method === "POST" && url.pathname === "/api/learn/onboarding") {
+    if (request.method === "POST" && (url.pathname === "/api/learn/onboarding" || url.pathname === "/api/learn/setup")) {
       return handleLearnOnboardingSave(request, env);
     }
     if (request.method === "POST" && url.pathname === "/api/registrations") return handleRegistrations(request, env);

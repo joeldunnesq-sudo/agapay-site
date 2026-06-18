@@ -11,6 +11,7 @@ const checks = [
   { name: "My AGAPAY giving shell", method: "GET", path: "/myagapay/giving", ok: [200] },
   { name: "My AGAPAY give shell", method: "GET", path: "/myagapay/giving/give", ok: [200] },
   { name: "My AGAPAY Learn shell", method: "GET", path: "/myagapay/learn", ok: [200] },
+  { name: "My AGAPAY Learn setup shell", method: "GET", path: "/myagapay/learn/setup", ok: [200] },
   { name: "legacy donor redirect", method: "GET", path: "/donor", ok: [200, 301, 302, 308] },
   { name: "legacy Learn dashboard redirect", method: "GET", path: "/learn/dashboard", ok: [200, 301, 302, 308] },
   { name: "parish login shell", method: "GET", path: "/parish/login", ok: [200] },
@@ -19,6 +20,7 @@ const checks = [
   { name: "public parishes", method: "GET", path: "/api/parishes?limit=5", ok: [200] },
   { name: "platform summary", method: "GET", path: "/api/platform/summary", ok: [200] },
   { name: "subscription tiers", method: "GET", path: "/api/subscription-tiers", ok: [200] },
+  { name: "learn setup api", method: "GET", path: "/api/learn/setup", ok: [200] },
   { name: "donor dashboard unauth", method: "GET", path: "/api/donor/dashboard", ok: [401] },
   { name: "admin registrations unauth", method: "GET", path: "/api/admin/registrations?limit=5", ok: [401] },
   {
