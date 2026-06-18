@@ -32,6 +32,52 @@ function childFormByAge(age) {
   return "Form V";
 }
 
+function formLabelForChild(child = {}) {
+  return text(child.formLabel || child.gradeLabel || child.form || childByAgeLabel(child.ageYears), "Household Form");
+}
+
+function childByAgeLabel(age) {
+  return childFormByAge(age) || "Household Form";
+}
+
+function groupRowsByForm(rows = [], dayIndex = null) {
+  const groups = new Map();
+  safeArray(rows).forEach((row, index) => {
+    const formLabel = formLabelForChild(row.child);
+    if (!groups.has(formLabel)) {
+      groups.set(formLabel, {
+        formLabel,
+        childNames: [],
+        initials: [],
+        color: ACCENTS[groups.size % ACCENTS.length],
+        items: [],
+        totalMinutes: 0
+      });
+    }
+    const group = groups.get(formLabel);
+    const name = childName(row.child, index);
+    if (!group.childNames.includes(name)) group.childNames.push(name);
+    const initial = childInitial(row.child, index);
+    if (!group.initials.includes(initial)) group.initials.push(initial);
+    const minutes = dayIndex === null
+      ? safeArray(row.minutes).reduce((sum, value) => sum + Number(value || 0), 0)
+      : Number(safeArray(row.minutes)[dayIndex] || 0);
+    const status = dayIndex === null ? "" : text(safeArray(row.statuses)[dayIndex], "");
+    if (dayIndex === null || minutes > 0 || status === "rest") {
+      group.totalMinutes += minutes;
+      group.items.push({
+        title: text(row.title, "Lesson"),
+        sub: text(row.detail || row.subtitle, ""),
+        childName: name,
+        minutes,
+        status,
+        graceModeApplied: Boolean(row.graceModeApplied)
+      });
+    }
+  });
+  return Array.from(groups.values()).filter((group) => group.items.length);
+}
+
 function donorAccountFromStorage() {
   try {
     const donor = JSON.parse(localStorage.getItem("agapayDonorProfile") || "{}");
@@ -194,6 +240,13 @@ export function toDashboardViewModel(rawPayload, context = {}) {
     graceMode: {
       active: Boolean(dashboard.preferences?.graceModeActive),
       mode: text(dashboard.preferences?.graceModeDefault, "light")
+    },
+    termProgress: {
+      label: text(dashboard.termProgress?.label || dashboard.term?.label, "Current Term"),
+      currentWeek: Number(dashboard.termProgress?.currentWeek || 0),
+      totalWeeks: Number(dashboard.termProgress?.totalWeeks || 0),
+      percent: percent(dashboard.termProgress?.percent),
+      dateRange: text(dashboard.termProgress?.dateRange, "")
     }
   };
 }
@@ -229,6 +282,7 @@ export function toPlannerViewModel(rawPayload) {
   const selectedDay = days[selectedDayIndex] || days[0] || {};
   const childTrackSummary = safeArray(planner.termSetup?.childTrackSummary);
   const childTrackById = new Map(childTrackSummary.map((track) => [track.childId, safeArray(track.tracks)]));
+  const rawChildRows = safeArray(week.childRows);
 
   return {
     shell,
@@ -262,7 +316,7 @@ export function toPlannerViewModel(rawPayload) {
         statuses: safeArray(row.statuses),
         graceModeApplied: Boolean(row.graceModeApplied)
       })),
-      childRows: safeArray(week.childRows).map((row, index) => ({
+      childRows: rawChildRows.map((row, index) => ({
         childName: childName(row.child, index),
         childId: text(row.childId || row.child?.id, ""),
         initial: childInitial(row.child, index),
@@ -277,7 +331,8 @@ export function toPlannerViewModel(rawPayload) {
         minutes: safeArray(row.minutes),
         statuses: safeArray(row.statuses),
         graceModeApplied: Boolean(row.graceModeApplied)
-      }))
+      })),
+      formRows: groupRowsByForm(rawChildRows)
     },
     day: {
       selected: selectedDay,
@@ -289,7 +344,7 @@ export function toPlannerViewModel(rawPayload) {
         status: selectedDay?.isSunday ? "rest" : text(safeArray(row.statuses)[selectedDayIndex], ""),
         graceModeApplied: Boolean(row.graceModeApplied)
       })).filter((row) => row.minutes > 0 || row.status === "rest"),
-      childBlocks: safeArray(week.childRows).map((row, index) => ({
+      childBlocks: rawChildRows.map((row, index) => ({
         childName: childName(row.child, index),
         initial: childInitial(row.child, index),
         color: text(row.color || row.child?.color, ACCENTS[index % ACCENTS.length]),
@@ -298,7 +353,8 @@ export function toPlannerViewModel(rawPayload) {
         minutes: selectedDay?.isSunday ? 0 : Number(safeArray(row.minutes)[selectedDayIndex] || 0),
         status: selectedDay?.isSunday ? "rest" : text(safeArray(row.statuses)[selectedDayIndex], ""),
         graceModeApplied: Boolean(row.graceModeApplied)
-      })).filter((row) => row.minutes > 0 || row.status === "rest")
+      })).filter((row) => row.minutes > 0 || row.status === "rest"),
+      formBlocks: selectedDay?.isSunday ? [] : groupRowsByForm(rawChildRows, selectedDayIndex)
     },
     term: {
       activeTerm,
@@ -386,6 +442,10 @@ export function toFormationViewModel(rawPayload) {
       date: text(today.dateLabel, ""),
       fasting: text(liturgicalDay.fastingRule, ""),
       readings: [text(liturgicalDay.epistleRef, ""), text(liturgicalDay.gospelRef, "")].filter(Boolean).join("; "),
+      readingTasks: [
+        { id: "epistle", label: "Epistle", ref: text(liturgicalDay.epistleRef, "") },
+        { id: "gospel", label: "Gospel", ref: text(liturgicalDay.gospelRef, "") }
+      ].filter((item) => item.ref),
       saint: text(safeArray(liturgicalDay.saints)[0], ""),
       troparion: text(liturgicalDay.troparionText, "")
     },
@@ -529,7 +589,11 @@ export function toCommunityViewModel(rawPayload) {
   const community = rawPayload?.community || {};
   return {
     shell: shellFromPayload("community", rawPayload),
-    page: page("community", "Community Resources", "Shared Orthodox homeschool links, tools, and living-book helps."),
+    page: page("community", "Community", "A shared Orthodox homeschool resource space is coming soon."),
+    comingSoon: Boolean(community.comingSoon),
+    title: text(community.title, "Community is coming soon"),
+    subtitle: text(community.subtitle, "A curated resource exchange is planned after the core Learn workflow is settled."),
+    detail: text(community.detail, ""),
     resources: simpleList(community.communityResources, (resource) => ({
       title: text(resource.title, "Resource"),
       category: text(resource.category, ""),

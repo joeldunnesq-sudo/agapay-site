@@ -7,7 +7,17 @@ import { getLearnSeedForRequest } from "./setup-persistence.js";
 
 function buildHouseholdStreamCards(seed, daily) {
   const streamLookup = new Map(seed.householdStreams.map((stream) => [stream.id, stream]));
-  return daily.householdBlocks.map((block) => {
+  const blocks = daily.householdBlocks?.length
+    ? daily.householdBlocks
+    : seed.householdStreams.map((stream, index) => ({
+        id: `stream_${stream.id || index}`,
+        householdStreamId: stream.id,
+        title: stream.title,
+        subtitle: stream.cadenceLabel || stream.streamType || "Household rhythm",
+        minutesPlanned: stream.minutesPlanned || 20,
+        status: stream.status || "planned"
+      }));
+  return blocks.map((block) => {
     const stream = streamLookup.get(block.householdStreamId);
     return {
       id: block.id,
@@ -19,6 +29,50 @@ function buildHouseholdStreamCards(seed, daily) {
       status: block.status
     };
   });
+}
+
+function progressFromTerm(term = {}, civilDate = "") {
+  const start = new Date(`${term.startDate || ""}T12:00:00`);
+  const end = new Date(`${term.endDate || ""}T12:00:00`);
+  const current = new Date(`${civilDate || ""}T12:00:00`);
+  if ([start, end, current].some((date) => Number.isNaN(date.getTime())) || end <= start) {
+    return {
+      label: term.label || "Current Term",
+      currentWeek: 0,
+      totalWeeks: 0,
+      percent: 0,
+      dateRange: [term.startDate, term.endDate].filter(Boolean).join(" - ")
+    };
+  }
+  const totalWeeks = Math.max(1, Math.ceil((end - start + 1) / (7 * 24 * 60 * 60 * 1000)));
+  const currentWeek = Math.max(1, Math.min(totalWeeks, Math.floor((current - start) / (7 * 24 * 60 * 60 * 1000)) + 1));
+  return {
+    label: term.label || "Current Term",
+    currentWeek,
+    totalWeeks,
+    percent: Math.round((currentWeek / totalWeeks) * 100),
+    dateRange: [term.startDate, term.endDate].filter(Boolean).join(" - ")
+  };
+}
+
+function computeWeeklySummary(seed, calendarType) {
+  const week = buildPlannerWeek(seed, calendarType);
+  const rows = [...(week.householdRows || []), ...(week.childRows || [])];
+  const statuses = rows.flatMap((row) => row.statuses || []).filter((status) => status && status !== "rest");
+  const lessonsPlanned = statuses.filter((status) => status !== "empty").length;
+  const lessonsCompleted = statuses.filter((status) => status === "completed").length;
+  const upcomingFeasts = buildUpcomingFeasts(seed, calendarType, week.dates?.[0] || new Date().toISOString().slice(0, 10));
+  const readAloud = seed.currentReadAlouds?.[0] || seed.books?.[0] || {};
+  return {
+    lessonsCompleted,
+    lessonsPlanned,
+    lessonsCompletionPercent: lessonsPlanned ? Math.round((lessonsCompleted / lessonsPlanned) * 100) : 0,
+    narrationsLogged: seed.narrationLogs?.length || 0,
+    feastDaysAhead: upcomingFeasts.length,
+    nextFeastLabel: upcomingFeasts[0]?.title || "No upcoming feast loaded",
+    readAloudProgressPercent: Number(readAloud.progressPercent || 0),
+    readAloudTitle: readAloud.title || "Add a read-aloud in Setup"
+  };
 }
 
 function buildChildColumns(seed, daily) {
@@ -333,7 +387,8 @@ export class SeedLearnRepository {
         householdStreamCards: hasSetup ? buildHouseholdStreamCards(this.seed, daily) : [],
         childColumns: hasSetup ? buildChildColumns(this.seed, daily) : []
       },
-      weeklySummary: hasSetup ? this.seed.weeklySummary : {
+      termProgress: hasSetup ? progressFromTerm(this.seed.term, civilDate) : progressFromTerm({}, civilDate),
+      weeklySummary: hasSetup ? computeWeeklySummary(this.seed, resolvedCalendar) : {
         lessonsCompleted: 0,
         lessonsPlanned: 0,
         lessonsCompletionPercent: 0,
@@ -366,14 +421,10 @@ export class SeedLearnRepository {
   getCommunity() {
     return {
       household: this.seed.household,
-      communityResources: this.seed.communityResources,
-      googleCalendarSync: this.seed.dashboardDaily["2025-05-07"]?.googleCalendarSync || this.seed.googleCalendarSync,
-      thisDayInHistory: this.seed.dashboardDaily["2025-05-07"]?.thisDayInHistory || this.seed.thisDayInHistory,
-      sharingGuidance: [
-        "Share only resources that help a real Orthodox homeschool rhythm.",
-        "Mark living book picks, saint stories, liturgical tools, and printable aids clearly.",
-        "If a link is more general than Orthodox homeschool specific, label it so families know why it belongs here."
-      ]
+      comingSoon: true,
+      title: "Community is coming soon",
+      subtitle: "A curated Orthodox homeschool resource exchange is planned, but intentionally paused for launch.",
+      detail: "For now, AGAPAY Learn is focused on the household planner, formation, books, reports, and print packs."
     };
   }
 
@@ -450,9 +501,9 @@ export class SeedLearnRepository {
     };
   }
 
-  getFormation({ calendarType = "julian" } = {}) {
+  getFormation({ calendarType = "julian", civilDate = new Date().toISOString().slice(0, 10) } = {}) {
     const resolvedCalendar = normalizeCalendarType(calendarType);
-    const dashboard = this.getDashboard({ calendarType: resolvedCalendar });
+    const dashboard = this.getDashboard({ calendarType: resolvedCalendar, civilDate });
     return {
       household: this.seed.household,
       children: this.seed.children,

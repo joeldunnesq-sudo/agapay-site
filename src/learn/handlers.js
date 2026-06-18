@@ -142,16 +142,18 @@ export async function handleLearnFormation(request, env) {
 
   const url = new URL(request.url);
   const calendarType = requestedCalendarType(url);
+  const civilDate = url.searchParams.get("date") || todayIso(env);
   const repository = await createLearnRepositoryForRequest(request, env);
   const formation = repository.getFormation({
-    calendarType
+    calendarType,
+    civilDate
   });
   formation.today.liturgicalDay = await enrichLiturgicalDayWithOrthocal(formation.today.liturgicalDay, {
     calendarType,
-    civilDate: formation.today.civilDate || todayIso(env)
+    civilDate
   });
   formation.today.liturgicalDay = await enrichLiturgicalDayWithPonomar(formation.today.liturgicalDay, {
-    civilDate: formation.today.civilDate || todayIso(env),
+    civilDate,
     env
   });
   return json({

@@ -147,7 +147,7 @@ function showLearnDialog(title, message, rows = []) {
   const dialog = document.createElement("div");
   dialog.dataset.learnDialog = "true";
   dialog.style.cssText = "position:fixed;inset:0;z-index:80;background:rgba(10,20,40,.54);display:flex;align-items:center;justify-content:center;padding:24px;";
-  dialog.innerHTML = `<div style="width:min(520px,100%);background:var(--cream);border:1px solid var(--gold);border-radius:16px;box-shadow:0 20px 60px rgba(10,20,40,.35);padding:22px;"><div style="display:flex;justify-content:space-between;gap:12px;align-items:start;"><div><h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0;color:var(--ink);">${html(title)}</h2><p style="color:#33405a;line-height:1.45;">${html(message)}</p></div><button type="button" data-dialog-close style="border:none;background:none;color:var(--muted);font-size:22px;cursor:pointer;">x</button></div>${rows.map((row) => `<div style="border-top:1px solid var(--line);padding:9px 0;"><small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;">${html(row.label)}</small><strong style="display:block;">${html(row.value)}</strong></div>`).join("")}<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;"><button type="button" data-dialog-close style="border:1px solid var(--line);background:var(--paper);border-radius:9px;padding:10px 16px;font-family:inherit;">Close</button><button type="button" data-dialog-checkout style="border:1px solid var(--gold);background:var(--navy);color:#f3ead4;border-radius:9px;padding:10px 16px;font-family:inherit;">Upgrade</button></div></div>`;
+  dialog.innerHTML = `<div style="width:min(520px,100%);background:#f3ead4;border:1px solid #b5942f;border-radius:16px;box-shadow:0 20px 60px rgba(10,20,40,.35);padding:22px;color:#14294a;"><div style="display:flex;justify-content:space-between;gap:12px;align-items:start;"><div><h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0;color:#14294a;">${html(title)}</h2><p style="color:#33405a;line-height:1.45;">${html(message)}</p></div><button type="button" data-dialog-close style="border:none;background:none;color:#6b7280;font-size:22px;cursor:pointer;">x</button></div>${rows.map((row) => `<div style="border-top:1px solid rgba(181,148,47,.28);padding:9px 0;"><small style="color:#9b7420;letter-spacing:.12em;text-transform:uppercase;">${html(row.label)}</small><strong style="display:block;">${html(row.value)}</strong></div>`).join("")}<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;"><button type="button" data-dialog-close style="border:1px solid rgba(20,41,74,.22);background:#fffaf0;border-radius:9px;padding:10px 16px;font-family:inherit;color:#14294a;">Close</button><button type="button" data-dialog-checkout style="border:1px solid #b5942f;background:#14294a;color:#f3ead4;border-radius:9px;padding:10px 16px;font-family:inherit;">Upgrade</button></div></div>`;
   dialog.addEventListener("click", (event) => {
     if (event.target === dialog || event.target.closest("[data-dialog-close]")) dialog.remove();
     if (event.target.closest("[data-dialog-checkout]")) openLearnCheckout();
@@ -310,11 +310,30 @@ function renderGraceModePanel(vm) {
   `;
 }
 
+function renderTermProgressPanel(vm) {
+  const term = vm.termProgress || {};
+  const progress = Number(term.percent || 0);
+  return `
+    <section style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;grid-template-columns:minmax(220px,.8fr) 1fr;gap:18px;align-items:center;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+      <div>
+        <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:700;text-transform:uppercase;">Current Term</div>
+        <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1.05;margin:5px 0 4px;color:var(--ink);">${html(term.label || "Current Term")}</h2>
+        <p style="margin:0;color:var(--muted);line-height:1.4;">${term.currentWeek && term.totalWeeks ? `Week ${html(term.currentWeek)} of ${html(term.totalWeeks)}` : "Set term dates in Setup"}${term.dateRange ? ` · ${html(term.dateRange)}` : ""}</p>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:8px;color:#33405a;font-size:13px;"><span>Term progress</span><strong>${html(progress)}%</strong></div>
+        ${bar(progress, "var(--gold)")}
+      </div>
+    </section>
+  `;
+}
+
 function renderDashboard(vm) {
   const today = vm.todayInChurch;
   const body = `
     <section data-screen-label="Dashboard" style="display:flex;flex-direction:column;gap:22px;">
       ${renderGraceModePanel(vm)}
+      ${renderTermProgressPanel(vm)}
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;gap:24px;box-shadow:0 1px 3px rgba(20,40,70,.04);flex-wrap:wrap;">
         <div style="flex:none;width:108px;height:146px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,#f8f0dd,#efe0ba);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:46px;">✥</div>
         <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:6px;">
@@ -413,8 +432,8 @@ function renderPlannerWeek(vm) {
     </div>
     <div style="display:flex;gap:14px;flex-wrap:wrap;">
       <div style="flex:1 1 620px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;">
-        <div style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;margin-bottom:12px;">CHILD PLANS</div>
-        ${vm.week.childRows.length ? vm.week.childRows.map((child) => `<div style="display:grid;grid-template-columns:42px 140px 1fr;gap:12px;align-items:center;border-top:1px solid var(--line);padding:12px 0;"><span style="width:38px;height:38px;border-radius:50%;background:${child.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(child.initial)}</span><strong>${html(child.childName)}</strong><span style="color:var(--muted);">${html(child.title)} · ${html(child.sub)}</span></div>`).join("") : emptyState("Add children and subjects in Setup to generate child plans.")}
+        <div style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;margin-bottom:12px;">FORM PLANS</div>
+        ${vm.week.formRows.length ? vm.week.formRows.map((form) => `<div style="display:grid;grid-template-columns:42px 150px 1fr;gap:12px;align-items:start;border-top:1px solid var(--line);padding:12px 0;"><span style="width:38px;height:38px;border-radius:50%;background:${form.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(form.initials.slice(0, 2).join(""))}</span><span><strong style="display:block;">${html(form.formLabel)}</strong><small style="color:var(--muted);">${html(form.childNames.join(", "))}</small></span><span style="color:var(--muted);display:grid;gap:5px;">${form.items.slice(0, 4).map((item) => `<span>${html(item.title)}${item.sub ? ` · ${html(item.sub)}` : ""}</span>`).join("")}${form.items.length > 4 ? `<small style="color:var(--gold);">+ ${form.items.length - 4} more lessons</small>` : ""}</span></div>`).join("") : emptyState("Add children and subjects in Setup to generate Form plans.")}
       </div>
       <aside style="flex:0 1 330px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;">
         <div style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;margin-bottom:12px;">TERM AT A GLANCE</div>
@@ -429,12 +448,12 @@ function renderPlannerDay(vm) {
   const day = vm.day.selected || {};
   const dayLinks = vm.week.days.map((item) => `<a href="/learn/planner?view=day&date=${encodeURIComponent(item.date)}" style="text-decoration:none;color:var(--ink);border:1px solid ${item.date === day.date ? "var(--gold)" : "var(--line)"};background:${item.date === day.date ? "#fbf2dd" : "var(--paper)"};border-radius:10px;padding:10px;text-align:center;min-width:92px;"><strong style="display:block;color:${item.isSunday ? "var(--burgundy)" : "var(--gold)"};">${html(item.weekday)}</strong><small>${html(item.shortDate)}</small></a>`).join("");
   const household = day.isSunday ? emptyState("Sunday is reserved for worship, rest, and family rhythm. No school blocks are scheduled.") : vm.day.householdBlocks.map((block) => `<div style="display:grid;grid-template-columns:1fr 70px 100px;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);"><span><strong>${html(block.title)}</strong><small style="display:block;color:var(--muted);">${html(block.sub)}</small></span><span>${html(block.minutes)}m</span>${statusPill(block.status)}</div>`).join("");
-  const children = day.isSunday ? "" : vm.day.childBlocks.map((block) => `<div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:12px;display:flex;gap:10px;align-items:flex-start;"><span style="width:34px;height:34px;border-radius:50%;background:${block.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(block.initial)}</span><span style="flex:1;"><strong>${html(block.childName)} · ${html(block.title)}</strong><small style="display:block;color:var(--muted);">${html(block.sub)}</small><small>${html(block.minutes)}m</small></span>${statusPill(block.status)}</div>`).join("");
+  const forms = day.isSunday ? "" : vm.day.formBlocks.map((form) => `<div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:12px;display:grid;gap:10px;"><div style="display:flex;gap:10px;align-items:center;"><span style="width:34px;height:34px;border-radius:50%;background:${form.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(form.initials.slice(0, 2).join(""))}</span><span><strong>${html(form.formLabel)}</strong><small style="display:block;color:var(--muted);">${html(form.childNames.join(", "))}</small></span></div>${form.items.map((item) => `<div style="display:grid;grid-template-columns:1fr 60px 90px;gap:10px;align-items:center;border-top:1px solid var(--line);padding-top:8px;"><span><strong>${html(item.title)}</strong><small style="display:block;color:var(--muted);">${html(item.sub)}</small></span><span>${html(item.minutes)}m</span>${statusPill(item.status)}</div>`).join("")}</div>`).join("");
   return `
     <div style="display:flex;gap:8px;overflow:auto;padding-bottom:2px;">${dayLinks}</div>
     <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:16px;align-items:start;">
       ${panel("Daily Plan", `<h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0;">${html(day.weekdayLong || day.weekday)} · ${html(day.shortDate || day.date)}</h2><p style="margin:6px 0 14px;color:var(--muted);">${html(day.feast)} · ${html(day.fasting)}</p>${household}`, { icon: day.isSunday ? "☩" : "▣" })}
-      ${panel("Child Work", day.isSunday ? `<div style="color:var(--muted);line-height:1.45;">No child school assignments are scheduled on Sunday.</div>` : `<div style="display:grid;gap:10px;">${children || emptyState("No child blocks for this day.")}</div>`, { icon: "◎" })}
+      ${panel("Form Work", day.isSunday ? `<div style="color:var(--muted);line-height:1.45;">No Form work is scheduled on Sunday.</div>` : `<div style="display:grid;gap:10px;">${forms || emptyState("No Form blocks for this day.")}</div>`, { icon: "◎" })}
     </div>
     ${panel("Church Notes", `<div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:12px;"><div><small style="color:var(--gold);letter-spacing:.12em;">EPISTLE</small><strong style="display:block;">${html(day.epistle || "Set readings source")}</strong></div><div><small style="color:var(--gold);letter-spacing:.12em;">GOSPEL</small><strong style="display:block;">${html(day.gospel || "Set readings source")}</strong></div><div><small style="color:var(--gold);letter-spacing:.12em;">TONE</small><strong style="display:block;">${html(day.tone || "Tone")}</strong></div></div>`, { icon: "✥" })}
   `;
@@ -475,12 +494,13 @@ function renderPlannerYear(vm) {
 
 function renderFormation(vm) {
   const rhythms = vm.rhythms.length ? vm.rhythms.map((item) => `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);">${check(item.complete)}<div><strong>${html(item.title)}</strong><small style="display:block;color:var(--muted);">${html(item.note)}</small></div></div>`).join("") : emptyState("Add formation rhythms in Setup.");
+  const readings = vm.today.readingTasks?.length ? `<div style="display:grid;gap:8px;margin:12px 0 4px;">${vm.today.readingTasks.map((reading) => `<button type="button" data-reading-check aria-pressed="false" style="display:flex;align-items:center;gap:10px;text-align:left;border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:9px 11px;font-family:inherit;color:var(--ink);cursor:pointer;"><span data-reading-mark style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--gold);display:grid;place-items:center;color:var(--gold);font-size:12px;"></span><span><strong>${html(reading.label)}</strong><small style="display:block;color:var(--muted);">${html(reading.ref)}</small></span></button>`).join("")}</div>` : `<p style="margin:10px 0 0;color:#33405a;line-height:1.45;">${html(vm.today.readings)}</p>`;
   const memory = vm.recitation.length ? vm.recitation.map((item) => `<div style="padding:10px 0;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 110px;gap:14px;align-items:center;"><div><strong>${html(item.title)}</strong><small style="display:block;color:var(--muted);">${html(item.status)}</small></div><div>${bar(item.progress, "var(--navy)")}<small style="color:var(--muted);">${item.progress}%</small></div></div>`).join("") : emptyState("No memory tracks configured yet.");
   const enrich = vm.enrichment.length ? vm.enrichment.map((item) => `<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid var(--line);"><span><strong>${html(item.type)}:</strong> ${html(item.title)}</span><span style="color:var(--muted);">${html(item.minutes)}</span></div>`).join("") : emptyState("Add enrichment blocks in Setup.");
   const body = `
     <section data-screen-label="Formation" style="display:flex;flex-direction:column;gap:18px;">
       <div style="display:grid;grid-template-columns:minmax(300px,1.2fr) minmax(270px,.9fr) minmax(230px,.7fr);gap:16px;align-items:start;">
-        ${panel("Church Rhythms", `<div style="display:grid;grid-template-columns:120px 1fr;gap:18px;"><div style="border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,#f8f0dd,#efe0ba);min-height:180px;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:54px;">✥</div><div><h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;margin:0 0 8px;">${html(vm.today.title)}</h2><p style="margin:0;color:var(--muted);line-height:1.4;">${html(vm.today.date)} · ${html(vm.today.fasting)}</p><p style="margin:10px 0 0;color:#33405a;line-height:1.45;">${html(vm.today.readings)}</p>${rhythms}</div></div>`, { icon: "☩", style: "grid-column:span 2;" })}
+        ${panel("Church Rhythms", `<div style="display:grid;grid-template-columns:120px 1fr;gap:18px;"><div style="border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,#f8f0dd,#efe0ba);min-height:180px;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:54px;">✥</div><div><h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;margin:0 0 8px;">${html(vm.today.title)}</h2><p style="margin:0;color:var(--muted);line-height:1.4;">${html(vm.today.date)} · ${html(vm.today.fasting)}</p>${readings}${rhythms}</div></div>`, { icon: "☩", style: "grid-column:span 2;" })}
         ${panel("This Week in the Church", `<div style="display:flex;flex-direction:column;gap:13px;"><strong style="font-family:'Cormorant Garamond',serif;font-size:22px;">${html(vm.today.title)}</strong><span style="color:var(--muted);">${html(vm.today.saint)}</span><p style="margin:0;line-height:1.45;color:#33405a;">${html(vm.today.troparion)}</p><a href="/learn/planner" style="color:var(--ink);text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center;background:var(--paper2);">View Full Calendar →</a></div>`, { icon: "✥" })}
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:16px;">
@@ -528,6 +548,20 @@ function renderReports(vm) {
 }
 
 function renderCommunity(vm) {
+  return shell(vm, `
+    <section data-screen-label="Community" style="display:grid;gap:18px;">
+      <div style="background:linear-gradient(135deg,#fffaf0 0%,#f5ead1 100%);border:1px solid rgba(181,148,47,.34);border-radius:18px;padding:28px;display:grid;grid-template-columns:1fr 220px;gap:24px;align-items:center;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+        <div>
+          <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:700;text-transform:uppercase;">Coming Soon</div>
+          <h2 style="font-family:'Cormorant Garamond',serif;font-size:42px;line-height:1;margin:8px 0;color:var(--ink);">${html(vm.title || "Community is coming soon")}</h2>
+          <p style="font-size:17px;line-height:1.5;color:#33405a;max-width:760px;margin:0;">${html(vm.subtitle || "A curated Orthodox homeschool resource exchange is planned after the core Learn workflow is settled.")}</p>
+          ${vm.detail ? `<p style="color:var(--muted);line-height:1.45;margin:12px 0 0;max-width:720px;">${html(vm.detail)}</p>` : ""}
+        </div>
+        <div style="border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.6);min-height:190px;display:grid;place-items:center;color:var(--gold);font-size:58px;">✥</div>
+      </div>
+      ${panel("Launch Focus", `<div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:12px;"><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;"><strong>Planner first</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Keep the household planning flow reliable before adding social features.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;"><strong>Curated resources</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Community sharing will launch with moderation and resource categories.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;"><strong>Family-safe</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">The future feature will be built around trust, not an open feed.</small></div></div>`, { icon: "✥" })}
+    </section>
+  `);
   const chip = (label, active = false, attr = "data-community-filter") => `<button type="button" ${attr}="${html(label)}" style="border:1px solid ${active ? "var(--gold)" : "var(--line)"};background:${active ? "var(--navy)" : "var(--paper)"};color:${active ? "#f3ead4" : "var(--ink)"};border-radius:9px;padding:8px 12px;font-family:inherit;cursor:pointer;">${html(label)}</button>`;
   const body = `
     <section data-screen-label="Community" style="display:flex;flex-direction:column;gap:18px;">
@@ -724,7 +758,8 @@ function renderPrintCenter(vm) {
   const childTemplates = vm.templates.filter((template) => template.audience === "child");
   const freePlan = !isLearnFamilyPlan();
   const remaining = Math.max(0, vm.billing.printLimit - printCount());
-  const templateCard = (template) => `<article data-print-template="${html(template.id)}" data-print-premium="${template.premium ? "true" : "false"}" style="border:1px solid ${template.premium ? "var(--gold)" : "var(--line)"};border-radius:10px;background:var(--paper2);padding:14px;display:flex;flex-direction:column;gap:8px;"><small style="display:block;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;">${html(template.type)}${template.premium ? " · Family" : ""}</small><strong style="display:block;">${html(template.title)}</strong><span style="display:block;color:var(--muted);line-height:1.35;">${html(template.description)}</span><button type="button" data-print-generate="${html(template.id)}" style="margin-top:auto;border:1px solid var(--line);background:${template.premium && freePlan ? "var(--paper)" : "var(--navy)"};color:${template.premium && freePlan ? "var(--ink)" : "#fff"};border-radius:9px;padding:9px 12px;font-family:inherit;cursor:pointer;">${template.premium && freePlan ? "Unlock" : "Generate PDF"}</button></article>`;
+  const accessBadge = (template) => `<span style="width:max-content;border:1px solid ${template.premium ? "var(--gold)" : "var(--line)"};background:${template.premium ? "#fbf2dd" : "#edf6ef"};color:${template.premium ? "var(--gold)" : "#365f3b"};border-radius:999px;padding:4px 9px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">${template.premium ? "Family Plan" : "Free"}</span>`;
+  const templateCard = (template) => `<article data-print-template="${html(template.id)}" data-print-premium="${template.premium ? "true" : "false"}" style="border:1px solid ${template.premium ? "var(--gold)" : "var(--line)"};border-radius:10px;background:${template.premium && freePlan ? "#fff8e8" : "var(--paper2)"};padding:14px;display:flex;flex-direction:column;gap:8px;box-shadow:${template.premium && freePlan ? "inset 0 0 0 1px rgba(181,148,47,.18)" : "none"};"><div style="display:flex;justify-content:space-between;gap:10px;align-items:start;"><small style="display:block;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;">${html(template.type)}</small>${accessBadge(template)}</div><strong style="display:block;">${html(template.title)}</strong><span style="display:block;color:var(--muted);line-height:1.35;">${html(template.description)}</span><button type="button" data-print-generate="${html(template.id)}" style="margin-top:auto;border:1px solid ${template.premium && freePlan ? "var(--gold)" : "var(--line)"};background:${template.premium && freePlan ? "#f3ead4" : "var(--navy)"};color:${template.premium && freePlan ? "var(--ink)" : "#fff"};border-radius:9px;padding:9px 12px;font-family:inherit;cursor:pointer;font-weight:700;">${template.premium && freePlan ? "Upgrade to Print" : "Generate PDF"}</button></article>`;
   const body = `
     <section data-screen-label="Print Center" style="display:flex;flex-direction:column;gap:18px;">
       <div style="border:1px solid ${freePlan && (vm.billing.childCount > 2 || remaining === 0) ? "var(--gold)" : "var(--line)"};background:var(--paper);border-radius:14px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
@@ -736,7 +771,7 @@ function renderPrintCenter(vm) {
         ${panel("Draft Job", `<strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">${html(vm.job.status)}</strong><div style="margin-top:8px;color:var(--muted);line-height:1.55;">${html(vm.term.label)}<br>${html(vm.term.week)}<br>${html(vm.job.range)} · ${html(vm.job.format)}</div><button type="button" data-print-generate="weekly-pack" style="margin-top:14px;width:100%;background:var(--navy);color:#fff;border:none;border-radius:10px;padding:11px;font-family:inherit;cursor:pointer;">Generate Print Pack</button>`, { icon: "✒" })}
       </div>
       <div style="display:grid;grid-template-columns:1fr 420px;gap:16px;align-items:start;">
-        ${panel("Child Sheets", `<div style="display:grid;grid-template-columns:repeat(2,minmax(190px,1fr));gap:10px;">${childTemplates.map((template) => `<article data-print-template="${html(template.id)}" data-print-premium="${template.premium ? "true" : "false"}" style="border:1px solid ${template.premium ? "var(--gold)" : "var(--line)"};border-radius:10px;background:var(--paper2);padding:11px;display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:flex-start;"><span style="width:34px;height:34px;border-radius:50%;background:${template.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(template.child.charAt(0) || "C")}</span><span><strong>${html(template.title)}</strong><small style="display:block;color:var(--muted);">${html(template.description)}</small><button type="button" data-print-generate="${html(template.id)}" style="margin-top:9px;border:1px solid var(--line);background:${freePlan ? "var(--paper)" : "var(--navy)"};color:${freePlan ? "var(--ink)" : "#fff"};border-radius:8px;padding:7px 10px;font-family:inherit;cursor:pointer;">${freePlan ? "Unlock" : "Generate PDF"}</button></span></article>`).join("")}</div>`, { icon: "◎" })}
+        ${panel("Child Sheets", `<div style="display:grid;grid-template-columns:repeat(2,minmax(190px,1fr));gap:10px;">${childTemplates.map((template) => `<article data-print-template="${html(template.id)}" data-print-premium="${template.premium ? "true" : "false"}" style="border:1px solid ${template.premium ? "var(--gold)" : "var(--line)"};border-radius:10px;background:${template.premium && freePlan ? "#fff8e8" : "var(--paper2)"};padding:11px;display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:flex-start;"><span style="width:34px;height:34px;border-radius:50%;background:${template.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(template.child.charAt(0) || "C")}</span><span><span style="display:flex;justify-content:space-between;gap:8px;align-items:start;"><strong>${html(template.title)}</strong>${accessBadge(template)}</span><small style="display:block;color:var(--muted);">${html(template.description)}</small><button type="button" data-print-generate="${html(template.id)}" style="margin-top:9px;border:1px solid ${freePlan ? "var(--gold)" : "var(--line)"};background:${freePlan ? "#f3ead4" : "var(--navy)"};color:${freePlan ? "var(--ink)" : "#fff"};border-radius:8px;padding:7px 10px;font-family:inherit;cursor:pointer;font-weight:700;">${freePlan ? "Upgrade to Print" : "Generate PDF"}</button></span></article>`).join("")}</div>`, { icon: "◎" })}
         ${panel("Print Preview", `<div style="border:1px solid var(--line);border-radius:10px;background:#fffaf0;padding:22px;min-height:420px;"><div style="text-align:center;color:var(--gold);font-size:30px;">✥</div><h2 style="font-family:'Cormorant Garamond',serif;text-align:center;margin:8px 0 4px;">${html(vm.document.title)}</h2><p style="text-align:center;color:var(--muted);margin:0 0 16px;">${html(vm.document.subtitle)}</p>${vm.document.sections.map((section) => `<div style="margin-top:14px;"><strong style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;font-size:12px;">${html(section.title)}</strong>${section.items.map((item) => `<div style="display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:8px 0;"><span><strong>${html(item.label)}</strong><small style="display:block;color:var(--muted);">${html(item.detail)}</small></span><span>${html(item.minutes)}m</span></div>`).join("")}</div>`).join("")}</div>`, { icon: "☰" })}
       </div>
       ${panel("Available Outputs", `<div style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:14px;"><div><strong>Household</strong>${vm.outputs.household.map((item) => `<div style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</div>`).join("")}</div><div><strong>Child</strong>${vm.outputs.child.map((item) => `<div style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</div>`).join("")}</div></div>`, { icon: "✥" })}
@@ -1220,6 +1255,19 @@ function wirePrintCenter(vm) {
   });
 }
 
+function wireFormation() {
+  root.querySelectorAll("[data-reading-check]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const active = button.getAttribute("aria-pressed") !== "true";
+      button.setAttribute("aria-pressed", String(active));
+      button.style.background = active ? "#fbf2dd" : "var(--paper2)";
+      button.style.borderColor = active ? "var(--gold)" : "var(--line)";
+      const mark = button.querySelector("[data-reading-mark]");
+      if (mark) mark.textContent = active ? "✓" : "";
+    });
+  });
+}
+
 async function mount() {
   if (new URLSearchParams(window.location.search).get("learn_billing") === "success") {
     localStorage.setItem("agapay.learn.plan", "family");
@@ -1241,6 +1289,7 @@ async function mount() {
   if (pageKey === "formation") {
     const raw = await apiGet(`/api/learn/formation?calendar=${encodeURIComponent(calendar)}`);
     root.innerHTML = renderFormation(toFormationViewModel(raw));
+    wireFormation();
     return;
   }
   if (pageKey === "books") {
@@ -1265,7 +1314,6 @@ async function mount() {
   if (pageKey === "community") {
     const raw = await apiGet("/api/learn/community");
     root.innerHTML = renderCommunity(toCommunityViewModel(raw));
-    wireCommunity();
     return;
   }
   if (pageKey === "co-op") {
