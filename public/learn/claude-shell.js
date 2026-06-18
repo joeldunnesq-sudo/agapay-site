@@ -954,8 +954,13 @@ function wireSetupPage() {
     submit.disabled = true;
     try {
       const saved = await apiPost("/api/learn/onboarding", payload);
-      localStorage.setItem("agapay.learn.calendar", payload.preferences.calendarType || "julian");
-      status.textContent = `Setup saved${saved.savedAt ? ` at ${new Date(saved.savedAt).toLocaleTimeString()}` : ""}.`;
+      const calendar = payload.preferences.calendarType || "julian";
+      const savedAt = saved.savedAt ? ` at ${new Date(saved.savedAt).toLocaleTimeString()}` : "";
+      localStorage.setItem("agapay.learn.calendar", calendar);
+      root.innerHTML = renderSetup(toSetupViewModel(saved, { calendar }));
+      wireSetupPage();
+      const nextStatus = root.querySelector("[data-setup-status]");
+      if (nextStatus) nextStatus.textContent = `Setup saved${savedAt}.`;
     } catch (error) {
       status.textContent = error.message;
       status.style.color = "var(--burgundy)";
