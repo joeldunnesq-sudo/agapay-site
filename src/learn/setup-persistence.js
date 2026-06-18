@@ -100,10 +100,13 @@ function normalizeSetupPayload(payload = {}, identity = learnSetupIdentity()) {
   const term = payload.term || {};
   const preferences = payload.preferences || {};
   const normalizedHousehold = {
-    ...seed.household,
     id: identity.householdId,
+    slug: slug(household.name || identity.householdId, identity.householdId),
     name: text(household.name, seed.household.name),
+    parentNames: [],
+    childrenCount: 0,
     parishName: text(household.parishName, seed.household.parishName || ""),
+    city: text(household.city, ""),
     primaryMethod: text(household.primaryMethod, seed.household.primaryMethod || "Charlotte Mason"),
     liturgicalCalendarType: text(preferences.calendarType || household.liturgicalCalendarType, seed.household.liturgicalCalendarType || "julian"),
     paceMode: text(preferences.paceMode || household.paceMode, seed.household.paceMode || "steady"),
@@ -128,6 +131,7 @@ function normalizeSetupPayload(payload = {}, identity = learnSetupIdentity()) {
       };
     })
     .filter(Boolean);
+  normalizedHousehold.childrenCount = children.length;
 
   const schoolYearId = text(schoolYear.id, "school_year_current");
   const normalizedSchoolYear = {
