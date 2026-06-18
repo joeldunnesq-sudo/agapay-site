@@ -4266,6 +4266,149 @@ body::before {
   font-size: 0.78rem;
 }
 
+/* Shared My AGAPAY utility bar alignment */
+.learn-utility-bar {
+  min-height: 74px;
+  padding: 0.9rem 1.55rem;
+  border-bottom: 1px solid rgba(201, 162, 91, 0.34);
+  background:
+    radial-gradient(circle at 86% 0%, rgba(201, 162, 91, 0.18), transparent 22rem),
+    linear-gradient(135deg, #061522 0%, #09223a 100%);
+  box-shadow: 0 14px 34px rgba(6, 21, 34, 0.14);
+  color: #fffdf8;
+}
+
+.learn-utility-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #fffdf8;
+  text-decoration: none;
+}
+
+.learn-utility-mark {
+  display: inline-grid;
+  width: 2.8rem;
+  height: 2.8rem;
+  place-items: center;
+}
+
+.learn-utility-mark img {
+  width: 2.55rem;
+  height: 2.55rem;
+  object-fit: contain;
+}
+
+.learn-utility-title {
+  color: #fffdf8;
+  font-family: var(--learn-serif);
+  font-size: 1.68rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1;
+}
+
+.learn-utility-brand small {
+  display: block;
+  margin-top: 0.16rem;
+  color: rgba(246, 241, 232, 0.72);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.learn-utility-actions {
+  gap: 0.8rem;
+}
+
+.learn-quick-action {
+  min-height: 2.75rem;
+  min-width: 9.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(201, 162, 91, 0.7);
+  border-radius: 0.7rem;
+  background: linear-gradient(135deg, #d6af5b, #b98832);
+  color: #061522;
+  font-family: var(--learn-sans);
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.learn-account-chip {
+  min-height: 3.05rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid rgba(246, 241, 232, 0.24);
+  border-radius: 999px;
+  padding: 0.32rem 0.86rem 0.32rem 0.34rem;
+  color: #fffdf8;
+  text-decoration: none;
+}
+
+.learn-account-avatar {
+  width: 2.36rem;
+  height: 2.36rem;
+  border: 1px solid rgba(201, 162, 91, 0.34);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.94);
+  color: #061522;
+  font-family: var(--learn-sans);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.learn-account-chip strong,
+.learn-account-chip small {
+  display: block;
+  line-height: 1.12;
+}
+
+.learn-account-chip strong {
+  max-width: 10rem;
+  overflow: hidden;
+  color: #fffdf8;
+  font-family: var(--learn-sans);
+  font-size: 0.86rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learn-account-chip small {
+  color: rgba(246, 241, 232, 0.68);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .learn-utility-bar {
+    padding: 0.78rem 0.85rem;
+  }
+
+  .learn-utility-brand small,
+  .learn-quick-action {
+    display: none;
+  }
+
+  .learn-utility-title {
+    font-size: 1.34rem;
+  }
+
+  .learn-account-chip {
+    padding-right: 0.34rem;
+  }
+
+  .learn-account-chip > span:not(.learn-account-avatar) {
+    display: none;
+  }
+}
+
 .learn-page-header,
 .learn-shell,
 .learn-planner-control-row {

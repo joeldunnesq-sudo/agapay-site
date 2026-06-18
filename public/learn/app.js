@@ -126,16 +126,13 @@
       <header class="learn-utility-bar">
         <a class="learn-utility-brand" href="/my-agapay" aria-label="Open My AGAPAY">
           <span class="learn-utility-mark"><img src="/mark.png" alt="" /></span>
-          <span><span class="learn-utility-title">AGAPAY</span><small>Faith + Family + Community</small></span>
+          <span><span class="learn-utility-title">MY AGAPAY</span><small>Love how you Give + Learn + Live</small></span>
         </a>
         <div class="learn-utility-actions">
-          <span class="learn-utility-time" aria-label="Current time">${account.timeLabel}</span>
-          <a class="learn-utility-icon" href="/my-agapay" aria-label="Open My AGAPAY">${icon("home")}</a>
-          <a class="learn-utility-icon" href="/learn/onboarding" aria-label="Open Learn setup">${icon("check")}</a>
-          <span class="learn-utility-bell" aria-label="Notifications">${icon("calendar")}<b>3</b></span>
-          <a class="learn-account-chip" href="/learn/onboarding" aria-label="Open Learn setup">
+          <a class="learn-quick-action" href="/learn/onboarding">Quick Action</a>
+          <a class="learn-account-chip" href="/my-agapay" aria-label="Back to My AGAPAY dashboard">
             <span class="learn-account-avatar">${account.initials}</span>
-            <span><strong>${account.name}</strong><small>${account.childrenCount} ${account.childrenCount === 1 ? "child" : "children"} · ${account.primaryMethod}</small></span>
+            <span><strong>${account.name}</strong><small>Back to Dashboard</small></span>
           </a>
         </div>
       </header>
