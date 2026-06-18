@@ -289,6 +289,10 @@ export function googleCalendarConnect(request, env = {}) {
   authUrl.searchParams.set("prompt", "consent");
   authUrl.searchParams.set("state", state);
 
+  if (url.searchParams.get("format") !== "json") {
+    return Response.redirect(authUrl.toString(), 302);
+  }
+
   return json({
     ok: true,
     configured: true,

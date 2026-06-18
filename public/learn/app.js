@@ -2269,7 +2269,7 @@
         }
         if (action === "google-calendar-connect") {
           try {
-            const payload = await apiGet(`/api/learn/google-calendar/connect?returnTo=${encodeURIComponent(window.location.pathname)}`);
+            const payload = await apiGet(`/api/learn/google-calendar/connect?format=json&returnTo=${encodeURIComponent(window.location.pathname)}`);
             if (payload.authUrl) {
               window.location.href = payload.authUrl;
               return;
