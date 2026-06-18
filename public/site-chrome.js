@@ -136,10 +136,6 @@
             <nav class="footer-col" aria-label="AGAPAY Giving">
               <h4>Giving</h4>
               <a href="/giving">Overview</a>
-              <a href="/giving/parish-giving">Parish Giving</a>
-              <a href="/giving/recurring-donations">Recurring Donations</a>
-              <a href="/giving/fundraising">Fundraising</a>
-              <a href="/giving/event-payments">Event Payments</a>
               <a href="/giving/features">Features</a>
               <a href="/giving/how-it-works">How It Works</a>
               <a href="/giving/pricing">Pricing</a>
