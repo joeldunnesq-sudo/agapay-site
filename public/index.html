@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
@@ -15,125 +15,275 @@
   <meta property="og:title" content="AGAPAY | One Orthodox Platform" />
   <meta property="og:description" content="A unified Orthodox platform for giving, learning, marketplace tools, directory discovery, and community life." />
   <meta property="og:url" content="https://agapay.app/" />
-  <meta property="og:image" content="https://agapay.app/images/home/platform-family-sketch.png" />
+  <meta property="og:image" content="https://agapay.app/images/home/platform-family-sketch-1440.webp" />
   <meta property="og:image:alt" content="An Orthodox family gathered near a church, representing the AGAPAY platform." />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="AGAPAY | One Orthodox Platform" />
   <meta name="twitter:description" content="Orthodox giving, family learning, marketplace tools, directory discovery, and community life in one trusted platform." />
-  <meta name="twitter:image" content="https://agapay.app/images/home/platform-family-sketch.png" />
+  <meta name="twitter:image" content="https://agapay.app/images/home/platform-family-sketch-1440.webp" />
   <meta name="theme-color" content="#061522" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preload" as="image" href="/images/home/platform-family-sketch-1440.webp" type="image/webp" media="(min-width: 981px)" fetchpriority="high" />
-  <link rel="preload" as="image" href="/images/home/platform-family-sketch-960.webp" type="image/webp" media="(max-width: 980px)" fetchpriority="high" />
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" /></noscript>
-  <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="preload" as="style" href="/site-chrome.css" onload="this.onload=null;this.rel='stylesheet'" />
-  <noscript><link rel="stylesheet" href="/site-chrome.css" /></noscript>
+  <link rel="preload" as="image" href="/images/home/platform-family-sketch-1440.webp" type="image/webp" media="(min-width: 821px)" fetchpriority="high" />
+  <link rel="preload" as="image" href="/images/home/platform-family-sketch-960.webp" type="image/webp" media="(max-width: 820px)" fetchpriority="high" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
   <style>
+    *, *::before, *::after { box-sizing: border-box; }
     :root {
-      --agp-nav-bg: #061522;
-      --agp-gold: #D6AF5B;
-      --agp-cream: #F6F1E8;
-      --agp-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-      --agp-serif: "Cormorant Garamond", Georgia, serif;
+      --night: #061522;
+      --blue: #0b2130;
+      --blue2: #0d2030;
+      --cream: #f6f1e8;
+      --paper: #fffdf8;
+      --parchment: #efe7d7;
+      --ink: #171715;
+      --muted: #5f5a50;
+      --soft: #8c8576;
+      --line: rgba(166, 159, 145, 0.32);
+      --gold: #c8a24a;
+      --gold2: #a97c25;
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --body: "EB Garamond", Georgia, serif;
     }
 
-    body:not(.agp-shell-ready):not([data-no-site-chrome="true"])::before {
-      content: "";
-      display: block;
-      min-height: 84px;
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--cream);
+      font-family: var(--body);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body[data-no-site-chrome="true"] { padding-top: 0; }
+    ::selection { background: var(--gold); color: var(--night); }
+    a { color: inherit; }
+    img { max-width: 100%; display: block; }
+
+    .ag-home-shell {
+      width: 100%;
+      overflow-x: clip;
       background:
-        linear-gradient(180deg, rgba(6, 21, 34, 0.98), rgba(6, 21, 34, 0.94)),
-        radial-gradient(circle at 18% 0%, rgba(214, 175, 91, 0.14), transparent 34%);
-      border-bottom: 1px solid rgba(200, 162, 74, 0.16);
+        linear-gradient(90deg, rgba(200, 162, 74, 0.07) 0 1px, transparent 1px) 0 0 / 52px 52px,
+        linear-gradient(180deg, #fbf7ec 0%, var(--cream) 38%, #fffaf0 100%);
     }
 
-    .site-header[data-shell="canonical"] {
+    .home-nav {
       position: sticky;
       top: 0;
-      z-index: 120;
-      background:
-        linear-gradient(180deg, rgba(6, 21, 34, 0.98), rgba(6, 21, 34, 0.94)),
-        radial-gradient(circle at 18% 0%, rgba(214, 175, 91, 0.14), transparent 34%);
-      border-bottom: 1px solid rgba(200, 162, 74, 0.16);
+      z-index: 50;
+      border-bottom: 1px solid rgba(166, 159, 145, 0.28);
+      background: rgba(246, 241, 232, 0.9);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
     }
 
-    .site-header[data-shell="canonical"] .nav {
-      width: min(1360px, calc(100% - 2rem));
-      min-height: 84px;
+    .home-nav-inner {
+      width: min(1240px, calc(100% - 2rem));
+      min-height: 74px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: auto 1fr auto auto;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
-      gap: 1rem;
+      gap: 1.4rem;
     }
 
-    .site-header[data-shell="canonical"] .brand {
+    .home-brand {
       display: inline-flex;
       align-items: center;
-      gap: 0.85rem;
-      color: var(--agp-cream);
+      gap: 0.8rem;
       text-decoration: none;
     }
 
-    .site-header[data-shell="canonical"] .brand-mark {
-      width: 52px;
-      height: 52px;
-      border-radius: 999px;
-      display: grid;
-      place-items: center;
-      overflow: hidden;
-      border: 1px solid rgba(214, 175, 91, 0.32);
-      background: rgba(246, 241, 232, 0.05);
+    .home-brand img {
+      width: 38px;
+      height: 38px;
+      object-fit: contain;
     }
 
-    .site-header[data-shell="canonical"] .brand-mark img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    .home-brand strong {
+      display: block;
+      padding-left: 0.22em;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 1.45rem;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      line-height: 0.95;
     }
 
-    .site-header[data-shell="canonical"] .brand-name {
-      display: grid;
-      gap: 0.12rem;
+    .home-brand-text {
+      display: block;
     }
 
-    .site-header[data-shell="canonical"] .brand-name strong {
-      font-family: var(--agp-serif);
-      font-size: 2rem;
-      line-height: 0.9;
-      font-weight: 500;
-      letter-spacing: 0.1em;
-      color: var(--agp-cream);
-    }
-
-    .site-header[data-shell="canonical"] .brand-name span {
-      color: var(--agp-gold);
-      font-size: 0.74rem;
+    .home-brand-tag {
+      display: block;
+      margin-top: 0.24rem;
+      padding-left: 0.34em;
+      color: var(--gold2);
+      font-size: 0.54rem;
+      font-weight: 600;
+      letter-spacing: 0.34em;
+      line-height: 1;
       text-transform: uppercase;
-      letter-spacing: 0.16em;
-      font-weight: 700;
     }
 
-    .brand-tagline {
+    .home-links,
+    .home-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: clamp(1rem, 2vw, 1.9rem);
+    }
+
+    .home-links a,
+    .home-actions a {
+      text-decoration: none;
+    }
+
+    .home-links a {
+      color: #3a3833;
+      font-size: 1rem;
+    }
+
+    .coming-soon {
+      display: block;
+      margin-top: -0.15rem;
+      color: var(--gold2);
+      font-family: Arial, sans-serif;
+      font-size: 0.54rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .home-signin {
+      color: var(--ink);
+      font-size: 1rem;
+    }
+
+    .gold-btn,
+    .outline-btn,
+    .dark-btn,
+    .ghost-btn {
+      min-height: 46px;
       display: inline-flex;
-      align-items: baseline;
-      gap: 0.34em;
+      align-items: center;
+      justify-content: center;
+      padding: 0 1.45rem;
+      border-radius: 2px;
+      font-size: 1.02rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-decoration: none;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .gold-btn {
+      border: 1px solid rgba(200, 162, 74, 0.8);
+      background: var(--gold);
+      color: #1c1408;
+      box-shadow: 0 8px 24px rgba(200, 162, 74, 0.2);
+    }
+
+    .outline-btn {
+      border: 1px solid rgba(166, 159, 145, 0.62);
+      color: var(--ink);
+      background: transparent;
+    }
+
+    .dark-btn {
+      border: 1px solid rgba(200, 162, 74, 0.42);
+      color: var(--cream);
+      background: var(--night);
+    }
+
+    .ghost-btn {
+      border: 1px solid rgba(200, 162, 74, 0.42);
+      color: var(--cream);
+      background: transparent;
+    }
+
+    .gold-btn:hover,
+    .outline-btn:hover,
+    .dark-btn:hover,
+    .ghost-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .mobile-nav-toggle { display: none; }
+
+    .section-inner {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+
+    .hero {
+      min-height: calc(100svh - 74px);
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(20rem, 1.08fr);
+      gap: clamp(2rem, 5vw, 5rem);
+      align-items: center;
+      padding: clamp(3.2rem, 7vw, 6.4rem) 0 clamp(2.2rem, 6vw, 5rem);
+    }
+
+    .eyebrow {
+      margin: 0 0 1.1rem;
+      color: var(--gold2);
+      font-size: 0.84rem;
+      font-weight: 600;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-family: var(--serif);
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+
+    h1 {
+      max-width: 9.7ch;
+      margin: 0 0 1.35rem;
+      color: var(--ink);
+      font-size: clamp(3.35rem, 7.2vw, 6rem);
+      line-height: 0.95;
+    }
+
+    .hero h1 em {
+      color: var(--gold2);
+      font-style: italic;
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 2;
+    }
+
+    .tagline {
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+      margin: 0 0 1.6rem;
+      color: var(--muted);
+      font-size: clamp(1.25rem, 2.2vw, 1.62rem);
+      line-height: 1.35;
     }
 
     .flip-word {
+      min-width: 4.25em;
       display: inline-block;
-      min-width: 3.85em;
-      padding: 0.05em 0.34em 0.08em;
-      border-radius: 4px;
-      border: 1px solid rgba(214, 175, 91, 0.72);
-      color: #FFE7A8;
-      background: linear-gradient(180deg, rgba(9, 34, 56, 0.98), rgba(4, 20, 35, 0.98));
+      padding: 0.06em 0.38em 0.12em;
+      border: 1px solid rgba(200, 162, 74, 0.72);
+      border-radius: 3px;
+      color: #ffe7a8;
+      background: linear-gradient(180deg, #092238, #041423);
       text-align: center;
       transform-origin: 50% 55%;
-      transition: transform 0.22s ease, opacity 0.22s ease;
+      transition: opacity 0.22s ease, transform 0.22s ease;
     }
 
     .flip-word.is-flipping {
@@ -141,859 +291,1096 @@
       transform: rotateX(88deg);
     }
 
-    .site-header[data-shell="canonical"] .nav-links {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 1.45rem;
-      min-width: 0;
-    }
-
-    .site-header[data-shell="canonical"] .nav-links a {
-      color: rgba(246, 241, 232, 0.84);
-      font-size: 0.95rem;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      padding: 0.4rem 0;
-      text-decoration: none;
-    }
-
-    .site-header[data-shell="canonical"] .nav-actions {
-      display: inline-flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 0.85rem;
-    }
-
-    .site-header[data-shell="canonical"] .btn-donate {
-      min-height: 44px;
-      padding: 0 1.4rem;
-      border-radius: 8px;
-      border: 1px solid rgba(200, 162, 74, 0.6);
-      color: #061522;
-      font-size: 0.95rem;
-      font-weight: 700;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: linear-gradient(135deg, #D6AF5B, #B98832);
-      text-decoration: none;
-    }
-
-    .nav-avatar,
-    .site-header[data-shell="canonical"] .mobile-menu-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 999px;
-      display: grid;
-      place-items: center;
-    }
-
-    .site-header[data-shell="canonical"] .mobile-menu-btn {
-      display: none;
-    }
-
-    .site-header[data-shell="canonical"] .signin-wrap {
-      position: relative;
-    }
-
-    .site-header[data-shell="canonical"] .signin-menu,
-    .drawer-backdrop,
-    .mobile-drawer {
-      display: none;
-    }
-
-    body.agp-shell-ready {
-      margin: 0;
-      font-family: var(--agp-sans);
-    }
-
-    @media (max-width: 1160px) {
-      .site-header[data-shell="canonical"] .nav {
-        grid-template-columns: auto 1fr auto;
-      }
-
-      .site-header[data-shell="canonical"] .nav-links,
-      .site-header[data-shell="canonical"] .nav-actions {
-        display: none;
-      }
-
-      .site-header[data-shell="canonical"] .mobile-menu-btn {
-        display: inline-grid;
-        justify-self: end;
-      }
-    }
-
-    @media (max-width: 680px) {
-      body:not(.agp-shell-ready):not([data-no-site-chrome="true"])::before {
-        min-height: 76px;
-      }
-
-      .site-header[data-shell="canonical"] .nav {
-        width: min(100%, calc(100% - 1rem));
-        min-height: 76px;
-      }
-
-      .site-header[data-shell="canonical"] .brand-mark {
-        width: 46px;
-        height: 46px;
-      }
-
-      .site-header[data-shell="canonical"] .brand-name strong {
-        font-size: 1.7rem;
-      }
-
-      .nav-avatar,
-      .site-header[data-shell="canonical"] .mobile-menu-btn {
-        width: 40px;
-        height: 40px;
-      }
-    }
-  </style>
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "AGAPAY",
-      "url": "https://agapay.app/",
-      "logo": "https://agapay.app/mark.png",
-      "description": "AGAPAY is a unified Orthodox platform for parish giving, family learning, trusted marketplace tools, local directory discovery, and community life.",
-      "sameAs": []
-    }
-  </script>
-  <style>
-    :root {
-      --platform-navy: #061522;
-      --platform-blue: #0B2130;
-      --platform-gold: #C89A3C;
-      --platform-gold-soft: #E3C573;
-      --platform-paper: #FFF9EE;
-      --platform-cream: #F5EAD8;
-      --platform-ink: #071827;
-      --platform-muted: #5C554B;
-      --platform-line: rgba(126, 94, 44, 0.22);
-      --platform-serif: "Cormorant Garamond", Georgia, serif;
-      --platform-sans: "DM Sans", system-ui, -apple-system, Segoe UI, sans-serif;
-    }
-
-    body {
-      margin: 0;
-      color: var(--platform-ink);
-      background:
-        radial-gradient(circle at 22% 0%, rgba(200, 154, 60, 0.16), transparent 32rem),
-        linear-gradient(180deg, #FFFDF8 0%, #F6EBD9 100%);
-      font-family: var(--platform-sans);
-    }
-
-    main {
-      overflow: hidden;
-    }
-
-    .platform-section {
-      padding: clamp(4rem, 7vw, 7rem) 0;
-    }
-
-    .platform-inner {
-      width: min(1180px, calc(100% - 2rem));
-      margin: 0 auto;
-    }
-
-    .eyebrow {
-      color: var(--platform-gold);
-      font-size: 0.78rem;
-      font-weight: 800;
-      letter-spacing: 0.19em;
-      text-transform: uppercase;
-    }
-
-    h1,
-    h2,
-    h3 {
-      font-family: var(--platform-serif);
-      font-weight: 600;
-      letter-spacing: 0;
-      margin: 0;
-    }
-
-    p {
-      line-height: 1.65;
-    }
-
-    .platform-hero {
-      min-height: calc(100vh - 84px);
-      display: grid;
-      align-items: stretch;
-      background:
-        linear-gradient(90deg, rgba(255, 249, 238, 0.98) 0%, rgba(255, 249, 238, 0.88) 38%, rgba(255, 249, 238, 0.14) 72%),
-        url("/images/home/platform-family-sketch-1440.webp") center right / contain no-repeat,
-        linear-gradient(180deg, #FFFDF8, #F6EAD8);
-      border-bottom: 1px solid var(--platform-line);
-      position: relative;
-    }
-
-    .platform-hero::after {
-      content: "";
-      position: absolute;
-      inset: auto 0 0;
-      height: 10rem;
-      background: linear-gradient(180deg, transparent, rgba(246, 234, 216, 0.88));
-      pointer-events: none;
-    }
-
-    .hero-content {
-      position: relative;
-      z-index: 1;
-      width: min(1180px, calc(100% - 2rem));
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: minmax(18rem, 0.82fr) 1fr;
-      align-items: center;
-      gap: clamp(2rem, 6vw, 6rem);
-      padding: clamp(4rem, 8vw, 7rem) 0 clamp(3rem, 6vw, 5rem);
-    }
-
-    .hero-copy {
-      max-width: 38rem;
-    }
-
-    .hero-copy h1 {
-      font-family: var(--platform-serif);
-      font-size: clamp(3.25rem, 6.2vw, 5.8rem);
-      line-height: 0.9;
-      font-weight: 600;
-      color: var(--platform-ink);
-    }
-
-    .hero-copy h1 span {
-      display: block;
-      margin-top: 0.35rem;
-      color: #9B712D;
-      font-size: 0.54em;
-      font-style: italic;
-      font-weight: 500;
-      line-height: 1;
-    }
-
-    .hero-copy p {
-      max-width: 35rem;
-      margin: 1.2rem 0 0;
-      color: #2F2B25;
-      font-size: clamp(1.05rem, 1.7vw, 1.25rem);
+    .hero-text {
+      max-width: 34rem;
+      margin: 0 0 2.1rem;
+      color: var(--muted);
+      font-size: clamp(1.18rem, 1.8vw, 1.36rem);
+      line-height: 1.58;
     }
 
     .hero-actions {
       display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin-top: 2rem;
-    }
-
-    .platform-btn {
-      min-height: 48px;
-      padding: 0 1.45rem;
-      border-radius: 8px;
-      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      font-weight: 800;
-      border: 1px solid rgba(111, 81, 35, 0.28);
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      margin-bottom: 2.2rem;
     }
 
-    .platform-btn.primary {
-      background: linear-gradient(135deg, #D5AC54, #B77C2F);
-      color: #071827;
-      box-shadow: 0 16px 34px rgba(116, 78, 22, 0.2);
-    }
-
-    .platform-btn.secondary {
-      background: rgba(255, 253, 248, 0.72);
-      color: var(--platform-ink);
-    }
-
-    .hero-pill-row {
+    .hero-proof {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 1rem;
-      margin-top: 3rem;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.25rem;
+      max-width: 40rem;
+      padding-top: 1.3rem;
+      border-top: 1px solid rgba(166, 159, 145, 0.34);
     }
 
-    .hero-pill {
-      display: grid;
-      gap: 0.5rem;
-      align-content: start;
-      color: #221D17;
-      font-size: 0.92rem;
-      font-weight: 800;
-    }
-
-    .hero-pill svg,
-    .trust-item svg,
-    .product-icon svg {
-      width: 34px;
-      height: 34px;
-      stroke: var(--platform-gold);
-      fill: none;
-      stroke-width: 1.6;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .device-stage {
-      align-self: end;
-      min-height: 28rem;
-      position: relative;
-    }
-
-    .platform-window {
-      position: absolute;
-      right: 2rem;
-      bottom: 0;
-      width: min(44rem, 86%);
-      border-radius: 14px 14px 8px 8px;
-      border: 10px solid #111;
-      background: #FDF6E8;
-      box-shadow: 0 34px 80px rgba(6, 21, 34, 0.34);
-      overflow: hidden;
-    }
-
-    .window-bar {
-      background: #061522;
-      color: var(--platform-gold);
-      padding: 0.55rem 0.8rem;
-      font-size: 0.72rem;
-      font-weight: 900;
-      letter-spacing: 0.12em;
-    }
-
-    .window-grid {
-      display: grid;
-      grid-template-columns: 8rem 1fr;
-      min-height: 19rem;
-    }
-
-    .window-side {
-      background: #061522;
-      padding: 1rem;
-      display: grid;
-      gap: 0.55rem;
-      align-content: start;
-    }
-
-    .window-side span {
-      height: 9px;
-      border-radius: 999px;
-      background: rgba(246, 241, 232, 0.16);
-    }
-
-    .window-main {
-      padding: 1.2rem;
-      display: grid;
-      gap: 0.9rem;
-    }
-
-    .window-card {
-      border: 1px solid rgba(126, 94, 44, 0.16);
-      background: rgba(255, 253, 248, 0.82);
-      border-radius: 10px;
-      padding: 1rem;
-      box-shadow: 0 10px 24px rgba(6, 21, 34, 0.06);
-    }
-
-    .window-tiles {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.8rem;
-    }
-
-    .window-tile {
-      aspect-ratio: 1.1;
-      border: 1px solid rgba(126, 94, 44, 0.14);
-      border-radius: 10px;
-      background: #FFF9EE;
-      display: grid;
-      place-items: center;
-      color: #9B712D;
-      font-weight: 900;
-    }
-
-    .phone-card {
-      position: absolute;
-      right: 0;
-      bottom: -1.2rem;
-      width: 13.5rem;
-      border: 9px solid #101010;
-      border-radius: 2rem;
-      background: #FFF9EE;
-      box-shadow: 0 24px 58px rgba(6, 21, 34, 0.36);
-      padding: 1rem;
-      display: grid;
-      gap: 0.75rem;
-    }
-
-    .phone-card strong {
-      font-family: var(--platform-serif);
-      font-size: 1.25rem;
-      line-height: 1;
-    }
-
-    .phone-give {
-      background: #C89A3C;
-      color: #071827;
-      border-radius: 8px;
-      padding: 0.75rem;
-      text-align: center;
-      font-weight: 900;
-    }
-
-    .section-heading {
-      max-width: 46rem;
-      margin: 0 auto 2.25rem;
-      text-align: center;
-    }
-
-    .section-heading h2 {
-      margin-top: 0.55rem;
-      font-size: clamp(2.45rem, 5vw, 4rem);
-      line-height: 0.95;
-    }
-
-    .section-heading p {
-      margin: 0.8rem auto 0;
-      color: var(--platform-muted);
-      font-size: 1.05rem;
-    }
-
-    .product-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1rem;
-    }
-
-    .product-card {
-      min-height: 23rem;
-      padding: 1.35rem;
-      border: 1px solid var(--platform-line);
-      border-radius: 10px;
-      background: rgba(255, 253, 248, 0.8);
-      box-shadow: 0 18px 42px rgba(74, 54, 25, 0.08);
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .product-card.featured {
-      color: var(--platform-cream);
-      background:
-        radial-gradient(circle at top right, rgba(200, 154, 60, 0.2), transparent 16rem),
-        linear-gradient(160deg, #061522, #092238);
-      border-color: rgba(200, 154, 60, 0.44);
-    }
-
-    .product-card h3 {
-      font-size: 2.2rem;
-      line-height: 0.92;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .product-card p {
-      margin: 0;
-      color: inherit;
-    }
-
-    .product-card ul {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: grid;
-      gap: 0.5rem;
-      color: inherit;
-      font-size: 0.95rem;
-    }
-
-    .product-card li::before {
-      content: "✓";
-      color: var(--platform-gold);
-      margin-right: 0.5rem;
-      font-weight: 900;
-    }
-
-    .product-card .platform-btn {
-      margin-top: auto;
-      width: 100%;
-    }
-
-    .soon {
-      display: inline-flex;
-      width: fit-content;
-      padding: 0.2rem 0.45rem;
-      border-radius: 999px;
-      background: rgba(200, 154, 60, 0.18);
-      color: #8A6426;
-      font-size: 0.68rem;
-      font-weight: 900;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    .scripture-band {
-      background:
-        radial-gradient(circle at 78% 50%, rgba(200, 154, 60, 0.2), transparent 24rem),
-        linear-gradient(90deg, rgba(6, 21, 34, 0.98), rgba(6, 21, 34, 0.76));
-      color: var(--platform-cream);
-      padding: clamp(3rem, 5vw, 4.4rem) 0;
-    }
-
-    .scripture-band blockquote {
-      margin: 0;
-      max-width: 56rem;
-      font-family: var(--platform-serif);
-      font-size: clamp(1.8rem, 4vw, 3.3rem);
-      line-height: 1.02;
-    }
-
-    .scripture-band cite {
+    .hero-proof strong {
       display: block;
-      margin-top: 1rem;
-      color: var(--platform-gold-soft);
-      font-style: normal;
-      font-weight: 900;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 1.12rem;
+      font-weight: 600;
+    }
+
+    .hero-proof span {
+      display: block;
+      margin-top: 0.25rem;
+      color: var(--soft);
+      font-size: 0.94rem;
+    }
+
+    .hero-art {
+      position: relative;
+      min-height: 38rem;
+    }
+
+    .hero-arch {
+      position: absolute;
+      inset: 0 0 2.8rem 3rem;
+      overflow: hidden;
+      border: 1px solid rgba(166, 159, 145, 0.34);
+      border-radius: 270px 270px 8px 8px;
+      background: var(--parchment);
+      box-shadow: 0 30px 70px rgba(6, 21, 34, 0.12);
+    }
+
+    .hero-arch picture,
+    .hero-arch img {
+      width: 100%;
+      height: 100%;
+    }
+
+    .hero-arch img {
+      object-fit: cover;
+      object-position: center;
+      filter: sepia(0.24) saturate(0.88) contrast(1.02);
+    }
+
+    .hero-card {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: min(22rem, 70%);
+      padding: 1.25rem;
+      border: 1px solid rgba(200, 162, 74, 0.42);
+      border-radius: 4px;
+      background: rgba(255, 253, 248, 0.96);
+      box-shadow: 0 18px 44px rgba(6, 21, 34, 0.16);
+    }
+
+    .hero-card small {
+      display: block;
+      margin-bottom: 0.4rem;
+      color: var(--gold2);
+      font-size: 0.66rem;
+      font-weight: 600;
       letter-spacing: 0.18em;
       text-transform: uppercase;
     }
 
+    .hero-card strong {
+      display: block;
+      margin-bottom: 0.95rem;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 1.45rem;
+      font-weight: 500;
+      line-height: 1.08;
+    }
+
+    .trust-strip {
+      padding: 2.1rem 0;
+      color: var(--cream);
+      background: var(--night);
+    }
+
+    .trust-strip .section-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.4rem;
+      flex-wrap: wrap;
+    }
+
+    .trust-title {
+      color: rgba(246, 241, 232, 0.64);
+      font-family: var(--serif);
+      font-size: 1.25rem;
+      font-style: italic;
+      white-space: nowrap;
+    }
+
+    .jurisdictions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: clamp(1rem, 3vw, 2.35rem);
+      color: rgba(200, 162, 74, 0.86);
+      font-size: 0.88rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .split-section {
+      padding: clamp(4.6rem, 8vw, 6.8rem) 0;
+    }
+
+    .split-grid {
+      display: grid;
+      grid-template-columns: 1.02fr 0.98fr;
+      gap: clamp(2rem, 6vw, 4.5rem);
+      align-items: center;
+    }
+
+    h2 {
+      margin: 0 0 1.2rem;
+      color: var(--ink);
+      font-size: clamp(3rem, 5vw, 4.2rem);
+      line-height: 1.02;
+    }
+
+    .section-copy {
+      max-width: 34rem;
+      margin: 0 0 2rem;
+      color: var(--muted);
+      font-size: 1.28rem;
+      line-height: 1.6;
+    }
+
+    .feature-pairs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.1rem 2rem;
+      max-width: 34rem;
+      margin-bottom: 2.2rem;
+    }
+
+    .feature-pair {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.8rem;
+    }
+
+    .feature-pair::before {
+      content: "";
+      flex: none;
+      width: 0.5rem;
+      height: 0.5rem;
+      margin-top: 0.6rem;
+      border-radius: 999px;
+      background: var(--gold);
+    }
+
+    .feature-pair strong {
+      display: block;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 1.35rem;
+      font-weight: 500;
+      line-height: 1.12;
+    }
+
+    .feature-pair span {
+      display: block;
+      margin-top: 0.15rem;
+      color: var(--soft);
+      font-size: 0.96rem;
+    }
+
+    .giving-widget {
+      padding: clamp(1.35rem, 3vw, 2.1rem);
+      border: 1px solid rgba(200, 162, 74, 0.4);
+      border-radius: 6px;
+      background: var(--paper);
+      box-shadow: 0 30px 70px rgba(6, 21, 34, 0.14);
+    }
+
+    .widget-head {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .widget-head img {
+      width: 34px;
+      height: 34px;
+      object-fit: contain;
+    }
+
+    .widget-head small {
+      display: block;
+      color: var(--gold2);
+      font-size: 0.64rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .widget-head strong {
+      display: block;
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      font-weight: 500;
+      line-height: 1.08;
+    }
+
+    .giving-tabs,
+    .amount-grid {
+      display: grid;
+      gap: 0.6rem;
+    }
+
+    .giving-tabs {
+      grid-template-columns: 1fr 1fr;
+      padding: 0.25rem;
+      border-radius: 3px;
+      background: #f1eadc;
+      margin-bottom: 1.25rem;
+    }
+
+    .giving-tabs button,
+    .amount-grid button,
+    .giving-widget button {
+      font-family: var(--body);
+      cursor: pointer;
+    }
+
+    .giving-tabs button {
+      min-height: 2.55rem;
+      border: 0;
+      border-radius: 2px;
+      background: transparent;
+      color: #5a564d;
+      font-size: 1rem;
+    }
+
+    .giving-tabs button.is-active {
+      background: var(--paper);
+      color: var(--ink);
+      box-shadow: 0 1px 2px rgba(6, 21, 34, 0.08);
+    }
+
+    .amount-grid {
+      grid-template-columns: repeat(4, 1fr);
+      margin: 0.75rem 0 0.85rem;
+    }
+
+    .amount-grid button {
+      min-height: 3rem;
+      border: 1px solid rgba(166, 159, 145, 0.42);
+      border-radius: 3px;
+      color: var(--ink);
+      background: #fff;
+      font-size: 1.1rem;
+    }
+
+    .amount-grid button.is-active {
+      border-color: var(--gold);
+      color: #1c1408;
+      background: rgba(200, 162, 74, 0.18);
+    }
+
+    .amount-field {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 0.85rem;
+      margin-bottom: 1.15rem;
+      border: 1px solid rgba(166, 159, 145, 0.45);
+      border-radius: 3px;
+      background: #fff;
+    }
+
+    .amount-field span {
+      color: var(--muted);
+      font-family: var(--serif);
+      font-size: 1.45rem;
+    }
+
+    .amount-field input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      color: var(--ink);
+      background: transparent;
+      font: inherit;
+      font-size: 1.1rem;
+    }
+
+    .widget-submit {
+      width: 100%;
+      min-height: 3.25rem;
+      border: 0;
+      border-radius: 3px;
+      color: #1c1408;
+      background: var(--gold);
+      font-size: 1.12rem;
+      font-weight: 600;
+      box-shadow: 0 8px 22px rgba(200, 162, 74, 0.24);
+    }
+
+    .secure-note {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      color: var(--soft);
+      font-size: 0.86rem;
+      letter-spacing: 0.02em;
+    }
+
+    .secure-note::before {
+      content: "";
+      width: 0.4rem;
+      height: 0.4rem;
+      border-radius: 999px;
+      background: #5b8f6b;
+    }
+
+    .platform-section {
+      padding: clamp(4.6rem, 8vw, 6.6rem) 0;
+      color: var(--cream);
+      background: var(--blue2);
+    }
+
+    .center-heading {
+      max-width: 48rem;
+      margin: 0 auto clamp(2.5rem, 5vw, 3.8rem);
+      text-align: center;
+    }
+
+    .platform-section h2,
+    .scripture-band h2 {
+      color: var(--cream);
+    }
+
+    .center-heading p,
+    .scripture-band p {
+      color: rgba(246, 241, 232, 0.66);
+      font-size: 1.18rem;
+      line-height: 1.58;
+    }
+
+    .pillar-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1.25rem;
+    }
+
+    .pillar {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 1.65rem;
+      border: 1px solid rgba(200, 162, 74, 0.28);
+      border-radius: 6px;
+      background: linear-gradient(180deg, #0a1b29, #08161f);
+    }
+
+    .pillar.is-muted {
+      background: rgba(255, 253, 248, 0.04);
+    }
+
+    .pillar-icon {
+      width: 2.9rem;
+      height: 2.9rem;
+      display: grid;
+      place-items: center;
+      margin-bottom: 1.25rem;
+      border: 1.5px solid var(--gold);
+      border-radius: 999px;
+      color: var(--gold);
+      font-size: 1.35rem;
+    }
+
+    .pillar h3 {
+      margin: 0 0 0.65rem;
+      color: var(--cream);
+      font-size: 1.8rem;
+      line-height: 1.05;
+    }
+
+    .pillar p,
+    .pillar li {
+      color: rgba(246, 241, 232, 0.65);
+      font-size: 0.98rem;
+      line-height: 1.5;
+    }
+
+    .pillar ul {
+      display: grid;
+      gap: 0.45rem;
+      margin: 0 0 1.45rem;
+      padding: 0;
+      list-style: none;
+    }
+
+    .pillar li::before {
+      content: "· ";
+      color: var(--gold);
+    }
+
+    .pillar .gold-btn,
+    .pillar .ghost-btn {
+      margin-top: auto;
+      min-height: 2.85rem;
+      width: 100%;
+    }
+
+    .scripture-band {
+      padding: clamp(4.5rem, 8vw, 7.5rem) 0;
+      text-align: center;
+      background: radial-gradient(120% 140% at 50% 0%, #0b2130 0%, var(--night) 70%);
+    }
+
+    .scripture-band blockquote {
+      max-width: 50rem;
+      margin: 0 auto 1rem;
+      color: var(--cream);
+      font-family: var(--serif);
+      font-size: clamp(2rem, 4vw, 3.7rem);
+      font-style: italic;
+      line-height: 1.08;
+    }
+
+    .scripture-band cite {
+      color: var(--gold);
+      font-size: 0.86rem;
+      font-style: normal;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+
+    .learn-card-preview {
+      min-height: 30rem;
+      padding: clamp(1.4rem, 3vw, 2rem);
+      border: 1px solid rgba(166, 159, 145, 0.34);
+      border-radius: 6px;
+      background: var(--paper);
+      box-shadow: 0 24px 60px rgba(6, 21, 34, 0.12);
+    }
+
+    .learn-preview-head,
+    .learn-preview-row,
+    .trust-card {
+      border: 1px solid rgba(166, 159, 145, 0.28);
+      border-radius: 5px;
+      background: #f7efe0;
+    }
+
+    .learn-preview-head {
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .learn-preview-head small {
+      color: var(--gold2);
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .learn-preview-head strong {
+      display: block;
+      margin-top: 0.25rem;
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 500;
+    }
+
+    .learn-preview-grid {
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .learn-preview-row {
+      display: grid;
+      grid-template-columns: 2rem 1fr auto;
+      gap: 0.8rem;
+      align-items: center;
+      padding: 0.9rem 1rem;
+    }
+
+    .learn-preview-row span:first-child {
+      color: var(--gold2);
+      font-size: 1.2rem;
+    }
+
+    .learn-preview-row strong {
+      display: block;
+      font-size: 1.05rem;
+    }
+
+    .learn-preview-row small {
+      color: var(--soft);
+    }
+
+    .trust-section {
+      padding: clamp(4.4rem, 8vw, 6.5rem) 0;
+      border-block: 1px solid rgba(166, 159, 145, 0.28);
+      background: var(--paper);
+    }
+
     .trust-grid {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 1rem;
     }
 
-    .trust-item {
+    .trust-card {
+      min-height: 11rem;
+      padding: 1.25rem;
       text-align: center;
-      padding: 1rem 0.7rem;
-      border-right: 1px solid var(--platform-line);
+      background: rgba(246, 241, 232, 0.72);
     }
 
-    .trust-item:last-child {
-      border-right: 0;
-    }
-
-    .trust-item h3 {
-      margin-top: 0.8rem;
-      font-family: var(--platform-sans);
-      font-size: 0.95rem;
-      line-height: 1.18;
-    }
-
-    .trust-item p {
-      margin: 0.45rem 0 0;
-      color: var(--platform-muted);
-      font-size: 0.86rem;
-      line-height: 1.42;
-    }
-
-    .learn-band {
-      background: rgba(255, 253, 248, 0.58);
-      border-top: 1px solid var(--platform-line);
-      border-bottom: 1px solid var(--platform-line);
-    }
-
-    .learn-links {
+    .trust-card span {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0.8rem;
-      margin-top: 1.7rem;
+      place-items: center;
+      width: 3rem;
+      height: 3rem;
+      margin: 0 auto 0.85rem;
+      border: 1px solid rgba(200, 162, 74, 0.44);
+      border-radius: 999px;
+      color: var(--gold2);
+      font-size: 1.35rem;
     }
 
-    .learn-links a {
-      border: 1px solid var(--platform-line);
-      border-radius: 10px;
-      padding: 1rem;
-      color: var(--platform-ink);
-      background: rgba(255, 253, 248, 0.78);
-      text-decoration: none;
-      font-weight: 900;
-      box-shadow: 0 12px 30px rgba(74, 54, 25, 0.06);
+    .trust-card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1.2rem;
+      line-height: 1.05;
     }
 
-    .cta-strip {
-      padding: clamp(3rem, 5vw, 4rem) 0;
-      background:
-        radial-gradient(circle at right bottom, rgba(200, 154, 60, 0.18), transparent 24rem),
-        #F6EAD8;
-      border-top: 1px solid var(--platform-line);
+    .trust-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.38;
     }
 
-    .cta-inner {
+    .final-cta {
+      padding: clamp(4.2rem, 8vw, 7rem) 0;
+      text-align: center;
+    }
+
+    .final-cta h2 {
+      max-width: 13ch;
+      margin-inline: auto;
+    }
+
+    .final-cta p {
+      max-width: 35rem;
+      margin: 0 auto 2rem;
+      color: var(--muted);
+      font-size: 1.25rem;
+      line-height: 1.55;
+    }
+
+    .home-footer {
+      padding: 4.5rem 0 2.5rem;
+      color: var(--cream);
+      background: var(--night);
+    }
+
+    .footer-grid {
       display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: center;
+      grid-template-columns: 1.2fr repeat(3, 0.7fr) 1fr;
       gap: 2rem;
+      align-items: start;
     }
 
-    .cta-inner h2 {
-      font-size: clamp(2.2rem, 4vw, 3.4rem);
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
     }
 
-    .cta-inner p {
-      margin: 0.4rem 0 0;
-      color: var(--platform-muted);
+    .footer-brand img {
+      width: 44px;
+      height: 44px;
     }
 
-    @media (max-width: 980px) {
-      .platform-hero {
-        min-height: auto;
-        background:
-          linear-gradient(180deg, rgba(255, 249, 238, 0.98), rgba(255, 249, 238, 0.78)),
-          url("/images/home/platform-family-sketch-960.webp") center top / 130% auto no-repeat,
-          linear-gradient(180deg, #FFFDF8, #F6EAD8);
-      }
+    .footer-brand strong {
+      display: block;
+      color: var(--gold);
+      font-family: var(--serif);
+      font-size: 1.75rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+    }
 
-      .hero-content {
-        grid-template-columns: 1fr;
-        padding-top: clamp(18rem, 46vw, 27rem);
-      }
+    .home-footer p,
+    .home-footer a {
+      color: rgba(246, 241, 232, 0.72);
+    }
 
-      .device-stage {
+    .home-footer a {
+      display: block;
+      margin-top: 0.62rem;
+      text-decoration: none;
+    }
+
+    .home-footer h3 {
+      margin: 0 0 0.8rem;
+      color: var(--gold);
+      font-family: var(--body);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 3rem;
+      padding-top: 1.4rem;
+      border-top: 1px solid rgba(200, 162, 74, 0.18);
+      color: rgba(246, 241, 232, 0.54);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 1060px) {
+      .home-links,
+      .home-actions {
         display: none;
       }
 
-      .hero-pill-row,
-      .product-grid,
+      .home-nav-inner {
+        grid-template-columns: auto 1fr auto;
+      }
+
+      .mobile-nav-toggle {
+        justify-self: end;
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(166, 159, 145, 0.44);
+        border-radius: 999px;
+        color: var(--ink);
+        background: rgba(255, 253, 248, 0.68);
+        font-size: 1.25rem;
+      }
+
+      .home-nav.is-open .home-links,
+      .home-nav.is-open .home-actions {
+        grid-column: 1 / -1;
+        width: 100%;
+        display: grid;
+        justify-content: stretch;
+        gap: 0.65rem;
+        padding-bottom: 1rem;
+      }
+
+      .home-nav.is-open .home-links a,
+      .home-nav.is-open .home-actions a {
+        padding: 0.75rem 0;
+        border-top: 1px solid rgba(166, 159, 145, 0.22);
+      }
+
+      .hero,
+      .split-grid,
+      .pillar-grid,
       .trust-grid,
-      .learn-links {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .trust-item {
-        border-right: 0;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .hero-content {
-        padding-top: clamp(14rem, 60vw, 21rem);
-      }
-
-      .hero-copy h1 {
-        font-size: clamp(2.9rem, 14vw, 4.2rem);
-      }
-
-      .hero-pill-row,
-      .product-grid,
-      .trust-grid,
-      .learn-links,
-      .cta-inner {
+      .footer-grid {
         grid-template-columns: 1fr;
       }
 
-      .hero-actions {
-        display: grid;
+      .hero {
+        min-height: auto;
+      }
+
+      .hero-art {
+        min-height: 32rem;
+      }
+
+      .hero-arch {
+        inset: 0 0 2.4rem 0;
+      }
+
+      .pillar-grid,
+      .trust-grid {
+        max-width: 42rem;
+        margin-inline: auto;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .home-nav-inner,
+      .section-inner {
+        width: min(100% - 1rem, 1180px);
+      }
+
+      h1 {
+        font-size: clamp(3rem, 13vw, 3.8rem);
+      }
+
+      .tagline {
+        flex-wrap: wrap;
+      }
+
+      .hero-proof,
+      .feature-pairs,
+      .amount-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-art {
+        min-height: 27rem;
+      }
+
+      .hero-card {
+        width: min(20rem, calc(100% - 1rem));
+      }
+
+      .trust-title {
+        white-space: normal;
+      }
+
+      .split-section,
+      .platform-section,
+      .trust-section {
+        padding-block: 4rem;
+      }
+
+      .learn-card-preview {
+        min-height: auto;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+        animation: none !important;
       }
     }
   </style>
-  <script src="/site-chrome.js" defer></script>
 </head>
-<body>
-  <main>
-    <section class="platform-hero" aria-labelledby="platform-title">
-      <div class="hero-content">
+<body data-no-site-chrome="true">
+  <div class="ag-home-shell">
+    <header class="home-nav" data-home-nav>
+      <div class="home-nav-inner">
+        <a class="home-brand" href="/" aria-label="AGAPAY home">
+          <img src="/mark.png" alt="" width="38" height="38" />
+          <span class="home-brand-text">
+            <strong>AGAPAY</strong>
+            <span class="home-brand-tag">Love how you live</span>
+          </span>
+        </a>
+        <nav class="home-links" aria-label="Primary">
+          <a href="/giving/features.html">Giving</a>
+          <a href="/learn">Learn</a>
+          <a href="/marketplace.html">Marketplace <small class="coming-soon">Soon</small></a>
+          <a href="/directory.html">Directory <small class="coming-soon">Soon</small></a>
+          <a href="#trust">About</a>
+        </nav>
+        <div class="home-actions">
+          <a class="home-signin" href="/my-agapay">Sign in</a>
+          <a class="gold-btn" href="/my-agapay/give">Start Giving</a>
+        </div>
+        <button class="mobile-nav-toggle" type="button" data-mobile-nav-toggle aria-label="Open navigation" aria-expanded="false">☰</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero section-inner" aria-labelledby="heroTitle">
         <div class="hero-copy">
-          <div class="eyebrow">Orthodox First</div>
-          <h1 id="platform-title">One home for Orthodox life online. <span>Give, learn, and live together.</span></h1>
-          <p>AGAPAY brings parish giving, family learning, trusted marketplace tools, and local Orthodox discovery into one platform built for the Church, the home, and the communities between them.</p>
+          <p class="eyebrow">Orthodox First</p>
+          <h1 id="heroTitle">One home for Orthodox life, <em>online.</em></h1>
+          <p class="tagline">
+            Love how you
+            <span class="flip-word" data-flip-word aria-live="polite">GIVE</span>
+          </p>
+          <p class="hero-text">Give to your parish, plan your family's learning, and connect with the wider Church in one quiet, trustworthy place.</p>
           <div class="hero-actions">
-            <a class="platform-btn primary" href="/giving">Explore the Platform</a>
-            <a class="platform-btn secondary" href="/giving/how-it-works">How It Works</a>
+            <a class="gold-btn" href="/my-agapay/give">Start Giving</a>
+            <a class="outline-btn" href="/learn">Plan a Homeschool</a>
           </div>
-          <div class="hero-pill-row" aria-label="AGAPAY commitments">
-            <div class="hero-pill">
-              <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M12 7v10"/><path d="M8 11h8"/></svg>
-              Orthodox First
-            </div>
-            <div class="hero-pill">
-              <svg viewBox="0 0 24 24"><path d="M7 20v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M4 20v-1a3 3 0 0 1 3-3"/><path d="M20 20v-1a3 3 0 0 0-3-3"/></svg>
-              Built for Real Families
-            </div>
-            <div class="hero-pill">
-              <svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M6 20V9l6-4 6 4v11"/><path d="M9 20v-6h6v6"/><path d="M12 5V2"/><path d="M10 3h4"/></svg>
-              Supporting Parishes
-            </div>
-            <div class="hero-pill">
-              <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.4 5.4 0 0 0-7.6 0L12 5.8l-1.2-1.2a5.4 5.4 0 1 0-7.6 7.6L12 21l8.8-8.8a5.4 5.4 0 0 0 0-7.6z"/></svg>
-              Strengthening Community
-            </div>
+          <div class="hero-proof" aria-label="Who AGAPAY serves">
+            <div><strong>For the Parish</strong><span>Giving and stewardship</span></div>
+            <div><strong>For the Home</strong><span>Learning and formation</span></div>
+            <div><strong>For the Faithful</strong><span>Marketplace and directory</span></div>
           </div>
         </div>
+        <div class="hero-art" aria-label="Orthodox family and church illustration">
+          <div class="hero-arch">
+            <picture>
+              <source media="(max-width: 820px)" srcset="/images/home/platform-family-sketch-960.webp" type="image/webp" />
+              <img src="/images/home/platform-family-sketch-1440.webp" alt="An Orthodox family reading together near a church and icons" width="1440" height="960" fetchpriority="high" />
+            </picture>
+          </div>
+          <div class="hero-card">
+            <small>St. Andrew Orthodox Church</small>
+            <strong>Giving with Faith and Joy</strong>
+            <a class="gold-btn" href="/my-agapay/give">Make a Donation</a>
+          </div>
+        </div>
+      </section>
 
-        <div class="device-stage" aria-hidden="true">
-          <div class="platform-window">
-            <div class="window-bar">AGAPAY PLATFORM</div>
-            <div class="window-grid">
-              <div class="window-side">
-                <span></span><span></span><span></span><span></span><span></span><span></span>
+      <section class="trust-strip" id="trust">
+        <div class="section-inner">
+          <div class="trust-title">Built for every canonical Orthodox jurisdiction</div>
+          <div class="jurisdictions" aria-label="Example Orthodox jurisdictions">
+            <span>Greek</span><span>Antiochian</span><span>OCA</span><span>ROCOR</span><span>Serbian</span><span>Romanian</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="split-section" id="giving">
+        <div class="section-inner split-grid">
+          <div>
+            <p class="eyebrow">AGAPAY Giving</p>
+            <h2>Giving, made worthy of the gift.</h2>
+            <p class="section-copy">Offer to your parish, support ministries, and remember loved ones with the dignity, security, and transparency stewardship deserves.</p>
+            <div class="feature-pairs">
+              <div class="feature-pair"><div><strong>One-time and recurring</strong><span>Give once or set a rhythm.</span></div></div>
+              <div class="feature-pair"><div><strong>Memorials and commemorations</strong><span>Offer in someone's name.</span></div></div>
+              <div class="feature-pair"><div><strong>Campaigns and projects</strong><span>Build the temple together.</span></div></div>
+              <div class="feature-pair"><div><strong>Secure and transparent</strong><span>Protected and receipted.</span></div></div>
+            </div>
+            <a href="/giving/how-it-works.html" class="outline-btn">See how giving works</a>
+          </div>
+
+          <div class="giving-widget" aria-label="Example giving widget">
+            <div class="widget-head">
+              <img src="/mark.png" alt="" width="34" height="34" />
+              <div>
+                <small>AGAPAY Giving</small>
+                <strong>St. Andrew Orthodox Church</strong>
               </div>
-              <div class="window-main">
-                <div class="window-card"><strong>Welcome home.</strong><br />Let your household build faith for today.</div>
-                <div class="window-tiles">
-                  <div class="window-tile">Give</div>
-                  <div class="window-tile">Learn</div>
-                  <div class="window-tile">Find</div>
-                  <div class="window-tile">Plan</div>
-                  <div class="window-tile">Print</div>
-                  <div class="window-tile">Serve</div>
-                </div>
-              </div>
+            </div>
+            <div class="giving-tabs" role="tablist" aria-label="Gift frequency">
+              <button class="is-active" type="button" data-frequency="once">One-time</button>
+              <button type="button" data-frequency="monthly">Monthly</button>
+            </div>
+            <div style="color:var(--soft);font-size:0.95rem;">Choose an amount</div>
+            <div class="amount-grid" data-amount-grid>
+              <button type="button">$25</button>
+              <button class="is-active" type="button">$50</button>
+              <button type="button">$100</button>
+              <button type="button">$250</button>
+            </div>
+            <label class="amount-field">
+              <span>$</span>
+              <input inputmode="decimal" type="number" placeholder="Other amount" aria-label="Other donation amount" />
+            </label>
+            <a class="widget-submit" href="/my-agapay/give" style="text-decoration:none;display:flex;align-items:center;justify-content:center;">Give with AGAPAY</a>
+            <div class="secure-note">Secure · Transparent · Tax-receipted</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="platform-section" id="platform">
+        <div class="section-inner">
+          <div class="center-heading">
+            <p class="eyebrow">Four Parts · One Mission</p>
+            <h2>A platform for the Orthodox way of life</h2>
+            <p>Support your parish, teach your children, find trusted goods, and connect with the wider Church together in one place.</p>
+          </div>
+          <div class="pillar-grid">
+            <article class="pillar">
+              <span class="pillar-icon">☩</span>
+              <h3>AGAPAY Giving</h3>
+              <p>Give to your parish, support ministries, and offer with purpose.</p>
+              <ul>
+                <li>One-time and recurring gifts</li>
+                <li>Memorials and commemorations</li>
+                <li>Campaigns and special projects</li>
+                <li>Secure and transparent</li>
+              </ul>
+              <a class="gold-btn" href="/giving/features.html">Give with Faith</a>
+            </article>
+            <article class="pillar">
+              <span class="pillar-icon">☰</span>
+              <h3>AGAPAY Learn</h3>
+              <p>Orthodox homeschool planning shaped by the Church year.</p>
+              <ul>
+                <li>Liturgical calendar integration</li>
+                <li>Household and child planning</li>
+                <li>Grace Mode for real life</li>
+                <li>Printables, reports, and transcripts</li>
+              </ul>
+              <a class="gold-btn" href="/learn">Plan Your Homeschool</a>
+            </article>
+            <article class="pillar is-muted">
+              <span class="pillar-icon">◫</span>
+              <h3>AGAPAY Marketplace</h3>
+              <p>Buy and sell Orthodox goods from trusted artisans and businesses.</p>
+              <ul>
+                <li>Faithful products</li>
+                <li>Support Orthodox makers</li>
+                <li>Built for our community</li>
+              </ul>
+              <a class="ghost-btn" href="/marketplace.html">Join the Waitlist</a>
+            </article>
+            <article class="pillar is-muted">
+              <span class="pillar-icon">⌖</span>
+              <h3>AGAPAY Directory</h3>
+              <p>Find Orthodox parishes, monasteries, schools, and trusted resources.</p>
+              <ul>
+                <li>Search by location</li>
+                <li>Parishes and ministries</li>
+                <li>Businesses and services</li>
+              </ul>
+              <a class="ghost-btn" href="/directory.html">Join the Waitlist</a>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="scripture-band" aria-label="Scripture">
+        <div class="section-inner">
+          <blockquote>As each has received a gift, use it to serve one another, as good stewards of God's varied grace.</blockquote>
+          <cite>1 Peter 4:10</cite>
+        </div>
+      </section>
+
+      <section class="split-section" id="learn">
+        <div class="section-inner split-grid">
+          <div class="learn-card-preview" aria-label="AGAPAY Learn preview">
+            <div class="learn-preview-head">
+              <small>Today in the Church</small>
+              <strong>Plan with peace.</strong>
+            </div>
+            <div class="learn-preview-grid">
+              <div class="learn-preview-row"><span>☩</span><div><strong>Morning prayers</strong><small>Household rhythm</small></div><span>Done</span></div>
+              <div class="learn-preview-row"><span>☰</span><div><strong>Read-aloud</strong><small>Living books</small></div><span>20m</span></div>
+              <div class="learn-preview-row"><span>✥</span><div><strong>Formation</strong><small>Saints, hymns, and feasts</small></div><span>Today</span></div>
+              <div class="learn-preview-row"><span>▣</span><div><strong>Reports</strong><small>Print what your household needs</small></div><span>Ready</span></div>
             </div>
           </div>
-          <div class="phone-card">
-            <strong>St. Andrew Orthodox Church</strong>
-            <span>Giving with Faith and Joy.</span>
-            <div class="phone-give">Make a Donation</div>
+          <div>
+            <p class="eyebrow">AGAPAY Learn</p>
+            <h2>Planning, formation, and records for the Orthodox home.</h2>
+            <p class="section-copy">AGAPAY Learn helps Orthodox families plan homeschool days around the Church year, living books, family rhythms, and beautiful recordkeeping.</p>
+            <div class="feature-pairs">
+              <div class="feature-pair"><div><strong>Church calendar</strong><span>Old or New Calendar in one click.</span></div></div>
+              <div class="feature-pair"><div><strong>Grace Mode</strong><span>Lighten hard weeks without losing the thread.</span></div></div>
+              <div class="feature-pair"><div><strong>Living books</strong><span>Track read-alouds and subject progress.</span></div></div>
+              <div class="feature-pair"><div><strong>Beautiful reports</strong><span>Print plans, records, and transcripts.</span></div></div>
+            </div>
+            <a class="gold-btn" href="/learn">Explore AGAPAY Learn</a>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="platform-section" aria-labelledby="products-title">
-      <div class="platform-inner">
-        <div class="section-heading">
-          <div class="eyebrow">Four Parts. One Mission.</div>
-          <h2 id="products-title">A Platform for the Orthodox Way of Life</h2>
-          <p>Whether you are looking to support your parish, teach your children, find trusted Orthodox goods, or connect with local resources, AGAPAY is here.</p>
-        </div>
-
-        <div class="product-grid">
-          <article class="product-card featured">
-            <div class="product-icon"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M6 20V9l6-4 6 4v11"/><path d="M12 5V2"/><path d="M10 3h4"/></svg></div>
-            <h3>AGAPAY Giving</h3>
-            <p>Give to your parish, support ministries, and offer with purpose.</p>
-            <ul>
-              <li>One-time and recurring gifts</li>
-              <li>Memorials and commemorations</li>
-              <li>Campaigns and special projects</li>
-              <li>Secure and transparent</li>
-            </ul>
-            <a class="platform-btn primary" href="/giving">Give with Faith</a>
-          </article>
-
-          <article class="product-card">
-            <div class="product-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/></svg></div>
-            <h3>AGAPAY Learn</h3>
-            <p>Orthodox homeschool planning shaped by the Church year.</p>
-            <ul>
-              <li>Liturgical calendar integration</li>
-              <li>Household and child planning</li>
-              <li>Grace Mode for real life</li>
-              <li>Printables, reports, and transcripts</li>
-            </ul>
-            <a class="platform-btn primary" href="/learn">Plan Your Homeschool</a>
-          </article>
-
-          <article class="product-card">
-            <span class="soon">Coming soon</span>
-            <div class="product-icon"><svg viewBox="0 0 24 24"><path d="M4 10h16"/><path d="M5 10l1-5h12l1 5"/><path d="M6 10v9h12v-9"/><path d="M9 19v-5h6v5"/></svg></div>
-            <h3>AGAPAY Marketplace</h3>
-            <p>Buy and sell Orthodox goods from trusted artisans and businesses.</p>
-            <ul>
-              <li>Faithful products</li>
-              <li>Support Orthodox makers</li>
-              <li>Built for our community</li>
-            </ul>
-            <a class="platform-btn secondary" href="/marketplace">Join the Waitlist</a>
-          </article>
-
-          <article class="product-card">
-            <span class="soon">Coming soon</span>
-            <div class="product-icon"><svg viewBox="0 0 24 24"><path d="M12 21s7-5.4 7-11a7 7 0 0 0-14 0c0 5.6 7 11 7 11z"/><circle cx="12" cy="10" r="2"/></svg></div>
-            <h3>AGAPAY Directory</h3>
-            <p>Find Orthodox parishes, monasteries, schools, and trusted resources.</p>
-            <ul>
-              <li>Search by location</li>
-              <li>Parishes and ministries</li>
-              <li>Businesses and services</li>
-            </ul>
-            <a class="platform-btn secondary" href="/directory">Join the Waitlist</a>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="scripture-band" aria-label="Scripture">
-      <div class="platform-inner">
-        <blockquote>“As each has received a gift, use it to serve one another, as good stewards of God's varied grace.”</blockquote>
-        <cite>1 Peter 4:10</cite>
-      </div>
-    </section>
-
-    <section class="platform-section" aria-labelledby="trust-title">
-      <div class="platform-inner">
-        <div class="section-heading">
-          <h2 id="trust-title">Why Families and Communities Trust AGAPAY</h2>
-        </div>
-        <div class="trust-grid">
-          <div class="trust-item">
-            <svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M9 6h6"/><path d="M5 10h14"/></svg>
-            <h3>Rooted in the Orthodox Faith</h3>
-            <p>Everything we build starts with Christ and His Church.</p>
+      <section class="trust-section">
+        <div class="section-inner">
+          <div class="center-heading">
+            <p class="eyebrow">Why Orthodox Families and Communities Trust AGAPAY</p>
+            <h2>Built with the Church, the home, and real life in view.</h2>
           </div>
-          <div class="trust-item">
-            <svg viewBox="0 0 24 24"><path d="M7 20v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <h3>For Real Life, Not Perfect Life</h3>
-            <p>Built for large families, hard seasons, and the beauty between.</p>
-          </div>
-          <div class="trust-item">
-            <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.4 5.4 0 0 0-7.6 0L12 5.8l-1.2-1.2a5.4 5.4 0 1 0-7.6 7.6L12 21l8.8-8.8a5.4 5.4 0 0 0 0-7.6z"/></svg>
-            <h3>Supporting Parishes and Monasteries</h3>
-            <p>Technology that strengthens stewardship and builds up the Body of Christ.</p>
-          </div>
-          <div class="trust-item">
-            <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/></svg>
-            <h3>Secure and Respectful</h3>
-            <p>Your information, privacy, and donations are protected.</p>
-          </div>
-          <div class="trust-item">
-            <svg viewBox="0 0 24 24"><path d="M12 21c-4-2-7-5-7-9a7 7 0 0 1 14 0c0 4-3 7-7 9z"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>
-            <h3>Built for Community</h3>
-            <p>A platform that connects, serves, and grows together.</p>
-          </div>
-          <div class="trust-item">
-            <svg viewBox="0 0 24 24"><path d="M20 4c-6 1-10 5-12 12"/><path d="M4 20c5-1 9-4 12-9"/><path d="M9 15c2 0 4 .5 6 2"/></svg>
-            <h3>Growing for the Future</h3>
-            <p>More tools are coming to serve you and the Orthodox Church.</p>
+          <div class="trust-grid">
+            <article class="trust-card"><span>☩</span><h3>Orthodox First</h3><p>Everything starts with Christ and His Church.</p></article>
+            <article class="trust-card"><span>⌂</span><h3>Real Families</h3><p>Built for large families, hard seasons, and joyful ordinary days.</p></article>
+            <article class="trust-card"><span>♡</span><h3>Parishes and Homes</h3><p>Technology that strengthens stewardship and the domestic church.</p></article>
+            <article class="trust-card"><span>▣</span><h3>Secure</h3><p>Your information, privacy, and donations are protected.</p></article>
+            <article class="trust-card"><span>✥</span><h3>Growing Together</h3><p>More tools are coming to serve the Orthodox community.</p></article>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="platform-section learn-band" aria-labelledby="learn-title">
-      <div class="platform-inner">
-        <div class="section-heading">
-          <div class="eyebrow">AGAPAY Learn</div>
-          <h2 id="learn-title">Planning, formation, and records for Orthodox homeschool life.</h2>
-          <p>Explore the public Learn pages and the app sections already taking shape.</p>
-        </div>
-        <div class="learn-links">
-          <a href="/learn">Learn Overview</a>
-          <a href="/learn#features">Features</a>
-          <a href="/learn/pricing">Learn Pricing</a>
-          <a href="/learn/pricing#plans">Plans</a>
-          <a href="/learn/pricing#compareTitle">Compare Plans</a>
-          <a href="/learn/pricing#faqTitle">FAQ</a>
-        </div>
-      </div>
-    </section>
-
-    <section class="cta-strip" aria-labelledby="platform-cta">
-      <div class="platform-inner cta-inner">
-        <div>
-          <h2 id="platform-cta">Ready to get started?</h2>
+      <section class="final-cta">
+        <div class="section-inner">
+          <p class="eyebrow">Together</p>
+          <h2>Ready to get started?</h2>
           <p>Explore the tools designed to help you give, learn, connect, and build up the Orthodox community.</p>
+          <div class="hero-actions" style="justify-content:center;margin-bottom:0;">
+            <a class="gold-btn" href="/my-agapay">Explore the Platform</a>
+            <a class="outline-btn" href="/learn">Explore AGAPAY Learn</a>
+          </div>
         </div>
-        <a class="platform-btn primary" href="/giving">Explore AGAPAY Giving</a>
+      </section>
+    </main>
+
+    <footer class="home-footer">
+      <div class="section-inner">
+        <div class="footer-grid">
+          <div>
+            <div class="footer-brand">
+              <img src="/mark.png" alt="" width="44" height="44" />
+              <strong>AGAPAY</strong>
+            </div>
+            <p>AGAPAY is a platform created to serve the Orthodox Church and strengthen faithful life online.</p>
+          </div>
+          <div>
+            <h3>AGAPAY Giving</h3>
+          <a href="/giving/features.html">Overview</a>
+          <a href="/giving/how-it-works.html">How It Works</a>
+          <a href="/giving/pricing.html">Pricing</a>
+          </div>
+          <div>
+            <h3>AGAPAY Learn</h3>
+            <a href="/learn">Overview</a>
+            <a href="/learn/pricing">Pricing</a>
+            <a href="/learn/onboarding">Start Free</a>
+          </div>
+          <div>
+            <h3>Company</h3>
+            <a href="/about.html">About</a>
+            <a href="/vision.html">Our Mission</a>
+            <a href="/contact.html">Contact</a>
+          </div>
+          <div>
+            <h3>Support</h3>
+            <a href="/privacy.html">Privacy Policy</a>
+            <a href="/terms.html">Terms of Service</a>
+            <a href="/my-agapay">Sign in</a>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>© 2026 AGAPAY. All rights reserved.</span>
+          <span>Faith in Action. Together.</span>
+        </div>
       </div>
-    </section>
-  </main>
+    </footer>
+  </div>
+  <script>
+    const nav = document.querySelector("[data-home-nav]");
+    const toggle = document.querySelector("[data-mobile-nav-toggle]");
+    toggle?.addEventListener("click", () => {
+      const open = nav.classList.toggle("is-open");
+      toggle.setAttribute("aria-expanded", String(open));
+    });
+
+    const flipWord = document.querySelector("[data-flip-word]");
+    const flipWords = ["GIVE", "LEARN", "LIVE"];
+    let flipIndex = 0;
+    if (flipWord && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      window.setInterval(() => {
+        flipWord.classList.add("is-flipping");
+        window.setTimeout(() => {
+          flipIndex = (flipIndex + 1) % flipWords.length;
+          flipWord.textContent = flipWords[flipIndex];
+          flipWord.classList.remove("is-flipping");
+        }, 180);
+      }, 2300);
+    }
+
+    document.querySelectorAll("[data-frequency]").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-frequency]").forEach((item) => item.classList.remove("is-active"));
+        button.classList.add("is-active");
+      });
+    });
+
+    document.querySelectorAll("[data-amount-grid] button").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-amount-grid] button").forEach((item) => item.classList.remove("is-active"));
+        button.classList.add("is-active");
+      });
+    });
+  </script>
 </body>
 </html>
