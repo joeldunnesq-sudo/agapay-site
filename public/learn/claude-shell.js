@@ -657,6 +657,15 @@ function renderBooks(vm) {
   const filters = ["All Books", "Read-Alouds", "Independent", "Formation"];
   const readAlouds = vm.readAlouds.length ? vm.readAlouds : [];
   const libraryRows = vm.library.map((book) => `<div style="display:grid;grid-template-columns:2.1fr 1.1fr 1fr .55fr .7fr 1fr 36px;gap:10px;align-items:center;padding:11px 4px;border-bottom:1px solid var(--line);font-size:13.5px;"><span style="display:flex;align-items:center;gap:9px;min-width:0;">${bookCover(book, "☰")}<span style="min-width:0;"><strong style="display:block;color:var(--ink);font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(book.title)}</strong><small style="display:block;color:var(--muted);">${html(book.assignment || "")}</small></span></span><span>${html(book.author)}</span><span>${html(book.category)}</span><span>${html(book.ages || "—")}</span><span style="color:var(--gold);">${book.orthodox ? "Orthodox" : "—"}</span><span>${bar(book.progress)}<small style="color:var(--gold);font-weight:700;">${html(book.progress)}%</small></span><span style="color:var(--gold);">→</span></div>`).join("");
+  const suggestionsPanel = vm.suggestions.length
+    ? panel("Suggested Orthodox Living Books", vm.suggestions.map((s) => `<div style="display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line);"><span style="width:38px;height:38px;border-radius:50%;background:${s.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">✥</span><div><strong style="font-family:'Cormorant Garamond',serif;font-size:18px;">${html(s.title)}</strong><small style="display:block;color:var(--muted);line-height:1.3;">${html(s.subtitle)}</small></div></div>`).join(""), { icon: "✥" })
+    : "";
+  const pacingPanel = vm.pacing.weeks.length
+    ? panel("Book Pacing", `<strong style="font-family:'Cormorant Garamond',serif;font-size:22px;">${html(vm.pacing.title)}</strong><small style="display:block;color:var(--muted);margin:4px 0 12px;">${html(vm.pacing.subtitle)}${vm.pacing.chaptersPerWeek ? ` · ${html(vm.pacing.chaptersPerWeek)} chapters / week` : ""}</small>${vm.pacing.weeks.map((week) => `<div style="display:grid;grid-template-columns:60px 1fr 60px;gap:8px;border-top:1px solid var(--line);padding:8px 0;font-size:13px;"><span>Week ${html(week.week)}</span><strong>${html(week.chapters)}</strong><span>${html(week.pages)}</span></div>`).join("")}`, { icon: "♙" })
+    : panel("Book Pacing", emptyState("Add a book with start and end chapters in Setup to generate pacing."), { icon: "♙" });
+  const copyworkPanel = vm.copywork.length
+    ? panel("Copywork Sources", vm.copywork.map((source) => `<div style="padding:9px 0;border-top:1px solid var(--line);"><strong>${html(source.title)}</strong><small style="display:block;color:var(--muted);">${html(source.detail)}</small></div>`).join(""), { icon: "✒" })
+    : "";
   const body = `
     <section data-screen-label="Books" style="display:flex;flex-direction:column;gap:18px;">
       <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
@@ -670,9 +679,9 @@ function renderBooks(vm) {
           ${panel("Household Library", `<div style="overflow:auto;"><div style="min-width:780px;"><div style="display:grid;grid-template-columns:2.1fr 1.1fr 1fr .55fr .7fr 1fr 36px;gap:10px;padding:0 4px 10px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.1em;color:var(--muted);font-weight:700;text-transform:uppercase;"><span>Title</span><span>Author</span><span>Category</span><span>Ages</span><span>Orthodox</span><span>Progress</span><span></span></div>${libraryRows || emptyState("Add books in Setup.")}</div></div>`, { icon: "⌂" })}
         </div>
         <aside style="flex:0 1 340px;display:flex;flex-direction:column;gap:16px;">
-          ${panel("Suggested Orthodox Living Books", vm.suggestions.map((s) => `<div style="display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line);"><span style="width:38px;height:38px;border-radius:50%;background:${s.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">✥</span><div><strong style="font-family:'Cormorant Garamond',serif;font-size:18px;">${html(s.title)}</strong><small style="display:block;color:var(--muted);line-height:1.3;">${html(s.subtitle)}</small></div></div>`).join(""), { icon: "✥" })}
-          ${panel("Book Pacing", `<strong style="font-family:'Cormorant Garamond',serif;font-size:22px;">${html(vm.pacing.title)}</strong><small style="display:block;color:var(--muted);margin:4px 0 12px;">${html(vm.pacing.subtitle)} · ${html(vm.pacing.chaptersPerWeek)} chapters / week</small>${vm.pacing.weeks.map((week) => `<div style="display:grid;grid-template-columns:60px 1fr 60px;gap:8px;border-top:1px solid var(--line);padding:8px 0;font-size:13px;"><span>Week ${html(week.week)}</span><strong>${html(week.chapters)}</strong><span>${html(week.pages)}</span></div>`).join("")}`, { icon: "♙" })}
-          ${panel("Copywork Sources", vm.copywork.map((source) => `<div style="padding:9px 0;border-top:1px solid var(--line);"><strong>${html(source.title)}</strong><small style="display:block;color:var(--muted);">${html(source.detail)}</small></div>`).join(""), { icon: "✒" })}
+          ${suggestionsPanel}
+          ${pacingPanel}
+          ${copyworkPanel}
         </aside>
       </div>
     </section>`;

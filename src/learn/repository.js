@@ -221,6 +221,29 @@ function buildSubjectProgress(seed) {
   return [...subjectRows, ...bookRows].filter((row) => row.subjectTitle && row.total > 0);
 }
 
+function setupCopyworkSources(setupSnapshot = {}) {
+  const formation = setupSnapshot.formation || {};
+  const sources = [
+    ...(Array.isArray(formation.recitationTracks) ? formation.recitationTracks : []).map((track) => ({
+      title: track.title,
+      detail: [track.sourceKind || track.source, track.status].filter(Boolean).join(" - ")
+    })),
+    ...(Array.isArray(formation.hymnStudies) ? formation.hymnStudies : []).map((hymn) => ({
+      title: hymn.title,
+      detail: [hymn.tone, hymn.source, hymn.status].filter(Boolean).join(" - ")
+    })),
+    ...(Array.isArray(formation.feasts) ? formation.feasts : []).map((feast) => ({
+      title: feast.title,
+      detail: [feast.civilDate || feast.date, feast.note].filter(Boolean).join(" - ")
+    })),
+    ...(Array.isArray(setupSnapshot.formationMaterials) ? setupSnapshot.formationMaterials : []).map((material) => ({
+      title: material.title,
+      detail: [material.materialType, material.source, material.cadence || material.cadenceLabel].filter(Boolean).join(" - ")
+    }))
+  ];
+  return sources.filter((source) => source.title || source.detail);
+}
+
 function reportCardsFromProgress(seed, subjectProgress) {
   if (!seed.setupSnapshot) return seed.reportCards;
   return (seed.children || []).map((child) => {
@@ -674,25 +697,26 @@ export class SeedLearnRepository {
   }
 
   getBooks() {
+    const hasSetup = Boolean(this.seed.setupSnapshot);
     const readAloud = this.seed.currentReadAlouds?.[0] || this.seed.books?.[0] || null;
     const start = Number(readAloud?.startChapter || 1);
     const end = Number(readAloud?.endChapter || readAloud?.totalChapters || 0);
-    const chapterSpan = end ? Math.max(1, end - start + 1) : 4;
-    const pacingWeeks = Array.from({ length: 4 }, (_, index) => {
+    const chapterSpan = end ? Math.max(1, end - start + 1) : 0;
+    const pacingWeeks = readAloud && end ? Array.from({ length: 4 }, (_, index) => {
       const first = start + Math.floor((index * chapterSpan) / 4);
       const last = start + Math.floor(((index + 1) * chapterSpan) / 4) - 1;
       return {
         week: index + 1,
-        chapters: end ? `${first}${Math.max(first, last) > first ? `-${Math.max(first, last)}` : ""}` : "Set range",
+        chapters: `${first}${Math.max(first, last) > first ? `-${Math.max(first, last)}` : ""}`,
         pages: ""
       };
-    });
+    }) : [];
     return {
       household: this.seed.household,
       children: this.seed.children,
       currentReadAlouds: this.seed.currentReadAlouds,
       libraryBooks: this.seed.libraryBooks,
-      orthodoxSuggestions: this.seed.orthodoxBookSuggestions,
+      orthodoxSuggestions: hasSetup ? [] : this.seed.orthodoxBookSuggestions,
       bookPacing: {
         title: readAloud?.title || "Add a read-aloud in Setup",
         subtitle: this.seed.term?.label || "Current Term",
@@ -700,7 +724,7 @@ export class SeedLearnRepository {
         progressPercent: readAloud?.progressPercent || 0,
         weeks: pacingWeeks
       },
-      copyworkSources: [
+      copyworkSources: hasSetup ? setupCopyworkSources(this.seed.setupSnapshot) : [
         { title: "KJV Scripture", detail: "Psalm 23; John 10:11; Philippians 4:13" },
         { title: "Hymn Texts", detail: "Be Thou My Vision; O Sacred Head" },
         { title: "Feast Day Texts", detail: "Troparia of the Day; Kontakia" }

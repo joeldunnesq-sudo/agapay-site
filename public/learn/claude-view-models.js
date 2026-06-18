@@ -497,18 +497,18 @@ export function toBooksViewModel(rawPayload) {
     readAlouds: simpleList(books.currentReadAlouds, (book) => ({
       title: text(book.title, "Untitled Book"),
       author: text(book.author, ""),
-      assignment: text(book.assignmentLabel, ""),
+      assignment: text(book.assignmentLabel || book.assignedTerm || book.assignment || book.audienceLabel, ""),
       progress: percent(book.progressPercent),
-      stream: text(book.streamLabel, ""),
+      stream: text(book.streamLabel || book.audienceLabel, ""),
       list: text(book.listLabel, "")
     })),
     library: simpleList(books.libraryBooks, (book) => ({
       title: text(book.title, "Untitled Book"),
       author: text(book.author, ""),
       category: text(book.category, ""),
-      ages: text(book.ageRange, ""),
+      ages: text(book.ageRange || book.ages, ""),
       orthodox: Boolean(book.orthodox),
-      assignment: text(book.assignmentLabel, ""),
+      assignment: text(book.assignmentLabel || book.assignment || book.audienceLabel || book.formLabel, ""),
       progress: percent(book.progressPercent)
     })),
     suggestions: simpleList(books.orthodoxSuggestions, (item, index) => ({
