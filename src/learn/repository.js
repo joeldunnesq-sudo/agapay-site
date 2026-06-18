@@ -77,7 +77,22 @@ function computeWeeklySummary(seed, calendarType) {
 
 function buildChildColumns(seed, daily) {
   const childLookup = new Map(seed.children.map((child) => [child.id, child]));
-  return daily.childColumns.map((column) => ({
+  const columns = daily.childColumns?.length
+    ? daily.childColumns
+    : seed.children.map((child) => ({
+        childId: child.id,
+        blocks: (seed.plannerWeek?.childRows || [])
+          .filter((row) => row.childId === child.id)
+          .slice(0, 5)
+          .map((row) => ({
+            id: row.id,
+            title: row.title,
+            subtitle: row.detail,
+            minutesPlanned: row.minutes?.find((minutes) => Number(minutes) > 0) || 0,
+            status: row.statuses?.find((status) => status && status !== "empty") || "planned"
+          }))
+      }));
+  return columns.map((column) => ({
     child: childLookup.get(column.childId),
     blocks: column.blocks.map((block) => ({
       id: block.id,
@@ -523,6 +538,19 @@ export class SeedLearnRepository {
   }
 
   getBooks() {
+    const readAloud = this.seed.currentReadAlouds?.[0] || this.seed.books?.[0] || null;
+    const start = Number(readAloud?.startChapter || 1);
+    const end = Number(readAloud?.endChapter || readAloud?.totalChapters || 0);
+    const chapterSpan = end ? Math.max(1, end - start + 1) : 4;
+    const pacingWeeks = Array.from({ length: 4 }, (_, index) => {
+      const first = start + Math.floor((index * chapterSpan) / 4);
+      const last = start + Math.floor(((index + 1) * chapterSpan) / 4) - 1;
+      return {
+        week: index + 1,
+        chapters: end ? `${first}${Math.max(first, last) > first ? `-${Math.max(first, last)}` : ""}` : "Set range",
+        pages: ""
+      };
+    });
     return {
       household: this.seed.household,
       children: this.seed.children,
@@ -530,16 +558,11 @@ export class SeedLearnRepository {
       libraryBooks: this.seed.libraryBooks,
       orthodoxSuggestions: this.seed.orthodoxBookSuggestions,
       bookPacing: {
-        title: this.seed.currentReadAlouds[0].title,
-        subtitle: "Spring Term",
-        chaptersPerWeek: 2,
-        progressPercent: this.seed.currentReadAlouds[0].progressPercent,
-        weeks: [
-          { week: 1, chapters: "1-2", pages: 44 },
-          { week: 2, chapters: "3-4", pages: 46 },
-          { week: 3, chapters: "5-6", pages: 42 },
-          { week: 4, chapters: "7-8", pages: 48 }
-        ]
+        title: readAloud?.title || "Add a read-aloud in Setup",
+        subtitle: this.seed.term?.label || "Current Term",
+        chaptersPerWeek: end ? Math.max(1, Math.ceil(chapterSpan / 12)) : 0,
+        progressPercent: readAloud?.progressPercent || 0,
+        weeks: pacingWeeks
       },
       copyworkSources: [
         { title: "KJV Scripture", detail: "Psalm 23; John 10:11; Philippians 4:13" },
@@ -556,7 +579,7 @@ export class SeedLearnRepository {
       children: this.seed.children,
       schoolYear: this.seed.schoolYear,
       term: this.seed.term,
-      weeklySummary: this.seed.weeklySummary,
+      weeklySummary: this.seed.setupSnapshot ? computeWeeklySummary(this.seed, this.seed.household?.liturgicalCalendarType || "julian") : this.seed.weeklySummary,
       reportCards: this.seed.reportCards.map((report) => ({
         ...report,
         child: childLookup.get(report.childId),

@@ -80,6 +80,17 @@ function childrenForAssignment(item = {}, children = []) {
   return children;
 }
 
+function bookBelongsToHouseholdStream(book = {}) {
+  const audience = String(book.audienceLabel || "").toLowerCase();
+  return !book.formLabel && !book.childId && (
+    !audience ||
+    audience === "household" ||
+    audience === "morning basket" ||
+    audience === "read-aloud" ||
+    audience === "read aloud"
+  );
+}
+
 export function learnSetupIdentity(request) {
   const email = normalizeEmail(
     request?.headers?.get("X-AGAPAY-Learn-Email")
@@ -319,7 +330,9 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
     orthodox: false,
     sortOrder: index + 1
   }));
-  next.currentReadAlouds = list(setupSnapshot.books).slice(0, 3).map((book) => ({
+  const householdBooks = list(setupSnapshot.books).filter(bookBelongsToHouseholdStream);
+  const childBooks = list(setupSnapshot.books).filter((book) => !bookBelongsToHouseholdStream(book));
+  next.currentReadAlouds = (householdBooks.length ? householdBooks : list(setupSnapshot.books)).slice(0, 3).map((book) => ({
     ...book,
     subtitle: book.category,
     progressPercent: book.endChapter ? Math.round(((book.startChapter || 1) / Math.max(book.endChapter, 1)) * 100) : 0,
@@ -327,7 +340,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
   }));
   next.bookAssignments = list(setupSnapshot.books).flatMap((book) => {
     const assignedChildren = childrenForAssignment(book, next.children);
-    const assignmentType = book.formLabel ? "form-reading" : "household-read-aloud";
+    const assignmentType = bookBelongsToHouseholdStream(book) ? "household-read-aloud" : book.formLabel ? "form-reading" : "independent-reading";
     return (assignedChildren.length ? assignedChildren : [null]).map((child) => ({
       id: `assignment_${book.id}_${child?.id || "household"}`,
       bookId: book.id,
@@ -347,7 +360,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
       title: subject.title,
       formLabel: subject.formLabel
     }));
-  }).concat(list(setupSnapshot.books).flatMap((book, index) => {
+  }).concat(childBooks.flatMap((book, index) => {
     const assignedChildren = childrenForAssignment(book, next.children);
     return assignedChildren.map((child) => ({
       id: `${book.id}_${child.id || index}`,
@@ -435,15 +448,26 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
   next.plannerWeek = {
     ...next.plannerWeek,
     label: setupSnapshot.term?.label || next.plannerWeek.label,
-    householdRows: list(setupSnapshot.streams).map((stream, index) => ({
-      id: `week_${stream.id}`,
-      streamId: stream.id,
-      title: stream.title,
-      detail: stream.cadenceLabel,
-      priority: index + 1,
-      minutes: [0, stream.dailyMinutes?.mon || 0, stream.dailyMinutes?.tue || 0, stream.dailyMinutes?.wed || 0, stream.dailyMinutes?.thu || 0, stream.dailyMinutes?.fri || 0, 0],
-      statuses: ["empty", "planned", "planned", "planned", "planned", "planned", "empty"]
-    })),
+    householdRows: [
+      ...list(setupSnapshot.streams).map((stream, index) => ({
+        id: `week_${stream.id}`,
+        streamId: stream.id,
+        title: stream.title,
+        detail: stream.cadenceLabel,
+        priority: index + 1,
+        minutes: [0, stream.dailyMinutes?.mon || 0, stream.dailyMinutes?.tue || 0, stream.dailyMinutes?.wed || 0, stream.dailyMinutes?.thu || 0, stream.dailyMinutes?.fri || 0, 0],
+        statuses: ["empty", "planned", "planned", "planned", "planned", "planned", "empty"]
+      })),
+      ...householdBooks.map((book, index) => ({
+        id: `week_household_book_${book.id}`,
+        streamId: book.id,
+        title: book.audienceLabel === "Morning Basket" ? book.title : `Read-Aloud: ${book.title}`,
+        detail: `${book.author || book.category}${book.endChapter ? ` • chapters ${book.startChapter || 1}-${book.endChapter}` : ""}`,
+        priority: 50 + index,
+        minutes: [0, 20, 20, 20, 20, 20, 0],
+        statuses: ["empty", "planned", "planned", "planned", "planned", "planned", "empty"]
+      }))
+    ],
     childRows: [
       ...list(setupSnapshot.subjects).flatMap((subject, index) => {
         const assignedChildren = childrenForAssignment(subject, next.children);
@@ -459,7 +483,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           statuses: ["empty", "planned", "planned", "planned", "planned", "planned", "empty"]
         }));
       }),
-      ...list(setupSnapshot.books).flatMap((book, index) => {
+      ...childBooks.flatMap((book, index) => {
         const assignedChildren = childrenForAssignment(book, next.children);
         return assignedChildren.map((child) => ({
           id: `week_${book.id}_${child.id}`,

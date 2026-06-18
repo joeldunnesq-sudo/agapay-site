@@ -657,10 +657,19 @@ export function toCoOpViewModel(rawPayload) {
 
 export function toSetupViewModel(rawPayload, clientState = {}) {
   const setup = rawPayload?.onboarding || {};
+  const snapshot = setup.setupSnapshot || {};
   const onboarding = setup.onboarding || {};
-  const preferences = onboarding.preferences || {};
-  const formation = setup.formation || {};
-  const materialDefaults = simpleList(setup.formationMaterials, (material, index) => ({
+  const preferences = setup.preferences || snapshot.preferences || onboarding.preferences || {};
+  const household = setup.household || snapshot.household || {};
+  const schoolYear = setup.schoolYear || snapshot.schoolYear || {};
+  const term = setup.term || snapshot.term || {};
+  const childrenSource = safeArray(setup.children).length ? setup.children : snapshot.children;
+  const streamsSource = safeArray(setup.starterStreams).length ? setup.starterStreams : safeArray(setup.householdStreams).length ? setup.householdStreams : snapshot.streams;
+  const subjectsSource = safeArray(snapshot.subjects).length ? snapshot.subjects : setup.subjects;
+  const booksSource = safeArray(snapshot.books).length ? snapshot.books : setup.books;
+  const formation = setup.formation || snapshot.formation || {};
+  const formationMaterialsSource = safeArray(snapshot.formationMaterials).length ? snapshot.formationMaterials : setup.formationMaterials;
+  const materialDefaults = simpleList(formationMaterialsSource, (material, index) => ({
     id: text(material.id, ""),
     title: text(material.title, "Formation Material"),
     materialType: text(material.materialType || material.resourceType, "Catechesis"),
@@ -693,14 +702,14 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       next: text(onboarding.household?.nextStep, "")
     },
     household: {
-      name: text(setup.household?.name, "Your Household"),
-      parish: text(setup.household?.parishName, ""),
-      method: text(setup.household?.primaryMethod, ""),
-      schoolYear: text(setup.schoolYear?.label, ""),
-      calendarType: text(setup.household?.liturgicalCalendarType, "julian"),
-      paceMode: text(setup.household?.paceMode, "steady")
+      name: text(household.name, "Your Household"),
+      parish: text(household.parishName, ""),
+      method: text(household.primaryMethod, ""),
+      schoolYear: text(schoolYear.label, ""),
+      calendarType: text(household.liturgicalCalendarType, "julian"),
+      paceMode: text(household.paceMode, "steady")
     },
-    children: simpleList(setup.children, (child, index) => ({
+    children: simpleList(childrenSource, (child, index) => ({
       id: text(child.id, ""),
       name: childName(child, index),
       firstName: text(child.firstName, childName(child, index)),
@@ -712,17 +721,17 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       color: text(child.color, ACCENTS[index % ACCENTS.length])
     })),
     schoolYear: {
-      id: text(setup.schoolYear?.id, ""),
-      label: text(setup.schoolYear?.label, ""),
-      startDate: text(setup.schoolYear?.startDate, ""),
-      endDate: text(setup.schoolYear?.endDate, "")
+      id: text(schoolYear.id, ""),
+      label: text(schoolYear.label, ""),
+      startDate: text(schoolYear.startDate, ""),
+      endDate: text(schoolYear.endDate, "")
     },
     term: {
-      id: text(setup.term?.id, ""),
-      label: text(setup.term?.label, ""),
-      startDate: text(setup.term?.startDate, ""),
-      endDate: text(setup.term?.endDate, ""),
-      paceMode: text(setup.term?.paceMode, setup.preferences?.paceMode || "steady")
+      id: text(term.id, ""),
+      label: text(term.label, ""),
+      startDate: text(term.startDate, ""),
+      endDate: text(term.endDate, ""),
+      paceMode: text(term.paceMode, preferences.paceMode || "steady")
     },
     steps: simpleList(onboarding.steps, (step) => ({
       title: text(step.title, "Setup Step"),
@@ -730,14 +739,14 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       summary: text(step.summary, "")
     })),
     preferences: {
-      calendarType: text(clientState.calendar || setup.preferences?.calendarType || preferences.calendarType, "julian"),
-      evaluationModel: text(setup.preferences?.evaluationModel || preferences.evaluationModel, "narrative-only"),
-      graceModeDefault: text(setup.preferences?.graceModeDefault || preferences.graceModeDefault, "light"),
-      graceModeActive: Boolean(setup.preferences?.graceModeActive),
-      paceMode: text(setup.preferences?.paceMode || setup.term?.paceMode, "steady"),
-      printPack: text(setup.preferences?.printPack || preferences.printPack, "")
+      calendarType: text(clientState.calendar || preferences.calendarType, "julian"),
+      evaluationModel: text(preferences.evaluationModel, "narrative-only"),
+      graceModeDefault: text(preferences.graceModeDefault, "light"),
+      graceModeActive: Boolean(preferences.graceModeActive),
+      paceMode: text(preferences.paceMode || term.paceMode, "steady"),
+      printPack: text(preferences.printPack, "")
     },
-    streams: simpleList(setup.starterStreams, (stream) => ({
+    streams: simpleList(streamsSource, (stream) => ({
       id: text(stream.id, ""),
       title: text(stream.title, "Stream"),
       streamType: text(stream.streamType, ""),
@@ -751,7 +760,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         fri: text(stream.friMinutes, "20")
       }
     })),
-    subjects: simpleList(setup.subjects, (subject, index) => ({
+    subjects: simpleList(subjectsSource, (subject, index) => ({
       id: text(subject.id, ""),
       title: text(subject.title, "Subject"),
       subjectType: text(subject.subjectType || subject.type, ""),
@@ -767,7 +776,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       graceNote: text(subject.graceNote, "Deferred gracefully to the reserve list."),
       color: text(subject.color, ACCENTS[index % ACCENTS.length])
     })),
-    books: simpleList(setup.books, (book, index) => ({
+    books: simpleList(booksSource, (book, index) => ({
       id: text(book.id, ""),
       title: text(book.title, "Book"),
       author: text(book.author, ""),
