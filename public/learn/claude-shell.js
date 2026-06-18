@@ -229,10 +229,10 @@ function topbar(vm) {
         <span style="color:var(--goldsoft);font-size:18px;">✥</span>
         <a class="learn-quick-action" href="/learn/onboarding">Quick Action</a>
         <a class="learn-account-utility" href="/learn/onboarding">
-          <span class="learn-account-utility-avatar">${html(vm.shell.familyInitial)}</span>
+          <span class="learn-account-utility-avatar">${html(vm.shell.accountInitials || "FM")}</span>
           <span style="text-align:left;line-height:1.2;">
-            <span style="display:block;font-weight:600;color:var(--ink);font-size:15.5px;">${html(vm.shell.familyName)}</span>
-            <span style="display:block;color:var(--muted);font-size:12.5px;">${html(vm.shell.familyMeta)}</span>
+            <span style="display:block;font-weight:600;color:var(--ink);font-size:15.5px;">${html(vm.shell.accountName || "Faithful Member")}</span>
+            <span style="display:block;color:var(--muted);font-size:12.5px;">View Account</span>
           </span>
           <span style="font-size:16px;color:var(--muted);">⌄</span>
         </a>

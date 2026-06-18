@@ -32,6 +32,27 @@ function childFormByAge(age) {
   return "Form V";
 }
 
+function donorAccountFromStorage() {
+  try {
+    const donor = JSON.parse(localStorage.getItem("agapayDonorProfile") || "{}");
+    const email = localStorage.getItem("agapayDonorEmail") || donor.email || "";
+    const name = text(donor.donorName || email.split("@")[0], "Faithful Member");
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    const initials = words.length
+      ? words.slice(0, 2).map((word) => word.charAt(0)).join("").toUpperCase()
+      : "FM";
+    return {
+      name,
+      initials: initials || "FM"
+    };
+  } catch {
+    return {
+      name: "Faithful Member",
+      initials: "FM"
+    };
+  }
+}
+
 function dateParts(isoDate) {
   const date = new Date(`${isoDate}T12:00:00`);
   if (Number.isNaN(date.getTime())) return { weekday: "", short: text(isoDate), dayNumber: "" };
@@ -50,10 +71,13 @@ function shellFromPayload(page, payload) {
   const children = safeArray(section.children);
   const name = text(household.name, "Your Household");
   const method = text(household.primaryMethod, "Homeschool");
+  const account = donorAccountFromStorage();
   return {
     familyName: name,
     familyInitial: name.replace(/^The\s+/i, "").trim().charAt(0).toUpperCase() || "F",
     familyMeta: `${children.length || household.childrenCount || 0} ${children.length === 1 ? "Child" : "Children"} • ${method}`,
+    accountName: account.name,
+    accountInitials: account.initials,
     timeLabel: text(household.topbarTimeLabel, new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date())),
     nav: [
       { id: "dashboard", href: "/learn/dashboard", label: "Dashboard", icon: "✥" },
