@@ -160,15 +160,10 @@ function sidebar(vm) {
   return `
     <aside class="learn-product-sidebar" data-learn-sidebar>
       <div class="learn-product-sidebar-scroll">
-        <div class="learn-product-brand">
-          <a class="learn-product-brand-mark" href="/my-agapay" aria-label="Open My AGAPAY">
-            <img src="/mark.png" alt="AGAPAY" />
-          </a>
-          <div class="learn-product-brand-copy">
-            <strong>AGAPAY</strong>
-            <span>Love + Give + Learn + Live</span>
-          </div>
-        </div>
+        <a class="learn-product-back" href="/my-agapay" aria-label="Back to My AGAPAY">
+          <span aria-hidden="true">←</span>
+          <strong>My AGAPAY</strong>
+        </a>
         <div class="learn-product-profile">
           <strong>${html(vm.shell.familyName || "Faithful Household")}</strong>
           <span>${html(vm.shell.familyMeta || "AGAPAY Learn")}</span>
@@ -182,10 +177,6 @@ function sidebar(vm) {
           </a>
         `).join("")}
         </nav>
-      </div>
-      <div class="learn-product-sidebar-signoff">
-        <img src="/mark.png" alt="" aria-hidden="true" />
-        <span>Faith in Action. Together.</span>
       </div>
     </aside>
   `;
@@ -237,8 +228,8 @@ function topbar(vm) {
         <div style="display:flex;align-items:center;gap:7px;color:var(--gold);font-size:15px;"><span style="font-size:18px;">☼</span><span style="color:var(--ink);letter-spacing:.02em;">${html(vm.shell.timeLabel)}</span></div>
         <span style="color:var(--goldsoft);font-size:18px;">✥</span>
         <a class="learn-quick-action" href="/learn/onboarding">Quick Action</a>
-        <a href="/learn/onboarding" style="display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit;">
-          <span style="width:40px;height:40px;border-radius:50%;background:var(--navy);border:2px solid var(--gold);color:var(--gold2);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;">${html(vm.shell.familyInitial)}</span>
+        <a class="learn-account-utility" href="/learn/onboarding">
+          <span class="learn-account-utility-avatar">${html(vm.shell.familyInitial)}</span>
           <span style="text-align:left;line-height:1.2;">
             <span style="display:block;font-weight:600;color:var(--ink);font-size:15.5px;">${html(vm.shell.familyName)}</span>
             <span style="display:block;color:var(--muted);font-size:12.5px;">${html(vm.shell.familyMeta)}</span>

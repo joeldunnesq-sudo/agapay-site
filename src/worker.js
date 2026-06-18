@@ -171,6 +171,7 @@ import {
 
 import {
   handleLearnBooks,
+  handleLearnCommunity,
   handleLearnCoOp,
   handleLearnDashboard,
   handleLearnFormation,
@@ -758,6 +759,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/learn/books") {
       return handleLearnBooks(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/learn/community") {
+      return handleLearnCommunity(request, env);
     }
     if (request.method === "GET" && url.pathname === "/api/learn/reports") {
       return handleLearnReports(request, env);
