@@ -79,6 +79,94 @@ import {
 // src/handlers/admin.js
 // Admin registrations, platform summary, password, and management handlers.
 
+function emptySubscriptionProduct(id, label) {
+  return {
+    id,
+    label,
+    monthlyCents: 0,
+    activeCount: 0,
+    trialingCount: 0,
+    estimated: true
+  };
+}
+
+function normalizeProductSubscriptionStatus(value) {
+  const status = String(value || "").trim().toLowerCase();
+  if (["active", "trialing", "free_forever"].includes(status)) return status;
+  return "";
+}
+
+function addSubscriptionRevenueProduct(summary, id, label, cents, status = "active") {
+  const normalized = normalizeProductSubscriptionStatus(status) || "active";
+  const product = summary.byProduct[id] || emptySubscriptionProduct(id, label);
+  product.label = label;
+  if (normalized !== "free_forever") product.monthlyCents += Math.max(0, Number(cents || 0));
+  if (normalized === "trialing") product.trialingCount += 1;
+  else product.activeCount += 1;
+  summary.byProduct[id] = product;
+}
+
+function monthlyEquivalentCents(value, interval = "month") {
+  const cents = Math.max(0, Number(value || 0));
+  if (!cents) return 0;
+  return String(interval || "").toLowerCase().startsWith("year") ? Math.round(cents / 12) : cents;
+}
+
+function buildSubscriptionRevenueSummary(registrations = []) {
+  const summary = {
+    monthLabel: monthLabel(new Date().getUTCMonth()),
+    totalMonthlyCents: 0,
+    byProduct: {
+      give: emptySubscriptionProduct("give", "AGAPAY Give"),
+      stewardship: emptySubscriptionProduct("stewardship", "AGAPAY Stewardship"),
+      learn: emptySubscriptionProduct("learn", "AGAPAY Learn")
+    },
+    note: "Subscription revenue is estimated from active AGAPAY records and normalized to a monthly amount."
+  };
+
+  for (const registration of registrations) {
+    if (subscriptionReady(registration)) {
+      const tier = subscriptionTier(registration);
+      const status = registration.subscriptionStatus || registration.billingStatus || "active";
+      addSubscriptionRevenueProduct(summary, "give", "AGAPAY Give", tier.monthlyCents, status);
+    }
+
+    const stewardshipStatus = normalizeProductSubscriptionStatus(registration.stewardshipStatus);
+    if (stewardshipStatus) {
+      const plan = String(registration.stewardshipPlan || registration.stewardshipBillingInterval || "").toLowerCase();
+      const monthlyCents = plan === "annual" ? Math.round(39900 / 12) : 3900;
+      addSubscriptionRevenueProduct(summary, "stewardship", "AGAPAY Stewardship", monthlyCents, stewardshipStatus);
+    }
+
+    const learnStatus = normalizeProductSubscriptionStatus(registration.learnSubscriptionStatus || registration.learnStatus);
+    if (learnStatus) {
+      const plan = String(registration.learnPlan || "").toLowerCase();
+      const yearlyCents = plan.includes("founding") ? 4900 : 5900;
+      const interval = registration.learnBillingInterval || "year";
+      addSubscriptionRevenueProduct(summary, "learn", "AGAPAY Learn", monthlyEquivalentCents(registration.learnSubscriptionCents || yearlyCents, interval), learnStatus);
+    }
+  }
+
+  summary.products = Object.values(summary.byProduct);
+  summary.totalMonthlyCents = summary.products.reduce((sum, product) => sum + product.monthlyCents, 0);
+  delete summary.byProduct;
+  return summary;
+}
+
+function emptyDonationFeeSummary(now = new Date()) {
+  return {
+    month: now.getUTCMonth() + 1,
+    monthLabel: monthLabel(now.getUTCMonth()),
+    agapayFeeCents: 0,
+    grossGiftCents: 0,
+    netDonationCents: 0,
+    giftCount: 0,
+    connectedAccounts: 0,
+    dataSource: "not_configured",
+    note: "Donation fee revenue appears after connected Stripe gifts are available."
+  };
+}
+
 
 
 export async function handleAdminRegistrations(request, env) {
@@ -235,6 +323,7 @@ export async function handleAdminPlatformSummary(request, env) {
   let totalVerified = 0;
   let connectedStripeAccounts = 0;
   const connected = [];
+  let revenueRegistrations = [];
 
   if (d1(env)) {
     const totals = await d1First(
@@ -276,8 +365,10 @@ export async function handleAdminPlatformSummary(request, env) {
        LIMIT 2000`
     );
     connected.push(...connectedRows.map(safeParseJsonRow).filter(Boolean));
+    revenueRegistrations = await loadAllRegistrations(env, { hardLimit: 10000 });
   } else {
     const registrations = await loadAllRegistrations(env);
+    revenueRegistrations = registrations;
     for (const registration of registrations) {
       totalRegistered += 1;
       if (registration.status === "verified") totalVerified += 1;
@@ -296,14 +387,19 @@ export async function handleAdminPlatformSummary(request, env) {
 
   let donationDataSource = "not_configured";
   let donationError = "";
+  const donationFeeRevenue = emptyDonationFeeSummary(now);
 
   if (env.STRIPE_SECRET_KEY && connected.length) {
     donationDataSource = "stripe";
+    donationFeeRevenue.dataSource = "stripe";
+    donationFeeRevenue.connectedAccounts = connected.length;
     for (const registration of connected) {
       const result = await listYtdStripeCharges(env, registration.stripeAccountId);
       if (!result.ok) {
         donationDataSource = "partial";
+        donationFeeRevenue.dataSource = "partial";
         donationError = result.body?.error?.message || "Stripe giving summary failed for at least one parish.";
+        donationFeeRevenue.note = donationError;
         continue;
       }
 
@@ -312,14 +408,25 @@ export async function handleAdminPlatformSummary(request, env) {
         const target = monthly[month.month - 1];
         target.ytdDonationsCents += month.amountCents || 0;
         target.giftCount += month.giftCount || 0;
+        if (month.month === donationFeeRevenue.month) {
+          donationFeeRevenue.agapayFeeCents += month.agapayFeeCents || 0;
+          donationFeeRevenue.grossGiftCents += month.grossGiftCents || 0;
+          donationFeeRevenue.netDonationCents += month.amountCents || 0;
+          donationFeeRevenue.giftCount += month.giftCount || 0;
+        }
       }
     }
   } else if (!connected.length) {
     donationDataSource = "not_connected";
+    donationFeeRevenue.dataSource = "not_connected";
+  }
+  if (donationFeeRevenue.dataSource === "stripe") {
+    donationFeeRevenue.note = "Current-month AGAPAY application fees from successful connected Stripe gifts.";
   }
 
   const ytdDonationsCents = monthly.reduce((sum, item) => sum + item.ytdDonationsCents, 0);
   const giftCount = monthly.reduce((sum, item) => sum + item.giftCount, 0);
+  const subscriptionRevenue = buildSubscriptionRevenueSummary(revenueRegistrations);
 
   return json({
     summary: {
@@ -330,6 +437,10 @@ export async function handleAdminPlatformSummary(request, env) {
       connectedStripeAccounts,
       ytdDonationsCents,
       giftCount,
+      revenue: {
+        subscriptionRevenue,
+        donationFeeRevenue
+      },
       donationDataSource,
       donationError,
       monthly

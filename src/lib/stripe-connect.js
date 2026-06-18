@@ -139,6 +139,8 @@ export function summarizeCharges(charges) {
     month: index + 1,
     label: monthLabel(index),
     amountCents: 0,
+    agapayFeeCents: 0,
+    grossGiftCents: 0,
     giftCount: 0
   }));
   const givers = new Set();
@@ -174,6 +176,8 @@ export function summarizeCharges(charges) {
     if (!netCents) continue;
     const monthIndex = created.getUTCMonth();
     monthly[monthIndex].amountCents += netCents;
+    monthly[monthIndex].agapayFeeCents += agapayFeeCents;
+    monthly[monthIndex].grossGiftCents += giftCents;
     monthly[monthIndex].giftCount += 1;
     ytdCents += netCents;
     grossGiftCents += giftCents;

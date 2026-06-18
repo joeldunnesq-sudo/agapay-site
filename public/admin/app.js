@@ -470,6 +470,58 @@
           <div class="growth-note">${escapeHtml(donationNote)}</div>
         </div>
       `;
+      renderRevenueCards(summary.revenue || {});
+    }
+
+    function revenueProductRows(products) {
+      const rows = Array.isArray(products) ? products : [];
+      return rows.map(product => {
+        const count = Number(product.activeCount || 0) + Number(product.trialingCount || 0);
+        return `
+          <div class="revenue-row">
+            <div>
+              <strong>${escapeHtml(product.label || 'AGAPAY Product')}</strong>
+              <span>${count} active${product.trialingCount ? ` · ${product.trialingCount} trialing` : ''}</span>
+            </div>
+            <b>${moneyShort(product.monthlyCents || 0)}</b>
+          </div>
+        `;
+      }).join('') || '<div class="revenue-empty">No active subscription records yet.</div>';
+    }
+
+    function renderRevenueCards(revenue) {
+      const grid = document.getElementById('adminRevenueGrid');
+      if (!grid) return;
+      const subscription = revenue.subscriptionRevenue || {};
+      const fees = revenue.donationFeeRevenue || {};
+      grid.innerHTML = `
+        <article class="revenue-card revenue-card-subscriptions">
+          <div class="revenue-card-head">
+            <div>
+              <span>Monthly subscriptions</span>
+              <h3>${moneyShort(subscription.totalMonthlyCents || 0)}</h3>
+            </div>
+            <small>${escapeHtml(subscription.monthLabel || monthLabel(new Date().getMonth()))}</small>
+          </div>
+          <div class="revenue-rows">${revenueProductRows(subscription.products)}</div>
+          <p>${escapeHtml(subscription.note || 'Estimated monthly subscription revenue by product.')}</p>
+        </article>
+        <article class="revenue-card revenue-card-fees">
+          <div class="revenue-card-head">
+            <div>
+              <span>Monthly donation fees</span>
+              <h3>${moneyShort(fees.agapayFeeCents || 0)}</h3>
+            </div>
+            <small>${escapeHtml(fees.monthLabel || monthLabel(new Date().getMonth()))}</small>
+          </div>
+          <div class="revenue-fee-stats">
+            <div><strong>${moneyShort(fees.grossGiftCents || 0)}</strong><span>Gross gifts</span></div>
+            <div><strong>${fees.giftCount || 0}</strong><span>Gifts</span></div>
+            <div><strong>${fees.connectedAccounts || 0}</strong><span>Accounts</span></div>
+          </div>
+          <p>${escapeHtml(fees.note || 'Current-month AGAPAY application fees from connected Stripe gifts.')}</p>
+        </article>
+      `;
     }
 
     async function loadPlatformSummary(btn) {
