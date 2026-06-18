@@ -176,6 +176,8 @@ import {
   handleLearnDashboard,
   handleLearnFormation,
   handleLearnGraceModeSave,
+  handleLearnBillingCheckout,
+  handleLearnBillingStatus,
   handleLearnMeta,
   handleLearnOnboarding,
   handleLearnOnboardingSave,
@@ -772,6 +774,12 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/learn/onboarding") {
       return handleLearnOnboarding(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/learn/billing/status") {
+      return handleLearnBillingStatus(request, env);
+    }
+    if (request.method === "POST" && url.pathname === "/api/learn/billing/checkout") {
+      return handleLearnBillingCheckout(request, env);
     }
     if (request.method === "POST" && url.pathname === "/api/learn/grace-mode") {
       return handleLearnGraceModeSave(request, env);

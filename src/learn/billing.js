@@ -7,6 +7,8 @@ export const LEARN_FREE_PLAN = "free";
 
 const yearlyPriceEnv = "AGAPAY_STRIPE_PRICE_LEARN_FAMILY_YEARLY";
 const monthlyPriceEnv = "AGAPAY_STRIPE_PRICE_LEARN_FAMILY_MONTHLY";
+const foundingYearlyPriceEnv = "AGAPAY_STRIPE_PRICE_LEARN_FOUNDING_YEARLY";
+const foundingMonthlyPriceEnv = "AGAPAY_STRIPE_PRICE_LEARN_FOUNDING_MONTHLY";
 const defaultFullAccessEmails = [
   "stephaie@dunncrew.com",
   "stephanie@dunncrew.com"
@@ -19,7 +21,16 @@ function publicBaseUrl(request, env = {}) {
   return `${url.protocol}//${url.host}`;
 }
 
-function learnPriceId(env = {}) {
+function normalizeCheckoutPlan(value) {
+  const plan = String(value || "").trim().toLowerCase();
+  if (plan === "founding" || plan === "founding-family" || plan === "founding_family") return "founding-family";
+  return LEARN_FAMILY_PLAN;
+}
+
+function learnPriceId(env = {}, plan = LEARN_FAMILY_PLAN) {
+  if (normalizeCheckoutPlan(plan) === "founding-family") {
+    return env[foundingYearlyPriceEnv] || env[foundingMonthlyPriceEnv] || env[yearlyPriceEnv] || env[monthlyPriceEnv] || "";
+  }
   return env[yearlyPriceEnv] || env[monthlyPriceEnv] || "";
 }
 
@@ -84,13 +95,16 @@ export function learnBillingStatus(request, env = {}) {
 }
 
 export async function learnBillingCheckout(request, env = {}) {
-  const priceId = learnPriceId(env);
+  const body = await request.json().catch(() => ({}));
+  const plan = normalizeCheckoutPlan(body.plan);
+  const priceId = learnPriceId(env, plan);
   if (!env.STRIPE_SECRET_KEY || !priceId) {
     return json({
       ok: false,
       error: "Stripe checkout is not configured for AGAPAY Learn yet.",
       requiredEnv: [
         "STRIPE_SECRET_KEY",
+        `${foundingYearlyPriceEnv} or ${foundingMonthlyPriceEnv} for founding pricing`,
         `${yearlyPriceEnv} or ${monthlyPriceEnv}`,
         "AGAPAY_PUBLIC_URL"
       ]
@@ -106,7 +120,7 @@ export async function learnBillingCheckout(request, env = {}) {
   params.set("success_url", `${baseUrl}/learn/onboarding?learn_billing=success&session_id={CHECKOUT_SESSION_ID}`);
   params.set("cancel_url", `${baseUrl}/learn/onboarding?learn_billing=cancelled`);
   params.set("metadata[product]", "learn");
-  params.set("metadata[plan]", "family");
+  params.set("metadata[plan]", plan);
 
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",

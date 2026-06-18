@@ -590,6 +590,30 @@ export class SeedLearnRepository {
   getPrintCenter({ calendarType = "julian" } = {}) {
     const resolvedCalendar = normalizeCalendarType(calendarType);
     const childLookup = childById(this.seed);
+    const householdTemplates = this.seed.placeholderRecords.printTemplates.filter((template) => template.audience !== "child");
+    const childTemplates = this.seed.setupSnapshot
+      ? this.seed.children.flatMap((child) => [
+          {
+            id: `print_${child.id}_weekly`,
+            householdId: this.seed.household.id,
+            templateType: "child-weekly-assignment",
+            title: `${child.firstName}'s Weekly Sheet`,
+            audience: "child",
+            childId: child.id,
+            description: "Daily assignments, readings, memory work, and copywork from this household's saved setup."
+          },
+          {
+            id: `print_${child.id}_term`,
+            householdId: this.seed.household.id,
+            templateType: "child-term-plan",
+            title: `${child.firstName}'s Term Plan`,
+            audience: "child",
+            childId: child.id,
+            description: "Term track summary, books, subjects, and progress from this household's saved setup."
+          }
+        ])
+      : this.seed.placeholderRecords.printTemplates.filter((template) => template.audience === "child");
+    const templates = [...householdTemplates, ...childTemplates];
     return {
       household: this.seed.household,
       children: this.seed.children,
@@ -597,7 +621,7 @@ export class SeedLearnRepository {
       term: this.seed.term,
       week: buildPlannerWeek(this.seed, resolvedCalendar),
       termSetup: this.seed.termSetup,
-      templates: this.seed.placeholderRecords.printTemplates.map((template) => ({
+      templates: templates.map((template) => ({
         ...template,
         child: template.childId ? childLookup.get(template.childId) : null
       })),

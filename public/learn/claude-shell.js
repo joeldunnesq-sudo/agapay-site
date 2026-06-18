@@ -240,7 +240,16 @@ function learnRequestHeaders(extra = {}) {
   return headers;
 }
 
+let learnCheckoutOpening = false;
+
 async function openLearnCheckout() {
+  if (learnCheckoutOpening) return;
+  learnCheckoutOpening = true;
+  document.querySelectorAll("[data-dialog-checkout], [data-print-upgrade]").forEach((button) => {
+    button.disabled = true;
+    button.dataset.previousText = button.textContent || "";
+    button.textContent = "Opening Stripe...";
+  });
   try {
     const payload = await apiPost("/api/learn/billing/checkout", { plan: "family" });
     if (payload.url) {
@@ -249,19 +258,27 @@ async function openLearnCheckout() {
     }
     throw new Error("Stripe checkout did not return a checkout URL.");
   } catch (error) {
-    showLearnDialog("Family Plan Needed", error.message || "Stripe checkout is not configured yet.", [
+    learnCheckoutOpening = false;
+    document.querySelectorAll("[data-dialog-checkout], [data-print-upgrade]").forEach((button) => {
+      button.disabled = false;
+      button.textContent = button.dataset.previousText || "Upgrade";
+    });
+    showLearnDialog("Checkout Setup Needed", error.message || "Stripe checkout is not configured yet.", [
       { label: "Stripe route", value: "/api/learn/billing/checkout" }
-    ]);
+    ], { upgrade: false });
   }
 }
 
-function showLearnDialog(title, message, rows = []) {
+function showLearnDialog(title, message, rows = [], options = {}) {
   const existing = document.querySelector("[data-learn-dialog]");
   if (existing) existing.remove();
   const dialog = document.createElement("div");
   dialog.dataset.learnDialog = "true";
   dialog.style.cssText = "position:fixed;inset:0;z-index:80;background:rgba(10,20,40,.54);display:flex;align-items:center;justify-content:center;padding:24px;";
-  dialog.innerHTML = `<div style="width:min(520px,100%);background:#f3ead4;border:1px solid #b5942f;border-radius:16px;box-shadow:0 20px 60px rgba(10,20,40,.35);padding:22px;color:#14294a;"><div style="display:flex;justify-content:space-between;gap:12px;align-items:start;"><div><h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0;color:#14294a;">${html(title)}</h2><p style="color:#33405a;line-height:1.45;">${html(message)}</p></div><button type="button" data-dialog-close style="border:none;background:none;color:#6b7280;font-size:22px;cursor:pointer;">x</button></div>${rows.map((row) => `<div style="border-top:1px solid rgba(181,148,47,.28);padding:9px 0;"><small style="color:#9b7420;letter-spacing:.12em;text-transform:uppercase;">${html(row.label)}</small><strong style="display:block;">${html(row.value)}</strong></div>`).join("")}<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;"><button type="button" data-dialog-close style="border:1px solid rgba(20,41,74,.22);background:#fffaf0;border-radius:9px;padding:10px 16px;font-family:inherit;color:#14294a;">Close</button><button type="button" data-dialog-checkout style="border:1px solid #b5942f;background:#14294a;color:#f3ead4;border-radius:9px;padding:10px 16px;font-family:inherit;">Upgrade</button></div></div>`;
+  const upgradeButton = options.upgrade
+    ? `<button type="button" data-dialog-checkout style="border:1px solid #b5942f;background:#14294a;color:#f3ead4;border-radius:9px;padding:10px 16px;font-family:inherit;">Upgrade</button>`
+    : "";
+  dialog.innerHTML = `<div style="width:min(520px,100%);background:#f3ead4;border:1px solid #b5942f;border-radius:16px;box-shadow:0 20px 60px rgba(10,20,40,.35);padding:22px;color:#14294a;"><div style="display:flex;justify-content:space-between;gap:12px;align-items:start;"><div><h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0;color:#14294a;">${html(title)}</h2><p style="color:#33405a;line-height:1.45;">${html(message)}</p></div><button type="button" data-dialog-close style="border:none;background:none;color:#6b7280;font-size:22px;cursor:pointer;">x</button></div>${rows.map((row) => `<div style="border-top:1px solid rgba(181,148,47,.28);padding:9px 0;"><small style="color:#9b7420;letter-spacing:.12em;text-transform:uppercase;">${html(row.label)}</small><strong style="display:block;">${html(row.value)}</strong></div>`).join("")}<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;"><button type="button" data-dialog-close style="border:1px solid rgba(20,41,74,.22);background:#fffaf0;border-radius:9px;padding:10px 16px;font-family:inherit;color:#14294a;">Close</button>${upgradeButton}</div></div>`;
   dialog.addEventListener("click", (event) => {
     if (event.target === dialog || event.target.closest("[data-dialog-close]")) dialog.remove();
     if (event.target.closest("[data-dialog-checkout]")) openLearnCheckout();
@@ -1469,11 +1486,11 @@ function printLines(vm, templateId) {
 function canUsePrint(vm, template) {
   if (isLearnFamilyPlan()) return true;
   if (template?.premium) {
-    showLearnDialog("Family Plan Required", "Child sheets, term packs, and premium print templates are available on the Learn Family plan.");
+    showLearnDialog("Family Plan Required", "Child sheets, term packs, and premium print templates are available on the Learn Family plan.", [], { upgrade: true });
     return false;
   }
   if (printCount() >= vm.billing.printLimit) {
-    showLearnDialog("Print Limit Reached", `The free plan includes ${vm.billing.printLimit} basic household prints. Upgrade to keep generating print packs.`);
+    showLearnDialog("Print Limit Reached", `The free plan includes ${vm.billing.printLimit} basic household prints. Upgrade to keep generating print packs.`, [], { upgrade: true });
     return false;
   }
   return true;

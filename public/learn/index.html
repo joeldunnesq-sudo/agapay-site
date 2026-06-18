@@ -132,8 +132,8 @@
       <a class="button button-secondary pricing-jump" href="/learn/pricing">See Full Pricing</a>
       <div class="pricing-grid compact-pricing">
         <article class="price-card"><p class="plan-label">Free</p><h3>$0</h3><p class="plan-note">Perfect for getting started.</p><ul><li>1 household</li><li>Up to 2 children</li><li>Basic planning tools</li><li>Limited printables</li></ul><a class="button button-secondary" href="/learn/onboarding">Start Free</a></article>
-        <article class="price-card featured"><div class="featured-ribbon">Most loved</div><p class="plan-label">Founding Family</p><h3>$49<span>/year</span></h3><p class="plan-note">Help shape AGAPAY Learn from the beginning.</p><ul><li>Everything in Family</li><li>Founding pricing</li><li>Early feature previews</li><li>Priority feedback</li></ul><a class="button button-primary" href="/learn/onboarding?plan=founding-family">Become a Founding Family</a></article>
-        <article class="price-card"><p class="plan-label">Family</p><h3>$59<span>/year</span></h3><p class="plan-note">Everything your household needs.</p><ul><li>Unlimited children</li><li>Full planner</li><li>Grace Mode</li><li>Reports and transcripts</li></ul><a class="button button-secondary" href="/learn/onboarding?plan=family">Choose Family</a></article>
+        <article class="price-card featured"><div class="featured-ribbon">Most loved</div><p class="plan-label">Founding Family</p><h3>$49<span>/year</span></h3><p class="plan-note">Help shape AGAPAY Learn from the beginning.</p><ul><li>Everything in Family</li><li>Founding pricing</li><li>Early feature previews</li><li>Priority feedback</li></ul><a class="button button-primary" href="/learn/onboarding?plan=founding-family" data-learn-checkout data-plan="founding-family">Become a Founding Family</a></article>
+        <article class="price-card"><p class="plan-label">Family</p><h3>$59<span>/year</span></h3><p class="plan-note">Everything your household needs.</p><ul><li>Unlimited children</li><li>Full planner</li><li>Grace Mode</li><li>Reports and transcripts</li></ul><a class="button button-secondary" href="/learn/onboarding?plan=family" data-learn-checkout data-plan="family">Choose Family</a></article>
       </div>
     </section>
 
@@ -146,5 +146,33 @@
       </div>
     </section>
   </main>
+  <script>
+    document.querySelectorAll("[data-learn-checkout]").forEach((link) => {
+      link.addEventListener("click", async (event) => {
+        event.preventDefault();
+        const fallback = link.getAttribute("href") || "/learn/onboarding";
+        const previous = link.textContent;
+        link.textContent = "Opening checkout...";
+        link.setAttribute("aria-busy", "true");
+        try {
+          const response = await fetch("/api/learn/billing/checkout", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ plan: link.dataset.plan || "family" })
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (response.ok && payload.url) {
+            window.location.href = payload.url;
+            return;
+          }
+        } catch (error) {
+          console.warn("AGAPAY Learn checkout unavailable", error);
+        }
+        link.textContent = previous;
+        link.removeAttribute("aria-busy");
+        window.location.href = fallback;
+      });
+    });
+  </script>
 </body>
 </html>

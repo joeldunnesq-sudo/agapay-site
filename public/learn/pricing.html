@@ -96,7 +96,7 @@
             <li>Priority feedback</li>
             <li>Direct impact on the future of AGAPAY Learn</li>
           </ul>
-          <a class="button button-primary" href="/learn/onboarding?plan=founding-family">Become a Founding Family</a>
+          <a class="button button-primary" href="/learn/onboarding?plan=founding-family" data-learn-checkout data-plan="founding-family">Become a Founding Family</a>
         </article>
 
         <article class="price-card">
@@ -112,7 +112,7 @@
             <li>Print center</li>
             <li>Reports, report cards, transcripts</li>
           </ul>
-          <a class="button button-secondary" href="/learn/onboarding?plan=family">Choose Family</a>
+          <a class="button button-secondary" href="/learn/onboarding?plan=family" data-learn-checkout data-plan="family">Choose Family</a>
         </article>
       </div>
     </section>
@@ -195,5 +195,33 @@
       <a class="button button-primary" href="/learn/onboarding">Start Your Household Plan</a>
     </section>
   </main>
+  <script>
+    document.querySelectorAll("[data-learn-checkout]").forEach((link) => {
+      link.addEventListener("click", async (event) => {
+        event.preventDefault();
+        const fallback = link.getAttribute("href") || "/learn/onboarding";
+        const previous = link.textContent;
+        link.textContent = "Opening checkout...";
+        link.setAttribute("aria-busy", "true");
+        try {
+          const response = await fetch("/api/learn/billing/checkout", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ plan: link.dataset.plan || "family" })
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (response.ok && payload.url) {
+            window.location.href = payload.url;
+            return;
+          }
+        } catch (error) {
+          console.warn("AGAPAY Learn checkout unavailable", error);
+        }
+        link.textContent = previous;
+        link.removeAttribute("aria-busy");
+        window.location.href = fallback;
+      });
+    });
+  </script>
 </body>
 </html>
