@@ -7,6 +7,7 @@
     { href: "/learn", label: "AGAPAY Learn", key: "learn" },
     { href: "/marketplace", label: "Marketplace", key: "marketplace" },
     { href: "/directory", label: "Directory", key: "directory" },
+    { href: "/vision", label: "Vision", key: "vision" },
     { href: "/about", label: "About", key: "about" }
   ];
 
@@ -57,7 +58,7 @@
             <span class="brand-mark"><img src="/mark.png" alt="" /></span>
             <span class="brand-name">
               <strong>AGAPAY</strong>
-              <span class="brand-tagline" aria-label="Love how you give, learn, buy, and live">Love how you <span class="flip-word" data-flip-word aria-hidden="true">GIVE</span></span>
+              <span class="brand-tagline" aria-label="Love how you give, learn, and live">Love how you <span class="flip-word" data-flip-word aria-hidden="true">GIVE</span></span>
             </span>
           </a>
 
@@ -148,10 +149,6 @@
               <h4>Learn</h4>
               <a href="/learn">Overview</a>
               <a href="/learn/pricing">Pricing</a>
-              <a href="/learn/planner">Planner</a>
-              <a href="/learn/formation">Formation</a>
-              <a href="/learn/books">Books</a>
-              <a href="/learn/print-center">Print Center</a>
             </nav>
             <nav class="footer-col" aria-label="Company">
               <h4>Company</h4>
@@ -228,7 +225,7 @@
   }
 
   function initFlipTaglines() {
-    const words = ["GIVE", "LEARN", "BUY", "LIVE"];
+    const words = ["GIVE", "LEARN", "LIVE"];
     const nodes = Array.from(document.querySelectorAll("[data-flip-word]"));
     if (!nodes.length || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 

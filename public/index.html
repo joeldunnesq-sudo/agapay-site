@@ -973,8 +973,8 @@
 
     .footer-grid {
       display: grid;
-      grid-template-columns: 1.2fr repeat(3, 0.7fr) 1fr;
-      gap: 2rem;
+      grid-template-columns: minmax(220px, 1.2fr) repeat(5, minmax(110px, 0.75fr));
+      gap: 1.4rem;
       align-items: start;
     }
 
@@ -1163,15 +1163,16 @@
           </span>
         </a>
         <nav class="home-links" aria-label="Primary">
-          <a href="/give/">Giving</a>
+          <a href="/giving">Giving</a>
           <a href="/learn">Learn</a>
           <a href="/marketplace.html">Marketplace <small class="coming-soon">Soon</small></a>
           <a href="/directory.html">Directory <small class="coming-soon">Soon</small></a>
+          <a href="/vision">Vision</a>
           <a href="/about.html">About</a>
         </nav>
         <div class="home-actions">
           <a class="home-signin" href="/my-agapay/login">Sign in</a>
-          <a class="gold-btn" href="/give/">Get Started</a>
+          <a class="gold-btn" href="/giving">Get Started</a>
         </div>
         <button class="mobile-nav-toggle" type="button" data-mobile-nav-toggle aria-label="Open navigation" aria-expanded="false">☰</button>
       </div>
@@ -1189,7 +1190,7 @@
           </p>
           <p class="hero-text">AGAPAY unites Orthodox giving, family learning, marketplace tools, and community life into one trusted home built for the Church, the household, and everything between. AGAPAY Learn is an Orthodox homeschool planning app for families.</p>
           <div class="hero-actions">
-            <a class="gold-btn" href="/give/">Start Giving</a>
+            <a class="gold-btn" href="/giving">Start Giving</a>
             <a class="outline-btn" href="/vision">Explore the Platform</a>
           </div>
         </div>
@@ -1242,7 +1243,7 @@
               <span>$</span>
               <input inputmode="decimal" type="number" placeholder="Other amount" aria-label="Other donation amount" />
             </label>
-            <a class="widget-submit" href="/give/" style="text-decoration:none;display:flex;align-items:center;justify-content:center;">Give with AGAPAY</a>
+            <a class="widget-submit" href="/giving" style="text-decoration:none;display:flex;align-items:center;justify-content:center;">Give with AGAPAY</a>
             <div class="secure-note">Secure · Transparent · Tax-receipted</div>
           </div>
         </div>
@@ -1266,7 +1267,7 @@
                 <li>Campaigns and special projects</li>
                 <li>Secure and transparent</li>
               </ul>
-              <a class="gold-btn" href="/give/">Give with Faith</a>
+              <a class="gold-btn" href="/giving">Give with Faith</a>
             </article>
             <article class="pillar">
               <span class="pillar-icon">☰</span>
@@ -1398,7 +1399,7 @@
           </div>
           <div>
             <h3>AGAPAY Giving</h3>
-          <a href="/give/">Overview</a>
+          <a href="/giving">Overview</a>
           <a href="/giving/how-it-works.html">How It Works</a>
           <a href="/giving/pricing.html">Pricing</a>
           </div>
@@ -1406,7 +1407,6 @@
             <h3>AGAPAY Learn</h3>
             <a href="/learn">Overview</a>
             <a href="/learn/pricing">Pricing</a>
-            <a href="/learn/onboarding">Start Free</a>
           </div>
           <div>
             <h3>Company</h3>
