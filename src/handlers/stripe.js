@@ -13,6 +13,10 @@ import {
 } from "../lib/subscriptions.js";
 
 import {
+  persistLearnBillingFromStripe,
+} from "../learn/billing.js";
+
+import {
   absoluteWebsiteUrl,
   slugify,
 } from "../lib/format.js";
@@ -207,6 +211,16 @@ export async function handleStripeWebhook(request, env) {
 export async function processStripeWebhookEvent(env, event) {
   const object = event.data?.object || {};
   if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
+    if (object.metadata?.product === "learn") {
+      await persistLearnBillingFromStripe(env, {
+        ...object,
+        status: object.mode === "subscription" ? "active" : object.payment_status || "active",
+        stripeSubscriptionId: object.subscription || "",
+        checkoutSessionId: object.id || ""
+      });
+      return;
+    }
+
     const paymentStatus = object.payment_status || "paid";
     const status = paymentStatus === "paid" || object.mode === "subscription" ? "completed" : "pending";
     const existingOffering = object.id ? await loadDonorOfferingByCheckout(env, object.id) : null;
@@ -424,6 +438,16 @@ export async function processStripeWebhookEvent(env, event) {
   }
 
   if (event.type === "checkout.session.completed" && object.mode === "subscription") {
+    if (object.metadata?.product === "learn") {
+      await persistLearnBillingFromStripe(env, {
+        ...object,
+        status: "active",
+        stripeSubscriptionId: object.subscription || "",
+        checkoutSessionId: object.id || ""
+      });
+      return;
+    }
+
     const reference = object.metadata?.agapay_reference || object.client_reference_id || "";
     await updateSubscriptionRecord(env, reference, {
       subscriptionStatus: "active",
@@ -441,6 +465,22 @@ export async function processStripeWebhookEvent(env, event) {
     || event.type === "customer.subscription.paused"
     || event.type === "customer.subscription.resumed"
   ) {
+    if (object.metadata?.product === "learn") {
+      const status = event.type === "customer.subscription.deleted"
+        ? "cancelled"
+        : event.type === "customer.subscription.paused"
+          ? "paused"
+          : event.type === "customer.subscription.resumed"
+            ? "active"
+            : subscriptionStatusFromStripe(object.status);
+      await persistLearnBillingFromStripe(env, {
+        ...object,
+        status,
+        stripeSubscriptionId: object.id || ""
+      });
+      return;
+    }
+
     const reference = object.metadata?.agapay_reference || "";
     const status = event.type === "customer.subscription.deleted"
       ? "cancelled"

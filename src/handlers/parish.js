@@ -678,44 +678,44 @@ export async function sendDashboardInvite(env, appUrl, registration) {
   const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   const parishName = htmlEscape(registration.parishName || "your parish");
-  const token = htmlEscape(registration.parishDashboardToken || "");
   const safeDashboardUrl = htmlEscape(dashboardUrl);
 
   const email = await sendEmail(env, {
     from,
     to: recipients,
     reply_to: replyTo,
-    subject: `AGAPAY dashboard access for ${registration.parishName || "your parish"}`,
-    html: agapayEmailHtml(appUrl, "Your AGAPAY parish dashboard", `
+    subject: `Getting started with AGAPAY — ${registration.parishName || "your parish"}`,
+    html: agapayEmailHtml(appUrl, "Getting started with AGAPAY", `
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
-      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;"><strong>${parishName}</strong> has been verified for AGAPAY. You can now access the parish dashboard to manage your giving page, funds, campaigns, billing, and Stripe onboarding.</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;"><strong>${parishName}</strong> has been verified for AGAPAY. You can now begin the setup process for your parish giving page, AGAPAY billing, and Stripe onboarding.</p>
       <div style="background:#061522;border:1px solid rgba(201,162,91,0.42);border-radius:12px;padding:18px 18px;margin:0 0 22px;">
         <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#C9A25B;font-weight:700;">Next step</p>
-        <p style="margin:0;font-size:15px;line-height:1.7;color:#F6F1E8;"><strong>Please choose your AGAPAY tier and complete billing first.</strong> Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.</p>
+        <p style="margin:0;font-size:15px;line-height:1.7;color:#F6F1E8;"><strong>Open your dashboard with the Parish ID and temporary password from your welcome email.</strong> Then choose your AGAPAY tier and complete billing. Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.</p>
       </div>
       <p style="margin:0 0 24px;"><a href="${safeDashboardUrl}" style="display:inline-block;background:#C9A25B;color:#061522;padding:14px 20px;border-radius:10px;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-style:italic;font-weight:600;">Open parish dashboard</a></p>
       <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
-        <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">Dashboard credentials</p>
+        <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">Dashboard reminder</p>
         <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Dashboard:</strong> <a href="${safeDashboardUrl}" style="color:#0A365B;text-decoration:underline;">${safeDashboardUrl}</a></p>
         <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Parish ID:</strong> ${htmlEscape(parishId)}</p>
-        <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Temporary password:</strong> ${token}</p>
+        <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Temporary password:</strong> Use the password from your welcome email.</p>
       </div>
-      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">After opening the dashboard, enter the parish ID and temporary password. The setup card will walk you through billing first, then Stripe onboarding.</p>
-      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">This temporary password gives access to your AGAPAY parish dashboard. Please keep it private.</p>
+      <p style="margin:0 0 10px;font-size:14px;line-height:1.7;color:#171715;">After opening the dashboard, enter the parish ID and temporary password from your welcome email. The setup card will walk you through billing first, then Stripe onboarding.</p>
+      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">If you cannot find the welcome email, use the “Forgot password” link on the parish login page or reply to this email.</p>
     `),
     text: [
-      "Your AGAPAY parish dashboard",
+      "Getting started with AGAPAY",
       "",
       `${registration.parishName || "Your parish"} has been verified for AGAPAY.`,
-      "Please choose your AGAPAY tier and complete billing first. Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.",
+      "Open your dashboard with the Parish ID and temporary password from your welcome email.",
+      "Then choose your AGAPAY tier and complete billing. Once billing is active, the dashboard will guide you into Stripe onboarding so your parish can receive donations.",
       "",
       `Dashboard: ${dashboardUrl}`,
       `Parish ID: ${parishId}`,
-      `Temporary password: ${registration.parishDashboardToken || ""}`,
+      "Temporary password: Use the password from your welcome email.",
       "",
-      "After opening the dashboard, enter the parish ID and temporary password. The setup card will walk you through billing first, then Stripe onboarding.",
+      "After opening the dashboard, enter the parish ID and temporary password from your welcome email. The setup card will walk you through billing first, then Stripe onboarding.",
       "",
-      "This temporary password gives access to your AGAPAY parish dashboard. Please keep it private."
+      "If you cannot find the welcome email, use the Forgot password link on the parish login page or reply to this email."
     ].join("\n")
   });
 
@@ -758,35 +758,48 @@ export async function sendParishPasswordResetEmail(env, appUrl, registration, re
 
 
 export async function sendRegistrationConfirmation(env, appUrl, registration) {
-  const to = registration.priestEmail || registration.treasurerEmail || "";
-  if (!to) return { status: "missing_recipient" };
+  const recipients = Array.from(new Set([
+    registration.priestEmail,
+    registration.treasurerEmail
+  ].filter(Boolean)));
+  if (!recipients.length) return { status: "missing_recipient" };
 
   const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   const parishName = htmlEscape(registration.parishName || "your community");
   const reference = htmlEscape(registration.reference || "");
+  const parishId = registration.parishId || slugify(registration.parishName);
+  const dashboardUrl = `${appUrl}/parish/login?parish=${encodeURIComponent(parishId)}`;
+  const safeDashboardUrl = htmlEscape(dashboardUrl);
+  const temporaryPassword = htmlEscape(registration.parishDashboardToken || "");
   const tier = subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration));
   const tierLabel = htmlEscape(subscriptionTierSummary(tier));
 
   return sendEmail(env, {
     from,
-    to: [to],
+    to: recipients,
     reply_to: replyTo,
-    subject: `AGAPAY registration received — ${registration.parishName || registration.reference}`,
-    html: agapayEmailHtml(appUrl, "Registration received", `
+    subject: `Welcome to AGAPAY — dashboard access for ${registration.parishName || "your parish"}`,
+    html: agapayEmailHtml(appUrl, "Welcome to AGAPAY", `
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
-      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Thank you for registering <strong>${parishName}</strong> with AGAPAY. We have received your application and will personally review it for canonical standing before activation. You will hear from us within one business day.</p>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">Thank you for registering <strong>${parishName}</strong> with AGAPAY. We have received your application and will personally review it for canonical standing before activation.</p>
       <div style="background:#061522;border:1px solid rgba(201,162,91,0.42);border-radius:12px;padding:20px;margin:0 0 24px;">
         <p style="margin:0 0 6px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:#C9A25B;font-weight:700;">Your registration summary</p>
         <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#F6F1E8;"><strong style="color:#C9A25B;">Reference number:</strong> ${reference}</p>
         <p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#F6F1E8;"><strong style="color:#C9A25B;">Community:</strong> ${parishName}</p>
         <p style="margin:0;font-size:14px;line-height:1.6;color:#F6F1E8;"><strong style="color:#C9A25B;">Subscription tier:</strong> ${tierLabel}</p>
       </div>
+      <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px 18px;margin:0 0 20px;">
+        <p style="margin:0 0 10px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#6F6A60;font-weight:700;">Dashboard access</p>
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Dashboard:</strong> <a href="${safeDashboardUrl}" style="color:#0A365B;text-decoration:underline;">${safeDashboardUrl}</a></p>
+        <p style="margin:0 0 8px;font-size:14px;line-height:1.55;color:#171715;"><strong>Parish ID:</strong> ${htmlEscape(parishId)}</p>
+        <p style="margin:0;font-size:14px;line-height:1.55;color:#171715;"><strong>Temporary password:</strong> ${temporaryPassword}</p>
+      </div>
       <p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#171715;">Please save your reference number. If you have questions about your registration status, email <a href="mailto:onboarding@agapay.app" style="color:#0A365B;">onboarding@agapay.app</a> and include it in your message.</p>
-      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">Once your community is verified, you will receive a second email with your parish dashboard credentials and next steps for connecting your Stripe account.</p>
+      <p style="margin:0;font-size:13px;line-height:1.6;color:#6F6A60;">Once your community is verified, you will receive a second email called “Getting started with AGAPAY” with the setup guide for choosing your AGAPAY tier, activating billing, and connecting Stripe. Keep the Parish ID and temporary password above; you will use them after verification.</p>
     `),
     text: [
-      "Registration received — AGAPAY",
+      "Welcome to AGAPAY",
       "",
       "Glory to Jesus Christ!",
       "",
@@ -799,11 +812,17 @@ export async function sendRegistrationConfirmation(env, appUrl, registration) {
       `Community: ${registration.parishName || ""}`,
       `Subscription tier: ${subscriptionTierSummary(tier)}`,
       "",
+      "DASHBOARD ACCESS",
+      `Dashboard: ${dashboardUrl}`,
+      `Parish ID: ${parishId}`,
+      `Temporary password: ${registration.parishDashboardToken || ""}`,
+      "",
       "Please save your reference number. If you have questions about your registration status,",
       "email onboarding@agapay.app and include it in your message.",
       "",
-      "Once your community is verified, you will receive a second email with your parish dashboard",
-      "credentials and next steps for connecting your Stripe account."
+      "Once your community is verified, you will receive a second email called Getting started with AGAPAY",
+      "with the setup guide for choosing your AGAPAY tier, activating billing, and connecting Stripe.",
+      "Keep the Parish ID and temporary password above; you will use them after verification."
     ].join("\n")
   });
 }
@@ -2326,12 +2345,18 @@ export async function handleRegistrations(request, env) {
   const reference = `AGP-REG-${Date.now().toString(36).toUpperCase()}`;
   const subscriptionTierId = body.subscriptionTier || defaultSubscriptionTier(body);
   const tier = subscriptionTier(subscriptionTierId) || subscriptionTier(defaultSubscriptionTier(body));
+  const parishId = slugify(body.parishName);
+  const parishDashboardToken = generateDashboardToken();
   const registration = {
     reference,
     status: "pending",
     receivedAt: new Date().toISOString(),
     canonicalVerification: "pending_review",
     ...body,
+    parishId,
+    parishDashboardToken,
+    parishDashboardTokenTemporary: true,
+    parishDashboardTokenCreatedAt: new Date().toISOString(),
     subscriptionTier: tier?.id || "parish",
     subscriptionStatus: tier?.monthlyCents === 0 ? "free_forever" : "not_started",
     subscriptionMonthlyCents: tier?.monthlyCents ?? null,

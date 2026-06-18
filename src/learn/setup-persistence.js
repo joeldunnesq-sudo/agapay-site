@@ -1,5 +1,5 @@
 import { d1, d1First, d1Run, normalizeEmail, safeParseJsonRow } from "../lib/core.js";
-import { LEARN_FREE_CHILD_LIMIT, learnRequestHasFamilyAccess } from "./billing.js";
+import { LEARN_FREE_CHILD_LIMIT, learnRequestHasFamilyAccessAsync } from "./billing.js";
 import { getLearnSeedSnapshot } from "./demo-data.js";
 
 const FALLBACK_EMAIL = "demo@agapay.local";
@@ -618,7 +618,7 @@ async function bestEffort(statement) {
 export async function saveLearnSetup(env, request, payload) {
   const identity = learnSetupIdentity(request);
   const setupSnapshot = normalizeSetupPayload(payload, identity);
-  if (setupSnapshot.children.length > LEARN_FREE_CHILD_LIMIT && !learnRequestHasFamilyAccess(request, env)) {
+  if (setupSnapshot.children.length > LEARN_FREE_CHILD_LIMIT && !(await learnRequestHasFamilyAccessAsync(request, env))) {
     return {
       ok: false,
       status: 402,

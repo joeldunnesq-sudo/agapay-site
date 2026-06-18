@@ -303,7 +303,7 @@ export async function handleLearnGoogleCalendarSync(request, env) {
   return googleCalendarSync(await createLearnRepositoryForRequest(request, env), request, env);
 }
 
-export function handleLearnBillingStatus(request, env) {
+export async function handleLearnBillingStatus(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return learnBillingStatus(request, env);

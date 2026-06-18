@@ -2055,7 +2055,7 @@
   async function apiPost(path, body = {}) {
     const response = await fetch(path, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: learnApiHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(body)
     });
     let payload = {};
@@ -2105,7 +2105,7 @@
   }
 
   async function apiGet(path) {
-    const response = await fetch(path);
+    const response = await fetch(path, { headers: learnApiHeaders() });
     let payload = {};
     try {
       payload = await response.json();
@@ -2116,6 +2116,16 @@
       throw new Error(payload.error || `Request failed with ${response.status}`);
     }
     return applySetupState(payload);
+  }
+
+  function learnApiHeaders(extra = {}) {
+    const email = localStorage.getItem("agapayDonorEmail") || "";
+    const token = localStorage.getItem("agapayDonorToken") || "";
+    return {
+      ...(email ? { "X-AGAPAY-Learn-Email": email, "X-AGAPAY-User-Email": email } : {}),
+      ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+      ...extra
+    };
   }
 
   function showDialog(title, body, fields) {

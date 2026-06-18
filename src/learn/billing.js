@@ -1,4 +1,4 @@
-import { json, normalizeEmail } from "../lib/core.js";
+import { d1, d1First, d1Run, json, normalizeEmail, safeParseJsonRow } from "../lib/core.js";
 
 export const LEARN_FREE_CHILD_LIMIT = 2;
 export const LEARN_FREE_PRINT_LIMIT = 3;
@@ -27,6 +27,16 @@ const defaultFullAccessEmails = [
   "stephaie@dunncrew.com",
   "stephanie@dunncrew.com"
 ];
+const LEARN_BILLING_KV_PREFIX = "__agapay_learn_billing:";
+
+function slug(value, fallback = "item") {
+  const normalized = String(value || "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return normalized || fallback;
+}
 
 function publicBaseUrl(request, env = {}) {
   const configured = String(env.AGAPAY_PUBLIC_URL || env.AGAPAY_APP_URL || "").trim();
@@ -65,6 +75,86 @@ function requestEmail(request) {
   );
 }
 
+function learnBillingIdentityFromEmail(email) {
+  const normalized = normalizeEmail(email);
+  return {
+    email: normalized,
+    householdId: normalized ? `learn_household_${slug(normalized)}` : ""
+  };
+}
+
+function learnBillingIdentity(request) {
+  return learnBillingIdentityFromEmail(requestEmail(request));
+}
+
+function learnBillingKey(email) {
+  return `${LEARN_BILLING_KV_PREFIX}${slug(normalizeEmail(email), "unknown")}`;
+}
+
+export async function loadLearnBillingRecord(env = {}, email = "") {
+  const identity = learnBillingIdentityFromEmail(email);
+  if (!identity.email) return null;
+
+  if (d1(env)) {
+    const row = await d1First(env, "SELECT data FROM learn_households WHERE id = ?1 LIMIT 1", identity.householdId);
+    const household = safeParseJsonRow(row);
+    const billing = household?.learnBilling || household?.billing || null;
+    if (billing?.status) return billing;
+  }
+
+  if (env.AGAPAY_REGISTRATIONS) {
+    const raw = await env.AGAPAY_REGISTRATIONS.get(learnBillingKey(identity.email));
+    if (raw) {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
+  }
+
+  return null;
+}
+
+export async function saveLearnBillingRecord(env = {}, record = {}) {
+  const identity = learnBillingIdentityFromEmail(record.email);
+  if (!identity.email) return { ok: false, reason: "missing_email" };
+  const now = new Date().toISOString();
+  const saved = {
+    product: "learn",
+    email: identity.email,
+    householdId: record.householdId || identity.householdId,
+    plan: normalizeCheckoutPlan(record.plan),
+    status: String(record.status || "active").toLowerCase(),
+    stripeCustomerId: record.stripeCustomerId || "",
+    stripeSubscriptionId: record.stripeSubscriptionId || "",
+    stripeCheckoutSessionId: record.stripeCheckoutSessionId || "",
+    currentPeriodEnd: record.currentPeriodEnd || "",
+    updatedAt: now,
+    createdAt: record.createdAt || now
+  };
+
+  if (env.AGAPAY_REGISTRATIONS) {
+    await env.AGAPAY_REGISTRATIONS.put(learnBillingKey(identity.email), JSON.stringify(saved));
+  }
+
+  if (d1(env)) {
+    const row = await d1First(env, "SELECT data FROM learn_households WHERE id = ?1 LIMIT 1", saved.householdId);
+    const household = safeParseJsonRow(row);
+    if (household) {
+      await d1Run(
+        env,
+        "UPDATE learn_households SET data = ?1, updated_at = ?2 WHERE id = ?3",
+        JSON.stringify({ ...household, ownerEmail: household.ownerEmail || identity.email, learnBilling: saved }),
+        now,
+        saved.householdId
+      );
+    }
+  }
+
+  return { ok: true, billing: saved };
+}
+
 function configuredFullAccessEmails(env = {}) {
   return String(env.AGAPAY_LEARN_FULL_ACCESS_EMAILS || "")
     .split(/[,\s]+/)
@@ -76,6 +166,12 @@ export function learnEmailHasFullAccess(email, env = {}) {
   const normalized = normalizeEmail(email);
   if (!normalized) return false;
   return new Set([...defaultFullAccessEmails, ...configuredFullAccessEmails(env)]).has(normalized);
+}
+
+export async function learnEmailHasPaidAccess(email, env = {}) {
+  if (learnEmailHasFullAccess(email, env)) return true;
+  const billing = await loadLearnBillingRecord(env, email);
+  return ["active", "trialing", "free_forever"].includes(String(billing?.status || "").toLowerCase());
 }
 
 export function learnPlanForRequest(request, env = {}) {
@@ -90,14 +186,23 @@ export function learnRequestHasFamilyAccess(request, env = {}) {
   return learnPlanForRequest(request, env) === LEARN_FAMILY_PLAN;
 }
 
-export function learnBillingStatus(request, env = {}) {
-  const plan = learnPlanForRequest(request, env);
+export async function learnRequestHasFamilyAccessAsync(request, env = {}) {
+  if (learnRequestHasFamilyAccess(request, env)) return true;
+  return learnEmailHasPaidAccess(requestEmail(request), env);
+}
+
+export async function learnBillingStatus(request, env = {}) {
+  const email = requestEmail(request);
+  const billing = await loadLearnBillingRecord(env, email);
+  const hasPaidAccess = ["active", "trialing", "free_forever"].includes(String(billing?.status || "").toLowerCase());
+  const plan = hasPaidAccess ? LEARN_FAMILY_PLAN : learnPlanForRequest(request, env);
   return json({
     ok: true,
     product: "learn",
     plan,
     paidPlan: LEARN_FAMILY_PLAN,
     fullAccess: plan === LEARN_FAMILY_PLAN,
+    billing,
     childLimit: LEARN_FREE_CHILD_LIMIT,
     printLimit: LEARN_FREE_PRINT_LIMIT,
     checkoutConfigured: checkoutConfigured(env),
@@ -116,6 +221,7 @@ export function learnBillingStatus(request, env = {}) {
 export async function learnBillingCheckout(request, env = {}) {
   const body = await request.json().catch(() => ({}));
   const plan = normalizeCheckoutPlan(body.plan);
+  const identity = learnBillingIdentity(request);
   const priceId = learnPriceId(env, plan);
   if (!env.STRIPE_SECRET_KEY) {
     return json({
@@ -146,14 +252,19 @@ export async function learnBillingCheckout(request, env = {}) {
     params.set("line_items[0][price_data][product_data][metadata][plan]", plan);
   }
   params.set("line_items[0][quantity]", "1");
+  if (identity.email) params.set("customer_email", identity.email);
   params.set("allow_promotion_codes", "true");
   params.set("automatic_tax[enabled]", "true");
   params.set("success_url", `${baseUrl}/myagapay/learn/setup?learn_billing=success&session_id={CHECKOUT_SESSION_ID}`);
   params.set("cancel_url", `${baseUrl}/myagapay/learn/setup?learn_billing=cancelled`);
   params.set("metadata[product]", "learn");
   params.set("metadata[plan]", plan);
+  params.set("metadata[email]", identity.email);
+  params.set("metadata[household_id]", identity.householdId);
   params.set("subscription_data[metadata][product]", "learn");
   params.set("subscription_data[metadata][plan]", plan);
+  params.set("subscription_data[metadata][email]", identity.email);
+  params.set("subscription_data[metadata][household_id]", identity.householdId);
 
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
@@ -176,5 +287,27 @@ export async function learnBillingCheckout(request, env = {}) {
     ok: true,
     url: session.url,
     sessionId: session.id
+  });
+}
+
+export async function persistLearnBillingFromStripe(env = {}, source = {}) {
+  const metadata = source.metadata || {};
+  const email = normalizeEmail(
+    metadata.email
+    || source.customer_email
+    || source.customer_details?.email
+    || source.customerEmail
+    || ""
+  );
+  if (!email) return { ok: false, reason: "missing_email" };
+  return saveLearnBillingRecord(env, {
+    email,
+    householdId: metadata.household_id || "",
+    plan: metadata.plan || "family",
+    status: source.status || "active",
+    stripeCustomerId: source.customer || source.stripeCustomerId || "",
+    stripeSubscriptionId: source.subscription || source.id || source.stripeSubscriptionId || "",
+    stripeCheckoutSessionId: source.checkoutSessionId || "",
+    currentPeriodEnd: source.current_period_end ? new Date(source.current_period_end * 1000).toISOString() : ""
   });
 }
