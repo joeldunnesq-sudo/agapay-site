@@ -4,7 +4,7 @@ import { learnBillingCheckout, learnBillingStatus } from "./billing.js";
 import { googleCalendarCallback, googleCalendarConnect, googleCalendarPreview, googleCalendarStatus } from "./google-calendar.js";
 import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-source.js";
 import { enrichLiturgicalDayWithOrthocal, handleLearnReadingsStatus } from "./readings-source.js";
-import { createLearnRepositoryForRequest, createSeedLearnRepository, SeedLearnRepository } from "./repository.js";
+import { createLearnRepositoryForRequest, SeedLearnRepository } from "./repository.js";
 import { saveLearnGraceMode, saveLearnSetup } from "./setup-persistence.js";
 
 function requestedCalendarType(url) {
@@ -290,10 +290,10 @@ export function handleLearnGoogleCalendarCallback(request, env) {
   return googleCalendarCallback(request, env);
 }
 
-export function handleLearnGoogleCalendarPreview(request, env) {
+export async function handleLearnGoogleCalendarPreview(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-  return googleCalendarPreview(createSeedLearnRepository(), request);
+  return googleCalendarPreview(await createLearnRepositoryForRequest(request, env), request);
 }
 
 export function handleLearnBillingStatus(request, env) {

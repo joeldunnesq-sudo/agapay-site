@@ -9,6 +9,20 @@ const yearlyPriceEnv = "AGAPAY_STRIPE_PRICE_LEARN_FAMILY_YEARLY";
 const monthlyPriceEnv = "AGAPAY_STRIPE_PRICE_LEARN_FAMILY_MONTHLY";
 const foundingYearlyPriceEnv = "AGAPAY_STRIPE_PRICE_LEARN_FOUNDING_YEARLY";
 const foundingMonthlyPriceEnv = "AGAPAY_STRIPE_PRICE_LEARN_FOUNDING_MONTHLY";
+const planCatalog = {
+  "founding-family": {
+    label: "AGAPAY Learn Founding Family",
+    unitAmount: 4900,
+    interval: "year",
+    description: "Founding annual subscription for AGAPAY Learn."
+  },
+  family: {
+    label: "AGAPAY Learn Family",
+    unitAmount: 5900,
+    interval: "year",
+    description: "Annual household subscription for AGAPAY Learn."
+  }
+};
 const defaultFullAccessEmails = [
   "stephaie@dunncrew.com",
   "stephanie@dunncrew.com"
@@ -34,8 +48,12 @@ function learnPriceId(env = {}, plan = LEARN_FAMILY_PLAN) {
   return env[yearlyPriceEnv] || env[monthlyPriceEnv] || "";
 }
 
+function learnPlanDetails(plan) {
+  return planCatalog[normalizeCheckoutPlan(plan)] || planCatalog.family;
+}
+
 function checkoutConfigured(env = {}) {
-  return Boolean(env.STRIPE_SECRET_KEY && learnPriceId(env));
+  return Boolean(env.STRIPE_SECRET_KEY);
 }
 
 function requestEmail(request) {
@@ -83,10 +101,11 @@ export function learnBillingStatus(request, env = {}) {
     childLimit: LEARN_FREE_CHILD_LIMIT,
     printLimit: LEARN_FREE_PRINT_LIMIT,
     checkoutConfigured: checkoutConfigured(env),
+    priceSource: learnPriceId(env) ? "configured_price" : "inline_price_data",
     checkoutEndpoint: "/api/learn/billing/checkout",
     requiredEnv: [
       "STRIPE_SECRET_KEY",
-      `${yearlyPriceEnv} or ${monthlyPriceEnv}`,
+      `${yearlyPriceEnv} or ${monthlyPriceEnv} optional; inline price data is used when absent`,
       "AGAPAY_PUBLIC_URL"
     ],
     successUrl: `${publicBaseUrl(request, env)}/learn/onboarding?learn_billing=success`,
@@ -98,29 +117,43 @@ export async function learnBillingCheckout(request, env = {}) {
   const body = await request.json().catch(() => ({}));
   const plan = normalizeCheckoutPlan(body.plan);
   const priceId = learnPriceId(env, plan);
-  if (!env.STRIPE_SECRET_KEY || !priceId) {
+  if (!env.STRIPE_SECRET_KEY) {
     return json({
       ok: false,
       error: "Stripe checkout is not configured for AGAPAY Learn yet.",
       requiredEnv: [
         "STRIPE_SECRET_KEY",
-        `${foundingYearlyPriceEnv} or ${foundingMonthlyPriceEnv} for founding pricing`,
-        `${yearlyPriceEnv} or ${monthlyPriceEnv}`,
+        `${foundingYearlyPriceEnv} or ${foundingMonthlyPriceEnv} optional for founding pricing`,
+        `${yearlyPriceEnv} or ${monthlyPriceEnv} optional for family pricing`,
         "AGAPAY_PUBLIC_URL"
       ]
     }, { status: 503 });
   }
 
   const baseUrl = publicBaseUrl(request, env);
+  const planDetails = learnPlanDetails(plan);
   const params = new URLSearchParams();
   params.set("mode", "subscription");
-  params.set("line_items[0][price]", priceId);
+  if (priceId) {
+    params.set("line_items[0][price]", priceId);
+  } else {
+    params.set("line_items[0][price_data][currency]", "usd");
+    params.set("line_items[0][price_data][unit_amount]", String(planDetails.unitAmount));
+    params.set("line_items[0][price_data][recurring][interval]", planDetails.interval);
+    params.set("line_items[0][price_data][product_data][name]", planDetails.label);
+    params.set("line_items[0][price_data][product_data][description]", planDetails.description);
+    params.set("line_items[0][price_data][product_data][metadata][product]", "learn");
+    params.set("line_items[0][price_data][product_data][metadata][plan]", plan);
+  }
   params.set("line_items[0][quantity]", "1");
   params.set("allow_promotion_codes", "true");
+  params.set("automatic_tax[enabled]", "true");
   params.set("success_url", `${baseUrl}/learn/onboarding?learn_billing=success&session_id={CHECKOUT_SESSION_ID}`);
   params.set("cancel_url", `${baseUrl}/learn/onboarding?learn_billing=cancelled`);
   params.set("metadata[product]", "learn");
   params.set("metadata[plan]", plan);
+  params.set("subscription_data[metadata][product]", "learn");
+  params.set("subscription_data[metadata][plan]", plan);
 
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",

@@ -178,6 +178,10 @@ import {
   handleLearnGraceModeSave,
   handleLearnBillingCheckout,
   handleLearnBillingStatus,
+  handleLearnGoogleCalendarCallback,
+  handleLearnGoogleCalendarConnect,
+  handleLearnGoogleCalendarPreview,
+  handleLearnGoogleCalendarStatus,
   handleLearnMeta,
   handleLearnOnboarding,
   handleLearnOnboardingSave,
@@ -780,6 +784,18 @@ export default {
     }
     if (request.method === "POST" && url.pathname === "/api/learn/billing/checkout") {
       return handleLearnBillingCheckout(request, env);
+    }
+    if (url.pathname === "/api/learn/google-calendar/status") {
+      return handleLearnGoogleCalendarStatus(request, env);
+    }
+    if (url.pathname === "/api/learn/google-calendar/connect") {
+      return handleLearnGoogleCalendarConnect(request, env);
+    }
+    if (url.pathname === "/api/learn/google-calendar/callback") {
+      return handleLearnGoogleCalendarCallback(request, env);
+    }
+    if (url.pathname === "/api/learn/google-calendar/preview") {
+      return handleLearnGoogleCalendarPreview(request, env);
     }
     if (request.method === "POST" && url.pathname === "/api/learn/grace-mode") {
       return handleLearnGraceModeSave(request, env);
