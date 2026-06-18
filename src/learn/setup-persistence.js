@@ -156,6 +156,19 @@ function normalizeSetupPayload(payload = {}, identity = learnSetupIdentity()) {
   normalizedHousehold.childrenCount = children.length;
 
   const schoolYearId = text(schoolYear.id, "school_year_current");
+  const normalizedTerms = (list(payload.terms).length ? list(payload.terms) : [term])
+    .map((entry, index) => ({
+      ...seed.term,
+      id: text(entry.id, `term_${index + 1}`),
+      schoolYearId,
+      label: text(entry.label, `Term ${index + 1}`),
+      startDate: text(entry.startDate, index === 0 ? seed.term.startDate : ""),
+      endDate: text(entry.endDate, index === 0 ? seed.term.endDate : ""),
+      paceMode: text(preferences.paceMode || entry.paceMode, seed.term.paceMode || "steady")
+    }))
+    .filter((entry) => entry.label);
+  const requestedCurrentTermId = text(term.id || schoolYear.currentTermId || payload.currentTermId, "");
+  const currentTermFromList = normalizedTerms.find((entry) => entry.id === requestedCurrentTermId) || normalizedTerms[0];
   const normalizedSchoolYear = {
     ...seed.schoolYear,
     id: schoolYearId,
@@ -163,17 +176,13 @@ function normalizeSetupPayload(payload = {}, identity = learnSetupIdentity()) {
     label: text(schoolYear.label, seed.schoolYear.label),
     startDate: text(schoolYear.startDate, seed.schoolYear.startDate),
     endDate: text(schoolYear.endDate, seed.schoolYear.endDate),
-    status: "active"
+    status: "active",
+    currentTermId: currentTermFromList?.id || "term_1"
   };
 
   const normalizedTerm = {
-    ...seed.term,
-    id: text(term.id, "term_current"),
-    schoolYearId,
-    label: text(term.label, seed.term.label),
-    startDate: text(term.startDate, seed.term.startDate),
-    endDate: text(term.endDate, seed.term.endDate),
-    paceMode: text(preferences.paceMode || term.paceMode, seed.term.paceMode || "steady")
+    ...(currentTermFromList || normalizedTerms[0] || seed.term),
+    id: currentTermFromList?.id || "term_1"
   };
 
   const streams = list(payload.streams).map((stream, index) => ({
@@ -204,6 +213,7 @@ function normalizeSetupPayload(payload = {}, identity = learnSetupIdentity()) {
     endChapter: int(book.endChapter || book.totalChapters, 0),
     totalChapters: int(book.endChapter || book.totalChapters, 0),
     color: text(book.color, ""),
+    termId: text(book.termId || book.assignedTermId, normalizedTerm.id),
     graceNote: text(book.graceNote, "Reading moved into the reserve basket.")
   })).filter((book) => book.title);
 
@@ -221,6 +231,7 @@ function normalizeSetupPayload(payload = {}, identity = learnSetupIdentity()) {
     currentNumber: int(subject.currentNumber || subject.completedThroughNumber || subject.startNumber, int(subject.startNumber, 1)),
     endNumber: int(subject.endNumber, 0),
     color: text(subject.color, ""),
+    termId: text(subject.termId || subject.assignedTermId, normalizedTerm.id),
     gracePriority: text(subject.gracePriority, "keep"),
     graceNote: text(subject.graceNote, "Deferred gracefully to the reserve list.")
   })).filter((subject) => subject.title);
@@ -231,7 +242,8 @@ function normalizeSetupPayload(payload = {}, identity = learnSetupIdentity()) {
     materialType: text(material.materialType || material.type, "Catechesis"),
     source: text(material.source || material.author, ""),
     cadenceLabel: text(material.cadenceLabel || material.cadence, "Weekly"),
-    color: text(material.color, "")
+    color: text(material.color, ""),
+    termId: text(material.termId || material.assignedTermId, normalizedTerm.id)
   })).filter((material) => material.title);
 
   const rawFormation = payload.formation || {};
@@ -305,6 +317,7 @@ function normalizeSetupPayload(payload = {}, identity = learnSetupIdentity()) {
     children,
     schoolYear: normalizedSchoolYear,
     term: normalizedTerm,
+    terms: normalizedTerms,
     preferences: {
       calendarType: normalizedHousehold.liturgicalCalendarType,
       paceMode: normalizedHousehold.paceMode,
@@ -325,6 +338,11 @@ function normalizeSetupPayload(payload = {}, identity = learnSetupIdentity()) {
 export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSnapshot = null) {
   if (!setupSnapshot) return seed;
   const next = clone(seed);
+  const currentTermId = setupSnapshot.term?.id || setupSnapshot.schoolYear?.currentTermId || setupSnapshot.terms?.[0]?.id || "";
+  const forCurrentTerm = (item = {}) => !item.termId || !currentTermId || item.termId === currentTermId;
+  const currentSubjects = list(setupSnapshot.subjects).filter(forCurrentTerm);
+  const currentBooks = list(setupSnapshot.books).filter(forCurrentTerm);
+  const currentFormationMaterials = list(setupSnapshot.formationMaterials).filter(forCurrentTerm);
   next.household = { ...next.household, ...setupSnapshot.household };
   next.children = list(setupSnapshot.children);
   next.schoolYear = { ...next.schoolYear, ...setupSnapshot.schoolYear };
@@ -334,8 +352,8 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
     mode: setupSnapshot.preferences?.graceModeActive ? setupSnapshot.preferences?.graceModeDefault || next.graceModeRule?.mode || "light" : "full"
   };
   next.householdStreams = list(setupSnapshot.streams);
-  next.books = list(setupSnapshot.books);
-  next.libraryBooks = list(setupSnapshot.books).map((book, index) => ({
+  next.books = currentBooks;
+  next.libraryBooks = currentBooks.map((book, index) => ({
     ...book,
     ages: "",
     assignment: "Setup",
@@ -343,15 +361,15 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
     orthodox: false,
     sortOrder: index + 1
   }));
-  const householdBooks = list(setupSnapshot.books).filter(bookBelongsToHouseholdStream);
-  const childBooks = list(setupSnapshot.books).filter((book) => !bookBelongsToHouseholdStream(book));
-  next.currentReadAlouds = (householdBooks.length ? householdBooks : list(setupSnapshot.books)).slice(0, 3).map((book) => ({
+  const householdBooks = currentBooks.filter(bookBelongsToHouseholdStream);
+  const childBooks = currentBooks.filter((book) => !bookBelongsToHouseholdStream(book));
+  next.currentReadAlouds = (householdBooks.length ? householdBooks : currentBooks).slice(0, 3).map((book) => ({
     ...book,
     subtitle: book.category,
     progressPercent: rangeProgressPercent(book.startChapter || 1, book.currentChapter || book.startChapter || 1, book.endChapter || book.totalChapters || 0),
     assignedTerm: setupSnapshot.term?.label || next.term.label
   }));
-  next.bookAssignments = list(setupSnapshot.books).flatMap((book) => {
+  next.bookAssignments = currentBooks.flatMap((book) => {
     const assignedChildren = childrenForAssignment(book, next.children);
     const assignmentType = bookBelongsToHouseholdStream(book) ? "household-read-aloud" : book.formLabel ? "form-reading" : "independent-reading";
     return (assignedChildren.length ? assignedChildren : [null]).map((child) => ({
@@ -364,7 +382,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
       progressPercent: rangeProgressPercent(book.startChapter || 1, book.currentChapter || book.startChapter || 1, book.endChapter || book.totalChapters || 0)
     }));
   });
-  next.childTracks = list(setupSnapshot.subjects).flatMap((subject, index) => {
+  next.childTracks = currentSubjects.flatMap((subject, index) => {
     const assignedChildren = childrenForAssignment(subject, next.children);
     return assignedChildren.map((child) => ({
       id: `${subject.id}_${child.id || index}`,
@@ -389,7 +407,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
     title: `${setupSnapshot.household?.name || "Household"} Curriculum`
   };
   next.curriculumPackages = [next.curriculumPackage];
-  next.curriculumSubjects = list(setupSnapshot.subjects).map((subject, index) => ({
+  next.curriculumSubjects = currentSubjects.map((subject, index) => ({
     id: subject.id,
     curriculumPackageId: next.curriculumPackage.id,
     subjectType: subject.subjectType,
@@ -433,11 +451,11 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
       color: block.color
     }))
   ];
-  const formationMaterialsForPlanning = list(setupSnapshot.formationMaterials).length
-    ? list(setupSnapshot.formationMaterials)
+  const formationMaterialsForPlanning = currentFormationMaterials.length
+    ? currentFormationMaterials
     : structuredFormationMaterials;
   next.curriculumResources = [
-    ...list(setupSnapshot.subjects).filter((subject) => subject.resource).map((subject, index) => ({
+    ...currentSubjects.filter((subject) => subject.resource).map((subject, index) => ({
       id: `resource_${subject.id}`,
       curriculumPackageId: next.curriculumPackage.id,
       curriculumSubjectId: subject.id,
@@ -482,7 +500,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
       }))
     ],
     childRows: [
-      ...list(setupSnapshot.subjects).flatMap((subject, index) => {
+      ...currentSubjects.flatMap((subject, index) => {
         const assignedChildren = childrenForAssignment(subject, next.children);
         return assignedChildren.map((child) => ({
           id: `week_${subject.id}_${child.id}`,
@@ -514,10 +532,12 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
   };
   next.termSetup = {
     ...next.termSetup,
+    termOptions: list(setupSnapshot.terms).length ? list(setupSnapshot.terms) : [{ ...next.term }],
+    activeTermId: currentTermId || next.term?.id || "",
     setupCards: [
       { id: "setup_children", title: "Children", value: String(next.children.length), detail: "Active homeschool children" },
-      { id: "setup_subjects", title: "Subjects", value: String(list(setupSnapshot.subjects).length), detail: "Configured curriculum tracks" },
-      { id: "setup_books", title: "Books", value: String(list(setupSnapshot.books).length), detail: "Living books and read-alouds" },
+      { id: "setup_subjects", title: "Subjects", value: String(currentSubjects.length), detail: "Configured curriculum tracks" },
+      { id: "setup_books", title: "Books", value: String(currentBooks.length), detail: "Living books and read-alouds" },
       { id: "setup_formation", title: "Formation", value: String(formationMaterialsForPlanning.length + list(formation.recitationTracks).length), detail: "Catechesis, hymns, and memory work" }
     ],
     childTrackSummary: next.children.map((child) => ({
@@ -527,14 +547,14 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
         .map((track) => `${track.subjectType === "reading" ? "Reading" : track.subjectType}: ${track.title}`)
     })),
     pacingRows: [
-      ...list(setupSnapshot.books).filter((book) => book.endChapter).map((book) => ({
+      ...currentBooks.filter((book) => book.endChapter).map((book) => ({
         id: `pace_${book.id}`,
         label: book.title,
         subtitle: `${book.author || book.category} • chapters ${book.startChapter || 1}-${book.endChapter}`,
         color: book.color,
         segments: distributeRangeSegments({ label: "Ch.", start: book.startChapter || 1, end: book.endChapter, color: book.color })
       })),
-      ...list(setupSnapshot.subjects).filter((subject) => subject.endNumber).map((subject) => ({
+      ...currentSubjects.filter((subject) => subject.endNumber).map((subject) => ({
         id: `pace_${subject.id}`,
         label: subject.title,
         subtitle: `${subject.resource || subject.subjectType} • ${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber}`,
@@ -550,12 +570,12 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
       }))
     ],
     graceReserve: [
-      ...list(setupSnapshot.subjects).filter((subject) => setupSnapshot.preferences?.graceModeActive && subject.gracePriority !== "keep").map((subject) => ({
+      ...currentSubjects.filter((subject) => setupSnapshot.preferences?.graceModeActive && subject.gracePriority !== "keep").map((subject) => ({
         title: subject.title,
         note: subject.graceNote,
         color: subject.color
       })),
-      ...list(setupSnapshot.books).filter((book) => setupSnapshot.preferences?.graceModeActive).map((book) => ({
+      ...currentBooks.filter((book) => setupSnapshot.preferences?.graceModeActive).map((book) => ({
         title: book.title,
         note: book.graceNote,
         color: book.color
@@ -726,23 +746,25 @@ export async function saveLearnSetup(env, request, payload) {
       setupSnapshot.schoolYear.label,
       setupSnapshot.schoolYear.startDate,
       setupSnapshot.schoolYear.endDate,
-      setupSnapshot.term.id,
+      setupSnapshot.schoolYear.currentTermId || setupSnapshot.term.id,
       JSON.stringify(setupSnapshot.schoolYear),
       timestamp
     );
-    await d1Run(
-      env,
-      `INSERT INTO learn_terms (id, school_year_id, label, start_date, end_date, pace_mode, data, created_at, updated_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)`,
-      setupSnapshot.term.id,
-      setupSnapshot.schoolYear.id,
-      setupSnapshot.term.label,
-      setupSnapshot.term.startDate,
-      setupSnapshot.term.endDate,
-      setupSnapshot.term.paceMode,
-      JSON.stringify(setupSnapshot.term),
-      timestamp
-    );
+    for (const term of list(setupSnapshot.terms).length ? list(setupSnapshot.terms) : [setupSnapshot.term]) {
+      await d1Run(
+        env,
+        `INSERT INTO learn_terms (id, school_year_id, label, start_date, end_date, pace_mode, data, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)`,
+        term.id,
+        setupSnapshot.schoolYear.id,
+        term.label,
+        term.startDate,
+        term.endDate,
+        term.paceMode,
+        JSON.stringify(term),
+        timestamp
+      );
+    }
   });
 
   return {
@@ -767,6 +789,7 @@ export async function saveLearnGraceMode(env, request, payload = {}) {
     },
     schoolYear: current.schoolYear,
     term: current.term,
+    terms: current.terms,
     preferences: nextPreferences,
     children: current.children,
     streams: current.streams,

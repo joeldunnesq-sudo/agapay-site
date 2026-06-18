@@ -459,6 +459,41 @@ function renderTermProgressPanel(vm) {
   `;
 }
 
+function renderTodayLearnContext(vm) {
+  const term = vm.termProgress || {};
+  const progress = Number(term.percent || 0);
+  const currentMode = vm.graceMode?.active ? vm.graceMode.mode || "light" : "full";
+  const modes = [
+    { id: "full", title: "Full", detail: "Keep the complete plan for a steady week." },
+    { id: "light", title: "Light", detail: "Keep essentials and soften lower-priority work." },
+    { id: "minimum viable", title: "Minimum", detail: "Prayer, one shared touchpoint, and the next right thing." },
+    { id: "feast only", title: "Feast", detail: "Let the Church year carry the day." }
+  ];
+  return `
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:12px;margin-top:18px;width:100%;">
+      <section style="border:1px solid var(--line);border-radius:14px;background:rgba(255,252,245,.72);padding:14px;">
+        <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:800;text-transform:uppercase;">Current Term</div>
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:25px;line-height:1.05;margin:5px 0 4px;color:var(--ink);">${html(term.label || "Current Term")}</h3>
+        <p style="margin:0 0 10px;color:var(--muted);line-height:1.35;">${term.currentWeek && term.totalWeeks ? `Week ${html(term.currentWeek)} of ${html(term.totalWeeks)}` : "Set term dates in Setup"}${term.dateRange ? ` · ${html(term.dateRange)}` : ""}</p>
+        <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:7px;color:#33405a;font-size:13px;"><span>Term progress</span><strong>${html(progress)}%</strong></div>
+        ${bar(progress, "var(--gold)")}
+      </section>
+      <section style="border:1px solid rgba(181,148,47,.34);border-radius:14px;background:linear-gradient(135deg,#fffaf0 0%,#f7edd6 100%);padding:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
+          <span><span style="display:block;color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:800;text-transform:uppercase;">Grace Mode</span><strong style="font-family:'Cormorant Garamond',serif;font-size:25px;">Today’s rhythm</strong></span>
+          <span data-grace-mode-status style="color:var(--muted);font-size:12px;min-height:18px;"></span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(110px,1fr));gap:8px;">
+          ${modes.map((mode) => {
+            const active = mode.id === currentMode;
+            return `<button type="button" data-grace-mode="${html(mode.id)}" aria-pressed="${active ? "true" : "false"}" title="${html(mode.detail)}" style="border:1px solid ${active ? "var(--gold)" : "var(--line)"};border-radius:11px;background:${active ? "var(--navy)" : "rgba(255,255,255,.62)"};color:${active ? "#fffaf0" : "var(--ink)"};padding:10px;text-align:left;cursor:pointer;font-family:inherit;min-height:84px;"><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:20px;line-height:1;">${html(mode.title)}</strong><small style="display:block;margin-top:5px;line-height:1.25;color:${active ? "rgba(255,250,240,.82)" : "var(--muted)"};">${html(mode.detail)}</small></button>`;
+          }).join("")}
+        </div>
+      </section>
+    </div>
+  `;
+}
+
 function renderDashboard(vm) {
   const today = vm.todayInChurch;
   const churchIconPanel = today.iconUrl
@@ -466,8 +501,6 @@ function renderDashboard(vm) {
     : `<div style="flex:none;width:108px;height:146px;border:1px solid var(--line);border-radius:10px;background:radial-gradient(circle at 50% 30%,#fff7df 0 24%,#f0dcae 25% 26%,transparent 27%),linear-gradient(180deg,#f8f0dd,#efe0ba);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:46px;position:relative;overflow:hidden;"><span style="position:absolute;inset:9px;border:1px solid rgba(181,148,47,.36);border-radius:7px;"></span><svg viewBox="0 0 64 84" aria-hidden="true" style="width:78px;height:104px;color:var(--gold);"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 6v18"/><path d="M24 14h16"/><path d="M14 78h36"/><path d="M18 78V44l14-12 14 12v34"/><path d="M25 78V58a7 7 0 0 1 14 0v20"/><path d="M12 46l20-18 20 18"/><path d="M32 32v-8"/></g></svg></div>`;
   const body = `
     <section data-screen-label="Dashboard" style="display:flex;flex-direction:column;gap:22px;">
-      ${renderGraceModePanel(vm)}
-      ${renderTermProgressPanel(vm)}
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;gap:24px;box-shadow:0 1px 3px rgba(20,40,70,.04);flex-wrap:wrap;">
         ${churchIconPanel}
         <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:6px;">
@@ -491,6 +524,7 @@ function renderDashboard(vm) {
           <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:600;">${html(today.kontakionLabel)}</div>
           <p style="margin:6px 0 0;font-size:15.5px;line-height:1.5;color:#33405a;">${html(today.kontakionText)}</p>
         </div>
+        ${renderTodayLearnContext(vm)}
       </div>
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
         <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;"><span style="color:var(--gold);font-size:16px;">✥</span><span style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">CHURCH RHYTHMS</span></div>
@@ -781,6 +815,18 @@ function setupSelect(label, name, value, options) {
   return `<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">${html(label)}<select name="${html(name)}" style="min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);">${options.map((option) => { const optionValue = typeof option === "object" && option !== null && "value" in option ? option.value : option; const optionLabel = typeof option === "object" && option !== null && "label" in option ? option.label : option; return `<option value="${html(optionValue)}" ${optionValue === value ? "selected" : ""}>${html(optionLabel)}</option>`; }).join("")}</select></label>`;
 }
 
+function setupTermOptions(terms = [], fallbackTerm = {}) {
+  const source = terms.length ? terms : [fallbackTerm];
+  return source.map((term, index) => ({
+    value: term.id || `term_${index + 1}`,
+    label: term.label || `Term ${index + 1}`
+  }));
+}
+
+function termSetupRow(term = {}, index = 0) {
+  return `<div data-setup-row="terms" data-id="${html(term.id || `term_${index + 1}`)}" style="display:grid;grid-template-columns:1fr .75fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;"><input type="hidden" name="id" value="${html(term.id || `term_${index + 1}`)}" />${setupInput("Term name", "label", term.label || `Term ${index + 1}`)}${setupInput("Start", "startDate", term.startDate || "", { type: "date" })}${setupInput("End", "endDate", term.endDate || "", { type: "date" })}${setupRemoveButton()}</div>`;
+}
+
 function setupRemoveButton() {
   return `<button type="button" data-setup-remove-row aria-label="Remove row" style="align-self:end;border:1px solid var(--line);background:var(--paper);color:var(--burgundy);border-radius:9px;padding:10px 12px;font-family:inherit;">Remove</button>`;
 }
@@ -822,16 +868,16 @@ function streamSetupRow(stream = {}) {
   return `<div data-setup-row="streams" data-id="${html(stream.id || "")}" style="display:grid;grid-template-columns:1.1fr .7fr repeat(5,.42fr) auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Stream", "title", stream.title || "")}${setupInput("Cadence", "cadenceLabel", stream.cadence || "")}${setupInput("Mon", "monMinutes", stream.dailyMinutes?.mon ?? stream.monMinutes ?? "20", { type: "number" })}${setupInput("Tue", "tueMinutes", stream.dailyMinutes?.tue ?? stream.tueMinutes ?? "20", { type: "number" })}${setupInput("Wed", "wedMinutes", stream.dailyMinutes?.wed ?? stream.wedMinutes ?? "20", { type: "number" })}${setupInput("Thu", "thuMinutes", stream.dailyMinutes?.thu ?? stream.thuMinutes ?? "20", { type: "number" })}${setupInput("Fri", "friMinutes", stream.dailyMinutes?.fri ?? stream.friMinutes ?? "20", { type: "number" })}${setupRemoveButton()}<input type="hidden" name="streamType" value="${html(stream.streamType || stream.type || "household")}" /></div>`;
 }
 
-function subjectSetupRow(subject = {}, children = []) {
-  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" style="display:grid;grid-template-columns:1fr .65fr .8fr 1fr .55fr .55fr .55fr .55fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Subject", "title", subject.title || "")}${setupInput("Type", "subjectType", subject.subjectType || "")}${setupSelect("Form", "formLabel", subject.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupInput("Curriculum", "resource", subject.resource || "")}${setupSelect("Pace By", "progressionType", subject.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", subject.startNumber || "", { type: "number" })}${setupInput("Done Through", "currentNumber", subject.currentNumber || subject.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", subject.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutes", subject.minutes || "", { type: "number" })}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">${setupSelect("Specific Child", "childId", subject.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Priority", "gracePriority", subject.gracePriority || "keep", ["keep", "reduce first", "bump if needed"])}${setupInput("Grace Note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</div></div>`;
+function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId = "") {
+  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" style="display:grid;grid-template-columns:1fr .65fr .8fr 1fr .55fr .55fr .55fr .55fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Subject", "title", subject.title || "")}${setupInput("Type", "subjectType", subject.subjectType || "")}${setupSelect("Form", "formLabel", subject.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupInput("Curriculum", "resource", subject.resource || "")}${setupSelect("Pace By", "progressionType", subject.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", subject.startNumber || "", { type: "number" })}${setupInput("Done Through", "currentNumber", subject.currentNumber || subject.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", subject.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutes", subject.minutes || "", { type: "number" })}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("Specific Child", "childId", subject.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Priority", "gracePriority", subject.gracePriority || "keep", ["keep", "reduce first", "bump if needed"])}${setupInput("Grace Note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</div></div>`;
 }
 
-function bookSetupRow(book = {}) {
-  return `<div data-setup-row="books" data-id="${html(book.id || "")}" style="display:grid;grid-template-columns:1.1fr .9fr .7fr .75fr .55fr .55fr .55fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Title", "title", book.title || "")}${setupInput("Author", "author", book.author || "")}${setupInput("Category", "category", book.category || "")}${setupSelect("Form", "formLabel", book.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupInput("Start Ch.", "startChapter", book.startChapter || "", { type: "number" })}${setupInput("Done Ch.", "currentChapter", book.currentChapter || book.startChapter || "", { type: "number" })}${setupInput("End Ch.", "endChapter", book.endChapter || book.totalChapters || "", { type: "number" })}${setupColorSelect("Planner Color", "color", book.color || colorChoices[2])}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:10px;">${setupSelect("Audience", "audienceLabel", book.audienceLabel || "Household", ["Household", "Morning Basket", "Independent", "Read-Aloud"])}${setupInput("Grace Note", "graceNote", book.graceNote || "Reading moved into the reserve basket.")}</div></div>`;
+function bookSetupRow(book = {}, terms = [], currentTermId = "") {
+  return `<div data-setup-row="books" data-id="${html(book.id || "")}" style="display:grid;grid-template-columns:1.1fr .9fr .7fr .75fr .55fr .55fr .55fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Title", "title", book.title || "")}${setupInput("Author", "author", book.author || "")}${setupInput("Category", "category", book.category || "")}${setupSelect("Form", "formLabel", book.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupInput("Start Ch.", "startChapter", book.startChapter || "", { type: "number" })}${setupInput("Done Ch.", "currentChapter", book.currentChapter || book.startChapter || "", { type: "number" })}${setupInput("End Ch.", "endChapter", book.endChapter || book.totalChapters || "", { type: "number" })}${setupColorSelect("Planner Color", "color", book.color || colorChoices[2])}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">${setupSelect("Term", "termId", book.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("Audience", "audienceLabel", book.audienceLabel || "Household", ["Household", "Morning Basket", "Independent", "Read-Aloud"])}${setupInput("Grace Note", "graceNote", book.graceNote || "Reading moved into the reserve basket.")}</div></div>`;
 }
 
-function formationSetupRow(material = {}) {
-  return `<div data-setup-row="formationMaterials" data-id="${html(material.id || "")}" style="display:grid;grid-template-columns:1.1fr .75fr 1fr .65fr .8fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Material", "title", material.title || "")}${setupSelect("Preset", "materialType", material.materialType || "Catechesis", ["Catechesis", "Art Study", "Poetry", "Music Study"])}${setupInput("Source", "source", material.source || "")}${setupInput("Cadence", "cadenceLabel", material.cadence || "")}${setupColorSelect("Term Color", "color", material.color || colorChoices[3])}${setupRemoveButton()}</div>`;
+function formationSetupRow(material = {}, terms = [], currentTermId = "") {
+  return `<div data-setup-row="formationMaterials" data-id="${html(material.id || "")}" style="display:grid;grid-template-columns:1.1fr .75fr 1fr .65fr .75fr .8fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Material", "title", material.title || "")}${setupSelect("Preset", "materialType", material.materialType || "Catechesis", ["Catechesis", "Art Study", "Poetry", "Music Study"])}${setupInput("Source", "source", material.source || "")}${setupInput("Cadence", "cadenceLabel", material.cadence || "")}${setupSelect("Term", "termId", material.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupColorSelect("Term Color", "color", material.color || colorChoices[3])}${setupRemoveButton()}</div>`;
 }
 
 function formationRhythmSetupRow(rhythm = {}) {
@@ -864,7 +910,7 @@ function formationSetupPanel(vm) {
       <p style="margin:0;color:var(--muted);line-height:1.45;">Edit the inputs that populate the Formation page cards. These are saved to the household setup and then transformed into Formation View Models.</p>
       <div style="${sectionStyle}">
         ${sectionTitle("☰", "Formation Materials", "These become the term pacing rows and also seed catechesis, art, poetry, music, and other Formation cards.")}
-        <div data-setup-list="formationMaterials" style="display:grid;gap:10px;">${(vm.formationMaterials?.length ? vm.formationMaterials : [{}]).map((material) => formationSetupRow(material)).join("")}</div>
+        <div data-setup-list="formationMaterials" style="display:grid;gap:10px;">${(vm.formationMaterials?.length ? vm.formationMaterials : [{}]).map((material) => formationSetupRow(material, vm.terms, vm.schoolYear.currentTermId || vm.term.id)).join("")}</div>
         <button type="button" data-setup-add-row="formationMaterials" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Formation Material</button>
       </div>
       <div style="${sectionStyle}">
@@ -901,15 +947,16 @@ function formationSetupPanel(vm) {
 }
 
 function renderSetup(vm) {
+  const currentTermId = vm.schoolYear.currentTermId || vm.term.id || vm.terms?.[0]?.id || "term_1";
   const body = `
     <form data-setup-form data-screen-label="Set Up" style="display:flex;flex-direction:column;gap:18px;">
       ${panel("Setup Progress", `<h2 style="font-family:'Cormorant Garamond',serif;margin:0 0 8px;font-size:28px;">Step ${vm.progress.current} of ${vm.progress.total}</h2>${bar((vm.progress.current / vm.progress.total) * 100, "var(--navy)")}<p style="color:var(--muted);">Next: ${html(vm.progress.next)}</p><div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px;margin-top:14px;">${vm.steps.map((step) => `<div style="border:1px solid var(--line);border-radius:10px;background:${step.status === "active" ? "#fbf2dd" : "var(--paper2)"};padding:12px;"><small style="color:var(--gold);text-transform:uppercase;letter-spacing:.12em;">${html(step.status)}</small><strong style="display:block;margin:5px 0;">${html(step.title)}</strong><span style="color:var(--muted);line-height:1.35;">${html(step.summary)}</span></div>`).join("")}</div>`, { icon: "⚙" })}
       ${panel("Where Setup Data Goes", `<div style="display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;"><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Children + Forms</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Groups Planner and Print work by Form instead of repeating every child.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Household Streams</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Feeds the dashboard Household Stream and the top Planner rows.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Subjects + Books</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Creates Planner Form rows, Books library cards, and term pacing.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Formation</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Powers Church Rhythms, Catechesis, Hymns, Memory, Enrichment, and Feast cards.</small></div></div>`, { icon: "✥" })}
-      ${panel("Household", `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">These dates drive the dashboard term-progress card. The Church calendar selection feeds Today in the Church, Formation, Planner, and Print.</p><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupInput("Method", "household.primaryMethod", vm.household.method)}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupInput("Current term", "term.label", vm.term.label)}${setupInput("Term start", "term.startDate", vm.term.startDate, { type: "date" })}${setupInput("Term end", "term.endDate", vm.term.endDate, { type: "date" })}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}${setupSelect("Pace", "preferences.paceMode", vm.preferences.paceMode, ["gentle", "steady", "ambitious"])}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /><a href="/api/learn/google-calendar/connect" style="display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;background:var(--navy);color:#fff;border-radius:10px;padding:10px;">Connect Google Calendar</a></div>`, { icon: "⌂" })}
+      ${panel("Household", `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Set the school year, choose the active term, and plan future terms ahead of time. The dashboard and core pages stay focused on the selected current term.</p><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupInput("Method", "household.primaryMethod", vm.household.method)}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}${setupSelect("Pace", "preferences.paceMode", vm.preferences.paceMode, ["gentle", "steady", "ambitious"])}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /><a href="/api/learn/google-calendar/connect" style="display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;background:var(--navy);color:#fff;border-radius:10px;padding:10px;">Connect Google Calendar</a></div><div style="margin-top:14px;border:1px solid var(--line);border-radius:13px;background:rgba(255,252,245,.64);padding:14px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;"><span><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:24px;">Terms</strong><small style="display:block;color:var(--muted);">Add future terms here, then assign subjects, books, and formation materials to the right term below.</small></span><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div></div>`, { icon: "⌂" })}
       ${panel("Children & Forms", `<p style="margin:0 0 12px;color:var(--muted);">Assign each child a Form and color. Forms are the grouping layer for Planner and Print, especially for larger households.</p><div data-setup-list="children" style="display:grid;gap:10px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child)).join("")}</div><button type="button" data-setup-add-row="children" style="margin-top:12px;width:100%;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px;font-family:inherit;">Add Child</button>`, { icon: "◎" })}
       ${panel("Household Streams", `<p style="margin:0 0 12px;color:var(--muted);">Use these for shared rhythms: morning basket, family read-aloud, nature study, catechesis, feast-day activity. These appear in the dashboard and Planner household rows.</p><div data-setup-list="streams" style="display:grid;gap:10px;">${(vm.streams.length ? vm.streams : [{}]).map((stream) => streamSetupRow(stream)).join("")}</div><button type="button" data-setup-add-row="streams" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Stream</button>`, { icon: "☰" })}
-      ${panel("Subjects & Curriculum", `<p style="margin:0 0 12px;color:var(--muted);">Choose a Form for shared age-band work or a Specific Child for individual work. These become Planner Form rows and term pacing rows.</p><div data-setup-list="subjects" style="display:grid;gap:10px;">${(vm.subjects.length ? vm.subjects : [{}]).map((subject) => subjectSetupRow(subject, vm.children)).join("")}</div><button type="button" data-setup-add-row="subjects" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Subject</button>`, { icon: "✎" })}
-      ${panel("Books & Read-Alouds", `<p style="margin:0 0 12px;color:var(--muted);">Household, Morning Basket, and Read-Aloud books feed the Books page and household Planner rows. Independent or Form-specific books feed Form work.</p><div data-setup-list="books" style="display:grid;gap:10px;">${(vm.books.length ? vm.books : [{}]).map((book) => bookSetupRow(book)).join("")}</div><button type="button" data-setup-add-row="books" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Book</button>`, { icon: "☰" })}
+      ${panel("Subjects & Curriculum", `<p style="margin:0 0 12px;color:var(--muted);">Assign each subject to a term. Current-term subjects feed Planner, Formation, Reports, and Print; future-term subjects stay parked until that term becomes current.</p><div data-setup-list="subjects" style="display:grid;gap:10px;">${(vm.subjects.length ? vm.subjects : [{}]).map((subject) => subjectSetupRow(subject, vm.children, vm.terms, currentTermId)).join("")}</div><button type="button" data-setup-add-row="subjects" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Subject</button>`, { icon: "✎" })}
+      ${panel("Books & Read-Alouds", `<p style="margin:0 0 12px;color:var(--muted);">Assign books to the term where they belong. Future books remain out of the Books and Planner views until their term is active.</p><div data-setup-list="books" style="display:grid;gap:10px;">${(vm.books.length ? vm.books : [{}]).map((book) => bookSetupRow(book, vm.terms, currentTermId)).join("")}</div><button type="button" data-setup-add-row="books" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Book</button>`, { icon: "☰" })}
       ${panel("Formation", formationSetupPanel(vm), { icon: "✥" })}
       ${panel("Co-op", `<div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">Coming Soon</strong><p style="margin:4px 0 0;color:var(--muted);line-height:1.4;">Co-op creation and member management are intentionally deferred so Learn can launch with the household planner, reports, print packs, and paid limits first.</p></div><span style="border:1px solid var(--gold);border-radius:999px;color:var(--gold);padding:7px 12px;white-space:nowrap;">Future add-on</span></div>`, { icon: "◎" })}
       <div style="position:sticky;bottom:12px;z-index:5;display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;background:rgba(253,249,239,.96);padding:12px 14px;box-shadow:0 8px 24px rgba(18,38,67,.12);">
@@ -1021,6 +1068,19 @@ function setupPayloadFromForm(form) {
   const isChecked = (name) => form.elements[name]?.type === "hidden"
     ? get(name) === "true"
     : Boolean(form.elements[name]?.checked);
+  const terms = collectRows(form, "terms", (row, index) => {
+    const label = rowValue(row, "label");
+    if (!label) return null;
+    return {
+      id: rowValue(row, "id") || row.dataset.id || `term_${index + 1}`,
+      label,
+      startDate: rowValue(row, "startDate"),
+      endDate: rowValue(row, "endDate"),
+      paceMode: get("preferences.paceMode")
+    };
+  });
+  const currentTermId = get("schoolYear.currentTermId") || terms[0]?.id || "term_1";
+  const currentTerm = terms.find((term) => term.id === currentTermId) || terms[0] || {};
   return {
     household: {
       name: get("household.name"),
@@ -1030,14 +1090,17 @@ function setupPayloadFromForm(form) {
     schoolYear: {
       label: get("schoolYear.label"),
       startDate: get("schoolYear.startDate"),
-      endDate: get("schoolYear.endDate")
+      endDate: get("schoolYear.endDate"),
+      currentTermId
     },
     term: {
-      label: get("term.label"),
-      startDate: get("term.startDate"),
-      endDate: get("term.endDate"),
+      id: currentTerm.id || currentTermId,
+      label: currentTerm.label || "Term 1",
+      startDate: currentTerm.startDate || "",
+      endDate: currentTerm.endDate || "",
       paceMode: get("preferences.paceMode")
     },
+    terms,
     preferences: {
       calendarType: get("preferences.calendarType"),
       evaluationModel: get("preferences.evaluationModel"),
@@ -1090,6 +1153,7 @@ function setupPayloadFromForm(form) {
         currentNumber: rowValue(row, "currentNumber"),
         endNumber: rowValue(row, "endNumber"),
         color: rowValue(row, "color"),
+        termId: rowValue(row, "termId") || currentTermId,
         gracePriority: rowValue(row, "gracePriority"),
         graceNote: rowValue(row, "graceNote")
       };
@@ -1108,6 +1172,7 @@ function setupPayloadFromForm(form) {
         currentChapter: rowValue(row, "currentChapter"),
         endChapter: rowValue(row, "endChapter"),
         color: rowValue(row, "color"),
+        termId: rowValue(row, "termId") || currentTermId,
         graceNote: rowValue(row, "graceNote")
       };
     }),
@@ -1186,6 +1251,7 @@ function setupPayloadFromForm(form) {
         materialType: rowValue(row, "materialType"),
         source: rowValue(row, "source"),
         cadenceLabel: rowValue(row, "cadenceLabel"),
+        termId: rowValue(row, "termId") || currentTermId,
         color: rowValue(row, "color")
       };
     }),
@@ -1203,18 +1269,40 @@ function currentSetupChildren(form) {
   }));
 }
 
+function currentSetupTerms(form) {
+  return collectRows(form, "terms", (row, index) => ({
+    id: rowValue(row, "id") || row.dataset.id || `term_${index + 1}`,
+    label: rowValue(row, "label") || `Term ${index + 1}`
+  }));
+}
+
 function setupBlankRow(type, form) {
+  const terms = currentSetupTerms(form);
+  const currentTermId = form.elements["schoolYear.currentTermId"]?.value || terms[0]?.id || "term_1";
   if (type === "children") return childSetupRow({});
   if (type === "streams") return streamSetupRow({});
-  if (type === "subjects") return subjectSetupRow({}, currentSetupChildren(form));
-  if (type === "books") return bookSetupRow({});
-  if (type === "formationMaterials") return formationSetupRow({});
+  if (type === "terms") return termSetupRow({}, terms.length);
+  if (type === "subjects") return subjectSetupRow({}, currentSetupChildren(form), terms, currentTermId);
+  if (type === "books") return bookSetupRow({}, terms, currentTermId);
+  if (type === "formationMaterials") return formationSetupRow({}, terms, currentTermId);
   if (type === "formationRhythms") return formationRhythmSetupRow({});
   if (type === "formationRecitation") return formationRecitationSetupRow({});
   if (type === "formationHymns") return formationHymnSetupRow({});
   if (type === "formationEnrichment") return formationEnrichmentSetupRow({});
   if (type === "formationFeasts") return formationFeastSetupRow({});
   return "";
+}
+
+function syncSetupTermSelects(form) {
+  const terms = currentSetupTerms(form);
+  if (!terms.length) return;
+  form.querySelectorAll('select[name="schoolYear.currentTermId"], select[name="termId"]').forEach((select) => {
+    const currentValue = select.value;
+    select.innerHTML = setupTermOptions(terms, terms[0])
+      .map((option) => `<option value="${html(option.value)}" ${option.value === currentValue ? "selected" : ""}>${html(option.label)}</option>`)
+      .join("");
+    if (![...select.options].some((option) => option.value === currentValue)) select.value = terms[0].id;
+  });
 }
 
 function wireSetupPage() {
@@ -1230,20 +1318,28 @@ function wireSetupPage() {
     if (event.target === textInput && /^#[0-9a-f]{6}$/i.test(textInput.value) && colorInput) colorInput.value = textInput.value;
     const value = /^#[0-9a-f]{6}$/i.test(textInput?.value || "") ? textInput.value : colorInput?.value;
     if (preview && value) preview.style.background = value;
+    if (event.target.closest('[data-setup-row="terms"]')) syncSetupTermSelects(form);
   });
   form.addEventListener("click", (event) => {
     const removeButton = event.target.closest("[data-setup-remove-row]");
     if (removeButton) {
       const row = removeButton.closest("[data-setup-row]");
       const list = row?.parentElement;
-      if (row && list && list.querySelectorAll("[data-setup-row]").length > 1) row.remove();
+      const removedType = row?.dataset.setupRow;
+      if (row && list && list.querySelectorAll("[data-setup-row]").length > 1) {
+        row.remove();
+        if (removedType === "terms") syncSetupTermSelects(form);
+      }
       return;
     }
     const addButton = event.target.closest("[data-setup-add-row]");
     if (addButton) {
       const type = addButton.dataset.setupAddRow;
       const list = form.querySelector(`[data-setup-list="${type}"]`);
-      if (list) list.insertAdjacentHTML("beforeend", setupBlankRow(type, form));
+      if (list) {
+        list.insertAdjacentHTML("beforeend", setupBlankRow(type, form));
+        if (type === "terms") syncSetupTermSelects(form);
+      }
     }
   });
   form.addEventListener("submit", async (event) => {

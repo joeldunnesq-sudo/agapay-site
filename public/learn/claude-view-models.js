@@ -695,6 +695,19 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
   const household = setup.household || snapshot.household || {};
   const schoolYear = setup.schoolYear || snapshot.schoolYear || {};
   const term = setup.term || snapshot.term || {};
+  const termsSource = safeArray(snapshot.terms).length ? snapshot.terms : safeArray(setup.terms);
+  const setupTerms = (termsSource.length ? termsSource : [
+    term,
+    { id: "term_2", label: "Term 2", startDate: "", endDate: "", paceMode: preferences.paceMode || term.paceMode || "steady" },
+    { id: "term_3", label: "Term 3", startDate: "", endDate: "", paceMode: preferences.paceMode || term.paceMode || "steady" }
+  ]).map((entry, index) => ({
+    id: text(entry.id, `term_${index + 1}`),
+    label: text(entry.label, `Term ${index + 1}`),
+    startDate: text(entry.startDate, ""),
+    endDate: text(entry.endDate, ""),
+    paceMode: text(entry.paceMode, preferences.paceMode || term.paceMode || "steady")
+  }));
+  const currentTermId = text(term.id || schoolYear.currentTermId || setupTerms[0]?.id, "term_1");
   const childrenSource = safeArray(setup.children).length ? setup.children : snapshot.children;
   const streamsSource = safeArray(setup.starterStreams).length ? setup.starterStreams : safeArray(setup.householdStreams).length ? setup.householdStreams : snapshot.streams;
   const subjectsSource = safeArray(snapshot.subjects).length ? snapshot.subjects : setup.subjects;
@@ -707,6 +720,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
     materialType: text(material.materialType || material.resourceType, "Catechesis"),
     source: text(material.source || material.author, ""),
     cadence: text(material.cadenceLabel || material.cadence, ""),
+    termId: text(material.termId || material.assignedTermId, currentTermId),
     color: text(material.color, ACCENTS[(index + 3) % ACCENTS.length])
   }));
   const defaultFormationMaterials = materialDefaults.length ? materialDefaults : [
@@ -756,7 +770,8 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       id: text(schoolYear.id, ""),
       label: text(schoolYear.label, ""),
       startDate: text(schoolYear.startDate, ""),
-      endDate: text(schoolYear.endDate, "")
+      endDate: text(schoolYear.endDate, ""),
+      currentTermId
     },
     term: {
       id: text(term.id, ""),
@@ -765,6 +780,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       endDate: text(term.endDate, ""),
       paceMode: text(term.paceMode, preferences.paceMode || "steady")
     },
+    terms: setupTerms,
     steps: simpleList(onboarding.steps, (step) => ({
       title: text(step.title, "Setup Step"),
       status: text(step.status, ""),
@@ -805,6 +821,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       startNumber: text(subject.startNumber, ""),
       currentNumber: text(subject.currentNumber || subject.completedThroughNumber, ""),
       endNumber: text(subject.endNumber, ""),
+      termId: text(subject.termId || subject.assignedTermId, currentTermId),
       gracePriority: text(subject.gracePriority, "keep"),
       graceNote: text(subject.graceNote, "Deferred gracefully to the reserve list."),
       color: text(subject.color, ACCENTS[index % ACCENTS.length])
@@ -819,6 +836,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       startChapter: text(book.startChapter, ""),
       currentChapter: text(book.currentChapter || book.completedThroughChapter, ""),
       endChapter: text(book.endChapter || book.totalChapters, ""),
+      termId: text(book.termId || book.assignedTermId, currentTermId),
       graceNote: text(book.graceNote, "Reading moved into the reserve basket."),
       color: text(book.color, ACCENTS[(index + 2) % ACCENTS.length])
     })),
