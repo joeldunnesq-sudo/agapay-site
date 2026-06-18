@@ -32,6 +32,18 @@ function setupKvKey(identity) {
   return `${LEARN_SETUP_KV_PREFIX}${identity.householdId}`;
 }
 
+function parseStoredSetup(value) {
+  if (!value) return null;
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+  return safeParseJsonRow(value) || value;
+}
+
 function text(value, fallback = "") {
   const normalized = String(value ?? "").trim();
   return normalized || fallback;
@@ -521,7 +533,7 @@ export async function loadLearnSetupSnapshot(env, request) {
   }
   if (env.AGAPAY_REGISTRATIONS) {
     const stored = await env.AGAPAY_REGISTRATIONS.get(setupKvKey(identity));
-    return safeParseJsonRow(stored)?.setupSnapshot || null;
+    return parseStoredSetup(stored)?.setupSnapshot || null;
   }
   return null;
 }
