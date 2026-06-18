@@ -2283,11 +2283,22 @@
         }
         if (action === "google-calendar-sync") {
           const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
-          const payload = await apiGet(`/api/learn/google-calendar/preview?calendar=${encodeURIComponent(calendar)}`);
-          return showDialog("Google Calendar Event Preview", `${payload.eventCount} events are ready to export once Google Calendar is connected.`, [
-            { label: "First Event", type: "text", value: payload.events[0]?.title || "No events" },
-            { label: "Calendar", type: "text", value: calendar === "revised-julian" ? "Revised Julian / Gregorian" : "Julian / Old Calendar" }
-          ]);
+          try {
+            const payload = await apiPost(`/api/learn/google-calendar/sync?calendar=${encodeURIComponent(calendar)}&returnTo=${encodeURIComponent(window.location.pathname)}`);
+            return showDialog("Google Calendar Synced", `${payload.syncedCount} AGAPAY Learn events were synced to Google Calendar.`, [
+              { label: "Created", type: "text", value: String(payload.createdCount || 0) },
+              { label: "Updated", type: "text", value: String(payload.updatedCount || 0) },
+              { label: "Calendar", type: "text", value: calendar === "revised-julian" ? "Revised Julian / Gregorian" : "Julian / Old Calendar" }
+            ]);
+          } catch (error) {
+            if (error.payload?.connectUrl) {
+              return showDialog("Connect Google Calendar First", error.message || "Connect Google Calendar before syncing events.", [
+                { label: "Action", type: "text", value: "Click Connect Google Calendar, approve access, then sync again." },
+                { label: "Scope", type: "text", value: "calendar.events" }
+              ]);
+            }
+            throw error;
+          }
         }
         if (action === "readings-provider-status") {
           const payload = await apiGet("/api/learn/readings/status");

@@ -182,6 +182,7 @@ import {
   handleLearnGoogleCalendarConnect,
   handleLearnGoogleCalendarPreview,
   handleLearnGoogleCalendarStatus,
+  handleLearnGoogleCalendarSync,
   handleLearnMeta,
   handleLearnOnboarding,
   handleLearnOnboardingSave,
@@ -807,6 +808,9 @@ export default {
     }
     if (url.pathname === "/api/learn/google-calendar/preview") {
       return handleLearnGoogleCalendarPreview(request, env);
+    }
+    if (url.pathname === "/api/learn/google-calendar/sync") {
+      return handleLearnGoogleCalendarSync(request, env);
     }
     if (request.method === "POST" && url.pathname === "/api/learn/grace-mode") {
       return handleLearnGraceModeSave(request, env);

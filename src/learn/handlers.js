@@ -1,7 +1,7 @@
 import { json } from "../lib/core.js";
 import { assertLearnEnabled, enabledProductSlugs, LEARN_PRODUCT_SLUG, learnCoOpEnabled } from "./access.js";
 import { learnBillingCheckout, learnBillingStatus } from "./billing.js";
-import { googleCalendarCallback, googleCalendarConnect, googleCalendarPreview, googleCalendarStatus } from "./google-calendar.js";
+import { googleCalendarCallback, googleCalendarConnect, googleCalendarPreview, googleCalendarStatus, googleCalendarSync } from "./google-calendar.js";
 import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-source.js";
 import { enrichLiturgicalDayWithOrthocal, handleLearnReadingsStatus } from "./readings-source.js";
 import { createLearnRepositoryForRequest, SeedLearnRepository } from "./repository.js";
@@ -272,7 +272,7 @@ export async function handleLearnGraceModeSave(request, env) {
   }, { calendarType, civilDate, env }));
 }
 
-export function handleLearnGoogleCalendarStatus(request, env) {
+export async function handleLearnGoogleCalendarStatus(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return googleCalendarStatus(request, env);
@@ -284,7 +284,7 @@ export function handleLearnGoogleCalendarConnect(request, env) {
   return googleCalendarConnect(request, env);
 }
 
-export function handleLearnGoogleCalendarCallback(request, env) {
+export async function handleLearnGoogleCalendarCallback(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return googleCalendarCallback(request, env);
@@ -294,6 +294,13 @@ export async function handleLearnGoogleCalendarPreview(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return googleCalendarPreview(await createLearnRepositoryForRequest(request, env), request);
+}
+
+export async function handleLearnGoogleCalendarSync(request, env) {
+  const blocked = assertLearnEnabled(env);
+  if (blocked) return blocked;
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  return googleCalendarSync(await createLearnRepositoryForRequest(request, env), request, env);
 }
 
 export function handleLearnBillingStatus(request, env) {
