@@ -96,10 +96,14 @@ export async function loadLearnBillingRecord(env = {}, email = "") {
   if (!identity.email) return null;
 
   if (d1(env)) {
-    const row = await d1First(env, "SELECT data FROM learn_households WHERE id = ?1 LIMIT 1", identity.householdId);
-    const household = safeParseJsonRow(row);
-    const billing = household?.learnBilling || household?.billing || null;
-    if (billing?.status) return billing;
+    try {
+      const row = await d1First(env, "SELECT data FROM learn_households WHERE id = ?1 LIMIT 1", identity.householdId);
+      const household = safeParseJsonRow(row);
+      const billing = household?.learnBilling || household?.billing || null;
+      if (billing?.status) return billing;
+    } catch {
+      // Learn schema may not be applied yet; KV billing records remain the fallback.
+    }
   }
 
   if (env.AGAPAY_REGISTRATIONS) {
@@ -139,16 +143,20 @@ export async function saveLearnBillingRecord(env = {}, record = {}) {
   }
 
   if (d1(env)) {
-    const row = await d1First(env, "SELECT data FROM learn_households WHERE id = ?1 LIMIT 1", saved.householdId);
-    const household = safeParseJsonRow(row);
-    if (household) {
-      await d1Run(
-        env,
-        "UPDATE learn_households SET data = ?1, updated_at = ?2 WHERE id = ?3",
-        JSON.stringify({ ...household, ownerEmail: household.ownerEmail || identity.email, learnBilling: saved }),
-        now,
-        saved.householdId
-      );
+    try {
+      const row = await d1First(env, "SELECT data FROM learn_households WHERE id = ?1 LIMIT 1", saved.householdId);
+      const household = safeParseJsonRow(row);
+      if (household) {
+        await d1Run(
+          env,
+          "UPDATE learn_households SET data = ?1, updated_at = ?2 WHERE id = ?3",
+          JSON.stringify({ ...household, ownerEmail: household.ownerEmail || identity.email, learnBilling: saved }),
+          now,
+          saved.householdId
+        );
+      }
+    } catch {
+      // Keep billing persistence working through KV until the Learn schema is present.
     }
   }
 
