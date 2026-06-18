@@ -91,6 +91,10 @@
           <div class="learn-sidebar-blessing">
             <p>Rooted in Christ.<br />Ordered in Love.</p>
           </div>
+          <a class="learn-home-link" href="/" aria-label="Back to AGAPAY homepage">
+            ${icon("home")}
+            <span>AGAPAY Home</span>
+          </a>
         </div>
       </aside>
     `;

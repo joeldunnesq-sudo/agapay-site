@@ -154,6 +154,42 @@ body::before {
   line-height: 1.35;
 }
 
+.learn-home-link {
+  min-height: 2.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.9rem;
+  border: 1px solid rgba(201, 162, 39, 0.34);
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+  color: rgba(246, 241, 232, 0.86);
+  font-family: var(--learn-sans);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.learn-home-link:hover {
+  border-color: rgba(201, 162, 39, 0.58);
+  background: rgba(181, 148, 47, 0.12);
+  color: #f4ecd6;
+}
+
+.learn-home-link svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.85;
+}
+
 .learn-main {
   padding: 0;
   background: var(--learn-cream);
