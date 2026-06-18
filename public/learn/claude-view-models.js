@@ -547,7 +547,12 @@ export function toReportsViewModel(rawPayload) {
     ],
     children: simpleList(reports.children, (child, index) => {
       const card = safeArray(reports.reportCards).find((item) => item.childId === child.id) || {};
+      const records = safeArray(card.records);
+      const completed = records.reduce((total, record) => total + (Number(record.completed) || 0), 0);
+      const planned = records.reduce((total, record) => total + (Number(record.total) || 0), 0);
+      const completionPercent = planned ? Math.round((completed / planned) * 100) : percent(card.readAloudProgressPercent || summary.lessonsCompletionPercent);
       return {
+        id: text(child.id, ""),
         name: childName(child, index),
         grade: text(child.gradeLabel, ""),
         age: text(child.ageYears, ""),
@@ -555,10 +560,35 @@ export function toReportsViewModel(rawPayload) {
         color: ACCENTS[index % ACCENTS.length],
         status: text(card.status, "in progress"),
         summary: text(card.summary, "No report notes yet."),
-        lessons: text(card.exportPreview?.records?.length || card.records?.length, "0"),
-        readAloud: `${percent(card.readAloudProgressPercent || summary.readAloudProgressPercent)}%`
+        lessons: {
+          done: completed || Number(summary.lessonsCompleted || 0),
+          total: planned || Number(summary.lessonsPlanned || 0),
+          percent: completionPercent
+        },
+        readAloud: {
+          percent: percent(card.readAloudProgressPercent || summary.readAloudProgressPercent)
+        }
       };
     }),
+    subjectProgress: simpleList(reports.subjectProgress, (row, index) => ({
+      id: text(row.id, `progress-${index}`),
+      childId: text(row.childId, ""),
+      childName: text(row.childName, "Household"),
+      formLabel: text(row.formLabel, "Household"),
+      kind: text(row.kind, "subject"),
+      subjectTitle: text(row.subjectTitle, "Subject"),
+      subjectType: text(row.subjectType, ""),
+      source: text(row.source, ""),
+      progressionType: text(row.progressionType, "lessons"),
+      start: text(row.start, ""),
+      current: text(row.current, ""),
+      end: text(row.end, ""),
+      completed: Number(row.completed || 0),
+      total: Number(row.total || 0),
+      percent: percent(row.percent),
+      status: text(row.status, "planned"),
+      color: ACCENTS[index % ACCENTS.length]
+    })),
     narrations: simpleList(reports.narrationLogs, (log) => ({
       date: text(log.loggedAt, "").slice(0, 10),
       child: childName(log.child, 0),
@@ -579,7 +609,8 @@ export function toReportsViewModel(rawPayload) {
         `Lessons completed: ${summary.lessonsCompleted || 0} / ${summary.lessonsPlanned || 0}`,
         `Narrations logged: ${summary.narrationsLogged || 0}`,
         `Read-aloud progress: ${percent(summary.readAloudProgressPercent)}%`,
-        `Feast days ahead: ${summary.feastDaysAhead || 0}`
+        `Feast days ahead: ${summary.feastDaysAhead || 0}`,
+        `Tracked subject rows: ${safeArray(reports.subjectProgress).length}`
       ]
     }
   };
@@ -771,6 +802,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       childId: text(subject.childId, ""),
       progressionType: text(subject.progressionType, "lessons"),
       startNumber: text(subject.startNumber, ""),
+      currentNumber: text(subject.currentNumber || subject.completedThroughNumber, ""),
       endNumber: text(subject.endNumber, ""),
       gracePriority: text(subject.gracePriority, "keep"),
       graceNote: text(subject.graceNote, "Deferred gracefully to the reserve list."),
@@ -784,6 +816,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       formLabel: text(book.formLabel, ""),
       audienceLabel: text(book.audienceLabel, "Household"),
       startChapter: text(book.startChapter, ""),
+      currentChapter: text(book.currentChapter || book.completedThroughChapter, ""),
       endChapter: text(book.endChapter || book.totalChapters, ""),
       graceNote: text(book.graceNote, "Reading moved into the reserve basket."),
       color: text(book.color, ACCENTS[(index + 2) % ACCENTS.length])

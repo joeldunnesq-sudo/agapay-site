@@ -58,6 +58,16 @@ function list(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function rangeProgressPercent(start, current, end) {
+  const first = Math.max(1, int(start, 1));
+  const last = Math.max(first, int(end, first));
+  if (!last || last <= first) return 0;
+  const doneThrough = Math.max(first - 1, Math.min(last, int(current, first - 1)));
+  const completed = Math.max(0, doneThrough - first + 1);
+  const total = Math.max(1, last - first + 1);
+  return Math.round((completed / total) * 100);
+}
+
 function distributeRangeSegments({ label = "", start = 1, end = 0, color = "" } = {}, weeks = 12) {
   const first = Math.max(1, int(start, 1));
   const last = Math.max(first, int(end, first));
@@ -189,6 +199,7 @@ function normalizeSetupPayload(payload = {}, identity = learnSetupIdentity()) {
     formLabel: text(book.formLabel, ""),
     audienceLabel: text(book.audienceLabel, "Household"),
     startChapter: int(book.startChapter, 1),
+    currentChapter: int(book.currentChapter || book.completedThroughChapter || book.startChapter, int(book.startChapter, 1)),
     endChapter: int(book.endChapter || book.totalChapters, 0),
     totalChapters: int(book.endChapter || book.totalChapters, 0),
     color: text(book.color, ""),
@@ -206,6 +217,7 @@ function normalizeSetupPayload(payload = {}, identity = learnSetupIdentity()) {
     childId: text(subject.childId, ""),
     progressionType: text(subject.progressionType, "lessons"),
     startNumber: int(subject.startNumber, 1),
+    currentNumber: int(subject.currentNumber || subject.completedThroughNumber || subject.startNumber, int(subject.startNumber, 1)),
     endNumber: int(subject.endNumber, 0),
     color: text(subject.color, ""),
     gracePriority: text(subject.gracePriority, "keep"),
@@ -326,7 +338,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
     ...book,
     ages: "",
     assignment: "Setup",
-    progressPercent: book.endChapter ? Math.round(((book.startChapter || 1) / Math.max(book.endChapter, 1)) * 100) : 0,
+    progressPercent: rangeProgressPercent(book.startChapter || 1, book.currentChapter || book.startChapter || 1, book.endChapter || book.totalChapters || 0),
     orthodox: false,
     sortOrder: index + 1
   }));
@@ -335,7 +347,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
   next.currentReadAlouds = (householdBooks.length ? householdBooks : list(setupSnapshot.books)).slice(0, 3).map((book) => ({
     ...book,
     subtitle: book.category,
-    progressPercent: book.endChapter ? Math.round(((book.startChapter || 1) / Math.max(book.endChapter, 1)) * 100) : 0,
+    progressPercent: rangeProgressPercent(book.startChapter || 1, book.currentChapter || book.startChapter || 1, book.endChapter || book.totalChapters || 0),
     assignedTerm: setupSnapshot.term?.label || next.term.label
   }));
   next.bookAssignments = list(setupSnapshot.books).flatMap((book) => {
@@ -348,7 +360,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
       householdId: setupSnapshot.identity?.householdId || next.household.id,
       formLabel: book.formLabel,
       assignmentType,
-      progressPercent: book.endChapter ? Math.round(((book.startChapter || 1) / Math.max(book.endChapter, 1)) * 100) : 0
+      progressPercent: rangeProgressPercent(book.startChapter || 1, book.currentChapter || book.startChapter || 1, book.endChapter || book.totalChapters || 0)
     }));
   });
   next.childTracks = list(setupSnapshot.subjects).flatMap((subject, index) => {

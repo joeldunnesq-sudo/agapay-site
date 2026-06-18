@@ -629,14 +629,19 @@ function renderBooks(vm) {
 }
 
 function renderReports(vm) {
-  const exportButtons = vm.exports.map((item) => `<button type="button" data-report-export="${html(item.label)}" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:12px;font-family:inherit;color:var(--ink);display:grid;gap:5px;text-align:left;cursor:pointer;"><strong>${html(item.label)}</strong><small style="color:var(--muted);">${html(item.format)}</small></button>`).join("");
+  const exportButtons = vm.exports.map((item) => {
+    const label = item.label || item.title || "Learn Report";
+    return `<button type="button" data-report-export="${html(label)}" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:12px;font-family:inherit;color:var(--ink);display:grid;gap:5px;text-align:left;cursor:pointer;"><strong>${html(label)}</strong><small style="color:var(--muted);">${html(item.format)}</small></button>`;
+  }).join("");
+  const subjectRows = vm.subjectProgress.length ? vm.subjectProgress.map((row) => `<tr style="border-top:1px solid var(--line);"><td style="padding:10px;font-weight:700;">${html(row.subjectTitle)}</td><td style="padding:10px;">${html(row.childName)}</td><td style="padding:10px;">${html(row.formLabel)}</td><td style="padding:10px;">${html(row.source || row.subjectType)}</td><td style="padding:10px;">${html(row.completed)} / ${html(row.total)} ${html(row.progressionType)}</td><td style="padding:10px;min-width:130px;">${bar(row.percent, row.color)}<small>${html(row.percent)}%</small></td><td style="padding:10px;text-transform:capitalize;color:var(--gold);">${html(row.status)}</td></tr>`).join("") : `<tr><td colspan="7" style="padding:18px;color:var(--muted);">Add subject ranges and Done Through progress in Setup to generate state-reporting rows.</td></tr>`;
   const body = `
     <section data-screen-label="Reports" style="display:flex;flex-direction:column;gap:18px;">
       <div style="display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:14px;">${vm.stats.map((stat) => `<div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;gap:13px;align-items:center;"><span style="width:44px;height:44px;border-radius:50%;background:${stat.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">✥</span><span><small style="display:block;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;">${html(stat.label)}</small><strong style="font-family:'Cormorant Garamond',serif;font-size:25px;">${html(stat.value)}</strong><small style="display:block;color:var(--muted);">${html(stat.sub)}</small></span></div>`).join("")}</div>
       <div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start;">
         ${panel("Child Progress Overview", vm.children.map((child) => `<div style="display:grid;grid-template-columns:42px 1fr 150px;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);"><span style="width:38px;height:38px;border-radius:50%;background:${child.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(child.initial)}</span><div><strong>${html(child.name)}</strong><small style="display:block;color:var(--muted);">${html(child.grade)} · Age ${html(child.age)} · ${html(child.summary)}</small><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;"><span><small style="color:var(--muted);">Lessons ${html(child.lessons.done)} / ${html(child.lessons.total)}</small>${bar(child.lessons.percent, child.color)}</span><span><small style="color:var(--muted);">Read-aloud ${html(child.readAloud.percent)}%</small>${bar(child.readAloud.percent, child.color)}</span></div></div><span style="text-transform:capitalize;color:var(--gold);">${html(child.status)}</span></div>`).join(""), { icon: "✥" })}
-        ${panel("Year-End Report Preview", `<div style="border:1px solid var(--line);background:#fffaf0;border-radius:10px;min-height:260px;padding:26px;text-align:center;"><div style="color:var(--gold);font-size:32px;">✥</div><h2 style="font-family:'Cormorant Garamond',serif;margin:12px 0 4px;">${html(vm.pdf.title)}</h2><p>${html(vm.pdf.familyName)}</p><small style="display:block;color:var(--muted);">Generated from Learn reports, narrations, lessons, and attendance.</small><div style="text-align:left;margin-top:18px;color:#34405a;font-size:13px;">${vm.pdf.summary.map((line) => `<div style="border-top:1px solid var(--line);padding:8px 0;">${html(line)}</div>`).join("")}</div></div><button type="button" data-report-pdf style="margin-top:12px;width:100%;background:var(--navy);color:#fff;border:none;border-radius:10px;padding:11px;font-family:inherit;cursor:pointer;">Export as PDF</button>`, { icon: "☰" })}
+        ${panel("Year-End Report Preview", `<div style="border:1px solid var(--line);background:#fffaf0;border-radius:10px;min-height:260px;padding:26px;text-align:center;"><div style="color:var(--gold);font-size:32px;">✥</div><h2 style="font-family:'Cormorant Garamond',serif;margin:12px 0 4px;">${html(vm.pdf.title)}</h2><p>${html(vm.pdf.familyName)}</p><small style="display:block;color:var(--muted);">Generated from Learn setup progress, narrations, lessons, and attendance.</small><div style="text-align:left;margin-top:18px;color:#34405a;font-size:13px;">${vm.pdf.summary.map((line) => `<div style="border-top:1px solid var(--line);padding:8px 0;">${html(line)}</div>`).join("")}</div></div><button type="button" data-report-pdf style="margin-top:12px;width:100%;background:var(--navy);color:#fff;border:none;border-radius:10px;padding:11px;font-family:inherit;cursor:pointer;">Print Beautiful Report</button>`, { icon: "☰" })}
       </div>
+      ${panel("State Reporting Subject Progress", `<div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;"><thead><tr style="color:var(--gold);font-size:11px;letter-spacing:.12em;text-transform:uppercase;"><th style="text-align:left;padding:8px;">Subject</th><th style="text-align:left;padding:8px;">Student</th><th style="text-align:left;padding:8px;">Form</th><th style="text-align:left;padding:8px;">Source</th><th style="text-align:left;padding:8px;">Progress</th><th style="text-align:left;padding:8px;">Complete</th><th style="text-align:left;padding:8px;">Status</th></tr></thead><tbody>${subjectRows}</tbody></table></div>`, { icon: "▤" })}
       ${panel("Narration Log", `<div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;"><tbody>${vm.narrations.map((log) => `<tr style="border-top:1px solid var(--line);"><td style="padding:10px;">${html(log.date)}</td><td style="padding:10px;">${html(log.child)}</td><td style="padding:10px;">${html(log.source)}</td><td style="padding:10px;text-transform:capitalize;">${html(log.type)}</td><td style="padding:10px;color:var(--muted);">${html(log.note)}</td></tr>`).join("")}</tbody></table></div>`, { icon: "✒" })}
       ${panel("Compliance-Friendly Exports", `<div style="display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;">${exportButtons}</div>`, { icon: "▤" })}
     </section>`;
@@ -758,11 +763,11 @@ function streamSetupRow(stream = {}) {
 }
 
 function subjectSetupRow(subject = {}, children = []) {
-  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" style="display:grid;grid-template-columns:1fr .65fr .8fr 1fr .55fr .55fr .55fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Subject", "title", subject.title || "")}${setupInput("Type", "subjectType", subject.subjectType || "")}${setupSelect("Form", "formLabel", subject.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupInput("Curriculum", "resource", subject.resource || "")}${setupSelect("Pace By", "progressionType", subject.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", subject.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", subject.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutes", subject.minutes || "", { type: "number" })}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">${setupSelect("Specific Child", "childId", subject.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Priority", "gracePriority", subject.gracePriority || "keep", ["keep", "reduce first", "bump if needed"])}${setupInput("Grace Note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</div></div>`;
+  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" style="display:grid;grid-template-columns:1fr .65fr .8fr 1fr .55fr .55fr .55fr .55fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Subject", "title", subject.title || "")}${setupInput("Type", "subjectType", subject.subjectType || "")}${setupSelect("Form", "formLabel", subject.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupInput("Curriculum", "resource", subject.resource || "")}${setupSelect("Pace By", "progressionType", subject.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", subject.startNumber || "", { type: "number" })}${setupInput("Done Through", "currentNumber", subject.currentNumber || subject.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", subject.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutes", subject.minutes || "", { type: "number" })}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">${setupSelect("Specific Child", "childId", subject.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Priority", "gracePriority", subject.gracePriority || "keep", ["keep", "reduce first", "bump if needed"])}${setupInput("Grace Note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</div></div>`;
 }
 
 function bookSetupRow(book = {}) {
-  return `<div data-setup-row="books" data-id="${html(book.id || "")}" style="display:grid;grid-template-columns:1.1fr .9fr .7fr .75fr .55fr .55fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Title", "title", book.title || "")}${setupInput("Author", "author", book.author || "")}${setupInput("Category", "category", book.category || "")}${setupSelect("Form", "formLabel", book.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupInput("Start Ch.", "startChapter", book.startChapter || "", { type: "number" })}${setupInput("End Ch.", "endChapter", book.endChapter || book.totalChapters || "", { type: "number" })}${setupColorSelect("Planner Color", "color", book.color || colorChoices[2])}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:10px;">${setupSelect("Audience", "audienceLabel", book.audienceLabel || "Household", ["Household", "Morning Basket", "Independent", "Read-Aloud"])}${setupInput("Grace Note", "graceNote", book.graceNote || "Reading moved into the reserve basket.")}</div></div>`;
+  return `<div data-setup-row="books" data-id="${html(book.id || "")}" style="display:grid;grid-template-columns:1.1fr .9fr .7fr .75fr .55fr .55fr .55fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Title", "title", book.title || "")}${setupInput("Author", "author", book.author || "")}${setupInput("Category", "category", book.category || "")}${setupSelect("Form", "formLabel", book.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupInput("Start Ch.", "startChapter", book.startChapter || "", { type: "number" })}${setupInput("Done Ch.", "currentChapter", book.currentChapter || book.startChapter || "", { type: "number" })}${setupInput("End Ch.", "endChapter", book.endChapter || book.totalChapters || "", { type: "number" })}${setupColorSelect("Planner Color", "color", book.color || colorChoices[2])}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;gap:10px;">${setupSelect("Audience", "audienceLabel", book.audienceLabel || "Household", ["Household", "Morning Basket", "Independent", "Read-Aloud"])}${setupInput("Grace Note", "graceNote", book.graceNote || "Reading moved into the reserve basket.")}</div></div>`;
 }
 
 function formationSetupRow(material = {}) {
@@ -1020,6 +1025,7 @@ function setupPayloadFromForm(form) {
         childId: rowValue(row, "childId"),
         progressionType: rowValue(row, "progressionType"),
         startNumber: rowValue(row, "startNumber"),
+        currentNumber: rowValue(row, "currentNumber"),
         endNumber: rowValue(row, "endNumber"),
         color: rowValue(row, "color"),
         gracePriority: rowValue(row, "gracePriority"),
@@ -1037,6 +1043,7 @@ function setupPayloadFromForm(form) {
         formLabel: rowValue(row, "formLabel"),
         audienceLabel: rowValue(row, "audienceLabel"),
         startChapter: rowValue(row, "startChapter"),
+        currentChapter: rowValue(row, "currentChapter"),
         endChapter: rowValue(row, "endChapter"),
         color: rowValue(row, "color"),
         graceNote: rowValue(row, "graceNote")
@@ -1304,14 +1311,112 @@ function reportLines(vm, label = "Year-End Report") {
   return [label, vm.pdf.familyName, vm.pdf.schoolYear, ...vm.pdf.summary, "", "Child Progress", ...children, "", "Narrations", ...narrations];
 }
 
+function printableReportHtml(vm, label = "Year-End Report") {
+  const subjectRows = vm.subjectProgress.length ? vm.subjectProgress.map((row) => `
+    <tr>
+      <td>${html(row.subjectTitle)}</td>
+      <td>${html(row.childName)}</td>
+      <td>${html(row.formLabel)}</td>
+      <td>${html(row.source || row.subjectType)}</td>
+      <td>${html(row.completed)} / ${html(row.total)} ${html(row.progressionType)}</td>
+      <td>${html(row.percent)}%</td>
+      <td>${html(row.status)}</td>
+    </tr>`).join("") : `<tr><td colspan="7">No subject progress rows have been configured yet.</td></tr>`;
+  const childCards = vm.children.map((child) => `
+    <article class="child-card">
+      <div class="avatar" style="background:${html(child.color)}">${html(child.initial)}</div>
+      <div>
+        <h3>${html(child.name)}</h3>
+        <p>${html(child.grade)} · Age ${html(child.age)} · ${html(child.summary)}</p>
+        <strong>${html(child.lessons.done)} / ${html(child.lessons.total)} tracked units · ${html(child.lessons.percent)}% complete</strong>
+      </div>
+    </article>`).join("");
+  const narrations = vm.narrations.slice(0, 12).map((log) => `
+    <tr><td>${html(log.date)}</td><td>${html(log.child)}</td><td>${html(log.source)}</td><td>${html(log.type)}</td><td>${html(log.note)}</td></tr>
+  `).join("");
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${html(label)} - ${html(vm.pdf.familyName)}</title>
+  <style>
+    @page { margin: .55in; }
+    body { margin:0; background:#f7f1e4; color:#07192d; font-family:"DM Sans", Arial, sans-serif; }
+    .sheet { background:#fffaf0; min-height:100vh; padding:34px; border:1px solid #d7c49a; }
+    .header { display:grid; grid-template-columns:1fr auto; gap:22px; align-items:start; border-bottom:3px double #c9a25b; padding-bottom:18px; margin-bottom:22px; }
+    .eyebrow { color:#a87924; letter-spacing:.18em; text-transform:uppercase; font-size:12px; font-weight:700; }
+    h1,h2,h3 { font-family:"Cormorant Garamond", Georgia, serif; margin:0; }
+    h1 { font-size:44px; line-height:1; }
+    h2 { font-size:27px; margin:22px 0 10px; }
+    h3 { font-size:22px; }
+    p { margin:6px 0; color:#34405a; line-height:1.45; }
+    .seal { width:86px; height:86px; border:1px solid #c9a25b; border-radius:50%; display:grid; place-items:center; color:#c9a25b; font-size:38px; }
+    .summary { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:18px 0 8px; }
+    .stat, .child-card { border:1px solid #dfd0aa; border-radius:14px; background:#fffdf7; padding:14px; }
+    .stat strong { display:block; font-family:"Cormorant Garamond", Georgia, serif; font-size:26px; }
+    .children { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+    .child-card { display:grid; grid-template-columns:44px 1fr; gap:12px; align-items:start; }
+    .avatar { width:42px; height:42px; border-radius:50%; color:#fffaf0; display:grid; place-items:center; font-family:"Cormorant Garamond", Georgia, serif; font-size:20px; }
+    table { width:100%; border-collapse:collapse; background:#fffdf7; border:1px solid #dfd0aa; }
+    th { background:#07192d; color:#f8e5b7; text-align:left; letter-spacing:.08em; text-transform:uppercase; font-size:11px; padding:9px; }
+    td { border-top:1px solid #eadfca; padding:9px; font-size:13px; vertical-align:top; }
+    .footer { margin-top:30px; display:grid; grid-template-columns:1fr 1fr; gap:28px; color:#34405a; }
+    .signature { border-top:1px solid #bfa56b; padding-top:8px; margin-top:34px; }
+    @media print { body { background:white; } .sheet { border:none; padding:0; } }
+  </style>
+</head>
+<body>
+  <main class="sheet">
+    <header class="header">
+      <div>
+        <div class="eyebrow">AGAPAY Learn</div>
+        <h1>${html(label)}</h1>
+        <p>${html(vm.pdf.familyName)} · ${html(vm.pdf.schoolYear)}</p>
+      </div>
+      <div class="seal">✥</div>
+    </header>
+    <section class="summary">
+      ${vm.pdf.summary.slice(0, 4).map((line) => `<div class="stat"><span class="eyebrow">Summary</span><strong>${html(line.split(":")[0])}</strong><p>${html(line.split(":").slice(1).join(":").trim())}</p></div>`).join("")}
+    </section>
+    <h2>Student Overview</h2>
+    <section class="children">${childCards || "<p>No students configured yet.</p>"}</section>
+    <h2>State Reporting Subject Progress</h2>
+    <table>
+      <thead><tr><th>Subject</th><th>Student</th><th>Form</th><th>Source</th><th>Progress</th><th>Complete</th><th>Status</th></tr></thead>
+      <tbody>${subjectRows}</tbody>
+    </table>
+    <h2>Narration Log</h2>
+    <table>
+      <thead><tr><th>Date</th><th>Student</th><th>Source</th><th>Type</th><th>Note</th></tr></thead>
+      <tbody>${narrations || `<tr><td colspan="5">No narrations logged yet.</td></tr>`}</tbody>
+    </table>
+    <footer class="footer">
+      <div><p>This report is generated from the household setup and progress records saved in AGAPAY Learn.</p></div>
+      <div class="signature">Parent / Teacher Signature</div>
+    </footer>
+  </main>
+  <script>window.addEventListener("load", () => setTimeout(() => window.print(), 150));</script>
+</body>
+</html>`;
+}
+
+function openPrintableReport(vm, label = "Year-End Report") {
+  const printWindow = window.open("", "_blank", "noopener,noreferrer");
+  const markup = printableReportHtml(vm, label);
+  if (!printWindow) {
+    downloadBlob(`${label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "learn-report"}.html`, new Blob([markup], { type: "text/html" }));
+    return;
+  }
+  printWindow.document.open();
+  printWindow.document.write(markup);
+  printWindow.document.close();
+}
+
 function wireReports(vm) {
-  const exportPdf = (label = vm.pdf.title) => {
-    const blob = buildSimplePdf(label, reportLines(vm, label));
-    downloadBlob(`${label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "learn-report"}.pdf`, blob);
-  };
-  root.querySelector("[data-report-pdf]")?.addEventListener("click", () => exportPdf(vm.pdf.title));
+  const exportReport = (label = vm.pdf.title) => openPrintableReport(vm, label);
+  root.querySelector("[data-report-pdf]")?.addEventListener("click", () => exportReport(vm.pdf.title));
   root.querySelectorAll("[data-report-export]").forEach((button) => {
-    button.addEventListener("click", () => exportPdf(button.dataset.reportExport || "Learn Report"));
+    button.addEventListener("click", () => exportReport(button.dataset.reportExport || "Learn Report"));
   });
 }
 
@@ -1327,10 +1432,6 @@ function printLines(vm, templateId) {
 
 function canUsePrint(vm, template) {
   if (isLearnFamilyPlan()) return true;
-  if (vm.billing.childCount > 2) {
-    showLearnDialog("Family Plan Required", "The free Learn plan supports up to 2 children. Upgrade to unlock printing for larger households.");
-    return false;
-  }
   if (template?.premium) {
     showLearnDialog("Family Plan Required", "Child sheets, term packs, and premium print templates are available on the Learn Family plan.");
     return false;
@@ -1347,7 +1448,7 @@ function wirePrintCenter(vm) {
   root.querySelectorAll("[data-print-generate]").forEach((button) => {
     button.addEventListener("click", () => {
       const templateId = button.dataset.printGenerate;
-      const template = vm.templates.find((item) => item.id === templateId) || vm.templates.find((item) => item.id === "weekly-pack");
+      const template = vm.templates.find((item) => item.id === templateId) || vm.templates.find((item) => item.id === "weekly-pack") || { id: "weekly-pack", title: "Weekly Print Pack", audience: "household", premium: false };
       if (!canUsePrint(vm, template)) return;
       const title = template?.title || "Weekly Print Pack";
       const blob = buildSimplePdf(title, printLines(vm, templateId));

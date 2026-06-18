@@ -136,6 +136,118 @@ function childById(seed) {
   return new Map(seed.children.map((child) => [child.id, child]));
 }
 
+function int(value, fallback = 0) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function childrenForProgress(item = {}, children = []) {
+  if (item.childId) return children.filter((child) => child.id === item.childId);
+  if (item.formLabel) return children.filter((child) => child.formLabel === item.formLabel || child.gradeLabel === item.formLabel);
+  return children;
+}
+
+function rangeProgress({ start = 1, current = 0, end = 0 } = {}) {
+  const first = Math.max(1, int(start, 1));
+  const last = Math.max(first, int(end, first));
+  const doneThrough = Math.max(first - 1, Math.min(last, int(current, first - 1)));
+  const completed = Math.max(0, doneThrough - first + 1);
+  const total = Math.max(1, last - first + 1);
+  return {
+    start: first,
+    current: doneThrough,
+    end: last,
+    completed,
+    total,
+    percent: Math.round((completed / total) * 100)
+  };
+}
+
+function buildSubjectProgress(seed) {
+  const children = seed.children || [];
+  const subjectRows = (seed.setupSnapshot?.subjects || seed.curriculumSubjects || []).flatMap((subject, index) => {
+    const assignedChildren = childrenForProgress(subject, children);
+    const progress = rangeProgress({
+      start: subject.startNumber || 1,
+      current: subject.currentNumber || subject.completedThroughNumber || subject.startNumber || 0,
+      end: subject.endNumber || subject.startNumber || 0
+    });
+    return (assignedChildren.length ? assignedChildren : [{ id: "", firstName: "Household", formLabel: subject.formLabel || "Household" }]).map((child) => ({
+      id: `subject_progress_${subject.id || index}_${child.id || "household"}`,
+      childId: child.id || "",
+      childName: child.firstName || "Household",
+      formLabel: child.formLabel || child.gradeLabel || subject.formLabel || "Household",
+      kind: "subject",
+      subjectTitle: subject.title || "Subject",
+      subjectType: subject.subjectType || "subject",
+      source: subject.resource || "",
+      progressionType: subject.progressionType || "lessons",
+      start: progress.start,
+      current: progress.current,
+      end: progress.end,
+      completed: progress.completed,
+      total: progress.total,
+      percent: progress.percent,
+      status: progress.percent >= 100 ? "complete" : progress.percent > 0 ? "in progress" : "planned"
+    }));
+  });
+  const bookRows = (seed.setupSnapshot?.books || seed.books || []).flatMap((book, index) => {
+    const assignedChildren = childrenForProgress(book, children);
+    const progress = rangeProgress({
+      start: book.startChapter || 1,
+      current: book.currentChapter || book.completedThroughChapter || book.startChapter || 0,
+      end: book.endChapter || book.totalChapters || book.startChapter || 0
+    });
+    const isHousehold = !book.formLabel && !book.childId;
+    return (assignedChildren.length ? assignedChildren : [{ id: "", firstName: "Household", formLabel: "Household" }]).map((child) => ({
+      id: `book_progress_${book.id || index}_${child.id || "household"}`,
+      childId: isHousehold ? "" : child.id || "",
+      childName: isHousehold ? "Household" : child.firstName || "Household",
+      formLabel: isHousehold ? "Household" : child.formLabel || child.gradeLabel || book.formLabel || "Household",
+      kind: "book",
+      subjectTitle: book.title || "Book",
+      subjectType: book.category || "Reading",
+      source: book.author || book.audienceLabel || "",
+      progressionType: "chapters",
+      start: progress.start,
+      current: progress.current,
+      end: progress.end,
+      completed: progress.completed,
+      total: progress.total,
+      percent: progress.percent,
+      status: progress.percent >= 100 ? "complete" : progress.percent > 0 ? "in progress" : "planned"
+    }));
+  });
+  return [...subjectRows, ...bookRows].filter((row) => row.subjectTitle && row.total > 0);
+}
+
+function reportCardsFromProgress(seed, subjectProgress) {
+  if (!seed.setupSnapshot) return seed.reportCards;
+  return (seed.children || []).map((child) => {
+    const rows = subjectProgress.filter((row) => row.childId === child.id);
+    const completed = rows.reduce((total, row) => total + row.completed, 0);
+    const planned = rows.reduce((total, row) => total + row.total, 0);
+    const percent = planned ? Math.round((completed / planned) * 100) : 0;
+    return {
+      id: `report_${child.id}_${seed.term?.id || "term"}`,
+      childId: child.id,
+      termId: seed.term?.id || "",
+      status: "draft",
+      summary: `${child.firstName}'s report is generated from setup-tracked subject and reading progress.`,
+      readAloudProgressPercent: percent,
+      records: rows.map((row) => ({
+        subject: row.subjectTitle,
+        description: row.source || row.subjectType,
+        progressPercent: row.percent,
+        status: row.status,
+        completed: row.completed,
+        total: row.total,
+        progressionType: row.progressionType
+      }))
+    };
+  });
+}
+
 function addDays(iso, days) {
   const date = new Date(`${iso}T00:00:00.000Z`);
   date.setUTCDate(date.getUTCDate() + days);
@@ -574,13 +686,16 @@ export class SeedLearnRepository {
 
   getReports() {
     const childLookup = childById(this.seed);
+    const subjectProgress = buildSubjectProgress(this.seed);
+    const reportCards = reportCardsFromProgress(this.seed, subjectProgress);
     return {
       household: this.seed.household,
       children: this.seed.children,
       schoolYear: this.seed.schoolYear,
       term: this.seed.term,
       weeklySummary: this.seed.setupSnapshot ? computeWeeklySummary(this.seed, this.seed.household?.liturgicalCalendarType || "julian") : this.seed.weeklySummary,
-      reportCards: this.seed.reportCards.map((report) => ({
+      subjectProgress,
+      reportCards: reportCards.map((report) => ({
         ...report,
         child: childLookup.get(report.childId),
         exportPreview: buildReportCardExport(report)
