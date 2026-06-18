@@ -6,6 +6,7 @@ const checks = [
   { name: "registration page", method: "GET", path: "/register.html", ok: [200] },
   { name: "learn overview page", method: "GET", path: "/learn", ok: [200] },
   { name: "learn pricing page", method: "GET", path: "/learn/pricing", ok: [200] },
+  { name: "find church giving page", method: "GET", path: "/give/find-church", ok: [200] },
   { name: "My AGAPAY login shell", method: "GET", path: "/myagapay/login", ok: [200] },
   { name: "My AGAPAY shell", method: "GET", path: "/myagapay", ok: [200] },
   { name: "My AGAPAY giving shell", method: "GET", path: "/myagapay/giving", ok: [200] },

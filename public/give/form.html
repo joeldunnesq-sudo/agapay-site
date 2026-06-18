@@ -892,14 +892,14 @@
       try {
         const slug = parishSlugFromPath();
         if (!slug) {
-          window.location.href = '/giving';
+          window.location.href = '/give/find-church';
           return;
         }
         const parishes = await fetchAllParishes();
         const parish = parishes.find(item => item.id === slug);
         if (!parish) {
           alert('This parish is not currently active in AGAPAY.');
-          window.location.href = '/giving';
+          window.location.href = '/give/find-church';
           return;
         }
 

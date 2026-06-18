@@ -620,6 +620,10 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/form";
     return new Request(url, request);
   }
+  if (url.pathname === "/give/find-church" || url.pathname === "/giving/find-church") {
+    url.pathname = "/give/find-church.html";
+    return new Request(url, request);
+  }
   if (url.pathname === "/give/parish-giving") {
     url.pathname = "/give/parish-giving.html";
     return new Request(url, request);
@@ -749,6 +753,10 @@ export default {
 
     if (request.method === "GET" && (url.pathname === "/give" || url.pathname === "/give/" || url.pathname === "/give.html" || url.pathname === "/giving/index.html")) {
       url.pathname = "/giving";
+      return Response.redirect(url.toString(), 301);
+    }
+    if (request.method === "GET" && (url.pathname === "/giving/find-church" || url.pathname === "/giving/find-church.html" || url.pathname === "/give/find-church.html")) {
+      url.pathname = "/give/find-church";
       return Response.redirect(url.toString(), 301);
     }
     if (request.method === "GET" && (url.pathname === "/give/parish-giving" || url.pathname === "/give/parish-giving.html" || url.pathname === "/giving/parish-giving.html")) {
