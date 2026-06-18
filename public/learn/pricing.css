@@ -114,6 +114,16 @@ h1 {
   line-height: 0.9;
 }
 
+.learn-hero-line {
+  max-width: 17ch;
+  margin: 0.7rem 0 0;
+  color: var(--learn-gold-dark);
+  font-family: var(--learn-serif);
+  font-size: clamp(2.1rem, 4vw, 3.7rem);
+  font-style: italic;
+  line-height: 0.98;
+}
+
 .hero-text {
   max-width: 42rem;
   margin: 1.45rem 0 0;
