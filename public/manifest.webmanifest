@@ -2,7 +2,7 @@
   "name": "AGAPAY",
   "short_name": "AGAPAY",
   "description": "Love how you give.",
-  "start_url": "/donor/login?source=pwa",
+  "start_url": "/my-agapay/login?source=pwa",
   "scope": "/",
   "display": "standalone",
   "background_color": "#F8F2E7",

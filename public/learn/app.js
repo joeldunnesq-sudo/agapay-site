@@ -124,13 +124,13 @@
     const account = learnUtilityContext(payload);
     return `
       <header class="learn-utility-bar">
-        <a class="learn-utility-brand" href="/myagapay" aria-label="Open My AGAPAY">
+        <a class="learn-utility-brand" href="/my-agapay" aria-label="Open My AGAPAY">
           <span class="learn-utility-mark"><img src="/mark.png" alt="" /></span>
           <span><span class="learn-utility-title">AGAPAY</span><small>Faith + Family + Community</small></span>
         </a>
         <div class="learn-utility-actions">
           <span class="learn-utility-time" aria-label="Current time">${account.timeLabel}</span>
-          <a class="learn-utility-icon" href="/myagapay" aria-label="Open My AGAPAY">${icon("home")}</a>
+          <a class="learn-utility-icon" href="/my-agapay" aria-label="Open My AGAPAY">${icon("home")}</a>
           <a class="learn-utility-icon" href="/learn/onboarding" aria-label="Open Learn setup">${icon("check")}</a>
           <span class="learn-utility-bell" aria-label="Notifications">${icon("calendar")}<b>3</b></span>
           <a class="learn-account-chip" href="/learn/onboarding" aria-label="Open Learn setup">

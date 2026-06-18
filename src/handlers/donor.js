@@ -277,7 +277,7 @@ export async function handleDonorPasswordResetRequest(request, env) {
   const resetToken = generateSecret("donor_reset");
   const resetSalt = generateSecret("donor_reset_salt");
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const resetUrl = `${String(appUrl).replace(/\/+$/, "")}/donor/login?reset=1&email=${encodeURIComponent(email)}&token=${encodeURIComponent(resetToken)}`;
+  const resetUrl = `${String(appUrl).replace(/\/+$/, "")}/my-agapay/login?reset=1&email=${encodeURIComponent(email)}&token=${encodeURIComponent(resetToken)}`;
   const updated = {
     ...donor,
     passwordResetSalt: resetSalt,
@@ -477,7 +477,7 @@ export async function handleDonorSignup(request, env) {
   const verificationToken = generateSecret("verify");
   const verificationSalt = generateSecret("verify_salt");
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const verificationUrl = `${String(appUrl).replace(/\/+$/, "")}/donor/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(verificationToken)}`;
+  const verificationUrl = `${String(appUrl).replace(/\/+$/, "")}/my-agapay/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(verificationToken)}`;
   const donor = await applyDonorPassword({
     ...(existing || {}),
     email,
@@ -629,7 +629,7 @@ export function donorVerifyHtml({ title, message, status = "info", script = "", 
               <h1>${htmlEscape(title)}</h1>
               <p>${htmlEscape(message)}</p>
               <div class="notice ${statusClass}" style="margin-top:1rem;">${htmlEscape(message)}</div>
-              <p class="form-help" style="margin-top:1rem;"><a href="/donor/login">Go to donor login</a></p>
+              <p class="form-help" style="margin-top:1rem;"><a href="/my-agapay/login">Go to My AGAPAY login</a></p>
             </div>
             <div class="hero-mark"><img src="/mark.png" alt="" /></div>
           </div>
@@ -681,7 +681,7 @@ export async function handleDonorVerifyPage(request, env) {
         title: "Email already verified",
         message: "Your email is already verified. Please log in to open your donor dashboard.",
         status: "success",
-        refreshUrl: "/donor/login"
+        refreshUrl: "/my-agapay/login"
       },
       { status: 200 }
     );

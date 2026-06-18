@@ -222,7 +222,18 @@ export const server = http.createServer(async (req, res) => {
   try {
     if (req.url.startsWith("/api/") && await handleApi(req, res)) return;
 
-    const { pathname } = new URL(req.url, `http://${req.headers.host}`);
+    const requestUrl = new URL(req.url, `http://${req.headers.host}`);
+    if (
+      req.method === "GET" &&
+      ["/myagapay/login", "/myagapay/login/", "/donor/login", "/donor/login/", "/donor/login.html"].includes(requestUrl.pathname)
+    ) {
+      requestUrl.pathname = "/my-agapay/login";
+      res.writeHead(301, { Location: requestUrl.toString() });
+      res.end();
+      return;
+    }
+
+    const { pathname } = requestUrl;
     const filePath = await resolveStaticPath(pathname);
     if (!filePath.startsWith(publicDir)) {
       res.writeHead(403);

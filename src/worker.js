@@ -708,6 +708,17 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
+    if (request.method === "GET" && (
+      url.pathname === "/myagapay/login" ||
+      url.pathname === "/myagapay/login/" ||
+      url.pathname === "/donor/login" ||
+      url.pathname === "/donor/login/" ||
+      url.pathname === "/donor/login.html"
+    )) {
+      url.pathname = "/my-agapay/login";
+      return Response.redirect(url.toString(), 301);
+    }
+
     if (request.method === "GET" && (url.pathname === "/give" || url.pathname === "/give/" || url.pathname === "/give.html" || url.pathname === "/giving/index.html")) {
       url.pathname = "/giving";
       return Response.redirect(url.toString(), 301);

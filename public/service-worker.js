@@ -1,7 +1,7 @@
-const AGAPAY_CACHE = "agapay-static-v9";
+const AGAPAY_CACHE = "agapay-static-v10";
 
 const STATIC_ASSETS = [
-  "/donor/login",
+  "/my-agapay/login",
   "/donor/login.html",
   "/donor/style.css",
   "/donor/app.js",
@@ -47,7 +47,7 @@ function shouldBypassCache(request) {
   if (url.pathname === "/donor" || url.pathname === "/donor/" || url.pathname === "/donor/dashboard") return true;
   if (
     url.pathname.startsWith("/donor/") &&
-    !["/donor/login", "/donor/login.html", "/donor/style.css", "/donor/app.js", "/donor/pwa-install.js"].includes(url.pathname)
+    !["/my-agapay/login", "/donor/login", "/donor/login.html", "/donor/style.css", "/donor/app.js", "/donor/pwa-install.js"].includes(url.pathname)
   ) {
     return true;
   }
@@ -68,7 +68,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (shouldBypassCache(request)) return;
 
-  if (request.mode === "navigate" && (url.pathname === "/donor/login" || url.pathname === "/donor/login.html")) {
+  if (request.mode === "navigate" && (url.pathname === "/my-agapay/login" || url.pathname === "/donor/login" || url.pathname === "/donor/login.html")) {
     event.respondWith(
       fetch(request)
         .then((response) => {

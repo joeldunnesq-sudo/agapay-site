@@ -11,7 +11,7 @@
   ];
 
   const SIGN_IN_LINKS = [
-    { href: "/myagapay/login", label: "My AGAPAY" },
+    { href: "/my-agapay/login", label: "My AGAPAY" },
     { href: "/parish/login", label: "Organization Dashboard" }
   ];
 
@@ -162,7 +162,7 @@
             </nav>
             <nav class="footer-col" aria-label="Account">
               <h4>Account</h4>
-              <a href="/myagapay/login">My AGAPAY</a>
+              <a href="/my-agapay/login">My AGAPAY</a>
               <a href="/parish/login">Organization Dashboard</a>
             </nav>
             <nav class="footer-col" aria-label="Legal">
