@@ -174,7 +174,8 @@ export function toDashboardViewModel(rawPayload, context = {}) {
       troparionLabel: liturgicalDay.troparionTone ? `TROPARION · ${liturgicalDay.troparionTone}` : "TROPARION",
       troparionText: text(liturgicalDay.troparionText, "No troparion text loaded yet."),
       kontakionLabel: liturgicalDay.kontakionTone ? `KONTAKION · ${liturgicalDay.kontakionTone}` : "KONTAKION",
-      kontakionText: text(liturgicalDay.kontakionText, "No kontakion text loaded yet.")
+      kontakionText: text(liturgicalDay.kontakionText, "No kontakion text loaded yet."),
+      iconUrl: text(liturgicalDay.iconUrl || liturgicalDay.ponomarIconUrl || liturgicalDay.feastIconUrl, "")
     },
     churchRhythms: safeArray(today.churchRhythms).map((item) => ({
       label: text(item.title, "Rhythm"),

@@ -222,6 +222,24 @@ function setPrintCount(value) {
   localStorage.setItem("agapay.learn.printCount", String(Math.max(0, value)));
 }
 
+function learnAccountEmail() {
+  try {
+    const donor = JSON.parse(localStorage.getItem("agapayDonorProfile") || "{}");
+    return localStorage.getItem("agapayDonorEmail") || donor.email || "";
+  } catch {
+    return localStorage.getItem("agapayDonorEmail") || "";
+  }
+}
+
+function learnRequestHeaders(extra = {}) {
+  const headers = { ...extra };
+  const email = learnAccountEmail();
+  const plan = localStorage.getItem("agapay.learn.plan") || "";
+  if (email) headers["X-AGAPAY-Learn-Email"] = email;
+  if (plan) headers["X-AGAPAY-Learn-Plan"] = plan;
+  return headers;
+}
+
 async function openLearnCheckout() {
   try {
     const payload = await apiPost("/api/learn/billing/checkout", { plan: "family" });
@@ -426,12 +444,15 @@ function renderTermProgressPanel(vm) {
 
 function renderDashboard(vm) {
   const today = vm.todayInChurch;
+  const churchIconPanel = today.iconUrl
+    ? `<div style="flex:none;width:108px;height:146px;border:1px solid var(--line);border-radius:10px;background:#fffaf0;overflow:hidden;display:flex;align-items:center;justify-content:center;"><img src="${html(today.iconUrl)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;"></div>`
+    : `<div style="flex:none;width:108px;height:146px;border:1px solid var(--line);border-radius:10px;background:radial-gradient(circle at 50% 30%,#fff7df 0 24%,#f0dcae 25% 26%,transparent 27%),linear-gradient(180deg,#f8f0dd,#efe0ba);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:46px;position:relative;overflow:hidden;"><span style="position:absolute;inset:9px;border:1px solid rgba(181,148,47,.36);border-radius:7px;"></span><svg viewBox="0 0 64 84" aria-hidden="true" style="width:78px;height:104px;color:var(--gold);"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 6v18"/><path d="M24 14h16"/><path d="M14 78h36"/><path d="M18 78V44l14-12 14 12v34"/><path d="M25 78V58a7 7 0 0 1 14 0v20"/><path d="M12 46l20-18 20 18"/><path d="M32 32v-8"/></g></svg></div>`;
   const body = `
     <section data-screen-label="Dashboard" style="display:flex;flex-direction:column;gap:22px;">
       ${renderGraceModePanel(vm)}
       ${renderTermProgressPanel(vm)}
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;gap:24px;box-shadow:0 1px 3px rgba(20,40,70,.04);flex-wrap:wrap;">
-        <div style="flex:none;width:108px;height:146px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,#f8f0dd,#efe0ba);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:46px;">✥</div>
+        ${churchIconPanel}
         <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:6px;">
           <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">${html(today.kicker)}</div>
           <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;color:var(--ink);line-height:1.1;">${html(today.title)}</div>
@@ -610,19 +631,32 @@ function renderFormation(vm) {
   return shell(vm, body);
 }
 
+function bookCover(book = {}, icon = "☰") {
+  const title = String(book.title || "Book").split(/\s+/).slice(0, 3).join(" ");
+  return `<div style="width:58px;height:82px;flex:none;border-radius:7px;border:1.5px solid var(--goldsoft);background:linear-gradient(145deg,var(--navy),#1b2c4a 58%,#6e2f2a);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 8px 18px rgba(20,40,70,.14);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#f7e8bd;padding:7px;gap:5px;"><span style="font-size:17px;color:var(--gold2);">${icon}</span><small style="font-size:10px;line-height:1.05;">${html(title)}</small></div>`;
+}
+
 function renderBooks(vm) {
+  const filters = ["All Books", "Read-Alouds", "Independent", "Formation"];
+  const readAlouds = vm.readAlouds.length ? vm.readAlouds : [];
+  const libraryRows = vm.library.map((book) => `<div style="display:grid;grid-template-columns:2.1fr 1.1fr 1fr .55fr .7fr 1fr 36px;gap:10px;align-items:center;padding:11px 4px;border-bottom:1px solid var(--line);font-size:13.5px;"><span style="display:flex;align-items:center;gap:9px;min-width:0;">${bookCover(book, "☰")}<span style="min-width:0;"><strong style="display:block;color:var(--ink);font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(book.title)}</strong><small style="display:block;color:var(--muted);">${html(book.assignment || "")}</small></span></span><span>${html(book.author)}</span><span>${html(book.category)}</span><span>${html(book.ages || "—")}</span><span style="color:var(--gold);">${book.orthodox ? "Orthodox" : "—"}</span><span>${bar(book.progress)}<small style="color:var(--gold);font-weight:700;">${html(book.progress)}%</small></span><span style="color:var(--gold);">→</span></div>`).join("");
   const body = `
     <section data-screen-label="Books" style="display:flex;flex-direction:column;gap:18px;">
-      <div style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;">
-        ${panel("Current Read-Alouds", `<div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:14px;">${vm.readAlouds.length ? vm.readAlouds.map((book) => `<article style="border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--paper2);display:grid;grid-template-columns:72px 1fr;gap:12px;"><div style="height:104px;border-radius:7px;background:linear-gradient(160deg,var(--navy),#6e2f2a);color:#f8f0dd;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;padding:8px;">Book</div><div><strong>${html(book.title)}</strong><small style="display:block;color:var(--muted);margin:5px 0;">${html(book.author)}</small><small style="color:var(--gold);">${html(book.assignment)}</small>${bar(book.progress)}<small>${book.progress}%</small></div></article>`).join("") : emptyState("Add read-alouds in Setup.")}</div>`, { icon: "☰" })}
-        ${panel("Suggested Orthodox Living Books", vm.suggestions.map((s) => `<div style="display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line);"><span style="width:36px;height:36px;border-radius:50%;background:${s.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">✥</span><div><strong>${html(s.title)}</strong><small style="display:block;color:var(--muted);">${html(s.subtitle)}</small></div></div>`).join(""), { icon: "✥" })}
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+        ${filters.map((filter) => `<button type="button" style="display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 14px;cursor:pointer;font-family:inherit;font-size:14px;color:var(--ink);"><span style="color:var(--gold);">☰</span>${html(filter)}<span style="color:var(--gold);">⌄</span></button>`).join("")}
+        <div style="flex:1;"></div>
+        <label style="display:flex;align-items:center;gap:9px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-width:min(260px,100%);"><span style="color:var(--gold);">⌕</span><input placeholder="Search books..." style="border:none;background:none;outline:none;font-family:inherit;font-size:14px;color:var(--ink);width:100%;"></label>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;">
-        ${panel("Household Library", `<div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;"><thead><tr style="color:var(--gold);font-size:11px;letter-spacing:.12em;"><th style="text-align:left;padding:8px;">Title</th><th style="text-align:left;padding:8px;">Author</th><th style="text-align:left;padding:8px;">Category</th><th style="text-align:left;padding:8px;">Ages</th><th style="text-align:left;padding:8px;">Orthodox</th><th style="text-align:left;padding:8px;">Progress</th></tr></thead><tbody>${vm.library.map((book) => `<tr style="border-top:1px solid var(--line);"><td style="padding:10px 8px;font-weight:600;">${html(book.title)}</td><td style="padding:10px 8px;">${html(book.author)}</td><td style="padding:10px 8px;">${html(book.category)}</td><td style="padding:10px 8px;">${html(book.ages)}</td><td style="padding:10px 8px;color:var(--gold);">${book.orthodox ? "☩" : ""}</td><td style="padding:10px 8px;min-width:110px;">${bar(book.progress)}<small>${book.progress}%</small></td></tr>`).join("")}</tbody></table></div>`, { icon: "⌂" })}
-        <div style="display:flex;flex-direction:column;gap:16px;">
-          ${panel("Book Pacing", `<strong>${html(vm.pacing.title)}</strong><small style="display:block;color:var(--muted);margin:4px 0 12px;">${html(vm.pacing.subtitle)} · ${html(vm.pacing.chaptersPerWeek)} chapters / week</small>${vm.pacing.weeks.map((week) => `<div style="display:flex;justify-content:space-between;border-top:1px solid var(--line);padding:8px 0;"><span>Week ${html(week.week)}</span><span>${html(week.chapters)}</span><span>${html(week.pages)} pages</span></div>`).join("")}`, { icon: "♙" })}
-          ${panel("Copywork Sources", vm.copywork.map((source) => `<div style="padding:9px 0;border-top:1px solid var(--line);"><strong>${html(source.title)}</strong><small style="display:block;color:var(--muted);">${html(source.detail)}</small></div>`).join(""), { icon: "✒" })}
+      <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+        <div style="flex:1 1 620px;min-width:0;display:flex;flex-direction:column;gap:16px;">
+          ${panel("Current Read-Alouds", `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">${readAlouds.length ? readAlouds.map((book) => `<article style="display:flex;gap:13px;background:var(--paper2);border:1px solid var(--line);border-radius:11px;padding:13px;min-width:0;">${bookCover(book, "☰")}<div style="flex:1;min-width:0;display:flex;flex-direction:column;"><strong style="font-family:'Cormorant Garamond',serif;font-size:19px;line-height:1.12;color:var(--ink);">${html(book.title)}</strong><span style="font-size:12.5px;color:#3a4256;font-style:italic;">${html(book.assignment || book.stream || "Household")}</span><span style="font-size:12.5px;color:var(--muted);margin-top:2px;">${html(book.author)}</span><div style="margin-top:auto;padding-top:11px;">${bar(book.progress)}<small style="display:block;color:var(--gold);font-weight:700;margin-top:4px;">${html(book.progress)}% complete</small></div></div></article>`).join("") : emptyState("Add read-alouds in Setup.")}</div>`, { icon: "☰", action: "View all read-alouds →" })}
+          ${panel("Household Library", `<div style="overflow:auto;"><div style="min-width:780px;"><div style="display:grid;grid-template-columns:2.1fr 1.1fr 1fr .55fr .7fr 1fr 36px;gap:10px;padding:0 4px 10px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.1em;color:var(--muted);font-weight:700;text-transform:uppercase;"><span>Title</span><span>Author</span><span>Category</span><span>Ages</span><span>Orthodox</span><span>Progress</span><span></span></div>${libraryRows || emptyState("Add books in Setup.")}</div></div>`, { icon: "⌂" })}
         </div>
+        <aside style="flex:0 1 340px;display:flex;flex-direction:column;gap:16px;">
+          ${panel("Suggested Orthodox Living Books", vm.suggestions.map((s) => `<div style="display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line);"><span style="width:38px;height:38px;border-radius:50%;background:${s.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">✥</span><div><strong style="font-family:'Cormorant Garamond',serif;font-size:18px;">${html(s.title)}</strong><small style="display:block;color:var(--muted);line-height:1.3;">${html(s.subtitle)}</small></div></div>`).join(""), { icon: "✥" })}
+          ${panel("Book Pacing", `<strong style="font-family:'Cormorant Garamond',serif;font-size:22px;">${html(vm.pacing.title)}</strong><small style="display:block;color:var(--muted);margin:4px 0 12px;">${html(vm.pacing.subtitle)} · ${html(vm.pacing.chaptersPerWeek)} chapters / week</small>${vm.pacing.weeks.map((week) => `<div style="display:grid;grid-template-columns:60px 1fr 60px;gap:8px;border-top:1px solid var(--line);padding:8px 0;font-size:13px;"><span>Week ${html(week.week)}</span><strong>${html(week.chapters)}</strong><span>${html(week.pages)}</span></div>`).join("")}`, { icon: "♙" })}
+          ${panel("Copywork Sources", vm.copywork.map((source) => `<div style="padding:9px 0;border-top:1px solid var(--line);"><strong>${html(source.title)}</strong><small style="display:block;color:var(--muted);">${html(source.detail)}</small></div>`).join(""), { icon: "✒" })}
+        </aside>
       </div>
     </section>`;
   return shell(vm, body);
@@ -887,7 +921,9 @@ function renderPrintCenter(vm) {
 }
 
 async function apiGet(path) {
-  const response = await fetch(path);
+  const response = await fetch(path, {
+    headers: learnRequestHeaders()
+  });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || payload.error) throw new Error(payload.error || `Request failed with ${response.status}`);
   return payload;
@@ -896,7 +932,7 @@ async function apiGet(path) {
 async function apiPost(path, body) {
   const response = await fetch(path, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: learnRequestHeaders({ "content-type": "application/json" }),
     body: JSON.stringify(body)
   });
   const payload = await response.json().catch(() => ({}));
@@ -1474,6 +1510,12 @@ function wireFormation() {
 async function mount() {
   if (new URLSearchParams(window.location.search).get("learn_billing") === "success") {
     localStorage.setItem("agapay.learn.plan", "family");
+  }
+  try {
+    const billing = await apiGet("/api/learn/billing/status");
+    if (billing.plan === "family" || billing.fullAccess) localStorage.setItem("agapay.learn.plan", "family");
+  } catch {
+    // Billing status is advisory for the shell; route-level saves still enforce limits.
   }
   const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
   root.innerHTML = `<div style="padding:32px;font-family:Georgia,serif;color:#1b2c45;">Loading AGAPAY Learn...</div>`;

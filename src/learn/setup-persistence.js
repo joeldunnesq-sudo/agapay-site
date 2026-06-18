@@ -1,4 +1,5 @@
 import { d1, d1First, d1Run, normalizeEmail, safeParseJsonRow } from "../lib/core.js";
+import { LEARN_FREE_CHILD_LIMIT, learnRequestHasFamilyAccess } from "./billing.js";
 import { getLearnSeedSnapshot } from "./demo-data.js";
 
 const FALLBACK_EMAIL = "demo@agapay.local";
@@ -597,6 +598,13 @@ async function bestEffort(statement) {
 export async function saveLearnSetup(env, request, payload) {
   const identity = learnSetupIdentity(request);
   const setupSnapshot = normalizeSetupPayload(payload, identity);
+  if (setupSnapshot.children.length > LEARN_FREE_CHILD_LIMIT && !learnRequestHasFamilyAccess(request, env)) {
+    return {
+      ok: false,
+      status: 402,
+      error: `The free AGAPAY Learn plan supports up to ${LEARN_FREE_CHILD_LIMIT} children. Upgrade to the Family plan to save larger households.`
+    };
+  }
   const timestamp = setupSnapshot.savedAt;
   if (!d1(env)) {
     devSetupSnapshots.set(identity.householdId, setupSnapshot);

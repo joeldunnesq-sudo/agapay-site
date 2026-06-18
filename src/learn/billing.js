@@ -1,10 +1,16 @@
-import { json } from "../lib/core.js";
+import { json, normalizeEmail } from "../lib/core.js";
 
 export const LEARN_FREE_CHILD_LIMIT = 2;
 export const LEARN_FREE_PRINT_LIMIT = 3;
+export const LEARN_FAMILY_PLAN = "family";
+export const LEARN_FREE_PLAN = "free";
 
 const yearlyPriceEnv = "AGAPAY_STRIPE_PRICE_LEARN_FAMILY_YEARLY";
 const monthlyPriceEnv = "AGAPAY_STRIPE_PRICE_LEARN_FAMILY_MONTHLY";
+const defaultFullAccessEmails = [
+  "stephaie@dunncrew.com",
+  "stephanie@dunncrew.com"
+];
 
 function publicBaseUrl(request, env = {}) {
   const configured = String(env.AGAPAY_PUBLIC_URL || env.AGAPAY_APP_URL || "").trim();
@@ -21,12 +27,48 @@ function checkoutConfigured(env = {}) {
   return Boolean(env.STRIPE_SECRET_KEY && learnPriceId(env));
 }
 
+function requestEmail(request) {
+  return normalizeEmail(
+    request?.headers?.get("X-AGAPAY-Learn-Email")
+    || request?.headers?.get("X-AGAPAY-User-Email")
+    || request?.headers?.get("CF-Access-Authenticated-User-Email")
+    || ""
+  );
+}
+
+function configuredFullAccessEmails(env = {}) {
+  return String(env.AGAPAY_LEARN_FULL_ACCESS_EMAILS || "")
+    .split(/[,\s]+/)
+    .map((email) => normalizeEmail(email))
+    .filter(Boolean);
+}
+
+export function learnEmailHasFullAccess(email, env = {}) {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return false;
+  return new Set([...defaultFullAccessEmails, ...configuredFullAccessEmails(env)]).has(normalized);
+}
+
+export function learnPlanForRequest(request, env = {}) {
+  const email = requestEmail(request);
+  if (learnEmailHasFullAccess(email, env)) return LEARN_FAMILY_PLAN;
+  const headerPlan = String(request?.headers?.get("X-AGAPAY-Learn-Plan") || "").trim().toLowerCase();
+  if (headerPlan === LEARN_FAMILY_PLAN) return LEARN_FAMILY_PLAN;
+  return LEARN_FREE_PLAN;
+}
+
+export function learnRequestHasFamilyAccess(request, env = {}) {
+  return learnPlanForRequest(request, env) === LEARN_FAMILY_PLAN;
+}
+
 export function learnBillingStatus(request, env = {}) {
+  const plan = learnPlanForRequest(request, env);
   return json({
     ok: true,
     product: "learn",
-    plan: "free",
-    paidPlan: "family",
+    plan,
+    paidPlan: LEARN_FAMILY_PLAN,
+    fullAccess: plan === LEARN_FAMILY_PLAN,
     childLimit: LEARN_FREE_CHILD_LIMIT,
     printLimit: LEARN_FREE_PRINT_LIMIT,
     checkoutConfigured: checkoutConfigured(env),
