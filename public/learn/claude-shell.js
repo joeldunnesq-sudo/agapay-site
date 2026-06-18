@@ -71,6 +71,102 @@ function softColor(color, alpha = "22") {
   return value.startsWith("#") && value.length === 7 ? `${value}${alpha}` : "var(--paper2)";
 }
 
+function pageIntroIcon(id) {
+  const icons = {
+    dashboard: '<path d="M4 12.5 12 5l8 7.5V21H4z"/><path d="M9 21v-6h6v6"/><path d="M12 5V2"/><path d="M10 4h4"/>',
+    planner: '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M8 14h3M13 14h3M8 17h3"/>',
+    formation: '<path d="M10 9h4M12 6v7"/><path d="M4 22V11l8-5 8 5v11"/><path d="M8 22v-4a4 4 0 0 1 8 0v4"/><path d="M12 2v3"/>',
+    books: '<path d="M12 7v14"/><path d="M4 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 3 1.35A4 4 0 0 1 15 3h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-5a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+    reports: '<path d="M4 21V3h12l4 4v14z"/><path d="M16 3v5h5"/><path d="M8 16v-3M12 16V9M16 16v-5"/>',
+    "print-center": '<path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/>',
+    community: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.3a4 4 0 0 1 0 7.4"/>',
+    "co-op": '<path d="M4 20V9l8-5 8 5v11"/><path d="M8 20v-5h8v5"/><path d="M7 12h2M15 12h2"/><path d="M12 4V2"/>',
+    onboarding: '<path d="M12.2 2h-.4a2 2 0 0 0-2 2 1.7 1.7 0 0 1-2.6 1.5 2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7A1.7 1.7 0 0 1 5 12a1.7 1.7 0 0 1-1 1.6 2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7A1.7 1.7 0 0 1 9 18.9a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2 1.7 1.7 0 0 1 2.6-1.5 2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7A1.7 1.7 0 0 1 19 12a1.7 1.7 0 0 1 1-1.6 2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7A1.7 1.7 0 0 1 14.2 4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>'
+  };
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8c.25 2.3.72 2.78 3 3-2.28.25-2.75.72-3 3-.25-2.28-.72-2.75-3-3 2.28-.22 2.75-.7 3-3z" fill="currentColor" stroke="none"/><g fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">${icons[id] || icons.dashboard}</g></svg>`;
+}
+
+function pageIntroMeta(id) {
+  const meta = {
+    dashboard: {
+      kicker: "AGAPAY LEARN",
+      description: "A peaceful command center for today’s Church rhythm, household learning, term progress, and gentle adjustments.",
+      quote: "Let all things be done decently and in order.",
+      ref: "1 Corinthians 14:40"
+    },
+    planner: {
+      kicker: "HOUSEHOLD PLANNING",
+      description: "Plan the week by household rhythm and Form, so large families stay organized without repeating the same work everywhere.",
+      quote: "Teach us to number our days, that we may apply our hearts unto wisdom.",
+      ref: "Psalm 90:12"
+    },
+    formation: {
+      kicker: "ORTHODOX FORMATION",
+      description: "Keep readings, prayers, catechesis, hymns, saints, feasts, and beauty tied to the living rhythm of the Church.",
+      quote: "Rooted and built up in Him, and stablished in the faith.",
+      ref: "Colossians 2:7"
+    },
+    books: {
+      kicker: "LIVING BOOKS",
+      description: "Track read-alouds, library choices, copywork sources, and Orthodox living-book suggestions for the whole household.",
+      quote: "Give attendance to reading, to exhortation, to doctrine.",
+      ref: "1 Timothy 4:13"
+    },
+    reports: {
+      kicker: "RECORDS & PROGRESS",
+      description: "Turn lessons, narrations, attendance, and books into calm records when you need to review or export progress.",
+      quote: "Write the vision, and make it plain.",
+      ref: "Habakkuk 2:2"
+    },
+    "print-center": {
+      kicker: "PRINT CENTER",
+      description: "Generate simple household plans and printable resources with clear Free and Family-plan access.",
+      quote: "The plans of the diligent lead surely to abundance.",
+      ref: "Proverbs 21:5"
+    },
+    community: {
+      kicker: "COMING SOON",
+      description: "A curated Orthodox homeschool resource exchange will come after the core planner is settled.",
+      quote: "As each has received a gift, use it to serve one another.",
+      ref: "1 Peter 4:10"
+    },
+    "co-op": {
+      kicker: "CO-OP",
+      description: "Future shared planning for Orthodox homeschool groups, classes, meetings, and records.",
+      quote: "Where two or three are gathered together in My name, there am I.",
+      ref: "Matthew 18:20"
+    },
+    onboarding: {
+      kicker: "SETUP",
+      description: "Shape the household profile, children, Forms, books, term dates, subjects, and Church rhythm that power Learn.",
+      quote: "Prepare your work outside; get everything ready.",
+      ref: "Proverbs 24:27"
+    }
+  };
+  return meta[id] || meta.dashboard;
+}
+
+function pageIntro(vm) {
+  const meta = pageIntroMeta(vm.page.id);
+  const subtitle = vm.page.subtitle ? vm.page.subtitle : meta.description;
+  return `
+    <section class="learn-page-intro" aria-labelledby="learn-page-heading">
+      <div class="learn-page-intro-heading">
+        <span class="learn-page-intro-icon">${pageIntroIcon(vm.page.id)}</span>
+        <div>
+          <div class="learn-page-intro-kicker">${html(meta.kicker)}</div>
+          <h1 id="learn-page-heading">${html(vm.page.title)}</h1>
+        </div>
+      </div>
+      <p class="learn-page-intro-description">${html(subtitle)}</p>
+      <div class="learn-page-intro-quote">
+        <span aria-hidden="true">“</span>
+        <p>${html(meta.quote)} <strong>${html(meta.ref)}</strong></p>
+      </div>
+    </section>
+  `;
+}
+
 function downloadBlob(filename, blob) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -248,7 +344,7 @@ function shell(vm, body) {
       <div class="learn-sidebar-scrim" data-learn-sidebar-scrim></div>
       <main class="learn-product-main scroll">
         ${topbar(vm)}
-        <div class="learn-product-content">${body}</div>
+        <div class="learn-product-content">${pageIntro(vm)}${body}</div>
         ${globalProductNav("learn")}
       </main>
     </div>
