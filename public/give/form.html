@@ -665,9 +665,9 @@
       </div>
       <button class="submit-btn claim-btn" id="claimDonorBtn" onclick="claimDonorAccount()">Create donor account</button>
       <p class="claim-status" id="claimDonorStatus"></p>
-      <p class="claim-login">Already have a My AGAPAY account? <a href="/my-agapay/login">Log in here</a>.</p>
+      <p class="claim-login">Already have a My AGAPAY account? <a href="/myagapay/login">Log in here</a>.</p>
     </div>
-    <a class="success-secondary-cta" id="successDashboardLink" href="/my-agapay" style="display:none;">Open My AGAPAY</a>
+    <a class="success-secondary-cta" id="successDashboardLink" href="/myagapay" style="display:none;">Open My AGAPAY</a>
     <a class="success-primary-cta" href="/giving">Give again</a>
   </div>
 
@@ -1118,7 +1118,7 @@
       wrap.style.display = signedIn ? 'none' : 'block';
       dashboardLink.style.display = signedIn ? 'inline-block' : 'none';
       if (pendingClaimSessionId) {
-        dashboardLink.href = '/my-agapay?gift_success=1&session_id=' + encodeURIComponent(pendingClaimSessionId);
+        dashboardLink.href = '/myagapay?gift_success=1&session_id=' + encodeURIComponent(pendingClaimSessionId);
       }
       setClaimStatus('');
     }
@@ -1165,7 +1165,7 @@
         if (result.token) localStorage.setItem('agapayDonorToken', result.token);
         if (result.donor) localStorage.setItem('agapayDonorProfile', JSON.stringify(result.donor));
         setClaimStatus('Success. Opening My AGAPAY...', 'success');
-        window.location.href = '/my-agapay?gift_success=1&session_id=' + encodeURIComponent(pendingClaimSessionId);
+        window.location.href = '/myagapay?gift_success=1&session_id=' + encodeURIComponent(pendingClaimSessionId);
       } catch (err) {
         const text = String(err.message || 'Unable to create donor account right now.');
         setClaimStatus(text, 'error');

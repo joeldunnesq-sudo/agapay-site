@@ -62,7 +62,7 @@ async function saveConnection(env = {}, householdId = "", connection = {}) {
 
 function googleRedirect(request, returnTo, status, message = "") {
   const url = new URL(request.url);
-  const redirectUrl = new URL(returnTo || "/learn/onboarding", url.origin);
+  const redirectUrl = new URL(returnTo || "/myagapay/learn/setup", url.origin);
   redirectUrl.searchParams.set("googleCalendar", status);
   if (message) redirectUrl.searchParams.set("message", message);
   return Response.redirect(redirectUrl.toString(), 302);
@@ -278,7 +278,7 @@ export function googleCalendarConnect(request, env = {}) {
   const url = new URL(request.url);
   const baseUrl = publicBaseUrl(request, env);
   const identity = learnSetupIdentity(request);
-  const returnTo = url.searchParams.get("returnTo") || "/learn/onboarding";
+  const returnTo = url.searchParams.get("returnTo") || "/myagapay/learn/setup";
   const state = encodeState({ returnTo, householdId: identity.householdId });
   const authUrl = new URL(GOOGLE_AUTH_BASE_URL);
   authUrl.searchParams.set("client_id", env.GOOGLE_CALENDAR_CLIENT_ID);
@@ -302,14 +302,14 @@ export function googleCalendarConnect(request, env = {}) {
 
 export async function googleCalendarCallback(request, env = {}) {
   const url = new URL(request.url);
-  let returnTo = "/learn/onboarding";
+  let returnTo = "/myagapay/learn/setup";
   let householdId = "";
   try {
     const state = decodeState(url.searchParams.get("state"));
     returnTo = state.returnTo || returnTo;
     householdId = state.householdId || "";
   } catch {
-    returnTo = "/learn/onboarding";
+    returnTo = "/myagapay/learn/setup";
   }
   if (!configured(env)) return googleRedirect(request, returnTo, "error", "not-configured");
   if (url.searchParams.get("error")) return googleRedirect(request, returnTo, "error", url.searchParams.get("error"));
@@ -357,7 +357,7 @@ export async function googleCalendarSync(repository, request, env = {}) {
       ok: false,
       connected: false,
       error: "Connect Google Calendar before syncing events.",
-      connectUrl: `/api/learn/google-calendar/connect?returnTo=${encodeURIComponent(new URL(request.url).searchParams.get("returnTo") || "/learn/onboarding")}`
+      connectUrl: `/api/learn/google-calendar/connect?returnTo=${encodeURIComponent(new URL(request.url).searchParams.get("returnTo") || "/myagapay/learn/setup")}`
     }, { status: 409 });
   }
 

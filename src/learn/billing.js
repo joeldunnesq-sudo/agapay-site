@@ -108,8 +108,8 @@ export function learnBillingStatus(request, env = {}) {
       `${yearlyPriceEnv} or ${monthlyPriceEnv} optional; inline price data is used when absent`,
       "AGAPAY_PUBLIC_URL"
     ],
-    successUrl: `${publicBaseUrl(request, env)}/learn/onboarding?learn_billing=success`,
-    cancelUrl: `${publicBaseUrl(request, env)}/learn/onboarding?learn_billing=cancelled`
+    successUrl: `${publicBaseUrl(request, env)}/myagapay/learn/setup?learn_billing=success`,
+    cancelUrl: `${publicBaseUrl(request, env)}/myagapay/learn/setup?learn_billing=cancelled`
   });
 }
 
@@ -148,8 +148,8 @@ export async function learnBillingCheckout(request, env = {}) {
   params.set("line_items[0][quantity]", "1");
   params.set("allow_promotion_codes", "true");
   params.set("automatic_tax[enabled]", "true");
-  params.set("success_url", `${baseUrl}/learn/onboarding?learn_billing=success&session_id={CHECKOUT_SESSION_ID}`);
-  params.set("cancel_url", `${baseUrl}/learn/onboarding?learn_billing=cancelled`);
+  params.set("success_url", `${baseUrl}/myagapay/learn/setup?learn_billing=success&session_id={CHECKOUT_SESSION_ID}`);
+  params.set("cancel_url", `${baseUrl}/myagapay/learn/setup?learn_billing=cancelled`);
   params.set("metadata[product]", "learn");
   params.set("metadata[plan]", plan);
   params.set("subscription_data[metadata][product]", "learn");

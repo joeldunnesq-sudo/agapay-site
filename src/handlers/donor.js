@@ -277,7 +277,7 @@ export async function handleDonorPasswordResetRequest(request, env) {
   const resetToken = generateSecret("donor_reset");
   const resetSalt = generateSecret("donor_reset_salt");
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const resetUrl = `${String(appUrl).replace(/\/+$/, "")}/my-agapay/login?reset=1&email=${encodeURIComponent(email)}&token=${encodeURIComponent(resetToken)}`;
+  const resetUrl = `${String(appUrl).replace(/\/+$/, "")}/myagapay/login?reset=1&email=${encodeURIComponent(email)}&token=${encodeURIComponent(resetToken)}`;
   const updated = {
     ...donor,
     passwordResetSalt: resetSalt,
@@ -379,7 +379,7 @@ export async function sendDonorDonationReceiptEmail(env, offering = {}) {
   const donorCovered = formatUsdFromCents(fees.donorCoveredFeeCents);
   const stripeReference = htmlEscape(offering.stripePaymentIntentId || offering.checkoutSessionId || offering.id || "");
   const donatedAt = htmlEscape(new Date(offering.completedAt || offering.createdAt || Date.now()).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }));
-  const dashboardUrl = htmlEscape(`${String(appUrl).replace(/\/+$/, "")}/donor`);
+  const dashboardUrl = htmlEscape(`${String(appUrl).replace(/\/+$/, "")}/myagapay`);
   const feeDetail = fees.coverFees
     ? `<p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Fees covered by you:</strong> ${htmlEscape(donorCovered)}</p>
        <p style="margin:0 0 8px;font-size:14px;color:#171715;"><strong>Parish received:</strong> ${htmlEscape(parishReceived)}</p>`
@@ -477,7 +477,7 @@ export async function handleDonorSignup(request, env) {
   const verificationToken = generateSecret("verify");
   const verificationSalt = generateSecret("verify_salt");
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const verificationUrl = `${String(appUrl).replace(/\/+$/, "")}/my-agapay/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(verificationToken)}`;
+  const verificationUrl = `${String(appUrl).replace(/\/+$/, "")}/myagapay/verify?email=${encodeURIComponent(email)}&token=${encodeURIComponent(verificationToken)}`;
   const donor = await applyDonorPassword({
     ...(existing || {}),
     email,
@@ -629,7 +629,7 @@ export function donorVerifyHtml({ title, message, status = "info", script = "", 
               <h1>${htmlEscape(title)}</h1>
               <p>${htmlEscape(message)}</p>
               <div class="notice ${statusClass}" style="margin-top:1rem;">${htmlEscape(message)}</div>
-              <p class="form-help" style="margin-top:1rem;"><a href="/my-agapay/login">Go to My AGAPAY login</a></p>
+              <p class="form-help" style="margin-top:1rem;"><a href="/myagapay/login">Go to My AGAPAY login</a></p>
             </div>
             <div class="hero-mark"><img src="/mark.png" alt="" /></div>
           </div>
@@ -681,7 +681,7 @@ export async function handleDonorVerifyPage(request, env) {
         title: "Email already verified",
         message: "Your email is already verified. Please log in to open your donor dashboard.",
         status: "success",
-        refreshUrl: "/my-agapay/login"
+        refreshUrl: "/myagapay/login"
       },
       { status: 200 }
     );
@@ -700,7 +700,7 @@ export async function handleDonorVerifyPage(request, env) {
     if (session.token) localStorage.setItem("agapayDonorToken", session.token);
     if (session.donor) localStorage.setItem("agapayDonorProfile", JSON.stringify(session.donor));
   } catch (err) {}
-  window.location.replace("/donor");
+  window.location.replace("/myagapay");
 })();
 </script>`;
 
@@ -710,7 +710,7 @@ export async function handleDonorVerifyPage(request, env) {
       message: data.alreadyVerified ? "Your email was already verified. Opening your donor dashboard." : "Your email is verified. Opening your donor dashboard.",
       status: "success",
       script,
-      refreshUrl: "/donor"
+      refreshUrl: "/myagapay"
     },
     { status: 200 }
   );
@@ -854,7 +854,7 @@ export async function handleDonorSubscriptionPortal(request, env) {
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const form = new URLSearchParams({
     customer: selectedOffering.stripeCustomerId,
-    return_url: `${String(appUrl).replace(/\/+$/, "")}/donor/offerings`
+    return_url: `${String(appUrl).replace(/\/+$/, "")}/myagapay/giving/history`
   });
 
   const session = await stripeFormConnectedRequest(env, "/v1/billing_portal/sessions", form, stripeAccountId);

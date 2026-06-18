@@ -2412,10 +2412,10 @@ export async function handleCheckout(request, env) {
   const donor = await requireDonor(request, env);
   const donorDashboardReturn = Boolean(donor?.email && normalizeEmail(donor.email) === normalizedDonorEmail);
   const successUrl = donorDashboardReturn
-    ? `${appUrl}/donor?gift_success=1&session_id={CHECKOUT_SESSION_ID}`
+    ? `${appUrl}/myagapay?gift_success=1&session_id={CHECKOUT_SESSION_ID}`
     : `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&success=1&session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = donorDashboardReturn
-    ? `${appUrl}/donor/give?checkout_canceled=1`
+    ? `${appUrl}/myagapay/giving/give?checkout_canceled=1`
     : `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&canceled=1`;
   const {
     chargeCents,

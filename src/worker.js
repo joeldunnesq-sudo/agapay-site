@@ -530,62 +530,94 @@ function handleLiturgicalCalendar(request) {
   });
 }
 
+const MYAGAPAY_ASSET_ROUTES = new Map([
+  ["/myagapay", "/donor/"],
+  ["/myagapay/", "/donor/"],
+  ["/myagapay/dashboard", "/donor/"],
+  ["/myagapay/login", "/donor/login"],
+  ["/myagapay/signup", "/donor/signup"],
+  ["/myagapay/account", "/donor/settings"],
+  ["/myagapay/settings", "/donor/settings"],
+  ["/myagapay/giving", "/donor/"],
+  ["/myagapay/giving/", "/donor/"],
+  ["/myagapay/giving/give", "/donor/give"],
+  ["/myagapay/giving/history", "/donor/offerings"],
+  ["/myagapay/giving/offerings", "/donor/offerings"],
+  ["/myagapay/giving/commemorations", "/donor/commemorations"],
+  ["/myagapay/giving/names", "/donor/commemorations"],
+  ["/myagapay/giving/calendar", "/donor/calendar"],
+  ["/myagapay/market", "/marketplace"],
+  ["/myagapay/marketplace", "/marketplace"],
+  ["/myagapay/directory", "/directory"],
+  ["/myagapay/learn", "/learn/dashboard"],
+  ["/myagapay/learn/", "/learn/dashboard"],
+  ["/myagapay/learn/dashboard", "/learn/dashboard"],
+  ["/myagapay/learn/planner", "/learn/planner"],
+  ["/myagapay/learn/formation", "/learn/formation"],
+  ["/myagapay/learn/books", "/learn/books"],
+  ["/myagapay/learn/community", "/learn/community"],
+  ["/myagapay/learn/reports", "/learn/reports"],
+  ["/myagapay/learn/print", "/learn/print-center"],
+  ["/myagapay/learn/print-center", "/learn/print-center"],
+  ["/myagapay/learn/setup", "/learn/onboarding"],
+  ["/myagapay/learn/onboarding", "/learn/onboarding"],
+  ["/myagapay/learn/co-op", "/learn/co-op"]
+]);
+
+const DASHBOARD_LEGACY_REDIRECTS = new Map([
+  ["/my-agapay", "/myagapay"],
+  ["/my-agapay/", "/myagapay"],
+  ["/my-agapay/dashboard", "/myagapay"],
+  ["/my-agapay/login", "/myagapay/login"],
+  ["/my-agapay/login/", "/myagapay/login"],
+  ["/my-agapay/signup", "/myagapay/signup"],
+  ["/my-agapay/verify", "/myagapay/verify"],
+  ["/my-agapay/give", "/myagapay/giving/give"],
+  ["/my-agapay/offerings", "/myagapay/giving/history"],
+  ["/my-agapay/commemorations", "/myagapay/giving/commemorations"],
+  ["/my-agapay/calendar", "/myagapay/giving/calendar"],
+  ["/my-agapay/settings", "/myagapay/account"],
+  ["/donor", "/myagapay"],
+  ["/donor/", "/myagapay"],
+  ["/donor/dashboard", "/myagapay"],
+  ["/donor/login", "/myagapay/login"],
+  ["/donor/login/", "/myagapay/login"],
+  ["/donor/login.html", "/myagapay/login"],
+  ["/donor/signup", "/myagapay/signup"],
+  ["/donor/give", "/myagapay/giving/give"],
+  ["/donor/offerings", "/myagapay/giving/history"],
+  ["/donor/commemorations", "/myagapay/giving/commemorations"],
+  ["/donor/calendar", "/myagapay/giving/calendar"],
+  ["/donor/settings", "/myagapay/account"],
+  ["/learn/dashboard", "/myagapay/learn"],
+  ["/learn/planner", "/myagapay/learn/planner"],
+  ["/learn/formation", "/myagapay/learn/formation"],
+  ["/learn/books", "/myagapay/learn/books"],
+  ["/learn/community", "/myagapay/learn/community"],
+  ["/learn/reports", "/myagapay/learn/reports"],
+  ["/learn/print-center", "/myagapay/learn/print"],
+  ["/learn/onboarding", "/myagapay/learn/setup"],
+  ["/learn/co-op", "/myagapay/learn/co-op"]
+]);
+
+function canonicalDashboardPath(pathname) {
+  return DASHBOARD_LEGACY_REDIRECTS.get(pathname) || "";
+}
+
 function cleanAssetRequest(request) {
   const url = new URL(request.url);
   if (url.pathname === "/") return request;
-  if (url.pathname === "/learn" || url.pathname === "/learn/") {
-    url.pathname = "/learn/index.html";
-    return new Request(url, request);
-  }
-  if (url.pathname.startsWith("/learn/") && !url.pathname.includes(".")) {
-    url.pathname = `${url.pathname}.html`;
-    return new Request(url, request);
-  }
-  if (url.pathname === "/admin") {
-    url.pathname = "/admin.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/parish/dashboard") {
-    url.pathname = "/parish/dashboard.html";
+  const myAgapayAsset = MYAGAPAY_ASSET_ROUTES.get(url.pathname);
+  if (myAgapayAsset) {
+    url.pathname = myAgapayAsset;
     return new Request(url, request);
   }
   if (url.pathname === "/give" || url.pathname === "/give/" || url.pathname === "/giving" || url.pathname === "/giving/") {
-    url.pathname = "/give/index.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/donor" || url.pathname === "/donor/") {
-    url.pathname = "/donor/index.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/donor/dashboard") {
-    url.pathname = "/donor/index.html";
-    return new Request(url, request);
-  }
-  if (
-    url.pathname === "/my-agapay" ||
-    url.pathname === "/my-agapay/" ||
-    url.pathname === "/my-agapay/dashboard" ||
-    url.pathname === "/myagapay" ||
-    url.pathname === "/myagapay/" ||
-    url.pathname === "/myagapay/dashboard"
-  ) {
-    url.pathname = "/donor/index.html";
-    return new Request(url, request);
-  }
-  if (url.pathname.startsWith("/my-agapay/") && !url.pathname.includes(".")) {
-    url.pathname = url.pathname.replace(/^\/my-agapay/, "/donor") + ".html";
-    return new Request(url, request);
-  }
-  if (url.pathname.startsWith("/myagapay/") && !url.pathname.includes(".")) {
-    url.pathname = url.pathname.replace(/^\/myagapay/, "/donor") + ".html";
-    return new Request(url, request);
-  }
-  if (url.pathname.startsWith("/donor/") && !url.pathname.includes(".")) {
-    url.pathname = `${url.pathname}.html`;
+    url.pathname = "/give/";
     return new Request(url, request);
   }
   if (url.pathname === "/give/form") {
-    url.pathname = "/give/form.html";
+    url.pathname = "/give/form";
     return new Request(url, request);
   }
   if (url.pathname === "/give/parish-giving") {
@@ -709,14 +741,9 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
-    if (request.method === "GET" && (
-      url.pathname === "/myagapay/login" ||
-      url.pathname === "/myagapay/login/" ||
-      url.pathname === "/donor/login" ||
-      url.pathname === "/donor/login/" ||
-      url.pathname === "/donor/login.html"
-    )) {
-      url.pathname = "/my-agapay/login";
+    const canonicalDashboard = (request.method === "GET" || request.method === "HEAD") ? canonicalDashboardPath(url.pathname) : "";
+    if (canonicalDashboard) {
+      url.pathname = canonicalDashboard;
       return Response.redirect(url.toString(), 301);
     }
 

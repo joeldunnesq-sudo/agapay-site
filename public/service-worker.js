@@ -1,7 +1,7 @@
 const AGAPAY_CACHE = "agapay-static-v10";
 
 const STATIC_ASSETS = [
-  "/my-agapay/login",
+  "/myagapay/login",
   "/donor/login.html",
   "/donor/style.css",
   "/donor/app.js",
@@ -39,7 +39,7 @@ function shouldBypassCache(request) {
   if (url.pathname.startsWith("/api/")) return true;
   if (url.pathname.startsWith("/admin")) return true;
   if (url.pathname.startsWith("/parish")) return true;
-  if (url.pathname.startsWith("/my-agapay")) return true;
+  if (url.pathname.startsWith("/myagapay") && url.pathname !== "/myagapay/login") return true;
 
   // Donor dashboard pages and API-backed pages are intentionally network-only.
   // The PWA only caches the unauthenticated login shell and static assets so no
@@ -47,7 +47,7 @@ function shouldBypassCache(request) {
   if (url.pathname === "/donor" || url.pathname === "/donor/" || url.pathname === "/donor/dashboard") return true;
   if (
     url.pathname.startsWith("/donor/") &&
-    !["/my-agapay/login", "/donor/login", "/donor/login.html", "/donor/style.css", "/donor/app.js", "/donor/pwa-install.js"].includes(url.pathname)
+    !["/myagapay/login", "/donor/login", "/donor/login.html", "/donor/style.css", "/donor/app.js", "/donor/pwa-install.js"].includes(url.pathname)
   ) {
     return true;
   }
@@ -68,7 +68,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (shouldBypassCache(request)) return;
 
-  if (request.mode === "navigate" && (url.pathname === "/my-agapay/login" || url.pathname === "/donor/login" || url.pathname === "/donor/login.html")) {
+  if (request.mode === "navigate" && (url.pathname === "/myagapay/login" || url.pathname === "/donor/login" || url.pathname === "/donor/login.html")) {
     event.respondWith(
       fetch(request)
         .then((response) => {

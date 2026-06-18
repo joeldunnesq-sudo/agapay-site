@@ -38,14 +38,14 @@ export function handleLearnMeta(env) {
     },
     navigation: [
       { href: "/learn", label: "Dashboard", implemented: true },
-      { href: "/learn/planner", label: "Planner", implemented: true },
-      { href: "/learn/formation", label: "Formation", implemented: true },
-      { href: "/learn/books", label: "Books", implemented: true },
-      { href: "/learn/community", label: "Community", implemented: true },
-      { href: "/learn/reports", label: "Reports", implemented: true },
-      { href: "/learn/print-center", label: "Print Center", implemented: true },
-      { href: "/learn/onboarding", label: "Setup", implemented: true },
-      { href: "/learn/co-op", label: "Co-op", implemented: learnCoOpEnabled(env), featureFlag: "learn-coop" }
+      { href: "/myagapay/learn/planner", label: "Planner", implemented: true },
+      { href: "/myagapay/learn/formation", label: "Formation", implemented: true },
+      { href: "/myagapay/learn/books", label: "Books", implemented: true },
+      { href: "/myagapay/learn/community", label: "Community", implemented: true },
+      { href: "/myagapay/learn/reports", label: "Reports", implemented: true },
+      { href: "/myagapay/learn/print", label: "Print Center", implemented: true },
+      { href: "/myagapay/learn/setup", label: "Setup", implemented: true },
+      { href: "/myagapay/learn/co-op", label: "Co-op", implemented: learnCoOpEnabled(env), featureFlag: "learn-coop" }
     ]
   });
 }

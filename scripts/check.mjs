@@ -49,7 +49,7 @@ assert.ok(backendSources.includes("subscription_data[application_fee_percent]"),
 assert.ok(backendSources.includes("Parish SaaS subscription billing is created in a separate flow"), "worker should keep parish subscription billing separate from donation fees");
 assert.ok(worker.includes("/api/checkout-session-status"), "worker should expose checkout return reconciliation");
 assert.ok(backendSources.includes("session_id={CHECKOUT_SESSION_ID}"), "Stripe success URLs should include the Checkout session id");
-assert.ok(backendSources.includes("/donor?gift_success=1"), "authenticated donor checkouts should return to the donor dashboard");
+assert.ok(backendSources.includes("/myagapay?gift_success=1"), "authenticated donor checkouts should return to the My AGAPAY dashboard");
 assert.ok(!worker.includes("const parishes = ["), "worker should not hardcode demo parishes");
 assert.ok(worker.includes('url.pathname === "/donor/verify"'), "worker should route donor verification links before assets");
 assert.ok(worker.includes("handleDonorVerifyPage"), "worker should handle donor verification links server-side");
@@ -80,7 +80,7 @@ const donorHome = await readFile("public/donor/index.html", "utf8");
 assert.ok(donorHome.includes("data-auth-guest"), "donor home should mark guest-only controls so signed-in donors do not see login prompts");
 assert.ok(donorHome.includes("donor-phone"), "donor home should use the mobile-first app shell");
 assert.ok(donorHome.includes("metricMonth"), "donor home should show month-to-date giving");
-assert.ok(donorHome.includes("/my-agapay/settings"), "donor home avatar should link to My AGAPAY settings");
+assert.ok(donorHome.includes("/myagapay/account"), "donor home avatar should link to My AGAPAY settings");
 const donorSettings = await readFile("public/donor/settings.html", "utf8");
 assert.ok(donorSettings.includes("saveDonorSettings(event)"), "donor settings should save through the donor API");
 const donorSecurity = await readFile("public/security.js", "utf8");

@@ -126,15 +126,15 @@ function shellFromPayload(page, payload) {
     accountInitials: account.initials,
     timeLabel: text(household.topbarTimeLabel, new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date())),
     nav: [
-      { id: "dashboard", href: "/learn/dashboard", label: "Dashboard", icon: "✥" },
-      { id: "planner", href: "/learn/planner", label: "Planner", icon: "▣" },
-      { id: "formation", href: "/learn/formation", label: "Formation", icon: "⌂" },
-      { id: "books", href: "/learn/books", label: "Books", icon: "☰" },
-      { id: "reports", href: "/learn/reports", label: "Reports", icon: "▥" },
-      { id: "print-center", href: "/learn/print-center", label: "Print", icon: "▤" },
-      { id: "co-op", href: "/learn/co-op", label: "Co-op", icon: "◎" },
-      { id: "community", href: "/learn/community", label: "Community", icon: "♡" },
-      { id: "onboarding", href: "/learn/onboarding", label: "Set Up", icon: "⚙" }
+      { id: "dashboard", href: "/myagapay/learn", label: "Dashboard", icon: "✥" },
+      { id: "planner", href: "/myagapay/learn/planner", label: "Planner", icon: "▣" },
+      { id: "formation", href: "/myagapay/learn/formation", label: "Formation", icon: "⌂" },
+      { id: "books", href: "/myagapay/learn/books", label: "Books", icon: "☰" },
+      { id: "reports", href: "/myagapay/learn/reports", label: "Reports", icon: "▥" },
+      { id: "print-center", href: "/myagapay/learn/print", label: "Print", icon: "▤" },
+      { id: "co-op", href: "/myagapay/learn/co-op", label: "Co-op", icon: "◎" },
+      { id: "community", href: "/myagapay/learn/community", label: "Community", icon: "♡" },
+      { id: "onboarding", href: "/myagapay/learn/setup", label: "Set Up", icon: "⚙" }
     ]
   };
 }
@@ -298,13 +298,13 @@ export function toPlannerViewModel(rawPayload) {
       id: view,
       label: view.charAt(0).toUpperCase() + view.slice(1),
       active: activeView === view,
-      href: `/learn/planner?view=${view}${view === "term" ? `&term=${activeTerm}&termId=${encodeURIComponent(activeTermId)}` : ""}`
+      href: `/myagapay/learn/planner?view=${view}${view === "term" ? `&term=${activeTerm}&termId=${encodeURIComponent(activeTermId)}` : ""}`
     })),
     termTabs: (termOptions.length ? termOptions : [1, 2, 3].map((term) => ({ id: `term_${term}`, label: `Term ${term}` }))).map((term, index) => ({
       id: term.id || index + 1,
       label: text(term.label, `Term ${index + 1}`),
       active: term.id ? term.id === activeTermId : activeTerm === index + 1,
-      href: `/learn/planner?view=term&term=${index + 1}&termId=${encodeURIComponent(term.id || "")}`
+      href: `/myagapay/learn/planner?view=term&term=${index + 1}&termId=${encodeURIComponent(term.id || "")}`
     })),
     week: {
       label: text(week.label, "This Week"),

@@ -10,7 +10,7 @@ const DONOR_SHELL_VERSION = "2026-06-16-giving-hand-v4";
 
 async function refreshStaleDashboardShell() {
   if (!("serviceWorker" in navigator) || !("caches" in window)) return;
-  if (!location.pathname.startsWith("/my-agapay") && !location.pathname.startsWith("/donor")) return;
+  if (!location.pathname.startsWith("/myagapay") && !location.pathname.startsWith("/donor")) return;
   if (localStorage.getItem(donorStore.shellVersion) === DONOR_SHELL_VERSION) return;
 
   localStorage.setItem(donorStore.shellVersion, DONOR_SHELL_VERSION);
@@ -211,7 +211,7 @@ function clearDonorSession() {
 
 function logoutDonor() {
   clearDonorSession();
-  window.location.href = "/my-agapay/login";
+  window.location.href = "/myagapay/login";
 }
 
 function showGuestDonorDashboard() {
@@ -251,7 +251,7 @@ function showGuestDonorDashboard() {
       <div class="my-agapay-activity-item">
         <span class="activity-dot">+</span>
         <div><strong>Sign in to load your AGAPAY activity</strong><span>Your giving, learning, and organization updates will appear here.</span></div>
-        <a class="activity-amount" href="/my-agapay/login">Log in</a>
+        <a class="activity-amount" href="/myagapay/login">Log in</a>
       </div>
     `;
   }
@@ -335,7 +335,7 @@ function donorGiftUrl(giftType, parish, extra = {}) {
   Object.entries(extra).forEach(([key, value]) => {
     if (value) params.set(key, value);
   });
-  return `/my-agapay/give?${params.toString()}`;
+  return `/myagapay/giving/give?${params.toString()}`;
 }
 
 function quickDonorGiftUrl(giftType, parish, extra = {}) {
@@ -613,7 +613,7 @@ function renderNextFeast(parish) {
       target.calendar.textContent = "Next Feast Day:";
       target.name.textContent = "Next feast day";
       target.date.textContent = "Sign in and select a church to see the next feast for its calendar.";
-      if (target.link) target.link.href = "/my-agapay/give?giftType=feast";
+      if (target.link) target.link.href = "/myagapay/giving/give?giftType=feast";
     });
     return;
   }
@@ -855,7 +855,7 @@ async function loginFromPage(event) {
     });
     saveDonorSession(data);
     setDonorStatus("Signed in. Opening My AGAPAY...", "success");
-    window.location.href = "/my-agapay/";
+    window.location.href = "/myagapay/";
   } catch (err) {
     clearDonorSession();
     const message = isDonorUnauthorized(err)
@@ -1059,12 +1059,12 @@ async function verifyDonorEmail() {
     });
     if (!data.token) {
       setDonorStatus("Email already verified. Please log in to open My AGAPAY.", "success");
-      setTimeout(() => { window.location.href = "/my-agapay/login"; }, 900);
+      setTimeout(() => { window.location.href = "/myagapay/login"; }, 900);
       return;
     }
     saveDonorSession(data);
     setDonorStatus("Email verified. Opening My AGAPAY...", "success");
-    setTimeout(() => { window.location.href = "/my-agapay"; }, 900);
+    setTimeout(() => { window.location.href = "/myagapay"; }, 900);
   } catch (err) {
     clearDonorSession();
     setDonorStatus(err.message, "error");
@@ -1113,7 +1113,7 @@ function renderMyAgapayDashboard(data) {
     title: `Donation to ${offering.parishName || parish?.name || "your parish"}`,
     meta: `${offering.giftType || "Offering"} - ${shortDate(offering.createdAt)}`,
     value: money(offering.amountCents),
-    href: "/my-agapay/offerings"
+    href: "/myagapay/giving/history"
   }));
 
   const fallbackActivities = [
@@ -1122,14 +1122,14 @@ function renderMyAgapayDashboard(data) {
       title: "AGAPAY Learn is ready",
       meta: "Open your Orthodox homeschool dashboard",
       value: "View",
-      href: "/learn/dashboard"
+      href: "/myagapay/learn"
     },
     {
       glyph: "C",
       title: `${summary.commemorationCount || 0} commemorations recorded`,
       meta: "Names submitted through AGAPAY",
       value: "View",
-      href: "/my-agapay/commemorations"
+      href: "/myagapay/giving/commemorations"
     }
   ];
 
@@ -1417,7 +1417,7 @@ function renderRecurringManagement(offerings = []) {
       <div class="recurring-management-empty">
         <strong>No recurring gifts yet.</strong>
         <span>When you create a recurring offering, you will be able to manage, change, or cancel it here.</span>
-        <a class="btn btn-gold btn-sm" href="/my-agapay/give?frequency=monthly">Start recurring gift</a>
+        <a class="btn btn-gold btn-sm" href="/myagapay/giving/give?frequency=monthly">Start recurring gift</a>
       </div>
     `;
     return;
@@ -1440,7 +1440,7 @@ async function openDonorRecurringPortal(parishId = "", button = null) {
   const session = donorSession();
   if (!session.email || !session.token) {
     setDonorStatus("Log in to manage recurring giving.", "error");
-    window.location.href = "/my-agapay/login";
+    window.location.href = "/myagapay/login";
     return;
   }
   const win = window.open("", "_blank");
@@ -1749,7 +1749,7 @@ async function handleDonorCheckoutReturn() {
   const sessionId = params.get("session_id");
   if (!sessionId) {
     setDonorStatus("Your payment was successful. We are still waiting for Stripe's final confirmation.", "success");
-    window.history.replaceState(null, "", "/donor");
+    window.history.replaceState(null, "", "/myagapay");
     return true;
   }
 
@@ -1767,7 +1767,7 @@ async function handleDonorCheckoutReturn() {
     setDonorStatus("Your payment was successful. Stripe confirmation is still processing, so your history may update shortly.", "success");
     console.warn("AGAPAY donor checkout confirmation warning:", err);
   }
-  window.history.replaceState(null, "", "/donor");
+  window.history.replaceState(null, "", "/myagapay");
   return true;
 }
 
@@ -1837,7 +1837,7 @@ function renderPledgeTracker(donor) {
     const goal = document.getElementById("pledgeGoal");
     if (goal)   goal.textContent = "of " + money(pledgeCents) + " pledge";
     const editLink = mobileCard.querySelector(".pledge-tracker-edit");
-    if (editLink) editLink.href = "/my-agapay/settings#pledge";
+    if (editLink) editLink.href = "/myagapay/account#pledge";
   }
 
   // Desktop tracker

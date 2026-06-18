@@ -18,7 +18,25 @@ crons = ["0 14 * * 6"]
 [assets]
 directory = "./public"
 binding = "ASSETS"
-run_worker_first = ["/**.html"]
+run_worker_first = [
+  "/**.html",
+  "/myagapay",
+  "/myagapay/*",
+  "/donor",
+  "/donor/*",
+  "/my-agapay",
+  "/my-agapay/*",
+  "/learn/dashboard",
+  "/learn/dashboard/*",
+  "/learn/planner",
+  "/learn/formation",
+  "/learn/books",
+  "/learn/community",
+  "/learn/reports",
+  "/learn/print-center",
+  "/learn/onboarding",
+  "/learn/co-op"
+]
 
 [[kv_namespaces]]
 binding = "AGAPAY_REGISTRATIONS"

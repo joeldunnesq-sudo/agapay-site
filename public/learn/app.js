@@ -1,14 +1,14 @@
 (function () {
   const navItems = [
-    { href: "/learn/dashboard", label: "Dashboard", key: "dashboard", icon: "home" },
-    { href: "/learn/planner", label: "Planner", key: "planner", icon: "calendar" },
-    { href: "/learn/formation", label: "Formation", key: "formation", icon: "church" },
-    { href: "/learn/books", label: "Books", key: "books", icon: "book" },
-    { href: "/learn/community", label: "Community", key: "community", icon: "users" },
-    { href: "/learn/reports", label: "Reports", key: "reports", icon: "bars" },
-    { href: "/learn/print-center", label: "Print Center", key: "print-center", icon: "printer" },
-    { href: "/learn/onboarding", label: "Setup", key: "onboarding", icon: "check" },
-    { href: "/learn/co-op", label: "Co-op", key: "co-op", icon: "users" }
+    { href: "/myagapay/learn", label: "Dashboard", key: "dashboard", icon: "home" },
+    { href: "/myagapay/learn/planner", label: "Planner", key: "planner", icon: "calendar" },
+    { href: "/myagapay/learn/formation", label: "Formation", key: "formation", icon: "church" },
+    { href: "/myagapay/learn/books", label: "Books", key: "books", icon: "book" },
+    { href: "/myagapay/learn/community", label: "Community", key: "community", icon: "users" },
+    { href: "/myagapay/learn/reports", label: "Reports", key: "reports", icon: "bars" },
+    { href: "/myagapay/learn/print", label: "Print Center", key: "print-center", icon: "printer" },
+    { href: "/myagapay/learn/setup", label: "Setup", key: "onboarding", icon: "check" },
+    { href: "/myagapay/learn/co-op", label: "Co-op", key: "co-op", icon: "users" }
   ];
 
   const LEARN_FREE_CHILD_LIMIT = 2;
@@ -128,13 +128,13 @@
     const account = learnUtilityContext(payload);
     return `
       <header class="learn-utility-bar">
-        <a class="learn-utility-brand" href="/my-agapay" aria-label="Open My AGAPAY">
+        <a class="learn-utility-brand" href="/myagapay" aria-label="Open My AGAPAY">
           <span class="learn-utility-mark"><img src="/mark.png" alt="" /></span>
           <span><span class="learn-utility-title">MY AGAPAY</span><small>Love how you Give + Learn + Live</small></span>
         </a>
         <div class="learn-utility-actions">
-          <a class="learn-quick-action" href="/learn/onboarding">Quick Action</a>
-          <a class="learn-account-chip" href="/my-agapay" aria-label="Back to My AGAPAY dashboard">
+          <a class="learn-quick-action" href="/myagapay/learn/setup">Quick Action</a>
+          <a class="learn-account-chip" href="/myagapay" aria-label="Back to My AGAPAY dashboard">
             <span class="learn-account-avatar">${account.initials}</span>
             <span><strong>${account.name}</strong><small>Back to Dashboard</small></span>
           </a>
@@ -259,7 +259,7 @@
       return `
         <section class="learn-card">
           <div class="learn-card-inner">
-            <div class="learn-card-title"><strong>Household Plan</strong><a class="learn-button learn-button-primary" href="/learn/onboarding">Finish Setup</a></div>
+            <div class="learn-card-title"><strong>Household Plan</strong><a class="learn-button learn-button-primary" href="/myagapay/learn/setup">Finish Setup</a></div>
             ${renderEmpty("No lessons planned yet", "Add children, subjects, books, and formation materials in Setup to generate your first Learn plan.")}
           </div>
         </section>
@@ -1408,7 +1408,7 @@
       return `
         <section class="learn-card">
           <div class="learn-card-inner">
-            <div class="learn-card-title"><strong>Term ${activeTerm} Plan</strong><span class="learn-chip-soft">${termRange}</span><a class="learn-button learn-button-primary" href="/learn/onboarding">Open Setup</a></div>
+            <div class="learn-card-title"><strong>Term ${activeTerm} Plan</strong><span class="learn-chip-soft">${termRange}</span><a class="learn-button learn-button-primary" href="/myagapay/learn/setup">Open Setup</a></div>
             ${renderEmpty("No term plan yet", "Add subjects, books, formation materials, and cycle notes in Setup before building a term plan.")}
           </div>
         </section>
@@ -1434,7 +1434,7 @@
             ${termCards.map((card) => `<article class="learn-term-card"><strong>${card.title}</strong><span>${card.detail}</span><b>${card.value}</b></article>`).join("")}
           </div>
           <section class="learn-card"><div class="learn-card-inner">
-            <div class="learn-card-title"><strong>Term Materials</strong><a class="learn-button" href="/learn/onboarding">Edit Setup</a></div>
+            <div class="learn-card-title"><strong>Term Materials</strong><a class="learn-button" href="/myagapay/learn/setup">Edit Setup</a></div>
             ${summaryItems.map((item) => `<div class="learn-change-line">${item}</div>`).join("")}
           </div></section>
           <section class="learn-term-summaries">
@@ -1729,21 +1729,21 @@
   function renderCoOp(payload) {
     const data = payload.coOp;
     if (!data.enabled) {
-      return `${renderSimpleTopbar("Co-op", "Optional community planning for shared classes, resources, and meeting days.", `<div class="learn-chip-soft">Not enabled</div>`)}<div class="learn-shell"><section class="learn-card"><div class="learn-card-inner"><div class="learn-card-title"><strong>Co-op is off for this household</strong><a class="learn-button learn-button-primary" href="/learn/onboarding">Open Setup</a></div><p class="learn-text-muted">Enable Co-op in Setup when you are ready to add member families, meeting days, teaching rotation, announcements, and shared resources.</p></div></section></div>`;
+      return `${renderSimpleTopbar("Co-op", "Optional community planning for shared classes, resources, and meeting days.", `<div class="learn-chip-soft">Not enabled</div>`)}<div class="learn-shell"><section class="learn-card"><div class="learn-card-inner"><div class="learn-card-title"><strong>Co-op is off for this household</strong><a class="learn-button learn-button-primary" href="/myagapay/learn/setup">Open Setup</a></div><p class="learn-text-muted">Enable Co-op in Setup when you are ready to add member families, meeting days, teaching rotation, announcements, and shared resources.</p></div></section></div>`;
     }
     return `
       ${renderSimpleTopbar("Co-op", `Co-operatives > ${data.coOp.name}`, `<div class="learn-chip">${data.coOp.learningCycleLabel}</div>`)}
       <div class="learn-shell">
         <section class="learn-card"><div class="learn-card-inner learn-coop-hero"><div class="learn-icon-panel"><img src="/pantocrator.png" alt="Co-op patron icon" /></div><div><h1>${data.coOp.name}</h1><p>${data.coOp.city || "Location not set"}</p><span>${data.coOp.affiliation}</span></div><div class="learn-feature-stat"><b>${data.members.length}</b><span>Member Families</span></div><div class="learn-feature-stat"><b>${data.meeting?.startsAt || "Set in Setup"}</b><span>Next Meeting</span></div></div></section>
         <section class="learn-feature-grid learn-coop-grid">
-          <div class="learn-card"><div class="learn-card-inner"><div class="learn-card-title"><strong>Weekly Co-op Schedule</strong><a class="learn-button" href="/learn/onboarding">Edit</a></div>${data.scheduleBlocks.length ? data.scheduleBlocks.map((block) => `<div class="learn-schedule-row"><b>${block.startsAt || "Set"}<br>${block.endsAt || "time"}</b><div><strong>${block.title}</strong><small>${block.subtitle}</small></div><span>${block.teacherHouseholdName || "Unassigned"}</span></div>`).join("") : renderEmpty("No meeting blocks yet", "Add the co-op meeting schedule in Setup.")}</div></div>
-          <div class="learn-card"><div class="learn-card-inner"><div class="learn-card-title"><strong>Announcements</strong><a class="learn-button" href="/learn/onboarding">Edit</a></div>${data.announcements.length ? data.announcements.map((entry) => `<div class="learn-record-row"><span class="learn-status-dot ${entry.priority === "important" ? "is-complete" : ""}"></span><div><strong>${entry.title}</strong><small>${entry.body}</small></div></div>`).join("") : renderEmpty("No announcements", "Add reminders and updates in Setup.")}</div></div>
+          <div class="learn-card"><div class="learn-card-inner"><div class="learn-card-title"><strong>Weekly Co-op Schedule</strong><a class="learn-button" href="/myagapay/learn/setup">Edit</a></div>${data.scheduleBlocks.length ? data.scheduleBlocks.map((block) => `<div class="learn-schedule-row"><b>${block.startsAt || "Set"}<br>${block.endsAt || "time"}</b><div><strong>${block.title}</strong><small>${block.subtitle}</small></div><span>${block.teacherHouseholdName || "Unassigned"}</span></div>`).join("") : renderEmpty("No meeting blocks yet", "Add the co-op meeting schedule in Setup.")}</div></div>
+          <div class="learn-card"><div class="learn-card-inner"><div class="learn-card-title"><strong>Announcements</strong><a class="learn-button" href="/myagapay/learn/setup">Edit</a></div>${data.announcements.length ? data.announcements.map((entry) => `<div class="learn-record-row"><span class="learn-status-dot ${entry.priority === "important" ? "is-complete" : ""}"></span><div><strong>${entry.title}</strong><small>${entry.body}</small></div></div>`).join("") : renderEmpty("No announcements", "Add reminders and updates in Setup.")}</div></div>
           <div class="learn-card"><div class="learn-card-inner"><div class="learn-card-title"><strong>Teaching Rotation</strong></div>${data.scheduleBlocks.length ? data.scheduleBlocks.map((block) => `<div class="learn-side-line"><b>${block.title}</b><span>${block.teacherHouseholdName || "Unassigned"}</span></div>`).join("") : renderEmpty("No rotation yet", "Assign teachers to schedule blocks in Setup.")}</div></div>
         </section>
         <section class="learn-feature-grid">
-          <div class="learn-card"><div class="learn-card-inner"><div class="learn-card-title"><strong>Shared Read-Alouds</strong><a class="learn-button" href="/learn/onboarding">Edit</a></div>${data.sharedReadAlouds.length ? data.sharedReadAlouds.map((book) => `<div class="learn-side-line"><b>${book.title}</b><span>${book.author}</span><small>${book.status || `${book.progressPercent || 0}%`}</small></div>`).join("") : renderEmpty("No shared books", "Add co-op read-alouds in Setup.")}</div></div>
-          <div class="learn-card"><div class="learn-card-inner"><div class="learn-card-title"><strong>Resources & Documents</strong><a class="learn-button" href="/learn/onboarding">Edit</a></div>${data.resources.length ? data.resources.map((resource) => `<div class="learn-side-line"><b>${resource.title}</b><span>${resource.type}</span></div>`).join("") : renderEmpty("No resources yet", "Add handbook links, calendars, and documents in Setup.")}</div></div>
-          <div class="learn-card"><div class="learn-card-inner"><div class="learn-card-title"><strong>Member Families</strong><a class="learn-button learn-button-primary" href="/learn/onboarding">Add Members</a></div>${data.members.map((member) => `<div class="learn-side-line"><b>${member.householdName}</b><span>${member.childrenCount} Children · ${member.role}${member.agapayEmail ? ` · ${member.agapayEmail}` : ""}</span></div>`).join("")}</div></div>
+          <div class="learn-card"><div class="learn-card-inner"><div class="learn-card-title"><strong>Shared Read-Alouds</strong><a class="learn-button" href="/myagapay/learn/setup">Edit</a></div>${data.sharedReadAlouds.length ? data.sharedReadAlouds.map((book) => `<div class="learn-side-line"><b>${book.title}</b><span>${book.author}</span><small>${book.status || `${book.progressPercent || 0}%`}</small></div>`).join("") : renderEmpty("No shared books", "Add co-op read-alouds in Setup.")}</div></div>
+          <div class="learn-card"><div class="learn-card-inner"><div class="learn-card-title"><strong>Resources & Documents</strong><a class="learn-button" href="/myagapay/learn/setup">Edit</a></div>${data.resources.length ? data.resources.map((resource) => `<div class="learn-side-line"><b>${resource.title}</b><span>${resource.type}</span></div>`).join("") : renderEmpty("No resources yet", "Add handbook links, calendars, and documents in Setup.")}</div></div>
+          <div class="learn-card"><div class="learn-card-inner"><div class="learn-card-title"><strong>Member Families</strong><a class="learn-button learn-button-primary" href="/myagapay/learn/setup">Add Members</a></div>${data.members.map((member) => `<div class="learn-side-line"><b>${member.householdName}</b><span>${member.childrenCount} Children · ${member.role}${member.agapayEmail ? ` · ${member.agapayEmail}` : ""}</span></div>`).join("")}</div></div>
         </section>
       </div>
     `;
