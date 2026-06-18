@@ -255,10 +255,66 @@ function shell(vm, body) {
   `;
 }
 
+function renderGraceModePanel(vm) {
+  const currentMode = vm.graceMode?.active ? vm.graceMode.mode || "light" : "full";
+  const modes = [
+    {
+      id: "full",
+      title: "Full Rhythm",
+      subtitle: "Keep the complete plan for an ordinary, steady week.",
+      detail: "Nothing is reduced. Best for settled weeks when the household has normal capacity."
+    },
+    {
+      id: "light",
+      title: "Light Day",
+      subtitle: "Keep the essentials and soften the rest.",
+      detail: "Protects prayer, readings, catechesis, and a gentle household stream while reducing lower-priority lessons."
+    },
+    {
+      id: "minimum viable",
+      title: "Minimum Viable",
+      subtitle: "A faithful tiny plan for hard days.",
+      detail: "Keeps the smallest meaningful rhythm: prayer, one shared learning touchpoint, and the next right thing."
+    },
+    {
+      id: "feast only",
+      title: "Feast Only",
+      subtitle: "Let the Church year carry the day.",
+      detail: "Centers the feast, readings, prayers, and family worship when schoolwork should yield to holy time."
+    }
+  ];
+  return `
+    <section data-grace-mode-panel style="background:linear-gradient(135deg,#fffaf0 0%,#f7edd6 100%);border:1px solid rgba(181,148,47,.34);border-radius:16px;padding:18px 20px;box-shadow:0 1px 3px rgba(20,40,70,.05);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
+        <div>
+          <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:700;text-transform:uppercase;">Grace Mode</div>
+          <h2 style="font-family:'Cormorant Garamond',serif;font-size:30px;line-height:1.05;margin:4px 0 4px;color:var(--ink);">Choose today's household rhythm.</h2>
+          <p style="margin:0;color:#4c5870;line-height:1.45;max-width:720px;">Adjust the day without abandoning the plan. AGAPAY keeps what matters most and gently moves the rest into reserve.</p>
+        </div>
+        <span data-grace-mode-status style="color:var(--muted);font-size:13px;min-height:20px;"></span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px;">
+        ${modes.map((mode) => {
+          const active = mode.id === currentMode;
+          return `<button type="button" data-grace-mode="${html(mode.id)}" aria-pressed="${active ? "true" : "false"}" style="text-align:left;border:1px solid ${active ? "var(--gold)" : "var(--line)"};border-radius:13px;background:${active ? "var(--navy)" : "rgba(255,255,255,.58)"};color:${active ? "#fffaf0" : "var(--ink)"};padding:13px;cursor:pointer;font-family:inherit;min-height:146px;box-shadow:${active ? "0 10px 24px rgba(6,21,34,.16)" : "none"};">
+            <span style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">
+              <strong style="font-family:'Cormorant Garamond',serif;font-size:22px;line-height:1;">${html(mode.title)}</strong>
+              <span style="width:22px;height:22px;border-radius:50%;border:1px solid ${active ? "rgba(255,250,240,.65)" : "var(--gold)"};display:grid;place-items:center;color:${active ? "var(--gold2)" : "var(--gold)"};">${active ? "✓" : ""}</span>
+            </span>
+            <span style="display:block;font-weight:700;font-size:13px;line-height:1.3;margin-bottom:7px;color:${active ? "#f5df9d" : "var(--gold)"};">${html(mode.subtitle)}</span>
+            <span style="display:block;font-size:13px;line-height:1.38;color:${active ? "rgba(255,250,240,.84)" : "#4c5870"};">${html(mode.detail)}</span>
+          </button>`;
+        }).join("")}
+      </div>
+    </section>
+  `;
+}
+
 function renderDashboard(vm) {
   const today = vm.todayInChurch;
   const body = `
     <section data-screen-label="Dashboard" style="display:flex;flex-direction:column;gap:22px;">
+      ${renderGraceModePanel(vm)}
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;gap:24px;box-shadow:0 1px 3px rgba(20,40,70,.04);flex-wrap:wrap;">
         <div style="flex:none;width:108px;height:146px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,#f8f0dd,#efe0ba);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:46px;">✥</div>
         <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:6px;">
@@ -648,7 +704,7 @@ function renderSetup(vm) {
   const body = `
     <form data-setup-form data-screen-label="Set Up" style="display:flex;flex-direction:column;gap:18px;">
       ${panel("Setup Progress", `<h2 style="font-family:'Cormorant Garamond',serif;margin:0 0 8px;font-size:28px;">Step ${vm.progress.current} of ${vm.progress.total}</h2>${bar((vm.progress.current / vm.progress.total) * 100, "var(--navy)")}<p style="color:var(--muted);">Next: ${html(vm.progress.next)}</p><div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px;margin-top:14px;">${vm.steps.map((step) => `<div style="border:1px solid var(--line);border-radius:10px;background:${step.status === "active" ? "#fbf2dd" : "var(--paper2)"};padding:12px;"><small style="color:var(--gold);text-transform:uppercase;letter-spacing:.12em;">${html(step.status)}</small><strong style="display:block;margin:5px 0;">${html(step.title)}</strong><span style="color:var(--muted);line-height:1.35;">${html(step.summary)}</span></div>`).join("")}</div>`, { icon: "⚙" })}
-      ${panel("Household", `<div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupInput("Method", "household.primaryMethod", vm.household.method)}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupInput("Current term", "term.label", vm.term.label)}${setupInput("Term start", "term.startDate", vm.term.startDate, { type: "date" })}${setupInput("Term end", "term.endDate", vm.term.endDate, { type: "date" })}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}${setupSelect("Pace", "preferences.paceMode", vm.preferences.paceMode, ["gentle", "steady", "ambitious"])}<label style="display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--paper2);color:var(--ink);letter-spacing:0;text-transform:none;font-size:14px;"><input name="preferences.graceModeActive" type="checkbox" ${vm.preferences.graceModeActive ? "checked" : ""} /> Grace Mode active</label>${setupSelect("Grace Mode Default", "preferences.graceModeDefault", vm.preferences.graceModeDefault, ["full", "light", "minimum viable", "feast only"])}<a href="/api/learn/google-calendar/connect" style="display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;background:var(--navy);color:#fff;border-radius:10px;padding:10px;">Connect Google Calendar</a></div>`, { icon: "⌂" })}
+      ${panel("Household", `<div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupInput("Method", "household.primaryMethod", vm.household.method)}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupInput("Current term", "term.label", vm.term.label)}${setupInput("Term start", "term.startDate", vm.term.startDate, { type: "date" })}${setupInput("Term end", "term.endDate", vm.term.endDate, { type: "date" })}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}${setupSelect("Pace", "preferences.paceMode", vm.preferences.paceMode, ["gentle", "steady", "ambitious"])}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /><a href="/api/learn/google-calendar/connect" style="display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;background:var(--navy);color:#fff;border-radius:10px;padding:10px;">Connect Google Calendar</a></div>`, { icon: "⌂" })}
       ${panel("Children", `<p style="margin:0 0 12px;color:var(--muted);">Assign each child a form and color. Forms follow the age-band rhythm used in Orthodox/Charlotte Mason formation planning.</p><div data-setup-list="children" style="display:grid;gap:10px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child)).join("")}</div><button type="button" data-setup-add-row="children" style="margin-top:12px;width:100%;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px;font-family:inherit;">Add Child</button>`, { icon: "◎" })}
       ${panel("Household Streams", `<div data-setup-list="streams" style="display:grid;gap:10px;">${(vm.streams.length ? vm.streams : [{}]).map((stream) => streamSetupRow(stream)).join("")}</div><button type="button" data-setup-add-row="streams" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Stream</button>`, { icon: "☰" })}
       ${panel("Subjects & Curriculum", `<div data-setup-list="subjects" style="display:grid;gap:10px;">${(vm.subjects.length ? vm.subjects : [{}]).map((subject) => subjectSetupRow(subject, vm.children)).join("")}</div><button type="button" data-setup-add-row="subjects" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Subject</button>`, { icon: "✎" })}
@@ -719,9 +775,48 @@ function collectRows(form, rowType, mapper) {
     .filter(Boolean);
 }
 
+function wireDashboard() {
+  root.querySelectorAll("[data-grace-mode]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const mode = button.dataset.graceMode || "light";
+      const status = root.querySelector("[data-grace-mode-status]");
+      const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
+      if (status) {
+        status.style.color = "var(--muted)";
+        status.textContent = "Saving rhythm...";
+      }
+      root.querySelectorAll("[data-grace-mode]").forEach((item) => {
+        item.disabled = true;
+        item.style.cursor = "wait";
+      });
+      try {
+        const saved = await apiPost(`/api/learn/grace-mode?calendar=${encodeURIComponent(calendar)}`, {
+          mode,
+          active: mode !== "full"
+        });
+        root.innerHTML = renderDashboard(toDashboardViewModel(saved));
+        wireDashboard();
+        const nextStatus = root.querySelector("[data-grace-mode-status]");
+        if (nextStatus) nextStatus.textContent = "Rhythm saved.";
+      } catch (error) {
+        if (status) {
+          status.style.color = "var(--burgundy)";
+          status.textContent = error.message;
+        }
+        root.querySelectorAll("[data-grace-mode]").forEach((item) => {
+          item.disabled = false;
+          item.style.cursor = "pointer";
+        });
+      }
+    });
+  });
+}
+
 function setupPayloadFromForm(form) {
   const get = (name) => form.elements[name]?.value?.trim() || "";
-  const isChecked = (name) => Boolean(form.elements[name]?.checked);
+  const isChecked = (name) => form.elements[name]?.type === "hidden"
+    ? get(name) === "true"
+    : Boolean(form.elements[name]?.checked);
   return {
     household: {
       name: get("household.name"),
@@ -1134,6 +1229,7 @@ async function mount() {
   if (pageKey === "dashboard") {
     const raw = await apiGet(`/api/learn/dashboard?calendar=${encodeURIComponent(calendar)}`);
     root.innerHTML = renderDashboard(toDashboardViewModel(raw));
+    wireDashboard();
     return;
   }
   if (pageKey === "planner") {

@@ -175,6 +175,7 @@ import {
   handleLearnCoOp,
   handleLearnDashboard,
   handleLearnFormation,
+  handleLearnGraceModeSave,
   handleLearnMeta,
   handleLearnOnboarding,
   handleLearnOnboardingSave,
@@ -771,6 +772,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/learn/onboarding") {
       return handleLearnOnboarding(request, env);
+    }
+    if (request.method === "POST" && url.pathname === "/api/learn/grace-mode") {
+      return handleLearnGraceModeSave(request, env);
     }
     if (request.method === "POST" && url.pathname === "/api/learn/onboarding") {
       return handleLearnOnboardingSave(request, env);

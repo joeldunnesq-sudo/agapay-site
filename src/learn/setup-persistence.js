@@ -305,6 +305,10 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
   next.children = list(setupSnapshot.children);
   next.schoolYear = { ...next.schoolYear, ...setupSnapshot.schoolYear };
   next.term = { ...next.term, ...setupSnapshot.term };
+  next.graceModeRule = {
+    ...next.graceModeRule,
+    mode: setupSnapshot.preferences?.graceModeActive ? setupSnapshot.preferences?.graceModeDefault || next.graceModeRule?.mode || "light" : "full"
+  };
   next.householdStreams = list(setupSnapshot.streams);
   next.books = list(setupSnapshot.books);
   next.libraryBooks = list(setupSnapshot.books).map((book, index) => ({
@@ -702,4 +706,38 @@ export async function saveLearnSetup(env, request, payload) {
     setupSnapshot,
     onboarding: applySetupSnapshotToSeed(getLearnSeedSnapshot(), setupSnapshot)
   };
+}
+
+export async function saveLearnGraceMode(env, request, payload = {}) {
+  const identity = learnSetupIdentity(request);
+  const current = await loadLearnSetupSnapshot(env, request);
+  const nextPreferences = {
+    ...(current?.preferences || {}),
+    graceModeDefault: text(payload.mode || payload.graceModeDefault, current?.preferences?.graceModeDefault || "light"),
+    graceModeActive: Boolean(payload.active ?? payload.graceModeActive ?? true)
+  };
+  const nextPayload = current ? {
+    household: {
+      ...current.household,
+      graceModeActive: nextPreferences.graceModeActive
+    },
+    schoolYear: current.schoolYear,
+    term: current.term,
+    preferences: nextPreferences,
+    children: current.children,
+    streams: current.streams,
+    subjects: current.subjects,
+    books: current.books,
+    formation: current.formation,
+    formationMaterials: current.formationMaterials,
+    coOp: current.coOp
+  } : {
+    household: {
+      id: identity.householdId,
+      name: "Your Household",
+      graceModeActive: nextPreferences.graceModeActive
+    },
+    preferences: nextPreferences
+  };
+  return saveLearnSetup(env, request, nextPayload);
 }

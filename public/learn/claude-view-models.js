@@ -166,6 +166,10 @@ export function toDashboardViewModel(rawPayload, context = {}) {
       calendarToggle: dashboard.calendarToggle || null,
       thisDayInHistory: dashboard.thisDayInHistory || null,
       googleCalendarSync: dashboard.googleCalendarSync || null
+    },
+    graceMode: {
+      active: Boolean(dashboard.preferences?.graceModeActive),
+      mode: text(dashboard.preferences?.graceModeDefault, "light")
     }
   };
 }
@@ -594,7 +598,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
     }));
   return {
     shell: shellFromPayload("onboarding", rawPayload),
-    page: page("onboarding", "Set Up", "Configure the household, calendar, books, lessons, Grace mode, and co-op."),
+    page: page("onboarding", "Set Up", "Configure the household, calendar, books, lessons, and co-op."),
     progress: {
       current: onboarding.household?.currentStep || 1,
       total: onboarding.household?.totalSteps || safeArray(onboarding.steps).length || 1,

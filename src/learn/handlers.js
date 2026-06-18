@@ -5,7 +5,7 @@ import { googleCalendarCallback, googleCalendarConnect, googleCalendarPreview, g
 import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-source.js";
 import { enrichLiturgicalDayWithOrthocal, handleLearnReadingsStatus } from "./readings-source.js";
 import { createLearnRepositoryForRequest, createSeedLearnRepository, SeedLearnRepository } from "./repository.js";
-import { saveLearnSetup } from "./setup-persistence.js";
+import { saveLearnGraceMode, saveLearnSetup } from "./setup-persistence.js";
 
 function requestedCalendarType(url) {
   return url.searchParams.get("calendar") || "julian";
@@ -237,6 +237,37 @@ export async function handleLearnOnboardingSave(request, env) {
     onboarding: repository.getOnboarding(),
     savedAt: saved.setupSnapshot.savedAt
   });
+}
+
+export async function handleLearnGraceModeSave(request, env) {
+  const blocked = assertLearnEnabled(env);
+  if (blocked) return blocked;
+
+  const payload = await request.json().catch(() => null);
+  if (!payload || typeof payload !== "object") {
+    return json({ ok: false, error: "Grace Mode could not be saved because the payload was invalid." }, { status: 400 });
+  }
+
+  const saved = await saveLearnGraceMode(env, request, payload);
+  if (!saved.ok) {
+    return json({ ok: false, error: saved.error }, { status: saved.status || 500 });
+  }
+
+  const repository = new SeedLearnRepository(saved.onboarding);
+  const url = new URL(request.url);
+  const calendarType = requestedCalendarType(url);
+  const civilDate = url.searchParams.get("date") || todayIso(env);
+  const dashboard = repository.getDashboard({ calendarType, civilDate });
+
+  return json(await applyReadingsProvider({
+    ok: true,
+    savedAt: saved.setupSnapshot.savedAt,
+    product: {
+      slug: LEARN_PRODUCT_SLUG,
+      enabled: true
+    },
+    dashboard
+  }, { calendarType, civilDate, env }));
 }
 
 export function handleLearnGoogleCalendarStatus(request, env) {

@@ -302,6 +302,12 @@ export class SeedLearnRepository {
       children,
       schoolYear: hasSetup ? this.seed.schoolYear : { label: "Set up your school year", startDate: "", endDate: "" },
       term: hasSetup ? this.seed.term : { label: "No term configured", startDate: "", endDate: "" },
+      preferences: this.seed.setupSnapshot?.preferences || {
+        calendarType: household.liturgicalCalendarType || calendarType,
+        paceMode: household.paceMode || "steady",
+        graceModeDefault: this.seed.graceModeRule?.mode || "light",
+        graceModeActive: Boolean(household.graceModeActive)
+      },
       cycle: {
         framework: this.seed.cycleFramework,
         year: hasSetup ? this.seed.cycleYear : { title: "Choose your cycle in Setup" },
