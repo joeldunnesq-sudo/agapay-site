@@ -426,6 +426,68 @@ h1 {
   line-height: 1.45;
 }
 
+.learn-quote-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  width: min(980px, 100%);
+  margin: clamp(1.8rem, 4vw, 3rem) auto 0;
+}
+
+.learn-quote-row figure,
+.wisdom-mini-quotes figure {
+  position: relative;
+  margin: 0;
+  border: 1px solid rgba(201, 162, 91, 0.3);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 253, 248, 0.86), rgba(239, 230, 212, 0.58)),
+    radial-gradient(circle at 92% 12%, rgba(201, 162, 91, 0.14), transparent 10rem);
+  box-shadow: 0 18px 42px rgba(26, 35, 45, 0.09);
+}
+
+.learn-quote-row figure {
+  padding: 1.35rem 1.4rem 1.2rem 3.2rem;
+}
+
+.learn-quote-row figure > span {
+  position: absolute;
+  left: 1.05rem;
+  top: 0.55rem;
+  color: rgba(169, 120, 41, 0.5);
+  font-family: var(--learn-serif);
+  font-size: 4.6rem;
+  line-height: 1;
+}
+
+.learn-quote-row blockquote,
+.learn-wisdom-band blockquote,
+.wisdom-mini-quotes blockquote {
+  margin: 0;
+  color: var(--learn-night);
+  font-family: var(--learn-serif);
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.learn-quote-row blockquote {
+  font-size: clamp(1.55rem, 2.5vw, 2.15rem);
+}
+
+.learn-quote-row figcaption,
+.wisdom-mini-quotes figcaption,
+.learn-wisdom-band cite {
+  display: block;
+  margin-top: 0.85rem;
+  color: var(--learn-gold-deep);
+  font-family: var(--learn-sans);
+  font-size: 0.74rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 .rhythm-section {
   padding: clamp(2.6rem, 6vw, 4.5rem) 0;
   color: #fff8e8;
@@ -472,6 +534,49 @@ h1 {
 
 .rhythm-steps p {
   color: rgba(255, 248, 232, 0.76);
+}
+
+.learn-wisdom-band {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(18rem, 0.72fr);
+  gap: clamp(1.2rem, 4vw, 3rem);
+  align-items: center;
+  width: min(1180px, calc(100% - 2rem));
+  margin: clamp(2rem, 4vw, 3.6rem) auto 0;
+  padding: clamp(1.6rem, 4vw, 2.8rem);
+  border: 1px solid rgba(201, 162, 91, 0.34);
+  border-radius: 24px;
+  color: #fff8e8;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(201, 162, 91, 0.16), transparent 18rem),
+    linear-gradient(135deg, #061522, #0b2130 68%, #102a3d);
+  box-shadow: 0 24px 60px rgba(6, 21, 34, 0.2);
+}
+
+.learn-wisdom-band .eyebrow,
+.learn-wisdom-band cite {
+  color: #e7bd64;
+}
+
+.learn-wisdom-band blockquote {
+  color: #fff8e8;
+  font-size: clamp(2rem, 4vw, 3.65rem);
+}
+
+.wisdom-mini-quotes {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.wisdom-mini-quotes figure {
+  padding: 1.1rem 1.2rem;
+  background:
+    linear-gradient(135deg, rgba(255, 248, 232, 0.97), rgba(239, 230, 212, 0.88));
+  box-shadow: none;
+}
+
+.wisdom-mini-quotes blockquote {
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
 }
 
 .designed-section {
@@ -874,7 +979,9 @@ h1 {
   .value-grid,
   .overview-feature-row,
   .rhythm-steps,
-  .designed-section {
+  .designed-section,
+  .learn-quote-row,
+  .learn-wisdom-band {
     grid-template-columns: 1fr;
   }
 
@@ -908,6 +1015,10 @@ h1 {
     gap: 1.5rem;
   }
 
+  .learn-wisdom-band {
+    margin-top: 1rem;
+  }
+
   .pricing-jump {
     position: static;
     margin-bottom: 1rem;
@@ -923,6 +1034,12 @@ h1 {
   .faq-section,
   .learn-final-cta {
     width: min(100% - 1rem, 1180px);
+  }
+
+  .learn-wisdom-band {
+    width: min(100% - 1rem, 1180px);
+    border-radius: 18px;
+    padding: 1.25rem;
   }
 
   h1 {
@@ -948,6 +1065,15 @@ h1 {
 
   .today-panel strong {
     margin-top: 2.2rem;
+  }
+
+  .learn-quote-row figure {
+    padding: 1.2rem 1.05rem 1.05rem 2.65rem;
+  }
+
+  .learn-quote-row figure > span {
+    left: 0.8rem;
+    font-size: 3.8rem;
   }
 
   .phone-frame {

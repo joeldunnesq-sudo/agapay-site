@@ -91,38 +91,38 @@ function pageIntroMeta(id) {
     dashboard: {
       kicker: "AGAPAY LEARN",
       description: "A peaceful command center for today’s Church rhythm, household learning, term progress, and gentle adjustments.",
-      quote: "Let all things be done decently and in order.",
-      ref: "1 Corinthians 14:40"
+      quote: "Of all holy works, the education of children is the most holy.",
+      ref: "St. Theophan the Recluse"
     },
     planner: {
       kicker: "HOUSEHOLD PLANNING",
       description: "Plan the week by household rhythm and Form, so large families stay organized without repeating the same work everywhere.",
-      quote: "Teach us to number our days, that we may apply our hearts unto wisdom.",
-      ref: "Psalm 90:12"
+      quote: "The soul of a child is like soft wax. If you impress right principles upon it while it is tender, no one will be able to efface them.",
+      ref: "St. John Chrysostom"
     },
     formation: {
       kicker: "ORTHODOX FORMATION",
       description: "Keep readings, prayers, catechesis, hymns, saints, feasts, and beauty tied to the living rhythm of the Church.",
-      quote: "Rooted and built up in Him, and stablished in the faith.",
-      ref: "Colossians 2:7"
+      quote: "We must not only teach our children to read and write, but we must also teach them to know God.",
+      ref: "St. Kosmas Aitolos"
     },
     books: {
       kicker: "LIVING BOOKS",
       description: "Track read-alouds, library choices, copywork sources, and Orthodox living-book suggestions for the whole household.",
-      quote: "Give attendance to reading, to exhortation, to doctrine.",
-      ref: "1 Timothy 4:13"
+      quote: "A word of advice is a seed. If the soil is good, it will bring forth fruit.",
+      ref: "Elder Thaddeus of Vitovnica"
     },
     reports: {
       kicker: "RECORDS & PROGRESS",
       description: "Turn lessons, narrations, attendance, and books into calm records when you need to review or export progress.",
-      quote: "Write the vision, and make it plain.",
-      ref: "Habakkuk 2:2"
+      quote: "If good foundations are laid early, children will grow up to be great.",
+      ref: "St. John Chrysostom"
     },
     "print-center": {
       kicker: "PRINT CENTER",
       description: "Generate simple household plans and printable resources with clear Free and Family-plan access.",
-      quote: "The plans of the diligent lead surely to abundance.",
-      ref: "Proverbs 21:5"
+      quote: "With us everything should be secondary compared to our concern with children, and their upbringing in the instruction and teaching of the Lord.",
+      ref: "St. John Chrysostom"
     },
     community: {
       kicker: "COMING SOON",
