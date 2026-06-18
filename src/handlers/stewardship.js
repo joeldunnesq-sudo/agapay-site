@@ -67,6 +67,7 @@ async function requireParishApiContext(request, env, parishId) {
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 export const STEWARDSHIP_PRODUCT_KEY = "stewardship";
+const STEWARDSHIP_COMING_SOON = true;
 
 // Active subscription states that unlock the module
 const ACTIVE_STATES = new Set(["active", "trialing"]);
@@ -91,6 +92,78 @@ function stewardshipPublicStatus(registration) {
     customerConfigured: Boolean(registration?.stewardshipStripeCustomerId),
     subscriptionConfigured: Boolean(registration?.stewardshipStripeSubscriptionId)
   };
+}
+
+function stewardshipComingSoonPayload(registration = null) {
+  return {
+    ok: true,
+    comingSoon: true,
+    stewardship: {
+      status: "coming_soon",
+      active: false,
+      cancelAtPeriodEnd: false,
+      currentPeriodEnd: null,
+      trialEnd: null,
+      customerConfigured: Boolean(registration?.stewardshipStripeCustomerId),
+      subscriptionConfigured: Boolean(registration?.stewardshipStripeSubscriptionId)
+    },
+    setupRequired: false,
+    meetings: [],
+    subscribePlans: [],
+    message: "AGAPAY Stewardship is currently paused as a coming soon add-on."
+  };
+}
+
+function stewardshipComingSoonJson(status = 409) {
+  return json({
+    ok: false,
+    comingSoon: true,
+    error: "AGAPAY Stewardship is coming soon. Packet generation and billing are not enabled yet."
+  }, { status });
+}
+
+function stewardshipComingSoonHtml(registration, env) {
+  const base = absoluteWebsiteUrl(env);
+  const parishName = registration?.parishName || registration?.name || "Your parish";
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AGAPAY Stewardship Coming Soon</title>
+  <link rel="stylesheet" href="${base}/site-chrome.css" />
+  <link rel="stylesheet" href="${base}/parish/style.css" />
+  <style>
+    .stewardship-soon-page { min-height:100vh; display:grid; place-items:center; padding:32px; background:#f4f0e6; color:#071827; }
+    .stewardship-soon-card { max-width:760px; border:1px solid rgba(201,162,91,.38); border-radius:18px; padding:34px; background:#fffaf0; box-shadow:0 22px 54px rgba(6,21,34,.14); }
+    .stewardship-soon-card h1 { margin:0 0 10px; font-family:var(--font-serif, Georgia, serif); font-size:clamp(2rem,5vw,3.4rem); color:#071827; }
+    .stewardship-soon-card p { margin:0 0 18px; color:#5f5b52; line-height:1.65; }
+    .stewardship-soon-kicker { color:#b98b2d; font-weight:800; letter-spacing:.14em; text-transform:uppercase; font-size:.78rem; }
+    .stewardship-soon-list { display:grid; gap:10px; margin:24px 0; padding:0; list-style:none; }
+    .stewardship-soon-list li { border:1px solid rgba(201,162,91,.24); border-radius:12px; padding:12px 14px; background:rgba(255,255,255,.72); }
+    .stewardship-soon-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; }
+    .stewardship-soon-actions a { text-decoration:none; }
+  </style>
+</head>
+<body>
+  <main class="stewardship-soon-page">
+    <section class="stewardship-soon-card">
+      <div class="stewardship-soon-kicker">Coming soon add-on</div>
+      <h1>AGAPAY Stewardship</h1>
+      <p><strong>${escHtml(parishName)}</strong> will see Stewardship here when the module is ready for production use. We are keeping packet generation, billing, and records tools paused until the workflow is dependable enough for real parish administration.</p>
+      <ul class="stewardship-soon-list">
+        <li>Annual meeting packet builder with parish-provided agenda, reports, financial summaries, nominees, and resolutions.</li>
+        <li>Print-ready packet generation for annual meetings and parish records.</li>
+        <li>Restricted fund snapshots, parish council records, compliance dates, and document storage.</li>
+      </ul>
+      <p>For now, Stewardship remains visible in the dashboard as a planned add-on without checkout or packet creation.</p>
+      <div class="stewardship-soon-actions">
+        <a class="btn btn-gold" href="/parish/dashboard">Back to parish dashboard</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>`;
 }
 
 // Stripe platform requests (uses STRIPE_SECRET_KEY from env, not the parish's connected account)
@@ -972,6 +1045,7 @@ export async function handleParishStewardshipSummary(request, env, parishId) {
   const ctx = await requireParishApiContext(request, env, parishId);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
+  if (STEWARDSHIP_COMING_SOON) return json(stewardshipComingSoonPayload(registration));
   let meetings = [];
   let setupRequired = false;
   try {
@@ -1004,6 +1078,7 @@ export async function handleParishStewardshipSubscribe(request, env, parishId) {
   const ctx = await requireParishApiContext(request, env, parishId);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
+  if (STEWARDSHIP_COMING_SOON) return stewardshipComingSoonJson();
 
   const limited = await rateLimit(request, env, "stewardship-subscribe", { limit: 5, windowSeconds: 60 });
   if (limited) return limited;
@@ -1059,6 +1134,7 @@ export async function handleParishStewardshipBillingPortal(request, env, parishI
   const ctx = await requireParishApiContext(request, env, parishId);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
+  if (STEWARDSHIP_COMING_SOON) return stewardshipComingSoonJson();
 
   const customerId = registration.stewardshipStripeCustomerId;
   if (!customerId) return json({ error: "No Stewardship billing customer found." }, { status: 400 });
@@ -1078,6 +1154,7 @@ export async function handleParishStewardshipMeetings(request, env, parishId) {
   const ctx = await requireParishApiContext(request, env, parishId);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
+  if (STEWARDSHIP_COMING_SOON) return stewardshipComingSoonJson();
   if (!hasStewardshipAccess(registration)) {
     return json({ error: "Stewardship subscription required.", stewardship: stewardshipPublicStatus(registration) }, { status: 402 });
   }
@@ -1135,6 +1212,7 @@ export async function handleParishStewardshipMeetingDetail(request, env, parishI
   const ctx = await requireParishApiContext(request, env, parishId);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
+  if (STEWARDSHIP_COMING_SOON) return stewardshipComingSoonJson();
   if (!hasStewardshipAccess(registration)) {
     return json({ error: "Stewardship subscription required.", stewardship: stewardshipPublicStatus(registration) }, { status: 402 });
   }
@@ -1200,6 +1278,11 @@ export async function handleStewardshipHome(request, env) {
   const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
+  if (STEWARDSHIP_COMING_SOON) {
+    return new Response(stewardshipComingSoonHtml(registration, env), {
+      headers: { "Content-Type": "text/html;charset=utf-8" },
+    });
+  }
 
   if (!hasStewardshipAccess(registration)) {
     return new Response(paywallHtml(registration, env), {
@@ -1226,6 +1309,12 @@ export async function handleStewardshipSubscribe(request, env) {
   const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
+  if (STEWARDSHIP_COMING_SOON) {
+    return new Response(stewardshipComingSoonHtml(registration, env), {
+      status: 409,
+      headers: { "Content-Type": "text/html;charset=utf-8" },
+    });
+  }
 
   const limited = await rateLimit(request, env, "stewardship-subscribe", { limit: 5, windowSeconds: 60 });
   if (limited) return limited;
@@ -1288,6 +1377,11 @@ export async function handleStewardshipBilling(request, env) {
   const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
+  if (STEWARDSHIP_COMING_SOON) {
+    return new Response(stewardshipComingSoonHtml(registration, env), {
+      headers: { "Content-Type": "text/html;charset=utf-8" },
+    });
+  }
 
   return new Response(billingHtml(registration, null, env), {
     headers: { "Content-Type": "text/html;charset=utf-8" },
@@ -1300,6 +1394,12 @@ export async function handleStewardshipBillingPortal(request, env) {
   const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
+  if (STEWARDSHIP_COMING_SOON) {
+    return new Response(stewardshipComingSoonHtml(registration, env), {
+      status: 409,
+      headers: { "Content-Type": "text/html;charset=utf-8" },
+    });
+  }
 
   const customerId = registration.stewardshipStripeCustomerId;
   if (!customerId) {
@@ -1332,6 +1432,12 @@ export async function handleStewardshipMeetingNew(request, env) {
   const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
+  if (STEWARDSHIP_COMING_SOON) {
+    return new Response(stewardshipComingSoonHtml(registration, env), {
+      status: request.method === "GET" ? 200 : 409,
+      headers: { "Content-Type": "text/html;charset=utf-8" },
+    });
+  }
 
   if (!hasStewardshipAccess(registration)) {
     return Response.redirect(absoluteWebsiteUrl(env) + "/parish/stewardship", 303);
@@ -1380,6 +1486,12 @@ export async function handleStewardshipMeetingEdit(request, env, meetingId) {
   const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
+  if (STEWARDSHIP_COMING_SOON) {
+    return new Response(stewardshipComingSoonHtml(registration, env), {
+      status: request.method === "GET" ? 200 : 409,
+      headers: { "Content-Type": "text/html;charset=utf-8" },
+    });
+  }
 
   if (!hasStewardshipAccess(registration)) {
     return Response.redirect(absoluteWebsiteUrl(env) + "/parish/stewardship", 303);
@@ -1438,6 +1550,11 @@ export async function handleStewardshipMeetingPreview(request, env, meetingId) {
   const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
+  if (STEWARDSHIP_COMING_SOON) {
+    return new Response(stewardshipComingSoonHtml(registration, env), {
+      headers: { "Content-Type": "text/html;charset=utf-8" },
+    });
+  }
 
   if (!hasStewardshipAccess(registration)) {
     return Response.redirect(absoluteWebsiteUrl(env) + "/parish/stewardship", 303);
@@ -1465,6 +1582,12 @@ export async function handleStewardshipMeetingPdf(request, env, meetingId) {
   const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
+  if (STEWARDSHIP_COMING_SOON) {
+    return new Response(stewardshipComingSoonHtml(registration, env), {
+      status: 409,
+      headers: { "Content-Type": "text/html;charset=utf-8" },
+    });
+  }
 
   if (!hasStewardshipAccess(registration)) {
     return unauthorized("Stewardship subscription required");

@@ -307,30 +307,15 @@
       meetingsPane.innerHTML = '<p class="muted">Load your parish dashboard to view annual meeting packets.</p>';
       return;
     }
-    if (stewardshipState.loaded && !force) {
-      renderStewardshipPanel();
-      return;
-    }
-    planPane.innerHTML = '<p class="muted">Loading Stewardship...</p>';
-    meetingsPane.innerHTML = '<p class="muted">Loading annual meeting packets...</p>';
-    try {
-      const res = await fetch(stewardshipApi(), { headers: authHeaders() });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Unable to load Stewardship.');
-      stewardshipState = {
-        loaded: true,
-        stewardship: data.stewardship || null,
-        meetings: data.meetings || [],
-        subscribePlans: data.subscribePlans || [],
-        setupRequired: Boolean(data.setupRequired),
-        selectedMeeting: stewardshipState.selectedMeeting
-      };
-      renderStewardshipPanel();
-    } catch (err) {
-      if (status) status.textContent = 'Error';
-      planPane.innerHTML = `<p class="muted error-text">${escapeHtml(err.message)}</p>`;
-      meetingsPane.innerHTML = '<p class="muted">Annual meeting packets could not be loaded.</p>';
-    }
+    stewardshipState = {
+      loaded: true,
+      stewardship: { status: 'coming_soon', active: false },
+      meetings: [],
+      subscribePlans: [],
+      setupRequired: false,
+      selectedMeeting: null
+    };
+    renderStewardshipPanel();
   }
 
   function renderStewardshipPanel() {
@@ -338,80 +323,29 @@
     const planPane = document.getElementById('stewardshipPlanPane');
     const meetingsPane = document.getElementById('stewardshipMeetingsPane');
     if (!planPane || !meetingsPane) return;
-    const stewardship = stewardshipState.stewardship || { status:'no_subscription', active:false };
-    if (status) status.textContent = statusLabel(stewardship.status || 'no_subscription');
-    const active = Boolean(stewardship.active);
-    if (stewardshipState.setupRequired) {
-      planPane.innerHTML = `
-        <div class="stewardship-status-banner">
-          <strong>Database setup required</strong>
-          <span>Run the Stewardship D1 migration before creating annual meeting packets.</span>
-        </div>`;
-      meetingsPane.innerHTML = `
-        <div class="stewardship-empty">
-          <strong>Stewardship tables are not installed yet.</strong>
-          <span>Apply <code>migrations/0003_stewardship.sql</code> to enable this module.</span>
-        </div>`;
-      return;
-    }
-    const period = stewardship.currentPeriodEnd ? isoDateLabel(Number(stewardship.currentPeriodEnd) * 1000) : '';
-    const planCards = (stewardshipState.subscribePlans || []).map(plan => `
-      <button class="stewardship-plan-option" type="button" onclick="startStewardshipSubscription('${escapeAttr(plan.id)}', this)">
-        <strong>${escapeHtml(plan.label)}</strong>
-        <span>${escapeHtml(plan.priceLabel)}</span>
-        <small>${escapeHtml(plan.trialLabel || '14-day free trial')}</small>
-      </button>
-    `).join('');
-    planPane.innerHTML = active ? `
-      <div class="stewardship-status-banner active">
-        <strong>${escapeHtml(statusLabel(stewardship.status))}</strong>
-        <span>${period ? `Current period ends ${escapeHtml(period)}.` : 'Your Stewardship workspace is active.'}</span>
-      </div>
-      <div class="btn-row">
-        <button class="btn btn-gold" type="button" onclick="openStewardshipBilling(this)">Manage billing</button>
-        <button class="btn btn-ghost" type="button" onclick="loadStewardshipPanel(true)">Refresh status</button>
-      </div>
-    ` : `
+    if (status) status.textContent = 'Coming soon';
+    planPane.innerHTML = `
       <div class="stewardship-status-banner">
-        <strong>${escapeHtml(statusLabel(stewardship.status || 'no_subscription'))}</strong>
-        <span>Subscribe to unlock annual meeting packets and stewardship records.</span>
+        <strong>Coming soon</strong>
+        <span>AGAPAY Stewardship is paused as a paid add-on until the packet workflow, billing, and reporting tools are ready for parishes to rely on.</span>
       </div>
-      <div class="stewardship-plan-options">${planCards}</div>
+      <div class="stewardship-plan-options">
+        <div class="stewardship-plan-option">
+          <strong>Annual meeting packets</strong>
+          <span>Agenda, rector report, treasurer report, nominations, resolutions, and print-ready packet output.</span>
+          <small>Planned</small>
+        </div>
+        <div class="stewardship-plan-option">
+          <strong>Parish records</strong>
+          <span>Parish council notes, restricted fund snapshots, compliance dates, and document storage.</span>
+          <small>Planned</small>
+        </div>
+      </div>
     `;
-
-    if (!active) {
-      meetingsPane.innerHTML = `
-        <div class="stewardship-empty">
-          <strong>Stewardship is ready when you are.</strong>
-          <span>Start a monthly or annual plan to create annual meeting packets inside this dashboard.</span>
-        </div>`;
-      return;
-    }
-
-    const rows = (stewardshipState.meetings || []).map(meeting => `
-      <tr>
-        <td><strong>${escapeHtml(meeting.title || 'Annual Meeting')}</strong><span>${escapeHtml(meeting.location || 'No location set')}</span></td>
-        <td>${escapeHtml(String(meeting.fiscalYear || ''))}</td>
-        <td>${escapeHtml(isoDateLabel(meeting.meetingDate))}</td>
-        <td><span class="status-pill">${escapeHtml(statusLabel(meeting.status || 'draft'))}</span></td>
-        <td class="table-actions">
-          <button class="btn btn-ghost btn-sm" type="button" onclick="editStewardshipMeeting('${escapeAttr(meeting.id)}')">Edit</button>
-          <a class="btn btn-ghost btn-sm" href="${escapeAttr(stewardshipPreviewUrl(meeting.id))}" target="_blank" rel="noopener">Preview</a>
-        </td>
-      </tr>
-    `).join('');
-    meetingsPane.innerHTML = rows ? `
-      <div class="stewardship-table-wrap">
-        <table class="stewardship-table">
-          <thead><tr><th>Packet</th><th>Year</th><th>Date</th><th>Status</th><th></th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-    ` : `
+    meetingsPane.innerHTML = `
       <div class="stewardship-empty">
-        <strong>No annual meeting packets yet.</strong>
-        <span>Create your first packet to organize agendas, reports, finances, nominees, and resolutions.</span>
-        <button class="btn btn-gold" type="button" onclick="newStewardshipMeeting()">Create first packet</button>
+        <strong>Packet generation is not enabled yet.</strong>
+        <span>The interface will return here when parishes can enter meeting details, save reports, and generate polished annual meeting packets reliably.</span>
       </div>`;
   }
 
@@ -479,9 +413,7 @@
 
   function newStewardshipMeeting() {
     if (!currentParish) { setStatus('Load a parish first.','error'); return; }
-    if (!stewardshipState.stewardship?.active) { setStatus('Subscribe to Stewardship before creating packets.','error'); return; }
-    stewardshipState.selectedMeeting = emptyStewardshipMeeting();
-    renderStewardshipEditor();
+    setStatus('AGAPAY Stewardship is coming soon. Packet creation is not enabled yet.','error');
   }
 
   async function editStewardshipMeeting(meetingId) {
