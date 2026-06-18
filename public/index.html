@@ -24,8 +24,6 @@
   <meta name="theme-color" content="#061522" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preload" as="image" href="/images/home/platform-family-sketch-1440.webp" type="image/webp" media="(min-width: 821px)" fetchpriority="high" />
-  <link rel="preload" as="image" href="/images/home/platform-family-sketch-960.webp" type="image/webp" media="(max-width: 820px)" fetchpriority="high" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -220,12 +218,45 @@
     }
 
     .hero {
+      position: relative;
       min-height: calc(100svh - 74px);
-      display: grid;
-      grid-template-columns: minmax(0, 0.92fr) minmax(20rem, 1.08fr);
-      gap: clamp(2rem, 5vw, 5rem);
+      display: flex;
       align-items: center;
-      padding: clamp(3.2rem, 7vw, 6.4rem) 0 clamp(2.2rem, 6vw, 5rem);
+      justify-content: center;
+      overflow: hidden;
+      padding: clamp(5.3rem, 9vw, 7.2rem) 1.5rem clamp(5.8rem, 10vw, 8rem);
+      text-align: center;
+      background:
+        linear-gradient(90deg, rgba(200, 162, 74, 0.035) 0 1px, transparent 1px) 0 0 / 62px 62px,
+        radial-gradient(120% 90% at 50% -10%, #0b2130 0%, #071a28 42%, #061522 72%);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: -18rem;
+      left: 50%;
+      width: min(48rem, 110vw);
+      aspect-ratio: 1;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(200, 162, 74, 0.24) 0%, rgba(200, 162, 74, 0) 66%);
+      opacity: 0.9;
+      transform: translateX(-50%);
+      animation: sanctuaryGlow 7s ease-in-out infinite;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      top: clamp(3.6rem, 8vw, 5rem);
+      left: 50%;
+      width: min(35rem, calc(100% - 2.4rem));
+      height: min(42.5rem, calc(100% - 5rem));
+      border: 1px solid rgba(200, 162, 74, 0.16);
+      border-bottom-color: rgba(200, 162, 74, 0.08);
+      border-radius: 280px 280px 6px 6px;
+      transform: translateX(-50%);
+      pointer-events: none;
     }
 
     .eyebrow {
@@ -253,14 +284,37 @@
       line-height: 0.95;
     }
 
+    .hero h1 {
+      max-width: none;
+      margin-bottom: 1rem;
+      color: var(--cream);
+      font-size: clamp(3.2rem, 7vw, 5.4rem);
+      line-height: 0.96;
+      text-wrap: balance;
+    }
+
     .hero h1 em {
-      color: var(--gold2);
+      color: #e5c873;
       font-style: italic;
     }
 
     .hero-copy {
       position: relative;
       z-index: 2;
+      max-width: 58rem;
+      margin: 0 auto;
+    }
+
+    .hero-mark {
+      width: clamp(4rem, 8vw, 6.6rem);
+      height: auto;
+      margin: 0 auto 1.4rem;
+      filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.28));
+    }
+
+    .hero .eyebrow {
+      margin-bottom: 1.2rem;
+      color: var(--gold);
     }
 
     .tagline {
@@ -282,8 +336,15 @@
       color: #ffe7a8;
       background: linear-gradient(180deg, #092238, #041423);
       text-align: center;
+      box-shadow: inset 0 0 0 1px rgba(255, 231, 168, 0.08), 0 8px 22px rgba(0, 0, 0, 0.2);
       transform-origin: 50% 55%;
       transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+
+    .hero .tagline {
+      justify-content: center;
+      margin-bottom: 1.25rem;
+      color: rgba(246, 241, 232, 0.8);
     }
 
     .flip-word.is-flipping {
@@ -292,9 +353,9 @@
     }
 
     .hero-text {
-      max-width: 34rem;
-      margin: 0 0 2.1rem;
-      color: var(--muted);
+      max-width: 43rem;
+      margin: 0 auto 2.2rem;
+      color: rgba(246, 241, 232, 0.78);
       font-size: clamp(1.18rem, 1.8vw, 1.36rem);
       line-height: 1.58;
     }
@@ -305,6 +366,17 @@
       flex-wrap: wrap;
       gap: 0.85rem;
       margin-bottom: 2.2rem;
+    }
+
+    .hero .hero-actions {
+      justify-content: center;
+      margin-bottom: 0;
+    }
+
+    .hero .outline-btn {
+      border-color: rgba(246, 241, 232, 0.34);
+      color: var(--cream);
+      background: rgba(255, 255, 255, 0.04);
     }
 
     .hero-proof {
@@ -388,6 +460,23 @@
       font-size: 1.45rem;
       font-weight: 500;
       line-height: 1.08;
+    }
+
+    .learn-sketch-art {
+      min-height: clamp(28rem, 46vw, 38rem);
+    }
+
+    .learn-sketch-art .hero-arch {
+      inset: 0 0 2.8rem 0;
+    }
+
+    .learn-sketch-art .hero-card {
+      width: min(23rem, calc(100% - 1rem));
+    }
+
+    @keyframes sanctuaryGlow {
+      0%, 100% { opacity: 0.66; transform: translateX(-50%) scale(0.96); }
+      50% { opacity: 1; transform: translateX(-50%) scale(1.03); }
     }
 
     .trust-strip {
@@ -756,68 +845,10 @@
       text-transform: uppercase;
     }
 
-    .learn-card-preview {
-      min-height: 30rem;
-      padding: clamp(1.4rem, 3vw, 2rem);
-      border: 1px solid rgba(166, 159, 145, 0.34);
-      border-radius: 6px;
-      background: var(--paper);
-      box-shadow: 0 24px 60px rgba(6, 21, 34, 0.12);
-    }
-
-    .learn-preview-head,
-    .learn-preview-row,
     .trust-card {
       border: 1px solid rgba(166, 159, 145, 0.28);
       border-radius: 5px;
       background: #f7efe0;
-    }
-
-    .learn-preview-head {
-      padding: 1.2rem;
-      margin-bottom: 1rem;
-    }
-
-    .learn-preview-head small {
-      color: var(--gold2);
-      font-weight: 600;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-    }
-
-    .learn-preview-head strong {
-      display: block;
-      margin-top: 0.25rem;
-      font-family: var(--serif);
-      font-size: 2rem;
-      font-weight: 500;
-    }
-
-    .learn-preview-grid {
-      display: grid;
-      gap: 0.85rem;
-    }
-
-    .learn-preview-row {
-      display: grid;
-      grid-template-columns: 2rem 1fr auto;
-      gap: 0.8rem;
-      align-items: center;
-      padding: 0.9rem 1rem;
-    }
-
-    .learn-preview-row span:first-child {
-      color: var(--gold2);
-      font-size: 1.2rem;
-    }
-
-    .learn-preview-row strong {
-      display: block;
-      font-size: 1.05rem;
-    }
-
-    .learn-preview-row small {
-      color: var(--soft);
     }
 
     .trust-section {
@@ -1053,9 +1084,6 @@
         padding-block: 4rem;
       }
 
-      .learn-card-preview {
-        min-height: auto;
-      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1079,51 +1107,34 @@
           </span>
         </a>
         <nav class="home-links" aria-label="Primary">
-          <a href="/giving/features.html">Giving</a>
+          <a href="/give/">Giving</a>
           <a href="/learn">Learn</a>
           <a href="/marketplace.html">Marketplace <small class="coming-soon">Soon</small></a>
           <a href="/directory.html">Directory <small class="coming-soon">Soon</small></a>
-          <a href="#trust">About</a>
+          <a href="/about.html">About</a>
         </nav>
         <div class="home-actions">
           <a class="home-signin" href="/my-agapay">Sign in</a>
-          <a class="gold-btn" href="/my-agapay/give">Start Giving</a>
+          <a class="gold-btn" href="/give/">Get Started</a>
         </div>
         <button class="mobile-nav-toggle" type="button" data-mobile-nav-toggle aria-label="Open navigation" aria-expanded="false">☰</button>
       </div>
     </header>
 
     <main>
-      <section class="hero section-inner" aria-labelledby="heroTitle">
+      <section class="hero" aria-labelledby="heroTitle">
         <div class="hero-copy">
-          <p class="eyebrow">Orthodox First</p>
-          <h1 id="heroTitle">One home for Orthodox life, <em>online.</em></h1>
+          <img class="hero-mark" src="/mark.png" alt="" width="112" height="112" />
+          <p class="eyebrow">Orthodox First · One Platform</p>
+          <h1 id="heroTitle">Give to your parish.<br />Grow your household.<br /><em>Gather the faithful.</em></h1>
           <p class="tagline">
             Love how you
             <span class="flip-word" data-flip-word aria-live="polite">GIVE</span>
           </p>
-          <p class="hero-text">Give to your parish, plan your family's learning, and connect with the wider Church in one quiet, trustworthy place.</p>
+          <p class="hero-text">AGAPAY unites Orthodox giving, family learning, marketplace tools, and community life into one trusted home built for the Church, the household, and everything between.</p>
           <div class="hero-actions">
-            <a class="gold-btn" href="/my-agapay/give">Start Giving</a>
-            <a class="outline-btn" href="/learn">Plan a Homeschool</a>
-          </div>
-          <div class="hero-proof" aria-label="Who AGAPAY serves">
-            <div><strong>For the Parish</strong><span>Giving and stewardship</span></div>
-            <div><strong>For the Home</strong><span>Learning and formation</span></div>
-            <div><strong>For the Faithful</strong><span>Marketplace and directory</span></div>
-          </div>
-        </div>
-        <div class="hero-art" aria-label="Orthodox family and church illustration">
-          <div class="hero-arch">
-            <picture>
-              <source media="(max-width: 820px)" srcset="/images/home/platform-family-sketch-960.webp" type="image/webp" />
-              <img src="/images/home/platform-family-sketch-1440.webp" alt="An Orthodox family reading together near a church and icons" width="1440" height="960" fetchpriority="high" />
-            </picture>
-          </div>
-          <div class="hero-card">
-            <small>St. Andrew Orthodox Church</small>
-            <strong>Giving with Faith and Joy</strong>
-            <a class="gold-btn" href="/my-agapay/give">Make a Donation</a>
+            <a class="gold-btn" href="/give/">Start Giving</a>
+            <a class="outline-btn" href="#platform">Explore the Platform</a>
           </div>
         </div>
       </section>
@@ -1175,7 +1186,7 @@
               <span>$</span>
               <input inputmode="decimal" type="number" placeholder="Other amount" aria-label="Other donation amount" />
             </label>
-            <a class="widget-submit" href="/my-agapay/give" style="text-decoration:none;display:flex;align-items:center;justify-content:center;">Give with AGAPAY</a>
+            <a class="widget-submit" href="/give/" style="text-decoration:none;display:flex;align-items:center;justify-content:center;">Give with AGAPAY</a>
             <div class="secure-note">Secure · Transparent · Tax-receipted</div>
           </div>
         </div>
@@ -1199,7 +1210,7 @@
                 <li>Campaigns and special projects</li>
                 <li>Secure and transparent</li>
               </ul>
-              <a class="gold-btn" href="/giving/features.html">Give with Faith</a>
+              <a class="gold-btn" href="/give/">Give with Faith</a>
             </article>
             <article class="pillar">
               <span class="pillar-icon">☰</span>
@@ -1248,16 +1259,17 @@
 
       <section class="split-section" id="learn">
         <div class="section-inner split-grid">
-          <div class="learn-card-preview" aria-label="AGAPAY Learn preview">
-            <div class="learn-preview-head">
-              <small>Today in the Church</small>
-              <strong>Plan with peace.</strong>
+          <div class="hero-art learn-sketch-art" aria-label="Orthodox family and church illustration">
+            <div class="hero-arch">
+              <picture>
+                <source media="(max-width: 820px)" srcset="/images/home/platform-family-sketch-960.webp" type="image/webp" />
+                <img src="/images/home/platform-family-sketch-1440.webp" alt="An Orthodox family reading together near a church and icons" width="1440" height="960" loading="lazy" decoding="async" />
+              </picture>
             </div>
-            <div class="learn-preview-grid">
-              <div class="learn-preview-row"><span>☩</span><div><strong>Morning prayers</strong><small>Household rhythm</small></div><span>Done</span></div>
-              <div class="learn-preview-row"><span>☰</span><div><strong>Read-aloud</strong><small>Living books</small></div><span>20m</span></div>
-              <div class="learn-preview-row"><span>✥</span><div><strong>Formation</strong><small>Saints, hymns, and feasts</small></div><span>Today</span></div>
-              <div class="learn-preview-row"><span>▣</span><div><strong>Reports</strong><small>Print what your household needs</small></div><span>Ready</span></div>
+            <div class="hero-card">
+              <small>AGAPAY Learn</small>
+              <strong>Plan with peace. Teach with purpose.</strong>
+              <a class="gold-btn" href="/learn">Open Learn</a>
             </div>
           </div>
           <div>
@@ -1316,7 +1328,7 @@
           </div>
           <div>
             <h3>AGAPAY Giving</h3>
-          <a href="/giving/features.html">Overview</a>
+          <a href="/give/">Overview</a>
           <a href="/giving/how-it-works.html">How It Works</a>
           <a href="/giving/pricing.html">Pricing</a>
           </div>
