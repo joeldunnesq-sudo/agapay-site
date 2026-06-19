@@ -166,20 +166,37 @@ function buildTermPlan(printCenter, template, generatedAt) {
 
 function buildMonthCalendar(printCenter, template, generatedAt) {
   const document = baseDocument(printCenter, template, generatedAt);
-  const dates = printCenter.week?.dates || [];
+  const month = printCenter.month || {};
+  const days = month.days || [];
+  const weekRows = [];
+  for (let index = 0; index < days.length; index += 7) {
+    weekRows.push(days.slice(index, index + 7).map((day) => {
+      if (!day?.inMonth) return "";
+      const plan = [...(day.householdPlan || []), ...(day.formPlan || [])]
+        .slice(0, 2)
+        .map((item) => item.title)
+        .join("; ");
+      return [
+        String(day.dayNumber || ""),
+        day.feastTitle || "",
+        day.isFastDay ? `${day.fastingType || day.fastingRule || "Fast"}` : "",
+        plan
+      ].filter(Boolean).join(" - ");
+    }));
+  }
+  document.title = month.printableTitle || month.label || template.month || document.title;
+  document.subtitle = text(`${printCenter.household?.name || "Household"} - ${month.label || "Month Calendar"} - ${printCenter.calendarToggle?.label || ""}`);
   document.sections = [
-    tableSection("Week View", ["Day", "Date", "Feast / Rhythm", "Plan"], dates.map((date, index) => {
-      const liturgicalDay = (printCenter.week?.liturgicalDays || [])[index] || {};
-      const householdPlan = (printCenter.week?.householdRows || [])
-        .filter((row) => Number(row.minutes?.[index] || 0) > 0)
-        .map((row) => row.title)
-        .slice(0, 3)
-        .join(", ");
-      return [DAYS[index] || "", date, liturgicalDay.title || "", householdPlan];
-    })),
-    listSection("Upcoming Notes", (printCenter.week?.liturgicalDays || []).map((day) => ({
-      label: day.title || day.date,
-      detail: [day.fastingRule, day.epistleRef, day.gospelRef].filter(Boolean).join(" - ")
+    cardsSection("Month Summary", [
+      { label: "Month", value: month.label || "", detail: "Household rhythm, feast markers, and fast-day notes." },
+      { label: "Fast Days", value: String(month.fastDays || 0), detail: "Shown in the calendar cells and detailed below." },
+      { label: "Feast Markers", value: String(month.feastDays || 0), detail: "Liturgical rhythm pulled from the selected Orthodox calendar." },
+      { label: "Calendar", value: printCenter.calendarToggle?.label || "Orthodox Calendar", detail: printCenter.calendarToggle?.description || "" }
+    ]),
+    tableSection("Month Calendar", DAYS, weekRows),
+    listSection("Fast-Day Details", days.filter((day) => day.inMonth && day.isFastDay).map((day) => ({
+      label: `${day.civilDate} - ${day.fastingType || day.fastingRule || "Fast"}`,
+      detail: [day.feastTitle, day.oldStyleDateLabel].filter(Boolean).join(" - ")
     })))
   ];
   return document;

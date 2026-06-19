@@ -258,6 +258,7 @@ export function toPlannerViewModel(rawPayload) {
   const shell = shellFromPayload("planner", rawPayload);
   const query = new URLSearchParams(window.location.search);
   const activeView = query.get("view") || planner.activeView || localStorage.getItem("agapay.learn.plannerView") || "week";
+  const monthKey = query.get("month") || planner.month?.key || new Date().toISOString().slice(0, 7);
   const termOptions = safeArray(planner.termSetup?.termOptions);
   const activeTermId = query.get("termId") || planner.termSetup?.activeTermId || planner.term?.id || "";
   const activeTermIndex = Math.max(0, termOptions.findIndex((term) => term.id === activeTermId));
@@ -289,16 +290,16 @@ export function toPlannerViewModel(rawPayload) {
     shell,
     page: {
       id: "planner",
-      title: activeView === "term" ? "Term Planner" : "Planner",
-      subtitle: activeView === "week" || activeView === "day" ? `${text(week.label, "This Week")}  •  ${text(week.seasonLabel, "")}` : "Plan your term with grace and intention.",
+      title: activeView === "term" ? "Term Planner" : activeView === "month" ? "Month Planner" : "Planner",
+      subtitle: activeView === "week" || activeView === "day" ? `${text(week.label, "This Week")}  •  ${text(week.seasonLabel, "")}` : activeView === "month" ? text(planner.month?.label, "Month Calendar") : "Plan your term with grace and intention.",
       ornament: true
     },
     activeView,
-    plannerTabs: ["day", "week", "term", "year"].map((view) => ({
+    plannerTabs: ["day", "week", "month", "term", "year"].map((view) => ({
       id: view,
       label: view.charAt(0).toUpperCase() + view.slice(1),
       active: activeView === view,
-      href: `/myagapay/learn/planner?view=${view}${view === "term" ? `&term=${activeTerm}&termId=${encodeURIComponent(activeTermId)}` : ""}`
+      href: `/myagapay/learn/planner?view=${view}${view === "month" ? `&month=${encodeURIComponent(monthKey)}` : ""}${view === "term" ? `&term=${activeTerm}&termId=${encodeURIComponent(activeTermId)}` : ""}`
     })),
     termTabs: (termOptions.length ? termOptions : [1, 2, 3, 4].map((term) => ({ id: `term_${term}`, label: term === 4 ? "Term 4 / Summer" : `Term ${term}` }))).map((term, index) => ({
       id: term.id || index + 1,
@@ -356,6 +357,37 @@ export function toPlannerViewModel(rawPayload) {
         graceModeApplied: Boolean(row.graceModeApplied)
       })).filter((row) => row.minutes > 0 || row.status === "rest"),
       formBlocks: selectedDay?.isSunday ? [] : groupRowsByForm(rawChildRows, selectedDayIndex)
+    },
+    month: {
+      key: monthKey,
+      label: text(planner.month?.label, "Month Calendar"),
+      printableTitle: text(planner.month?.printableTitle, "Household Month Calendar"),
+      weekdays: safeArray(planner.month?.weekdays).length ? safeArray(planner.month?.weekdays) : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+      fastDays: Number(planner.month?.fastDays || 0),
+      feastDays: Number(planner.month?.feastDays || 0),
+      days: safeArray(planner.month?.days).map((day) => ({
+        date: text(day.civilDate, ""),
+        dayNumber: text(day.dayNumber, ""),
+        weekday: text(day.weekdayLabel, ""),
+        inMonth: Boolean(day.inMonth),
+        isToday: Boolean(day.isToday),
+        isSunday: Boolean(day.isSunday),
+        isFastDay: Boolean(day.isFastDay),
+        feast: text(day.feastTitle, ""),
+        feastRank: text(day.feastRank, ""),
+        fasting: text(day.fastingRule, ""),
+        fastingType: text(day.fastingType, ""),
+        oldStyleDateLabel: text(day.oldStyleDateLabel, ""),
+        householdPlan: safeArray(day.householdPlan).map((item) => ({
+          title: text(item.title, ""),
+          minutes: Number(item.minutes || 0)
+        })),
+        formPlan: safeArray(day.formPlan).map((item) => ({
+          title: text(item.title, ""),
+          formLabel: text(item.formLabel, ""),
+          minutes: Number(item.minutes || 0)
+        }))
+      }))
     },
     term: {
       activeTerm,

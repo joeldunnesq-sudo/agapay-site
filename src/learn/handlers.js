@@ -167,7 +167,8 @@ export async function handleLearnPlanner(request, env) {
   const { repository } = auth;
   const planner = repository.getPlanner({
     calendarType: requestedCalendarType(url),
-    view: url.searchParams.get("view") || "week"
+    view: url.searchParams.get("view") || "week",
+    month: url.searchParams.get("month") || ""
   });
 
   return json({
@@ -189,7 +190,8 @@ export async function handleLearnPrintCenter(request, env) {
   if (auth.response) return auth.response;
   const { repository } = auth;
   const printCenter = repository.getPrintCenter({
-    calendarType: requestedCalendarType(url)
+    calendarType: requestedCalendarType(url),
+    month: url.searchParams.get("month") || ""
   });
 
   return json({
@@ -232,7 +234,8 @@ export async function handleLearnPrintPdf(request, env, templateId = "") {
         generatedAt: new Date().toISOString()
       })
     : buildLearnPrintDocument(repository.getPrintCenter({
-        calendarType: requestedCalendarType(url)
+        calendarType: requestedCalendarType(url),
+        month: body.month || url.searchParams.get("month") || ""
       }), {
         templateId: resolvedTemplateId,
         childId: body.childId || "",

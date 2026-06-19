@@ -5,6 +5,8 @@ import { normalizeCalendarType, SeedLiturgicalSource } from "./liturgical-source
 import { buildPrintJobRequest, buildWeeklyHouseholdPrintDocument } from "./print-engine.js";
 import { getLearnSeedForIdentity, learnSetupIdentity } from "./setup-persistence.js";
 
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 function buildHouseholdStreamCards(seed, daily) {
   const streamLookup = new Map(seed.householdStreams.map((stream) => [stream.id, stream]));
   const blocks = daily.householdBlocks?.length
@@ -295,6 +297,16 @@ function weekdayLabelFromIso(iso) {
     .format(new Date(`${iso}T00:00:00.000Z`));
 }
 
+function monthLabelFromIso(iso) {
+  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" })
+    .format(new Date(`${iso}T00:00:00.000Z`));
+}
+
+function monthKeyFromIso(iso) {
+  const value = String(iso || "");
+  return /^\d{4}-\d{2}/.test(value) ? value.slice(0, 7) : new Date().toISOString().slice(0, 7);
+}
+
 function julianOldStyleLabel(civilDate) {
   const [year, month, day] = civilDate.split("-").map(Number);
   const oldStyle = jdnToGregorian(gregorianToJdn(year, month, day) - 13);
@@ -325,6 +337,23 @@ function fastingRuleForDate(civilDate, feast) {
   return weekday === 3 || weekday === 5 ? "Fast" : "No Fast";
 }
 
+function fastingTypeForDate(civilDate, feast, fastingRule = "") {
+  const rule = String(fastingRule || "").toLowerCase();
+  if (rule.includes("no fast")) return "No fasting prescribed";
+  const offset = paschalOffset(civilDate);
+  if (offset >= 0 && offset <= 6) return "Bright Week";
+  if (feast?.rank === "fast") return "Strict fast day";
+  const [, month, day] = civilDate.split("-").map(Number);
+  if (month === 8 && day >= 1 && day <= 14) return "Dormition Fast";
+  if (month === 11 && day >= 15 || month === 12 && day <= 24) return "Nativity Fast";
+  if (month === 6 && day >= 8 && day <= 28) return "Apostles' Fast";
+  const weekday = new Date(`${civilDate}T00:00:00.000Z`).getUTCDay();
+  if (weekday === 3) return "Wednesday fast";
+  if (weekday === 5) return "Friday fast";
+  if (rule.includes("fast")) return "Fast day";
+  return "No fasting prescribed";
+}
+
 function buildAgapayLiturgicalDays({ calendarType = "julian", startDate, endDate, seed }) {
   const calendar = normalizeCalendarType(calendarType) === "revised-julian" ? "gregorian" : "julian";
   const startYear = Number(startDate.slice(0, 4));
@@ -345,6 +374,7 @@ function buildAgapayLiturgicalDays({ calendarType = "julian", startDate, endDate
       feastTitle: feast?.name || (isSunday ? "Sunday Orthodox Rhythm" : "Daily Orthodox Rhythm"),
       feastRank: feast?.rank ? `${feast.rank.charAt(0).toUpperCase()}${feast.rank.slice(1)}` : "Daily Rhythm",
       fastingRule: seededReadings.fastingRule || fastingRuleForDate(civilDate, feast),
+      fastingType: fastingTypeForDate(civilDate, feast, seededReadings.fastingRule || fastingRuleForDate(civilDate, feast)),
       saints: feast ? [feast.name] : ["Household prayer and lesson rhythm"],
       oldStyleDateLabel: calendar === "julian" ? feast?.sourceDate || julianOldStyleLabel(civilDate) : dateLabelFromIso(civilDate),
       epistleRef: seededReadings.epistleRef || "Daily readings source not connected",
@@ -387,6 +417,74 @@ function buildPlannerWeek(seed, calendarType) {
       ...row,
       child: childLookup.get(row.childId)
     }))
+  };
+}
+
+function buildPlannerMonth(seed, calendarType, month = "") {
+  const monthKey = /^\d{4}-\d{2}$/.test(String(month || "")) ? month : monthKeyFromIso(seed.term?.startDate || new Date().toISOString());
+  const [year, monthNumber] = monthKey.split("-").map(Number);
+  const first = new Date(Date.UTC(year, monthNumber - 1, 1));
+  const last = new Date(Date.UTC(year, monthNumber, 0));
+  const gridStart = new Date(first);
+  gridStart.setUTCDate(first.getUTCDate() - first.getUTCDay());
+  const gridEnd = new Date(last);
+  gridEnd.setUTCDate(last.getUTCDate() + (6 - last.getUTCDay()));
+  const startDate = gridStart.toISOString().slice(0, 10);
+  const endDate = gridEnd.toISOString().slice(0, 10);
+  const liturgicalDays = buildAgapayLiturgicalDays({ calendarType, startDate, endDate, seed });
+  const liturgicalByDate = new Map(liturgicalDays.map((day) => [day.civilDate, day]));
+  const week = buildPlannerWeek(seed, calendarType);
+  const today = new Date().toISOString().slice(0, 10);
+  const householdPlanByWeekday = new Map();
+  const formPlanByWeekday = new Map();
+  const planIndexForWeekday = (weekday) => weekday === 0 ? 6 : weekday - 1;
+
+  for (let weekday = 0; weekday < 7; weekday += 1) {
+    const index = planIndexForWeekday(weekday);
+    householdPlanByWeekday.set(weekday, (week.householdRows || [])
+      .filter((row) => Number(row.minutes?.[index] || 0) > 0)
+      .map((row) => ({ title: row.title, minutes: Number(row.minutes?.[index] || 0) }))
+      .slice(0, 3));
+    formPlanByWeekday.set(weekday, (week.childRows || [])
+      .filter((row) => Number(row.minutes?.[index] || 0) > 0)
+      .map((row) => ({ title: row.title, formLabel: row.child?.formLabel || row.child?.gradeLabel || "Form", minutes: Number(row.minutes?.[index] || 0) }))
+      .slice(0, 3));
+  }
+
+  const days = eachIsoDate(startDate, endDate).map((civilDate) => {
+    const date = new Date(`${civilDate}T00:00:00.000Z`);
+    const weekday = date.getUTCDay();
+    const liturgicalDay = liturgicalByDate.get(civilDate) || {};
+    const fastingRule = liturgicalDay.fastingRule || "No Fast";
+    return {
+      civilDate,
+      dayNumber: date.getUTCDate(),
+      weekday,
+      weekdayLabel: DAYS[weekday],
+      inMonth: civilDate.startsWith(monthKey),
+      isToday: civilDate === today,
+      isSunday: weekday === 0,
+      feastTitle: liturgicalDay.feastTitle || "Daily Orthodox Rhythm",
+      feastRank: liturgicalDay.feastRank || "Daily Rhythm",
+      fastingRule,
+      fastingType: liturgicalDay.fastingType || fastingTypeForDate(civilDate, null, fastingRule),
+      isFastDay: /fast/i.test(fastingRule) && !/no fast/i.test(fastingRule),
+      oldStyleDateLabel: liturgicalDay.oldStyleDateLabel || "",
+      householdPlan: householdPlanByWeekday.get(weekday) || [],
+      formPlan: formPlanByWeekday.get(weekday) || []
+    };
+  });
+
+  return {
+    key: monthKey,
+    label: monthLabelFromIso(`${monthKey}-01`),
+    startDate,
+    endDate,
+    weekdays: DAYS,
+    days,
+    fastDays: days.filter((day) => day.inMonth && day.isFastDay).length,
+    feastDays: days.filter((day) => day.inMonth && day.feastRank !== "Daily Rhythm").length,
+    printableTitle: `${monthLabelFromIso(`${monthKey}-01`)} Household Calendar`
   };
 }
 
@@ -578,7 +676,7 @@ export class SeedLearnRepository {
     };
   }
 
-  getPlanner({ calendarType = "julian", view = "week" } = {}) {
+  getPlanner({ calendarType = "julian", view = "week", month = "" } = {}) {
     const resolvedCalendar = normalizeCalendarType(calendarType);
     return {
       household: this.seed.household,
@@ -586,7 +684,7 @@ export class SeedLearnRepository {
       schoolYear: this.seed.schoolYear,
       term: this.seed.term,
       calendarToggle: buildCalendarToggle(resolvedCalendar),
-      activeView: ["day", "week", "term", "year"].includes(view) ? view : "week",
+      activeView: ["day", "week", "month", "term", "year"].includes(view) ? view : "week",
       cycle: {
         framework: this.seed.cycleFramework,
         year: this.seed.cycleYear,
@@ -601,6 +699,7 @@ export class SeedLearnRepository {
       curriculum: buildCurriculum(this.seed),
       graceMode: buildGraceMode(this.seed),
       week: buildPlannerWeek(this.seed, resolvedCalendar),
+      month: buildPlannerMonth(this.seed, resolvedCalendar, month),
       termSetup: this.seed.termSetup,
       upcomingFeasts: buildUpcomingFeasts(this.seed, resolvedCalendar),
       readAloud: {
@@ -610,7 +709,7 @@ export class SeedLearnRepository {
     };
   }
 
-  getPrintCenter({ calendarType = "julian" } = {}) {
+  getPrintCenter({ calendarType = "julian", month = "" } = {}) {
     const resolvedCalendar = normalizeCalendarType(calendarType);
     const childLookup = childById(this.seed);
     const householdTemplates = this.seed.placeholderRecords.printTemplates.filter((template) => template.audience !== "child");
@@ -643,6 +742,7 @@ export class SeedLearnRepository {
       calendarToggle: buildCalendarToggle(resolvedCalendar),
       term: this.seed.term,
       week: buildPlannerWeek(this.seed, resolvedCalendar),
+      month: buildPlannerMonth(this.seed, resolvedCalendar, month),
       termSetup: this.seed.termSetup,
       templates: templates.map((template) => ({
         ...template,

@@ -520,7 +520,7 @@ function renderDashboard(vm) {
 function renderPlanner(vm) {
   const controls = `
     <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
-      <div style="display:flex;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:5px;width:280px;">
+      <div style="display:flex;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:5px;min-width:min(100%,390px);">
         ${vm.plannerTabs.map((tab) => `<a href="${tab.href}" style="flex:1;text-align:center;text-decoration:none;border:none;border-radius:8px;padding:8px 0;font-family:inherit;font-size:15px;cursor:pointer;${tab.active ? "background:var(--navy);color:#fff;" : "background:transparent;color:var(--ink);"}">${html(tab.label)}</a>`).join("")}
       </div>
       <div style="display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:7px 12px;">
@@ -533,11 +533,13 @@ function renderPlanner(vm) {
   `;
   const content = vm.activeView === "day"
     ? renderPlannerDay(vm)
-    : vm.activeView === "term"
-      ? renderPlannerTerm(vm)
-      : vm.activeView === "year"
-        ? renderPlannerYear(vm)
-        : renderPlannerWeek(vm);
+    : vm.activeView === "month"
+      ? renderPlannerMonth(vm)
+      : vm.activeView === "term"
+        ? renderPlannerTerm(vm)
+        : vm.activeView === "year"
+          ? renderPlannerYear(vm)
+          : renderPlannerWeek(vm);
   const body = `
     <section data-screen-label="Planner" style="display:flex;flex-direction:column;gap:18px;">
       ${controls}
@@ -591,6 +593,58 @@ function renderPlannerDay(vm) {
       ${panel("Form Work", day.isSunday ? `<div style="color:var(--muted);line-height:1.45;">No Form work is scheduled on Sunday.</div>` : `<div style="display:grid;gap:10px;">${forms || emptyState("No Form blocks for this day.")}</div>`, { icon: "◎" })}
     </div>
     ${panel("Church Notes", `<div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:12px;"><div><small style="color:var(--gold);letter-spacing:.12em;">EPISTLE</small><strong style="display:block;">${html(day.epistle || "Set readings source")}</strong></div><div><small style="color:var(--gold);letter-spacing:.12em;">GOSPEL</small><strong style="display:block;">${html(day.gospel || "Set readings source")}</strong></div><div><small style="color:var(--gold);letter-spacing:.12em;">TONE</small><strong style="display:block;">${html(day.tone || "Tone")}</strong></div></div>`, { icon: "✥" })}
+  `;
+}
+
+function adjacentMonthKey(monthKey, delta) {
+  const [year, month] = String(monthKey || "").split("-").map(Number);
+  const date = new Date(Date.UTC(Number.isFinite(year) ? year : new Date().getUTCFullYear(), (Number.isFinite(month) ? month : 1) - 1 + delta, 1));
+  return date.toISOString().slice(0, 7);
+}
+
+function renderPlannerMonth(vm) {
+  const month = vm.month || {};
+  const dayCells = (month.days || []).map((day) => {
+    const muted = !day.inMonth;
+    const fastBg = day.isFastDay ? "rgba(110,47,42,.12)" : day.isSunday ? "rgba(181,148,47,.14)" : "var(--paper2)";
+    const border = day.isToday ? "var(--gold)" : day.isFastDay ? "rgba(110,47,42,.38)" : "var(--line)";
+    const plans = [...(day.householdPlan || []), ...(day.formPlan || [])].slice(0, 3);
+    return `<article style="min-height:150px;border:1px solid ${border};border-radius:12px;background:${muted ? "rgba(248,240,221,.46)" : fastBg};padding:10px;display:flex;flex-direction:column;gap:7px;box-shadow:${day.isToday ? "inset 0 0 0 1px rgba(181,148,47,.45)" : "none"};opacity:${muted ? ".58" : "1"};">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <span style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:${day.isFastDay ? "var(--burgundy)" : "var(--ink)"};">${html(day.dayNumber)}</span>
+        ${day.isToday ? `<span style="border:1px solid var(--gold);border-radius:999px;padding:2px 7px;font-size:10px;color:var(--gold);font-weight:700;">TODAY</span>` : ""}
+      </div>
+      <strong style="font-size:12.5px;line-height:1.18;color:${day.isFastDay ? "var(--burgundy)" : "var(--ink)"};">${html(day.feast)}</strong>
+      ${day.isFastDay ? `<span style="border:1px solid rgba(110,47,42,.35);background:#fff8f3;color:var(--burgundy);border-radius:999px;padding:4px 7px;font-size:11px;font-weight:700;width:max-content;max-width:100%;">${html(day.fastingType || day.fasting)}</span>` : `<span style="color:var(--muted);font-size:11px;">${html(day.fastingType || "No fasting prescribed")}</span>`}
+      <div style="display:grid;gap:4px;margin-top:auto;">${plans.length ? plans.map((plan) => `<span style="font-size:11.5px;color:#33405a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(plan.title)}${plan.minutes ? ` · ${html(plan.minutes)}m` : ""}</span>`).join("") : `<span style="font-size:11.5px;color:var(--muted);font-style:italic;">Quiet household rhythm</span>`}</div>
+    </article>`;
+  }).join("");
+  return `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px;align-items:start;">
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+          <div>
+            <div style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:700;text-transform:uppercase;">Household Month</div>
+            <h2 style="font-family:'Cormorant Garamond',serif;font-size:34px;line-height:1;margin:5px 0 0;color:var(--ink);">${html(month.label)}</h2>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <a href="/myagapay/learn/planner?view=month&month=${encodeURIComponent(adjacentMonthKey(month.key, -1))}" style="border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);text-decoration:none;background:var(--paper2);">← Previous</a>
+            <button type="button" data-planner-month-print="${html(month.key)}" style="border:1px solid var(--gold);background:var(--navy);color:#fff;border-radius:9px;padding:9px 14px;font-family:inherit;font-weight:700;cursor:pointer;">Print Month</button>
+            <a href="/myagapay/learn/planner?view=month&month=${encodeURIComponent(adjacentMonthKey(month.key, 1))}" style="border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);text-decoration:none;background:var(--paper2);">Next →</a>
+          </div>
+        </div>
+        <div style="overflow:auto;padding-bottom:4px;">
+          <div style="display:grid;grid-template-columns:repeat(7,minmax(92px,1fr));gap:8px;min-width:760px;">
+            ${(month.weekdays || []).map((day) => `<div style="color:var(--gold);font-size:11px;letter-spacing:.12em;font-weight:700;text-align:center;text-transform:uppercase;">${html(day)}</div>`).join("")}
+            ${dayCells}
+          </div>
+        </div>
+      </div>
+      <aside style="display:flex;flex-direction:column;gap:14px;">
+        ${panel("Month Notes", `<div style="display:grid;gap:12px;"><div><small style="color:var(--gold);letter-spacing:.12em;">FAST DAYS</small><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--burgundy);">${html(month.fastDays)}</strong><span style="color:var(--muted);">Marked in red with fasting type.</span></div><div><small style="color:var(--gold);letter-spacing:.12em;">FEAST MARKERS</small><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--ink);">${html(month.feastDays)}</strong><span style="color:var(--muted);">Major rhythms shown from the liturgical calendar.</span></div><div style="border-top:1px solid var(--line);padding-top:12px;color:#33405a;line-height:1.45;">Use this as Stephanie's fridge calendar: plan the month, see fast days at a glance, then print a clean household copy.</div></div>`, { icon: "▣" })}
+        ${panel("Legend", `<div style="display:grid;gap:10px;"><span style="display:flex;gap:9px;align-items:center;"><i style="width:18px;height:18px;border-radius:5px;background:rgba(110,47,42,.12);border:1px solid rgba(110,47,42,.38);"></i> Fast day</span><span style="display:flex;gap:9px;align-items:center;"><i style="width:18px;height:18px;border-radius:5px;background:rgba(181,148,47,.14);border:1px solid var(--line);"></i> Sunday / feast rhythm</span><span style="display:flex;gap:9px;align-items:center;"><i style="width:18px;height:18px;border-radius:5px;background:var(--paper2);border:1px solid var(--gold);"></i> Today</span></div>`, { icon: "✥" })}
+      </aside>
+    </div>
   `;
 }
 
@@ -1053,11 +1107,16 @@ async function apiGet(path) {
 }
 
 async function apiPost(path, body) {
-  const response = await fetch(path, {
-    method: "POST",
-    headers: learnRequestHeaders({ "content-type": "application/json" }),
-    body: JSON.stringify(body)
-  });
+  let response;
+  try {
+    response = await fetch(path, {
+      method: "POST",
+      headers: learnRequestHeaders({ "content-type": "application/json" }),
+      body: JSON.stringify(body)
+    });
+  } catch {
+    throw new Error("Unable to reach AGAPAY Learn. Please refresh, confirm you are still logged in, and try again.");
+  }
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || payload.error) throw new Error(payload.error || `Request failed with ${response.status}`);
   return payload;
@@ -1419,7 +1478,41 @@ function wireSetupPage() {
       status.textContent = error.message;
       status.style.color = "var(--burgundy)";
     } finally {
-      submit.disabled = false;
+      if (submit?.isConnected) submit.disabled = false;
+    }
+  });
+}
+
+function wirePlanner(vm) {
+  if (vm.activeView) localStorage.setItem("agapay.learn.plannerView", vm.activeView);
+  if (vm.month?.key) localStorage.setItem("agapay.learn.plannerMonth", vm.month.key);
+  root.querySelector("[data-planner-month-print]")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    const month = button.dataset.plannerMonthPrint || vm.month?.key || new Date().toISOString().slice(0, 7);
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = "Generating...";
+    try {
+      const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
+      const response = await fetch(`/api/learn/print/print_mom_month?calendar=${encodeURIComponent(calendar)}&month=${encodeURIComponent(month)}`, {
+        method: "POST",
+        headers: learnRequestHeaders({ "content-type": "application/json" }),
+        body: JSON.stringify({ month })
+      });
+      const contentType = response.headers.get("content-type") || "";
+      if (!response.ok || !contentType.includes("application/pdf")) {
+        const payload = contentType.includes("application/json") ? await response.json().catch(() => ({})) : {};
+        throw new Error(payload.error || "Unable to generate the month calendar. Please try again.");
+      }
+      const blob = await response.blob();
+      const disposition = response.headers.get("content-disposition") || "";
+      const fileMatch = disposition.match(/filename="([^"]+)"/i);
+      downloadBlob(fileMatch?.[1] || `agapay-learn-${month}-calendar.pdf`, blob);
+    } catch (error) {
+      showLearnDialog("Month Calendar Could Not Be Generated", error.message || "Please refresh and try again.", []);
+    } finally {
+      button.disabled = false;
+      button.textContent = originalText;
     }
   });
 }
@@ -1652,9 +1745,13 @@ async function mount() {
     return;
   }
   if (pageKey === "planner") {
-    const view = new URLSearchParams(window.location.search).get("view") || localStorage.getItem("agapay.learn.plannerView") || "week";
-    const raw = await apiGet(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}&view=${encodeURIComponent(view)}`);
-    root.innerHTML = renderPlanner(toPlannerViewModel(raw));
+    const params = new URLSearchParams(window.location.search);
+    const view = params.get("view") || localStorage.getItem("agapay.learn.plannerView") || "week";
+    const month = params.get("month") || localStorage.getItem("agapay.learn.plannerMonth") || new Date().toISOString().slice(0, 7);
+    const raw = await apiGet(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}&view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}`);
+    const vm = toPlannerViewModel(raw);
+    root.innerHTML = renderPlanner(vm);
+    wirePlanner(vm);
     return;
   }
   if (pageKey === "formation") {
