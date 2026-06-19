@@ -889,6 +889,20 @@ const graceModeOptions = [
   { value: "bump if needed", label: "Defer if needed" }
 ];
 
+const planningModeOptions = [
+  { value: "family", label: "Family-Based" },
+  { value: "forms", label: "Forms-Based" }
+];
+
+const weeklyFrequencyOptions = [
+  { value: "daily", label: "Daily" },
+  { value: "4x", label: "4x / week" },
+  { value: "3x", label: "3x / week" },
+  { value: "2x", label: "2x / week" },
+  { value: "1x", label: "1x / week" },
+  { value: "as-needed", label: "As needed" }
+];
+
 const colorChoices = [
   "#14294a",
   "#6e2f2a",
@@ -918,35 +932,50 @@ function streamSetupRow(stream = {}) {
 }
 
 function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId = "") {
-  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" style="display:grid;grid-template-columns:1fr .8fr .75fr 1fr .55fr .55fr .55fr .55fr .65fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Subject / skill", "title", subject.title || "")}${setupSelect("School-day area", "subjectType", subject.subjectType || subject.type || "language-arts", subjectTypeOptions)}${setupSelect("Form", "formLabel", subject.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupInput("Book / curriculum / source", "resource", subject.resource || "")}${setupSelect("Track by", "progressionType", subject.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", subject.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", subject.currentNumber || subject.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", subject.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutes", subject.minutes || "", { type: "number" })}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));gap:10px;">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("Specific child", "childId", subject.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</div></div>`;
+  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" style="display:grid;grid-template-columns:1fr .8fr .75fr 1fr .55fr .55fr .55fr .55fr .65fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Subject / skill", "title", subject.title || "")}${setupSelect("School-day area", "subjectType", subject.subjectType || subject.type || "language-arts", subjectTypeOptions)}${setupSelect("Planning Mode", "planningMode", subject.planningMode || "forms", planningModeOptions)}${setupInput("Book / curriculum / source", "resource", subject.resource || "")}${setupSelect("Track by", "progressionType", subject.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", subject.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", subject.currentNumber || subject.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", subject.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutes", subject.minutes || "", { type: "number" })}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(8,minmax(120px,1fr));gap:10px;">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("Form", "formLabel", subject.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupSelect("Frequency", "weeklyFrequency", subject.weeklyFrequency || subject.cadenceLabel || "daily", weeklyFrequencyOptions)}${setupSelect("Specific child", "childId", subject.childId || "", [{ value: "", label: "Use Planning Mode" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</div></div>`;
 }
 
 function bookSetupRow(book = {}, terms = [], currentTermId = "") {
-  return `<div data-setup-row="books" data-id="${html(book.id || "")}" style="display:grid;grid-template-columns:1.1fr .9fr .7fr .75fr .55fr .55fr .55fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Title", "title", book.title || "")}${setupInput("Author", "author", book.author || "")}${setupInput("Category", "category", book.category || "")}${setupSelect("Form", "formLabel", book.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupInput("Start Ch.", "startChapter", book.startChapter || "", { type: "number" })}${setupInput("Done Ch.", "currentChapter", book.currentChapter || book.startChapter || "", { type: "number" })}${setupInput("End Ch.", "endChapter", book.endChapter || book.totalChapters || "", { type: "number" })}${setupColorSelect("Planner Color", "color", book.color || colorChoices[2])}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">${setupSelect("Term", "termId", book.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("Audience", "audienceLabel", book.audienceLabel || "Household", ["Household", "Morning Basket", "Independent", "Read-Aloud"])}${setupInput("Grace Note", "graceNote", book.graceNote || "Reading moved into the reserve basket.")}</div></div>`;
+  return `<div data-setup-row="books" data-id="${html(book.id || "")}" style="display:grid;grid-template-columns:1.1fr .9fr .7fr .75fr .55fr .55fr .55fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Title", "title", book.title || "")}${setupInput("Author", "author", book.author || "")}${setupInput("Category", "category", book.category || "")}${setupSelect("Planning Mode", "planningMode", book.planningMode || (book.formLabel ? "forms" : "family"), planningModeOptions)}${setupInput("Start Ch.", "startChapter", book.startChapter || "", { type: "number" })}${setupInput("Done Ch.", "currentChapter", book.currentChapter || book.startChapter || "", { type: "number" })}${setupInput("End Ch.", "endChapter", book.endChapter || book.totalChapters || "", { type: "number" })}${setupColorSelect("Planner Color", "color", book.color || colorChoices[2])}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;">${setupSelect("Term", "termId", book.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("Form", "formLabel", book.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupSelect("Frequency", "weeklyFrequency", book.weeklyFrequency || "daily", weeklyFrequencyOptions)}${setupSelect("Audience", "audienceLabel", book.audienceLabel || "Household", ["Household", "Morning Basket", "Independent", "Read-Aloud"])}${setupInput("Minutes", "minutes", book.minutes || "20", { type: "number" })}${setupInput("Grace Note", "graceNote", book.graceNote || "Reading moved into the reserve basket.")}</div></div>`;
 }
 
 function formationSetupRow(material = {}, terms = [], currentTermId = "") {
-  return `<div data-setup-row="formationMaterials" data-id="${html(material.id || "")}" style="display:grid;grid-template-columns:1.1fr .75fr 1fr .65fr .75fr .8fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Material", "title", material.title || "")}${setupSelect("Preset", "materialType", material.materialType || "Catechesis", ["Catechesis", "Art Study", "Poetry", "Music Study"])}${setupInput("Source", "source", material.source || "")}${setupInput("Cadence", "cadenceLabel", material.cadence || "")}${setupSelect("Term", "termId", material.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupColorSelect("Term Color", "color", material.color || colorChoices[3])}${setupRemoveButton()}</div>`;
+  return `<div data-setup-row="formationMaterials" data-id="${html(material.id || "")}" style="display:grid;grid-template-columns:1.1fr .75fr 1fr .75fr .65fr .75fr .8fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Material", "title", material.title || "")}${setupSelect("Preset", "materialType", material.materialType || "Catechesis", ["Catechesis", "Art Study", "Poetry", "Music Study"])}${setupInput("Source", "source", material.source || "")}${setupSelect("Planning Mode", "planningMode", material.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "weeklyFrequency", material.weeklyFrequency || material.cadence || "1x", weeklyFrequencyOptions)}${setupSelect("Term", "termId", material.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupInput("Minutes", "minutes", material.minutes || "", { type: "number" })}${setupColorSelect("Term Color", "color", material.color || colorChoices[3])}${setupRemoveButton()}</div>`;
 }
 
 function formationRhythmSetupRow(rhythm = {}) {
-  return `<div data-setup-row="formationRhythms" data-id="${html(rhythm.id || "")}" style="display:grid;grid-template-columns:1fr 1.15fr .6fr .45fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Rhythm", "title", rhythm.title || "")}${setupInput("Note", "note", rhythm.note || "")}${setupInput("Cadence", "cadenceLabel", rhythm.cadenceLabel || rhythm.cadence || "")}${setupInput("Minutes", "minutes", rhythm.minutes || rhythm.minutesPlanned || "", { type: "number" })}${setupRemoveButton()}</div>`;
+  return `<div data-setup-row="formationRhythms" data-id="${html(rhythm.id || "")}" style="display:grid;grid-template-columns:1fr 1.15fr .65fr .45fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Rhythm", "title", rhythm.title || "")}${setupInput("Note", "note", rhythm.note || "")}${setupSelect("Frequency", "weeklyFrequency", rhythm.weeklyFrequency || rhythm.cadenceLabel || rhythm.cadence || "daily", weeklyFrequencyOptions)}${setupInput("Minutes", "minutes", rhythm.minutes || rhythm.minutesPlanned || "", { type: "number" })}${setupRemoveButton()}</div>`;
 }
 
 function formationRecitationSetupRow(track = {}) {
-  return `<div data-setup-row="formationRecitation" data-id="${html(track.id || "")}" style="display:grid;grid-template-columns:1fr .75fr .65fr .45fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Memory Work", "title", track.title || "")}${setupInput("Source", "sourceKind", track.sourceKind || track.source || "")}${setupSelect("Status", "status", track.status || "memorizing", ["planned", "memorizing", "memorized"])}${setupInput("Progress %", "progressPercent", track.progressPercent ?? track.progress ?? "", { type: "number" })}${setupRemoveButton()}</div>`;
+  return `<div data-setup-row="formationRecitation" data-id="${html(track.id || "")}" style="display:grid;grid-template-columns:1fr .75fr .75fr .65fr .55fr .45fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Memory Work", "title", track.title || "")}${setupInput("Source", "sourceKind", track.sourceKind || track.source || "")}${setupSelect("Planning Mode", "planningMode", track.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "weeklyFrequency", track.weeklyFrequency || "daily", weeklyFrequencyOptions)}${setupInput("Minutes", "minutes", track.minutes || "", { type: "number" })}${setupSelect("Status", "status", track.status || "memorizing", ["planned", "memorizing", "memorized"])}${setupInput("Progress %", "progressPercent", track.progressPercent ?? track.progress ?? "", { type: "number" })}${setupRemoveButton()}</div>`;
 }
 
 function formationHymnSetupRow(hymn = {}) {
-  return `<div data-setup-row="formationHymns" data-id="${html(hymn.id || "")}" style="display:grid;grid-template-columns:1fr .55fr .9fr .65fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Hymn", "title", hymn.title || "")}${setupInput("Tone", "tone", hymn.tone || "")}${setupInput("Source", "source", hymn.source || "")}${setupSelect("Status", "status", hymn.status || "planned", ["planned", "in-progress", "learned"])}${setupRemoveButton()}</div>`;
+  return `<div data-setup-row="formationHymns" data-id="${html(hymn.id || "")}" style="display:grid;grid-template-columns:1fr .55fr .9fr .75fr .65fr .45fr .65fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Hymn", "title", hymn.title || "")}${setupInput("Tone", "tone", hymn.tone || "")}${setupInput("Source", "source", hymn.source || "")}${setupSelect("Planning Mode", "planningMode", hymn.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "weeklyFrequency", hymn.weeklyFrequency || "1x", weeklyFrequencyOptions)}${setupInput("Minutes", "minutes", hymn.minutes || "", { type: "number" })}${setupSelect("Status", "status", hymn.status || "planned", ["planned", "in-progress", "learned"])}${setupRemoveButton()}</div>`;
 }
 
 function formationEnrichmentSetupRow(block = {}) {
-  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" style="display:grid;grid-template-columns:.85fr 1fr .65fr .45fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupSelect("Card", "blockType", block.blockType || block.type || "Art Study", ["Art Study", "Nature Study", "Poetry", "Music Study", "Composer", "Timeline"])}${setupInput("Title", "title", block.title || "")}${setupInput("Cadence", "cadenceLabel", block.cadenceLabel || block.cadence || "")}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "", { type: "number" })}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupRemoveButton()}</div>`;
+  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" style="display:grid;grid-template-columns:.85fr 1fr .75fr .65fr .45fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupSelect("Card", "blockType", block.blockType || block.type || "Art Study", ["Art Study", "Nature Study", "Poetry", "Music Study", "Composer", "Timeline"])}${setupInput("Title", "title", block.title || "")}${setupSelect("Planning Mode", "planningMode", block.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "weeklyFrequency", block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x", weeklyFrequencyOptions)}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "", { type: "number" })}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupRemoveButton()}</div>`;
 }
 
 function formationFeastSetupRow(feast = {}) {
-  return `<div data-setup-row="formationFeasts" data-id="${html(feast.id || "")}" style="display:grid;grid-template-columns:.55fr 1fr .75fr 1fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Date", "civilDate", feast.civilDate || feast.date || "", { type: "date" })}${setupInput("Feast", "title", feast.title || "")}${setupInput("Fasting", "fastingRule", feast.fastingRule || feast.fasting || "")}${setupInput("Note", "note", feast.note || "")}${setupRemoveButton()}</div>`;
+  return `<div data-setup-row="formationFeasts" data-id="${html(feast.id || "")}" style="display:grid;grid-template-columns:.55fr 1fr .75fr .75fr .55fr 1fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Date", "civilDate", feast.civilDate || feast.date || "", { type: "date" })}${setupInput("Feast", "title", feast.title || "")}${setupInput("Fasting", "fastingRule", feast.fastingRule || feast.fasting || "")}${setupSelect("Planning Mode", "planningMode", feast.planningMode || "family", planningModeOptions)}${setupInput("Minutes", "minutes", feast.minutes || "", { type: "number" })}${setupInput("Note", "note", feast.note || "")}${setupRemoveButton()}</div>`;
+}
+
+function churchRhythmSetupPanel(vm) {
+  const formation = vm.formationSetup || {};
+  const sectionStyle = "border:1px solid var(--line);border-radius:13px;background:rgba(255,252,245,.64);padding:14px;display:grid;gap:12px;";
+  const sectionTitle = (icon, title, subtitle = "") => `<div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--gold);font-size:22px;line-height:1;">${icon}</span><span><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:22px;">${html(title)}</strong>${subtitle ? `<small style="display:block;color:var(--muted);line-height:1.35;">${html(subtitle)}</small>` : ""}</span></div>`;
+  return `
+    <div style="display:grid;gap:14px;">
+      <p style="margin:0;color:var(--muted);line-height:1.45;">This is the household's daily Church anchor. It lives above school subjects because it shapes the day before lesson planning begins.</p>
+      <div style="${sectionStyle}">
+        ${sectionTitle("☩", "Church Rhythms", "Prayer, Gospel, Epistle, saints, feasts, and fasting notes.")}
+        <div data-setup-list="formationRhythms" style="display:grid;gap:10px;">${(formation.churchRhythms?.length ? formation.churchRhythms : [{}]).map((rhythm) => formationRhythmSetupRow(rhythm)).join("")}</div>
+        <button type="button" data-setup-add-row="formationRhythms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Church Rhythm</button>
+      </div>
+    </div>`;
 }
 
 function formationSetupPanel(vm) {
@@ -956,16 +985,11 @@ function formationSetupPanel(vm) {
   const sectionTitle = (icon, title, subtitle = "") => `<div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--gold);font-size:22px;line-height:1;">${icon}</span><span><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:22px;">${html(title)}</strong>${subtitle ? `<small style="display:block;color:var(--muted);line-height:1.35;">${html(subtitle)}</small>` : ""}</span></div>`;
   return `
     <div style="display:grid;gap:14px;">
-      <p style="margin:0;color:var(--muted);line-height:1.45;">This mirrors the first movement of the school day: prayer, Scripture, saints, catechesis, memory work, hymnody, and enrichment planned by term.</p>
-      <div style="${sectionStyle}">
-        ${sectionTitle("☩", "Church Rhythms", "Daily family rhythms shown in the main Formation card.")}
-        <div data-setup-list="formationRhythms" style="display:grid;gap:10px;">${(formation.churchRhythms?.length ? formation.churchRhythms : [{}]).map((rhythm) => formationRhythmSetupRow(rhythm)).join("")}</div>
-        <button type="button" data-setup-add-row="formationRhythms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Church Rhythm</button>
-      </div>
+      <p style="margin:0;color:var(--muted);line-height:1.45;">Choose whether each item is shared by the whole family or assigned by Form, then set how often it appears and how long it usually takes.</p>
       <div style="${sectionStyle}">
         ${sectionTitle("✥", "Catechesis", "Current lesson cycle and doctrinal focus.")}
-        <div style="display:grid;grid-template-columns:1.1fr 1fr .45fr .45fr;gap:10px;">${setupInput("Catechesis title", "formation.catechesis.title", catechesis.title || "")}${setupInput("Current lesson", "formation.catechesis.currentLesson", catechesis.currentLesson || "")}${setupInput("Lesson #", "formation.catechesis.lessonNumber", catechesis.lessonNumber || "", { type: "number" })}${setupInput("Total", "formation.catechesis.totalLessons", catechesis.totalLessons || "", { type: "number" })}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">${setupInput("Doctrinal topic", "formation.catechesis.doctrinalTopic", catechesis.doctrinalTopic || catechesis.topic || "")}${setupInput("Source / text", "formation.catechesis.source", catechesis.source || "")}</div>
+        <div style="display:grid;grid-template-columns:1.1fr 1fr .75fr .65fr .45fr .45fr;gap:10px;">${setupInput("Catechesis title", "formation.catechesis.title", catechesis.title || "")}${setupInput("Current lesson", "formation.catechesis.currentLesson", catechesis.currentLesson || "")}${setupSelect("Planning Mode", "formation.catechesis.planningMode", catechesis.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "formation.catechesis.weeklyFrequency", catechesis.weeklyFrequency || "2x", weeklyFrequencyOptions)}${setupInput("Minutes", "formation.catechesis.minutes", catechesis.minutes || "", { type: "number" })}${setupInput("Lesson #", "formation.catechesis.lessonNumber", catechesis.lessonNumber || "", { type: "number" })}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr .45fr;gap:10px;">${setupInput("Doctrinal topic", "formation.catechesis.doctrinalTopic", catechesis.doctrinalTopic || catechesis.topic || "")}${setupInput("Source / text", "formation.catechesis.source", catechesis.source || "")}${setupInput("Total", "formation.catechesis.totalLessons", catechesis.totalLessons || "", { type: "number" })}</div>
       </div>
       <div style="${sectionStyle}">
         ${sectionTitle("☰", "Recitation & Memory Work", "Creeds, prayers, psalms, and scripture memory.")}
@@ -985,7 +1009,7 @@ function formationSetupPanel(vm) {
       <div style="${sectionStyle}">
         ${sectionTitle("☰", "Formation Materials", "Optional term materials that seed catechesis, art, poetry, music, saints, and other Formation cards.")}
         <div data-setup-list="formationMaterials" style="display:grid;gap:10px;">${(vm.formationMaterials?.length ? vm.formationMaterials : [{}]).map((material) => formationSetupRow(material, vm.terms, vm.schoolYear.currentTermId || vm.term.id)).join("")}</div>
-        <button type="button" data-setup-add-row="formationMaterials" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Cycle Material</button>
+        <button type="button" data-setup-add-row="formationMaterials" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Formation Material</button>
       </div>
       <div style="${sectionStyle}">
         ${sectionTitle("✥", "Saints & Feasts", "Optional household-highlighted feasts; liturgical calendar feasts still come from the calendar provider.")}
@@ -1001,7 +1025,8 @@ function setupStepTarget(step) {
   if (text.includes("stream")) return "learnSetupStreams";
   if (text.includes("language") || text.includes("math") || text.includes("science") || text.includes("subject") || text.includes("curriculum")) return "learnSetupSubjects";
   if (text.includes("literature") || text.includes("book") || text.includes("read")) return "learnSetupBooks";
-  if (text.includes("formation") || text.includes("church") || text.includes("catechesis") || text.includes("enrichment")) return "learnSetupFormation";
+  if (text.includes("church rhythm")) return "learnSetupChurchRhythm";
+  if (text.includes("formation") || text.includes("catechesis") || text.includes("enrichment")) return "learnSetupFormation";
   return "learnSetupHousehold";
 }
 
@@ -1026,8 +1051,10 @@ function renderSetup(vm) {
       ${panel("Household", `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Set the school year, choose the active term, and plan future terms ahead of time. The dashboard and core pages stay focused on the selected current term.</p><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Charlotte Mason", homeschoolMethodOptions)}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /><a href="/api/learn/google-calendar/connect" style="display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;background:var(--navy);color:#fff;border-radius:10px;padding:10px;">Connect Google Calendar</a></div><div style="margin-top:14px;border:1px solid var(--line);border-radius:13px;background:rgba(255,252,245,.64);padding:14px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;"><span><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:24px;">Terms</strong><small style="display:block;color:var(--muted);">Term 4 / Summer is available for year-round homeschoolers. Assign subjects, books, and formation materials to the term where they belong.</small></span><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div></div>`, { icon: "⌂" })}
       <span id="learnSetupChildren" class="learn-setup-anchor"></span>
       ${panel("Children & Forms", `<p style="margin:0 0 12px;color:var(--muted);">Assign each child a Form and color. Forms are the grouping layer for Planner and Print, especially for larger households.</p><div data-setup-list="children" style="display:grid;gap:10px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child)).join("")}</div><button type="button" data-setup-add-row="children" style="margin-top:12px;width:100%;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px;font-family:inherit;">Add Child</button>`, { icon: "◎" })}
+      <span id="learnSetupChurchRhythm" class="learn-setup-anchor"></span>
+      ${panel("Church Rhythm", churchRhythmSetupPanel(vm), { icon: "☩" })}
       <span id="learnSetupFormation" class="learn-setup-anchor"></span>
-      ${panel("Church Rhythm, Catechesis & Enrichment", formationSetupPanel(vm), { icon: "✥" })}
+      ${panel("Catechesis & Enrichment", formationSetupPanel(vm), { icon: "✥" })}
       <span id="learnSetupStreams" class="learn-setup-anchor"></span>
       ${panel("Household Shared Blocks", `<p style="margin:0 0 12px;color:var(--muted);">Use these for the shared portions of a normal day: morning basket, family read-aloud, nature study, catechesis, feast-day activity, or a shared science read. These appear in the dashboard and Planner household rows.</p><div data-setup-list="streams" style="display:grid;gap:10px;">${(vm.streams.length ? vm.streams : [{}]).map((stream) => streamSetupRow(stream)).join("")}</div><button type="button" data-setup-add-row="streams" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Shared Block</button>`, { icon: "☰" })}
       <span id="learnSetupBooks" class="learn-setup-anchor"></span>
@@ -1225,6 +1252,9 @@ function setupPayloadFromForm(form) {
         id: row.dataset.id || "",
         title,
         subjectType: rowValue(row, "subjectType"),
+        planningMode: rowValue(row, "planningMode"),
+        weeklyFrequency: rowValue(row, "weeklyFrequency"),
+        cadenceLabel: rowValue(row, "weeklyFrequency"),
         formLabel: rowValue(row, "formLabel"),
         resource: rowValue(row, "resource"),
         minutes: rowValue(row, "minutes"),
@@ -1249,6 +1279,9 @@ function setupPayloadFromForm(form) {
         title,
         author: rowValue(row, "author"),
         category: rowValue(row, "category"),
+        planningMode: rowValue(row, "planningMode"),
+        weeklyFrequency: rowValue(row, "weeklyFrequency"),
+        minutes: rowValue(row, "minutes"),
         formLabel: rowValue(row, "formLabel"),
         audienceLabel: rowValue(row, "audienceLabel"),
         startChapter: rowValue(row, "startChapter"),
@@ -1267,13 +1300,17 @@ function setupPayloadFromForm(form) {
           id: row.dataset.id || "",
           title,
           note: rowValue(row, "note"),
-          cadenceLabel: rowValue(row, "cadenceLabel"),
+          weeklyFrequency: rowValue(row, "weeklyFrequency"),
+          cadenceLabel: rowValue(row, "weeklyFrequency"),
           minutes: rowValue(row, "minutes")
         };
       }),
       catechesis: {
         title: get("formation.catechesis.title"),
         currentLesson: get("formation.catechesis.currentLesson"),
+        planningMode: get("formation.catechesis.planningMode"),
+        weeklyFrequency: get("formation.catechesis.weeklyFrequency"),
+        minutes: get("formation.catechesis.minutes"),
         lessonNumber: get("formation.catechesis.lessonNumber"),
         totalLessons: get("formation.catechesis.totalLessons"),
         doctrinalTopic: get("formation.catechesis.doctrinalTopic"),
@@ -1286,6 +1323,9 @@ function setupPayloadFromForm(form) {
           id: row.dataset.id || "",
           title,
           sourceKind: rowValue(row, "sourceKind"),
+          planningMode: rowValue(row, "planningMode"),
+          weeklyFrequency: rowValue(row, "weeklyFrequency"),
+          minutes: rowValue(row, "minutes"),
           status: rowValue(row, "status"),
           progressPercent: rowValue(row, "progressPercent")
         };
@@ -1298,6 +1338,9 @@ function setupPayloadFromForm(form) {
           title,
           tone: rowValue(row, "tone"),
           source: rowValue(row, "source"),
+          planningMode: rowValue(row, "planningMode"),
+          weeklyFrequency: rowValue(row, "weeklyFrequency"),
+          minutes: rowValue(row, "minutes"),
           status: rowValue(row, "status")
         };
       }),
@@ -1308,7 +1351,9 @@ function setupPayloadFromForm(form) {
           id: row.dataset.id || "",
           blockType: rowValue(row, "blockType"),
           title,
-          cadenceLabel: rowValue(row, "cadenceLabel"),
+          planningMode: rowValue(row, "planningMode"),
+          weeklyFrequency: rowValue(row, "weeklyFrequency"),
+          cadenceLabel: rowValue(row, "weeklyFrequency"),
           minutesPlanned: rowValue(row, "minutesPlanned"),
           color: rowValue(row, "color")
         };
@@ -1321,6 +1366,8 @@ function setupPayloadFromForm(form) {
           civilDate: rowValue(row, "civilDate"),
           title,
           fastingRule: rowValue(row, "fastingRule"),
+          planningMode: rowValue(row, "planningMode"),
+          minutes: rowValue(row, "minutes"),
           note: rowValue(row, "note")
         };
       })
@@ -1333,7 +1380,10 @@ function setupPayloadFromForm(form) {
         title,
         materialType: rowValue(row, "materialType"),
         source: rowValue(row, "source"),
-        cadenceLabel: rowValue(row, "cadenceLabel"),
+        planningMode: rowValue(row, "planningMode"),
+        weeklyFrequency: rowValue(row, "weeklyFrequency"),
+        cadenceLabel: rowValue(row, "weeklyFrequency"),
+        minutes: rowValue(row, "minutes"),
         termId: rowValue(row, "termId") || currentTermId,
         color: rowValue(row, "color")
       };

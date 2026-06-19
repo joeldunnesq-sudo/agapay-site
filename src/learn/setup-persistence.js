@@ -115,6 +115,18 @@ function text(value, fallback = "") {
   return normalized || fallback;
 }
 
+function weeklyFrequencyValue(value, fallback = "1x") {
+  const raw = String(value || "").trim().toLowerCase();
+  if (["daily", "4x", "3x", "2x", "1x", "as-needed"].includes(raw)) return raw;
+  if (raw.includes("daily") || raw.includes("every")) return "daily";
+  if (raw.includes("4")) return "4x";
+  if (raw.includes("3")) return "3x";
+  if (raw.includes("2")) return "2x";
+  if (raw.includes("as")) return "as-needed";
+  if (raw.includes("week")) return "1x";
+  return fallback;
+}
+
 function normalizeHomeschoolMethod(value) {
   const candidate = text(value, "Charlotte Mason");
   return HOMESCHOOL_METHODS.includes(candidate) ? candidate : "Charlotte Mason";
@@ -180,6 +192,20 @@ function distributeRangeSegments({ label = "", start = 1, end = 0, color = "" } 
       color
     };
   });
+}
+
+function weeklyPlanArrays(frequency = "daily", minutes = 20) {
+  const value = String(frequency || "daily").toLowerCase();
+  const amount = Math.max(0, int(minutes, 20));
+  const activeDays = value === "daily" ? [1, 2, 3, 4, 5]
+    : value === "4x" ? [1, 2, 3, 4]
+    : value === "3x" ? [1, 3, 5]
+    : value === "2x" ? [2, 4]
+    : value === "1x" ? [3]
+    : [];
+  const planMinutes = Array.from({ length: 7 }, (_, index) => activeDays.includes(index) ? amount : 0);
+  const statuses = Array.from({ length: 7 }, (_, index) => activeDays.includes(index) ? "planned" : "empty");
+  return { minutes: planMinutes, statuses };
 }
 
 function childrenForAssignment(item = {}, children = []) {
@@ -303,6 +329,9 @@ function normalizeSetupPayload(payload = {}, identity) {
     title: text(book.title, ""),
     author: text(book.author, ""),
     category: text(book.category, "Living Books"),
+    planningMode: text(book.planningMode, book.formLabel ? "forms" : "family"),
+    weeklyFrequency: weeklyFrequencyValue(book.weeklyFrequency || book.cadenceLabel || book.cadence, "daily"),
+    minutes: int(book.minutes, 20),
     formLabel: text(book.formLabel, ""),
     audienceLabel: text(book.audienceLabel, "Household"),
     startChapter: int(book.startChapter, 1),
@@ -318,9 +347,11 @@ function normalizeSetupPayload(payload = {}, identity) {
     id: text(subject.id, stableId("subject", subject.title, index)),
     subjectType: text(subject.subjectType || subject.type, slug(subject.title, "subject")),
     title: text(subject.title, "Subject"),
+    planningMode: text(subject.planningMode, "forms"),
+    weeklyFrequency: weeklyFrequencyValue(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "daily"),
     formLabel: text(subject.formLabel, ""),
     resource: text(subject.resource, ""),
-    cadenceLabel: text(subject.cadenceLabel || subject.cadence, "Weekly"),
+    cadenceLabel: text(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "Weekly"),
     minutes: int(subject.minutes, 20),
     childId: text(subject.childId, ""),
     progressionType: text(subject.progressionType, "lessons"),
@@ -340,7 +371,10 @@ function normalizeSetupPayload(payload = {}, identity) {
     title: text(material.title, ""),
     materialType: text(material.materialType || material.type, "Catechesis"),
     source: text(material.source || material.author, ""),
-    cadenceLabel: text(material.cadenceLabel || material.cadence, "Weekly"),
+    planningMode: text(material.planningMode, "family"),
+    weeklyFrequency: weeklyFrequencyValue(material.weeklyFrequency || material.cadenceLabel || material.cadence, "1x"),
+    cadenceLabel: text(material.weeklyFrequency || material.cadenceLabel || material.cadence, "Weekly"),
+    minutes: int(material.minutes, 0),
     color: text(material.color, ""),
     termId: text(material.termId || material.assignedTermId, normalizedTerm.id)
   })).filter((material) => material.title);
@@ -351,7 +385,8 @@ function normalizeSetupPayload(payload = {}, identity) {
       id: text(rhythm.id, stableId("rhythm", rhythm.title, index)),
       title: text(rhythm.title, ""),
       note: text(rhythm.note, ""),
-      cadenceLabel: text(rhythm.cadenceLabel || rhythm.cadence, "Daily"),
+      weeklyFrequency: weeklyFrequencyValue(rhythm.weeklyFrequency || rhythm.cadenceLabel || rhythm.cadence, "daily"),
+      cadenceLabel: text(rhythm.weeklyFrequency || rhythm.cadenceLabel || rhythm.cadence, "Daily"),
       minutes: int(rhythm.minutes || rhythm.minutesPlanned, 0),
       status: text(rhythm.status, "planned")
     })).filter((rhythm) => rhythm.title),
@@ -361,6 +396,9 @@ function normalizeSetupPayload(payload = {}, identity) {
       cycleYearId: seed.cycleYear?.id || "cycle_current",
       title: text(rawFormation.catechesis?.title, formationMaterials.find((material) => material.materialType === "Catechesis")?.title || "Catechesis"),
       currentLesson: text(rawFormation.catechesis?.currentLesson, ""),
+      planningMode: text(rawFormation.catechesis?.planningMode, "family"),
+      weeklyFrequency: weeklyFrequencyValue(rawFormation.catechesis?.weeklyFrequency || rawFormation.catechesis?.cadenceLabel || rawFormation.catechesis?.cadence, "2x"),
+      minutes: int(rawFormation.catechesis?.minutes, 0),
       lessonNumber: int(rawFormation.catechesis?.lessonNumber, 0),
       totalLessons: int(rawFormation.catechesis?.totalLessons, 0),
       doctrinalTopic: text(rawFormation.catechesis?.doctrinalTopic || rawFormation.catechesis?.topic, ""),
@@ -372,6 +410,9 @@ function normalizeSetupPayload(payload = {}, identity) {
       householdId: identity.householdId,
       title: text(track.title, ""),
       sourceKind: text(track.sourceKind || track.source, "memory"),
+      planningMode: text(track.planningMode, "family"),
+      weeklyFrequency: weeklyFrequencyValue(track.weeklyFrequency || track.cadenceLabel || track.cadence, "daily"),
+      minutes: int(track.minutes, 0),
       progressPercent: int(track.progressPercent || track.progress, 0),
       status: text(track.status, "memorizing")
     })).filter((track) => track.title),
@@ -382,6 +423,9 @@ function normalizeSetupPayload(payload = {}, identity) {
       title: text(hymn.title, ""),
       tone: text(hymn.tone, ""),
       source: text(hymn.source, ""),
+      planningMode: text(hymn.planningMode, "family"),
+      weeklyFrequency: weeklyFrequencyValue(hymn.weeklyFrequency || hymn.cadenceLabel || hymn.cadence, "1x"),
+      minutes: int(hymn.minutes, 0),
       status: text(hymn.status, "planned")
     })).filter((hymn) => hymn.title),
     enrichmentBlocks: list(rawFormation.enrichmentBlocks).map((block, index) => ({
@@ -390,8 +434,10 @@ function normalizeSetupPayload(payload = {}, identity) {
       termId: normalizedTerm.id,
       blockType: text(block.blockType || block.type, "enrichment"),
       title: text(block.title, ""),
+      planningMode: text(block.planningMode, "family"),
+      weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
       minutesPlanned: int(block.minutesPlanned || block.minutes, 0),
-      cadenceLabel: text(block.cadenceLabel || block.cadence, "Weekly"),
+      cadenceLabel: text(block.weeklyFrequency || block.cadenceLabel || block.cadence, "Weekly"),
       color: text(block.color, "")
     })).filter((block) => block.title),
     feasts: list(rawFormation.feasts).map((feast, index) => ({
@@ -399,6 +445,8 @@ function normalizeSetupPayload(payload = {}, identity) {
       civilDate: text(feast.civilDate || feast.date, ""),
       title: text(feast.title, ""),
       fastingRule: text(feast.fastingRule || feast.fasting, ""),
+      planningMode: text(feast.planningMode, "family"),
+      minutes: int(feast.minutes, 0),
       note: text(feast.note, "")
     })).filter((feast) => feast.title)
   };
@@ -616,10 +664,9 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
         id: `week_household_book_${book.id}`,
         streamId: book.id,
         title: book.audienceLabel === "Morning Basket" ? book.title : `Read-Aloud: ${book.title}`,
-        detail: `${book.author || book.category}${book.endChapter ? ` • chapters ${book.startChapter || 1}-${book.endChapter}` : ""}`,
+        detail: `${book.author || book.category}${book.endChapter ? ` • chapters ${book.startChapter || 1}-${book.endChapter}` : ""}${book.weeklyFrequency ? ` • ${book.weeklyFrequency}` : ""}`,
         priority: 50 + index,
-        minutes: [0, 20, 20, 20, 20, 20, 0],
-        statuses: ["empty", "planned", "planned", "planned", "planned", "planned", "empty"]
+        ...weeklyPlanArrays(book.weeklyFrequency, book.minutes || 20)
       }))
     ],
     childRows: [
@@ -629,12 +676,11 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           id: `week_${subject.id}_${child.id}`,
           childId: child.id,
           title: subject.title,
-          detail: `${subject.resource || subject.cadenceLabel}${subject.endNumber ? ` (${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber})` : ""}`,
+          detail: `${subject.resource || subject.cadenceLabel}${subject.endNumber ? ` (${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber})` : ""}${subject.weeklyFrequency ? ` • ${subject.weeklyFrequency}` : ""}`,
           priority: index + 1,
           color: subject.color,
           graceModeApplied: setupSnapshot.preferences?.graceModeActive && subject.gracePriority !== "keep",
-          minutes: [0, subject.minutes, subject.minutes, subject.minutes, subject.minutes, subject.minutes, 0],
-          statuses: ["empty", "planned", "planned", "planned", "planned", "planned", "empty"]
+          ...weeklyPlanArrays(subject.weeklyFrequency, subject.minutes)
         }));
       }),
       ...childBooks.flatMap((book, index) => {
@@ -643,12 +689,11 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           id: `week_${book.id}_${child.id}`,
           childId: child.id,
           title: book.title,
-          detail: `${book.author || book.category}${book.endChapter ? ` (chapters ${book.startChapter || 1}-${book.endChapter})` : ""}`,
+          detail: `${book.author || book.category}${book.endChapter ? ` (chapters ${book.startChapter || 1}-${book.endChapter})` : ""}${book.weeklyFrequency ? ` • ${book.weeklyFrequency}` : ""}`,
           priority: index + 100,
           color: book.color,
           graceModeApplied: setupSnapshot.preferences?.graceModeActive,
-          minutes: [0, 20, 20, 20, 20, 20, 0],
-          statuses: ["empty", "planned", "planned", "planned", "planned", "planned", "empty"]
+          ...weeklyPlanArrays(book.weeklyFrequency, book.minutes || 20)
         }));
       })
     ]

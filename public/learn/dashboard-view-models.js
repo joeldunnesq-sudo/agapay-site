@@ -8,6 +8,18 @@ function text(value, fallback = "") {
   return String(value || fallback);
 }
 
+function weeklyFrequencyValue(value, fallback = "1x") {
+  const raw = String(value || "").trim().toLowerCase();
+  if (["daily", "4x", "3x", "2x", "1x", "as-needed"].includes(raw)) return raw;
+  if (raw.includes("daily") || raw.includes("every")) return "daily";
+  if (raw.includes("4")) return "4x";
+  if (raw.includes("3")) return "3x";
+  if (raw.includes("2")) return "2x";
+  if (raw.includes("as")) return "as-needed";
+  if (raw.includes("week")) return "1x";
+  return fallback;
+}
+
 function percent(value) {
   const number = Number(value || 0);
   return Math.max(0, Math.min(100, Number.isFinite(number) ? number : 0));
@@ -764,6 +776,9 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
     materialType: text(material.materialType || material.resourceType, "Catechesis"),
     source: text(material.source || material.author, ""),
     cadence: text(material.cadenceLabel || material.cadence, ""),
+    planningMode: text(material.planningMode, "family"),
+    weeklyFrequency: weeklyFrequencyValue(material.weeklyFrequency || material.cadenceLabel || material.cadence, "1x"),
+    minutes: text(material.minutes, ""),
     termId: text(material.termId || material.assignedTermId, currentTermId),
     color: text(material.color, ACCENTS[(index + 3) % ACCENTS.length])
   }));
@@ -777,11 +792,13 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
     .filter((material) => material.materialType !== "Catechesis")
     .map((material) => ({
       id: material.id,
-      blockType: material.materialType,
-      title: material.title,
-      cadenceLabel: material.cadence,
-      minutesPlanned: "",
-      color: material.color
+    blockType: material.materialType,
+    title: material.title,
+    cadenceLabel: material.cadence,
+    planningMode: material.planningMode || "family",
+    weeklyFrequency: weeklyFrequencyValue(material.weeklyFrequency || material.cadence, "1x"),
+    minutesPlanned: "",
+    color: material.color
     }));
   const setupV2Steps = [
     {
@@ -884,6 +901,8 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       id: text(subject.id, ""),
       title: text(subject.title, "Subject"),
       subjectType: text(subject.subjectType || subject.type, ""),
+      planningMode: text(subject.planningMode, subject.childId ? "forms" : "forms"),
+      weeklyFrequency: weeklyFrequencyValue(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "daily"),
       formLabel: text(subject.formLabel, ""),
       resource: text(subject.resource || subject.title, ""),
       cadence: text(subject.cadenceLabel || subject.cadence, ""),
@@ -905,6 +924,9 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       title: text(book.title, "Book"),
       author: text(book.author, ""),
       category: text(book.category, "Living Books"),
+      planningMode: text(book.planningMode, book.formLabel ? "forms" : "family"),
+      weeklyFrequency: weeklyFrequencyValue(book.weeklyFrequency || book.cadenceLabel || book.cadence, "daily"),
+      minutes: text(book.minutes, "20"),
       formLabel: text(book.formLabel, ""),
       audienceLabel: text(book.audienceLabel, "Household"),
       startChapter: text(book.startChapter, ""),
@@ -921,22 +943,27 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         title: text(rhythm.title, ["Morning Prayers", "Scripture Readings", "Saint of the Day", "Troparion Practice"][index] || "Church Rhythm"),
         note: text(rhythm.note, ""),
         cadenceLabel: text(rhythm.cadenceLabel || rhythm.cadence, "Daily"),
+        weeklyFrequency: weeklyFrequencyValue(rhythm.weeklyFrequency || rhythm.cadenceLabel || rhythm.cadence, "daily"),
         minutes: text(rhythm.minutes || rhythm.minutesPlanned, "")
       })).length ? simpleList(formation.churchRhythms, (rhythm, index) => ({
         id: text(rhythm.id, ""),
         title: text(rhythm.title, ["Morning Prayers", "Scripture Readings", "Saint of the Day", "Troparion Practice"][index] || "Church Rhythm"),
         note: text(rhythm.note, ""),
         cadenceLabel: text(rhythm.cadenceLabel || rhythm.cadence, "Daily"),
+        weeklyFrequency: weeklyFrequencyValue(rhythm.weeklyFrequency || rhythm.cadenceLabel || rhythm.cadence, "daily"),
         minutes: text(rhythm.minutes || rhythm.minutesPlanned, "")
       })) : [
-        { id: "rhythm_morning_prayers", title: "Morning Prayers", note: "Family prayer rule", cadenceLabel: "Daily", minutes: "10" },
-        { id: "rhythm_scripture", title: "Scripture Readings", note: "Epistle and Gospel", cadenceLabel: "Daily", minutes: "10" },
-        { id: "rhythm_saint", title: "Saint of the Day", note: "Read and discuss", cadenceLabel: "Daily", minutes: "10" },
-        { id: "rhythm_troparion", title: "Troparion Practice", note: "Practice hymn of the day", cadenceLabel: "Daily", minutes: "5" }
+        { id: "rhythm_morning_prayers", title: "Morning Prayers", note: "Family prayer rule", cadenceLabel: "Daily", weeklyFrequency: "daily", minutes: "10" },
+        { id: "rhythm_scripture", title: "Scripture Readings", note: "Epistle and Gospel", cadenceLabel: "Daily", weeklyFrequency: "daily", minutes: "10" },
+        { id: "rhythm_saint", title: "Saint of the Day", note: "Read and discuss", cadenceLabel: "Daily", weeklyFrequency: "daily", minutes: "10" },
+        { id: "rhythm_troparion", title: "Troparion Practice", note: "Practice hymn of the day", cadenceLabel: "Daily", weeklyFrequency: "daily", minutes: "5" }
       ],
       catechesis: {
         title: text(formation.catechesis?.title, defaultFormationMaterials.find((material) => material.materialType === "Catechesis")?.title || "Catechesis"),
         currentLesson: text(formation.catechesis?.currentLesson, ""),
+        planningMode: text(formation.catechesis?.planningMode, "family"),
+        weeklyFrequency: weeklyFrequencyValue(formation.catechesis?.weeklyFrequency || formation.catechesis?.cadenceLabel || formation.catechesis?.cadence, "2x"),
+        minutes: text(formation.catechesis?.minutes, ""),
         lessonNumber: text(formation.catechesis?.lessonNumber, ""),
         totalLessons: text(formation.catechesis?.totalLessons, ""),
         doctrinalTopic: text(formation.catechesis?.doctrinalTopic || formation.catechesis?.topic, ""),
@@ -946,6 +973,9 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         id: text(track.id, ""),
         title: text(track.title, "Memory Work"),
         sourceKind: text(track.sourceKind || track.source, ""),
+        planningMode: text(track.planningMode, "family"),
+        weeklyFrequency: weeklyFrequencyValue(track.weeklyFrequency || track.cadenceLabel || track.cadence, "daily"),
+        minutes: text(track.minutes, ""),
         status: text(track.status, "memorizing"),
         progressPercent: text(track.progressPercent || track.progress, "")
       })),
@@ -954,6 +984,9 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         title: text(hymn.title, "Hymn"),
         tone: text(hymn.tone, ""),
         source: text(hymn.source, ""),
+        planningMode: text(hymn.planningMode, "family"),
+        weeklyFrequency: weeklyFrequencyValue(hymn.weeklyFrequency || hymn.cadenceLabel || hymn.cadence, "1x"),
+        minutes: text(hymn.minutes, ""),
         status: text(hymn.status, "planned")
       })),
       enrichmentBlocks: simpleList(formation.enrichmentBlocks, (block) => ({
@@ -961,6 +994,8 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         blockType: text(block.blockType || block.type, "Art Study"),
         title: text(block.title, "Enrichment"),
         cadenceLabel: text(block.cadenceLabel || block.cadence, ""),
+        planningMode: text(block.planningMode, "family"),
+        weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
         minutesPlanned: text(block.minutesPlanned || block.minutes, ""),
         color: text(block.color, ACCENTS[2])
       })).length ? simpleList(formation.enrichmentBlocks, (block) => ({
@@ -968,6 +1003,8 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         blockType: text(block.blockType || block.type, "Art Study"),
         title: text(block.title, "Enrichment"),
         cadenceLabel: text(block.cadenceLabel || block.cadence, ""),
+        planningMode: text(block.planningMode, "family"),
+        weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
         minutesPlanned: text(block.minutesPlanned || block.minutes, ""),
         color: text(block.color, ACCENTS[2])
       })) : derivedEnrichment,
@@ -976,6 +1013,8 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         civilDate: text(feast.civilDate || feast.date, ""),
         title: text(feast.title, "Feast"),
         fastingRule: text(feast.fastingRule || feast.fasting, ""),
+        planningMode: text(feast.planningMode, "family"),
+        minutes: text(feast.minutes, ""),
         note: text(feast.note, "")
       }))
     },
