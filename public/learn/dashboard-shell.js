@@ -515,13 +515,13 @@ function renderDashboard(vm) {
               <div><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">GOSPEL READING</span><span style="font-size:16px;">${html(today.gospelRef)}</span></div>
             </div>
           </div>
+          ${saintCard}
         </div>
         <div style="flex:1;min-width:220px;border-left:1px solid var(--line);padding-left:22px;">
           <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:600;">${html(today.troparionLabel)}</div>
           <p style="margin:6px 0 16px;font-size:15.5px;line-height:1.5;color:#33405a;">${html(today.troparionText)}</p>
           <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:600;">${html(today.kontakionLabel)}</div>
           <p style="margin:6px 0 0;font-size:15.5px;line-height:1.5;color:#33405a;">${html(today.kontakionText)}</p>
-          ${saintCard}
         </div>
         ${renderTodayLearnContext(vm)}
       </div>
@@ -1179,9 +1179,13 @@ async function openSaintOfDay(button) {
     const unavailable = payload.sourceConnected === false
       ? payload.message || "Lives of the Saints are unavailable right now. Please try again later."
       : "";
+    const firstSaintTitle = payload.saints?.[0]?.name
+      || payload.saints?.[0]?.title
+      || button.querySelector("strong")?.textContent
+      || "Saint of the Day";
     showLearnDialog(
-      "Saint of the Day",
-      payload.date ? `Commemorations for ${payload.date}` : "Today's commemorations",
+      firstSaintTitle,
+      payload.date ? `Saint of the Day · ${payload.date}` : "Today's commemoration",
       [{ label: "Attribution", value: "Lives of the Saints courtesy of Orthocal.info" }],
       {
         width: "760px",

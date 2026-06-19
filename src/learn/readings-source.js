@@ -73,31 +73,53 @@ export function orthocalSaintStories(day = {}) {
   // Orthocal's 2026-06-19 response confirms `saints` is a string[] of names,
   // while full lives are in `stories[]` as `{ title, story }` HTML from the source feed.
   const stories = Array.isArray(day.stories) ? day.stories : [];
-  const storyKeys = new Set(stories.map((entry) => saintNameKey(entry?.title || "")).filter(Boolean));
-  const storyRows = stories.map((entry) => ({
-    name: String(entry?.title || "").trim(),
-    title: String(entry?.title || "").trim(),
-    storyText: stripHtml(entry?.story || ""),
-    storyHtml: String(entry?.story || ""),
-    reposeCentury: reposeCenturyLabel(entry?.title || ""),
-    feastRank: day.feast_level_description || "",
-    sourceLabel: "Orthocal.info"
-  })).filter((entry) => entry.name || entry.storyText);
+  const storyByKey = new Map();
+  for (const entry of stories) {
+    const key = saintNameKey(entry?.title || "");
+    if (key && !storyByKey.has(key)) storyByKey.set(key, entry);
+  }
 
-  const missingNames = saintNames
-    .filter((name) => !storyKeys.has(saintNameKey(name)))
-    .map((name) => ({
-      name: String(name || "").trim(),
-      title: String(name || "").trim(),
-      storyText: "",
-      storyHtml: "",
-      reposeCentury: reposeCenturyLabel(name),
-      feastRank: day.feast_level_description || "",
-      sourceLabel: "Orthocal.info"
-    }))
-    .filter((entry) => entry.name);
+  const usedStoryKeys = new Set();
+  const fromSaints = saintNames
+    .map((name) => {
+      const key = saintNameKey(name);
+      const story = storyByKey.get(key);
+      if (story && key) usedStoryKeys.add(key);
+      const storyTitle = String(story?.title || "").trim();
+      const displayName = String(name || storyTitle || "").trim();
+      const title = storyTitle || displayName;
+      return {
+        name: displayName,
+        title,
+        storyText: stripHtml(story?.story || ""),
+        storyHtml: String(story?.story || ""),
+        reposeCentury: reposeCenturyLabel(title || displayName),
+        feastRank: day.feast_level_description || "",
+        sourceLabel: "Orthocal.info"
+      };
+    })
+    .filter((entry) => entry.name || entry.storyText);
 
-  return [...storyRows, ...missingNames];
+  const extraStories = stories
+    .filter((entry) => {
+      const key = saintNameKey(entry?.title || "");
+      return key && !usedStoryKeys.has(key);
+    })
+    .map((entry) => {
+      const title = String(entry?.title || "").trim();
+      return {
+        name: title,
+        title,
+        storyText: stripHtml(entry?.story || ""),
+        storyHtml: String(entry?.story || ""),
+        reposeCentury: reposeCenturyLabel(title),
+        feastRank: day.feast_level_description || "",
+        sourceLabel: "Orthocal.info"
+      };
+    })
+    .filter((entry) => entry.name || entry.storyText);
+
+  return [...fromSaints, ...extraStories];
 }
 
 export async function fetchOrthocalDay({ calendarType = "julian", civilDate, fetcher = fetch } = {}) {
