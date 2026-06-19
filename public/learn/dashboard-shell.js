@@ -275,6 +275,26 @@ function saintStoryDialogHtml(saints = [], unavailableMessage = "") {
   }).join("");
 }
 
+function saintMatchKey(value = "") {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\([^)]*\b[1-2]?[0-9]{2,3}\b[^)]*\)/g, "")
+    .replace(/\b(st|saint|ven|venerable|holy|apostle|holy apostle|our holy)\.?\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function orderSaintsForCard(saints = [], cardTitle = "") {
+  const titleKey = saintMatchKey(cardTitle);
+  if (!titleKey || !Array.isArray(saints) || saints.length < 2) return saints;
+  const matchedIndex = saints.findIndex((saint) => {
+    const nameKey = saintMatchKey(saint?.name || saint?.title || "");
+    return nameKey && (nameKey === titleKey || nameKey.includes(titleKey) || titleKey.includes(nameKey));
+  });
+  if (matchedIndex <= 0) return saints;
+  return [saints[matchedIndex], ...saints.slice(0, matchedIndex), ...saints.slice(matchedIndex + 1)];
+}
+
 function sidebar(vm) {
   const active = vm.page.id;
   return `
@@ -510,7 +530,7 @@ function renderDashboard(vm) {
               <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">✥</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">TONE OF WEEK</span><span style="font-size:16px;">${html(today.toneLabel)}</span></span></div>
             </div>
             <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">♙</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">FASTING RULE</span><span style="font-size:16px;display:block;">${html(today.fastingRule)}</span><span style="color:var(--muted);font-size:13px;font-style:italic;">${html(today.fastingNote)}</span></span></div>
-            <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(130px,1fr));gap:14px;flex:1 1 300px;min-width:min(100%,300px);">
               <div><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">EPISTLE READING</span><span style="font-size:16px;">${html(today.epistleRef)}</span></div>
               <div><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">GOSPEL READING</span><span style="font-size:16px;">${html(today.gospelRef)}</span></div>
             </div>
@@ -1179,9 +1199,11 @@ async function openSaintOfDay(button) {
     const unavailable = payload.sourceConnected === false
       ? payload.message || "Lives of the Saints are unavailable right now. Please try again later."
       : "";
-    const firstSaintTitle = payload.saints?.[0]?.name
-      || payload.saints?.[0]?.title
-      || button.querySelector("strong")?.textContent
+    const cardSaintTitle = button.querySelector("strong")?.textContent || "";
+    const orderedSaints = orderSaintsForCard(payload.saints || [], cardSaintTitle);
+    const firstSaintTitle = orderedSaints?.[0]?.name
+      || orderedSaints?.[0]?.title
+      || cardSaintTitle
       || "Saint of the Day";
     showLearnDialog(
       firstSaintTitle,
@@ -1189,7 +1211,7 @@ async function openSaintOfDay(button) {
       [{ label: "Attribution", value: "Lives of the Saints courtesy of Orthocal.info" }],
       {
         width: "760px",
-        contentHtml: saintStoryDialogHtml(payload.saints || [], unavailable)
+        contentHtml: saintStoryDialogHtml(orderedSaints, unavailable)
       }
     );
   } catch (error) {
