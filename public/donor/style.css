@@ -4048,6 +4048,34 @@ body.donor-mobile-page {
   font-weight: 800;
 }
 
+.learn-tier-limited {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.learn-upgrade-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.45rem;
+  border: 1px solid rgba(18, 62, 112, 0.24);
+  border-radius: 999px;
+  padding: 0.25rem 0.58rem;
+  background: #123e70;
+  color: #fffaf0;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.learn-upgrade-mini:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
 .coming-pill {
   display: inline-flex;
   width: fit-content;

@@ -75,6 +75,11 @@ function setText(id, value) {
   if (el) el.textContent = value;
 }
 
+function setHtml(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = value;
+}
+
 function isDonorUnauthorized(err) {
   return err?.status === 401 || String(err?.message || "").toLowerCase() === "unauthorized";
 }
@@ -223,7 +228,9 @@ function showGuestDonorDashboard() {
   setText("desktopGreeting", "Welcome, Faithful Member");
   setText("myAgapayGreetingName", "Faithful Member");
   setText("myAgapayDefaultParish", "Choose a church in Settings");
-  setText("myAgapayLearnFeast", "Open calendar");
+  setText("myAgapayLearnPlanner", "Ready");
+  setText("myAgapayLearnTerm", "Set up term");
+  setHtml("myAgapayLearnTier", "Limited Free");
   setText("myAgapayRecurringCount", "0 Active");
   setText("myAgapayRecentAmount", "$0");
   setText("myAgapayGivingMonth", "$0");
@@ -1085,6 +1092,90 @@ function cacheDonorDashboardPayload(data) {
   }
 }
 
+function learnTermSummary(dashboard) {
+  const term = dashboard?.termProgress || {};
+  const percent = Number(term.percent || 0);
+  const currentWeek = Number(term.currentWeek || 0);
+  const totalWeeks = Number(term.totalWeeks || 0);
+  if (currentWeek > 0 && totalWeeks > 0) {
+    return `${Math.max(0, Math.min(100, Math.round(percent)))}% complete`;
+  }
+  return "Set up term";
+}
+
+function learnPlannerSummary(dashboard) {
+  const term = dashboard?.termProgress || {};
+  if (Number(term.currentWeek || 0) > 0 && Number(term.totalWeeks || 0) > 0) {
+    return term.label || "Current term active";
+  }
+  return "Ready";
+}
+
+function renderLearnTierStatus(billing) {
+  const familyAccess = Boolean(billing?.fullAccess || billing?.plan === "family");
+  const tier = document.getElementById("myAgapayLearnTier");
+  if (!tier) return;
+  tier.classList.toggle("status-good", familyAccess);
+  if (familyAccess) {
+    tier.textContent = "Ready";
+    return;
+  }
+  tier.innerHTML = `<span class="learn-tier-limited">Limited Free</span><button type="button" class="learn-upgrade-mini" data-myagapay-learn-upgrade>Upgrade now</button>`;
+}
+
+async function renderMyAgapayLearnCard() {
+  const session = donorSession();
+  if (!session.email || !session.token) return;
+  setText("myAgapayLearnPlanner", "Loading...");
+  setText("myAgapayLearnTerm", "Loading...");
+  setHtml("myAgapayLearnTier", "Checking...");
+
+  const [dashboardResult, billingResult] = await Promise.allSettled([
+    donorApi("/api/learn/dashboard"),
+    donorApi("/api/learn/billing/status")
+  ]);
+
+  if (dashboardResult.status === "fulfilled") {
+    const dashboard = dashboardResult.value?.dashboard || {};
+    setText("myAgapayLearnPlanner", learnPlannerSummary(dashboard));
+    setText("myAgapayLearnTerm", learnTermSummary(dashboard));
+  } else {
+    setText("myAgapayLearnPlanner", "Ready");
+    setText("myAgapayLearnTerm", "Set up term");
+  }
+
+  if (billingResult.status === "fulfilled") {
+    renderLearnTierStatus(billingResult.value);
+  } else {
+    renderLearnTierStatus({ plan: "free", fullAccess: false });
+  }
+}
+
+async function openMyAgapayLearnCheckout(button) {
+  const original = button?.textContent || "Upgrade now";
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Opening...";
+  }
+  try {
+    const data = await donorApi("/api/learn/billing/checkout", {
+      method: "POST",
+      body: JSON.stringify({ plan: "family" })
+    });
+    if (data.url) {
+      window.location.href = data.url;
+      return;
+    }
+    throw new Error("Stripe checkout did not return a checkout link.");
+  } catch (err) {
+    setDonorStatus(err.message || "Unable to open Learn checkout.", "error");
+    if (button) {
+      button.disabled = false;
+      button.textContent = original;
+    }
+  }
+}
+
 function renderMyAgapayDashboard(data) {
   const donor = data?.donor || {};
   const summary = data?.summary || {};
@@ -1093,11 +1184,10 @@ function renderMyAgapayDashboard(data) {
   const monthCents = summary.parishNetMonthCents ?? summary.monthCents;
   const ytdCents = summary.parishNetYtdCents ?? summary.ytdCents;
   const latestOffering = recentOfferings[0] || null;
-  const feast = parish ? nextFeastForCalendar(parish.calendar) : null;
 
   setText("myAgapayGreetingName", donorDisplayName(donor));
   setText("myAgapayDefaultParish", parish?.name || "Choose a church in Settings");
-  setText("myAgapayLearnFeast", feast?.name || "Open calendar");
+  renderMyAgapayLearnCard();
   setText("myAgapayRecurringCount", `${summary.recurringCount || 0} Active`);
   setText("myAgapayRecentAmount", latestOffering ? money(latestOffering.amountCents) : money(ytdCents));
   setText("myAgapayGivingMonth", money(monthCents));
@@ -1781,6 +1871,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.querySelectorAll('.sidebar-footer a[href="/"], .sidebar-footer a[href="/give"], .sidebar-footer a[href="/giving"]').forEach((link) => {
     link.setAttribute("hx-boost", "false");
+  });
+  document.addEventListener("click", (event) => {
+    const upgradeButton = event.target.closest("[data-myagapay-learn-upgrade]");
+    if (!upgradeButton) return;
+    event.preventDefault();
+    openMyAgapayLearnCheckout(upgradeButton);
   });
   if (saved.email) {
     setDonorProfile(saved);
