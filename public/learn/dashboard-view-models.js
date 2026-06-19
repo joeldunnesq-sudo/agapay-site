@@ -787,7 +787,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
     {
       title: "Household",
       status: household.name && schoolYear.label ? "complete" : "active",
-      summary: "Name, parish, method, school year, terms, calendar, and pace."
+      summary: "Name, parish, method, school year, terms, and calendar."
     },
     {
       title: "Children & Forms",
