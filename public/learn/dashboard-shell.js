@@ -298,6 +298,13 @@ function orderSaintsForCard(saints = [], cardTitle = "") {
   return [saints[matchedIndex], ...saints.slice(0, matchedIndex), ...saints.slice(matchedIndex + 1)];
 }
 
+function saintCardTitle(today = {}) {
+  const title = String(today.title || "").trim();
+  const genericTitle = /^(today in the church|daily orthodox rhythm|sunday orthodox rhythm)$/i.test(title);
+  if (title && !genericTitle) return title;
+  return today.saintNames?.[0] || "Lives of the Saints";
+}
+
 function sidebar(vm) {
   const active = vm.page.id;
   return `
@@ -509,15 +516,23 @@ function renderTodayLearnContext(vm) {
 function renderDashboard(vm) {
   const today = vm.todayInChurch;
   const todayArtworkUrl = today.iconUrl || "/images/learn/today-in-the-church.jpg";
+  const displayedSaintTitle = saintCardTitle(today);
   const churchIconPanel = `<div class="learn-today-art-panel"><img src="${html(todayArtworkUrl)}" alt="Illustrated Orthodox homeschool planner open to today" loading="lazy"></div>`;
-  const saintPreview = today.saintNames?.length
+  const saintPreview = displayedSaintTitle && displayedSaintTitle !== "Lives of the Saints"
+    ? `${today.saintNames?.length > 1 ? `${today.saintNames.length} commemorations` : "Open the life"} for today.`
+    : today.saintNames?.length
     ? today.saintNames.slice(0, 2).join("; ") + (today.saintNames.length > 2 ? ` + ${today.saintNames.length - 2} more` : "")
     : "Open the lives commemorated today.";
   const saintIcon = today.saintStories?.find((saint) => saint.iconUrl)?.iconUrl || "";
-  const saintCentury = today.saintStories?.find((saint) => saint.reposeCentury)?.reposeCentury || "";
+  const displayedSaintKey = saintMatchKey(displayedSaintTitle);
+  const displayedSaintStory = today.saintStories?.find((saint) => {
+    const key = saintMatchKey(saint?.name || saint?.title || "");
+    return key && displayedSaintKey && (key === displayedSaintKey || key.includes(displayedSaintKey) || displayedSaintKey.includes(key));
+  });
+  const saintCentury = displayedSaintStory?.reposeCentury || today.saintStories?.find((saint) => saint.reposeCentury)?.reposeCentury || "";
   const saintCard = `<button type="button" data-saint-of-day data-date="${html(today.civilDate)}" data-calendar="${html(today.calendarType)}" style="margin-top:14px;width:100%;text-align:left;border:1px solid rgba(181,148,47,.34);background:linear-gradient(135deg,#fffaf0,#f7edd6);border-radius:13px;padding:13px;display:flex;gap:12px;align-items:center;cursor:pointer;font-family:inherit;color:var(--ink);box-shadow:0 1px 2px rgba(20,40,70,.04);">
     ${saintIcon ? `<img src="${html(saintIcon)}" alt="" style="width:52px;height:52px;border-radius:12px;object-fit:cover;border:1px solid var(--goldsoft);flex:none;">` : `<span style="width:48px;height:48px;border-radius:50%;background:var(--navy);color:#f3ead4;display:grid;place-items:center;flex:none;font-size:23px;">✥</span>`}
-    <span style="min-width:0;line-height:1.25;"><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">Saint of the Day</span><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(today.saintNames?.[0] || "Lives of the Saints")}</strong>${saintCentury ? `<span style="display:block;color:var(--gold);font-size:12px;font-weight:800;margin:2px 0 1px;">${html(saintCentury)}</span>` : ""}<small style="display:block;color:var(--muted);line-height:1.35;">${html(saintPreview)}</small></span>
+    <span style="min-width:0;line-height:1.25;"><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">Saint of the Day</span><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(displayedSaintTitle)}</strong>${saintCentury ? `<span style="display:block;color:var(--gold);font-size:12px;font-weight:800;margin:2px 0 1px;">${html(saintCentury)}</span>` : ""}<small style="display:block;color:var(--muted);line-height:1.35;">${html(saintPreview)}</small></span>
     <span style="margin-left:auto;color:var(--gold);font-size:20px;flex:none;">→</span>
   </button>`;
   const body = `
