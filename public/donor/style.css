@@ -1648,6 +1648,38 @@ body.donor-home {
   height: 38px;
 }
 
+.giving-tool-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+}
+
+.giving-tool-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.85;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.giving-tool-icon svg path,
+.giving-tool-icon svg rect,
+.giving-tool-icon svg circle,
+.giving-tool-icon svg line,
+.giving-tool-icon svg polyline,
+.giving-tool-icon svg polygon {
+  fill: none;
+  stroke: currentColor;
+}
+
+.giving-tool-icon svg .icon-dot {
+  fill: currentColor;
+  stroke: none;
+}
+
 .mobile-giving-tool strong {
   font-family: var(--serif);
   font-size: 19px;

@@ -196,7 +196,7 @@
           </div>
           <div class="learn-liturgy-grid">
             <div class="learn-icon-panel learn-liturgy-icon-panel">
-              <img src="/pantocrator.png" alt="Christ Pantocrator icon" />
+              <img src="/images/learn/today-in-the-church.jpg" alt="Illustrated Orthodox homeschool planner open to today" loading="lazy" />
             </div>
             <div class="learn-liturgy-copy">
               <div class="learn-kicker">${day.feastRank}</div>
@@ -1852,8 +1852,35 @@
         <label class="learn-field"><span>Status</span><input type="text" data-setup-coop-readaloud="status" value="${book.status || ""}" placeholder="Planned, In Progress" /></label>
       </article>
     `).join("");
+    const hasText = (value) => Boolean(String(value || "").trim());
+    const setupProgress = [
+      {
+        target: "learnSetupHousehold",
+        title: "Household",
+        body: "Children, family method, parish, and school year.",
+        complete: hasText(setup.householdName || data.household?.name) && hasText(setup.parentNames) && children.length > 0
+      },
+      {
+        target: "learnSetupCalendar",
+        title: "Church Calendar",
+        body: "Liturgical calendar, readings, fasting, and records.",
+        complete: hasText(setup.calendarType || "julian") && hasText(setup.evaluationModel) && hasText(setup.schoolYearLabel || data.schoolYear?.label) && hasText(setup.schoolYearStart) && hasText(setup.schoolYearEnd)
+      },
+      {
+        target: "learnSetupMaterials",
+        title: "Living Materials",
+        body: "Books, subjects, formation texts, riches, and cycle notes.",
+        complete: subjects.length > 0 && books.length > 0 && formationMaterials.length > 0
+      },
+      {
+        target: "learnSetupSync",
+        title: "Shared Rhythm",
+        body: "Grace Mode, Google Calendar, co-op, and print-ready plans.",
+        complete: hasText(setup.graceModeDefault || "light") && hasText(setup.googleCalendar?.targetCalendar || "AGAPAY Learn")
+      }
+    ];
     return `
-      ${renderSimpleTopbar("Setup", "Configure AGAPAY Learn for your household before the school rhythm begins.", `<div class="learn-chip">Step ${data.onboarding.household.currentStep} of ${data.onboarding.household.totalSteps}</div>`)}
+      ${renderSimpleTopbar("Setup", "Configure AGAPAY Learn for your household before the school rhythm begins.", `<div class="learn-chip">Step ${data.household?.currentStep || 1} of ${data.household?.totalSteps || 4}</div>`)}
       <div class="learn-shell">
         <form class="learn-setup-form" id="learnSetupForm">
           <section class="learn-card learn-method-card"><div class="learn-card-inner">
@@ -1862,10 +1889,13 @@
               <span class="learn-chip-soft">Prepare · choose · schedule · adjust</span>
             </div>
             <div class="learn-method-steps">
-              <a href="#learnSetupHousehold"><b>Household</b><span>Children, family method, parish, and school year.</span></a>
-              <a href="#learnSetupCalendar"><b>Church Calendar</b><span>Liturgical calendar, readings, fasting, and records.</span></a>
-              <a href="#learnSetupMaterials"><b>Living Materials</b><span>Books, subjects, formation texts, riches, and cycle notes.</span></a>
-              <a href="#learnSetupSync"><b>Shared Rhythm</b><span>Grace Mode, Google Calendar, co-op, and print-ready plans.</span></a>
+              ${setupProgress.map((step) => `
+                <a class="${step.complete ? "is-complete" : "is-needed"}" href="#${step.target}" data-learn-action="setup-progress" data-setup-target="${step.target}">
+                  <small>${step.complete ? "Complete" : "Needs info"}</small>
+                  <b>${step.title}</b>
+                  <span>${step.body}</span>
+                </a>
+              `).join("")}
             </div>
           </div></section>
           <section class="learn-card" id="learnSetupHousehold"><div class="learn-card-inner">
@@ -1886,7 +1916,7 @@
             <div class="learn-setup-grid">
               <label class="learn-field"><span>Church Calendar</span><select name="calendarType"><option value="julian" ${setup.calendarType !== "revised-julian" ? "selected" : ""}>Julian / Old Calendar</option><option value="revised-julian" ${setup.calendarType === "revised-julian" ? "selected" : ""}>Revised Julian / Gregorian</option></select></label>
               <label class="learn-field"><span>Evaluation Model</span><select name="evaluationModel">${data.evaluationModels.map((model) => `<option value="${model}" ${setup.evaluationModel === model ? "selected" : ""}>${model}</option>`).join("")}</select></label>
-              <label class="learn-field"><span>School Year Label</span><input type="text" name="schoolYearLabel" value="${setup.schoolYearLabel || data.schoolYear.label || ""}" /></label>
+              <label class="learn-field"><span>School Year Label</span><input type="text" name="schoolYearLabel" value="${setup.schoolYearLabel || data.schoolYear?.label || ""}" /></label>
               <label class="learn-field"><span>First School Day</span><input type="date" name="schoolYearStart" value="${setup.schoolYearStart || ""}" /></label>
               <label class="learn-field"><span>Last School Day</span><input type="date" name="schoolYearEnd" value="${setup.schoolYearEnd || ""}" /></label>
             </div>
@@ -2178,6 +2208,14 @@
         if (action === "dialog-close") return closeDialog();
         if (action === "retry") return mountPage();
         if (action === "learn-upgrade") return startLearnCheckout();
+        if (action === "setup-progress") {
+          const target = document.getElementById(this.dataset.setupTarget || "");
+          if (!target) return;
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+          target.classList.add("learn-setup-focus");
+          window.setTimeout(() => target.classList.remove("learn-setup-focus"), 1500);
+          return;
+        }
         if (action === "community-save") {
           const title = document.querySelector('[data-community-field="title"]')?.value?.trim() || "";
           const url = document.querySelector('[data-community-field="url"]')?.value?.trim() || "";
