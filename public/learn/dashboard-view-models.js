@@ -750,9 +750,8 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
     endDate: text(entry.endDate, ""),
     paceMode: text(entry.paceMode, preferences.paceMode || term.paceMode || "steady")
   }));
-  const currentTermId = text(term.id || schoolYear.currentTermId || setupTerms[0]?.id, "term_1");
+  const currentTermId = text(schoolYear.currentTermId || term.id || setupTerms[0]?.id, "term_1");
   const householdMethod = text(household.primaryMethod, "Charlotte Mason");
-  const historyCycle = setup.historyCycle || snapshot.historyCycle || {};
   const childrenSource = safeArray(setup.children).length ? setup.children : snapshot.children;
   const streamsSource = safeArray(setup.starterStreams).length ? setup.starterStreams : safeArray(setup.householdStreams).length ? setup.householdStreams : snapshot.streams;
   const subjectsSource = safeArray(snapshot.subjects).length ? snapshot.subjects : setup.subjects;
@@ -796,11 +795,6 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       summary: "Assign each child to the Form used by Planner and Print."
     },
     {
-      title: "Cycles",
-      status: historyCycle.cycleYear || historyCycle.framework ? "complete" : "needed",
-      summary: "Choose the history and enrichment spine for the year."
-    },
-    {
       title: "Church Rhythm",
       status: safeArray(formation.churchRhythms).length ? "complete" : "needed",
       summary: "Prayer, readings, saints, feasts, hymnody, and fasting rhythm."
@@ -808,7 +802,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
     {
       title: "Catechesis & Enrichment",
       status: formation.catechesis?.title || safeArray(formation.enrichmentBlocks).length || defaultFormationMaterials.length ? "complete" : "needed",
-      summary: "Cycle-based Scripture, doctrine, memory work, icons, art, poetry, music, and nature."
+      summary: "Scripture, doctrine, memory work, icons, art, poetry, music, and nature."
     },
     {
       title: "Literature",
@@ -871,13 +865,6 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       graceModeActive: Boolean(preferences.graceModeActive),
       paceMode: text(preferences.paceMode || term.paceMode, "steady"),
       printPack: text(preferences.printPack, "")
-    },
-    historyCycle: {
-      framework: text(historyCycle.framework, householdMethod === "Orthodox Classical" ? "orthodox-classical" : householdMethod === "Eclectic" ? "custom" : "ambleside-inspired"),
-      rotation: text(historyCycle.rotation, "first"),
-      cycleYear: text(historyCycle.cycleYear, "year_1"),
-      currentFocus: text(historyCycle.currentFocus, ""),
-      sourceNote: text(historyCycle.sourceNote, "")
     },
     streams: simpleList(streamsSource, (stream) => ({
       id: text(stream.id, ""),

@@ -217,7 +217,7 @@ function normalizeSetupPayload(payload = {}, identity) {
   const term = payload.term || {};
   const preferences = payload.preferences || {};
   const primaryMethod = normalizeHomeschoolMethod(household.primaryMethod || seed.household.primaryMethod);
-  const historyCycle = normalizeHistoryCycle(payload.historyCycle || {}, primaryMethod);
+  const historyCycle = payload.historyCycle ? normalizeHistoryCycle(payload.historyCycle, primaryMethod) : null;
   const normalizedHousehold = {
     id: identity.householdId,
     slug: slug(household.name || identity.householdId, identity.householdId),
@@ -264,7 +264,7 @@ function normalizeSetupPayload(payload = {}, identity) {
       paceMode: text(preferences.paceMode || entry.paceMode, seed.term.paceMode || "steady")
     }))
     .filter((entry) => entry.label);
-  const requestedCurrentTermId = text(term.id || schoolYear.currentTermId || payload.currentTermId, "");
+  const requestedCurrentTermId = text(schoolYear.currentTermId || payload.currentTermId || term.id, "");
   const currentTermFromList = normalizedTerms.find((entry) => entry.id === requestedCurrentTermId) || normalizedTerms[0];
   const normalizedSchoolYear = {
     ...seed.schoolYear,
