@@ -8,7 +8,7 @@ import {
   toPrintCenterViewModel,
   toReportsViewModel,
   toSetupViewModel
-} from "./claude-view-models.js";
+} from "./dashboard-view-models.js";
 
 const pageKey = document.body.dataset.learnPage || "dashboard";
 const root = document.getElementById("learnRoot");
@@ -233,10 +233,8 @@ function learnAccountEmail() {
 
 function learnRequestHeaders(extra = {}) {
   const headers = { ...extra };
-  const email = learnAccountEmail();
-  const plan = localStorage.getItem("agapay.learn.plan") || "";
-  if (email) headers["X-AGAPAY-Learn-Email"] = email;
-  if (plan) headers["X-AGAPAY-Learn-Plan"] = plan;
+  const token = localStorage.getItem("agapayDonorToken") || "";
+  if (token) headers.Authorization = `Bearer ${token}`;
   return headers;
 }
 
@@ -496,9 +494,8 @@ function renderTodayLearnContext(vm) {
 
 function renderDashboard(vm) {
   const today = vm.todayInChurch;
-  const churchIconPanel = today.iconUrl
-    ? `<div style="flex:none;width:108px;height:146px;border:1px solid var(--line);border-radius:10px;background:#fffaf0;overflow:hidden;display:flex;align-items:center;justify-content:center;"><img src="${html(today.iconUrl)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;"></div>`
-    : `<div style="flex:none;width:108px;height:146px;border:1px solid var(--line);border-radius:10px;background:radial-gradient(circle at 50% 30%,#fff7df 0 24%,#f0dcae 25% 26%,transparent 27%),linear-gradient(180deg,#f8f0dd,#efe0ba);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:46px;position:relative;overflow:hidden;"><span style="position:absolute;inset:9px;border:1px solid rgba(181,148,47,.36);border-radius:7px;"></span><svg viewBox="0 0 64 84" aria-hidden="true" style="width:78px;height:104px;color:var(--gold);"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 6v18"/><path d="M24 14h16"/><path d="M14 78h36"/><path d="M18 78V44l14-12 14 12v34"/><path d="M25 78V58a7 7 0 0 1 14 0v20"/><path d="M12 46l20-18 20 18"/><path d="M32 32v-8"/></g></svg></div>`;
+  const todayArtworkUrl = today.iconUrl || "/images/learn/today-in-the-church.jpg";
+  const churchIconPanel = `<div class="learn-today-art-panel"><img src="${html(todayArtworkUrl)}" alt="Illustrated Orthodox homeschool planner open to today" loading="lazy"></div>`;
   const body = `
     <section data-screen-label="Dashboard" style="display:flex;flex-direction:column;gap:22px;">
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;gap:24px;box-shadow:0 1px 3px rgba(20,40,70,.04);flex-wrap:wrap;">
@@ -946,17 +943,44 @@ function formationSetupPanel(vm) {
     </div>`;
 }
 
+function setupStepTarget(step) {
+  const text = `${step.id || ""} ${step.title || ""}`.toLowerCase();
+  if (text.includes("child") || text.includes("form")) return "learnSetupChildren";
+  if (text.includes("stream")) return "learnSetupStreams";
+  if (text.includes("subject") || text.includes("curriculum")) return "learnSetupSubjects";
+  if (text.includes("book") || text.includes("read")) return "learnSetupBooks";
+  if (text.includes("formation") || text.includes("church") || text.includes("catechesis")) return "learnSetupFormation";
+  return "learnSetupHousehold";
+}
+
+function setupStepState(step) {
+  const status = String(step.status || "").toLowerCase();
+  if (["complete", "completed", "done"].includes(status)) return "is-complete";
+  if (status === "active") return "is-active";
+  return "is-needed";
+}
+
+function setupProgressCard(step) {
+  return `<button type="button" class="learn-setup-step ${setupStepState(step)}" data-setup-progress-target="${setupStepTarget(step)}"><small>${html(step.status)}</small><strong>${html(step.title)}</strong><span>${html(step.summary)}</span></button>`;
+}
+
 function renderSetup(vm) {
   const currentTermId = vm.schoolYear.currentTermId || vm.term.id || vm.terms?.[0]?.id || "term_1";
   const body = `
     <form data-setup-form data-screen-label="Set Up" style="display:flex;flex-direction:column;gap:18px;">
-      ${panel("Setup Progress", `<h2 style="font-family:'Cormorant Garamond',serif;margin:0 0 8px;font-size:28px;">Step ${vm.progress.current} of ${vm.progress.total}</h2>${bar((vm.progress.current / vm.progress.total) * 100, "var(--navy)")}<p style="color:var(--muted);">Next: ${html(vm.progress.next)}</p><div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px;margin-top:14px;">${vm.steps.map((step) => `<div style="border:1px solid var(--line);border-radius:10px;background:${step.status === "active" ? "#fbf2dd" : "var(--paper2)"};padding:12px;"><small style="color:var(--gold);text-transform:uppercase;letter-spacing:.12em;">${html(step.status)}</small><strong style="display:block;margin:5px 0;">${html(step.title)}</strong><span style="color:var(--muted);line-height:1.35;">${html(step.summary)}</span></div>`).join("")}</div>`, { icon: "⚙" })}
+      ${panel("Setup Progress", `<h2 style="font-family:'Cormorant Garamond',serif;margin:0 0 8px;font-size:28px;">Step ${vm.progress.current} of ${vm.progress.total}</h2>${bar((vm.progress.current / vm.progress.total) * 100, "var(--navy)")}<p style="color:var(--muted);">Next: ${html(vm.progress.next)}</p><div class="learn-setup-progress-grid">${vm.steps.map(setupProgressCard).join("")}</div>`, { icon: "⚙" })}
       ${panel("Where Setup Data Goes", `<div style="display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;"><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Children + Forms</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Groups Planner and Print work by Form instead of repeating every child.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Household Streams</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Feeds the dashboard Household Stream and the top Planner rows.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Subjects + Books</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Creates Planner Form rows, Books library cards, and term pacing.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Formation</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Powers Church Rhythms, Catechesis, Hymns, Memory, Enrichment, and Feast cards.</small></div></div>`, { icon: "✥" })}
+      <span id="learnSetupHousehold" class="learn-setup-anchor"></span>
       ${panel("Household", `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Set the school year, choose the active term, and plan future terms ahead of time. The dashboard and core pages stay focused on the selected current term.</p><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupInput("Method", "household.primaryMethod", vm.household.method)}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}${setupSelect("Pace", "preferences.paceMode", vm.preferences.paceMode, ["gentle", "steady", "ambitious"])}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /><a href="/api/learn/google-calendar/connect" style="display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;background:var(--navy);color:#fff;border-radius:10px;padding:10px;">Connect Google Calendar</a></div><div style="margin-top:14px;border:1px solid var(--line);border-radius:13px;background:rgba(255,252,245,.64);padding:14px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;"><span><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:24px;">Terms</strong><small style="display:block;color:var(--muted);">Add future terms here, then assign subjects, books, and formation materials to the right term below.</small></span><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div></div>`, { icon: "⌂" })}
+      <span id="learnSetupChildren" class="learn-setup-anchor"></span>
       ${panel("Children & Forms", `<p style="margin:0 0 12px;color:var(--muted);">Assign each child a Form and color. Forms are the grouping layer for Planner and Print, especially for larger households.</p><div data-setup-list="children" style="display:grid;gap:10px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child)).join("")}</div><button type="button" data-setup-add-row="children" style="margin-top:12px;width:100%;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px;font-family:inherit;">Add Child</button>`, { icon: "◎" })}
+      <span id="learnSetupStreams" class="learn-setup-anchor"></span>
       ${panel("Household Streams", `<p style="margin:0 0 12px;color:var(--muted);">Use these for shared rhythms: morning basket, family read-aloud, nature study, catechesis, feast-day activity. These appear in the dashboard and Planner household rows.</p><div data-setup-list="streams" style="display:grid;gap:10px;">${(vm.streams.length ? vm.streams : [{}]).map((stream) => streamSetupRow(stream)).join("")}</div><button type="button" data-setup-add-row="streams" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Stream</button>`, { icon: "☰" })}
+      <span id="learnSetupSubjects" class="learn-setup-anchor"></span>
       ${panel("Subjects & Curriculum", `<p style="margin:0 0 12px;color:var(--muted);">Assign each subject to a term. Current-term subjects feed Planner, Formation, Reports, and Print; future-term subjects stay parked until that term becomes current.</p><div data-setup-list="subjects" style="display:grid;gap:10px;">${(vm.subjects.length ? vm.subjects : [{}]).map((subject) => subjectSetupRow(subject, vm.children, vm.terms, currentTermId)).join("")}</div><button type="button" data-setup-add-row="subjects" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Subject</button>`, { icon: "✎" })}
+      <span id="learnSetupBooks" class="learn-setup-anchor"></span>
       ${panel("Books & Read-Alouds", `<p style="margin:0 0 12px;color:var(--muted);">Assign books to the term where they belong. Future books remain out of the Books and Planner views until their term is active.</p><div data-setup-list="books" style="display:grid;gap:10px;">${(vm.books.length ? vm.books : [{}]).map((book) => bookSetupRow(book, vm.terms, currentTermId)).join("")}</div><button type="button" data-setup-add-row="books" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Book</button>`, { icon: "☰" })}
+      <span id="learnSetupFormation" class="learn-setup-anchor"></span>
       ${panel("Formation", formationSetupPanel(vm), { icon: "✥" })}
       ${panel("Co-op", `<div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">Coming Soon</strong><p style="margin:4px 0 0;color:var(--muted);line-height:1.4;">Co-op creation and member management are intentionally deferred so Learn can launch with the household planner, reports, print packs, and paid limits first.</p></div><span style="border:1px solid var(--gold);border-radius:999px;color:var(--gold);padding:7px 12px;white-space:nowrap;">Future add-on</span></div>`, { icon: "◎" })}
       <div style="position:sticky;bottom:12px;z-index:5;display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;background:rgba(253,249,239,.96);padding:12px 14px;box-shadow:0 8px 24px rgba(18,38,67,.12);">
@@ -1702,6 +1726,17 @@ mount().catch((error) => {
 });
 
 document.addEventListener("click", (event) => {
+  const progressTarget = event.target.closest("[data-setup-progress-target]");
+  if (progressTarget) {
+    const target = document.getElementById(progressTarget.dataset.setupProgressTarget);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      target.classList.add("learn-setup-focus");
+      window.setTimeout(() => target.classList.remove("learn-setup-focus"), 1500);
+    }
+    return;
+  }
+
   const toggle = event.target.closest("[data-learn-menu-toggle]");
   const scrim = event.target.closest("[data-learn-sidebar-scrim]");
   const navLink = event.target.closest(".learn-product-nav a");

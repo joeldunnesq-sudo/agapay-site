@@ -48,10 +48,16 @@ assert(coOp.enabled === true && coOp.scheduleBlocks.length >= 5, "Co-op scaffold
 const onboarding = repository.getOnboarding();
 assert(onboarding.onboarding.steps.some((step) => step.status === "active"), "Onboarding should have an active setup step.");
 
-const learnApp = readFileSync(new URL("../public/learn/app.js", import.meta.url), "utf8");
-assert(learnApp.includes("role=\"dialog\""), "Learn app should include accessible edit dialogs.");
-assert(learnApp.includes("role=\"progressbar\""), "Learn app should expose progressbar semantics.");
-assert(learnApp.includes("data-learn-action=\"print-edit\""), "Learn app should expose print edit flow hooks.");
+const learnShell = readFileSync(new URL("../public/learn/dashboard-shell.js", import.meta.url), "utf8");
+const learnDashboardHtml = readFileSync(new URL("../public/learn/dashboard.html", import.meta.url), "utf8");
+assert(learnShell.includes("data-dialog-checkout"), "Learn shell should include checkout dialog hooks.");
+assert(learnShell.includes("data-grace-mode"), "Learn shell should expose grace mode controls.");
+assert(learnShell.includes("data-print-generate"), "Learn shell should expose print generation hooks.");
+assert(learnShell.includes("today-in-the-church.jpg"), "Learn shell should render the Today in the Church artwork.");
+assert(learnShell.includes("data-setup-progress-target"), "Learn shell setup progress cards should be interactive.");
+assert(learnDashboardHtml.includes("/learn/dashboard-shell.js"), "Learn dashboard should load the active dashboard shell.");
+assert(learnDashboardHtml.includes("/learn/dashboard-view-models.js"), "Learn dashboard should preload the active view model bundle.");
+assert(!learnDashboardHtml.includes("claude-shell"), "Learn dashboard should not reference legacy Claude shell filenames.");
 
 const phase3Migration = readFileSync(new URL("../migrations/0005_agapay_learn_phase3.sql", import.meta.url), "utf8");
 [
