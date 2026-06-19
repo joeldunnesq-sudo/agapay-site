@@ -126,12 +126,21 @@
 
   function renderUtilityBar(payload = {}) {
     const account = learnUtilityContext(payload);
+    const setup = readSetupState();
+    const paid = learnPlanIsPaid(setup);
     return `
       <header class="learn-utility-bar">
         <a class="learn-utility-brand" href="/myagapay" aria-label="Open My AGAPAY">
           <span class="learn-utility-mark"><img src="/mark.png" alt="" /></span>
           <span><span class="learn-utility-title">MY AGAPAY</span><small>Love how you Give + Learn + Live</small></span>
         </a>
+        <div class="learn-tier-center" aria-label="AGAPAY Learn subscription tier">
+          <span class="learn-tier-pill ${paid ? "is-paid" : "is-free"}">
+            <strong>${learnTierLabel(setup)}</strong>
+            <small>${learnTierDetail(setup)}</small>
+          </span>
+          ${paid ? "" : `<button class="learn-tier-upgrade" type="button" data-learn-action="learn-upgrade">Upgrade</button>`}
+        </div>
         <div class="learn-utility-actions">
           <a class="learn-quick-action" href="/myagapay/learn/setup">Quick Action</a>
           <a class="learn-account-chip" href="/myagapay" aria-label="Back to My AGAPAY dashboard">
@@ -504,6 +513,20 @@
   function learnPlanIsPaid(setup = readSetupState()) {
     return ["family", "founding-family", "active"].includes(String(learnPlan(setup)).toLowerCase())
       || String(setup.billing?.status || "").toLowerCase() === "active";
+  }
+
+  function learnTierLabel(setup = readSetupState()) {
+    const plan = String(learnPlan(setup)).toLowerCase();
+    const status = String(setup.billing?.status || "").toLowerCase();
+    if (plan === "founding-family") return "Founding Family";
+    if (plan === "family" || plan === "active" || status === "active" || status === "trialing") return "Family";
+    if (status === "free_forever") return "Full Access";
+    return "Free";
+  }
+
+  function learnTierDetail(setup = readSetupState()) {
+    if (learnPlanIsPaid(setup)) return "All Learn features unlocked";
+    return `${LEARN_FREE_CHILD_LIMIT} children included`;
   }
 
   function learnPrintCount() {

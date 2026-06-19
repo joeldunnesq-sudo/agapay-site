@@ -2192,6 +2192,10 @@ body.donor-mobile-page {
   padding: 1.15rem 0.95rem 6.6rem;
 }
 
+.donor-give-page .donor-mobile-content {
+  padding-bottom: calc(9.6rem + env(safe-area-inset-bottom));
+}
+
 .donor-mobile-page .page {
   width: min(100%, 480px);
   min-height: calc(100vh - 7.75rem);
@@ -2201,6 +2205,14 @@ body.donor-mobile-page {
   border-radius: 32px;
   background: rgba(246, 241, 232, 0.96);
   box-shadow: 0 18px 50px rgba(6, 21, 34, 0.13);
+}
+
+.donor-give-page .page {
+  margin-bottom: calc(2.8rem + env(safe-area-inset-bottom));
+}
+
+.donor-give-page #donorCheckoutForm {
+  padding-bottom: calc(2.2rem + env(safe-area-inset-bottom));
 }
 
 .donor-mobile-page .notice {
