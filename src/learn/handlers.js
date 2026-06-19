@@ -4,7 +4,7 @@ import { assertLearnEnabled, enabledProductSlugs, LEARN_PRODUCT_SLUG, learnCoOpE
 import { LEARN_FREE_PRINT_LIMIT, learnBillingCheckout, learnBillingStatus, learnRequestHasFamilyAccessAsync } from "./billing.js";
 import { googleCalendarCallback, googleCalendarConnect, googleCalendarPreview, googleCalendarStatus, googleCalendarSync } from "./google-calendar.js";
 import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-source.js";
-import { enrichLiturgicalDayWithOrthocal, handleLearnReadingsStatus } from "./readings-source.js";
+import { enrichLiturgicalDayWithOrthocal, fetchOrthocalDay, handleLearnReadingsStatus, orthocalSaintStories } from "./readings-source.js";
 import { buildLearnPrintDocument, buildLearnReportPrintDocument, printDocumentFilename, renderPrintDocumentPdf } from "./print-engine.js";
 import { createLearnRepositoryForRequest, SeedLearnRepository } from "./repository.js";
 import { learnSetupIdentity, saveLearnGraceMode, saveLearnSetup } from "./setup-persistence.js";
@@ -13,6 +13,13 @@ const LEARN_PRINT_USAGE_PREFIX = "__agapay_learn_print_usage:";
 
 function requestedCalendarType(url) {
   return url.searchParams.get("calendar") || "julian";
+}
+
+function repositoryCalendarType(repository, fallback = "julian") {
+  return repository?.seed?.setupSnapshot?.preferences?.calendarType
+    || repository?.seed?.setupSnapshot?.household?.liturgicalCalendarType
+    || repository?.seed?.household?.liturgicalCalendarType
+    || fallback;
 }
 
 function todayIso(env = {}) {
@@ -284,6 +291,46 @@ export async function handleLearnFormation(request, env) {
     ok: true,
     formation
   });
+}
+
+export async function handleLearnSaints(request, env) {
+  const blocked = assertLearnEnabled(env);
+  if (blocked) return blocked;
+
+  const url = new URL(request.url);
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+  const { repository } = auth;
+  const civilDate = url.searchParams.get("date") || todayIso(env);
+  const calendarType = url.searchParams.get("calendar") || repositoryCalendarType(repository);
+
+  try {
+    const day = await fetchOrthocalDay({ calendarType, civilDate });
+    const saintStories = orthocalSaintStories(day);
+    return json({
+      ok: true,
+      date: civilDate,
+      calendar: calendarType,
+      sourceConnected: true,
+      sourceLabel: "Orthocal.info",
+      sourceUrl: `https://orthocal.info/api/${calendarType === "revised-julian" ? "gregorian" : "julian"}/${civilDate.split("-").map(Number).join("/")}/`,
+      saints: saintStories,
+      saintNames: Array.isArray(day?.saints) ? day.saints : [],
+      feastRank: day?.feast_level_description || ""
+    });
+  } catch (error) {
+    return json({
+      ok: true,
+      date: civilDate,
+      calendar: calendarType,
+      sourceConnected: false,
+      sourceLabel: "Orthocal.info unavailable",
+      sourceError: error.message,
+      saints: [],
+      saintNames: [],
+      message: "Lives of the Saints are unavailable right now. Please try again later."
+    });
+  }
 }
 
 export async function handleLearnBooks(request, env) {

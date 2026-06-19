@@ -242,16 +242,37 @@ function showLearnDialog(title, message, rows = [], options = {}) {
   if (existing) existing.remove();
   const dialog = document.createElement("div");
   dialog.dataset.learnDialog = "true";
-  dialog.style.cssText = "position:fixed;inset:0;z-index:80;background:rgba(10,20,40,.54);display:flex;align-items:center;justify-content:center;padding:24px;";
+  dialog.style.cssText = "position:fixed;inset:0;z-index:80;background:rgba(10,20,40,.54);display:flex;align-items:center;justify-content:center;padding:clamp(10px,3vw,24px);";
+  const contentHtml = options.contentHtml || "";
+  const width = options.width || "520px";
   const upgradeButton = options.upgrade
     ? `<button type="button" data-dialog-checkout style="border:1px solid #b5942f;background:#14294a;color:#f3ead4;border-radius:9px;padding:10px 16px;font-family:inherit;">Upgrade</button>`
     : "";
-  dialog.innerHTML = `<div style="width:min(520px,100%);background:#f3ead4;border:1px solid #b5942f;border-radius:16px;box-shadow:0 20px 60px rgba(10,20,40,.35);padding:22px;color:#14294a;"><div style="display:flex;justify-content:space-between;gap:12px;align-items:start;"><div><h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0;color:#14294a;">${html(title)}</h2><p style="color:#33405a;line-height:1.45;">${html(message)}</p></div><button type="button" data-dialog-close style="border:none;background:none;color:#6b7280;font-size:22px;cursor:pointer;">x</button></div>${rows.map((row) => `<div style="border-top:1px solid rgba(181,148,47,.28);padding:9px 0;"><small style="color:#9b7420;letter-spacing:.12em;text-transform:uppercase;">${html(row.label)}</small><strong style="display:block;">${html(row.value)}</strong></div>`).join("")}<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;"><button type="button" data-dialog-close style="border:1px solid rgba(20,41,74,.22);background:#fffaf0;border-radius:9px;padding:10px 16px;font-family:inherit;color:#14294a;">Close</button>${upgradeButton}</div></div>`;
+  dialog.innerHTML = `<div style="width:min(${width},100%);max-height:min(760px,92vh);overflow:auto;background:#f3ead4;border:1px solid #b5942f;border-radius:16px;box-shadow:0 20px 60px rgba(10,20,40,.35);padding:clamp(16px,4vw,24px);color:#14294a;"><div style="display:flex;justify-content:space-between;gap:12px;align-items:start;position:sticky;top:-24px;background:#f3ead4;padding-top:2px;padding-bottom:12px;z-index:2;"><div><h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(25px,7vw,31px);line-height:1.02;margin:0;color:#14294a;">${html(title)}</h2><p style="color:#33405a;line-height:1.45;margin:8px 0 0;">${html(message)}</p></div><button type="button" data-dialog-close aria-label="Close dialog" style="border:1px solid rgba(20,41,74,.18);background:#fffaf0;color:#14294a;border-radius:999px;width:44px;height:44px;display:grid;place-items:center;font-size:24px;line-height:1;cursor:pointer;flex:none;">×</button></div>${contentHtml}${rows.map((row) => `<div style="border-top:1px solid rgba(181,148,47,.28);padding:9px 0;"><small style="color:#9b7420;letter-spacing:.12em;text-transform:uppercase;">${html(row.label)}</small><strong style="display:block;">${html(row.value)}</strong></div>`).join("")}<div style="position:sticky;bottom:-24px;background:#f3ead4;display:flex;justify-content:flex-end;gap:10px;margin-top:16px;padding-top:12px;padding-bottom:2px;"><button type="button" data-dialog-close style="border:1px solid rgba(20,41,74,.22);background:#fffaf0;border-radius:10px;padding:12px 18px;min-height:44px;font-family:inherit;color:#14294a;font-weight:700;">Close</button>${upgradeButton}</div></div>`;
   dialog.addEventListener("click", (event) => {
     if (event.target === dialog || event.target.closest("[data-dialog-close]")) dialog.remove();
     if (event.target.closest("[data-dialog-checkout]")) openLearnCheckout();
   });
   document.body.append(dialog);
+}
+
+function saintStoryDialogHtml(saints = [], unavailableMessage = "") {
+  if (unavailableMessage) {
+    return `<div style="border-top:1px solid rgba(181,148,47,.28);padding:14px 0;color:#33405a;line-height:1.5;">${html(unavailableMessage)}</div>`;
+  }
+  if (!saints.length) {
+    return `<div style="border-top:1px solid rgba(181,148,47,.28);padding:14px 0;color:#33405a;line-height:1.5;">No saint life is listed for this day yet. Please try again later.</div>`;
+  }
+  return saints.map((saint) => {
+    const paragraphs = String(saint.storyText || "").split(/\n{2,}/).map((part) => part.trim()).filter(Boolean);
+    return `<article style="border-top:1px solid rgba(181,148,47,.28);padding:16px 0;display:grid;gap:8px;">
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        ${saint.iconUrl ? `<img src="${html(saint.iconUrl)}" alt="" style="width:64px;height:64px;border-radius:12px;object-fit:cover;border:1px solid rgba(181,148,47,.34);">` : `<span style="width:48px;height:48px;border-radius:50%;background:#14294a;color:#f3ead4;display:grid;place-items:center;flex:none;font-size:23px;">✥</span>`}
+        <span><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:24px;line-height:1.05;color:#14294a;">${html(saint.name || saint.title || "Saint of the Day")}</strong>${saint.reposeCentury ? `<small style="display:block;margin-top:4px;color:#9b7420;font-weight:800;">${html(saint.reposeCentury)}</small>` : ""}${saint.feastRank ? `<small style="display:block;margin-top:4px;color:#9b7420;letter-spacing:.08em;text-transform:uppercase;">${html(saint.feastRank)}</small>` : ""}</span>
+      </div>
+      ${paragraphs.length ? paragraphs.map((paragraph) => `<p style="margin:0;color:#33405a;line-height:1.58;">${html(paragraph)}</p>`).join("") : `<p style="margin:0;color:#33405a;line-height:1.58;">A life-story text is not listed for this commemoration.</p>`}
+    </article>`;
+  }).join("");
 }
 
 function sidebar(vm) {
@@ -466,6 +487,16 @@ function renderDashboard(vm) {
   const today = vm.todayInChurch;
   const todayArtworkUrl = today.iconUrl || "/images/learn/today-in-the-church.jpg";
   const churchIconPanel = `<div class="learn-today-art-panel"><img src="${html(todayArtworkUrl)}" alt="Illustrated Orthodox homeschool planner open to today" loading="lazy"></div>`;
+  const saintPreview = today.saintNames?.length
+    ? today.saintNames.slice(0, 2).join("; ") + (today.saintNames.length > 2 ? ` + ${today.saintNames.length - 2} more` : "")
+    : "Open the lives commemorated today.";
+  const saintIcon = today.saintStories?.find((saint) => saint.iconUrl)?.iconUrl || "";
+  const saintCentury = today.saintStories?.find((saint) => saint.reposeCentury)?.reposeCentury || "";
+  const saintCard = `<button type="button" data-saint-of-day data-date="${html(today.civilDate)}" data-calendar="${html(today.calendarType)}" style="margin-top:14px;width:100%;text-align:left;border:1px solid rgba(181,148,47,.34);background:linear-gradient(135deg,#fffaf0,#f7edd6);border-radius:13px;padding:13px;display:flex;gap:12px;align-items:center;cursor:pointer;font-family:inherit;color:var(--ink);box-shadow:0 1px 2px rgba(20,40,70,.04);">
+    ${saintIcon ? `<img src="${html(saintIcon)}" alt="" style="width:52px;height:52px;border-radius:12px;object-fit:cover;border:1px solid var(--goldsoft);flex:none;">` : `<span style="width:48px;height:48px;border-radius:50%;background:var(--navy);color:#f3ead4;display:grid;place-items:center;flex:none;font-size:23px;">✥</span>`}
+    <span style="min-width:0;line-height:1.25;"><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">Saint of the Day</span><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(today.saintNames?.[0] || "Lives of the Saints")}</strong>${saintCentury ? `<span style="display:block;color:var(--gold);font-size:12px;font-weight:800;margin:2px 0 1px;">${html(saintCentury)}</span>` : ""}<small style="display:block;color:var(--muted);line-height:1.35;">${html(saintPreview)}</small></span>
+    <span style="margin-left:auto;color:var(--gold);font-size:20px;flex:none;">→</span>
+  </button>`;
   const body = `
     <section data-screen-label="Dashboard" style="display:flex;flex-direction:column;gap:22px;">
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;gap:24px;box-shadow:0 1px 3px rgba(20,40,70,.04);flex-wrap:wrap;">
@@ -490,6 +521,7 @@ function renderDashboard(vm) {
           <p style="margin:6px 0 16px;font-size:15.5px;line-height:1.5;color:#33405a;">${html(today.troparionText)}</p>
           <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:600;">${html(today.kontakionLabel)}</div>
           <p style="margin:6px 0 0;font-size:15.5px;line-height:1.5;color:#33405a;">${html(today.kontakionText)}</p>
+          ${saintCard}
         </div>
         ${renderTodayLearnContext(vm)}
       </div>
@@ -1134,7 +1166,44 @@ function collectRows(form, rowType, mapper) {
     .filter(Boolean);
 }
 
+async function openSaintOfDay(button) {
+  const date = button.dataset.date || "";
+  const calendar = button.dataset.calendar || localStorage.getItem("agapay.learn.calendar") || "julian";
+  const previousText = button.querySelector("small")?.textContent || "";
+  button.disabled = true;
+  button.style.cursor = "wait";
+  const small = button.querySelector("small");
+  if (small) small.textContent = "Loading the lives of the saints...";
+  try {
+    const payload = await apiGet(`/api/learn/saints?date=${encodeURIComponent(date)}&calendar=${encodeURIComponent(calendar)}`);
+    const unavailable = payload.sourceConnected === false
+      ? payload.message || "Lives of the Saints are unavailable right now. Please try again later."
+      : "";
+    showLearnDialog(
+      "Saint of the Day",
+      payload.date ? `Commemorations for ${payload.date}` : "Today's commemorations",
+      [{ label: "Attribution", value: "Lives of the Saints courtesy of Orthocal.info" }],
+      {
+        width: "760px",
+        contentHtml: saintStoryDialogHtml(payload.saints || [], unavailable)
+      }
+    );
+  } catch (error) {
+    showLearnDialog("Saint of the Day Unavailable", error.message || "Lives of the Saints are unavailable right now. Please try again later.", [
+      { label: "Source", value: "Orthocal.info" }
+    ]);
+  } finally {
+    button.disabled = false;
+    button.style.cursor = "pointer";
+    if (small) small.textContent = previousText;
+  }
+}
+
 function wireDashboard() {
+  root.querySelectorAll("[data-saint-of-day]").forEach((button) => {
+    button.addEventListener("click", () => openSaintOfDay(button));
+  });
+
   root.querySelectorAll("[data-grace-mode]").forEach((button) => {
     button.addEventListener("click", async () => {
       const mode = button.dataset.graceMode || "light";

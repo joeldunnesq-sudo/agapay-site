@@ -207,6 +207,9 @@ async function withMockFetch(handler, run) {
   const noAuth = await worker.fetch(request("/api/learn/dashboard"), testEnv);
   assert.equal(noAuth.status, 401);
 
+  const saintsNoAuth = await worker.fetch(request("/api/learn/saints?date=2026-06-19"), testEnv);
+  assert.equal(saintsNoAuth.status, 401);
+
   const closeNoAuth = await worker.fetch(request("/api/learn/terms/term_1/close", {
     method: "POST",
     body: {}
@@ -217,6 +220,11 @@ async function withMockFetch(handler, run) {
     headers: { "X-AGAPAY-Learn-Email": "victim@example.com" }
   }), testEnv);
   assert.equal(spoofedHeaderOnly.status, 401);
+
+  const saintsSpoofedHeaderOnly = await worker.fetch(request("/api/learn/saints?date=2026-06-19", {
+    headers: { "X-AGAPAY-Learn-Email": "victim@example.com" }
+  }), testEnv);
+  assert.equal(saintsSpoofedHeaderOnly.status, 401);
 
   const closeSpoofedHeaderOnly = await worker.fetch(request("/api/learn/terms/term_1/close", {
     method: "POST",
@@ -235,6 +243,37 @@ async function withMockFetch(handler, run) {
   }), testEnv);
   assert.equal(alphaDashboard.status, 200);
   assert.equal((await json(alphaDashboard)).ok, true);
+
+  await withMockFetch(async () => new Response(JSON.stringify({
+    saints: ["Saint Alpha", "Saint Beta"],
+    stories: [
+      { title: "Saint Alpha (845)", story: "<p>Alpha life.</p>" },
+      { title: "Saint Beta (293)", story: "<p>Beta life.</p>" }
+    ],
+    feast_level_description: "Daily commemoration"
+  }), { status: 200, headers: { "content-type": "application/json" } }), async () => {
+    const saints = await worker.fetch(request("/api/learn/saints?date=2026-06-19", {
+      headers: alpha.headers
+    }), testEnv);
+    assert.equal(saints.status, 200);
+    const saintsBody = await json(saints);
+    assert.equal(saintsBody.sourceConnected, true);
+    assert.equal(saintsBody.saints.length, 2);
+    assert.equal(saintsBody.saints[0].storyText, "Alpha life.");
+    assert.equal(saintsBody.saints[0].reposeCentury, "Reposed: 9th century");
+  });
+
+  await withMockFetch(async () => {
+    throw new Error("Orthocal offline");
+  }, async () => {
+    const saints = await worker.fetch(request("/api/learn/saints?date=2026-06-19", {
+      headers: alpha.headers
+    }), testEnv);
+    assert.equal(saints.status, 200);
+    const saintsBody = await json(saints);
+    assert.equal(saintsBody.sourceConnected, false);
+    assert.match(saintsBody.message, /unavailable/i);
+  });
 
   const alphaSetupPayload = {
     household: { name: "Alpha Household", parishName: "St. Alpha" },

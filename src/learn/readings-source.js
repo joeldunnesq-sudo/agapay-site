@@ -28,6 +28,78 @@ function firstReadingText(day = {}, source) {
   return (reading?.passage || []).slice(0, 3).map((verse) => `${verse.chapter}:${verse.verse} ${verse.content}`).join(" ");
 }
 
+function stripHtml(value = "") {
+  return String(value || "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+    .replace(/&ldquo;/g, "“")
+    .replace(/&rdquo;/g, "”")
+    .replace(/&lsquo;/g, "‘")
+    .replace(/&rsquo;/g, "’")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function reposeCenturyLabel(value = "") {
+  const matches = [...String(value || "").matchAll(/\b([1-2][0-9]{3}|[1-9][0-9]{2})\b/g)];
+  if (!matches.length) return "";
+  const year = Number(matches[matches.length - 1][1]);
+  if (!Number.isFinite(year) || year <= 0) return "";
+  const century = Math.ceil(year / 100);
+  const suffix = century % 100 >= 11 && century % 100 <= 13 ? "th"
+    : century % 10 === 1 ? "st"
+    : century % 10 === 2 ? "nd"
+    : century % 10 === 3 ? "rd"
+    : "th";
+  return `Reposed: ${century}${suffix} century`;
+}
+
+function saintNameKey(value = "") {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\([^)]*\b[1-2]?[0-9]{2,3}\b[^)]*\)/g, "")
+    .replace(/\b(st|saint|ven|venerable|holy|our holy)\.?\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+export function orthocalSaintStories(day = {}) {
+  const saintNames = Array.isArray(day.saints) ? day.saints : [];
+  // Orthocal's 2026-06-19 response confirms `saints` is a string[] of names,
+  // while full lives are in `stories[]` as `{ title, story }` HTML from the source feed.
+  const stories = Array.isArray(day.stories) ? day.stories : [];
+  const storyKeys = new Set(stories.map((entry) => saintNameKey(entry?.title || "")).filter(Boolean));
+  const storyRows = stories.map((entry) => ({
+    name: String(entry?.title || "").trim(),
+    title: String(entry?.title || "").trim(),
+    storyText: stripHtml(entry?.story || ""),
+    storyHtml: String(entry?.story || ""),
+    reposeCentury: reposeCenturyLabel(entry?.title || ""),
+    feastRank: day.feast_level_description || "",
+    sourceLabel: "Orthocal.info"
+  })).filter((entry) => entry.name || entry.storyText);
+
+  const missingNames = saintNames
+    .filter((name) => !storyKeys.has(saintNameKey(name)))
+    .map((name) => ({
+      name: String(name || "").trim(),
+      title: String(name || "").trim(),
+      storyText: "",
+      storyHtml: "",
+      reposeCentury: reposeCenturyLabel(name),
+      feastRank: day.feast_level_description || "",
+      sourceLabel: "Orthocal.info"
+    }))
+    .filter((entry) => entry.name);
+
+  return [...storyRows, ...missingNames];
+}
+
 export async function fetchOrthocalDay({ calendarType = "julian", civilDate, fetcher = fetch } = {}) {
   if (!civilDate) return null;
   const response = await fetcher(orthocalUrl(calendarType, civilDate), {
@@ -43,12 +115,14 @@ export async function enrichLiturgicalDayWithOrthocal(liturgicalDay, { calendarT
     if (!day) return liturgicalDay;
     const titles = Array.isArray(day.titles) ? day.titles : [];
     const saints = Array.isArray(day.saints) ? day.saints : [];
+    const saintStories = orthocalSaintStories(day);
     return {
       ...liturgicalDay,
       feastTitle: day.summary_title || titles[0] || liturgicalDay.feastTitle,
       feastRank: day.feast_level_description || liturgicalDay.feastRank,
       fastingRule: fastingLabel(day),
       saints: saints.length ? saints : liturgicalDay.saints,
+      saintStories: saintStories.length ? saintStories : liturgicalDay.saintStories,
       tone: day.tone ? `Tone ${day.tone}` : liturgicalDay.tone,
       epistleRef: readingRef(day, "epistle"),
       gospelRef: readingRef(day, "gospel"),

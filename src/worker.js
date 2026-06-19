@@ -190,6 +190,7 @@ import {
   handleLearnPrintCenter,
   handleLearnPrintPdf,
   handleLearnReports,
+  handleLearnSaints,
   handleLearnTermClose,
 } from "./learn/handlers.js";
 
@@ -818,6 +819,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/learn/formation") {
       return handleLearnFormation(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/learn/saints") {
+      return handleLearnSaints(request, env);
     }
     if (request.method === "GET" && url.pathname === "/api/learn/books") {
       return handleLearnBooks(request, env);

@@ -187,7 +187,17 @@ export function toDashboardViewModel(rawPayload, context = {}) {
       troparionText: text(liturgicalDay.troparionText, "No troparion text loaded yet."),
       kontakionLabel: liturgicalDay.kontakionTone ? `KONTAKION · ${liturgicalDay.kontakionTone}` : "KONTAKION",
       kontakionText: text(liturgicalDay.kontakionText, "No kontakion text loaded yet."),
-      iconUrl: text(liturgicalDay.iconUrl || liturgicalDay.ponomarIconUrl || liturgicalDay.feastIconUrl, "")
+      iconUrl: text(liturgicalDay.iconUrl || liturgicalDay.ponomarIconUrl || liturgicalDay.feastIconUrl, ""),
+      civilDate: text(today.civilDate, ""),
+      calendarType: text(dashboard.calendarToggle?.selected || dashboard.preferences?.calendarType || liturgicalDay.calendarType, ""),
+      saintNames: safeArray(liturgicalDay.saints).map((saint) => text(typeof saint === "string" ? saint : saint.name || saint.title, "")).filter(Boolean),
+      saintStories: safeArray(liturgicalDay.saintStories).map((saint) => ({
+        name: text(saint.name || saint.title, ""),
+        storyText: text(saint.storyText || saint.story || saint.description, ""),
+        reposeCentury: text(saint.reposeCentury, ""),
+        feastRank: text(saint.feastRank, ""),
+        iconUrl: text(saint.iconUrl, "")
+      })).filter((saint) => saint.name || saint.storyText)
     },
     churchRhythms: safeArray(today.churchRhythms).map((item) => ({
       label: text(item.title, "Rhythm"),
