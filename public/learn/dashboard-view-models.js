@@ -784,6 +784,43 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       minutesPlanned: "",
       color: material.color
     }));
+  const setupV2Steps = [
+    {
+      title: "Household",
+      status: household.name && schoolYear.label ? "complete" : "active",
+      summary: "Name, parish, method, school year, terms, calendar, and pace."
+    },
+    {
+      title: "Children & Forms",
+      status: safeArray(childrenSource).length ? "complete" : "needed",
+      summary: "Assign each child to the Form used by Planner and Print."
+    },
+    {
+      title: "Cycles",
+      status: historyCycle.cycleYear || historyCycle.framework ? "complete" : "needed",
+      summary: "Choose the history and enrichment spine for the year."
+    },
+    {
+      title: "Church Rhythm",
+      status: safeArray(formation.churchRhythms).length ? "complete" : "needed",
+      summary: "Prayer, readings, saints, feasts, hymnody, and fasting rhythm."
+    },
+    {
+      title: "Catechesis & Enrichment",
+      status: formation.catechesis?.title || safeArray(formation.enrichmentBlocks).length || defaultFormationMaterials.length ? "complete" : "needed",
+      summary: "Cycle-based Scripture, doctrine, memory work, icons, art, poetry, music, and nature."
+    },
+    {
+      title: "Literature",
+      status: safeArray(booksSource).length ? "complete" : "needed",
+      summary: "Living books, stories, plays, history reads, tales, and read-alouds."
+    },
+    {
+      title: "Form Subjects",
+      status: safeArray(subjectsSource).length ? "complete" : "needed",
+      summary: "Language arts, history, geography, math, science, and progress ranges."
+    }
+  ];
   return {
     shell: shellFromPayload("onboarding", rawPayload),
     page: page("onboarding", "Set Up", "Configure the household, calendar, books, lessons, and co-op."),
@@ -826,11 +863,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       paceMode: text(term.paceMode, preferences.paceMode || "steady")
     },
     terms: setupTerms,
-    steps: simpleList(onboarding.steps, (step) => ({
-      title: text(step.title, "Setup Step"),
-      status: text(step.status, ""),
-      summary: text(step.summary, "")
-    })),
+    steps: setupV2Steps,
     preferences: {
       calendarType: text(clientState.calendar || preferences.calendarType, "julian"),
       evaluationModel: text(preferences.evaluationModel, "narrative-only"),
