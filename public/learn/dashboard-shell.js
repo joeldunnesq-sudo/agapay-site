@@ -234,7 +234,9 @@ function learnAccountEmail() {
 function learnRequestHeaders(extra = {}) {
   const headers = { ...extra };
   const token = localStorage.getItem("agapayDonorToken") || "";
+  const email = learnAccountEmail();
   if (token) headers.Authorization = `Bearer ${token}`;
+  if (email) headers["X-AGAPAY-Donor-Email"] = email;
   return headers;
 }
 
