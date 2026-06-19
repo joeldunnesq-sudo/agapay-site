@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { buildReportCardExport, buildTranscriptExport } from "../src/learn/academic-exports.js";
 import { normalizeCalendarType, SeedLiturgicalSource } from "../src/learn/liturgical-source.js";
-import { buildPrintJobRequest, buildWeeklyHouseholdPrintDocument } from "../src/learn/print-engine.js";
+import { buildLearnPrintDocument, buildLearnReportPrintDocument, buildPrintJobRequest, buildWeeklyHouseholdPrintDocument, renderPrintDocumentPdf } from "../src/learn/print-engine.js";
 import { getLearnSeedSnapshot } from "../src/learn/demo-data.js";
 import { createSeedLearnRepository } from "../src/learn/repository.js";
 
@@ -39,6 +39,12 @@ assert(liturgicalSource.listRange({ calendarType: "julian", startDate: "2025-05-
 const printCenter = repository.getPrintCenter();
 const printDocument = buildWeeklyHouseholdPrintDocument(printCenter);
 assert(printDocument.sections.length >= 2, "Print engine should build household and child sections.");
+const serverPrintDocument = buildLearnPrintDocument(printCenter, { templateId: "print_mom_weekly" });
+const pdfBytes = await renderPrintDocumentPdf(serverPrintDocument);
+assert(pdfBytes[0] === 0x25 && pdfBytes[1] === 0x50 && pdfBytes[2] === 0x44 && pdfBytes[3] === 0x46, "Print engine should render a real PDF.");
+const reportPrintDocument = buildLearnReportPrintDocument(reports, { templateId: "year-end-report" });
+const reportPdfBytes = await renderPrintDocumentPdf(reportPrintDocument);
+assert(reportPdfBytes[0] === 0x25 && reportPdfBytes[1] === 0x50 && reportPdfBytes[2] === 0x44 && reportPdfBytes[3] === 0x46, "Report print engine should render a real PDF.");
 const printJob = buildPrintJobRequest({ templateId: "print_mom_weekly", rangeLabel: "May 4 - May 10" });
 assert(printJob.status === "ready" && printJob.format === "pdf", "Print job helper should default to ready PDFs.");
 
@@ -54,6 +60,9 @@ const learnDashboardHtml = readFileSync(new URL("../public/learn/dashboard.html"
 assert(learnShell.includes("data-dialog-checkout"), "Learn shell should include checkout dialog hooks.");
 assert(learnShell.includes("data-grace-mode"), "Learn shell should expose grace mode controls.");
 assert(learnShell.includes("data-print-generate"), "Learn shell should expose print generation hooks.");
+assert(learnShell.includes("/api/learn/print/"), "Learn shell should request route-scoped server-side PDF generation.");
+assert(!learnShell.includes("buildSimplePdf"), "Learn shell should not use client-side raw PDF generation.");
+assert(!learnShell.includes("window.print"), "Learn shell should not use browser print for report PDFs.");
 assert(learnShell.includes("today-in-the-church.jpg"), "Learn shell should render the Today in the Church artwork.");
 assert(learnShell.includes("data-setup-progress-target"), "Learn shell setup progress cards should be interactive.");
 assert(learnDashboardHtml.includes("/learn/dashboard-shell.js"), "Learn dashboard should load the active dashboard shell.");

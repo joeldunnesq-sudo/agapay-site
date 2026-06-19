@@ -188,6 +188,7 @@ import {
   handleLearnOnboardingSave,
   handleLearnPlanner,
   handleLearnPrintCenter,
+  handleLearnPrintPdf,
   handleLearnReports,
 } from "./learn/handlers.js";
 
@@ -807,6 +808,12 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/learn/print-center") {
       return handleLearnPrintCenter(request, env);
+    }
+    if (request.method === "POST" && url.pathname.startsWith("/api/learn/print/")) {
+      return handleLearnPrintPdf(request, env, decodeURIComponent(url.pathname.slice("/api/learn/print/".length)));
+    }
+    if (request.method === "POST" && url.pathname === "/api/learn/print") {
+      return handleLearnPrintPdf(request, env, "");
     }
     if (request.method === "GET" && url.pathname === "/api/learn/formation") {
       return handleLearnFormation(request, env);

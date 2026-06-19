@@ -178,38 +178,6 @@ function downloadBlob(filename, blob) {
   URL.revokeObjectURL(url);
 }
 
-function pdfEscape(value) {
-  return String(value ?? "").replace(/[\\()]/g, "\\$&").replace(/[^\x09\x0A\x0D\x20-\x7E]/g, "-");
-}
-
-function buildSimplePdf(title, lines) {
-  const safeLines = [title, "", ...lines].flatMap((line) => String(line || "").match(/.{1,82}/g) || [""]);
-  const content = ["BT", "/F1 16 Tf", "72 742 Td", `(${pdfEscape(safeLines[0])}) Tj`, "/F1 10 Tf"]
-    .concat(safeLines.slice(1).map((line) => `0 -16 Td (${pdfEscape(line)}) Tj`))
-    .concat("ET")
-    .join("\n");
-  const objects = [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman >>",
-    `<< /Length ${content.length} >>\nstream\n${content}\nendstream`
-  ];
-  let pdf = "%PDF-1.4\n";
-  const offsets = [0];
-  objects.forEach((object, index) => {
-    offsets.push(pdf.length);
-    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
-  });
-  const xref = pdf.length;
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  offsets.slice(1).forEach((offset) => {
-    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
-  });
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-  return new Blob([pdf], { type: "application/pdf" });
-}
-
 function isLearnFamilyPlan() {
   return localStorage.getItem("agapay.learn.plan") === "family";
 }
@@ -1552,129 +1520,49 @@ function wireCommunity() {
   });
 }
 
-function reportLines(vm, label = "Year-End Report") {
-  const children = vm.children.map((child) => `${child.name}: ${child.lessons.done}/${child.lessons.total} lessons, read-aloud ${child.readAloud.percent}%, ${child.status}.`);
-  const narrations = vm.narrations.map((log) => `${log.date} - ${log.child}: ${log.source} (${log.type}) - ${log.note}`);
-  return [label, vm.pdf.familyName, vm.pdf.schoolYear, ...vm.pdf.summary, "", "Child Progress", ...children, "", "Narrations", ...narrations];
-}
-
-function printableReportHtml(vm, label = "Year-End Report") {
-  const subjectRows = vm.subjectProgress.length ? vm.subjectProgress.map((row) => `
-    <tr>
-      <td>${html(row.subjectTitle)}</td>
-      <td>${html(row.childName)}</td>
-      <td>${html(row.formLabel)}</td>
-      <td>${html(row.source || row.subjectType)}</td>
-      <td>${html(row.completed)} / ${html(row.total)} ${html(row.progressionType)}</td>
-      <td>${html(row.percent)}%</td>
-      <td>${html(row.status)}</td>
-    </tr>`).join("") : `<tr><td colspan="7">No subject progress rows have been configured yet.</td></tr>`;
-  const childCards = vm.children.map((child) => `
-    <article class="child-card">
-      <div class="avatar" style="background:${html(child.color)}">${html(child.initial)}</div>
-      <div>
-        <h3>${html(child.name)}</h3>
-        <p>${html(child.grade)} · Age ${html(child.age)} · ${html(child.summary)}</p>
-        <strong>${html(child.lessons.done)} / ${html(child.lessons.total)} tracked units · ${html(child.lessons.percent)}% complete</strong>
-      </div>
-    </article>`).join("");
-  const narrations = vm.narrations.slice(0, 12).map((log) => `
-    <tr><td>${html(log.date)}</td><td>${html(log.child)}</td><td>${html(log.source)}</td><td>${html(log.type)}</td><td>${html(log.note)}</td></tr>
-  `).join("");
-  return `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>${html(label)} - ${html(vm.pdf.familyName)}</title>
-  <style>
-    @page { margin: .55in; }
-    body { margin:0; background:#f7f1e4; color:#07192d; font-family:"DM Sans", Arial, sans-serif; }
-    .sheet { background:#fffaf0; min-height:100vh; padding:34px; border:1px solid #d7c49a; }
-    .header { display:grid; grid-template-columns:1fr auto; gap:22px; align-items:start; border-bottom:3px double #c9a25b; padding-bottom:18px; margin-bottom:22px; }
-    .eyebrow { color:#a87924; letter-spacing:.18em; text-transform:uppercase; font-size:12px; font-weight:700; }
-    h1,h2,h3 { font-family:"Cormorant Garamond", Georgia, serif; margin:0; }
-    h1 { font-size:44px; line-height:1; }
-    h2 { font-size:27px; margin:22px 0 10px; }
-    h3 { font-size:22px; }
-    p { margin:6px 0; color:#34405a; line-height:1.45; }
-    .seal { width:86px; height:86px; border:1px solid #c9a25b; border-radius:50%; display:grid; place-items:center; color:#c9a25b; font-size:38px; }
-    .summary { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:18px 0 8px; }
-    .stat, .child-card { border:1px solid #dfd0aa; border-radius:14px; background:#fffdf7; padding:14px; }
-    .stat strong { display:block; font-family:"Cormorant Garamond", Georgia, serif; font-size:26px; }
-    .children { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
-    .child-card { display:grid; grid-template-columns:44px 1fr; gap:12px; align-items:start; }
-    .avatar { width:42px; height:42px; border-radius:50%; color:#fffaf0; display:grid; place-items:center; font-family:"Cormorant Garamond", Georgia, serif; font-size:20px; }
-    table { width:100%; border-collapse:collapse; background:#fffdf7; border:1px solid #dfd0aa; }
-    th { background:#07192d; color:#f8e5b7; text-align:left; letter-spacing:.08em; text-transform:uppercase; font-size:11px; padding:9px; }
-    td { border-top:1px solid #eadfca; padding:9px; font-size:13px; vertical-align:top; }
-    .footer { margin-top:30px; display:grid; grid-template-columns:1fr 1fr; gap:28px; color:#34405a; }
-    .signature { border-top:1px solid #bfa56b; padding-top:8px; margin-top:34px; }
-    @media print { body { background:white; } .sheet { border:none; padding:0; } }
-  </style>
-</head>
-<body>
-  <main class="sheet">
-    <header class="header">
-      <div>
-        <div class="eyebrow">AGAPAY Learn</div>
-        <h1>${html(label)}</h1>
-        <p>${html(vm.pdf.familyName)} · ${html(vm.pdf.schoolYear)}</p>
-      </div>
-      <div class="seal">✥</div>
-    </header>
-    <section class="summary">
-      ${vm.pdf.summary.slice(0, 4).map((line) => `<div class="stat"><span class="eyebrow">Summary</span><strong>${html(line.split(":")[0])}</strong><p>${html(line.split(":").slice(1).join(":").trim())}</p></div>`).join("")}
-    </section>
-    <h2>Student Overview</h2>
-    <section class="children">${childCards || "<p>No students configured yet.</p>"}</section>
-    <h2>State Reporting Subject Progress</h2>
-    <table>
-      <thead><tr><th>Subject</th><th>Student</th><th>Form</th><th>Source</th><th>Progress</th><th>Complete</th><th>Status</th></tr></thead>
-      <tbody>${subjectRows}</tbody>
-    </table>
-    <h2>Narration Log</h2>
-    <table>
-      <thead><tr><th>Date</th><th>Student</th><th>Source</th><th>Type</th><th>Note</th></tr></thead>
-      <tbody>${narrations || `<tr><td colspan="5">No narrations logged yet.</td></tr>`}</tbody>
-    </table>
-    <footer class="footer">
-      <div><p>This report is generated from the household setup and progress records saved in AGAPAY Learn.</p></div>
-      <div class="signature">Parent / Teacher Signature</div>
-    </footer>
-  </main>
-  <script>window.addEventListener("load", () => setTimeout(() => window.print(), 150));</script>
-</body>
-</html>`;
-}
-
-function openPrintableReport(vm, label = "Year-End Report") {
-  const printWindow = window.open("", "_blank", "noopener,noreferrer");
-  const markup = printableReportHtml(vm, label);
-  if (!printWindow) {
-    downloadBlob(`${label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "learn-report"}.html`, new Blob([markup], { type: "text/html" }));
-    return;
-  }
-  printWindow.document.open();
-  printWindow.document.write(markup);
-  printWindow.document.close();
-}
-
 function wireReports(vm) {
-  const exportReport = (label = vm.pdf.title) => openPrintableReport(vm, label);
-  root.querySelector("[data-report-pdf]")?.addEventListener("click", () => exportReport(vm.pdf.title));
+  const reportTemplateId = (label = "Year-End Report") => {
+    const lower = String(label || "").toLowerCase();
+    if (lower.includes("transcript")) return "transcript";
+    if (lower.includes("report card")) return "report-card";
+    if (lower.includes("subject")) return "subject-progress-report";
+    return "year-end-report";
+  };
+  const exportReport = async (label = vm.pdf.title, button = null) => {
+    const title = label || "Year-End Report";
+    const originalText = button?.textContent;
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Generating...";
+    }
+    try {
+      const response = await fetch(`/api/learn/print/${encodeURIComponent(reportTemplateId(title))}`, {
+        method: "POST",
+        headers: learnRequestHeaders({ "content-type": "application/json" }),
+        body: JSON.stringify({ label: title })
+      });
+      const contentType = response.headers.get("content-type") || "";
+      if (!response.ok || !contentType.includes("application/pdf")) {
+        const payload = contentType.includes("application/json") ? await response.json().catch(() => ({})) : {};
+        throw new Error(payload.error || "Unable to generate the report PDF. Please try again.");
+      }
+      const blob = await response.blob();
+      const disposition = response.headers.get("content-disposition") || "";
+      const fileMatch = disposition.match(/filename="([^"]+)"/i);
+      downloadBlob(fileMatch?.[1] || `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "learn-report"}.pdf`, blob);
+    } catch (error) {
+      showLearnDialog("Report Could Not Be Generated", error.message || "Please refresh and try again.", []);
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
+  };
+  root.querySelector("[data-report-pdf]")?.addEventListener("click", (event) => exportReport(vm.pdf.title, event.currentTarget));
   root.querySelectorAll("[data-report-export]").forEach((button) => {
-    button.addEventListener("click", () => exportReport(button.dataset.reportExport || "Learn Report"));
+    button.addEventListener("click", () => exportReport(button.dataset.reportExport || "Learn Report", button));
   });
-}
-
-function printLines(vm, templateId) {
-  const title = vm.templates.find((template) => template.id === templateId)?.title || vm.document.title;
-  const sections = vm.document.sections.flatMap((section) => [
-    "",
-    section.title,
-    ...section.items.map((item) => `${item.label}: ${item.detail}${item.minutes ? ` (${item.minutes}m)` : ""}`)
-  ]);
-  return [title, vm.document.subtitle, `${vm.term.label} - ${vm.term.week}`, vm.job.range, ...sections];
 }
 
 function canUsePrint(vm, template) {
@@ -1693,14 +1581,41 @@ function canUsePrint(vm, template) {
 function wirePrintCenter(vm) {
   root.querySelector("[data-print-upgrade]")?.addEventListener("click", openLearnCheckout);
   root.querySelectorAll("[data-print-generate]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       const templateId = button.dataset.printGenerate;
       const template = vm.templates.find((item) => item.id === templateId) || vm.templates.find((item) => item.id === "weekly-pack") || { id: "weekly-pack", title: "Weekly Print Pack", audience: "household", premium: false };
       if (!canUsePrint(vm, template)) return;
       const title = template?.title || "Weekly Print Pack";
-      const blob = buildSimplePdf(title, printLines(vm, templateId));
-      downloadBlob(`${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "learn-print-pack"}.pdf`, blob);
-      if (!isLearnFamilyPlan()) setPrintCount(printCount() + 1);
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = "Generating...";
+      try {
+        const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
+        const response = await fetch(`/api/learn/print/${encodeURIComponent(templateId)}?calendar=${encodeURIComponent(calendar)}`, {
+          method: "POST",
+          headers: learnRequestHeaders({ "content-type": "application/json" }),
+          body: JSON.stringify({
+            childId: template.childId || "",
+            termId: template.termId || ""
+          })
+        });
+        const contentType = response.headers.get("content-type") || "";
+        if (!response.ok || !contentType.includes("application/pdf")) {
+          const payload = contentType.includes("application/json") ? await response.json().catch(() => ({})) : {};
+          throw new Error(payload.error || "Unable to generate the PDF. Please try again.");
+        }
+        const blob = await response.blob();
+        const disposition = response.headers.get("content-disposition") || "";
+        const fileMatch = disposition.match(/filename="([^"]+)"/i);
+        downloadBlob(fileMatch?.[1] || `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "learn-print-pack"}.pdf`, blob);
+        const serverCount = Number(response.headers.get("x-agapay-learn-print-count"));
+        if (!isLearnFamilyPlan()) setPrintCount(Number.isFinite(serverCount) ? serverCount : printCount() + 1);
+      } catch (error) {
+        showLearnDialog("Print Could Not Be Generated", error.message || "Please refresh and try again.", []);
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
     });
   });
 }

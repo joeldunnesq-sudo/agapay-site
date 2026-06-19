@@ -1,11 +1,14 @@
 import { json, unauthorized } from "../lib/core.js";
 import { assertLearnEnabled, enabledProductSlugs, LEARN_PRODUCT_SLUG, learnCoOpEnabled } from "./access.js";
-import { learnBillingCheckout, learnBillingStatus } from "./billing.js";
+import { LEARN_FREE_PRINT_LIMIT, learnBillingCheckout, learnBillingStatus, learnRequestHasFamilyAccessAsync } from "./billing.js";
 import { googleCalendarCallback, googleCalendarConnect, googleCalendarPreview, googleCalendarStatus, googleCalendarSync } from "./google-calendar.js";
 import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-source.js";
 import { enrichLiturgicalDayWithOrthocal, handleLearnReadingsStatus } from "./readings-source.js";
+import { buildLearnPrintDocument, buildLearnReportPrintDocument, printDocumentFilename, renderPrintDocumentPdf } from "./print-engine.js";
 import { createLearnRepositoryForRequest, SeedLearnRepository } from "./repository.js";
-import { saveLearnGraceMode, saveLearnSetup } from "./setup-persistence.js";
+import { learnSetupIdentity, saveLearnGraceMode, saveLearnSetup } from "./setup-persistence.js";
+
+const LEARN_PRINT_USAGE_PREFIX = "__agapay_learn_print_usage:";
 
 function requestedCalendarType(url) {
   return url.searchParams.get("calendar") || "julian";
@@ -29,6 +32,57 @@ async function requireLearnRepository(request, env) {
   const repository = await createLearnRepositoryForRequest(request, env);
   if (!repository) return { response: unauthorized() };
   return { repository };
+}
+
+function learnPrintUsageKey(identity) {
+  return `${LEARN_PRINT_USAGE_PREFIX}${identity?.householdId || identity?.email || "unknown"}`;
+}
+
+async function loadLearnPrintUsage(env, identity) {
+  if (!env.AGAPAY_REGISTRATIONS || !identity) return { count: 0 };
+  const raw = await env.AGAPAY_REGISTRATIONS.get(learnPrintUsageKey(identity));
+  if (!raw) return { count: 0 };
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      count: Math.max(0, Number(parsed.count || 0)),
+      updatedAt: parsed.updatedAt || ""
+    };
+  } catch {
+    return { count: 0 };
+  }
+}
+
+async function incrementLearnPrintUsage(env, identity) {
+  if (!env.AGAPAY_REGISTRATIONS || !identity) return { count: 0 };
+  const current = await loadLearnPrintUsage(env, identity);
+  const next = {
+    count: current.count + 1,
+    updatedAt: new Date().toISOString()
+  };
+  await env.AGAPAY_REGISTRATIONS.put(learnPrintUsageKey(identity), JSON.stringify(next));
+  return next;
+}
+
+async function enforceLearnPrintLimit(request, env, identity) {
+  if (await learnRequestHasFamilyAccessAsync(request, env, identity)) {
+    return { ok: true, family: true, count: 0, limit: LEARN_FREE_PRINT_LIMIT };
+  }
+  const usage = await loadLearnPrintUsage(env, identity);
+  if (usage.count >= LEARN_FREE_PRINT_LIMIT) {
+    return {
+      ok: false,
+      response: json({
+        ok: false,
+        error: `The free AGAPAY Learn plan includes ${LEARN_FREE_PRINT_LIMIT} PDF prints. Upgrade to keep generating print packs.`,
+        upgradeRequired: true,
+        printLimit: LEARN_FREE_PRINT_LIMIT,
+        printCount: usage.count
+      }, { status: 403 })
+    };
+  }
+  const updated = await incrementLearnPrintUsage(env, identity);
+  return { ok: true, family: false, count: updated.count, limit: LEARN_FREE_PRINT_LIMIT };
 }
 
 export function handleLearnMeta(env) {
@@ -145,6 +199,58 @@ export async function handleLearnPrintCenter(request, env) {
       enabled: true
     },
     printCenter
+  });
+}
+
+export async function handleLearnPrintPdf(request, env, templateId = "") {
+  const blocked = assertLearnEnabled(env);
+  if (blocked) return blocked;
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+
+  const url = new URL(request.url);
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+  const { repository } = auth;
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return unauthorized();
+
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    body = {};
+  }
+
+  const limit = await enforceLearnPrintLimit(request, env, identity);
+  if (!limit.ok) return limit.response;
+  const resolvedTemplateId = templateId || body.templateId || "print_mom_weekly";
+  const reportTemplate = /report|transcript|subject-progress|year-end/i.test(resolvedTemplateId);
+  const document = reportTemplate
+    ? buildLearnReportPrintDocument(repository.getReports(), {
+        templateId: resolvedTemplateId,
+        label: body.label || "",
+        generatedAt: new Date().toISOString()
+      })
+    : buildLearnPrintDocument(repository.getPrintCenter({
+        calendarType: requestedCalendarType(url)
+      }), {
+        templateId: resolvedTemplateId,
+        childId: body.childId || "",
+        termId: body.termId || "",
+        month: body.month || "",
+        year: body.year || "",
+        generatedAt: new Date().toISOString()
+      });
+  const pdfBytes = await renderPrintDocumentPdf(document);
+
+  return new Response(pdfBytes, {
+    headers: {
+      "content-type": "application/pdf",
+      "content-disposition": `attachment; filename="${printDocumentFilename(document)}"`,
+      "cache-control": "no-store",
+      "x-agapay-learn-print-count": String(limit.count),
+      "x-agapay-learn-print-limit": String(limit.limit)
+    }
   });
 }
 

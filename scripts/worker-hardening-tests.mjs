@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import worker from "../src/worker.js";
+import { LEARN_FREE_PRINT_LIMIT } from "../src/learn/billing.js";
 
 class MemoryKV {
   constructor() {
@@ -302,6 +303,59 @@ async function withMockFetch(handler, run) {
   }), testEnv);
   assert.equal(envAllowlistBilling.status, 200);
   assert.equal((await json(envAllowlistBilling)).plan, "family");
+}
+
+{
+  const testEnv = env();
+  const noAuth = await worker.fetch(request("/api/learn/print/print_mom_weekly", {
+    method: "POST",
+    body: {}
+  }), testEnv);
+  assert.equal(noAuth.status, 401);
+
+  const spoofedHeaderOnly = await worker.fetch(request("/api/learn/print/print_mom_weekly", {
+    method: "POST",
+    headers: {
+      "X-AGAPAY-Learn-Email": "print-victim@example.com",
+      "X-AGAPAY-Learn-Plan": "family"
+    },
+    body: {}
+  }), testEnv);
+  assert.equal(spoofedHeaderOnly.status, 401);
+
+  const free = await verifiedDonorSession(testEnv, "free-print-limit@example.com");
+  for (let index = 0; index < LEARN_FREE_PRINT_LIMIT; index += 1) {
+    const response = await worker.fetch(request("/api/learn/print/print_mom_weekly", {
+      method: "POST",
+      headers: free.headers,
+      body: {}
+    }), testEnv);
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type") || "", /application\/pdf/);
+    assert.equal(response.headers.get("x-agapay-learn-print-count"), String(index + 1));
+  }
+
+  const blocked = await worker.fetch(request("/api/learn/print/print_mom_weekly", {
+    method: "POST",
+    headers: free.headers,
+    body: {}
+  }), testEnv);
+  assert.equal(blocked.status, 403);
+  const blockedBody = await json(blocked);
+  assert.equal(blockedBody.upgradeRequired, true);
+  assert.equal(blockedBody.printLimit, LEARN_FREE_PRINT_LIMIT);
+
+  const family = await verifiedDonorSession(testEnv, "stephanie@dunncrew.com");
+  for (let index = 0; index < LEARN_FREE_PRINT_LIMIT + 2; index += 1) {
+    const response = await worker.fetch(request("/api/learn/print/print_mom_weekly", {
+      method: "POST",
+      headers: family.headers,
+      body: {}
+    }), testEnv);
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type") || "", /application\/pdf/);
+    assert.equal(response.headers.get("x-agapay-learn-print-count"), "0");
+  }
 }
 
 {
