@@ -27,6 +27,8 @@ import {
   verifyParishDashboardBearer,
 } from "./parish.js";
 
+import { verifyStripeWebhook } from "./stripe.js";
+
 import { getBearerToken } from "../lib/core.js";
 
 // Auth for stewardship SSR pages.
@@ -1631,11 +1633,11 @@ export async function handleStewardshipWebhook(request, env) {
   const sig = request.headers.get("stripe-signature") || "";
   const secret = env.STEWARDSHIP_STRIPE_WEBHOOK_SECRET;
 
-  // Verify signature
-  if (secret) {
-    const valid = await verifyStripeWebhookSignature(body, sig, secret);
-    if (!valid) return json({ error: "Invalid signature" }, { status: 400 });
+  if (!secret) {
+    return json({ error: "STEWARDSHIP_STRIPE_WEBHOOK_SECRET is not configured" }, { status: 500 });
   }
+  const valid = await verifyStripeWebhook(body, sig, secret);
+  if (!valid) return json({ error: "Invalid signature" }, { status: 400 });
 
   let event;
   try { event = JSON.parse(body); } catch { return json({ error: "Invalid JSON" }, { status: 400 }); }
@@ -1727,29 +1729,6 @@ async function loadRegistrationByStripeCustomer(env, customerId) {
 }
 
 // Stripe webhook signature verification (HMAC-SHA256)
-async function verifyStripeWebhookSignature(payload, sigHeader, secret) {
-  try {
-    const parts = Object.fromEntries(sigHeader.split(",").map(p => p.split("=")));
-    const timestamp = parts.t;
-    const sig = parts.v1;
-    if (!timestamp || !sig) return false;
-
-    const signedPayload = timestamp + "." + payload;
-    const key = await crypto.subtle.importKey(
-      "raw", new TextEncoder().encode(secret),
-      { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-    );
-    const computed = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(signedPayload));
-    const hex = Array.from(new Uint8Array(computed)).map(b => b.toString(16).padStart(2, "0")).join("");
-
-    // Constant-time compare
-    if (hex.length !== sig.length) return false;
-    let mismatch = 0;
-    for (let i = 0; i < hex.length; i++) mismatch |= hex.charCodeAt(i) ^ sig.charCodeAt(i);
-    return mismatch === 0;
-  } catch { return false; }
-}
-
 // ─── D1 sub-record helpers ────────────────────────────────────────────────────
 
 async function loadMeetingSubRecords(env, meetingId) {

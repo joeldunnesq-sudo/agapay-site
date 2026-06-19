@@ -3,7 +3,7 @@ import { buildReportCardExport, buildTranscriptExport } from "./academic-exports
 import { getLearnSeedSnapshot } from "./demo-data.js";
 import { normalizeCalendarType, SeedLiturgicalSource } from "./liturgical-source.js";
 import { buildPrintJobRequest, buildWeeklyHouseholdPrintDocument } from "./print-engine.js";
-import { getLearnSeedForRequest } from "./setup-persistence.js";
+import { getLearnSeedForIdentity, learnSetupIdentity } from "./setup-persistence.js";
 
 function buildHouseholdStreamCards(seed, daily) {
   const streamLookup = new Map(seed.householdStreams.map((stream) => [stream.id, stream]));
@@ -826,5 +826,7 @@ export function createSeedLearnRepository() {
 }
 
 export async function createLearnRepositoryForRequest(request, env) {
-  return new SeedLearnRepository(await getLearnSeedForRequest(env, request));
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return null;
+  return new SeedLearnRepository(await getLearnSeedForIdentity(env, identity));
 }

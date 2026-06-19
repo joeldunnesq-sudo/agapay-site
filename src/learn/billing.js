@@ -1,4 +1,5 @@
 import { d1, d1First, d1Run, json, normalizeEmail, safeParseJsonRow } from "../lib/core.js";
+import { requireDonor } from "../handlers/parish.js";
 
 export const LEARN_FREE_CHILD_LIMIT = 2;
 export const LEARN_FREE_PRINT_LIMIT = 3;
@@ -23,10 +24,6 @@ const planCatalog = {
     description: "Annual household subscription for AGAPAY Learn."
   }
 };
-const defaultFullAccessEmails = [
-  "stephaie@dunncrew.com",
-  "stephanie@dunncrew.com"
-];
 const LEARN_BILLING_KV_PREFIX = "__agapay_learn_billing:";
 
 function slug(value, fallback = "item") {
@@ -66,13 +63,9 @@ function checkoutConfigured(env = {}) {
   return Boolean(env.STRIPE_SECRET_KEY);
 }
 
-function requestEmail(request) {
-  return normalizeEmail(
-    request?.headers?.get("X-AGAPAY-Learn-Email")
-    || request?.headers?.get("X-AGAPAY-User-Email")
-    || request?.headers?.get("CF-Access-Authenticated-User-Email")
-    || ""
-  );
+async function requestEmail(request, env = {}) {
+  const donor = await requireDonor(request, env);
+  return normalizeEmail(donor?.email || "");
 }
 
 function learnBillingIdentityFromEmail(email) {
@@ -83,8 +76,8 @@ function learnBillingIdentityFromEmail(email) {
   };
 }
 
-function learnBillingIdentity(request) {
-  return learnBillingIdentityFromEmail(requestEmail(request));
+async function learnBillingIdentity(request, env = {}) {
+  return learnBillingIdentityFromEmail(await requestEmail(request, env));
 }
 
 function learnBillingKey(email) {
@@ -173,7 +166,7 @@ function configuredFullAccessEmails(env = {}) {
 export function learnEmailHasFullAccess(email, env = {}) {
   const normalized = normalizeEmail(email);
   if (!normalized) return false;
-  return new Set([...defaultFullAccessEmails, ...configuredFullAccessEmails(env)]).has(normalized);
+  return new Set(configuredFullAccessEmails(env)).has(normalized);
 }
 
 export async function learnEmailHasPaidAccess(email, env = {}) {
@@ -182,28 +175,30 @@ export async function learnEmailHasPaidAccess(email, env = {}) {
   return ["active", "trialing", "free_forever"].includes(String(billing?.status || "").toLowerCase());
 }
 
-export function learnPlanForRequest(request, env = {}) {
-  const email = requestEmail(request);
+export async function learnPlanForRequest(request, env = {}, identity = null) {
+  const email = identity?.email || await requestEmail(request, env);
   if (learnEmailHasFullAccess(email, env)) return LEARN_FAMILY_PLAN;
-  const headerPlan = String(request?.headers?.get("X-AGAPAY-Learn-Plan") || "").trim().toLowerCase();
-  if (headerPlan === LEARN_FAMILY_PLAN) return LEARN_FAMILY_PLAN;
   return LEARN_FREE_PLAN;
 }
 
-export function learnRequestHasFamilyAccess(request, env = {}) {
-  return learnPlanForRequest(request, env) === LEARN_FAMILY_PLAN;
+export async function learnRequestHasFamilyAccess(request, env = {}, identity = null) {
+  return await learnPlanForRequest(request, env, identity) === LEARN_FAMILY_PLAN;
 }
 
-export async function learnRequestHasFamilyAccessAsync(request, env = {}) {
-  if (learnRequestHasFamilyAccess(request, env)) return true;
-  return learnEmailHasPaidAccess(requestEmail(request), env);
+export async function learnRequestHasFamilyAccessAsync(request, env = {}, identity = null) {
+  if (await learnRequestHasFamilyAccess(request, env, identity)) return true;
+  const email = identity?.email || await requestEmail(request, env);
+  if (!email) return false;
+  return learnEmailHasPaidAccess(email, env);
 }
 
 export async function learnBillingStatus(request, env = {}) {
-  const email = requestEmail(request);
+  const identity = await learnBillingIdentity(request, env);
+  if (!identity.email) return json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  const email = identity.email;
   const billing = await loadLearnBillingRecord(env, email);
   const hasPaidAccess = ["active", "trialing", "free_forever"].includes(String(billing?.status || "").toLowerCase());
-  const plan = hasPaidAccess ? LEARN_FAMILY_PLAN : learnPlanForRequest(request, env);
+  const plan = hasPaidAccess ? LEARN_FAMILY_PLAN : await learnPlanForRequest(request, env, identity);
   return json({
     ok: true,
     product: "learn",
@@ -229,7 +224,8 @@ export async function learnBillingStatus(request, env = {}) {
 export async function learnBillingCheckout(request, env = {}) {
   const body = await request.json().catch(() => ({}));
   const plan = normalizeCheckoutPlan(body.plan);
-  const identity = learnBillingIdentity(request);
+  const identity = await learnBillingIdentity(request, env);
+  if (!identity.email) return json({ ok: false, error: "Unauthorized" }, { status: 401 });
   const priceId = learnPriceId(env, plan);
   if (!env.STRIPE_SECRET_KEY) {
     return json({

@@ -26,24 +26,24 @@ for (const routeFile of publicRoutes) {
 
 const directoryHtml = await readFile("public/directory.html", "utf8");
 assert.ok(
-  directoryHtml.includes("leaflet@1.9.4"),
-  "Directory page should include Leaflet assets for interactive map support"
+  directoryHtml.includes("AGAPAY Directory Waitlist"),
+  "Directory page should render the current AGAPAY Directory waitlist experience"
 );
 assert.ok(
-  directoryHtml.includes("id=\"directoryMap\""),
-  "Directory page should include the live map root element"
+  directoryHtml.includes("id=\"waitlistForm\""),
+  "Directory page should include a waitlist form"
 );
 assert.ok(
-  directoryHtml.includes("mapCardTitle"),
-  "Directory page should include the live map detail card"
+  directoryHtml.includes("id=\"waitlistEmail\""),
+  "Directory page should collect waitlist email addresses"
 );
 assert.ok(
-  directoryHtml.includes("fitBounds(bounds"),
-  "Directory page should auto-fit the map to visible markers"
+  directoryHtml.includes("AGAPAY Directory waitlist"),
+  "Directory page should identify the Directory waitlist clearly"
 );
 assert.ok(
-  directoryHtml.includes("const listings = ["),
-  "Directory page should define listing data for cards and markers"
+  directoryHtml.includes("mailto:hello@agapay.app"),
+  "Directory waitlist should route submissions to AGAPAY"
 );
 
 const registerHtml = await readFile("public/register.html", "utf8");
@@ -56,15 +56,24 @@ assert.ok(parishApp.includes("addressLine1"), "Parish settings should include ed
 assert.ok(parishApp.includes("postalCode"), "Parish settings should include editable postal code");
 assert.ok(parishApp.includes("country"), "Parish settings should include editable country");
 
-const worker = await readFile("src/worker.js", "utf8");
-assert.ok(worker.includes("X-AGAPAY-Admin-Token"), "Worker should accept AGAPAY admin auth header");
-assert.ok(worker.includes("X-AGAPAY-Donor-Email"), "Worker should accept AGAPAY donor auth header");
-assert.ok(worker.includes("handleAdminReleaseStatus"), "Worker should expose a release-status report");
-assert.ok(worker.includes("STRIPE_WEBHOOK_SECRET_CONNECT"), "Worker should support a separate Connect webhook signing secret");
-assert.ok(worker.includes("handleParishStripeRefresh"), "Worker should let parishes refresh Stripe Connect status");
-assert.ok(worker.includes("checkoutFinancials("), "Worker should centralize donation fee calculations");
-assert.ok(worker.includes("subscription_data[application_fee_percent]"), "Worker should apply AGAPAY donation fees to recurring donor gifts");
-assert.ok(worker.includes("Parish SaaS subscription billing is created in a separate flow"), "Worker should keep parish subscription billing separate from donation fees");
+const backendFiles = [
+  "src/worker.js",
+  "src/lib/core.js",
+  "src/handlers/admin.js",
+  "src/handlers/donor.js",
+  "src/handlers/parish.js",
+  "src/handlers/stripe.js",
+  "src/handlers/stewardship.js"
+];
+const backendSources = (await Promise.all(backendFiles.map((file) => readFile(file, "utf8")))).join("\n");
+assert.ok(backendSources.includes("X-AGAPAY-Admin-Token"), "Backend should accept AGAPAY admin auth header");
+assert.ok(backendSources.includes("X-AGAPAY-Donor-Email"), "Backend should accept AGAPAY donor auth header");
+assert.ok(backendSources.includes("handleAdminReleaseStatus"), "Backend should expose a release-status report");
+assert.ok(backendSources.includes("STRIPE_WEBHOOK_SECRET_CONNECT"), "Backend should support a separate Connect webhook signing secret");
+assert.ok(backendSources.includes("handleParishStripeRefresh"), "Backend should let parishes refresh Stripe Connect status");
+assert.ok(backendSources.includes("checkoutFinancials("), "Backend should centralize donation fee calculations");
+assert.ok(backendSources.includes("subscription_data[application_fee_percent]"), "Backend should apply AGAPAY donation fees to recurring donor gifts");
+assert.ok(backendSources.includes("Parish SaaS subscription billing is created in a separate flow"), "Backend should keep parish subscription billing separate from donation fees");
 
 if (process.env.AGAPAY_BASE_URL) {
   const baseUrl = process.env.AGAPAY_BASE_URL.replace(/\/+$/, "");

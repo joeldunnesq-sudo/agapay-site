@@ -1,9 +1,8 @@
 import { d1, d1First, d1Run, normalizeEmail, safeParseJsonRow } from "../lib/core.js";
+import { requireDonor } from "../handlers/parish.js";
 import { LEARN_FREE_CHILD_LIMIT, learnRequestHasFamilyAccessAsync } from "./billing.js";
 import { getLearnSeedSnapshot } from "./demo-data.js";
 
-const FALLBACK_EMAIL = "demo@agapay.local";
-const FALLBACK_HOUSEHOLD_ID = "household_martin";
 const LEARN_SETUP_KV_PREFIX = "__agapay_learn_setup:";
 const devSetupSnapshots = new Map();
 
@@ -102,20 +101,18 @@ function bookBelongsToHouseholdStream(book = {}) {
   );
 }
 
-export function learnSetupIdentity(request) {
-  const email = normalizeEmail(
-    request?.headers?.get("X-AGAPAY-Learn-Email")
-    || request?.headers?.get("X-AGAPAY-User-Email")
-    || request?.headers?.get("CF-Access-Authenticated-User-Email")
-    || ""
-  ) || FALLBACK_EMAIL;
+export async function learnSetupIdentity(request, env) {
+  const donor = await requireDonor(request, env);
+  const email = normalizeEmail(donor?.email || "");
+  if (!email) return null;
   return {
     email,
-    householdId: email === FALLBACK_EMAIL ? FALLBACK_HOUSEHOLD_ID : `learn_household_${slug(email)}`
+    donor,
+    householdId: `learn_household_${slug(email)}`
   };
 }
 
-function normalizeSetupPayload(payload = {}, identity = learnSetupIdentity()) {
+function normalizeSetupPayload(payload = {}, identity) {
   const seed = getLearnSeedSnapshot();
   const household = payload.household || {};
   const schoolYear = payload.schoolYear || {};
@@ -586,8 +583,8 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
   return next;
 }
 
-export async function loadLearnSetupSnapshot(env, request) {
-  const identity = learnSetupIdentity(request);
+export async function loadLearnSetupSnapshotForIdentity(env, identity) {
+  if (!identity?.householdId) return null;
   if (!d1(env)) return devSetupSnapshots.get(identity.householdId) || null;
   try {
     const row = await d1First(env, "SELECT data FROM learn_households WHERE id = ?1", identity.householdId);
@@ -603,8 +600,19 @@ export async function loadLearnSetupSnapshot(env, request) {
   return null;
 }
 
+export async function loadLearnSetupSnapshot(env, request) {
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return null;
+  return loadLearnSetupSnapshotForIdentity(env, identity);
+}
+
+export async function getLearnSeedForIdentity(env, identity) {
+  if (!identity) return null;
+  return applySetupSnapshotToSeed(getLearnSeedSnapshot(), await loadLearnSetupSnapshotForIdentity(env, identity));
+}
+
 export async function getLearnSeedForRequest(env, request) {
-  return applySetupSnapshotToSeed(getLearnSeedSnapshot(), await loadLearnSetupSnapshot(env, request));
+  return getLearnSeedForIdentity(env, await learnSetupIdentity(request, env));
 }
 
 async function bestEffort(statement) {
@@ -616,9 +624,12 @@ async function bestEffort(statement) {
 }
 
 export async function saveLearnSetup(env, request, payload) {
-  const identity = learnSetupIdentity(request);
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) {
+    return { ok: false, status: 401, error: "Unauthorized" };
+  }
   const setupSnapshot = normalizeSetupPayload(payload, identity);
-  if (setupSnapshot.children.length > LEARN_FREE_CHILD_LIMIT && !(await learnRequestHasFamilyAccessAsync(request, env))) {
+  if (setupSnapshot.children.length > LEARN_FREE_CHILD_LIMIT && !(await learnRequestHasFamilyAccessAsync(request, env, identity))) {
     return {
       ok: false,
       status: 402,
@@ -775,8 +786,11 @@ export async function saveLearnSetup(env, request, payload) {
 }
 
 export async function saveLearnGraceMode(env, request, payload = {}) {
-  const identity = learnSetupIdentity(request);
-  const current = await loadLearnSetupSnapshot(env, request);
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) {
+    return { ok: false, status: 401, error: "Unauthorized" };
+  }
+  const current = await loadLearnSetupSnapshotForIdentity(env, identity);
   const nextPreferences = {
     ...(current?.preferences || {}),
     graceModeDefault: text(payload.mode || payload.graceModeDefault, current?.preferences?.graceModeDefault || "light"),

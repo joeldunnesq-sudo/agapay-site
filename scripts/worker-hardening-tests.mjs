@@ -32,6 +32,7 @@ function env() {
     AGAPAY_REGISTRATIONS: new MemoryKV(),
     AGAPAY_ADMIN_TOKEN: "root-admin-token-for-tests",
     AGAPAY_APP_URL: "https://agapay.test",
+    AGAPAY_ENABLED_PRODUCTS: "give,learn",
     STRIPE_WEBHOOK_SECRET: "whsec_test_secret",
     STRIPE_WEBHOOK_SECRET_CONNECT: "whsec_connect_test_secret",
     STRIPE_SECRET_KEY: "sk_test_worker_hardening"
@@ -72,8 +73,7 @@ async function parishSession(testEnv, parishId, password) {
   return json(response);
 }
 
-async function stripeSignature(payload, secret) {
-  const timestamp = Math.floor(Date.now() / 1000);
+async function stripeSignature(payload, secret, timestamp = Math.floor(Date.now() / 1000)) {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -94,6 +94,51 @@ async function postStripeWebhook(testEnv, event, secret = testEnv.STRIPE_WEBHOOK
     headers: { "Stripe-Signature": signature },
     body: payload
   }), testEnv);
+}
+
+async function postStewardshipWebhook(testEnv, event, secret = testEnv.STEWARDSHIP_STRIPE_WEBHOOK_SECRET, timestamp) {
+  const payload = JSON.stringify(event);
+  const signature = await stripeSignature(payload, secret, timestamp);
+  return worker.fetch(new Request("https://agapay.test/webhooks/stewardship", {
+    method: "POST",
+    headers: { "Stripe-Signature": signature },
+    body: payload
+  }), testEnv);
+}
+
+async function verifiedDonorSession(testEnv, email, password = "correct-horse-battery") {
+  const signup = await worker.fetch(request("/api/donor/signup", {
+    method: "POST",
+    body: {
+      donorName: `Test ${email}`,
+      email,
+      password,
+      parishId: "st-test"
+    }
+  }), testEnv);
+  assert.equal(signup.status, 201);
+  const donorKey = `__agapay_donor__${email}`;
+  const donor = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(donorKey));
+  await testEnv.AGAPAY_REGISTRATIONS.put(donorKey, JSON.stringify({
+    ...donor,
+    emailVerifiedAt: new Date().toISOString()
+  }));
+
+  const login = await worker.fetch(request("/api/donor/login", {
+    method: "POST",
+    body: { email, password }
+  }), testEnv);
+  assert.equal(login.status, 200);
+  const body = await json(login);
+  assert.ok(body.token);
+  return {
+    email,
+    token: body.token,
+    headers: {
+      Authorization: `Bearer ${body.token}`,
+      "X-AGAPAY-Donor-Email": email
+    }
+  };
 }
 
 async function withMockFetch(handler, run) {
@@ -158,6 +203,108 @@ async function withMockFetch(handler, run) {
 
 {
   const testEnv = env();
+  const noAuth = await worker.fetch(request("/api/learn/dashboard"), testEnv);
+  assert.equal(noAuth.status, 401);
+
+  const spoofedHeaderOnly = await worker.fetch(request("/api/learn/dashboard", {
+    headers: { "X-AGAPAY-Learn-Email": "victim@example.com" }
+  }), testEnv);
+  assert.equal(spoofedHeaderOnly.status, 401);
+
+  const alpha = await verifiedDonorSession(testEnv, "alpha-learn@example.com");
+  const beta = await verifiedDonorSession(testEnv, "beta-learn@example.com");
+  const stephanie = await verifiedDonorSession(testEnv, "stephanie@dunncrew.com");
+
+  const alphaDashboard = await worker.fetch(request("/api/learn/dashboard", {
+    headers: alpha.headers
+  }), testEnv);
+  assert.equal(alphaDashboard.status, 200);
+  assert.equal((await json(alphaDashboard)).ok, true);
+
+  const alphaSetupPayload = {
+    household: { name: "Alpha Household", parishName: "St. Alpha" },
+    schoolYear: { label: "2026-2027", startDate: "2026-09-01", endDate: "2027-05-31" },
+    term: { id: "term_1", label: "Term 1", startDate: "2026-09-01", endDate: "2026-12-15" },
+    preferences: { evaluationModel: "narrative-only", graceModeDefault: "light" },
+    children: [{ firstName: "Anna", ageYears: 8, gradeLabel: "Form I" }],
+    streams: [{ title: "Morning Basket", streamType: "household", cadenceLabel: "Daily" }],
+    subjects: [],
+    books: [],
+    formation: {},
+    formationMaterials: []
+  };
+  const alphaSave = await worker.fetch(request("/api/learn/setup", {
+    method: "POST",
+    headers: alpha.headers,
+    body: alphaSetupPayload
+  }), testEnv);
+  assert.equal(alphaSave.status, 200);
+  assert.equal((await json(alphaSave)).onboarding.household.name, "Alpha Household");
+
+  const betaRead = await worker.fetch(request("/api/learn/setup", {
+    headers: {
+      ...beta.headers,
+      "X-AGAPAY-Learn-Email": "alpha-learn@example.com"
+    }
+  }), testEnv);
+  assert.equal(betaRead.status, 200);
+  assert.notEqual((await json(betaRead)).onboarding.household.name, "Alpha Household");
+
+  const betaSpoofedSave = await worker.fetch(request("/api/learn/setup", {
+    method: "POST",
+    headers: {
+      ...beta.headers,
+      "X-AGAPAY-Learn-Email": "alpha-learn@example.com"
+    },
+    body: {
+      ...alphaSetupPayload,
+      household: { name: "Beta Household", parishName: "St. Beta" },
+      children: [{ firstName: "Ben", ageYears: 10, gradeLabel: "Form II" }]
+    }
+  }), testEnv);
+  assert.equal(betaSpoofedSave.status, 200);
+
+  const alphaAfterSpoof = await worker.fetch(request("/api/learn/setup", {
+    headers: alpha.headers
+  }), testEnv);
+  assert.equal(alphaAfterSpoof.status, 200);
+  assert.equal((await json(alphaAfterSpoof)).onboarding.household.name, "Alpha Household");
+
+  const billingHeaderOnly = await worker.fetch(request("/api/learn/billing/status", {
+    headers: {
+      "X-AGAPAY-Learn-Email": "alpha-learn@example.com",
+      "X-AGAPAY-Learn-Plan": "family"
+    }
+  }), testEnv);
+  assert.equal(billingHeaderOnly.status, 401);
+
+  const freeBilling = await worker.fetch(request("/api/learn/billing/status", {
+    headers: {
+      ...alpha.headers,
+      "X-AGAPAY-Learn-Plan": "family"
+    }
+  }), testEnv);
+  assert.equal(freeBilling.status, 200);
+  const freeBillingBody = await json(freeBilling);
+  assert.equal(freeBillingBody.plan, "free");
+  assert.equal(freeBillingBody.fullAccess, false);
+
+  const hardcodedEmailBilling = await worker.fetch(request("/api/learn/billing/status", {
+    headers: stephanie.headers
+  }), testEnv);
+  assert.equal(hardcodedEmailBilling.status, 200);
+  assert.equal((await json(hardcodedEmailBilling)).plan, "free");
+
+  testEnv.AGAPAY_LEARN_FULL_ACCESS_EMAILS = "stephanie@dunncrew.com";
+  const envAllowlistBilling = await worker.fetch(request("/api/learn/billing/status", {
+    headers: stephanie.headers
+  }), testEnv);
+  assert.equal(envAllowlistBilling.status, 200);
+  assert.equal((await json(envAllowlistBilling)).plan, "family");
+}
+
+{
+  const testEnv = env();
   const signup = await worker.fetch(request("/api/donor/signup", {
     method: "POST",
     body: {
@@ -189,7 +336,7 @@ async function withMockFetch(handler, run) {
   }), testEnv);
   assert.equal(resetRequest.status, 200);
   const resetBody = await json(resetRequest);
-  assert.match(resetBody.resetUrl, /\/donor\/login\?reset=1/);
+  assert.match(resetBody.resetUrl, /\/myagapay\/login\?reset=1/);
   const resetToken = new URL(resetBody.resetUrl).searchParams.get("token");
   assert.ok(resetToken);
 
@@ -1027,6 +1174,51 @@ async function withMockFetch(handler, run) {
   assert.equal(disputeWon.status, "completed");
   assert.equal(disputeWon.paymentStatus, "paid");
   assert.equal(disputeWon.disputeStatus, "won");
+}
+
+{
+  const testEnv = env();
+  const registration = {
+    reference: "AGP-STEWARDSHIP-WEBHOOK",
+    status: "verified",
+    parishId: "st-stewardship-webhook",
+    parishName: "St. Stewardship Orthodox Church",
+    stewardshipStatus: "no_subscription"
+  };
+  await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_parish_id__st-stewardship-webhook", registration.reference);
+
+  const event = {
+    id: "evt_stewardship_unsigned",
+    type: "customer.subscription.updated",
+    data: {
+      object: {
+        id: "sub_stewardship_unsigned",
+        status: "active",
+        customer: "cus_stewardship",
+        metadata: { parish_id: "st-stewardship-webhook" }
+      }
+    }
+  };
+
+  const missingSecret = await worker.fetch(new Request("https://agapay.test/webhooks/stewardship", {
+    method: "POST",
+    body: JSON.stringify(event)
+  }), testEnv);
+  assert.equal(missingSecret.status, 500);
+  const afterMissingSecret = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(registration.reference));
+  assert.equal(afterMissingSecret.stewardshipStatus, "no_subscription");
+
+  testEnv.STEWARDSHIP_STRIPE_WEBHOOK_SECRET = "whsec_stewardship_test";
+  const stale = await postStewardshipWebhook(
+    testEnv,
+    { ...event, id: "evt_stewardship_stale" },
+    testEnv.STEWARDSHIP_STRIPE_WEBHOOK_SECRET,
+    Math.floor(Date.now() / 1000) - 301
+  );
+  assert.equal(stale.status, 400);
+  const afterStale = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(registration.reference));
+  assert.equal(afterStale.stewardshipStatus, "no_subscription");
 }
 
 console.log("AGAPAY Worker hardening tests passed.");

@@ -1,4 +1,4 @@
-import { json } from "../lib/core.js";
+import { json, unauthorized } from "../lib/core.js";
 import { assertLearnEnabled, enabledProductSlugs, LEARN_PRODUCT_SLUG, learnCoOpEnabled } from "./access.js";
 import { learnBillingCheckout, learnBillingStatus } from "./billing.js";
 import { googleCalendarCallback, googleCalendarConnect, googleCalendarPreview, googleCalendarStatus, googleCalendarSync } from "./google-calendar.js";
@@ -23,6 +23,12 @@ function todayIso(env = {}) {
     return acc;
   }, {});
   return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+async function requireLearnRepository(request, env) {
+  const repository = await createLearnRepositoryForRequest(request, env);
+  if (!repository) return { response: unauthorized() };
+  return { repository };
 }
 
 export function handleLearnMeta(env) {
@@ -77,7 +83,9 @@ export async function handleLearnDashboard(request, env) {
   if (blocked) return blocked;
 
   const url = new URL(request.url);
-  const repository = await createLearnRepositoryForRequest(request, env);
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+  const { repository } = auth;
   const calendarType = requestedCalendarType(url);
   const civilDate = url.searchParams.get("date") || todayIso(env);
   const dashboard = repository.getDashboard({
@@ -100,7 +108,9 @@ export async function handleLearnPlanner(request, env) {
   if (blocked) return blocked;
 
   const url = new URL(request.url);
-  const repository = await createLearnRepositoryForRequest(request, env);
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+  const { repository } = auth;
   const planner = repository.getPlanner({
     calendarType: requestedCalendarType(url),
     view: url.searchParams.get("view") || "week"
@@ -121,7 +131,9 @@ export async function handleLearnPrintCenter(request, env) {
   if (blocked) return blocked;
 
   const url = new URL(request.url);
-  const repository = await createLearnRepositoryForRequest(request, env);
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+  const { repository } = auth;
   const printCenter = repository.getPrintCenter({
     calendarType: requestedCalendarType(url)
   });
@@ -143,7 +155,9 @@ export async function handleLearnFormation(request, env) {
   const url = new URL(request.url);
   const calendarType = requestedCalendarType(url);
   const civilDate = url.searchParams.get("date") || todayIso(env);
-  const repository = await createLearnRepositoryForRequest(request, env);
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+  const { repository } = auth;
   const formation = repository.getFormation({
     calendarType,
     civilDate
@@ -166,7 +180,9 @@ export async function handleLearnBooks(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
 
-  const repository = await createLearnRepositoryForRequest(request, env);
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+  const { repository } = auth;
   return json({
     ok: true,
     books: repository.getBooks()
@@ -177,7 +193,9 @@ export async function handleLearnCommunity(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
 
-  const repository = await createLearnRepositoryForRequest(request, env);
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+  const { repository } = auth;
   return json({
     ok: true,
     community: repository.getCommunity()
@@ -188,7 +206,9 @@ export async function handleLearnReports(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
 
-  const repository = await createLearnRepositoryForRequest(request, env);
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+  const { repository } = auth;
   return json({
     ok: true,
     reports: repository.getReports()
@@ -199,7 +219,9 @@ export async function handleLearnCoOp(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
 
-  const repository = await createLearnRepositoryForRequest(request, env);
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+  const { repository } = auth;
   return json({
     ok: true,
     coOp: repository.getCoOp({
@@ -212,7 +234,9 @@ export async function handleLearnOnboarding(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
 
-  const repository = await createLearnRepositoryForRequest(request, env);
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+  const { repository } = auth;
   return json({
     ok: true,
     onboarding: repository.getOnboarding()
@@ -278,7 +302,7 @@ export async function handleLearnGoogleCalendarStatus(request, env) {
   return googleCalendarStatus(request, env);
 }
 
-export function handleLearnGoogleCalendarConnect(request, env) {
+export async function handleLearnGoogleCalendarConnect(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return googleCalendarConnect(request, env);
@@ -293,14 +317,18 @@ export async function handleLearnGoogleCalendarCallback(request, env) {
 export async function handleLearnGoogleCalendarPreview(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
-  return googleCalendarPreview(await createLearnRepositoryForRequest(request, env), request);
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+  return googleCalendarPreview(auth.repository, request);
 }
 
 export async function handleLearnGoogleCalendarSync(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  return googleCalendarSync(await createLearnRepositoryForRequest(request, env), request, env);
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+  return googleCalendarSync(auth.repository, request, env);
 }
 
 export async function handleLearnBillingStatus(request, env) {

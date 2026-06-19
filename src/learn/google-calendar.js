@@ -1,4 +1,4 @@
-import { json } from "../lib/core.js";
+import { json, unauthorized } from "../lib/core.js";
 import { learnSetupIdentity } from "./setup-persistence.js";
 
 const GOOGLE_AUTH_BASE_URL = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -247,7 +247,8 @@ async function upsertGoogleEvent(accessToken, event, index, env) {
 
 export async function googleCalendarStatus(request, env = {}) {
   const baseUrl = publicBaseUrl(request, env);
-  const identity = learnSetupIdentity(request);
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return unauthorized();
   const connection = await loadConnection(env, identity.householdId);
   return json({
     ok: true,
@@ -264,7 +265,7 @@ export async function googleCalendarStatus(request, env = {}) {
   });
 }
 
-export function googleCalendarConnect(request, env = {}) {
+export async function googleCalendarConnect(request, env = {}) {
   if (!configured(env)) {
     return json({
       ok: false,
@@ -277,7 +278,8 @@ export function googleCalendarConnect(request, env = {}) {
 
   const url = new URL(request.url);
   const baseUrl = publicBaseUrl(request, env);
-  const identity = learnSetupIdentity(request);
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return unauthorized();
   const returnTo = url.searchParams.get("returnTo") || "/myagapay/learn/setup";
   const state = encodeState({ returnTo, householdId: identity.householdId });
   const authUrl = new URL(GOOGLE_AUTH_BASE_URL);
@@ -350,7 +352,8 @@ export async function googleCalendarSync(repository, request, env = {}) {
     return json({ ok: false, error: "Google Calendar sync is not configured yet." }, { status: 503 });
   }
 
-  const identity = learnSetupIdentity(request);
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return unauthorized();
   let connection = await loadConnection(env, identity.householdId);
   if (!connection?.refreshToken) {
     return json({
