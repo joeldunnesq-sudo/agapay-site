@@ -21,7 +21,7 @@ const checks = [
   { name: "public parishes", method: "GET", path: "/api/parishes?limit=5", ok: [200] },
   { name: "platform summary", method: "GET", path: "/api/platform/summary", ok: [200] },
   { name: "subscription tiers", method: "GET", path: "/api/subscription-tiers", ok: [200] },
-  { name: "learn setup api", method: "GET", path: "/api/learn/setup", ok: [200] },
+  { name: "learn setup api unauth", method: "GET", path: "/api/learn/setup", ok: [401] },
   { name: "donor dashboard unauth", method: "GET", path: "/api/donor/dashboard", ok: [401] },
   { name: "admin registrations unauth", method: "GET", path: "/api/admin/registrations?limit=5", ok: [401] },
   {

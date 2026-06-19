@@ -3,11 +3,23 @@ import { findParish } from "../lib/parishes.js";
 import { handleOptions, readJson, requireFields, sendJson } from "../lib/http.js";
 
 const requiredFields = ["parishId", "giftType", "amount", "firstName", "email"];
+const MAX_DONATION_CENTS = 5_000_000;
 
 function centsFromAmount(amount) {
   const numeric = Number(amount);
   if (!Number.isFinite(numeric) || numeric <= 0) return null;
-  return Math.round(numeric * 100);
+  const cents = Math.round(numeric * 100);
+  if (cents <= 0 || cents > MAX_DONATION_CENTS) return null;
+  return cents;
+}
+
+function donationAmountError(amount) {
+  const numeric = Number(amount);
+  const cents = Number.isFinite(numeric) ? Math.round(numeric * 100) : 0;
+  if (Number.isFinite(numeric) && numeric > 0 && cents > MAX_DONATION_CENTS) {
+    return "Amount exceeds the maximum allowed gift.";
+  }
+  return "Amount must be greater than zero.";
 }
 
 function postToStripe(form, stripeKey, stripeAccountId) {
@@ -59,7 +71,7 @@ export default async function handler(req, res) {
   if (missing.length) return sendJson(res, 422, { error: "Missing required fields", fields: missing });
 
   const amountCents = centsFromAmount(body.amount);
-  if (!amountCents) return sendJson(res, 422, { error: "Amount must be greater than zero" });
+  if (!amountCents) return sendJson(res, 422, { error: donationAmountError(body.amount) });
 
   const parish = await findParish(body.parishId);
   if (!parish || parish.status !== "verified") return sendJson(res, 404, { error: "Verified parish not found" });

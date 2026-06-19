@@ -18,6 +18,7 @@ import {
   normalizeEmail,
   publicDonor,
   rateLimit,
+  rateLimitByKey,
   safeParseJsonRow,
   saveDonor,
   secureCompare,
@@ -522,6 +523,9 @@ export async function handleDonorLogin(request, env) {
   const email = normalizeEmail(body.email);
   const password = String(body.password || "");
   if (!email || !password) return json({ error: "Email and password are required" }, { status: 422 });
+  const accountLimited = await rateLimitByKey(request, env, "donor-login-account", email, { limit: 10, windowSeconds: 300 });
+  if (accountLimited) return accountLimited;
+
   const donor = await loadDonor(env, email);
   if (!donor) return unauthorized();
   if (!(await verifyDonorPassword(donor, password))) return unauthorized();

@@ -308,6 +308,52 @@ async function withMockFetch(handler, run) {
   const signup = await worker.fetch(request("/api/donor/signup", {
     method: "POST",
     body: {
+      donorName: "Rate Limited Donor",
+      email: "rate-limited-donor@example.com",
+      password: "correct-horse-battery",
+      parishId: "st-test"
+    }
+  }), testEnv);
+  assert.equal(signup.status, 201);
+  const donorKey = "__agapay_donor__rate-limited-donor@example.com";
+  const donor = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(donorKey));
+  await testEnv.AGAPAY_REGISTRATIONS.put(donorKey, JSON.stringify({
+    ...donor,
+    emailVerifiedAt: new Date().toISOString()
+  }));
+
+  let limited;
+  for (let index = 0; index < 11; index += 1) {
+    limited = await worker.fetch(request("/api/donor/login", {
+      method: "POST",
+      headers: { "CF-Connecting-IP": `198.51.100.${index + 1}` },
+      body: {
+        email: "rate-limited-donor@example.com",
+        password: "wrong-password"
+      }
+    }), testEnv);
+  }
+  assert.equal(limited.status, 429);
+}
+
+{
+  const testEnv = env();
+  let limited;
+  for (let index = 0; index < 21; index += 1) {
+    limited = await worker.fetch(request("/api/admin/session", {
+      method: "POST",
+      headers: { "CF-Connecting-IP": `198.51.101.${index + 1}` },
+      body: { password: "wrong-admin-password" }
+    }), testEnv);
+  }
+  assert.equal(limited.status, 429);
+}
+
+{
+  const testEnv = env();
+  const signup = await worker.fetch(request("/api/donor/signup", {
+    method: "POST",
+    body: {
       donorName: "Reset Member",
       email: "reset-member@example.com",
       password: "original-password",
@@ -567,6 +613,30 @@ async function withMockFetch(handler, run) {
 {
   const testEnv = env();
   const registration = {
+    reference: "AGP-PARISH-ACCOUNT-RATE",
+    status: "verified",
+    parishId: "st-account-rate-limit",
+    parishName: "St. Account Rate Limit Orthodox Church",
+    communityType: "parish",
+    givingStatus: "active",
+    parishDashboardToken: "real-password"
+  };
+  await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
+  await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_parish_id__st-account-rate-limit", registration.reference);
+  let limited;
+  for (let index = 0; index < 21; index += 1) {
+    limited = await worker.fetch(request("/api/parish/dashboard/st-account-rate-limit/session", {
+      method: "POST",
+      headers: { "CF-Connecting-IP": `198.51.102.${index + 1}` },
+      body: { password: "wrong-parish-password" }
+    }), testEnv);
+  }
+  assert.equal(limited.status, 429);
+}
+
+{
+  const testEnv = env();
+  const registration = {
     reference: "AGP-CHECKOUT",
     status: "verified",
     parishId: "st-checkout",
@@ -582,6 +652,19 @@ async function withMockFetch(handler, run) {
   };
   await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
   await testEnv.AGAPAY_REGISTRATIONS.put("__agapay_index_parish_id__st-checkout", registration.reference);
+
+  const cappedCheckout = await worker.fetch(request("/api/create-checkout-session", {
+    method: "POST",
+    body: {
+      parishId: "st-checkout",
+      giftType: "stewardship",
+      amount: 50_000.01,
+      firstName: "Big",
+      email: "big@example.com"
+    }
+  }), testEnv);
+  assert.equal(cappedCheckout.status, 422);
+  assert.equal((await json(cappedCheckout)).error, "Amount exceeds the maximum allowed gift.");
 
   const calls = [];
   await withMockFetch(async (url, init = {}) => {

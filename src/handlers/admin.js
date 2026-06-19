@@ -29,6 +29,7 @@ import {
   parseJsonRow,
   parsePasswordRecord,
   rateLimit,
+  rateLimitByKey,
   recordStripeEvent,
   safeParseJsonRow,
   saveDonor,
@@ -596,6 +597,8 @@ export async function handleAdminSession(request, env) {
 
   const password = String(body.password || body.adminPassword || "").trim();
   if (!password) return unauthorized();
+  const accountLimited = await rateLimitByKey(request, env, "admin-auth-account", "admin", { limit: 20, windowSeconds: 300 });
+  if (accountLimited) return accountLimited;
 
   let valid = false;
   if (hasProductionStore(env)) {

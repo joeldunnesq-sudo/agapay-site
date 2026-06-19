@@ -343,11 +343,8 @@ export function clientIp(request) {
     || "unknown";
 }
 
-export async function rateLimit(request, env, bucket, { limit = 10, windowSeconds = 60 } = {}) {
+async function rateLimitCounter(env, key, { limit = 10, windowSeconds = 60 } = {}) {
   if (!env.AGAPAY_REGISTRATIONS) return null;
-  const windowId = Math.floor(Date.now() / (windowSeconds * 1000));
-  const ipHash = await sha256Hex(clientIp(request));
-  const key = `${RATE_LIMIT_PREFIX}${bucket}:${ipHash}:${windowId}`;
   const current = Number(await env.AGAPAY_REGISTRATIONS.get(key)) || 0;
   const next = current + 1;
   await env.AGAPAY_REGISTRATIONS.put(key, String(next), {
@@ -364,6 +361,24 @@ export async function rateLimit(request, env, bucket, { limit = 10, windowSecond
       headers: { "Retry-After": String(windowSeconds) }
     }
   );
+}
+
+export async function rateLimit(request, env, bucket, { limit = 10, windowSeconds = 60 } = {}) {
+  if (!env.AGAPAY_REGISTRATIONS) return null;
+  const windowId = Math.floor(Date.now() / (windowSeconds * 1000));
+  const ipHash = await sha256Hex(clientIp(request));
+  const key = `${RATE_LIMIT_PREFIX}${bucket}:ip:${ipHash}:${windowId}`;
+  return rateLimitCounter(env, key, { limit, windowSeconds });
+}
+
+export async function rateLimitByKey(request, env, bucket, identifier, { limit = 10, windowSeconds = 60 } = {}) {
+  if (!env.AGAPAY_REGISTRATIONS) return null;
+  const normalizedIdentifier = String(identifier || "").trim().toLowerCase();
+  if (!normalizedIdentifier) return null;
+  const windowId = Math.floor(Date.now() / (windowSeconds * 1000));
+  const identifierHash = await sha256Hex(normalizedIdentifier);
+  const key = `${RATE_LIMIT_PREFIX}${bucket}:key:${identifierHash}:${windowId}`;
+  return rateLimitCounter(env, key, { limit, windowSeconds });
 }
 
 export async function verifyTurnstileIfConfigured(request, env, token) {

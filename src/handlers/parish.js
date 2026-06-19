@@ -46,6 +46,7 @@ import {
   parsePasswordRecord,
   publicDonor,
   rateLimit,
+  rateLimitByKey,
   recordStripeEvent,
   resolveAdminSession,
   resolveParishDashboardSession,
@@ -72,6 +73,8 @@ const subscriptionTiers = [
   { key: "growth", name: "Growth", monthlyPrice: 199, annualPrice: 1999 },
   { key: "cathedral", name: "Cathedral", monthlyPrice: 399, annualPrice: 3999 }
 ];
+
+export const MAX_DONATION_CENTS = 5_000_000;
 
 async function sendDonationReceiptIfNeeded(env, offering = {}) {
   const donorModule = await import("./donor.js");
@@ -263,7 +266,18 @@ export function statusTimelineWithNext(currentStatus, nextStatus, existingTimeli
 export function centsFromAmount(amount) {
   const numeric = Number(amount);
   if (!Number.isFinite(numeric) || numeric <= 0) return null;
-  return Math.round(numeric * 100);
+  const cents = Math.round(numeric * 100);
+  if (cents <= 0 || cents > MAX_DONATION_CENTS) return null;
+  return cents;
+}
+
+export function donationAmountError(amount) {
+  const numeric = Number(amount);
+  const cents = Number.isFinite(numeric) ? Math.round(numeric * 100) : 0;
+  if (Number.isFinite(numeric) && numeric > 0 && cents > MAX_DONATION_CENTS) {
+    return "Amount exceeds the maximum allowed gift.";
+  }
+  return "Amount must be greater than zero.";
 }
 
 export function estimateStripeProcessingFeeCents(chargeCents) {
@@ -2411,7 +2425,7 @@ export async function handleCheckout(request, env) {
   if (missing.length) return json({ error: "Missing required fields", fields: missing }, { status: 422 });
 
   const amountCents = centsFromAmount(body.amount);
-  if (!amountCents) return json({ error: "Amount must be greater than zero" }, { status: 422 });
+  if (!amountCents) return json({ error: donationAmountError(body.amount) }, { status: 422 });
 
   const parish = await findCheckoutParish(env, body.parishId);
   if (!parish || parish.status !== "verified") return json({ error: "Verified parish not found" }, { status: 404 });
@@ -3533,6 +3547,8 @@ export async function handleParishSession(request, env, parishId) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const limited = await rateLimit(request, env, "parish-auth", { limit: 20, windowSeconds: 300 });
   if (limited) return limited;
+  const accountLimited = await rateLimitByKey(request, env, "parish-auth-account", parishId, { limit: 20, windowSeconds: 300 });
+  if (accountLimited) return accountLimited;
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   let body = {};
