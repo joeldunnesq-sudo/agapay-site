@@ -290,7 +290,7 @@ export function toPlannerViewModel(rawPayload) {
     page: {
       id: "planner",
       title: activeView === "term" ? "Term Planner" : "Planner",
-      subtitle: activeView === "week" || activeView === "day" ? `${text(week.label, "This Week")}  •  ${text(week.seasonLabel, "")}` : "Plan your Charlotte Mason term with grace and intention.",
+      subtitle: activeView === "week" || activeView === "day" ? `${text(week.label, "This Week")}  •  ${text(week.seasonLabel, "")}` : "Plan your term with grace and intention.",
       ornament: true
     },
     activeView,
@@ -300,7 +300,7 @@ export function toPlannerViewModel(rawPayload) {
       active: activeView === view,
       href: `/myagapay/learn/planner?view=${view}${view === "term" ? `&term=${activeTerm}&termId=${encodeURIComponent(activeTermId)}` : ""}`
     })),
-    termTabs: (termOptions.length ? termOptions : [1, 2, 3].map((term) => ({ id: `term_${term}`, label: `Term ${term}` }))).map((term, index) => ({
+    termTabs: (termOptions.length ? termOptions : [1, 2, 3, 4].map((term) => ({ id: `term_${term}`, label: term === 4 ? "Term 4 / Summer" : `Term ${term}` }))).map((term, index) => ({
       id: term.id || index + 1,
       label: text(term.label, `Term ${index + 1}`),
       active: term.id ? term.id === activeTermId : activeTerm === index + 1,
@@ -696,11 +696,22 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
   const schoolYear = setup.schoolYear || snapshot.schoolYear || {};
   const term = setup.term || snapshot.term || {};
   const termsSource = safeArray(snapshot.terms).length ? snapshot.terms : safeArray(setup.terms);
-  const setupTerms = (termsSource.length ? termsSource : [
+  const baseSetupTerms = (termsSource.length ? termsSource : [
     term,
     { id: "term_2", label: "Term 2", startDate: "", endDate: "", paceMode: preferences.paceMode || term.paceMode || "steady" },
-    { id: "term_3", label: "Term 3", startDate: "", endDate: "", paceMode: preferences.paceMode || term.paceMode || "steady" }
-  ]).map((entry, index) => ({
+    { id: "term_3", label: "Term 3", startDate: "", endDate: "", paceMode: preferences.paceMode || term.paceMode || "steady" },
+    { id: "term_4", label: "Term 4 / Summer", startDate: "", endDate: "", paceMode: preferences.paceMode || term.paceMode || "steady" }
+  ]);
+  while (baseSetupTerms.length < 4) {
+    baseSetupTerms.push({
+      id: `term_${baseSetupTerms.length + 1}`,
+      label: baseSetupTerms.length === 3 ? "Term 4 / Summer" : `Term ${baseSetupTerms.length + 1}`,
+      startDate: "",
+      endDate: "",
+      paceMode: preferences.paceMode || term.paceMode || "steady"
+    });
+  }
+  const setupTerms = baseSetupTerms.map((entry, index) => ({
     id: text(entry.id, `term_${index + 1}`),
     label: text(entry.label, `Term ${index + 1}`),
     startDate: text(entry.startDate, ""),
@@ -708,6 +719,8 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
     paceMode: text(entry.paceMode, preferences.paceMode || term.paceMode || "steady")
   }));
   const currentTermId = text(term.id || schoolYear.currentTermId || setupTerms[0]?.id, "term_1");
+  const householdMethod = text(household.primaryMethod, "Charlotte Mason");
+  const historyCycle = setup.historyCycle || snapshot.historyCycle || {};
   const childrenSource = safeArray(setup.children).length ? setup.children : snapshot.children;
   const streamsSource = safeArray(setup.starterStreams).length ? setup.starterStreams : safeArray(setup.householdStreams).length ? setup.householdStreams : snapshot.streams;
   const subjectsSource = safeArray(snapshot.subjects).length ? snapshot.subjects : setup.subjects;
@@ -750,7 +763,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
     household: {
       name: text(household.name, "Your Household"),
       parish: text(household.parishName, ""),
-      method: text(household.primaryMethod, ""),
+      method: householdMethod,
       schoolYear: text(schoolYear.label, ""),
       calendarType: text(household.liturgicalCalendarType, "julian"),
       paceMode: text(household.paceMode, "steady")
@@ -793,6 +806,13 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       graceModeActive: Boolean(preferences.graceModeActive),
       paceMode: text(preferences.paceMode || term.paceMode, "steady"),
       printPack: text(preferences.printPack, "")
+    },
+    historyCycle: {
+      framework: text(historyCycle.framework, householdMethod === "Orthodox Classical" ? "orthodox-classical" : householdMethod === "Eclectic" ? "custom" : "ambleside-inspired"),
+      rotation: text(historyCycle.rotation, "first"),
+      cycleYear: text(historyCycle.cycleYear, "year_1"),
+      currentFocus: text(historyCycle.currentFocus, ""),
+      sourceNote: text(historyCycle.sourceNote, "")
     },
     streams: simpleList(streamsSource, (stream) => ({
       id: text(stream.id, ""),

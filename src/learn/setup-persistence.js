@@ -6,6 +6,71 @@ import { getLearnSeedSnapshot } from "./demo-data.js";
 const LEARN_SETUP_KV_PREFIX = "__agapay_learn_setup:";
 const devSetupSnapshots = new Map();
 
+const HOMESCHOOL_METHODS = ["Charlotte Mason", "Orthodox Classical", "Eclectic"];
+
+const HISTORY_CYCLES = {
+  "ambleside-inspired": {
+    title: "Charlotte Mason History & Enrichment Cycle",
+    summary: "A six-year chronological enrichment spine inspired by AmblesideOnline, adapted for Orthodox households with saints, church history, geography, timeline, art, poetry, music, and living-book context.",
+    years: {
+      year_1: {
+        number: 1,
+        title: "Year 1: Early medieval and national beginnings",
+        topics: ["Early medieval stories", "Lives of saints and missionaries", "Maps, legends, folk songs, and picture study"]
+      },
+      year_2: {
+        number: 2,
+        title: "Year 2: Renaissance, exploration, and reformations",
+        topics: ["Renaissance and exploration", "Church history touchpoints", "Art, geography, and narration"]
+      },
+      year_3: {
+        number: 3,
+        title: "Year 3: Early modern and colonial worlds",
+        topics: ["Early modern nations", "Colonial and missionary encounters", "Timeline and map work"]
+      },
+      year_4: {
+        number: 4,
+        title: "Year 4: Revolutions and the long nineteenth century",
+        topics: ["Revolutions and reform", "Nineteenth-century lives and literature", "Composer, artist, and poetry pairings"]
+      },
+      year_5: {
+        number: 5,
+        title: "Year 5: Modern nations and the twentieth century",
+        topics: ["Modern world history", "Orthodox witness in modernity", "Civic geography and reports"]
+      },
+      year_6: {
+        number: 6,
+        title: "Year 6: Ancient Greece/Rome plus modern bridge",
+        topics: ["Ancient Greek and Roman background", "Early Christian context", "Timeline synthesis and narration"]
+      }
+    }
+  },
+  "orthodox-classical": {
+    title: "Orthodox Classical History & Enrichment Cycle",
+    summary: "A chronological enrichment spine centered on Scripture, patristic history, Byzantium, Orthodox missions, and modern Church witness.",
+    years: {
+      year_1: { number: 1, title: "Year 1: Ancient, biblical, and patristic foundations", topics: ["Scripture geography", "Ancient civilizations", "Apostolic and patristic witness"] },
+      year_2: { number: 2, title: "Year 2: Byzantium and medieval Christendom", topics: ["Byzantium", "Councils and saints", "Iconography, chant, and sacred art"] },
+      year_3: { number: 3, title: "Year 3: Missions, nations, and early modern worlds", topics: ["Slavic and global missions", "Early modern empires", "Geography and source narration"] },
+      year_4: { number: 4, title: "Year 4: Modern world and Orthodox witness", topics: ["Modern history", "New martyrs and confessors", "Civic life and reports"] },
+      year_5: { number: 5, title: "Year 5: Integrated review and research", topics: ["Timeline review", "Family research projects", "Oral narration and portfolios"] },
+      year_6: { number: 6, title: "Year 6: Capstone synthesis", topics: ["Ancient-to-modern synthesis", "Church history capstone", "Beautiful written reports"] }
+    }
+  },
+  custom: {
+    title: "Custom Enrichment Cycle",
+    summary: "A flexible enrichment spine for eclectic households who want AGAPAY to organize history, geography, arts, saints, and living books around their chosen focus.",
+    years: {
+      year_1: { number: 1, title: "Custom Year 1", topics: ["Household-selected history", "Living books", "Narration and timeline work"] },
+      year_2: { number: 2, title: "Custom Year 2", topics: ["Household-selected history", "Geography", "Arts and poetry"] },
+      year_3: { number: 3, title: "Custom Year 3", topics: ["Household-selected history", "Church-life connections", "Reports"] },
+      year_4: { number: 4, title: "Custom Year 4", topics: ["Household-selected history", "Timeline review", "Portfolio work"] },
+      year_5: { number: 5, title: "Custom Year 5", topics: ["Household-selected history", "Independent reading", "Beautiful reports"] },
+      year_6: { number: 6, title: "Custom Year 6", topics: ["Household-selected history", "Synthesis", "Capstone narration"] }
+    }
+  }
+};
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -47,6 +112,38 @@ function parseStoredSetup(value) {
 function text(value, fallback = "") {
   const normalized = String(value ?? "").trim();
   return normalized || fallback;
+}
+
+function normalizeHomeschoolMethod(value) {
+  const candidate = text(value, "Charlotte Mason");
+  return HOMESCHOOL_METHODS.includes(candidate) ? candidate : "Charlotte Mason";
+}
+
+function defaultHistoryFrameworkForMethod(method) {
+  if (method === "Orthodox Classical") return "orthodox-classical";
+  if (method === "Eclectic") return "custom";
+  return "ambleside-inspired";
+}
+
+function normalizeHistoryCycle(value = {}, method = "Charlotte Mason") {
+  const framework = HISTORY_CYCLES[value.framework] ? value.framework : defaultHistoryFrameworkForMethod(method);
+  const frameworkConfig = HISTORY_CYCLES[framework] || HISTORY_CYCLES["ambleside-inspired"];
+  const cycleYear = frameworkConfig.years[value.cycleYear] ? value.cycleYear : "year_1";
+  const year = frameworkConfig.years[cycleYear];
+  const rotation = ["first", "second"].includes(value.rotation) ? value.rotation : "first";
+  const currentFocus = text(value.currentFocus, year.topics[0] || year.title);
+  return {
+    framework,
+    rotation,
+    cycleYear,
+    currentFocus,
+    sourceNote: text(value.sourceNote, framework === "ambleside-inspired" ? "AO-inspired chronology adapted for an Orthodox household." : "Household enrichment cycle."),
+    frameworkTitle: frameworkConfig.title,
+    frameworkSummary: frameworkConfig.summary,
+    yearNumber: year.number,
+    yearTitle: year.title,
+    enrichmentTopics: year.topics
+  };
 }
 
 function int(value, fallback = 0) {
@@ -118,6 +215,8 @@ function normalizeSetupPayload(payload = {}, identity) {
   const schoolYear = payload.schoolYear || {};
   const term = payload.term || {};
   const preferences = payload.preferences || {};
+  const primaryMethod = normalizeHomeschoolMethod(household.primaryMethod || seed.household.primaryMethod);
+  const historyCycle = normalizeHistoryCycle(payload.historyCycle || {}, primaryMethod);
   const normalizedHousehold = {
     id: identity.householdId,
     slug: slug(household.name || identity.householdId, identity.householdId),
@@ -126,7 +225,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     childrenCount: 0,
     parishName: text(household.parishName, seed.household.parishName || ""),
     city: text(household.city, ""),
-    primaryMethod: text(household.primaryMethod, seed.household.primaryMethod || "Charlotte Mason"),
+    primaryMethod,
     liturgicalCalendarType: text(preferences.calendarType || household.liturgicalCalendarType, seed.household.liturgicalCalendarType || "julian"),
     paceMode: text(preferences.paceMode || household.paceMode, seed.household.paceMode || "steady"),
     graceModeActive: Boolean(preferences.graceModeActive ?? seed.household.graceModeActive),
@@ -328,6 +427,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     books,
     formation,
     formationMaterials,
+    historyCycle,
     coOp
   };
 }
@@ -344,6 +444,29 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
   next.children = list(setupSnapshot.children);
   next.schoolYear = { ...next.schoolYear, ...setupSnapshot.schoolYear };
   next.term = { ...next.term, ...setupSnapshot.term };
+  if (setupSnapshot.historyCycle) {
+    next.cycleFramework = {
+      ...next.cycleFramework,
+      id: setupSnapshot.historyCycle.framework,
+      frameworkType: "enrichment",
+      title: setupSnapshot.historyCycle.frameworkTitle,
+      summary: setupSnapshot.historyCycle.frameworkSummary
+    };
+    next.cycleYear = {
+      ...next.cycleYear,
+      id: setupSnapshot.historyCycle.cycleYear,
+      cycleFrameworkId: setupSnapshot.historyCycle.framework,
+      yearNumber: setupSnapshot.historyCycle.yearNumber,
+      title: setupSnapshot.historyCycle.yearTitle
+    };
+    next.cycleTopics = list(setupSnapshot.historyCycle.enrichmentTopics).map((topic, index) => ({
+      id: `cycle_topic_${setupSnapshot.historyCycle.cycleYear}_${index + 1}`,
+      cycleYearId: setupSnapshot.historyCycle.cycleYear,
+      subjectType: index === 0 ? "history" : index === 1 ? "church-history" : "enrichment",
+      title: topic,
+      seasonLabel: setupSnapshot.historyCycle.rotation === "second" ? "Second rotation" : "First rotation"
+    }));
+  }
   next.graceModeRule = {
     ...next.graceModeRule,
     mode: setupSnapshot.preferences?.graceModeActive ? setupSnapshot.preferences?.graceModeDefault || next.graceModeRule?.mode || "light" : "full"

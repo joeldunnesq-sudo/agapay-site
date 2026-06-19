@@ -839,6 +839,32 @@ const formOptions = [
   "Form V"
 ];
 
+const homeschoolMethodOptions = [
+  "Charlotte Mason",
+  "Orthodox Classical",
+  "Eclectic"
+];
+
+const historyCycleFrameworkOptions = [
+  { value: "ambleside-inspired", label: "Charlotte Mason / Ambleside-inspired" },
+  { value: "orthodox-classical", label: "Orthodox Classical chronology" },
+  { value: "custom", label: "Custom / Eclectic" }
+];
+
+const historyCycleRotationOptions = [
+  { value: "first", label: "First rotation: wonder, stories, foundations" },
+  { value: "second", label: "Second rotation: deeper chronology and synthesis" }
+];
+
+const historyCycleYearOptions = [
+  { value: "year_1", label: "Year 1: Early medieval and national beginnings" },
+  { value: "year_2", label: "Year 2: Renaissance, exploration, and reformations" },
+  { value: "year_3", label: "Year 3: Early modern and colonial worlds" },
+  { value: "year_4", label: "Year 4: Revolutions and the long nineteenth century" },
+  { value: "year_5", label: "Year 5: Modern nations and the twentieth century" },
+  { value: "year_6", label: "Year 6: Ancient Greece/Rome plus modern bridge" }
+];
+
 const colorChoices = [
   "#14294a",
   "#6e2f2a",
@@ -899,6 +925,33 @@ function formationFeastSetupRow(feast = {}) {
   return `<div data-setup-row="formationFeasts" data-id="${html(feast.id || "")}" style="display:grid;grid-template-columns:.55fr 1fr .75fr 1fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Date", "civilDate", feast.civilDate || feast.date || "", { type: "date" })}${setupInput("Feast", "title", feast.title || "")}${setupInput("Fasting", "fastingRule", feast.fastingRule || feast.fasting || "")}${setupInput("Note", "note", feast.note || "")}${setupRemoveButton()}</div>`;
 }
 
+function historyCycleSetupPanel(vm) {
+  const cycle = vm.historyCycle || {};
+  return `
+    <div style="display:grid;gap:14px;">
+      <div style="display:grid;grid-template-columns:minmax(0,1.25fr) minmax(240px,.75fr);gap:16px;align-items:stretch;">
+        <div style="border:1px solid var(--line);border-radius:14px;background:linear-gradient(135deg,rgba(255,252,245,.92),rgba(239,224,186,.36));padding:16px;display:grid;gap:10px;">
+          <small style="color:var(--gold);letter-spacing:.15em;text-transform:uppercase;font-weight:700;">History & enrichment spine</small>
+          <p style="margin:0;color:#34405a;line-height:1.5;">Choose a six-year chronological cycle inspired by AmblesideOnline's Charlotte Mason structure, then adapt it with Orthodox saints, Church history, feasts, and the books your household actually uses.</p>
+          <p style="margin:0;color:var(--muted);line-height:1.45;font-size:13px;">AGAPAY does not copy AO's curriculum; it gives moms an intuitive enrichment spine for history, timeline, geography, saints, art, music, poetry, narration, and living-book context.</p>
+        </div>
+        <div style="border:1px solid var(--line);border-radius:14px;background:var(--paper2);padding:16px;display:grid;gap:8px;">
+          <strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">How it flows</strong>
+          <span style="display:flex;gap:8px;color:#34405a;"><b style="color:var(--gold);">1.</b> Pick the household method.</span>
+          <span style="display:flex;gap:8px;color:#34405a;"><b style="color:var(--gold);">2.</b> Select the history cycle year.</span>
+          <span style="display:flex;gap:8px;color:#34405a;"><b style="color:var(--gold);">3.</b> Assign enrichment subjects and living books to the active term.</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;">
+        ${setupSelect("Cycle framework", "historyCycle.framework", cycle.framework || "ambleside-inspired", historyCycleFrameworkOptions)}
+        ${setupSelect("Rotation", "historyCycle.rotation", cycle.rotation || "first", historyCycleRotationOptions)}
+        ${setupSelect("Cycle year", "historyCycle.cycleYear", cycle.cycleYear || "year_1", historyCycleYearOptions)}
+        ${setupInput("Current focus", "historyCycle.currentFocus", cycle.currentFocus || "")}
+      </div>
+      ${setupInput("Source note", "historyCycle.sourceNote", cycle.sourceNote || "AO-inspired chronology adapted for an Orthodox household.")}
+    </div>`;
+}
+
 function formationSetupPanel(vm) {
   const formation = vm.formationSetup || {};
   const catechesis = formation.catechesis || {};
@@ -950,6 +1003,7 @@ function setupStepTarget(step) {
   if (text.includes("child") || text.includes("form")) return "learnSetupChildren";
   if (text.includes("stream")) return "learnSetupStreams";
   if (text.includes("subject") || text.includes("curriculum")) return "learnSetupSubjects";
+  if (text.includes("history") || text.includes("cycle") || text.includes("enrichment")) return "learnSetupHistory";
   if (text.includes("book") || text.includes("read")) return "learnSetupBooks";
   if (text.includes("formation") || text.includes("church") || text.includes("catechesis")) return "learnSetupFormation";
   return "learnSetupHousehold";
@@ -971,15 +1025,17 @@ function renderSetup(vm) {
   const body = `
     <form data-setup-form data-screen-label="Set Up" style="display:flex;flex-direction:column;gap:18px;">
       ${panel("Setup Progress", `<h2 style="font-family:'Cormorant Garamond',serif;margin:0 0 8px;font-size:28px;">Step ${vm.progress.current} of ${vm.progress.total}</h2>${bar((vm.progress.current / vm.progress.total) * 100, "var(--navy)")}<p style="color:var(--muted);">Next: ${html(vm.progress.next)}</p><div class="learn-setup-progress-grid">${vm.steps.map(setupProgressCard).join("")}</div>`, { icon: "⚙" })}
-      ${panel("Where Setup Data Goes", `<div style="display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;"><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Children + Forms</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Groups Planner and Print work by Form instead of repeating every child.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Household Streams</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Feeds the dashboard Household Stream and the top Planner rows.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Subjects + Books</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Creates Planner Form rows, Books library cards, and term pacing.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Formation</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Powers Church Rhythms, Catechesis, Hymns, Memory, Enrichment, and Feast cards.</small></div></div>`, { icon: "✥" })}
+      ${panel("Where Setup Data Goes", `<div style="display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;"><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Children + Forms</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Groups Planner and Print work by Form instead of repeating every child.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Household Streams</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Feeds the dashboard Household Stream and the top Planner rows.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Subjects + Books</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Creates Planner Form rows, Books library cards, and term pacing.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>Enrichment Cycles</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Guides history, timeline, geography, arts, saints, and church-history context.</small></div></div>`, { icon: "✥" })}
       <span id="learnSetupHousehold" class="learn-setup-anchor"></span>
-      ${panel("Household", `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Set the school year, choose the active term, and plan future terms ahead of time. The dashboard and core pages stay focused on the selected current term.</p><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupInput("Method", "household.primaryMethod", vm.household.method)}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}${setupSelect("Pace", "preferences.paceMode", vm.preferences.paceMode, ["gentle", "steady", "ambitious"])}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /><a href="/api/learn/google-calendar/connect" style="display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;background:var(--navy);color:#fff;border-radius:10px;padding:10px;">Connect Google Calendar</a></div><div style="margin-top:14px;border:1px solid var(--line);border-radius:13px;background:rgba(255,252,245,.64);padding:14px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;"><span><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:24px;">Terms</strong><small style="display:block;color:var(--muted);">Add future terms here, then assign subjects, books, and formation materials to the right term below.</small></span><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div></div>`, { icon: "⌂" })}
+      ${panel("Household", `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Set the school year, choose the active term, and plan future terms ahead of time. The dashboard and core pages stay focused on the selected current term.</p><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Charlotte Mason", homeschoolMethodOptions)}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}${setupSelect("Pace", "preferences.paceMode", vm.preferences.paceMode, ["gentle", "steady", "ambitious"])}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /><a href="/api/learn/google-calendar/connect" style="display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;background:var(--navy);color:#fff;border-radius:10px;padding:10px;">Connect Google Calendar</a></div><div style="margin-top:14px;border:1px solid var(--line);border-radius:13px;background:rgba(255,252,245,.64);padding:14px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;"><span><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:24px;">Terms</strong><small style="display:block;color:var(--muted);">Term 4 / Summer is available for year-round homeschoolers. Assign subjects, books, and formation materials to the term where they belong.</small></span><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div></div>`, { icon: "⌂" })}
       <span id="learnSetupChildren" class="learn-setup-anchor"></span>
       ${panel("Children & Forms", `<p style="margin:0 0 12px;color:var(--muted);">Assign each child a Form and color. Forms are the grouping layer for Planner and Print, especially for larger households.</p><div data-setup-list="children" style="display:grid;gap:10px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child)).join("")}</div><button type="button" data-setup-add-row="children" style="margin-top:12px;width:100%;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px;font-family:inherit;">Add Child</button>`, { icon: "◎" })}
       <span id="learnSetupStreams" class="learn-setup-anchor"></span>
       ${panel("Household Streams", `<p style="margin:0 0 12px;color:var(--muted);">Use these for shared rhythms: morning basket, family read-aloud, nature study, catechesis, feast-day activity. These appear in the dashboard and Planner household rows.</p><div data-setup-list="streams" style="display:grid;gap:10px;">${(vm.streams.length ? vm.streams : [{}]).map((stream) => streamSetupRow(stream)).join("")}</div><button type="button" data-setup-add-row="streams" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Stream</button>`, { icon: "☰" })}
       <span id="learnSetupSubjects" class="learn-setup-anchor"></span>
       ${panel("Subjects & Curriculum", `<p style="margin:0 0 12px;color:var(--muted);">Assign each subject to a term. Current-term subjects feed Planner, Formation, Reports, and Print; future-term subjects stay parked until that term becomes current.</p><div data-setup-list="subjects" style="display:grid;gap:10px;">${(vm.subjects.length ? vm.subjects : [{}]).map((subject) => subjectSetupRow(subject, vm.children, vm.terms, currentTermId)).join("")}</div><button type="button" data-setup-add-row="subjects" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Subject</button>`, { icon: "✎" })}
+      <span id="learnSetupHistory" class="learn-setup-anchor"></span>
+      ${panel("History & Enrichment Cycles", historyCycleSetupPanel(vm), { icon: "☼" })}
       <span id="learnSetupBooks" class="learn-setup-anchor"></span>
       ${panel("Books & Read-Alouds", `<p style="margin:0 0 12px;color:var(--muted);">Assign books to the term where they belong. Future books remain out of the Books and Planner views until their term is active.</p><div data-setup-list="books" style="display:grid;gap:10px;">${(vm.books.length ? vm.books : [{}]).map((book) => bookSetupRow(book, vm.terms, currentTermId)).join("")}</div><button type="button" data-setup-add-row="books" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Book</button>`, { icon: "☰" })}
       <span id="learnSetupFormation" class="learn-setup-anchor"></span>
@@ -1133,6 +1189,13 @@ function setupPayloadFromForm(form) {
       graceModeDefault: get("preferences.graceModeDefault"),
       paceMode: get("preferences.paceMode"),
       graceModeActive: isChecked("preferences.graceModeActive")
+    },
+    historyCycle: {
+      framework: get("historyCycle.framework"),
+      rotation: get("historyCycle.rotation"),
+      cycleYear: get("historyCycle.cycleYear"),
+      currentFocus: get("historyCycle.currentFocus"),
+      sourceNote: get("historyCycle.sourceNote")
     },
     children: collectRows(form, "children", (row) => {
       const firstName = rowValue(row, "firstName");
