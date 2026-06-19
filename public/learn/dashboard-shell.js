@@ -829,7 +829,8 @@ function renderCoOp(vm) {
 
 function setupInput(label, name, value = "", options = {}) {
   const type = options.type || "text";
-  return `<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">${html(label)}<input name="${html(name)}" type="${html(type)}" value="${html(value)}" style="min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);" /></label>`;
+  const step = options.step ? ` step="${html(options.step)}"` : "";
+  return `<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">${html(label)}<input name="${html(name)}" type="${html(type)}"${step} value="${html(value)}" style="min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);" /></label>`;
 }
 
 function setupSelect(label, name, value, options) {
@@ -845,7 +846,8 @@ function setupTermOptions(terms = [], fallbackTerm = {}) {
 }
 
 function termSetupRow(term = {}, index = 0) {
-  return `<div data-setup-row="terms" data-id="${html(term.id || `term_${index + 1}`)}" style="display:grid;grid-template-columns:1fr .75fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;"><input type="hidden" name="id" value="${html(term.id || `term_${index + 1}`)}" />${setupInput("Term name", "label", term.label || `Term ${index + 1}`)}${setupInput("Start", "startDate", term.startDate || "", { type: "date" })}${setupInput("End", "endDate", term.endDate || "", { type: "date" })}${setupRemoveButton()}</div>`;
+  const termId = term.id || `term_${index + 1}`;
+  return `<div data-setup-row="terms" data-id="${html(termId)}" style="display:grid;grid-template-columns:1fr .75fr .75fr auto auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;"><input type="hidden" name="id" value="${html(termId)}" />${setupInput("Term name", "label", term.label || `Term ${index + 1}`)}${setupInput("Start", "startDate", term.startDate || "", { type: "date" })}${setupInput("End", "endDate", term.endDate || "", { type: "date" })}<button type="button" data-close-term="${html(termId)}" style="align-self:end;border:1px solid var(--gold);background:#fbf2dd;color:var(--ink);border-radius:9px;padding:10px 12px;font-family:inherit;font-weight:700;">Close Term</button>${setupRemoveButton()}</div>`;
 }
 
 function setupRemoveButton() {
@@ -936,7 +938,7 @@ function streamSetupRow(stream = {}) {
 }
 
 function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId = "") {
-  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" style="display:grid;grid-template-columns:1fr .8fr .75fr 1fr .55fr .55fr .55fr .55fr .65fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Subject / skill", "title", subject.title || "")}${setupSelect("School-day area", "subjectType", subject.subjectType || subject.type || "language-arts", subjectTypeOptions)}${setupSelect("Form", "formLabel", subject.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupInput("Book / curriculum / source", "resource", subject.resource || "")}${setupSelect("Track by", "progressionType", subject.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", subject.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", subject.currentNumber || subject.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", subject.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutes", subject.minutes || "", { type: "number" })}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("Specific child", "childId", subject.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</div></div>`;
+  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" style="display:grid;grid-template-columns:1fr .8fr .75fr 1fr .55fr .55fr .55fr .55fr .65fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Subject / skill", "title", subject.title || "")}${setupSelect("School-day area", "subjectType", subject.subjectType || subject.type || "language-arts", subjectTypeOptions)}${setupSelect("Form", "formLabel", subject.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupInput("Book / curriculum / source", "resource", subject.resource || "")}${setupSelect("Track by", "progressionType", subject.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", subject.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", subject.currentNumber || subject.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", subject.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutes", subject.minutes || "", { type: "number" })}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));gap:10px;">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("Specific child", "childId", subject.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</div></div>`;
 }
 
 function bookSetupRow(book = {}, terms = [], currentTermId = "") {
@@ -1288,6 +1290,8 @@ function setupPayloadFromForm(form) {
         startNumber: rowValue(row, "startNumber"),
         currentNumber: rowValue(row, "currentNumber"),
         endNumber: rowValue(row, "endNumber"),
+        credits: rowValue(row, "credits"),
+        finalGradeOverride: rowValue(row, "finalGradeOverride"),
         color: rowValue(row, "color"),
         termId: rowValue(row, "termId") || currentTermId,
         gracePriority: rowValue(row, "gracePriority"),
@@ -1457,6 +1461,40 @@ function wireSetupPage() {
     if (event.target.closest('[data-setup-row="terms"]')) syncSetupTermSelects(form);
   });
   form.addEventListener("click", (event) => {
+    const closeButton = event.target.closest("[data-close-term]");
+    if (closeButton) {
+      const termId = closeButton.dataset.closeTerm || closeButton.closest("[data-setup-row]")?.dataset.id || "";
+      const status = form.querySelector("[data-setup-status]");
+      const originalText = closeButton.textContent;
+      closeButton.disabled = true;
+      closeButton.textContent = "Closing...";
+      if (status) {
+        status.style.color = "var(--muted)";
+        status.textContent = "Saving setup before closing term...";
+      }
+      (async () => {
+        try {
+          const payload = setupPayloadFromForm(form);
+          const calendar = payload.preferences.calendarType || "julian";
+          await apiPost("/api/learn/setup", payload);
+          const closed = await apiPost(`/api/learn/terms/${encodeURIComponent(termId)}/close`, {});
+          localStorage.setItem("agapay.learn.calendar", calendar);
+          if (status) {
+            status.style.color = "var(--gold)";
+            status.textContent = `${closed.term?.label || "Term"} closed with ${closed.academicRecords?.length || 0} academic records.`;
+          }
+          closeButton.textContent = "Closed";
+        } catch (error) {
+          if (status) {
+            status.style.color = "var(--burgundy)";
+            status.textContent = error.message;
+          }
+          closeButton.disabled = false;
+          closeButton.textContent = originalText;
+        }
+      })();
+      return;
+    }
     const removeButton = event.target.closest("[data-setup-remove-row]");
     if (removeButton) {
       const row = removeButton.closest("[data-setup-row]");

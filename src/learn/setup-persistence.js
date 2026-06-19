@@ -1,5 +1,6 @@
 import { d1, d1First, d1Run, normalizeEmail, safeParseJsonRow } from "../lib/core.js";
 import { requireDonor } from "../handlers/parish.js";
+import { loadLearnAcademicSnapshot } from "./academic-records.js";
 import { LEARN_FREE_CHILD_LIMIT, learnRequestHasFamilyAccessAsync } from "./billing.js";
 import { getLearnSeedSnapshot } from "./demo-data.js";
 
@@ -326,6 +327,8 @@ function normalizeSetupPayload(payload = {}, identity) {
     startNumber: int(subject.startNumber, 1),
     currentNumber: int(subject.currentNumber || subject.completedThroughNumber || subject.startNumber, int(subject.startNumber, 1)),
     endNumber: int(subject.endNumber, 0),
+    credits: Math.max(0, Number(subject.credits) || 0),
+    finalGradeOverride: text(subject.finalGradeOverride, ""),
     color: text(subject.color, ""),
     termId: text(subject.termId || subject.assignedTermId, normalizedTerm.id),
     gracePriority: text(subject.gracePriority, "keep"),
@@ -731,7 +734,11 @@ export async function loadLearnSetupSnapshot(env, request) {
 
 export async function getLearnSeedForIdentity(env, identity) {
   if (!identity) return null;
-  return applySetupSnapshotToSeed(getLearnSeedSnapshot(), await loadLearnSetupSnapshotForIdentity(env, identity));
+  const seed = applySetupSnapshotToSeed(getLearnSeedSnapshot(), await loadLearnSetupSnapshotForIdentity(env, identity));
+  const academicSnapshot = await loadLearnAcademicSnapshot(env, identity.householdId);
+  seed.closedAcademicRecords = academicSnapshot.academicRecords;
+  seed.closedReportCards = academicSnapshot.reportCards;
+  return seed;
 }
 
 export async function getLearnSeedForRequest(env, request) {

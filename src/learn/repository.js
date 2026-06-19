@@ -1,5 +1,6 @@
 import { calendarLabel, displayDate, gregorianToJdn, jdnToGregorian, liturgicalFeastsForYear, orthodoxPascha } from "../liturgical-calendar.js";
 import { buildReportCardExport, buildTranscriptExport } from "./academic-exports.js";
+import { buildTranscriptsFromAcademicRecords } from "./academic-records.js";
 import { getLearnSeedSnapshot } from "./demo-data.js";
 import { normalizeCalendarType, SeedLiturgicalSource } from "./liturgical-source.js";
 import { buildPrintJobRequest, buildWeeklyHouseholdPrintDocument } from "./print-engine.js";
@@ -835,7 +836,14 @@ export class SeedLearnRepository {
   getReports() {
     const childLookup = childById(this.seed);
     const subjectProgress = buildSubjectProgress(this.seed);
-    const reportCards = reportCardsFromProgress(this.seed, subjectProgress);
+    const closedReportCards = Array.isArray(this.seed.closedReportCards) ? this.seed.closedReportCards : [];
+    const reportCards = closedReportCards.length ? closedReportCards : reportCardsFromProgress(this.seed, subjectProgress);
+    const academicRecords = this.seed.setupSnapshot
+      ? (Array.isArray(this.seed.closedAcademicRecords) ? this.seed.closedAcademicRecords : [])
+      : this.seed.academicRecords;
+    const transcripts = this.seed.setupSnapshot
+      ? buildTranscriptsFromAcademicRecords({ ...this.seed, academicRecords })
+      : this.seed.transcripts;
     return {
       household: this.seed.household,
       children: this.seed.children,
@@ -848,12 +856,12 @@ export class SeedLearnRepository {
         child: childLookup.get(report.childId),
         exportPreview: buildReportCardExport(report)
       })),
-      transcripts: this.seed.transcripts.map((transcript) => ({
+      transcripts: transcripts.map((transcript) => ({
         ...transcript,
         child: childLookup.get(transcript.childId),
         exportPreview: buildTranscriptExport(transcript)
       })),
-      academicRecords: this.seed.academicRecords,
+      academicRecords,
       reportExports: this.seed.reportExports,
       narrationLogs: this.seed.narrationLogs.map((entry) => ({
         ...entry,

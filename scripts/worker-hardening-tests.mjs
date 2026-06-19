@@ -207,10 +207,23 @@ async function withMockFetch(handler, run) {
   const noAuth = await worker.fetch(request("/api/learn/dashboard"), testEnv);
   assert.equal(noAuth.status, 401);
 
+  const closeNoAuth = await worker.fetch(request("/api/learn/terms/term_1/close", {
+    method: "POST",
+    body: {}
+  }), testEnv);
+  assert.equal(closeNoAuth.status, 401);
+
   const spoofedHeaderOnly = await worker.fetch(request("/api/learn/dashboard", {
     headers: { "X-AGAPAY-Learn-Email": "victim@example.com" }
   }), testEnv);
   assert.equal(spoofedHeaderOnly.status, 401);
+
+  const closeSpoofedHeaderOnly = await worker.fetch(request("/api/learn/terms/term_1/close", {
+    method: "POST",
+    headers: { "X-AGAPAY-Learn-Email": "victim@example.com" },
+    body: {}
+  }), testEnv);
+  assert.equal(closeSpoofedHeaderOnly.status, 401);
 
   const alpha = await verifiedDonorSession(testEnv, "alpha-learn@example.com");
   const beta = await verifiedDonorSession(testEnv, "beta-learn@example.com");
@@ -230,7 +243,18 @@ async function withMockFetch(handler, run) {
     preferences: { evaluationModel: "narrative-only", graceModeDefault: "light" },
     children: [{ firstName: "Anna", ageYears: 8, gradeLabel: "Form I" }],
     streams: [{ title: "Morning Basket", streamType: "household", cadenceLabel: "Daily" }],
-    subjects: [],
+    subjects: [{
+      title: "Math",
+      subjectType: "math",
+      formLabel: "Form I",
+      resource: "Singapore Math",
+      progressionType: "lessons",
+      startNumber: 1,
+      currentNumber: 12,
+      endNumber: 12,
+      credits: 1,
+      finalGradeOverride: "A"
+    }],
     books: [],
     formation: {},
     formationMaterials: []
@@ -242,6 +266,39 @@ async function withMockFetch(handler, run) {
   }), testEnv);
   assert.equal(alphaSave.status, 200);
   assert.equal((await json(alphaSave)).onboarding.household.name, "Alpha Household");
+
+  const alphaReportsBeforeClose = await worker.fetch(request("/api/learn/reports", {
+    headers: alpha.headers
+  }), testEnv);
+  assert.equal(alphaReportsBeforeClose.status, 200);
+  assert.equal((await json(alphaReportsBeforeClose)).reports.transcripts.length, 0);
+
+  const closeAlphaTerm = await worker.fetch(request("/api/learn/terms/term_1/close", {
+    method: "POST",
+    headers: alpha.headers,
+    body: {}
+  }), testEnv);
+  assert.equal(closeAlphaTerm.status, 200);
+  const closeAlphaBody = await json(closeAlphaTerm);
+  assert.equal(closeAlphaBody.ok, true);
+  assert.equal(closeAlphaBody.academicRecords.length, 1);
+  assert.equal(closeAlphaBody.academicRecords[0].mark, "A");
+
+  const closeAlphaTermAgain = await worker.fetch(request("/api/learn/terms/term_1/close", {
+    method: "POST",
+    headers: alpha.headers,
+    body: {}
+  }), testEnv);
+  assert.equal(closeAlphaTermAgain.status, 200);
+
+  const alphaReportsAfterClose = await worker.fetch(request("/api/learn/reports", {
+    headers: alpha.headers
+  }), testEnv);
+  assert.equal(alphaReportsAfterClose.status, 200);
+  const alphaClosedReports = await json(alphaReportsAfterClose);
+  assert.equal(alphaClosedReports.reports.transcripts.length, 1);
+  assert.equal(alphaClosedReports.reports.academicRecords.length, 1);
+  assert.equal(alphaClosedReports.reports.transcripts[0].credits, 1);
 
   const betaRead = await worker.fetch(request("/api/learn/setup", {
     headers: {

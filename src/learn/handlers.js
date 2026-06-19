@@ -1,4 +1,5 @@
 import { json, unauthorized } from "../lib/core.js";
+import { closeLearnTerm } from "./academic-records.js";
 import { assertLearnEnabled, enabledProductSlugs, LEARN_PRODUCT_SLUG, learnCoOpEnabled } from "./access.js";
 import { LEARN_FREE_PRINT_LIMIT, learnBillingCheckout, learnBillingStatus, learnRequestHasFamilyAccessAsync } from "./billing.js";
 import { googleCalendarCallback, googleCalendarConnect, googleCalendarPreview, googleCalendarStatus, googleCalendarSync } from "./google-calendar.js";
@@ -322,6 +323,24 @@ export async function handleLearnReports(request, env) {
     ok: true,
     reports: repository.getReports()
   });
+}
+
+export async function handleLearnTermClose(request, env, termId = "") {
+  const blocked = assertLearnEnabled(env);
+  if (blocked) return blocked;
+  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, { status: 405 });
+
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+  const { repository } = auth;
+  const setupSnapshot = repository.seed?.setupSnapshot;
+  if (!setupSnapshot) {
+    return json({ ok: false, error: "Complete Learn setup before closing a term." }, { status: 400 });
+  }
+
+  const result = await closeLearnTerm(env, setupSnapshot, termId);
+  if (!result.ok) return json(result, { status: result.status || 500 });
+  return json(result);
 }
 
 export async function handleLearnCoOp(request, env) {

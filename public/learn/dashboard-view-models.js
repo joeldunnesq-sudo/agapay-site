@@ -906,6 +906,8 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       startNumber: text(subject.startNumber, ""),
       currentNumber: text(subject.currentNumber || subject.completedThroughNumber, ""),
       endNumber: text(subject.endNumber, ""),
+      credits: text(subject.credits, ""),
+      finalGradeOverride: text(subject.finalGradeOverride, ""),
       termId: text(subject.termId || subject.assignedTermId, currentTermId),
       gracePriority: text(subject.gracePriority, "keep"),
       graceNote: text(subject.graceNote, "Deferred gracefully to the reserve list."),

@@ -190,6 +190,7 @@ import {
   handleLearnPrintCenter,
   handleLearnPrintPdf,
   handleLearnReports,
+  handleLearnTermClose,
 } from "./learn/handlers.js";
 
 import {
@@ -826,6 +827,10 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/learn/reports") {
       return handleLearnReports(request, env);
+    }
+    if (request.method === "POST" && url.pathname.startsWith("/api/learn/terms/") && url.pathname.endsWith("/close")) {
+      const termId = decodeURIComponent(url.pathname.slice("/api/learn/terms/".length, -"/close".length));
+      return handleLearnTermClose(request, env, termId);
     }
     if (request.method === "GET" && url.pathname === "/api/learn/co-op") {
       return handleLearnCoOp(request, env);
