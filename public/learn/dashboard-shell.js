@@ -1478,6 +1478,21 @@ function currentSetupTerms(form) {
   }));
 }
 
+function setupChildCount(form) {
+  return form.querySelectorAll('[data-setup-row="children"]').length;
+}
+
+function syncSetupChildLimit(form) {
+  const button = form.querySelector('[data-setup-add-row="children"]');
+  if (!button) return;
+  const freeLimitReached = !isLearnFamilyPlan() && setupChildCount(form) >= 2;
+  button.dataset.upgradeRequired = freeLimitReached ? "true" : "false";
+  button.textContent = freeLimitReached ? "Upgrade to add another child" : "Add Child";
+  button.style.background = freeLimitReached ? "var(--navy)" : "var(--paper2)";
+  button.style.color = freeLimitReached ? "#fff" : "var(--ink)";
+  button.style.borderColor = freeLimitReached ? "var(--gold)" : "var(--line)";
+}
+
 function setupBlankRow(type, form) {
   const terms = currentSetupTerms(form);
   const currentTermId = form.elements["schoolYear.currentTermId"]?.value || terms[0]?.id || "term_1";
@@ -1521,6 +1536,7 @@ function wireSetupPage() {
     const value = /^#[0-9a-f]{6}$/i.test(textInput?.value || "") ? textInput.value : colorInput?.value;
     if (preview && value) preview.style.background = value;
     if (event.target.closest('[data-setup-row="terms"]')) syncSetupTermSelects(form);
+    if (event.target.closest('[data-setup-row="children"]')) syncSetupChildLimit(form);
   });
   form.addEventListener("click", (event) => {
     const closeButton = event.target.closest("[data-close-term]");
@@ -1565,19 +1581,29 @@ function wireSetupPage() {
       if (row && list && list.querySelectorAll("[data-setup-row]").length > 1) {
         row.remove();
         if (removedType === "terms") syncSetupTermSelects(form);
+        if (removedType === "children") syncSetupChildLimit(form);
       }
       return;
     }
     const addButton = event.target.closest("[data-setup-add-row]");
     if (addButton) {
       const type = addButton.dataset.setupAddRow;
+      if (type === "children" && addButton.dataset.upgradeRequired === "true") {
+        showLearnDialog("Upgrade to Add Another Child", "The free AGAPAY Learn plan includes up to two children. Upgrade to the Family plan to add unlimited children, child sheets, term packs, and larger-household planning.", [
+          { label: "Free plan", value: "Up to 2 children" },
+          { label: "Family plan", value: "Unlimited children" }
+        ], { upgrade: true });
+        return;
+      }
       const list = form.querySelector(`[data-setup-list="${type}"]`);
       if (list) {
         list.insertAdjacentHTML("beforeend", setupBlankRow(type, form));
         if (type === "terms") syncSetupTermSelects(form);
+        if (type === "children") syncSetupChildLimit(form);
       }
     }
   });
+  syncSetupChildLimit(form);
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const status = form.querySelector("[data-setup-status]");
