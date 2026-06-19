@@ -49,6 +49,7 @@ const onboarding = repository.getOnboarding();
 assert(onboarding.onboarding.steps.some((step) => step.status === "active"), "Onboarding should have an active setup step.");
 
 const learnShell = readFileSync(new URL("../public/learn/dashboard-shell.js", import.meta.url), "utf8");
+const learnBilling = readFileSync(new URL("../src/learn/billing.js", import.meta.url), "utf8");
 const learnDashboardHtml = readFileSync(new URL("../public/learn/dashboard.html", import.meta.url), "utf8");
 assert(learnShell.includes("data-dialog-checkout"), "Learn shell should include checkout dialog hooks.");
 assert(learnShell.includes("data-grace-mode"), "Learn shell should expose grace mode controls.");
@@ -58,6 +59,7 @@ assert(learnShell.includes("data-setup-progress-target"), "Learn shell setup pro
 assert(learnDashboardHtml.includes("/learn/dashboard-shell.js"), "Learn dashboard should load the active dashboard shell.");
 assert(learnDashboardHtml.includes("/learn/dashboard-view-models.js"), "Learn dashboard should preload the active view model bundle.");
 assert(!learnDashboardHtml.includes("claude-shell"), "Learn dashboard should not reference legacy Claude shell filenames.");
+assert(learnBilling.includes("stephaie@dunncrew.com"), "Founder-family Learn access should include Stephanie's account.");
 
 const phase3Migration = readFileSync(new URL("../migrations/0005_agapay_learn_phase3.sql", import.meta.url), "utf8");
 [

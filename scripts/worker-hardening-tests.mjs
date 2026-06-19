@@ -214,6 +214,7 @@ async function withMockFetch(handler, run) {
   const alpha = await verifiedDonorSession(testEnv, "alpha-learn@example.com");
   const beta = await verifiedDonorSession(testEnv, "beta-learn@example.com");
   const stephanie = await verifiedDonorSession(testEnv, "stephanie@dunncrew.com");
+  const envAllowed = await verifiedDonorSession(testEnv, "env-allowed-learn@example.com");
 
   const alphaDashboard = await worker.fetch(request("/api/learn/dashboard", {
     headers: alpha.headers
@@ -293,11 +294,11 @@ async function withMockFetch(handler, run) {
     headers: stephanie.headers
   }), testEnv);
   assert.equal(hardcodedEmailBilling.status, 200);
-  assert.equal((await json(hardcodedEmailBilling)).plan, "free");
+  assert.equal((await json(hardcodedEmailBilling)).plan, "family");
 
-  testEnv.AGAPAY_LEARN_FULL_ACCESS_EMAILS = "stephanie@dunncrew.com";
+  testEnv.AGAPAY_LEARN_FULL_ACCESS_EMAILS = "env-allowed-learn@example.com";
   const envAllowlistBilling = await worker.fetch(request("/api/learn/billing/status", {
-    headers: stephanie.headers
+    headers: envAllowed.headers
   }), testEnv);
   assert.equal(envAllowlistBilling.status, 200);
   assert.equal((await json(envAllowlistBilling)).plan, "family");

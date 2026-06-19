@@ -25,6 +25,10 @@ const planCatalog = {
   }
 };
 const LEARN_BILLING_KV_PREFIX = "__agapay_learn_billing:";
+const DEFAULT_FULL_ACCESS_EMAILS = [
+  "stephaie@dunncrew.com",
+  "stephanie@dunncrew.com"
+];
 
 function slug(value, fallback = "item") {
   const normalized = String(value || "")
@@ -157,10 +161,11 @@ export async function saveLearnBillingRecord(env = {}, record = {}) {
 }
 
 function configuredFullAccessEmails(env = {}) {
-  return String(env.AGAPAY_LEARN_FULL_ACCESS_EMAILS || "")
+  const configured = String(env.AGAPAY_LEARN_FULL_ACCESS_EMAILS || "")
     .split(/[,\s]+/)
     .map((email) => normalizeEmail(email))
     .filter(Boolean);
+  return [...new Set([...DEFAULT_FULL_ACCESS_EMAILS.map((email) => normalizeEmail(email)), ...configured])];
 }
 
 export function learnEmailHasFullAccess(email, env = {}) {
