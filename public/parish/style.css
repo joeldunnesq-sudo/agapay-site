@@ -162,6 +162,9 @@
     .sidebar-nav-item:hover { background: rgba(184,144,47,0.06); color: var(--cream); padding-left: 1.45rem; }
     .sidebar-nav-item.active { background: rgba(184,144,47,0.1); color: var(--cream); border-left-color: var(--gold); }
     .sidebar-nav-item svg, .sidebar-link svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
+    .sidebar-nav-item svg { color: var(--gold); }
+    .sidebar-nav-item .nav-label { min-width: 0; }
+    .nav-soon-badge { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(184,144,47,0.42); border-radius: 999px; background: rgba(184,144,47,0.14); color: var(--gold); padding: 0.16rem 0.45rem; font-size: 8px; font-weight: 800; letter-spacing: 0.08em; line-height: 1; text-transform: uppercase; white-space: nowrap; }
     .sidebar-links { padding: 1rem 1.25rem; margin-top: auto; }
     .sidebar-link { display: flex; align-items: center; gap: 8px; color: rgba(166,159,145,0.62); font-size: 12px; text-decoration: none; margin-bottom: 0.5rem; transition: color 0.15s ease; }
     .sidebar-link:hover { color: var(--cream); }
@@ -1198,6 +1201,25 @@
       stroke-width: 1.9;
       stroke-linecap: round;
       stroke-linejoin: round;
+      color: var(--gold);
+    }
+
+    .mobile-soon-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: -0.08rem;
+      border: 1px solid rgba(184,144,47,0.42);
+      border-radius: 999px;
+      background: rgba(184,144,47,0.12);
+      color: var(--gold);
+      padding: 0.08rem 0.34rem;
+      font-size: 7px;
+      font-style: normal;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      text-transform: uppercase;
     }
 
     @media (max-width: 760px) {
@@ -1523,7 +1545,7 @@
       }
 
       .mobile-tab-link.active svg {
-        color: currentColor;
+        color: var(--gold);
       }
 
       .qr-feature-card,
@@ -1624,6 +1646,180 @@
       grid-template-columns: minmax(0, 0.95fr) minmax(280px, 0.7fr);
       gap: 1rem;
       margin-bottom: 1rem;
+    }
+
+    .stewardship-soon-hero-card {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 1rem;
+      align-items: start;
+      margin-bottom: 1rem;
+      padding: 1.35rem 1.45rem;
+      border: 1px solid rgba(201,162,91,0.34);
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 92% 0%, rgba(201,162,91,0.18), transparent 13rem),
+        linear-gradient(135deg, var(--deep), var(--forest));
+      color: var(--cream);
+      box-shadow: 0 18px 42px rgba(6,21,34,0.16);
+      overflow: hidden;
+    }
+
+    .stewardship-soon-mark {
+      width: 54px;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(201,162,91,0.36);
+      border-radius: 999px;
+      background: rgba(201,162,91,0.12);
+      color: var(--gold);
+    }
+
+    .stewardship-soon-mark svg {
+      width: 28px;
+      height: 28px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .stewardship-soon-hero-card span,
+    .stewardship-soon-preview-head span {
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .stewardship-soon-hero-card strong {
+      display: block;
+      margin-top: 0.28rem;
+      color: var(--cream);
+      font-family: var(--serif);
+      font-size: clamp(1.65rem, 3vw, 2.35rem);
+      font-weight: 500;
+      line-height: 1.05;
+    }
+
+    .stewardship-soon-hero-card p {
+      max-width: 620px;
+      margin: 0.65rem 0 0;
+      color: rgba(246,241,232,0.72);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .stewardship-soon-feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .stewardship-soon-feature {
+      display: grid;
+      gap: 0.35rem;
+      min-height: 148px;
+      padding: 1rem;
+      border: 1px solid rgba(201,162,91,0.28);
+      border-radius: 14px;
+      background: linear-gradient(180deg, #fff, rgba(244,240,230,0.72));
+      box-shadow: 0 12px 30px rgba(6,21,34,0.06);
+    }
+
+    .stewardship-soon-feature i {
+      width: fit-content;
+      border-radius: 999px;
+      background: var(--deep);
+      color: var(--gold);
+      padding: 0.24rem 0.55rem;
+      font-size: 10px;
+      font-style: normal;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+
+    .stewardship-soon-feature strong,
+    .stewardship-soon-preview-list b {
+      color: var(--deep);
+      font-family: var(--serif);
+      font-size: 1.22rem;
+      font-weight: 600;
+      line-height: 1.05;
+    }
+
+    .stewardship-soon-feature span,
+    .stewardship-soon-preview-list span,
+    .stewardship-soon-note span {
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .stewardship-soon-preview {
+      display: grid;
+      gap: 1rem;
+      min-height: 100%;
+      padding: 1.15rem;
+      border: 1px solid rgba(201,162,91,0.32);
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(201,162,91,0.16), transparent 10rem),
+        linear-gradient(180deg, #fff, rgba(244,240,230,0.66));
+      box-shadow: var(--soft-shadow);
+    }
+
+    .stewardship-soon-preview-head {
+      display: grid;
+      gap: 0.22rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid rgba(201,162,91,0.22);
+    }
+
+    .stewardship-soon-preview-head strong {
+      color: var(--deep);
+      font-family: var(--serif);
+      font-size: 1.55rem;
+      font-weight: 500;
+      line-height: 1.05;
+    }
+
+    .stewardship-soon-preview-list {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .stewardship-soon-preview-list > div {
+      display: grid;
+      gap: 0.2rem;
+      padding: 0.85rem;
+      border: 1px solid rgba(201,162,91,0.2);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.62);
+    }
+
+    .stewardship-soon-note {
+      display: grid;
+      gap: 0.25rem;
+      padding: 1rem;
+      border-radius: 14px;
+      background: var(--deep);
+      color: var(--cream);
+    }
+
+    .stewardship-soon-note strong {
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .stewardship-soon-note span {
+      color: rgba(246,241,232,0.72);
     }
 
     .stewardship-status-banner {
@@ -1859,7 +2055,12 @@
     @media (max-width: 960px) {
       .stewardship-native-grid,
       .stewardship-form-grid,
+      .stewardship-soon-feature-grid,
       .stewardship-plan-options {
+        grid-template-columns: 1fr;
+      }
+
+      .stewardship-soon-hero-card {
         grid-template-columns: 1fr;
       }
 

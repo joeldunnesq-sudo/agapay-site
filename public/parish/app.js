@@ -325,27 +325,49 @@
     if (!planPane || !meetingsPane) return;
     if (status) status.textContent = 'Coming soon';
     planPane.innerHTML = `
-      <div class="stewardship-status-banner">
-        <strong>Coming soon</strong>
-        <span>AGAPAY Stewardship is paused as a paid add-on until the packet workflow, billing, and reporting tools are ready for parishes to rely on.</span>
-      </div>
-      <div class="stewardship-plan-options">
-        <div class="stewardship-plan-option">
-          <strong>Annual meeting packets</strong>
-          <span>Agenda, rector report, treasurer report, nominations, resolutions, and print-ready packet output.</span>
-          <small>Planned</small>
+      <div class="stewardship-soon-hero-card">
+        <div class="stewardship-soon-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-5"/></svg>
         </div>
-        <div class="stewardship-plan-option">
-          <strong>Parish records</strong>
-          <span>Parish council notes, restricted fund snapshots, compliance dates, and document storage.</span>
-          <small>Planned</small>
+        <div>
+          <span>Native AGAPAY add-on</span>
+          <strong>Beautiful stewardship materials without the spreadsheet scramble.</strong>
+          <p>Annual parish meeting packets, pledge materials, restricted fund snapshots, and parish-ready reports are being shaped as a focused add-on inside AGAPAY Giving.</p>
+        </div>
+      </div>
+      <div class="stewardship-soon-feature-grid">
+        <div class="stewardship-soon-feature">
+          <i>01</i>
+          <strong>Packet builder</strong>
+          <span>Agenda, clergy reports, treasurer notes, nominees, resolutions, and print-ready annual meeting materials.</span>
+        </div>
+        <div class="stewardship-soon-feature">
+          <i>02</i>
+          <strong>Pledge campaigns</strong>
+          <span>Parish stewardship messaging, follow-up cadence, and giving goals tied to the dashboard.</span>
+        </div>
+        <div class="stewardship-soon-feature">
+          <i>03</i>
+          <strong>Financial snapshots</strong>
+          <span>Restricted funds, giving progress, campaign summaries, and council-ready reporting in one place.</span>
         </div>
       </div>
     `;
     meetingsPane.innerHTML = `
-      <div class="stewardship-empty">
-        <strong>Packet generation is not enabled yet.</strong>
-        <span>The interface will return here when parishes can enter meeting details, save reports, and generate polished annual meeting packets reliably.</span>
+      <div class="stewardship-soon-preview">
+        <div class="stewardship-soon-preview-head">
+          <span>Coming soon</span>
+          <strong>2026 Annual Parish Meeting Packet</strong>
+        </div>
+        <div class="stewardship-soon-preview-list">
+          <div><b>Agenda</b><span>Opening prayer, quorum, reports, elections, resolutions</span></div>
+          <div><b>Reports</b><span>Rector, treasurer, stewardship, ministries, restricted funds</span></div>
+          <div><b>Output</b><span>Polished PDF packet for parish council and faithful</span></div>
+        </div>
+        <div class="stewardship-soon-note">
+          <strong>Not enabled yet.</strong>
+          <span>We are keeping this dormant until the workflow, billing, and generated packets are reliable enough for live parish use.</span>
+        </div>
       </div>`;
   }
 
