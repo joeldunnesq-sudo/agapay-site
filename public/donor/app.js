@@ -1148,6 +1148,76 @@ function renderLearnTierStatus(billing) {
   tier.innerHTML = `<span class="learn-tier-limited">Limited Free</span><button type="button" class="learn-upgrade-mini" data-myagapay-learn-upgrade>Upgrade now</button>`;
 }
 
+function renderLearnSubscriptionSettings(payload = {}) {
+  const billing = payload.billing || {};
+  const fullAccess = Boolean(payload.fullAccess || payload.plan === "family");
+  const status = String(billing.status || (fullAccess ? "active" : "free")).toLowerCase();
+  const cancelPending = Boolean(billing.cancelAtPeriodEnd || billing.cancelledAt);
+  const currentPeriodEnd = billing.currentPeriodEnd ? shortDate(billing.currentPeriodEnd) : "";
+
+  const statusPill = document.getElementById("learnBillingStatusPill");
+  if (statusPill) {
+    statusPill.textContent = cancelPending ? "Cancelling" : fullAccess ? "Family Plan" : "Limited Free";
+    statusPill.classList.toggle("pending", cancelPending);
+  }
+  setText("learnBillingPlan", fullAccess ? "AGAPAY Learn Family access is active." : "Limited Free access is active.");
+  setText("learnBillingRenewal", cancelPending
+    ? `Cancels at period end${currentPeriodEnd ? ` (${currentPeriodEnd})` : ""}.`
+    : fullAccess && currentPeriodEnd
+      ? `Renews through Stripe on ${currentPeriodEnd}.`
+      : fullAccess
+        ? "Full access is enabled for this account."
+        : "Upgrade to unlock unlimited children, printing, and full reports.");
+  setText("learnBillingHelp", cancelPending
+    ? "Your Learn subscription has been scheduled for cancellation. You can keep using Learn until Stripe completes the billing-period change."
+    : fullAccess
+      ? "Canceling stops future renewal through Stripe. Your current My AGAPAY login remains active."
+      : "The free plan supports up to two children and limited printing.");
+
+  const cancelButton = document.getElementById("learnCancelSubscriptionButton");
+  if (cancelButton) {
+    cancelButton.hidden = !billing.stripeSubscriptionId || !fullAccess || cancelPending;
+  }
+  const upgradeLink = document.getElementById("learnBillingUpgradeLink");
+  if (upgradeLink) {
+    upgradeLink.hidden = fullAccess && !cancelPending;
+  }
+}
+
+async function loadLearnSubscriptionSettings() {
+  if (!document.getElementById("learnSubscriptionCard")) return;
+  try {
+    const data = await donorApi("/api/learn/billing/status");
+    renderLearnSubscriptionSettings(data);
+  } catch (err) {
+    setText("learnBillingStatusPill", "Unavailable");
+    setText("learnBillingPlan", "AGAPAY Learn billing could not be loaded.");
+    setText("learnBillingRenewal", err.message || "Please try again later.");
+    const cancelButton = document.getElementById("learnCancelSubscriptionButton");
+    if (cancelButton) cancelButton.hidden = true;
+  }
+}
+
+async function cancelLearnSubscription(button) {
+  if (!confirm("Cancel your AGAPAY Learn subscription at the end of the current billing period?")) return;
+  const original = button?.textContent || "Cancel Learn subscription";
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Cancelling...";
+  }
+  try {
+    const data = await donorApi("/api/learn/billing/cancel", { method: "POST" });
+    renderLearnSubscriptionSettings({ fullAccess: true, plan: "family", billing: data.billing });
+    setDonorStatus(data.message || "AGAPAY Learn subscription cancellation scheduled.", "success");
+  } catch (err) {
+    setDonorStatus(err.message || "Unable to cancel AGAPAY Learn subscription.", "error");
+    if (button) {
+      button.disabled = false;
+      button.textContent = original;
+    }
+  }
+}
+
 async function renderMyAgapayLearnCard() {
   const session = donorSession();
   if (!session.email || !session.token) return;
@@ -1347,8 +1417,10 @@ async function loadDonorSettingsPage() {
     setValue("settingsCountry", donor.country || "US");
     const parishName = document.getElementById("settingsParishName");
     if (parishName) parishName.textContent = data.parish?.name || "Choose a parish below";
+    await loadLearnSubscriptionSettings();
   } catch (err) {
     setDonorStatus(err.message, "error");
+    await loadLearnSubscriptionSettings();
   }
 }
 

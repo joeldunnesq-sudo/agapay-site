@@ -950,19 +950,14 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       summary: "Memory work, hymnody, saints, feasts, icons, art, poetry, music, and nature."
     },
     {
-      title: "Literature",
-      status: safeArray(booksSource).length ? "complete" : "needed",
-      summary: "Living books, stories, plays, history reads, tales, and read-alouds."
-    },
-    {
       title: "Form Subjects",
       status: safeArray(subjectsSource).length ? "complete" : "needed",
-      summary: "Language arts, history, geography, math, science, and progress ranges."
+      summary: "Language arts, literature, languages, history, geography, math, science, and progress ranges."
     }
   ];
   return {
     shell: shellFromPayload("onboarding", rawPayload),
-    page: page("onboarding", "Set Up", "Configure the household, calendar, books, lessons, and co-op."),
+    page: page("onboarding", "Set Up", "Configure the household, calendar, terms, enrichment, subjects, and co-op."),
     progress: {
       current: onboarding.household?.currentStep || 1,
       total: onboarding.household?.totalSteps || safeArray(onboarding.steps).length || 1,

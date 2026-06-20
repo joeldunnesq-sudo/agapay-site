@@ -1,7 +1,7 @@
 import { json, unauthorized } from "../lib/core.js";
 import { closeLearnTerm } from "./academic-records.js";
 import { assertLearnEnabled, enabledProductSlugs, LEARN_PRODUCT_SLUG, learnCoOpEnabled } from "./access.js";
-import { LEARN_FREE_PRINT_LIMIT, learnBillingCheckout, learnBillingStatus, learnRequestHasFamilyAccessAsync } from "./billing.js";
+import { LEARN_FREE_PRINT_LIMIT, learnBillingCancel, learnBillingCheckout, learnBillingStatus, learnRequestHasFamilyAccessAsync } from "./billing.js";
 import { googleCalendarCallback, googleCalendarConnect, googleCalendarPreview, googleCalendarStatus, googleCalendarSync } from "./google-calendar.js";
 import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-source.js";
 import { enrichLiturgicalDayWithOrthocal, fetchOrthocalDay, handleLearnReadingsStatus, orthocalSaintStories } from "./readings-source.js";
@@ -516,6 +516,12 @@ export function handleLearnBillingCheckout(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return learnBillingCheckout(request, env);
+}
+
+export function handleLearnBillingCancel(request, env) {
+  const blocked = assertLearnEnabled(env);
+  if (blocked) return blocked;
+  return learnBillingCancel(request, env);
 }
 
 export function handleLearnReadingsProviderStatus(_request, env) {

@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css" />
-  <script src="/donor/app.js?v=20260619a" defer></script>
+  <script src="/donor/app.js?v=20260620a" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon.png" />
@@ -103,6 +103,30 @@
                 <button class="btn btn-ghost" type="button" onclick="logoutDonor()">Log out</button>
               </div>
             </form>
+          </div>
+        </section>
+        <section class="card section-gap" id="learnSubscriptionCard">
+          <div class="card-header">
+            <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5V5a2 2 0 0 1 2-2h5a4 4 0 0 1 3 1.35A4 4 0 0 1 17 3h1a2 2 0 0 1 2 2v14.5"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H11a3 3 0 0 1 3 3 3 3 0 0 1 3-3h.5A2.5 2.5 0 0 1 20 19.5"/></svg></span> AGAPAY Learn Subscription</div>
+            <span class="status-pill" id="learnBillingStatusPill">Checking...</span>
+          </div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Plan</label>
+                <div class="form-help" id="learnBillingPlan">Loading AGAPAY Learn billing...</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Renewal</label>
+                <div class="form-help" id="learnBillingRenewal">Checking subscription status.</div>
+              </div>
+            </div>
+            <p class="form-help" id="learnBillingHelp">Manage the Learn subscription tied to this My AGAPAY account.</p>
+            <div class="btn-row section-gap">
+              <a class="btn btn-ghost" href="/myagapay/learn">Open Learn</a>
+              <a class="btn btn-gold" id="learnBillingUpgradeLink" href="/learn/pricing">View Learn pricing</a>
+              <button class="btn btn-ghost" id="learnCancelSubscriptionButton" type="button" onclick="cancelLearnSubscription(this)" hidden>Cancel Learn subscription</button>
+            </div>
           </div>
         </section>
       </div>

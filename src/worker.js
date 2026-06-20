@@ -180,6 +180,7 @@ import {
   handleLearnDashboard,
   handleLearnFormation,
   handleLearnGraceModeSave,
+  handleLearnBillingCancel,
   handleLearnBillingCheckout,
   handleLearnBillingStatus,
   handleLearnGoogleCalendarCallback,
@@ -863,6 +864,9 @@ export default {
     }
     if (request.method === "POST" && url.pathname === "/api/learn/billing/checkout") {
       return handleLearnBillingCheckout(request, env);
+    }
+    if (request.method === "POST" && url.pathname === "/api/learn/billing/cancel") {
+      return handleLearnBillingCancel(request, env);
     }
     if (url.pathname === "/api/learn/google-calendar/status") {
       return handleLearnGoogleCalendarStatus(request, env);

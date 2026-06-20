@@ -1023,6 +1023,7 @@ const subjectTypeOptions = [
   { value: "tales", label: "Tales" },
   { value: "literature", label: "Literature" },
   { value: "language-arts", label: "Language Arts" },
+  { value: "classical-foreign-languages", label: "Classical & Foreign Languages" },
   { value: "history", label: "History" },
   { value: "geography", label: "Geography" },
   { value: "math", label: "Math" },
@@ -1206,6 +1207,14 @@ function formSubjectsSetupPanel(vm, currentTermId) {
       defaultType: "literature"
     },
     {
+      panel: "languages",
+      title: "Classical & Foreign Languages",
+      detail: "Greek, Latin, modern languages, translation, grammar, and oral practice.",
+      icon: "Α",
+      types: ["classical-foreign-languages", "foreign-language", "classical-languages", "latin", "greek"],
+      defaultType: "classical-foreign-languages"
+    },
+    {
       panel: "history",
       title: "History",
       detail: "History readings, narrations, timelines, biographies, and term projects.",
@@ -1258,7 +1267,7 @@ function setupStepTarget(step) {
   if (text.includes("child") || text.includes("form")) return "learnSetupChildren";
   if (text.includes("stream")) return "learnSetupFormation";
   if (text.includes("language") || text.includes("math") || text.includes("science") || text.includes("subject") || text.includes("curriculum")) return "learnSetupSubjects";
-  if (text.includes("literature") || text.includes("book") || text.includes("read")) return "learnSetupBooks";
+  if (text.includes("literature") || text.includes("book") || text.includes("read")) return "learnSetupSubjects";
   if (text.includes("church rhythm")) return "learnSetupChurchRhythm";
   if (text.includes("formation") || text.includes("catechesis") || text.includes("enrichment")) return "learnSetupFormation";
   return "learnSetupHousehold";
@@ -1280,7 +1289,6 @@ function renderSetup(vm) {
   const body = `
     <form data-setup-form data-screen-label="Set Up" style="display:flex;flex-direction:column;gap:18px;">
       ${panel("Setup Progress", `<h2 style="font-family:'Cormorant Garamond',serif;margin:0 0 8px;font-size:28px;">Step ${vm.progress.current} of ${vm.progress.total}</h2>${bar((vm.progress.current / vm.progress.total) * 100, "var(--navy)")}<p style="color:var(--muted);">Next: ${html(vm.progress.next)}</p><div class="learn-setup-progress-grid">${vm.steps.map(setupProgressCard).join("")}</div>`, { icon: "⚙" })}
-      ${panel("A Typical Orthodox School Day", `<div style="display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;"><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>1. Household + Forms</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Set the year, terms, children, and Forms before adding lessons.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>2. Church Rhythm</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Prayer, Gospel, Epistle, saints, feasts, and fasting shape the day.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>3. Enrichment</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Memory work, art, poetry, music, nature, and formation materials.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>4. Form Work</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Tales, literature, language arts, history, geography, math, and sciences.</small></div></div>`, { icon: "✥" })}
       <span id="learnSetupHousehold" class="learn-setup-anchor"></span>
       ${panel("Household", `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Set the household identity and the broad school-year preferences. Terms, children, and Forms are managed immediately below so the setup flow stays easy to scan.</p><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Charlotte Mason", homeschoolMethodOptions)}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /></div>`, { icon: "⌂", largeTitle: true })}
       <span id="learnSetupChildren" class="learn-setup-anchor"></span>
@@ -1290,8 +1298,6 @@ function renderSetup(vm) {
       ${panel("Church Rhythm", churchRhythmSetupPanel(vm), { icon: "☩", largeTitle: true })}
       <span id="learnSetupFormation" class="learn-setup-anchor"></span>
       ${panel("Enrichment", formationSetupPanel(vm), { icon: "✥", largeTitle: true })}
-      <span id="learnSetupBooks" class="learn-setup-anchor"></span>
-      ${panel("Literature", `<p style="margin:0 0 12px;color:var(--muted);">Add living books, read-alouds, stories, plays, history reads, folk stories, myths, and great tales. Assign each book to the term and Form where it belongs.</p><div data-setup-list="books" style="display:grid;gap:10px;">${(vm.books.length ? vm.books : [{}]).map((book) => bookSetupRow(book, vm.terms, currentTermId)).join("")}</div><button type="button" data-setup-add-row="books" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Literature</button>`, { icon: "☰", largeTitle: true })}
       <span id="learnSetupSubjects" class="learn-setup-anchor"></span>
       ${panel("Form Subjects", formSubjectsSetupPanel(vm, currentTermId), { icon: "✎", largeTitle: true })}
       ${panel("Co-op", `<div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">Coming Soon</strong><p style="margin:4px 0 0;color:var(--muted);line-height:1.4;">Co-op creation and member management are intentionally deferred so Learn can launch with the household planner, reports, print packs, and paid limits first.</p></div><span style="border:1px solid var(--gold);border-radius:999px;color:var(--gold);padding:7px 12px;white-space:nowrap;">Future add-on</span></div>`, { icon: "◎" })}

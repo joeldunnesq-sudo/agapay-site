@@ -249,7 +249,9 @@ function learnBillingMetrics(records = [], now = new Date()) {
   let monthlyRecurringCents = 0;
 
   for (const record of records) {
-    const status = learnSubscriptionStatus(record.status);
+    const status = record.cancelAtPeriodEnd || record.cancelledAt || record.canceledAt
+      ? "cancelled"
+      : learnSubscriptionStatus(record.status);
     if (status === "active") counts.active += 1;
     if (status === "trialing") counts.trialing += 1;
     if (status === "past_due") counts.pastDue += 1;
@@ -290,7 +292,7 @@ function learnBillingMetrics(records = [], now = new Date()) {
       .map((record) => ({
         email: record.email || "",
         plan: record.plan || "family",
-        status: learnSubscriptionStatus(record.status),
+        status: record.cancelAtPeriodEnd || record.cancelledAt || record.canceledAt ? "cancelled" : learnSubscriptionStatus(record.status),
         createdAt: record.createdAt || "",
         updatedAt: record.updatedAt || "",
         stripeSubscriptionId: record.stripeSubscriptionId || ""

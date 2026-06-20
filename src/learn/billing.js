@@ -67,6 +67,17 @@ function checkoutConfigured(env = {}) {
   return Boolean(env.STRIPE_SECRET_KEY);
 }
 
+function isFutureIso(value) {
+  const time = value ? new Date(value).getTime() : 0;
+  return Number.isFinite(time) && time > Date.now();
+}
+
+function billingGrantsPaidAccess(billing = {}) {
+  const status = String(billing?.status || "").toLowerCase();
+  if (["active", "trialing", "free_forever"].includes(status)) return true;
+  return Boolean(billing?.cancelAtPeriodEnd && isFutureIso(billing.currentPeriodEnd));
+}
+
 async function requestEmail(request, env = {}) {
   const donor = await requireDonor(request, env);
   return normalizeEmail(donor?.email || "");
@@ -131,6 +142,8 @@ export async function saveLearnBillingRecord(env = {}, record = {}) {
     stripeSubscriptionId: record.stripeSubscriptionId || "",
     stripeCheckoutSessionId: record.stripeCheckoutSessionId || "",
     currentPeriodEnd: record.currentPeriodEnd || "",
+    cancelAtPeriodEnd: Boolean(record.cancelAtPeriodEnd || record.cancel_at_period_end),
+    cancelledAt: record.cancelledAt || record.canceledAt || "",
     updatedAt: now,
     createdAt: record.createdAt || now
   };
@@ -219,7 +232,7 @@ export function learnEmailHasFullAccess(email, env = {}) {
 export async function learnEmailHasPaidAccess(email, env = {}) {
   if (learnEmailHasFullAccess(email, env)) return true;
   const billing = await loadLearnBillingRecord(env, email);
-  return ["active", "trialing", "free_forever"].includes(String(billing?.status || "").toLowerCase());
+  return billingGrantsPaidAccess(billing);
 }
 
 export async function learnPlanForRequest(request, env = {}, identity = null) {
@@ -244,7 +257,7 @@ export async function learnBillingStatus(request, env = {}) {
   if (!identity.email) return json({ ok: false, error: "Unauthorized" }, { status: 401 });
   const email = identity.email;
   const billing = await loadLearnBillingRecord(env, email);
-  const hasPaidAccess = ["active", "trialing", "free_forever"].includes(String(billing?.status || "").toLowerCase());
+  const hasPaidAccess = billingGrantsPaidAccess(billing);
   const plan = hasPaidAccess ? LEARN_FAMILY_PLAN : await learnPlanForRequest(request, env, identity);
   return json({
     ok: true,
@@ -341,6 +354,65 @@ export async function learnBillingCheckout(request, env = {}) {
   });
 }
 
+export async function learnBillingCancel(request, env = {}) {
+  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, { status: 405 });
+  const identity = await learnBillingIdentity(request, env);
+  if (!identity.email) return json({ ok: false, error: "Unauthorized" }, { status: 401 });
+
+  const billing = await loadLearnBillingRecord(env, identity.email);
+  if (!billing?.stripeSubscriptionId) {
+    return json({
+      ok: false,
+      error: "No Stripe-backed AGAPAY Learn subscription was found for this account."
+    }, { status: 404 });
+  }
+  if (billing.cancelAtPeriodEnd || String(billing.status || "").toLowerCase() === "cancelled") {
+    return json({ ok: true, billing, message: "This AGAPAY Learn subscription is already scheduled to cancel." });
+  }
+  if (!env.STRIPE_SECRET_KEY) {
+    return json({
+      ok: false,
+      error: "Stripe is not configured, so AGAPAY cannot cancel this Learn subscription yet."
+    }, { status: 503 });
+  }
+
+  const response = await fetch(`https://api.stripe.com/v1/subscriptions/${encodeURIComponent(billing.stripeSubscriptionId)}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: new URLSearchParams({ cancel_at_period_end: "true" })
+  });
+  const subscription = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    return json({
+      ok: false,
+      error: subscription.error?.message || "Stripe could not schedule this AGAPAY Learn subscription for cancellation."
+    }, { status: response.status || 502 });
+  }
+
+  const saved = await saveLearnBillingRecord(env, {
+    ...billing,
+    email: identity.email,
+    householdId: billing.householdId || identity.householdId,
+    status: subscription.status || billing.status || "active",
+    stripeCustomerId: subscription.customer || billing.stripeCustomerId || "",
+    stripeSubscriptionId: subscription.id || billing.stripeSubscriptionId,
+    currentPeriodEnd: subscription.current_period_end
+      ? new Date(subscription.current_period_end * 1000).toISOString()
+      : billing.currentPeriodEnd,
+    cancelAtPeriodEnd: true,
+    cancelledAt: new Date().toISOString()
+  });
+
+  return json({
+    ok: true,
+    billing: saved.billing,
+    message: "Your AGAPAY Learn subscription is scheduled to cancel at the end of the current billing period."
+  });
+}
+
 export async function persistLearnBillingFromStripe(env = {}, source = {}) {
   const metadata = source.metadata || {};
   const email = normalizeEmail(
@@ -359,6 +431,8 @@ export async function persistLearnBillingFromStripe(env = {}, source = {}) {
     stripeCustomerId: source.customer || source.stripeCustomerId || "",
     stripeSubscriptionId: source.subscription || source.id || source.stripeSubscriptionId || "",
     stripeCheckoutSessionId: source.checkoutSessionId || "",
-    currentPeriodEnd: source.current_period_end ? new Date(source.current_period_end * 1000).toISOString() : ""
+    currentPeriodEnd: source.current_period_end ? new Date(source.current_period_end * 1000).toISOString() : "",
+    cancelAtPeriodEnd: Boolean(source.cancel_at_period_end),
+    cancelledAt: source.canceled_at ? new Date(source.canceled_at * 1000).toISOString() : ""
   });
 }
