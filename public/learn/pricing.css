@@ -204,6 +204,65 @@ h1 {
   place-items: center;
 }
 
+.learn-hero-art {
+  isolation: isolate;
+  min-height: clamp(25rem, 47vw, 40rem);
+  margin-right: clamp(-5.5rem, -5vw, -1rem);
+}
+
+.learn-hero-art::before,
+.learn-hero-art::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.learn-hero-art::before {
+  inset: 6% 0 0 4%;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 58% 42%, rgba(201, 162, 91, 0.24), transparent 48%),
+    radial-gradient(circle at 42% 68%, rgba(6, 21, 34, 0.12), transparent 46%);
+  filter: blur(18px);
+}
+
+.learn-hero-art::after {
+  inset: 3% -5% 8% 8%;
+  border-radius: 40% 46% 38% 44%;
+  background:
+    linear-gradient(90deg, rgba(251, 243, 227, 0.98), rgba(251, 243, 227, 0) 18%, rgba(251, 243, 227, 0) 82%, rgba(251, 243, 227, 0.92)),
+    linear-gradient(180deg, rgba(251, 243, 227, 0.96), rgba(251, 243, 227, 0) 18%, rgba(251, 243, 227, 0) 78%, rgba(251, 243, 227, 0.82));
+  mix-blend-mode: multiply;
+  opacity: 0.62;
+}
+
+.learn-hero-art-glow {
+  position: absolute;
+  inset: 11% -7% 5% 12%;
+  z-index: -2;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 62% 48%, rgba(255, 253, 248, 0.84), transparent 42%),
+    radial-gradient(circle at 50% 72%, rgba(201, 162, 91, 0.16), transparent 52%);
+  filter: blur(26px);
+}
+
+.learn-hero-art img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: min(58rem, 118%);
+  max-width: none;
+  height: auto;
+  margin-left: clamp(-1.5rem, -2vw, -0.35rem);
+  filter:
+    drop-shadow(0 24px 34px rgba(6, 21, 34, 0.18))
+    drop-shadow(0 3px 8px rgba(201, 162, 91, 0.12));
+  -webkit-mask-image: radial-gradient(ellipse at 55% 54%, #000 61%, rgba(0,0,0,0.82) 76%, rgba(0,0,0,0.24) 91%, transparent 99%);
+  mask-image: radial-gradient(ellipse at 55% 54%, #000 61%, rgba(0,0,0,0.82) 76%, rgba(0,0,0,0.24) 91%, transparent 99%);
+}
+
 .product-orbit {
   position: absolute;
   width: min(38rem, 100%);
@@ -1075,6 +1134,16 @@ h1 {
     min-height: 32rem;
   }
 
+  .learn-hero-art {
+    min-height: auto;
+    margin: 0;
+  }
+
+  .learn-hero-art img {
+    width: min(100%, 48rem);
+    margin: 0 auto;
+  }
+
   .price-card.featured {
     transform: none;
   }
@@ -1136,6 +1205,21 @@ h1 {
 
   .learn-product {
     min-height: 25rem;
+  }
+
+  .learn-hero-art {
+    min-height: auto;
+    margin-top: -0.5rem;
+  }
+
+  .learn-hero-art::after {
+    inset: 0;
+    opacity: 0.5;
+  }
+
+  .learn-hero-art img {
+    width: min(115%, 42rem);
+    margin-left: -6%;
   }
 
   .laptop-frame {
