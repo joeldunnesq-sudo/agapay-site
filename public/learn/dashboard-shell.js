@@ -282,26 +282,58 @@ function saintMatchKey(value = "") {
   return String(value || "")
     .toLowerCase()
     .replace(/\([^)]*\b[1-2]?[0-9]{2,3}\b[^)]*\)/g, "")
-    .replace(/\b(st|saint|ven|venerable|holy|apostle|holy apostle|our holy)\.?\b/g, "")
+    .replace(/\b(st|saint|ven|venerable|holy|apostle|evangelist|martyr|great|our holy|righteous|blessed|elder|prophet|hieromartyr|new martyr)\.?\b/g, "")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+}
+
+function saintMatchScore(a = "", b = "") {
+  const aTokens = saintMatchKey(a).split(/\s+/).filter((token) => token.length > 2);
+  const bTokens = saintMatchKey(b).split(/\s+/).filter((token) => token.length > 2);
+  if (!aTokens.length || !bTokens.length) return 0;
+  const aSet = new Set(aTokens);
+  const bSet = new Set(bTokens);
+  let score = 0;
+  aSet.forEach((token) => {
+    if (bSet.has(token)) score += 3;
+    else if ([...bSet].some((other) => other.includes(token) || token.includes(other))) score += 1;
+  });
+  return score / Math.max(aSet.size, bSet.size);
 }
 
 function orderSaintsForCard(saints = [], cardTitle = "") {
   const titleKey = saintMatchKey(cardTitle);
   if (!titleKey || !Array.isArray(saints) || saints.length < 2) return saints;
-  const matchedIndex = saints.findIndex((saint) => {
+  let matchedIndex = saints.findIndex((saint) => {
     const nameKey = saintMatchKey(saint?.name || saint?.title || "");
     return nameKey && (nameKey === titleKey || nameKey.includes(titleKey) || titleKey.includes(nameKey));
   });
+  if (matchedIndex < 0) {
+    let bestScore = 0;
+    saints.forEach((saint, index) => {
+      const score = Math.max(
+        saintMatchScore(cardTitle, saint?.name || ""),
+        saintMatchScore(cardTitle, saint?.title || "")
+      );
+      if (score > bestScore) {
+        bestScore = score;
+        matchedIndex = index;
+      }
+    });
+    if (bestScore < 0.45) matchedIndex = -1;
+  }
   if (matchedIndex <= 0) return saints;
   return [saints[matchedIndex], ...saints.slice(0, matchedIndex), ...saints.slice(matchedIndex + 1)];
 }
 
 function saintCardTitle(today = {}) {
+  const firstName = today.saintNames?.[0] || "";
+  if (firstName) {
+    const orderedStories = orderSaintsForCard(today.saintStories || [], firstName);
+    return orderedStories?.[0]?.name || orderedStories?.[0]?.title || firstName;
+  }
   const firstStoryTitle = today.saintStories?.[0]?.name || today.saintStories?.[0]?.title || "";
   if (firstStoryTitle) return firstStoryTitle;
-  if (today.saintNames?.[0]) return today.saintNames[0];
   const title = String(today.title || "").trim();
   return title || "Lives of the Saints";
 }
@@ -518,20 +550,21 @@ function renderDashboard(vm) {
   const today = vm.todayInChurch;
   const todayArtworkUrl = today.iconUrl || "/images/learn/today-in-the-church.jpg";
   const displayedSaintTitle = saintCardTitle(today);
+  const orderedSaintStories = orderSaintsForCard(today.saintStories || [], displayedSaintTitle);
   const churchIconPanel = `<div class="learn-today-art-panel"><img src="${html(todayArtworkUrl)}" alt="Illustrated Orthodox homeschool planner open to today" loading="lazy"></div>`;
   const saintPreview = displayedSaintTitle && displayedSaintTitle !== "Lives of the Saints"
     ? `${today.saintNames?.length > 1 ? `${today.saintNames.length} commemorations` : "Open the life"} for today.`
     : today.saintNames?.length
     ? today.saintNames.slice(0, 2).join("; ") + (today.saintNames.length > 2 ? ` + ${today.saintNames.length - 2} more` : "")
     : "Open the lives commemorated today.";
-  const saintIcon = today.saintStories?.find((saint) => saint.iconUrl)?.iconUrl || "";
+  const saintIcon = orderedSaintStories?.find((saint) => saint.iconUrl)?.iconUrl || "";
   const displayedSaintKey = saintMatchKey(displayedSaintTitle);
-  const displayedSaintStory = today.saintStories?.find((saint) => {
+  const displayedSaintStory = orderedSaintStories?.find((saint) => {
     const key = saintMatchKey(saint?.name || saint?.title || "");
     return key && displayedSaintKey && (key === displayedSaintKey || key.includes(displayedSaintKey) || displayedSaintKey.includes(key));
   });
-  const saintCentury = displayedSaintStory?.reposeCentury || today.saintStories?.find((saint) => saint.reposeCentury)?.reposeCentury || "";
-  const saintCard = `<button type="button" data-saint-of-day data-date="${html(today.civilDate)}" data-calendar="${html(today.calendarType)}" style="margin-top:14px;width:100%;text-align:left;border:1px solid rgba(181,148,47,.34);background:linear-gradient(135deg,#fffaf0,#f7edd6);border-radius:13px;padding:13px;display:flex;gap:12px;align-items:center;cursor:pointer;font-family:inherit;color:var(--ink);box-shadow:0 1px 2px rgba(20,40,70,.04);">
+  const saintCentury = displayedSaintStory?.reposeCentury || orderedSaintStories?.find((saint) => saint.reposeCentury)?.reposeCentury || "";
+  const saintCard = `<button type="button" data-saint-of-day data-saint-title="${html(displayedSaintTitle)}" data-date="${html(today.civilDate)}" data-calendar="${html(today.calendarType)}" style="margin-top:14px;width:100%;text-align:left;border:1px solid rgba(181,148,47,.34);background:linear-gradient(135deg,#fffaf0,#f7edd6);border-radius:13px;padding:13px;display:flex;gap:12px;align-items:center;cursor:pointer;font-family:inherit;color:var(--ink);box-shadow:0 1px 2px rgba(20,40,70,.04);">
     ${saintIcon ? `<img src="${html(saintIcon)}" alt="" style="width:52px;height:52px;border-radius:12px;object-fit:cover;border:1px solid var(--goldsoft);flex:none;">` : `<span style="width:48px;height:48px;border-radius:50%;background:var(--navy);color:#f3ead4;display:grid;place-items:center;flex:none;font-size:23px;">✥</span>`}
     <span style="min-width:0;line-height:1.25;"><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">Saint of the Day</span><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(displayedSaintTitle)}</strong>${saintCentury ? `<span style="display:block;color:var(--gold);font-size:12px;font-weight:800;margin:2px 0 1px;">${html(saintCentury)}</span>` : ""}<small style="display:block;color:var(--muted);line-height:1.35;">${html(saintPreview)}</small></span>
     <span style="margin-left:auto;color:var(--gold);font-size:20px;flex:none;">→</span>
@@ -543,12 +576,12 @@ function renderDashboard(vm) {
         <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:6px;">
           <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">${html(today.kicker)}</div>
           <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;color:var(--ink);line-height:1.1;">${html(today.title)}</div>
-          <div style="display:flex;gap:30px;flex-wrap:wrap;margin-top:12px;">
-            <div style="display:flex;flex-direction:column;gap:14px;">
-              <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">▣</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">LITURGICAL DATE</span><span style="font-size:16px;">${html(today.liturgicalDateLabel)}</span></span></div>
+          <div style="display:grid;grid-template-columns:minmax(220px,.85fr) minmax(220px,.85fr) minmax(300px,1.2fr);gap:16px;margin-top:12px;align-items:start;">
+            <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">▣</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">LITURGICAL DATE</span><span style="font-size:16px;display:block;">${html(today.liturgicalDateLabel)}</span>${today.annoMundiLabel ? `<span style="color:var(--muted);font-size:13px;font-style:italic;">${html(today.annoMundiLabel)}</span>` : ""}</span></div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
               <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">✥</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">TONE OF WEEK</span><span style="font-size:16px;">${html(today.toneLabel)}</span></span></div>
+              <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">♙</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">FASTING RULE</span><span style="font-size:16px;display:block;">${html(today.fastingRule)}</span><span style="color:var(--muted);font-size:13px;font-style:italic;">${html(today.fastingNote)}</span></span></div>
             </div>
-            <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">♙</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">FASTING RULE</span><span style="font-size:16px;display:block;">${html(today.fastingRule)}</span><span style="color:var(--muted);font-size:13px;font-style:italic;">${html(today.fastingNote)}</span></span></div>
             <div style="display:grid;grid-template-columns:repeat(2,minmax(130px,1fr));gap:14px;flex:1 1 300px;min-width:min(100%,300px);">
               <div><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">EPISTLE READING</span><span style="font-size:16px;">${html(today.epistleRef)}</span></div>
               <div><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">GOSPEL READING</span><span style="font-size:16px;">${html(today.gospelRef)}</span></div>
@@ -1200,7 +1233,7 @@ async function openSaintOfDay(button) {
     const unavailable = payload.sourceConnected === false
       ? payload.message || "Lives of the Saints are unavailable right now. Please try again later."
       : "";
-    const cardSaintTitle = button.querySelector("strong")?.textContent || "";
+    const cardSaintTitle = button.dataset.saintTitle || button.querySelector("strong")?.textContent || "";
     const orderedSaints = orderSaintsForCard(payload.saints || [], cardSaintTitle);
     const firstSaintTitle = orderedSaints?.[0]?.name
       || orderedSaints?.[0]?.title

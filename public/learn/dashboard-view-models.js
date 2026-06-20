@@ -4,6 +4,59 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function saintKey(value = "") {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\([^)]*\b[1-2]?[0-9]{2,3}\b[^)]*\)/g, "")
+    .replace(/\b(st|saint|ven|venerable|holy|apostle|evangelist|martyr|great|our holy|righteous|blessed|elder|prophet|hieromartyr|new martyr)\.?\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function saintScore(a = "", b = "") {
+  const aTokens = saintKey(a).split(/\s+/).filter((token) => token.length > 2);
+  const bTokens = saintKey(b).split(/\s+/).filter((token) => token.length > 2);
+  if (!aTokens.length || !bTokens.length) return 0;
+  const bSet = new Set(bTokens);
+  let score = 0;
+  aTokens.forEach((token) => {
+    if (bSet.has(token)) score += 3;
+    else if ([...bSet].some((other) => other.includes(token) || token.includes(other))) score += 1;
+  });
+  return score / Math.max(aTokens.length, bTokens.length);
+}
+
+function orderSaintStories(stories = [], names = []) {
+  const remaining = [...stories];
+  const ordered = [];
+  names.forEach((name) => {
+    let bestIndex = -1;
+    let bestScore = 0;
+    remaining.forEach((story, index) => {
+      const score = Math.max(saintScore(name, story.name), saintScore(name, story.title));
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    });
+    if (bestIndex >= 0 && bestScore >= 0.45) {
+      ordered.push(remaining[bestIndex]);
+      remaining.splice(bestIndex, 1);
+    }
+  });
+  return [...ordered, ...remaining];
+}
+
+function annoMundiLabel(civilDate = "") {
+  const match = String(civilDate || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return "";
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (!year || !month || !day) return "";
+  return `AM ${year + (month >= 9 ? 5509 : 5508)}`;
+}
+
 function text(value, fallback = "") {
   return String(value || fallback);
 }
@@ -165,6 +218,17 @@ export function toDashboardViewModel(rawPayload, context = {}) {
   const liturgicalDay = today.liturgicalDay || {};
   const summary = dashboard.weeklySummary || {};
   const shell = shellFromPayload("dashboard", rawPayload);
+  const saintNames = safeArray(liturgicalDay.saints)
+    .map((saint) => text(typeof saint === "string" ? saint : saint.name || saint.title, ""))
+    .filter(Boolean);
+  const saintStories = orderSaintStories(safeArray(liturgicalDay.saintStories).map((saint) => ({
+    name: text(saint.name || saint.title, ""),
+    title: text(saint.title || saint.name, ""),
+    storyText: text(saint.storyText || saint.story || saint.description, ""),
+    reposeCentury: text(saint.reposeCentury, ""),
+    feastRank: text(saint.feastRank, ""),
+    iconUrl: text(saint.iconUrl, "")
+  })).filter((saint) => saint.name || saint.storyText), saintNames);
 
   return {
     shell,
@@ -178,6 +242,7 @@ export function toDashboardViewModel(rawPayload, context = {}) {
       kicker: "TODAY IN THE CHURCH",
       title: text(liturgicalDay.feastTitle, "Today in the Church"),
       liturgicalDateLabel: text(liturgicalDay.oldStyleDateLabel || liturgicalDay.liturgicalDateLabel, "Set calendar in Setup"),
+      annoMundiLabel: text(liturgicalDay.annoMundiLabel || annoMundiLabel(today.civilDate), ""),
       toneLabel: text(liturgicalDay.tone, "Tone unavailable"),
       fastingRule: text(liturgicalDay.fastingRule, "Set fasting source in Setup"),
       fastingNote: text(liturgicalDay.fastingNote || liturgicalDay.seasonLabel, ""),
@@ -190,14 +255,8 @@ export function toDashboardViewModel(rawPayload, context = {}) {
       iconUrl: text(liturgicalDay.iconUrl || liturgicalDay.ponomarIconUrl || liturgicalDay.feastIconUrl, ""),
       civilDate: text(today.civilDate, ""),
       calendarType: text(dashboard.calendarToggle?.selected || dashboard.preferences?.calendarType || liturgicalDay.calendarType, ""),
-      saintNames: safeArray(liturgicalDay.saints).map((saint) => text(typeof saint === "string" ? saint : saint.name || saint.title, "")).filter(Boolean),
-      saintStories: safeArray(liturgicalDay.saintStories).map((saint) => ({
-        name: text(saint.name || saint.title, ""),
-        storyText: text(saint.storyText || saint.story || saint.description, ""),
-        reposeCentury: text(saint.reposeCentury, ""),
-        feastRank: text(saint.feastRank, ""),
-        iconUrl: text(saint.iconUrl, "")
-      })).filter((saint) => saint.name || saint.storyText)
+      saintNames,
+      saintStories
     },
     churchRhythms: safeArray(today.churchRhythms).map((item) => ({
       label: text(item.title, "Rhythm"),
