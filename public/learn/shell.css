@@ -710,11 +710,31 @@ body {
 }
 
 .learn-setup-section-card small {
+  align-items: center;
   color: var(--gold);
+  display: flex;
+  gap: 8px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+.learn-setup-card-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(201, 162, 91, 0.38);
+  border-radius: 50%;
+  background: rgba(201, 162, 91, 0.12);
+  color: var(--gold);
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
 }
 
 .learn-setup-section-card strong {
@@ -764,6 +784,61 @@ body {
 
 .learn-setup-subsection[hidden] {
   display: none !important;
+}
+
+.learn-setup-row {
+  display: grid;
+  gap: 12px;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper2);
+  padding: 12px;
+}
+
+.learn-setup-row-main,
+.learn-setup-row-meta {
+  display: grid;
+  gap: 10px;
+  align-items: end;
+}
+
+.learn-setup-row-main {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.learn-setup-row-meta {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  padding-top: 10px;
+  border-top: 1px solid rgba(201, 162, 91, 0.18);
+}
+
+.learn-setup-row button[data-setup-remove-row] {
+  align-self: end;
+  min-height: 42px;
+}
+
+.learn-color-field {
+  min-width: 0;
+}
+
+.learn-color-field > span {
+  min-width: 0;
+}
+
+.learn-color-field input[type="text"] {
+  min-width: 0;
+}
+
+.learn-setup-grace-note {
+  display: block;
+  min-width: 0;
+}
+
+@media (min-width: 1100px) {
+  .learn-setup-grace-note {
+    grid-column: span 2;
+  }
 }
 
 .learn-setup-subsection-header {
@@ -1051,6 +1126,26 @@ body {
   .learn-product-content [data-setup-row] {
     grid-template-columns: 1fr !important;
     align-items: stretch !important;
+  }
+
+  .learn-setup-row-main,
+  .learn-setup-row-meta,
+  .learn-setup-tile-editor {
+    grid-template-columns: 1fr !important;
+  }
+
+  .learn-setup-row {
+    padding: 10px;
+  }
+
+  .learn-color-field > span {
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) 34px;
+    width: 100%;
+  }
+
+  .learn-setup-grace-note {
+    grid-column: auto;
   }
 
 .learn-product-content [data-setup-row] > span:first-child {
