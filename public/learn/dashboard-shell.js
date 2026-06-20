@@ -301,16 +301,36 @@ function saintMatchScore(a = "", b = "") {
   return score / Math.max(aSet.size, bSet.size);
 }
 
+function saintPrecedence(value = "") {
+  const text = String(value || "").toLowerCase();
+  if (/\b(lord|theotokos|mother of god|cross|resurrection|nativity|theophany|pascha|pentecost|transfiguration|ascension|annunciation|dormition)\b/.test(text)) return 100;
+  if (/\b(apostle|evangelist|forerunner|baptist)\b/.test(text)) return 90;
+  if (/\b(prophet|hierarch|bishop|equal[- ]to[- ]the[- ]apostles)\b/.test(text)) return 80;
+  if (/\b(great martyr|new martyr|hieromartyr|martyr|confessor)\b/.test(text)) return 70;
+  if (/\b(righteous|ancestor|forefather|foremother)\b/.test(text)) return 60;
+  if (/\b(venerable|abbot|abbess|monk|nun|elder|wonderworker)\b/.test(text)) return 50;
+  return 40;
+}
+
+function orderSaintsByPrecedence(saints = []) {
+  return [...saints].sort((a, b) => {
+    const aTitle = typeof a === "string" ? a : a?.name || a?.title || "";
+    const bTitle = typeof b === "string" ? b : b?.name || b?.title || "";
+    return saintPrecedence(bTitle) - saintPrecedence(aTitle);
+  });
+}
+
 function orderSaintsForCard(saints = [], cardTitle = "") {
+  const precedenceOrdered = orderSaintsByPrecedence(saints);
   const titleKey = saintMatchKey(cardTitle);
-  if (!titleKey || !Array.isArray(saints) || saints.length < 2) return saints;
-  let matchedIndex = saints.findIndex((saint) => {
+  if (!titleKey || !Array.isArray(precedenceOrdered) || precedenceOrdered.length < 2) return precedenceOrdered;
+  let matchedIndex = precedenceOrdered.findIndex((saint) => {
     const nameKey = saintMatchKey(saint?.name || saint?.title || "");
     return nameKey && (nameKey === titleKey || nameKey.includes(titleKey) || titleKey.includes(nameKey));
   });
   if (matchedIndex < 0) {
     let bestScore = 0;
-    saints.forEach((saint, index) => {
+    precedenceOrdered.forEach((saint, index) => {
       const score = Math.max(
         saintMatchScore(cardTitle, saint?.name || ""),
         saintMatchScore(cardTitle, saint?.title || "")
@@ -322,8 +342,8 @@ function orderSaintsForCard(saints = [], cardTitle = "") {
     });
     if (bestScore < 0.45) matchedIndex = -1;
   }
-  if (matchedIndex <= 0) return saints;
-  return [saints[matchedIndex], ...saints.slice(0, matchedIndex), ...saints.slice(matchedIndex + 1)];
+  if (matchedIndex <= 0) return precedenceOrdered;
+  return [precedenceOrdered[matchedIndex], ...precedenceOrdered.slice(0, matchedIndex), ...precedenceOrdered.slice(matchedIndex + 1)];
 }
 
 function forceDisplayedSaintFirst(saints = [], cardTitle = "") {
@@ -590,23 +610,23 @@ function renderDashboard(vm) {
     <section data-screen-label="Dashboard" style="display:flex;flex-direction:column;gap:22px;">
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;gap:24px;box-shadow:0 1px 3px rgba(20,40,70,.04);flex-wrap:wrap;">
         ${churchIconPanel}
-        <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:6px;">
+        <div class="learn-today-main">
           <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">${html(today.kicker)}</div>
           <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;color:var(--ink);line-height:1.1;">${html(displayedSaintTitle)}</div>
-          <div style="display:grid;grid-template-columns:minmax(220px,.85fr) minmax(220px,.85fr) minmax(300px,1.2fr);gap:16px;margin-top:12px;align-items:start;">
+          <div class="learn-today-meta-grid">
             <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">▣</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">LITURGICAL DATE</span><span style="font-size:16px;display:block;">${html(today.liturgicalDateLabel)}</span>${today.annoMundiLabel ? `<span style="color:var(--muted);font-size:13px;font-style:italic;">${html(today.annoMundiLabel)}</span>` : ""}</span></div>
             <div style="display:flex;flex-direction:column;gap:12px;">
               <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">✥</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">TONE OF WEEK</span><span style="font-size:16px;">${html(today.toneLabel)}</span></span></div>
               <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">♙</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">FASTING RULE</span><span style="font-size:16px;display:block;">${html(today.fastingRule)}</span><span style="color:var(--muted);font-size:13px;font-style:italic;">${html(today.fastingNote)}</span></span></div>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(2,minmax(130px,1fr));gap:14px;flex:1 1 300px;min-width:min(100%,300px);">
+            <div class="learn-today-readings">
               <div><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">EPISTLE READING</span><span style="font-size:16px;">${html(today.epistleRef)}</span></div>
               <div><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">GOSPEL READING</span><span style="font-size:16px;">${html(today.gospelRef)}</span></div>
             </div>
           </div>
           ${saintCard}
         </div>
-        <div style="flex:1;min-width:220px;border-left:1px solid var(--line);padding-left:22px;">
+        <div class="learn-today-hymns">
           <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:600;">${html(today.troparionLabel)}</div>
           <p style="margin:6px 0 16px;font-size:15.5px;line-height:1.5;color:#33405a;">${html(today.troparionText)}</p>
           <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:600;">${html(today.kontakionLabel)}</div>
@@ -1069,8 +1089,8 @@ function formationRecitationSetupRow(track = {}) {
   return `<div data-setup-row="formationRecitation" data-id="${html(track.id || "")}" style="display:grid;grid-template-columns:1fr .75fr .75fr .65fr .55fr .45fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Memory Work", "title", track.title || "")}${setupInput("Source", "sourceKind", track.sourceKind || track.source || "")}${setupSelect("Planning Mode", "planningMode", track.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "weeklyFrequency", track.weeklyFrequency || "daily", weeklyFrequencyOptions)}${setupInput("Minutes", "minutes", track.minutes || "", { type: "number" })}${setupSelect("Status", "status", track.status || "memorizing", ["planned", "memorizing", "memorized"])}${setupInput("Progress %", "progressPercent", track.progressPercent ?? track.progress ?? "", { type: "number" })}${setupRemoveButton()}</div>`;
 }
 
-function formationEnrichmentSetupRow(block = {}) {
-  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" style="display:grid;grid-template-columns:.85fr 1fr .75fr .65fr .45fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Recitation & Memory Work", "Hymn Study", "Art Study", "Nature Study", "Poetry", "Music Study", "Composer", "Timeline", "Saints & Feasts"])}${setupInput("Title", "title", block.title || "")}${setupSelect("Planning Mode", "planningMode", block.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "weeklyFrequency", block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x", weeklyFrequencyOptions)}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "", { type: "number" })}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupRemoveButton()}</div>`;
+function formationEnrichmentSetupRow(block = {}, children = [], terms = [], currentTermId = "") {
+  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" style="display:grid;grid-template-columns:.85fr 1fr .75fr 1fr .55fr .55fr .55fr .55fr .65fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Recitation & Memory Work", "Hymn Study", "Art Study", "Nature Study", "Poetry", "Music Study", "Composer", "Timeline", "Saints & Feasts"])}${setupInput("Title", "title", block.title || "")}${setupSelect("Planning Mode", "planningMode", block.planningMode || "family", planningModeOptions)}${setupInput("Book / source / resource", "resource", block.resource || block.source || "")}${setupSelect("Track by", "progressionType", block.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", block.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", block.currentNumber || block.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", block.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "", { type: "number" })}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(8,minmax(120px,1fr));gap:10px;">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("Form", "formLabel", block.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupSelect("Frequency", "weeklyFrequency", block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x", weeklyFrequencyOptions)}${setupSelect("Specific child", "childId", block.childId || "", [{ value: "", label: "Use Planning Mode" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "keep", graceModeOptions)}${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</div></div>`;
 }
 
 function churchRhythmSetupPanel(vm) {
@@ -1112,7 +1132,7 @@ function formationSetupPanel(vm) {
       </div>
       <div style="${sectionStyle}">
         ${sectionTitle("Enrichment", "Art, poetry, music, nature study, composer, and timeline work.")}
-        <div data-setup-list="formationEnrichment" style="display:grid;gap:10px;">${(formation.enrichmentBlocks?.length ? formation.enrichmentBlocks : [{}]).map((block) => formationEnrichmentSetupRow(block)).join("")}</div>
+        <div data-setup-list="formationEnrichment" style="display:grid;gap:10px;">${(formation.enrichmentBlocks?.length ? formation.enrichmentBlocks : [{}]).map((block) => formationEnrichmentSetupRow(block, vm.children, vm.terms, vm.schoolYear.currentTermId || vm.term.id)).join("")}</div>
         <button type="button" data-setup-add-row="formationEnrichment" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Enrichment</button>
       </div>
       <div style="${sectionStyle}">
@@ -1161,9 +1181,9 @@ function renderSetup(vm) {
       <span id="learnSetupFormation" class="learn-setup-anchor"></span>
       ${panel("Enrichment", formationSetupPanel(vm), { icon: "✥", largeTitle: true })}
       <span id="learnSetupBooks" class="learn-setup-anchor"></span>
-      ${panel("Literature", `<p style="margin:0 0 12px;color:var(--muted);">Add living books, read-alouds, stories, plays, history reads, folk stories, myths, and great tales. Assign each book to the term and Form where it belongs.</p><div data-setup-list="books" style="display:grid;gap:10px;">${(vm.books.length ? vm.books : [{}]).map((book) => bookSetupRow(book, vm.terms, currentTermId)).join("")}</div><button type="button" data-setup-add-row="books" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Literature</button>`, { icon: "☰" })}
+      ${panel("Literature", `<p style="margin:0 0 12px;color:var(--muted);">Add living books, read-alouds, stories, plays, history reads, folk stories, myths, and great tales. Assign each book to the term and Form where it belongs.</p><div data-setup-list="books" style="display:grid;gap:10px;">${(vm.books.length ? vm.books : [{}]).map((book) => bookSetupRow(book, vm.terms, currentTermId)).join("")}</div><button type="button" data-setup-add-row="books" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Literature</button>`, { icon: "☰", largeTitle: true })}
       <span id="learnSetupSubjects" class="learn-setup-anchor"></span>
-      ${panel("Form Subjects", `<p style="margin:0 0 12px;color:var(--muted);">Use one list for term-based subject work. Each row can be assigned by Form, child, term, range, credits, final mark, and Grace Mode behavior.</p><div style="display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin-bottom:12px;"><span style="border:1px solid var(--line);border-radius:10px;background:rgba(255,252,245,.64);padding:14px;"><strong style="display:block;font-family:var(--sans);font-size:15px;color:var(--ink);">Tales & Literature</strong><small style="display:block;color:var(--muted);line-height:1.35;margin-top:2px;">Living books, stories, plays, folk tales, myths, and great tales.</small></span><span style="border:1px solid var(--line);border-radius:10px;background:rgba(255,252,245,.64);padding:14px;"><strong style="display:block;font-family:var(--sans);font-size:15px;color:var(--ink);">Language Arts</strong><small style="display:block;color:var(--muted);line-height:1.35;margin-top:2px;">Reading, narration, copywork, dictation, grammar, composition, and rhetoric.</small></span><span style="border:1px solid var(--line);border-radius:10px;background:rgba(255,252,245,.64);padding:14px;"><strong style="display:block;font-family:var(--sans);font-size:15px;color:var(--ink);">History & Geography</strong><small style="display:block;color:var(--muted);line-height:1.35;margin-top:2px;">Books, maps, PDFs, links, narrations, and term projects.</small></span><span style="border:1px solid var(--line);border-radius:10px;background:rgba(255,252,245,.64);padding:14px;"><strong style="display:block;font-family:var(--sans);font-size:15px;color:var(--ink);">Math, Sciences & Nature</strong><small style="display:block;color:var(--muted);line-height:1.35;margin-top:2px;">Lesson ranges, experiments, nature study, and progress tracking.</small></span></div><div data-setup-list="subjects" style="display:grid;gap:10px;">${(vm.subjects.length ? vm.subjects : [{}]).map((subject) => subjectSetupRow(subject, vm.children, vm.terms, currentTermId)).join("")}</div><button type="button" data-setup-add-row="subjects" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Form Subject</button>`, { icon: "✎" })}
+      ${panel("Form Subjects", `<p style="margin:0 0 12px;color:var(--muted);">Use one list for term-based subject work. Each row can be assigned by Form, child, term, range, credits, final mark, and Grace Mode behavior.</p><div style="display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin-bottom:12px;"><span style="border:1px solid var(--line);border-radius:10px;background:rgba(255,252,245,.64);padding:14px;"><strong style="display:block;font-family:var(--sans);font-size:15px;color:var(--ink);">Tales & Literature</strong><small style="display:block;color:var(--muted);line-height:1.35;margin-top:2px;">Living books, stories, plays, folk tales, myths, and great tales.</small></span><span style="border:1px solid var(--line);border-radius:10px;background:rgba(255,252,245,.64);padding:14px;"><strong style="display:block;font-family:var(--sans);font-size:15px;color:var(--ink);">Language Arts</strong><small style="display:block;color:var(--muted);line-height:1.35;margin-top:2px;">Reading, narration, copywork, dictation, grammar, composition, and rhetoric.</small></span><span style="border:1px solid var(--line);border-radius:10px;background:rgba(255,252,245,.64);padding:14px;"><strong style="display:block;font-family:var(--sans);font-size:15px;color:var(--ink);">History & Geography</strong><small style="display:block;color:var(--muted);line-height:1.35;margin-top:2px;">Books, maps, PDFs, links, narrations, and term projects.</small></span><span style="border:1px solid var(--line);border-radius:10px;background:rgba(255,252,245,.64);padding:14px;"><strong style="display:block;font-family:var(--sans);font-size:15px;color:var(--ink);">Math, Sciences & Nature</strong><small style="display:block;color:var(--muted);line-height:1.35;margin-top:2px;">Lesson ranges, experiments, nature study, and progress tracking.</small></span></div><div data-setup-list="subjects" style="display:grid;gap:10px;">${(vm.subjects.length ? vm.subjects : [{}]).map((subject) => subjectSetupRow(subject, vm.children, vm.terms, currentTermId)).join("")}</div><button type="button" data-setup-add-row="subjects" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Form Subject</button>`, { icon: "✎", largeTitle: true })}
       ${panel("Co-op", `<div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">Coming Soon</strong><p style="margin:4px 0 0;color:var(--muted);line-height:1.4;">Co-op creation and member management are intentionally deferred so Learn can launch with the household planner, reports, print packs, and paid limits first.</p></div><span style="border:1px solid var(--gold);border-radius:999px;color:var(--gold);padding:7px 12px;white-space:nowrap;">Future add-on</span></div>`, { icon: "◎" })}
       <div style="position:sticky;bottom:12px;z-index:5;display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;background:rgba(253,249,239,.96);padding:12px 14px;box-shadow:0 8px 24px rgba(18,38,67,.12);">
         <span data-setup-status style="color:var(--muted);">Setup saves to the household profile and D1-backed Learn records.</span>
@@ -1497,11 +1517,23 @@ function setupPayloadFromForm(form) {
           id: row.dataset.id || "",
           blockType: rowValue(row, "blockType"),
           title,
+          resource: rowValue(row, "resource"),
           planningMode: rowValue(row, "planningMode"),
           weeklyFrequency: rowValue(row, "weeklyFrequency"),
           cadenceLabel: rowValue(row, "weeklyFrequency"),
+          formLabel: rowValue(row, "formLabel"),
+          childId: rowValue(row, "childId"),
+          progressionType: rowValue(row, "progressionType"),
+          startNumber: rowValue(row, "startNumber"),
+          currentNumber: rowValue(row, "currentNumber"),
+          endNumber: rowValue(row, "endNumber"),
           minutesPlanned: rowValue(row, "minutesPlanned"),
-          color: rowValue(row, "color")
+          credits: rowValue(row, "credits"),
+          finalGradeOverride: rowValue(row, "finalGradeOverride"),
+          color: rowValue(row, "color"),
+          termId: rowValue(row, "termId") || currentTermId,
+          gracePriority: rowValue(row, "gracePriority"),
+          graceNote: rowValue(row, "graceNote")
         };
       }),
       feasts: collectRows(form, "formationFeasts", (row) => {
@@ -1580,7 +1612,7 @@ function setupBlankRow(type, form) {
   if (type === "formationMaterials") return formationSetupRow({}, terms, currentTermId);
   if (type === "formationRhythms") return formationRhythmSetupRow({});
   if (type === "formationRecitation") return formationRecitationSetupRow({});
-  if (type === "formationEnrichment") return formationEnrichmentSetupRow({});
+  if (type === "formationEnrichment") return formationEnrichmentSetupRow({}, currentSetupChildren(form), terms, currentTermId);
   return "";
 }
 

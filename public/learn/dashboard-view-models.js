@@ -26,10 +26,25 @@ function saintScore(a = "", b = "") {
   return score / Math.max(aTokens.length, bTokens.length);
 }
 
+function saintPrecedence(value = "") {
+  const text = String(value || "").toLowerCase();
+  if (/\b(lord|theotokos|mother of god|cross|resurrection|nativity|theophany|pascha|pentecost|transfiguration|ascension|annunciation|dormition)\b/.test(text)) return 100;
+  if (/\b(apostle|evangelist|forerunner|baptist)\b/.test(text)) return 90;
+  if (/\b(prophet|hierarch|bishop|equal[- ]to[- ]the[- ]apostles)\b/.test(text)) return 80;
+  if (/\b(great martyr|new martyr|hieromartyr|martyr|confessor)\b/.test(text)) return 70;
+  if (/\b(righteous|ancestor|forefather|foremother)\b/.test(text)) return 60;
+  if (/\b(venerable|abbot|abbess|monk|nun|elder|wonderworker)\b/.test(text)) return 50;
+  return 40;
+}
+
+function orderSaintNames(names = []) {
+  return [...names].sort((a, b) => saintPrecedence(b) - saintPrecedence(a));
+}
+
 function orderSaintStories(stories = [], names = []) {
   const remaining = [...stories];
   const ordered = [];
-  names.forEach((name) => {
+  orderSaintNames(names).forEach((name) => {
     let bestIndex = -1;
     let bestScore = 0;
     remaining.forEach((story, index) => {
@@ -54,7 +69,7 @@ function annoMundiLabel(civilDate = "") {
   const month = Number(match[2]);
   const day = Number(match[3]);
   if (!year || !month || !day) return "";
-  return `AM ${year + (month >= 9 ? 5509 : 5508)}`;
+  return `Anno Mundi ${year + (month >= 9 ? 5509 : 5508)}`;
 }
 
 function text(value, fallback = "") {
@@ -221,6 +236,7 @@ export function toDashboardViewModel(rawPayload, context = {}) {
   const saintNames = safeArray(liturgicalDay.saints)
     .map((saint) => text(typeof saint === "string" ? saint : saint.name || saint.title, ""))
     .filter(Boolean);
+  const orderedSaintNames = orderSaintNames(saintNames);
   const saintStories = orderSaintStories(safeArray(liturgicalDay.saintStories).map((saint) => ({
     name: text(saint.name || saint.title, ""),
     title: text(saint.title || saint.name, ""),
@@ -228,7 +244,7 @@ export function toDashboardViewModel(rawPayload, context = {}) {
     reposeCentury: text(saint.reposeCentury, ""),
     feastRank: text(saint.feastRank, ""),
     iconUrl: text(saint.iconUrl, "")
-  })).filter((saint) => saint.name || saint.storyText), saintNames);
+  })).filter((saint) => saint.name || saint.storyText), orderedSaintNames);
 
   return {
     shell,
@@ -242,7 +258,7 @@ export function toDashboardViewModel(rawPayload, context = {}) {
       kicker: "TODAY IN THE CHURCH",
       title: text(liturgicalDay.feastTitle, "Today in the Church"),
       liturgicalDateLabel: text(liturgicalDay.oldStyleDateLabel || liturgicalDay.liturgicalDateLabel, "Set calendar in Setup"),
-      annoMundiLabel: text(liturgicalDay.annoMundiLabel || annoMundiLabel(today.civilDate), ""),
+      annoMundiLabel: text(liturgicalDay.annoMundiLabel || annoMundiLabel(today.civilDate), "").replace(/^AM\s+/i, "Anno Mundi "),
       toneLabel: text(liturgicalDay.tone, "Tone unavailable"),
       fastingRule: text(liturgicalDay.fastingRule, "Set fasting source in Setup"),
       fastingNote: text(liturgicalDay.fastingNote || liturgicalDay.seasonLabel, ""),
@@ -255,7 +271,7 @@ export function toDashboardViewModel(rawPayload, context = {}) {
       iconUrl: text(liturgicalDay.iconUrl || liturgicalDay.ponomarIconUrl || liturgicalDay.feastIconUrl, ""),
       civilDate: text(today.civilDate, ""),
       calendarType: text(dashboard.calendarToggle?.selected || dashboard.preferences?.calendarType || liturgicalDay.calendarType, ""),
-      saintNames,
+      saintNames: orderedSaintNames,
       saintStories
     },
     churchRhythms: safeArray(today.churchRhythms).map((item) => ({
@@ -1094,20 +1110,44 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         id: text(block.id, ""),
         blockType: text(block.blockType || block.type, "Art Study"),
         title: text(block.title, "Enrichment"),
+        resource: text(block.resource || block.source, ""),
         cadenceLabel: text(block.cadenceLabel || block.cadence, ""),
         planningMode: text(block.planningMode, "family"),
         weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
+        formLabel: text(block.formLabel, ""),
+        childId: text(block.childId, ""),
+        progressionType: text(block.progressionType, "lessons"),
+        startNumber: text(block.startNumber, ""),
+        currentNumber: text(block.currentNumber || block.completedThroughNumber, ""),
+        endNumber: text(block.endNumber, ""),
         minutesPlanned: text(block.minutesPlanned || block.minutes, ""),
-        color: text(block.color, ACCENTS[2])
+        credits: text(block.credits, ""),
+        finalGradeOverride: text(block.finalGradeOverride, ""),
+        color: text(block.color, ACCENTS[2]),
+        termId: text(block.termId || block.assignedTermId, currentTermId),
+        gracePriority: text(block.gracePriority, "keep"),
+        graceNote: text(block.graceNote, "Deferred gracefully to the reserve list.")
       })).length ? simpleList(formation.enrichmentBlocks, (block) => ({
         id: text(block.id, ""),
         blockType: text(block.blockType || block.type, "Art Study"),
         title: text(block.title, "Enrichment"),
+        resource: text(block.resource || block.source, ""),
         cadenceLabel: text(block.cadenceLabel || block.cadence, ""),
         planningMode: text(block.planningMode, "family"),
         weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
+        formLabel: text(block.formLabel, ""),
+        childId: text(block.childId, ""),
+        progressionType: text(block.progressionType, "lessons"),
+        startNumber: text(block.startNumber, ""),
+        currentNumber: text(block.currentNumber || block.completedThroughNumber, ""),
+        endNumber: text(block.endNumber, ""),
         minutesPlanned: text(block.minutesPlanned || block.minutes, ""),
-        color: text(block.color, ACCENTS[2])
+        credits: text(block.credits, ""),
+        finalGradeOverride: text(block.finalGradeOverride, ""),
+        color: text(block.color, ACCENTS[2]),
+        termId: text(block.termId || block.assignedTermId, currentTermId),
+        gracePriority: text(block.gracePriority, "keep"),
+        graceNote: text(block.graceNote, "Deferred gracefully to the reserve list.")
       })) : derivedEnrichment,
       feasts: simpleList(formation.feasts, (feast) => ({
         id: text(feast.id, ""),

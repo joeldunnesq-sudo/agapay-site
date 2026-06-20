@@ -454,14 +454,25 @@ function normalizeSetupPayload(payload = {}, identity) {
     enrichmentBlocks: list(rawFormation.enrichmentBlocks).map((block, index) => ({
       id: text(block.id, stableId("enrich", block.title, index)),
       householdId: identity.householdId,
-      termId: normalizedTerm.id,
+      termId: text(block.termId || block.assignedTermId, normalizedTerm.id),
       blockType: text(block.blockType || block.type, "enrichment"),
       title: text(block.title, ""),
+      resource: text(block.resource || block.source, ""),
       planningMode: text(block.planningMode, "family"),
       weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
+      formLabel: text(block.formLabel, ""),
+      childId: text(block.childId, ""),
+      progressionType: text(block.progressionType, "lessons"),
+      startNumber: text(block.startNumber, ""),
+      currentNumber: text(block.currentNumber || block.completedThroughNumber, ""),
+      endNumber: text(block.endNumber, ""),
       minutesPlanned: int(block.minutesPlanned || block.minutes, 0),
+      credits: text(block.credits, ""),
+      finalGradeOverride: text(block.finalGradeOverride, ""),
       cadenceLabel: text(block.weeklyFrequency || block.cadenceLabel || block.cadence, "Weekly"),
-      color: text(block.color, "")
+      color: text(block.color, ""),
+      gracePriority: text(block.gracePriority, "keep"),
+      graceNote: text(block.graceNote, "Deferred gracefully to the reserve list.")
     })).filter((block) => block.title),
     feasts: list(rawFormation.feasts).map((feast, index) => ({
       id: text(feast.id, stableId("feast", feast.title, index)),
