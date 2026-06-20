@@ -1,4 +1,4 @@
-import { d1, d1First, d1Run, json, normalizeEmail, safeParseJsonRow } from "../lib/core.js";
+import { d1, d1All, d1First, d1Run, json, listKvKeys, normalizeEmail, safeParseJsonRow } from "../lib/core.js";
 import { requireDonor } from "../handlers/parish.js";
 
 export const LEARN_FREE_CHILD_LIMIT = 2;
@@ -24,7 +24,7 @@ const planCatalog = {
     description: "Annual household subscription for AGAPAY Learn."
   }
 };
-const LEARN_BILLING_KV_PREFIX = "__agapay_learn_billing:";
+export const LEARN_BILLING_KV_PREFIX = "__agapay_learn_billing:";
 const DEFAULT_FULL_ACCESS_EMAILS = [
   "stephaie@dunncrew.com",
   "stephanie@dunncrew.com"
@@ -158,6 +158,48 @@ export async function saveLearnBillingRecord(env = {}, record = {}) {
   }
 
   return { ok: true, billing: saved };
+}
+
+export async function listLearnBillingRecords(env = {}) {
+  const byKey = new Map();
+  const add = (record = {}) => {
+    const email = normalizeEmail(record.email || "");
+    const key = email || record.stripeSubscriptionId || record.stripeCheckoutSessionId || record.householdId || "";
+    if (!key) return;
+    byKey.set(key, { ...record, email, product: "learn" });
+  };
+
+  if (env.AGAPAY_REGISTRATIONS) {
+    const keys = await listKvKeys(env, { prefix: LEARN_BILLING_KV_PREFIX, limit: 10000 });
+    for (const key of keys) {
+      const raw = await env.AGAPAY_REGISTRATIONS.get(key.name);
+      if (!raw) continue;
+      try {
+        add(JSON.parse(raw));
+      } catch {}
+    }
+  }
+
+  if (d1(env)) {
+    try {
+      const rows = await d1All(env, "SELECT id, data, updated_at FROM learn_households ORDER BY updated_at DESC LIMIT 10000");
+      for (const row of rows) {
+        const household = safeParseJsonRow(row);
+        const billing = household?.learnBilling || household?.billing || null;
+        if (billing?.status) {
+          add({
+            ...billing,
+            householdId: billing.householdId || row.id || household?.id || "",
+            email: billing.email || household?.ownerEmail || ""
+          });
+        }
+      }
+    } catch {
+      // Learn schema may not exist in every local/dev environment.
+    }
+  }
+
+  return [...byKey.values()];
 }
 
 function configuredFullAccessEmails(env = {}) {

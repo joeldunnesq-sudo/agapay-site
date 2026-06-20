@@ -896,6 +896,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
   const subjectsSource = safeArray(snapshot.subjects).length ? snapshot.subjects : setup.subjects;
   const booksSource = safeArray(snapshot.books).length ? snapshot.books : setup.books;
   const formation = setup.formation || snapshot.formation || {};
+  const setupTiles = snapshot.setupTiles || setup.setupTiles || {};
   const formationMaterialsSource = safeArray(snapshot.formationMaterials).length ? snapshot.formationMaterials : setup.formationMaterials;
   const materialDefaults = simpleList(formationMaterialsSource, (material, index) => ({
     id: text(material.id, ""),
@@ -1001,6 +1002,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       paceMode: text(term.paceMode, preferences.paceMode || "steady")
     },
     terms: setupTerms,
+    setupTiles,
     steps: setupV2Steps,
     preferences: {
       calendarType: text(clientState.calendar || preferences.calendarType, "julian"),

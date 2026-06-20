@@ -1232,10 +1232,60 @@
       z-index: 1;
       margin: 0.85rem 0 0;
     }
+    .learn-admin-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    .learn-admin-chart {
+      grid-column: 1 / -1;
+    }
+    .learn-admin-recent {
+      display: grid;
+      gap: 0.55rem;
+      max-height: 320px;
+      overflow: auto;
+    }
+    .learn-scholarship-list {
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+    .learn-scholarship-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      border: 1px solid rgba(111,106,96,0.13);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.68);
+      padding: 0.82rem 0.9rem;
+    }
+    .learn-scholarship-row strong {
+      display: block;
+      color: var(--deep);
+      font-family: var(--mono, "DM Sans", system-ui, sans-serif);
+      letter-spacing: 0.04em;
+    }
+    .learn-scholarship-row span {
+      display: block;
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.45;
+      margin-top: 0.18rem;
+    }
+    .growth-bar.danger {
+      background: linear-gradient(180deg, #9d3b33, #6e2f2a);
+    }
     @media (max-width: 860px) {
       .revenue-grid,
-      .revenue-fee-stats {
+      .revenue-fee-stats,
+      .learn-admin-grid {
         grid-template-columns: 1fr;
+      }
+      .learn-scholarship-row {
+        align-items: stretch;
+        flex-direction: column;
       }
     }
     .growth-bars {

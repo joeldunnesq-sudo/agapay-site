@@ -445,17 +445,22 @@ function topbar(vm) {
         ${vm.page.subtitle ? `<div style="font-size:14.5px;color:var(--muted);margin-top:2px;">${html(vm.page.subtitle)}</div>` : ""}
       </div>
       <div class="learn-utility-actions" style="display:flex;align-items:center;gap:18px;flex:none;">
-        <div style="display:flex;align-items:center;gap:7px;color:var(--gold);font-size:15px;"><span style="font-size:18px;">☼</span><span style="color:var(--ink);letter-spacing:.02em;">${html(vm.shell.timeLabel)}</span></div>
-        <span style="color:var(--goldsoft);font-size:18px;">✥</span>
         <a class="learn-quick-action" href="/myagapay/learn/setup">Quick Action</a>
-        <a class="learn-account-utility" href="/myagapay/learn/setup">
-          <span class="learn-account-utility-avatar">${html(vm.shell.accountInitials || "FM")}</span>
-          <span style="text-align:left;line-height:1.2;">
-            <span style="display:block;font-weight:600;color:var(--ink);font-size:15.5px;">${html(vm.shell.accountName || "Faithful Member")}</span>
-            <span style="display:block;color:var(--muted);font-size:12.5px;">View Account</span>
-          </span>
-          <span style="font-size:16px;color:var(--muted);">⌄</span>
-        </a>
+        <div class="learn-account-menu" data-learn-account-menu>
+          <button class="learn-account-utility" type="button" data-learn-account-toggle aria-haspopup="true" aria-expanded="false">
+            <span class="learn-account-utility-avatar">${html(vm.shell.accountInitials || "FM")}</span>
+            <span class="learn-account-utility-copy">
+              <span>${html(vm.shell.accountName || "Faithful Member")}</span>
+              <small>View Account</small>
+            </span>
+            <span class="learn-account-utility-caret">⌄</span>
+          </button>
+          <div class="learn-account-dropdown" role="menu" hidden>
+            <a href="/myagapay/account" role="menuitem">Global Dashboard Settings</a>
+            <a href="/myagapay" role="menuitem">Back to My AGAPAY</a>
+            <button type="button" data-learn-logout role="menuitem">Log out</button>
+          </div>
+        </div>
       </div>
     </header>
   `;
@@ -1090,7 +1095,7 @@ function formationRecitationSetupRow(track = {}) {
 }
 
 function formationEnrichmentSetupRow(block = {}, children = [], terms = [], currentTermId = "") {
-  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" style="display:grid;grid-template-columns:.85fr 1fr .75fr 1fr .55fr .55fr .55fr .55fr .65fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Recitation & Memory Work", "Hymn Study", "Art Study", "Nature Study", "Poetry", "Music Study", "Composer", "Timeline", "Saints & Feasts"])}${setupInput("Title", "title", block.title || "")}${setupSelect("Planning Mode", "planningMode", block.planningMode || "family", planningModeOptions)}${setupInput("Book / source / resource", "resource", block.resource || block.source || "")}${setupSelect("Track by", "progressionType", block.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", block.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", block.currentNumber || block.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", block.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "", { type: "number" })}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(8,minmax(120px,1fr));gap:10px;">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("Form", "formLabel", block.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupSelect("Frequency", "weeklyFrequency", block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x", weeklyFrequencyOptions)}${setupSelect("Specific child", "childId", block.childId || "", [{ value: "", label: "Use Planning Mode" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "keep", graceModeOptions)}${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</div></div>`;
+  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" style="display:grid;grid-template-columns:.85fr 1fr .75fr 1fr .55fr .55fr .55fr .55fr .65fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupInput("Title", "title", block.title || "")}${setupSelect("Planning Mode", "planningMode", block.planningMode || "family", planningModeOptions)}${setupInput("Book / source / resource", "resource", block.resource || block.source || "")}${setupSelect("Track by", "progressionType", block.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", block.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", block.currentNumber || block.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", block.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "", { type: "number" })}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(8,minmax(120px,1fr));gap:10px;">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("Form", "formLabel", block.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupSelect("Frequency", "weeklyFrequency", block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x", weeklyFrequencyOptions)}${setupSelect("Specific child", "childId", block.childId || "", [{ value: "", label: "Use Planning Mode" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "keep", graceModeOptions)}${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</div></div>`;
 }
 
 function churchRhythmSetupPanel(vm) {
@@ -1108,39 +1113,144 @@ function churchRhythmSetupPanel(vm) {
     </div>`;
 }
 
+function setupTileValue(vm, group, panelId, fallback) {
+  const tile = vm.setupTiles?.[group]?.[panelId] || {};
+  return {
+    ...fallback,
+    title: tile.title || fallback.title,
+    detail: tile.detail || fallback.detail
+  };
+}
+
+function setupSectionCard({ group, panel: panelId, title, detail, count = 0, icon = "✥" }) {
+  const controls = `learnSetupPanel-${group}-${panelId}`;
+  const countLabel = count ? `${count} item${count === 1 ? "" : "s"}` : "Open";
+  return `<button type="button" class="learn-setup-section-card" data-setup-section-toggle data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" aria-expanded="false" aria-controls="${html(controls)}"><small>${html(icon)} ${html(countLabel)}</small><strong data-setup-section-card-title>${html(title)}</strong><span data-setup-section-card-detail>${html(detail)}</span><em>Open</em></button>`;
+}
+
+function setupSectionPanel({ group, panel: panelId, title, detail = "", content }) {
+  const id = `learnSetupPanel-${group}-${panelId}`;
+  return `<div id="${html(id)}" class="learn-setup-subsection" data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" hidden><div class="learn-setup-subsection-header"><div><strong data-setup-section-panel-title>${html(title)}</strong>${detail ? `<span data-setup-section-panel-detail>${html(detail)}</span>` : ""}</div><button type="button" class="learn-setup-subsection-close" data-setup-section-close data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}">Collapse</button></div><div class="learn-setup-tile-editor"><label>Tile title<input name="setupTiles.${html(group)}.${html(panelId)}.title" data-setup-section-title-input data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" value="${html(title)}" /></label><label>Tile description<textarea name="setupTiles.${html(group)}.${html(panelId)}.detail" data-setup-section-detail-input data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" rows="2">${html(detail)}</textarea></label></div>${content}</div>`;
+}
+
 function formationSetupPanel(vm) {
   const formation = vm.formationSetup || {};
-  const sectionStyle = "border:1px solid var(--line);border-radius:13px;background:rgba(255,252,245,.64);padding:14px;display:grid;gap:12px;";
-  const sectionTitle = (title, subtitle = "") => `<div><strong style="display:block;font-family:var(--sans);font-size:15px;color:var(--ink);">${html(title)}</strong>${subtitle ? `<small style="display:block;color:var(--muted);line-height:1.35;margin-top:2px;">${html(subtitle)}</small>` : ""}</div>`;
-  const categoryTiles = [
-    { title: "Recitation & Memory Work", detail: "Creeds, prayers, psalms, Scripture, poetry, and speeches." },
-    { title: "Hymn Study", detail: "Troparia, kontakia, festal hymns, and music study." },
-    { title: "Saints & Feasts", detail: "Household-highlighted commemorations and seasonal focus." },
-    { title: "Enrichment", detail: "Art, poetry, music, nature, composer, and timeline work." },
-    { title: "Formation Materials", detail: "Books, PDFs, links, icons, and term resources." }
-  ];
+  const currentTermId = vm.schoolYear.currentTermId || vm.term.id;
+  const enrichmentBlocks = formation.enrichmentBlocks || [];
+  const countByType = (type) => enrichmentBlocks.filter((block) => String(block.blockType || block.type || "").toLowerCase() === type.toLowerCase()).length;
+  const sections = [
+    {
+      panel: "catechesis",
+      title: "Catechesis",
+      detail: "Doctrine, Scripture, faith conversations, and parish formation.",
+      icon: "✥",
+      type: "Catechesis"
+    },
+    {
+      panel: "recitation",
+      title: "Recitation",
+      detail: "Creeds, prayers, psalms, Scripture, poems, and speeches.",
+      icon: "✦",
+      type: "Recitation & Memory Work",
+      rows: formation.recitationTracks || [],
+      rowKind: "recitation"
+    },
+    {
+      panel: "saints",
+      title: "Saints",
+      detail: "Lives of saints, feast preparation, and century-book notes.",
+      icon: "☰",
+      type: "Saints & Feasts"
+    },
+    { panel: "icons", title: "Icons", detail: "Icon study, sacred art observation, and copywork prompts.", icon: "▣", type: "Icon Study" },
+    { panel: "hymns", title: "Hymns", detail: "Troparia, kontakia, hymn study, and singing practice.", icon: "♪", type: "Hymn Study" },
+    { panel: "artists", title: "Artists", detail: "Artist study, picture study, and visual narration.", icon: "◎", type: "Art Study" },
+    { panel: "composers", title: "Composers", detail: "Composer study, sacred music, and attentive listening.", icon: "♫", type: "Music Study" },
+    { panel: "folk-songs", title: "Folk Songs", detail: "Folk songs, seasonal songs, and family singing.", icon: "♬", type: "Folk Songs" },
+    { panel: "poetry", title: "Poetry", detail: "Poet study, recitation, copywork, and beautiful language.", icon: "✒", type: "Poetry" },
+    { panel: "shakespeare", title: "Shakespeare", detail: "Plays, scenes, narration, and performance notes.", icon: "♜", type: "Shakespeare" }
+  ].map((section) => setupTileValue(vm, "formation", section.panel, section));
+  const sectionRows = (section) => section.rowKind === "recitation"
+    ? (section.rows.length ? section.rows : [{}]).map((track) => formationRecitationSetupRow(track)).join("")
+    : (enrichmentBlocks.filter((block) => String(block.blockType || block.type || "").toLowerCase() === section.type.toLowerCase()).length
+      ? enrichmentBlocks.filter((block) => String(block.blockType || block.type || "").toLowerCase() === section.type.toLowerCase())
+      : [{ blockType: section.type }]).map((block) => formationEnrichmentSetupRow({ ...block, blockType: block.blockType || section.type }, vm.children, vm.terms, currentTermId)).join("");
+  const sectionContent = (section) => section.rowKind === "recitation"
+    ? `<div data-setup-list="formationRecitation" style="display:grid;gap:10px;">${sectionRows(section)}</div><button type="button" data-setup-add-row="formationRecitation" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Recitation</button>`
+    : `<div id="learnSetupFormation-${html(section.panel)}" data-setup-list="formationEnrichment" style="display:grid;gap:10px;">${sectionRows(section)}</div><button type="button" data-setup-add-row="formationEnrichment" data-setup-add-target="learnSetupFormation-${html(section.panel)}" data-setup-add-block-type="${html(section.type)}" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add ${html(section.title)}</button>`;
   return `
     <div style="display:grid;gap:14px;">
       <p style="margin:0;color:var(--muted);line-height:1.45;">Choose whether each item is shared by the whole family or assigned by Form, then set how often it appears and how long it usually takes.</p>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
-        ${categoryTiles.map((tile) => `<span style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:10px;"><strong>${html(tile.title)}</strong><small style="display:block;color:var(--muted);">${html(tile.detail)}</small></span>`).join("")}
-      </div>
-      <div style="${sectionStyle}">
-        ${sectionTitle("Recitation & Memory Work", "Creeds, prayers, psalms, and scripture memory.")}
-        <div data-setup-list="formationRecitation" style="display:grid;gap:10px;">${(formation.recitationTracks?.length ? formation.recitationTracks : [{}]).map((track) => formationRecitationSetupRow(track)).join("")}</div>
-        <button type="button" data-setup-add-row="formationRecitation" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Memory Work</button>
-      </div>
-      <div style="${sectionStyle}">
-        ${sectionTitle("Enrichment", "Art, poetry, music, nature study, composer, and timeline work.")}
-        <div data-setup-list="formationEnrichment" style="display:grid;gap:10px;">${(formation.enrichmentBlocks?.length ? formation.enrichmentBlocks : [{}]).map((block) => formationEnrichmentSetupRow(block, vm.children, vm.terms, vm.schoolYear.currentTermId || vm.term.id)).join("")}</div>
-        <button type="button" data-setup-add-row="formationEnrichment" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Enrichment</button>
-      </div>
-      <div style="${sectionStyle}">
-        ${sectionTitle("Formation Materials", "Optional term materials that seed catechesis, art, poetry, music, saints, and other Formation cards.")}
-        <div data-setup-list="formationMaterials" style="display:grid;gap:10px;">${(vm.formationMaterials?.length ? vm.formationMaterials : [{}]).map((material) => formationSetupRow(material, vm.terms, vm.schoolYear.currentTermId || vm.term.id)).join("")}</div>
-        <button type="button" data-setup-add-row="formationMaterials" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Formation Material</button>
-      </div>
+      <div class="learn-setup-section-grid">${sections.map((section) => setupSectionCard({ group: "formation", ...section, count: section.rowKind === "recitation" ? section.rows.length : countByType(section.type) })).join("")}</div>
+      ${sections.map((section) => setupSectionPanel({ group: "formation", panel: section.panel, title: section.title, detail: section.detail, content: sectionContent(section) })).join("")}
     </div>`;
+}
+
+function formSubjectsSetupPanel(vm, currentTermId) {
+  const subjects = vm.subjects || [];
+  const groups = [
+    {
+      panel: "language",
+      title: "Language Arts",
+      detail: "Reading, narration, copywork, dictation, grammar, composition, and rhetoric.",
+      icon: "✎",
+      types: ["language-arts"],
+      defaultType: "language-arts"
+    },
+    {
+      panel: "literature",
+      title: "Literature",
+      detail: "Living books, stories, plays, folk tales, myths, and great tales.",
+      icon: "☰",
+      types: ["tales", "literature"],
+      defaultType: "literature"
+    },
+    {
+      panel: "history",
+      title: "History",
+      detail: "History readings, narrations, timelines, biographies, and term projects.",
+      icon: "⌁",
+      types: ["history"],
+      defaultType: "history"
+    },
+    {
+      panel: "geography",
+      title: "Geography",
+      detail: "Maps, regions, place study, journeys, and notebook work.",
+      icon: "⌖",
+      types: ["geography"],
+      defaultType: "geography"
+    },
+    {
+      panel: "maths",
+      title: "Maths",
+      detail: "Lesson ranges, practice, mastery checks, and progress tracking.",
+      icon: "◎",
+      types: ["math", "maths"],
+      defaultType: "math"
+    },
+    {
+      panel: "sciences",
+      title: "Sciences",
+      detail: "Science, nature study, experiments, notebooks, and observations.",
+      icon: "✦",
+      types: ["sciences-nature", "science", "nature-study"],
+      defaultType: "sciences-nature"
+    }
+  ].map((group) => setupTileValue(vm, "subjects", group.panel, group));
+  const subjectsForGroup = (group) => subjects.filter((subject) => group.types.includes(subject.subjectType || subject.type || "language-arts"));
+  return `
+    <p style="margin:0 0 12px;color:var(--muted);">Use one list for term-based subject work. Open only the subject family you are planning right now, then assign each row by Form, child, term, range, credits, final mark, and Grace Mode behavior.</p>
+    <div class="learn-setup-section-grid">
+      ${groups.map((group) => setupSectionCard({ group: "subjects", panel: group.panel, title: group.title, detail: group.detail, count: subjectsForGroup(group).length, icon: group.icon })).join("")}
+    </div>
+    ${groups.map((group) => {
+      const rows = subjectsForGroup(group);
+      const listId = `learnSetupSubjects-${group.panel}`;
+      const renderedRows = (rows.length ? rows : [{ subjectType: group.defaultType }]).map((subject) => subjectSetupRow(subject, vm.children, vm.terms, currentTermId)).join("");
+      const content = `<div id="${html(listId)}" data-setup-list="subjects" style="display:grid;gap:10px;">${renderedRows}</div><button type="button" data-setup-add-row="subjects" data-setup-add-target="${html(listId)}" data-setup-add-subject-type="${html(group.defaultType)}" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add ${html(group.title)} Subject</button>`;
+      return setupSectionPanel({ group: "subjects", panel: group.panel, title: group.title, detail: group.detail, content });
+    }).join("")}`;
 }
 
 function setupStepTarget(step) {
@@ -1183,7 +1293,7 @@ function renderSetup(vm) {
       <span id="learnSetupBooks" class="learn-setup-anchor"></span>
       ${panel("Literature", `<p style="margin:0 0 12px;color:var(--muted);">Add living books, read-alouds, stories, plays, history reads, folk stories, myths, and great tales. Assign each book to the term and Form where it belongs.</p><div data-setup-list="books" style="display:grid;gap:10px;">${(vm.books.length ? vm.books : [{}]).map((book) => bookSetupRow(book, vm.terms, currentTermId)).join("")}</div><button type="button" data-setup-add-row="books" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Literature</button>`, { icon: "☰", largeTitle: true })}
       <span id="learnSetupSubjects" class="learn-setup-anchor"></span>
-      ${panel("Form Subjects", `<p style="margin:0 0 12px;color:var(--muted);">Use one list for term-based subject work. Each row can be assigned by Form, child, term, range, credits, final mark, and Grace Mode behavior.</p><div style="display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin-bottom:12px;"><span style="border:1px solid var(--line);border-radius:10px;background:rgba(255,252,245,.64);padding:14px;"><strong style="display:block;font-family:var(--sans);font-size:15px;color:var(--ink);">Tales & Literature</strong><small style="display:block;color:var(--muted);line-height:1.35;margin-top:2px;">Living books, stories, plays, folk tales, myths, and great tales.</small></span><span style="border:1px solid var(--line);border-radius:10px;background:rgba(255,252,245,.64);padding:14px;"><strong style="display:block;font-family:var(--sans);font-size:15px;color:var(--ink);">Language Arts</strong><small style="display:block;color:var(--muted);line-height:1.35;margin-top:2px;">Reading, narration, copywork, dictation, grammar, composition, and rhetoric.</small></span><span style="border:1px solid var(--line);border-radius:10px;background:rgba(255,252,245,.64);padding:14px;"><strong style="display:block;font-family:var(--sans);font-size:15px;color:var(--ink);">History & Geography</strong><small style="display:block;color:var(--muted);line-height:1.35;margin-top:2px;">Books, maps, PDFs, links, narrations, and term projects.</small></span><span style="border:1px solid var(--line);border-radius:10px;background:rgba(255,252,245,.64);padding:14px;"><strong style="display:block;font-family:var(--sans);font-size:15px;color:var(--ink);">Math, Sciences & Nature</strong><small style="display:block;color:var(--muted);line-height:1.35;margin-top:2px;">Lesson ranges, experiments, nature study, and progress tracking.</small></span></div><div data-setup-list="subjects" style="display:grid;gap:10px;">${(vm.subjects.length ? vm.subjects : [{}]).map((subject) => subjectSetupRow(subject, vm.children, vm.terms, currentTermId)).join("")}</div><button type="button" data-setup-add-row="subjects" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Form Subject</button>`, { icon: "✎", largeTitle: true })}
+      ${panel("Form Subjects", formSubjectsSetupPanel(vm, currentTermId), { icon: "✎", largeTitle: true })}
       ${panel("Co-op", `<div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">Coming Soon</strong><p style="margin:4px 0 0;color:var(--muted);line-height:1.4;">Co-op creation and member management are intentionally deferred so Learn can launch with the household planner, reports, print packs, and paid limits first.</p></div><span style="border:1px solid var(--gold);border-radius:999px;color:var(--gold);padding:7px 12px;white-space:nowrap;">Future add-on</span></div>`, { icon: "◎" })}
       <div style="position:sticky;bottom:12px;z-index:5;display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;background:rgba(253,249,239,.96);padding:12px 14px;box-shadow:0 8px 24px rgba(18,38,67,.12);">
         <span data-setup-status style="color:var(--muted);">Setup saves to the household profile and D1-backed Learn records.</span>
@@ -1355,6 +1465,17 @@ function setupPayloadFromForm(form) {
   });
   const currentTermId = get("schoolYear.currentTermId") || terms[0]?.id || "term_1";
   const currentTerm = terms.find((term) => term.id === currentTermId) || terms[0] || {};
+  const setupTiles = {};
+  form.querySelectorAll(".learn-setup-subsection").forEach((section) => {
+    const group = section.dataset.setupSectionGroup || "";
+    const panelId = section.dataset.setupSectionPanel || "";
+    if (!group || !panelId) return;
+    const title = section.querySelector("[data-setup-section-title-input]")?.value?.trim() || "";
+    const detail = section.querySelector("[data-setup-section-detail-input]")?.value?.trim() || "";
+    if (!title && !detail) return;
+    setupTiles[group] = setupTiles[group] || {};
+    setupTiles[group][panelId] = { title, detail };
+  });
   return {
     household: {
       name: get("household.name"),
@@ -1375,6 +1496,7 @@ function setupPayloadFromForm(form) {
       paceMode: "steady"
     },
     terms,
+    setupTiles,
     preferences: {
       calendarType: get("preferences.calendarType"),
       evaluationModel: get("preferences.evaluationModel"),
@@ -1602,18 +1724,33 @@ function syncSetupChildLimit(form) {
   button.style.borderColor = freeLimitReached ? "var(--gold)" : "var(--line)";
 }
 
-function setupBlankRow(type, form) {
+function setupBlankRow(type, form, preset = {}) {
   const terms = currentSetupTerms(form);
   const currentTermId = form.elements["schoolYear.currentTermId"]?.value || terms[0]?.id || "term_1";
   if (type === "children") return childSetupRow({});
   if (type === "terms") return termSetupRow({}, terms.length);
-  if (type === "subjects") return subjectSetupRow({}, currentSetupChildren(form), terms, currentTermId);
+  if (type === "subjects") return subjectSetupRow(preset, currentSetupChildren(form), terms, currentTermId);
   if (type === "books") return bookSetupRow({}, terms, currentTermId);
   if (type === "formationMaterials") return formationSetupRow({}, terms, currentTermId);
   if (type === "formationRhythms") return formationRhythmSetupRow({});
   if (type === "formationRecitation") return formationRecitationSetupRow({});
-  if (type === "formationEnrichment") return formationEnrichmentSetupRow({}, currentSetupChildren(form), terms, currentTermId);
+  if (type === "formationEnrichment") return formationEnrichmentSetupRow(preset, currentSetupChildren(form), terms, currentTermId);
   return "";
+}
+
+function setSetupSectionOpen(form, group, panelId, shouldOpen) {
+  form.querySelectorAll(`[data-setup-section-group="${group}"][data-setup-section-toggle]`).forEach((button) => {
+    const isTarget = button.dataset.setupSectionPanel === panelId;
+    const open = shouldOpen && isTarget;
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+    button.classList.toggle("is-open", open);
+    const action = button.querySelector("em");
+    if (action) action.textContent = open ? "Collapse" : "Open";
+  });
+  form.querySelectorAll(`[data-setup-section-group="${group}"].learn-setup-subsection`).forEach((section) => {
+    const open = shouldOpen && section.dataset.setupSectionPanel === panelId;
+    section.hidden = !open;
+  });
 }
 
 function syncSetupTermSelects(form) {
@@ -1632,6 +1769,24 @@ function wireSetupPage() {
   const form = root.querySelector("[data-setup-form]");
   if (!form) return;
   form.addEventListener("input", (event) => {
+    const tileInput = event.target.closest("[data-setup-section-title-input], [data-setup-section-detail-input]");
+    if (tileInput) {
+      const group = tileInput.dataset.setupSectionGroup || "";
+      const panelId = tileInput.dataset.setupSectionPanel || "";
+      const section = tileInput.closest(".learn-setup-subsection");
+      const title = section?.querySelector("[data-setup-section-title-input]")?.value?.trim() || "";
+      const detail = section?.querySelector("[data-setup-section-detail-input]")?.value?.trim() || "";
+      const card = form.querySelector(`[data-setup-section-group="${group}"][data-setup-section-panel="${panelId}"][data-setup-section-toggle]`);
+      const cardTitle = card?.querySelector("[data-setup-section-card-title]");
+      const cardDetail = card?.querySelector("[data-setup-section-card-detail]");
+      const panelTitle = section?.querySelector("[data-setup-section-panel-title]");
+      const panelDetail = section?.querySelector("[data-setup-section-panel-detail]");
+      if (cardTitle && title) cardTitle.textContent = title;
+      if (cardDetail && detail) cardDetail.textContent = detail;
+      if (panelTitle && title) panelTitle.textContent = title;
+      if (panelDetail && detail) panelDetail.textContent = detail;
+      return;
+    }
     const colorField = event.target.closest(".learn-color-field");
     if (!colorField) return;
     const colorInput = colorField.querySelector('input[type="color"]');
@@ -1645,6 +1800,21 @@ function wireSetupPage() {
     if (event.target.closest('[data-setup-row="children"]')) syncSetupChildLimit(form);
   });
   form.addEventListener("click", (event) => {
+    const sectionToggle = event.target.closest("[data-setup-section-toggle]");
+    if (sectionToggle) {
+      const group = sectionToggle.dataset.setupSectionGroup || "";
+      const panelId = sectionToggle.dataset.setupSectionPanel || "";
+      const wasOpen = sectionToggle.getAttribute("aria-expanded") === "true";
+      setSetupSectionOpen(form, group, panelId, !wasOpen);
+      const panelElement = document.getElementById(sectionToggle.getAttribute("aria-controls") || "");
+      if (!wasOpen && panelElement) panelElement.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    const sectionClose = event.target.closest("[data-setup-section-close]");
+    if (sectionClose) {
+      setSetupSectionOpen(form, sectionClose.dataset.setupSectionGroup || "", sectionClose.dataset.setupSectionPanel || "", false);
+      return;
+    }
     const closeButton = event.target.closest("[data-close-term]");
     if (closeButton) {
       const termId = closeButton.dataset.closeTerm || closeButton.closest("[data-setup-row]")?.dataset.id || "";
@@ -1701,9 +1871,14 @@ function wireSetupPage() {
         ], { upgrade: true });
         return;
       }
-      const list = form.querySelector(`[data-setup-list="${type}"]`);
+      const preset = {};
+      if (addButton.dataset.setupAddSubjectType) preset.subjectType = addButton.dataset.setupAddSubjectType;
+      if (addButton.dataset.setupAddBlockType) preset.blockType = addButton.dataset.setupAddBlockType;
+      const list = addButton.dataset.setupAddTarget
+        ? document.getElementById(addButton.dataset.setupAddTarget)
+        : form.querySelector(`[data-setup-list="${type}"]`);
       if (list) {
-        list.insertAdjacentHTML("beforeend", setupBlankRow(type, form));
+        list.insertAdjacentHTML("beforeend", setupBlankRow(type, form, preset));
         if (type === "terms") syncSetupTermSelects(form);
         if (type === "children") syncSetupChildLimit(form);
       }
@@ -2055,6 +2230,31 @@ mount().catch((error) => {
 });
 
 document.addEventListener("click", (event) => {
+  const accountToggle = event.target.closest("[data-learn-account-toggle]");
+  const accountMenu = event.target.closest("[data-learn-account-menu]");
+  if (accountToggle) {
+    const menu = accountToggle.closest("[data-learn-account-menu]");
+    const dropdown = menu?.querySelector(".learn-account-dropdown");
+    const open = accountToggle.getAttribute("aria-expanded") !== "true";
+    document.querySelectorAll("[data-learn-account-toggle]").forEach((button) => button.setAttribute("aria-expanded", "false"));
+    document.querySelectorAll(".learn-account-dropdown").forEach((panel) => { panel.hidden = true; });
+    accountToggle.setAttribute("aria-expanded", String(open));
+    if (dropdown) dropdown.hidden = !open;
+    return;
+  }
+  if (!accountMenu) {
+    document.querySelectorAll("[data-learn-account-toggle]").forEach((button) => button.setAttribute("aria-expanded", "false"));
+    document.querySelectorAll(".learn-account-dropdown").forEach((panel) => { panel.hidden = true; });
+  }
+  if (event.target.closest("[data-learn-logout]")) {
+    localStorage.removeItem("agapayDonorToken");
+    localStorage.removeItem("agapayDonorProfile");
+    localStorage.removeItem("agapayDonorEmail");
+    localStorage.removeItem("agapay.learn.plan");
+    window.location.href = "/myagapay/login";
+    return;
+  }
+
   const progressTarget = event.target.closest("[data-setup-progress-target]");
   if (progressTarget) {
     const target = document.getElementById(progressTarget.dataset.setupProgressTarget);
@@ -2080,4 +2280,6 @@ document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
   document.body.classList.remove("learn-menu-open");
   document.querySelector("[data-learn-menu-toggle]")?.setAttribute("aria-expanded", "false");
+  document.querySelectorAll("[data-learn-account-toggle]").forEach((button) => button.setAttribute("aria-expanded", "false"));
+  document.querySelectorAll(".learn-account-dropdown").forEach((panel) => { panel.hidden = true; });
 });

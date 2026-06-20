@@ -207,10 +207,11 @@
       setStatus(message, tone);
     }
 
-    function authHeaders() {
+    function authHeaders(extra = {}) {
       return {
         'Accept': 'application/json',
-        'Authorization': 'Bearer ' + token()
+        'Authorization': 'Bearer ' + token(),
+        ...extra
       };
     }
 
@@ -522,6 +523,170 @@
           <p>${escapeHtml(fees.note || 'Current-month AGAPAY application fees from connected Stripe gifts.')}</p>
         </article>
       `;
+    }
+
+    function renderLearnGrowthBars(monthly = []) {
+      const maxValue = Math.max(...monthly.map(item => Math.max(Number(item.newSubscriptions || 0), Number(item.cancellations || 0), Number(item.active || 0))), 1);
+      return monthly.map((item, index) => {
+        const activeHeight = Math.max(item.active ? 5 : 3, Math.round((Number(item.active || 0) / maxValue) * 130));
+        const newHeight = Math.max(item.newSubscriptions ? 5 : 0, Math.round((Number(item.newSubscriptions || 0) / maxValue) * 130));
+        const cancelHeight = Math.max(item.cancellations ? 5 : 0, Math.round((Number(item.cancellations || 0) / maxValue) * 130));
+        return `
+          <div class="growth-bar-wrap" title="${escapeAttr(`${item.label}: ${item.newSubscriptions || 0} new / ${item.cancellations || 0} cancelled / ${item.active || 0} net active`)}">
+            <div class="growth-bar-stack" style="animation-delay:${index * 0.04}s">
+              ${cancelHeight ? `<div class="growth-bar danger" style="height:${cancelHeight}px;"></div>` : ''}
+              ${newHeight ? `<div class="growth-bar alt" style="height:${newHeight}px;"></div>` : ''}
+              <div class="growth-bar" style="height:${activeHeight}px;"></div>
+            </div>
+            <div class="growth-label">${escapeHtml(item.label)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderLearnScholarships(scholarships = []) {
+      const list = document.getElementById('learnScholarshipList');
+      if (!list) return;
+      if (!scholarships.length) {
+        list.innerHTML = '<div class="revenue-empty">No Learn scholarship codes have been generated yet.</div>';
+        return;
+      }
+      list.innerHTML = scholarships.map((item) => `
+        <div class="learn-scholarship-row">
+          <div>
+            <strong>${escapeHtml(item.code || '')}</strong>
+            <span>${escapeHtml(item.label || 'AGAPAY Learn scholarship')} · ${escapeHtml(String(item.percentOff || 0))}% off · ${escapeHtml(String(item.maxRedemptions || 1))} redemption${Number(item.maxRedemptions || 1) === 1 ? '' : 's'}</span>
+          </div>
+          <button class="secondary btn-sm" onclick="copyLearnText('${jsAttr(item.code || '')}', 'Scholarship code copied.')">Copy</button>
+        </div>
+      `).join('');
+    }
+
+    function renderLearnAdmin(data = {}) {
+      const pane = document.getElementById('learnAdminPane');
+      if (!pane) return;
+      const subscriptions = data.subscriptions || {};
+      const counts = subscriptions.counts || {};
+      pane.innerHTML = `
+        <article class="revenue-card">
+          <div class="revenue-card-head">
+            <div>
+              <span>Learn monthly revenue</span>
+              <h3>${moneyShort(subscriptions.monthlyRecurringCents || 0)}</h3>
+            </div>
+            <small>${escapeHtml(String(subscriptions.year || new Date().getFullYear()))}</small>
+          </div>
+          <div class="revenue-fee-stats">
+            <div><strong>${counts.active || 0}</strong><span>Active</span></div>
+            <div><strong>${counts.trialing || 0}</strong><span>Trialing</span></div>
+            <div><strong>${counts.cancelled || 0}</strong><span>Cancelled</span></div>
+          </div>
+          <p>Revenue is normalized to monthly value from active Learn billing records.</p>
+        </article>
+        <article class="revenue-card">
+          <div class="revenue-card-head">
+            <div>
+              <span>Scholarships</span>
+              <h3>${(data.scholarships || []).length}</h3>
+            </div>
+            <small>${data.stripeConfigured ? 'Stripe live' : 'Tracking only'}</small>
+          </div>
+          <div class="revenue-fee-stats">
+            <div><strong>${counts.freeForever || 0}</strong><span>Full access</span></div>
+            <div><strong>${counts.pastDue || 0}</strong><span>Past due</span></div>
+            <div><strong>${subscriptions.totalRecords || 0}</strong><span>Records</span></div>
+          </div>
+          <p>${data.stripeConfigured ? 'New scholarship codes are created as Stripe promotion codes.' : 'Set STRIPE_SECRET_KEY to create live Stripe promotion codes.'}</p>
+        </article>
+        <article class="growth-chart-card learn-admin-chart">
+          <div class="growth-chart-title">Learn Growth <span>Net active / new / cancellations</span></div>
+          <div class="growth-bars">${renderLearnGrowthBars(subscriptions.monthly || [])}</div>
+          <div class="growth-note">Current-year Learn subscription movement.</div>
+        </article>
+        <article class="growth-chart-card">
+          <div class="growth-chart-title">Recent Learn Accounts <span>Latest billing records</span></div>
+          <div class="learn-admin-recent">
+            ${(subscriptions.recent || []).map((item) => `
+              <div class="revenue-row">
+                <div>
+                  <strong>${escapeHtml(item.email || 'Unknown household')}</strong>
+                  <span>${escapeHtml(item.plan || 'family')} · ${escapeHtml(readable(item.status || 'active'))}</span>
+                </div>
+                <b>${escapeHtml(shortDate(item.updatedAt || item.createdAt))}</b>
+              </div>
+            `).join('') || '<div class="revenue-empty">No Learn billing records yet.</div>'}
+          </div>
+        </article>
+      `;
+      renderLearnScholarships(data.scholarships || []);
+    }
+
+    async function loadLearnAdmin(btn) {
+      if (!token()) {
+        setStatus('Log in to load AGAPAY Learn admin.', 'error');
+        return;
+      }
+      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+      try {
+        const response = await fetch('/api/admin/learn/summary', { headers: authHeaders() });
+        const result = await response.json().catch(() => ({}));
+        if (handleAuthFailure(response, result)) return;
+        if (!response.ok) throw new Error(result.error || 'Unable to load AGAPAY Learn admin');
+        renderLearnAdmin(result.learn || {});
+      } catch (err) {
+        setStatus(err.message, 'error');
+      } finally {
+        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+      }
+    }
+
+    async function copyLearnText(value, message = 'Copied.') {
+      try {
+        await navigator.clipboard.writeText(value);
+        setStatus(message, 'success');
+      } catch {
+        setStatus(value, 'info');
+      }
+    }
+
+    async function createLearnScholarship(btn) {
+      const status = document.getElementById('learnScholarshipStatus');
+      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+      if (status) {
+        status.textContent = 'Generating scholarship code...';
+        status.className = 'payment-status';
+      }
+      try {
+        const payload = {
+          label: document.getElementById('learnScholarshipLabel')?.value || 'AGAPAY Learn scholarship',
+          percentOff: document.getElementById('learnScholarshipPercent')?.value || 100,
+          maxRedemptions: document.getElementById('learnScholarshipMax')?.value || 1,
+          code: document.getElementById('learnScholarshipCode')?.value || ''
+        };
+        const response = await fetch('/api/admin/learn/scholarships', {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json().catch(() => ({}));
+        if (handleAuthFailure(response, result)) return;
+        if (!response.ok) throw new Error(result.error || 'Unable to generate scholarship code');
+        if (status) {
+          status.textContent = `Scholarship code ready: ${result.scholarship?.code || ''}`;
+          status.className = 'payment-status success';
+        }
+        document.getElementById('learnScholarshipCode').value = '';
+        await copyLearnText(result.scholarship?.code || '', 'Scholarship code copied.');
+        await loadLearnAdmin();
+      } catch (err) {
+        if (status) {
+          status.textContent = err.message;
+          status.className = 'payment-status error';
+        }
+        setStatus(err.message, 'error');
+      } finally {
+        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+      }
     }
 
     async function loadPlatformSummary(btn) {
@@ -1594,11 +1759,12 @@
       if (nav)   nav.classList.add('active');
       if (mobileNav) mobileNav.classList.add('active');
       activeTab = tab;
-      const titles = { overview: 'Overview', queue: 'Registration Queue', settings: 'Settings' };
+      const titles = { overview: 'Overview', queue: 'Registration Queue', learn: 'AGAPAY Learn', settings: 'Settings' };
       const titleEl = document.getElementById('topbarTitle');
       if (titleEl) titleEl.textContent = titles[tab] || 'Admin Console';
       document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
       if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (tab === 'learn') loadLearnAdmin();
     }
 
     // ── BULK ACTIONS ──────────────────────────────────────────────────────

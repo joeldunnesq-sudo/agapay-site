@@ -489,6 +489,27 @@ function normalizeSetupPayload(payload = {}, identity) {
     enabled: false,
     status: "coming-soon"
   };
+  const rawSetupTiles = payload.setupTiles && typeof payload.setupTiles === "object" ? payload.setupTiles : {};
+  const setupTiles = Object.fromEntries(
+    Object.entries(rawSetupTiles)
+      .filter(([, group]) => group && typeof group === "object")
+      .map(([groupKey, group]) => [
+        text(groupKey, ""),
+        Object.fromEntries(
+          Object.entries(group)
+            .filter(([, tile]) => tile && typeof tile === "object")
+            .map(([tileKey, tile]) => [
+              text(tileKey, ""),
+              {
+                title: text(tile.title, ""),
+                detail: text(tile.detail, "")
+              }
+            ])
+            .filter(([tileKey, tile]) => tileKey && (tile.title || tile.detail))
+        )
+      ])
+      .filter(([groupKey, group]) => groupKey && Object.keys(group).length)
+  );
 
   return {
     version: 1,
@@ -510,6 +531,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     streams,
     subjects,
     books,
+    setupTiles,
     formation,
     formationMaterials,
     historyCycle,

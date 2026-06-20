@@ -140,6 +140,8 @@ import {
   handleAdminMigrateKvToD1,
   handleAdminPlatformSummary,
   handleAdminRegistrationGivingSummary,
+  handleAdminLearnScholarship,
+  handleAdminLearnSummary,
   handleAdminReleaseStatus,
   handleAdminRebuildIndexes,
   handleAdminPassword,
@@ -947,6 +949,12 @@ export default {
     }
     if (url.pathname === "/api/admin/password") {
       return handleAdminPassword(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/admin/learn/summary") {
+      return handleAdminLearnSummary(request, env);
+    }
+    if (url.pathname === "/api/admin/learn/scholarships") {
+      return handleAdminLearnScholarship(request, env);
     }
     if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/subscription-checkout")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/subscription-checkout", ""));
