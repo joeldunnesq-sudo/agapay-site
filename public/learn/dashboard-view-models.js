@@ -41,6 +41,13 @@ function orderSaintNames(names = []) {
   return [...names].sort((a, b) => saintPrecedence(b) - saintPrecedence(a));
 }
 
+function saintLikeTitle(value = "") {
+  const text = String(value || "").trim();
+  if (!text || /today in the church|daily orthodox rhythm|set calendar/i.test(text)) return "";
+  if (saintPrecedence(text) > 40) return text;
+  return /\b(st\.?|saint|holy|apostle|venerable|martyr|righteous|prophet|hierarch|elder)\b/i.test(text) ? text : "";
+}
+
 function orderSaintStories(stories = [], names = []) {
   const remaining = [...stories];
   const ordered = [];
@@ -236,7 +243,10 @@ export function toDashboardViewModel(rawPayload, context = {}) {
   const saintNames = safeArray(liturgicalDay.saints)
     .map((saint) => text(typeof saint === "string" ? saint : saint.name || saint.title, ""))
     .filter(Boolean);
-  const orderedSaintNames = orderSaintNames(saintNames);
+  const titleSaintName = saintLikeTitle(liturgicalDay.feastTitle || liturgicalDay.summaryTitle || "");
+  const combinedSaintNames = [...(titleSaintName ? [titleSaintName] : []), ...saintNames]
+    .filter((name, index, names) => names.findIndex((candidate) => saintKey(candidate) === saintKey(name)) === index);
+  const orderedSaintNames = orderSaintNames(combinedSaintNames);
   const saintStories = orderSaintStories(safeArray(liturgicalDay.saintStories).map((saint) => ({
     name: text(saint.name || saint.title, ""),
     title: text(saint.title || saint.name, ""),
