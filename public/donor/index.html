@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260620a" />
   <script src="/liturgical-calendar.js"></script>
-  <script src="/donor/app.js?v=20260619a" defer></script>
+  <script src="/donor/app.js?v=20260620a" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon.png" />
@@ -65,19 +65,26 @@
         <div class="donor-home-topbar-brand">
           <img src="/mark.png" alt="" aria-hidden="true" />
           <span>
-            <strong class="topbar-title">MY AGAPAY</strong>
-            <small>Love how you Give + Learn + Live</small>
+            <strong class="topbar-title" id="donorUtilityTitle">My AGAPAY</strong>
+            <small id="donorUtilityTagline">Love how you Give + Learn + Live</small>
           </span>
         </div>
         <div class="topbar-actions">
           <a class="btn btn-gold btn-sm donor-home-quick-action" href="/myagapay/giving">Quick Action</a>
-          <a class="donor-home-account-chip" href="/myagapay/account" aria-label="Open account">
-            <span class="donor-home-mini-avatar">FM</span>
-            <span><strong id="donorHomeTopbarName">Faithful Member</strong><small>View Account</small></span>
-          </a>
+          <div class="donor-home-account-menu" data-donor-account-menu data-auth-required hidden>
+            <button class="donor-home-account-chip" type="button" data-donor-account-toggle aria-haspopup="true" aria-expanded="false">
+              <span class="donor-home-mini-avatar">FM</span>
+              <span><strong id="donorHomeTopbarName">Faithful Member</strong><small>View Account</small></span>
+              <span class="donor-home-account-caret" aria-hidden="true">⌄</span>
+            </button>
+            <div class="donor-home-account-dropdown" role="menu" hidden>
+              <a href="/myagapay/account" role="menuitem">Global Dashboard Settings</a>
+              <a href="/myagapay" role="menuitem">Back to My AGAPAY</a>
+              <button type="button" data-donor-logout role="menuitem">Log out</button>
+            </div>
+          </div>
           <a class="btn btn-ghost btn-sm" href="/myagapay/login" data-auth-guest>Login</a>
           <a class="btn btn-gold btn-sm" href="/myagapay/signup" data-auth-guest>Sign up</a>
-          <button class="btn btn-ghost btn-sm" type="button" onclick="logoutDonor()" data-auth-required hidden>Log out</button>
         </div>
       </div>
 
@@ -518,6 +525,12 @@
       if (giving) giving.hidden = !isGivingView;
       if (phone) phone.hidden = !isGivingView;
       document.body.classList.toggle("showing-giving-dashboard", isGivingView);
+      const utilityTitle = document.getElementById("donorUtilityTitle");
+      const utilityTagline = document.getElementById("donorUtilityTagline");
+      const quickAction = document.querySelector(".donor-home-quick-action");
+      if (utilityTitle) utilityTitle.textContent = isGivingView ? "AGAPAY Giving" : "My AGAPAY";
+      if (utilityTagline) utilityTagline.textContent = isGivingView ? "Love how you give" : "Love how you Give + Learn + Live";
+      if (quickAction) quickAction.href = isGivingView ? "/myagapay/giving/give" : "/myagapay/giving";
     }
 
     window.addEventListener("hashchange", applyDonorProductView);

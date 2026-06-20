@@ -438,7 +438,7 @@ function topbar(vm) {
       </button>
       <a class="learn-mobile-brand learn-utility-brand" href="/myagapay" aria-label="Open My AGAPAY">
         <img src="/mark.png" alt="" />
-        <span><strong>AGAPAY</strong><small>Love how you Give + Learn + Live</small></span>
+        <span><strong>AGAPAY Learn</strong><small>Love how you learn</small></span>
       </a>
       <div class="learn-page-title-utility" style="flex:1;min-width:0;line-height:1.1;">
         <div style="font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;color:var(--ink);display:flex;align-items:center;">${title}</div>

@@ -243,6 +243,15 @@ function logoutDonor() {
   window.location.href = "/myagapay/login";
 }
 
+function closeDonorAccountMenus() {
+  document.querySelectorAll("[data-donor-account-toggle]").forEach((button) => {
+    button.setAttribute("aria-expanded", "false");
+  });
+  document.querySelectorAll(".donor-home-account-dropdown").forEach((panel) => {
+    panel.hidden = true;
+  });
+}
+
 function showGuestDonorDashboard() {
   setDonorStatus("");
   setText("profileName", "Faithful Account");
@@ -1973,6 +1982,23 @@ document.addEventListener("DOMContentLoaded", () => {
     link.setAttribute("hx-boost", "false");
   });
   document.addEventListener("click", (event) => {
+    const accountToggle = event.target.closest("[data-donor-account-toggle]");
+    const accountMenu = event.target.closest("[data-donor-account-menu]");
+    if (accountToggle) {
+      const menu = accountToggle.closest("[data-donor-account-menu]");
+      const dropdown = menu?.querySelector(".donor-home-account-dropdown");
+      const open = accountToggle.getAttribute("aria-expanded") !== "true";
+      closeDonorAccountMenus();
+      accountToggle.setAttribute("aria-expanded", String(open));
+      if (dropdown) dropdown.hidden = !open;
+      return;
+    }
+    if (!accountMenu) closeDonorAccountMenus();
+    if (event.target.closest("[data-donor-logout]")) {
+      logoutDonor();
+      return;
+    }
+
     const upgradeButton = event.target.closest("[data-myagapay-learn-upgrade]");
     if (!upgradeButton) return;
     event.preventDefault();
