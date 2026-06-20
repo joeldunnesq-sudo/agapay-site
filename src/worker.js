@@ -101,7 +101,9 @@ import {
   handleParishDashboard,
   handleParishSession,
   handleParishes,
+  handleParishCampaignUpload,
   handlePublicPlatformSummary,
+  handlePublicCampaign,
   handleRegistrations,
   handleCheckout,
   handleCheckoutSessionStatus,
@@ -627,6 +629,10 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/find-church.html";
     return new Request(url, request);
   }
+  if (url.pathname.startsWith("/give/parish-giving/") || url.pathname.startsWith("/giving/parish-giving/")) {
+    url.pathname = "/give/parish-giving/index.html";
+    return new Request(url, request);
+  }
   if (url.pathname === "/give/parish-giving") {
     url.pathname = "/give/parish-giving.html";
     return new Request(url, request);
@@ -783,6 +789,7 @@ export default {
       return handleStripeWebhook(request, env);
     }
     if (request.method === "GET" && url.pathname === "/api/parishes") return handleParishes(request, env);
+    if (request.method === "GET" && url.pathname === "/api/campaign") return handlePublicCampaign(request, env);
     if (request.method === "GET" && url.pathname === "/api/platform/summary") return handlePublicPlatformSummary(env);
     if (request.method === "GET" && url.pathname === "/api/subscription-tiers") {
       return json({ tiers: publicSubscriptionTiers() });
@@ -1007,6 +1014,10 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/payout-diagnostics")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/payout-diagnostics", ""));
       return handleParishPayoutDiagnostics(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/campaign-upload")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/campaign-upload", ""));
+      return handleParishCampaignUpload(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship", ""));

@@ -872,7 +872,7 @@
     }
 
     function renderFunds(funds) {
-      const fundOptions = document.querySelector('.fund-options');
+      const fundOptions = document.querySelector('#fundsSection .fund-options');
       if (!fundOptions || !funds || !funds.length) return;
 
       selectedFund = funds[0].name;
@@ -886,6 +886,77 @@
           </div>
         </label>
       `).join('');
+    }
+
+    function activeCampaigns(parish) {
+      return [
+        ...(Array.isArray(parish?.campaigns) ? parish.campaigns : []),
+        ...(Array.isArray(parish?.feastCampaigns) ? parish.feastCampaigns : [])
+      ].filter(campaign => {
+        const status = String(campaign?.status || (campaign?.enabled === false ? 'hidden' : 'active')).toLowerCase();
+        return campaign && !['hidden', 'paused', 'cancelled', 'ended', 'inactive'].includes(status);
+      });
+    }
+
+    function campaignLabel(campaign) {
+      return campaign?.name || campaign?.campaignName || 'Parish Alms Campaign';
+    }
+
+    function renderCampaigns(campaigns) {
+      const campaignOptions = document.querySelector('#almsSection .fund-options');
+      if (!campaignOptions) return;
+      if (!campaigns || !campaigns.length) {
+        selectedCampaign = '';
+        campaignOptions.innerHTML = `
+          <label class="fund-option selected">
+            <input type="radio" name="campaign" value="" checked disabled />
+            <div class="fund-radio"><div class="fund-radio-dot"></div></div>
+            <div class="fund-info">
+              <div class="fund-name">No active campaigns</div>
+              <div class="fund-desc">This parish does not have an active alms campaign right now.</div>
+            </div>
+          </label>
+        `;
+        return;
+      }
+
+      selectedCampaign = campaignLabel(campaigns[0]);
+      campaignOptions.innerHTML = campaigns.map((campaign, index) => {
+        const label = campaignLabel(campaign);
+        const value = campaign.id || campaign.feastId || campaign.slug || label;
+        const description = campaign.description || 'Parish-approved alms for this need.';
+        return `
+          <label class="fund-option ${index === 0 ? 'selected' : ''}" onclick="selectCampaign(this)">
+            <input type="radio" name="campaign" value="${escapeHtml(value)}" ${index === 0 ? 'checked' : ''} />
+            <div class="fund-radio"><div class="fund-radio-dot"></div></div>
+            <div class="fund-info">
+              <div class="fund-name">${escapeHtml(label)}</div>
+              <div class="fund-desc">${escapeHtml(description)}</div>
+            </div>
+          </label>
+        `;
+      }).join('');
+    }
+
+    function applyGiftQueryParams() {
+      const params = new URLSearchParams(window.location.search);
+      const requestedType = params.get('giftType') || params.get('type');
+      const typeAliases = { campaign: 'alms', candles: 'candle', commemoration: 'love' };
+      const giftType = typeAliases[requestedType] || requestedType;
+      if (giftType) {
+        const card = document.querySelector(`.gift-type-card[data-type="${CSS.escape(giftType)}"]`);
+        if (card) selectGiftType(card);
+      }
+
+      const requestedCampaign = params.get('campaign');
+      if (requestedCampaign) {
+        const campaignRadio = Array.from(document.querySelectorAll('#almsSection input[name="campaign"]')).find((radio) => radio.value === requestedCampaign);
+        const campaignLabelEl = campaignRadio?.closest('.fund-option');
+        if (campaignLabelEl) {
+          campaignRadio.checked = true;
+          selectCampaign(campaignLabelEl);
+        }
+      }
     }
 
     async function loadCurrentParish() {
@@ -927,6 +998,8 @@
         const successText = document.querySelector('.success-parish');
         if (successText) successText.innerHTML = `Your gift to <strong>${parish.name}</strong> has been received.<br>A confirmation will be sent to your email.`;
         renderFunds(parish.funds);
+        renderCampaigns(activeCampaigns(parish));
+        applyGiftQueryParams();
         updateSummary();
       } catch (err) {
         console.error('AGAPAY parish load error:', err);

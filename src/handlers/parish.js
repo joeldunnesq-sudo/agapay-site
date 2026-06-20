@@ -2236,6 +2236,107 @@ export async function handleParishes(request, env) {
   });
 }
 
+export async function handlePublicCampaign(request, env) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const url = new URL(request.url);
+  const parishId = String(url.searchParams.get("parish") || url.searchParams.get("parishId") || "").trim();
+  const slug = String(url.searchParams.get("slug") || url.searchParams.get("campaign") || url.searchParams.get("c") || "").trim();
+  if (!parishId || !slug) return json({ error: "Campaign parish and slug are required." }, { status: 422 });
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Campaign not found" }, { status: 404 });
+  const parish = parishFromRegistration(found.registration);
+  if (!parish) return json({ error: "Campaign not found" }, { status: 404 });
+
+  const enrichedParish = await enrichParishGivingOptions(env, parish);
+  const campaigns = [
+    ...(Array.isArray(enrichedParish.campaigns) ? enrichedParish.campaigns : []),
+    ...(Array.isArray(enrichedParish.feastCampaigns) ? enrichedParish.feastCampaigns : [])
+  ];
+  const normalizedSlug = slugify(slug);
+  const campaign = campaigns.find((item) => {
+    const keys = [item.slug, item.id, item.feastId, item.name, item.campaignName, item.title]
+      .filter(Boolean)
+      .map((value) => slugify(value));
+    return keys.includes(normalizedSlug);
+  });
+  if (!campaign) return json({ error: "Campaign not found" }, { status: 404 });
+
+  const status = String(campaign.status || (campaign.enabled === false ? "hidden" : "active")).toLowerCase();
+  if (["hidden", "cancelled", "inactive"].includes(status)) {
+    return json({ error: "Campaign not found" }, { status: 404 });
+  }
+
+  return json({
+    ok: true,
+    parish: enrichedParish,
+    campaign: {
+      ...campaign,
+      slug: campaign.slug || slugify(campaign.name || campaign.campaignName || campaign.id || slug)
+    }
+  });
+}
+
+export async function handleParishCampaignUpload(request, env, parishId) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-campaign-upload", { limit: 20, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+  const token = getBearerToken(request);
+  if (!(await verifyParishDashboardBearer(found.registration, token))) return unauthorized();
+
+  if (!env.CAMPAIGN_ASSETS || !env.CAMPAIGN_ASSETS_URL) {
+    return json({ error: "Campaign photo storage is not configured." }, { status: 503 });
+  }
+
+  const contentType = String(request.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+  const allowed = new Map([
+    ["image/jpeg", "jpg"],
+    ["image/png", "png"],
+    ["image/webp", "webp"]
+  ]);
+  const ext = allowed.get(contentType);
+  if (!ext) {
+    return json({ error: "Campaign photos must be JPG, PNG, or WebP images." }, { status: 415 });
+  }
+
+  const maxBytes = 10 * 1024 * 1024;
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength && contentLength > maxBytes) {
+    return json({ error: "Campaign photo must be 10MB or smaller." }, { status: 413 });
+  }
+
+  const bytes = await request.arrayBuffer();
+  if (!bytes.byteLength) return json({ error: "Campaign photo is empty." }, { status: 422 });
+  if (bytes.byteLength > maxBytes) return json({ error: "Campaign photo must be 10MB or smaller." }, { status: 413 });
+
+  const uploadUrl = new URL(request.url);
+  const campaignId = slugify(uploadUrl.searchParams.get("campaign") || "draft");
+  const key = [
+    "campaigns",
+    slugify(parishId),
+    campaignId,
+    `${Date.now()}-${crypto.randomUUID()}.${ext}`
+  ].join("/");
+  await env.CAMPAIGN_ASSETS.put(key, bytes, {
+    httpMetadata: {
+      contentType,
+      cacheControl: "public, max-age=31536000, immutable"
+    }
+  });
+  const publicBase = String(env.CAMPAIGN_ASSETS_URL || "").replace(/\/+$/, "");
+  return json({
+    ok: true,
+    key,
+    url: `${publicBase}/${key}`,
+    contentType,
+    size: bytes.byteLength
+  });
+}
+
 export async function loadPaidDonorOfferingPlatformTotals(env) {
   if (d1(env)) {
     const row = await d1First(

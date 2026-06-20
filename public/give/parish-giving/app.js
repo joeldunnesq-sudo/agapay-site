@@ -143,7 +143,7 @@
       const campaign = data.campaign;
       const parish   = data.parish;
       const canonicalUrl = window.location.origin + "/give/parish-giving/" + encodeURIComponent(slug) + "?parish=" + encodeURIComponent(parishId);
-      const giveUrl  = "/give/form?parish=" + encodeURIComponent(parish.parishId || parish.id || "") + "&campaign=" + encodeURIComponent(campaign.id || "");
+      const giveUrl  = "/give/form?parish=" + encodeURIComponent(parish.parishId || parish.id || "") + "&giftType=alms&campaign=" + encodeURIComponent(campaign.id || campaign.slug || campaign.name || "");
 
       applyOgTags(campaign, parish, canonicalUrl);
       renderHero(campaign, parish);
