@@ -367,7 +367,8 @@ export async function handleAdminLearnScholarship(request, env) {
       return json({ ok: false, error: coupon.error?.message || "Stripe could not create the scholarship coupon." }, { status: couponResponse.status || 502 });
     }
     const promoParams = new URLSearchParams();
-    promoParams.set("coupon", coupon.id);
+    promoParams.set("promotion[type]", "coupon");
+    promoParams.set("promotion[coupon]", coupon.id);
     promoParams.set("code", code);
     promoParams.set("max_redemptions", String(maxRedemptions));
     promoParams.set("active", "true");

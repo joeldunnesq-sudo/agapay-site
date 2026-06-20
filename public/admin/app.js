@@ -8,6 +8,8 @@
     let autoRefreshTimer = null;
     let isLoadingRegistrations = false;
     let lastDataLoadedAt = null;
+    let latestPlatformSummary = null;
+    let latestLearnAdmin = null;
 
     function token() {
       return document.getElementById('adminToken')?.value.trim() || sessionStorage.getItem(adminSessionKey) || '';
@@ -82,7 +84,7 @@
       if (!enabled || isLoginPage()) return;
       autoRefreshTimer = setInterval(() => {
         if (!token() || isLoadingRegistrations) return;
-        loadRegistrations({ silent: true, preserveSelection: activeTab === 'queue' });
+        loadRegistrations({ silent: true, preserveSelection: activeTab === 'giving' });
       }, 90000);
     }
 
@@ -442,6 +444,8 @@
     }
 
     function renderPlatformGrowth(summary) {
+      latestPlatformSummary = summary || null;
+      renderProductOverview();
       const pane = document.getElementById('platformGrowthPane');
       if (!pane) return;
       const donationSource = summary.donationDataSource || 'local_only';
@@ -472,6 +476,90 @@
         </div>
       `;
       renderRevenueCards(summary.revenue || {});
+    }
+
+    function productCard({ slug, title, status, statusTone = 'good', metric, metricLabel, body, action, tab }) {
+      return `
+        <article class="product-overview-card product-${escapeAttr(slug)}">
+          <div class="product-overview-head">
+            <span>${escapeHtml(title)}</span>
+            <b class="product-status ${escapeAttr(statusTone)}">${escapeHtml(status)}</b>
+          </div>
+          <strong>${escapeHtml(metric)}</strong>
+          <small>${escapeHtml(metricLabel)}</small>
+          <p>${escapeHtml(body)}</p>
+          <button class="secondary btn-sm" onclick="switchTab('${escapeAttr(tab)}')">${escapeHtml(action)}</button>
+        </article>
+      `;
+    }
+
+    function renderProductOverview() {
+      const grid = document.getElementById('productOverviewGrid');
+      if (!grid) return;
+      const summary = latestPlatformSummary || computeLocalPlatformSummary(registrationsCache);
+      const learn = latestLearnAdmin || {};
+      const learnSubs = learn.subscriptions || {};
+      const learnCounts = learnSubs.counts || {};
+      const verified = Number(summary.totalVerified || 0);
+      const connected = Number(summary.connectedStripeAccounts || 0);
+      const pending = registrationsCache.filter(item => ['pending', 'needs_more_info'].includes(item.status || 'pending')).length;
+      const givingHealth = verified ? Math.round((connected / verified) * 100) : pending ? 50 : 0;
+      const learnActive = Number(learnCounts.active || 0) + Number(learnCounts.trialing || 0) + Number(learnCounts.freeForever || 0);
+      const totalProducts = 4;
+      const liveProducts = 2;
+      const healthScore = Math.round(((givingHealth || 0) + (learnActive ? 100 : 65) + 40 + 40) / totalProducts);
+
+      const healthEl = document.getElementById('overviewHealthScore');
+      const healthNote = document.getElementById('overviewHealthNote');
+      if (healthEl) healthEl.textContent = `${Math.max(0, Math.min(100, healthScore))}%`;
+      if (healthNote) healthNote.textContent = `${liveProducts} products live, ${pending} Giving registration${pending === 1 ? '' : 's'} awaiting action.`;
+
+      grid.innerHTML = [
+        productCard({
+          slug: 'giving',
+          title: 'AGAPAY Giving',
+          status: connected ? 'Live' : verified ? 'Needs Stripe' : 'Onboarding',
+          statusTone: connected ? 'good' : 'warn',
+          metric: `${verified} verified`,
+          metricLabel: `${connected} Stripe connected · ${pending} pending`,
+          body: `${moneyShort(summary.ytdDonationsCents || 0)} in ${summary.year || new Date().getFullYear()} gifts tracked through the admin summary.`,
+          action: 'Manage Giving',
+          tab: 'giving'
+        }),
+        productCard({
+          slug: 'learn',
+          title: 'AGAPAY Learn',
+          status: learnActive ? 'Live' : 'Ready',
+          statusTone: learnActive ? 'good' : 'warn',
+          metric: moneyShort(learnSubs.monthlyRecurringCents || 0),
+          metricLabel: `${learnActive} active/full-access household${learnActive === 1 ? '' : 's'}`,
+          body: `${Number(learnCounts.cancelled || 0)} cancellations and ${(learn.scholarships || []).length} scholarship code${(learn.scholarships || []).length === 1 ? '' : 's'} tracked.`,
+          action: 'Manage Learn',
+          tab: 'learn'
+        }),
+        productCard({
+          slug: 'marketplace',
+          title: 'Marketplace',
+          status: 'Coming Soon',
+          statusTone: 'soon',
+          metric: 'Waitlist',
+          metricLabel: 'Vendor and catalog tooling pending',
+          body: 'Admin will track vendors, products, orders, refunds, shipments, and seller payout readiness.',
+          action: 'View Roadmap',
+          tab: 'marketplace'
+        }),
+        productCard({
+          slug: 'directory',
+          title: 'Directory',
+          status: 'Coming Soon',
+          statusTone: 'soon',
+          metric: `${verified} seed records`,
+          metricLabel: 'Verified Giving communities can seed launch',
+          body: 'Admin will manage verified Orthodox organizations, claims, location quality, and public listing status.',
+          action: 'View Roadmap',
+          tab: 'directory'
+        })
+      ].join('');
     }
 
     function revenueProductRows(products) {
@@ -567,6 +655,8 @@
       if (!pane) return;
       const subscriptions = data.subscriptions || {};
       const counts = subscriptions.counts || {};
+      latestLearnAdmin = data || {};
+      renderProductOverview();
       pane.innerHTML = `
         <article class="revenue-card">
           <div class="revenue-card-head">
@@ -721,7 +811,7 @@
               <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             </div>
             <h2>Select a registration</h2>
-            <p>Choose a parish from the queue to begin review.</p>
+            <p>Choose a parish from the Giving queue to begin review.</p>
           </div>
         </div>
       `;
@@ -780,6 +870,7 @@
           await loadDetail(selectedReference, { silent: true, noScroll: true });
         }
         loadPlatformSummary();
+        loadLearnAdmin();
         lastDataLoadedAt = new Date();
         refreshDataAsOf();
         if (!silent) setStatus(`Loaded ${registrationsCache.length} registration(s).`, 'success');
@@ -799,6 +890,7 @@
       renderCommunitySnapshot(registrations);
       renderNextActionQueue(registrations);
       renderOnboardingHealth(registrations);
+      renderProductOverview();
     }
 
     function communityTypeOf(registration) {
@@ -820,6 +912,12 @@
       document.getElementById('snapshotChurches').textContent = counts.church;
       document.getElementById('snapshotCathedrals').textContent = counts.cathedral;
       document.getElementById('snapshotMonasteries').textContent = counts.monastery;
+      const directoryVerified = document.getElementById('directoryVerifiedCount');
+      const directoryChurch = document.getElementById('directoryChurchCount');
+      const directoryMonastery = document.getElementById('directoryMonasteryCount');
+      if (directoryVerified) directoryVerified.textContent = String(active.length);
+      if (directoryChurch) directoryChurch.textContent = String(counts.church + counts.mission + counts.cathedral);
+      if (directoryMonastery) directoryMonastery.textContent = String(counts.monastery);
     }
 
     function renderOnboardingHealth(registrations) {
@@ -1070,7 +1168,7 @@
       
       document.getElementById('backToQueueBtn')?.classList.remove('hidden');
       document.getElementById('copySummaryBtn')?.classList.remove('hidden');
-      if (activeTab !== 'queue') switchTab('queue');
+      if (activeTab !== 'giving') switchTab('giving');
       if (!silent) setStatus('Loading details...');
 
       try {
@@ -1187,7 +1285,7 @@
       const reference = jsAttr(reg.reference);
       const publicParishId = escapeHtml(reg.parishId || '');
       document.getElementById('registrationDetail').innerHTML = `
-        <button class="secondary btn-sm back-to-queue" onclick="collapseRegistrationDetail()">Back to registration queue</button>
+        <button class="secondary btn-sm back-to-queue" onclick="collapseRegistrationDetail()">Back to Giving queue</button>
         <div class="workflow-card">
           <div class="workflow-top">
             <div>
@@ -1750,6 +1848,7 @@
     let activeTab = 'overview';
 
     function switchTab(tab) {
+      if (tab === 'queue') tab = 'giving';
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.sidebar-nav-item, .mobile-tab-link').forEach(n => n.classList.remove('active'));
       const panel = document.getElementById('tab-' + tab);
@@ -1759,7 +1858,14 @@
       if (nav)   nav.classList.add('active');
       if (mobileNav) mobileNav.classList.add('active');
       activeTab = tab;
-      const titles = { overview: 'Overview', queue: 'Registration Queue', learn: 'AGAPAY Learn', settings: 'Settings' };
+      const titles = {
+        overview: 'Platform Overview',
+        giving: 'AGAPAY Giving',
+        learn: 'AGAPAY Learn',
+        marketplace: 'AGAPAY Marketplace',
+        directory: 'AGAPAY Directory',
+        settings: 'Settings'
+      };
       const titleEl = document.getElementById('topbarTitle');
       if (titleEl) titleEl.textContent = titles[tab] || 'Admin Console';
       document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });

@@ -41,13 +41,21 @@
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
             Overview
           </div>
-          <div class="sidebar-nav-item" onclick="switchTab('queue')" id="nav-queue">
+          <div class="sidebar-nav-item" onclick="switchTab('giving')" id="nav-giving">
             <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            Registration Queue
+            AGAPAY Giving
           </div>
           <div class="sidebar-nav-item" onclick="switchTab('learn')" id="nav-learn">
             <svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg>
             AGAPAY Learn
+          </div>
+          <div class="sidebar-nav-item" onclick="switchTab('marketplace')" id="nav-marketplace">
+            <svg viewBox="0 0 24 24"><path d="M6 7h12l1 14H5z"/><path d="M9 7a3 3 0 0 1 6 0"/><path d="M8 11h8"/></svg>
+            Marketplace
+          </div>
+          <div class="sidebar-nav-item" onclick="switchTab('directory')" id="nav-directory">
+            <svg viewBox="0 0 24 24"><path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            Directory
           </div>
           <div class="sidebar-nav-item" onclick="switchTab('settings')" id="nav-settings">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -107,13 +115,30 @@
             </label>
           </div>
           <button class="secondary btn-sm" onclick="loadRegistrations()">Refresh</button>
-          <button class="secondary btn-sm hidden" id="backToQueueBtn" onclick="collapseRegistrationDetail()">← Queue</button>
+          <button class="secondary btn-sm hidden" id="backToQueueBtn" onclick="collapseRegistrationDetail()">← Giving</button>
           <button class="secondary btn-sm hidden" id="copySummaryBtn" onclick="copyRegistrationSummary()">Copy summary</button>
           <button class="secondary btn-sm" onclick="logoutAdmin()">Log out</button>
         </div>
       </div>
       <div class="detail-wrap" id="detailPane">
         <div class="tab-panel active" id="tab-overview">
+          <section class="admin-command-hero">
+            <div>
+              <div class="admin-kicker">Global Admin Dashboard</div>
+              <h1>AGAPAY Platform Overview</h1>
+              <p>One command center for product health, growth, revenue, onboarding, and launch readiness across AGAPAY Giving, Learn, Marketplace, and Directory.</p>
+            </div>
+            <div class="admin-command-status">
+              <strong id="overviewHealthScore">—</strong>
+              <span>Platform health</span>
+              <small id="overviewHealthNote">Load platform data to calculate current status.</small>
+            </div>
+          </section>
+
+          <section class="product-overview-grid" id="productOverviewGrid">
+            <article class="product-overview-card"><div class="revenue-empty">Load platform data to see product health.</div></article>
+          </section>
+
           <section class="community-snapshot" id="communitySnapshot">
           <div class="community-snapshot-card">
             <div class="community-snapshot-value" id="snapshotMissions">0</div>
@@ -180,7 +205,16 @@
         </section>
         </div>
 
-        <div class="tab-panel" id="tab-queue">
+        <div class="tab-panel" id="tab-giving">
+          <section class="product-admin-hero product-admin-hero-giving">
+            <div>
+              <div class="admin-kicker">Product Operations</div>
+              <h2>AGAPAY Giving</h2>
+              <p>Manage parish registrations, Stripe Connect readiness, dashboard invites, subscription billing, and giving revenue.</p>
+            </div>
+            <button class="gold" onclick="loadRegistrations()">Refresh Giving</button>
+          </section>
+
           <div class="queue-filter-bar">
             <div>
               <label for="searchInputMain">Search</label>
@@ -220,8 +254,8 @@
           <section class="queue-card" id="registrationQueue">
           <div class="queue-header">
             <div>
-              <div class="queue-title">Registration Queue</div>
-              <div class="queue-subtitle">Use the sidebar filters to narrow the queue, then select a parish to review.</div>
+              <div class="queue-title">Giving Registration Queue</div>
+              <div class="queue-subtitle">Review parish onboarding, verify Orthodox communities, send dashboard access, and monitor Stripe readiness.</div>
             </div>
             <div class="queue-count" id="queueCount">No registrations loaded</div>
           </div>
@@ -241,6 +275,58 @@
           </div>
         </div>
         </div>
+        </div>
+
+        <div class="tab-panel" id="tab-marketplace">
+          <section class="product-admin-hero product-admin-hero-marketplace">
+            <div>
+              <div class="admin-kicker">Product Operations</div>
+              <h2>AGAPAY Marketplace</h2>
+              <p>Waitlist, vendor onboarding, order operations, payouts, and catalog controls will live here once Marketplace leaves preview.</p>
+            </div>
+            <span class="admin-soon-pill">Coming Soon</span>
+          </section>
+          <section class="product-admin-grid">
+            <article class="revenue-card">
+              <div class="revenue-card-head"><div><span>Launch status</span><h3>Preview</h3></div><small>Waitlist</small></div>
+              <div class="revenue-fee-stats"><div><strong>0</strong><span>Vendors</span></div><div><strong>0</strong><span>Orders</span></div><div><strong>0</strong><span>Payouts</span></div></div>
+              <p>Next admin milestone: connect waitlist submissions, vendor applications, catalog review, and Stripe seller payout status.</p>
+            </article>
+            <article class="growth-chart-card">
+              <div class="growth-chart-title">Marketplace Admin Roadmap <span>Operational checklist</span></div>
+              <div class="admin-roadmap-list">
+                <div><strong>Vendor intake</strong><span>Applications, verification, contact records, and approval status.</span></div>
+                <div><strong>Catalog review</strong><span>Product moderation, Orthodox fit, pricing, and media quality.</span></div>
+                <div><strong>Order health</strong><span>Purchases, shipment tracking, refunds, disputes, and seller payouts.</span></div>
+              </div>
+            </article>
+          </section>
+        </div>
+
+        <div class="tab-panel" id="tab-directory">
+          <section class="product-admin-hero product-admin-hero-directory">
+            <div>
+              <div class="admin-kicker">Product Operations</div>
+              <h2>AGAPAY Directory</h2>
+              <p>Verified Orthodox parishes, monasteries, schools, ministries, businesses, and local resources will be managed here.</p>
+            </div>
+            <span class="admin-soon-pill">Coming Soon</span>
+          </section>
+          <section class="product-admin-grid">
+            <article class="revenue-card">
+              <div class="revenue-card-head"><div><span>Directory readiness</span><h3 id="directoryVerifiedCount">0</h3></div><small>Giving data</small></div>
+              <div class="revenue-fee-stats"><div><strong id="directoryChurchCount">0</strong><span>Churches</span></div><div><strong id="directoryMonasteryCount">0</strong><span>Monasteries</span></div><div><strong>0</strong><span>Businesses</span></div></div>
+              <p>Verified Giving parishes can become the first canonical Directory records when the Directory product is activated.</p>
+            </article>
+            <article class="growth-chart-card">
+              <div class="growth-chart-title">Directory Admin Roadmap <span>Operational checklist</span></div>
+              <div class="admin-roadmap-list">
+                <div><strong>Record verification</strong><span>Canonical status, contact info, location quality, and ownership claims.</span></div>
+                <div><strong>Search quality</strong><span>Region filters, jurisdictions, categories, and distance-based discovery.</span></div>
+                <div><strong>Claim workflow</strong><span>Allow approved organizations to maintain their public listing.</span></div>
+              </div>
+            </article>
+          </section>
         </div>
 
         <div class="tab-panel" id="tab-learn">
@@ -347,13 +433,21 @@
       <svg viewBox="0 0 38 38" aria-hidden="true"><path d="M19 4.5 8.5 13v18h21V13L19 4.5Z"/><path d="M14.5 31V20.5h9V31"/><path d="M5.5 31h27"/><path d="M19 9v6"/><path d="M16.2 12h5.6"/></svg>
       <span>Overview</span>
     </button>
-    <button class="mobile-tab-link" type="button" data-nav-tab="queue" onclick="switchTab('queue')">
+    <button class="mobile-tab-link" type="button" data-nav-tab="giving" onclick="switchTab('giving')">
       <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7.5 5.5h13v17h-13z"/><path d="M10.5 10h7"/><path d="M10.5 14h7"/><path d="M10.5 18h5"/><path d="M19 3.5v4h4"/></svg>
-      <span>Queue</span>
+      <span>Giving</span>
     </button>
     <button class="mobile-tab-link" type="button" data-nav-tab="learn" onclick="switchTab('learn')">
       <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 5a4 4 0 0 1 4-4h12v21H10a4 4 0 0 0-4 4z"/><path d="M6 5v21"/><path d="M10 7h8"/><path d="M10 11h7"/></svg>
       <span>Learn</span>
+    </button>
+    <button class="mobile-tab-link" type="button" data-nav-tab="marketplace" onclick="switchTab('marketplace')">
+      <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M7 8h14l1 16H6z"/><path d="M10 8a4 4 0 0 1 8 0"/></svg>
+      <span>Market</span>
+    </button>
+    <button class="mobile-tab-link" type="button" data-nav-tab="directory" onclick="switchTab('directory')">
+      <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 25s8-5 8-13a8 8 0 1 0-16 0c0 8 8 13 8 13z"/><circle cx="14" cy="12" r="3"/></svg>
+      <span>Directory</span>
     </button>
     <button class="mobile-tab-link" type="button" data-nav-tab="settings" onclick="switchTab('settings')">
       <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="3"/><path d="M14 5v3"/><path d="M14 20v3"/><path d="M5 14h3"/><path d="M20 14h3"/><path d="m7.6 7.6 2.1 2.1"/><path d="m18.3 18.3 2.1 2.1"/><path d="m20.4 7.6-2.1 2.1"/><path d="m9.7 18.3-2.1 2.1"/></svg>

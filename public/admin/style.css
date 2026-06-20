@@ -1109,6 +1109,186 @@
       gap: 1rem;
       margin: 0 0 1rem;
     }
+    .admin-command-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, 0.28fr);
+      gap: 1rem;
+      align-items: stretch;
+      margin-bottom: 1rem;
+      border: 1px solid rgba(184,144,47,0.24);
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 90% 0%, rgba(184,144,47,0.18), transparent 22rem),
+        linear-gradient(135deg, rgba(255,255,255,0.96), rgba(247,241,227,0.9));
+      padding: 1.25rem;
+      box-shadow: 0 18px 42px rgba(6,21,34,0.08);
+    }
+    .admin-kicker {
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .admin-command-hero h1,
+    .product-admin-hero h2 {
+      margin: 0.22rem 0 0;
+      color: var(--deep);
+      font-family: var(--serif);
+      font-size: clamp(36px, 5vw, 58px);
+      font-weight: 600;
+      line-height: 0.98;
+    }
+    .admin-command-hero p,
+    .product-admin-hero p {
+      max-width: 760px;
+      margin: 0.75rem 0 0;
+      color: var(--stone);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+    .admin-command-status {
+      display: grid;
+      place-items: center;
+      text-align: center;
+      border: 1px solid rgba(184,144,47,0.26);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.72);
+      padding: 1rem;
+    }
+    .admin-command-status strong {
+      color: var(--deep);
+      font-family: var(--serif);
+      font-size: 52px;
+      line-height: 0.92;
+      font-weight: 600;
+    }
+    .admin-command-status span {
+      margin-top: 0.35rem;
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .admin-command-status small {
+      margin-top: 0.55rem;
+      color: var(--stone);
+      line-height: 1.45;
+    }
+    .product-overview-grid,
+    .product-admin-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .product-admin-grid {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    }
+    .product-overview-card {
+      display: grid;
+      gap: 0.65rem;
+      align-content: start;
+      border: 1px solid rgba(184,144,47,0.22);
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 90% 0%, rgba(184,144,47,0.12), transparent 9rem),
+        rgba(255,255,255,0.86);
+      padding: 1rem;
+      box-shadow: 0 12px 30px rgba(6,21,34,0.06);
+      min-height: 246px;
+    }
+    .product-overview-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.65rem;
+      align-items: center;
+    }
+    .product-overview-head span {
+      color: var(--deep);
+      font-weight: 900;
+    }
+    .product-status,
+    .admin-soon-pill {
+      border: 1px solid rgba(184,144,47,0.3);
+      border-radius: 999px;
+      background: #fbf2dd;
+      color: #7b5b12;
+      padding: 0.25rem 0.5rem;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .product-status.good { background: #edf6ef; color: #2f5f3a; border-color: rgba(47,95,58,0.22); }
+    .product-status.warn { background: #fff6df; color: #80611a; }
+    .product-status.soon { background: #f4edf6; color: #604067; border-color: rgba(96,64,103,0.2); }
+    .product-overview-card > strong {
+      color: var(--deep);
+      font-family: var(--serif);
+      font-size: 34px;
+      line-height: 1;
+      font-weight: 600;
+    }
+    .product-overview-card > small {
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .product-overview-card p {
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.55;
+      margin: 0;
+    }
+    .product-overview-card button {
+      align-self: end;
+      width: max-content;
+      margin-top: auto;
+    }
+    .product-admin-hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      border: 1px solid rgba(184,144,47,0.24);
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 88% 5%, rgba(184,144,47,0.16), transparent 18rem),
+        linear-gradient(135deg, rgba(255,255,255,0.97), rgba(247,241,227,0.9));
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 14px 34px rgba(6,21,34,0.07);
+    }
+    .product-admin-hero h2 {
+      font-size: clamp(34px, 4vw, 48px);
+    }
+    .admin-roadmap-list {
+      display: grid;
+      gap: 0.75rem;
+    }
+    .admin-roadmap-list div {
+      border: 1px solid rgba(111,106,96,0.13);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.7);
+      padding: 0.85rem;
+    }
+    .admin-roadmap-list strong {
+      display: block;
+      color: var(--deep);
+      font-size: 14px;
+    }
+    .admin-roadmap-list span {
+      display: block;
+      margin-top: 0.22rem;
+      color: var(--stone);
+      font-size: 12px;
+      line-height: 1.5;
+    }
     .revenue-card {
       position: relative;
       overflow: hidden;
@@ -1280,8 +1460,15 @@
     @media (max-width: 860px) {
       .revenue-grid,
       .revenue-fee-stats,
-      .learn-admin-grid {
+      .learn-admin-grid,
+      .product-overview-grid,
+      .product-admin-grid,
+      .admin-command-hero {
         grid-template-columns: 1fr;
+      }
+      .product-admin-hero {
+        align-items: flex-start;
+        flex-direction: column;
       }
       .learn-scholarship-row {
         align-items: stretch;
@@ -2470,8 +2657,9 @@
         bottom: 0;
         z-index: 9000;
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        width: min(100%, 480px);
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(82px, 1fr);
+        width: min(100%, 640px);
         min-height: 76px;
         transform: translateX(-50%);
         padding: 0;
@@ -2481,6 +2669,8 @@
         background: rgba(246,241,232,0.95);
         backdrop-filter: blur(10px);
         box-shadow: 0 -10px 30px rgba(6,21,34,0.12);
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
       }
 
       .mobile-tab-link {
