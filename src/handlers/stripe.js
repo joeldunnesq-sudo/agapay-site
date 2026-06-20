@@ -13,6 +13,10 @@ import {
 } from "../lib/subscriptions.js";
 
 import {
+  createSubscriptionCheckoutForRegistration,
+} from "../lib/subscription-checkout.js";
+
+import {
   persistLearnBillingFromStripe,
 } from "../learn/billing.js";
 
@@ -77,7 +81,15 @@ export async function handleSubscriptionCheckout(request, env, reference) {
     body = {};
   }
 
-  const response = await createSubscriptionCheckoutForRegistration(request, env, reference, registration, body, "/admin");
+  const response = await createSubscriptionCheckoutForRegistration({
+    request,
+    env,
+    reference,
+    registration,
+    body,
+    returnPath: "/admin",
+    saveRegistrationRecord
+  });
   let payload = null;
   try {
     payload = await response.clone().json();

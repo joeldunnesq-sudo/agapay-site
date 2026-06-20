@@ -46,8 +46,11 @@ export function defaultSubscriptionTier(registration = {}) {
 }
 
 export function subscriptionTier(registration = {}) {
-  const selected = String(registration.subscriptionTier || registration.tier || "").trim().toLowerCase();
-  return subscriptionTiers.find((tier) => tier.id === selected) || subscriptionTiers.find((tier) => tier.id === defaultSubscriptionTier(registration)) || subscriptionTiers[1];
+  const isTierId = typeof registration === "string";
+  const selected = String(isTierId ? registration : registration.subscriptionTier || registration.tier || "").trim().toLowerCase();
+  return subscriptionTiers.find((tier) => tier.id === selected)
+    || (!isTierId ? subscriptionTiers.find((tier) => tier.id === defaultSubscriptionTier(registration)) : null)
+    || subscriptionTiers[1];
 }
 
 export function subscriptionReady(registration = {}) {

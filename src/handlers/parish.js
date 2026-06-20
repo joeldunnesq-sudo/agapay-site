@@ -64,15 +64,20 @@ import {
   verifyTurnstileIfConfigured,
 } from "../lib/core.js";
 
+import {
+  createSubscriptionCheckoutForRegistration,
+} from "../lib/subscription-checkout.js";
+
+import {
+  defaultSubscriptionTier as sharedDefaultSubscriptionTier,
+  publicSubscriptionTiers as sharedPublicSubscriptionTiers,
+  subscriptionReady as sharedSubscriptionReady,
+  subscriptionTier as sharedSubscriptionTier,
+} from "../lib/subscriptions.js";
+
 function d1(env) {
   return env.AGAPAY_DB || env.DB || null;
 }
-
-const subscriptionTiers = [
-  { key: "starter", name: "Starter", monthlyPrice: 99, annualPrice: 999 },
-  { key: "growth", name: "Growth", monthlyPrice: 199, annualPrice: 1999 },
-  { key: "cathedral", name: "Cathedral", monthlyPrice: 399, annualPrice: 3999 }
-];
 
 export const MAX_DONATION_CENTS = 5_000_000;
 
@@ -501,14 +506,11 @@ export function stripeAccountStatus(account) {
 }
 
 export function subscriptionTier(id) {
-  return subscriptionTiers.find((tier) => tier.id === id) || null;
+  return sharedSubscriptionTier(id);
 }
 
 export function defaultSubscriptionTier(registration) {
-  const type = normalizeCommunityType(registration.communityType);
-  if (type === "monastery") return "monastery_free";
-  if (type === "mission") return "mission";
-  return "parish";
+  return sharedDefaultSubscriptionTier(registration);
 }
 
 export function subscriptionStatusLabel(status) {
@@ -909,7 +911,7 @@ export async function sendAdminRegistrationNotice(env, appUrl, registration) {
 }
 
 export function publicSubscriptionTiers() {
-  return subscriptionTiers.map(({ stripePriceEnv, ...tier }) => tier);
+  return sharedPublicSubscriptionTiers();
 }
 
 export function stripeReady(registration) {
@@ -917,7 +919,7 @@ export function stripeReady(registration) {
 }
 
 export function subscriptionReady(registration) {
-  return ["active", "free_forever"].includes(registration.subscriptionStatus);
+  return sharedSubscriptionReady(registration);
 }
 
 export function weekWindow(date = new Date()) {
@@ -2779,14 +2781,15 @@ export async function handleParishSubscriptionCheckout(request, env, parishId) {
     body = {};
   }
 
-  return createSubscriptionCheckoutForRegistration(
+  return createSubscriptionCheckoutForRegistration({
     request,
     env,
-    found.key,
-    found.registration,
+    reference: found.key,
+    registration: found.registration,
     body,
-    `/parish/dashboard?parish=${encodeURIComponent(parishId)}`
-  );
+    returnPath: `/parish/dashboard?parish=${encodeURIComponent(parishId)}`,
+    saveRegistrationRecord
+  });
 }
 
 export async function handleParishSubscriptionRefresh(request, env, parishId) {
