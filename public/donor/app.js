@@ -231,6 +231,7 @@ function showGuestDonorDashboard() {
   setText("myAgapayLearnPlanner", "Ready");
   setText("myAgapayLearnTerm", "Set up term");
   setHtml("myAgapayLearnTier", "Limited Free");
+  setText("myAgapayGivingParish", "Choose church");
   setText("myAgapayRecurringCount", "0 Active");
   setText("myAgapayRecentAmount", "$0");
   setText("myAgapayGivingMonth", "$0");
@@ -1188,8 +1189,9 @@ function renderMyAgapayDashboard(data) {
   setText("myAgapayGreetingName", donorDisplayName(donor));
   setText("myAgapayDefaultParish", parish?.name || "Choose a church in Settings");
   renderMyAgapayLearnCard();
+  setText("myAgapayGivingParish", parish?.name || "Choose church");
   setText("myAgapayRecurringCount", `${summary.recurringCount || 0} Active`);
-  setText("myAgapayRecentAmount", latestOffering ? money(latestOffering.amountCents) : money(ytdCents));
+  setText("myAgapayRecentAmount", latestOffering ? money(latestOffering.amountCents) : "No gifts yet");
   setText("myAgapayGivingMonth", money(monthCents));
   setText("myAgapaySnapshotMonth", money(monthCents));
   setText("myAgapaySnapshotRecurring", String(summary.recurringCount || 0));

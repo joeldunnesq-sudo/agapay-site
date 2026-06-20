@@ -225,6 +225,29 @@ function bookBelongsToHouseholdStream(book = {}) {
   );
 }
 
+function resourceBookLike({ id = "", title = "", author = "", category = "", termId = "", formLabel = "", audienceLabel = "", planningMode = "", weeklyFrequency = "1x", minutes = "", color = "", sourceKind = "setup" } = {}) {
+  const resolvedTitle = text(title, "");
+  if (!resolvedTitle) return null;
+  return {
+    id,
+    title: resolvedTitle,
+    author,
+    category,
+    termId,
+    formLabel,
+    audienceLabel,
+    planningMode,
+    weeklyFrequency,
+    minutes,
+    color,
+    sourceKind,
+    startChapter: "",
+    currentChapter: "",
+    endChapter: "",
+    totalChapters: ""
+  };
+}
+
 export async function learnSetupIdentity(request, env) {
   const donor = await requireDonor(request, env);
   const email = normalizeEmail(donor?.email || "");
@@ -489,8 +512,50 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
   const currentTermId = setupSnapshot.term?.id || setupSnapshot.schoolYear?.currentTermId || setupSnapshot.terms?.[0]?.id || "";
   const forCurrentTerm = (item = {}) => !item.termId || !currentTermId || item.termId === currentTermId;
   const currentSubjects = list(setupSnapshot.subjects).filter(forCurrentTerm);
-  const currentBooks = list(setupSnapshot.books).filter(forCurrentTerm);
+  const literatureBooks = list(setupSnapshot.books).filter(forCurrentTerm);
   const currentFormationMaterials = list(setupSnapshot.formationMaterials).filter(forCurrentTerm);
+  const formation = setupSnapshot.formation || {};
+  const enrichmentBooks = list(formation.enrichmentBlocks).filter(forCurrentTerm).map((block, index) => resourceBookLike({
+    id: block.id || `enrichment_book_${index + 1}`,
+    title: block.title,
+    category: block.blockType || block.type || "Enrichment",
+    termId: block.termId || currentTermId,
+    formLabel: block.formLabel || "",
+    audienceLabel: block.planningMode === "forms" ? "Form Enrichment" : "Household Enrichment",
+    planningMode: block.planningMode || "family",
+    weeklyFrequency: block.weeklyFrequency || block.cadenceLabel || "1x",
+    minutes: block.minutesPlanned || block.minutes || "",
+    color: block.color || "",
+    sourceKind: "enrichment"
+  })).filter(Boolean);
+  const subjectBooks = currentSubjects.filter((subject) => subject.resource).map((subject, index) => resourceBookLike({
+    id: `subject_resource_${subject.id || index + 1}`,
+    title: subject.resource,
+    category: subject.title || subject.subjectType || "Form Subject",
+    termId: subject.termId || currentTermId,
+    formLabel: subject.formLabel || "",
+    audienceLabel: subject.childId ? "Child Resource" : "Form Resource",
+    planningMode: subject.planningMode || "forms",
+    weeklyFrequency: subject.weeklyFrequency || "1x",
+    minutes: subject.minutes || "",
+    color: subject.color || "",
+    sourceKind: "form-subject"
+  })).filter(Boolean);
+  const materialBooks = currentFormationMaterials.map((material, index) => resourceBookLike({
+    id: `formation_material_${material.id || index + 1}`,
+    title: material.source || material.title,
+    author: material.source && material.title ? material.title : "",
+    category: material.materialType || "Formation Material",
+    termId: material.termId || currentTermId,
+    formLabel: material.formLabel || "",
+    audienceLabel: material.planningMode === "forms" ? "Form Formation" : "Household Formation",
+    planningMode: material.planningMode || "family",
+    weeklyFrequency: material.weeklyFrequency || material.cadenceLabel || "1x",
+    minutes: material.minutes || "",
+    color: material.color || "",
+    sourceKind: "formation-material"
+  })).filter(Boolean);
+  const currentBooks = [...literatureBooks, ...enrichmentBooks, ...subjectBooks, ...materialBooks];
   next.household = { ...next.household, ...setupSnapshot.household };
   next.children = list(setupSnapshot.children);
   next.schoolYear = { ...next.schoolYear, ...setupSnapshot.schoolYear };
@@ -585,7 +650,6 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
     title: subject.title,
     sortOrder: index + 1
   }));
-  const formation = setupSnapshot.formation || {};
   if (list(formation.churchRhythms).length) {
     next.dashboardDaily = Object.fromEntries(Object.entries(next.dashboardDaily || {}).map(([date, day]) => [
       date,
