@@ -26,24 +26,24 @@ for (const routeFile of publicRoutes) {
 
 const directoryHtml = await readFile("public/directory.html", "utf8");
 assert.ok(
-  directoryHtml.includes("AGAPAY Directory Waitlist"),
-  "Directory page should render the current AGAPAY Directory waitlist experience"
+  directoryHtml.includes("AGAPAY Directory Intake"),
+  "Directory page should render the current AGAPAY Directory intake experience"
 );
 assert.ok(
-  directoryHtml.includes("id=\"waitlistForm\""),
-  "Directory page should include a waitlist form"
+  directoryHtml.includes("id=\"directoryForm\""),
+  "Directory page should include a directory intake form"
 );
 assert.ok(
-  directoryHtml.includes("id=\"waitlistEmail\""),
-  "Directory page should collect waitlist email addresses"
+  directoryHtml.includes("id=\"contactEmail\""),
+  "Directory page should collect contact email addresses"
 );
 assert.ok(
-  directoryHtml.includes("AGAPAY Directory waitlist"),
-  "Directory page should identify the Directory waitlist clearly"
+  directoryHtml.includes("Submit a listing"),
+  "Directory page should identify the Directory intake clearly"
 );
 assert.ok(
-  directoryHtml.includes("mailto:hello@agapay.app"),
-  "Directory waitlist should route submissions to AGAPAY"
+  directoryHtml.includes("/api/directory/intake"),
+  "Directory intake should route submissions to the AGAPAY API"
 );
 
 const registerHtml = await readFile("public/register.html", "utf8");

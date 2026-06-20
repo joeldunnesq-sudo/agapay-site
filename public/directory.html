@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AGAPAY Directory Waitlist</title>
-  <meta name="description" content="Join the AGAPAY Directory waitlist for Orthodox parishes, monasteries, schools, ministries, and trusted local resources." />
+  <title>AGAPAY Directory Intake</title>
+  <meta name="description" content="Submit a parish, business, monastery, ministry, school, or nonprofit for the AGAPAY Directory while the public directory is being prepared." />
   <link rel="canonical" href="https://agapay.app/directory" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
@@ -174,7 +174,24 @@
       display: grid;
       gap: 0.7rem;
     }
-    input {
+    .form-grid {
+      display: grid;
+      gap: 0.7rem;
+    }
+    .field {
+      display: grid;
+      gap: 0.32rem;
+    }
+    .field label {
+      color: #8b6a2a;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    input,
+    select,
+    textarea {
       width: 100%;
       min-height: 52px;
       border: 1px solid rgba(6, 21, 34, 0.15);
@@ -183,6 +200,11 @@
       background: #fff;
       color: var(--navy);
       font: inherit;
+    }
+    textarea {
+      min-height: 112px;
+      padding: 0.8rem 0.9rem;
+      resize: vertical;
     }
     button {
       min-height: 52px;
@@ -202,6 +224,7 @@
       font-size: 0.9rem;
       font-weight: 800;
     }
+    .status.error { color: #8f2f2f; }
     .back {
       display: inline-flex;
       width: fit-content;
@@ -213,7 +236,8 @@
     @media (min-width: 760px) {
       .hero { grid-template-columns: minmax(0, 1fr) minmax(320px, 0.42fr); align-items: center; }
       .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      form { grid-template-columns: minmax(0, 1fr) auto; }
+      .form-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .form-grid.three { grid-template-columns: 1fr 0.7fr 0.55fr; }
     }
     @media (max-width: 640px) {
       nav { display: none; }
@@ -242,9 +266,9 @@
     <section class="shell">
       <div class="hero">
         <div class="copy">
-          <div class="eyebrow">Directory waitlist</div>
+          <div class="eyebrow">Directory intake</div>
           <h1>Find Orthodox life near you.</h1>
-          <p class="lead">AGAPAY Directory is being prepared as a trusted guide to Orthodox parishes, monasteries, ministries, schools, businesses, and local resources.</p>
+          <p class="lead">AGAPAY Directory is being prepared as a trusted guide to Orthodox parishes, monasteries, ministries, schools, businesses, and local resources. Submit a listing now so we can start building the database before final launch.</p>
           <ul class="features">
             <li>Parishes, monasteries, and missions</li>
             <li>Orthodox schools, ministries, and vendors</li>
@@ -253,27 +277,121 @@
           </ul>
         </div>
         <article class="card">
-          <h2>Join the waitlist</h2>
-          <p>Leave your email and tell us you want early Directory updates.</p>
-          <form id="waitlistForm">
-            <input id="waitlistEmail" type="email" autocomplete="email" placeholder="you@example.com" required />
-            <button type="submit">Join Waitlist</button>
+          <h2>Submit a listing</h2>
+          <p>Add a church, business, monastery, ministry, school, or nonprofit for future Directory review.</p>
+          <form id="directoryForm">
+            <div class="form-grid two">
+              <div class="field">
+                <label for="kind">Listing type</label>
+                <select id="kind" name="kind" required>
+                  <option value="business">Orthodox business</option>
+                  <option value="church">Parish / mission / cathedral</option>
+                  <option value="monastery">Monastery / skete</option>
+                  <option value="ministry">Ministry</option>
+                  <option value="school">School / co-op</option>
+                  <option value="nonprofit">Nonprofit</option>
+                  <option value="other">Other Orthodox resource</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="name">Name</label>
+                <input id="name" name="name" autocomplete="organization" placeholder="St. Nicholas Orthodox Church" required />
+              </div>
+            </div>
+            <div class="form-grid two">
+              <div class="field">
+                <label for="contactName">Contact name</label>
+                <input id="contactName" name="contactName" autocomplete="name" placeholder="Primary contact" />
+              </div>
+              <div class="field">
+                <label for="contactEmail">Contact email</label>
+                <input id="contactEmail" name="contactEmail" type="email" autocomplete="email" placeholder="contact@example.com" required />
+              </div>
+            </div>
+            <div class="form-grid two">
+              <div class="field">
+                <label for="phone">Phone</label>
+                <input id="phone" name="phone" autocomplete="tel" placeholder="(555) 555-5555" />
+              </div>
+              <div class="field">
+                <label for="website">Website</label>
+                <input id="website" name="website" autocomplete="url" placeholder="https://example.org" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="address1">Address</label>
+              <input id="address1" name="address1" autocomplete="address-line1" placeholder="Street address" />
+            </div>
+            <div class="field">
+              <label for="address2">Address line 2</label>
+              <input id="address2" name="address2" autocomplete="address-line2" placeholder="Suite, building, or parish hall" />
+            </div>
+            <div class="form-grid three">
+              <div class="field">
+                <label for="city">City</label>
+                <input id="city" name="city" autocomplete="address-level2" />
+              </div>
+              <div class="field">
+                <label for="state">State / region</label>
+                <input id="state" name="state" autocomplete="address-level1" />
+              </div>
+              <div class="field">
+                <label for="postalCode">ZIP</label>
+                <input id="postalCode" name="postalCode" autocomplete="postal-code" />
+              </div>
+            </div>
+            <div class="form-grid two">
+              <div class="field">
+                <label for="jurisdiction">Jurisdiction / affiliation</label>
+                <input id="jurisdiction" name="jurisdiction" placeholder="OCA, GOARCH, Antiochian, ROCOR..." />
+              </div>
+              <div class="field">
+                <label for="category">Category</label>
+                <input id="category" name="category" placeholder="Books, parish, iconographer, school..." />
+              </div>
+            </div>
+            <div class="field">
+              <label for="description">Description</label>
+              <textarea id="description" name="description" placeholder="Briefly describe the church, business, ministry, or resource."></textarea>
+            </div>
+            <div class="field">
+              <label for="services">Helpful notes</label>
+              <textarea id="services" name="services" placeholder="Products, services, parish schedule notes, verification source, service area, shipping, or anything else helpful."></textarea>
+            </div>
+            <button type="submit">Submit Directory Listing</button>
           </form>
-          <div class="status" id="waitlistStatus" aria-live="polite"></div>
+          <div class="status" id="directoryStatus" aria-live="polite"></div>
           <a class="back" href="/">Back to AGAPAY</a>
         </article>
       </div>
     </section>
   </main>
   <script>
-    document.getElementById("waitlistForm").addEventListener("submit", (event) => {
+    document.getElementById("directoryForm").addEventListener("submit", async (event) => {
       event.preventDefault();
-      const email = document.getElementById("waitlistEmail").value.trim();
-      if (!email || !email.includes("@")) return;
-      const subject = encodeURIComponent("AGAPAY Directory waitlist");
-      const body = encodeURIComponent(`Please add me to the AGAPAY Directory waitlist.\n\nEmail: ${email}`);
-      document.getElementById("waitlistStatus").textContent = "Opening your email app so we can add you to the waitlist.";
-      window.location.href = `mailto:hello@agapay.app?subject=${subject}&body=${body}`;
+      const form = event.currentTarget;
+      const button = form.querySelector("button[type='submit']");
+      const status = document.getElementById("directoryStatus");
+      const data = Object.fromEntries(new FormData(form).entries());
+      status.classList.remove("error");
+      status.textContent = "Submitting your Directory listing...";
+      button.disabled = true;
+      try {
+        const response = await fetch("/api/directory/intake", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...data, source: "directory-page" })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Unable to submit this listing.");
+        form.reset();
+        status.textContent = "Thank you. Your Directory information has been received for review.";
+      } catch (error) {
+        status.classList.add("error");
+        status.textContent = error.message || "Unable to submit this listing. Please try again.";
+      } finally {
+        button.disabled = false;
+      }
     });
   </script>
 </body>

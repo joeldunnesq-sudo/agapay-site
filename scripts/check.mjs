@@ -69,10 +69,10 @@ assert.ok(registerHtml.includes("requiresJurisdiction"), "registration should br
 assert.ok(registerHtml.includes("requiresWebsite"), "registration should require websites for businesses");
 
 const directoryPage = await readFile("public/directory.html", "utf8");
-assert.ok(directoryPage.includes("AGAPAY Directory Waitlist"), "directory should render the waitlist experience");
-assert.ok(directoryPage.includes("Join the waitlist"), "directory should invite organizations to join the waitlist");
-assert.ok(directoryPage.includes("parishes, monasteries, schools, ministries"), "directory should describe Orthodox organization coverage");
-assert.ok(directoryPage.includes("mailto:hello@agapay.app"), "directory waitlist should route signups to the AGAPAY inbox");
+assert.ok(directoryPage.includes("AGAPAY Directory Intake"), "directory should render the intake experience");
+assert.ok(directoryPage.includes("Submit a listing"), "directory should invite organizations to submit listings");
+assert.ok(directoryPage.includes("parishes, monasteries, ministries, schools, businesses"), "directory should describe Orthodox organization coverage");
+assert.ok(directoryPage.includes("/api/directory/intake"), "directory intake should post to the AGAPAY API");
 
 
 const donorApp = await readFile("public/donor/app.js", "utf8");
