@@ -1,4 +1,4 @@
-const AGAPAY_CACHE = "agapay-static-v16";
+const AGAPAY_CACHE = "agapay-static-v17";
 
 const STATIC_ASSETS = [
   "/myagapay/login",

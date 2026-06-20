@@ -6,7 +6,7 @@ const donorStore = {
   shellVersion: "agapayDonorShellVersion"
 };
 
-const DONOR_SHELL_VERSION = "2026-06-16-giving-hand-v4";
+const DONOR_SHELL_VERSION = "2026-06-19-myagapay-auth-redirect";
 
 async function refreshStaleDashboardShell() {
   if (!("serviceWorker" in navigator) || !("caches" in window)) return;
@@ -82,6 +82,30 @@ function setHtml(id, value) {
 
 function isDonorUnauthorized(err) {
   return err?.status === 401 || String(err?.message || "").toLowerCase() === "unauthorized";
+}
+
+function isMyAgapayHomePath() {
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  return path === "/myagapay" || path === "/my-agapay" || path === "/donor";
+}
+
+function redirectToMyAgapayLogin(reason = "expired") {
+  clearDonorSession();
+  if (!isMyAgapayHomePath()) return false;
+  const next = `${window.location.pathname}${window.location.search || ""}`;
+  const loginUrl = new URL("/myagapay/login", window.location.origin);
+  loginUrl.searchParams.set("next", next);
+  if (reason) loginUrl.searchParams.set("reason", reason);
+  window.location.replace(loginUrl.toString());
+  return true;
+}
+
+function donorLoginReturnPath() {
+  const params = new URLSearchParams(window.location.search);
+  const next = params.get("next") || "/myagapay/";
+  return next.startsWith("/myagapay") || next.startsWith("/my-agapay") || next.startsWith("/donor")
+    ? next
+    : "/myagapay/";
 }
 
 function donorCacheEmail() {
@@ -863,7 +887,7 @@ async function loginFromPage(event) {
     });
     saveDonorSession(data);
     setDonorStatus("Signed in. Opening My AGAPAY...", "success");
-    window.location.href = "/myagapay/";
+    window.location.href = donorLoginReturnPath();
   } catch (err) {
     clearDonorSession();
     const message = isDonorUnauthorized(err)
@@ -1272,6 +1296,7 @@ function renderDonorDashboardPayload(data) {
 async function loadDonorDashboardPage() {
   const session = donorSession();
   if (!session.email || !session.token) {
+    if (redirectToMyAgapayLogin("signin-required")) return;
     showGuestDonorDashboard();
     return;
   }
@@ -1284,6 +1309,7 @@ async function loadDonorDashboardPage() {
     setDonorStatus("");
   } catch (err) {
     if (isDonorUnauthorized(err)) {
+      if (redirectToMyAgapayLogin("session-expired")) return;
       clearDonorSession();
       showGuestDonorDashboard();
       return;
