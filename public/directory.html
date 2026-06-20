@@ -11,184 +11,243 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site-chrome.css" />
   <style>
     :root {
-      --navy: #061522;
-      --navy-2: #0B2130;
-      --paper: #FFFDF8;
-      --cream: #F6F1E8;
-      --gold: #C9A25B;
-      --ink: #171715;
-      --muted: #70695D;
-      --line: rgba(201, 162, 91, 0.3);
-      --serif: "Cormorant Garamond", Georgia, serif;
-      --sans: "DM Sans", Arial, sans-serif;
+      --directory-navy: #061522;
+      --directory-navy-2: #0B2130;
+      --directory-paper: #FFFDF8;
+      --directory-cream: #F6F1E8;
+      --directory-gold: #C9A25B;
+      --directory-ink: #171715;
+      --directory-muted: #70695D;
+      --directory-line: rgba(201, 162, 91, 0.32);
+      --directory-serif: "Cormorant Garamond", Georgia, serif;
+      --directory-sans: "DM Sans", Arial, sans-serif;
     }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      background: var(--cream);
-      color: var(--ink);
-      font-family: var(--sans);
-    }
-    a { color: inherit; }
-    .top {
-      background: linear-gradient(135deg, var(--navy), var(--navy-2));
-      color: var(--paper);
-      border-bottom: 1px solid rgba(201, 162, 91, 0.44);
-    }
-    .top-inner {
-      width: min(1180px, calc(100% - 2rem));
-      min-height: 76px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.75rem;
-      text-decoration: none;
-    }
-    .brand img { width: 42px; height: 42px; }
-    .brand strong {
-      display: block;
-      color: var(--gold);
-      font-family: var(--serif);
-      font-size: 1.55rem;
-      letter-spacing: 0.12em;
-    }
-    .brand span {
-      display: block;
-      margin-top: -0.25rem;
-      font-size: 0.68rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-    }
-    nav {
-      display: flex;
-      gap: 1rem;
-      font-size: 0.78rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    nav a { text-decoration: none; opacity: 0.86; }
-    main {
-      min-height: calc(100vh - 76px);
-      display: grid;
-      place-items: center;
-      padding: 3rem 1rem;
       background:
-        radial-gradient(circle at 80% 12%, rgba(201, 162, 91, 0.2), transparent 30%),
-        linear-gradient(180deg, rgba(255, 253, 248, 0.82), rgba(246, 241, 232, 0.96));
+        radial-gradient(circle at 18% 8%, rgba(201, 162, 91, 0.14), transparent 30rem),
+        linear-gradient(180deg, #fffaf0 0%, var(--directory-cream) 46%, #fffdf8 100%);
+      color: var(--directory-ink);
+      font-family: var(--directory-sans);
     }
-    .shell {
-      width: min(1120px, 100%);
-      display: grid;
-      gap: 1rem;
-    }
-    .hero {
-      position: relative;
+
+    a { color: inherit; }
+
+    .directory-page {
       overflow: hidden;
-      display: grid;
-      gap: 2rem;
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      padding: clamp(1.25rem, 4vw, 3rem);
-      background: rgba(255, 253, 248, 0.9);
-      box-shadow: 0 24px 70px rgba(6, 21, 34, 0.14);
+      padding: clamp(2rem, 5vw, 4.5rem) 1rem clamp(3rem, 6vw, 5.5rem);
     }
-    .hero::after {
+
+    .directory-shell {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+    }
+
+    .directory-hero {
+      position: relative;
+      display: grid;
+      gap: clamp(1.5rem, 4vw, 3rem);
+      align-items: center;
+      min-height: clamp(520px, 72vh, 690px);
+      border-bottom: 1px solid var(--directory-line);
+    }
+
+    .directory-hero::before {
       content: "";
       position: absolute;
-      right: -3rem;
-      bottom: -3rem;
-      width: 23rem;
-      height: 23rem;
-      background: url("/images/directory/church-sketch-directory.png") center / contain no-repeat;
-      opacity: 0.14;
+      inset: -3rem -10vw auto;
+      height: 18rem;
+      background:
+        radial-gradient(circle at 55% 40%, rgba(201, 162, 91, 0.16), transparent 28rem),
+        linear-gradient(180deg, rgba(255, 253, 248, 0.9), rgba(255, 253, 248, 0));
       pointer-events: none;
     }
-    .copy, .card { position: relative; z-index: 1; }
-    .eyebrow {
-      color: #9b711f;
+
+    .directory-hero-copy,
+    .directory-hero-art {
+      position: relative;
+      z-index: 1;
+    }
+
+    .directory-eyebrow {
+      color: #9B711F;
       font-size: 0.78rem;
       font-weight: 900;
-      letter-spacing: 0.16em;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
     }
-    h1 {
-      max-width: 760px;
-      margin: 0.55rem 0 0;
-      color: var(--navy);
-      font-family: var(--serif);
-      font-size: clamp(3.25rem, 6.2vw, 5.8rem);
-      line-height: 0.9;
+
+    .directory-hero h1 {
+      max-width: 690px;
+      margin: 0.6rem 0 0;
+      color: var(--directory-navy);
+      font-family: var(--directory-serif);
+      font-size: clamp(3.45rem, 7.5vw, 6.9rem);
+      font-weight: 600;
+      line-height: 0.86;
       letter-spacing: 0;
     }
-    .lead {
+
+    .directory-lead {
       max-width: 610px;
-      margin: 1rem 0 0;
-      color: var(--muted);
-      font-size: 1.06rem;
-      line-height: 1.65;
+      margin: 1.2rem 0 0;
+      color: var(--directory-muted);
+      font-size: clamp(1rem, 1.6vw, 1.13rem);
+      line-height: 1.7;
     }
-    .features {
+
+    .directory-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      margin-top: 1.55rem;
+    }
+
+    .directory-button,
+    .directory-button-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      border-radius: 8px;
+      padding: 0 1.2rem;
+      font-weight: 900;
+      text-decoration: none;
+    }
+
+    .directory-button {
+      background: linear-gradient(135deg, var(--directory-gold), #B8862F);
+      color: var(--directory-navy);
+      box-shadow: 0 16px 32px rgba(157, 111, 29, 0.18);
+    }
+
+    .directory-button-secondary {
+      border: 1px solid rgba(6, 21, 34, 0.22);
+      background: rgba(255, 253, 248, 0.72);
+      color: var(--directory-navy);
+    }
+
+    .directory-features {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 0.65rem;
-      margin-top: 1.35rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.72rem 1rem;
+      max-width: 610px;
+      margin: 1.45rem 0 0;
       padding: 0;
       list-style: none;
     }
-    .features li {
+
+    .directory-features li {
       display: flex;
       gap: 0.55rem;
       color: rgba(6, 21, 34, 0.78);
-      font-weight: 700;
+      font-size: 0.94rem;
+      font-weight: 800;
+      line-height: 1.35;
     }
-    .features li::before { content: "+"; color: var(--gold); font-weight: 900; }
-    .card {
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 1rem;
-      background: linear-gradient(180deg, #fff, rgba(246, 241, 232, 0.88));
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+
+    .directory-features li::before {
+      content: "+";
+      color: var(--directory-gold);
+      font-weight: 900;
     }
-    .card h2 {
+
+    .directory-hero-art {
+      min-height: min(72vw, 560px);
+      display: grid;
+      place-items: center;
+      isolation: isolate;
+    }
+
+    .directory-hero-art::before {
+      content: "";
+      position: absolute;
+      inset: 5% -7% -3% 4%;
+      z-index: -1;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 48% 50%, rgba(255, 253, 248, 0.82), rgba(246, 241, 232, 0.32) 52%, transparent 72%);
+      filter: blur(2px);
+    }
+
+    .directory-hero-art img {
+      width: min(100%, 670px);
+      height: auto;
+      opacity: 0.9;
+      mix-blend-mode: multiply;
+      filter: sepia(0.12) contrast(1.04) drop-shadow(0 28px 42px rgba(92, 66, 22, 0.12));
+      -webkit-mask-image: radial-gradient(ellipse at center, #000 62%, rgba(0, 0, 0, 0.68) 78%, transparent 100%);
+      mask-image: radial-gradient(ellipse at center, #000 62%, rgba(0, 0, 0, 0.68) 78%, transparent 100%);
+    }
+
+    .directory-intake {
+      padding: clamp(2.25rem, 5vw, 4.5rem) 0 0;
+    }
+
+    .directory-intake-heading {
+      display: grid;
+      gap: 0.55rem;
+      max-width: 760px;
+      margin: 0 auto clamp(1.35rem, 3vw, 2rem);
+      text-align: center;
+    }
+
+    .directory-intake-heading h2 {
       margin: 0;
-      color: var(--navy);
-      font-family: var(--serif);
-      font-size: 2rem;
-      line-height: 1;
+      color: var(--directory-navy);
+      font-family: var(--directory-serif);
+      font-size: clamp(2.45rem, 5vw, 4rem);
+      font-weight: 600;
+      line-height: 0.95;
     }
-    .card p {
-      margin: 0.45rem 0 1rem;
-      color: var(--muted);
-      line-height: 1.5;
+
+    .directory-intake-heading p {
+      margin: 0;
+      color: var(--directory-muted);
+      line-height: 1.65;
     }
+
+    .directory-card {
+      width: min(920px, 100%);
+      margin: 0 auto;
+      border: 1px solid var(--directory-line);
+      border-radius: 18px;
+      padding: clamp(1rem, 3vw, 1.65rem);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.93), rgba(255, 253, 248, 0.88)),
+        radial-gradient(circle at 100% 0%, rgba(201, 162, 91, 0.12), transparent 18rem);
+      box-shadow: 0 24px 70px rgba(6, 21, 34, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.76);
+    }
+
     form {
       display: grid;
-      gap: 0.7rem;
+      gap: 0.75rem;
     }
+
     .form-grid {
       display: grid;
-      gap: 0.7rem;
+      gap: 0.75rem;
     }
+
     .field {
       display: grid;
-      gap: 0.32rem;
+      gap: 0.34rem;
     }
+
     .field label {
-      color: #8b6a2a;
+      color: #8B6A2A;
       font-size: 0.72rem;
       font-weight: 900;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
+
     input,
     select,
     textarea {
@@ -198,87 +257,117 @@
       border-radius: 10px;
       padding: 0 0.9rem;
       background: #fff;
-      color: var(--navy);
+      color: var(--directory-navy);
       font: inherit;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
     }
+
     textarea {
       min-height: 112px;
       padding: 0.8rem 0.9rem;
       resize: vertical;
     }
-    button {
-      min-height: 52px;
+
+    .directory-submit {
+      min-height: 54px;
       border: 0;
       border-radius: 10px;
       padding: 0 1rem;
-      background: linear-gradient(135deg, var(--gold), #b8862f);
-      color: var(--navy);
+      background: linear-gradient(135deg, var(--directory-gold), #B8862F);
+      color: var(--directory-navy);
       cursor: pointer;
       font: inherit;
       font-weight: 900;
+      box-shadow: 0 14px 28px rgba(157, 111, 29, 0.18);
     }
+
+    .directory-submit:disabled {
+      cursor: wait;
+      opacity: 0.72;
+    }
+
     .status {
       min-height: 1.25rem;
       margin-top: 0.8rem;
-      color: #285c36;
+      color: #285C36;
       font-size: 0.9rem;
       font-weight: 800;
     }
-    .status.error { color: #8f2f2f; }
-    .back {
-      display: inline-flex;
-      width: fit-content;
-      margin-top: 1.2rem;
-      color: var(--navy);
-      font-weight: 900;
-      text-decoration: none;
-    }
-    @media (min-width: 760px) {
-      .hero { grid-template-columns: minmax(0, 1fr) minmax(320px, 0.42fr); align-items: center; }
-      .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .status.error { color: #8F2F2F; }
+
+    @media (min-width: 820px) {
+      .directory-hero {
+        grid-template-columns: minmax(0, 0.86fr) minmax(360px, 0.9fr);
+      }
+
       .form-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .form-grid.three { grid-template-columns: 1fr 0.7fr 0.55fr; }
     }
-    @media (max-width: 640px) {
-      nav { display: none; }
-      .top-inner { width: min(100% - 1.5rem, 1180px); }
-      main { padding: 1rem 0.75rem 2rem; }
-      .brand strong { font-size: 1.25rem; }
-      h1 { font-size: clamp(2.9rem, 14vw, 4.2rem); }
+
+    @media (max-width: 819px) {
+      .directory-page {
+        padding-top: 1.5rem;
+      }
+
+      .directory-hero {
+        min-height: 0;
+      }
+
+      .directory-hero-art {
+        min-height: 0;
+        order: -1;
+      }
+
+      .directory-hero-art img {
+        width: min(100%, 560px);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .directory-features {
+        grid-template-columns: 1fr;
+      }
+
+      .directory-actions {
+        display: grid;
+      }
     }
   </style>
+  <script src="/site-chrome.js" defer></script>
 </head>
 <body>
-  <header class="top">
-    <div class="top-inner">
-      <a class="brand" href="/" aria-label="AGAPAY home">
-        <img src="/mark.png" alt="" />
-        <span><strong>AGAPAY</strong><span>Faith in Action. Together.</span></span>
-      </a>
-      <nav aria-label="Main navigation">
-        <a href="/giving">Giving</a>
-        <a href="/learn">Learn</a>
-        <a href="/marketplace">Marketplace</a>
-      </nav>
-    </div>
-  </header>
-  <main>
-    <section class="shell">
-      <div class="hero">
-        <div class="copy">
-          <div class="eyebrow">Directory intake</div>
-          <h1>Find Orthodox life near you.</h1>
-          <p class="lead">AGAPAY Directory is being prepared as a trusted guide to Orthodox parishes, monasteries, ministries, schools, businesses, and local resources. Submit a listing now so we can start building the database before final launch.</p>
-          <ul class="features">
+  <main class="directory-page">
+    <div class="directory-shell">
+      <section class="directory-hero" aria-labelledby="directory-title">
+        <div class="directory-hero-copy">
+          <div class="directory-eyebrow">AGAPAY Directory</div>
+          <h1 id="directory-title">Find Orthodox life near you.</h1>
+          <p class="directory-lead">AGAPAY Directory is being prepared as a trusted guide to Orthodox parishes, monasteries, ministries, schools, businesses, and local resources. Submit a listing now so we can start building the database before final launch.</p>
+          <div class="directory-actions">
+            <a class="directory-button" href="#directory-intake">Submit a listing</a>
+            <a class="directory-button-secondary" href="/vision">See the AGAPAY vision</a>
+          </div>
+          <ul class="directory-features">
             <li>Parishes, monasteries, and missions</li>
             <li>Orthodox schools, ministries, and vendors</li>
             <li>Search by location and category</li>
             <li>Designed for faithful discovery</li>
           </ul>
         </div>
-        <article class="card">
-          <h2>Submit a listing</h2>
-          <p>Add a church, business, monastery, ministry, school, or nonprofit for future Directory review.</p>
+        <div class="directory-hero-art" aria-hidden="true">
+          <img src="/images/directory/church-sketch-directory.png" alt="" />
+        </div>
+      </section>
+
+      <section class="directory-intake" id="directory-intake" aria-labelledby="directory-intake-title">
+        <div class="directory-intake-heading">
+          <div class="directory-eyebrow">Build the Directory with us</div>
+          <h2 id="directory-intake-title">Submit a listing</h2>
+          <p>Add a church, business, monastery, ministry, school, or nonprofit for future Directory review. We will use submissions to prepare verified listings before the full public Directory opens.</p>
+        </div>
+
+        <article class="directory-card">
           <form id="directoryForm">
             <div class="form-grid two">
               <div class="field">
@@ -358,13 +447,12 @@
               <label for="services">Helpful notes</label>
               <textarea id="services" name="services" placeholder="Products, services, parish schedule notes, verification source, service area, shipping, or anything else helpful."></textarea>
             </div>
-            <button type="submit">Submit Directory Listing</button>
+            <button class="directory-submit" type="submit">Submit Directory Listing</button>
           </form>
           <div class="status" id="directoryStatus" aria-live="polite"></div>
-          <a class="back" href="/">Back to AGAPAY</a>
         </article>
-      </div>
-    </section>
+      </section>
+    </div>
   </main>
   <script>
     document.getElementById("directoryForm").addEventListener("submit", async (event) => {

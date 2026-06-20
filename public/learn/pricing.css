@@ -62,8 +62,7 @@ body.learn-overview-page {
   min-height: calc(100svh - 84px);
 }
 
-.overview-hero::before,
-.overview-hero::after {
+.overview-hero::before {
   content: "";
   position: absolute;
   pointer-events: none;
@@ -76,17 +75,6 @@ body.learn-overview-page {
   height: 18rem;
   border-left: 1px solid rgba(201, 162, 91, 0.4);
   border-top: 1px solid rgba(201, 162, 91, 0.22);
-}
-
-.overview-hero::after {
-  right: -2rem;
-  top: 2rem;
-  width: 16rem;
-  height: 16rem;
-  border-radius: 999px;
-  background: url("/pantocrator.png") center / cover;
-  filter: sepia(0.2);
-  opacity: 0.16;
 }
 
 .eyebrow {
@@ -716,8 +704,13 @@ h1 {
   box-shadow: none;
 }
 
-.wisdom-mini-quotes blockquote {
+.learn-wisdom-band .wisdom-mini-quotes blockquote {
+  color: var(--learn-night);
   font-size: clamp(1.25rem, 2vw, 1.65rem);
+}
+
+.learn-wisdom-band .wisdom-mini-quotes figcaption {
+  color: var(--learn-gold-deep);
 }
 
 .designed-section {
