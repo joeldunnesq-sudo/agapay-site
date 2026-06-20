@@ -44,6 +44,8 @@ assert.ok(backendSources.includes("PARISH_ID_INDEX_PREFIX"), "worker should main
 assert.ok(backendSources.includes("handleAdminRebuildIndexes"), "worker should expose an admin-only index rebuild endpoint");
 assert.ok(backendSources.includes("handleAdminReleaseStatus"), "worker should expose an admin release status endpoint");
 assert.ok(worker.includes('url.pathname === "/api/admin/release-status"'), "worker should route the admin release status endpoint");
+assert.ok(worker.includes('["/parish/login", "/giving/login"]'), "legacy parish login should redirect to the Giving login URL");
+assert.ok(worker.includes('url.pathname === "/giving/login"'), "worker should serve the Giving login URL from the parish login shell");
 assert.ok(backendSources.includes("checkoutFinancials("), "worker should centralize donation fee calculations");
 assert.ok(backendSources.includes("subscription_data[application_fee_percent]"), "worker should apply AGAPAY donation fees to recurring donor gifts");
 assert.ok(backendSources.includes("Parish SaaS subscription billing is created in a separate flow"), "worker should keep parish subscription billing separate from donation fees");
@@ -106,7 +108,7 @@ assert.ok(giveHtml.includes("/security.js") && giveHtml.includes("data-agapay-tu
 assert.ok(giveHtml.includes("agapaySecurityPayload"), "public giving checkout should send Turnstile tokens when configured");
 const campaignPage = await readFile("public/give/parish-giving/app.js", "utf8");
 assert.ok(campaignPage.includes("/api/campaign?"), "campaign share page should load campaign data from the Worker API");
-assert.ok(campaignPage.includes("giftType=alms"), "campaign share page should send donors into the alms campaign checkout flow");
+assert.ok(campaignPage.includes("/api/create-checkout-session") && campaignPage.includes('giftType: "campaign"'), "campaign share page should create a direct Stripe checkout for campaign gifts");
 assert.ok(worker.includes('url.pathname === "/api/campaign"'), "worker should route public campaign lookup API");
 assert.ok(worker.includes('endsWith("/campaign-upload")'), "worker should route authenticated parish campaign photo uploads");
 assert.ok(worker.includes('startsWith("/give/parish-giving/")'), "worker should serve campaign share URLs instead of the generic giving form");

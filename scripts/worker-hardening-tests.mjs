@@ -650,7 +650,7 @@ async function withMockFetch(handler, run) {
   }), testEnv);
   assert.equal(resetRequest.status, 200);
   const resetBody = await json(resetRequest);
-  assert.match(resetBody.resetUrl, /\/parish\/login\?reset=1/);
+  assert.match(resetBody.resetUrl, /\/giving\/login\?reset=1/);
   const resetToken = new URL(resetBody.resetUrl).searchParams.get("token");
   assert.ok(resetToken);
 

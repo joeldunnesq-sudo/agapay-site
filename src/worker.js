@@ -594,6 +594,9 @@ const DASHBOARD_LEGACY_REDIRECTS = new Map([
   ["/donor/commemorations", "/myagapay/giving/commemorations"],
   ["/donor/calendar", "/myagapay/giving/calendar"],
   ["/donor/settings", "/myagapay/account"],
+  ["/parish/login", "/giving/login"],
+  ["/parish/login/", "/giving/login"],
+  ["/parish/login.html", "/giving/login"],
   ["/learn/dashboard", "/myagapay/learn"],
   ["/learn/planner", "/myagapay/learn/planner"],
   ["/learn/formation", "/myagapay/learn/formation"],
@@ -623,6 +626,10 @@ function cleanAssetRequest(request) {
   }
   if (url.pathname === "/give/form") {
     url.pathname = "/give/form";
+    return new Request(url, request);
+  }
+  if (url.pathname === "/giving/login" || url.pathname === "/giving/login/") {
+    url.pathname = "/parish/login.html";
     return new Request(url, request);
   }
   if (url.pathname === "/give/find-church" || url.pathname === "/giving/find-church") {

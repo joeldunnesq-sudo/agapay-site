@@ -19,6 +19,25 @@
   }
 
   function el(id) { return document.getElementById(id); }
+  let activeCampaign = null;
+  let activeParish = null;
+  let activeCanonicalUrl = "";
+
+  function firstPhotoUrl(photos) {
+    const first = Array.isArray(photos) ? photos.find(Boolean) : null;
+    return typeof first === "string" ? first : first?.url || "";
+  }
+
+  function campaignPhotoUrl(campaign, parish) {
+    return campaign.coverPhotoUrl
+      || campaign.coverUrl
+      || campaign.imageUrl
+      || campaign.photoUrl
+      || firstPhotoUrl(campaign.photos)
+      || parish.imageUrl
+      || parish.logoUrl
+      || "";
+  }
 
   function parseParams() {
     const url   = new URL(window.location.href);
@@ -43,7 +62,7 @@
   function applyOgTags(campaign, parish, canonicalUrl) {
     const title = campaign.name + " — " + parish.name;
     const desc  = (campaign.description || "").substring(0, 200).replace(/\n/g, " ") || ("Support " + parish.name + " through AGAPAY.");
-    const img   = campaign.coverPhotoUrl || parish.imageUrl || "";
+    const img   = campaignPhotoUrl(campaign, parish);
     document.title = title + " | AGAPAY";
     setMeta("og:title", title); setMeta("og:description", desc);
     setMeta("og:image", img);   setMeta("og:url", canonicalUrl);
@@ -65,13 +84,17 @@
   }
 
   function renderHero(campaign, parish) {
-    const src = campaign.coverPhotoUrl || parish.imageUrl || "";
+    const src = campaignPhotoUrl(campaign, parish);
     if (src) {
       const img = el("heroImg");
       img.onload  = () => { el("heroSkeleton").hidden = true; img.hidden = false; el("heroOverlay").hidden = false; el("heroBadge").hidden = false; };
       img.onerror = () => { el("heroSkeleton").hidden = true; };
       img.src = src; img.alt = campaign.name;
-    } else { el("heroSkeleton").hidden = true; }
+    } else {
+      el("heroSkeleton").hidden = true;
+      el("heroOverlay").hidden = true;
+      el("heroBadge").hidden = false;
+    }
     el("heroBadge").textContent = campaign.status === "completed" ? "Campaign Ended" : campaign.status === "paused" ? "Paused" : "Active Campaign";
   }
 
@@ -101,6 +124,96 @@
       div.className = "update-item";
       div.innerHTML = '<div class="update-line"></div><div><div class="update-date">' + formatDate(u.date) + '</div><div class="update-body">' + escHtml(u.body || "") + '</div></div>';
       list.appendChild(div);
+    });
+  }
+
+  function selectedCampaignKey(campaign) {
+    return campaign.id || campaign.slug || campaign.feastId || campaign.name || "campaign";
+  }
+
+  async function handleCampaignCheckout(event) {
+    event.preventDefault();
+    const status = el("campaignCheckoutStatus");
+    const submit = el("giveBtn");
+    if (!activeCampaign || !activeParish) return;
+
+    const amount = Number(el("campaignAmount")?.value || 0);
+    const firstName = String(el("campaignFirstName")?.value || "").trim();
+    const lastName = String(el("campaignLastName")?.value || "").trim();
+    const email = String(el("campaignEmail")?.value || "").trim();
+    if (!amount || amount <= 0) {
+      status.textContent = "Enter a gift amount to continue.";
+      status.className = "campaign-checkout-status error";
+      return;
+    }
+    if (!firstName || !email) {
+      status.textContent = "Enter your first name and email to continue.";
+      status.className = "campaign-checkout-status error";
+      return;
+    }
+
+    const original = submit.textContent;
+    submit.disabled = true;
+    submit.textContent = "Opening secure checkout...";
+    status.textContent = "";
+    status.className = "campaign-checkout-status";
+
+    try {
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          parishId: activeParish.parishId || activeParish.id || "",
+          giftType: "campaign",
+          amount,
+          frequency: "once",
+          campaign: selectedCampaignKey(activeCampaign),
+          campaignDescription: activeCampaign.name || "",
+          paymentMethod: "card",
+          coverFees: true,
+          firstName,
+          lastName,
+          email,
+          source: "campaign_page",
+          returnPath: window.location.pathname + window.location.search,
+          ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
+        })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.detail || result.error || "Unable to start checkout");
+      if (result.url) {
+        window.location.href = result.url;
+        return;
+      }
+      throw new Error(result.message || "Stripe checkout did not return a link.");
+    } catch (err) {
+      status.textContent = err.message || "Checkout failed. Please try again.";
+      status.className = "campaign-checkout-status error";
+    } finally {
+      submit.disabled = false;
+      submit.textContent = original;
+    }
+  }
+
+  function wireCheckoutControls() {
+    const amountInput = el("campaignAmount");
+    document.querySelectorAll(".quick-amount").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".quick-amount").forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+        if (amountInput) amountInput.value = button.dataset.amount || "50";
+      });
+    });
+    amountInput?.addEventListener("input", () => {
+      document.querySelectorAll(".quick-amount").forEach((button) => {
+        button.classList.toggle("active", Number(button.dataset.amount) === Number(amountInput.value));
+      });
+    });
+    el("campaignCheckoutForm")?.addEventListener("submit", handleCampaignCheckout);
+    el("topbarGiveBtn")?.addEventListener("click", (event) => {
+      event.preventDefault();
+      el("campaignAmount")?.focus();
+      document.querySelector(".progress-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 
@@ -143,12 +256,15 @@
       const campaign = data.campaign;
       const parish   = data.parish;
       const canonicalUrl = window.location.origin + "/give/parish-giving/" + encodeURIComponent(slug) + "?parish=" + encodeURIComponent(parishId);
-      const giveUrl  = "/give/form?parish=" + encodeURIComponent(parish.parishId || parish.id || "") + "&giftType=alms&campaign=" + encodeURIComponent(campaign.id || campaign.slug || campaign.name || "");
+      activeCampaign = campaign;
+      activeParish = parish;
+      activeCanonicalUrl = canonicalUrl;
 
       applyOgTags(campaign, parish, canonicalUrl);
       renderHero(campaign, parish);
 
-      if (parish.imageUrl) { el("parishAvatar").src = parish.imageUrl; el("parishAvatar").alt = parish.name; }
+      el("parishAvatar").src = parish.imageUrl || parish.logoUrl || "/mark.png";
+      el("parishAvatar").alt = parish.name || "AGAPAY";
       el("parishNameLabel").textContent = parish.name || "";
       el("campaignTitle").textContent   = campaign.name || "Campaign";
       renderStatus(campaign.status || "active");
@@ -158,12 +274,11 @@
       renderUpdates(campaign.updates);
       renderThermometer(campaign);
 
-      el("giveBtn").href        = giveUrl;
-      el("topbarGiveBtn").href  = giveUrl;
+      el("topbarGiveBtn").href  = "#campaignCheckoutForm";
       if (campaign.status === "completed") {
         el("giveBtn").textContent      = "Campaign Completed — Thank You";
         el("giveBtn").style.background = "var(--stone)";
-        el("giveBtn").style.pointerEvents = "none";
+        el("giveBtn").disabled = true;
       }
       renderDeadline(campaign.endsAt);
       wireShareButtons(canonicalUrl, campaign.name + " — " + parish.name);
@@ -178,6 +293,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
+    wireCheckoutControls();
     init();
     el("lightbox").addEventListener("click", closeLightbox);
     el("lightboxClose").addEventListener("click", closeLightbox);

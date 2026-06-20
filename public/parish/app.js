@@ -26,7 +26,7 @@
       sessionStorage.removeItem(legacyParishTokenStorageKey);
       if (isDashboardPage && (!id || !token)) {
         const suffix = urlParish || id;
-        window.location.replace('/parish/login' + (suffix ? `?parish=${encodeURIComponent(suffix)}` : ''));
+        window.location.replace('/giving/login' + (suffix ? `?parish=${encodeURIComponent(suffix)}` : ''));
         return;
       }
       if (id && parishIdField) parishIdField.value = id;
@@ -52,7 +52,7 @@
       sessionStorage.removeItem(parishSessionStorageKey);
       sessionStorage.removeItem(legacyParishTokenStorageKey);
     } catch {}
-    window.location.href = '/parish/login';
+    window.location.href = '/giving/login';
   }
 
   // ── PRESETS ──────────────────────────────────────────────
