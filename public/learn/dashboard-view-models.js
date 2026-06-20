@@ -489,6 +489,17 @@ export function toFormationViewModel(rawPayload) {
   const today = formation.today || {};
   const liturgicalDay = today.liturgicalDay || {};
   const catechesis = formation.catechesisCycle || {};
+  const enrichmentBlocks = simpleList(formation.enrichmentBlocks, (block) => ({
+    title: text(block.title, "Enrichment"),
+    type: text(block.blockType, ""),
+    minutes: block.minutesPlanned ? `${block.minutesPlanned}m` : "",
+    frequency: text(block.weeklyFrequency || block.cadenceLabel, "")
+  }));
+  const enrichmentByType = (pattern) => enrichmentBlocks.filter((block) => pattern.test(block.type));
+  const mappedMemory = enrichmentByType(/recitation|memory/i);
+  const mappedHymns = enrichmentByType(/hymn/i);
+  const mappedFeasts = enrichmentByType(/saints?|feasts?/i);
+  const coreEnrichment = enrichmentBlocks.filter((block) => !/(recitation|memory|hymn|saints?|feasts?)/i.test(block.type));
   return {
     shell: shellFromPayload("formation", rawPayload),
     page: page("formation", "Formation", "Church-first learning for hearts and minds."),
@@ -515,26 +526,47 @@ export function toFormationViewModel(rawPayload) {
       progress: catechesis.lessonNumber && catechesis.totalLessons ? `Lesson ${catechesis.lessonNumber} of ${catechesis.totalLessons}` : "",
       topic: text(catechesis.doctrinalTopic, "")
     },
-    recitation: simpleList(formation.recitationTracks, (track) => ({
+    recitation: [
+      ...simpleList(formation.recitationTracks, (track) => ({
       title: text(track.title, "Memory Work"),
       status: text(track.status, ""),
       progress: percent(track.progressPercent)
-    })),
-    hymns: simpleList(formation.hymnStudies, (hymn) => ({
+      })),
+      ...mappedMemory.map((item) => ({
+        title: item.title,
+        status: item.frequency || item.type,
+        progress: 0
+      }))
+    ],
+    hymns: [
+      ...simpleList(formation.hymnStudies, (hymn) => ({
       title: text(hymn.title, "Hymn"),
       tone: text(hymn.tone, ""),
       source: text(hymn.source, "")
+      })),
+      ...mappedHymns.map((item) => ({
+        title: item.title,
+        tone: item.frequency || item.type,
+        source: item.minutes
+      }))
+    ],
+    enrichment: coreEnrichment.map((block) => ({
+      title: block.title,
+      type: block.type,
+      minutes: block.minutes
     })),
-    enrichment: simpleList(formation.enrichmentBlocks, (block) => ({
-      title: text(block.title, "Enrichment"),
-      type: text(block.blockType, ""),
-      minutes: block.minutesPlanned ? `${block.minutesPlanned}m` : ""
-    })),
-    feasts: simpleList(formation.upcomingFeasts, (feast) => ({
+    feasts: [
+      ...mappedFeasts.map((item) => ({
+        title: item.title,
+        date: item.frequency || "Household focus",
+        fasting: item.minutes
+      })),
+      ...simpleList(formation.upcomingFeasts, (feast) => ({
       title: text(feast.title, "Feast"),
       date: text(feast.civilDate, ""),
       fasting: text(feast.fastingRule, "")
-    })),
+      }))
+    ].slice(0, 2),
     nature: simpleList(formation.natureJournalEntries, (entry) => ({
       title: text(entry.title, "Nature Journal"),
       location: text(entry.location, ""),
@@ -827,9 +859,9 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       summary: "Prayer, readings, saints, feasts, hymnody, and fasting rhythm."
     },
     {
-      title: "Catechesis & Enrichment",
-      status: formation.catechesis?.title || safeArray(formation.enrichmentBlocks).length || defaultFormationMaterials.length ? "complete" : "needed",
-      summary: "Scripture, doctrine, memory work, icons, art, poetry, music, and nature."
+      title: "Enrichment",
+      status: safeArray(formation.recitationTracks).length || safeArray(formation.enrichmentBlocks).length || defaultFormationMaterials.length ? "complete" : "needed",
+      summary: "Memory work, hymnody, saints, feasts, icons, art, poetry, music, and nature."
     },
     {
       title: "Literature",

@@ -756,19 +756,20 @@ function renderFormation(vm) {
   const readings = vm.today.readingTasks?.length ? `<div style="display:grid;gap:8px;margin:12px 0 4px;">${vm.today.readingTasks.map((reading) => `<button type="button" data-reading-check aria-pressed="false" style="display:flex;align-items:center;gap:10px;text-align:left;border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:9px 11px;font-family:inherit;color:var(--ink);cursor:pointer;"><span data-reading-mark style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--gold);display:grid;place-items:center;color:var(--gold);font-size:12px;"></span><span><strong>${html(reading.label)}</strong><small style="display:block;color:var(--muted);">${html(reading.ref)}</small></span></button>`).join("")}</div>` : `<p style="margin:10px 0 0;color:#33405a;line-height:1.45;">${html(vm.today.readings)}</p>`;
   const memory = vm.recitation.length ? vm.recitation.map((item) => `<div style="padding:10px 0;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 110px;gap:14px;align-items:center;"><div><strong>${html(item.title)}</strong><small style="display:block;color:var(--muted);">${html(item.status)}</small></div><div>${bar(item.progress, "var(--navy)")}<small style="color:var(--muted);">${item.progress}%</small></div></div>`).join("") : emptyState("No memory tracks configured yet.");
   const enrich = vm.enrichment.length ? vm.enrichment.map((item) => `<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid var(--line);"><span><strong>${html(item.type)}:</strong> ${html(item.title)}</span><span style="color:var(--muted);">${html(item.minutes)}</span></div>`).join("") : emptyState("Add enrichment blocks in Setup.");
+  const feasts = vm.feasts.length ? vm.feasts.slice(0, 2).map((feast) => `<div style="border-top:1px solid var(--line);padding:11px 0;"><strong>${html(feast.title)}</strong><small style="display:block;color:var(--muted);margin-top:4px;">${html(feast.date)}${feast.fasting ? ` · ${html(feast.fasting)}` : ""}</small></div>`).join("") : emptyState("No upcoming feasts loaded.");
   const body = `
     <section data-screen-label="Formation" style="display:flex;flex-direction:column;gap:18px;">
       <div style="display:grid;grid-template-columns:minmax(300px,1.2fr) minmax(270px,.9fr) minmax(230px,.7fr);gap:16px;align-items:start;">
         ${panel("Church Rhythms", `<div style="display:grid;grid-template-columns:120px 1fr;gap:18px;"><div style="border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,#f8f0dd,#efe0ba);min-height:180px;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:54px;">✥</div><div><h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;margin:0 0 8px;">${html(vm.today.title)}</h2><p style="margin:0;color:var(--muted);line-height:1.4;">${html(vm.today.date)} · ${html(vm.today.fasting)}</p>${readings}${rhythms}</div></div>`, { icon: "☩", style: "grid-column:span 2;" })}
         ${panel("This Week in the Church", `<div style="display:flex;flex-direction:column;gap:13px;"><strong style="font-family:'Cormorant Garamond',serif;font-size:22px;">${html(vm.today.title)}</strong><span style="color:var(--muted);">${html(vm.today.saint)}</span><p style="margin:0;line-height:1.45;color:#33405a;">${html(vm.today.troparion)}</p><a href="/myagapay/learn/planner" style="color:var(--ink);text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center;background:var(--paper2);">View Full Calendar →</a></div>`, { icon: "✥" })}
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:16px;">
+      <div style="display:grid;grid-template-columns:repeat(5,minmax(170px,1fr));gap:16px;">
         ${panel("Catechesis", `<div style="display:grid;gap:10px;"><small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;">Current Lesson Cycle</small><strong style="font-family:'Cormorant Garamond',serif;font-size:23px;">${html(vm.catechesis.title)}</strong><span style="color:#33405a;line-height:1.45;">${html(vm.catechesis.currentLesson)}</span>${vm.catechesis.progress ? `<span style="border:1px solid var(--line);border-radius:999px;padding:6px 10px;width:max-content;background:var(--paper2);">${html(vm.catechesis.progress)}</span>` : ""}<p style="margin:0;color:var(--muted);line-height:1.45;">${html(vm.catechesis.topic)}</p></div>`, { icon: "✥" })}
         ${panel("Recitation & Memory Work", memory, { icon: "☰" })}
         ${panel("Hymn Study", vm.hymns.length ? vm.hymns.map((hymn) => `<div style="padding:11px 0;border-top:1px solid var(--line);"><strong>${html(hymn.title)}</strong><small style="display:block;color:var(--muted);">${html(hymn.tone)} · ${html(hymn.source)}</small></div>`).join("") : emptyState("Add hymn study in Setup."), { icon: "♫" })}
         ${panel("Enrichment", enrich, { icon: "✣" })}
+        ${panel("Saints & Feasts", feasts, { icon: "✥" })}
       </div>
-      ${panel("Saints & Feasts", `<div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:12px;">${vm.feasts.length ? vm.feasts.map((feast) => `<div style="border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--paper2);"><strong>${html(feast.title)}</strong><small style="display:block;color:var(--muted);margin-top:4px;">${html(feast.date)} · ${html(feast.fasting)}</small></div>`).join("") : emptyState("No upcoming feasts loaded.")}</div>`, { icon: "✥" })}
     </section>`;
   return shell(vm, body);
 }
@@ -1017,16 +1018,8 @@ function formationRecitationSetupRow(track = {}) {
   return `<div data-setup-row="formationRecitation" data-id="${html(track.id || "")}" style="display:grid;grid-template-columns:1fr .75fr .75fr .65fr .55fr .45fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Memory Work", "title", track.title || "")}${setupInput("Source", "sourceKind", track.sourceKind || track.source || "")}${setupSelect("Planning Mode", "planningMode", track.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "weeklyFrequency", track.weeklyFrequency || "daily", weeklyFrequencyOptions)}${setupInput("Minutes", "minutes", track.minutes || "", { type: "number" })}${setupSelect("Status", "status", track.status || "memorizing", ["planned", "memorizing", "memorized"])}${setupInput("Progress %", "progressPercent", track.progressPercent ?? track.progress ?? "", { type: "number" })}${setupRemoveButton()}</div>`;
 }
 
-function formationHymnSetupRow(hymn = {}) {
-  return `<div data-setup-row="formationHymns" data-id="${html(hymn.id || "")}" style="display:grid;grid-template-columns:1fr .55fr .9fr .75fr .65fr .45fr .65fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Hymn", "title", hymn.title || "")}${setupInput("Tone", "tone", hymn.tone || "")}${setupInput("Source", "source", hymn.source || "")}${setupSelect("Planning Mode", "planningMode", hymn.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "weeklyFrequency", hymn.weeklyFrequency || "1x", weeklyFrequencyOptions)}${setupInput("Minutes", "minutes", hymn.minutes || "", { type: "number" })}${setupSelect("Status", "status", hymn.status || "planned", ["planned", "in-progress", "learned"])}${setupRemoveButton()}</div>`;
-}
-
 function formationEnrichmentSetupRow(block = {}) {
-  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" style="display:grid;grid-template-columns:.85fr 1fr .75fr .65fr .45fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupSelect("Card", "blockType", block.blockType || block.type || "Art Study", ["Art Study", "Nature Study", "Poetry", "Music Study", "Composer", "Timeline"])}${setupInput("Title", "title", block.title || "")}${setupSelect("Planning Mode", "planningMode", block.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "weeklyFrequency", block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x", weeklyFrequencyOptions)}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "", { type: "number" })}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupRemoveButton()}</div>`;
-}
-
-function formationFeastSetupRow(feast = {}) {
-  return `<div data-setup-row="formationFeasts" data-id="${html(feast.id || "")}" style="display:grid;grid-template-columns:.55fr 1fr .75fr .75fr .55fr 1fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Date", "civilDate", feast.civilDate || feast.date || "", { type: "date" })}${setupInput("Feast", "title", feast.title || "")}${setupInput("Fasting", "fastingRule", feast.fastingRule || feast.fasting || "")}${setupSelect("Planning Mode", "planningMode", feast.planningMode || "family", planningModeOptions)}${setupInput("Minutes", "minutes", feast.minutes || "", { type: "number" })}${setupInput("Note", "note", feast.note || "")}${setupRemoveButton()}</div>`;
+  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" style="display:grid;grid-template-columns:.85fr 1fr .75fr .65fr .45fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Recitation & Memory Work", "Hymn Study", "Art Study", "Nature Study", "Poetry", "Music Study", "Composer", "Timeline", "Saints & Feasts"])}${setupInput("Title", "title", block.title || "")}${setupSelect("Planning Mode", "planningMode", block.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "weeklyFrequency", block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x", weeklyFrequencyOptions)}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "", { type: "number" })}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupRemoveButton()}</div>`;
 }
 
 function churchRhythmSetupPanel(vm) {
@@ -1046,37 +1039,25 @@ function churchRhythmSetupPanel(vm) {
 
 function formationSetupPanel(vm) {
   const formation = vm.formationSetup || {};
-  const catechesis = formation.catechesis || {};
   const sectionStyle = "border:1px solid var(--line);border-radius:13px;background:rgba(255,252,245,.64);padding:14px;display:grid;gap:12px;";
   const sectionTitle = (title, subtitle = "") => `<div><strong style="display:block;font-family:var(--sans);font-size:15px;color:var(--ink);">${html(title)}</strong>${subtitle ? `<small style="display:block;color:var(--muted);line-height:1.35;margin-top:2px;">${html(subtitle)}</small>` : ""}</div>`;
   const categoryTiles = [
-    { title: "Catechesis", detail: "Doctrine, Scripture, Church teaching, and Orthodox identity." },
     { title: "Recitation & Memory Work", detail: "Creeds, prayers, psalms, Scripture, poetry, and speeches." },
     { title: "Hymn Study", detail: "Troparia, kontakia, festal hymns, and music study." },
+    { title: "Saints & Feasts", detail: "Household-highlighted commemorations and seasonal focus." },
     { title: "Enrichment", detail: "Art, poetry, music, nature, composer, and timeline work." },
-    { title: "Formation Materials", detail: "Books, PDFs, links, icons, and term resources." },
-    { title: "Saints & Feasts", detail: "Household-highlighted commemorations and seasonal focus." }
+    { title: "Formation Materials", detail: "Books, PDFs, links, icons, and term resources." }
   ];
   return `
     <div style="display:grid;gap:14px;">
       <p style="margin:0;color:var(--muted);line-height:1.45;">Choose whether each item is shared by the whole family or assigned by Form, then set how often it appears and how long it usually takes.</p>
-      <div style="display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap:10px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
         ${categoryTiles.map((tile) => `<span style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:10px;"><strong>${html(tile.title)}</strong><small style="display:block;color:var(--muted);">${html(tile.detail)}</small></span>`).join("")}
-      </div>
-      <div style="${sectionStyle}">
-        ${sectionTitle("Catechesis", "Current lesson cycle and doctrinal focus.")}
-        <div style="display:grid;grid-template-columns:1.1fr 1fr .75fr .65fr .45fr .45fr;gap:10px;">${setupInput("Catechesis title", "formation.catechesis.title", catechesis.title || "")}${setupInput("Current lesson", "formation.catechesis.currentLesson", catechesis.currentLesson || "")}${setupSelect("Planning Mode", "formation.catechesis.planningMode", catechesis.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "formation.catechesis.weeklyFrequency", catechesis.weeklyFrequency || "2x", weeklyFrequencyOptions)}${setupInput("Minutes", "formation.catechesis.minutes", catechesis.minutes || "", { type: "number" })}${setupInput("Lesson #", "formation.catechesis.lessonNumber", catechesis.lessonNumber || "", { type: "number" })}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr .45fr;gap:10px;">${setupInput("Doctrinal topic", "formation.catechesis.doctrinalTopic", catechesis.doctrinalTopic || catechesis.topic || "")}${setupInput("Source / text", "formation.catechesis.source", catechesis.source || "")}${setupInput("Total", "formation.catechesis.totalLessons", catechesis.totalLessons || "", { type: "number" })}</div>
       </div>
       <div style="${sectionStyle}">
         ${sectionTitle("Recitation & Memory Work", "Creeds, prayers, psalms, and scripture memory.")}
         <div data-setup-list="formationRecitation" style="display:grid;gap:10px;">${(formation.recitationTracks?.length ? formation.recitationTracks : [{}]).map((track) => formationRecitationSetupRow(track)).join("")}</div>
         <button type="button" data-setup-add-row="formationRecitation" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Memory Work</button>
-      </div>
-      <div style="${sectionStyle}">
-        ${sectionTitle("Hymn Study", "Weekly hymn studies and sources.")}
-        <div data-setup-list="formationHymns" style="display:grid;gap:10px;">${(formation.hymnStudies?.length ? formation.hymnStudies : [{}]).map((hymn) => formationHymnSetupRow(hymn)).join("")}</div>
-        <button type="button" data-setup-add-row="formationHymns" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Hymn</button>
       </div>
       <div style="${sectionStyle}">
         ${sectionTitle("Enrichment", "Art, poetry, music, nature study, composer, and timeline work.")}
@@ -1087,11 +1068,6 @@ function formationSetupPanel(vm) {
         ${sectionTitle("Formation Materials", "Optional term materials that seed catechesis, art, poetry, music, saints, and other Formation cards.")}
         <div data-setup-list="formationMaterials" style="display:grid;gap:10px;">${(vm.formationMaterials?.length ? vm.formationMaterials : [{}]).map((material) => formationSetupRow(material, vm.terms, vm.schoolYear.currentTermId || vm.term.id)).join("")}</div>
         <button type="button" data-setup-add-row="formationMaterials" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Formation Material</button>
-      </div>
-      <div style="${sectionStyle}">
-        ${sectionTitle("Saints & Feasts", "Optional household-highlighted feasts; liturgical calendar feasts still come from the calendar provider.")}
-        <div data-setup-list="formationFeasts" style="display:grid;gap:10px;">${(formation.feasts?.length ? formation.feasts : [{}]).map((feast) => formationFeastSetupRow(feast)).join("")}</div>
-        <button type="button" data-setup-add-row="formationFeasts" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Feast Highlight</button>
       </div>
     </div>`;
 }
@@ -1123,7 +1099,7 @@ function renderSetup(vm) {
   const body = `
     <form data-setup-form data-screen-label="Set Up" style="display:flex;flex-direction:column;gap:18px;">
       ${panel("Setup Progress", `<h2 style="font-family:'Cormorant Garamond',serif;margin:0 0 8px;font-size:28px;">Step ${vm.progress.current} of ${vm.progress.total}</h2>${bar((vm.progress.current / vm.progress.total) * 100, "var(--navy)")}<p style="color:var(--muted);">Next: ${html(vm.progress.next)}</p><div class="learn-setup-progress-grid">${vm.steps.map(setupProgressCard).join("")}</div>`, { icon: "⚙" })}
-      ${panel("A Typical Orthodox School Day", `<div style="display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;"><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>1. Household + Forms</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Set the year, terms, children, and Forms before adding lessons.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>2. Church Rhythm</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Prayer, Gospel, Epistle, saints, feasts, and fasting shape the day.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>3. Catechesis + Enrichment</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Scripture, memory, icons, hymns, art, poetry, music, and nature.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>4. Form Work</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Tales, literature, language arts, history, geography, math, and sciences.</small></div></div>`, { icon: "✥" })}
+      ${panel("A Typical Orthodox School Day", `<div style="display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;"><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>1. Household + Forms</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Set the year, terms, children, and Forms before adding lessons.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>2. Church Rhythm</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Prayer, Gospel, Epistle, saints, feasts, and fasting shape the day.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>3. Enrichment</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Memory work, art, poetry, music, nature, and formation materials.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:13px;"><strong>4. Form Work</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Tales, literature, language arts, history, geography, math, and sciences.</small></div></div>`, { icon: "✥" })}
       <span id="learnSetupHousehold" class="learn-setup-anchor"></span>
       ${panel("Household", `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Set the household identity and the broad school-year preferences. Terms, children, and Forms are managed immediately below so the setup flow stays easy to scan.</p><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Charlotte Mason", homeschoolMethodOptions)}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /></div>`, { icon: "⌂", largeTitle: true })}
       <span id="learnSetupChildren" class="learn-setup-anchor"></span>
@@ -1132,7 +1108,7 @@ function renderSetup(vm) {
       <span id="learnSetupChurchRhythm" class="learn-setup-anchor"></span>
       ${panel("Church Rhythm", churchRhythmSetupPanel(vm), { icon: "☩", largeTitle: true })}
       <span id="learnSetupFormation" class="learn-setup-anchor"></span>
-      ${panel("Catechesis & Enrichment", formationSetupPanel(vm), { icon: "✥", largeTitle: true })}
+      ${panel("Enrichment", formationSetupPanel(vm), { icon: "✥", largeTitle: true })}
       <span id="learnSetupBooks" class="learn-setup-anchor"></span>
       ${panel("Literature", `<p style="margin:0 0 12px;color:var(--muted);">Add living books, read-alouds, stories, plays, history reads, folk stories, myths, and great tales. Assign each book to the term and Form where it belongs.</p><div data-setup-list="books" style="display:grid;gap:10px;">${(vm.books.length ? vm.books : [{}]).map((book) => bookSetupRow(book, vm.terms, currentTermId)).join("")}</div><button type="button" data-setup-add-row="books" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Literature</button>`, { icon: "☰" })}
       <span id="learnSetupSubjects" class="learn-setup-anchor"></span>
@@ -1553,9 +1529,7 @@ function setupBlankRow(type, form) {
   if (type === "formationMaterials") return formationSetupRow({}, terms, currentTermId);
   if (type === "formationRhythms") return formationRhythmSetupRow({});
   if (type === "formationRecitation") return formationRecitationSetupRow({});
-  if (type === "formationHymns") return formationHymnSetupRow({});
   if (type === "formationEnrichment") return formationEnrichmentSetupRow({});
-  if (type === "formationFeasts") return formationFeastSetupRow({});
   return "";
 }
 
