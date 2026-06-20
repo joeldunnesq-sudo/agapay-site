@@ -127,6 +127,12 @@ function weeklyFrequencyValue(value, fallback = "1x") {
   return fallback;
 }
 
+function resourceTypeValue(value, fallback = "curriculum") {
+  const raw = String(value || "").trim().toLowerCase();
+  if (["book", "curriculum", "website", "hymn", "icon", "activity", "none"].includes(raw)) return raw;
+  return fallback;
+}
+
 function normalizeHomeschoolMethod(value) {
   const candidate = text(value, "Charlotte Mason");
   return HOMESCHOOL_METHODS.includes(candidate) ? candidate : "Charlotte Mason";
@@ -374,6 +380,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     weeklyFrequency: weeklyFrequencyValue(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "daily"),
     formLabel: text(subject.formLabel, ""),
     resource: text(subject.resource, ""),
+    resourceType: resourceTypeValue(subject.resourceType || subject.sourceType, subject.resource ? "curriculum" : "none"),
     cadenceLabel: text(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "Weekly"),
     minutes: int(subject.minutes, 20),
     childId: text(subject.childId, ""),
@@ -458,6 +465,7 @@ function normalizeSetupPayload(payload = {}, identity) {
       blockType: text(block.blockType || block.type, "enrichment"),
       title: text(block.title, ""),
       resource: text(block.resource || block.source, ""),
+      resourceType: resourceTypeValue(block.resourceType || block.sourceType, block.resource || block.source ? "curriculum" : "none"),
       planningMode: text(block.planningMode, "family"),
       weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
       formLabel: text(block.formLabel, ""),
@@ -548,10 +556,11 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
   const literatureBooks = list(setupSnapshot.books).filter(forCurrentTerm);
   const currentFormationMaterials = list(setupSnapshot.formationMaterials).filter(forCurrentTerm);
   const formation = setupSnapshot.formation || {};
-  const enrichmentBooks = list(formation.enrichmentBlocks).filter(forCurrentTerm).map((block, index) => resourceBookLike({
+  const isBookResource = (item = {}) => item.resource && item.resourceType === "book";
+  const enrichmentBooks = list(formation.enrichmentBlocks).filter(forCurrentTerm).filter(isBookResource).map((block, index) => resourceBookLike({
     id: block.id || `enrichment_book_${index + 1}`,
-    title: block.title,
-    category: block.blockType || block.type || "Enrichment",
+    title: block.resource,
+    category: block.title || block.blockType || block.type || "Enrichment",
     termId: block.termId || currentTermId,
     formLabel: block.formLabel || "",
     audienceLabel: block.planningMode === "forms" ? "Form Enrichment" : "Household Enrichment",
@@ -561,7 +570,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
     color: block.color || "",
     sourceKind: "enrichment"
   })).filter(Boolean);
-  const subjectBooks = currentSubjects.filter((subject) => subject.resource).map((subject, index) => resourceBookLike({
+  const subjectBooks = currentSubjects.filter(isBookResource).map((subject, index) => resourceBookLike({
     id: `subject_resource_${subject.id || index + 1}`,
     title: subject.resource,
     category: subject.title || subject.subjectType || "Form Subject",
@@ -729,7 +738,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
       curriculumSubjectId: subject.id,
       title: subject.resource,
       author: "",
-      resourceType: subject.subjectType,
+      resourceType: subject.resourceType || subject.subjectType,
       sourceKind: "household",
       sortOrder: index + 1
     })),
