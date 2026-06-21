@@ -444,6 +444,30 @@ h1 {
   margin-bottom: 0;
 }
 
+.learn-planning-model {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.learn-planning-model article {
+  border-left: 3px solid var(--learn-gold);
+  padding: 0.85rem 1rem;
+  background: rgba(255, 253, 248, 0.66);
+}
+
+.learn-planning-model h3 {
+  color: var(--learn-night);
+  font-size: 1.35rem;
+}
+
+.learn-planning-model p {
+  margin: 0.3rem 0 0;
+  color: var(--learn-muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
 .google-sync-disclosure {
   padding: clamp(1.1rem, 3vw, 1.7rem);
   border: 1px solid rgba(6, 21, 34, 0.14);
