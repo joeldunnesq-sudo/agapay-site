@@ -71,6 +71,7 @@ const learnSetupPersistence = readFileSync(new URL("../src/learn/setup-persisten
 const learnDashboardHtml = readFileSync(new URL("../public/learn/dashboard.html", import.meta.url), "utf8");
 const learnOverviewHtml = readFileSync(new URL("../public/learn/index.html", import.meta.url), "utf8");
 const learnPricingHtml = readFileSync(new URL("../public/learn/pricing.html", import.meta.url), "utf8");
+const learnShellCss = readFileSync(new URL("../public/learn/shell.css", import.meta.url), "utf8");
 assert(learnShell.includes("data-dialog-checkout"), "Learn shell should include checkout dialog hooks.");
 assert(learnShell.includes("data-grace-mode"), "Learn shell should expose grace mode controls.");
 assert(learnShell.includes("data-print-generate"), "Learn shell should expose print generation hooks.");
@@ -90,6 +91,9 @@ assert(learnShell.includes("Grace Mode lightens a day without erasing the plan")
 assert(learnShell.includes("renderReportsComingSoon") && !learnShell.includes('apiGet("/api/learn/reports")'), "The Learn Reports screen should remain a coming-soon surface without loading report data.");
 assert(learnShell.includes("Free plan: up to 2 children"), "Learn setup wizard should clearly disclose the free child limit.");
 assert(learnShell.includes('href="/myagapay/learn/setup?simple=1">Quick Setup'), "Learn utility bar should open the simple setup wizard.");
+assert(learnShell.includes('class="learn-setup-savebar"'), "Advanced Setup should use a dedicated reachable save bar.");
+assert(learnShellCss.includes(".learn-product-topbar .learn-quick-action") && learnShellCss.includes("display: inline-flex !important"), "Quick Setup should remain visible in the mobile utility bar.");
+assert(learnShellCss.includes("bottom: calc(78px + env(safe-area-inset-bottom))"), "The mobile setup save bar should sit above the fixed product navigation.");
 assert(learnShell.includes('loginUrl.searchParams.set("reason", "session-expired")'), "Expired Learn sessions should return users to My AGAPAY sign-in.");
 assert(learnShell.includes('loginUrl.searchParams.set("next",'), "Learn sign-in redirects should preserve the requested Learn page.");
 assert(learnShell.includes("existingSnapshot?.subjects || []"), "Quick Setup should preserve an existing household's advanced subject plan.");

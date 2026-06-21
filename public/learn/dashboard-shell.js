@@ -7,7 +7,7 @@ import {
   toPlannerViewModel,
   toPrintCenterViewModel,
   toSetupViewModel
-} from "./dashboard-view-models.js?v=20260621b";
+} from "./dashboard-view-models.js?v=20260621c";
 
 const pageKey = document.body.dataset.learnPage || "dashboard";
 const root = document.getElementById("learnRoot");
@@ -1716,7 +1716,7 @@ function renderSetup(vm) {
       ${panel("Terms", `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Term 4 / Summer is available for year-round homeschoolers. Assign subjects, books, and formation materials to the term where they belong.</p><div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div>`, { icon: "◷", largeTitle: true })}
       ${experience.order.map((key) => adaptivePanels[key]).join("")}
       ${panel("Co-op", `<div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">Coming Soon</strong><p style="margin:4px 0 0;color:var(--muted);line-height:1.4;">Co-op tools are deferred while Learn focuses on setup, Today, planning, formation, books, Grace Mode, and printable household plans.</p></div><span style="border:1px solid var(--gold);border-radius:999px;color:var(--gold);padding:7px 12px;white-space:nowrap;">Future add-on</span></div>`, { icon: "◎" })}
-      <div style="position:sticky;bottom:12px;z-index:5;display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;background:rgba(253,249,239,.96);padding:12px 14px;box-shadow:0 8px 24px rgba(18,38,67,.12);">
+      <div class="learn-setup-savebar">
         <span data-setup-status style="color:var(--muted);">Setup saves to the household profile and D1-backed Learn records.</span>
         <button type="submit" style="border:none;background:var(--navy);color:#fff;border-radius:10px;padding:12px 20px;font-family:inherit;font-weight:700;">Save Setup</button>
       </div>
