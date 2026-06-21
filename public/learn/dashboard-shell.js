@@ -445,7 +445,7 @@ function topbar(vm) {
         ${vm.page.subtitle ? `<div style="font-size:14.5px;color:var(--muted);margin-top:2px;">${html(vm.page.subtitle)}</div>` : ""}
       </div>
       <div class="learn-utility-actions" style="display:flex;align-items:center;gap:18px;flex:none;">
-        <a class="learn-quick-action" href="/myagapay/learn/setup">Quick Action</a>
+        <a class="learn-quick-action" href="/myagapay/learn/setup?simple=1">Quick Setup</a>
         <div class="learn-account-menu" data-learn-account-menu>
           <button class="learn-account-utility" type="button" data-learn-account-toggle aria-haspopup="true" aria-expanded="false">
             <span class="learn-account-utility-avatar">${html(vm.shell.accountInitials || "FM")}</span>
@@ -1334,6 +1334,7 @@ function suggestedFormForChild(child = {}) {
 
 function defaultSimpleSetupDraft(vm = {}) {
   const existingChildren = Array.isArray(vm.children) ? vm.children.map((child, index) => ({
+    id: child.id || "",
     clientId: child.id || `child_${Date.now()}_${index}`,
     firstName: child.firstName || child.name || "",
     ageYears: String(child.age || ""),
@@ -1345,7 +1346,7 @@ function defaultSimpleSetupDraft(vm = {}) {
     householdName: vm.household?.name || "",
     parentName: vm.household?.parentName || "",
     calendarType: vm.preferences?.calendarType || "julian",
-    children: existingChildren.length ? existingChildren : [{ clientId: `child_${Date.now()}`, firstName: "", ageYears: "", gradeLabel: "", formLabel: "" }],
+    children: existingChildren.length ? existingChildren : [{ id: "", clientId: `child_${Date.now()}`, firstName: "", ageYears: "", gradeLabel: "", formLabel: "" }],
     useForms: true,
     method: vm.household?.method || "Unsure",
     starterWeek: true
@@ -1363,7 +1364,8 @@ function loadSimpleSetupDraft(vm) {
       step: Math.max(0, Math.min(SIMPLE_SETUP_STEPS.length - 1, Number(stored.step) || 0)),
       children: Array.isArray(stored.children) && stored.children.length
         ? stored.children.map((child, index) => ({
-            clientId: child.clientId || `child_${Date.now()}_${index}`,
+          clientId: child.clientId || `child_${Date.now()}_${index}`,
+            id: String(child.id || ""),
             firstName: String(child.firstName || ""),
             ageYears: String(child.ageYears || ""),
             gradeLabel: String(child.gradeLabel || ""),
@@ -1430,6 +1432,7 @@ function captureSimpleSetupStep(form, draft) {
   } else if (draft.step === 1) {
     draft.children = [...form.querySelectorAll("[data-wizard-child]")].map((row, index) => ({
       clientId: row.dataset.clientId || `child_${Date.now()}_${index}`,
+      id: draft.children[index]?.id || "",
       firstName: row.querySelector('[name="firstName"]')?.value.trim() || "",
       ageYears: row.querySelector('[name="ageYears"]')?.value.trim() || "",
       gradeLabel: row.querySelector('[name="gradeLabel"]')?.value.trim() || "",
@@ -1478,11 +1481,11 @@ function simpleSetupDates() {
   };
 }
 
-function simpleSetupPayload(draft) {
+function simpleSetupPayload(draft, existingSnapshot = null) {
   const dates = simpleSetupDates();
   const colors = ["#14294a", "#6e2f2a", "#4a5a31", "#b5942f", "#4b3158"];
   const children = draft.children.filter((child) => child.firstName).map((child, index) => ({
-    id: "",
+    id: child.id || "",
     firstName: child.firstName,
     ageYears: child.ageYears,
     gradeLabel: child.gradeLabel,
@@ -1491,35 +1494,40 @@ function simpleSetupPayload(draft) {
   }));
   const formLabels = [...new Set(children.map((child) => child.formLabel).filter(Boolean))];
   const planningGroups = formLabels.length ? formLabels : [""];
-  const subjects = draft.starterWeek ? planningGroups.flatMap((formLabel, groupIndex) => [
+  const existingHasPlan = Boolean(existingSnapshot?.subjects?.length || existingSnapshot?.streams?.length || existingSnapshot?.formation?.enrichmentBlocks?.length);
+  const createStarterWeek = draft.starterWeek && !existingHasPlan;
+  const subjects = createStarterWeek ? planningGroups.flatMap((formLabel, groupIndex) => [
     { title: "Starter Language Arts", subjectType: "language-arts", planningMode: "forms", weeklyFrequency: "4x", formLabel, minutes: "20", termId: "term_1", gracePriority: "keep", color: colors[groupIndex % colors.length] },
     { title: "Starter Mathematics", subjectType: "math", planningMode: "forms", weeklyFrequency: "4x", formLabel, minutes: "20", termId: "term_1", gracePriority: "keep", color: colors[(groupIndex + 1) % colors.length] },
     { title: "Nature & Science", subjectType: "sciences-nature", planningMode: "forms", weeklyFrequency: "2x", formLabel, minutes: "25", termId: "term_1", gracePriority: "reduce first", color: colors[(groupIndex + 2) % colors.length] }
   ]) : [];
+  const starterTerm = { id: "term_1", label: "Starter Term", startDate: dates.termStart, endDate: dates.termEnd, paceMode: "steady" };
+  const starterFormation = {
+    churchRhythms: [
+      { title: "Morning Prayers", note: "Begin together", weeklyFrequency: "daily", minutes: 10 },
+      { title: "Daily Readings", note: "Epistle and Gospel", weeklyFrequency: "daily", minutes: 10 },
+      { title: "Saint of the Day", note: "Read and discuss", weeklyFrequency: "daily", minutes: 10 }
+    ],
+    recitationTracks: [], hymnStudies: [], feasts: [],
+    enrichmentBlocks: [
+      { blockType: "Literature", title: "Family Read-Aloud", planningMode: "family", weeklyFrequency: "daily", minutesPlanned: 20, termId: "term_1", gracePriority: "keep" },
+      { blockType: "Nature Study", title: "Nature Walk", planningMode: "family", weeklyFrequency: "1x", minutesPlanned: 30, termId: "term_1", gracePriority: "reduce first" }
+    ]
+  };
   return {
-    household: { name: draft.householdName, parentName: draft.parentName, parentNames: [draft.parentName], primaryMethod: draft.method },
-    schoolYear: { id: "school_year_current", label: dates.yearLabel, startDate: dates.yearStart, endDate: dates.yearEnd, currentTermId: "term_1" },
-    term: { id: "term_1", label: "Starter Term", startDate: dates.termStart, endDate: dates.termEnd, paceMode: "steady" },
-    terms: [{ id: "term_1", label: "Starter Term", startDate: dates.termStart, endDate: dates.termEnd, paceMode: "steady" }],
-    preferences: { calendarType: draft.calendarType, evaluationModel: "narrative-only", graceModeDefault: "light", graceModeActive: false, paceMode: "steady" },
+    ...(existingSnapshot || {}),
+    household: { ...(existingSnapshot?.household || {}), name: draft.householdName, parentName: draft.parentName, parentNames: [draft.parentName], primaryMethod: draft.method },
+    schoolYear: existingSnapshot?.schoolYear || { id: "school_year_current", label: dates.yearLabel, startDate: dates.yearStart, endDate: dates.yearEnd, currentTermId: "term_1" },
+    term: existingSnapshot?.term || starterTerm,
+    terms: existingSnapshot?.terms?.length ? existingSnapshot.terms : [starterTerm],
+    preferences: { ...(existingSnapshot?.preferences || {}), calendarType: draft.calendarType, evaluationModel: existingSnapshot?.preferences?.evaluationModel || "narrative-only", graceModeDefault: existingSnapshot?.preferences?.graceModeDefault || "light", graceModeActive: Boolean(existingSnapshot?.preferences?.graceModeActive), paceMode: "steady" },
     children,
-    streams: draft.starterWeek ? [{ title: "Morning Time", streamType: "morning-time", cadenceLabel: "Daily", dailyMinutes: { mon: 30, tue: 30, wed: 30, thu: 30, fri: 30 } }] : [],
-    subjects,
-    books: [],
-    formation: draft.starterWeek ? {
-      churchRhythms: [
-        { title: "Morning Prayers", note: "Begin together", weeklyFrequency: "daily", minutes: 10 },
-        { title: "Daily Readings", note: "Epistle and Gospel", weeklyFrequency: "daily", minutes: 10 },
-        { title: "Saint of the Day", note: "Read and discuss", weeklyFrequency: "daily", minutes: 10 }
-      ],
-      recitationTracks: [], hymnStudies: [], feasts: [],
-      enrichmentBlocks: [
-        { blockType: "Literature", title: "Family Read-Aloud", planningMode: "family", weeklyFrequency: "daily", minutesPlanned: 20, termId: "term_1", gracePriority: "keep" },
-        { blockType: "Nature Study", title: "Nature Walk", planningMode: "family", weeklyFrequency: "1x", minutesPlanned: 30, termId: "term_1", gracePriority: "reduce first" }
-      ]
-    } : { churchRhythms: [], recitationTracks: [], hymnStudies: [], enrichmentBlocks: [], feasts: [] },
-    formationMaterials: [],
-    coOp: { enabled: false, status: "coming-soon" }
+    streams: createStarterWeek ? [{ title: "Morning Time", streamType: "morning-time", cadenceLabel: "Daily", dailyMinutes: { mon: 30, tue: 30, wed: 30, thu: 30, fri: 30 } }] : existingSnapshot?.streams || [],
+    subjects: createStarterWeek ? subjects : existingSnapshot?.subjects || [],
+    books: existingSnapshot?.books || [],
+    formation: createStarterWeek ? starterFormation : existingSnapshot?.formation || { churchRhythms: [], recitationTracks: [], hymnStudies: [], enrichmentBlocks: [], feasts: [] },
+    formationMaterials: existingSnapshot?.formationMaterials || [],
+    coOp: existingSnapshot?.coOp || { enabled: false, status: "coming-soon" }
   };
 }
 
@@ -1538,13 +1546,13 @@ function applySimpleDraftToSetupVm(vm, draft) {
   return vm;
 }
 
-function wireSimpleSetupWizard(vm, draft) {
+function wireSimpleSetupWizard(vm, draft, existingSnapshot = null) {
   const form = root.querySelector("[data-simple-setup-wizard] form");
   if (!form) return;
   const status = form.querySelector("[data-wizard-status]");
   const rerender = () => {
     root.innerHTML = renderSimpleSetupWizard(vm, draft);
-    wireSimpleSetupWizard(vm, draft);
+    wireSimpleSetupWizard(vm, draft, existingSnapshot);
     root.querySelector(".learn-wizard")?.scrollIntoView({ block: "start" });
   };
   form.addEventListener("input", () => captureSimpleSetupStep(form, draft));
@@ -1562,7 +1570,7 @@ function wireSimpleSetupWizard(vm, draft) {
         ], { upgrade: true });
         return;
       }
-      draft.children.push({ clientId: `child_${Date.now()}`, firstName: "", ageYears: "", gradeLabel: "", formLabel: "" });
+      draft.children.push({ id: "", clientId: `child_${Date.now()}`, firstName: "", ageYears: "", gradeLabel: "", formLabel: "" });
       saveSimpleSetupDraft(draft);
       rerender();
       return;
@@ -1598,7 +1606,7 @@ function wireSimpleSetupWizard(vm, draft) {
     finish.disabled = true;
     status.textContent = "Preparing your AGAPAY Learn dashboard...";
     try {
-      await apiPost("/api/learn/setup", simpleSetupPayload(draft));
+      await apiPost("/api/learn/setup", simpleSetupPayload(draft, existingSnapshot));
       localStorage.setItem("agapay.learn.calendar", draft.calendarType || "julian");
       localStorage.removeItem(simpleSetupDraftKey());
       window.location.href = "/myagapay/learn";
@@ -2564,7 +2572,7 @@ async function mount() {
     const simple = setupParams.get("simple") === "1";
     if ((!vm.setupCompleted && !advanced) || simple) {
       root.innerHTML = renderSimpleSetupWizard(vm, draft);
-      wireSimpleSetupWizard(vm, draft);
+      wireSimpleSetupWizard(vm, draft, raw.onboarding?.setupSnapshot || null);
       return;
     }
     root.innerHTML = renderSetup(!vm.setupCompleted ? applySimpleDraftToSetupVm(vm, draft) : vm);
