@@ -6,7 +6,6 @@ import {
   toFormationViewModel,
   toPlannerViewModel,
   toPrintCenterViewModel,
-  toReportsViewModel,
   toSetupViewModel
 } from "./dashboard-view-models.js?v=20260621b";
 
@@ -116,8 +115,8 @@ function pageIntroMeta(id) {
       ref: "Elder Thaddeus of Vitovnica"
     },
     reports: {
-      kicker: "RECORDS & PROGRESS",
-      description: "Turn lessons, narrations, attendance, and books into calm records when you need to review or export progress.",
+      kicker: "COMING SOON",
+      description: "Beautiful academic records, report cards, progress summaries, and transcripts are planned for a future Learn release.",
       quote: "If good foundations are laid early, children will grow up to be great.",
       ref: "St. John Chrysostom"
     },
@@ -394,6 +393,7 @@ function sidebar(vm) {
           <a class="${item.id === active ? "is-active" : ""}" href="${item.href}" ${item.id === active ? 'aria-current="page"' : ""}>
             <span class="learn-product-nav-icon">${item.icon}</span>
             <span>${html(item.label)}</span>
+            ${item.comingSoon ? '<small class="learn-nav-soon">Soon</small>' : ""}
           </a>
         `).join("")}
         </nav>
@@ -721,7 +721,7 @@ function renderPlannerWeek(vm) {
       <aside style="flex:0 1 330px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;">
         <div style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;margin-bottom:12px;">TERM AT A GLANCE</div>
         <strong style="font-family:'Cormorant Garamond',serif;font-size:22px;">${html(vm.term.cycleTitle)}</strong>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">${vm.term.settings.length ? vm.term.settings.map((item) => `<span style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</span>`).join("") : emptyState("Set cycle planning in Setup.")}</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">${vm.term.settings.length ? vm.term.settings.map((item) => `<span style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</span>`).join("") : emptyState("Add term dates and subject plans in Setup.")}</div>
       </aside>
     </div>
   `;
@@ -816,11 +816,11 @@ function renderPlannerTerm(vm) {
 function renderPlannerYear(vm) {
   return `
     <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start;">
-      ${panel("School Year & Cycle", `<h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0;">${html(vm.year.schoolYear)}</h2><p style="color:var(--muted);">${html(vm.year.dateRange)}</p><strong>${html(vm.year.cycleTitle)}</strong><p style="line-height:1.45;color:#33405a;">${html(vm.year.cycleYear)}</p><div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:10px;margin-top:12px;">${vm.year.terms.map((term) => `<div style="border:1px solid ${term.active ? "var(--gold)" : "var(--line)"};border-radius:10px;background:${term.active ? "#fbf2dd" : "var(--paper2)"};padding:12px;"><strong>${html(term.label)}</strong><small style="display:block;color:var(--muted);">${term.active ? "Current term" : "Planned"}</small></div>`).join("")}</div>`, { icon: "▣" })}
+      ${panel("School Year & Terms", `<h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0;">${html(vm.year.schoolYear)}</h2><p style="color:var(--muted);">${html(vm.year.dateRange)}</p><div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:10px;margin-top:12px;">${vm.year.terms.map((term) => `<div style="border:1px solid ${term.active ? "var(--gold)" : "var(--line)"};border-radius:10px;background:${term.active ? "#fbf2dd" : "var(--paper2)"};padding:12px;"><strong>${html(term.label)}</strong><small style="display:block;color:var(--muted);">${term.active ? "Current term" : "Planned"}</small></div>`).join("")}</div>`, { icon: "▣" })}
       ${panel("Upcoming Feasts", vm.year.upcomingFeasts.map((feast) => `<div style="padding:10px 0;border-top:1px solid var(--line);"><strong>${html(feast.title)}</strong><small style="display:block;color:var(--muted);">${html(feast.date)} · ${html(feast.fasting)}</small></div>`).join("") || emptyState("No feasts loaded."), { icon: "✥" })}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      ${panel("Cycle Frameworks", vm.year.frameworks.map((item) => `<div style="padding:10px 0;border-top:1px solid var(--line);"><small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;">${html(item.type)}</small><strong style="display:block;">${html(item.label)}</strong></div>`).join(""), { icon: "◎" })}
+      ${panel("Planning Structure", `<div style="padding:10px 0;border-top:1px solid var(--line);"><small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;">Adaptive setup</small><strong style="display:block;">Use Forms or grade levels, with family-based work shared once.</strong></div>`, { icon: "◎" })}
       ${panel("Season Topics", vm.year.topics.map((topic) => `<div style="padding:10px 0;border-top:1px solid var(--line);"><small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;">${html(topic.season)} · ${html(topic.type)}</small><strong style="display:block;">${html(topic.title)}</strong></div>`).join(""), { icon: "☰" })}
     </div>
     ${panel("Curriculum Packages", `<div style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:12px;">${vm.year.curriculumPackages.map((pkg) => `<div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:12px;"><small style="color:var(--gold);">${html(pkg.vendor)}</small><strong style="display:block;margin:4px 0;">${html(pkg.title)}</strong><span style="color:var(--muted);line-height:1.35;">${html(pkg.summary)}</span></div>`).join("")}</div>`, { icon: "✥" })}
@@ -964,10 +964,10 @@ function renderCommunity(vm) {
 function renderCoOp(vm) {
   const body = `
     <section data-screen-label="Co-op" style="display:flex;flex-direction:column;gap:18px;">
-      ${panel("Co-op Coming Soon", `<div style="display:grid;grid-template-columns:130px 1fr;gap:22px;align-items:center;"><div style="height:132px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,#f8f0dd,#efe0ba);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:54px;">◎</div><div><small style="color:var(--gold);letter-spacing:.16em;text-transform:uppercase;">Future Learn Add-On</small><h2 style="font-family:'Cormorant Garamond',serif;font-size:34px;margin:8px 0 6px;">Co-op tools are coming soon</h2><p style="margin:0;color:#34405a;line-height:1.5;max-width:760px;">For launch, AGAPAY Learn is focused on household setup, planning, calendar rhythms, print packs, reports, books, and revenue-ready subscription limits. Co-op creation, invitations, shared schedules, and member management will return after the core product is generating traction.</p></div></div>`, { icon: "◎" })}
+      ${panel("Co-op Coming Soon", `<div style="display:grid;grid-template-columns:130px 1fr;gap:22px;align-items:center;"><div style="height:132px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,#f8f0dd,#efe0ba);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:54px;">◎</div><div><small style="color:var(--gold);letter-spacing:.16em;text-transform:uppercase;">Future Learn Add-On</small><h2 style="font-family:'Cormorant Garamond',serif;font-size:34px;margin:8px 0 6px;">Co-op tools are coming soon</h2><p style="margin:0;color:#34405a;line-height:1.5;max-width:760px;">For launch, AGAPAY Learn is focused on setup, Today, planning, Church rhythms, formation, books, Grace Mode, and printable household plans. Co-op creation, invitations, and shared schedules will come in a later release.</p></div></div>`, { icon: "◎" })}
       <div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:16px;">
         ${panel("Planned Later", `<div style="padding:8px 0;border-top:1px solid var(--line);">Create or join a co-op</div><div style="padding:8px 0;border-top:1px solid var(--line);">Invite AGAPAY member families</div><div style="padding:8px 0;border-top:1px solid var(--line);">Shared schedules and rotation</div>`, { icon: "▣" })}
-        ${panel("Launch Focus", `<div style="padding:8px 0;border-top:1px solid var(--line);">Parent setup flow</div><div style="padding:8px 0;border-top:1px solid var(--line);">Planner and print center</div><div style="padding:8px 0;border-top:1px solid var(--line);">Reports and paid household limits</div>`, { icon: "✥" })}
+        ${panel("Launch Focus", `<div style="padding:8px 0;border-top:1px solid var(--line);">Simple and Advanced Setup</div><div style="padding:8px 0;border-top:1px solid var(--line);">Planner and Print Center</div><div style="padding:8px 0;border-top:1px solid var(--line);">Formation, books, and Grace Mode</div>`, { icon: "✥" })}
         ${panel("Status", `<strong style="font-family:'Cormorant Garamond',serif;font-size:26px;">Coming Soon</strong><small style="display:block;color:var(--muted);margin-top:6px;">This tab is intentionally parked for the first revenue-focused launch.</small>`, { icon: "♢" })}
       </div>
     </section>`;
@@ -1448,6 +1448,24 @@ function renderSimpleSetupWizard(vm, draft) {
   return shell(vm, body);
 }
 
+function renderReportsComingSoon(vm) {
+  return shell(vm, `
+    <section data-screen-label="Reports" class="learn-coming-soon-page">
+      <div class="learn-coming-soon-mark" aria-hidden="true">▥</div>
+      <p>Future Learn Feature</p>
+      <h2>Beautiful records, without the institutional clutter.</h2>
+      <span>Reports are intentionally parked while AGAPAY Learn focuses on a dependable Today dashboard, adaptive setup, planning, formation, books, and printable household plans.</span>
+      <div class="learn-coming-soon-list">
+        <strong>Planned for Reports</strong>
+        <span>Progress summaries by child, Form, or grade</span>
+        <span>Report cards and year-end household records</span>
+        <span>Transcript-ready academic exports</span>
+        <span>Printable state-reporting support</span>
+      </div>
+      <a href="/myagapay/learn" class="learn-coming-soon-action">Back to Today</a>
+    </section>`);
+}
+
 function captureSimpleSetupStep(form, draft) {
   const value = (name) => form.elements[name]?.value?.trim() || "";
   if (draft.step === 0) {
@@ -1697,7 +1715,7 @@ function renderSetup(vm) {
       ${panel(groupingTitle, `<p style="margin:0 0 12px;color:var(--muted);">${html(groupingCopy)}</p><div data-setup-list="children" style="display:grid;gap:10px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child, groupingMode)).join("")}</div><button type="button" data-setup-add-row="children" style="margin-top:12px;width:100%;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px;font-family:inherit;">Add Child</button>`, { icon: "◎", largeTitle: true })}
       ${panel("Terms", `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Term 4 / Summer is available for year-round homeschoolers. Assign subjects, books, and formation materials to the term where they belong.</p><div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div>`, { icon: "◷", largeTitle: true })}
       ${experience.order.map((key) => adaptivePanels[key]).join("")}
-      ${panel("Co-op", `<div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">Coming Soon</strong><p style="margin:4px 0 0;color:var(--muted);line-height:1.4;">Co-op creation and member management are intentionally deferred so Learn can launch with the household planner, reports, print packs, and paid limits first.</p></div><span style="border:1px solid var(--gold);border-radius:999px;color:var(--gold);padding:7px 12px;white-space:nowrap;">Future add-on</span></div>`, { icon: "◎" })}
+      ${panel("Co-op", `<div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">Coming Soon</strong><p style="margin:4px 0 0;color:var(--muted);line-height:1.4;">Co-op tools are deferred while Learn focuses on setup, Today, planning, formation, books, Grace Mode, and printable household plans.</p></div><span style="border:1px solid var(--gold);border-radius:999px;color:var(--gold);padding:7px 12px;white-space:nowrap;">Future add-on</span></div>`, { icon: "◎" })}
       <div style="position:sticky;bottom:12px;z-index:5;display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;background:rgba(253,249,239,.96);padding:12px 14px;box-shadow:0 8px 24px rgba(18,38,67,.12);">
         <span data-setup-status style="color:var(--muted);">Setup saves to the household profile and D1-backed Learn records.</span>
         <button type="submit" style="border:none;background:var(--navy);color:#fff;border-radius:10px;padding:12px 20px;font-family:inherit;font-weight:700;">Save Setup</button>
@@ -2632,10 +2650,10 @@ async function mount() {
     return;
   }
   if (pageKey === "reports") {
-    const raw = await apiGet("/api/learn/reports");
-    const vm = toReportsViewModel(raw);
-    root.innerHTML = renderReports(vm);
-    wireReports(vm);
+    const raw = await apiGet("/api/learn/dashboard");
+    const vm = toDashboardViewModel(raw);
+    vm.page = { id: "reports", title: "Reports", subtitle: "Academic records and transcript tools are coming soon.", ornament: true };
+    root.innerHTML = renderReportsComingSoon(vm);
     return;
   }
   if (pageKey === "print-center") {

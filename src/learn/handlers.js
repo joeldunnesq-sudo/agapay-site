@@ -110,7 +110,7 @@ export function handleLearnMeta(env) {
       { href: "/myagapay/learn/formation", label: "Formation", implemented: true },
       { href: "/myagapay/learn/books", label: "Books", implemented: true },
       { href: "/myagapay/learn/community", label: "Community", implemented: true },
-      { href: "/myagapay/learn/reports", label: "Reports", implemented: true },
+      { href: "/myagapay/learn/reports", label: "Reports", implemented: false, status: "coming-soon" },
       { href: "/myagapay/learn/print", label: "Print Center", implemented: true },
       { href: "/myagapay/learn/setup", label: "Setup", implemented: true },
       { href: "/myagapay/learn/co-op", label: "Co-op", implemented: learnCoOpEnabled(env), featureFlag: "learn-coop" }

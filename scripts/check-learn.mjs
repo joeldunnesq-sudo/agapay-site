@@ -69,6 +69,8 @@ const learnHandlers = readFileSync(new URL("../src/learn/handlers.js", import.me
 const learnRepository = readFileSync(new URL("../src/learn/repository.js", import.meta.url), "utf8");
 const learnSetupPersistence = readFileSync(new URL("../src/learn/setup-persistence.js", import.meta.url), "utf8");
 const learnDashboardHtml = readFileSync(new URL("../public/learn/dashboard.html", import.meta.url), "utf8");
+const learnOverviewHtml = readFileSync(new URL("../public/learn/index.html", import.meta.url), "utf8");
+const learnPricingHtml = readFileSync(new URL("../public/learn/pricing.html", import.meta.url), "utf8");
 assert(learnShell.includes("data-dialog-checkout"), "Learn shell should include checkout dialog hooks.");
 assert(learnShell.includes("data-grace-mode"), "Learn shell should expose grace mode controls.");
 assert(learnShell.includes("data-print-generate"), "Learn shell should expose print generation hooks.");
@@ -85,6 +87,7 @@ assert(learnShell.includes("simpleSetupPayload"), "Learn setup wizard should sav
 assert(learnShell.includes("Create a gentle starter week"), "Learn setup wizard should offer a starter-week plan.");
 assert(learnShell.includes('title: "Starter Language Arts"') && learnShell.includes('title: "Morning Prayers"') && learnShell.includes('title: "Family Read-Aloud"'), "The starter-week option should persist real subject, Church rhythm, and enrichment data.");
 assert(learnShell.includes("Grace Mode lightens a day without erasing the plan"), "The setup wizard should explain Grace Mode and its non-destructive behavior.");
+assert(learnShell.includes("renderReportsComingSoon") && !learnShell.includes('apiGet("/api/learn/reports")'), "The Learn Reports screen should remain a coming-soon surface without loading report data.");
 assert(learnShell.includes("Free plan: up to 2 children"), "Learn setup wizard should clearly disclose the free child limit.");
 assert(learnShell.includes('href="/myagapay/learn/setup?simple=1">Quick Setup'), "Learn utility bar should open the simple setup wizard.");
 assert(learnShell.includes('loginUrl.searchParams.set("reason", "session-expired")'), "Expired Learn sessions should return users to My AGAPAY sign-in.");
@@ -98,6 +101,10 @@ assert(learnRepository.includes("setupCompleted: Boolean(this.seed.setupSnapshot
 assert(learnSetupPersistence.includes('"Traditional", "Eclectic", "Unsure"'), "Learn setup should accept every wizard rhythm preset.");
 assert(learnSetupPersistence.includes("parentNames"), "Learn setup should persist the wizard parent name.");
 assert(learnSetupPersistence.includes("groupingMode"), "Learn setup should persist the selected planning-group model.");
+assert(learnHandlers.includes('label: "Reports", implemented: false, status: "coming-soon"'), "Learn metadata should mark Reports as coming soon.");
+assert(learnOverviewHtml.includes("Clearly on the roadmap") && learnOverviewHtml.includes("Reports & Transcripts"), "The Learn overview should clearly separate coming-soon features.");
+assert(!learnOverviewHtml.includes("Printables, reports, and transcripts"), "The Learn overview should not advertise Reports as currently available.");
+assert(learnPricingHtml.includes("Reports Coming Soon") && learnPricingHtml.includes("Reports</div><div>Coming Soon"), "Learn pricing should clearly label Reports as coming soon.");
 assert(learnDashboardHtml.includes("/learn/dashboard-shell.js"), "Learn dashboard should load the active dashboard shell.");
 assert(learnDashboardHtml.includes("/learn/dashboard-view-models.js"), "Learn dashboard should preload the active view model bundle.");
 assert(!learnDashboardHtml.includes("claude-shell"), "Learn dashboard should not reference legacy Claude shell filenames.");

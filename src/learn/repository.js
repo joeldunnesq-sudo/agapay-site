@@ -673,7 +673,7 @@ export class SeedLearnRepository {
       comingSoon: true,
       title: "Community is coming soon",
       subtitle: "A curated Orthodox homeschool resource exchange is planned, but intentionally paused for launch.",
-      detail: "For now, AGAPAY Learn is focused on the household planner, formation, books, reports, and print packs."
+      detail: "For now, AGAPAY Learn is focused on adaptive setup, Today, household planning, formation, books, Grace Mode, and printable plans."
     };
   }
 
