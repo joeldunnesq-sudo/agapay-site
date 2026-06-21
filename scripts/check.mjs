@@ -113,6 +113,13 @@ assert.ok(worker.includes('url.pathname === "/api/campaign"'), "worker should ro
 assert.ok(worker.includes('endsWith("/campaign-upload")'), "worker should route authenticated parish campaign photo uploads");
 assert.ok(worker.includes('startsWith("/give/parish-giving/")'), "worker should serve campaign share URLs instead of the generic giving form");
 assert.ok(donorApp.includes("handleDonorCheckoutReturn"), "donor dashboard should confirm returned Stripe checkout sessions");
+const givingOverview = await readFile("public/give/index.html", "utf8");
+assert.ok(givingOverview.includes("Orthodox Giving App &amp; Tithing Software") || givingOverview.includes("Orthodox Giving App & Tithing Software"), "Giving overview should target Orthodox giving and tithing search intent");
+assert.ok(givingOverview.includes('"@type": "SoftwareApplication"') && givingOverview.includes('"@type": "FAQPage"'), "Giving overview should include software and FAQ structured data");
+assert.ok(givingOverview.includes("Orthodox giving and tithing tools ready for parish life"), "Giving overview should describe currently available tools");
+assert.ok(givingOverview.includes("Text-to-Give") && givingOverview.includes("AGAPAY Stewardship") && givingOverview.includes("Coming Soon"), "Giving overview should clearly identify coming-soon products");
+const sitemap = await readFile("public/sitemap.xml", "utf8");
+assert.ok(sitemap.includes("https://agapay.app/giving"), "sitemap should include the canonical Giving overview URL");
 assert.ok(registerHtml.includes("/security.js") && registerHtml.includes("data-agapay-turnstile"), "registration should render Turnstile when configured");
 assert.ok(registerHtml.includes("agapaySecurityPayload"), "registration should send Turnstile tokens when configured");
 

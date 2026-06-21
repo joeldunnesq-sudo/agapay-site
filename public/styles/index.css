@@ -1117,6 +1117,122 @@
       margin: 0;
       font-size: 0.9rem;
     }
+    .giving-capabilities {
+      background:
+        linear-gradient(180deg, rgba(255, 253, 248, 0.97), rgba(246, 241, 232, 0.96)),
+        var(--cream);
+      border-top: 1px solid rgba(200, 162, 74, 0.2);
+      border-bottom: 1px solid rgba(200, 162, 74, 0.2);
+    }
+    .giving-capabilities-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(320px, 0.7fr);
+      gap: clamp(2rem, 6vw, 5rem);
+      align-items: end;
+      margin-bottom: 2rem;
+    }
+    .giving-capabilities-head .lead { margin: 0; }
+    .giving-capability-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      border-top: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+    }
+    .giving-capability-card {
+      min-height: 220px;
+      padding: 1.5rem;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.42);
+    }
+    .giving-capability-card h3 {
+      margin: 1rem 0 0.65rem;
+      color: var(--night);
+      font-size: 1.08rem;
+    }
+    .giving-capability-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 0.94rem;
+    }
+    .giving-status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 0 0.62rem;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .giving-status.is-live {
+      color: #1f5c43;
+      border: 1px solid rgba(31, 92, 67, 0.25);
+      background: rgba(83, 139, 104, 0.1);
+    }
+    .giving-roadmap {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.55fr) minmax(0, 1.45fr);
+      gap: 2rem;
+      margin-top: 2rem;
+      padding: 1.5rem;
+      border: 1px solid rgba(200, 162, 74, 0.35);
+      border-radius: 8px;
+      background: rgba(200, 162, 74, 0.07);
+    }
+    .giving-roadmap h3 { margin: 0.4rem 0 0; }
+    .giving-roadmap-items {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    .giving-roadmap-items p {
+      margin: 0;
+      padding-left: 1rem;
+      border-left: 2px solid var(--gold);
+    }
+    .giving-roadmap-items strong,
+    .giving-roadmap-items span { display: block; }
+    .giving-roadmap-items strong { color: var(--night); }
+    .giving-roadmap-items span {
+      margin-top: 0.35rem;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.9rem;
+    }
+    .giving-capability-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+    .giving-faq { background: #fffdf8; }
+    .giving-faq-layout {
+      display: grid;
+      grid-template-columns: minmax(240px, 0.55fr) minmax(0, 1fr);
+      gap: clamp(2rem, 7vw, 6rem);
+      align-items: start;
+    }
+    .giving-faq-list {
+      border-top: 1px solid var(--line);
+    }
+    .giving-faq-list details {
+      border-bottom: 1px solid var(--line);
+      padding: 1.2rem 0;
+    }
+    .giving-faq-list summary {
+      cursor: pointer;
+      color: var(--night);
+      font-weight: 750;
+      list-style-position: outside;
+    }
+    .giving-faq-list p {
+      margin: 0.85rem 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
     footer {
       margin-top: 4.5rem;
       border-top: 1px solid rgba(200, 162, 74, 0.16);
@@ -1144,9 +1260,13 @@
       .ecosystem,
       .trust-grid,
       .mission-band,
-      .join-grid {
+      .join-grid,
+      .giving-capabilities-head,
+      .giving-roadmap,
+      .giving-faq-layout {
         grid-template-columns: 1fr;
       }
+      .giving-capability-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .hero-console {
         position: relative;
         right: auto;
@@ -1241,6 +1361,10 @@
       .section { padding-block: 4rem; }
       .problem::before { opacity: 0.05; }
       .join-features { grid-template-columns: 1fr; }
+      .giving-capability-grid,
+      .giving-roadmap-items { grid-template-columns: 1fr; }
+      .giving-capability-card { min-height: 0; }
+      .giving-capability-actions .btn { width: 100%; }
       footer a:first-child { margin-left: 0; }
     }
 
