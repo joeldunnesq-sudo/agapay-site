@@ -1668,10 +1668,30 @@ function renderPrintCenter(vm) {
   return shell(vm, body);
 }
 
+function redirectExpiredLearnSession() {
+  localStorage.removeItem("agapayDonorToken");
+  localStorage.removeItem("agapayDonorProfile");
+  localStorage.removeItem("agapayDonorEmail");
+  localStorage.removeItem("agapay.learn.plan");
+
+  const loginUrl = new URL("/myagapay/login", window.location.origin);
+  loginUrl.searchParams.set("next", `${window.location.pathname}${window.location.search || ""}`);
+  loginUrl.searchParams.set("reason", "session-expired");
+  window.location.replace(loginUrl.toString());
+}
+
+function waitForLearnSignIn(response) {
+  if (response.status !== 401) return null;
+  redirectExpiredLearnSession();
+  return new Promise(() => {});
+}
+
 async function apiGet(path) {
   const response = await fetch(path, {
     headers: learnRequestHeaders()
   });
+  const signInRedirect = waitForLearnSignIn(response);
+  if (signInRedirect) return signInRedirect;
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || payload.error) throw new Error(payload.error || `Request failed with ${response.status}`);
   return payload;
@@ -1688,6 +1708,8 @@ async function apiPost(path, body) {
   } catch {
     throw new Error("Unable to reach AGAPAY Learn. Please refresh, confirm you are still logged in, and try again.");
   }
+  const signInRedirect = waitForLearnSignIn(response);
+  if (signInRedirect) return signInRedirect;
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || payload.error) throw new Error(payload.error || `Request failed with ${response.status}`);
   return payload;

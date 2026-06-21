@@ -85,6 +85,8 @@ assert(learnShell.includes("simpleSetupPayload"), "Learn setup wizard should sav
 assert(learnShell.includes("Create a gentle starter week"), "Learn setup wizard should offer a starter-week plan.");
 assert(learnShell.includes("Free plan: up to 2 children"), "Learn setup wizard should clearly disclose the free child limit.");
 assert(learnShell.includes('href="/myagapay/learn/setup?simple=1">Quick Setup'), "Learn utility bar should open the simple setup wizard.");
+assert(learnShell.includes('loginUrl.searchParams.set("reason", "session-expired")'), "Expired Learn sessions should return users to My AGAPAY sign-in.");
+assert(learnShell.includes('loginUrl.searchParams.set("next",'), "Learn sign-in redirects should preserve the requested Learn page.");
 assert(learnShell.includes("existingSnapshot?.subjects || []"), "Quick Setup should preserve an existing household's advanced subject plan.");
 assert(learnHandlers.includes("setupCompleted: Boolean(repository.seed?.setupSnapshot)"), "Learn dashboard API should expose first-run setup state.");
 assert(learnRepository.includes("setupCompleted: Boolean(this.seed.setupSnapshot)"), "Learn onboarding API should expose saved setup state.");
