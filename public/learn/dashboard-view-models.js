@@ -893,6 +893,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
   const currentTermId = text(schoolYear.currentTermId || term.id || setupTerms[0]?.id, "term_1");
   const householdMethod = text(household.primaryMethod, "Charlotte Mason");
   const childrenSource = setupCompleted ? (safeArray(setup.children).length ? setup.children : snapshot.children) : [];
+  const groupingMode = text(preferences.groupingMode, childrenSource.some((child) => text(child.formLabel, "")) || householdMethod === "Charlotte Mason" ? "forms" : "grades") === "grades" ? "grades" : "forms";
   const streamsSource = setupCompleted ? (safeArray(setup.starterStreams).length ? setup.starterStreams : safeArray(setup.householdStreams).length ? setup.householdStreams : snapshot.streams) : [];
   const subjectsSource = setupCompleted ? (safeArray(snapshot.subjects).length ? snapshot.subjects : setup.subjects) : [];
   const booksSource = setupCompleted ? (safeArray(snapshot.books).length ? snapshot.books : setup.books) : [];
@@ -1004,6 +1005,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
     steps: setupV2Steps,
     preferences: {
       calendarType: text(clientState.calendar || preferences.calendarType, "julian"),
+      groupingMode,
       evaluationModel: text(preferences.evaluationModel, "narrative-only"),
       graceModeDefault: text(preferences.graceModeDefault, "light"),
       graceModeActive: Boolean(preferences.graceModeActive),
@@ -1031,6 +1033,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       planningMode: text(subject.planningMode, subject.childId ? "forms" : "forms"),
       weeklyFrequency: weeklyFrequencyValue(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "daily"),
       formLabel: text(subject.formLabel, ""),
+      gradeLabel: text(subject.gradeLabel, ""),
       resource: text(subject.resource || subject.title, ""),
       resourceType: text(subject.resourceType || subject.sourceType, subject.resource ? "curriculum" : "none"),
       cadence: text(subject.cadenceLabel || subject.cadence, ""),
@@ -1127,6 +1130,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         planningMode: text(block.planningMode, "family"),
         weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
         formLabel: text(block.formLabel, ""),
+        gradeLabel: text(block.gradeLabel, ""),
         childId: text(block.childId, ""),
         progressionType: text(block.progressionType, "lessons"),
         startNumber: text(block.startNumber, ""),
@@ -1149,6 +1153,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         planningMode: text(block.planningMode, "family"),
         weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
         formLabel: text(block.formLabel, ""),
+        gradeLabel: text(block.gradeLabel, ""),
         childId: text(block.childId, ""),
         progressionType: text(block.progressionType, "lessons"),
         startNumber: text(block.startNumber, ""),

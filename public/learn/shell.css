@@ -790,6 +790,30 @@ body {
   display: none !important;
 }
 
+.learn-setup-method-note {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 14px;
+  border-left: 3px solid var(--gold);
+  border-radius: 0 10px 10px 0;
+  background: rgba(201, 162, 91, 0.1);
+  padding: 11px 14px;
+}
+
+.learn-setup-method-note small {
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.learn-setup-method-note strong {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 .learn-setup-row {
   display: grid;
   gap: 12px;
@@ -1133,6 +1157,68 @@ body {
   font-size: 0.78rem;
   line-height: 1.35;
   text-align: right;
+}
+
+.learn-wizard-grace-explainer {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  border: 1px solid rgba(201, 162, 91, 0.42);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(6, 21, 34, 0.97), rgba(18, 44, 67, 0.96));
+  padding: 18px;
+  color: #fffaf0;
+}
+
+.learn-wizard-grace-explainer small {
+  color: rgba(255, 250, 240, 0.72);
+  line-height: 1.4;
+}
+
+.learn-wizard-grace-explainer > div > small {
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.learn-wizard-grace-explainer h3 {
+  margin: 5px 0;
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(1.45rem, 3vw, 1.9rem);
+  line-height: 1.05;
+}
+
+.learn-wizard-grace-explainer p {
+  margin: 0;
+  color: rgba(255, 250, 240, 0.82);
+  line-height: 1.55;
+}
+
+.learn-wizard-grace-levels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.learn-wizard-grace-levels span {
+  display: grid;
+  gap: 3px;
+  border: 1px solid rgba(201, 162, 91, 0.26);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 11px;
+}
+
+.learn-wizard-grace-levels strong {
+  color: var(--gold);
+}
+
+.learn-wizard-grace-tip {
+  border-top: 1px solid rgba(201, 162, 91, 0.22);
+  padding-top: 12px;
+  font-size: 0.86rem;
 }
 
 .learn-wizard-child {
@@ -1689,6 +1775,10 @@ body {
 
   .learn-wizard-plan-note span {
     text-align: left;
+  }
+
+  .learn-wizard-grace-levels {
+    grid-template-columns: 1fr;
   }
 
   .learn-wizard-child .learn-wizard-field {

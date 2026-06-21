@@ -217,6 +217,7 @@ function weeklyPlanArrays(frequency = "daily", minutes = 20) {
 function childrenForAssignment(item = {}, children = []) {
   if (item.childId) return children.filter((child) => child.id === item.childId);
   if (item.formLabel) return children.filter((child) => child.formLabel === item.formLabel || child.gradeLabel === item.formLabel);
+  if (item.gradeLabel) return children.filter((child) => child.gradeLabel === item.gradeLabel);
   return children;
 }
 
@@ -271,6 +272,7 @@ function normalizeSetupPayload(payload = {}, identity) {
   const schoolYear = payload.schoolYear || {};
   const term = payload.term || {};
   const preferences = payload.preferences || {};
+  const groupingMode = preferences.groupingMode === "grades" ? "grades" : "forms";
   const primaryMethod = normalizeHomeschoolMethod(household.primaryMethod || seed.household.primaryMethod);
   const parentNames = list(household.parentNames)
     .map((name) => text(name, ""))
@@ -383,6 +385,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     planningMode: text(subject.planningMode, "forms"),
     weeklyFrequency: weeklyFrequencyValue(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "daily"),
     formLabel: text(subject.formLabel, ""),
+    gradeLabel: text(subject.gradeLabel, ""),
     resource: text(subject.resource, ""),
     resourceType: resourceTypeValue(subject.resourceType || subject.sourceType, subject.resource ? "curriculum" : "none"),
     cadenceLabel: text(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "Weekly"),
@@ -473,6 +476,7 @@ function normalizeSetupPayload(payload = {}, identity) {
       planningMode: text(block.planningMode, "family"),
       weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
       formLabel: text(block.formLabel, ""),
+      gradeLabel: text(block.gradeLabel, ""),
       childId: text(block.childId, ""),
       progressionType: text(block.progressionType, "lessons"),
       startNumber: text(block.startNumber, ""),
@@ -534,6 +538,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     terms: normalizedTerms,
     preferences: {
       calendarType: normalizedHousehold.liturgicalCalendarType,
+      groupingMode,
       paceMode: normalizedHousehold.paceMode,
       evaluationModel: text(preferences.evaluationModel, "narrative-only"),
       graceModeDefault: text(preferences.graceModeDefault, "light"),
