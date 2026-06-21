@@ -7,7 +7,7 @@ import { getLearnSeedSnapshot } from "./demo-data.js";
 const LEARN_SETUP_KV_PREFIX = "__agapay_learn_setup:";
 const devSetupSnapshots = new Map();
 
-const HOMESCHOOL_METHODS = ["Charlotte Mason", "Orthodox Classical", "Eclectic"];
+const HOMESCHOOL_METHODS = ["Charlotte Mason", "Orthodox Classical", "Traditional", "Eclectic", "Unsure"];
 
 const HISTORY_CYCLES = {
   "ambleside-inspired": {
@@ -272,12 +272,16 @@ function normalizeSetupPayload(payload = {}, identity) {
   const term = payload.term || {};
   const preferences = payload.preferences || {};
   const primaryMethod = normalizeHomeschoolMethod(household.primaryMethod || seed.household.primaryMethod);
+  const parentNames = list(household.parentNames)
+    .map((name) => text(name, ""))
+    .filter(Boolean);
+  if (!parentNames.length && text(household.parentName, "")) parentNames.push(text(household.parentName, ""));
   const historyCycle = payload.historyCycle ? normalizeHistoryCycle(payload.historyCycle, primaryMethod) : null;
   const normalizedHousehold = {
     id: identity.householdId,
     slug: slug(household.name || identity.householdId, identity.householdId),
     name: text(household.name, seed.household.name),
-    parentNames: [],
+    parentNames,
     childrenCount: 0,
     parishName: text(household.parishName, seed.household.parishName || ""),
     city: text(household.city, ""),
@@ -297,8 +301,8 @@ function normalizeSetupPayload(payload = {}, identity) {
         householdId: identity.householdId,
         firstName,
         ageYears: int(child.ageYears || child.age, 0),
-        gradeLabel: text(child.formLabel || child.gradeLabel || child.grade, ""),
-        formLabel: text(child.formLabel || child.gradeLabel || child.grade, ""),
+        gradeLabel: text(child.gradeLabel || child.grade, child.formLabel || ""),
+        formLabel: text(child.formLabel, ""),
         color: text(child.color, ""),
         avatarMonogram: text(child.avatarMonogram, firstName.charAt(0).toUpperCase()),
         accentToken: text(child.accentToken, seed.children[index % seed.children.length]?.accentToken || "navy")

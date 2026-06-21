@@ -897,6 +897,8 @@ export class SeedLearnRepository {
 
   getOnboarding() {
     return {
+      setupCompleted: Boolean(this.seed.setupSnapshot),
+      setupSnapshot: this.seed.setupSnapshot || null,
       household: this.seed.household,
       children: this.seed.children,
       schoolYear: this.seed.schoolYear,

@@ -8,7 +8,7 @@ import {
   toPrintCenterViewModel,
   toReportsViewModel,
   toSetupViewModel
-} from "./dashboard-view-models.js";
+} from "./dashboard-view-models.js?v=20260621a";
 
 const pageKey = document.body.dataset.learnPage || "dashboard";
 const root = document.getElementById("learnRoot");
@@ -1012,8 +1012,10 @@ const formOptions = [
 
 const homeschoolMethodOptions = [
   "Charlotte Mason",
-  "Orthodox Classical",
-  "Eclectic"
+  { value: "Orthodox Classical", label: "Classical" },
+  "Traditional",
+  "Eclectic",
+  "Unsure"
 ];
 
 const subjectTypeOptions = [
@@ -1294,13 +1296,326 @@ function setupProgressCard(step) {
   return `<button type="button" class="learn-setup-step ${setupStepState(step)}" data-setup-progress-target="${setupStepTarget(step)}"><small>${html(step.status)}</small><strong>${html(step.title)}</strong><span>${html(step.summary)}</span></button>`;
 }
 
+const SIMPLE_SETUP_STEPS = ["Household", "Children", "Forms", "Rhythm", "Starter Week"];
+
+function simpleSetupDraftKey() {
+  let identity = localStorage.getItem("agapayDonorEmail") || "household";
+  try {
+    const profile = JSON.parse(localStorage.getItem("agapayDonorProfile") || "{}");
+    identity = profile.email || identity;
+  } catch {
+    // A malformed cached profile should not block local wizard progress.
+  }
+  return `agapay.learn.simpleSetup.v1:${String(identity).toLowerCase().replace(/[^a-z0-9@._-]/g, "")}`;
+}
+
+function suggestedFormForChild(child = {}) {
+  const age = Number.parseInt(child.ageYears, 10);
+  if (Number.isFinite(age)) {
+    if (age <= 5) return "Little Ones";
+    if (age <= 8) return "Form I";
+    if (age <= 11) return "Form II";
+    if (age <= 14) return "Form III";
+    if (age <= 16) return "Form IV";
+    return "Form V";
+  }
+  const grade = String(child.gradeLabel || "").toLowerCase();
+  const number = Number.parseInt(grade.match(/\d+/)?.[0] || "", 10);
+  if (grade.includes("pre") || grade.includes("kindergarten") || grade === "k") return "Little Ones";
+  if (Number.isFinite(number)) {
+    if (number <= 3) return "Form I";
+    if (number <= 6) return "Form II";
+    if (number <= 9) return "Form III";
+    if (number <= 11) return "Form IV";
+    return "Form V";
+  }
+  return "Form I";
+}
+
+function defaultSimpleSetupDraft(vm = {}) {
+  const existingChildren = Array.isArray(vm.children) ? vm.children.map((child, index) => ({
+    clientId: child.id || `child_${Date.now()}_${index}`,
+    firstName: child.firstName || child.name || "",
+    ageYears: String(child.age || ""),
+    gradeLabel: child.grade || "",
+    formLabel: child.formLabel || child.form || ""
+  })) : [];
+  return {
+    step: 0,
+    householdName: vm.household?.name || "",
+    parentName: vm.household?.parentName || "",
+    calendarType: vm.preferences?.calendarType || "julian",
+    children: existingChildren.length ? existingChildren : [{ clientId: `child_${Date.now()}`, firstName: "", ageYears: "", gradeLabel: "", formLabel: "" }],
+    useForms: true,
+    method: vm.household?.method || "Unsure",
+    starterWeek: true
+  };
+}
+
+function loadSimpleSetupDraft(vm) {
+  const fallback = defaultSimpleSetupDraft(vm);
+  try {
+    const stored = JSON.parse(localStorage.getItem(simpleSetupDraftKey()) || "null");
+    if (!stored || typeof stored !== "object") return fallback;
+    return {
+      ...fallback,
+      ...stored,
+      step: Math.max(0, Math.min(SIMPLE_SETUP_STEPS.length - 1, Number(stored.step) || 0)),
+      children: Array.isArray(stored.children) && stored.children.length
+        ? stored.children.map((child, index) => ({
+            clientId: child.clientId || `child_${Date.now()}_${index}`,
+            firstName: String(child.firstName || ""),
+            ageYears: String(child.ageYears || ""),
+            gradeLabel: String(child.gradeLabel || ""),
+            formLabel: String(child.formLabel || "")
+          }))
+        : fallback.children
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function saveSimpleSetupDraft(draft) {
+  localStorage.setItem(simpleSetupDraftKey(), JSON.stringify(draft));
+}
+
+function simpleSetupField(label, name, value = "", options = {}) {
+  const type = options.type || "text";
+  const placeholder = options.placeholder ? ` placeholder="${html(options.placeholder)}"` : "";
+  const min = options.min !== undefined ? ` min="${html(options.min)}"` : "";
+  const max = options.max !== undefined ? ` max="${html(options.max)}"` : "";
+  return `<label class="learn-wizard-field"><span>${html(label)}</span><input name="${html(name)}" type="${html(type)}" value="${html(value)}"${placeholder}${min}${max}></label>`;
+}
+
+function simpleSetupStepBody(draft) {
+  if (draft.step === 0) {
+    return `<div class="learn-wizard-step-copy"><span>Begin with the people, not the paperwork.</span><h2>Tell us about your household.</h2><p>This is enough to personalize Learn. You can add parish, terms, books, and detailed subjects later.</p></div><div class="learn-wizard-fields">${simpleSetupField("Household name", "wizard.householdName", draft.householdName, { placeholder: "The Dunn Family" })}${simpleSetupField("Your name", "wizard.parentName", draft.parentName, { placeholder: "Stephanie" })}<label class="learn-wizard-field"><span>Church calendar</span><select name="wizard.calendarType"><option value="julian" ${draft.calendarType === "julian" ? "selected" : ""}>Old Calendar (Julian)</option><option value="revised-julian" ${draft.calendarType === "revised-julian" ? "selected" : ""}>New Calendar (Revised Julian)</option></select></label></div>`;
+  }
+  if (draft.step === 1) {
+    return `<div class="learn-wizard-step-copy"><span>Your learners</span><h2>Add the children learning at home.</h2><p>First name plus either age or grade is enough. The free plan supports two children; larger households can upgrade without re-entering their work.</p></div><div class="learn-wizard-children">${draft.children.map((child, index) => `<div class="learn-wizard-child" data-wizard-child="${index}" data-client-id="${html(child.clientId)}"><span class="learn-wizard-child-number">${index + 1}</span>${simpleSetupField("First name", "firstName", child.firstName, { placeholder: "Maria" })}${simpleSetupField("Age", "ageYears", child.ageYears, { type: "number", min: 0, max: 21 })}${simpleSetupField("Grade or level", "gradeLabel", child.gradeLabel, { placeholder: "Grade 3 or Kindergarten" })}${draft.children.length > 1 ? `<button type="button" class="learn-wizard-icon-button" data-wizard-remove-child="${index}" aria-label="Remove ${html(child.firstName || `child ${index + 1}`)}">×</button>` : ""}</div>`).join("")}</div><button type="button" class="learn-wizard-add" data-wizard-add-child>${!isLearnFamilyPlan() && draft.children.length >= 2 ? "Upgrade to add another child" : "+ Add another child"}</button>`;
+  }
+  if (draft.step === 2) {
+    return `<div class="learn-wizard-step-copy"><span>Optional grouping</span><h2>Would Forms make planning easier?</h2><p>A Form is simply a group of children learning at a similar stage. Siblings in the same Form can share history, science, geography, or literature without duplicate plans.</p></div><label class="learn-wizard-choice-toggle"><input type="checkbox" name="wizard.useForms" ${draft.useForms ? "checked" : ""}><span><strong>Use suggested Forms</strong><small>We grouped children by age or grade. Adjust anything that does not fit your family.</small></span></label>${draft.useForms ? `<div class="learn-wizard-form-list">${draft.children.map((child, index) => { const suggested = child.formLabel || suggestedFormForChild(child); return `<label data-wizard-form-child="${index}"><span><strong>${html(child.firstName || `Child ${index + 1}`)}</strong><small>${html(child.ageYears ? `Age ${child.ageYears}` : child.gradeLabel || "Stage not entered")}</small></span><select name="formLabel">${formOptions.map((option) => `<option value="${html(option)}" ${option === suggested ? "selected" : ""}>${html(option)}</option>`).join("")}</select></label>`; }).join("")}</div>` : `<div class="learn-wizard-gentle-note"><strong>No problem.</strong><span>You can organize Forms later in Advanced Setup. Learn will keep each child’s age or grade and begin with a shared household plan.</span></div>`}`;
+  }
+  if (draft.step === 3) {
+    const methods = [
+      ["Charlotte Mason", "Living books, narration, short lessons, and generous enrichment."],
+      ["Orthodox Classical", "Classical formation, language, history, and ordered study."],
+      ["Traditional", "Familiar subjects, grade-level structure, and steady daily practice."],
+      ["Eclectic", "A flexible blend chosen to fit each child and season."],
+      ["Unsure", "Start gently now and refine your approach later."]
+    ];
+    return `<div class="learn-wizard-step-copy"><span>Your household rhythm</span><h2>Which approach feels closest?</h2><p>This only shapes starter suggestions. It never locks you into a curriculum or method.</p></div><div class="learn-wizard-methods">${methods.map(([value, detail]) => `<label><input type="radio" name="wizard.method" value="${html(value)}" ${draft.method === value ? "checked" : ""}><span><strong>${html(value === "Orthodox Classical" ? "Classical" : value)}</strong><small>${html(detail)}</small></span></label>`).join("")}</div>`;
+  }
+  return `<div class="learn-wizard-step-copy"><span>Ready for Today</span><h2>Would you like a simple starter week?</h2><p>AGAPAY can create a light first week from your household and Forms. It is a starting point, not a prescribed curriculum, and every item can be edited later.</p></div><label class="learn-wizard-starter"><input type="checkbox" name="wizard.starterWeek" ${draft.starterWeek ? "checked" : ""}><span><strong>Create a gentle starter week</strong><small>Morning prayer and readings, family read-aloud, language arts, math, history, and nature study.</small></span></label><div class="learn-wizard-summary"><div><small>Household</small><strong>${html(draft.householdName || "Your household")}</strong></div><div><small>Children</small><strong>${draft.children.filter((child) => child.firstName).length}</strong></div><div><small>Planning</small><strong>${draft.useForms ? "Family + Forms" : "Family first"}</strong></div><div><small>Style</small><strong>${html(draft.method === "Orthodox Classical" ? "Classical" : draft.method)}</strong></div></div>`;
+}
+
+function renderSimpleSetupWizard(vm, draft) {
+  const body = `<section class="learn-wizard" data-simple-setup-wizard data-wizard-step="${draft.step}">
+    <div class="learn-wizard-topline"><div><span>Simple Setup</span><strong>Step ${draft.step + 1} of ${SIMPLE_SETUP_STEPS.length}</strong></div><a href="/myagapay/learn/setup?advanced=1" data-wizard-advanced>Advanced Setup</a></div>
+    <div class="learn-wizard-progress" aria-label="Setup progress">${SIMPLE_SETUP_STEPS.map((label, index) => `<span class="${index < draft.step ? "is-complete" : index === draft.step ? "is-current" : ""}"><i>${index < draft.step ? "✓" : index + 1}</i><em>${html(label)}</em></span>`).join("")}</div>
+    <form class="learn-wizard-card">${simpleSetupStepBody(draft)}<p class="learn-wizard-status" data-wizard-status aria-live="polite"></p><div class="learn-wizard-actions">${draft.step ? `<button type="button" class="learn-wizard-secondary" data-wizard-back>Back</button>` : `<a class="learn-wizard-secondary" href="/myagapay/learn/setup?advanced=1" data-wizard-advanced>Skip to full setup</a>`}<button type="button" class="learn-wizard-primary" ${draft.step === SIMPLE_SETUP_STEPS.length - 1 ? "data-wizard-finish" : "data-wizard-next"}>${draft.step === SIMPLE_SETUP_STEPS.length - 1 ? "Save & open Today" : "Continue"}</button></div></form>
+    <p class="learn-wizard-draft-note">Your progress is saved on this device until setup is complete.</p>
+  </section>`;
+  return shell(vm, body);
+}
+
+function captureSimpleSetupStep(form, draft) {
+  const value = (name) => form.elements[name]?.value?.trim() || "";
+  if (draft.step === 0) {
+    draft.householdName = value("wizard.householdName");
+    draft.parentName = value("wizard.parentName");
+    draft.calendarType = value("wizard.calendarType") || "julian";
+  } else if (draft.step === 1) {
+    draft.children = [...form.querySelectorAll("[data-wizard-child]")].map((row, index) => ({
+      clientId: row.dataset.clientId || `child_${Date.now()}_${index}`,
+      firstName: row.querySelector('[name="firstName"]')?.value.trim() || "",
+      ageYears: row.querySelector('[name="ageYears"]')?.value.trim() || "",
+      gradeLabel: row.querySelector('[name="gradeLabel"]')?.value.trim() || "",
+      formLabel: draft.children[index]?.formLabel || ""
+    }));
+  } else if (draft.step === 2) {
+    draft.useForms = Boolean(form.elements["wizard.useForms"]?.checked);
+    if (draft.useForms) {
+      form.querySelectorAll("[data-wizard-form-child]").forEach((row) => {
+        const index = Number(row.dataset.wizardFormChild);
+        if (draft.children[index]) draft.children[index].formLabel = row.querySelector('[name="formLabel"]')?.value || suggestedFormForChild(draft.children[index]);
+      });
+    } else {
+      draft.children.forEach((child) => { child.formLabel = ""; });
+    }
+  } else if (draft.step === 3) {
+    draft.method = form.querySelector('[name="wizard.method"]:checked')?.value || "Unsure";
+  } else {
+    draft.starterWeek = Boolean(form.elements["wizard.starterWeek"]?.checked);
+  }
+  saveSimpleSetupDraft(draft);
+}
+
+function validateSimpleSetupStep(draft) {
+  if (draft.step === 0 && (!draft.householdName || !draft.parentName)) return "Please add the household name and your name.";
+  if (draft.step === 1) {
+    const children = draft.children.filter((child) => child.firstName);
+    if (!children.length) return "Please add at least one child.";
+    if (children.some((child) => !child.ageYears && !child.gradeLabel)) return "Add an age or grade for each child so Learn can suggest the right Form.";
+  }
+  return "";
+}
+
+function simpleSetupDates() {
+  const today = new Date();
+  const academicStartYear = today.getMonth() >= 5 ? today.getFullYear() : today.getFullYear() - 1;
+  const termEnd = new Date(today);
+  termEnd.setDate(termEnd.getDate() + 84);
+  const iso = (date) => date.toISOString().slice(0, 10);
+  return {
+    yearLabel: `${academicStartYear}-${academicStartYear + 1} School Year`,
+    yearStart: iso(today),
+    yearEnd: `${academicStartYear + 1}-06-30`,
+    termStart: iso(today),
+    termEnd: iso(termEnd)
+  };
+}
+
+function simpleSetupPayload(draft) {
+  const dates = simpleSetupDates();
+  const colors = ["#14294a", "#6e2f2a", "#4a5a31", "#b5942f", "#4b3158"];
+  const children = draft.children.filter((child) => child.firstName).map((child, index) => ({
+    id: "",
+    firstName: child.firstName,
+    ageYears: child.ageYears,
+    gradeLabel: child.gradeLabel,
+    formLabel: draft.useForms ? child.formLabel || suggestedFormForChild(child) : "",
+    color: colors[index % colors.length]
+  }));
+  const formLabels = [...new Set(children.map((child) => child.formLabel).filter(Boolean))];
+  const planningGroups = formLabels.length ? formLabels : [""];
+  const subjects = draft.starterWeek ? planningGroups.flatMap((formLabel, groupIndex) => [
+    { title: "Starter Language Arts", subjectType: "language-arts", planningMode: "forms", weeklyFrequency: "4x", formLabel, minutes: "20", termId: "term_1", gracePriority: "keep", color: colors[groupIndex % colors.length] },
+    { title: "Starter Mathematics", subjectType: "math", planningMode: "forms", weeklyFrequency: "4x", formLabel, minutes: "20", termId: "term_1", gracePriority: "keep", color: colors[(groupIndex + 1) % colors.length] },
+    { title: "Nature & Science", subjectType: "sciences-nature", planningMode: "forms", weeklyFrequency: "2x", formLabel, minutes: "25", termId: "term_1", gracePriority: "reduce first", color: colors[(groupIndex + 2) % colors.length] }
+  ]) : [];
+  return {
+    household: { name: draft.householdName, parentName: draft.parentName, parentNames: [draft.parentName], primaryMethod: draft.method },
+    schoolYear: { id: "school_year_current", label: dates.yearLabel, startDate: dates.yearStart, endDate: dates.yearEnd, currentTermId: "term_1" },
+    term: { id: "term_1", label: "Starter Term", startDate: dates.termStart, endDate: dates.termEnd, paceMode: "steady" },
+    terms: [{ id: "term_1", label: "Starter Term", startDate: dates.termStart, endDate: dates.termEnd, paceMode: "steady" }],
+    preferences: { calendarType: draft.calendarType, evaluationModel: "narrative-only", graceModeDefault: "light", graceModeActive: false, paceMode: "steady" },
+    children,
+    streams: draft.starterWeek ? [{ title: "Morning Time", streamType: "morning-time", cadenceLabel: "Daily", dailyMinutes: { mon: 30, tue: 30, wed: 30, thu: 30, fri: 30 } }] : [],
+    subjects,
+    books: [],
+    formation: draft.starterWeek ? {
+      churchRhythms: [
+        { title: "Morning Prayers", note: "Begin together", weeklyFrequency: "daily", minutes: 10 },
+        { title: "Daily Readings", note: "Epistle and Gospel", weeklyFrequency: "daily", minutes: 10 },
+        { title: "Saint of the Day", note: "Read and discuss", weeklyFrequency: "daily", minutes: 10 }
+      ],
+      recitationTracks: [], hymnStudies: [], feasts: [],
+      enrichmentBlocks: [
+        { blockType: "Literature", title: "Family Read-Aloud", planningMode: "family", weeklyFrequency: "daily", minutesPlanned: 20, termId: "term_1", gracePriority: "keep" },
+        { blockType: "Nature Study", title: "Nature Walk", planningMode: "family", weeklyFrequency: "1x", minutesPlanned: 30, termId: "term_1", gracePriority: "reduce first" }
+      ]
+    } : { churchRhythms: [], recitationTracks: [], hymnStudies: [], enrichmentBlocks: [], feasts: [] },
+    formationMaterials: [],
+    coOp: { enabled: false, status: "coming-soon" }
+  };
+}
+
+function applySimpleDraftToSetupVm(vm, draft) {
+  vm.household.name = draft.householdName || vm.household.name;
+  vm.household.parentName = draft.parentName || vm.household.parentName;
+  vm.household.method = draft.method || vm.household.method;
+  vm.preferences.calendarType = draft.calendarType || vm.preferences.calendarType;
+  const draftedChildren = draft.children.filter((child) => child.firstName).map((child, index) => ({
+    id: "", name: child.firstName, firstName: child.firstName, age: child.ageYears, grade: child.gradeLabel,
+    form: draft.useForms ? child.formLabel || suggestedFormForChild(child) : "",
+    formLabel: draft.useForms ? child.formLabel || suggestedFormForChild(child) : "",
+    color: colorChoices[index % colorChoices.length]
+  }));
+  if (draftedChildren.length) vm.children = draftedChildren;
+  return vm;
+}
+
+function wireSimpleSetupWizard(vm, draft) {
+  const form = root.querySelector("[data-simple-setup-wizard] form");
+  if (!form) return;
+  const status = form.querySelector("[data-wizard-status]");
+  const rerender = () => {
+    root.innerHTML = renderSimpleSetupWizard(vm, draft);
+    wireSimpleSetupWizard(vm, draft);
+    root.querySelector(".learn-wizard")?.scrollIntoView({ block: "start" });
+  };
+  form.addEventListener("input", () => captureSimpleSetupStep(form, draft));
+  form.addEventListener("change", (event) => {
+    captureSimpleSetupStep(form, draft);
+    if (event.target.name === "wizard.useForms") rerender();
+  });
+  form.addEventListener("click", async (event) => {
+    const addChild = event.target.closest("[data-wizard-add-child]");
+    if (addChild) {
+      captureSimpleSetupStep(form, draft);
+      if (!isLearnFamilyPlan() && draft.children.length >= 2) {
+        showLearnDialog("Upgrade to Add Another Child", "The free AGAPAY Learn plan includes up to two children. Your wizard progress is saved, so you can upgrade without starting over.", [
+          { label: "Free plan", value: "Up to 2 children" }, { label: "Family plan", value: "Unlimited children" }
+        ], { upgrade: true });
+        return;
+      }
+      draft.children.push({ clientId: `child_${Date.now()}`, firstName: "", ageYears: "", gradeLabel: "", formLabel: "" });
+      saveSimpleSetupDraft(draft);
+      rerender();
+      return;
+    }
+    const removeChild = event.target.closest("[data-wizard-remove-child]");
+    if (removeChild) {
+      captureSimpleSetupStep(form, draft);
+      draft.children.splice(Number(removeChild.dataset.wizardRemoveChild), 1);
+      saveSimpleSetupDraft(draft);
+      rerender();
+      return;
+    }
+    if (event.target.closest("[data-wizard-back]")) {
+      captureSimpleSetupStep(form, draft);
+      draft.step = Math.max(0, draft.step - 1);
+      saveSimpleSetupDraft(draft);
+      rerender();
+      return;
+    }
+    if (event.target.closest("[data-wizard-next]")) {
+      captureSimpleSetupStep(form, draft);
+      const error = validateSimpleSetupStep(draft);
+      if (error) { status.textContent = error; return; }
+      if (draft.step === 1) draft.children.forEach((child) => { child.formLabel ||= suggestedFormForChild(child); });
+      draft.step = Math.min(SIMPLE_SETUP_STEPS.length - 1, draft.step + 1);
+      saveSimpleSetupDraft(draft);
+      rerender();
+      return;
+    }
+    const finish = event.target.closest("[data-wizard-finish]");
+    if (!finish) return;
+    captureSimpleSetupStep(form, draft);
+    finish.disabled = true;
+    status.textContent = "Preparing your AGAPAY Learn dashboard...";
+    try {
+      await apiPost("/api/learn/setup", simpleSetupPayload(draft));
+      localStorage.setItem("agapay.learn.calendar", draft.calendarType || "julian");
+      localStorage.removeItem(simpleSetupDraftKey());
+      window.location.href = "/myagapay/learn";
+    } catch (error) {
+      status.textContent = error.message;
+      finish.disabled = false;
+    }
+  });
+}
+
 function renderSetup(vm) {
   const currentTermId = vm.schoolYear.currentTermId || vm.term.id || vm.terms?.[0]?.id || "term_1";
   const body = `
     <form data-setup-form data-screen-label="Set Up" style="display:flex;flex-direction:column;gap:18px;">
       ${panel("Setup Progress", `<h2 style="font-family:'Cormorant Garamond',serif;margin:0 0 8px;font-size:28px;">Step ${vm.progress.current} of ${vm.progress.total}</h2>${bar((vm.progress.current / vm.progress.total) * 100, "var(--navy)")}<p style="color:var(--muted);">Next: ${html(vm.progress.next)}</p><div class="learn-setup-progress-grid">${vm.steps.map(setupProgressCard).join("")}</div>`, { icon: "⚙" })}
       <span id="learnSetupHousehold" class="learn-setup-anchor"></span>
-      ${panel("Household", `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Set the household identity and the broad school-year preferences. Terms, children, and Forms are managed immediately below so the setup flow stays easy to scan.</p><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Charlotte Mason", homeschoolMethodOptions)}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /></div>`, { icon: "⌂", largeTitle: true })}
+      ${panel("Household", `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Set the household identity and the broad school-year preferences. Terms, children, and Forms are managed immediately below so the setup flow stays easy to scan.</p><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parent name", "household.parentName", vm.household.parentName)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Unsure", homeschoolMethodOptions)}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /></div>`, { icon: "⌂", largeTitle: true })}
       <span id="learnSetupChildren" class="learn-setup-anchor"></span>
       ${panel("Children & Forms", `<p style="margin:0 0 12px;color:var(--muted);">Assign each child a Form and color. Forms are the grouping layer for Planner and Print, especially for larger households.</p><div data-setup-list="children" style="display:grid;gap:10px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child)).join("")}</div><button type="button" data-setup-add-row="children" style="margin-top:12px;width:100%;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px;font-family:inherit;">Add Child</button>`, { icon: "◎", largeTitle: true })}
       ${panel("Terms", `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Term 4 / Summer is available for year-round homeschoolers. Assign subjects, books, and formation materials to the term where they belong.</p><div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div>`, { icon: "◷", largeTitle: true })}
@@ -1495,6 +1810,8 @@ function setupPayloadFromForm(form) {
   return {
     household: {
       name: get("household.name"),
+      parentName: get("household.parentName"),
+      parentNames: get("household.parentName") ? [get("household.parentName")] : [],
       parishName: get("household.parishName"),
       primaryMethod: get("household.primaryMethod")
     },
@@ -2185,6 +2502,10 @@ async function mount() {
   root.innerHTML = `<div style="padding:32px;font-family:Georgia,serif;color:#1b2c45;">Loading AGAPAY Learn...</div>`;
   if (pageKey === "dashboard") {
     const raw = await apiGet(`/api/learn/dashboard?calendar=${encodeURIComponent(calendar)}`);
+    if (raw.setupCompleted === false) {
+      window.location.replace("/myagapay/learn/setup");
+      return;
+    }
     root.innerHTML = renderDashboard(toDashboardViewModel(raw));
     wireDashboard();
     return;
@@ -2236,7 +2557,17 @@ async function mount() {
   }
   if (pageKey === "onboarding") {
     const raw = await apiGet("/api/learn/setup");
-    root.innerHTML = renderSetup(toSetupViewModel(raw, { calendar }));
+    const vm = toSetupViewModel(raw, { calendar });
+    const draft = loadSimpleSetupDraft(vm);
+    const setupParams = new URLSearchParams(window.location.search);
+    const advanced = setupParams.get("advanced") === "1";
+    const simple = setupParams.get("simple") === "1";
+    if ((!vm.setupCompleted && !advanced) || simple) {
+      root.innerHTML = renderSimpleSetupWizard(vm, draft);
+      wireSimpleSetupWizard(vm, draft);
+      return;
+    }
+    root.innerHTML = renderSetup(!vm.setupCompleted ? applySimpleDraftToSetupVm(vm, draft) : vm);
     wireSetupPage();
     return;
   }

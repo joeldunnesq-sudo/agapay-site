@@ -157,6 +157,7 @@ export async function handleLearnDashboard(request, env) {
 
   return json(await applyReadingsProvider({
     ok: true,
+    setupCompleted: Boolean(repository.seed?.setupSnapshot),
     product: {
       slug: LEARN_PRODUCT_SLUG,
       enabled: true

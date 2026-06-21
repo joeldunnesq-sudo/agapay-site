@@ -860,12 +860,13 @@ export function toCoOpViewModel(rawPayload) {
 
 export function toSetupViewModel(rawPayload, clientState = {}) {
   const setup = rawPayload?.onboarding || {};
+  const setupCompleted = Boolean(setup.setupCompleted || setup.setupSnapshot);
   const snapshot = setup.setupSnapshot || {};
   const onboarding = setup.onboarding || {};
   const preferences = setup.preferences || snapshot.preferences || onboarding.preferences || {};
-  const household = setup.household || snapshot.household || {};
-  const schoolYear = setup.schoolYear || snapshot.schoolYear || {};
-  const term = setup.term || snapshot.term || {};
+  const household = setupCompleted ? setup.household || snapshot.household || {} : {};
+  const schoolYear = setupCompleted ? setup.schoolYear || snapshot.schoolYear || {} : {};
+  const term = setupCompleted ? setup.term || snapshot.term || {} : {};
   const termsSource = safeArray(snapshot.terms).length ? snapshot.terms : safeArray(setup.terms);
   const baseSetupTerms = (termsSource.length ? termsSource : [
     term,
@@ -891,11 +892,11 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
   }));
   const currentTermId = text(schoolYear.currentTermId || term.id || setupTerms[0]?.id, "term_1");
   const householdMethod = text(household.primaryMethod, "Charlotte Mason");
-  const childrenSource = safeArray(setup.children).length ? setup.children : snapshot.children;
-  const streamsSource = safeArray(setup.starterStreams).length ? setup.starterStreams : safeArray(setup.householdStreams).length ? setup.householdStreams : snapshot.streams;
-  const subjectsSource = safeArray(snapshot.subjects).length ? snapshot.subjects : setup.subjects;
-  const booksSource = safeArray(snapshot.books).length ? snapshot.books : setup.books;
-  const formation = setup.formation || snapshot.formation || {};
+  const childrenSource = setupCompleted ? (safeArray(setup.children).length ? setup.children : snapshot.children) : [];
+  const streamsSource = setupCompleted ? (safeArray(setup.starterStreams).length ? setup.starterStreams : safeArray(setup.householdStreams).length ? setup.householdStreams : snapshot.streams) : [];
+  const subjectsSource = setupCompleted ? (safeArray(snapshot.subjects).length ? snapshot.subjects : setup.subjects) : [];
+  const booksSource = setupCompleted ? (safeArray(snapshot.books).length ? snapshot.books : setup.books) : [];
+  const formation = setupCompleted ? setup.formation || snapshot.formation || {} : {};
   const setupTiles = snapshot.setupTiles || setup.setupTiles || {};
   const formationMaterialsSource = safeArray(snapshot.formationMaterials).length ? snapshot.formationMaterials : setup.formationMaterials;
   const materialDefaults = simpleList(formationMaterialsSource, (material, index) => ({
@@ -956,6 +957,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
     }
   ];
   return {
+    setupCompleted,
     shell: shellFromPayload("onboarding", rawPayload),
     page: page("onboarding", "Set Up", "Configure the household, calendar, terms, enrichment, subjects, and co-op."),
     progress: {
@@ -964,7 +966,8 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       next: text(onboarding.household?.nextStep, "")
     },
     household: {
-      name: text(household.name, "Your Household"),
+      name: text(household.name, ""),
+      parentName: text(household.parentNames?.[0] || household.parentName, ""),
       parish: text(household.parishName, ""),
       method: householdMethod,
       schoolYear: text(schoolYear.label, ""),

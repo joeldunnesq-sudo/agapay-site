@@ -61,9 +61,13 @@ assert(coOp.enabled === true && coOp.scheduleBlocks.length >= 5, "Co-op scaffold
 
 const onboarding = repository.getOnboarding();
 assert(onboarding.onboarding.steps.some((step) => step.status === "active"), "Onboarding should have an active setup step.");
+assert(onboarding.setupCompleted === false, "Unsaved Learn households should be identified as first-run setup.");
 
 const learnShell = readFileSync(new URL("../public/learn/dashboard-shell.js", import.meta.url), "utf8");
 const learnBilling = readFileSync(new URL("../src/learn/billing.js", import.meta.url), "utf8");
+const learnHandlers = readFileSync(new URL("../src/learn/handlers.js", import.meta.url), "utf8");
+const learnRepository = readFileSync(new URL("../src/learn/repository.js", import.meta.url), "utf8");
+const learnSetupPersistence = readFileSync(new URL("../src/learn/setup-persistence.js", import.meta.url), "utf8");
 const learnDashboardHtml = readFileSync(new URL("../public/learn/dashboard.html", import.meta.url), "utf8");
 assert(learnShell.includes("data-dialog-checkout"), "Learn shell should include checkout dialog hooks.");
 assert(learnShell.includes("data-grace-mode"), "Learn shell should expose grace mode controls.");
@@ -74,6 +78,15 @@ assert(!learnShell.includes("buildSimplePdf"), "Learn shell should not use clien
 assert(!learnShell.includes("window.print"), "Learn shell should not use browser print for report PDFs.");
 assert(learnShell.includes("today-in-the-church.jpg"), "Learn shell should render the Today in the Church artwork.");
 assert(learnShell.includes("data-setup-progress-target"), "Learn shell setup progress cards should be interactive.");
+assert(learnShell.includes("data-simple-setup-wizard"), "Learn should provide a simplified first-run setup wizard.");
+assert(learnShell.includes("agapay.learn.simpleSetup.v1"), "Learn setup wizard should persist unfinished progress locally.");
+assert(learnShell.includes("data-wizard-advanced"), "Learn setup wizard should link to Advanced Setup.");
+assert(learnShell.includes("simpleSetupPayload"), "Learn setup wizard should save through the existing setup endpoint.");
+assert(learnShell.includes("Create a gentle starter week"), "Learn setup wizard should offer a starter-week plan.");
+assert(learnHandlers.includes("setupCompleted: Boolean(repository.seed?.setupSnapshot)"), "Learn dashboard API should expose first-run setup state.");
+assert(learnRepository.includes("setupCompleted: Boolean(this.seed.setupSnapshot)"), "Learn onboarding API should expose saved setup state.");
+assert(learnSetupPersistence.includes('"Traditional", "Eclectic", "Unsure"'), "Learn setup should accept every wizard rhythm preset.");
+assert(learnSetupPersistence.includes("parentNames"), "Learn setup should persist the wizard parent name.");
 assert(learnDashboardHtml.includes("/learn/dashboard-shell.js"), "Learn dashboard should load the active dashboard shell.");
 assert(learnDashboardHtml.includes("/learn/dashboard-view-models.js"), "Learn dashboard should preload the active view model bundle.");
 assert(!learnDashboardHtml.includes("claude-shell"), "Learn dashboard should not reference legacy Claude shell filenames.");
