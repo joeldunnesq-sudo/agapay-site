@@ -17,11 +17,11 @@
   ];
 
   function activeKeyFromPath() {
-    if (path === "/why" || path.endsWith("/why.html")) return "why";
+    if (path === "/giving/why" || path.endsWith("/giving/why.html")) return "give";
     if (path === "/vision" || path.endsWith("/vision.html")) return "vision";
-    if (path === "/features" || path.endsWith("/features.html")) return "give";
-    if (path === "/pricing" || path.endsWith("/pricing.html")) return "pricing";
-    if (path === "/how-it-works" || path.endsWith("/how-it-works.html")) return "how";
+    if (path === "/giving/features" || path.endsWith("/giving/features.html")) return "give";
+    if (path === "/giving/pricing" || path.endsWith("/giving/pricing.html")) return "give";
+    if (path === "/giving/how-it-works" || path.endsWith("/giving/how-it-works.html")) return "give";
     if (path === "/about" || path.endsWith("/about.html") || path === "/contact" || path.endsWith("/contact.html")) return "about";
     if (path === "/giving" || path.endsWith("/giving/index.html") || path.startsWith("/giving/") || path === "/give" || path.endsWith("/give/index.html") || path.startsWith("/give/")) return "give";
     if (path === "/learn" || path === "/learn/" || path.startsWith("/learn/")) return "learn";
@@ -139,6 +139,7 @@
               <a href="/giving/features">Features</a>
               <a href="/giving/how-it-works">How It Works</a>
               <a href="/giving/pricing">Pricing</a>
+              <a href="/giving/why">Why AGAPAY Giving</a>
               <a href="/onboarding">Get Started</a>
             </nav>
             <nav class="footer-col" aria-label="AGAPAY Learn">
@@ -149,7 +150,6 @@
             <nav class="footer-col" aria-label="Company">
               <h4>Company</h4>
               <a href="/about">About</a>
-              <a href="/why">Why AGAPAY</a>
               <a href="/vision">Vision</a>
               <a href="/contact">Contact</a>
             </nav>

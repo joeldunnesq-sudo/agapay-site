@@ -7,7 +7,7 @@
     { href: "/giving", label: "Giving" },
     { href: "/marketplace", label: "Marketplace" },
     { href: "/directory", label: "Directory" },
-    { href: "/how-it-works", label: "Resources" },
+    { href: "/giving/how-it-works", label: "Resources" },
     { href: "/about", label: "About" }
   ];
 

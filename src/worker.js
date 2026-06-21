@@ -775,15 +775,19 @@ function cleanAssetRequest(request) {
     return new Request(url, request);
   }
   if (url.pathname === "/giving/features") {
-    url.pathname = "/features.html";
+    url.pathname = "/giving/features.html";
     return new Request(url, request);
   }
   if (url.pathname === "/giving/how-it-works") {
-    url.pathname = "/how-it-works.html";
+    url.pathname = "/giving/how-it-works.html";
     return new Request(url, request);
   }
   if (url.pathname === "/giving/pricing") {
-    url.pathname = "/pricing.html";
+    url.pathname = "/giving/pricing.html";
+    return new Request(url, request);
+  }
+  if (url.pathname === "/giving/why") {
+    url.pathname = "/giving/why.html";
     return new Request(url, request);
   }
   if (url.pathname === "/give/find_parish") {
@@ -808,6 +812,21 @@ function cleanAssetRequest(request) {
   }
   return request;
 }
+
+const LEGACY_GIVING_PAGE_REDIRECTS = new Map([
+  ["/features", "/giving/features"],
+  ["/features.html", "/giving/features"],
+  ["/features/", "/giving/features"],
+  ["/how-it-works", "/giving/how-it-works"],
+  ["/how-it-works.html", "/giving/how-it-works"],
+  ["/how-it-works/", "/giving/how-it-works"],
+  ["/pricing", "/giving/pricing"],
+  ["/pricing.html", "/giving/pricing"],
+  ["/pricing/", "/giving/pricing"],
+  ["/why", "/giving/why"],
+  ["/why.html", "/giving/why"],
+  ["/why/", "/giving/why"]
+]);
 
 function formatCommemorationNames(entries, field) {
   const names = entries.flatMap((entry) => Array.isArray(entry[field]) ? entry[field] : []);
@@ -857,6 +876,13 @@ export default {
 
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (request.method === "GET" || request.method === "HEAD") {
+      const canonicalGivingPath = LEGACY_GIVING_PAGE_REDIRECTS.get(url.pathname.toLowerCase());
+      if (canonicalGivingPath) {
+        url.pathname = canonicalGivingPath;
+        return Response.redirect(url.toString(), 301);
+      }
+    }
 
     if (request.method === "GET" && url.pathname === "/index.html") {
       url.pathname = "/";

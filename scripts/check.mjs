@@ -46,6 +46,10 @@ assert.ok(backendSources.includes("handleAdminReleaseStatus"), "worker should ex
 assert.ok(worker.includes('url.pathname === "/api/admin/release-status"'), "worker should route the admin release status endpoint");
 assert.ok(worker.includes('["/parish/login", "/giving/login"]'), "legacy parish login should redirect to the Giving login URL");
 assert.ok(worker.includes('url.pathname === "/giving/login"'), "worker should serve the Giving login URL from the parish login shell");
+assert.ok(worker.includes('LEGACY_GIVING_PAGE_REDIRECTS'), "worker should redirect legacy Giving marketing URLs to the Giving subtree");
+for (const givingPage of ["features", "how-it-works", "pricing", "why"]) {
+  assert.ok(worker.includes(`["/${givingPage}", "/giving/${givingPage}"]`), `worker should redirect /${givingPage} to /giving/${givingPage}`);
+}
 assert.ok(backendSources.includes("checkoutFinancials("), "worker should centralize donation fee calculations");
 assert.ok(backendSources.includes("subscription_data[application_fee_percent]"), "worker should apply AGAPAY donation fees to recurring donor gifts");
 assert.ok(backendSources.includes("Parish SaaS subscription billing is created in a separate flow"), "worker should keep parish subscription billing separate from donation fees");
@@ -120,6 +124,15 @@ assert.ok(givingOverview.includes("Orthodox giving and tithing tools ready for p
 assert.ok(givingOverview.includes("Text-to-Give") && givingOverview.includes("AGAPAY Stewardship") && givingOverview.includes("Coming Soon"), "Giving overview should clearly identify coming-soon products");
 const sitemap = await readFile("public/sitemap.xml", "utf8");
 assert.ok(sitemap.includes("https://agapay.app/giving"), "sitemap should include the canonical Giving overview URL");
+for (const givingPage of ["features", "how-it-works", "pricing", "why"]) {
+  const html = await readFile(`public/giving/${givingPage}.html`, "utf8");
+  assert.ok(html.includes(`https://agapay.app/giving/${givingPage}`), `Giving ${givingPage} page should use its nested canonical URL`);
+  assert.ok(sitemap.includes(`https://agapay.app/giving/${givingPage}`), `sitemap should include /giving/${givingPage}`);
+}
+assert.ok(!sitemap.includes("<loc>https://agapay.app/features</loc>"), "sitemap should not list the legacy root features URL");
+assert.ok(!sitemap.includes("<loc>https://agapay.app/how-it-works</loc>"), "sitemap should not list the legacy root how-it-works URL");
+assert.ok(!sitemap.includes("<loc>https://agapay.app/pricing</loc>"), "sitemap should not list the legacy root pricing URL");
+assert.ok(!sitemap.includes("<loc>https://agapay.app/why</loc>"), "sitemap should not list the legacy root why URL");
 assert.ok(registerHtml.includes("/security.js") && registerHtml.includes("data-agapay-turnstile"), "registration should render Turnstile when configured");
 assert.ok(registerHtml.includes("agapaySecurityPayload"), "registration should send Turnstile tokens when configured");
 

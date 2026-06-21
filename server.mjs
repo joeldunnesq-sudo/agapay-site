@@ -210,7 +210,11 @@ async function resolveStaticPath(urlPath) {
   if (pathname === "/give" || pathname === "/give/" || pathname === "/giving" || pathname === "/giving/") {
     pathname = "/give/index.html";
   }
-  if (pathname.startsWith("/giving/")) pathname = pathname.replace(/^\/giving\//, "/give/");
+  if (["/giving/features", "/giving/how-it-works", "/giving/pricing", "/giving/why"].includes(pathname)) {
+    pathname = `${pathname}.html`;
+  } else if (pathname.startsWith("/giving/")) {
+    pathname = pathname.replace(/^\/giving\//, "/give/");
+  }
   if (!path.extname(pathname)) pathname = `${pathname}.html`;
   if (pathname.startsWith("/give/") && !(await pathExists(path.join(publicDir, pathname)))) {
     pathname = "/give/st-seraphim-mission.html";
@@ -223,6 +227,29 @@ export const server = http.createServer(async (req, res) => {
     if (req.url.startsWith("/api/") && await handleApi(req, res)) return;
 
     const requestUrl = new URL(req.url, `http://${req.headers.host}`);
+    const legacyGivingRedirects = new Map([
+      ["/features", "/giving/features"],
+      ["/features.html", "/giving/features"],
+      ["/features/", "/giving/features"],
+      ["/how-it-works", "/giving/how-it-works"],
+      ["/how-it-works.html", "/giving/how-it-works"],
+      ["/how-it-works/", "/giving/how-it-works"],
+      ["/pricing", "/giving/pricing"],
+      ["/pricing.html", "/giving/pricing"],
+      ["/pricing/", "/giving/pricing"],
+      ["/why", "/giving/why"],
+      ["/why.html", "/giving/why"],
+      ["/why/", "/giving/why"]
+    ]);
+    if (req.method === "GET" || req.method === "HEAD") {
+      const canonicalGivingPath = legacyGivingRedirects.get(requestUrl.pathname.toLowerCase());
+      if (canonicalGivingPath) {
+        requestUrl.pathname = canonicalGivingPath;
+        res.writeHead(301, { Location: requestUrl.toString() });
+        res.end();
+        return;
+      }
+    }
     if (
       req.method === "GET" &&
       ["/myagapay/login", "/myagapay/login/", "/donor/login", "/donor/login/", "/donor/login.html"].includes(requestUrl.pathname)
