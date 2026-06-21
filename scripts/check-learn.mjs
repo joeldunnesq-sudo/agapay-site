@@ -82,12 +82,14 @@ assert(!learnShell.includes("window.print"), "Learn shell should not use browser
 assert(learnShell.includes("today-in-the-church.jpg"), "Learn shell should render the Today in the Church artwork.");
 assert(!learnShell.includes('panel("Setup Progress"'), "Advanced Setup should not repeat the first-run wizard progress card.");
 assert(learnShell.includes("data-simple-setup-wizard"), "Learn should provide a simplified first-run setup wizard.");
+assert(learnShell.includes('const SIMPLE_SETUP_STEPS = ["Household", "Rhythm", "Forms or Grades", "Children", "Grace Mode", "Starter Week"]'), "Learn setup should establish rhythm and planning structure before collecting children, then introduce Grace Mode.");
 assert(learnShell.includes("agapay.learn.simpleSetup.v1"), "Learn setup wizard should persist unfinished progress locally.");
 assert(learnShell.includes("data-wizard-advanced"), "Learn setup wizard should link to Advanced Setup.");
 assert(learnShell.includes("simpleSetupPayload"), "Learn setup wizard should save through the existing setup endpoint.");
 assert(learnShell.includes("Create a gentle starter week"), "Learn setup wizard should offer a starter-week plan.");
 assert(learnShell.includes('title: "Starter Language Arts"') && learnShell.includes('title: "Morning Prayers"') && learnShell.includes('title: "Family Read-Aloud"'), "The starter-week option should persist real subject, Church rhythm, and enrichment data.");
 assert(learnShell.includes("Grace Mode lightens a day without erasing the plan"), "The setup wizard should explain Grace Mode and its non-destructive behavior.");
+assert(learnShell.includes("No permanent choice is required"), "The Grace Mode wizard step should explain that families can change modes day by day.");
 assert(learnShell.includes("renderReportsComingSoon") && !learnShell.includes('apiGet("/api/learn/reports")'), "The Learn Reports screen should remain a coming-soon surface without loading report data.");
 assert(learnShell.includes("Free plan: up to 2 children"), "Learn setup wizard should clearly disclose the free child limit.");
 assert(learnShell.includes('href="/myagapay/learn/setup?simple=1">Quick Setup'), "Learn utility bar should open the simple setup wizard.");

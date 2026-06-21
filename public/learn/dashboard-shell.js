@@ -1321,7 +1321,7 @@ function setupProgressCard(step) {
   return `<button type="button" class="learn-setup-step ${setupStepState(step)}" data-setup-progress-target="${setupStepTarget(step)}"><small>${html(step.status)}</small><strong>${html(step.title)}</strong><span>${html(step.summary)}</span></button>`;
 }
 
-const SIMPLE_SETUP_STEPS = ["Household", "Children", "Forms", "Rhythm", "Starter Week"];
+const SIMPLE_SETUP_STEPS = ["Household", "Rhythm", "Forms or Grades", "Children", "Grace Mode", "Starter Week"];
 
 function simpleSetupDraftKey() {
   let identity = localStorage.getItem("agapayDonorEmail") || "household";
@@ -1420,12 +1420,6 @@ function simpleSetupStepBody(draft) {
     return `<div class="learn-wizard-step-copy"><span>Begin with the people, not the paperwork.</span><h2>Tell us about your household.</h2><p>This is enough to personalize Learn. You can add parish, terms, books, and detailed subjects later.</p></div><div class="learn-wizard-fields">${simpleSetupField("Household name", "wizard.householdName", draft.householdName, { placeholder: "The Dunn Family" })}${simpleSetupField("Your name", "wizard.parentName", draft.parentName, { placeholder: "Stephanie" })}<label class="learn-wizard-field"><span>Church calendar</span><select name="wizard.calendarType"><option value="julian" ${draft.calendarType === "julian" ? "selected" : ""}>Old Calendar (Julian)</option><option value="revised-julian" ${draft.calendarType === "revised-julian" ? "selected" : ""}>New Calendar (Revised Julian)</option></select></label></div>`;
   }
   if (draft.step === 1) {
-    return `<div class="learn-wizard-step-copy"><span>Your learners</span><h2>Add the children learning at home.</h2><p>First name plus either age or grade is enough. Larger households can upgrade without re-entering their work.</p></div><div class="learn-wizard-plan-note"><strong>Free plan: up to 2 children</strong><span>Family plans include unlimited children, Forms, child sheets, and full household planning.</span></div><div class="learn-wizard-children">${draft.children.map((child, index) => `<div class="learn-wizard-child" data-wizard-child="${index}" data-client-id="${html(child.clientId)}"><span class="learn-wizard-child-number">${index + 1}</span>${simpleSetupField("First name", "firstName", child.firstName, { placeholder: "Maria" })}${simpleSetupField("Age", "ageYears", child.ageYears, { type: "number", min: 0, max: 21 })}${simpleSetupField("Grade or level", "gradeLabel", child.gradeLabel, { placeholder: "Grade 3 or Kindergarten" })}${draft.children.length > 1 ? `<button type="button" class="learn-wizard-icon-button" data-wizard-remove-child="${index}" aria-label="Remove ${html(child.firstName || `child ${index + 1}`)}">×</button>` : ""}</div>`).join("")}</div><button type="button" class="learn-wizard-add" data-wizard-add-child>${!isLearnFamilyPlan() && draft.children.length >= 2 ? "Upgrade to add another child" : "+ Add another child"}</button>`;
-  }
-  if (draft.step === 2) {
-    return `<div class="learn-wizard-step-copy"><span>Optional grouping</span><h2>Would Forms make planning easier?</h2><p>A Form is simply a group of children learning at a similar stage. Siblings in the same Form can share history, science, geography, or literature without duplicate plans.</p></div><label class="learn-wizard-choice-toggle"><input type="checkbox" name="wizard.useForms" ${draft.useForms ? "checked" : ""}><span><strong>Use suggested Forms</strong><small>We grouped children by age or grade. Adjust anything that does not fit your family.</small></span></label>${draft.useForms ? `<div class="learn-wizard-form-list">${draft.children.map((child, index) => { const suggested = child.formLabel || suggestedFormForChild(child); return `<label data-wizard-form-child="${index}"><span><strong>${html(child.firstName || `Child ${index + 1}`)}</strong><small>${html(child.ageYears ? `Age ${child.ageYears}` : child.gradeLabel || "Stage not entered")}</small></span><select name="formLabel">${formOptions.map((option) => `<option value="${html(option)}" ${option === suggested ? "selected" : ""}>${html(option)}</option>`).join("")}</select></label>`; }).join("")}</div>` : `<div class="learn-wizard-gentle-note"><strong>Use familiar grades instead.</strong><span>Learn will organize children and assignments by grade or level. You can switch to Forms later without losing either set of assignments.</span></div>`}`;
-  }
-  if (draft.step === 3) {
     const methods = [
       ["Charlotte Mason", "Living books, narration, short lessons, and generous enrichment."],
       ["Orthodox Classical", "Classical formation, language, history, and ordered study."],
@@ -1433,7 +1427,16 @@ function simpleSetupStepBody(draft) {
       ["Eclectic", "A flexible blend chosen to fit each child and season."],
       ["Unsure", "Start gently now and refine your approach later."]
     ];
-    return `<div class="learn-wizard-step-copy"><span>Your household rhythm</span><h2>Which approach feels closest?</h2><p>This shapes the order and language of Advanced Setup. It never locks you into a curriculum, and changing it later never deletes saved work.</p></div><div class="learn-wizard-methods">${methods.map(([value, detail]) => `<label><input type="radio" name="wizard.method" value="${html(value)}" ${draft.method === value ? "checked" : ""}><span><strong>${html(value === "Orthodox Classical" ? "Classical" : value)}</strong><small>${html(detail)}</small></span></label>`).join("")}</div><aside class="learn-wizard-grace-explainer"><div><small>Built for real family life</small><h3>Grace Mode lightens a day without erasing the plan.</h3><p>Use it for illness, a new baby, travel, feast days, difficult mornings, or any season when the full plan is too much. Deferred work stays in your plan and can return when the household is ready.</p></div><div class="learn-wizard-grace-levels"><span><strong>Full</strong><small>Runs the complete day as planned.</small></span><span><strong>Light</strong><small>Keeps essentials and softens lower-priority work.</small></span><span><strong>Minimum</strong><small>Keeps prayer, one shared touchpoint, and the next right thing.</small></span></div><p class="learn-wizard-grace-tip"><strong>How to use it:</strong> choose today’s mode at the top of the Learn Dashboard. In Advanced Setup, each subject can be marked “keep,” “reduce first,” or “defer if needed,” so you remain in control.</p></aside>`;
+    return `<div class="learn-wizard-step-copy"><span>Your household rhythm</span><h2>Which approach feels closest?</h2><p>This shapes the order and language of Advanced Setup. It never locks you into a curriculum, and changing it later never deletes saved work.</p></div><div class="learn-wizard-methods">${methods.map(([value, detail]) => `<label><input type="radio" name="wizard.method" value="${html(value)}" ${draft.method === value ? "checked" : ""}><span><strong>${html(value === "Orthodox Classical" ? "Classical" : value)}</strong><small>${html(detail)}</small></span></label>`).join("")}</div>`;
+  }
+  if (draft.step === 2) {
+    return `<div class="learn-wizard-step-copy"><span>Choose your planning structure</span><h2>Would you rather use Forms or familiar grades?</h2><p>A Form is a flexible group of children learning at a similar stage. Forms make shared work easier; grades keep the familiar structure many families already use.</p></div><label class="learn-wizard-choice-toggle"><input type="checkbox" name="wizard.useForms" ${draft.useForms ? "checked" : ""}><span><strong>Plan with Forms</strong><small>After you add your children, Learn will suggest a Form from each age or grade. You can adjust every suggestion.</small></span></label>${draft.useForms ? `<div class="learn-wizard-gentle-note"><strong>Forms selected.</strong><span>Next, add each child. Learn will suggest Little Ones, Form I, Form II, and beyond based on the information you enter.</span></div>` : `<div class="learn-wizard-gentle-note"><strong>Use familiar grades instead.</strong><span>Learn will organize children and assignments by grade or level. You can switch to Forms later without losing saved assignments.</span></div>`}`;
+  }
+  if (draft.step === 3) {
+    return `<div class="learn-wizard-step-copy"><span>Your learners</span><h2>Add the children learning at home.</h2><p>First name plus either age or grade is enough.${draft.useForms ? " Learn will suggest a Form for each child as you enter them." : " Learn will use the grade or level you enter."}</p></div><div class="learn-wizard-plan-note"><strong>Free plan: up to 2 children</strong><span>Family plans include unlimited children, Forms, child sheets, and full household planning.</span></div><div class="learn-wizard-children">${draft.children.map((child, index) => { const suggested = child.formLabel || suggestedFormForChild(child); const formField = draft.useForms ? `<label class="learn-wizard-field"><span>Suggested Form</span><select name="formLabel">${formOptions.map((option) => `<option value="${html(option)}" ${option === suggested ? "selected" : ""}>${html(option)}</option>`).join("")}</select></label>` : ""; return `<div class="learn-wizard-child${draft.useForms ? " uses-forms" : ""}" data-wizard-child="${index}" data-client-id="${html(child.clientId)}"><span class="learn-wizard-child-number">${index + 1}</span>${simpleSetupField("First name", "firstName", child.firstName, { placeholder: "Maria" })}${simpleSetupField("Age", "ageYears", child.ageYears, { type: "number", min: 0, max: 21 })}${simpleSetupField("Grade or level", "gradeLabel", child.gradeLabel, { placeholder: "Grade 3 or Kindergarten" })}${formField}${draft.children.length > 1 ? `<button type="button" class="learn-wizard-icon-button" data-wizard-remove-child="${index}" aria-label="Remove ${html(child.firstName || `child ${index + 1}`)}">×</button>` : ""}</div>`; }).join("")}</div><button type="button" class="learn-wizard-add" data-wizard-add-child>${!isLearnFamilyPlan() && draft.children.length >= 2 ? "Upgrade to add another child" : "+ Add another child"}</button>`;
+  }
+  if (draft.step === 4) {
+    return `<div class="learn-wizard-step-copy"><span>A gentler way through real life</span><h2>Meet Grace Mode.</h2><p>Your plan should serve your family, not punish it. Grace Mode lets you lighten a difficult day without deleting work or pretending the plan never existed.</p></div><aside class="learn-wizard-grace-explainer"><div><small>Built for real family life</small><h3>Grace Mode lightens a day without erasing the plan.</h3><p>Use it for illness, a new baby, travel, feast days, difficult mornings, or any season when the full plan is too much. Deferred work stays in your plan and can return when the household is ready.</p></div><div class="learn-wizard-grace-levels"><span><strong>Full</strong><small>Runs the complete day as planned.</small></span><span><strong>Light</strong><small>Keeps essentials and softens lower-priority work.</small></span><span><strong>Minimum</strong><small>Keeps prayer, one shared touchpoint, and the next right thing.</small></span></div><p class="learn-wizard-grace-tip"><strong>How to use it:</strong> choose today’s mode at the top of the Learn Dashboard. In Advanced Setup, each subject can be marked “keep,” “reduce first,” or “defer if needed,” so you remain in control.</p></aside><div class="learn-wizard-gentle-note"><strong>No permanent choice is required.</strong><span>You can change Grace Mode from day to day as family life changes.</span></div>`;
   }
   return `<div class="learn-wizard-step-copy"><span>Ready for Today</span><h2>Would you like a simple starter week?</h2><p>AGAPAY will save a real editable first term, Church rhythm, family read-aloud, nature walk, and starter subject plan organized by ${draft.useForms ? "Form" : "grade or level"}. Nothing is sample-only or locked.</p></div><label class="learn-wizard-starter"><input type="checkbox" name="wizard.starterWeek" ${draft.starterWeek ? "checked" : ""}><span><strong>Create a gentle starter week</strong><small>Creates Morning Prayers, Daily Readings, Saint of the Day, family read-aloud, nature walk, Language Arts, Mathematics, and Nature & Science.</small></span></label><div class="learn-wizard-summary"><div><small>Household</small><strong>${html(draft.householdName || "Your household")}</strong></div><div><small>Children</small><strong>${draft.children.filter((child) => child.firstName).length}</strong></div><div><small>Planning</small><strong>${draft.useForms ? "Family + Forms" : "Family + grades"}</strong></div><div><small>Style</small><strong>${html(draft.method === "Orthodox Classical" ? "Classical" : draft.method)}</strong></div></div>`;
 }
@@ -1473,27 +1476,23 @@ function captureSimpleSetupStep(form, draft) {
     draft.parentName = value("wizard.parentName");
     draft.calendarType = value("wizard.calendarType") || "julian";
   } else if (draft.step === 1) {
+    draft.method = form.querySelector('[name="wizard.method"]:checked')?.value || "Unsure";
+  } else if (draft.step === 2) {
+    draft.useForms = Boolean(form.elements["wizard.useForms"]?.checked);
+    if (!draft.useForms) draft.children.forEach((child) => { child.formLabel = ""; });
+  } else if (draft.step === 3) {
     draft.children = [...form.querySelectorAll("[data-wizard-child]")].map((row, index) => ({
       clientId: row.dataset.clientId || `child_${Date.now()}_${index}`,
       id: draft.children[index]?.id || "",
       firstName: row.querySelector('[name="firstName"]')?.value.trim() || "",
       ageYears: row.querySelector('[name="ageYears"]')?.value.trim() || "",
       gradeLabel: row.querySelector('[name="gradeLabel"]')?.value.trim() || "",
-      formLabel: draft.children[index]?.formLabel || ""
+      formLabel: draft.useForms ? row.querySelector('[name="formLabel"]')?.value || suggestedFormForChild({
+        ageYears: row.querySelector('[name="ageYears"]')?.value.trim() || "",
+        gradeLabel: row.querySelector('[name="gradeLabel"]')?.value.trim() || ""
+      }) : ""
     }));
-  } else if (draft.step === 2) {
-    draft.useForms = Boolean(form.elements["wizard.useForms"]?.checked);
-    if (draft.useForms) {
-      form.querySelectorAll("[data-wizard-form-child]").forEach((row) => {
-        const index = Number(row.dataset.wizardFormChild);
-        if (draft.children[index]) draft.children[index].formLabel = row.querySelector('[name="formLabel"]')?.value || suggestedFormForChild(draft.children[index]);
-      });
-    } else {
-      draft.children.forEach((child) => { child.formLabel = ""; });
-    }
-  } else if (draft.step === 3) {
-    draft.method = form.querySelector('[name="wizard.method"]:checked')?.value || "Unsure";
-  } else {
+  } else if (draft.step === SIMPLE_SETUP_STEPS.length - 1) {
     draft.starterWeek = Boolean(form.elements["wizard.starterWeek"]?.checked);
   }
   saveSimpleSetupDraft(draft);
@@ -1501,7 +1500,7 @@ function captureSimpleSetupStep(form, draft) {
 
 function validateSimpleSetupStep(draft) {
   if (draft.step === 0 && (!draft.householdName || !draft.parentName)) return "Please add the household name and your name.";
-  if (draft.step === 1) {
+  if (draft.step === 3) {
     const children = draft.children.filter((child) => child.firstName);
     if (!children.length) return "Please add at least one child.";
     if (children.some((child) => !child.ageYears && !child.gradeLabel)) return "Add an age or grade for each child so Learn can suggest the right Form.";
@@ -1639,7 +1638,7 @@ function wireSimpleSetupWizard(vm, draft, existingSnapshot = null) {
       captureSimpleSetupStep(form, draft);
       const error = validateSimpleSetupStep(draft);
       if (error) { status.textContent = error; return; }
-      if (draft.step === 1) draft.children.forEach((child) => { child.formLabel ||= suggestedFormForChild(child); });
+      if (draft.step === 3 && draft.useForms) draft.children.forEach((child) => { child.formLabel ||= suggestedFormForChild(child); });
       draft.step = Math.min(SIMPLE_SETUP_STEPS.length - 1, draft.step + 1);
       saveSimpleSetupDraft(draft);
       rerender();
