@@ -1,6 +1,6 @@
 {
-  "name": "AGAPAY",
-  "short_name": "AGAPAY",
+  "name": "My AGAPAY",
+  "short_name": "My AGAPAY",
   "description": "Love how you give, learn, and live.",
   "start_url": "/myagapay/login?source=pwa",
   "scope": "/",
