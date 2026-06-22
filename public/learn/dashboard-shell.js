@@ -206,6 +206,7 @@ function learnAccountEmail() {
 }
 
 function learnRequestHeaders(extra = {}) {
+  if (window.MyAgapayShell?.authHeaders) return window.MyAgapayShell.authHeaders(extra);
   const headers = { Accept: "application/json", ...extra };
   const token = localStorage.getItem("agapayDonorToken") || "";
   const email = learnAccountEmail();
@@ -407,6 +408,9 @@ function sidebar(vm) {
 }
 
 function globalProductNav(activeProduct = "learn") {
+  if (window.MyAgapayShell?.productNav) {
+    return window.MyAgapayShell.productNav(activeProduct, "learn-product-tabbar");
+  }
   return `
     <nav class="learn-product-tabbar" aria-label="My AGAPAY navigation">
       <a class="${activeProduct === "home" ? "is-active" : ""}" href="/myagapay">
@@ -1900,6 +1904,10 @@ function renderPrintCenter(vm) {
 }
 
 function redirectExpiredLearnSession() {
+  if (window.MyAgapayShell?.redirectToLogin) {
+    window.MyAgapayShell.redirectToLogin("session-expired");
+    return;
+  }
   localStorage.removeItem("agapayDonorToken");
   localStorage.removeItem("agapayDonorProfile");
   localStorage.removeItem("agapayDonorEmail");

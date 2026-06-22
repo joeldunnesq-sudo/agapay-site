@@ -130,6 +130,8 @@ assert(learnOverviewHtml.includes("Clearly on the roadmap") && learnOverviewHtml
 assert(!learnOverviewHtml.includes("Printables, reports, and transcripts"), "The Learn overview should not advertise Reports as currently available.");
 assert(learnPricingHtml.includes("Reports Coming Soon") && learnPricingHtml.includes("Reports</div><div>Coming Soon"), "Learn pricing should clearly label Reports as coming soon.");
 assert(learnDashboardHtml.includes("/learn/dashboard-shell.js"), "Learn dashboard should load the active dashboard shell.");
+assert(learnDashboardHtml.includes("/myagapay-shell.js"), "Learn dashboard should load the shared My AGAPAY shell.");
+assert(learnShell.includes("window.MyAgapayShell.productNav") && learnShell.includes("window.MyAgapayShell.redirectToLogin"), "Learn should share global product navigation and expired-session handling with My AGAPAY.");
 assert(learnDashboardHtml.includes("/learn/dashboard-view-models.js"), "Learn dashboard should preload the active view model bundle.");
 assert(!learnDashboardHtml.includes("claude-shell"), "Learn dashboard should not reference legacy Claude shell filenames.");
 assert(learnBilling.includes("stephaie@dunncrew.com"), "Founder-family Learn access should include Stephanie's account.");

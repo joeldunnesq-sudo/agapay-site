@@ -91,8 +91,14 @@ assert.ok(worker.includes('url.pathname === "/api/parish-interest"'), "worker sh
 
 
 const donorApp = await readFile("public/donor/app.js", "utf8");
+const myAgapayShell = await readFile("public/myagapay-shell.js", "utf8");
+assert.ok(myAgapayShell.includes('id: "giving"') && myAgapayShell.includes('label: "Give"'), "shared My AGAPAY shell should define the canonical Give product tab");
+assert.ok(myAgapayShell.includes('id: "learn"') && myAgapayShell.includes('label: "Learn"'), "shared My AGAPAY shell should define the canonical Learn product tab");
+assert.ok(myAgapayShell.includes('data-myagapay-global-nav') && myAgapayShell.includes("normalizeProductNavs"), "shared shell should normalize mobile product navigation across dashboards");
+assert.ok(myAgapayShell.includes("handleUnauthorized") && myAgapayShell.includes("redirectToLogin"), "shared shell should enforce one expired-session response across My AGAPAY products");
 assert.ok(donorApp.includes('nav.setAttribute("hx-boost", "false")'), "donor shell should not htmx-boost dashboard navigation");
 assert.ok(donorApp.includes("function updateDonorAuthState()"), "donor shell should update guest/authenticated controls from localStorage session");
+assert.ok(donorApp.includes('link.closest("[data-myagapay-global-nav]")'), "donor icon enhancement should not overwrite canonical global product icons");
 const donorHome = await readFile("public/donor/index.html", "utf8");
 assert.ok(donorHome.includes("data-auth-guest"), "donor home should mark guest-only controls so signed-in donors do not see login prompts");
 assert.ok(donorHome.includes("donor-phone"), "donor home should use the mobile-first app shell");
@@ -111,6 +117,7 @@ const donorPages = ["calendar", "commemorations", "give", "index", "login", "off
 for (const page of donorPages) {
   const html = await readFile(`public/donor/${page}.html`, "utf8");
   assert.ok(!html.includes('hx-boost="true"'), `donor ${page} page should use full navigation so page initializers run`);
+  assert.ok(html.includes("/myagapay-shell.js"), `donor ${page} page should load the shared My AGAPAY shell`);
 }
 
 const giveHtml = await readFile("public/give/form.html", "utf8");

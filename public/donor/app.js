@@ -35,6 +35,9 @@ function donorSession() {
 }
 
 function donorAuthHeaders(extra = {}) {
+  if (window.MyAgapayShell?.authHeaders) {
+    return window.MyAgapayShell.authHeaders({ "Content-Type": "application/json", ...extra });
+  }
   const session = donorSession();
   return {
     Accept: "application/json",
@@ -50,6 +53,16 @@ async function donorApi(path, options = {}) {
     ...options,
     headers: options.headers || donorAuthHeaders()
   });
+  const publicAuthRequest = [
+    "/api/donor/login",
+    "/api/donor/signup",
+    "/api/donor/verify",
+    "/api/donor/password-reset-request",
+    "/api/donor/password-reset-confirm"
+  ].some((route) => String(path).startsWith(route));
+  if (!publicAuthRequest && window.MyAgapayShell?.handleUnauthorized?.(res)) {
+    return new Promise(() => {});
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = new Error(data.error || data.detail || "AGAPAY request failed");
@@ -84,14 +97,12 @@ function isDonorUnauthorized(err) {
   return err?.status === 401 || String(err?.message || "").toLowerCase() === "unauthorized";
 }
 
-function isMyAgapayHomePath() {
-  const path = window.location.pathname.replace(/\/+$/, "") || "/";
-  return path === "/myagapay" || path === "/my-agapay" || path === "/donor";
-}
-
 function redirectToMyAgapayLogin(reason = "expired") {
+  if (window.MyAgapayShell?.redirectToLogin) {
+    window.MyAgapayShell.redirectToLogin(reason);
+    return true;
+  }
   clearDonorSession();
-  if (!isMyAgapayHomePath()) return false;
   const next = `${window.location.pathname}${window.location.search || ""}`;
   const loginUrl = new URL("/myagapay/login", window.location.origin);
   loginUrl.searchParams.set("next", next);
@@ -442,6 +453,8 @@ const donorGiftTypeCopy = {
 };
 
 function donorNavIcon(kind) {
+  const sharedKind = kind === "giving" ? "give" : kind === "marketplace" ? "market" : kind;
+  if (window.MyAgapayShell?.icons?.[sharedKind]) return window.MyAgapayShell.icons[sharedKind];
   const givingHandIcon = '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M8 15V8.5a1.8 1.8 0 0 1 3.6 0V15"/><path d="M11.6 15V6.5a1.8 1.8 0 0 1 3.6 0V15"/><path d="M15.2 15V8a1.8 1.8 0 0 1 3.6 0v8"/><path d="M18.8 16v-4.2a1.8 1.8 0 0 1 3.6 0V17c0 4.4-3 7-7.6 7H14a8 8 0 0 1-8-8v-2a1.8 1.8 0 0 1 2.4 0L10 16"/><path d="M6.5 21.5c1.6 1.6 3.8 2.5 6.2 2.5"/></svg>';
   const icons = {
     home: '<svg viewBox="0 0 38 38" aria-hidden="true"><line x1="19" y1="2" x2="19" y2="5"/><line x1="17" y1="3.5" x2="21" y2="3.5"/><path d="M19 5 C15 7 13 11 14 14 C15 16 17 17 19 17 C21 17 23 16 24 14 C25 11 23 7 19 5Z"/><line x1="10" y1="6" x2="10" y2="8"/><path d="M10 8 C8 9.5 7 12 7.5 14 C8 15.5 9 16 10 16 C11 16 12 15.5 12.5 14 C13 12 12 9.5 10 8Z"/><line x1="28" y1="6" x2="28" y2="8"/><path d="M28 8 C26 9.5 25 12 25.5 14 C26 15.5 27 16 28 16 C29 16 30 15.5 30.5 14 C31 12 30 9.5 28 8Z"/><rect x="4" y="17" width="30" height="14" rx="1"/><path d="M16 31 L16 25 Q19 22 22 25 L22 31"/></svg>',
@@ -463,6 +476,7 @@ function donorNavIcon(kind) {
 function donorNavKind(href) {
   const path = String(href || "");
   if (path.includes("#giving-dashboard")) return "giving";
+  if (path.includes("/myagapay/giving")) return "giving";
   if (path.includes("/learn")) return "learn";
   if (path.includes("/marketplace")) return "marketplace";
   if (path.includes("/directory")) return "directory";
@@ -477,6 +491,7 @@ function donorNavKind(href) {
 
 function applyDonorNavIcons() {
   document.querySelectorAll(".nav a, .mobile-tabbar a, .my-agapay-tabbar a").forEach((link) => {
+    if (link.closest("[data-myagapay-global-nav]")) return;
     const existing = link.querySelector("svg");
     if (!existing) return;
     const wrapper = document.createElement("span");
