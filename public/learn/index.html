@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AGAPAY Learn | Orthodox Homeschool Planning</title>
+  <meta name="application-name" content="AGAPAY Learn" />
   <meta name="description" content="AGAPAY Learn is an Orthodox homeschool planner with liturgical calendars, adaptive household setup, Grace Mode, books, formation, and printable family plans." />
   <link rel="canonical" href="https://agapay.app/learn" />
   <meta property="og:type" content="website" />
@@ -20,6 +21,18 @@
   <link rel="stylesheet" href="/learn/pricing.css" />
   <link rel="stylesheet" href="/site-chrome.css" />
   <script src="/site-chrome.js" defer></script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "AGAPAY Learn",
+      "url": "https://agapay.app/learn",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web",
+      "description": "AGAPAY Learn is an Orthodox Christian homeschool planning application that helps parents organize children, school terms, lessons, books, Church rhythms, liturgical calendars, and printable plans.",
+      "privacyPolicy": "https://agapay.app/privacy.html"
+    }
+  </script>
 </head>
 <body class="learn-pricing-page learn-overview-page">
   <main>
@@ -64,15 +77,20 @@
           </div>
         </div>
         <div class="google-sync-disclosure" aria-label="Google Calendar Sync disclosure">
-          <p class="eyebrow">Coming Soon: Google Calendar Sync</p>
-          <h3>An optional calendar connection is planned for a future release.</h3>
-          <p>Google Calendar Sync is not part of the current launch feature set. When released, it will be optional and will only create or sync homeschool planning events that a household chooses to send, such as lesson blocks, term dates, feast days, and reminders.</p>
+          <p class="eyebrow">Optional Google Calendar Sync</p>
+          <h3>Send the homeschool schedule you choose to your family calendar.</h3>
+          <p>AGAPAY Learn requests Google Calendar access only when a signed-in parent chooses to connect and sync a calendar. The connection creates and updates AGAPAY Learn events in the user's primary Google Calendar, including selected lesson blocks, term dates, feast days, and reminders. It checks for previously synced AGAPAY Learn events so they can be updated instead of duplicated.</p>
           <ul>
+            <li>Calendar connection is optional; AGAPAY Learn works without it.</li>
+            <li>AGAPAY Learn requests only the Google Calendar events permission.</li>
             <li>AGAPAY Learn does not sell Google user data.</li>
             <li>AGAPAY Learn does not use Google Calendar data for advertising.</li>
-            <li>All current AGAPAY Learn features work without Google Calendar.</li>
+            <li>Users can disconnect Calendar Sync or revoke access through their Google Account at any time.</li>
           </ul>
-          <a class="button button-secondary" href="/privacy.html">Read the Privacy Policy</a>
+          <div class="hero-actions">
+            <a class="button button-secondary" href="/privacy.html#google-calendar-sync">Read the Privacy Policy</a>
+            <a class="button button-secondary" href="https://myaccount.google.com/permissions" rel="noopener noreferrer">Manage Google Access</a>
+          </div>
         </div>
       </div>
     </section>
