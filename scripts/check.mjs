@@ -133,6 +133,14 @@ assert.ok(givingOverview.includes("Orthodox Giving App &amp; Tithing Software") 
 assert.ok(givingOverview.includes('"@type": "SoftwareApplication"') && givingOverview.includes('"@type": "FAQPage"'), "Giving overview should include software and FAQ structured data");
 assert.ok(givingOverview.includes("Orthodox giving and tithing tools ready for parish life"), "Giving overview should describe currently available tools");
 assert.ok(givingOverview.includes("Text-to-Give") && givingOverview.includes("AGAPAY Stewardship") && givingOverview.includes("Coming Soon"), "Giving overview should clearly identify coming-soon products");
+const platformHome = await readFile("public/index.html", "utf8");
+assert.ok(platformHome.indexOf('href="/vision"') < platformHome.indexOf('href="/giving"'), "platform homepage should lead its navigation with Vision");
+assert.ok((platformHome.match(/data-flip-word/g) || []).length >= 2, "platform homepage should animate its header and hero taglines");
+assert.ok(platformHome.includes('footer class="site-footer" data-shell="canonical"'), "platform homepage should use the canonical footer");
+const canonicalChrome = await readFile("public/site-chrome.js", "utf8");
+assert.ok(canonicalChrome.indexOf('{ href: "/vision"') < canonicalChrome.indexOf('{ href: "/giving"'), "canonical navigation should lead with Vision");
+const visionPage = await readFile("public/vision.html", "utf8");
+assert.ok(visionPage.includes("repeat(6,minmax(0,1fr))") && visionPage.includes("grid-column:span 3"), "Vision phases should use a balanced two-plus-three desktop grid");
 const sitemap = await readFile("public/sitemap.xml", "utf8");
 assert.ok(sitemap.includes("https://agapay.app/giving"), "sitemap should include the canonical Giving overview URL");
 for (const givingPage of ["features", "how-it-works", "pricing", "why"]) {

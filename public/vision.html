@@ -154,9 +154,12 @@
     .value p{color:var(--stone);line-height:1.65}
 
     .phase-section{background:linear-gradient(180deg,#07192A,#061522);color:var(--cream);padding:3.8rem 0 4.2rem}
-    .phase-heading{text-align:center;margin-bottom:2rem}
-    .phase-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:1rem}
-    .phase-card{background:rgba(255,255,255,.95);color:var(--ink);border:1px solid rgba(166,159,145,.4);border-radius:12px;padding:1.5rem;position:relative;overflow:hidden}
+    .phase-heading{text-align:center;max-width:760px;margin:0 auto 2.25rem}
+    .phase-heading h2{font:500 clamp(2.5rem,4vw,3.7rem)/1.02 var(--serif);color:var(--cream);margin:.25rem 0 .65rem}
+    .phase-heading p{color:rgba(246,241,232,.7);font-size:1.02rem;line-height:1.65}
+    .phase-cards{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1.15rem}
+    .phase-card{grid-column:span 2;background:rgba(255,255,255,.96);color:var(--ink);border:1px solid rgba(200,162,74,.3);border-radius:8px;padding:1.65rem;position:relative;overflow:hidden;box-shadow:0 18px 42px rgba(0,0,0,.12)}
+    .phase-card.phase-1,.phase-card.phase-2{grid-column:span 3;min-height:360px}
     .phase-card>*{position:relative;z-index:2}
     .phase-num{width:38px;height:38px;border-radius:50%;border:2px solid var(--gold);display:grid;place-items:center;font-family:var(--numeric-font,var(--serif));font-variant-numeric:lining-nums tabular-nums;font-weight:700;background:#fff;margin-bottom:.85rem}
     .phase-label{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--stone);margin-bottom:.35rem;font-weight:600}
@@ -270,6 +273,7 @@
       .hero-copy { max-width: 680px; }
       
       .mission-grid,.phase-cards,.values-grid{grid-template-columns:1fr}
+      .phase-card,.phase-card.phase-1,.phase-card.phase-2{grid-column:auto;min-height:0}
       .mission-copy{padding-right:0}
       .mission-photo{min-height:300px}
       .eco-layout{grid-template-columns:1fr;gap:1.4rem}
@@ -323,7 +327,7 @@
       <article class="value"><div class="value-head"><div class="value-icon"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10"/><path d="M12 8v6"/><path d="M9 11h6"/></svg></div><div class="eyebrow">Our Response</div></div><h3>A unified platform built on faith, trust, and stewardship.</h3><p>AGAPAY creates modern infrastructure to help Orthodox life become more connected, sustainable, and resilient.</p></article>
     </div></section>
 
-    <section class="phase-section"><div class="wrap"><div class="phase-heading"><div class="eyebrow">The Phased Vision</div></div><div class="phase-cards">
+    <section class="phase-section"><div class="wrap"><div class="phase-heading"><div class="eyebrow">The Phased Vision</div><h2>Built in stages. Designed as one whole.</h2><p>Each phase strengthens the products before it, building toward a connected Orthodox platform for parishes, households, creators, and communities.</p></div><div class="phase-cards">
       <article class="phase-card phase-1"><div class="phase-photo" aria-hidden="true"></div><div class="phase-num">1</div><div class="phase-label">Phase One</div><span class="phase-status live">Live Today</span><h4>AGAPAY Giving</h4><p>The foundation: modern giving software built around the real life of an Orthodox parish and monastery.</p><ul class="phase-list"><li>Online giving and recurring stewardship</li><li>Candles lit for the living and the departed</li><li>Commemorations delivered to the priest each week</li><li>Designated funds and parish campaigns</li><li>Donor and parish dashboards</li><li>Annual giving statements</li></ul></article>
       <article class="phase-card phase-2"><div class="phase-photo" aria-hidden="true"></div><div class="phase-num">2</div><div class="phase-label">Phase Two</div><span class="phase-status live">Live Today</span><h4>AGAPAY Learn</h4><p>Orthodox homeschool planning shaped by the Church year and designed for real family life.</p><ul class="phase-list"><li>Liturgical calendar and feast-aware planning</li><li>Household, child, and form-level plans</li><li>Books, subjects, reports, and printables</li><li>Grace Mode for busy seasons</li><li>Beautiful records for state reporting</li></ul></article>
       <article class="phase-card phase-3"><div class="phase-photo" aria-hidden="true"></div><div class="phase-num">3</div><div class="phase-label">Phase Three</div><span class="phase-status next">On the Roadmap</span><h4>AGAPAY Marketplace</h4><p>A marketplace where Orthodox businesses, monasteries, and creators connect directly with the faithful.</p><ul class="phase-list"><li>Orthodox businesses and monastery goods</li><li>Books, icons, and sacred art</li><li>Vestments and church supplies</li><li>Handcrafted and digital products</li><li>Events and pilgrimage services</li></ul></article>

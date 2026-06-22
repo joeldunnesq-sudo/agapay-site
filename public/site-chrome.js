@@ -3,17 +3,17 @@
   if (/^\/(?:admin|parish|donor|myagapay)(?:\/|$)/.test(path)) return;
 
   const PRIMARY_LINKS = [
+    { href: "/vision", label: "Vision", key: "vision" },
     { href: "/giving", label: "AGAPAY Giving", key: "give" },
     { href: "/learn", label: "AGAPAY Learn", key: "learn" },
     { href: "/marketplace", label: "Marketplace", key: "marketplace" },
     { href: "/directory", label: "Directory", key: "directory" },
-    { href: "/vision", label: "Vision", key: "vision" },
     { href: "/about", label: "About", key: "about" }
   ];
 
   const SIGN_IN_LINKS = [
     { href: "/myagapay/login", label: "My AGAPAY" },
-    { href: "/parish/login", label: "Organization Dashboard" }
+    { href: "/giving/login", label: "Organization Dashboard" }
   ];
 
   function activeKeyFromPath() {
@@ -156,7 +156,7 @@
             <nav class="footer-col" aria-label="Account">
               <h4>Account</h4>
               <a href="/myagapay/login">My AGAPAY</a>
-              <a href="/parish/login">Organization Dashboard</a>
+              <a href="/giving/login">Organization Dashboard</a>
             </nav>
             <nav class="footer-col" aria-label="Legal">
               <h4>Legal</h4>

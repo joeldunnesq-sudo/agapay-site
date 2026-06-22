@@ -25,6 +25,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site-chrome.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     :root {
@@ -115,15 +116,27 @@
     }
 
     .home-brand-tag {
-      display: block;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.42em;
       margin-top: 0.24rem;
       padding-left: 0.34em;
       color: var(--gold2);
       font-size: 0.54rem;
       font-weight: 600;
-      letter-spacing: 0.34em;
+      letter-spacing: 0.22em;
       line-height: 1;
       text-transform: uppercase;
+    }
+
+    .home-brand-tag .flip-word {
+      min-width: 4.1em;
+      padding: 0.16em 0.4em 0.2em;
+      border: 1px solid rgba(200, 162, 74, 0.86);
+      color: #ffe7a8;
+      background: #061522;
+      box-shadow: inset 0 1px 0 rgba(255, 231, 168, 0.08);
+      letter-spacing: 0.12em;
     }
 
     .home-links,
@@ -1163,15 +1176,15 @@
           <img src="/mark.png" alt="" width="38" height="38" />
           <span class="home-brand-text">
             <strong>AGAPAY</strong>
-            <span class="home-brand-tag">Love how you live</span>
+            <span class="home-brand-tag">Love how you <span class="flip-word" data-flip-word aria-hidden="true">GIVE</span></span>
           </span>
         </a>
         <nav class="home-links" aria-label="Primary">
+          <a href="/vision">Vision</a>
           <a href="/giving">Giving</a>
           <a href="/learn">Learn</a>
           <a href="/marketplace.html">Marketplace <small class="coming-soon">Soon</small></a>
           <a href="/directory.html">Directory <small class="coming-soon">Soon</small></a>
-          <a href="/vision">Vision</a>
           <a href="/about.html">About</a>
         </nav>
         <div class="home-actions">
@@ -1391,43 +1404,56 @@
       </section>
     </main>
 
-    <footer class="home-footer">
-      <div class="section-inner">
+    <footer class="site-footer" data-shell="canonical">
+      <div class="footer-inner">
         <div class="footer-grid">
-          <div>
-            <div class="footer-brand">
-              <img src="/mark.png" alt="" width="44" height="44" />
-              <strong>AGAPAY</strong>
+          <div class="footer-brand">
+            <div class="footer-lockup">
+              <img src="/mark.png" alt="" />
+              <span class="fl-name"><strong>AGAPAY</strong></span>
             </div>
-            <p>AGAPAY is a platform created to serve the Orthodox Church and strengthen faithful life online.</p>
           </div>
-          <div>
-            <h3>AGAPAY Giving</h3>
-          <a href="/giving">Overview</a>
-          <a href="/giving/how-it-works">How It Works</a>
-          <a href="/giving/pricing">Pricing</a>
-          </div>
-          <div>
-            <h3>AGAPAY Learn</h3>
+          <nav class="footer-col" aria-label="Platform">
+            <h4>Platform</h4>
+            <a href="/giving">AGAPAY Giving</a>
+            <a href="/learn">AGAPAY Learn</a>
+            <a href="/marketplace">Marketplace</a>
+            <a href="/directory">Directory</a>
+          </nav>
+          <nav class="footer-col" aria-label="AGAPAY Giving">
+            <h4>Giving</h4>
+            <a href="/giving">Overview</a>
+            <a href="/giving/features">Features</a>
+            <a href="/giving/how-it-works">How It Works</a>
+            <a href="/giving/pricing">Pricing</a>
+            <a href="/giving/why">Why AGAPAY Giving</a>
+            <a href="/onboarding">Get Started</a>
+          </nav>
+          <nav class="footer-col" aria-label="AGAPAY Learn">
+            <h4>Learn</h4>
             <a href="/learn">Overview</a>
             <a href="/learn/pricing">Pricing</a>
-          </div>
-          <div>
-            <h3>Company</h3>
-            <a href="/about.html">About</a>
-            <a href="/vision.html">Our Mission</a>
-            <a href="/contact.html">Contact</a>
-          </div>
-          <div>
-            <h3>Support</h3>
-            <a href="/privacy.html">Privacy Policy</a>
-            <a href="/terms.html">Terms of Service</a>
-            <a href="/myagapay/login">Sign in</a>
-          </div>
+          </nav>
+          <nav class="footer-col" aria-label="Company">
+            <h4>Company</h4>
+            <a href="/about">About</a>
+            <a href="/vision">Vision</a>
+            <a href="/contact">Contact</a>
+          </nav>
+          <nav class="footer-col" aria-label="Account">
+            <h4>Account</h4>
+            <a href="/myagapay/login">My AGAPAY</a>
+            <a href="/giving/login">Organization Dashboard</a>
+          </nav>
+          <nav class="footer-col" aria-label="Legal">
+            <h4>Legal</h4>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
+          </nav>
         </div>
         <div class="footer-bottom">
-          <span>© 2026 AGAPAY. All rights reserved.</span>
-          <span>Faith in Action. Together.</span>
+          <span>&copy; 2026 AGAPAY. All rights reserved.</span>
+          <span>Built for Orthodox communities.</span>
         </div>
       </div>
     </footer>
@@ -1440,16 +1466,18 @@
       toggle.setAttribute("aria-expanded", String(open));
     });
 
-    const flipWord = document.querySelector("[data-flip-word]");
+    const flipWordNodes = Array.from(document.querySelectorAll("[data-flip-word]"));
     const flipWords = ["GIVE", "LEARN", "LIVE"];
     let flipIndex = 0;
-    if (flipWord && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (flipWordNodes.length && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       window.setInterval(() => {
-        flipWord.classList.add("is-flipping");
+        flipWordNodes.forEach((node) => node.classList.add("is-flipping"));
         window.setTimeout(() => {
           flipIndex = (flipIndex + 1) % flipWords.length;
-          flipWord.textContent = flipWords[flipIndex];
-          flipWord.classList.remove("is-flipping");
+          flipWordNodes.forEach((node) => {
+            node.textContent = flipWords[flipIndex];
+            node.classList.remove("is-flipping");
+          });
         }, 180);
       }, 2300);
     }
