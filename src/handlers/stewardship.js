@@ -831,7 +831,7 @@ function dashboardNav(registration, activeSection, base) {
     </div>
     <ul class="nav-links">
       <li class="${activeSection === "home" ? "active" : ""}"><a href="/parish">Dashboard</a></li>
-      <li class="${activeSection === "giving" ? "active" : ""}"><a href="/parish/giving">Giving</a></li>
+      <li class="${activeSection === "giving" ? "active" : ""}"><a href="/parish/give">Giving</a></li>
       <li class="${activeSection === "commemorations" ? "active" : ""}"><a href="/parish/commemorations">Commemorations</a></li>
       <li class="${activeSection === "campaigns" ? "active" : ""}"><a href="/parish/campaigns">Campaigns</a></li>
       <li class="${activeSection === "stewardship" ? "active" : ""}"><a href="/parish/stewardship">Stewardship</a></li>

@@ -176,6 +176,10 @@ async function handleApi(req, res) {
     await sendResponse(await handleLearnOnboardingSave(learnRequest(), learnEnv));
     return true;
   }
+  if (req.method === "POST" && pathname === "/api/learn/family-planning") {
+    await sendResponse(handleLearnFamilyPlanningSave(learnRequest(), learnEnv));
+    return true;
+  }
   if (pathname === "/api/learn/google-calendar/status") {
     await sendResponse(handleLearnGoogleCalendarStatus(learnRequest(), learnEnv));
     return true;
@@ -235,34 +239,20 @@ async function resolveStaticPath(urlPath) {
   if (pathname.startsWith("/myagapay/") && !path.extname(pathname)) pathname = pathname.replace(/^\/myagapay/, "/donor") + ".html";
   if (pathname === "/donor" || pathname === "/donor/") pathname = "/donor/index.html";
   if (pathname === "/donor/dashboard") pathname = "/donor/index.html";
-  if (pathname === "/give" || pathname === "/give/" || pathname === "/giving" || pathname === "/giving/") {
+  if (pathname === "/give" || pathname === "/give/") {
     pathname = "/give/index.html";
-  }
-  if (req.method === "POST" && pathname === "/api/learn/family-planning") {
-    await sendResponse(handleLearnFamilyPlanningSave(learnRequest(), learnEnv));
-    return true;
-  }
-  if (pathname === "/giving/login" || pathname === "/giving/login/") {
+  } else if (pathname === "/give/login" || pathname === "/give/login/") {
     pathname = "/parish/login.html";
-  } else if (pathname === "/giving/find-church") {
-    pathname = "/give/find-church.html";
-  } else if (pathname === "/giving/parish-giving") {
-    pathname = "/give/parish-giving.html";
-  } else if (["/giving/recurring-donations", "/giving/fundraising", "/giving/event-payments"].includes(pathname)) {
-    pathname = pathname.replace(/^\/giving\//, "/give/") + ".html";
-  } else if (/^\/giving\/[^/]+\/[^/]+-campaign\/?$/.test(pathname)) {
+  } else if (pathname === "/give/find-parish") {
+    pathname = "/give/find-parish.html";
+  } else if (/^\/give\/[^/]+\/[^/]+-campaign\/?$/.test(pathname)) {
     pathname = "/give/parish-giving/index.html";
-  } else if (["/giving/features", "/giving/how-it-works", "/giving/pricing", "/giving/why"].includes(pathname)) {
+  } else if (["/give/features", "/give/how-it-works", "/give/pricing", "/give/why", "/give/parish-giving", "/give/recurring-donations", "/give/fundraising", "/give/event-payments"].includes(pathname)) {
     pathname = `${pathname}.html`;
-  } else if (/^\/giving\/[^/]+\/?$/.test(pathname)) {
+  } else if (/^\/give\/[^/]+\/?$/.test(pathname)) {
     pathname = "/give/form.html";
-  } else if (pathname.startsWith("/giving/")) {
-    pathname = pathname.replace(/^\/giving\//, "/give/");
   }
   if (!path.extname(pathname)) pathname = `${pathname}.html`;
-  if (pathname.startsWith("/give/") && !(await pathExists(path.join(publicDir, pathname)))) {
-    pathname = "/give/st-seraphim-mission.html";
-  }
   return path.normalize(path.join(publicDir, pathname));
 }
 
@@ -272,17 +262,21 @@ export const server = http.createServer(async (req, res) => {
 
     const requestUrl = new URL(req.url, `http://${req.headers.host}`);
     if (req.method === "GET" || req.method === "HEAD") {
-      const legacyParishPath = requestUrl.pathname.match(/^\/give\/([^/]+)\/?$/);
-      const reservedGivePaths = new Set(["form", "find-church", "parish-giving", "recurring-donations", "fundraising", "event-payments"]);
-      if (legacyParishPath && !reservedGivePaths.has(legacyParishPath[1])) {
-        requestUrl.pathname = `/giving/${encodeURIComponent(decodeURIComponent(legacyParishPath[1]))}`;
+      if (requestUrl.pathname === "/giving" || requestUrl.pathname === "/giving/" || requestUrl.pathname.startsWith("/giving/")) {
+        requestUrl.pathname = requestUrl.pathname.replace(/^\/giving/, "/give");
+        res.writeHead(301, { Location: requestUrl.toString() });
+        res.end();
+        return;
+      }
+      if (["/give/find-church", "/give/find-church.html", "/give/find_parish", "/give/parish-list"].includes(requestUrl.pathname)) {
+        requestUrl.pathname = "/give/find-parish";
         res.writeHead(301, { Location: requestUrl.toString() });
         res.end();
         return;
       }
       const legacyParishId = String(requestUrl.searchParams.get("parish") || "").trim();
       if (["/give/form", "/give/form.html"].includes(requestUrl.pathname) && legacyParishId) {
-        requestUrl.pathname = `/giving/${encodeURIComponent(legacyParishId)}`;
+        requestUrl.pathname = `/give/${encodeURIComponent(legacyParishId)}`;
         requestUrl.searchParams.delete("parish");
         res.writeHead(301, { Location: requestUrl.toString() });
         res.end();
@@ -292,7 +286,7 @@ export const server = http.createServer(async (req, res) => {
       const parishId = String(requestUrl.searchParams.get("parish") || "").trim();
       if (legacyCampaign && parishId) {
         const campaignSlug = decodeURIComponent(legacyCampaign[1]).replace(/-campaign$/, "");
-        requestUrl.pathname = `/giving/${encodeURIComponent(parishId)}/${encodeURIComponent(campaignSlug)}-campaign`;
+        requestUrl.pathname = `/give/${encodeURIComponent(parishId)}/${encodeURIComponent(campaignSlug)}-campaign`;
         requestUrl.searchParams.delete("parish");
         res.writeHead(301, { Location: requestUrl.toString() });
         res.end();
@@ -300,18 +294,18 @@ export const server = http.createServer(async (req, res) => {
       }
     }
     const legacyGivingRedirects = new Map([
-      ["/features", "/giving/features"],
-      ["/features.html", "/giving/features"],
-      ["/features/", "/giving/features"],
-      ["/how-it-works", "/giving/how-it-works"],
-      ["/how-it-works.html", "/giving/how-it-works"],
-      ["/how-it-works/", "/giving/how-it-works"],
-      ["/pricing", "/giving/pricing"],
-      ["/pricing.html", "/giving/pricing"],
-      ["/pricing/", "/giving/pricing"],
-      ["/why", "/giving/why"],
-      ["/why.html", "/giving/why"],
-      ["/why/", "/giving/why"]
+      ["/features", "/give/features"],
+      ["/features.html", "/give/features"],
+      ["/features/", "/give/features"],
+      ["/how-it-works", "/give/how-it-works"],
+      ["/how-it-works.html", "/give/how-it-works"],
+      ["/how-it-works/", "/give/how-it-works"],
+      ["/pricing", "/give/pricing"],
+      ["/pricing.html", "/give/pricing"],
+      ["/pricing/", "/give/pricing"],
+      ["/why", "/give/why"],
+      ["/why.html", "/give/why"],
+      ["/why/", "/give/why"]
     ]);
     if (req.method === "GET" || req.method === "HEAD") {
       const canonicalGivingPath = legacyGivingRedirects.get(requestUrl.pathname.toLowerCase());

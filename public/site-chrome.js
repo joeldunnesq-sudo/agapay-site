@@ -4,7 +4,7 @@
 
   const PRIMARY_LINKS = [
     { href: "/vision", label: "Vision", key: "vision" },
-    { href: "/giving", label: "AGAPAY Giving", key: "give" },
+    { href: "/give", label: "AGAPAY Give", key: "give" },
     { href: "/learn", label: "AGAPAY Learn", key: "learn" },
     { href: "/marketplace", label: "Marketplace", key: "marketplace" },
     { href: "/directory", label: "Directory", key: "directory" },
@@ -13,17 +13,17 @@
 
   const SIGN_IN_LINKS = [
     { href: "/myagapay/login", label: "My AGAPAY" },
-    { href: "/giving/login", label: "Organization Dashboard" }
+    { href: "/give/login", label: "Organization Dashboard" }
   ];
 
   function activeKeyFromPath() {
-    if (path === "/giving/why" || path.endsWith("/giving/why.html")) return "give";
+    if (path === "/give/why" || path.endsWith("/give/why.html")) return "give";
     if (path === "/vision" || path.endsWith("/vision.html")) return "vision";
-    if (path === "/giving/features" || path.endsWith("/giving/features.html")) return "give";
-    if (path === "/giving/pricing" || path.endsWith("/giving/pricing.html")) return "give";
-    if (path === "/giving/how-it-works" || path.endsWith("/giving/how-it-works.html")) return "give";
+    if (path === "/give/features" || path.endsWith("/give/features.html")) return "give";
+    if (path === "/give/pricing" || path.endsWith("/give/pricing.html")) return "give";
+    if (path === "/give/how-it-works" || path.endsWith("/give/how-it-works.html")) return "give";
     if (path === "/about" || path.endsWith("/about.html") || path === "/contact" || path.endsWith("/contact.html")) return "about";
-    if (path === "/giving" || path.endsWith("/giving/index.html") || path.startsWith("/giving/") || path === "/give" || path.endsWith("/give/index.html") || path.startsWith("/give/")) return "give";
+    if (path === "/give" || path.endsWith("/give/index.html") || path.startsWith("/give/")) return "give";
     if (path === "/learn" || path === "/learn/" || path.startsWith("/learn/")) return "learn";
     if (path === "/marketplace" || path.endsWith("/marketplace.html")) return "marketplace";
     if (path === "/directory" || path.endsWith("/directory.html")) return "directory";
@@ -128,19 +128,19 @@
             </div>
             <nav class="footer-col" aria-label="Platform">
               <h4>Platform</h4>
-              <a href="/giving">AGAPAY Giving</a>
+              <a href="/give">AGAPAY Give</a>
               <a href="/learn">AGAPAY Learn</a>
               <a href="/marketplace">Marketplace</a>
               <a href="/directory">Directory</a>
               <a href="/onboarding">Get Started</a>
             </nav>
-            <nav class="footer-col" aria-label="AGAPAY Giving">
-              <h4>Giving</h4>
-              <a href="/giving">Overview</a>
-              <a href="/giving/features">Features</a>
-              <a href="/giving/how-it-works">How It Works</a>
-              <a href="/giving/pricing">Pricing</a>
-              <a href="/giving/why">Why AGAPAY Giving</a>
+            <nav class="footer-col" aria-label="AGAPAY Give">
+              <h4>Give</h4>
+              <a href="/give">Overview</a>
+              <a href="/give/features">Features</a>
+              <a href="/give/how-it-works">How It Works</a>
+              <a href="/give/pricing">Pricing</a>
+              <a href="/give/why">Why AGAPAY Give</a>
             </nav>
             <nav class="footer-col" aria-label="AGAPAY Learn">
               <h4>Learn</h4>
@@ -156,7 +156,7 @@
             <nav class="footer-col" aria-label="Account">
               <h4>Account</h4>
               <a href="/myagapay/login">My AGAPAY</a>
-              <a href="/giving/login">Organization Dashboard</a>
+              <a href="/give/login">Organization Dashboard</a>
             </nav>
             <nav class="footer-col" aria-label="Legal">
               <h4>Legal</h4>

@@ -517,7 +517,7 @@
       grid.innerHTML = [
         productCard({
           slug: 'giving',
-          title: 'AGAPAY Giving',
+          title: 'AGAPAY Give',
           status: connected ? 'Live' : verified ? 'Needs Stripe' : 'Onboarding',
           statusTone: connected ? 'good' : 'warn',
           metric: `${verified} verified`,
@@ -1392,7 +1392,7 @@
             <div class="field-val">
               This registration is included in <code>/api/parishes</code> as <strong>${publicParishId}</strong> when giving status is active.
               <br><br>
-              Public giving URL: <code>/giving/${publicParishId}</code>
+              Public giving URL: <code>/give/${publicParishId}</code>
             </div>
           </div>
         ` : ''}
@@ -1903,7 +1903,7 @@
       activeTab = tab;
       const titles = {
         overview: 'Platform Overview',
-        giving: 'AGAPAY Giving',
+        giving: 'AGAPAY Give',
         learn: 'AGAPAY Learn',
         marketplace: 'AGAPAY Marketplace',
         directory: 'AGAPAY Directory',

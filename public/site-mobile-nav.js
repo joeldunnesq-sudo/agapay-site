@@ -4,10 +4,10 @@
 
   const links = [
     { href: "/vision", label: "Vision" },
-    { href: "/giving", label: "Giving" },
+    { href: "/give", label: "AGAPAY Give" },
     { href: "/marketplace", label: "Marketplace" },
     { href: "/directory", label: "Directory" },
-    { href: "/giving/how-it-works", label: "Resources" },
+    { href: "/give/how-it-works", label: "Resources" },
     { href: "/about", label: "About" }
   ];
 

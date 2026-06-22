@@ -54,7 +54,7 @@
 
   function campaignPageUrl(parishId, slug) {
     const campaignSlug = String(slug || "campaign").replace(/-campaign$/, "");
-    return window.location.origin + "/giving/" + encodeURIComponent(parishId) + "/" + encodeURIComponent(campaignSlug) + "-campaign";
+    return window.location.origin + "/give/" + encodeURIComponent(parishId) + "/" + encodeURIComponent(campaignSlug) + "-campaign";
   }
 
   async function fetchCampaign(parishId, slug) {

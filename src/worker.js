@@ -706,9 +706,9 @@ const DASHBOARD_LEGACY_REDIRECTS = new Map([
   ["/donor/commemorations", "/myagapay/giving/commemorations"],
   ["/donor/calendar", "/myagapay/giving/calendar"],
   ["/donor/settings", "/myagapay/account"],
-  ["/parish/login", "/giving/login"],
-  ["/parish/login/", "/giving/login"],
-  ["/parish/login.html", "/giving/login"],
+  ["/parish/login", "/give/login"],
+  ["/parish/login/", "/give/login"],
+  ["/parish/login.html", "/give/login"],
   ["/learn/dashboard", "/myagapay/learn"],
   ["/learn/planner", "/myagapay/learn/planner"],
   ["/learn/formation", "/myagapay/learn/formation"],
@@ -737,7 +737,7 @@ function cleanAssetRequest(request) {
     url.pathname = myAgapayAsset;
     return new Request(url, request);
   }
-  if (url.pathname === "/give" || url.pathname === "/give/" || url.pathname === "/giving" || url.pathname === "/giving/") {
+  if (url.pathname === "/give" || url.pathname === "/give/") {
     url.pathname = "/give/";
     return new Request(url, request);
   }
@@ -745,84 +745,26 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/form";
     return new Request(url, request);
   }
-  if (url.pathname === "/giving/login" || url.pathname === "/giving/login/") {
+  if (url.pathname === "/give/login" || url.pathname === "/give/login/") {
     url.pathname = "/parish/login.html";
     return new Request(url, request);
   }
-  if (url.pathname === "/give/find-church" || url.pathname === "/giving/find-church") {
-    url.pathname = "/give/find-church.html";
+  if (url.pathname === "/give/find-parish") {
+    url.pathname = "/give/find-parish.html";
     return new Request(url, request);
   }
-  if (/^\/giving\/[^/]+\/[^/]+-campaign\/?$/.test(url.pathname)) {
+  if (/^\/give\/[^/]+\/[^/]+-campaign\/?$/.test(url.pathname)) {
     url.pathname = "/give/parish-giving/index.html";
     return new Request(url, request);
   }
-  if (url.pathname.startsWith("/give/parish-giving/") || url.pathname.startsWith("/giving/parish-giving/")) {
+  if (url.pathname.startsWith("/give/parish-giving/")) {
     url.pathname = "/give/parish-giving/index.html";
     return new Request(url, request);
   }
-  if (url.pathname === "/give/parish-giving") {
-    url.pathname = "/give/parish-giving.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/giving/parish-giving") {
-    url.pathname = "/give/parish-giving.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/give/recurring-donations") {
-    url.pathname = "/give/recurring-donations.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/giving/recurring-donations") {
-    url.pathname = "/give/recurring-donations.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/give/fundraising") {
-    url.pathname = "/give/fundraising.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/giving/fundraising") {
-    url.pathname = "/give/fundraising.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/give/event-payments") {
-    url.pathname = "/give/event-payments.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/giving/event-payments") {
-    url.pathname = "/give/event-payments.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/giving/features") {
-    url.pathname = "/giving/features.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/giving/how-it-works") {
-    url.pathname = "/giving/how-it-works.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/giving/pricing") {
-    url.pathname = "/giving/pricing.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/giving/why") {
-    url.pathname = "/giving/why.html";
-    return new Request(url, request);
-  }
-  if (/^\/giving\/[^/]+\/?$/.test(url.pathname)) {
-    url.pathname = "/give/form.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/give/find_parish") {
-    url.pathname = "/give/form.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/give/parish-list") {
-    url.pathname = "/give/form.html";
-    return new Request(url, request);
-  }
-  if (url.pathname === "/give/st-seraphim-mission") {
-    url.pathname = "/give/form.html";
+  const staticGivePages = new Set(["features", "how-it-works", "pricing", "why", "parish-giving", "recurring-donations", "fundraising", "event-payments"]);
+  const givePage = url.pathname.match(/^\/give\/([^/]+)\/?$/)?.[1] || "";
+  if (staticGivePages.has(givePage)) {
+    url.pathname = `/give/${givePage}.html`;
     return new Request(url, request);
   }
   if (url.pathname.startsWith("/give/") && !url.pathname.includes(".")) {
@@ -849,18 +791,18 @@ async function fetchCleanAsset(request, env) {
 }
 
 const LEGACY_GIVING_PAGE_REDIRECTS = new Map([
-  ["/features", "/giving/features"],
-  ["/features.html", "/giving/features"],
-  ["/features/", "/giving/features"],
-  ["/how-it-works", "/giving/how-it-works"],
-  ["/how-it-works.html", "/giving/how-it-works"],
-  ["/how-it-works/", "/giving/how-it-works"],
-  ["/pricing", "/giving/pricing"],
-  ["/pricing.html", "/giving/pricing"],
-  ["/pricing/", "/giving/pricing"],
-  ["/why", "/giving/why"],
-  ["/why.html", "/giving/why"],
-  ["/why/", "/giving/why"]
+  ["/features", "/give/features"],
+  ["/features.html", "/give/features"],
+  ["/features/", "/give/features"],
+  ["/how-it-works", "/give/how-it-works"],
+  ["/how-it-works.html", "/give/how-it-works"],
+  ["/how-it-works/", "/give/how-it-works"],
+  ["/pricing", "/give/pricing"],
+  ["/pricing.html", "/give/pricing"],
+  ["/pricing/", "/give/pricing"],
+  ["/why", "/give/why"],
+  ["/why.html", "/give/why"],
+  ["/why/", "/give/why"]
 ]);
 
 function canonicalCampaignPathFromLegacy(url) {
@@ -868,7 +810,7 @@ function canonicalCampaignPathFromLegacy(url) {
   const parishId = String(url.searchParams.get("parish") || "").trim();
   if (!match || !parishId) return "";
   const campaignSlug = decodeURIComponent(match[1]).replace(/-campaign$/, "");
-  return `/giving/${encodeURIComponent(parishId)}/${encodeURIComponent(campaignSlug)}-campaign`;
+  return `/give/${encodeURIComponent(parishId)}/${encodeURIComponent(campaignSlug)}-campaign`;
 }
 
 function formatCommemorationNames(entries, field) {
@@ -920,15 +862,17 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "GET" || request.method === "HEAD") {
-      const legacyParishPath = url.pathname.match(/^\/give\/([^/]+)\/?$/);
-      const reservedGivePaths = new Set(["form", "find-church", "parish-giving", "recurring-donations", "fundraising", "event-payments"]);
-      if (legacyParishPath && !reservedGivePaths.has(legacyParishPath[1])) {
-        url.pathname = `/giving/${encodeURIComponent(decodeURIComponent(legacyParishPath[1]))}`;
+      if (url.pathname === "/giving" || url.pathname === "/giving/" || url.pathname.startsWith("/giving/")) {
+        url.pathname = url.pathname.replace(/^\/giving/, "/give");
+        return Response.redirect(url.toString(), 301);
+      }
+      if (["/give/find-church", "/give/find-church.html", "/give/find_parish", "/give/parish-list"].includes(url.pathname)) {
+        url.pathname = "/give/find-parish";
         return Response.redirect(url.toString(), 301);
       }
       const legacyParishId = String(url.searchParams.get("parish") || "").trim();
       if ((url.pathname === "/give/form" || url.pathname === "/give/form.html") && legacyParishId) {
-        url.pathname = `/giving/${encodeURIComponent(legacyParishId)}`;
+        url.pathname = `/give/${encodeURIComponent(legacyParishId)}`;
         url.searchParams.delete("parish");
         return Response.redirect(url.toString(), 301);
       }
@@ -956,28 +900,17 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
-    if (request.method === "GET" && (url.pathname === "/give" || url.pathname === "/give/" || url.pathname === "/give.html" || url.pathname === "/giving/index.html")) {
-      url.pathname = "/giving";
+    if (request.method === "GET" && (url.pathname === "/give.html" || url.pathname === "/give/index.html")) {
+      url.pathname = "/give";
       return Response.redirect(url.toString(), 301);
     }
-    if (request.method === "GET" && (url.pathname === "/giving/find-church" || url.pathname === "/giving/find-church.html" || url.pathname === "/give/find-church.html")) {
-      url.pathname = "/give/find-church";
+    if (request.method === "GET" && url.pathname === "/give/find-parish.html") {
+      url.pathname = "/give/find-parish";
       return Response.redirect(url.toString(), 301);
     }
-    if (request.method === "GET" && (url.pathname === "/give/parish-giving" || url.pathname === "/give/parish-giving.html" || url.pathname === "/giving/parish-giving.html")) {
-      url.pathname = "/giving/parish-giving";
-      return Response.redirect(url.toString(), 301);
-    }
-    if (request.method === "GET" && (url.pathname === "/give/recurring-donations" || url.pathname === "/give/recurring-donations.html" || url.pathname === "/giving/recurring-donations.html")) {
-      url.pathname = "/giving/recurring-donations";
-      return Response.redirect(url.toString(), 301);
-    }
-    if (request.method === "GET" && (url.pathname === "/give/fundraising" || url.pathname === "/give/fundraising.html" || url.pathname === "/giving/fundraising.html")) {
-      url.pathname = "/giving/fundraising";
-      return Response.redirect(url.toString(), 301);
-    }
-    if (request.method === "GET" && (url.pathname === "/give/event-payments" || url.pathname === "/give/event-payments.html" || url.pathname === "/giving/event-payments.html")) {
-      url.pathname = "/giving/event-payments";
+    const cleanGivePage = url.pathname.match(/^\/give\/(features|how-it-works|pricing|why|parish-giving|recurring-donations|fundraising|event-payments)\.html$/)?.[1];
+    if (request.method === "GET" && cleanGivePage) {
+      url.pathname = `/give/${cleanGivePage}`;
       return Response.redirect(url.toString(), 301);
     }
 

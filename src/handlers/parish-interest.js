@@ -82,7 +82,7 @@ export async function handleParishInterest(request, env) {
     parishWebsite: normalizedWebsite,
     note,
     shareName,
-    source: "find-church",
+    source: "find-parish",
     createdAt: now,
     updatedAt: now,
     userAgent: request.headers.get("user-agent") || "",
@@ -100,16 +100,16 @@ export async function handleParishInterest(request, env) {
     from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
     to: [parishEmail],
     reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
-    subject: `A parishioner asked about AGAPAY Giving for ${parishName}`,
+    subject: `A parishioner asked about AGAPAY Give for ${parishName}`,
     html: agapayEmailHtml(appUrl, "A Parishioner Would Like to Give with AGAPAY", `
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Dear ${htmlEscape(parishName)} leadership,</p>
       ${requestorLine}
-      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;"><strong>AGAPAY Giving</strong> is an Orthodox-first giving platform for stewardship, recurring gifts, candles, memorials, commemorations, campaigns, and parish giving history.</p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;"><strong>AGAPAY Give</strong> is an Orthodox-first giving platform for stewardship, recurring gifts, candles, memorials, commemorations, campaigns, and parish giving history.</p>
       <p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:#171715;">AGAPAY can complement your current donation structure; your parish does not need to abandon the giving methods already serving your community.</p>
-      <p style="margin:0 0 24px;"><a href="${htmlEscape(`${appUrl}/giving`)}" style="display:inline-block;background:#061522;color:#FFFDF8;text-decoration:none;border-radius:7px;padding:12px 18px;font-weight:700;">Explore AGAPAY Giving</a></p>
+      <p style="margin:0 0 24px;"><a href="${htmlEscape(`${appUrl}/give`)}" style="display:inline-block;background:#061522;color:#FFFDF8;text-decoration:none;border-radius:7px;padding:12px 18px;font-weight:700;">Explore AGAPAY Give</a></p>
       <p style="margin:0;font-size:13px;line-height:1.65;color:#625D53;">This is a one-time message sent because a parishioner supplied this public parish contact address. Reply to this email if you would like details or prefer not to hear from AGAPAY again.</p>
     `),
-    text: `Dear ${parishName} leadership,\n\nA parishioner in your community asked AGAPAY to let you know they would like the option to give through AGAPAY Giving. AGAPAY is an Orthodox-first platform for stewardship, recurring gifts, candles, memorials, commemorations, campaigns, and giving history. It can complement your current donation structure.\n\nLearn more: ${appUrl}/giving\n\nThis is a one-time message sent because a parishioner supplied this public parish contact address. Reply if you would like details or prefer not to hear from AGAPAY again.`,
+    text: `Dear ${parishName} leadership,\n\nA parishioner in your community asked AGAPAY to let you know they would like the option to give through AGAPAY Give. AGAPAY is an Orthodox-first platform for stewardship, recurring gifts, candles, memorials, commemorations, campaigns, and giving history. It can complement your current donation structure.\n\nLearn more: ${appUrl}/give\n\nThis is a one-time message sent because a parishioner supplied this public parish contact address. Reply if you would like details or prefer not to hear from AGAPAY again.`,
   });
 
   const notifyTo = env.AGAPAY_REGISTRATION_NOTIFY_EMAIL || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
@@ -119,7 +119,7 @@ export async function handleParishInterest(request, env) {
     reply_to: parishionerEmail,
     subject: `New parish interest: ${parishName}`,
     html: agapayEmailHtml(appUrl, "New Parish Interest", `
-      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">A parishioner requested AGAPAY Giving outreach.</p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">A parishioner requested AGAPAY Give outreach.</p>
       <div style="background:#F6F1E8;border:1px solid rgba(166,159,145,0.34);border-radius:12px;padding:18px;">
         <p style="margin:0 0 8px;"><strong>Parish:</strong> ${htmlEscape(parishName)} (${htmlEscape(location)})</p>
         <p style="margin:0 0 8px;"><strong>Jurisdiction:</strong> ${htmlEscape(jurisdiction || "Not provided")}</p>
@@ -140,9 +140,9 @@ export async function handleParishInterest(request, env) {
     subject: `Your AGAPAY request for ${parishName}`,
     html: agapayEmailHtml(appUrl, "Thank You for Inviting Your Parish", `
       <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Thank you, ${htmlEscape(parishionerName)}. We received your request for <strong>${htmlEscape(parishName)}</strong>.</p>
-      <p style="margin:0;font-size:15px;line-height:1.7;color:#171715;">${outreachResult.status === "sent" ? "We sent the parish a respectful introduction to AGAPAY Giving." : "Your request is saved, and the AGAPAY team will follow up with the parish contact."}</p>
+      <p style="margin:0;font-size:15px;line-height:1.7;color:#171715;">${outreachResult.status === "sent" ? "We sent the parish a respectful introduction to AGAPAY Give." : "Your request is saved, and the AGAPAY team will follow up with the parish contact."}</p>
     `),
-    text: `Thank you, ${parishionerName}. We received your AGAPAY Giving request for ${parishName}. ${outreachResult.status === "sent" ? "We sent the parish a respectful introduction." : "The AGAPAY team will follow up with the parish contact."}`,
+    text: `Thank you, ${parishionerName}. We received your AGAPAY Give request for ${parishName}. ${outreachResult.status === "sent" ? "We sent the parish a respectful introduction." : "The AGAPAY team will follow up with the parish contact."}`,
   });
 
   const updated = {
@@ -160,7 +160,7 @@ export async function handleParishInterest(request, env) {
     id,
     outreachSent: outreachResult.status === "sent",
     message: outreachResult.status === "sent"
-      ? "Thank you. We sent your parish a respectful introduction to AGAPAY Giving."
+      ? "Thank you. We sent your parish a respectful introduction to AGAPAY Give."
       : "Thank you. Your request was saved for the AGAPAY team to follow up.",
   }, { status: 201 });
 }

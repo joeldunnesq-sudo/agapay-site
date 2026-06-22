@@ -48,12 +48,12 @@ assert.ok(backendSources.includes("PARISH_ID_INDEX_PREFIX"), "worker should main
 assert.ok(backendSources.includes("handleAdminRebuildIndexes"), "worker should expose an admin-only index rebuild endpoint");
 assert.ok(backendSources.includes("handleAdminReleaseStatus"), "worker should expose an admin release status endpoint");
 assert.ok(worker.includes('url.pathname === "/api/admin/release-status"'), "worker should route the admin release status endpoint");
-assert.ok(worker.includes('["/parish/login", "/giving/login"]'), "legacy parish login should redirect to the Giving login URL");
-assert.ok(worker.includes('url.pathname === "/giving/login"'), "worker should serve the Giving login URL from the parish login shell");
-assert.ok(worker.includes('/^\\/giving\\/[^/]+\\/?$/'), "worker should serve parish giving pages at /giving/:parish");
-assert.ok(worker.includes('LEGACY_GIVING_PAGE_REDIRECTS'), "worker should redirect legacy Giving marketing URLs to the Giving subtree");
+assert.ok(worker.includes('["/parish/login", "/give/login"]'), "legacy parish login should redirect to the Give login URL");
+assert.ok(worker.includes('url.pathname === "/give/login"'), "worker should serve the Give login URL from the parish login shell");
+assert.ok(worker.includes('url.pathname.startsWith("/give/")') && worker.includes('url.pathname = "/give/form.html"'), "worker should serve parish giving pages at /give/:parish");
+assert.ok(worker.includes('url.pathname.startsWith("/giving/")'), "worker should permanently redirect legacy /giving URLs");
 for (const givingPage of ["features", "how-it-works", "pricing", "why"]) {
-  assert.ok(worker.includes(`["/${givingPage}", "/giving/${givingPage}"]`), `worker should redirect /${givingPage} to /giving/${givingPage}`);
+  assert.ok(worker.includes(`["/${givingPage}", "/give/${givingPage}"]`), `worker should redirect /${givingPage} to /give/${givingPage}`);
 }
 assert.ok(backendSources.includes("checkoutFinancials("), "worker should centralize donation fee calculations");
 assert.ok(backendSources.includes("subscription_data[application_fee_percent]"), "worker should apply AGAPAY donation fees to recurring donor gifts");
@@ -83,9 +83,9 @@ assert.ok(directoryPage.includes("Submit a listing"), "directory should invite o
 assert.ok(directoryPage.includes("parishes, monasteries, ministries, schools, businesses"), "directory should describe Orthodox organization coverage");
 assert.ok(directoryPage.includes("/api/directory/intake"), "directory intake should post to the AGAPAY API");
 
-const findChurchPage = await readFile("public/give/find-church.html", "utf8");
-assert.ok(findChurchPage.includes("Bring AGAPAY Giving to your parish"), "find-church should invite parishioners to advocate for AGAPAY Giving");
-assert.ok(findChurchPage.includes("/api/parish-interest"), "find-church interest form should post to its Worker endpoint");
+const findChurchPage = await readFile("public/give/find-parish.html", "utf8");
+assert.ok(findChurchPage.includes("Bring AGAPAY Give to your parish"), "find-parish should invite parishioners to advocate for AGAPAY Give");
+assert.ok(findChurchPage.includes("/api/parish-interest"), "find-parish interest form should post to its Worker endpoint");
 assert.ok(findChurchPage.includes("data-agapay-turnstile") && findChurchPage.includes("agapaySecurityPayload"), "parish interest outreach should use Turnstile when configured");
 assert.ok(worker.includes('url.pathname === "/api/parish-interest"'), "worker should route parish interest submissions");
 
@@ -125,13 +125,13 @@ const campaignPage = await readFile("public/give/parish-giving/app.js", "utf8");
 assert.ok(campaignPage.includes("/api/campaign?"), "campaign share page should load campaign data from the Worker API");
 assert.ok(campaignPage.includes('`${slug}-campaign`'), "campaign routes should resolve campaign names that already end in Campaign without breaking lookup");
 assert.ok(campaignPage.includes("/api/create-checkout-session") && campaignPage.includes('giftType: "campaign"'), "campaign share page should create a direct Stripe checkout for campaign gifts");
-assert.ok(campaignPage.includes('"/giving/"') && campaignPage.includes('"-campaign"'), "campaign share page should build canonical nested campaign URLs");
+assert.ok(campaignPage.includes('"/give/"') && campaignPage.includes('"-campaign"'), "campaign share page should build canonical nested campaign URLs");
 assert.ok(worker.includes('url.pathname === "/api/campaign"'), "worker should route public campaign lookup API");
 assert.ok(worker.includes('endsWith("/campaign-upload")'), "worker should route authenticated parish campaign photo uploads");
 assert.ok(worker.includes('startsWith("/give/parish-giving/")'), "worker should serve campaign share URLs instead of the generic giving form");
 assert.ok(worker.includes("async function fetchCleanAsset"), "worker should keep rewritten asset routes at their canonical public URLs");
 assert.ok(worker.includes("canonicalCampaignPathFromLegacy"), "worker should redirect legacy campaign URLs to canonical nested campaign routes");
-assert.ok(worker.includes('/^\\/giving\\/[^/]+\\/[^/]+-campaign\\/?$/'), "worker should serve canonical parish campaign routes");
+assert.ok(worker.includes('/^\\/give\\/[^/]+\\/[^/]+-campaign\\/?$/'), "worker should serve canonical parish campaign routes");
 const parishDashboardApp = await readFile("public/parish/app.js", "utf8");
 assert.ok(parishDashboardApp.includes("campaignPublicUrl") && parishDashboardApp.includes("-campaign"), "parish dashboard should publish canonical nested campaign URLs");
 const parishDashboardHtml = await readFile("public/parish/dashboard.html", "utf8");
@@ -145,20 +145,21 @@ assert.ok(givingOverview.includes('"@type": "SoftwareApplication"') && givingOve
 assert.ok(givingOverview.includes("Orthodox giving and tithing tools ready for parish life"), "Giving overview should describe currently available tools");
 assert.ok(givingOverview.includes("Text-to-Give") && givingOverview.includes("AGAPAY Stewardship") && givingOverview.includes("Coming Soon"), "Giving overview should clearly identify coming-soon products");
 const platformHome = await readFile("public/index.html", "utf8");
-assert.ok(platformHome.indexOf('href="/vision"') < platformHome.indexOf('href="/giving"'), "platform homepage should lead its navigation with Vision");
+assert.ok(platformHome.indexOf('href="/vision"') < platformHome.indexOf('href="/give"'), "platform homepage should lead its navigation with Vision");
 assert.ok((platformHome.match(/data-flip-word/g) || []).length >= 2, "platform homepage should animate its header and hero taglines");
 assert.ok(platformHome.includes('footer class="site-footer" data-shell="canonical"'), "platform homepage should use the canonical footer");
 const canonicalChrome = await readFile("public/site-chrome.js", "utf8");
-assert.ok(canonicalChrome.indexOf('{ href: "/vision"') < canonicalChrome.indexOf('{ href: "/giving"'), "canonical navigation should lead with Vision");
+assert.ok(canonicalChrome.indexOf('{ href: "/vision"') < canonicalChrome.indexOf('{ href: "/give"'), "canonical navigation should lead with Vision");
 const visionPage = await readFile("public/vision.html", "utf8");
 assert.ok(visionPage.includes("repeat(6,minmax(0,1fr))") && visionPage.includes("grid-column:span 3"), "Vision phases should use a balanced two-plus-three desktop grid");
 const sitemap = await readFile("public/sitemap.xml", "utf8");
-assert.ok(sitemap.includes("https://agapay.app/giving"), "sitemap should include the canonical Giving overview URL");
+assert.ok(sitemap.includes("https://agapay.app/give"), "sitemap should include the canonical Give overview URL");
 for (const givingPage of ["features", "how-it-works", "pricing", "why"]) {
-  const html = await readFile(`public/giving/${givingPage}.html`, "utf8");
-  assert.ok(html.includes(`https://agapay.app/giving/${givingPage}`), `Giving ${givingPage} page should use its nested canonical URL`);
-  assert.ok(sitemap.includes(`https://agapay.app/giving/${givingPage}`), `sitemap should include /giving/${givingPage}`);
+  const html = await readFile(`public/give/${givingPage}.html`, "utf8");
+  assert.ok(html.includes(`https://agapay.app/give/${givingPage}`), `Give ${givingPage} page should use its nested canonical URL`);
+  assert.ok(sitemap.includes(`https://agapay.app/give/${givingPage}`), `sitemap should include /give/${givingPage}`);
 }
+assert.ok(sitemap.includes("https://agapay.app/give/find-parish"), "sitemap should include the canonical parish finder URL");
 assert.ok(!sitemap.includes("<loc>https://agapay.app/features</loc>"), "sitemap should not list the legacy root features URL");
 assert.ok(!sitemap.includes("<loc>https://agapay.app/how-it-works</loc>"), "sitemap should not list the legacy root how-it-works URL");
 assert.ok(!sitemap.includes("<loc>https://agapay.app/pricing</loc>"), "sitemap should not list the legacy root pricing URL");

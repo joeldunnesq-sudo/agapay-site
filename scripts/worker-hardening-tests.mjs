@@ -852,7 +852,7 @@ async function withMockFetch(handler, run) {
   }), testEnv);
   assert.equal(resetRequest.status, 200);
   const resetBody = await json(resetRequest);
-  assert.match(resetBody.resetUrl, /\/giving\/login\?reset=1/);
+  assert.match(resetBody.resetUrl, /\/give\/login\?reset=1/);
   const resetToken = new URL(resetBody.resetUrl).searchParams.get("token");
   assert.ok(resetToken);
 
@@ -1034,8 +1034,8 @@ async function withMockFetch(handler, run) {
       assert.equal(init.headers["Stripe-Account"], "acct_connected_test");
       const form = new URLSearchParams(init.body);
       assert.equal(form.get("mode"), "payment");
-      assert.equal(form.get("success_url"), "https://agapay.test/giving/st-checkout?success=1&session_id={CHECKOUT_SESSION_ID}");
-      assert.equal(form.get("cancel_url"), "https://agapay.test/giving/st-checkout?canceled=1");
+      assert.equal(form.get("success_url"), "https://agapay.test/give/st-checkout?success=1&session_id={CHECKOUT_SESSION_ID}");
+      assert.equal(form.get("cancel_url"), "https://agapay.test/give/st-checkout?canceled=1");
       assert.equal(form.get("payment_intent_data[application_fee_amount]"), "48");
       assert.equal(form.get("metadata[parish_id]"), "st-checkout");
       assert.equal(form.get("metadata[donor_email]"), "giver@example.com");

@@ -638,7 +638,7 @@ export async function sendTreasurerStripeInvite(env, appUrl, registration) {
   if (!to) return { status: "missing_recipient" };
 
   const parishId = registration.parishId || parishSlug(registration.parishName, registration.city);
-  const dashboardUrl = `${appUrl}/giving/login?parish=${encodeURIComponent(parishId)}`;
+  const dashboardUrl = `${appUrl}/give/login?parish=${encodeURIComponent(parishId)}`;
   const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   const parishName = htmlEscape(registration.parishName || "your parish");
@@ -694,7 +694,7 @@ export async function sendDashboardInvite(env, appUrl, registration) {
   if (!recipients.length) return { status: "missing_recipient" };
 
   const parishId = registration.parishId || parishSlug(registration.parishName, registration.city);
-  const dashboardUrl = `${appUrl}/giving/login?parish=${encodeURIComponent(parishId)}`;
+  const dashboardUrl = `${appUrl}/give/login?parish=${encodeURIComponent(parishId)}`;
   const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   const parishName = htmlEscape(registration.parishName || "your parish");
@@ -789,7 +789,7 @@ export async function sendRegistrationConfirmation(env, appUrl, registration) {
   const parishName = htmlEscape(registration.parishName || "your community");
   const reference = htmlEscape(registration.reference || "");
   const parishId = registration.parishId || parishSlug(registration.parishName, registration.city);
-  const dashboardUrl = `${appUrl}/giving/login?parish=${encodeURIComponent(parishId)}`;
+  const dashboardUrl = `${appUrl}/give/login?parish=${encodeURIComponent(parishId)}`;
   const safeDashboardUrl = htmlEscape(dashboardUrl);
   const temporaryPassword = htmlEscape(registration.parishDashboardToken || "");
   const tier = subscriptionTier(registration.subscriptionTier || defaultSubscriptionTier(registration));
@@ -2584,13 +2584,13 @@ export async function handleCheckout(request, env) {
   const successUrl = donorDashboardReturn
     ? `${appUrl}/myagapay?gift_success=1&session_id={CHECKOUT_SESSION_ID}`
     : campaignPageCheckout
-    ? `${appUrl}/giving/${encodeURIComponent(parish.id)}?giftType=campaign&campaign=${encodeURIComponent(body.campaign || "")}&success=1&session_id={CHECKOUT_SESSION_ID}`
-    : `${appUrl}/giving/${encodeURIComponent(parish.id)}?success=1&session_id={CHECKOUT_SESSION_ID}`;
+    ? `${appUrl}/give/${encodeURIComponent(parish.id)}?giftType=campaign&campaign=${encodeURIComponent(body.campaign || "")}&success=1&session_id={CHECKOUT_SESSION_ID}`
+    : `${appUrl}/give/${encodeURIComponent(parish.id)}?success=1&session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = donorDashboardReturn
     ? `${appUrl}/myagapay/giving/give?checkout_canceled=1`
     : campaignPageCheckout && returnPath
     ? `${appUrl}${returnPath}${returnPath.includes("?") ? "&" : "?"}checkout_canceled=1`
-    : `${appUrl}/giving/${encodeURIComponent(parish.id)}?canceled=1`;
+    : `${appUrl}/give/${encodeURIComponent(parish.id)}?canceled=1`;
   const {
     chargeCents,
     estimatedStripeFeeCents,
@@ -4133,7 +4133,7 @@ export async function handleParishPasswordResetRequest(request, env) {
   const resetToken = generateSecret("parish_reset");
   const resetSalt = generateSecret("parish_reset_salt");
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
-  const resetUrl = `${String(appUrl).replace(/\/+$/, "")}/giving/login?reset=1&parish=${encodeURIComponent(registration.parishId || parishId)}&token=${encodeURIComponent(resetToken)}`;
+  const resetUrl = `${String(appUrl).replace(/\/+$/, "")}/give/login?reset=1&parish=${encodeURIComponent(registration.parishId || parishId)}&token=${encodeURIComponent(resetToken)}`;
   const updated = {
     ...registration,
     parishPasswordResetSalt: resetSalt,
