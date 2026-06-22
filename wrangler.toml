@@ -25,6 +25,8 @@ run_worker_first = [
   "/myagapay/*",
   "/donor",
   "/donor/*",
+  "/give",
+  "/give/*",
   "/my-agapay",
   "/my-agapay/*",
   "/learn/dashboard",
