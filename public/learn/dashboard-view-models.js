@@ -371,9 +371,12 @@ export function toPlannerViewModel(rawPayload) {
   const activeView = query.get("view") || planner.activeView || localStorage.getItem("agapay.learn.plannerView") || "week";
   const monthKey = query.get("month") || planner.month?.key || new Date().toISOString().slice(0, 7);
   const termOptions = safeArray(planner.termSetup?.termOptions);
-  const activeTermId = query.get("termId") || planner.termSetup?.activeTermId || planner.term?.id || "";
-  const activeTermIndex = Math.max(0, termOptions.findIndex((term) => term.id === activeTermId));
-  const activeTerm = Number(query.get("term") || localStorage.getItem("agapay.learn.plannerTerm") || activeTermIndex + 1 || 2);
+  const requestedTermId = query.get("termId") || planner.term?.id || planner.termSetup?.activeTermId || "";
+  const requestedTermIndex = termOptions.findIndex((term) => term.id === requestedTermId);
+  const numericTermIndex = Math.max(0, Math.min(termOptions.length - 1, Number(query.get("term") || localStorage.getItem("agapay.learn.plannerTerm") || 1) - 1));
+  const activeTermIndex = requestedTermIndex >= 0 ? requestedTermIndex : numericTermIndex;
+  const activeTermId = termOptions[activeTermIndex]?.id || requestedTermId;
+  const activeTerm = activeTermIndex + 1;
   const days = safeArray(week.liturgicalDays).map((day, index) => {
     const parts = dateParts(day.civilDate || safeArray(week.dates)[index]);
     return {
@@ -410,13 +413,13 @@ export function toPlannerViewModel(rawPayload) {
       id: view,
       label: view.charAt(0).toUpperCase() + view.slice(1),
       active: activeView === view,
-      href: `/myagapay/learn/planner?view=${view}${view === "month" ? `&month=${encodeURIComponent(monthKey)}` : ""}${view === "term" ? `&term=${activeTerm}&termId=${encodeURIComponent(activeTermId)}` : ""}`
+      href: `/myagapay/learn/planner?view=${view}${view === "month" ? `&month=${encodeURIComponent(monthKey)}` : ""}${view !== "year" ? `&term=${activeTerm}&termId=${encodeURIComponent(activeTermId)}` : ""}`
     })),
     termTabs: (termOptions.length ? termOptions : [1, 2, 3, 4].map((term) => ({ id: `term_${term}`, label: term === 4 ? "Term 4 / Summer" : `Term ${term}` }))).map((term, index) => ({
       id: term.id || index + 1,
       label: text(term.label, `Term ${index + 1}`),
-      active: term.id ? term.id === activeTermId : activeTerm === index + 1,
-      href: `/myagapay/learn/planner?view=term&term=${index + 1}&termId=${encodeURIComponent(term.id || "")}`
+      active: index === activeTermIndex,
+      href: `/myagapay/learn/planner?view=${encodeURIComponent(activeView)}&term=${index + 1}&termId=${encodeURIComponent(term.id || "")}${activeView === "month" ? `&month=${encodeURIComponent(monthKey)}` : ""}`
     })),
     week: {
       label: text(week.label, "This Week"),
@@ -557,7 +560,7 @@ export function toPlannerViewModel(rawPayload) {
       })),
       terms: (termOptions.length ? termOptions : [{ label: "Term 1" }, { label: "Term 2" }, { label: "Term 3" }]).map((term, index) => ({
         label: text(term.label, `Term ${index + 1}`),
-        active: term.id ? term.id === activeTermId : index + 1 === activeTerm
+        active: index === activeTermIndex
       })),
       upcomingFeasts: simpleList(planner.upcomingFeasts, (feast) => ({
         date: text(feast.civilDate, ""),

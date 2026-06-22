@@ -497,7 +497,7 @@ function renderGraceModePanel(vm) {
       id: "light",
       title: "Light Day",
       subtitle: "Keep the essentials and soften the rest.",
-      detail: "Protects prayer, readings, catechesis, and a gentle household stream while reducing lower-priority lessons."
+      detail: "Protects prayer, readings, catechesis, and gentle family-based learning while reducing lower-priority lessons."
     },
     {
       id: "minimum viable",
@@ -681,9 +681,7 @@ function renderPlanner(vm) {
       <div style="display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:7px 12px;">
         <div style="text-align:center;line-height:1.15;min-width:150px;"><span style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);">${html(vm.week.label)}</span><span style="display:block;font-size:12.5px;color:var(--gold);font-style:italic;">${html(vm.week.seasonLabel)}</span></div>
       </div>
-      <div style="display:flex;align-items:center;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:5px;">
-        ${vm.termTabs.map((tab) => `<a href="${tab.href}" style="text-decoration:none;border-radius:8px;padding:8px 24px;font-size:15px;${tab.active ? "background:var(--navy);color:#fff;" : "color:var(--ink);"}">${html(tab.label)}</a>`).join("")}
-      </div>
+      ${vm.activeView === "year" ? "" : `<div style="display:flex;align-items:center;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:5px;overflow:auto;max-width:100%;">${vm.termTabs.map((tab) => `<a href="${tab.href}" aria-current="${tab.active ? "page" : "false"}" style="text-decoration:none;border-radius:8px;padding:8px 24px;font-size:15px;white-space:nowrap;${tab.active ? "background:var(--navy);color:#fff;" : "color:var(--ink);"}">${html(tab.label)}</a>`).join("")}</div>`}
     </div>
   `;
   const content = vm.activeView === "day"
@@ -738,7 +736,7 @@ function renderPlannerWeek(vm) {
 
 function renderPlannerDay(vm) {
   const day = vm.day.selected || {};
-  const dayLinks = vm.week.days.map((item) => `<a href="/myagapay/learn/planner?view=day&date=${encodeURIComponent(item.date)}" style="text-decoration:none;color:var(--ink);border:1px solid ${item.date === day.date ? "var(--gold)" : "var(--line)"};background:${item.date === day.date ? "#fbf2dd" : "var(--paper)"};border-radius:10px;padding:10px;text-align:center;min-width:92px;"><strong style="display:block;color:${item.isSunday ? "var(--burgundy)" : "var(--gold)"};">${html(item.weekday)}</strong><small>${html(item.shortDate)}</small></a>`).join("");
+  const dayLinks = vm.week.days.map((item) => `<a href="/myagapay/learn/planner?view=day&date=${encodeURIComponent(item.date)}&term=${encodeURIComponent(vm.term.activeTerm)}&termId=${encodeURIComponent(vm.term.activeTermId)}" style="text-decoration:none;color:var(--ink);border:1px solid ${item.date === day.date ? "var(--gold)" : "var(--line)"};background:${item.date === day.date ? "#fbf2dd" : "var(--paper)"};border-radius:10px;padding:10px;text-align:center;min-width:92px;"><strong style="display:block;color:${item.isSunday ? "var(--burgundy)" : "var(--gold)"};">${html(item.weekday)}</strong><small>${html(item.shortDate)}</small></a>`).join("");
   const household = day.isSunday ? emptyState("Sunday is reserved for worship, rest, and family rhythm. No school blocks are scheduled.") : vm.day.householdBlocks.map((block) => `<div style="display:grid;grid-template-columns:1fr 70px 100px;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);"><span><strong>${html(block.title)}</strong><small style="display:block;color:var(--muted);">${html(block.sub)}</small></span><span>${html(block.minutes)}m</span>${statusPill(block.status)}</div>`).join("");
   const forms = day.isSunday ? "" : vm.day.formBlocks.map((form) => `<div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:12px;display:grid;gap:10px;"><div style="display:flex;gap:10px;align-items:center;"><span style="width:34px;height:34px;border-radius:50%;background:${form.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(form.initials.slice(0, 2).join(""))}</span><span><strong>${html(form.formLabel)}</strong><small style="display:block;color:var(--muted);">${html(form.childNames.join(", "))}</small></span></div>${form.items.map((item) => `<div style="display:grid;grid-template-columns:1fr 60px 90px;gap:10px;align-items:center;border-top:1px solid var(--line);padding-top:8px;"><span><strong>${html(item.title)}</strong><small style="display:block;color:var(--muted);">${html(item.sub)}</small></span><span>${html(item.minutes)}m</span>${statusPill(item.status)}</div>`).join("")}</div>`).join("");
   return `
@@ -783,9 +781,9 @@ function renderPlannerMonth(vm) {
             <h2 style="font-family:'Cormorant Garamond',serif;font-size:34px;line-height:1;margin:5px 0 0;color:var(--ink);">${html(month.label)}</h2>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <a href="/myagapay/learn/planner?view=month&month=${encodeURIComponent(adjacentMonthKey(month.key, -1))}" style="border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);text-decoration:none;background:var(--paper2);">← Previous</a>
+            <a href="/myagapay/learn/planner?view=month&month=${encodeURIComponent(adjacentMonthKey(month.key, -1))}&term=${encodeURIComponent(vm.term.activeTerm)}&termId=${encodeURIComponent(vm.term.activeTermId)}" style="border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);text-decoration:none;background:var(--paper2);">← Previous</a>
             <button type="button" data-planner-month-print="${html(month.key)}" style="border:1px solid var(--gold);background:var(--navy);color:#fff;border-radius:9px;padding:9px 14px;font-family:inherit;font-weight:700;cursor:pointer;">Print Month</button>
-            <a href="/myagapay/learn/planner?view=month&month=${encodeURIComponent(adjacentMonthKey(month.key, 1))}" style="border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);text-decoration:none;background:var(--paper2);">Next →</a>
+            <a href="/myagapay/learn/planner?view=month&month=${encodeURIComponent(adjacentMonthKey(month.key, 1))}&term=${encodeURIComponent(vm.term.activeTerm)}&termId=${encodeURIComponent(vm.term.activeTermId)}" style="border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);text-decoration:none;background:var(--paper2);">Next →</a>
           </div>
         </div>
         <div style="overflow:auto;padding-bottom:4px;">
@@ -815,7 +813,7 @@ function renderPlannerTerm(vm) {
       </div>
     </div>
     <div style="display:grid;grid-template-columns:.9fr repeat(${Math.max(vm.term.childTracks.length, 1)}, minmax(150px,1fr));gap:12px;">
-      ${panel("Household Stream", vm.term.householdSummary.map((item) => `<div style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</div>`).join(""), { icon: "⌂" })}
+      ${panel("Family-Based Learning", vm.term.householdSummary.map((item) => `<div style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</div>`).join(""), { icon: "⌂" })}
       ${vm.term.childTracks.map((child) => panel(`${child.name} · Age ${child.age}`, `<div style="display:grid;gap:8px;">${child.tracks.map((track) => `<div style="border-top:1px solid var(--line);padding:8px 0;">${html(track)}</div>`).join("") || emptyState("No tracks configured.")}</div>`, { icon: child.initial, style: "min-width:0;" })).join("")}
     </div>
     ${vm.term.graceReserve?.length ? panel("Grace Mode Reserve", `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">${vm.term.graceReserve.map((item) => `<div style="border:1px solid ${html(item.color)};border-radius:10px;background:${softColor(item.color, "18")};padding:12px;"><strong style="display:block;color:var(--ink);">${html(item.title)}</strong><small style="display:block;color:var(--muted);line-height:1.35;margin-top:4px;">${html(item.note)}</small></div>`).join("")}</div>`, { icon: "✥" }) : ""}
@@ -1447,7 +1445,7 @@ function simpleSetupStepBody(draft) {
   if (draft.step === 4) {
     return `<div class="learn-wizard-step-copy"><span>A gentler way through real life</span><h2>Meet Grace Mode.</h2><p>Your plan should serve your family, not punish it. Grace Mode lets you lighten a difficult day without deleting work or pretending the plan never existed.</p></div><aside class="learn-wizard-grace-explainer"><div><small>Built for real family life</small><h3>Grace Mode lightens a day without erasing the plan.</h3><p>Use it for illness, a new baby, travel, feast days, difficult mornings, or any season when the full plan is too much. Deferred work stays in your plan and can return when the household is ready.</p></div><div class="learn-wizard-grace-levels"><span><strong>Full</strong><small>Runs the complete day as planned.</small></span><span><strong>Light</strong><small>Keeps essentials and softens lower-priority work.</small></span><span><strong>Minimum</strong><small>Keeps prayer, one shared touchpoint, and the next right thing.</small></span></div><p class="learn-wizard-grace-tip"><strong>How to use it:</strong> choose today’s mode at the top of the Learn Dashboard. In Advanced Setup, each subject can be marked “keep,” “reduce first,” or “defer if needed,” so you remain in control.</p></aside><div class="learn-wizard-gentle-note"><strong>No permanent choice is required.</strong><span>You can change Grace Mode from day to day as family life changes.</span></div>`;
   }
-  return `<div class="learn-wizard-step-copy"><span>Ready for Today</span><h2>Would you like a simple starter week?</h2><p>AGAPAY will save a real editable first term, Daily Church Rhythms, family read-aloud, nature walk, and starter subject plan organized by ${draft.useForms ? "Form" : "grade or level"}. Nothing is sample-only or locked.</p></div><label class="learn-wizard-starter"><input type="checkbox" name="wizard.starterWeek" ${draft.starterWeek ? "checked" : ""}><span><strong>Create a gentle starter week</strong><small>Creates Morning Prayers, Daily Readings, Saint of the Day, family read-aloud, nature walk, Language Arts, Mathematics, and Nature & Science.</small></span></label><div class="learn-wizard-summary"><div><small>Household</small><strong>${html(draft.householdName || "Your household")}</strong></div><div><small>Children</small><strong>${draft.children.filter((child) => child.firstName).length}</strong></div><div><small>Planning</small><strong>${draft.useForms ? "Family + Forms" : "Family + grades"}</strong></div><div><small>Style</small><strong>${html(draft.method === "Orthodox Classical" ? "Classical" : draft.method)}</strong></div></div>`;
+  return `<div class="learn-wizard-step-copy"><span>Ready for Today</span><h2>Would you like a simple starter week?</h2><p>AGAPAY will save a real editable first term, Daily Church Rhythms, family read-aloud, nature walk, and starter subject plan organized by ${draft.useForms ? "Form" : "grade or level"}. Nothing is sample-only or locked.</p></div><label class="learn-wizard-starter"><input type="checkbox" name="wizard.starterWeek" ${draft.starterWeek ? "checked" : ""}><span><strong>Create a gentle starter week</strong><small>Creates Morning Prayers, Daily Readings, Saint of the Day, family read-aloud, nature walk, plus editable Language Arts, Mathematics, History, Geography, Literature, and Science subjects for every ${draft.useForms ? "Form" : "grade or level"}.</small></span></label><div class="learn-wizard-summary"><div><small>Household</small><strong>${html(draft.householdName || "Your household")}</strong></div><div><small>Children</small><strong>${draft.children.filter((child) => child.firstName).length}</strong></div><div><small>Planning</small><strong>${draft.useForms ? "Family + Forms" : "Family + grades"}</strong></div><div><small>Style</small><strong>${html(draft.method === "Orthodox Classical" ? "Classical" : draft.method)}</strong></div></div>`;
 }
 
 function renderSimpleSetupWizard(vm, draft) {
@@ -1581,11 +1579,23 @@ function simpleSetupPayload(draft, existingSnapshot = null) {
   const existingHasPlan = Boolean(existingSnapshot?.subjects?.length || existingSnapshot?.formation?.enrichmentBlocks?.length);
   const createStarterWeek = draft.starterWeek && !existingHasPlan;
   const starterAssignment = (groupLabel) => draft.useForms ? { formLabel: groupLabel } : { gradeLabel: groupLabel };
-  const subjects = createStarterWeek ? planningGroups.flatMap((groupLabel, groupIndex) => [
-    { title: "Starter Language Arts", subjectType: "language-arts", planningMode: draft.useForms ? "forms" : "grades", weeklyFrequency: "4x", ...starterAssignment(groupLabel), minutes: "20", termId: "term_1", gracePriority: "keep", color: colors[groupIndex % colors.length] },
-    { title: "Starter Mathematics", subjectType: "math", planningMode: draft.useForms ? "forms" : "grades", weeklyFrequency: "4x", ...starterAssignment(groupLabel), minutes: "20", termId: "term_1", gracePriority: "keep", color: colors[(groupIndex + 1) % colors.length] },
-    { title: "Nature & Science", subjectType: "sciences-nature", planningMode: draft.useForms ? "forms" : "grades", weeklyFrequency: "2x", ...starterAssignment(groupLabel), minutes: "25", termId: "term_1", gracePriority: "reduce first", color: colors[(groupIndex + 2) % colors.length] }
-  ]) : [];
+  const starterSubjectSlate = [
+    { title: "Language Arts", subjectType: "language-arts", weeklyFrequency: "4x", minutes: "20", gracePriority: "keep" },
+    { title: "Mathematics", subjectType: "math", weeklyFrequency: "4x", minutes: "20", gracePriority: "keep" },
+    { title: "History", subjectType: "history", weeklyFrequency: "3x", minutes: "25", gracePriority: "keep" },
+    { title: "Geography", subjectType: "geography", weeklyFrequency: "2x", minutes: "20", gracePriority: "reduce first" },
+    { title: "Literature", subjectType: "literature", weeklyFrequency: "3x", minutes: "20", gracePriority: "keep" },
+    { title: "Science", subjectType: "sciences-nature", weeklyFrequency: "2x", minutes: "25", gracePriority: "reduce first" }
+  ];
+  const subjects = createStarterWeek ? planningGroups.flatMap((groupLabel, groupIndex) => starterSubjectSlate.map((subject, subjectIndex) => ({
+    ...subject,
+    planningMode: draft.useForms ? "forms" : "grades",
+    ...starterAssignment(groupLabel),
+    termId: "term_1",
+    resource: "",
+    resourceType: "none",
+    color: colors[(groupIndex + subjectIndex) % colors.length]
+  }))) : [];
   const starterTerm = { id: "term_1", label: "Starter Term", startDate: dates.termStart, endDate: dates.termEnd, paceMode: "steady" };
   const starterFormation = {
     churchRhythms: [
@@ -2449,6 +2459,7 @@ function wireSetupPage() {
 function wirePlanner(vm) {
   if (vm.activeView) localStorage.setItem("agapay.learn.plannerView", vm.activeView);
   if (vm.month?.key) localStorage.setItem("agapay.learn.plannerMonth", vm.month.key);
+  if (vm.term?.activeTerm) localStorage.setItem("agapay.learn.plannerTerm", String(vm.term.activeTerm));
   root.querySelector("[data-planner-month-print]")?.addEventListener("click", async (event) => {
     const button = event.currentTarget;
     const month = button.dataset.plannerMonthPrint || vm.month?.key || new Date().toISOString().slice(0, 7);
@@ -2798,7 +2809,8 @@ async function mount() {
     const params = new URLSearchParams(window.location.search);
     const view = params.get("view") || localStorage.getItem("agapay.learn.plannerView") || "week";
     const month = params.get("month") || localStorage.getItem("agapay.learn.plannerMonth") || new Date().toISOString().slice(0, 7);
-    const raw = await apiGet(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}&view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}`);
+    const termId = params.get("termId") || "";
+    const raw = await apiGet(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}&view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}&termId=${encodeURIComponent(termId)}`);
     const vm = toPlannerViewModel(raw);
     root.innerHTML = renderPlanner(vm);
     wirePlanner(vm);

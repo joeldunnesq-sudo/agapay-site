@@ -122,7 +122,7 @@ function buildHouseholdWeekly(printCenter, template, generatedAt) {
   const week = printCenter.week || {};
   const formRows = groupChildRowsByForm(week.childRows || []);
   document.sections = [
-    tableSection("Household Stream", ["Rhythm", "Notes", "Minutes"], (week.householdRows || []).map((row) => [
+    tableSection("Family-Based Learning", ["Rhythm", "Notes", "Minutes"], (week.householdRows || []).map((row) => [
       row.title,
       row.detail,
       `${sumMinutes(row.minutes)}m`

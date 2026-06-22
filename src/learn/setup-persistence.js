@@ -378,7 +378,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     id: text(stream.id, stableId("stream", stream.title, index)),
     householdId: identity.householdId,
     streamType: text(stream.streamType || stream.type, "custom"),
-    title: text(stream.title, "Household Stream"),
+    title: text(stream.title, "Family-Based Block"),
     cadenceLabel: text(stream.cadenceLabel || stream.cadence, "Weekly"),
     dailyMinutes: {
       mon: int(stream.dailyMinutes?.mon ?? stream.monMinutes, 20),
@@ -979,9 +979,18 @@ export async function saveLearnCompletion(env, request, payload = {}) {
   return { ok: true, setupSnapshot, scope, periodKey, itemId, completed: Boolean(payload.completed) };
 }
 
-export async function getLearnSeedForIdentity(env, identity) {
+export async function getLearnSeedForIdentity(env, identity, { termId = "" } = {}) {
   if (!identity) return null;
-  const seed = applySetupSnapshotToSeed(getLearnSeedSnapshot(), await loadLearnSetupSnapshotForIdentity(env, identity));
+  let setupSnapshot = await loadLearnSetupSnapshotForIdentity(env, identity);
+  const selectedTerm = setupSnapshot?.terms?.find((term) => term.id === termId);
+  if (selectedTerm) {
+    setupSnapshot = {
+      ...clone(setupSnapshot),
+      schoolYear: { ...setupSnapshot.schoolYear, currentTermId: selectedTerm.id },
+      term: { ...selectedTerm }
+    };
+  }
+  const seed = applySetupSnapshotToSeed(getLearnSeedSnapshot(), setupSnapshot);
   const academicSnapshot = await loadLearnAcademicSnapshot(env, identity.householdId);
   seed.closedAcademicRecords = academicSnapshot.academicRecords;
   seed.closedReportCards = academicSnapshot.reportCards;

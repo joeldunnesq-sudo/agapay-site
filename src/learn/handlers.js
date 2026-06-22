@@ -37,8 +37,8 @@ function todayIso(env = {}) {
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
-async function requireLearnRepository(request, env) {
-  const repository = await createLearnRepositoryForRequest(request, env);
+async function requireLearnRepository(request, env, options = {}) {
+  const repository = await createLearnRepositoryForRequest(request, env, options);
   if (!repository) return { response: unauthorized() };
   return { repository };
 }
@@ -171,7 +171,7 @@ export async function handleLearnPlanner(request, env) {
   if (blocked) return blocked;
 
   const url = new URL(request.url);
-  const auth = await requireLearnRepository(request, env);
+  const auth = await requireLearnRepository(request, env, { termId: url.searchParams.get("termId") || "" });
   if (auth.response) return auth.response;
   const { repository } = auth;
   const planner = repository.getPlanner({

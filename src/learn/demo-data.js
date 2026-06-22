@@ -729,7 +729,7 @@ const termSetup = {
 };
 
 const printTemplates = [
-  { id: "print_mom_weekly", householdId: learnHousehold.id, templateType: "weekly-household-plan", title: "Weekly Household Plan", audience: "mom", description: "One-page household stream, feast notes, and child overview." },
+  { id: "print_mom_weekly", householdId: learnHousehold.id, templateType: "weekly-household-plan", title: "Weekly Family Plan", audience: "mom", description: "One-page family-based learning plan, feast notes, and child overview." },
   { id: "print_mom_term", householdId: learnHousehold.id, templateType: "term-plan", title: "Term Plan", audience: "mom", description: "12-week pacing, curriculum package, and cycle overview." },
   { id: "print_mom_month", householdId: learnHousehold.id, templateType: "month-calendar", title: "Month Calendar", audience: "mom", description: "School rhythm with feast and fast markers." },
   { id: "print_mom_liturgical", householdId: learnHousehold.id, templateType: "liturgical-school-calendar", title: "Liturgical School Calendar", audience: "mom", description: "School-year view by Orthodox calendar mode." },
@@ -869,9 +869,9 @@ const libraryBooks = [
 ];
 
 const currentReadAlouds = [
-  { bookId: "book_wingfeather", title: "The Wingfeather Saga Book 1: On the Edge of the Dark Sea of Darkness", author: "Andrew Peterson", assignmentLabel: "Spring Term", progressPercent: 65, streamLabel: "Household Stream", listLabel: "Morning Basket" },
-  { bookId: "book_st_nicholas", title: "Saint Nicholas: The Real Story of the Christmas Legend", author: "Barbara Yoffie", assignmentLabel: "Advent Term", progressPercent: 40, streamLabel: "Household Stream", listLabel: "Morning Basket" },
-  { bookId: "book_swiss_family", title: "The Swiss Family Robinson", author: "Johann David Wyss", assignmentLabel: "Spring Term", progressPercent: 25, streamLabel: "Household Stream", listLabel: "Morning Basket" }
+  { bookId: "book_wingfeather", title: "The Wingfeather Saga Book 1: On the Edge of the Dark Sea of Darkness", author: "Andrew Peterson", assignmentLabel: "Spring Term", progressPercent: 65, streamLabel: "Together This Week", listLabel: "Morning Basket" },
+  { bookId: "book_st_nicholas", title: "Saint Nicholas: The Real Story of the Christmas Legend", author: "Barbara Yoffie", assignmentLabel: "Advent Term", progressPercent: 40, streamLabel: "Together This Week", listLabel: "Morning Basket" },
+  { bookId: "book_swiss_family", title: "The Swiss Family Robinson", author: "Johann David Wyss", assignmentLabel: "Spring Term", progressPercent: 25, streamLabel: "Together This Week", listLabel: "Morning Basket" }
 ];
 
 const academicRecords = [

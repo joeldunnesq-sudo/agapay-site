@@ -971,8 +971,8 @@ export function createSeedLearnRepository() {
   return new SeedLearnRepository();
 }
 
-export async function createLearnRepositoryForRequest(request, env) {
+export async function createLearnRepositoryForRequest(request, env, options = {}) {
   const identity = await learnSetupIdentity(request, env);
   if (!identity) return null;
-  return new SeedLearnRepository(await getLearnSeedForIdentity(env, identity));
+  return new SeedLearnRepository(await getLearnSeedForIdentity(env, identity, options));
 }

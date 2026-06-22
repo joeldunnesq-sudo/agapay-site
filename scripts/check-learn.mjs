@@ -87,7 +87,9 @@ assert(learnShell.includes("agapay.learn.simpleSetup.v1"), "Learn setup wizard s
 assert(learnShell.includes("data-wizard-advanced"), "Learn setup wizard should link to Advanced Setup.");
 assert(learnShell.includes("simpleSetupPayload"), "Learn setup wizard should save through the existing setup endpoint.");
 assert(learnShell.includes("Create a gentle starter week"), "Learn setup wizard should offer a starter-week plan.");
-assert(learnShell.includes('title: "Starter Language Arts"') && learnShell.includes('title: "Morning Prayers"') && learnShell.includes('title: "Family Read-Aloud"'), "The starter-week option should persist real subject, Church rhythm, and enrichment data.");
+assert(["Language Arts", "Mathematics", "History", "Geography", "Literature", "Science"].every((title) => learnShell.includes(`title: "${title}"`)) && learnShell.includes('title: "Morning Prayers"') && learnShell.includes('title: "Family Read-Aloud"'), "The starter-week option should persist a full editable subject slate, Church rhythm, and enrichment data.");
+assert(learnShell.includes('panel("Family-Based Learning"') && !learnShell.includes('panel("Household Stream"'), "Planner should use family-based learning language instead of the legacy Household Stream label.");
+assert(learnShell.includes('vm.activeView === "year" ? ""') && learnShell.includes('aria-current="${tab.active ? "page" : "false"}"'), "Planner should show one explicit active term outside the combined Year view.");
 assert(learnShell.includes("TOGETHER THIS WEEK") && learnShell.includes("DAILY CHURCH RHYTHMS"), "Learn dashboard should distinguish weekly family work from daily Church rhythms.");
 assert(learnShell.includes("learn-week-overview") && learnShell.includes("learn-child-week-grid") && learnShell.includes("WEEK AT A GLANCE"), "Learn dashboard should keep household summaries separate from a scalable child grid.");
 assert(learnShell.includes("data-learn-completion") && learnShell.includes("/api/learn/completion"), "Learn dashboard should persist daily and weekly completion through the backend.");

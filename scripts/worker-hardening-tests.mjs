@@ -304,8 +304,12 @@ async function withMockFetch(handler, run) {
 
   const alphaSetupPayload = {
     household: { name: "Alpha Household", parishName: "St. Alpha" },
-    schoolYear: { label: "2026-2027", startDate: "2026-09-01", endDate: "2027-05-31" },
+    schoolYear: { label: "2026-2027", startDate: "2026-09-01", endDate: "2027-05-31", currentTermId: "term_1" },
     term: { id: "term_1", label: "Term 1", startDate: "2026-09-01", endDate: "2026-12-15" },
+    terms: [
+      { id: "term_1", label: "Term 1", startDate: "2026-09-01", endDate: "2026-12-15" },
+      { id: "term_4", label: "Term 4 / Summer", startDate: "2027-06-01", endDate: "2027-08-15" }
+    ],
     preferences: { evaluationModel: "narrative-only", graceModeDefault: "light" },
     children: [{ firstName: "Anna", ageYears: 8, gradeLabel: "Form I" }],
     streams: [{ title: "Morning Basket", streamType: "household", cadenceLabel: "Daily" }],
@@ -320,6 +324,16 @@ async function withMockFetch(handler, run) {
       endNumber: 12,
       credits: 1,
       finalGradeOverride: "A"
+    }, {
+      title: "Summer Science",
+      subjectType: "sciences-nature",
+      formLabel: "Form I",
+      resource: "Nature notebook",
+      progressionType: "lessons",
+      startNumber: 1,
+      currentNumber: 1,
+      endNumber: 10,
+      termId: "term_4"
     }],
     books: [],
     formation: {},
@@ -332,6 +346,17 @@ async function withMockFetch(handler, run) {
   }), testEnv);
   assert.equal(alphaSave.status, 200);
   assert.equal((await json(alphaSave)).onboarding.household.name, "Alpha Household");
+
+  const alphaTermOnePlanner = await worker.fetch(request("/api/learn/planner?view=week&termId=term_1", { headers: alpha.headers }), testEnv);
+  const alphaTermOneRows = (await json(alphaTermOnePlanner)).planner.week.childRows;
+  assert.equal(alphaTermOneRows.some((row) => row.title === "Math"), true);
+  assert.equal(alphaTermOneRows.some((row) => row.title === "Summer Science"), false);
+
+  const alphaTermFourPlanner = await worker.fetch(request("/api/learn/planner?view=week&termId=term_4", { headers: alpha.headers }), testEnv);
+  const alphaTermFourBody = await json(alphaTermFourPlanner);
+  assert.equal(alphaTermFourBody.planner.term.id, "term_4");
+  assert.equal(alphaTermFourBody.planner.week.childRows.some((row) => row.title === "Summer Science"), true);
+  assert.equal(alphaTermFourBody.planner.week.childRows.some((row) => row.title === "Math"), false);
 
   const alphaCommunity = await worker.fetch(request("/api/learn/community", {
     headers: alpha.headers
