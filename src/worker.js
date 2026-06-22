@@ -176,6 +176,7 @@ import {
 import {
   handleLearnBooks,
   handleLearnCommunity,
+  handleLearnCompletionSave,
   handleLearnCoOp,
   handleLearnDashboard,
   handleLearnFormation,
@@ -995,6 +996,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/learn/dashboard") {
       return handleLearnDashboard(request, env);
+    }
+    if (request.method === "POST" && url.pathname === "/api/learn/completion") {
+      return handleLearnCompletionSave(request, env);
     }
     if (request.method === "GET" && url.pathname === "/api/learn/planner") {
       return handleLearnPlanner(request, env);

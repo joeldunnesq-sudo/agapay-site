@@ -210,6 +210,12 @@ async function withMockFetch(handler, run) {
   const saintsNoAuth = await worker.fetch(request("/api/learn/saints?date=2026-06-19"), testEnv);
   assert.equal(saintsNoAuth.status, 401);
 
+  const completionNoAuth = await worker.fetch(request("/api/learn/completion", {
+    method: "POST",
+    body: { itemId: "morning-prayers", scope: "daily", completed: true, civilDate: "2026-06-19" }
+  }), testEnv);
+  assert.equal(completionNoAuth.status, 401);
+
   const closeNoAuth = await worker.fetch(request("/api/learn/terms/term_1/close", {
     method: "POST",
     body: {}
@@ -225,6 +231,13 @@ async function withMockFetch(handler, run) {
     headers: { "X-AGAPAY-Learn-Email": "victim@example.com" }
   }), testEnv);
   assert.equal(saintsSpoofedHeaderOnly.status, 401);
+
+  const completionSpoofedHeaderOnly = await worker.fetch(request("/api/learn/completion", {
+    method: "POST",
+    headers: { "X-AGAPAY-Learn-Email": "victim@example.com" },
+    body: { itemId: "morning-prayers", scope: "daily", completed: true, civilDate: "2026-06-19" }
+  }), testEnv);
+  assert.equal(completionSpoofedHeaderOnly.status, 401);
 
   const closeSpoofedHeaderOnly = await worker.fetch(request("/api/learn/terms/term_1/close", {
     method: "POST",
@@ -305,6 +318,18 @@ async function withMockFetch(handler, run) {
   }), testEnv);
   assert.equal(alphaSave.status, 200);
   assert.equal((await json(alphaSave)).onboarding.household.name, "Alpha Household");
+
+  const alphaCompletion = await worker.fetch(request("/api/learn/completion", {
+    method: "POST",
+    headers: alpha.headers,
+    body: { itemId: "morning-prayers", scope: "daily", completed: true, civilDate: "2026-06-19" }
+  }), testEnv);
+  assert.equal(alphaCompletion.status, 200);
+  const alphaSetupAfterCompletion = await worker.fetch(request("/api/learn/setup", {
+    headers: alpha.headers
+  }), testEnv);
+  assert.equal(alphaSetupAfterCompletion.status, 200);
+  assert.equal((await json(alphaSetupAfterCompletion)).onboarding.setupSnapshot.completion.daily["2026-06-19"]["morning-prayers"], true);
 
   const alphaReportsBeforeClose = await worker.fetch(request("/api/learn/reports", {
     headers: alpha.headers

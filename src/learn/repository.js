@@ -8,9 +8,30 @@ import { getLearnSeedForIdentity, learnSetupIdentity } from "./setup-persistence
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-function buildHouseholdStreamCards(seed, daily) {
+function weekStartSundayIso(civilDate = new Date().toISOString().slice(0, 10)) {
+  const date = new Date(`${civilDate}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() - date.getUTCDay());
+  return date.toISOString().slice(0, 10);
+}
+
+function completionStatus(seed, scope, civilDate, itemId, fallback = "planned") {
+  const periodKey = scope === "daily" ? civilDate : weekStartSundayIso(civilDate);
+  const bucket = seed.setupSnapshot?.completion?.[scope]?.[periodKey];
+  if (bucket && Object.prototype.hasOwnProperty.call(bucket, itemId)) return bucket[itemId] ? "completed" : "planned";
+  return fallback;
+}
+
+function buildHouseholdStreamCards(seed, daily, civilDate) {
   const streamLookup = new Map(seed.householdStreams.map((stream) => [stream.id, stream]));
-  const blocks = daily.householdBlocks?.length
+  const setupRows = (seed.plannerWeek?.householdRows || []).filter((row) => row.kind === "enrichment");
+  const blocks = setupRows.length
+    ? setupRows.map((row) => ({
+        ...row,
+        subtitle: row.detail,
+        minutesPlanned: row.minutes?.find((minutes) => Number(minutes) > 0) || 0,
+        status: row.statuses?.includes("completed") ? "completed" : "planned"
+      }))
+    : daily.householdBlocks?.length
     ? daily.householdBlocks
     : seed.householdStreams.map((stream, index) => ({
         id: `stream_${stream.id || index}`,
@@ -27,9 +48,11 @@ function buildHouseholdStreamCards(seed, daily) {
       streamType: stream?.streamType || "",
       title: block.title,
       subtitle: block.subtitle,
+      groupLabel: block.groupLabel || (block.planningMode === "forms" ? "Form Enrichment" : "Everyone Together"),
+      href: block.href || (/read|literature/i.test(`${block.title} ${block.subtitle}`) ? "/myagapay/learn/books" : "/myagapay/learn/formation"),
       cadenceLabel: stream?.cadenceLabel || "",
       minutesPlanned: block.minutesPlanned,
-      status: block.status
+      status: completionStatus(seed, "weekly", civilDate, block.id, block.status)
     };
   });
 }
@@ -58,10 +81,13 @@ function progressFromTerm(term = {}, civilDate = "") {
   };
 }
 
-function computeWeeklySummary(seed, calendarType) {
+function computeWeeklySummary(seed, calendarType, civilDate = new Date().toISOString().slice(0, 10)) {
   const week = buildPlannerWeek(seed, calendarType);
   const rows = [...(week.householdRows || []), ...(week.childRows || [])];
-  const statuses = rows.flatMap((row) => row.statuses || []).filter((status) => status && status !== "rest");
+  const statuses = rows.flatMap((row) => {
+    const completed = completionStatus(seed, "weekly", civilDate, row.id, "planned") === "completed";
+    return (row.statuses || []).map((status) => completed && status !== "empty" && status !== "rest" ? "completed" : status);
+  }).filter((status) => status && status !== "rest");
   const lessonsPlanned = statuses.filter((status) => status !== "empty").length;
   const lessonsCompleted = statuses.filter((status) => status === "completed").length;
   const upcomingFeasts = buildUpcomingFeasts(seed, calendarType, week.dates?.[0] || new Date().toISOString().slice(0, 10));
@@ -78,9 +104,9 @@ function computeWeeklySummary(seed, calendarType) {
   };
 }
 
-function buildChildColumns(seed, daily) {
+function buildChildColumns(seed, daily, civilDate) {
   const childLookup = new Map(seed.children.map((child) => [child.id, child]));
-  const columns = daily.childColumns?.length
+  const columns = !seed.setupSnapshot && daily.childColumns?.length
     ? daily.childColumns
     : seed.children.map((child) => ({
         childId: child.id,
@@ -102,7 +128,7 @@ function buildChildColumns(seed, daily) {
       title: block.title,
       subtitle: block.subtitle,
       minutesPlanned: block.minutesPlanned,
-      status: block.status
+      status: completionStatus(seed, "weekly", civilDate, block.id, block.status)
     }))
   }));
 }
@@ -632,12 +658,15 @@ export class SeedLearnRepository {
           ? this.seed.setupSnapshot.formation.churchRhythms
           : hasSetup ? daily.churchRhythms : [
             { id: "rhythm_setup", title: "Complete Setup", status: "planned", note: "Build your household rhythm." }
-          ]).map((entry) => ({ ...entry })),
-        householdStreamCards: hasSetup ? buildHouseholdStreamCards(this.seed, daily) : [],
-        childColumns: hasSetup ? buildChildColumns(this.seed, daily) : []
+          ]).map((entry) => ({
+            ...entry,
+            status: completionStatus(this.seed, "daily", civilDate, entry.id, entry.status)
+          })),
+        householdStreamCards: hasSetup ? buildHouseholdStreamCards(this.seed, daily, civilDate) : [],
+        childColumns: hasSetup ? buildChildColumns(this.seed, daily, civilDate) : []
       },
       termProgress: hasSetup ? progressFromTerm(this.seed.term, civilDate) : progressFromTerm({}, civilDate),
-      weeklySummary: hasSetup ? computeWeeklySummary(this.seed, resolvedCalendar) : {
+      weeklySummary: hasSetup ? computeWeeklySummary(this.seed, resolvedCalendar, civilDate) : {
         lessonsCompleted: 0,
         lessonsPlanned: 0,
         lessonsCompletionPercent: 0,

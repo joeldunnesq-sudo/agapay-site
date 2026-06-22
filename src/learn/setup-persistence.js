@@ -214,6 +214,37 @@ function weeklyPlanArrays(frequency = "daily", minutes = 20) {
   return { minutes: planMinutes, statuses };
 }
 
+function currentWeekWindow(reference = new Date()) {
+  const start = new Date(Date.UTC(reference.getUTCFullYear(), reference.getUTCMonth(), reference.getUTCDate()));
+  start.setUTCDate(start.getUTCDate() - start.getUTCDay());
+  const dates = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(start);
+    date.setUTCDate(start.getUTCDate() + index);
+    return date.toISOString().slice(0, 10);
+  });
+  const format = (iso) => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
+  return { dates, label: `${format(dates[0])} - ${format(dates[6])}` };
+}
+
+function normalizeCompletion(value = {}) {
+  const normalizeBucket = (bucket, limit) => Object.fromEntries(
+    Object.entries(bucket && typeof bucket === "object" ? bucket : {})
+      .filter(([key, items]) => /^\d{4}-\d{2}-\d{2}$/.test(key) && items && typeof items === "object")
+      .sort(([a], [b]) => b.localeCompare(a))
+      .slice(0, limit)
+      .map(([key, items]) => [key, Object.fromEntries(
+        Object.entries(items)
+          .filter(([itemId]) => /^[a-zA-Z0-9:_-]{1,180}$/.test(itemId))
+          .slice(0, 250)
+          .map(([itemId, completed]) => [itemId, Boolean(completed)])
+      )])
+  );
+  return {
+    daily: normalizeBucket(value.daily, 45),
+    weekly: normalizeBucket(value.weekly, 18)
+  };
+}
+
 function childrenForAssignment(item = {}, children = []) {
   if (item.childId) return children.filter((child) => child.id === item.childId);
   if (item.formLabel) return children.filter((child) => child.formLabel === item.formLabel || child.gradeLabel === item.formLabel);
@@ -552,6 +583,11 @@ function normalizeSetupPayload(payload = {}, identity) {
     formation,
     formationMaterials,
     historyCycle,
+    completion: normalizeCompletion(payload.completion),
+    starterWeek: payload.starterWeek && typeof payload.starterWeek === "object" ? {
+      generatedAt: text(payload.starterWeek.generatedAt, ""),
+      enabled: Boolean(payload.starterWeek.enabled)
+    } : null,
     coOp
   };
 }
@@ -764,7 +800,8 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
   ];
   next.plannerWeek = {
     ...next.plannerWeek,
-    label: setupSnapshot.term?.label || next.plannerWeek.label,
+    ...currentWeekWindow(),
+    seasonLabel: setupSnapshot.term?.label || next.plannerWeek.seasonLabel,
     householdRows: [
       ...list(setupSnapshot.streams).map((stream, index) => ({
         id: `week_${stream.id}`,
@@ -782,6 +819,19 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
         detail: `${book.author || book.category}${book.endChapter ? ` • chapters ${book.startChapter || 1}-${book.endChapter}` : ""}${book.weeklyFrequency ? ` • ${book.weeklyFrequency}` : ""}`,
         priority: 50 + index,
         ...weeklyPlanArrays(book.weeklyFrequency, book.minutes || 20)
+      })),
+      ...list(formation.enrichmentBlocks).filter(forCurrentTerm).map((block, index) => ({
+        id: `week_enrichment_${block.id}`,
+        sourceId: block.id,
+        kind: "enrichment",
+        title: block.title,
+        detail: `${block.resource || block.blockType || "Enrichment"}${block.weeklyFrequency ? ` • ${block.weeklyFrequency}` : ""}`,
+        groupLabel: block.planningMode === "forms" ? block.formLabel || block.gradeLabel || "Form Enrichment" : "Everyone Together",
+        planningMode: block.planningMode || "family",
+        href: /literature|read-aloud|read aloud/i.test(`${block.blockType} ${block.title}`) ? "/myagapay/learn/books" : "/myagapay/learn/formation",
+        priority: 70 + index,
+        color: block.color,
+        ...weeklyPlanArrays(block.weeklyFrequency, block.minutesPlanned || 20)
       }))
     ],
     childRows: [
@@ -890,6 +940,43 @@ export async function loadLearnSetupSnapshot(env, request) {
   const identity = await learnSetupIdentity(request, env);
   if (!identity) return null;
   return loadLearnSetupSnapshotForIdentity(env, identity);
+}
+
+export async function saveLearnCompletion(env, request, payload = {}) {
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return { ok: false, status: 401, error: "Unauthorized" };
+  const current = await loadLearnSetupSnapshotForIdentity(env, identity);
+  if (!current) return { ok: false, status: 400, error: "Complete Learn setup before tracking progress." };
+
+  const scope = payload.scope === "daily" ? "daily" : payload.scope === "weekly" ? "weekly" : "";
+  const itemId = text(payload.itemId, "");
+  const civilDate = /^\d{4}-\d{2}-\d{2}$/.test(String(payload.civilDate || "")) ? String(payload.civilDate) : nowIso().slice(0, 10);
+  if (!scope || !/^[a-zA-Z0-9:_-]{1,180}$/.test(itemId)) {
+    return { ok: false, status: 400, error: "Progress item was invalid." };
+  }
+
+  const date = new Date(`${civilDate}T12:00:00Z`);
+  if (scope === "weekly") date.setUTCDate(date.getUTCDate() - date.getUTCDay());
+  const periodKey = date.toISOString().slice(0, 10);
+  const completion = normalizeCompletion(current.completion);
+  completion[scope][periodKey] = {
+    ...(completion[scope][periodKey] || {}),
+    [itemId]: Boolean(payload.completed)
+  };
+  const setupSnapshot = {
+    ...current,
+    savedAt: nowIso(),
+    completion: normalizeCompletion(completion)
+  };
+  const householdData = JSON.stringify({ ownerEmail: identity.email, setupSnapshot });
+
+  if (!d1(env)) {
+    devSetupSnapshots.set(identity.householdId, setupSnapshot);
+  } else {
+    await d1Run(env, "UPDATE learn_households SET data = ?1, updated_at = ?2 WHERE id = ?3", householdData, setupSnapshot.savedAt, identity.householdId);
+  }
+  if (env.AGAPAY_REGISTRATIONS) await env.AGAPAY_REGISTRATIONS.put(setupKvKey(identity), householdData);
+  return { ok: true, setupSnapshot, scope, periodKey, itemId, completed: Boolean(payload.completed) };
 }
 
 export async function getLearnSeedForIdentity(env, identity) {

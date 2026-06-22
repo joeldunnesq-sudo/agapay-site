@@ -43,6 +43,10 @@ function check(complete) {
   return `<span style="width:23px;height:23px;flex:none;border-radius:50%;border:1.4px solid ${complete ? "var(--navy)" : "var(--gold)"};background:${complete ? "var(--navy)" : "transparent"};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;">${complete ? "✓" : ""}</span>`;
 }
 
+function completionCheck(item, scope, label) {
+  return `<button type="button" data-learn-completion data-completion-id="${html(item.id)}" data-completion-scope="${html(scope)}" aria-pressed="${item.complete ? "true" : "false"}" aria-label="${html(`${item.complete ? "Mark incomplete" : "Mark complete"}: ${label}`)}" style="width:27px;height:27px;flex:none;border-radius:50%;border:1.5px solid ${item.complete ? "var(--navy)" : "var(--gold)"};background:${item.complete ? "var(--navy)" : "transparent"};color:#fff;display:grid;place-items:center;font-size:14px;cursor:pointer;padding:0;">${item.complete ? "✓" : ""}</button>`;
+}
+
 function panel(title, content, options = {}) {
   const icon = options.icon || "✥";
   const style = options.style || "";
@@ -611,6 +615,13 @@ function renderDashboard(vm) {
     <span style="min-width:0;line-height:1.25;"><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">Saint of the Day</span><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(displayedSaintTitle)}</strong>${saintCentury ? `<span style="display:block;color:var(--gold);font-size:12px;font-weight:800;margin:2px 0 1px;">${html(saintCentury)}</span>` : ""}<small style="display:block;color:var(--muted);line-height:1.35;">${html(saintPreview)}</small></span>
     <span style="margin-left:auto;color:var(--gold);font-size:20px;flex:none;">→</span>
   </button>`;
+  const householdGroups = vm.householdStream.reduce((groups, item) => {
+    const label = item.group || "Everyone Together";
+    if (!groups.has(label)) groups.set(label, []);
+    groups.get(label).push(item);
+    return groups;
+  }, new Map());
+  const togetherThisWeek = householdGroups.size ? [...householdGroups.entries()].map(([group, items]) => `<section><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 8px;"><strong style="color:var(--ink);font-family:'Cormorant Garamond',serif;font-size:18px;">${html(group)}</strong><span style="font-size:11px;color:var(--muted);">${items.filter((item) => item.complete).length}/${items.length} complete</span></div><div style="display:flex;flex-direction:column;gap:9px;">${items.map((item) => `<div style="display:flex;align-items:center;gap:12px;background:var(--paper2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;"><span style="width:38px;height:38px;border-radius:50%;background:#f1e6c9;color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;">${html(item.icon)}</span><a href="${html(item.href)}" style="flex:1;min-width:0;line-height:1.2;text-decoration:none;color:inherit;"><span style="display:block;font-weight:600;font-size:15.5px;color:var(--ink);">${html(item.title)}</span><span style="display:block;font-size:12.5px;color:var(--muted);">${html(item.sub)}</span></a><span style="color:var(--muted);font-size:13px;flex:none;">${html(item.time)}</span>${completionCheck(item, "weekly", item.title)}</div>`).join("")}</div></section>`).join("") : `<div style="color:var(--muted);font-style:italic;">Run Quick Setup or add Enrichment in Advanced Setup to build this week together.</div>`;
   const body = `
     <section data-screen-label="Dashboard" style="display:flex;flex-direction:column;gap:22px;">
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;gap:24px;box-shadow:0 1px 3px rgba(20,40,70,.04);flex-wrap:wrap;">
@@ -640,19 +651,17 @@ function renderDashboard(vm) {
         ${renderTodayLearnContext(vm)}
       </div>
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
-        <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;"><span style="color:var(--gold);font-size:16px;">✥</span><span style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">CHURCH RHYTHMS</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;"><span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:16px;">✥</span><span style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">DAILY CHURCH RHYTHMS</span></span><small style="color:var(--muted);">Resets each day</small></div>
         <div style="display:flex;gap:14px;flex-wrap:wrap;">
-          ${vm.churchRhythms.map((r) => `<div style="flex:1;min-width:170px;display:flex;align-items:center;gap:12px;">${check(r.complete)}<span style="line-height:1.25;"><span style="display:block;font-size:16px;color:var(--ink);font-weight:500;">${html(r.label)}</span><span style="display:block;font-size:13px;color:var(--muted);">${html(r.sub)}</span></span></div>`).join("")}
+          ${vm.churchRhythms.map((r) => `<div style="flex:1;min-width:170px;display:flex;align-items:center;gap:12px;">${completionCheck(r, "daily", r.label)}<span style="line-height:1.25;"><span style="display:block;font-size:16px;color:var(--ink);font-weight:500;">${html(r.label)}</span><span style="display:block;font-size:13px;color:var(--muted);">${html(r.sub)}</span></span></div>`).join("")}
         </div>
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
         <div style="flex:1.25 1 240px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
-          <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;"><span style="color:var(--gold);font-size:17px;">⌂</span><span style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;">HOUSEHOLD STREAM</span></div>
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            ${vm.householdStream.length ? vm.householdStream.map((s) => `<div style="display:flex;align-items:center;gap:12px;background:var(--paper2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;"><span style="width:38px;height:38px;border-radius:50%;background:#f1e6c9;color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;">${html(s.icon)}</span><div style="flex:1;min-width:0;line-height:1.2;"><span style="display:block;font-weight:600;font-size:15.5px;color:var(--ink);">${html(s.title)}</span><span style="display:block;font-size:12.5px;color:var(--muted);">${html(s.sub)}</span></div><span style="color:var(--muted);font-size:13px;flex:none;">${html(s.time)}</span>${check(s.complete)}</div>`).join("") : `<div style="color:var(--muted);font-style:italic;">Finish Setup to build your household stream.</div>`}
-          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;"><span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:17px;">⌂</span><span style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;">TOGETHER THIS WEEK</span></span><small style="color:var(--muted);">Resets Sunday</small></div>
+          <div style="display:flex;flex-direction:column;gap:13px;">${togetherThisWeek}</div>
         </div>
-        ${vm.childColumns.map((col) => `<div style="flex:1 1 185px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 1px 3px rgba(20,40,70,.04);"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line);"><span style="width:34px;height:34px;border-radius:50%;background:${col.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-size:16px;">${html(col.initial)}</span><div style="line-height:1.15;"><span style="display:block;font-size:10px;letter-spacing:.12em;color:var(--gold);font-weight:600;">${html(col.tag)}</span><span style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);">${html(col.name)} <span style="color:var(--muted);font-size:13px;font-family:'EB Garamond',serif;">• Age ${html(col.age)}</span></span></div></div><div style="display:flex;flex-direction:column;gap:8px;">${col.tasks.map((t) => `<div style="display:flex;align-items:center;gap:9px;background:var(--paper2);border:1px solid var(--line);border-radius:9px;padding:9px 10px;"><div style="flex:1;min-width:0;line-height:1.15;"><span style="display:block;font-weight:600;font-size:14px;color:var(--ink);">${html(t.title)}</span><span style="display:block;font-size:11.5px;color:var(--muted);">${html(t.sub)}</span></div><span style="color:var(--muted);font-size:11.5px;flex:none;">${html(t.time)}</span>${check(t.complete)}</div>`).join("")}</div></div>`).join("")}
+        ${vm.childColumns.map((col) => `<div style="flex:1 1 185px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 1px 3px rgba(20,40,70,.04);"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line);"><span style="width:34px;height:34px;border-radius:50%;background:${col.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-size:16px;">${html(col.initial)}</span><div style="line-height:1.15;"><span style="display:block;font-size:10px;letter-spacing:.12em;color:var(--gold);font-weight:600;">${html(col.tag)}</span><span style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);">${html(col.name)} <span style="color:var(--muted);font-size:13px;font-family:'EB Garamond',serif;">• Age ${html(col.age)}</span></span></div></div><div style="display:flex;flex-direction:column;gap:8px;">${col.tasks.map((t) => `<div style="display:flex;align-items:center;gap:9px;background:var(--paper2);border:1px solid var(--line);border-radius:9px;padding:9px 10px;"><a href="/myagapay/learn/planner" style="flex:1;min-width:0;line-height:1.15;text-decoration:none;color:inherit;"><span style="display:block;font-weight:600;font-size:14px;color:var(--ink);">${html(t.title)}</span><span style="display:block;font-size:11.5px;color:var(--muted);">${html(t.sub)}</span></a><span style="color:var(--muted);font-size:11.5px;flex:none;">${html(t.time)}</span>${completionCheck(t, "weekly", `${col.name}: ${t.title}`)}</div>`).join("")}</div></div>`).join("")}
         <div style="flex:1.05 1 210px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
           <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;"><span style="color:var(--gold);font-size:16px;">✥</span><span style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;">THIS WEEK</span></div>
           <div style="display:flex;flex-direction:column;gap:16px;">${vm.thisWeek.map((w) => `<div style="display:flex;align-items:center;gap:13px;"><span style="width:44px;height:44px;border-radius:50%;background:${w.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-size:20px;">${html(w.icon)}</span><div style="line-height:1.2;"><span style="display:block;font-family:'Cormorant Garamond',serif;font-size:23px;font-weight:600;color:var(--ink);">${html(w.big)}</span><span style="display:block;font-size:13.5px;color:#3a4256;font-weight:500;">${html(w.label)}</span><span style="display:block;font-size:12.5px;color:var(--muted);">${html(w.sub)}</span></div></div>`).join("")}<a href="/myagapay/learn/planner" style="margin-top:4px;width:100%;background:var(--paper2);border:1px solid var(--line);border-radius:10px;padding:11px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;color:var(--ink);font-weight:500;text-decoration:none;">View Full Week <span style="color:var(--gold);">→</span></a></div>
@@ -1438,7 +1447,7 @@ function simpleSetupStepBody(draft) {
   if (draft.step === 4) {
     return `<div class="learn-wizard-step-copy"><span>A gentler way through real life</span><h2>Meet Grace Mode.</h2><p>Your plan should serve your family, not punish it. Grace Mode lets you lighten a difficult day without deleting work or pretending the plan never existed.</p></div><aside class="learn-wizard-grace-explainer"><div><small>Built for real family life</small><h3>Grace Mode lightens a day without erasing the plan.</h3><p>Use it for illness, a new baby, travel, feast days, difficult mornings, or any season when the full plan is too much. Deferred work stays in your plan and can return when the household is ready.</p></div><div class="learn-wizard-grace-levels"><span><strong>Full</strong><small>Runs the complete day as planned.</small></span><span><strong>Light</strong><small>Keeps essentials and softens lower-priority work.</small></span><span><strong>Minimum</strong><small>Keeps prayer, one shared touchpoint, and the next right thing.</small></span></div><p class="learn-wizard-grace-tip"><strong>How to use it:</strong> choose today’s mode at the top of the Learn Dashboard. In Advanced Setup, each subject can be marked “keep,” “reduce first,” or “defer if needed,” so you remain in control.</p></aside><div class="learn-wizard-gentle-note"><strong>No permanent choice is required.</strong><span>You can change Grace Mode from day to day as family life changes.</span></div>`;
   }
-  return `<div class="learn-wizard-step-copy"><span>Ready for Today</span><h2>Would you like a simple starter week?</h2><p>AGAPAY will save a real editable first term, Church rhythm, family read-aloud, nature walk, and starter subject plan organized by ${draft.useForms ? "Form" : "grade or level"}. Nothing is sample-only or locked.</p></div><label class="learn-wizard-starter"><input type="checkbox" name="wizard.starterWeek" ${draft.starterWeek ? "checked" : ""}><span><strong>Create a gentle starter week</strong><small>Creates Morning Prayers, Daily Readings, Saint of the Day, family read-aloud, nature walk, Language Arts, Mathematics, and Nature & Science.</small></span></label><div class="learn-wizard-summary"><div><small>Household</small><strong>${html(draft.householdName || "Your household")}</strong></div><div><small>Children</small><strong>${draft.children.filter((child) => child.firstName).length}</strong></div><div><small>Planning</small><strong>${draft.useForms ? "Family + Forms" : "Family + grades"}</strong></div><div><small>Style</small><strong>${html(draft.method === "Orthodox Classical" ? "Classical" : draft.method)}</strong></div></div>`;
+  return `<div class="learn-wizard-step-copy"><span>Ready for Today</span><h2>Would you like a simple starter week?</h2><p>AGAPAY will save a real editable first term, Daily Church Rhythms, family read-aloud, nature walk, and starter subject plan organized by ${draft.useForms ? "Form" : "grade or level"}. Nothing is sample-only or locked.</p></div><label class="learn-wizard-starter"><input type="checkbox" name="wizard.starterWeek" ${draft.starterWeek ? "checked" : ""}><span><strong>Create a gentle starter week</strong><small>Creates Morning Prayers, Daily Readings, Saint of the Day, family read-aloud, nature walk, Language Arts, Mathematics, and Nature & Science.</small></span></label><div class="learn-wizard-summary"><div><small>Household</small><strong>${html(draft.householdName || "Your household")}</strong></div><div><small>Children</small><strong>${draft.children.filter((child) => child.firstName).length}</strong></div><div><small>Planning</small><strong>${draft.useForms ? "Family + Forms" : "Family + grades"}</strong></div><div><small>Style</small><strong>${html(draft.method === "Orthodox Classical" ? "Classical" : draft.method)}</strong></div></div>`;
 }
 
 function renderSimpleSetupWizard(vm, draft) {
@@ -1536,13 +1545,13 @@ function simpleSetupPayload(draft, existingSnapshot = null) {
   }));
   const planningGroups = [...new Set(children.map((child) => draft.useForms ? child.formLabel : child.gradeLabel).filter(Boolean))];
   if (!planningGroups.length) planningGroups.push("");
-  const existingHasPlan = Boolean(existingSnapshot?.subjects?.length || existingSnapshot?.streams?.length || existingSnapshot?.formation?.enrichmentBlocks?.length);
+  const existingHasPlan = Boolean(existingSnapshot?.subjects?.length || existingSnapshot?.formation?.enrichmentBlocks?.length);
   const createStarterWeek = draft.starterWeek && !existingHasPlan;
   const starterAssignment = (groupLabel) => draft.useForms ? { formLabel: groupLabel } : { gradeLabel: groupLabel };
   const subjects = createStarterWeek ? planningGroups.flatMap((groupLabel, groupIndex) => [
-    { title: "Starter Language Arts", subjectType: "language-arts", planningMode: "forms", weeklyFrequency: "4x", ...starterAssignment(groupLabel), minutes: "20", termId: "term_1", gracePriority: "keep", color: colors[groupIndex % colors.length] },
-    { title: "Starter Mathematics", subjectType: "math", planningMode: "forms", weeklyFrequency: "4x", ...starterAssignment(groupLabel), minutes: "20", termId: "term_1", gracePriority: "keep", color: colors[(groupIndex + 1) % colors.length] },
-    { title: "Nature & Science", subjectType: "sciences-nature", planningMode: "forms", weeklyFrequency: "2x", ...starterAssignment(groupLabel), minutes: "25", termId: "term_1", gracePriority: "reduce first", color: colors[(groupIndex + 2) % colors.length] }
+    { title: "Starter Language Arts", subjectType: "language-arts", planningMode: draft.useForms ? "forms" : "grades", weeklyFrequency: "4x", ...starterAssignment(groupLabel), minutes: "20", termId: "term_1", gracePriority: "keep", color: colors[groupIndex % colors.length] },
+    { title: "Starter Mathematics", subjectType: "math", planningMode: draft.useForms ? "forms" : "grades", weeklyFrequency: "4x", ...starterAssignment(groupLabel), minutes: "20", termId: "term_1", gracePriority: "keep", color: colors[(groupIndex + 1) % colors.length] },
+    { title: "Nature & Science", subjectType: "sciences-nature", planningMode: draft.useForms ? "forms" : "grades", weeklyFrequency: "2x", ...starterAssignment(groupLabel), minutes: "25", termId: "term_1", gracePriority: "reduce first", color: colors[(groupIndex + 2) % colors.length] }
   ]) : [];
   const starterTerm = { id: "term_1", label: "Starter Term", startDate: dates.termStart, endDate: dates.termEnd, paceMode: "steady" };
   const starterFormation = {
@@ -1570,6 +1579,8 @@ function simpleSetupPayload(draft, existingSnapshot = null) {
     books: existingSnapshot?.books || [],
     formation: createStarterWeek ? starterFormation : existingSnapshot?.formation || { churchRhythms: [], recitationTracks: [], hymnStudies: [], enrichmentBlocks: [], feasts: [] },
     formationMaterials: existingSnapshot?.formationMaterials || [],
+    completion: existingSnapshot?.completion || { daily: {}, weekly: {} },
+    starterWeek: createStarterWeek ? { enabled: true, generatedAt: new Date().toISOString() } : existingSnapshot?.starterWeek || null,
     coOp: existingSnapshot?.coOp || { enabled: false, status: "coming-soon" }
   };
 }
@@ -1796,6 +1807,11 @@ async function apiPost(path, body) {
   return payload;
 }
 
+function localIsoDate() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
 function rowValue(row, name) {
   const control = row.querySelector(`[name="${name}"]`);
   if (!control) return "";
@@ -1851,6 +1867,31 @@ async function openSaintOfDay(button) {
 function wireDashboard() {
   root.querySelectorAll("[data-saint-of-day]").forEach((button) => {
     button.addEventListener("click", () => openSaintOfDay(button));
+  });
+
+  root.querySelectorAll("[data-learn-completion]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const itemId = button.dataset.completionId || "";
+      const scope = button.dataset.completionScope || "";
+      const completed = button.getAttribute("aria-pressed") !== "true";
+      const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
+      button.disabled = true;
+      button.style.cursor = "wait";
+      try {
+        const saved = await apiPost(`/api/learn/completion?calendar=${encodeURIComponent(calendar)}`, {
+          itemId,
+          scope,
+          completed,
+          civilDate: localIsoDate()
+        });
+        root.innerHTML = renderDashboard(toDashboardViewModel(saved));
+        wireDashboard();
+      } catch (error) {
+        button.disabled = false;
+        button.style.cursor = "pointer";
+        showLearnDialog("Progress Could Not Be Saved", error.message || "AGAPAY Learn could not save this progress update.", []);
+      }
+    });
   });
 
   root.querySelectorAll("[data-grace-mode]").forEach((button) => {

@@ -285,24 +285,29 @@ export function toDashboardViewModel(rawPayload, context = {}) {
       saintStories
     },
     churchRhythms: safeArray(today.churchRhythms).map((item) => ({
+      id: text(item.id, ""),
       label: text(item.title, "Rhythm"),
       sub: text(item.note || item.subtitle, ""),
       complete: item.status === "completed"
     })),
     householdStream: safeArray(today.householdStreamCards).map((item) => ({
+      id: text(item.id, ""),
       title: text(item.title, "Household block"),
       sub: text(item.subtitle, ""),
+      group: text(item.groupLabel, "Everyone Together"),
+      href: text(item.href, "/myagapay/learn/formation"),
       time: item.minutesPlanned ? `${item.minutesPlanned}m` : "",
       complete: item.status === "completed",
       icon: item.icon || "☩"
     })),
     childColumns: safeArray(today.childColumns).map((column, index) => ({
-      tag: `CHILD ${index + 1}`,
+      tag: text(column.child?.formLabel || column.child?.gradeLabel, `CHILD ${index + 1}`).toUpperCase(),
       name: childName(column.child, index),
       age: text(column.child?.ageYears, ""),
       initial: childInitial(column.child, index),
       color: ACCENTS[index % ACCENTS.length],
       tasks: safeArray(column.blocks).map((block) => ({
+        id: text(block.id, ""),
         title: text(block.title, "Lesson"),
         sub: text(block.subtitle, ""),
         time: block.minutesPlanned ? `${block.minutesPlanned}m` : "",

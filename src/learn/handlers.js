@@ -7,7 +7,7 @@ import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-s
 import { enrichLiturgicalDayWithOrthocal, fetchOrthocalDay, handleLearnReadingsStatus, orthocalSaintStories } from "./readings-source.js";
 import { buildLearnPrintDocument, buildLearnReportPrintDocument, printDocumentFilename, renderPrintDocumentPdf } from "./print-engine.js";
 import { createLearnRepositoryForRequest, SeedLearnRepository } from "./repository.js";
-import { learnSetupIdentity, saveLearnGraceMode, saveLearnSetup } from "./setup-persistence.js";
+import { learnSetupIdentity, saveLearnCompletion, saveLearnGraceMode, saveLearnSetup } from "./setup-persistence.js";
 
 const LEARN_PRINT_USAGE_PREFIX = "__agapay_learn_print_usage:";
 
@@ -211,6 +211,30 @@ export async function handleLearnPrintCenter(request, env) {
     },
     printCenter
   });
+}
+
+export async function handleLearnCompletionSave(request, env) {
+  const blocked = assertLearnEnabled(env);
+  if (blocked) return blocked;
+  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, { status: 405 });
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+  const payload = await request.json().catch(() => null);
+  if (!payload || typeof payload !== "object") return json({ ok: false, error: "Progress payload was invalid." }, { status: 400 });
+
+  const saved = await saveLearnCompletion(env, request, payload);
+  if (!saved.ok) return json({ ok: false, error: saved.error }, { status: saved.status || 500 });
+  const repository = await createLearnRepositoryForRequest(request, env);
+  const calendarType = requestedCalendarType(new URL(request.url));
+  const civilDate = /^\d{4}-\d{2}-\d{2}$/.test(String(payload.civilDate || "")) ? String(payload.civilDate) : todayIso(env);
+  const dashboard = repository.getDashboard({ calendarType, civilDate });
+  return json(await applyReadingsProvider({
+    ok: true,
+    setupCompleted: true,
+    product: { slug: LEARN_PRODUCT_SLUG, enabled: true },
+    completion: { scope: saved.scope, periodKey: saved.periodKey, itemId: saved.itemId, completed: saved.completed },
+    dashboard
+  }, { calendarType, civilDate, env }));
 }
 
 export async function handleLearnPrintPdf(request, env, templateId = "") {

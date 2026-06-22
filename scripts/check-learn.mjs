@@ -88,6 +88,8 @@ assert(learnShell.includes("data-wizard-advanced"), "Learn setup wizard should l
 assert(learnShell.includes("simpleSetupPayload"), "Learn setup wizard should save through the existing setup endpoint.");
 assert(learnShell.includes("Create a gentle starter week"), "Learn setup wizard should offer a starter-week plan.");
 assert(learnShell.includes('title: "Starter Language Arts"') && learnShell.includes('title: "Morning Prayers"') && learnShell.includes('title: "Family Read-Aloud"'), "The starter-week option should persist real subject, Church rhythm, and enrichment data.");
+assert(learnShell.includes("TOGETHER THIS WEEK") && learnShell.includes("DAILY CHURCH RHYTHMS"), "Learn dashboard should distinguish weekly family work from daily Church rhythms.");
+assert(learnShell.includes("data-learn-completion") && learnShell.includes("/api/learn/completion"), "Learn dashboard should persist daily and weekly completion through the backend.");
 assert(learnShell.includes("Grace Mode lightens a day without erasing the plan"), "The setup wizard should explain Grace Mode and its non-destructive behavior.");
 assert(learnShell.includes("No permanent choice is required"), "The Grace Mode wizard step should explain that families can change modes day by day.");
 assert(learnShell.includes("renderReportsComingSoon") && !learnShell.includes('apiGet("/api/learn/reports")'), "The Learn Reports screen should remain a coming-soon surface without loading report data.");
@@ -107,6 +109,7 @@ assert(learnRepository.includes("setupCompleted: Boolean(this.seed.setupSnapshot
 assert(learnSetupPersistence.includes('"Traditional", "Eclectic", "Unsure"'), "Learn setup should accept every wizard rhythm preset.");
 assert(learnSetupPersistence.includes("parentNames"), "Learn setup should persist the wizard parent name.");
 assert(learnSetupPersistence.includes("groupingMode"), "Learn setup should persist the selected planning-group model.");
+assert(learnSetupPersistence.includes("currentWeekWindow") && learnSetupPersistence.includes('kind: "enrichment"'), "Starter setup should generate a current editable week with enrichment rows.");
 assert(learnHandlers.includes('label: "Reports", implemented: false, status: "coming-soon"'), "Learn metadata should mark Reports as coming soon.");
 assert(learnOverviewHtml.includes("Clearly on the roadmap") && learnOverviewHtml.includes("Reports & Transcripts"), "The Learn overview should clearly separate coming-soon features.");
 assert(!learnOverviewHtml.includes("Printables, reports, and transcripts"), "The Learn overview should not advertise Reports as currently available.");
