@@ -84,7 +84,7 @@ assert.ok(directoryPage.includes("parishes, monasteries, ministries, schools, bu
 assert.ok(directoryPage.includes("/api/directory/intake"), "directory intake should post to the AGAPAY API");
 
 const findChurchPage = await readFile("public/give/find-church.html", "utf8");
-assert.ok(findChurchPage.includes("Bring AGAPAY to the conversation"), "find-church should invite parishioners to advocate for AGAPAY Giving");
+assert.ok(findChurchPage.includes("Bring AGAPAY Giving to your parish"), "find-church should invite parishioners to advocate for AGAPAY Giving");
 assert.ok(findChurchPage.includes("/api/parish-interest"), "find-church interest form should post to its Worker endpoint");
 assert.ok(findChurchPage.includes("data-agapay-turnstile") && findChurchPage.includes("agapaySecurityPayload"), "parish interest outreach should use Turnstile when configured");
 assert.ok(worker.includes('url.pathname === "/api/parish-interest"'), "worker should route parish interest submissions");
