@@ -127,6 +127,26 @@ function weeklyFrequencyValue(value, fallback = "1x") {
   return fallback;
 }
 
+const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+function scheduledDaysValue(value, legacyFrequency = "") {
+  const direct = Array.isArray(value) ? value : String(value || "").split(",");
+  const selected = direct.map((day) => text(day, "").toLowerCase()).filter((day) => WEEKDAY_KEYS.includes(day));
+  if (selected.length) return [...new Set(selected)];
+  const frequency = weeklyFrequencyValue(legacyFrequency, "daily");
+  return frequency === "daily" ? ["mon", "tue", "wed", "thu", "fri"]
+    : frequency === "4x" ? ["mon", "tue", "wed", "thu"]
+    : frequency === "3x" ? ["mon", "wed", "fri"]
+    : frequency === "2x" ? ["tue", "thu"]
+    : frequency === "1x" ? ["wed"]
+    : [];
+}
+
+function frequencyFromDays(days = []) {
+  const count = scheduledDaysValue(days, "as-needed").length;
+  return count >= 5 ? "daily" : count ? `${count}x` : "as-needed";
+}
+
 function resourceTypeValue(value, fallback = "curriculum") {
   const raw = String(value || "").trim().toLowerCase();
   if (["book", "curriculum", "website", "hymn", "icon", "activity", "none"].includes(raw)) return raw;
@@ -200,15 +220,9 @@ function distributeRangeSegments({ label = "", start = 1, end = 0, color = "" } 
   });
 }
 
-function weeklyPlanArrays(frequency = "daily", minutes = 20) {
-  const value = String(frequency || "daily").toLowerCase();
+function weeklyPlanArrays(schedule = "daily", minutes = 20) {
   const amount = Math.max(0, int(minutes, 20));
-  const activeDays = value === "daily" ? [1, 2, 3, 4, 5]
-    : value === "4x" ? [1, 2, 3, 4]
-    : value === "3x" ? [1, 3, 5]
-    : value === "2x" ? [2, 4]
-    : value === "1x" ? [3]
-    : [];
+  const activeDays = scheduledDaysValue(schedule, Array.isArray(schedule) ? "as-needed" : schedule).map((day) => WEEKDAY_KEYS.indexOf(day));
   const planMinutes = Array.from({ length: 7 }, (_, index) => activeDays.includes(index) ? amount : 0);
   const statuses = Array.from({ length: 7 }, (_, index) => activeDays.includes(index) ? "planned" : "empty");
   return { minutes: planMinutes, statuses };
@@ -315,6 +329,10 @@ function normalizeSetupPayload(payload = {}, identity) {
     slug: slug(household.name || identity.householdId, identity.householdId),
     name: text(household.name, seed.household.name),
     parentNames,
+    motherName: text(household.motherName, ""),
+    motherNameDay: text(household.motherNameDay, ""),
+    fatherName: text(household.fatherName, ""),
+    fatherNameDay: text(household.fatherNameDay, ""),
     childrenCount: 0,
     parishName: text(household.parishName, seed.household.parishName || ""),
     city: text(household.city, ""),
@@ -334,6 +352,7 @@ function normalizeSetupPayload(payload = {}, identity) {
         householdId: identity.householdId,
         firstName,
         ageYears: int(child.ageYears || child.age, 0),
+        nameDay: text(child.nameDay, ""),
         gradeLabel: text(child.gradeLabel || child.grade, child.formLabel || ""),
         formLabel: text(child.formLabel, ""),
         color: text(child.color, ""),
@@ -409,12 +428,15 @@ function normalizeSetupPayload(payload = {}, identity) {
     graceNote: text(book.graceNote, "Reading moved into the reserve basket.")
   })).filter((book) => book.title);
 
-  const subjects = list(payload.subjects).map((subject, index) => ({
+  const subjects = list(payload.subjects).map((subject, index) => {
+    const subjectDays = scheduledDaysValue(subject.scheduledDays, subject.weeklyFrequency || subject.cadenceLabel || subject.cadence || "daily");
+    return ({
     id: text(subject.id, stableId("subject", subject.title, index)),
     subjectType: text(subject.subjectType || subject.type, slug(subject.title, "subject")),
     title: text(subject.title, "Subject"),
     planningMode: text(subject.planningMode, "forms"),
-    weeklyFrequency: weeklyFrequencyValue(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "daily"),
+    scheduledDays: subjectDays,
+    weeklyFrequency: frequencyFromDays(subjectDays),
     formLabel: text(subject.formLabel, ""),
     gradeLabel: text(subject.gradeLabel, ""),
     resource: text(subject.resource, ""),
@@ -432,7 +454,8 @@ function normalizeSetupPayload(payload = {}, identity) {
     termId: text(subject.termId || subject.assignedTermId, normalizedTerm.id),
     gracePriority: text(subject.gracePriority, "keep"),
     graceNote: text(subject.graceNote, "Deferred gracefully to the reserve list.")
-  })).filter((subject) => subject.title);
+  });
+  }).filter((subject) => subject.title);
 
   const formationMaterials = list(payload.formationMaterials).map((material, index) => ({
     id: text(material.id, stableId("formation", material.title, index)),
@@ -496,7 +519,9 @@ function normalizeSetupPayload(payload = {}, identity) {
       minutes: int(hymn.minutes, 0),
       status: text(hymn.status, "planned")
     })).filter((hymn) => hymn.title),
-    enrichmentBlocks: list(rawFormation.enrichmentBlocks).map((block, index) => ({
+    enrichmentBlocks: list(rawFormation.enrichmentBlocks).map((block, index) => {
+      const blockDays = scheduledDaysValue(block.scheduledDays, block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x");
+      return ({
       id: text(block.id, stableId("enrich", block.title, index)),
       householdId: identity.householdId,
       termId: text(block.termId || block.assignedTermId, normalizedTerm.id),
@@ -505,7 +530,8 @@ function normalizeSetupPayload(payload = {}, identity) {
       resource: text(block.resource || block.source, ""),
       resourceType: resourceTypeValue(block.resourceType || block.sourceType, block.resource || block.source ? "curriculum" : "none"),
       planningMode: text(block.planningMode, "family"),
-      weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
+      scheduledDays: blockDays,
+      weeklyFrequency: frequencyFromDays(blockDays),
       formLabel: text(block.formLabel, ""),
       gradeLabel: text(block.gradeLabel, ""),
       childId: text(block.childId, ""),
@@ -520,7 +546,8 @@ function normalizeSetupPayload(payload = {}, identity) {
       color: text(block.color, ""),
       gracePriority: text(block.gracePriority, "keep"),
       graceNote: text(block.graceNote, "Deferred gracefully to the reserve list.")
-    })).filter((block) => block.title),
+    });
+    }).filter((block) => block.title),
     feasts: list(rawFormation.feasts).map((feast, index) => ({
       id: text(feast.id, stableId("feast", feast.title, index)),
       civilDate: text(feast.civilDate || feast.date, ""),
@@ -535,6 +562,20 @@ function normalizeSetupPayload(payload = {}, identity) {
   const coOp = {
     enabled: false,
     status: "coming-soon"
+  };
+  const rawFamilyPlanning = payload.familyPlanning || {};
+  const familyPlanning = {
+    fastingPreference: ["guidance", "strict", "off"].includes(rawFamilyPlanning.fastingPreference) ? rawFamilyPlanning.fastingPreference : "guidance",
+    weekStart: text(rawFamilyPlanning.weekStart, ""),
+    nameDays: [
+      normalizedHousehold.motherNameDay && normalizedHousehold.motherName ? { id: "name_day_mother", personName: normalizedHousehold.motherName, relationship: "mother", monthDay: normalizedHousehold.motherNameDay.slice(-5) } : null,
+      normalizedHousehold.fatherNameDay && normalizedHousehold.fatherName ? { id: "name_day_father", personName: normalizedHousehold.fatherName, relationship: "father", monthDay: normalizedHousehold.fatherNameDay.slice(-5) } : null,
+      ...children.map((child) => child.nameDay ? { id: `name_day_${child.id}`, personId: child.id, personName: child.firstName, relationship: "child", monthDay: child.nameDay.slice(-5) } : null)
+    ].filter(Boolean),
+    events: list(rawFamilyPlanning.events).slice(0, 250).map((event, index) => ({ id: text(event.id, stableId("event", event.title, index)), title: text(event.title, "Event"), eventType: text(event.eventType, "appointment"), date: text(event.date, ""), startTime: text(event.startTime, ""), location: text(event.location, ""), notes: text(event.notes, "") })).filter((event) => event.date),
+    meals: list(rawFamilyPlanning.meals).slice(0, 120).map((meal, index) => ({ id: text(meal.id, stableId("meal", meal.date, index)), date: text(meal.date, ""), breakfast: text(meal.breakfast, ""), lunch: text(meal.lunch, ""), dinner: text(meal.dinner, "") })).filter((meal) => meal.date),
+    recipes: list(rawFamilyPlanning.recipes).slice(0, 250).map((recipe, index) => ({ id: text(recipe.id, stableId("recipe", recipe.title, index)), title: text(recipe.title, ""), fastingType: ["fast-friendly", "adaptable", "regular"].includes(recipe.fastingType) ? recipe.fastingType : "adaptable", category: text(recipe.category, "Dinner"), sourceUrl: text(recipe.sourceUrl, ""), ingredients: text(recipe.ingredients, ""), instructions: text(recipe.instructions, "") })).filter((recipe) => recipe.title),
+    groceryItems: list(rawFamilyPlanning.groceryItems).slice(0, 250).map((item, index) => ({ id: text(item.id, stableId("grocery", item.name, index)), name: text(item.name, ""), quantity: text(item.quantity, ""), category: text(item.category, "Other"), checked: Boolean(item.checked) })).filter((item) => item.name)
   };
   const rawSetupTiles = payload.setupTiles && typeof payload.setupTiles === "object" ? payload.setupTiles : {};
   const setupTiles = Object.fromEntries(
@@ -580,6 +621,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     subjects,
     books,
     setupTiles,
+    familyPlanning,
     formation,
     formationMaterials,
     historyCycle,
@@ -595,6 +637,7 @@ function normalizeSetupPayload(payload = {}, identity) {
 export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSnapshot = null) {
   if (!setupSnapshot) return seed;
   const next = clone(seed);
+  next.familyPlanning = clone(setupSnapshot.familyPlanning || { nameDays: [], events: [], meals: [], recipes: [], groceryItems: [], fastingPreference: "guidance" });
   const currentTermId = setupSnapshot.term?.id || setupSnapshot.schoolYear?.currentTermId || setupSnapshot.terms?.[0]?.id || "";
   const forCurrentTerm = (item = {}) => !item.termId || !currentTermId || item.termId === currentTermId;
   const currentSubjects = list(setupSnapshot.subjects).filter(forCurrentTerm);
@@ -831,7 +874,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
         href: /literature|read-aloud|read aloud/i.test(`${block.blockType} ${block.title}`) ? "/myagapay/learn/books" : "/myagapay/learn/formation",
         priority: 70 + index,
         color: block.color,
-        ...weeklyPlanArrays(block.weeklyFrequency, block.minutesPlanned || 20)
+        ...weeklyPlanArrays(block.scheduledDays?.length ? block.scheduledDays : block.weeklyFrequency, block.minutesPlanned || 20)
       }))
     ],
     childRows: [
@@ -845,7 +888,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           priority: index + 1,
           color: subject.color,
           graceModeApplied: setupSnapshot.preferences?.graceModeActive && subject.gracePriority !== "keep",
-          ...weeklyPlanArrays(subject.weeklyFrequency, subject.minutes)
+          ...weeklyPlanArrays(subject.scheduledDays?.length ? subject.scheduledDays : subject.weeklyFrequency, subject.minutes)
         }));
       }),
       ...childBooks.flatMap((book, index) => {
@@ -1169,6 +1212,29 @@ export async function saveLearnSetup(env, request, payload) {
     setupSnapshot,
     onboarding: applySetupSnapshotToSeed(getLearnSeedSnapshot(), setupSnapshot)
   };
+}
+
+export async function saveLearnFamilyPlanning(env, request, payload = {}) {
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return { ok: false, status: 401, error: "Unauthorized" };
+  const current = await loadLearnSetupSnapshotForIdentity(env, identity);
+  if (!current) return { ok: false, status: 409, error: "Complete Learn setup before saving the family planner." };
+  const childNameDays = new Map(list(payload.childNameDays).map((entry) => [text(entry.childId, ""), text(entry.nameDay, "")]));
+  return saveLearnSetup(env, request, {
+    ...current,
+    household: {
+      ...current.household,
+      motherName: text(payload.household?.motherName, current.household?.motherName || ""),
+      motherNameDay: text(payload.household?.motherNameDay, current.household?.motherNameDay || ""),
+      fatherName: text(payload.household?.fatherName, current.household?.fatherName || ""),
+      fatherNameDay: text(payload.household?.fatherNameDay, current.household?.fatherNameDay || "")
+    },
+    children: list(current.children).map((child) => ({
+      ...child,
+      nameDay: childNameDays.has(child.id) ? childNameDays.get(child.id) : child.nameDay || ""
+    })),
+    familyPlanning: payload.familyPlanning || current.familyPlanning || {}
+  });
 }
 
 export async function saveLearnGraceMode(env, request, payload = {}) {

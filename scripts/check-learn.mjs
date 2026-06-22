@@ -102,6 +102,12 @@ assert(learnShell.includes("data-community-suggest-form") && learnShell.includes
 assert(learnShell.includes("Free plan: up to 2 children"), "Learn setup wizard should clearly disclose the free child limit.");
 assert(learnShell.includes('href="/myagapay/learn/setup?simple=1">Quick Setup'), "Learn utility bar should open the simple setup wizard.");
 assert(learnShell.includes('class="learn-setup-savebar"'), "Advanced Setup should use a dedicated reachable save bar.");
+assert(learnShell.includes("data-day-choice") && learnShell.includes('name="scheduledDays"'), "Enrichment and Form subjects should support exact weekday scheduling.");
+assert(learnShell.includes("Family Planner & Meals") && learnShell.includes("familyPlanning.fastingPreference"), "Planner should expose connected family calendar and fasting-aware meal planning.");
+assert(learnShell.includes('data-setup-row="familyEvents"') && learnShell.includes('data-setup-row="recipes"') && learnShell.includes('data-setup-row="groceryItems"'), "Learn setup should persist events, recipes, and grocery items.");
+assert(learnShell.includes('name="childNameDay"') && learnShell.includes("motherNameDay") && learnShell.includes("fatherNameDay"), "The Family Planner should collect annual household name days.");
+assert(learnShell.includes("data-family-planning-form") && learnShell.includes("/api/learn/family-planning"), "Family planning should live in Planner and save through its own endpoint.");
+assert(!learnShell.includes('panel("Family Calendar & Meals", familyPlanningSetupPanel(vm)'), "Advanced school setup should not contain the family planning workspace.");
 assert(learnShellCss.includes(".learn-product-topbar .learn-quick-action") && learnShellCss.includes("display: inline-flex !important"), "Quick Setup should remain visible in the mobile utility bar.");
 assert(learnShellCss.includes("bottom: calc(78px + env(safe-area-inset-bottom))"), "The mobile setup save bar should sit above the fixed product navigation.");
 assert(learnShell.includes('loginUrl.searchParams.set("reason", "session-expired")'), "Expired Learn sessions should return users to My AGAPAY sign-in.");
@@ -116,6 +122,8 @@ assert(learnSetupPersistence.includes('"Traditional", "Eclectic", "Unsure"'), "L
 assert(learnSetupPersistence.includes("parentNames"), "Learn setup should persist the wizard parent name.");
 assert(learnSetupPersistence.includes("groupingMode"), "Learn setup should persist the selected planning-group model.");
 assert(learnSetupPersistence.includes("currentWeekWindow") && learnSetupPersistence.includes('kind: "enrichment"'), "Starter setup should generate a current editable week with enrichment rows.");
+assert(learnSetupPersistence.includes("scheduledDaysValue") && learnSetupPersistence.includes("familyPlanning"), "Learn setup persistence should normalize weekday schedules and connected family planning.");
+assert(learnRepository.includes("familyPlanForDate") && learnRepository.includes("familyDays"), "Planner APIs should map name days, events, and meals onto calendar dates.");
 assert(!learnHandlers.includes('href: "/myagapay/learn/reports"'), "Learn metadata should keep Reports inside Print Center rather than a standalone tab.");
 assert(learnHandlers.includes("AGAPAY_LEARN_FACEBOOK_GROUP_URL"), "Community should accept a configured Facebook group URL.");
 assert(learnOverviewHtml.includes("Clearly on the roadmap") && learnOverviewHtml.includes("Reports & Transcripts"), "The Learn overview should clearly separate coming-soon features.");

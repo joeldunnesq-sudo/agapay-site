@@ -379,6 +379,7 @@ export function toPlannerViewModel(rawPayload) {
   const activeTerm = activeTermIndex + 1;
   const days = safeArray(week.liturgicalDays).map((day, index) => {
     const parts = dateParts(day.civilDate || safeArray(week.dates)[index]);
+    const familyDay = safeArray(week.familyDays)[index] || {};
     return {
       weekday: text(day.weekdayLabel || parts.weekday, ""),
       weekdayLong: text(day.weekdayLong || parts.weekdayLong, ""),
@@ -390,7 +391,11 @@ export function toPlannerViewModel(rawPayload) {
       fasting: text(day.fastingRule, ""),
       tone: text(day.tone || day.troparionTone, ""),
       epistle: text(day.epistleRef, ""),
-      gospel: text(day.gospelRef, "")
+      gospel: text(day.gospelRef, ""),
+      nameDays: safeArray(familyDay.nameDays),
+      events: safeArray(familyDay.events),
+      meal: familyDay.meal || null,
+      fastingPreference: text(familyDay.fastingPreference, "guidance")
     };
   });
   const selectedDate = query.get("date") || days.find((day) => !day.isSunday)?.date || days[0]?.date || "";
@@ -492,6 +497,10 @@ export function toPlannerViewModel(rawPayload) {
         fasting: text(day.fastingRule, ""),
         fastingType: text(day.fastingType, ""),
         oldStyleDateLabel: text(day.oldStyleDateLabel, ""),
+        nameDays: safeArray(day.nameDays),
+        events: safeArray(day.events),
+        meal: day.meal || null,
+        fastingPreference: text(day.fastingPreference, "guidance"),
         householdPlan: safeArray(day.householdPlan).map((item) => ({
           title: text(item.title, ""),
           minutes: Number(item.minutes || 0)
@@ -502,6 +511,21 @@ export function toPlannerViewModel(rawPayload) {
           minutes: Number(item.minutes || 0)
         }))
       }))
+    },
+    familyPlanning: {
+      fastingPreference: text(planner.familyPlanning?.fastingPreference, "guidance"),
+      recipes: safeArray(planner.familyPlanning?.recipes || week.recipes),
+      groceryItems: safeArray(planner.familyPlanning?.groceryItems || week.groceryItems),
+      events: safeArray(planner.familyPlanning?.events),
+      meals: safeArray(planner.familyPlanning?.meals),
+      weekStart: text(planner.familyPlanning?.weekStart, ""),
+      household: {
+        motherName: text(planner.household?.motherName, ""),
+        motherNameDay: text(planner.household?.motherNameDay, ""),
+        fatherName: text(planner.household?.fatherName, ""),
+        fatherNameDay: text(planner.household?.fatherNameDay, "")
+      },
+      children: safeArray(planner.children).map((child, index) => ({ id: text(child.id, ""), name: childName(child, index), nameDay: text(child.nameDay, "") }))
     },
     term: {
       activeTerm,
@@ -914,6 +938,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
   const booksSource = setupCompleted ? (safeArray(snapshot.books).length ? snapshot.books : setup.books) : [];
   const formation = setupCompleted ? setup.formation || snapshot.formation || {} : {};
   const setupTiles = snapshot.setupTiles || setup.setupTiles || {};
+  const familyPlanning = snapshot.familyPlanning || setup.familyPlanning || {};
   const formationMaterialsSource = safeArray(snapshot.formationMaterials).length ? snapshot.formationMaterials : setup.formationMaterials;
   const materialDefaults = simpleList(formationMaterialsSource, (material, index) => ({
     id: text(material.id, ""),
@@ -984,6 +1009,10 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
     household: {
       name: text(household.name, ""),
       parentName: text(household.parentNames?.[0] || household.parentName, ""),
+      motherName: text(household.motherName, ""),
+      motherNameDay: text(household.motherNameDay, ""),
+      fatherName: text(household.fatherName, ""),
+      fatherNameDay: text(household.fatherNameDay, ""),
       parish: text(household.parishName, ""),
       method: householdMethod,
       schoolYear: text(schoolYear.label, ""),
@@ -996,6 +1025,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       firstName: text(child.firstName, childName(child, index)),
       grade: text(child.gradeLabel, ""),
       age: text(child.ageYears, ""),
+      nameDay: text(child.nameDay, ""),
       form: text(child.formLabel || child.gradeLabel, childFormByAge(child.ageYears)),
       formLabel: text(child.formLabel || child.gradeLabel, childFormByAge(child.ageYears)),
       initial: childInitial(child, index),
@@ -1046,6 +1076,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       title: text(subject.title, "Subject"),
       subjectType: text(subject.subjectType || subject.type, ""),
       planningMode: text(subject.planningMode, subject.childId ? "forms" : "forms"),
+      scheduledDays: safeArray(subject.scheduledDays),
       weeklyFrequency: weeklyFrequencyValue(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "daily"),
       formLabel: text(subject.formLabel, ""),
       gradeLabel: text(subject.gradeLabel, ""),
@@ -1143,6 +1174,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         resourceType: text(block.resourceType || block.sourceType, block.resource || block.source ? "curriculum" : "none"),
         cadenceLabel: text(block.cadenceLabel || block.cadence, ""),
         planningMode: text(block.planningMode, "family"),
+        scheduledDays: safeArray(block.scheduledDays),
         weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
         formLabel: text(block.formLabel, ""),
         gradeLabel: text(block.gradeLabel, ""),
@@ -1166,6 +1198,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         resourceType: text(block.resourceType || block.sourceType, block.resource || block.source ? "curriculum" : "none"),
         cadenceLabel: text(block.cadenceLabel || block.cadence, ""),
         planningMode: text(block.planningMode, "family"),
+        scheduledDays: safeArray(block.scheduledDays),
         weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
         formLabel: text(block.formLabel, ""),
         gradeLabel: text(block.gradeLabel, ""),
@@ -1201,6 +1234,15 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       cycle: text(setup.coOp?.cycle, ""),
       theme: text(setup.coOp?.theme, ""),
       memberNotes: text(setup.coOp?.memberNotes, "")
+    },
+    familyPlanning: {
+      fastingPreference: text(familyPlanning.fastingPreference, "guidance"),
+      weekStart: text(familyPlanning.weekStart, ""),
+      nameDays: safeArray(familyPlanning.nameDays),
+      events: safeArray(familyPlanning.events),
+      meals: safeArray(familyPlanning.meals),
+      recipes: safeArray(familyPlanning.recipes),
+      groceryItems: safeArray(familyPlanning.groceryItems)
     },
     calendarOptions: safeArray(setup.calendarToggle?.options),
     evaluationModels: safeArray(setup.evaluationModels)

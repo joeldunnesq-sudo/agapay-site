@@ -256,6 +256,12 @@ async function withMockFetch(handler, run) {
   }), testEnv);
   assert.equal(completionNoAuth.status, 401);
 
+  const familyPlanningNoAuth = await worker.fetch(request("/api/learn/family-planning", {
+    method: "POST",
+    body: { familyPlanning: { events: [] } }
+  }), testEnv);
+  assert.equal(familyPlanningNoAuth.status, 401);
+
   const closeNoAuth = await worker.fetch(request("/api/learn/terms/term_1/close", {
     method: "POST",
     body: {}

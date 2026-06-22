@@ -427,6 +427,19 @@ function applyGraceModeToRows(rows, graceModeRule) {
   });
 }
 
+function familyPlanForDate(seed, civilDate, liturgicalDay = {}) {
+  const planning = seed.familyPlanning || seed.setupSnapshot?.familyPlanning || {};
+  const monthDay = civilDate.slice(5);
+  return {
+    nameDays: (planning.nameDays || []).filter((entry) => entry.monthDay === monthDay),
+    events: (planning.events || []).filter((entry) => entry.date === civilDate),
+    meal: (planning.meals || []).find((entry) => entry.date === civilDate) || null,
+    fastingPreference: planning.fastingPreference || "guidance",
+    fastingRule: liturgicalDay?.fastingRule || "No Fast",
+    fastingType: liturgicalDay?.fastingType || "none"
+  };
+}
+
 function buildPlannerWeek(seed, calendarType) {
   const week = seed.plannerWeek;
   const liturgicalDays = buildAgapayLiturgicalDays({
@@ -439,6 +452,9 @@ function buildPlannerWeek(seed, calendarType) {
   return {
     ...week,
     liturgicalDays,
+    familyDays: week.dates.map((civilDate) => familyPlanForDate(seed, civilDate, liturgicalDays.find((day) => day.civilDate === civilDate))),
+    recipes: seed.familyPlanning?.recipes || [],
+    groceryItems: seed.familyPlanning?.groceryItems || [],
     householdRows: applyGraceModeToRows(week.householdRows, seed.graceModeRule),
     childRows: applyGraceModeToRows(week.childRows, seed.graceModeRule).map((row) => ({
       ...row,
@@ -483,6 +499,7 @@ function buildPlannerMonth(seed, calendarType, month = "") {
     const weekday = date.getUTCDay();
     const liturgicalDay = liturgicalByDate.get(civilDate) || {};
     const fastingRule = liturgicalDay.fastingRule || "No Fast";
+    const familyPlan = familyPlanForDate(seed, civilDate, liturgicalDay);
     return {
       civilDate,
       dayNumber: date.getUTCDate(),
@@ -497,6 +514,10 @@ function buildPlannerMonth(seed, calendarType, month = "") {
       fastingType: liturgicalDay.fastingType || fastingTypeForDate(civilDate, null, fastingRule),
       isFastDay: /fast/i.test(fastingRule) && !/no fast/i.test(fastingRule),
       oldStyleDateLabel: liturgicalDay.oldStyleDateLabel || "",
+      nameDays: familyPlan.nameDays,
+      events: familyPlan.events,
+      meal: familyPlan.meal,
+      fastingPreference: familyPlan.fastingPreference,
       householdPlan: householdPlanByWeekday.get(weekday) || [],
       formPlan: formPlanByWeekday.get(weekday) || []
     };
@@ -742,7 +763,8 @@ export class SeedLearnRepository {
       readAloud: {
         book: this.seed.books[0],
         assignment: this.seed.bookAssignments[0]
-      }
+      },
+      familyPlanning: this.seed.familyPlanning || this.seed.setupSnapshot?.familyPlanning || { nameDays: [], events: [], meals: [], recipes: [], groceryItems: [], fastingPreference: "guidance" }
     };
   }
 

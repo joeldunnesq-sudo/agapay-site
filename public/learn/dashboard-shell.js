@@ -697,6 +697,7 @@ function renderPlanner(vm) {
     <section data-screen-label="Planner" style="display:flex;flex-direction:column;gap:18px;">
       ${controls}
       ${content}
+      ${renderFamilyPlanningEditor(vm)}
     </section>
   `;
   return shell(vm, body);
@@ -749,6 +750,10 @@ function renderPlannerDay(vm) {
   `;
 }
 
+function renderFamilyPlanningEditor(vm) {
+  return `<form data-family-planning-form id="family-planner" style="display:grid;gap:12px;scroll-margin-top:110px;">${panel("Family Planner & Meals", familyPlanningSetupPanel({ familyPlanning: vm.familyPlanning, household: vm.familyPlanning.household, children: vm.familyPlanning.children }), { icon: "▣", largeTitle: true })}<div class="learn-family-planner-save"><span data-family-planning-status>Appointments, name days, meals, recipes, and groceries save independently from school setup.</span><button type="submit">Save Family Planner</button></div></form>`;
+}
+
 function adjacentMonthKey(monthKey, delta) {
   const [year, month] = String(monthKey || "").split("-").map(Number);
   const date = new Date(Date.UTC(Number.isFinite(year) ? year : new Date().getUTCFullYear(), (Number.isFinite(month) ? month : 1) - 1 + delta, 1));
@@ -761,7 +766,12 @@ function renderPlannerMonth(vm) {
     const muted = !day.inMonth;
     const fastBg = day.isFastDay ? "rgba(110,47,42,.12)" : day.isSunday ? "rgba(181,148,47,.14)" : "var(--paper2)";
     const border = day.isToday ? "var(--gold)" : day.isFastDay ? "rgba(110,47,42,.38)" : "var(--line)";
-    const plans = [...(day.householdPlan || []), ...(day.formPlan || [])].slice(0, 3);
+    const familyItems = [
+      ...(day.nameDays || []).map((entry) => ({ title: `Name day · ${entry.personName}` })),
+      ...(day.events || []).map((entry) => ({ title: entry.title })),
+      ...(day.meal?.dinner ? [{ title: `Dinner · ${day.meal.dinner}` }] : [])
+    ];
+    const plans = [...familyItems, ...(day.householdPlan || []), ...(day.formPlan || [])].slice(0, 4);
     return `<article style="min-height:150px;border:1px solid ${border};border-radius:12px;background:${muted ? "rgba(248,240,221,.46)" : fastBg};padding:10px;display:flex;flex-direction:column;gap:7px;box-shadow:${day.isToday ? "inset 0 0 0 1px rgba(181,148,47,.45)" : "none"};opacity:${muted ? ".58" : "1"};">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
         <span style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:${day.isFastDay ? "var(--burgundy)" : "var(--ink)"};">${html(day.dayNumber)}</span>
@@ -1072,6 +1082,37 @@ const weeklyFrequencyOptions = [
   { value: "as-needed", label: "As needed" }
 ];
 
+const setupWeekdays = [
+  { value: "sun", label: "Sun" },
+  { value: "mon", label: "Mon" },
+  { value: "tue", label: "Tue" },
+  { value: "wed", label: "Wed" },
+  { value: "thu", label: "Thu" },
+  { value: "fri", label: "Fri" },
+  { value: "sat", label: "Sat" }
+];
+
+function scheduledDays(value, legacyFrequency = "") {
+  const direct = Array.isArray(value) ? value : String(value || "").split(",");
+  const valid = direct.map((day) => String(day).trim().toLowerCase()).filter((day) => setupWeekdays.some((option) => option.value === day));
+  if (valid.length) return [...new Set(valid)];
+  const presets = {
+    daily: ["mon", "tue", "wed", "thu", "fri"],
+    "4x": ["mon", "tue", "wed", "thu"],
+    "3x": ["mon", "wed", "fri"],
+    "2x": ["tue", "thu"],
+    "1x": ["wed"],
+    "as-needed": []
+  };
+  return presets[String(legacyFrequency || "").toLowerCase()] || ["mon", "tue", "wed", "thu", "fri"];
+}
+
+function setupDayPicker(value, legacyFrequency = "") {
+  const selected = scheduledDays(value, legacyFrequency);
+  const summary = selected.length ? setupWeekdays.filter((day) => selected.includes(day.value)).map((day) => day.label).join(" · ") : "Choose days";
+  return `<details class="learn-day-picker"><summary><span>Days</span><strong data-day-summary>${html(summary)}</strong></summary><div class="learn-day-picker-menu">${setupWeekdays.map((day) => `<label><input type="checkbox" data-day-choice value="${day.value}" ${selected.includes(day.value) ? "checked" : ""}>${day.label}</label>`).join("")}</div><input type="hidden" name="scheduledDays" value="${html(selected.join(","))}"></details>`;
+}
+
 const sourceTypeOptions = [
   { value: "book", label: "Book - show on Books page" },
   { value: "curriculum", label: "Curriculum / lesson plan" },
@@ -1106,7 +1147,7 @@ function childSetupRow(child = {}, groupingMode = "forms") {
   const groupingField = groupingMode === "forms"
     ? setupSelect("Form", "formLabel", child.formLabel || child.form || "", formOptions)
     : `<input type="hidden" name="formLabel" value="${html(child.formLabel || child.form || "")}" />`;
-  return `<div data-setup-row="children" data-id="${html(child.id || "")}" style="display:grid;grid-template-columns:44px 1.05fr .55fr .8fr ${groupingMode === "forms" ? ".8fr" : ""} .9fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;"><span style="width:38px;height:38px;border-radius:50%;background:${html(child.color || colorChoices[0])};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:18px;">${html((child.firstName || child.name || "C").charAt(0))}</span>${setupInput("Child name", "firstName", child.firstName || child.name || "")}${setupInput("Age", "ageYears", child.age || "", { type: "number" })}${setupInput("Grade / level", "gradeLabel", child.gradeLabel || child.grade || "")}${groupingField}${setupColorSelect("Color", "color", child.color || colorChoices[0])}${setupRemoveButton()}</div>`;
+  return `<div data-setup-row="children" data-id="${html(child.id || "")}" class="learn-family-row learn-child-row"><span class="learn-child-monogram" style="background:${html(child.color || colorChoices[0])};">${html((child.firstName || child.name || "C").charAt(0))}</span>${setupInput("Child name", "firstName", child.firstName || child.name || "")}${setupInput("Age", "ageYears", child.age || "", { type: "number" })}${setupInput("Grade / level", "gradeLabel", child.gradeLabel || child.grade || "")}${groupingField}${setupColorSelect("Color", "color", child.color || colorChoices[0])}${setupRemoveButton()}</div>`;
 }
 
 function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms") {
@@ -1115,7 +1156,7 @@ function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId 
   const activeGroupField = groupingMode === "grades"
     ? `${setupSelect(groupLabel, "gradeLabel", subject.gradeLabel || "", [{ value: "", label: "All grades" }, ...groupOptions])}<input type="hidden" name="formLabel" value="${html(subject.formLabel || "")}" />`
     : `${setupSelect(groupLabel, "formLabel", subject.formLabel || "", [{ value: "", label: "All Forms" }, ...groupOptions])}<input type="hidden" name="gradeLabel" value="${html(subject.gradeLabel || "")}" />`;
-  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main">${setupInput("Subject / skill", "title", subject.title || "")}${setupSelect("School-day area", "subjectType", subject.subjectType || subject.type || "language-arts", subjectTypeOptions)}${setupSelect("Planning Mode", "planningMode", subject.planningMode || "forms", planningModeOptionsFor(groupingMode))}${setupInput("Book / curriculum / source", "resource", subject.resource || "")}${setupSelect("Source type", "resourceType", subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"), sourceTypeOptions)}${setupSelect("Track by", "progressionType", subject.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", subject.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", subject.currentNumber || subject.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", subject.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutes", subject.minutes || "", { type: "number" })}${setupRemoveButton()}</div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupSelect("Frequency", "weeklyFrequency", subject.weeklyFrequency || subject.cadenceLabel || "daily", weeklyFrequencyOptions)}${setupSelect("Specific child", "childId", subject.childId || "", [{ value: "", label: "Use Planning Mode" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main">${setupInput("Subject / skill", "title", subject.title || "")}${setupSelect("School-day area", "subjectType", subject.subjectType || subject.type || "language-arts", subjectTypeOptions)}${setupSelect("Planning Mode", "planningMode", subject.planningMode || "forms", planningModeOptionsFor(groupingMode))}${setupInput("Book / curriculum / source", "resource", subject.resource || "")}${setupSelect("Source type", "resourceType", subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"), sourceTypeOptions)}${setupSelect("Track by", "progressionType", subject.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", subject.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", subject.currentNumber || subject.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", subject.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutes", subject.minutes || "", { type: "number" })}${setupRemoveButton()}</div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupDayPicker(subject.scheduledDays, subject.weeklyFrequency || subject.cadenceLabel || "daily")}${setupSelect("Specific child", "childId", subject.childId || "", [{ value: "", label: "Use Planning Mode" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function bookSetupRow(book = {}, terms = [], currentTermId = "") {
@@ -1140,7 +1181,7 @@ function formationEnrichmentSetupRow(block = {}, children = [], terms = [], curr
   const activeGroupField = groupingMode === "grades"
     ? `${setupSelect(groupLabel, "gradeLabel", block.gradeLabel || "", [{ value: "", label: "All grades" }, ...groupOptions])}<input type="hidden" name="formLabel" value="${html(block.formLabel || "")}" />`
     : `${setupSelect(groupLabel, "formLabel", block.formLabel || "", [{ value: "", label: "All Forms" }, ...groupOptions])}<input type="hidden" name="gradeLabel" value="${html(block.gradeLabel || "")}" />`;
-  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupInput("Title", "title", block.title || "")}${setupSelect("Planning Mode", "planningMode", block.planningMode || "family", planningModeOptionsFor(groupingMode))}${setupInput("Book / source / resource", "resource", block.resource || block.source || "")}${setupSelect("Source type", "resourceType", block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"), sourceTypeOptions)}${setupSelect("Track by", "progressionType", block.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", block.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", block.currentNumber || block.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", block.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "", { type: "number" })}${setupRemoveButton()}</div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupSelect("Frequency", "weeklyFrequency", block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x", weeklyFrequencyOptions)}${setupSelect("Specific child", "childId", block.childId || "", [{ value: "", label: "Use Planning Mode" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupInput("Title", "title", block.title || "")}${setupSelect("Planning Mode", "planningMode", block.planningMode || "family", planningModeOptionsFor(groupingMode))}${setupInput("Book / source / resource", "resource", block.resource || block.source || "")}${setupSelect("Source type", "resourceType", block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"), sourceTypeOptions)}${setupSelect("Track by", "progressionType", block.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", block.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", block.currentNumber || block.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", block.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "", { type: "number" })}${setupRemoveButton()}</div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupDayPicker(block.scheduledDays, block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x")}${setupSelect("Specific child", "childId", block.childId || "", [{ value: "", label: "Use Planning Mode" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function churchRhythmSetupPanel(vm) {
@@ -1747,6 +1788,51 @@ function setupExperience(method = "Unsure", groupingMode = "forms") {
   return profiles[method] || profiles.Unsure;
 }
 
+function familyEventSetupRow(event = {}) {
+  return `<div data-setup-row="familyEvents" data-id="${html(event.id || "")}" class="learn-family-row learn-event-row">${setupInput("Event", "title", event.title || "")}${setupSelect("Type", "eventType", event.eventType || "appointment", [{ value: "appointment", label: "Appointment" }, { value: "field-trip", label: "Field trip" }, { value: "extracurricular", label: "Extracurricular" }, { value: "family", label: "Family" }, { value: "other", label: "Other" }])}${setupInput("Date", "date", event.date || "", { type: "date" })}${setupInput("Starts", "startTime", event.startTime || "", { type: "time" })}${setupInput("Location", "location", event.location || "")}${setupInput("Notes", "notes", event.notes || "")}${setupRemoveButton()}</div>`;
+}
+
+function recipeSetupRow(recipe = {}) {
+  return `<div data-setup-row="recipes" data-id="${html(recipe.id || "")}" class="learn-family-row learn-recipe-row">${setupInput("Recipe", "title", recipe.title || "")}${setupSelect("Fasting fit", "fastingType", recipe.fastingType || "adaptable", [{ value: "fast-friendly", label: "Fast-friendly" }, { value: "adaptable", label: "Easy to adapt" }, { value: "regular", label: "Regular meal" }])}${setupInput("Category", "category", recipe.category || "Dinner")}${setupInput("Source link", "sourceUrl", recipe.sourceUrl || "", { type: "url" })}${setupInput("Ingredients", "ingredients", recipe.ingredients || "")}${setupInput("Notes / method", "instructions", recipe.instructions || "")}${setupRemoveButton()}</div>`;
+}
+
+function grocerySetupRow(item = {}) {
+  return `<div data-setup-row="groceryItems" data-id="${html(item.id || "")}" class="learn-family-row learn-grocery-row">${setupInput("Item", "name", item.name || "")}${setupInput("Quantity", "quantity", item.quantity || "")}${setupSelect("Aisle", "category", item.category || "Produce", ["Produce", "Pantry", "Bakery", "Dairy", "Frozen", "Household", "Other"])}<label class="learn-check-field"><input type="checkbox" name="checked" ${item.checked ? "checked" : ""}> In cart</label>${setupRemoveButton()}</div>`;
+}
+
+function nextSevenDates(startDate = "") {
+  const start = /^\d{4}-\d{2}-\d{2}$/.test(startDate) ? new Date(`${startDate}T12:00:00`) : new Date();
+  start.setDate(start.getDate() - start.getDay());
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    return date.toISOString().slice(0, 10);
+  });
+}
+
+function mealSetupRow(meal = {}, date = "") {
+  const resolvedDate = meal.date || date;
+  const weekday = resolvedDate ? new Date(`${resolvedDate}T12:00:00`).toLocaleDateString(undefined, { weekday: "long" }) : "Day";
+  return `<div data-setup-row="meals" data-id="${html(meal.id || "")}" class="learn-meal-row"><div><strong>${html(weekday)}</strong><input type="date" name="date" value="${html(resolvedDate)}"></div>${setupInput("Breakfast", "breakfast", meal.breakfast || "")}${setupInput("Lunch", "lunch", meal.lunch || "")}${setupInput("Dinner", "dinner", meal.dinner || "")}</div>`;
+}
+
+function familyPlanningSetupPanel(vm) {
+  const planning = vm.familyPlanning || {};
+  const household = vm.household || planning.household || {};
+  const children = vm.children || planning.children || [];
+  const dates = nextSevenDates(planning.weekStart);
+  const mealByDate = new Map((planning.meals || []).map((meal) => [meal.date, meal]));
+  return `<div class="learn-family-planning">
+    <p class="learn-panel-intro">Keep the household calendar, meals, and practical life beside the school plan. Name days repeat annually; appointments and outings appear on their exact dates.</p>
+    <div class="learn-family-adults">${setupInput("Mom's name", "household.motherName", household.motherName || "")}${setupInput("Mom's name day", "household.motherNameDay", household.motherNameDay || "", { type: "date" })}${setupInput("Dad's name", "household.fatherName", household.fatherName || "")}${setupInput("Dad's name day", "household.fatherNameDay", household.fatherNameDay || "", { type: "date" })}</div>
+    <div class="learn-child-name-days">${children.map((child) => `<label data-family-child-id="${html(child.id)}"><span>${html(child.name)}'s name day</span><input type="date" name="childNameDay" value="${html(child.nameDay || "")}"></label>`).join("")}</div>
+    <details id="learn-weekly-meals" open class="learn-planning-section"><summary><span>Weekly Meals</span><small>Plan one week at a time with fasting guidance from your selected Church calendar</small></summary>${setupSelect("Fasting guidance", "familyPlanning.fastingPreference", planning.fastingPreference || "guidance", [{ value: "guidance", label: "Show guidance, let me decide" }, { value: "strict", label: "Follow fasting guidance closely" }, { value: "off", label: "Do not show meal guidance" }])}<input type="hidden" name="familyPlanning.weekStart" value="${html(dates[0])}"><div data-setup-list="meals" class="learn-meal-week">${dates.map((date) => mealSetupRow(mealByDate.get(date) || {}, date)).join("")}</div><p class="learn-planning-note">AGAPAY shows the fasting rule; it does not judge ingredients or replace guidance from your priest.</p></details>
+    <details class="learn-planning-section"><summary><span>Family Calendar</span><small>Appointments, activities, field trips, and family events</small></summary><div data-setup-list="familyEvents" class="learn-planning-list">${(planning.events?.length ? planning.events : [{}]).map(familyEventSetupRow).join("")}</div><button type="button" data-setup-add-row="familyEvents" class="learn-add-button">Add Calendar Event</button></details>
+    <details class="learn-planning-section"><summary><span>Recipes</span><small>Your household library, including fast-friendly favorites</small></summary><div data-setup-list="recipes" class="learn-planning-list">${(planning.recipes?.length ? planning.recipes : [{}]).map(recipeSetupRow).join("")}</div><button type="button" data-setup-add-row="recipes" class="learn-add-button">Add Recipe</button></details>
+    <details class="learn-planning-section"><summary><span>Grocery List</span><small>A practical list generated and edited alongside the week</small></summary><div data-setup-list="groceryItems" class="learn-planning-list">${(planning.groceryItems?.length ? planning.groceryItems : [{}]).map(grocerySetupRow).join("")}</div><button type="button" data-setup-add-row="groceryItems" class="learn-add-button">Add Grocery Item</button></details>
+  </div>`;
+}
+
 function renderSetup(vm) {
   const currentTermId = vm.schoolYear.currentTermId || vm.term.id || vm.terms?.[0]?.id || "term_1";
   const groupingMode = vm.preferences.groupingMode === "grades" ? "grades" : "forms";
@@ -2017,6 +2103,10 @@ function setupPayloadFromForm(form) {
       name: get("household.name"),
       parentName: get("household.parentName"),
       parentNames: get("household.parentName") ? [get("household.parentName")] : [],
+      motherName: get("household.motherName"),
+      motherNameDay: get("household.motherNameDay"),
+      fatherName: get("household.fatherName"),
+      fatherNameDay: get("household.fatherNameDay"),
       parishName: get("household.parishName"),
       primaryMethod: get("household.primaryMethod")
     },
@@ -2052,6 +2142,7 @@ function setupPayloadFromForm(form) {
         gradeLabel: rowValue(row, "gradeLabel"),
         formLabel: rowValue(row, "formLabel"),
         ageYears: rowValue(row, "ageYears"),
+        nameDay: rowValue(row, "nameDay"),
         color: rowValue(row, "color")
       };
     }),
@@ -2080,6 +2171,7 @@ function setupPayloadFromForm(form) {
         title,
         subjectType: rowValue(row, "subjectType"),
         planningMode: rowValue(row, "planningMode"),
+        scheduledDays: scheduledDays(rowValue(row, "scheduledDays"), rowValue(row, "weeklyFrequency")),
         weeklyFrequency: rowValue(row, "weeklyFrequency"),
         cadenceLabel: rowValue(row, "weeklyFrequency"),
         formLabel: rowValue(row, "formLabel"),
@@ -2183,6 +2275,7 @@ function setupPayloadFromForm(form) {
           resource: rowValue(row, "resource"),
           resourceType: rowValue(row, "resourceType"),
           planningMode: rowValue(row, "planningMode"),
+          scheduledDays: scheduledDays(rowValue(row, "scheduledDays"), rowValue(row, "weeklyFrequency")),
           weeklyFrequency: rowValue(row, "weeklyFrequency"),
           cadenceLabel: rowValue(row, "weeklyFrequency"),
           formLabel: rowValue(row, "formLabel"),
@@ -2231,6 +2324,26 @@ function setupPayloadFromForm(form) {
         color: rowValue(row, "color")
       };
     }),
+    familyPlanning: {
+      fastingPreference: get("familyPlanning.fastingPreference") || "guidance",
+      weekStart: get("familyPlanning.weekStart"),
+      events: collectRows(form, "familyEvents", (row) => {
+        const title = rowValue(row, "title");
+        if (!title || !rowValue(row, "date")) return null;
+        return { id: row.dataset.id || "", title, eventType: rowValue(row, "eventType"), date: rowValue(row, "date"), startTime: rowValue(row, "startTime"), location: rowValue(row, "location"), notes: rowValue(row, "notes") };
+      }),
+      meals: collectRows(form, "meals", (row) => ({ id: row.dataset.id || "", date: rowValue(row, "date"), breakfast: rowValue(row, "breakfast"), lunch: rowValue(row, "lunch"), dinner: rowValue(row, "dinner") })).filter((meal) => meal.date),
+      recipes: collectRows(form, "recipes", (row) => {
+        const title = rowValue(row, "title");
+        if (!title) return null;
+        return { id: row.dataset.id || "", title, fastingType: rowValue(row, "fastingType"), category: rowValue(row, "category"), sourceUrl: rowValue(row, "sourceUrl"), ingredients: rowValue(row, "ingredients"), instructions: rowValue(row, "instructions") };
+      }),
+      groceryItems: collectRows(form, "groceryItems", (row) => {
+        const name = rowValue(row, "name");
+        if (!name) return null;
+        return { id: row.dataset.id || "", name, quantity: rowValue(row, "quantity"), category: rowValue(row, "category"), checked: Boolean(row.querySelector('[name="checked"]')?.checked) };
+      })
+    },
     coOp: {
       enabled: false,
       status: "coming-soon"
@@ -2245,6 +2358,37 @@ function currentSetupChildren(form) {
     gradeLabel: rowValue(row, "gradeLabel"),
     formLabel: rowValue(row, "formLabel")
   }));
+}
+
+function familyPlanningPayloadFromForm(form) {
+  const get = (name) => form.elements[name]?.value?.trim() || "";
+  return {
+    household: {
+      motherName: get("household.motherName"),
+      motherNameDay: get("household.motherNameDay"),
+      fatherName: get("household.fatherName"),
+      fatherNameDay: get("household.fatherNameDay")
+    },
+    childNameDays: [...form.querySelectorAll("[data-family-child-id]")].map((row) => ({ childId: row.dataset.familyChildId || "", nameDay: row.querySelector('[name="childNameDay"]')?.value || "" })),
+    familyPlanning: {
+      fastingPreference: get("familyPlanning.fastingPreference") || "guidance",
+      weekStart: get("familyPlanning.weekStart"),
+      events: collectRows(form, "familyEvents", (row) => {
+        const title = rowValue(row, "title");
+        if (!title || !rowValue(row, "date")) return null;
+        return { id: row.dataset.id || "", title, eventType: rowValue(row, "eventType"), date: rowValue(row, "date"), startTime: rowValue(row, "startTime"), location: rowValue(row, "location"), notes: rowValue(row, "notes") };
+      }),
+      meals: collectRows(form, "meals", (row) => ({ id: row.dataset.id || "", date: rowValue(row, "date"), breakfast: rowValue(row, "breakfast"), lunch: rowValue(row, "lunch"), dinner: rowValue(row, "dinner") })).filter((meal) => meal.date),
+      recipes: collectRows(form, "recipes", (row) => {
+        const title = rowValue(row, "title");
+        return title ? { id: row.dataset.id || "", title, fastingType: rowValue(row, "fastingType"), category: rowValue(row, "category"), sourceUrl: rowValue(row, "sourceUrl"), ingredients: rowValue(row, "ingredients"), instructions: rowValue(row, "instructions") } : null;
+      }),
+      groceryItems: collectRows(form, "groceryItems", (row) => {
+        const name = rowValue(row, "name");
+        return name ? { id: row.dataset.id || "", name, quantity: rowValue(row, "quantity"), category: rowValue(row, "category"), checked: Boolean(row.querySelector('[name="checked"]')?.checked) } : null;
+      })
+    }
+  };
 }
 
 function currentSetupTerms(form) {
@@ -2281,6 +2425,9 @@ function setupBlankRow(type, form, preset = {}) {
   if (type === "formationRhythms") return formationRhythmSetupRow({});
   if (type === "formationRecitation") return formationRecitationSetupRow({});
   if (type === "formationEnrichment") return formationEnrichmentSetupRow(preset, currentSetupChildren(form), terms, currentTermId, groupingMode);
+  if (type === "familyEvents") return familyEventSetupRow({});
+  if (type === "recipes") return recipeSetupRow({});
+  if (type === "groceryItems") return grocerySetupRow({});
   return "";
 }
 
@@ -2315,6 +2462,14 @@ function wireSetupPage() {
   const form = root.querySelector("[data-setup-form]");
   if (!form) return;
   form.addEventListener("input", (event) => {
+    const dayChoice = event.target.closest("[data-day-choice]");
+    if (dayChoice) {
+      const picker = dayChoice.closest(".learn-day-picker");
+      const selected = [...picker.querySelectorAll("[data-day-choice]:checked")].map((input) => input.value);
+      picker.querySelector('[name="scheduledDays"]').value = selected.join(",");
+      picker.querySelector("[data-day-summary]").textContent = selected.length ? setupWeekdays.filter((day) => selected.includes(day.value)).map((day) => day.label).join(" · ") : "Choose days";
+      return;
+    }
     const tileInput = event.target.closest("[data-setup-section-title-input], [data-setup-section-detail-input]");
     if (tileInput) {
       const group = tileInput.dataset.setupSectionGroup || "";
@@ -2487,6 +2642,36 @@ function wirePlanner(vm) {
     } finally {
       button.disabled = false;
       button.textContent = originalText;
+    }
+  });
+  const familyForm = root.querySelector("[data-family-planning-form]");
+  familyForm?.addEventListener("click", (event) => {
+    const remove = event.target.closest("[data-setup-remove-row]");
+    if (remove) {
+      const row = remove.closest("[data-setup-row]");
+      if (row && row.parentElement.querySelectorAll("[data-setup-row]").length > 1) row.remove();
+      return;
+    }
+    const add = event.target.closest("[data-setup-add-row]");
+    if (!add) return;
+    const list = familyForm.querySelector(`[data-setup-list="${add.dataset.setupAddRow}"]`);
+    if (list) list.insertAdjacentHTML("beforeend", setupBlankRow(add.dataset.setupAddRow, familyForm));
+  });
+  familyForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const status = familyForm.querySelector("[data-family-planning-status]");
+    const submit = familyForm.querySelector('button[type="submit"]');
+    status.textContent = "Saving family planner...";
+    submit.disabled = true;
+    try {
+      const saved = await apiPost("/api/learn/family-planning", familyPlanningPayloadFromForm(familyForm));
+      status.textContent = `Family planner saved${saved.savedAt ? ` at ${new Date(saved.savedAt).toLocaleTimeString()}` : ""}.`;
+      status.style.color = "var(--gold)";
+    } catch (error) {
+      status.textContent = error.message;
+      status.style.color = "var(--burgundy)";
+    } finally {
+      submit.disabled = false;
     }
   });
 }
@@ -2868,6 +3053,9 @@ async function mount() {
     document.body.classList.remove("learn-simple-setup");
     root.innerHTML = renderSetup(!vm.setupCompleted ? applySimpleDraftToSetupVm(vm, draft) : vm);
     wireSetupPage();
+    if (window.location.hash) {
+      window.requestAnimationFrame(() => document.querySelector(window.location.hash)?.scrollIntoView({ block: "start" }));
+    }
     return;
   }
   root.innerHTML = `<div style="padding:32px;font-family:Georgia,serif;color:#1b2c45;">This Learn route has not been migrated to the Claude shell yet.</div>`;

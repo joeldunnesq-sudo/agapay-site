@@ -8,7 +8,7 @@ import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-s
 import { enrichLiturgicalDayWithOrthocal, fetchOrthocalDay, handleLearnReadingsStatus, orthocalSaintStories } from "./readings-source.js";
 import { buildLearnPrintDocument, buildLearnReportPrintDocument, printDocumentFilename, renderPrintDocumentPdf } from "./print-engine.js";
 import { createLearnRepositoryForRequest, SeedLearnRepository } from "./repository.js";
-import { learnSetupIdentity, saveLearnCompletion, saveLearnGraceMode, saveLearnSetup } from "./setup-persistence.js";
+import { learnSetupIdentity, saveLearnCompletion, saveLearnFamilyPlanning, saveLearnGraceMode, saveLearnSetup } from "./setup-persistence.js";
 
 const LEARN_PRINT_USAGE_PREFIX = "__agapay_learn_print_usage:";
 
@@ -534,6 +534,17 @@ export async function handleLearnGoogleCalendarStatus(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return googleCalendarStatus(request, env);
+}
+
+export async function handleLearnFamilyPlanningSave(request, env) {
+  const blocked = assertLearnEnabled(env);
+  if (blocked) return blocked;
+  const payload = await request.json().catch(() => null);
+  if (!payload || typeof payload !== "object") return json({ ok: false, error: "Family planner data was invalid." }, { status: 400 });
+  const saved = await saveLearnFamilyPlanning(env, request, payload);
+  if (!saved.ok) return json({ ok: false, error: saved.error }, { status: saved.status || 500 });
+  const repository = new SeedLearnRepository(saved.onboarding);
+  return json({ ok: true, savedAt: saved.setupSnapshot.savedAt, planner: repository.getPlanner({ calendarType: saved.setupSnapshot.preferences?.calendarType || "julian" }) });
 }
 
 export async function handleLearnGoogleCalendarConnect(request, env) {

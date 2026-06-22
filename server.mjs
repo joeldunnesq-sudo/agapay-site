@@ -11,6 +11,7 @@ import {
   handleLearnCommunity,
   handleLearnDashboard,
   handleLearnFormation,
+  handleLearnFamilyPlanningSave,
   handleLearnGoogleCalendarCallback,
   handleLearnGoogleCalendarConnect,
   handleLearnGoogleCalendarPreview,
@@ -24,11 +25,32 @@ import {
   handleLearnReadingsProviderStatus,
   handleLearnReports,
 } from "./src/learn/handlers.js";
+import { donorKey, hashSessionToken } from "./src/lib/core.js";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(root, "public");
 const port = Number(process.env.PORT || 3000);
+const localPreviewEmail = "preview@agapay.local";
+const localPreviewToken = "agapay-local-preview";
+const localPreviewSalt = "agapay-local-preview-salt";
+const localPreviewStore = new Map();
+localPreviewStore.set(donorKey(localPreviewEmail), JSON.stringify({
+  email: localPreviewEmail,
+  firstName: "Stephanie",
+  lastName: "Preview",
+  emailVerifiedAt: new Date().toISOString(),
+  sessionSalt: localPreviewSalt,
+  sessionTokenHash: await hashSessionToken(localPreviewToken, localPreviewSalt),
+  sessionExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+}));
+const localPreviewKv = {
+  async get(key) { return localPreviewStore.get(String(key)) || null; },
+  async put(key, value) { localPreviewStore.set(String(key), String(value)); },
+  async delete(key) { localPreviewStore.delete(String(key)); },
+  async list() { return { keys: [...localPreviewStore.keys()].map((name) => ({ name })), list_complete: true }; }
+};
 const learnEnv = {
+  AGAPAY_REGISTRATIONS: localPreviewKv,
   AGAPAY_ENABLED_PRODUCTS: process.env.AGAPAY_ENABLED_PRODUCTS || "give,learn,learn-coop",
   AGAPAY_PUBLIC_URL: process.env.AGAPAY_PUBLIC_URL,
   AGAPAY_STRIPE_PRICE_LEARN_FAMILY_MONTHLY: process.env.AGAPAY_STRIPE_PRICE_LEARN_FAMILY_MONTHLY,
@@ -84,14 +106,18 @@ function cacheControlFor(filePath) {
 async function handleApi(req, res) {
   const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
   function learnRequest() {
+    const headers = new Headers(req.headers);
+    if (!headers.has("authorization")) headers.set("authorization", `Bearer ${localPreviewToken}`);
+    if (!headers.has("x-agapay-donor-email")) headers.set("x-agapay-donor-email", localPreviewEmail);
     return new Request(`http://${req.headers.host}${req.url}`, {
       method: req.method,
-      headers: req.headers,
+      headers,
       body: req.method === "GET" || req.method === "HEAD" ? undefined : req,
       duplex: "half"
     });
   }
   async function sendResponse(response) {
+    response = await response;
     res.writeHead(response.status, Object.fromEntries(response.headers.entries()));
     res.end(Buffer.from(await response.arrayBuffer()));
   }
@@ -142,11 +168,11 @@ async function handleApi(req, res) {
     await sendResponse(handleLearnCommunity(learnRequest(), learnEnv));
     return true;
   }
-  if (req.method === "GET" && pathname === "/api/learn/onboarding") {
+  if (req.method === "GET" && ["/api/learn/onboarding", "/api/learn/setup"].includes(pathname)) {
     await sendResponse(handleLearnOnboarding(learnRequest(), learnEnv));
     return true;
   }
-  if (req.method === "POST" && pathname === "/api/learn/onboarding") {
+  if (req.method === "POST" && ["/api/learn/onboarding", "/api/learn/setup"].includes(pathname)) {
     await sendResponse(await handleLearnOnboardingSave(learnRequest(), learnEnv));
     return true;
   }
@@ -195,6 +221,8 @@ async function resolveStaticPath(urlPath) {
   if (pathname === "/") pathname = "/index.html";
   if (pathname === "/learn" || pathname === "/learn/") pathname = "/learn/index.html";
   if (pathname.startsWith("/learn/") && !path.extname(pathname)) pathname = `${pathname}.html`;
+  if (pathname === "/myagapay/learn" || pathname === "/myagapay/learn/") pathname = "/learn/dashboard.html";
+  if (pathname.startsWith("/myagapay/learn/") && !path.extname(pathname)) pathname = pathname.replace(/^\/myagapay/, "") + ".html";
   if (
     pathname === "/my-agapay" ||
     pathname === "/my-agapay/" ||
@@ -209,6 +237,10 @@ async function resolveStaticPath(urlPath) {
   if (pathname === "/donor/dashboard") pathname = "/donor/index.html";
   if (pathname === "/give" || pathname === "/give/" || pathname === "/giving" || pathname === "/giving/") {
     pathname = "/give/index.html";
+  }
+  if (req.method === "POST" && pathname === "/api/learn/family-planning") {
+    await sendResponse(handleLearnFamilyPlanningSave(learnRequest(), learnEnv));
+    return true;
   }
   if (pathname === "/giving/login" || pathname === "/giving/login/") {
     pathname = "/parish/login.html";
