@@ -25,7 +25,7 @@ function cssVars() {
     "--ink:#1b2c45",
     "--navy:#102a4c",
     "--navy2:#0a1c38",
-    "--cream:#f3ead4",
+    "--cream:#f6f1e8",
     "--paper:#fdf9ef",
     "--paper2:#f8f0dd",
     "--line:#e7dcc0",
@@ -156,7 +156,7 @@ function pageIntro(vm) {
   const meta = pageIntroMeta(vm.page.id);
   const subtitle = vm.page.subtitle ? vm.page.subtitle : meta.description;
   return `
-    <section class="learn-page-intro" aria-labelledby="learn-page-heading">
+    <section class="learn-page-intro ${vm.page.id === "dashboard" ? "learn-page-intro--dashboard" : ""}" aria-labelledby="learn-page-heading">
       <div class="learn-page-intro-heading">
         <span class="learn-page-intro-icon">${pageIntroIcon(vm.page.id)}</span>
         <div>

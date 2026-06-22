@@ -6,7 +6,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  background: #f3ead4;
+  background: #f6f1e8;
 }
 
 .learn-product-shell {
@@ -559,6 +559,46 @@ body {
   line-height: 1;
   transform: translateY(-50%);
   pointer-events: none;
+}
+
+.learn-page-intro--dashboard {
+  border-color: rgba(200, 162, 74, 0.42);
+  background:
+    radial-gradient(circle at 86% 20%, rgba(200, 162, 74, 0.13), transparent 17rem),
+    linear-gradient(145deg, #061522 0%, #0b2130 100%);
+  color: #f6f1e8;
+  box-shadow: 0 16px 36px rgba(6, 21, 34, 0.2);
+}
+
+.learn-page-intro--dashboard::after {
+  content: "";
+  right: clamp(1rem, 4vw, 3rem);
+  top: 50%;
+  width: clamp(120px, 18vw, 220px);
+  aspect-ratio: 1;
+  background: url("/mark.png") center / contain no-repeat;
+  opacity: 0.065;
+  transform: translateY(-50%);
+}
+
+.learn-page-intro--dashboard .learn-page-intro-icon {
+  border-color: rgba(200, 162, 74, 0.52);
+  background: rgba(246, 241, 232, 0.07);
+  color: #d5ad50;
+  box-shadow: inset 0 0 0 1px rgba(246, 241, 232, 0.05);
+}
+
+.learn-page-intro.learn-page-intro--dashboard h1,
+.learn-page-intro.learn-page-intro--dashboard .learn-page-intro-quote p {
+  color: #f6f1e8;
+}
+
+.learn-page-intro.learn-page-intro--dashboard .learn-page-intro-description {
+  color: rgba(246, 241, 232, 0.76);
+}
+
+.learn-page-intro--dashboard .learn-page-intro-quote {
+  border-top-color: rgba(200, 162, 74, 0.28);
 }
 
 .learn-page-intro-heading {
