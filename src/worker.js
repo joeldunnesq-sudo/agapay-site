@@ -721,6 +721,10 @@ function canonicalDashboardPath(pathname) {
 function cleanAssetRequest(request) {
   const url = new URL(request.url);
   if (url.pathname === "/") return request;
+  if (url.pathname === "/learn") {
+    url.pathname = "/learn/";
+    return new Request(url, request);
+  }
   const myAgapayAsset = MYAGAPAY_ASSET_ROUTES.get(url.pathname);
   if (myAgapayAsset) {
     url.pathname = myAgapayAsset;
