@@ -132,6 +132,7 @@
               <a href="/learn">AGAPAY Learn</a>
               <a href="/marketplace">Marketplace</a>
               <a href="/directory">Directory</a>
+              <a href="/onboarding">Get Started</a>
             </nav>
             <nav class="footer-col" aria-label="AGAPAY Giving">
               <h4>Giving</h4>
@@ -140,7 +141,6 @@
               <a href="/giving/how-it-works">How It Works</a>
               <a href="/giving/pricing">Pricing</a>
               <a href="/giving/why">Why AGAPAY Giving</a>
-              <a href="/onboarding">Get Started</a>
             </nav>
             <nav class="footer-col" aria-label="AGAPAY Learn">
               <h4>Learn</h4>
