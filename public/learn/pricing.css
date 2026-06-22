@@ -444,6 +444,41 @@ h1 {
   margin-bottom: 0;
 }
 
+.learn-function-heading {
+  margin: 1.35rem 0 0.65rem;
+  color: var(--learn-night);
+  font-family: var(--learn-serif);
+  font-size: clamp(1.35rem, 2.5vw, 1.8rem);
+}
+
+.learn-function-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.learn-function-list li {
+  position: relative;
+  padding-left: 1.35rem;
+  color: var(--learn-muted);
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.learn-function-list li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--learn-gold-dark);
+  font-weight: 700;
+}
+
+.learn-function-list strong {
+  color: var(--learn-night);
+}
+
 .learn-planning-model {
   display: grid;
   gap: 0.75rem;
