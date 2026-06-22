@@ -42,16 +42,30 @@
   function parseParams() {
     const url   = new URL(window.location.href);
     const parts = url.pathname.split("/").filter(Boolean);
-    const slug     = parts[2] || url.searchParams.get("c") || "";
-    const parishId = url.searchParams.get("parish") || "";
+    const isCanonicalCampaign = parts[0] === "giving" && parts.length >= 3 && parts[2].endsWith("-campaign");
+    const slug = isCanonicalCampaign
+      ? decodeURIComponent(parts[2]).replace(/-campaign$/, "")
+      : decodeURIComponent(parts[2] || url.searchParams.get("c") || "");
+    const parishId = isCanonicalCampaign
+      ? decodeURIComponent(parts[1] || "")
+      : url.searchParams.get("parish") || "";
     return { slug, parishId };
   }
 
+  function campaignPageUrl(parishId, slug) {
+    const campaignSlug = String(slug || "campaign").replace(/-campaign$/, "");
+    return window.location.origin + "/giving/" + encodeURIComponent(parishId) + "/" + encodeURIComponent(campaignSlug) + "-campaign";
+  }
+
   async function fetchCampaign(parishId, slug) {
-    const qs  = new URLSearchParams({ parish: parishId, slug });
-    const res = await fetch("/api/campaign?" + qs);
-    if (!res.ok) throw new Error("Campaign not found");
-    return res.json();
+    const candidates = [slug, `${slug}-campaign`];
+    for (const candidate of candidates) {
+      const qs = new URLSearchParams({ parish: parishId, slug: candidate });
+      const res = await fetch("/api/campaign?" + qs);
+      if (res.ok) return res.json();
+      if (res.status !== 404) throw new Error("Unable to load campaign");
+    }
+    throw new Error("Campaign not found");
   }
 
   function setMeta(name, content) {
@@ -69,6 +83,8 @@
     setMeta("twitter:title", title); setMeta("twitter:description", desc); setMeta("twitter:image", img);
     const descEl = document.querySelector('meta[name="description"]');
     if (descEl) descEl.setAttribute("content", desc);
+    const canonicalEl = document.getElementById("campaignCanonicalUrl");
+    if (canonicalEl) canonicalEl.setAttribute("href", canonicalUrl);
   }
 
   function renderThermometer(campaign) {
@@ -88,14 +104,13 @@
     if (src) {
       const img = el("heroImg");
       img.onload  = () => { el("heroSkeleton").hidden = true; img.hidden = false; el("heroOverlay").hidden = false; el("heroBadge").hidden = false; };
-      img.onerror = () => { el("heroSkeleton").hidden = true; };
+      img.onerror = () => { img.hidden = true; el("heroSkeleton").hidden = false; el("heroBadge").hidden = false; };
       img.src = src; img.alt = campaign.name;
     } else {
-      el("heroSkeleton").hidden = true;
+      el("heroSkeleton").hidden = false;
       el("heroOverlay").hidden = true;
       el("heroBadge").hidden = false;
     }
-    el("heroBadge").textContent = campaign.status === "completed" ? "Campaign Ended" : campaign.status === "paused" ? "Paused" : "Active Campaign";
   }
 
   function renderGallery(photos) {
@@ -119,6 +134,7 @@
     el("updatesSection").hidden = false;
     const list   = el("updatesList");
     const sorted = [...updates].sort((a, b) => new Date(b.date) - new Date(a.date));
+    el("updatesCount").textContent = sorted.length + " " + (sorted.length === 1 ? "post" : "posts");
     sorted.forEach(u => {
       const div = document.createElement("div");
       div.className = "update-item";
@@ -222,13 +238,18 @@
   function wireShareButtons(canonicalUrl, title) {
     el("shareFacebook").href = "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(canonicalUrl);
     el("shareTwitter").href  = "https://twitter.com/intent/tweet?url=" + encodeURIComponent(canonicalUrl) + "&text=" + encodeURIComponent(title);
-    el("shareCopy").addEventListener("click", async () => {
+    el("shareWhatsApp").href = "https://wa.me/?text=" + encodeURIComponent(title + " " + canonicalUrl);
+    el("shareEmail").href = "mailto:?subject=" + encodeURIComponent(title) + "&body=" + encodeURIComponent("Support this parish campaign: " + canonicalUrl);
+    const copyCampaignLink = async (button) => {
       try { await navigator.clipboard.writeText(canonicalUrl); } catch { /* fallback */ }
-      const btn = el("shareCopy");
+      const btn = button;
       btn.classList.add("copied");
-      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
-      setTimeout(() => { btn.classList.remove("copied"); btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy link'; }, 2500);
-    });
+      const original = btn.textContent;
+      btn.textContent = "Copied";
+      setTimeout(() => { btn.classList.remove("copied"); btn.textContent = original; }, 2200);
+    };
+    el("shareCopy").addEventListener("click", () => copyCampaignLink(el("shareCopy")));
+    el("topbarShareBtn")?.addEventListener("click", () => copyCampaignLink(el("topbarShareBtn")));
   }
 
   function renderStatus(status) {
@@ -255,7 +276,7 @@
       const data     = await fetchCampaign(parishId, slug);
       const campaign = data.campaign;
       const parish   = data.parish;
-      const canonicalUrl = window.location.origin + "/give/parish-giving/" + encodeURIComponent(slug) + "?parish=" + encodeURIComponent(parishId);
+      const canonicalUrl = campaignPageUrl(parishId, campaign.slug || slug);
       activeCampaign = campaign;
       activeParish = parish;
       activeCanonicalUrl = canonicalUrl;
@@ -263,9 +284,25 @@
       applyOgTags(campaign, parish, canonicalUrl);
       renderHero(campaign, parish);
 
-      el("parishAvatar").src = parish.imageUrl || parish.logoUrl || "/mark.png";
-      el("parishAvatar").alt = parish.name || "AGAPAY";
+      const parishName = parish.name || "Orthodox Parish";
+      const parishImage = parish.imageUrl || parish.logoUrl || "";
+      const initials = parishName.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
+      el("headerParishName").textContent = parishName;
+      if (parishImage) {
+        el("parishAvatar").src = parishImage;
+        el("parishAvatar").alt = parishName;
+        el("parishInitials").textContent = "";
+      } else {
+        el("parishAvatar").hidden = true;
+        el("parishInitials").textContent = initials || "A";
+      }
       el("parishNameLabel").textContent = parish.name || "";
+      const location = [parish.city, parish.state].filter(Boolean).join(", ");
+      el("parishLocationLabel").textContent = location;
+      if (!location) {
+        el("parishLocationLabel").hidden = true;
+        document.querySelector(".organizer-label")?.classList.add("without-location");
+      }
       el("campaignTitle").textContent   = campaign.name || "Campaign";
       renderStatus(campaign.status || "active");
       el("campaignDescription").textContent = campaign.description || "";

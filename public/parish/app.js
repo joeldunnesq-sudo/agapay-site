@@ -273,7 +273,7 @@
   function fallbackCampaigns(v) { return JSON.stringify(v && v.length ? v : [{ id:'alms', name:'Alms Campaign', description:'Parish-approved alms for a specific need.' }], null, 2); }
   function fallbackFundsArray(v)     { return JSON.parse(fallbackFunds(v)); }
   function fallbackCampaignsArray(v) { return JSON.parse(fallbackCampaigns(v)); }
-  function dedicatedGivingUrl() { return currentParish ? `${window.location.origin}/give/form?parish=${encodeURIComponent(currentParish.parishId)}` : ''; }
+  function dedicatedGivingUrl() { return currentParish ? `${window.location.origin}/giving/${encodeURIComponent(currentParish.parishId)}` : ''; }
   function downloadBlob(filename, blob) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
   function qrFilename(ext) { return `${currentParish?.parishId || 'agapay-parish'}-giving-qr.${ext}`; }
   function slugifyLocal(v) { return String(v||'item').toLowerCase().replace(/&/g,' and ').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,48)||'item'; }
@@ -1238,14 +1238,14 @@
     const nameEl = document.getElementById('bulletinParishName');
     const urlEl  = document.getElementById('bulletinUrl');
     if (nameEl && currentParish) nameEl.textContent = currentParish.parishName || 'Parish Name';
-    if (urlEl  && currentParish) urlEl.textContent  = dedicatedGivingUrl() || 'agapay.app/give/form?parish=…';
+    if (urlEl  && currentParish) urlEl.textContent  = dedicatedGivingUrl() || 'agapay.app/giving/parish-name-city';
     // QR is rendered by renderQrCode which writes to bulletinQrCode too
     if (currentQrSvg) { const bqr = document.getElementById('bulletinQrCode'); if (bqr) bqr.innerHTML = currentQrSvg; }
   }
 
   function buildBulletinSvg() {
     const parishName = escapeHtml(currentParish?.parishName || 'Parish Name');
-    const url        = dedicatedGivingUrl() || 'agapay.app/give/form?parish=…';
+    const url        = dedicatedGivingUrl() || 'agapay.app/giving/parish-name-city';
     const qrInner    = currentQrSvg || '<text x="75" y="75" text-anchor="middle" font-size="10" fill="#6F6A60">QR code</text>';
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 280" width="840" height="560">
       <rect width="420" height="280" fill="#FFFDF9"/>
@@ -1458,7 +1458,7 @@ function renderCampaignList(parish) {
     const raised = Number(c.raisedCents||0), goal = Number(c.goalCents||0);
     const pct    = goal > 0 ? Math.min(100, Math.round((raised/goal)*100)) : 0;
     const slug   = c.slug || slugifyCampaign(c.name);
-    const pageUrl = '/give/parish-giving/' + encodeURIComponent(slug) + '?parish=' + encodeURIComponent(parish.parishId);
+    const pageUrl = campaignPublicUrl(parish.parishId, slug);
     const s = statusMap[c.status] || statusMap.active;
     const campaignId = String(c.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     return '<div class="campaign-list-item" style="border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem;margin-bottom:10px;background:var(--paper);">' +
@@ -1483,6 +1483,12 @@ function renderCampaignList(parish) {
 
 function slugifyCampaign(str) {
   return String(str||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+}
+
+function campaignPublicUrl(parishId, campaignSlug) {
+  const parishSegment = slugifyCampaign(parishId);
+  const campaignSegment = slugifyCampaign(campaignSlug).replace(/-campaign$/, '');
+  return '/giving/' + encodeURIComponent(parishSegment) + '/' + encodeURIComponent(campaignSegment) + '-campaign';
 }
 
 function escCamp(s) {
@@ -1619,7 +1625,7 @@ async function saveCampaign() {
     renderCampaignList(currentParish);
     const updateCard = document.getElementById('campaignUpdateCard'); if (updateCard) updateCard.hidden = false;
     const slug = campaignData.slug;
-    const pageUrl = '/give/parish-giving/' + encodeURIComponent(slug) + '?parish=' + encodeURIComponent(currentParish.parishId);
+    const pageUrl = campaignPublicUrl(currentParish.parishId, slug);
     if (statusSpan) statusSpan.innerHTML = '✓ Saved — <a href="' + pageUrl + '" target="_blank" style="color:var(--gold)">View campaign page ↗</a>';
   } catch(e) {
     if (statusSpan) statusSpan.textContent = 'Error: ' + e.message;

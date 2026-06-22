@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Give Through AGAPAY | Orthodox Stewardship Checkout</title>
   <meta name="description" content="Complete a secure Orthodox giving gift through AGAPAY for stewardship, candles, commemorations, funds, and feast offerings." />
-  <link rel="canonical" href="https://agapay.app/give/form" />
+  <link rel="canonical" id="parishCanonicalUrl" href="https://agapay.app/giving" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="AGAPAY" />
   <meta property="og:title" content="Give Through AGAPAY" />
   <meta property="og:description" content="Secure Orthodox giving for stewardship, candles, commemorations, funds, and feast offerings." />
-  <meta property="og:url" content="https://agapay.app/give/form" />
+  <meta property="og:url" content="https://agapay.app/giving" />
   <meta property="og:image" content="https://agapay.app/images/app/icon-512.png" />
   <meta property="og:image:alt" content="AGAPAY logo" />
   <meta name="twitter:card" content="summary" />
@@ -826,7 +826,8 @@
       const params = new URLSearchParams(window.location.search);
       if (params.get('parish')) return params.get('parish');
       const parts = window.location.pathname.split('/').filter(Boolean);
-      return parts[0] === 'give' && parts[1] ? parts[1] : '';
+      if ((parts[0] === 'give' || parts[0] === 'giving') && parts[1]) return parts[1];
+      return '';
     }
 
     function escapeHtml(value) {
@@ -975,6 +976,9 @@
         }
 
         currentParish = parish;
+        const canonicalUrl = `${window.location.origin}/giving/${encodeURIComponent(parish.id)}`;
+        document.querySelector('#parishCanonicalUrl')?.setAttribute('href', canonicalUrl);
+        document.querySelector('meta[property="og:url"]')?.setAttribute('content', canonicalUrl);
         const location = `${parish.city || ''}, ${parish.state || ''}`.replace(/^, /, '').replace(/, $/, '');
         document.title = `Give to ${parish.name} — AGAPAY`;
         const avatar = document.querySelector('.parish-avatar-lg');

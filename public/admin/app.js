@@ -1349,7 +1349,7 @@
             <div class="field-val">
               This registration is included in <code>/api/parishes</code> as <strong>${publicParishId}</strong> when giving status is active.
               <br><br>
-              Public giving URL: <code>/give/form?parish=${publicParishId}</code>
+              Public giving URL: <code>/giving/${publicParishId}</code>
             </div>
           </div>
         ` : ''}

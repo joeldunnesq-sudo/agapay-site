@@ -738,6 +738,10 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/find-church.html";
     return new Request(url, request);
   }
+  if (/^\/giving\/[^/]+\/[^/]+-campaign\/?$/.test(url.pathname)) {
+    url.pathname = "/give/parish-giving/index.html";
+    return new Request(url, request);
+  }
   if (url.pathname.startsWith("/give/parish-giving/") || url.pathname.startsWith("/giving/parish-giving/")) {
     url.pathname = "/give/parish-giving/index.html";
     return new Request(url, request);
@@ -790,6 +794,10 @@ function cleanAssetRequest(request) {
     url.pathname = "/giving/why.html";
     return new Request(url, request);
   }
+  if (/^\/giving\/[^/]+\/?$/.test(url.pathname)) {
+    url.pathname = "/give/form.html";
+    return new Request(url, request);
+  }
   if (url.pathname === "/give/find_parish") {
     url.pathname = "/give/form.html";
     return new Request(url, request);
@@ -827,6 +835,14 @@ const LEGACY_GIVING_PAGE_REDIRECTS = new Map([
   ["/why.html", "/giving/why"],
   ["/why/", "/giving/why"]
 ]);
+
+function canonicalCampaignPathFromLegacy(url) {
+  const match = url.pathname.match(/^\/(?:give|giving)\/parish-giving\/([^/]+)\/?$/);
+  const parishId = String(url.searchParams.get("parish") || "").trim();
+  if (!match || !parishId) return "";
+  const campaignSlug = decodeURIComponent(match[1]).replace(/-campaign$/, "");
+  return `/giving/${encodeURIComponent(parishId)}/${encodeURIComponent(campaignSlug)}-campaign`;
+}
 
 function formatCommemorationNames(entries, field) {
   const names = entries.flatMap((entry) => Array.isArray(entry[field]) ? entry[field] : []);
@@ -877,6 +893,24 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "GET" || request.method === "HEAD") {
+      const legacyParishPath = url.pathname.match(/^\/give\/([^/]+)\/?$/);
+      const reservedGivePaths = new Set(["form", "find-church", "parish-giving", "recurring-donations", "fundraising", "event-payments"]);
+      if (legacyParishPath && !reservedGivePaths.has(legacyParishPath[1])) {
+        url.pathname = `/giving/${encodeURIComponent(decodeURIComponent(legacyParishPath[1]))}`;
+        return Response.redirect(url.toString(), 301);
+      }
+      const legacyParishId = String(url.searchParams.get("parish") || "").trim();
+      if ((url.pathname === "/give/form" || url.pathname === "/give/form.html") && legacyParishId) {
+        url.pathname = `/giving/${encodeURIComponent(legacyParishId)}`;
+        url.searchParams.delete("parish");
+        return Response.redirect(url.toString(), 301);
+      }
+      const canonicalCampaignPath = canonicalCampaignPathFromLegacy(url);
+      if (canonicalCampaignPath) {
+        url.pathname = canonicalCampaignPath;
+        url.searchParams.delete("parish");
+        return Response.redirect(url.toString(), 301);
+      }
       const canonicalGivingPath = LEGACY_GIVING_PAGE_REDIRECTS.get(url.pathname.toLowerCase());
       if (canonicalGivingPath) {
         url.pathname = canonicalGivingPath;

@@ -75,6 +75,10 @@ import {
   subscriptionTier as sharedSubscriptionTier,
 } from "../lib/subscriptions.js";
 
+import {
+  parishSlug,
+} from "../lib/format.js";
+
 function d1(env) {
   return env.AGAPAY_DB || env.DB || null;
 }
@@ -633,7 +637,7 @@ export async function sendTreasurerStripeInvite(env, appUrl, registration) {
   const to = registration.treasurerEmail || registration.priestEmail || "";
   if (!to) return { status: "missing_recipient" };
 
-  const parishId = registration.parishId || slugify(registration.parishName);
+  const parishId = registration.parishId || parishSlug(registration.parishName, registration.city);
   const dashboardUrl = `${appUrl}/giving/login?parish=${encodeURIComponent(parishId)}`;
   const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
@@ -689,7 +693,7 @@ export async function sendDashboardInvite(env, appUrl, registration) {
   ].filter(Boolean)));
   if (!recipients.length) return { status: "missing_recipient" };
 
-  const parishId = registration.parishId || slugify(registration.parishName);
+  const parishId = registration.parishId || parishSlug(registration.parishName, registration.city);
   const dashboardUrl = `${appUrl}/giving/login?parish=${encodeURIComponent(parishId)}`;
   const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
@@ -742,7 +746,7 @@ export async function sendParishPasswordResetEmail(env, appUrl, registration, re
   const from = env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>";
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   const parishName = htmlEscape(registration.parishName || "your parish");
-  const parishId = htmlEscape(registration.parishId || slugify(registration.parishName));
+  const parishId = htmlEscape(registration.parishId || parishSlug(registration.parishName, registration.city));
   const safeResetUrl = htmlEscape(resetUrl);
 
   return sendEmail(env, {
@@ -764,7 +768,7 @@ export async function sendParishPasswordResetEmail(env, appUrl, registration, re
       "Reset parish dashboard password",
       "",
       `Parish: ${registration.parishName || ""}`,
-      `Parish ID: ${registration.parishId || slugify(registration.parishName)}`,
+      `Parish ID: ${registration.parishId || parishSlug(registration.parishName, registration.city)}`,
       `Open this link to choose a new password: ${resetUrl}`,
       "",
       "If you did not request this, ignore this email. The link expires in 1 hour."
@@ -784,7 +788,7 @@ export async function sendRegistrationConfirmation(env, appUrl, registration) {
   const replyTo = env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
   const parishName = htmlEscape(registration.parishName || "your community");
   const reference = htmlEscape(registration.reference || "");
-  const parishId = registration.parishId || slugify(registration.parishName);
+  const parishId = registration.parishId || parishSlug(registration.parishName, registration.city);
   const dashboardUrl = `${appUrl}/giving/login?parish=${encodeURIComponent(parishId)}`;
   const safeDashboardUrl = htmlEscape(dashboardUrl);
   const temporaryPassword = htmlEscape(registration.parishDashboardToken || "");
@@ -1601,7 +1605,7 @@ export function communitySketchAlt(type) {
 
 export function parishFromRegistration(registration) {
   if (!registration) return null;
-  const id = registration.parishId || slugify(registration.parishName);
+  const id = registration.parishId || parishSlug(registration.parishName, registration.city);
   if (!id || registration.status !== "verified") return null;
   if (registration.givingStatus && registration.givingStatus !== "active") return null;
   const type = normalizeCommunityType(registration.communityType);
@@ -1644,8 +1648,8 @@ export function normalizeCommunityType(value) {
 
 export async function saveRegistrationRecord(env, reference, registration, previous = null) {
   if (!reference) return registration;
-  const parishId = registration.parishId || slugify(registration.parishName);
-  const previousParishId = previous ? previous.parishId || slugify(previous.parishName) : "";
+  const parishId = registration.parishId || parishSlug(registration.parishName, registration.city);
+  const previousParishId = previous ? previous.parishId || parishSlug(previous.parishName, previous.city) : "";
 
   if (d1(env)) {
     await d1Run(
@@ -1830,7 +1834,7 @@ export async function findRegistrationByParishId(env, parishId) {
     if (!raw) continue;
     try {
       const registration = JSON.parse(raw);
-      const currentParishId = registration.parishId || slugify(registration.parishName);
+      const currentParishId = registration.parishId || parishSlug(registration.parishName, registration.city);
       if (currentParishId === parishId) {
         await env.AGAPAY_REGISTRATIONS.put(parishIdIndexKey(parishId), key.name);
         return { key: key.name, registration };
@@ -2470,7 +2474,20 @@ export async function handleRegistrations(request, env) {
   const reference = `AGP-REG-${Date.now().toString(36).toUpperCase()}`;
   const subscriptionTierId = body.subscriptionTier || defaultSubscriptionTier(body);
   const tier = subscriptionTier(subscriptionTierId) || subscriptionTier(defaultSubscriptionTier(body));
-  const parishId = slugify(body.parishName);
+  const baseParishId = parishSlug(body.parishName, body.city);
+  let parishId = baseParishId;
+  if (await findRegistrationByParishId(env, parishId)) {
+    const stateSuffix = slugify(body.state);
+    parishId = stateSuffix ? `${baseParishId}-${stateSuffix}`.slice(0, 80) : baseParishId;
+    let collision = await findRegistrationByParishId(env, parishId);
+    let suffix = 2;
+    while (collision && suffix < 100) {
+      parishId = `${baseParishId}-${stateSuffix ? `${stateSuffix}-` : ""}${suffix}`.slice(0, 80);
+      collision = await findRegistrationByParishId(env, parishId);
+      suffix += 1;
+    }
+    if (collision) return json({ error: "Unable to create a unique parish ID. Please contact AGAPAY support." }, { status: 409 });
+  }
   const parishDashboardToken = generateDashboardToken();
   const registration = {
     reference,
@@ -2479,6 +2496,7 @@ export async function handleRegistrations(request, env) {
     canonicalVerification: "pending_review",
     ...body,
     parishId,
+    parishUsername: parishId,
     parishDashboardToken,
     parishDashboardTokenTemporary: true,
     parishDashboardTokenCreatedAt: new Date().toISOString(),
@@ -2566,13 +2584,13 @@ export async function handleCheckout(request, env) {
   const successUrl = donorDashboardReturn
     ? `${appUrl}/myagapay?gift_success=1&session_id={CHECKOUT_SESSION_ID}`
     : campaignPageCheckout
-    ? `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&giftType=campaign&campaign=${encodeURIComponent(body.campaign || "")}&success=1&session_id={CHECKOUT_SESSION_ID}`
-    : `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&success=1&session_id={CHECKOUT_SESSION_ID}`;
+    ? `${appUrl}/giving/${encodeURIComponent(parish.id)}?giftType=campaign&campaign=${encodeURIComponent(body.campaign || "")}&success=1&session_id={CHECKOUT_SESSION_ID}`
+    : `${appUrl}/giving/${encodeURIComponent(parish.id)}?success=1&session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = donorDashboardReturn
     ? `${appUrl}/myagapay/giving/give?checkout_canceled=1`
     : campaignPageCheckout && returnPath
     ? `${appUrl}${returnPath}${returnPath.includes("?") ? "&" : "?"}checkout_canceled=1`
-    : `${appUrl}/give/form?parish=${encodeURIComponent(parish.id)}&canceled=1`;
+    : `${appUrl}/giving/${encodeURIComponent(parish.id)}?canceled=1`;
   const {
     chargeCents,
     estimatedStripeFeeCents,
@@ -2818,7 +2836,7 @@ export async function handleDashboardInvite(request, env, reference) {
   const parishDashboardToken = registration.parishDashboardToken || generateDashboardToken();
   const withToken = {
     ...registration,
-    parishId: registration.parishId || slugify(registration.parishName),
+    parishId: registration.parishId || parishSlug(registration.parishName, registration.city),
     parishDashboardToken,
     parishDashboardTokenTemporary: true,
     parishDashboardTokenCreatedAt: registration.parishDashboardTokenCreatedAt || new Date().toISOString()

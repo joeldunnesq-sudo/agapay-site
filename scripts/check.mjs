@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
+import { parishSlug } from "../src/lib/format.js";
 
 const worker = await readFile("src/worker.js", "utf8");
 const core = await readFile("src/lib/core.js", "utf8");
@@ -11,6 +12,8 @@ const stripeHandler = await readFile("src/handlers/stripe.js", "utf8");
 const wrangler = await readFile("wrangler.toml", "utf8");
 const d1Migration = await readFile("migrations/0001_production_records.sql", "utf8");
 const backendSources = worker + core + stripeConnect + adminHandler + donorHandler + parishHandler + stripeHandler;
+assert.equal(parishSlug("St. Fiacre Orthodox Church", "Munster"), "st-fiacre-munster", "parish usernames should include patronal name and city");
+assert.equal(parishSlug("Holy Resurrection Orthodox Church", "Boston"), "holy-resurrection-boston", "parish usernames should normalize common church suffixes");
 assert.ok(wrangler.includes('binding = "AGAPAY_DB"'), "wrangler should bind the production D1 database");
 assert.ok(d1Migration.includes("CREATE TABLE IF NOT EXISTS registrations"), "D1 migration should create registrations table");
 assert.ok(backendSources.includes("AGAPAY_DB"), "worker should prefer D1 for production records");
@@ -46,6 +49,7 @@ assert.ok(backendSources.includes("handleAdminReleaseStatus"), "worker should ex
 assert.ok(worker.includes('url.pathname === "/api/admin/release-status"'), "worker should route the admin release status endpoint");
 assert.ok(worker.includes('["/parish/login", "/giving/login"]'), "legacy parish login should redirect to the Giving login URL");
 assert.ok(worker.includes('url.pathname === "/giving/login"'), "worker should serve the Giving login URL from the parish login shell");
+assert.ok(worker.includes('/^\\/giving\\/[^/]+\\/?$/'), "worker should serve parish giving pages at /giving/:parish");
 assert.ok(worker.includes('LEGACY_GIVING_PAGE_REDIRECTS'), "worker should redirect legacy Giving marketing URLs to the Giving subtree");
 for (const givingPage of ["features", "how-it-works", "pricing", "why"]) {
   assert.ok(worker.includes(`["/${givingPage}", "/giving/${givingPage}"]`), `worker should redirect /${givingPage} to /giving/${givingPage}`);
@@ -112,10 +116,16 @@ assert.ok(giveHtml.includes("/security.js") && giveHtml.includes("data-agapay-tu
 assert.ok(giveHtml.includes("agapaySecurityPayload"), "public giving checkout should send Turnstile tokens when configured");
 const campaignPage = await readFile("public/give/parish-giving/app.js", "utf8");
 assert.ok(campaignPage.includes("/api/campaign?"), "campaign share page should load campaign data from the Worker API");
+assert.ok(campaignPage.includes('`${slug}-campaign`'), "campaign routes should resolve campaign names that already end in Campaign without breaking lookup");
 assert.ok(campaignPage.includes("/api/create-checkout-session") && campaignPage.includes('giftType: "campaign"'), "campaign share page should create a direct Stripe checkout for campaign gifts");
+assert.ok(campaignPage.includes('"/giving/"') && campaignPage.includes('"-campaign"'), "campaign share page should build canonical nested campaign URLs");
 assert.ok(worker.includes('url.pathname === "/api/campaign"'), "worker should route public campaign lookup API");
 assert.ok(worker.includes('endsWith("/campaign-upload")'), "worker should route authenticated parish campaign photo uploads");
 assert.ok(worker.includes('startsWith("/give/parish-giving/")'), "worker should serve campaign share URLs instead of the generic giving form");
+assert.ok(worker.includes("canonicalCampaignPathFromLegacy"), "worker should redirect legacy campaign URLs to canonical nested campaign routes");
+assert.ok(worker.includes('/^\\/giving\\/[^/]+\\/[^/]+-campaign\\/?$/'), "worker should serve canonical parish campaign routes");
+const parishDashboardApp = await readFile("public/parish/app.js", "utf8");
+assert.ok(parishDashboardApp.includes("campaignPublicUrl") && parishDashboardApp.includes("-campaign"), "parish dashboard should publish canonical nested campaign URLs");
 assert.ok(donorApp.includes("handleDonorCheckoutReturn"), "donor dashboard should confirm returned Stripe checkout sessions");
 const givingOverview = await readFile("public/give/index.html", "utf8");
 assert.ok(givingOverview.includes("Orthodox Giving App &amp; Tithing Software") || givingOverview.includes("Orthodox Giving App & Tithing Software"), "Giving overview should target Orthodox giving and tithing search intent");

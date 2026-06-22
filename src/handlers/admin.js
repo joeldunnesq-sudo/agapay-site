@@ -47,6 +47,7 @@ import {
 
 import {
   monthLabel,
+  parishSlug,
   slugify,
 } from "../lib/format.js";
 
@@ -931,7 +932,7 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
     }
 
     const parishId = nextStatus === "verified"
-      ? current.parishId || slugify(current.parishName)
+      ? current.parishId || parishSlug(current.parishName, current.city)
       : current.parishId;
     const requestedDashboardToken = body.parishDashboardToken !== undefined
       ? String(body.parishDashboardToken || "").trim()
@@ -948,6 +949,7 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
       ...current,
       status: nextStatus,
       parishId,
+      parishUsername: current.parishUsername || parishId,
       givingStatus: body.givingStatus || current.givingStatus || (nextStatus === "verified" ? "active" : "hidden"),
       stripeAccountStatus: body.stripeAccountStatus || current.stripeAccountStatus || "not_started",
       stripeAccountId: body.stripeAccountId ?? current.stripeAccountId ?? "",

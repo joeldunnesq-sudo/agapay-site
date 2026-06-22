@@ -832,8 +832,8 @@ async function withMockFetch(handler, run) {
       assert.equal(init.headers["Stripe-Account"], "acct_connected_test");
       const form = new URLSearchParams(init.body);
       assert.equal(form.get("mode"), "payment");
-      assert.equal(form.get("success_url"), "https://agapay.test/give/form?parish=st-checkout&success=1&session_id={CHECKOUT_SESSION_ID}");
-      assert.equal(form.get("cancel_url"), "https://agapay.test/give/form?parish=st-checkout&canceled=1");
+      assert.equal(form.get("success_url"), "https://agapay.test/giving/st-checkout?success=1&session_id={CHECKOUT_SESSION_ID}");
+      assert.equal(form.get("cancel_url"), "https://agapay.test/giving/st-checkout?canceled=1");
       assert.equal(form.get("payment_intent_data[application_fee_amount]"), "48");
       assert.equal(form.get("metadata[parish_id]"), "st-checkout");
       assert.equal(form.get("metadata[donor_email]"), "giver@example.com");

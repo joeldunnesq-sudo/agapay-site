@@ -210,8 +210,20 @@ async function resolveStaticPath(urlPath) {
   if (pathname === "/give" || pathname === "/give/" || pathname === "/giving" || pathname === "/giving/") {
     pathname = "/give/index.html";
   }
-  if (["/giving/features", "/giving/how-it-works", "/giving/pricing", "/giving/why"].includes(pathname)) {
+  if (pathname === "/giving/login" || pathname === "/giving/login/") {
+    pathname = "/parish/login.html";
+  } else if (pathname === "/giving/find-church") {
+    pathname = "/give/find-church.html";
+  } else if (pathname === "/giving/parish-giving") {
+    pathname = "/give/parish-giving.html";
+  } else if (["/giving/recurring-donations", "/giving/fundraising", "/giving/event-payments"].includes(pathname)) {
+    pathname = pathname.replace(/^\/giving\//, "/give/") + ".html";
+  } else if (/^\/giving\/[^/]+\/[^/]+-campaign\/?$/.test(pathname)) {
+    pathname = "/give/parish-giving/index.html";
+  } else if (["/giving/features", "/giving/how-it-works", "/giving/pricing", "/giving/why"].includes(pathname)) {
     pathname = `${pathname}.html`;
+  } else if (/^\/giving\/[^/]+\/?$/.test(pathname)) {
+    pathname = "/give/form.html";
   } else if (pathname.startsWith("/giving/")) {
     pathname = pathname.replace(/^\/giving\//, "/give/");
   }
@@ -227,6 +239,34 @@ export const server = http.createServer(async (req, res) => {
     if (req.url.startsWith("/api/") && await handleApi(req, res)) return;
 
     const requestUrl = new URL(req.url, `http://${req.headers.host}`);
+    if (req.method === "GET" || req.method === "HEAD") {
+      const legacyParishPath = requestUrl.pathname.match(/^\/give\/([^/]+)\/?$/);
+      const reservedGivePaths = new Set(["form", "find-church", "parish-giving", "recurring-donations", "fundraising", "event-payments"]);
+      if (legacyParishPath && !reservedGivePaths.has(legacyParishPath[1])) {
+        requestUrl.pathname = `/giving/${encodeURIComponent(decodeURIComponent(legacyParishPath[1]))}`;
+        res.writeHead(301, { Location: requestUrl.toString() });
+        res.end();
+        return;
+      }
+      const legacyParishId = String(requestUrl.searchParams.get("parish") || "").trim();
+      if (["/give/form", "/give/form.html"].includes(requestUrl.pathname) && legacyParishId) {
+        requestUrl.pathname = `/giving/${encodeURIComponent(legacyParishId)}`;
+        requestUrl.searchParams.delete("parish");
+        res.writeHead(301, { Location: requestUrl.toString() });
+        res.end();
+        return;
+      }
+      const legacyCampaign = requestUrl.pathname.match(/^\/(?:give|giving)\/parish-giving\/([^/]+)\/?$/);
+      const parishId = String(requestUrl.searchParams.get("parish") || "").trim();
+      if (legacyCampaign && parishId) {
+        const campaignSlug = decodeURIComponent(legacyCampaign[1]).replace(/-campaign$/, "");
+        requestUrl.pathname = `/giving/${encodeURIComponent(parishId)}/${encodeURIComponent(campaignSlug)}-campaign`;
+        requestUrl.searchParams.delete("parish");
+        res.writeHead(301, { Location: requestUrl.toString() });
+        res.end();
+        return;
+      }
+    }
     const legacyGivingRedirects = new Map([
       ["/features", "/giving/features"],
       ["/features.html", "/giving/features"],

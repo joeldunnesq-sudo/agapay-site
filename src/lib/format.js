@@ -25,3 +25,14 @@ export function slugify(value) {
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
 }
+
+export function parishSlug(parishName, city = "") {
+  const name = String(parishName || "")
+    .replace(/\b(?:greek|russian|antiochian|serbian|romanian|bulgarian|ukrainian|american)?\s*orthodox\b.*$/i, "")
+    .replace(/\b(?:church|parish|mission|cathedral|monastery|skete)\b.*$/i, "")
+    .trim();
+  const nameSlug = slugify(name || parishName || "parish");
+  const citySlug = slugify(city);
+  if (!citySlug || nameSlug === citySlug || nameSlug.endsWith(`-${citySlug}`)) return nameSlug;
+  return `${nameSlug}-${citySlug}`.slice(0, 80).replace(/-+$/g, "");
+}
