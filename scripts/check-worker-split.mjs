@@ -8,6 +8,8 @@ const sourceFiles = [
   "src/lib/format.js",
   "src/lib/registrations.js",
   "src/lib/stripe-connect.js",
+  "src/learn/community-store.js",
+  "src/learn/handlers.js",
   "src/handlers/parish.js",
   "src/handlers/donor.js",
   "src/handlers/admin.js",

@@ -1,8 +1,9 @@
-import { json, unauthorized } from "../lib/core.js";
+import { json, rateLimit, unauthorized } from "../lib/core.js";
 import { closeLearnTerm } from "./academic-records.js";
 import { assertLearnEnabled, enabledProductSlugs, LEARN_PRODUCT_SLUG, learnCoOpEnabled } from "./access.js";
 import { LEARN_FREE_PRINT_LIMIT, learnBillingCancel, learnBillingCheckout, learnBillingStatus, learnRequestHasFamilyAccessAsync } from "./billing.js";
 import { googleCalendarCallback, googleCalendarConnect, googleCalendarPreview, googleCalendarStatus, googleCalendarSync } from "./google-calendar.js";
+import { flagLearnCommunityResource, listLearnCommunityResources, submitLearnCommunityResource } from "./community-store.js";
 import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-source.js";
 import { enrichLiturgicalDayWithOrthocal, fetchOrthocalDay, handleLearnReadingsStatus, orthocalSaintStories } from "./readings-source.js";
 import { buildLearnPrintDocument, buildLearnReportPrintDocument, printDocumentFilename, renderPrintDocumentPdf } from "./print-engine.js";
@@ -380,12 +381,41 @@ export async function handleLearnCommunity(request, env) {
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   const { repository } = auth;
+  const communityResources = await listLearnCommunityResources(env);
   return json({
     ok: true,
     community: repository.getCommunity({
-      facebookGroupUrl: String(env.AGAPAY_LEARN_FACEBOOK_GROUP_URL || "").trim()
+      facebookGroupUrl: String(env.AGAPAY_LEARN_FACEBOOK_GROUP_URL || "").trim(),
+      communityResources
     })
   });
+}
+
+export async function handleLearnCommunitySubmit(request, env) {
+  const blocked = assertLearnEnabled(env);
+  if (blocked) return blocked;
+  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "learn-community-submit", { limit: 10, windowSeconds: 86400 });
+  if (limited) return limited;
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return unauthorized();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") return json({ ok: false, error: "Resource submission was invalid." }, { status: 400 });
+  const result = await submitLearnCommunityResource(env, identity, body);
+  return json(result, { status: result.ok ? 201 : result.status || 500 });
+}
+
+export async function handleLearnCommunityFlag(request, env, resourceId = "") {
+  const blocked = assertLearnEnabled(env);
+  if (blocked) return blocked;
+  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "learn-community-flag", { limit: 20, windowSeconds: 300 });
+  if (limited) return limited;
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return unauthorized();
+  const body = await request.json().catch(() => ({}));
+  const result = await flagLearnCommunityResource(env, identity, resourceId, body.reason);
+  return json(result, { status: result.ok ? 200 : result.status || 500 });
 }
 
 export async function handleLearnReports(request, env) {

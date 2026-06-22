@@ -803,6 +803,8 @@ export function toCommunityViewModel(rawPayload) {
     detail: text(community.detail, ""),
     facebookGroupUrl: text(community.facebookGroupUrl, ""),
     resources: simpleList(community.communityResources, (resource) => ({
+      id: text(resource.id, ""),
+      source: text(resource.source, "curated"),
       title: text(resource.title, "Resource"),
       category: text(resource.category, ""),
       resourceType: text(resource.resourceType, "Resource"),
@@ -817,7 +819,8 @@ export function toCommunityViewModel(rawPayload) {
       tags: safeArray(resource.tags).length ? safeArray(resource.tags).map((tag) => text(tag)) : [text(resource.category, "Resource"), "Orthodox", "Homeschool"].filter(Boolean),
       votes: Number(resource.votes || 0),
       pinned: Boolean(resource.pinned || resource.vetted),
-      vetted: Boolean(resource.vetted)
+      vetted: Boolean(resource.vetted),
+      flagCount: safeArray(resource.flags).length
     })).map((resource, index) => ({
       ...resource,
       color: ACCENTS[index % ACCENTS.length],

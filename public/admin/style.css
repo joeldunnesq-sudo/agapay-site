@@ -1454,6 +1454,35 @@
       line-height: 1.45;
       margin-top: 0.18rem;
     }
+
+    .learn-moderation-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .learn-moderation-summary span {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--cream);
+      padding: 11px;
+      color: var(--stone);
+      font-size: 12px;
+    }
+
+    .learn-moderation-summary strong { display: block; color: var(--deep); font-size: 20px; }
+    .learn-moderation-list { display: grid; gap: 10px; }
+    .learn-moderation-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: #fff; }
+    .learn-moderation-row.is-flagged { border-color: #9a4b42; box-shadow: inset 4px 0 #9a4b42; }
+    .learn-moderation-copy { display: grid; gap: 4px; min-width: 0; }
+    .learn-moderation-copy a { color: var(--gold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .learn-moderation-copy small { color: var(--stone); line-height: 1.4; }
+    .learn-moderation-status { color: var(--gold); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .learn-moderation-actions { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+    .learn-flag-reasons { display: grid; gap: 4px; margin-top: 5px; }
+    .learn-flag-reasons span { border-left: 3px solid #9a4b42; padding-left: 8px; color: #7a3933; font-size: 12px; }
+    button.danger { border: 1px solid #9a4b42; background: #fff4f2; color: #7a3933; }
     .growth-bar.danger {
       background: linear-gradient(180deg, #9d3b33, #6e2f2a);
     }
@@ -1474,6 +1503,10 @@
         align-items: stretch;
         flex-direction: column;
       }
+
+      .learn-moderation-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .learn-moderation-row { grid-template-columns: 1fr; }
+      .learn-moderation-actions { justify-content: flex-start; }
     }
     .growth-bars {
       min-height: 170px;

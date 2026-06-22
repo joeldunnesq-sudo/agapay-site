@@ -650,6 +650,27 @@
       `).join('');
     }
 
+    function renderLearnCommunityModeration(moderation = {}) {
+      const list = document.getElementById('learnCommunityModeration');
+      if (!list) return;
+      const counts = moderation.counts || {};
+      const resources = moderation.resources || [];
+      list.innerHTML = `
+        <div class="learn-moderation-summary">
+          <span><strong>${Number(counts.pending || 0)}</strong> Pending</span>
+          <span><strong>${Number(counts.flagged || 0)}</strong> Flagged</span>
+          <span><strong>${Number(counts.approved || 0)}</strong> Approved</span>
+          <span><strong>${Number(counts.hidden || 0)}</strong> Hidden</span>
+        </div>
+        <div class="learn-moderation-list">${resources.map((item) => {
+          const flags = Array.isArray(item.flags) ? item.flags : [];
+          return `<article class="learn-moderation-row ${flags.length ? 'is-flagged' : ''}">
+            <div class="learn-moderation-copy"><span class="learn-moderation-status">${escapeHtml(readable(item.status || 'pending'))}${flags.length ? ` · ${flags.length} flag${flags.length === 1 ? '' : 's'}` : ''}</span><strong>${escapeHtml(item.title || 'Untitled resource')}</strong><a href="${escapeHtml(item.url || '#')}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.url || '')}</a><small>${escapeHtml(item.description || '')}</small><small>Submitted by ${escapeHtml(item.submittedBy || 'Unknown')} · ${escapeHtml(shortDate(item.createdAt))}</small>${flags.length ? `<div class="learn-flag-reasons">${flags.map((flag) => `<span>${escapeHtml(flag.reason || 'Flagged for review')}</span>`).join('')}</div>` : ''}</div>
+            <div class="learn-moderation-actions"><button class="gold btn-sm" onclick="moderateLearnCommunity('${jsAttr(item.id || '')}','approved',this)">Approve</button><button class="secondary btn-sm" onclick="moderateLearnCommunity('${jsAttr(item.id || '')}','hidden',this)">Hide</button><button class="danger btn-sm" onclick="moderateLearnCommunity('${jsAttr(item.id || '')}','removed',this)">Remove</button></div>
+          </article>`;
+        }).join('') || '<div class="revenue-empty">No community submissions are waiting for review.</div>'}</div>`;
+    }
+
     function renderLearnAdmin(data = {}) {
       const pane = document.getElementById('learnAdminPane');
       if (!pane) return;
@@ -709,6 +730,28 @@
         </article>
       `;
       renderLearnScholarships(data.scholarships || []);
+      renderLearnCommunityModeration(data.communityModeration || {});
+    }
+
+    async function moderateLearnCommunity(resourceId, status, btn) {
+      if (!resourceId) return;
+      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+      try {
+        const response = await fetch(`/api/admin/learn/community/${encodeURIComponent(resourceId)}`, {
+          method: 'PATCH',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ status })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (handleAuthFailure(response, result)) return;
+        if (!response.ok) throw new Error(result.error || 'Unable to update community resource');
+        setStatus(`Community resource marked ${status}.`, 'success');
+        await loadLearnAdmin();
+      } catch (err) {
+        setStatus(err.message, 'error');
+      } finally {
+        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+      }
     }
 
     async function loadLearnAdmin(btn) {

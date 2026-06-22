@@ -2004,10 +2004,18 @@ body {
     grid-template-columns: 1fr !important;
   }
 
+  .learn-week-overview {
+    grid-template-columns: 1fr !important;
+  }
+
   .learn-community-hero > div:last-child {
     border-left: 0 !important;
     border-top: 1px solid rgba(201, 162, 91, 0.35);
     padding-left: 0 !important;
     padding-top: 18px;
+  }
+
+  [data-community-suggest-form] > div:nth-child(2) {
+    grid-template-columns: 1fr !important;
   }
 }

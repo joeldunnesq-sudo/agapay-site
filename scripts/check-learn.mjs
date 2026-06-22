@@ -89,12 +89,14 @@ assert(learnShell.includes("simpleSetupPayload"), "Learn setup wizard should sav
 assert(learnShell.includes("Create a gentle starter week"), "Learn setup wizard should offer a starter-week plan.");
 assert(learnShell.includes('title: "Starter Language Arts"') && learnShell.includes('title: "Morning Prayers"') && learnShell.includes('title: "Family Read-Aloud"'), "The starter-week option should persist real subject, Church rhythm, and enrichment data.");
 assert(learnShell.includes("TOGETHER THIS WEEK") && learnShell.includes("DAILY CHURCH RHYTHMS"), "Learn dashboard should distinguish weekly family work from daily Church rhythms.");
+assert(learnShell.includes("learn-week-overview") && learnShell.includes("learn-child-week-grid") && learnShell.includes("WEEK AT A GLANCE"), "Learn dashboard should keep household summaries separate from a scalable child grid.");
 assert(learnShell.includes("data-learn-completion") && learnShell.includes("/api/learn/completion"), "Learn dashboard should persist daily and weekly completion through the backend.");
 assert(learnShell.includes("Grace Mode lightens a day without erasing the plan"), "The setup wizard should explain Grace Mode and its non-destructive behavior.");
 assert(learnShell.includes("No permanent choice is required"), "The Grace Mode wizard step should explain that families can change modes day by day.");
 assert(learnShell.includes('id="reports"') && learnShell.includes("Reports & Records"), "Print Center should contain the staged Reports and Records workspace.");
 assert(!learnShell.includes('apiGet("/api/learn/reports")'), "The Learn shell should not load a standalone Reports screen.");
 assert(learnShell.includes("data-community-category") && learnShell.includes("data-community-resource-type") && learnShell.includes("data-community-media-type"), "Community Resources should filter by subject, resource type, and media type.");
+assert(learnShell.includes("data-community-suggest-form") && learnShell.includes("data-community-flag"), "Community Resources should support moderated submissions and member flags.");
 assert(learnShell.includes("Free plan: up to 2 children"), "Learn setup wizard should clearly disclose the free child limit.");
 assert(learnShell.includes('href="/myagapay/learn/setup?simple=1">Quick Setup'), "Learn utility bar should open the simple setup wizard.");
 assert(learnShell.includes('class="learn-setup-savebar"'), "Advanced Setup should use a dedicated reachable save bar.");

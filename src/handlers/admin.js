@@ -66,6 +66,11 @@ import {
 } from "../learn/billing.js";
 
 import {
+  listLearnCommunityResources,
+  moderateLearnCommunityResource,
+} from "../learn/community-store.js";
+
+import {
   listYtdStripeCharges,
   stripeAccountStatus,
   stripeFormRequest,
@@ -308,15 +313,36 @@ export async function handleAdminLearnSummary(request, env) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const records = await listLearnBillingRecords(env);
   const scholarships = await listLearnScholarships(env);
+  const communityResources = await listLearnCommunityResources(env, { includeAll: true });
   return json({
     ok: true,
     learn: {
       subscriptions: learnBillingMetrics(records),
       scholarships,
+      communityModeration: {
+        counts: communityResources.reduce((counts, resource) => {
+          counts[resource.status] = (counts[resource.status] || 0) + 1;
+          if ((resource.flags || []).length) counts.flagged += 1;
+          return counts;
+        }, { pending: 0, approved: 0, hidden: 0, removed: 0, flagged: 0 }),
+        resources: communityResources.slice(0, 100)
+      },
       stripeConfigured: Boolean(env.STRIPE_SECRET_KEY),
       promotionCodesEnabled: true
     }
   });
+}
+
+export async function handleAdminLearnCommunity(request, env, resourceId = "") {
+  if (request.method !== "PATCH") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "admin-learn-community", { limit: 60, windowSeconds: 300 });
+  if (limited) return limited;
+  const adminContext = await requireAdminContext(request, env);
+  if (!adminContext) return unauthorized();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") return json({ ok: false, error: "Moderation update was invalid." }, { status: 400 });
+  const result = await moderateLearnCommunityResource(env, adminContext, resourceId, body);
+  return json(result, { status: result.ok ? 200 : result.status || 500 });
 }
 
 export async function handleAdminLearnScholarship(request, env) {

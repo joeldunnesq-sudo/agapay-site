@@ -213,6 +213,12 @@ async function withMockFetch(handler, run) {
   const communityNoAuth = await worker.fetch(request("/api/learn/community"), testEnv);
   assert.equal(communityNoAuth.status, 401);
 
+  const communitySubmitNoAuth = await worker.fetch(request("/api/learn/community/resources", {
+    method: "POST",
+    body: { title: "Unsafe", url: "https://example.com", description: "Should not save" }
+  }), testEnv);
+  assert.equal(communitySubmitNoAuth.status, 401);
+
   const completionNoAuth = await worker.fetch(request("/api/learn/completion", {
     method: "POST",
     body: { itemId: "morning-prayers", scope: "daily", completed: true, civilDate: "2026-06-19" }
@@ -334,6 +340,56 @@ async function withMockFetch(handler, run) {
   const alphaCommunityBody = await json(alphaCommunity);
   assert.equal(alphaCommunityBody.community.comingSoon, false);
   assert.ok(alphaCommunityBody.community.communityResources.length > 0);
+
+  const alphaCommunitySubmit = await worker.fetch(request("/api/learn/community/resources", {
+    method: "POST",
+    headers: alpha.headers,
+    body: {
+      title: "Orthodox Nature Study",
+      url: "https://example.com/nature-study",
+      description: "A family nature study resource.",
+      category: "Nature Study",
+      resourceType: "Printable",
+      mediaType: "PDF"
+    }
+  }), testEnv);
+  assert.equal(alphaCommunitySubmit.status, 201);
+  const submittedResource = (await json(alphaCommunitySubmit)).resource;
+  assert.equal(submittedResource.status, "pending");
+
+  const communityBeforeApproval = await worker.fetch(request("/api/learn/community", { headers: alpha.headers }), testEnv);
+  assert.equal((await json(communityBeforeApproval)).community.communityResources.some((item) => item.id === submittedResource.id), false);
+
+  const moderationAdmin = await adminSession(testEnv);
+  const approveCommunity = await worker.fetch(request(`/api/admin/learn/community/${submittedResource.id}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${moderationAdmin.token}` },
+    body: { status: "approved" }
+  }), testEnv);
+  assert.equal(approveCommunity.status, 200);
+
+  const communityAfterApproval = await worker.fetch(request("/api/learn/community", { headers: alpha.headers }), testEnv);
+  assert.equal((await json(communityAfterApproval)).community.communityResources.some((item) => item.id === submittedResource.id), true);
+
+  const betaFlag = await worker.fetch(request(`/api/learn/community/resources/${submittedResource.id}/flag`, {
+    method: "POST",
+    headers: beta.headers,
+    body: { reason: "Please review for Orthodox consistency." }
+  }), testEnv);
+  assert.equal(betaFlag.status, 200);
+
+  const moderationSummary = await worker.fetch(request("/api/admin/learn/summary", { headers: { Authorization: `Bearer ${moderationAdmin.token}` } }), testEnv);
+  assert.equal((await json(moderationSummary)).learn.communityModeration.counts.flagged, 1);
+
+  const hideCommunity = await worker.fetch(request(`/api/admin/learn/community/${submittedResource.id}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${moderationAdmin.token}` },
+    body: { status: "hidden" }
+  }), testEnv);
+  assert.equal(hideCommunity.status, 200);
+
+  const communityAfterHide = await worker.fetch(request("/api/learn/community", { headers: alpha.headers }), testEnv);
+  assert.equal((await json(communityAfterHide)).community.communityResources.some((item) => item.id === submittedResource.id), false);
 
   const alphaPrintCenter = await worker.fetch(request("/api/learn/print-center", {
     headers: alpha.headers

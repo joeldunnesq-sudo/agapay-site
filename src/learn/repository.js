@@ -696,7 +696,7 @@ export class SeedLearnRepository {
     };
   }
 
-  getCommunity({ facebookGroupUrl = "" } = {}) {
+  getCommunity({ facebookGroupUrl = "", communityResources = [] } = {}) {
     return {
       household: this.seed.household,
       comingSoon: false,
@@ -704,7 +704,7 @@ export class SeedLearnRepository {
       subtitle: "A growing library of trusted resources for Orthodox homeschool families.",
       detail: "Search by subject, resource type, or media format. AGAPAY curates the library; the Facebook group is the place for conversation, questions, and encouragement.",
       facebookGroupUrl,
-      communityResources: this.seed.communityResources || [],
+      communityResources: [...(this.seed.communityResources || []), ...communityResources],
       sharingGuidance: [
         "Resources are reviewed before being added to the AGAPAY library.",
         "Use the Facebook group to ask questions and recommend resources.",

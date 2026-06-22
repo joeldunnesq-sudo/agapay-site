@@ -656,17 +656,17 @@ function renderDashboard(vm) {
           ${vm.churchRhythms.map((r) => `<div style="flex:1;min-width:170px;display:flex;align-items:center;gap:12px;">${completionCheck(r, "daily", r.label)}<span style="line-height:1.25;"><span style="display:block;font-size:16px;color:var(--ink);font-weight:500;">${html(r.label)}</span><span style="display:block;font-size:13px;color:var(--muted);">${html(r.sub)}</span></span></div>`).join("")}
         </div>
       </div>
-      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
-        <div style="flex:1.25 1 240px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+      <div class="learn-week-overview" style="display:grid;grid-template-columns:minmax(0,1.65fr) minmax(260px,.75fr);gap:16px;align-items:stretch;">
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;"><span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:17px;">⌂</span><span style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;">TOGETHER THIS WEEK</span></span><small style="color:var(--muted);">Resets Sunday</small></div>
           <div style="display:flex;flex-direction:column;gap:13px;">${togetherThisWeek}</div>
         </div>
-        ${vm.childColumns.map((col) => `<div style="flex:1 1 185px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 1px 3px rgba(20,40,70,.04);"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line);"><span style="width:34px;height:34px;border-radius:50%;background:${col.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-size:16px;">${html(col.initial)}</span><div style="line-height:1.15;"><span style="display:block;font-size:10px;letter-spacing:.12em;color:var(--gold);font-weight:600;">${html(col.tag)}</span><span style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);">${html(col.name)} <span style="color:var(--muted);font-size:13px;font-family:'EB Garamond',serif;">• Age ${html(col.age)}</span></span></div></div><div style="display:flex;flex-direction:column;gap:8px;">${col.tasks.map((t) => `<div style="display:flex;align-items:center;gap:9px;background:var(--paper2);border:1px solid var(--line);border-radius:9px;padding:9px 10px;"><a href="/myagapay/learn/planner" style="flex:1;min-width:0;line-height:1.15;text-decoration:none;color:inherit;"><span style="display:block;font-weight:600;font-size:14px;color:var(--ink);">${html(t.title)}</span><span style="display:block;font-size:11.5px;color:var(--muted);">${html(t.sub)}</span></a><span style="color:var(--muted);font-size:11.5px;flex:none;">${html(t.time)}</span>${completionCheck(t, "weekly", `${col.name}: ${t.title}`)}</div>`).join("")}</div></div>`).join("")}
-        <div style="flex:1.05 1 210px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
-          <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;"><span style="color:var(--gold);font-size:16px;">✥</span><span style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;">THIS WEEK</span></div>
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;"><span style="color:var(--gold);font-size:16px;">✥</span><span style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;">WEEK AT A GLANCE</span></div>
           <div style="display:flex;flex-direction:column;gap:16px;">${vm.thisWeek.map((w) => `<div style="display:flex;align-items:center;gap:13px;"><span style="width:44px;height:44px;border-radius:50%;background:${w.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-size:20px;">${html(w.icon)}</span><div style="line-height:1.2;"><span style="display:block;font-family:'Cormorant Garamond',serif;font-size:23px;font-weight:600;color:var(--ink);">${html(w.big)}</span><span style="display:block;font-size:13.5px;color:#3a4256;font-weight:500;">${html(w.label)}</span><span style="display:block;font-size:12.5px;color:var(--muted);">${html(w.sub)}</span></div></div>`).join("")}<a href="/myagapay/learn/planner" style="margin-top:4px;width:100%;background:var(--paper2);border:1px solid var(--line);border-radius:10px;padding:11px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;color:var(--ink);font-weight:500;text-decoration:none;">View Full Week <span style="color:var(--gold);">→</span></a></div>
         </div>
       </div>
+      <section style="display:grid;gap:12px;"><div style="display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;"><div><div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:800;text-transform:uppercase;">Forms & Children</div><h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1;margin:5px 0 0;color:var(--ink);">Individual work this week</h2></div><small style="color:var(--muted);">${vm.childColumns.length} ${vm.childColumns.length === 1 ? "learner" : "learners"}</small></div><div class="learn-child-week-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px;align-items:start;">${vm.childColumns.map((col) => `<article style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 1px 3px rgba(20,40,70,.04);"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line);"><span style="width:34px;height:34px;border-radius:50%;background:${col.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-size:16px;">${html(col.initial)}</span><div style="line-height:1.15;"><span style="display:block;font-size:10px;letter-spacing:.12em;color:var(--gold);font-weight:600;">${html(col.tag)}</span><span style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);">${html(col.name)} <span style="color:var(--muted);font-size:13px;font-family:'EB Garamond',serif;">• Age ${html(col.age)}</span></span></div></div><div style="display:flex;flex-direction:column;gap:8px;">${col.tasks.map((t) => `<div style="display:flex;align-items:center;gap:9px;background:var(--paper2);border:1px solid var(--line);border-radius:9px;padding:9px 10px;"><a href="/myagapay/learn/planner" style="flex:1;min-width:0;line-height:1.15;text-decoration:none;color:inherit;"><span style="display:block;font-weight:600;font-size:14px;color:var(--ink);">${html(t.title)}</span><span style="display:block;font-size:11.5px;color:var(--muted);">${html(t.sub)}</span></a><span style="color:var(--muted);font-size:11.5px;flex:none;">${html(t.time)}</span>${completionCheck(t, "weekly", `${col.name}: ${t.title}`)}</div>`).join("")}</div></article>`).join("")}</div></section>
     </section>
   `;
   return shell(vm, body);
@@ -1470,13 +1470,13 @@ function renderCommunity(vm) {
     <div><small style="display:block;color:var(--gold);font-weight:800;letter-spacing:.1em;text-transform:uppercase;">${html(resource.category)}</small><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:24px;line-height:1.08;margin-top:4px;color:var(--ink);">${html(resource.title)}</strong></div>
     <p style="font-size:14px;color:#3a4256;line-height:1.45;flex:1;margin:0;">${html(resource.desc)}</p>
     <div style="display:flex;gap:6px;flex-wrap:wrap;"><span style="font-size:11px;border:1px solid var(--line);border-radius:6px;padding:4px 7px;color:var(--muted);">${html(resource.resourceType)}</span><span style="font-size:11px;border:1px solid var(--line);border-radius:6px;padding:4px 7px;color:var(--muted);">${html(resource.mediaType)}</span><span style="font-size:11px;border:1px solid var(--line);border-radius:6px;padding:4px 7px;color:var(--muted);">${html(resource.ageRange)}</span></div>
-    <a href="${html(resource.url)}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding-top:11px;color:var(--navy);font-weight:800;text-decoration:none;">Open resource <span style="color:var(--gold);">↗</span></a>
+    <div style="display:flex;align-items:center;gap:9px;border-top:1px solid var(--line);padding-top:11px;"><a href="${html(resource.url)}" target="_blank" rel="noopener noreferrer" style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--navy);font-weight:800;text-decoration:none;">Open resource <span style="color:var(--gold);">↗</span></a>${resource.source === "community" ? `<button type="button" data-community-flag="${html(resource.id)}" title="Flag this resource for admin review" style="border:1px solid var(--line);background:var(--paper2);color:var(--muted);border-radius:8px;padding:6px 9px;font:inherit;font-size:12px;cursor:pointer;">Flag</button>` : ""}</div>
   </article>`).join("");
   return shell(vm, `
     <section data-screen-label="Community Resources" style="display:flex;flex-direction:column;gap:18px;">
       <div class="learn-community-hero" style="background:var(--navy);border:1px solid var(--gold);border-radius:16px;padding:clamp(20px,4vw,30px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:22px;align-items:center;color:#fffaf0;box-shadow:0 8px 24px rgba(4,20,39,.14);">
         <div><div style="color:var(--gold2);font-size:11px;letter-spacing:.18em;font-weight:800;text-transform:uppercase;">Moms helping moms</div><h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(34px,5vw,50px);line-height:.98;margin:8px 0 10px;">A thoughtful Orthodox homeschool community.</h2><p style="line-height:1.55;color:rgba(255,250,240,.82);margin:0;max-width:700px;">Ask practical questions, share encouragement, and learn from families walking the same road. The conversation lives in our moderated Facebook group.</p></div>
-        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:11px;border-left:1px solid rgba(201,162,91,.35);padding-left:22px;"><strong style="font-family:'Cormorant Garamond',serif;font-size:25px;">Join the conversation</strong><span style="color:rgba(255,250,240,.72);line-height:1.4;">Questions, curriculum experiences, feast-day ideas, and the ordinary wisdom of Orthodox homeschool life.</span>${facebookAction}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:11px;border-left:1px solid rgba(201,162,91,.35);padding-left:22px;"><strong style="font-family:'Cormorant Garamond',serif;font-size:25px;">Join the conversation</strong><span style="color:rgba(255,250,240,.72);line-height:1.4;">Questions, curriculum experiences, feast-day ideas, and the ordinary wisdom of Orthodox homeschool life.</span>${facebookAction}<button type="button" data-community-suggest style="border:1px solid rgba(255,255,255,.38);background:transparent;color:#fffaf0;border-radius:10px;padding:10px 15px;font:inherit;font-weight:800;cursor:pointer;">Suggest a resource</button></div>
       </div>
       <div class="learn-community-filters" style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;grid-template-columns:minmax(220px,1.5fr) repeat(3,minmax(150px,.7fr));gap:10px;align-items:end;">
         <label style="display:grid;gap:5px;color:var(--gold);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">Search<input data-community-search type="search" placeholder="Search saints, history, audio, books..." style="border:1px solid var(--line);border-radius:9px;background:var(--paper2);padding:11px 12px;font:inherit;color:var(--ink);min-width:0;"></label>
@@ -1488,6 +1488,7 @@ function renderCommunity(vm) {
       <div data-community-empty hidden style="border:1px dashed var(--gold);border-radius:14px;background:var(--paper);padding:28px;text-align:center;color:var(--muted);">No resources match those filters yet. Try a broader search.</div>
       <div data-community-grid style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,275px),1fr));gap:14px;">${cards}</div>
       ${panel("How the Library Works", `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;">${vm.guidance.map((item, index) => `<div style="display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:13px;"><span style="width:26px;height:26px;border-radius:50%;background:var(--navy);color:var(--gold2);display:grid;place-items:center;flex:none;">${index + 1}</span><span style="line-height:1.4;color:#33405a;">${html(item)}</span></div>`).join("")}</div>`, { icon: "✥" })}
+      <div data-community-suggest-dialog hidden style="position:fixed;inset:0;z-index:90;background:rgba(4,20,39,.72);padding:20px;align-items:center;justify-content:center;"><form data-community-suggest-form style="width:min(560px,100%);max-height:90vh;overflow:auto;background:var(--cream);border:1px solid var(--gold);border-radius:16px;box-shadow:0 22px 70px rgba(0,0,0,.35);"><div style="padding:19px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;"><div><h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0;">Suggest a Resource</h2><small style="color:var(--muted);">Submissions are reviewed before appearing in the library.</small></div><button type="button" data-community-suggest-close aria-label="Close" style="border:0;background:transparent;font-size:24px;color:var(--muted);cursor:pointer;">×</button></div><div style="padding:20px 22px;display:grid;grid-template-columns:1fr 1fr;gap:12px;"><label style="grid-column:1/-1;display:grid;gap:5px;">Title<input name="title" required maxlength="120" style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label><label style="grid-column:1/-1;display:grid;gap:5px;">Link<input name="url" type="url" required style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label><label style="display:grid;gap:5px;">Subject<input name="category" placeholder="Catechesis, History..." style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label><label style="display:grid;gap:5px;">Resource type<input name="resourceType" placeholder="Book, Website, Printable..." style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label><label style="display:grid;gap:5px;">Media type<input name="mediaType" placeholder="Article, Audio, PDF..." style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label><label style="display:grid;gap:5px;">Age range<input name="ageRange" placeholder="Family, Form II..." style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label><label style="grid-column:1/-1;display:grid;gap:5px;">Tags<input name="tags" placeholder="saints, narration, feast days" style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label><label style="grid-column:1/-1;display:grid;gap:5px;">Why it is helpful<textarea name="description" required maxlength="600" rows="4" style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;resize:vertical;"></textarea></label><div data-community-suggest-status style="grid-column:1/-1;color:var(--muted);font-size:13px;"></div></div><div style="padding:15px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:9px;"><button type="button" data-community-suggest-close style="border:1px solid var(--line);background:var(--paper);border-radius:9px;padding:10px 15px;font:inherit;cursor:pointer;">Cancel</button><button type="submit" style="border:1px solid var(--gold);background:var(--navy);color:#fff;border-radius:9px;padding:10px 16px;font:inherit;font-weight:800;cursor:pointer;">Send for Review</button></div></form></div>
     </section>
   `);
 }
@@ -2601,6 +2602,61 @@ function wireCommunity() {
 
   search?.addEventListener("input", applyFilters);
   [category, resourceType, mediaType].forEach((control) => control?.addEventListener("change", applyFilters));
+
+  root.querySelectorAll("[data-community-flag]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try {
+        await apiPost(`/api/learn/community/resources/${encodeURIComponent(button.dataset.communityFlag || "")}/flag`, {});
+        button.textContent = "Flagged";
+        showLearnDialog("Sent for Review", "An AGAPAY administrator will review this resource.", []);
+      } catch (error) {
+        button.disabled = false;
+        showLearnDialog("Could Not Flag Resource", error.message || "Please try again.", []);
+      }
+    });
+  });
+
+  const dialog = root.querySelector("[data-community-suggest-dialog]");
+  const form = root.querySelector("[data-community-suggest-form]");
+  const closeDialog = () => {
+    if (!dialog) return;
+    dialog.hidden = true;
+    dialog.style.display = "none";
+  };
+  root.querySelector("[data-community-suggest]")?.addEventListener("click", () => {
+    if (!dialog) return;
+    dialog.hidden = false;
+    dialog.style.display = "flex";
+  });
+  root.querySelectorAll("[data-community-suggest-close]").forEach((button) => button.addEventListener("click", closeDialog));
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const status = form.querySelector("[data-community-suggest-status]");
+    const submit = form.querySelector('button[type="submit"]');
+    const values = new FormData(form);
+    if (submit) submit.disabled = true;
+    if (status) status.textContent = "Sending your suggestion for review...";
+    try {
+      await apiPost("/api/learn/community/resources", {
+        title: values.get("title"),
+        url: values.get("url"),
+        category: values.get("category"),
+        resourceType: values.get("resourceType"),
+        mediaType: values.get("mediaType"),
+        ageRange: values.get("ageRange"),
+        tags: values.get("tags"),
+        description: values.get("description")
+      });
+      form.reset();
+      closeDialog();
+      showLearnDialog("Resource Submitted", "Thank you. The resource is now in the AGAPAY moderation queue and will not appear publicly until it is approved.", []);
+    } catch (error) {
+      if (status) status.textContent = error.message || "The resource could not be submitted.";
+    } finally {
+      if (submit) submit.disabled = false;
+    }
+  });
 }
 
 function wireReports(vm) {
