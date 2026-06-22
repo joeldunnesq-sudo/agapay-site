@@ -204,6 +204,37 @@ async function withMockFetch(handler, run) {
 
 {
   const testEnv = env();
+  const invalid = await worker.fetch(request("/api/parish-interest", {
+    method: "POST",
+    body: { parishName: "St. Test Orthodox Church" }
+  }), testEnv);
+  assert.equal(invalid.status, 400);
+
+  const submitted = await worker.fetch(request("/api/parish-interest", {
+    method: "POST",
+    body: {
+      parishionerName: "Faithful Parishioner",
+      parishionerEmail: "faithful@example.com",
+      parishName: "St. Test Orthodox Church",
+      parishEmail: "office@sttest.example",
+      city: "Testville",
+      state: "IL",
+      consent: true
+    }
+  }), testEnv);
+  assert.equal(submitted.status, 201);
+  const submittedBody = await json(submitted);
+  assert.equal(submittedBody.ok, true);
+  assert.equal(submittedBody.outreachSent, false);
+  const stored = await testEnv.AGAPAY_REGISTRATIONS.list({ prefix: "parish-interest:" });
+  assert.equal(stored.keys.length, 1);
+  const storedInterest = JSON.parse(await testEnv.AGAPAY_REGISTRATIONS.get(stored.keys[0].name));
+  assert.equal(storedInterest.status, "follow_up_needed");
+  assert.equal(storedInterest.parishEmail, "office@sttest.example");
+}
+
+{
+  const testEnv = env();
   const noAuth = await worker.fetch(request("/api/learn/dashboard"), testEnv);
   assert.equal(noAuth.status, 401);
 

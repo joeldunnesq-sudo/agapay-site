@@ -212,6 +212,10 @@ import {
   htmlEscape,
 } from "./lib/format.js";
 
+import {
+  handleParishInterest,
+} from "./handlers/parish-interest.js";
+
 
 
 const marketplaceBrowseCategories = [
@@ -991,6 +995,9 @@ export default {
     }
     if (url.pathname === "/api/directory/intake") {
       return handleDirectoryIntake(request, env);
+    }
+    if (url.pathname === "/api/parish-interest") {
+      return handleParishInterest(request, env);
     }
     if (request.method === "GET" && url.pathname === "/api/security/config") {
       return handleSecurityConfig(env);

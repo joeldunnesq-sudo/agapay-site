@@ -25,6 +25,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/site-chrome.css" />
+  <script src="/security.js" defer></script>
   <style>
     :root {
       --night: #061522;
@@ -237,17 +238,183 @@
       text-align: center;
       line-height: 1.6;
     }
+    .invite-section {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(4rem, 8vw, 7rem) 0;
+      color: var(--cream);
+      background:
+        radial-gradient(circle at 10% 12%, rgba(214, 175, 91, 0.17), transparent 26rem),
+        linear-gradient(135deg, #061522, #0b2638);
+      border-top: 3px solid var(--gold);
+    }
+    .invite-section::after {
+      content: "";
+      position: absolute;
+      right: -8rem;
+      bottom: -10rem;
+      width: 34rem;
+      aspect-ratio: 1;
+      border: 1px solid rgba(214, 175, 91, 0.12);
+      border-radius: 50%;
+      box-shadow: 0 0 0 4rem rgba(214, 175, 91, 0.035), 0 0 0 8rem rgba(214, 175, 91, 0.025);
+      pointer-events: none;
+    }
+    .invite-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.82fr) minmax(28rem, 1.18fr);
+      gap: clamp(2rem, 7vw, 6rem);
+      align-items: start;
+    }
+    .invite-copy {
+      position: sticky;
+      top: 2rem;
+    }
+    .invite-copy .eyebrow { color: var(--gold); }
+    .invite-copy h2 {
+      max-width: 10ch;
+      margin: 0;
+      color: var(--paper);
+      font-family: var(--serif);
+      font-size: clamp(3rem, 6vw, 5.25rem);
+      font-weight: 500;
+      line-height: 0.94;
+    }
+    .invite-lead {
+      max-width: 35rem;
+      margin: 1.25rem 0 0;
+      color: rgba(246, 241, 232, 0.76);
+      font-size: 1.08rem;
+      line-height: 1.7;
+    }
+    .invite-points {
+      display: grid;
+      gap: 0;
+      margin: 1.8rem 0 0;
+      padding: 0;
+      list-style: none;
+      border-top: 1px solid rgba(214, 175, 91, 0.28);
+    }
+    .invite-points li {
+      position: relative;
+      padding: 0.9rem 0 0.9rem 1.6rem;
+      border-bottom: 1px solid rgba(214, 175, 91, 0.28);
+      color: rgba(246, 241, 232, 0.78);
+      line-height: 1.5;
+    }
+    .invite-points li::before {
+      content: "✦";
+      position: absolute;
+      left: 0;
+      color: var(--gold);
+    }
+    .interest-form {
+      position: relative;
+      z-index: 1;
+      padding: clamp(1.25rem, 4vw, 2.25rem);
+      border: 1px solid rgba(214, 175, 91, 0.34);
+      border-radius: 8px;
+      background: var(--paper);
+      color: var(--ink);
+      box-shadow: 0 26px 70px rgba(0, 0, 0, 0.22);
+    }
+    .interest-form h3 {
+      margin: 0;
+      color: var(--night);
+      font-family: var(--serif);
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-weight: 600;
+      line-height: 1;
+    }
+    .form-intro {
+      margin: 0.65rem 0 1.35rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.9rem;
+    }
+    .field { margin-bottom: 0.9rem; }
+    .field label,
+    .field-label {
+      display: block;
+      margin-bottom: 0.4rem;
+      color: var(--night);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+    .field input,
+    .field textarea {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid rgba(166, 159, 145, 0.48);
+      border-radius: 7px;
+      background: #fffaf1;
+      color: var(--ink);
+      font: 500 0.96rem var(--sans);
+      padding: 0.75rem 0.85rem;
+      outline: none;
+    }
+    .field textarea { min-height: 108px; resize: vertical; }
+    .field input:focus,
+    .field textarea:focus {
+      border-color: var(--gold-dark);
+      box-shadow: 0 0 0 3px rgba(214, 175, 91, 0.14);
+    }
+    .check-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.65rem;
+      align-items: start;
+      margin: 0.85rem 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    .check-row input { width: 1.05rem; height: 1.05rem; margin-top: 0.15rem; accent-color: var(--gold-dark); }
+    .interest-submit {
+      width: 100%;
+      min-height: 52px;
+      margin-top: 0.9rem;
+      border: 0;
+      border-radius: 7px;
+      background: var(--gold);
+      color: var(--night);
+      font: 800 0.95rem var(--sans);
+      cursor: pointer;
+    }
+    .interest-submit:disabled { cursor: wait; opacity: 0.68; }
+    .interest-status {
+      min-height: 1.5rem;
+      margin-top: 0.9rem;
+      color: #1f6f43;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+    .interest-status.error { color: #9c2f2f; }
+    .privacy-note { margin: 0.9rem 0 0; color: var(--muted); font-size: 0.78rem; line-height: 1.5; }
+    .privacy-note a { color: var(--gold-dark); text-decoration: underline; }
+    .honeypot { position: absolute !important; left: -10000px !important; width: 1px !important; height: 1px !important; overflow: hidden !important; }
     @media (max-width: 900px) {
       .hero-grid,
       .search-panel,
-      .parish-grid { grid-template-columns: 1fr; }
+      .parish-grid,
+      .invite-grid { grid-template-columns: 1fr; }
       .hero-art { max-width: 360px; }
+      .invite-copy { position: static; }
+      .invite-copy h2 { max-width: 14ch; }
     }
     @media (max-width: 560px) {
       .wrap { width: min(100% - 1rem, 1160px); }
       h1 { font-size: clamp(2.9rem, 15vw, 4.2rem); }
       .find-hero { padding-top: 3.2rem; }
       .card-actions .button { width: 100%; }
+      .form-grid { grid-template-columns: 1fr; gap: 0; }
+      .interest-form { padding: 1rem; }
     }
   </style>
 </head>
@@ -278,6 +445,85 @@
         <div class="parish-grid" id="churchGrid" aria-live="polite">
           <div class="empty">Loading verified Orthodox communities...</div>
         </div>
+      </div>
+    </section>
+
+    <section class="invite-section" aria-labelledby="inviteParishHeading">
+      <div class="wrap invite-grid">
+        <div class="invite-copy">
+          <p class="eyebrow">Do not see your parish yet?</p>
+          <h2 id="inviteParishHeading">Bring AGAPAY to the conversation.</h2>
+          <p class="invite-lead">Encourage your priest, parish council, or board to add AGAPAY Giving alongside the donation options your community already uses. One respectful introduction can help parish leadership see that faithful people are ready to give through an Orthodox-first platform.</p>
+          <ul class="invite-points">
+            <li>AGAPAY can complement your parish's current donation structure.</li>
+            <li>We will send one thoughtful note to the public parish contact you provide.</li>
+            <li>Your personal contact information stays with AGAPAY unless you choose to share your name.</li>
+          </ul>
+        </div>
+
+        <form class="interest-form" id="parishInterestForm">
+          <h3>Ask AGAPAY to contact your parish</h3>
+          <p class="form-intro">Tell us where you worship and how to reach parish leadership. We will explain that someone in the community wants the option to give with AGAPAY.</p>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="parishionerName">Your name</label>
+              <input id="parishionerName" name="parishionerName" autocomplete="name" required />
+            </div>
+            <div class="field">
+              <label for="parishionerEmail">Your email</label>
+              <input id="parishionerEmail" name="parishionerEmail" type="email" autocomplete="email" required />
+            </div>
+          </div>
+          <div class="field">
+            <label for="interestParishName">Parish name</label>
+            <input id="interestParishName" name="parishName" autocomplete="organization" placeholder="St. Nicholas Orthodox Church" required />
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="interestCity">City</label>
+              <input id="interestCity" name="city" autocomplete="address-level2" required />
+            </div>
+            <div class="field">
+              <label for="interestState">State / region</label>
+              <input id="interestState" name="state" autocomplete="address-level1" required />
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="parishEmail">Public parish email</label>
+              <input id="parishEmail" name="parishEmail" type="email" autocomplete="off" placeholder="office@parish.org" required />
+            </div>
+            <div class="field">
+              <label for="jurisdiction">Jurisdiction</label>
+              <input id="jurisdiction" name="jurisdiction" placeholder="OCA, GOARCH, Antiochian, ROCOR..." />
+            </div>
+          </div>
+          <div class="field">
+            <label for="parishWebsite">Parish website <span aria-hidden="true">(optional)</span></label>
+            <input id="parishWebsite" name="parishWebsite" type="url" autocomplete="url" placeholder="https://parish.org" />
+          </div>
+          <div class="field">
+            <label for="interestNote">Anything helpful for our team? <span aria-hidden="true">(optional)</span></label>
+            <textarea id="interestNote" name="note" placeholder="A brief note about your parish or why you would like to give through AGAPAY."></textarea>
+          </div>
+          <div class="honeypot" aria-hidden="true">
+            <label for="organizationWebsite">Organization website</label>
+            <input id="organizationWebsite" name="organizationWebsite" tabindex="-1" autocomplete="off" />
+          </div>
+          <label class="check-row">
+            <input type="checkbox" name="shareName" />
+            <span>AGAPAY may include my name in the parish introduction. My email address will not be shared.</span>
+          </label>
+          <label class="check-row">
+            <input type="checkbox" name="consent" required />
+            <span>I want AGAPAY to send one introductory message to this public parish email address.</span>
+          </label>
+          <div data-agapay-turnstile></div>
+          <button class="interest-submit" type="submit">Ask AGAPAY to Contact My Parish</button>
+          <div class="interest-status" id="parishInterestStatus" aria-live="polite"></div>
+          <p class="privacy-note">We use this information only to respond to your request and contact the parish. See our <a href="/privacy.html">Privacy Policy</a>.</p>
+        </form>
       </div>
     </section>
   </main>
@@ -378,6 +624,37 @@
         count.textContent = "Unable to load";
         grid.innerHTML = `<div class="empty">${escapeHtml(error.message || "Unable to load churches right now.")}</div>`;
       });
+
+    document.getElementById("parishInterestForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const button = form.querySelector("button[type='submit']");
+      const status = document.getElementById("parishInterestStatus");
+      const formData = new FormData(form);
+      const payload = Object.fromEntries(formData.entries());
+      payload.shareName = formData.has("shareName");
+      payload.consent = formData.has("consent");
+      Object.assign(payload, window.agapaySecurityPayload ? window.agapaySecurityPayload() : {});
+      status.classList.remove("error");
+      status.textContent = "Sending your request...";
+      button.disabled = true;
+      try {
+        const response = await fetch("/api/parish-interest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Unable to send this request.");
+        form.reset();
+        status.textContent = result.message || "Thank you. Your parish invitation has been received.";
+      } catch (error) {
+        status.classList.add("error");
+        status.textContent = error.message || "Unable to send this request. Please try again.";
+      } finally {
+        button.disabled = false;
+      }
+    });
   </script>
   <script src="/site-chrome.js" defer></script>
 </body>

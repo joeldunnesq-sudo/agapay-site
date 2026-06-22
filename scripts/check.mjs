@@ -9,9 +9,10 @@ const adminHandler = await readFile("src/handlers/admin.js", "utf8");
 const donorHandler = await readFile("src/handlers/donor.js", "utf8");
 const parishHandler = await readFile("src/handlers/parish.js", "utf8");
 const stripeHandler = await readFile("src/handlers/stripe.js", "utf8");
+const parishInterestHandler = await readFile("src/handlers/parish-interest.js", "utf8");
 const wrangler = await readFile("wrangler.toml", "utf8");
 const d1Migration = await readFile("migrations/0001_production_records.sql", "utf8");
-const backendSources = worker + core + stripeConnect + adminHandler + donorHandler + parishHandler + stripeHandler;
+const backendSources = worker + core + stripeConnect + adminHandler + donorHandler + parishHandler + stripeHandler + parishInterestHandler;
 assert.equal(parishSlug("St. Fiacre Orthodox Church", "Munster"), "st-fiacre-munster", "parish usernames should include patronal name and city");
 assert.equal(parishSlug("Holy Resurrection Orthodox Church", "Boston"), "holy-resurrection-boston", "parish usernames should normalize common church suffixes");
 assert.ok(wrangler.includes('binding = "AGAPAY_DB"'), "wrangler should bind the production D1 database");
@@ -81,6 +82,12 @@ assert.ok(directoryPage.includes("AGAPAY Directory Intake"), "directory should r
 assert.ok(directoryPage.includes("Submit a listing"), "directory should invite organizations to submit listings");
 assert.ok(directoryPage.includes("parishes, monasteries, ministries, schools, businesses"), "directory should describe Orthodox organization coverage");
 assert.ok(directoryPage.includes("/api/directory/intake"), "directory intake should post to the AGAPAY API");
+
+const findChurchPage = await readFile("public/give/find-church.html", "utf8");
+assert.ok(findChurchPage.includes("Bring AGAPAY to the conversation"), "find-church should invite parishioners to advocate for AGAPAY Giving");
+assert.ok(findChurchPage.includes("/api/parish-interest"), "find-church interest form should post to its Worker endpoint");
+assert.ok(findChurchPage.includes("data-agapay-turnstile") && findChurchPage.includes("agapaySecurityPayload"), "parish interest outreach should use Turnstile when configured");
+assert.ok(worker.includes('url.pathname === "/api/parish-interest"'), "worker should route parish interest submissions");
 
 
 const donorApp = await readFile("public/donor/app.js", "utf8");
