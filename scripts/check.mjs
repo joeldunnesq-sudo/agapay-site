@@ -122,6 +122,7 @@ assert.ok(campaignPage.includes('"/giving/"') && campaignPage.includes('"-campai
 assert.ok(worker.includes('url.pathname === "/api/campaign"'), "worker should route public campaign lookup API");
 assert.ok(worker.includes('endsWith("/campaign-upload")'), "worker should route authenticated parish campaign photo uploads");
 assert.ok(worker.includes('startsWith("/give/parish-giving/")'), "worker should serve campaign share URLs instead of the generic giving form");
+assert.ok(worker.includes("async function fetchCleanAsset"), "worker should keep rewritten asset routes at their canonical public URLs");
 assert.ok(worker.includes("canonicalCampaignPathFromLegacy"), "worker should redirect legacy campaign URLs to canonical nested campaign routes");
 assert.ok(worker.includes('/^\\/giving\\/[^/]+\\/[^/]+-campaign\\/?$/'), "worker should serve canonical parish campaign routes");
 const parishDashboardApp = await readFile("public/parish/app.js", "utf8");

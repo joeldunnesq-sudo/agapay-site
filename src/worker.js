@@ -821,6 +821,18 @@ function cleanAssetRequest(request) {
   return request;
 }
 
+async function fetchCleanAsset(request, env) {
+  const assetRequest = cleanAssetRequest(request);
+  const response = await env.ASSETS.fetch(assetRequest);
+  if (assetRequest.url === request.url || ![301, 302, 307, 308].includes(response.status)) return response;
+
+  const location = response.headers.get("Location");
+  if (!location) return response;
+  const target = new URL(location, assetRequest.url);
+  if (target.origin !== new URL(request.url).origin) return response;
+  return env.ASSETS.fetch(new Request(target, request));
+}
+
 const LEGACY_GIVING_PAGE_REDIRECTS = new Map([
   ["/features", "/giving/features"],
   ["/features.html", "/giving/features"],
@@ -1267,6 +1279,6 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
-    return env.ASSETS.fetch(cleanAssetRequest(request));
+    return fetchCleanAsset(request, env);
   }
 };
