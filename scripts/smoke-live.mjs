@@ -22,7 +22,7 @@ const checks = [
   { name: "legacy donor redirect", method: "GET", path: "/donor", ok: [200, 301, 302, 308] },
   { name: "legacy Learn dashboard redirect", method: "GET", path: "/learn/dashboard", ok: [200, 301, 302, 308] },
   { name: "Give login shell", method: "GET", path: "/give/login", ok: [200] },
-  { name: "legacy Giving redirect", method: "GET", path: "/giving/features", ok: [301, 302, 308] },
+  { name: "legacy Giving redirect", method: "GET", path: "/giving/features", ok: [301, 302, 308], redirect: "manual" },
   { name: "legacy parish login redirect", method: "GET", path: "/parish/login", ok: [200, 301, 302, 308] },
   { name: "admin app shell", method: "GET", path: "/admin", ok: [200] },
   { name: "security config", method: "GET", path: "/api/security/config", ok: [200] },
@@ -62,7 +62,8 @@ for (const check of checks) {
   const init = {
     method: check.method,
     headers: check.body ? { "content-type": "application/json" } : undefined,
-    body: check.body ? JSON.stringify(check.body) : undefined
+    body: check.body ? JSON.stringify(check.body) : undefined,
+    redirect: check.redirect || "follow"
   };
   try {
     const response = await fetch(`${baseUrl}${check.path}`, init);

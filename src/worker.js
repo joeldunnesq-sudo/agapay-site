@@ -738,7 +738,7 @@ function cleanAssetRequest(request) {
     return new Request(url, request);
   }
   if (url.pathname === "/give" || url.pathname === "/give/") {
-    url.pathname = "/give/";
+    url.pathname = "/give/index.html";
     return new Request(url, request);
   }
   if (url.pathname === "/give/form") {
