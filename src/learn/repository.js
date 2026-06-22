@@ -696,13 +696,20 @@ export class SeedLearnRepository {
     };
   }
 
-  getCommunity() {
+  getCommunity({ facebookGroupUrl = "" } = {}) {
     return {
       household: this.seed.household,
-      comingSoon: true,
-      title: "Community is coming soon",
-      subtitle: "A curated Orthodox homeschool resource exchange is planned, but intentionally paused for launch.",
-      detail: "For now, AGAPAY Learn is focused on adaptive setup, Today, household planning, formation, books, Grace Mode, and printable plans."
+      comingSoon: false,
+      title: "Community Resources",
+      subtitle: "A growing library of trusted resources for Orthodox homeschool families.",
+      detail: "Search by subject, resource type, or media format. AGAPAY curates the library; the Facebook group is the place for conversation, questions, and encouragement.",
+      facebookGroupUrl,
+      communityResources: this.seed.communityResources || [],
+      sharingGuidance: [
+        "Resources are reviewed before being added to the AGAPAY library.",
+        "Use the Facebook group to ask questions and recommend resources.",
+        "Always review a resource for your family's needs before assigning it."
+      ]
     };
   }
 

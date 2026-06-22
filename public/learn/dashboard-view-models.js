@@ -217,10 +217,9 @@ function shellFromPayload(page, payload) {
       { id: "planner", href: "/myagapay/learn/planner", label: "Planner", icon: "▣" },
       { id: "formation", href: "/myagapay/learn/formation", label: "Formation", icon: "⌂" },
       { id: "books", href: "/myagapay/learn/books", label: "Books", icon: "☰" },
-      { id: "reports", href: "/myagapay/learn/reports", label: "Reports", icon: "▥", comingSoon: true },
       { id: "print-center", href: "/myagapay/learn/print", label: "Print", icon: "▤" },
       { id: "co-op", href: "/myagapay/learn/co-op", label: "Co-op", icon: "◎", comingSoon: true },
-      { id: "community", href: "/myagapay/learn/community", label: "Community", icon: "♡", comingSoon: true },
+      { id: "community", href: "/myagapay/learn/community", label: "Community", icon: "♡" },
       { id: "onboarding", href: "/myagapay/learn/setup", label: "Set Up", icon: "⚙" }
     ]
   };
@@ -797,14 +796,18 @@ export function toCommunityViewModel(rawPayload) {
   const community = rawPayload?.community || {};
   return {
     shell: shellFromPayload("community", rawPayload),
-    page: page("community", "Community", "A shared Orthodox homeschool resource space is coming soon."),
+    page: page("community", "Community Resources", "Trusted tools and encouragement for Orthodox homeschool families."),
     comingSoon: Boolean(community.comingSoon),
     title: text(community.title, "Community is coming soon"),
     subtitle: text(community.subtitle, "A curated resource exchange is planned after the core Learn workflow is settled."),
     detail: text(community.detail, ""),
+    facebookGroupUrl: text(community.facebookGroupUrl, ""),
     resources: simpleList(community.communityResources, (resource) => ({
       title: text(resource.title, "Resource"),
       category: text(resource.category, ""),
+      resourceType: text(resource.resourceType, "Resource"),
+      mediaType: text(resource.mediaType, "Mixed Media"),
+      ageRange: text(resource.ageRange, "Family"),
       subtitle: text(resource.subtitle, ""),
       desc: text(resource.description || resource.subtitle, ""),
       url: text(resource.url, "#"),
@@ -821,7 +824,8 @@ export function toCommunityViewModel(rawPayload) {
       posterColor: ACCENTS[(index + 1) % ACCENTS.length]
     })),
     categories: ["All", ...new Set(simpleList(community.communityResources, (resource) => text(resource.category, "")).filter(Boolean))],
-    sortOptions: ["Top", "Newest"],
+    resourceTypes: ["All", ...new Set(simpleList(community.communityResources, (resource) => text(resource.resourceType, "")).filter(Boolean))],
+    mediaTypes: ["All", ...new Set(simpleList(community.communityResources, (resource) => text(resource.mediaType, "")).filter(Boolean))],
     calendar: {
       connected: Boolean(community.googleCalendarSync?.connected),
       account: text(community.googleCalendarSync?.accountLabel, "No account connected"),
@@ -1199,6 +1203,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
 
 export function toPrintCenterViewModel(rawPayload) {
   const printCenter = rawPayload?.printCenter || {};
+  const reports = toReportsViewModel({ reports: printCenter.reports || {} });
   return {
     shell: shellFromPayload("print-center", { "print-center": printCenter }),
     page: page("print-center", "Print Center", "Prepare limited, useful print packs for the household and each child."),
@@ -1239,6 +1244,7 @@ export function toPrintCenterViewModel(rawPayload) {
       household: safeArray(printCenter.sampleOutputs?.mom).map((item) => text(item)),
       child: safeArray(printCenter.sampleOutputs?.child).map((item) => text(item))
     },
+    reports,
     billing: {
       childCount: safeArray(printCenter.children).length,
       printLimit: 3

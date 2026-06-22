@@ -210,6 +210,9 @@ async function withMockFetch(handler, run) {
   const saintsNoAuth = await worker.fetch(request("/api/learn/saints?date=2026-06-19"), testEnv);
   assert.equal(saintsNoAuth.status, 401);
 
+  const communityNoAuth = await worker.fetch(request("/api/learn/community"), testEnv);
+  assert.equal(communityNoAuth.status, 401);
+
   const completionNoAuth = await worker.fetch(request("/api/learn/completion", {
     method: "POST",
     body: { itemId: "morning-prayers", scope: "daily", completed: true, civilDate: "2026-06-19" }
@@ -231,6 +234,11 @@ async function withMockFetch(handler, run) {
     headers: { "X-AGAPAY-Learn-Email": "victim@example.com" }
   }), testEnv);
   assert.equal(saintsSpoofedHeaderOnly.status, 401);
+
+  const communitySpoofedHeaderOnly = await worker.fetch(request("/api/learn/community", {
+    headers: { "X-AGAPAY-Learn-Email": "victim@example.com" }
+  }), testEnv);
+  assert.equal(communitySpoofedHeaderOnly.status, 401);
 
   const completionSpoofedHeaderOnly = await worker.fetch(request("/api/learn/completion", {
     method: "POST",
@@ -318,6 +326,20 @@ async function withMockFetch(handler, run) {
   }), testEnv);
   assert.equal(alphaSave.status, 200);
   assert.equal((await json(alphaSave)).onboarding.household.name, "Alpha Household");
+
+  const alphaCommunity = await worker.fetch(request("/api/learn/community", {
+    headers: alpha.headers
+  }), testEnv);
+  assert.equal(alphaCommunity.status, 200);
+  const alphaCommunityBody = await json(alphaCommunity);
+  assert.equal(alphaCommunityBody.community.comingSoon, false);
+  assert.ok(alphaCommunityBody.community.communityResources.length > 0);
+
+  const alphaPrintCenter = await worker.fetch(request("/api/learn/print-center", {
+    headers: alpha.headers
+  }), testEnv);
+  assert.equal(alphaPrintCenter.status, 200);
+  assert.ok((await json(alphaPrintCenter)).printCenter.reports);
 
   const alphaCompletion = await worker.fetch(request("/api/learn/completion", {
     method: "POST",

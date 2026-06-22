@@ -92,7 +92,9 @@ assert(learnShell.includes("TOGETHER THIS WEEK") && learnShell.includes("DAILY C
 assert(learnShell.includes("data-learn-completion") && learnShell.includes("/api/learn/completion"), "Learn dashboard should persist daily and weekly completion through the backend.");
 assert(learnShell.includes("Grace Mode lightens a day without erasing the plan"), "The setup wizard should explain Grace Mode and its non-destructive behavior.");
 assert(learnShell.includes("No permanent choice is required"), "The Grace Mode wizard step should explain that families can change modes day by day.");
-assert(learnShell.includes("renderReportsComingSoon") && !learnShell.includes('apiGet("/api/learn/reports")'), "The Learn Reports screen should remain a coming-soon surface without loading report data.");
+assert(learnShell.includes('id="reports"') && learnShell.includes("Reports & Records"), "Print Center should contain the staged Reports and Records workspace.");
+assert(!learnShell.includes('apiGet("/api/learn/reports")'), "The Learn shell should not load a standalone Reports screen.");
+assert(learnShell.includes("data-community-category") && learnShell.includes("data-community-resource-type") && learnShell.includes("data-community-media-type"), "Community Resources should filter by subject, resource type, and media type.");
 assert(learnShell.includes("Free plan: up to 2 children"), "Learn setup wizard should clearly disclose the free child limit.");
 assert(learnShell.includes('href="/myagapay/learn/setup?simple=1">Quick Setup'), "Learn utility bar should open the simple setup wizard.");
 assert(learnShell.includes('class="learn-setup-savebar"'), "Advanced Setup should use a dedicated reachable save bar.");
@@ -110,7 +112,8 @@ assert(learnSetupPersistence.includes('"Traditional", "Eclectic", "Unsure"'), "L
 assert(learnSetupPersistence.includes("parentNames"), "Learn setup should persist the wizard parent name.");
 assert(learnSetupPersistence.includes("groupingMode"), "Learn setup should persist the selected planning-group model.");
 assert(learnSetupPersistence.includes("currentWeekWindow") && learnSetupPersistence.includes('kind: "enrichment"'), "Starter setup should generate a current editable week with enrichment rows.");
-assert(learnHandlers.includes('label: "Reports", implemented: false, status: "coming-soon"'), "Learn metadata should mark Reports as coming soon.");
+assert(!learnHandlers.includes('href: "/myagapay/learn/reports"'), "Learn metadata should keep Reports inside Print Center rather than a standalone tab.");
+assert(learnHandlers.includes("AGAPAY_LEARN_FACEBOOK_GROUP_URL"), "Community should accept a configured Facebook group URL.");
 assert(learnOverviewHtml.includes("Clearly on the roadmap") && learnOverviewHtml.includes("Reports & Transcripts"), "The Learn overview should clearly separate coming-soon features.");
 assert(!learnOverviewHtml.includes("Printables, reports, and transcripts"), "The Learn overview should not advertise Reports as currently available.");
 assert(learnPricingHtml.includes("Reports Coming Soon") && learnPricingHtml.includes("Reports</div><div>Coming Soon"), "Learn pricing should clearly label Reports as coming soon.");

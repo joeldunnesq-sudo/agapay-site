@@ -919,7 +919,7 @@ function renderReports(vm) {
   return shell(vm, body);
 }
 
-function renderCommunity(vm) {
+function renderCommunityLegacy(vm) {
   return shell(vm, `
     <section data-screen-label="Community" style="display:grid;gap:18px;">
       <div style="background:linear-gradient(135deg,#fffaf0 0%,#f5ead1 100%);border:1px solid rgba(181,148,47,.34);border-radius:18px;padding:28px;display:grid;grid-template-columns:1fr 220px;gap:24px;align-items:center;box-shadow:0 1px 3px rgba(20,40,70,.04);">
@@ -1460,6 +1460,38 @@ function renderSimpleSetupWizard(vm, draft) {
   return shell(vm, body);
 }
 
+function renderCommunity(vm) {
+  const filterOptions = (values) => values.map((value) => `<option value="${html(value)}">${html(value)}</option>`).join("");
+  const facebookAction = vm.facebookGroupUrl
+    ? `<a href="${html(vm.facebookGroupUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;background:#fff;color:var(--navy);border:1px solid rgba(255,255,255,.45);border-radius:10px;padding:11px 17px;text-decoration:none;font-weight:800;">Visit the Facebook Group <span aria-hidden="true">↗</span></a>`
+    : `<span style="display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.32);border-radius:999px;padding:7px 12px;color:#f3ead4;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">Facebook group opening soon</span>`;
+  const cards = vm.resources.map((resource) => `<article data-community-card data-category="${html(resource.category)}" data-resource-type="${html(resource.resourceType)}" data-media-type="${html(resource.mediaType)}" data-search="${html(`${resource.title} ${resource.category} ${resource.resourceType} ${resource.mediaType} ${resource.ageRange} ${resource.desc} ${resource.tags.join(" ")}`.toLowerCase())}" style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 3px rgba(20,40,70,.04);min-height:286px;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;"><span style="width:46px;height:46px;border-radius:12px;background:${softColor(resource.color, "28")};color:${html(resource.color)};display:grid;place-items:center;font-size:23px;border:1px solid ${softColor(resource.color, "44")};">✥</span>${resource.vetted ? `<span style="border:1px solid rgba(54,95,59,.28);background:#edf6ef;color:#365f3b;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:800;letter-spacing:.08em;">AGAPAY CURATED</span>` : ""}</div>
+    <div><small style="display:block;color:var(--gold);font-weight:800;letter-spacing:.1em;text-transform:uppercase;">${html(resource.category)}</small><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:24px;line-height:1.08;margin-top:4px;color:var(--ink);">${html(resource.title)}</strong></div>
+    <p style="font-size:14px;color:#3a4256;line-height:1.45;flex:1;margin:0;">${html(resource.desc)}</p>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;"><span style="font-size:11px;border:1px solid var(--line);border-radius:6px;padding:4px 7px;color:var(--muted);">${html(resource.resourceType)}</span><span style="font-size:11px;border:1px solid var(--line);border-radius:6px;padding:4px 7px;color:var(--muted);">${html(resource.mediaType)}</span><span style="font-size:11px;border:1px solid var(--line);border-radius:6px;padding:4px 7px;color:var(--muted);">${html(resource.ageRange)}</span></div>
+    <a href="${html(resource.url)}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding-top:11px;color:var(--navy);font-weight:800;text-decoration:none;">Open resource <span style="color:var(--gold);">↗</span></a>
+  </article>`).join("");
+  return shell(vm, `
+    <section data-screen-label="Community Resources" style="display:flex;flex-direction:column;gap:18px;">
+      <div class="learn-community-hero" style="background:var(--navy);border:1px solid var(--gold);border-radius:16px;padding:clamp(20px,4vw,30px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:22px;align-items:center;color:#fffaf0;box-shadow:0 8px 24px rgba(4,20,39,.14);">
+        <div><div style="color:var(--gold2);font-size:11px;letter-spacing:.18em;font-weight:800;text-transform:uppercase;">Moms helping moms</div><h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(34px,5vw,50px);line-height:.98;margin:8px 0 10px;">A thoughtful Orthodox homeschool community.</h2><p style="line-height:1.55;color:rgba(255,250,240,.82);margin:0;max-width:700px;">Ask practical questions, share encouragement, and learn from families walking the same road. The conversation lives in our moderated Facebook group.</p></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:11px;border-left:1px solid rgba(201,162,91,.35);padding-left:22px;"><strong style="font-family:'Cormorant Garamond',serif;font-size:25px;">Join the conversation</strong><span style="color:rgba(255,250,240,.72);line-height:1.4;">Questions, curriculum experiences, feast-day ideas, and the ordinary wisdom of Orthodox homeschool life.</span>${facebookAction}</div>
+      </div>
+      <div class="learn-community-filters" style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;grid-template-columns:minmax(220px,1.5fr) repeat(3,minmax(150px,.7fr));gap:10px;align-items:end;">
+        <label style="display:grid;gap:5px;color:var(--gold);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">Search<input data-community-search type="search" placeholder="Search saints, history, audio, books..." style="border:1px solid var(--line);border-radius:9px;background:var(--paper2);padding:11px 12px;font:inherit;color:var(--ink);min-width:0;"></label>
+        <label style="display:grid;gap:5px;color:var(--gold);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">Subject<select data-community-category style="border:1px solid var(--line);border-radius:9px;background:var(--paper2);padding:11px 10px;font:inherit;color:var(--ink);min-width:0;">${filterOptions(vm.categories)}</select></label>
+        <label style="display:grid;gap:5px;color:var(--gold);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">Resource type<select data-community-resource-type style="border:1px solid var(--line);border-radius:9px;background:var(--paper2);padding:11px 10px;font:inherit;color:var(--ink);min-width:0;">${filterOptions(vm.resourceTypes)}</select></label>
+        <label style="display:grid;gap:5px;color:var(--gold);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">Media<select data-community-media-type style="border:1px solid var(--line);border-radius:9px;background:var(--paper2);padding:11px 10px;font:inherit;color:var(--ink);min-width:0;">${filterOptions(vm.mediaTypes)}</select></label>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;"><div data-community-count style="color:var(--muted);font-size:13px;">Showing ${vm.resources.length} curated resources</div><small style="color:var(--muted);">Links open in a new tab.</small></div>
+      <div data-community-empty hidden style="border:1px dashed var(--gold);border-radius:14px;background:var(--paper);padding:28px;text-align:center;color:var(--muted);">No resources match those filters yet. Try a broader search.</div>
+      <div data-community-grid style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,275px),1fr));gap:14px;">${cards}</div>
+      ${panel("How the Library Works", `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;">${vm.guidance.map((item, index) => `<div style="display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:13px;"><span style="width:26px;height:26px;border-radius:50%;background:var(--navy);color:var(--gold2);display:grid;place-items:center;flex:none;">${index + 1}</span><span style="line-height:1.4;color:#33405a;">${html(item)}</span></div>`).join("")}</div>`, { icon: "✥" })}
+    </section>
+  `);
+}
+
 function renderReportsComingSoon(vm) {
   return shell(vm, `
     <section data-screen-label="Reports" class="learn-coming-soon-page">
@@ -1755,6 +1787,16 @@ function renderPrintCenter(vm) {
         ${panel("Child Sheets", `<div style="display:grid;grid-template-columns:repeat(2,minmax(190px,1fr));gap:10px;">${childTemplates.map((template) => `<article data-print-template="${html(template.id)}" data-print-premium="${template.premium ? "true" : "false"}" style="border:1px solid ${template.premium ? "var(--gold)" : "var(--line)"};border-radius:10px;background:${template.premium && freePlan ? "#fff8e8" : "var(--paper2)"};padding:11px;display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:flex-start;"><span style="width:34px;height:34px;border-radius:50%;background:${template.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(template.child.charAt(0) || "C")}</span><span><span style="display:flex;justify-content:space-between;gap:8px;align-items:start;"><strong>${html(template.title)}</strong>${accessBadge(template)}</span><small style="display:block;color:var(--muted);">${html(template.description)}</small><button type="button" data-print-generate="${html(template.id)}" style="margin-top:9px;border:1px solid ${freePlan ? "var(--gold)" : "var(--line)"};background:${freePlan ? "#f3ead4" : "var(--navy)"};color:${freePlan ? "var(--ink)" : "#fff"};border-radius:8px;padding:7px 10px;font-family:inherit;cursor:pointer;font-weight:700;">${freePlan ? "Upgrade to Print" : "Generate PDF"}</button></span></article>`).join("")}</div>`, { icon: "◎" })}
         ${panel("Print Preview", `<div style="border:1px solid var(--line);border-radius:10px;background:#fffaf0;padding:22px;min-height:420px;"><div style="text-align:center;color:var(--gold);font-size:30px;">✥</div><h2 style="font-family:'Cormorant Garamond',serif;text-align:center;margin:8px 0 4px;">${html(vm.document.title)}</h2><p style="text-align:center;color:var(--muted);margin:0 0 16px;">${html(vm.document.subtitle)}</p>${vm.document.sections.map((section) => `<div style="margin-top:14px;"><strong style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;font-size:12px;">${html(section.title)}</strong>${section.items.map((item) => `<div style="display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:8px 0;"><span><strong>${html(item.label)}</strong><small style="display:block;color:var(--muted);">${html(item.detail)}</small></span><span>${html(item.minutes)}m</span></div>`).join("")}</div>`).join("")}</div>`, { icon: "☰" })}
       </div>
+      <section id="reports" style="background:linear-gradient(135deg,#fffaf0,#f5ead1);border:1px solid rgba(181,148,47,.42);border-radius:14px;padding:20px;display:grid;gap:16px;scroll-margin-top:110px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;"><div><div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:800;text-transform:uppercase;">Reports & Records</div><h2 style="font-family:'Cormorant Garamond',serif;font-size:32px;line-height:1;margin:7px 0 5px;color:var(--ink);">Beautiful records, built from work already completed.</h2><p style="margin:0;color:var(--muted);line-height:1.45;max-width:760px;">This workspace will turn saved lessons, subject progress, attendance, narrations, and term closures into polished homeschool records. It is intentionally staged for a later release.</p></div><span style="border:1px solid var(--gold);border-radius:999px;background:var(--navy);color:#fffaf0;padding:7px 12px;font-size:11px;font-weight:800;letter-spacing:.08em;white-space:nowrap;">COMING SOON</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;">${vm.reports.stats.map((stat) => `<article style="border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.58);padding:13px;"><small style="display:block;color:var(--gold);letter-spacing:.09em;text-transform:uppercase;font-weight:800;">${html(stat.label)}</small><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:25px;margin-top:3px;">${html(stat.value)}</strong><span style="display:block;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(stat.sub)}</span></article>`).join("")}</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">
+          <article style="border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:14px;"><strong>Progress summaries</strong><p style="color:var(--muted);line-height:1.4;margin:5px 0 0;">Term and year snapshots by child, Form, and subject.</p></article>
+          <article style="border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:14px;"><strong>Report cards</strong><p style="color:var(--muted);line-height:1.4;margin:5px 0 0;">Narrative, complete/incomplete, percentage, and letter-grade formats.</p></article>
+          <article style="border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:14px;"><strong>Transcripts</strong><p style="color:var(--muted);line-height:1.4;margin:5px 0 0;">Course, credit, grade, and school-year records for older students.</p></article>
+          <article style="border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:14px;"><strong>State reporting exports</strong><p style="color:var(--muted);line-height:1.4;margin:5px 0 0;">Printable attendance, subject progress, and portfolio-ready summaries.</p></article>
+        </div>
+      </section>
       ${panel("Available Outputs", `<div style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:14px;"><div><strong>Household</strong>${vm.outputs.household.map((item) => `<div style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</div>`).join("")}</div><div><strong>Child</strong>${vm.outputs.child.map((item) => `<div style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</div>`).join("")}</div></div>`, { icon: "✥" })}
     </section>`;
   return shell(vm, body);
@@ -2446,7 +2488,7 @@ function updateActiveButton(buttons, activeButton) {
   });
 }
 
-function wireCommunity() {
+function wireCommunityLegacy() {
   const search = root.querySelector("[data-community-search]");
   const cards = [...root.querySelectorAll("[data-community-card]")];
   const count = root.querySelector("[data-community-count]");
@@ -2531,6 +2573,34 @@ function wireCommunity() {
       grid.insertAdjacentHTML("afterbegin", `<article data-community-card data-category="${html(category)}" data-search="${html(searchText)}" style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:11px;"><div style="height:92px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(135deg,#f6edd6,var(--paper2));display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:36px;">✥</div><strong style="font-family:'Cormorant Garamond',serif;font-size:20px;">${html(title)}</strong><p style="font-size:13px;color:#3a4256;line-height:1.4;margin:0;">Newly shared by this household.</p><a href="${html(url)}" target="_blank" rel="noreferrer" style="color:var(--gold);text-decoration:none;">Open resource ↗</a></article>`);
     }
   });
+}
+
+function wireCommunity() {
+  const search = root.querySelector("[data-community-search]");
+  const category = root.querySelector("[data-community-category]");
+  const resourceType = root.querySelector("[data-community-resource-type]");
+  const mediaType = root.querySelector("[data-community-media-type]");
+  const cards = [...root.querySelectorAll("[data-community-card]")];
+  const count = root.querySelector("[data-community-count]");
+  const empty = root.querySelector("[data-community-empty]");
+
+  const applyFilters = () => {
+    const query = (search?.value || "").trim().toLowerCase();
+    let shown = 0;
+    cards.forEach((card) => {
+      const matches = (!query || (card.dataset.search || "").includes(query))
+        && (!category || category.value === "All" || card.dataset.category === category.value)
+        && (!resourceType || resourceType.value === "All" || card.dataset.resourceType === resourceType.value)
+        && (!mediaType || mediaType.value === "All" || card.dataset.mediaType === mediaType.value);
+      card.hidden = !matches;
+      if (matches) shown += 1;
+    });
+    if (count) count.textContent = `Showing ${shown} curated ${shown === 1 ? "resource" : "resources"}`;
+    if (empty) empty.hidden = shown !== 0;
+  };
+
+  search?.addEventListener("input", applyFilters);
+  [category, resourceType, mediaType].forEach((control) => control?.addEventListener("change", applyFilters));
 }
 
 function wireReports(vm) {
@@ -2706,6 +2776,7 @@ async function mount() {
   if (pageKey === "community") {
     const raw = await apiGet("/api/learn/community");
     root.innerHTML = renderCommunity(toCommunityViewModel(raw));
+    wireCommunity();
     return;
   }
   if (pageKey === "co-op") {

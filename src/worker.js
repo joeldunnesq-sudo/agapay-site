@@ -664,7 +664,6 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
   ["/myagapay/learn/formation", "/learn/formation"],
   ["/myagapay/learn/books", "/learn/books"],
   ["/myagapay/learn/community", "/learn/community"],
-  ["/myagapay/learn/reports", "/learn/reports"],
   ["/myagapay/learn/print", "/learn/print-center"],
   ["/myagapay/learn/print-center", "/learn/print-center"],
   ["/myagapay/learn/setup", "/learn/onboarding"],
@@ -705,7 +704,8 @@ const DASHBOARD_LEGACY_REDIRECTS = new Map([
   ["/learn/formation", "/myagapay/learn/formation"],
   ["/learn/books", "/myagapay/learn/books"],
   ["/learn/community", "/myagapay/learn/community"],
-  ["/learn/reports", "/myagapay/learn/reports"],
+  ["/learn/reports", "/myagapay/learn/print"],
+  ["/myagapay/learn/reports", "/myagapay/learn/print"],
   ["/learn/print-center", "/myagapay/learn/print"],
   ["/learn/onboarding", "/myagapay/learn/setup"],
   ["/learn/co-op", "/myagapay/learn/co-op"]
