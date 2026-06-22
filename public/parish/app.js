@@ -10,6 +10,7 @@
   let campaignPhotos    = [];
   let allGifts          = [];   // full history cache
   let filteredGifts     = [];   // filtered view
+  let reconciliationData = null;
   let stewardshipState   = { loaded: false, stewardship: null, meetings: [], selectedMeeting: null };
   const parishSessionStorageKey = 'agapay_parish_session_token';
   const legacyParishTokenStorageKey = 'agapay_parish_token';
@@ -121,13 +122,14 @@
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
     if (tab === 'givers' && allGifts.length) renderGiversPanel();
     if (tab === 'qr') renderBulletinPreview();
     if (tab === 'stewardship') loadStewardshipPanel();
+    if (tab === 'reconcile' && currentParish) loadReconciliation();
     document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
     if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -788,6 +790,7 @@
       loadGivingHistory();
       stewardshipState.loaded = false;
       if (activeTab === 'stewardship') loadStewardshipPanel(true);
+      if (activeTab === 'reconcile') loadReconciliation();
     } catch (err) { setStatus(err.message,'error'); }
     finally {
       if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
@@ -1142,6 +1145,246 @@
     setStatus(`Exported ${filteredGifts.length} gifts to ${name}.`, 'success');
   }
 
+  // ── MONTHLY RECONCILIATION ────────────────────────────────
+  function initReconciliationMonths() {
+    const select = document.getElementById('reconcileMonth');
+    if (!select || select.options.length) return;
+    const now = new Date();
+    const options = [];
+    for (let offset = 0; offset < 36; offset += 1) {
+      const date = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+      const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const label = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      options.push(`<option value="${value}">${label}</option>`);
+    }
+    select.innerHTML = options.join('');
+  }
+
+  function reconciliationMonthLabel(month) {
+    const [year, monthNumber] = String(month || '').split('-').map(Number);
+    if (!year || !monthNumber) return String(month || 'Selected month');
+    return new Date(year, monthNumber - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+
+  function reconciliationDate(seconds) {
+    if (!seconds) return '—';
+    return new Date(Number(seconds) * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function setReconciliationLoading(message) {
+    const ids = ['reconcileAllocationsPane', 'reconcileGiftActivityPane', 'reconcilePayoutsPane', 'reconcileExceptionsPane'];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = `<div class="history-empty">${escapeHtml(message)}</div>`;
+    });
+  }
+
+  async function loadReconciliation(btn) {
+    if (!currentParish) { setStatus('Load a parish first.', 'error'); return; }
+    initReconciliationMonths();
+    const month = document.getElementById('reconcileMonth')?.value;
+    if (!month) return;
+    if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+    setReconciliationLoading('Matching Stripe payouts to AGAPAY gifts…');
+    try {
+      const path = `/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/reconciliation?month=${encodeURIComponent(month)}`;
+      const response = await fetch(path, { headers: authHeaders() });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || data.error || 'Unable to run reconciliation.');
+      reconciliationData = data;
+      renderReconciliation(data);
+    } catch (error) {
+      reconciliationData = null;
+      setReconciliationLoading(error.message);
+      const status = document.getElementById('reconcileStatusLine');
+      if (status) status.innerHTML = `<span class="reconcile-state attention">Needs attention</span><span>${escapeHtml(error.message)}</span>`;
+      setStatus(error.message, 'error');
+    } finally {
+      if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+    }
+  }
+
+  function renderReconciliation(data) {
+    if (!data?.available) {
+      setReconciliationLoading(data?.reason || 'Connect Stripe before reconciling monthly deposits.');
+      return;
+    }
+    const summary = data.summary || {};
+    const close = data.closeRecord || null;
+    document.getElementById('reconcileDeposited').textContent = money(summary.depositedCents || 0);
+    document.getElementById('reconcilePayoutCount').textContent = `${summary.paidPayoutCount || 0} paid payout${summary.paidPayoutCount === 1 ? '' : 's'}`;
+    document.getElementById('reconcileGross').textContent = money(summary.grossActivityCents || 0);
+    document.getElementById('reconcileRefunds').textContent = money(summary.refundCents || 0);
+    document.getElementById('reconcileFees').textContent = money(summary.totalFeeCents || 0);
+    document.getElementById('reconcileFeeBreakdown').textContent = `Stripe ${money(summary.stripeFeeCents || 0)} · AGAPAY ${money(summary.agapayFeeCents || 0)}`;
+    document.getElementById('reconcileMatched').textContent = money(summary.matchedNetCents || 0);
+    document.getElementById('reconcileMatchedPercent').textContent = `${summary.matchedPercent ?? 0}% of payout activity traced`;
+    document.getElementById('reconcileExceptions').textContent = summary.exceptionCount || 0;
+
+    const status = document.getElementById('reconcileStatusLine');
+    if (status) {
+      const closed = close?.status === 'closed';
+      const detail = closed
+        ? `Closed ${fullDate(close.closedAt)} · Bank difference ${moneyFull(close.differenceCents || 0)}`
+        : `${summary.payoutCount || 0} payout${summary.payoutCount === 1 ? '' : 's'} arriving in ${reconciliationMonthLabel(data.period?.month)}`;
+      status.innerHTML = `<span class="reconcile-state ${closed ? 'closed' : 'open'}">${closed ? 'Month closed' : 'Open month'}</span><span>${escapeHtml(detail)}</span>`;
+    }
+
+    renderReconciliationAllocations(data.allocations || [], summary.depositedCents || 0);
+    renderReconciliationGiftActivity(data.giftActivity || {});
+    renderReconciliationPayouts(data.payouts || [], data.transactions || []);
+    renderReconciliationExceptions(data.exceptions || []);
+
+    const amount = document.getElementById('reconcileBankAmount');
+    const notes = document.getElementById('reconcileNotes');
+    if (amount) amount.value = close ? (Number(close.bankStatementCents || 0) / 100).toFixed(2) : (Number(summary.depositedCents || 0) / 100).toFixed(2);
+    if (notes) notes.value = close?.notes || '';
+    updateReconciliationDifference();
+  }
+
+  function renderReconciliationAllocations(allocations, depositedCents) {
+    const pane = document.getElementById('reconcileAllocationsPane');
+    if (!pane) return;
+    if (!allocations.length) {
+      pane.innerHTML = '<div class="history-empty">No matched fund allocations were found in this month\'s paid payouts.</div>';
+      return;
+    }
+    pane.innerHTML = `<div class="reconcile-allocation-list">${allocations.map(item => {
+      const percent = depositedCents ? Math.max(0, Math.min(100, Math.round((Number(item.netCents || 0) / depositedCents) * 100))) : 0;
+      return `<div class="reconcile-allocation-row">
+        <div class="reconcile-allocation-copy"><span>${escapeHtml(item.category || 'Giving')}</span><strong>${escapeHtml(item.label || 'General Giving')}</strong><small>${item.transactionCount || 0} transaction${item.transactionCount === 1 ? '' : 's'} · ${money(item.feeCents || 0)} fees</small></div>
+        <div class="reconcile-allocation-amount"><strong>${money(item.netCents || 0)}</strong><span>${percent}%</span></div>
+        <div class="reconcile-allocation-bar"><i style="width:${percent}%"></i></div>
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  function renderReconciliationGiftActivity(activity) {
+    const pane = document.getElementById('reconcileGiftActivityPane');
+    if (!pane) return;
+    pane.innerHTML = `<div class="reconcile-activity-grid">
+      <div><span>Gifts made</span><strong>${activity.giftCount || 0}</strong></div>
+      <div><span>Gross gifts</span><strong>${money(activity.grossGiftCents || 0)}</strong></div>
+      <div><span>Parish net</span><strong>${money(activity.parishNetCents || 0)}</strong></div>
+      <div><span>Gift fees</span><strong>${money(activity.feeCents || 0)}</strong></div>
+    </div><p class="section-note">These gifts were made during the month. Stripe may deposit some of them in a later month.</p>`;
+  }
+
+  function renderReconciliationPayouts(payouts, transactions) {
+    const pane = document.getElementById('reconcilePayoutsPane');
+    if (!pane) return;
+    if (!payouts.length) {
+      pane.innerHTML = '<div class="history-empty">No Stripe payouts arrived in this month.</div>';
+      return;
+    }
+    pane.innerHTML = `<div class="reconcile-payout-list">${payouts.map(payout => {
+      const rows = transactions.filter(row => row.payoutId === payout.id);
+      return `<details class="reconcile-payout">
+        <summary>
+          <div><span>${reconciliationDate(payout.arrivalDate)}</span><strong>${escapeHtml(payout.id || 'Stripe payout')}</strong></div>
+          <div><strong>${money(payout.amountCents || 0)}</strong><span class="payout-status ${escapeHtml(payout.status || '')}">${escapeHtml(statusLabel(payout.status))}</span></div>
+        </summary>
+        <div class="reconcile-payout-meta"><span>${payout.transactionCount || 0} Stripe transactions</span><span>${money(payout.matchedNetCents || 0)} matched</span><span>${money(payout.differenceCents || 0)} composition difference</span></div>
+        <div class="history-table-wrap"><table class="history-table reconcile-transaction-table"><thead><tr><th>Date</th><th>Post to</th><th>Donor</th><th>Gross</th><th>Fees</th><th>Net</th><th>Match</th></tr></thead><tbody>
+          ${rows.map(row => `<tr><td>${reconciliationDate(row.created)}</td><td>${escapeHtml(row.allocationLabel || row.reportingCategory || 'Stripe activity')}</td><td>${escapeHtml(row.donorName || '—')}</td><td>${moneyFull(row.grossCents || 0)}</td><td>${moneyFull(row.feeCents || 0)}</td><td><strong>${moneyFull(row.netCents || 0)}</strong></td><td><span class="reconcile-match ${row.matched ? 'yes' : 'no'}">${row.matched ? 'Matched' : 'Review'}</span></td></tr>`).join('') || '<tr><td colspan="7">No transaction detail returned.</td></tr>'}
+        </tbody></table></div>
+      </details>`;
+    }).join('')}</div>`;
+  }
+
+  function renderReconciliationExceptions(exceptions) {
+    const pane = document.getElementById('reconcileExceptionsPane');
+    if (!pane) return;
+    if (!exceptions.length) {
+      pane.innerHTML = '<div class="reconcile-clear"><strong>Ready to close</strong><span>No payout exceptions need review.</span></div>';
+      return;
+    }
+    pane.innerHTML = `<div class="reconcile-exception-list">${exceptions.map(item => `<div class="reconcile-exception ${escapeHtml(item.severity || 'warning')}"><span>${escapeHtml(statusLabel(item.severity || 'warning'))}</span><div><strong>${escapeHtml(item.message || 'Review this item.')}</strong>${item.amountCents ? `<small>Amount: ${moneyFull(item.amountCents)}</small>` : ''}${item.payoutId ? `<small>Payout: ${escapeHtml(item.payoutId)}</small>` : ''}</div></div>`).join('')}</div>`;
+  }
+
+  function updateReconciliationDifference() {
+    const el = document.getElementById('reconcileDifference');
+    if (!el) return;
+    if (!reconciliationData?.available) { el.textContent = 'Difference: —'; return; }
+    const entered = Math.round(Number(document.getElementById('reconcileBankAmount')?.value || 0) * 100);
+    const expected = Number(reconciliationData.summary?.depositedCents || 0);
+    const difference = entered - expected;
+    el.classList.toggle('balanced', difference === 0);
+    el.classList.toggle('unbalanced', difference !== 0);
+    el.textContent = difference === 0 ? 'Balanced to Stripe' : `Difference: ${moneyFull(difference)}`;
+  }
+
+  async function saveReconciliationClose(closed, btn) {
+    if (!currentParish || !reconciliationData?.available) { setStatus('Run the reconciliation first.', 'error'); return; }
+    const bankStatementCents = Math.round(Number(document.getElementById('reconcileBankAmount')?.value || 0) * 100);
+    const expectedDepositCents = Number(reconciliationData.summary?.depositedCents || 0);
+    const notes = document.getElementById('reconcileNotes')?.value.trim() || '';
+    if (closed && bankStatementCents !== expectedDepositCents && !notes) {
+      setStatus('Add a treasurer note explaining the bank difference before closing.', 'error');
+      document.getElementById('reconcileNotes')?.focus();
+      return;
+    }
+    if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+    try {
+      const response = await fetch(`/api/parish/dashboard/${encodeURIComponent(currentParish.parishId)}/reconciliation/close`, {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ month: reconciliationData.period?.month, bankStatementCents, expectedDepositCents, notes, closed })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to save the month close.');
+      reconciliationData.closeRecord = data.record;
+      renderReconciliation(reconciliationData);
+      setStatus(closed ? 'Month closed and preserved for the parish record.' : 'Month reopened.', 'success');
+    } catch (error) { setStatus(error.message, 'error'); }
+    finally { if (btn) { btn.classList.remove('loading'); btn.disabled = false; } }
+  }
+
+  function csvCell(value) {
+    return `"${String(value ?? '').replace(/"/g, '""')}"`;
+  }
+
+  function exportReconciliationCsv() {
+    if (!reconciliationData?.available) { setStatus('Run the reconciliation first.', 'error'); return; }
+    const data = reconciliationData;
+    const rows = [
+      ['AGAPAY Monthly Reconciliation', currentParish?.parishName || ''],
+      ['Month', data.period?.month || ''],
+      ['Deposited to bank', (Number(data.summary?.depositedCents || 0) / 100).toFixed(2)],
+      ['Stripe fees', (Number(data.summary?.stripeFeeCents || 0) / 100).toFixed(2)],
+      ['AGAPAY fees', (Number(data.summary?.agapayFeeCents || 0) / 100).toFixed(2)],
+      [],
+      ['Fund Allocation'],
+      ['Category', 'Fund / Campaign', 'Transactions', 'Gross', 'Fees', 'Net'],
+      ...(data.allocations || []).map(item => [item.category, item.label, item.transactionCount, item.grossCents / 100, item.feeCents / 100, item.netCents / 100]),
+      [],
+      ['Stripe Payouts'],
+      ['Arrival date', 'Payout ID', 'Status', 'Amount', 'Matched', 'Difference'],
+      ...(data.payouts || []).map(item => [reconciliationDate(item.arrivalDate), item.id, item.status, item.amountCents / 100, (item.matchedNetCents || 0) / 100, (item.differenceCents || 0) / 100]),
+      [],
+      ['Transaction Detail'],
+      ['Date', 'Payout ID', 'Allocation', 'Donor', 'Gross', 'Fees', 'Net', 'Matched'],
+      ...(data.transactions || []).map(item => [reconciliationDate(item.created), item.payoutId, item.allocationLabel, item.donorName, item.grossCents / 100, item.feeCents / 100, item.netCents / 100, item.matched ? 'Yes' : 'No'])
+    ];
+    const csv = rows.map(row => row.map(csvCell).join(',')).join('\n');
+    const name = `${currentParish.parishId}-reconciliation-${data.period.month}.csv`;
+    downloadBlob(name, new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    setStatus(`Exported ${name}.`, 'success');
+  }
+
+  function printReconciliationReport() {
+    if (!reconciliationData?.available) { setStatus('Run the reconciliation first.', 'error'); return; }
+    const data = reconciliationData;
+    const summary = data.summary || {};
+    const popup = window.open('', '_blank', 'noopener,noreferrer');
+    if (!popup) { setStatus('Allow pop-ups to print the closeout report.', 'error'); return; }
+    const allocations = (data.allocations || []).map(item => `<tr><td>${escapeHtml(item.category)}</td><td>${escapeHtml(item.label)}</td><td>${item.transactionCount || 0}</td><td>${moneyFull(item.netCents || 0)}</td></tr>`).join('');
+    const payouts = (data.payouts || []).map(item => `<tr><td>${reconciliationDate(item.arrivalDate)}</td><td>${escapeHtml(item.id)}</td><td>${escapeHtml(statusLabel(item.status))}</td><td>${moneyFull(item.amountCents || 0)}</td></tr>`).join('');
+    const exceptions = (data.exceptions || []).map(item => `<li>${escapeHtml(item.message)}</li>`).join('') || '<li>None.</li>';
+    popup.document.write(`<!doctype html><html><head><title>AGAPAY Reconciliation</title><style>body{font:14px Arial;color:#061522;margin:40px}h1,h2{font-family:Georgia,serif}header{border-bottom:3px solid #c9a24a;margin-bottom:24px;padding-bottom:16px}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.summary div{border:1px solid #ddd;padding:12px}.summary span{display:block;color:#666;font-size:11px;text-transform:uppercase}.summary strong{font-size:20px}table{width:100%;border-collapse:collapse;margin:12px 0 28px}th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left}th{font-size:11px;text-transform:uppercase}footer{margin-top:36px;border-top:1px solid #ccc;padding-top:12px;color:#666}@media print{body{margin:18mm}.no-print{display:none}}@media(max-width:700px){.summary{grid-template-columns:1fr 1fr}}</style></head><body><header><small>AGAPAY GIVING · MONTHLY RECONCILIATION</small><h1>${escapeHtml(currentParish.parishName || 'Parish')}</h1><p>${escapeHtml(reconciliationMonthLabel(data.period?.month))}</p></header><div class="summary"><div><span>Bank deposits</span><strong>${money(summary.depositedCents || 0)}</strong></div><div><span>Gross activity</span><strong>${money(summary.grossActivityCents || 0)}</strong></div><div><span>Total fees</span><strong>${money(summary.totalFeeCents || 0)}</strong></div><div><span>Matched</span><strong>${summary.matchedPercent ?? 0}%</strong></div></div><h2>Fund allocation</h2><table><thead><tr><th>Category</th><th>Post to</th><th>Count</th><th>Net</th></tr></thead><tbody>${allocations || '<tr><td colspan="4">No allocations.</td></tr>'}</tbody></table><h2>Stripe payouts</h2><table><thead><tr><th>Arrival</th><th>Payout</th><th>Status</th><th>Amount</th></tr></thead><tbody>${payouts || '<tr><td colspan="4">No payouts.</td></tr>'}</tbody></table><h2>Review items</h2><ul>${exceptions}</ul><footer>Generated ${escapeHtml(new Date(data.generatedAt || Date.now()).toLocaleString())} · AGAPAY Giving</footer><script>window.onload=()=>window.print()<\/script></body></html>`);
+    popup.document.close();
+  }
+
   // ── SAVE DASHBOARD ────────────────────────────────────────
   function payload() {
     syncGivingOptionsFromAdvanced();
@@ -1437,6 +1680,7 @@
   const params = new URLSearchParams(window.location.search);
   const parishIdField = document.getElementById('parishId');
   if (params.get('parish') && parishIdField) parishIdField.value = params.get('parish');
+  initReconciliationMonths();
   initParishPasswordResetPage();
 
 

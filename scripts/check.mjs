@@ -134,6 +134,10 @@ assert.ok(worker.includes("canonicalCampaignPathFromLegacy"), "worker should red
 assert.ok(worker.includes('/^\\/giving\\/[^/]+\\/[^/]+-campaign\\/?$/'), "worker should serve canonical parish campaign routes");
 const parishDashboardApp = await readFile("public/parish/app.js", "utf8");
 assert.ok(parishDashboardApp.includes("campaignPublicUrl") && parishDashboardApp.includes("-campaign"), "parish dashboard should publish canonical nested campaign URLs");
+const parishDashboardHtml = await readFile("public/parish/dashboard.html", "utf8");
+assert.ok(parishDashboardHtml.includes('id="tab-reconcile"') && parishDashboardHtml.includes("Treasurer closeout"), "parish dashboard should include monthly reconciliation and closeout UI");
+assert.ok(parishDashboardApp.includes("loadReconciliation") && parishDashboardApp.includes("exportReconciliationCsv") && parishDashboardApp.includes("saveReconciliationClose"), "parish dashboard should load, export, and close monthly reconciliations");
+assert.ok(worker.includes("handleParishReconciliation") && worker.includes("/reconciliation/close"), "worker should route authenticated parish reconciliation endpoints");
 assert.ok(donorApp.includes("handleDonorCheckoutReturn"), "donor dashboard should confirm returned Stripe checkout sessions");
 const givingOverview = await readFile("public/give/index.html", "utf8");
 assert.ok(givingOverview.includes("Orthodox Giving App &amp; Tithing Software") || givingOverview.includes("Orthodox Giving App & Tithing Software"), "Giving overview should target Orthodox giving and tithing search intent");

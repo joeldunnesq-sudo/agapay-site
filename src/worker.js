@@ -95,6 +95,8 @@ import {
   handleParishSubscriptionPortal,
   handleParishCommemorations,
   handleParishPayoutDiagnostics,
+  handleParishReconciliation,
+  handleParishReconciliationClose,
   handleParishGivingSummary,
   handleParishGivingHistory,
   handleParishRecurringHealth,
@@ -1235,6 +1237,14 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/payout-diagnostics")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/payout-diagnostics", ""));
       return handleParishPayoutDiagnostics(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/reconciliation/close")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/reconciliation/close", ""));
+      return handleParishReconciliationClose(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/reconciliation")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/reconciliation", ""));
+      return handleParishReconciliation(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/campaign-upload")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/campaign-upload", ""));

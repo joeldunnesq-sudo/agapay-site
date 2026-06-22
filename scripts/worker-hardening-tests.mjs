@@ -737,6 +737,7 @@ async function withMockFetch(handler, run) {
     parishName: "St. Test Orthodox Church",
     communityType: "parish",
     givingStatus: "active",
+    stripeAccountId: "acct_reconciliation_test",
     parishDashboardToken: "temporary-password"
   };
   await testEnv.AGAPAY_REGISTRATIONS.put(registration.reference, JSON.stringify(registration));
@@ -776,6 +777,42 @@ async function withMockFetch(handler, run) {
     headers: { Authorization: `Bearer ${parishLogin.token}` }
   }), testEnv);
   assert.equal(parish.status, 200);
+
+  const reconciliationWithoutAuth = await worker.fetch(request("/api/parish/dashboard/st-test/reconciliation?month=2026-06"), testEnv);
+  assert.equal(reconciliationWithoutAuth.status, 401);
+
+  const closeWithoutAuth = await worker.fetch(request("/api/parish/dashboard/st-test/reconciliation/close", {
+    method: "POST",
+    body: { month: "2026-06", bankStatementCents: 0, expectedDepositCents: 0, closed: true }
+  }), testEnv);
+  assert.equal(closeWithoutAuth.status, 401);
+
+  await withMockFetch(async (url, init = {}) => {
+    assert.ok(String(url).includes("/v1/payouts?"));
+    assert.equal(init.headers["Stripe-Account"], "acct_reconciliation_test");
+    return new Response(JSON.stringify({
+      data: [{ id: "po_reconciliation", amount: 100, status: "paid", created: 1781136000, arrival_date: 1781568000 }],
+      has_more: false
+    }), { status: 200, headers: { "Content-Type": "application/json" } });
+  }, async () => {
+    const unexplainedDifference = await worker.fetch(request("/api/parish/dashboard/st-test/reconciliation/close", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${parishLogin.token}` },
+      body: { month: "2026-06", bankStatementCents: 200, expectedDepositCents: 200, closed: true }
+    }), testEnv);
+    assert.equal(unexplainedDifference.status, 400, "server should recompute expected deposits and require a note for differences");
+
+    const balancedClose = await worker.fetch(request("/api/parish/dashboard/st-test/reconciliation/close", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${parishLogin.token}` },
+      body: { month: "2026-06", bankStatementCents: 100, expectedDepositCents: 999999, closed: true }
+    }), testEnv);
+    assert.equal(balancedClose.status, 200);
+    const closeBody = await json(balancedClose);
+    assert.equal(closeBody.record.expectedDepositCents, 100, "close record should use Stripe's total rather than the browser value");
+    assert.equal(closeBody.record.status, "closed");
+  });
+
 }
 
 {
