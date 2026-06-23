@@ -112,20 +112,16 @@
     </div>
 
   <script type="module" src="/listen/app.js"></script>
-
-  <script>
-    // Register service worker
-   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/listen/service-worker.js', { scope: '/listen/' })
-        .then((registration) => {
-          console.log('AGAPAY Listen PWA registered with scope:', registration.scope);
-        })
-        .catch((error) => {
-          console.error('Listen PWA scoped registration failed:', error);
-        });
-    });
-  }
+  
+    <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        // Point directly to a dedicated or shared script file explicitly scoped
+        navigator.serviceWorker.register('/listen/sw.js', { scope: '/listen/' })
+          .then(reg => console.log('AGAPAY Listen PWA registered with scope:', reg.scope))
+          .catch(err => console.error('Service worker registration failed:', err));
+      });
+    }
   </script>
 </body>
 </html>
