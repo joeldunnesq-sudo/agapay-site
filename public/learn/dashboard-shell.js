@@ -226,7 +226,7 @@ async function openLearnCheckout() {
     button.textContent = "Opening Stripe...";
   });
   try {
-    const payload = await apiPost("/api/learn/billing/checkout", { plan: "family" });
+    const payload = await apiPost("/api/learn/billing/checkout", { plan: "family", interval: "year" });
     if (payload.url) {
       window.location.href = payload.url;
       return;

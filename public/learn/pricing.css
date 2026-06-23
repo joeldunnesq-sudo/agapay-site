@@ -185,6 +185,18 @@ h1 {
   border: 1px solid rgba(201, 162, 91, 0.42);
 }
 
+.button-quiet {
+  color: var(--learn-night);
+  background: rgba(255, 253, 248, 0.42);
+  border: 1px solid rgba(6, 21, 34, 0.14);
+}
+
+.featured .button-quiet {
+  color: #fff8e8;
+  background: rgba(255, 248, 232, 0.08);
+  border-color: rgba(201, 162, 91, 0.5);
+}
+
 .learn-product {
   position: relative;
   min-height: 36rem;
@@ -1052,6 +1064,20 @@ h1 {
   background: var(--learn-gold);
 }
 
+.billing-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 1.35rem;
+}
+
+.billing-choice .button {
+  width: 100%;
+  min-height: 46px;
+  margin: 0;
+  padding-inline: 0.8rem;
+}
+
 .scholarship {
   display: grid;
   grid-template-columns: 1.15fr 1fr auto;
@@ -1071,7 +1097,8 @@ h1 {
 }
 
 .scholarship a {
-  color: var(--learn-gold-deep);
+  width: max-content;
+  color: var(--learn-night);
   font-weight: 900;
 }
 
@@ -1282,6 +1309,10 @@ h1 {
   .pricing-jump {
     position: static;
     margin-bottom: 1rem;
+  }
+
+  .billing-choice {
+    grid-template-columns: 1fr;
   }
 }
 

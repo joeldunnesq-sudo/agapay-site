@@ -216,8 +216,8 @@
       <a class="button button-secondary pricing-jump" href="/learn/pricing">See Full Pricing</a>
       <div class="pricing-grid compact-pricing">
         <article class="price-card"><p class="plan-label">Free</p><h3>$0</h3><p class="plan-note">Perfect for getting started.</p><ul><li>1 household</li><li>Up to 2 children</li><li>Basic planning tools</li><li>Limited printables</li></ul><a class="button button-secondary" href="/onboarding">Start Free</a></article>
-        <article class="price-card featured"><div class="featured-ribbon">Most loved</div><p class="plan-label">Founding Family</p><h3>$49<span>/year</span></h3><p class="plan-note">Help shape AGAPAY Learn from the beginning.</p><ul><li>Everything in Family</li><li>Founding pricing</li><li>Early feature previews</li><li>Priority feedback</li></ul><a class="button button-primary" href="/myagapay/learn/setup?plan=founding-family" data-learn-checkout data-plan="founding-family">Become a Founding Family</a></article>
-        <article class="price-card"><p class="plan-label">Family</p><h3>$59<span>/year</span></h3><p class="plan-note">Everything your household needs.</p><ul><li>Unlimited children</li><li>Full adaptive planner</li><li>Grace Mode</li><li>Full Print Center access</li></ul><a class="button button-secondary" href="/myagapay/learn/setup?plan=family" data-learn-checkout data-plan="family">Choose Family</a></article>
+        <article class="price-card featured"><div class="featured-ribbon">Most loved</div><p class="plan-label">Founding Family</p><h3>$49<span>/year</span></h3><p class="plan-note">Help shape AGAPAY Learn from the beginning, or pay $5/month.</p><ul><li>Everything in Family</li><li>Founding pricing</li><li>Early feature previews</li><li>Priority feedback</li></ul><div class="billing-choice"><a class="button button-primary" href="/myagapay/learn/setup?plan=founding-family&interval=year" data-learn-checkout data-plan="founding-family" data-interval="year">Pay yearly</a><a class="button button-quiet" href="/myagapay/learn/setup?plan=founding-family&interval=month" data-learn-checkout data-plan="founding-family" data-interval="month">Pay monthly</a></div></article>
+        <article class="price-card"><p class="plan-label">Family</p><h3>$59<span>/year</span></h3><p class="plan-note">Everything your household needs, or pay $6/month.</p><ul><li>Unlimited children</li><li>Full adaptive planner</li><li>Grace Mode</li><li>Full Print Center access</li></ul><div class="billing-choice"><a class="button button-secondary" href="/myagapay/learn/setup?plan=family&interval=year" data-learn-checkout data-plan="family" data-interval="year">Pay yearly</a><a class="button button-quiet" href="/myagapay/learn/setup?plan=family&interval=month" data-learn-checkout data-plan="family" data-interval="month">Pay monthly</a></div></article>
       </div>
     </section>
 
@@ -291,11 +291,15 @@
           const response = await fetch("/api/learn/billing/checkout", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ plan: link.dataset.plan || "family" })
+            body: JSON.stringify({ plan: link.dataset.plan || "family", interval: link.dataset.interval || "year" })
           });
           const payload = await response.json().catch(() => ({}));
           if (response.ok && payload.url) {
             window.location.href = payload.url;
+            return;
+          }
+          if (response.status === 401) {
+            window.location.href = `/my-agapay/login?next=${encodeURIComponent(link.getAttribute("href") || "/myagapay/learn/setup")}`;
             return;
           }
           errorMessage = payload.error || errorMessage;

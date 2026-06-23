@@ -88,7 +88,7 @@
           <div class="featured-ribbon">Founding pricing</div>
           <p class="plan-label">Founding Family</p>
           <h3>$49<span>/year</span></h3>
-          <p class="plan-note">For families helping shape AGAPAY Learn from the beginning.</p>
+          <p class="plan-note">For families helping shape AGAPAY Learn from the beginning. Monthly is available at $5/month.</p>
           <ul>
             <li>Everything in Family</li>
             <li>Founding pricing</li>
@@ -96,13 +96,16 @@
             <li>Priority feedback</li>
             <li>Direct impact on the future of AGAPAY Learn</li>
           </ul>
-          <a class="button button-primary" href="/myagapay/learn/setup?plan=founding-family" data-learn-checkout data-plan="founding-family">Become a Founding Family</a>
+          <div class="billing-choice">
+            <a class="button button-primary" href="/myagapay/learn/setup?plan=founding-family&interval=year" data-learn-checkout data-plan="founding-family" data-interval="year">Pay yearly</a>
+            <a class="button button-quiet" href="/myagapay/learn/setup?plan=founding-family&interval=month" data-learn-checkout data-plan="founding-family" data-interval="month">Pay monthly</a>
+          </div>
         </article>
 
         <article class="price-card">
           <p class="plan-label">Family</p>
           <h3>$59<span>/year</span></h3>
-          <p class="plan-note">Or $6/month for the full household planner.</p>
+          <p class="plan-note">Best value for the full household planner. Monthly is available at $6/month.</p>
           <ul>
             <li>Unlimited children</li>
             <li>Full planner</li>
@@ -112,7 +115,10 @@
             <li>Print center</li>
             <li>Full Print Center access</li>
           </ul>
-          <a class="button button-secondary" href="/myagapay/learn/setup?plan=family" data-learn-checkout data-plan="family">Choose Family</a>
+          <div class="billing-choice">
+            <a class="button button-secondary" href="/myagapay/learn/setup?plan=family&interval=year" data-learn-checkout data-plan="family" data-interval="year">Pay yearly</a>
+            <a class="button button-quiet" href="/myagapay/learn/setup?plan=family&interval=month" data-learn-checkout data-plan="family" data-interval="month">Pay monthly</a>
+          </div>
         </article>
       </div>
     </section>
@@ -122,8 +128,8 @@
         <p class="eyebrow">We are here for every family.</p>
         <h2>AGAPAY Learn should remain accessible for real households.</h2>
       </div>
-      <p>Families may be able to use parish partner discounts, scholarship codes, or hardship coupons at checkout.</p>
-      <a href="/myagapay/learn/setup#scholarships">Learn how discounts & scholarships work</a>
+      <p>If you want to use AGAPAY Learn but cannot afford it right now, contact us. We are building scholarship codes and parish-supported discounts so faithful planning can remain accessible.</p>
+      <a class="button button-secondary" href="/contact?subject=AGAPAY%20Learn%20scholarship">Ask about scholarships</a>
     </section>
 
     <section class="value-section">
@@ -218,11 +224,15 @@
           const response = await fetch("/api/learn/billing/checkout", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ plan: link.dataset.plan || "family" })
+            body: JSON.stringify({ plan: link.dataset.plan || "family", interval: link.dataset.interval || "year" })
           });
           const payload = await response.json().catch(() => ({}));
           if (response.ok && payload.url) {
             window.location.href = payload.url;
+            return;
+          }
+          if (response.status === 401) {
+            window.location.href = `/my-agapay/login?next=${encodeURIComponent(link.getAttribute("href") || "/myagapay/learn/setup")}`;
             return;
           }
           errorMessage = payload.error || errorMessage;

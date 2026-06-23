@@ -11,17 +11,29 @@ const monthlyPriceEnv = "AGAPAY_STRIPE_PRICE_LEARN_FAMILY_MONTHLY";
 const foundingYearlyPriceEnv = "AGAPAY_STRIPE_PRICE_LEARN_FOUNDING_YEARLY";
 const foundingMonthlyPriceEnv = "AGAPAY_STRIPE_PRICE_LEARN_FOUNDING_MONTHLY";
 const planCatalog = {
-  "founding-family": {
+  "founding-family:year": {
     label: "AGAPAY Learn Founding Family",
     unitAmount: 4900,
     interval: "year",
     description: "Founding annual subscription for AGAPAY Learn."
   },
-  family: {
+  "founding-family:month": {
+    label: "AGAPAY Learn Founding Family",
+    unitAmount: 500,
+    interval: "month",
+    description: "Founding monthly subscription for AGAPAY Learn."
+  },
+  "family:year": {
     label: "AGAPAY Learn Family",
     unitAmount: 5900,
     interval: "year",
     description: "Annual household subscription for AGAPAY Learn."
+  },
+  "family:month": {
+    label: "AGAPAY Learn Family",
+    unitAmount: 600,
+    interval: "month",
+    description: "Monthly household subscription for AGAPAY Learn."
   }
 };
 export const LEARN_BILLING_KV_PREFIX = "__agapay_learn_billing:";
@@ -52,15 +64,24 @@ function normalizeCheckoutPlan(value) {
   return LEARN_FAMILY_PLAN;
 }
 
-function learnPriceId(env = {}, plan = LEARN_FAMILY_PLAN) {
-  if (normalizeCheckoutPlan(plan) === "founding-family") {
-    return env[foundingYearlyPriceEnv] || env[foundingMonthlyPriceEnv] || env[yearlyPriceEnv] || env[monthlyPriceEnv] || "";
-  }
-  return env[yearlyPriceEnv] || env[monthlyPriceEnv] || "";
+function normalizeCheckoutInterval(value) {
+  const interval = String(value || "").trim().toLowerCase();
+  if (interval === "monthly" || interval === "month") return "month";
+  return "year";
 }
 
-function learnPlanDetails(plan) {
-  return planCatalog[normalizeCheckoutPlan(plan)] || planCatalog.family;
+function learnPriceId(env = {}, plan = LEARN_FAMILY_PLAN, interval = "year") {
+  const billingInterval = normalizeCheckoutInterval(interval);
+  if (normalizeCheckoutPlan(plan) === "founding-family") {
+    return billingInterval === "month"
+      ? env[foundingMonthlyPriceEnv] || env[monthlyPriceEnv] || ""
+      : env[foundingYearlyPriceEnv] || env[yearlyPriceEnv] || "";
+  }
+  return billingInterval === "month" ? env[monthlyPriceEnv] || "" : env[yearlyPriceEnv] || "";
+}
+
+function learnPlanDetails(plan, interval = "year") {
+  return planCatalog[`${normalizeCheckoutPlan(plan)}:${normalizeCheckoutInterval(interval)}`] || planCatalog["family:year"];
 }
 
 function checkoutConfigured(env = {}) {
@@ -138,9 +159,12 @@ export async function saveLearnBillingRecord(env = {}, record = {}) {
     householdId: record.householdId || identity.householdId,
     plan: normalizeCheckoutPlan(record.plan),
     status: String(record.status || "active").toLowerCase(),
+    learnSubscriptionCents: Math.max(0, Number(record.learnSubscriptionCents || learnPlanDetails(record.plan, record.interval || record.billingInterval).unitAmount || 0)),
     stripeCustomerId: record.stripeCustomerId || "",
     stripeSubscriptionId: record.stripeSubscriptionId || "",
     stripeCheckoutSessionId: record.stripeCheckoutSessionId || "",
+    interval: normalizeCheckoutInterval(record.interval || record.billingInterval),
+    learnBillingInterval: normalizeCheckoutInterval(record.interval || record.billingInterval),
     currentPeriodEnd: record.currentPeriodEnd || "",
     cancelAtPeriodEnd: Boolean(record.cancelAtPeriodEnd || record.cancel_at_period_end),
     cancelledAt: record.cancelledAt || record.canceledAt || "",
@@ -269,7 +293,7 @@ export async function learnBillingStatus(request, env = {}) {
     childLimit: LEARN_FREE_CHILD_LIMIT,
     printLimit: LEARN_FREE_PRINT_LIMIT,
     checkoutConfigured: checkoutConfigured(env),
-    priceSource: learnPriceId(env) ? "configured_price" : "inline_price_data",
+    priceSource: learnPriceId(env, LEARN_FAMILY_PLAN, "year") || learnPriceId(env, LEARN_FAMILY_PLAN, "month") ? "configured_price" : "inline_price_data",
     checkoutEndpoint: "/api/learn/billing/checkout",
     requiredEnv: [
       "STRIPE_SECRET_KEY",
@@ -284,9 +308,10 @@ export async function learnBillingStatus(request, env = {}) {
 export async function learnBillingCheckout(request, env = {}) {
   const body = await request.json().catch(() => ({}));
   const plan = normalizeCheckoutPlan(body.plan);
+  const interval = normalizeCheckoutInterval(body.interval || body.billingInterval);
   const identity = await learnBillingIdentity(request, env);
   if (!identity.email) return json({ ok: false, error: "Unauthorized" }, { status: 401 });
-  const priceId = learnPriceId(env, plan);
+  const priceId = learnPriceId(env, plan, interval);
   if (!env.STRIPE_SECRET_KEY) {
     return json({
       ok: false,
@@ -301,7 +326,7 @@ export async function learnBillingCheckout(request, env = {}) {
   }
 
   const baseUrl = publicBaseUrl(request, env);
-  const planDetails = learnPlanDetails(plan);
+  const planDetails = learnPlanDetails(plan, interval);
   const params = new URLSearchParams();
   params.set("mode", "subscription");
   if (priceId) {
@@ -323,10 +348,12 @@ export async function learnBillingCheckout(request, env = {}) {
   params.set("cancel_url", `${baseUrl}/myagapay/learn/setup?learn_billing=cancelled`);
   params.set("metadata[product]", "learn");
   params.set("metadata[plan]", plan);
+  params.set("metadata[interval]", interval);
   params.set("metadata[email]", identity.email);
   params.set("metadata[household_id]", identity.householdId);
   params.set("subscription_data[metadata][product]", "learn");
   params.set("subscription_data[metadata][plan]", plan);
+  params.set("subscription_data[metadata][interval]", interval);
   params.set("subscription_data[metadata][email]", identity.email);
   params.set("subscription_data[metadata][household_id]", identity.householdId);
 
@@ -427,6 +454,8 @@ export async function persistLearnBillingFromStripe(env = {}, source = {}) {
     email,
     householdId: metadata.household_id || "",
     plan: metadata.plan || "family",
+    interval: metadata.interval || source.interval || "",
+    learnSubscriptionCents: learnPlanDetails(metadata.plan || "family", metadata.interval || source.interval || "year").unitAmount,
     status: source.status || "active",
     stripeCustomerId: source.customer || source.stripeCustomerId || "",
     stripeSubscriptionId: source.subscription || source.id || source.stripeSubscriptionId || "",
