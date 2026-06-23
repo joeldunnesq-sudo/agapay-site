@@ -676,6 +676,32 @@ function renderProfile() {
   </div>`;
 }
 
+
+function mountPremiumTheme() {
+  if (document.querySelector('link[data-agp-listen-premium]')) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = '/listen-premium.css';
+  link.dataset.agpListenPremium = 'true';
+  document.head.appendChild(link);
+}
+
+function renderMiniPlayer() {
+  if (!state.current || state.screen === 'player' || state.screen === 'show') return '';
+  const ep = state.current;
+  return `<div class="agp-mini-player tappable" id="mini-player-open" role="button" tabindex="0" aria-label="Open now playing">
+    ${epArt(ep, 46, 0)}
+    <div class="agp-mini-player__copy">
+      <div class="agp-mini-player__title">${esc(ep.title)}</div>
+      <div class="agp-mini-player__show">${esc(ep.show || 'AGAPAY Listen')}</div>
+      <div class="agp-mini-player__progress"><span style="width:${Math.max(0, Math.min(100, state.progress)).toFixed(1)}%"></span></div>
+    </div>
+    <button class="agp-mini-player__button mini-play-pause tappable" type="button" aria-label="${state.playing ? 'Pause' : 'Play'}">
+      ${state.playing ? I.pause : I.play}
+    </button>
+  </div>`;
+}
+
 // ─── Main render ──────────────────────────────────────────────────────────────
 function render() {
   const root = document.getElementById('listen-app');
@@ -693,7 +719,8 @@ function render() {
 
   // Build inner interface layout
   root.innerHTML = `
-    ${screen}
+    <div class="agp-screen-enter">${screen}</div>
+    ${renderMiniPlayer()}
     ${(state.screen !== 'player' && state.screen !== 'show') ? renderBottomNav() : ''}
     ${renderToast()}
     ${renderRssSheet()}
@@ -717,6 +744,18 @@ function bindEvents() {
   });
 
   document.querySelector('.back-btn')?.addEventListener('click', () => setState({ screen: 'home' }));
+
+  document.getElementById('mini-player-open')?.addEventListener('click', (e) => {
+    if (e.target.closest('.mini-play-pause')) return;
+    setState({ screen: 'player' });
+  });
+
+  document.querySelector('.mini-play-pause')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (state.playing) { player.pause(); setState({ playing: false }); }
+    else { player.play(); setState({ playing: true }); }
+  });
+
 
   document.querySelector('.play-pause')?.addEventListener('click', () => {
     if (state.playing) { player.pause(); setState({ playing: false }); }
@@ -878,6 +917,7 @@ async function checkGlobalAuthSession() {
 }
 
 // ─── Boot Sequence ─────────────────────────────────────────────────────────────
+mountPremiumTheme();
 render();
 checkGlobalAuthSession(); // Silently reconciles login states across sub-apps
 if (state.subs.length) refreshAllFeeds();
