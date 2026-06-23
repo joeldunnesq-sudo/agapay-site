@@ -505,21 +505,27 @@ function renderLibrary() {
   return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:88px;background:${NIGHT}">
     <div style="padding:16px 24px 18px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:500;color:#F6F1E8">Library</div>
 
-    <div style="padding:0 20px;margin-bottom:20px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${GOLD}" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
-        <span style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD};font-weight:700">Subscriptions</span>
-      </div>
-      <div style="background:rgba(255,255,255,0.01);border-radius:16px;border:1px solid rgba(255,255,255,0.04);overflow:hidden;">
-        ${state.subs.length ? state.subs.map((sub,i) => `
-          <div style="display:flex;gap:14px;align-items:center;padding:12px 16px;">
-            ${epArt(sub, 42, i)}
-            <div style="flex:1;min-width:0">
-              <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.95rem;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(sub.title)}</div>
-            </div>
-          </div>`
-        ).join('') : `<div style="padding:24px 16px;text-align:center;font-size:0.8rem;color:${MUTED};font-style:italic">No active subscriptions — tap Discover to begin</div>`}
-      </div>
+     <!-- Subscriptions -->
+      <div style="padding:0 20px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-left:4px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${GOLD}" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+          <span style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD};font-weight:700">Subscriptions</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.01);border-radius:16px;border:1px solid rgba(255,255,255,0.04);overflow:hidden;box-shadow: 0 4px 20px rgba(0,0,0,0.2)">
+          ${state.subs.length ? state.subs.map((sub,i) => `
+            <div style="display:flex;gap:14px;align-items:center;padding:12px 16px;${i<state.subs.length-1?'border-bottom:1px solid rgba(255,255,255,0.04)':''}">
+              ${epArt(sub, 42, i)}
+              <div style="flex:1;min-width:0">
+                <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.95rem;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2">${esc(sub.title)}</div>
+                <div style="font-size:0.58rem;color:${MUTED};margin-top:3px;font-family:monospace;opacity:0.85">${(sub.xmlUrl||'').replace(/^https?:\/\//,'').split('/')[0]}</div>
+              </div>
+              <div class="unfollow-btn tappable" data-url="${esc(sub.xmlUrl)}" data-title="${esc(sub.title)}"
+                style="padding:6px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;font-size:0.56rem;color:${MUTED};font-weight:600;white-space:nowrap;letter-spacing:0.02em">
+                Unfollow
+              </div>
+            </div>`
+          ).join('') : `<div style="padding:24px 16px;text-align:center;font-size:0.8rem;color:${MUTED};font-style:italic">No active subscriptions — tap Discover to begin</div>`}
+        </div>
     </div>
   </div>`;
 }
