@@ -450,7 +450,7 @@ function renderPlayer() {
       ['<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', 'Sleep'],
       ['<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2" stroke-linecap="round"><polygon points="5,4 15,12 5,20"/><polygon points="12,4 22,12 12,20"/></svg>', '1.0×'],
       ['open-desc-btn', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', 'Details', GOLD],
-      ['<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>', 'Share']
+      ['share-btn', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>', 'Share', MUTED]
     ].map(([idOrSvg, svgOrLabel, labelOrColor, optionalColor]) => {
       const isCustom = typeof optionalColor !== 'undefined' || idOrSvg === 'open-desc-btn';
       const targetId = isCustom ? idOrSvg : '';
@@ -616,6 +616,38 @@ function bindEvents() {
     state.searchQuery = e.target.value;
     doSearch(e.target.value);
     // Removed full render() to keep the input element stable and preserve the cursor
+  });
+
+    // ─── Native Web Share Handler ───────────────────────────────────────────────
+  document.getElementById('share-btn')?.addEventListener('click', async () => {
+    const ep = state.current;
+    if (!ep) return;
+  
+    const shareData = {
+      title: ep.title,
+      text: `Listening to "${ep.title}" on AGAPAY Listen:`,
+      url: ep.url || window.location.href // Fallback to current app address if stream url is empty
+    };
+  
+    // Attempt Native System Share Sheet
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // Ignore AbortError caused by user manually dismissing the native menu
+        if (err.name !== 'AbortError') {
+          console.error('Share failure:', err);
+        }
+      }
+    } else {
+      // Elegant Clipboard Fallback for Desktop/Unsupported browsers
+      try {
+        await navigator.clipboard.writeText(shareData.url);
+        showToast('Episode link copied to clipboard!');
+      } catch {
+        showToast('Unable to share track link.');
+      }
+    }
   });
 }
 
