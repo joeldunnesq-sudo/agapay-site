@@ -220,6 +220,22 @@
       <!-- ============ WEEK VIEW ============ -->
       <sc-if value="{{ isWeek }}" hint-placeholder-val="{{ true }}">
         <div style="animation:mealsFade .3s ease;">
+          <section style="margin-bottom:12px;border:1px solid rgba(181,148,47,.38);border-radius:14px;padding:13px 16px;background:linear-gradient(135deg,#fffaf0,#f6ead0);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="color:#b5942f;">✥</span><span style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;">Feasts this week</span></div>
+            <sc-if value="{{ weekFeastsVisible }}" hint-placeholder-val="{{ true }}">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">
+                <sc-for list="{{ weekFeasts }}" as="f" hint-placeholder-count="1">
+                  <article style="border:1px solid {{ f.border }};border-radius:12px;background:{{ f.bg }};padding:11px 12px;display:flex;gap:10px;align-items:flex-start;">
+                    <span style="width:42px;height:42px;border-radius:50%;display:grid;place-items:center;flex:none;background:rgba(181,148,47,.16);border:1px solid rgba(181,148,47,.42);font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:800;color:#b5942f;">{{ f.day }}</span>
+                    <span style="min-width:0;"><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:20px;line-height:1.05;color:#1b2c45;">{{ f.name }}</strong><small style="display:block;margin-top:4px;font-family:'DM Sans',sans-serif;font-size:.76rem;line-height:1.25;color:#6e2f2a;">{{ f.rank }}</small><button type="button" onClick="{{ f.onPlan }}" style="margin-top:8px;border:1px solid #b5942f;background:#102a4c;color:#fff;border-radius:999px;padding:6px 11px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.72rem;cursor:pointer;display:{{ f.planDisplay }};">Plan feast table →</button></span>
+                  </article>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ weekFeastsEmpty }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:0;font-family:'DM Sans',sans-serif;font-size:.86rem;color:#8a7c5e;">No major feast markers in this week. The daily fast guidance still appears in the calendar below.</p>
+            </sc-if>
+          </section>
 
           <sc-if value="{{ lessonsWeek }}" hint-placeholder-val="{{ false }}">
             <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:12px;padding:13px 16px;border:1px solid rgba(181,148,47,.32);border-radius:13px;background:linear-gradient(135deg,#fffaf0,#f6ead0);">
@@ -274,12 +290,6 @@
               </div>
             </div>
             <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;align-items:stretch;">
-              <div style="flex:1 1 340px;border:1px solid rgba(181,148,47,.4);border-radius:14px;padding:14px 16px;background:linear-gradient(135deg,#fffaf0,#f6ead0);display:flex;flex-direction:column;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;"><span style="color:#b5942f;">✥</span><span style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;">Feast this week</span></div>
-                <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:22px;color:#1b2c45;line-height:1.05;">Entrance of the Theotokos</strong>
-                <p style="margin:4px 0 10px;color:#33405a;line-height:1.4;font-size:.9rem;">Saturday, Nov 21 — a Great Feast within the Nativity Fast. Fish, wine, and oil are blessed.</p>
-                <button type="button" onClick="{{ onPlanFeast }}" style="margin-top:auto;align-self:flex-start;border:1px solid #b5942f;background:#102a4c;color:#fff;border-radius:9px;padding:9px 15px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.84rem;cursor:pointer;">Plan the feast table →</button>
-              </div>
               <aside style="flex:1 1 300px;border:1px solid #e7dcc0;border-radius:14px;padding:14px 16px;background:#fdf9ef;">
                 <div style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;margin-bottom:10px;">Fasting legend</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;">
@@ -453,7 +463,8 @@
             </div>
             <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;">
               <sc-for list="{{ monthCells }}" as="c" hint-placeholder-count="35">
-                <button type="button" onClick="{{ c.onClick }}" style="min-height:52px;border:1px solid {{ c.border }};border-radius:9px;background:{{ c.bg }};padding:5px 6px;display:flex;flex-direction:column;gap:1px;opacity:{{ c.opacity }};cursor:{{ c.cursor }};text-align:left;font-family:inherit;" style-hover="border-color:{{ c.hoverBorder }};box-shadow:0 3px 10px rgba(20,40,70,.07);">
+                <button type="button" onClick="{{ c.onClick }}" style="position:relative;overflow:hidden;min-height:52px;border:1px solid {{ c.border }};border-radius:9px;background:{{ c.bg }};padding:5px 6px 5px 9px;display:flex;flex-direction:column;gap:1px;opacity:{{ c.opacity }};cursor:{{ c.cursor }};text-align:left;font-family:inherit;" style-hover="border-color:{{ c.hoverBorder }};box-shadow:0 3px 10px rgba(20,40,70,.07);">
+                  <i style="position:absolute;left:0;top:0;bottom:0;width:4px;background:{{ c.accent }};display:{{ c.accentDisplay }};"></i>
                   <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:3px;"><span style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;color:{{ c.numColor }};">{{ c.dayNumber }}</span><span style="border:1px solid #b5942f;border-radius:999px;padding:0 5px;font-family:'DM Sans',sans-serif;font-size:7.5px;font-weight:800;color:#b5942f;display:{{ c.todayDisplay }};">TODAY</span></div>
                   <span style="font-family:'DM Sans',sans-serif;font-size:8.5px;font-weight:700;color:{{ c.tagColor }};line-height:1.1;display:{{ c.tagDisplay }};">{{ c.fastTag }}</span>
                   <span style="font-family:'DM Sans',sans-serif;font-size:9.5px;font-weight:600;color:{{ c.scopeColor }};line-height:1.18;display:{{ c.scopeDisplay }};">{{ c.scopeText }}</span>
@@ -797,6 +808,7 @@ class Component extends DCLogic {
       {id:'entrance',day:'21',name:'Entrance of the Theotokos',rank:'Great Feast · fish, wine & oil',plan:true},
       {id:'andrew',day:'30',name:'Apostle Andrew the First-Called',rank:'Feast',plan:false}
     ];
+    this.WEEK_FEASTS=[];
     this.MONTH={label:'November 2026',weekdays:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],days:[],weekRange:'Nov 15 - 21',fastingSummary:'Nativity Fast'};
     this.FEAST={
       id:'entrance', dateLong:'Saturday, November 21', name:'Entrance of the Theotokos', rank:'Great Feast within the Nativity Fast', allow:'Fish, wine & oil are blessed',
@@ -811,6 +823,7 @@ class Component extends DCLogic {
     if(seed.days&&seed.days.length) this.DAYS=seed.days;
     if(seed.month) this.MONTH={...this.MONTH,...seed.month};
     if(seed.month&&seed.month.feasts) this.MONTH_FEASTS=seed.month.feasts;
+    if(seed.month&&seed.month.weekFeasts) this.WEEK_FEASTS=seed.month.weekFeasts;
     if(seed.setup) this.SETUP={...this.SETUP,...seed.setup};
     if(seed.kids&&seed.kids.length) this.KIDS=seed.kids;
     if(seed.feast) this.FEAST={...this.FEAST,...seed.feast};
@@ -942,6 +955,7 @@ class Component extends DCLogic {
     const eventsByDay=this.DAYS.map(d=>{ const items=eventsForDay(d.key); return {weekday:d.long,shortDate:d.short,feast:d.feast,emptyDisplay:items.length?'none':'block',items:items.map(e=>{ const sm=syncMeta(); return {time:e.time||'—',title:e.title,type:e.type,who:e.who,color:evColor(e.type),onClick:()=>this.openEvent(e.id),syncLabel:sm.syncLabel,syncColor:sm.syncColor}; })}; });
     const eventsCount=S.events.length;
     const googleSyncLine = gConnected ? `Syncing to ${S.google.email}` : 'Not synced to Google';
+    const weekFeasts=(this.WEEK_FEASTS||[]).map(f=>({day:f.day||String(f.dateLabel||'').replace(/\D/g,'')||'✥',dateLabel:f.dateLabel||f.day||'',name:f.name||'Feast',rank:f.rank||'Feast',border:f.plan?'rgba(181,148,47,.5)':'#e7dcc0',bg:f.plan?'#fffaf0':'#fffdf8',planDisplay:f.plan?'inline-flex':'none',onPlan:()=>this.openFeast()}));
 
     // ---------- intro / scope ----------
     const introByScope={
@@ -979,6 +993,7 @@ class Component extends DCLogic {
       // shared data
       days, weekRows, lessonRows, setupForms, setupSummary, choresRows, choreKids,
       isWoven:S.integration==='woven',
+      weekFeasts, weekFeastsVisible:weekFeasts.length>0, weekFeastsEmpty:weekFeasts.length===0,
       mealTools:[['plan','Plan'],['recipes','Recipes'],['groceries','Groceries'],['pantry','Pantry']].map(([k,l])=>({label:l,onClick:()=> (k!=='plan'&&isMonth)?this.setState({view:'week',tab:k}):this.setTab(k),bg:(isMonth?(k==='plan'):(S.tab===k))?'#102a4c':'transparent',color:(isMonth?(k==='plan'):(S.tab===k))?'#fff':'#1b2c45'})),
       integrationTabs:[['dedicated','Meals only'],['woven','In school week']].map(([k,l])=>({label:l,onClick:()=>this.setIntegration(k),bg:S.integration===k?'#102a4c':'transparent',color:S.integration===k?'#fff':'#1b2c45'})),
       onPlanFeast:()=>this.openFeast(),
@@ -1021,7 +1036,7 @@ class Component extends DCLogic {
       const monthScopeLabel = sMeals?'dinners':sChores?'chores':sEvents?'events':'lessons';
       const sourceDays=(this.MONTH.days&&this.MONTH.days.length)?this.MONTH.days:this.DAYS.map(d=>({...d,dayNumber:d.date,fullDate:d.fullDate,inMonth:true,isFastDay:d.level!=='rich',isSunday:d.sunday,feastRank:'',fasting:d.tag,meal:null}));
       sourceDays.forEach((day)=>{
-        const date=Number(day.dayNumber||String(day.fullDate||'').slice(-2))||0; const isSun=!!day.isSunday; const isFeast=!!day.feast&&!day.isFastDay; const isFast=!!day.isFastDay; const isToday=!!day.isToday; const dk=day.key||'';
+        const date=Number(day.dayNumber||String(day.fullDate||'').slice(-2))||0; const isSun=!!day.isSunday; const isFeast=!!(day.feastDay||day.isImportantFeast||day.feast&&!day.isFastDay); const isFast=!!day.isFastDay; const isToday=!!day.isToday; const dk=day.key||'';
         let scopeText='';
         if(sMeals){ scopeText=dk?this.rName(dk,'dinner'):(day.meal&&day.meal.dinner)||''; if(scopeText==='—')scopeText=''; }
         else if(sChores){ scopeText=(!isSun&&!isFeast&&day.inMonth!==false)?'Chores':''; }
@@ -1030,11 +1045,13 @@ class Component extends DCLogic {
         if(scopeText.length>20) scopeText=scopeText.slice(0,19)+'…';
         const ev=evByDate[day.fullDate]||[];
         cells.push({blank:false,dayNumber:String(date),opacity:'1',
-          bg: day.inMonth===false?'rgba(248,240,221,.46)':(isFeast?'rgba(181,148,47,.14)':(isFast?'rgba(110,47,42,.08)':(isSun?'rgba(181,148,47,.08)':'#fffdf8'))),
-          border: isToday?'#b5942f':(isFeast?'rgba(181,148,47,.5)':(isFast?'rgba(110,47,42,.28)':'#e7dcc0')),
+          bg: day.inMonth===false?'rgba(248,240,221,.46)':(isFeast?'linear-gradient(135deg,rgba(181,148,47,.24),rgba(255,250,240,.98))':(isFast?'linear-gradient(135deg,rgba(110,47,42,.16),rgba(255,248,243,.98))':(isSun?'linear-gradient(135deg,rgba(181,148,47,.14),#fffdf8)':'#fffdf8'))),
+          border: isToday?'#b5942f':(isFeast?'rgba(181,148,47,.62)':(isFast?'rgba(110,47,42,.42)':'#e7dcc0')),
+          accent: isFeast?'#b5942f':(isFast?'#6e2f2a':(isSun?'#34507a':'transparent')),
+          accentDisplay: (isFeast||isFast||isSun)?'block':'none',
           numColor: isFeast?'#b5942f':(isFast?'#6e2f2a':'#1b2c45'),
           todayDisplay: isToday?'inline':'none',
-          tagDisplay: (isFeast||isFast)?'block':'none', fastTag: isFeast?day.feast:(day.fasting||day.fastingType||'Fast day'), tagColor: isFeast?'#b5942f':'#6e2f2a',
+          tagDisplay: (isFeast||isFast)?'block':'none', fastTag: isFeast?day.feast:(day.fasting||day.fastingType||'Fast day'), tagColor: isFeast?'#8a681d':'#6e2f2a',
           scopeDisplay: scopeText?'block':'none', scopeText, scopeColor: sEvents?'#34507a':'#33405a',
           eventDots: ev.slice(0,4).map(e=>({color:evColor(e.type)})),
           onClick: dk ? (sMeals ? ()=>this.openPicker(dk,'dinner') : sEvents ? ()=>this.openEventOnDay(dk) : ()=>this.openDay(dk)) : ()=>{},

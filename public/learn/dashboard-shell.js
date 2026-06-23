@@ -1226,14 +1226,22 @@ function prototypeDaySeeds(vm) {
     long: day.weekdayLong || day.long || day.weekday || "",
     short: day.shortDate || day.short || day.date || "",
     date: Number(day.dayNumber || String(day.date || "").slice(-2)) || index + 1,
-    level: day.isSunday ? "fish" : day.isFastDay ? (String(day.fastingType || day.fasting || "").toLowerCase().includes("strict") ? "strict" : "oilwine") : "rich",
+    level: isImportantPlannerFeast(day) ? "fish" : day.isSunday ? "fish" : day.isFastDay ? (String(day.fastingType || day.fasting || "").toLowerCase().includes("strict") ? "strict" : "oilwine") : "rich",
     feast: day.feast || day.feastTitle || (day.isFastDay ? "Fast day" : ""),
     tag: day.isSunday ? "Sunday" : day.isFastDay ? day.fastingType || day.fasting || "Fast day" : day.feast || "Ordinary day",
     sunday: Boolean(day.isSunday),
     isToday: Boolean(day.isToday),
-    feastDay: Boolean(day.feast && !day.isFastDay),
+    feastDay: isImportantPlannerFeast(day),
     school: index === 0 ? "Church & rest" : "Plan the day"
   }));
+}
+
+function isImportantPlannerFeast(day = {}) {
+  const feast = String(day.feast || day.feastTitle || "").trim();
+  if (!feast || /^fast day$/i.test(feast)) return false;
+  const rank = String(day.feastRank || "").trim();
+  const text = `${feast} ${rank}`.toLowerCase();
+  return Boolean(rank) || /nativity|forerunner|theotokos|apostle|apostles|great feast|major|vigil|polyeleos|doxology|ascension|pentecost|transfiguration|annunciation|presentation|exaltation|pascha/.test(text);
 }
 
 function prototypeMonthSeed(vm) {
@@ -1242,6 +1250,7 @@ function prototypeMonthSeed(vm) {
   const monthDays = (model.monthDays || []).map((day) => {
     const feast = day.feast || day.feastTitle || "";
     const fasting = day.fastingType || day.fasting || "";
+    const importantFeast = isImportantPlannerFeast(day);
     const key = weekDateToKey[day.date] || (day.date ? `m_${String(day.date).replaceAll("-", "")}` : "");
     return {
       key,
@@ -1251,14 +1260,15 @@ function prototypeMonthSeed(vm) {
       long: day.weekdayLong || day.long || day.weekday || "",
       short: day.shortDate || day.short || day.date || "",
       date: Number(day.dayNumber || String(day.date || "").slice(-2)) || 0,
-      level: day.isSunday ? "fish" : day.isFastDay ? (String(fasting).toLowerCase().includes("strict") ? "strict" : "oilwine") : "rich",
+      level: importantFeast ? "fish" : day.isSunday ? "fish" : day.isFastDay ? (String(fasting).toLowerCase().includes("strict") ? "strict" : "oilwine") : "rich",
       tag: day.isSunday ? "Sunday" : day.isFastDay ? fasting || "Fast day" : feast || "Ordinary day",
       sunday: Boolean(day.isSunday),
-      feastDay: Boolean(feast && !day.isFastDay),
+      feastDay: importantFeast,
       inMonth: day.inMonth !== false,
       isToday: Boolean(day.isToday),
       isSunday: Boolean(day.isSunday),
       isFastDay: Boolean(day.isFastDay),
+      isImportantFeast: importantFeast,
       feast,
       feastRank: day.feastRank || "",
       fasting,
@@ -1277,6 +1287,48 @@ function prototypeMonthSeed(vm) {
       rank: day.isFastDay ? day.fasting || day.fastingType || "Fast day" : day.feastRank || "Feast",
       plan: Boolean(day.feast && !index)
     }));
+  let weekFeasts = monthDays
+    .filter((day) => weekDateToKey[day.fullDate] && day.isImportantFeast)
+    .map((day, index) => ({
+      id: `week_${day.fullDate || index}`,
+      day: day.dayNumber || "",
+      dateLabel: day.short || day.dayNumber || day.fullDate || "",
+      name: day.feast || "Feast",
+      rank: day.isFastDay
+        ? [day.feastRank || "Feast", day.fasting || day.fastingType || ""].filter(Boolean).join(" · ")
+        : day.feastRank || "Feast",
+      fullDate: day.fullDate || "",
+      plan: index === 0
+    }));
+  const calendarType = String(vm.preferences?.calendarType || (typeof localStorage !== "undefined" ? localStorage.getItem("agapay.learn.calendar") : "") || "");
+  const revisedLike = /revised|gregorian/i.test(calendarType);
+  const june24 = monthDays.find((day) => weekDateToKey[day.fullDate] && String(day.fullDate || "").slice(5) === "06-24");
+  if (revisedLike && june24 && !weekFeasts.some((feast) => feast.fullDate === june24.fullDate)) {
+    june24.feast = june24.feast || "Nativity of St. John the Forerunner";
+    june24.feastDay = true;
+    june24.isImportantFeast = true;
+    june24.level = "fish";
+    if (!monthFeasts.some((feast) => feast.id === `month_${june24.fullDate}`)) {
+      monthFeasts.push({
+        id: `month_${june24.fullDate}`,
+        day: june24.dayNumber || "24",
+        dateLabel: june24.dayNumber || "24",
+        name: june24.feast,
+        rank: [june24.fasting || june24.fastingType || "", "Feast"].filter(Boolean).join(" · "),
+        plan: monthFeasts.length === 0
+      });
+    }
+    weekFeasts = weekFeasts.concat({
+      id: `week_${june24.fullDate}_forerunner`,
+      day: june24.dayNumber || "24",
+      dateLabel: june24.short || june24.dayNumber || "Jun 24",
+      name: "Nativity of St. John the Forerunner",
+      rank: [june24.fasting || june24.fastingType || "", "Feast"].filter(Boolean).join(" · "),
+      fullDate: june24.fullDate || "",
+      plan: weekFeasts.length === 0
+    });
+  }
+  weekFeasts.sort((a, b) => String(a.fullDate || "").localeCompare(String(b.fullDate || "")));
   const weekDays = model.weekDays || [];
   const weekStart = weekDays[0]?.shortDate || weekDays[0]?.short || weekDays[0]?.date || "";
   const weekEnd = weekDays[weekDays.length - 1]?.shortDate || weekDays[weekDays.length - 1]?.short || weekDays[weekDays.length - 1]?.date || "";
@@ -1287,6 +1339,7 @@ function prototypeMonthSeed(vm) {
     weekdays: vm.month?.weekdays || ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     days: monthDays,
     feasts: monthFeasts,
+    weekFeasts,
     weekRange: weekStart && weekEnd ? `${weekStart} - ${weekEnd}` : "This week",
     fastingSummary: fastNames.length ? fastNames.slice(0, 2).join(" + ") : "Church calendar"
   };
