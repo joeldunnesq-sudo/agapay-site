@@ -611,12 +611,11 @@ function bindEvents() {
   document.getElementById('desc-backdrop')?.addEventListener('click', () => setState({ descriptionSheet: false }));
   document.getElementById('desc-close-btn')?.addEventListener('click', () => setState({ descriptionSheet: false }));
 
-  // Search
+   // ─── Search Input Fix ────────────────────────────────────────────────────────
   document.getElementById('search-input')?.addEventListener('input', (e) => {
     state.searchQuery = e.target.value;
     doSearch(e.target.value);
-    render();
-    document.getElementById('search-input')?.focus();
+    // Removed full render() to keep the input element stable and preserve the cursor
   });
 }
 
