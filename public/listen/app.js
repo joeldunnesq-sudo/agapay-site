@@ -111,7 +111,7 @@ async function fetchFeed(xmlUrl) {
   const items = [...doc.querySelectorAll('item')].slice(0, 30).map((item, i) => {
     const enclosure = item.querySelector('enclosure');
     return {
-      guid:    (item.querySelector('guid')?.textContent || enclosure?.getAttribute('url'] || String(i)).trim(),
+      guid:    (item.querySelector('guid')?.textContent || enclosure?.getAttribute('url') || String(i)).trim(),
       title:   item.querySelector('title')?.textContent?.trim() || 'Untitled',
       show:    channelTitle,
       xmlUrl,
