@@ -492,6 +492,45 @@ function renderDiscover() {
     ${state.searchQuery ? `
     <div style="padding:0 20px">
       <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${MUTED};font-weight:700;margin-bottom:12px">Results</div>
+      ${state.searchResults.length ? state.searchResults.map((f,i) => `
+        <div style="display:flex;gap:14px;align-items:center;padding:12px 6px;border-bottom:1px solid rgba(255,255,255,0.04)">
+          ${epArt({image: f.artwork || f.image}, 46, i)}
+          <div style="flex:1;min-width:0">
+            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.title)}</div>
+            <div style="font-size:0.62rem;color:${MUTED};margin-top:3px">${esc(f.author||'')}</div>
+          </div>
+          <div class="follow-btn tappable" data-url="${esc(f.url)}" data-title="${esc(f.title)}"
+            style="padding:6px 12px;background:${state.subs.find(s=>s.xmlUrl===f.url)?'rgba(200,162,74,0.08)':'rgba(255,255,255,0.04)'};border:1px solid ${state.subs.find(s=>s.xmlUrl===f.url)?'rgba(200,162,74,0.2)':'rgba(255,255,255,0.08)'};border-radius:12px;font-size:0.58rem;color:${state.subs.find(s=>s.xmlUrl===f.url)?GOLD:MUTED};font-weight:700;white-space:nowrap;letter-spacing:0.02em">
+            ${state.subs.find(s=>s.xmlUrl===f.url) ? 'Following' : '+ Follow'}
+          </div>
+        </div>`
+      ).join('') : `<div style="padding:32px;text-align:center;color:${MUTED};font-size:0.85rem;font-style:italic">Searching…</div>`}
+    </div>` : `
+    <div style="padding:0 20px;margin-bottom:16px">
+      <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${MUTED};font-weight:700;margin-bottom:12px;padding-left:4px">Popular Orthodox Podcasts</div>
+      <div style="background:rgba(255,255,255,0.01);border-radius:16px;border:1px solid rgba(255,255,255,0.04);overflow:hidden;box-shadow: 0 4px 20px rgba(0,0,0,0.2)">
+        ${TRENDING.map((t,i) => `
+          <div style="display:flex;gap:14px;align-items:center;padding:12px 16px;${i<TRENDING.length-1?'border-bottom:1px solid rgba(255,255,255,0.04)':''}">
+            <span style="font-size:0.8rem;color:${i<2?GOLD:STONE};font-weight:700;width:16px;text-align:center;font-family:'Cormorant Garamond',serif">${i+1}</span>
+            ${epArt({image:''}, 42, i)}
+            <div style="flex:1;min-width:0">
+              <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.95rem;color:#F6F1E8;line-height:1.2">${esc(t.title)}</div>
+              <div style="font-size:0.58rem;color:${MUTED};margin-top:2px">${esc(t.author)}</div>
+            </div>
+            <div class="follow-btn tappable" data-url="${esc(t.url)}" data-title="${esc(t.title)}"
+              style="padding:5px 12px;background:${state.subs.find(s=>s.xmlUrl===t.url)?'rgba(200,162,74,0.08)':'rgba(255,255,255,0.04)'};border:1px solid ${state.subs.find(s=>s.xmlUrl===t.url)?'rgba(200,162,74,0.18)' : 'rgba(255,255,255,0.08)'};border-radius:12px;font-size:0.58rem;color:${state.subs.find(s=>s.xmlUrl===t.url)?GOLD:MUTED};font-weight:700">
+              ${state.subs.find(s=>s.xmlUrl===t.url)?'Following':'+ Follow'}
+            </div>
+          </div>`
+        ).join('')}
+      </div>
+    </div>`}
+  </div>`;
+}
+
+    ${state.searchQuery ? `
+    <div style="padding:0 20px">
+      <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${MUTED};font-weight:700;margin-bottom:12px">Results</div>
       ${state.searchResults.map((f,i) => `
         <div style="display:flex;gap:14px;align-items:center;padding:12px 6px;border-bottom:1px solid rgba(255,255,255,0.04)">
           ${epArt({image: f.artwork || f.image}, 46, i)}
