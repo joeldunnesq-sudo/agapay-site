@@ -779,6 +779,31 @@ function bindEvents() {
   });
 }
 
+  async function checkGlobalAuthSession() {
+    try {
+      const resp = await fetch('/api/listen/profile');
+      if (resp.ok) {
+        const userData = await resp.json();
+        if (userData.authenticated) {
+          state.user = {
+            authenticated: true,
+            name: userData.name,
+            initials: userData.initials,
+            status: userData.memberStatus
+          };
+          render(); // Re-render once user details load successfully
+        }
+      }
+    } catch (err) {
+      console.warn('Global account sync currently unavailable:', err);
+    }
+  }
+  
+  // ─── Boot Sequence ─────────────────────────────────────────────────────────────
+  render();
+  checkGlobalAuthSession(); // Silently reconciles login states across sub-apps
+  if (state.subs.length) refreshAllFeeds();
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 render();
 if (state.subs.length) refreshAllFeeds();
