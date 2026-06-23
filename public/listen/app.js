@@ -445,25 +445,25 @@ function renderPlayer() {
     </div>
 
     <!-- Enlarged & Redesigned Utility Deck — Includes Description Dynamic Action Button -->
-    <div style="display:flex;justify-content:center;gap:40px;padding:16px 20px 12px;border-top:1px solid rgba(255,255,255,0.03);background:rgba(0,0,0,0.1)">
-      ${[
-        ['<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', 'Sleep'],
-        ['<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2" stroke-linecap="round"><polygon points="5,4 15,12 5,20"/><polygon points="12,4 22,12 12,20"/></svg>', '1.0×'],
-        ['open-desc-btn', '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', 'Details', GOLD],
-        ['<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>', 'Share']
-      ].map(([idOrSvg, svgOrLabel, labelOrColor, optionalColor]) => {
-        const isCustom = typeof optionalColor !== 'undefined' || idOrSvg === 'open-desc-btn';
-        const targetId = isCustom ? idOrSvg : '';
-        const visualSvg = isCustom ? svgOrLabel : idOrSvg;
-        const textLabel = isCustom ? labelOrColor : svgOrLabel;
-        const textColor = isCustom ? optionalColor : MUTED;
-        
-        return `
-          <div ${targetId ? `id="${targetId}"` : ''} class="tappable" style="display:flex;align-items:center;gap:8px;padding:4px 8px">
-            ${visualSvg}<span style="font-size:0.72rem;color:${textColor};font-weight:600">${textLabel}</span>
-          </div>`;
-      }).join('')}
-    </div>
+     <div style="display:flex; justify-content:center; align-items:center; gap:16px; padding:12px 20px; border:1px solid rgba(255,255,255,0.04); border-radius:30px; background:rgba(0,0,0,0.15); width:fit-content; margin:auto; margin-top:auto;">
+    ${[
+      ['<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', 'Sleep'],
+      ['<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2" stroke-linecap="round"><polygon points="5,4 15,12 5,20"/><polygon points="12,4 22,12 12,20"/></svg>', '1.0×'],
+      ['open-desc-btn', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', 'Details', GOLD],
+      ['<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>', 'Share']
+    ].map(([idOrSvg, svgOrLabel, labelOrColor, optionalColor]) => {
+      const isCustom = typeof optionalColor !== 'undefined' || idOrSvg === 'open-desc-btn';
+      const targetId = isCustom ? idOrSvg : '';
+      const visualSvg = isCustom ? svgOrLabel : idOrSvg;
+      const textLabel = isCustom ? labelOrColor : svgOrLabel;
+      const textColor = isCustom ? optionalColor : MUTED;
+      
+      return `
+        <div ${targetId ? `id="${targetId}"` : ''} class="tappable" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:20px;border:1px solid rgba(255,255,255,0.02)">
+          ${visualSvg}<span style="font-size:0.68rem;color:${textColor};font-weight:600">${textLabel}</span>
+        </div>`;
+    }).join('')}
+  </div>
   </div>`;
 }
 
