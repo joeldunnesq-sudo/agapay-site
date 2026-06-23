@@ -34,6 +34,7 @@ const state = {
   subs:               load('agp_subs',     []),
   episodes:           load('agp_eps',      []),
   current:            load('agp_current',  null),
+  currentShow:        null, // Tracks the currently active podcast channel view
   queue:              [],
   progress:           0,
   playing:            false,
@@ -46,7 +47,7 @@ const state = {
   liked:              new Set(load('agp_liked', [])),
   downloads:          {},   // guid -> object URL
   
-  // Initialized fallback properties to prevent runtime profile crashes
+  // Platform accounts configuration profiles
   user: {
     authenticated: false,
     name: 'Guest Listener',
@@ -91,7 +92,6 @@ function timeAgo(str) {
   return new Date(str).toLocaleDateString('en-US', { month:'short', day:'numeric' });
 }
 
-// Fixed: Cleaned character string encoding
 function esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -549,10 +549,12 @@ function renderLibrary() {
         <div style="background:rgba(255,255,255,0.01);border-radius:16px;border:1px solid rgba(255,255,255,0.04);overflow:hidden;box-shadow: 0 4px 20px rgba(0,0,0,0.2)">
           ${state.subs.length ? state.subs.map((sub,i) => `
             <div style="display:flex;gap:14px;align-items:center;padding:12px 16px;${i<state.subs.length-1?'border-bottom:1px solid rgba(255,255,255,0.04)':''}">
-              ${epArt(sub, 42, i)}
-              <div style="flex:1;min-width:0">
-                <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.95rem;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2">${esc(sub.title)}</div>
-                <div style="font-size:0.58rem;color:${MUTED};margin-top:3px;font-family:monospace;opacity:0.85">${(sub.xmlUrl||'').replace(/^https?:\/\//,'').split('/')[0]}</div>
+              <div class="show-row-tap tappable" data-show='${esc(JSON.stringify(sub))}' style="display:flex;flex:1;gap:14px;align-items:center;min-width:0;">
+                ${epArt(sub, 42, i)}
+                <div style="flex:1;min-width:0">
+                  <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.95rem;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2">${esc(sub.title)}</div>
+                  <div style="font-size:0.58rem;color:${MUTED};margin-top:3px;font-family:monospace;opacity:0.85">${(sub.xmlUrl||'').replace(/^https?:\/\//,'').split('/')[0]}</div>
+                </div>
               </div>
               <div class="unfollow-btn tappable" data-url="${esc(sub.xmlUrl)}" data-title="${esc(sub.title)}"
                 style="padding:6px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;font-size:0.56rem;color:${MUTED};font-weight:600;white-space:nowrap;letter-spacing:0.02em">
@@ -561,6 +563,51 @@ function renderLibrary() {
             </div>`
           ).join('') : `<div style="padding:24px 16px;text-align:center;font-size:0.8rem;color:${MUTED};font-style:italic">No active subscriptions — tap Discover to begin</div>`}
         </div>
+    </div>
+  </div>`;
+}
+
+function renderShowDetail() {
+  const show = state.currentShow;
+  if (!show) return `<div style="padding:40px; text-align:center; color:${MUTED}">Show context missing.</div>`;
+
+  // Filter global feeds array down to matching target show RSS references exclusively
+  const showEps = state.episodes.filter(ep => ep.xmlUrl === show.xmlUrl);
+
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:88px;background:${NIGHT}">
+    <div style="display:flex;align-items:center;gap:14px;padding:16px 20px 20px;">
+      <div class="show-back-btn tappable" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.3rem;font-weight:500;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Podcast Details</div>
+    </div>
+
+    <div style="display:flex;gap:20px;padding:0 24px 24px;align-items:center;border-bottom:1px solid rgba(255,255,255,0.04)">
+      ${epArt(show, 84, 0)}
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.4rem;font-weight:500;color:#F6F1E8;line-height:1.2;margin-bottom:6px">${esc(show.title)}</div>
+        <div class="unfollow-btn tappable" data-url="${esc(show.xmlUrl)}" data-title="${esc(show.title)}"
+          style="display:inline-block;padding:6px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;font-size:0.65rem;color:${MUTED};font-weight:600;letter-spacing:0.02em">
+          Unfollow Podcast
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:20px 4px 0">
+      <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px;padding-left:20px">Episodes (${showEps.length})</div>
+      
+      ${showEps.length ? showEps.map((ep, i) => `
+        <div class="ep-tap tappable" data-ep='${esc(JSON.stringify(ep))}' style="display:flex;gap:14px;align-items:center;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.02)">
+          ${epArt(ep, 42, i)}
+          <div style="flex:1;min-width:0">
+            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.95rem;font-weight:500;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2">${esc(ep.title)}</div>
+            <div style="font-size:0.58rem;color:${MUTED};margin-top:4px">${ep.duration ? esc(ep.duration) : 'Audio Track'}${ep.date ? ' · ' + timeAgo(ep.date) : ''}</div>
+          </div>
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(200,162,74,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="${GOLD}"><polygon points="6,3 21,12 6,21"/></svg>
+          </div>
+        </div>
+      `).join('') : `<div style="padding:40px 20px;text-align:center;font-size:0.8rem;color:${MUTED};font-style:italic">No episodes cached yet. Feeds will populate during synchronization.</div>`}
     </div>
   </div>`;
 }
@@ -577,7 +624,7 @@ function renderProfile() {
       <div style="font-size:0.6rem;color:${GOLD};font-weight:700;letter-spacing:0.16em;text-transform:uppercase">${esc(state.user.status)}</div>
     </div>
 
-    <div style="display:flex;margin:0 20px 24px;background:rgba(255,255,255,0.02);border-radius:16px;border:1px solid rgba(255,255,255,0.05);overflow:hidden;box-shadow: 0 4px 16px rgba(0,0,0,0.15)">
+    <div style="display:flex;margin:0 20px 24px;background:rgba(255,255,255,0.02);border-radius:16px;border:1px solid rgba(255,255,255,0.04);overflow:hidden;box-shadow: 0 4px 16px rgba(0,0,0,0.15)">
       ${[
         [String(state.subs.length), 'Following'],
         [String(state.episodes.length), 'Cached Tracks'],
@@ -640,13 +687,14 @@ function render() {
     case 'discover': screen = renderDiscover(); break;
     case 'library':  screen = renderLibrary();  break;
     case 'profile':  screen = renderProfile();  break;
+    case 'show':     screen = renderShowDetail(); break; // Integrated Show Detail routing route
     default:         screen = renderHome();
   }
 
   // Build inner interface layout
   root.innerHTML = `
     ${screen}
-    ${state.screen !== 'player' ? renderBottomNav() : ''}
+    ${(state.screen !== 'player' && state.screen !== 'show') ? renderBottomNav() : ''}
     ${renderToast()}
     ${renderRssSheet()}
     ${renderDescriptionSheet()}
@@ -763,6 +811,22 @@ function bindEvents() {
     }
   });
 
+  // Wired: Click event mapping from Library cards directly into dynamic show views
+  document.querySelectorAll('.show-row-tap').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.unfollow-btn')) return; // Avoid bubble collisons with clear unfollow sweeps
+      try {
+        const showData = JSON.parse(el.dataset.show);
+        setState({ screen: 'show', currentShow: showData });
+      } catch (err) { console.error('Show detail state routing error:', err); }
+    });
+  });
+
+  // Return navigation from deep channel catalog feeds back to Library tab matrix
+  document.querySelector('.show-back-btn')?.addEventListener('click', () => {
+    setState({ screen: 'library', currentShow: null });
+  });
+
   // Unfollow Click Handler
   document.querySelectorAll('.unfollow-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -778,9 +842,14 @@ function bindEvents() {
       save('agp_subs', updatedSubs);
       save('agp_eps', updatedEps);
       
+      // If unfollowing from within a detail page, pop back safely to library grid
+      const exitingShowView = state.screen === 'show' && state.currentShow?.xmlUrl === url;
+
       setState({ 
         subs: updatedSubs,
-        episodes: updatedEps
+        episodes: updatedEps,
+        screen: exitingShowView ? 'library' : state.screen,
+        currentShow: exitingShowView ? null : state.currentShow
       });
 
       showToast(`Unfollowed "${title}"`);
