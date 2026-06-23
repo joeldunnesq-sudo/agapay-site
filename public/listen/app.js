@@ -101,7 +101,7 @@ function epArt(ep, size, colorIdx = 0) {
   const img = ep?.image
     ? `<img src="${esc(ep.image)}" style="width:${size}px;height:${size}px;object-fit:cover;position:absolute;inset:0;transition:transform 0.3s" onerror="this.remove()">`
     : '';
-  const mark = `<img src="/mark.png" style="width:${Math.round(size*0.55)}px;height:${Math.round(size*0.55)}px;opacity:0.4">`;
+  const mark = `<img src="/listen/images/mark.png" style="width:${Math.round(size*0.55)}px;height:${Math.round(size*0.55)}px;opacity:0.4">`;
   return `<div class="art-container" style="width:${size}px;height:${size}px;flex:none;border-radius:${Math.round(size*0.25)}px;background:${bg};box-shadow: 0 4px 12px rgba(0,0,0,0.3);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">${img}${mark}</div>`;
 }
 
@@ -681,7 +681,7 @@ function mountPremiumTheme() {
   if (document.querySelector('link[data-agp-listen-premium]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = '/listen-premium.css';
+  link.href = '/listen/listen-premium.css';
   link.dataset.agpListenPremium = 'true';
   document.head.appendChild(link);
 }
