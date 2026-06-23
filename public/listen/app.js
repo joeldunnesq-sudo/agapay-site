@@ -103,7 +103,6 @@ async function fetchFeed(xmlUrl) {
   const doc  = new DOMParser().parseFromString(xml, 'application/xml');
 
   const channelTitle = doc.querySelector('channel > title')?.textContent?.trim() || '';
-  // itunes:image takes priority over channel > image
   const channelImage =
     doc.querySelector('channel image[href]')?.getAttribute('href') ||
     doc.querySelector('channel > image > url')?.textContent?.trim() || '';
@@ -150,7 +149,6 @@ async function addRssFeed(xmlUrl) {
     save('agp_subs', subs);
     setState({ subs, rssSheet: false, rssUrl: '' });
     showToast(`"${sub.title}" added`);
-    // Merge episodes into feed
     const allEps = [...state.episodes.filter(e => e.xmlUrl !== sub.xmlUrl), ...items];
     allEps.sort((a, b) => new Date(b.date) - new Date(a.date));
     const episodes = allEps.slice(0, 60);
@@ -177,7 +175,6 @@ async function doSearch(q) {
 // ─── Playback ─────────────────────────────────────────────────────────────────
 player.on('progress', ({ progress, elapsed, duration }) => {
   state.progress = progress;
-  // Direct DOM update — no full re-render needed
   const fill    = document.getElementById('pgfill');
   const thumb   = document.getElementById('pgthumb');
   const elapsed_ = document.getElementById('pgtime');
@@ -186,7 +183,6 @@ player.on('progress', ({ progress, elapsed, duration }) => {
   if (thumb)   thumb.style.left = progress + '%';
   if (elapsed_) elapsed_.textContent = fmtTime(elapsed);
   if (remain)  remain.textContent   = '-' + fmtTime(duration - elapsed);
-  // Persist progress
   if (state.current) {
     db.saveProgress(state.current.guid, elapsed, duration);
   }
@@ -204,13 +200,11 @@ player.on('ended', () => {
 
 async function playEpisode(ep, queue = state.queue) {
   if (!ep.url) { showToast('No audio URL for this episode'); return; }
-  // Check for offline download first
   let audioUrl = ep.url;
   try {
     const localUrl = await db.getDownload(ep.guid);
     if (localUrl) audioUrl = localUrl;
   } catch {}
-  // Resume from saved position
   const saved = await db.getProgress(ep.guid).catch(() => null);
   const startTime = saved?.position || 0;
   player.load(audioUrl, startTime);
@@ -285,17 +279,7 @@ const TRENDING = [
 
 // ─── Render helpers ───────────────────────────────────────────────────────────
 function renderStatusBar() {
-  return `
-  <div style="position:absolute;top:0;left:0;right:0;height:52px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 10px;z-index:40;pointer-events:none">
-    <span style="font-size:12px;font-weight:600;color:#F6F1E8" id="app-clock">${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}</span>
-    <div style="display:flex;gap:5px;align-items:center">
-      <svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="6" width="3" height="5" rx="1" fill="#F6F1E8" opacity="0.35"/><rect x="4.5" y="4" width="3" height="7" rx="1" fill="#F6F1E8" opacity="0.6"/><rect x="9" y="2" width="3" height="9" rx="1" fill="#F6F1E8" opacity="0.85"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#F6F1E8"/></svg>
-      <div style="width:21px;height:10px;border:1.5px solid rgba(246,241,232,0.6);border-radius:2.5px;padding:1.5px;position:relative">
-        <div style="position:absolute;right:-4px;top:50%;transform:translateY(-50%);width:2.5px;height:5px;background:rgba(246,241,232,0.5);border-radius:0 2px 2px 0"></div>
-        <div style="width:75%;height:100%;background:#F6F1E8;border-radius:1px"></div>
-      </div>
-    </div>
-  </div>`;
+  return ''; // Cleanly eliminated mock device elements
 }
 
 function renderBottomNav() {
@@ -355,8 +339,7 @@ function renderHome() {
   const eps  = state.episodes.length ? state.episodes : DEMO_EPS;
   const cur  = state.current;
 
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:52px;padding-bottom:76px;background:${NIGHT}">
-    <!-- Header -->
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:20px;padding-bottom:76px;background:${NIGHT}">
     <div style="padding:16px 22px 8px;display:flex;align-items:center;justify-content:space-between">
       <div>
         <div style="font-size:0.58rem;letter-spacing:0.24em;text-transform:uppercase;color:${GOLD};font-weight:700">AGAPAY</div>
@@ -383,14 +366,12 @@ function renderHome() {
       </div>
     </div>` : ''}
 
-    <!-- Category chips -->
     <div style="display:flex;gap:8px;padding:0 18px 14px;overflow-x:auto;white-space:nowrap">
       ${['All','Sermons','Theology','Prayer','Saints','Scripture'].map((c,i) =>
         `<div style="flex:none;padding:6px 15px;background:${i===0?`linear-gradient(135deg,${GOLD},#A97C25)`:'rgba(255,255,255,0.05)'};border:${i===0?'none':'1px solid rgba(255,255,255,0.09)'};border-radius:20px;font-size:0.62rem;color:${i===0?NIGHT:MUTED};font-weight:${i===0?'700':'400'}">${c}</div>`
       ).join('')}
     </div>
 
-    <!-- Episodes -->
     <div style="padding:0 18px;display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
       <span style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.18rem;font-weight:500;color:#F6F1E8;letter-spacing:0.04em">Recent Episodes</span>
       <span style="font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:${GOLD};font-weight:600">See All</span>
@@ -420,7 +401,7 @@ function renderPlayer() {
   const liked = state.liked.has(ep.guid);
 
   return `<div style="position:absolute;inset:0;background:linear-gradient(180deg,${NIGHT} 0%,#081A28 40%,${NIGHT} 100%);overflow-y:auto;display:flex;flex-direction:column">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:58px 24px 12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:24px 24px 12px">
       <div class="back-btn tappable" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
       </div>
@@ -431,10 +412,10 @@ function renderPlayer() {
     </div>
 
     <div style="display:flex;justify-content:center;padding:8px 0 28px">
-      <div style="width:220px;height:220px;border-radius:50%;background:${EP_COLORS[0]};border:2px solid rgba(200,162,74,0.35);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;overflow:hidden;animation:glow-pulse 4s ease-in-out infinite">
-        <div style="position:absolute;inset:-8px;border-radius:50%;border:1px solid rgba(200,162,74,0.14)"></div>
-        <div style="position:absolute;inset:-18px;border-radius:50%;border:1px solid rgba(200,162,74,0.07)"></div>
-        ${ep.image ? `<img src="${esc(ep.image)}" style="width:220px;height:220px;border-radius:50%;object-fit:cover;position:absolute;inset:0" onerror="this.remove()">` : ''}
+      <div style="width:220px;height:220px;border-radius:16px;background:${EP_COLORS[0]};border:2px solid rgba(200,162,74,0.35);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;overflow:hidden;animation:glow-pulse 4s ease-in-out infinite">
+        <div style="position:absolute;inset:-8px;border-radius:16px;border:1px solid rgba(200,162,74,0.14)"></div>
+        <div style="position:absolute;inset:-18px;border-radius:16px;border:1px solid rgba(200,162,74,0.07)"></div>
+        ${ep.image ? `<img src="${esc(ep.image)}" style="width:220px;height:220px;border-radius:16px;object-fit:cover;position:absolute;inset:0" onerror="this.remove()">` : ''}
         <img src="/mark.png" style="width:100px;height:100px;opacity:0.8">
       </div>
     </div>
@@ -496,7 +477,7 @@ function renderPlayer() {
 }
 
 function renderDiscover() {
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:52px;padding-bottom:76px;background:${NIGHT}">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:20px;padding-bottom:76px;background:${NIGHT}">
     <div style="padding:16px 22px 12px;display:flex;align-items:center;justify-content:space-between">
       <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.55rem;font-weight:500;letter-spacing:0.06em;color:#F6F1E8">Discover</div>
       <div class="open-rss tappable" style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:linear-gradient(135deg,rgba(200,162,74,0.15),rgba(200,162,74,0.07));border:1px solid rgba(200,162,74,0.28);border-radius:20px">
@@ -555,10 +536,9 @@ function renderDiscover() {
 
 function renderLibrary() {
   const eps = state.episodes.length ? state.episodes : DEMO_EPS;
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:52px;padding-bottom:76px;background:${NIGHT}">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:20px;padding-bottom:76px;background:${NIGHT}">
     <div style="padding:16px 22px 18px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.55rem;font-weight:500;letter-spacing:0.06em;color:#F6F1E8">Library</div>
 
-    <!-- Subscriptions -->
     <div style="padding:0 18px;margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${GOLD}" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
@@ -577,7 +557,6 @@ function renderLibrary() {
       </div>
     </div>
 
-    <!-- Queue -->
     <div style="padding:0 18px;margin-bottom:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:8px">
@@ -603,7 +582,7 @@ function renderLibrary() {
 }
 
 function renderProfile() {
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:52px;padding-bottom:76px;background:${NIGHT}">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:20px;padding-bottom:76px;background:${NIGHT}">
     <div style="padding:16px 22px 20px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.55rem;font-weight:500;letter-spacing:0.06em;color:#F6F1E8">Profile</div>
 
     <div style="display:flex;flex-direction:column;align-items:center;padding:0 22px 24px">
@@ -623,7 +602,6 @@ function renderProfile() {
       ).join('')}
     </div>
 
-    <!-- Library transfer -->
     <div style="padding:0 18px;margin-bottom:14px">
       <div style="font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:10px">Library Transfer</div>
       <div style="display:flex;gap:10px">
@@ -643,7 +621,6 @@ function renderProfile() {
       </div>
     </div>
 
-    <!-- Preferences -->
     <div style="padding:0 18px;margin-bottom:24px">
       <div style="font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:10px">Preferences</div>
       <div style="background:rgba(255,255,255,0.03);border-radius:14px;border:1px solid rgba(255,255,255,0.07);overflow:hidden">
@@ -678,13 +655,8 @@ function render() {
     default:         screen = renderHome();
   }
 
-  // Preserve existing static chrome
-  root.querySelectorAll('.dynamic-island, .status-bar').forEach(el => el.remove());
-
-  // Build inner markup
+  // Build inner markup cleanly without mock phone components
   root.innerHTML = `
-    <div class="dynamic-island"></div>
-    ${renderStatusBar()}
     ${screen}
     ${state.screen !== 'player' ? renderBottomNav() : ''}
     ${renderToast()}
@@ -696,12 +668,10 @@ function render() {
 
 // ─── Event binding ────────────────────────────────────────────────────────────
 function bindEvents() {
-  // Nav tabs
   document.querySelectorAll('[data-nav]').forEach(el => {
     el.addEventListener('click', () => setState({ screen: el.dataset.nav }));
   });
 
-  // Episode tap → play
   document.querySelectorAll('.ep-tap').forEach(el => {
     el.addEventListener('click', (e) => {
       if (e.target.closest('.follow-btn')) return;
@@ -709,7 +679,6 @@ function bindEvents() {
     });
   });
 
-  // Player controls
   document.querySelector('.back-btn')?.addEventListener('click', () => setState({ screen: 'home' }));
 
   document.querySelector('.play-pause')?.addEventListener('click', () => {
@@ -733,7 +702,6 @@ function bindEvents() {
     save('agp_liked', liked);
   });
 
-  // RSS sheet
   document.querySelector('.open-rss')?.addEventListener('click', () => setState({ rssSheet: true }));
   document.getElementById('rss-backdrop')?.addEventListener('click', () => setState({ rssSheet: false }));
   document.getElementById('rss-cancel')?.addEventListener('click',   () => setState({ rssSheet: false }));
@@ -743,17 +711,14 @@ function bindEvents() {
     addRssFeed(val);
   });
 
-  // Search
   document.getElementById('search-input')?.addEventListener('input', (e) => {
     state.searchQuery = e.target.value;
     doSearch(e.target.value);
-    // Re-render search area without wiping input focus
     render();
     document.getElementById('search-input')?.focus();
   });
   document.getElementById('clear-search')?.addEventListener('click', () => setState({ searchQuery: '', searchResults: [] }));
 
-  // Follow buttons
   document.querySelectorAll('.follow-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -773,7 +738,6 @@ function bindEvents() {
     });
   });
 
-  // OPML
   document.getElementById('import-opml')?.addEventListener('click', handleImport);
   document.getElementById('export-opml')?.addEventListener('click', handleExport);
 }
