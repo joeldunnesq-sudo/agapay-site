@@ -29,14 +29,4 @@
       "type": "image/png",
       "purpose": "maskable any"
     }
-  ],
-  "shortcuts": [
-    {
-      "name": "AGAPAY Listen",
-      "short_name": "Listen",
-      "description": "Podcasts that Move You",
-      "url": "/listen",
-      "icons": [{ "src": "/images/app/listen-icon-192.png", "sizes": "192x192" }]
-    }
-  ]
 }
