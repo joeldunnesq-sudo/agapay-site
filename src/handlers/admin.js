@@ -66,6 +66,7 @@ import {
 } from "../learn/billing.js";
 
 import {
+  createCuratedLearnCommunityResource,
   listLearnCommunityResources,
   moderateLearnCommunityResource,
 } from "../learn/community-store.js";
@@ -334,13 +335,17 @@ export async function handleAdminLearnSummary(request, env) {
 }
 
 export async function handleAdminLearnCommunity(request, env, resourceId = "") {
-  if (request.method !== "PATCH") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!["POST", "PATCH"].includes(request.method)) return json({ error: "Method not allowed" }, { status: 405 });
   const limited = await rateLimit(request, env, "admin-learn-community", { limit: 60, windowSeconds: 300 });
   if (limited) return limited;
   const adminContext = await requireAdminContext(request, env);
   if (!adminContext) return unauthorized();
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") return json({ ok: false, error: "Moderation update was invalid." }, { status: 400 });
+  if (request.method === "POST") {
+    const result = await createCuratedLearnCommunityResource(env, adminContext, body);
+    return json(result, { status: result.ok ? 201 : result.status || 500 });
+  }
   const result = await moderateLearnCommunityResource(env, adminContext, resourceId, body);
   return json(result, { status: result.ok ? 200 : result.status || 500 });
 }

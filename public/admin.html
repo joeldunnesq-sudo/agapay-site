@@ -382,6 +382,64 @@
           <section class="section-card">
             <div class="section-header">
               <div class="section-title">
+                <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M12 3l2.4 5.2L20 9l-4 4 1 5.8-5-2.8-5 2.8 1-5.8-4-4 5.6-.8z"/><path d="M12 7v5"/></svg></div>
+                Add AGAPAY Curated Resource
+              </div>
+              <button class="secondary btn-sm" onclick="clearLearnCuratedResourceForm()">Clear</button>
+            </div>
+            <div class="section-body">
+              <p style="margin:0 0 1rem;color:var(--stone);font-size:13px;line-height:1.65;">Publish a trusted resource directly to every Learn household. Admin-added resources are approved immediately and display with the AGAPAY CURATED label.</p>
+              <div class="form-grid">
+                <div>
+                  <label for="learnCuratedTitle">Title</label>
+                  <input id="learnCuratedTitle" placeholder="Orthodox Formation by Subject" />
+                </div>
+                <div>
+                  <label for="learnCuratedUrl">Resource link</label>
+                  <input id="learnCuratedUrl" type="url" placeholder="https://..." />
+                </div>
+                <div>
+                  <label for="learnCuratedCategory">Subject</label>
+                  <input id="learnCuratedCategory" placeholder="Catechesis, History, Literature..." />
+                </div>
+                <div>
+                  <label for="learnCuratedResourceType">Resource type</label>
+                  <input id="learnCuratedResourceType" placeholder="Website, Book, Printable..." />
+                </div>
+                <div>
+                  <label for="learnCuratedMediaType">Media type</label>
+                  <input id="learnCuratedMediaType" placeholder="Article, PDF, Audio..." />
+                </div>
+                <div>
+                  <label for="learnCuratedAgeRange">Age range</label>
+                  <input id="learnCuratedAgeRange" placeholder="Family, Form I, High School..." />
+                </div>
+                <div>
+                  <label for="learnCuratedTags">Tags</label>
+                  <input id="learnCuratedTags" placeholder="saints, narration, feast days" />
+                </div>
+                <div>
+                  <label class="checkbox-line" for="learnCuratedPinned">
+                    <input id="learnCuratedPinned" type="checkbox" />
+                    Pin near the top
+                  </label>
+                </div>
+                <div style="grid-column:1/-1;">
+                  <label for="learnCuratedDescription">Why this is helpful</label>
+                  <textarea id="learnCuratedDescription" rows="4" placeholder="Short, parent-facing note about why this resource is trustworthy and useful."></textarea>
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="gold" onclick="createLearnCuratedResource(this)">Publish curated resource</button>
+                <button class="secondary" onclick="loadLearnAdmin()">Refresh resources</button>
+              </div>
+              <div class="payment-status" id="learnCuratedResourceStatus"></div>
+            </div>
+          </section>
+
+          <section class="section-card">
+            <div class="section-header">
+              <div class="section-title">
                 <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
                 Community Moderation
               </div>

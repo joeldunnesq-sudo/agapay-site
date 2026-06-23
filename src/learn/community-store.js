@@ -62,7 +62,10 @@ export async function listLearnCommunityResources(env, { includeAll = false } = 
   }
   return [...records.values()]
     .filter((record) => includeAll || record.status === "approved")
-    .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
+    .sort((a, b) => {
+      if (Boolean(a.pinned) !== Boolean(b.pinned)) return a.pinned ? -1 : 1;
+      return String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || ""));
+    });
 }
 
 export async function submitLearnCommunityResource(env, identity, body = {}) {
@@ -89,6 +92,40 @@ export async function submitLearnCommunityResource(env, identity, body = {}) {
     flags: [],
     createdAt: now,
     updatedAt: now
+  };
+  await save(env, record);
+  return { ok: true, resource: record };
+}
+
+export async function createCuratedLearnCommunityResource(env, adminContext, body = {}) {
+  const title = clean(body.title, 120);
+  const url = safeUrl(body.url);
+  const description = clean(body.description, 600);
+  if (!title || !url || !description) return { ok: false, status: 400, error: "Title, link, and description are required." };
+  const now = new Date().toISOString();
+  const record = {
+    id: generateSecret("learn_resource"),
+    source: "agapay-curated",
+    title,
+    url,
+    description,
+    subtitle: description,
+    category: clean(body.category, 60) || "General",
+    resourceType: clean(body.resourceType, 60) || "Website",
+    mediaType: clean(body.mediaType, 60) || "Mixed Media",
+    ageRange: clean(body.ageRange, 40) || "Family",
+    tags: Array.isArray(body.tags) ? body.tags.map((tag) => clean(tag, 40)).filter(Boolean).slice(0, 10) : clean(body.tags, 240).split(",").map((tag) => clean(tag, 40)).filter(Boolean).slice(0, 10),
+    sharedBy: "AGAPAY",
+    submittedBy: adminContext.actor || "AGAPAY Admin",
+    householdId: "",
+    status: "approved",
+    vetted: true,
+    pinned: Boolean(body.pinned),
+    flags: [],
+    createdAt: now,
+    updatedAt: now,
+    curatedBy: adminContext.actor || "AGAPAY Admin",
+    curatedAt: now
   };
   await save(env, record);
   return { ok: true, resource: record };

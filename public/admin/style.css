@@ -444,6 +444,23 @@
       font-weight: 600;
     }
     .check-card input { width: auto; }
+    .checkbox-line {
+      min-height: 43px;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      margin: 1.45rem 0 0;
+      color: var(--deep);
+      letter-spacing: 0;
+      text-transform: none;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .checkbox-line input {
+      width: auto;
+      flex: none;
+      accent-color: var(--gold);
+    }
     code {
       background: rgba(11,33,48,0.08);
       border: 1px solid rgba(11,33,48,0.16);

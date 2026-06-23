@@ -664,8 +664,9 @@
         </div>
         <div class="learn-moderation-list">${resources.map((item) => {
           const flags = Array.isArray(item.flags) ? item.flags : [];
+          const curated = item.vetted || item.source === 'agapay-curated';
           return `<article class="learn-moderation-row ${flags.length ? 'is-flagged' : ''}">
-            <div class="learn-moderation-copy"><span class="learn-moderation-status">${escapeHtml(readable(item.status || 'pending'))}${flags.length ? ` · ${flags.length} flag${flags.length === 1 ? '' : 's'}` : ''}</span><strong>${escapeHtml(item.title || 'Untitled resource')}</strong><a href="${escapeHtml(item.url || '#')}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.url || '')}</a><small>${escapeHtml(item.description || '')}</small><small>Submitted by ${escapeHtml(item.submittedBy || 'Unknown')} · ${escapeHtml(shortDate(item.createdAt))}</small>${flags.length ? `<div class="learn-flag-reasons">${flags.map((flag) => `<span>${escapeHtml(flag.reason || 'Flagged for review')}</span>`).join('')}</div>` : ''}</div>
+            <div class="learn-moderation-copy"><span class="learn-moderation-status">${escapeHtml(readable(item.status || 'pending'))}${curated ? ' · AGAPAY CURATED' : ''}${flags.length ? ` · ${flags.length} flag${flags.length === 1 ? '' : 's'}` : ''}</span><strong>${escapeHtml(item.title || 'Untitled resource')}</strong><a href="${escapeHtml(item.url || '#')}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.url || '')}</a><small>${escapeHtml(item.description || '')}</small><small>${curated ? 'Published by' : 'Submitted by'} ${escapeHtml(item.submittedBy || 'Unknown')} · ${escapeHtml(shortDate(item.createdAt))}</small>${flags.length ? `<div class="learn-flag-reasons">${flags.map((flag) => `<span>${escapeHtml(flag.reason || 'Flagged for review')}</span>`).join('')}</div>` : ''}</div>
             <div class="learn-moderation-actions"><button class="gold btn-sm" onclick="moderateLearnCommunity('${jsAttr(item.id || '')}','approved',this)">Approve</button><button class="secondary btn-sm" onclick="moderateLearnCommunity('${jsAttr(item.id || '')}','hidden',this)">Hide</button><button class="danger btn-sm" onclick="moderateLearnCommunity('${jsAttr(item.id || '')}','removed',this)">Remove</button></div>
           </article>`;
         }).join('') || '<div class="revenue-empty">No community submissions are waiting for review.</div>'}</div>`;
@@ -748,6 +749,74 @@
         setStatus(`Community resource marked ${status}.`, 'success');
         await loadLearnAdmin();
       } catch (err) {
+        setStatus(err.message, 'error');
+      } finally {
+        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+      }
+    }
+
+    function clearLearnCuratedResourceForm() {
+      [
+        'learnCuratedTitle',
+        'learnCuratedUrl',
+        'learnCuratedCategory',
+        'learnCuratedResourceType',
+        'learnCuratedMediaType',
+        'learnCuratedAgeRange',
+        'learnCuratedTags',
+        'learnCuratedDescription'
+      ].forEach((id) => {
+        const field = document.getElementById(id);
+        if (field) field.value = '';
+      });
+      const pinned = document.getElementById('learnCuratedPinned');
+      if (pinned) pinned.checked = false;
+      const status = document.getElementById('learnCuratedResourceStatus');
+      if (status) {
+        status.textContent = '';
+        status.className = 'payment-status';
+      }
+    }
+
+    async function createLearnCuratedResource(btn) {
+      const status = document.getElementById('learnCuratedResourceStatus');
+      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+      if (status) {
+        status.textContent = 'Publishing curated resource...';
+        status.className = 'payment-status';
+      }
+      try {
+        const payload = {
+          title: document.getElementById('learnCuratedTitle')?.value || '',
+          url: document.getElementById('learnCuratedUrl')?.value || '',
+          category: document.getElementById('learnCuratedCategory')?.value || '',
+          resourceType: document.getElementById('learnCuratedResourceType')?.value || '',
+          mediaType: document.getElementById('learnCuratedMediaType')?.value || '',
+          ageRange: document.getElementById('learnCuratedAgeRange')?.value || '',
+          tags: document.getElementById('learnCuratedTags')?.value || '',
+          description: document.getElementById('learnCuratedDescription')?.value || '',
+          pinned: Boolean(document.getElementById('learnCuratedPinned')?.checked)
+        };
+        const response = await fetch('/api/admin/learn/community', {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json().catch(() => ({}));
+        if (handleAuthFailure(response, result)) return;
+        if (!response.ok) throw new Error(result.error || 'Unable to publish curated resource');
+        clearLearnCuratedResourceForm();
+        if (status) {
+          status.textContent = `Published: ${result.resource?.title || payload.title}`;
+          status.className = 'payment-status success';
+        }
+        setStatus('AGAPAY curated Learn resource published.', 'success');
+        await loadLearnAdmin();
+      } catch (err) {
+        if (status) {
+          status.textContent = err.message;
+          status.className = 'payment-status error';
+        }
         setStatus(err.message, 'error');
       } finally {
         if (btn) { btn.classList.remove('loading'); btn.disabled = false; }

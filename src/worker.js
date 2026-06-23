@@ -1098,6 +1098,9 @@ export default {
     if (url.pathname === "/api/admin/learn/scholarships") {
       return handleAdminLearnScholarship(request, env);
     }
+    if (url.pathname === "/api/admin/learn/community") {
+      return handleAdminLearnCommunity(request, env);
+    }
     if (url.pathname.startsWith("/api/admin/learn/community/")) {
       return handleAdminLearnCommunity(request, env, decodeURIComponent(url.pathname.slice("/api/admin/learn/community/".length)));
     }
