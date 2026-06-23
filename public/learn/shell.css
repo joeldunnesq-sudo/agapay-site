@@ -2123,8 +2123,8 @@ body {
 .learn-family-term-tabs a { min-width: 94px; padding-inline: 13px; }
 .learn-family-lock { margin-left: auto; color: var(--muted); font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
 .learn-family-lock::before { content: "🔒"; color: var(--gold); }
-.learn-prototype-embed { min-height: calc(100vh - 112px); border: 1px solid rgba(181,148,47,.28); border-radius: 18px; overflow: hidden; background: #f3ead4; box-shadow: 0 12px 32px rgba(6,21,34,.12); }
-.learn-prototype-embed iframe { display: block; width: 100%; min-height: calc(100vh - 112px); height: 1500px; border: 0; background: #f3ead4; }
+.learn-prototype-embed { min-height: calc(100vh - 112px); overflow: visible; background: transparent; }
+.learn-prototype-embed iframe { display: block; width: 100%; min-height: calc(100vh - 112px); height: 1500px; border: 0; background: transparent; }
 .learn-family-planner-panel { display: grid; gap: 14px; scroll-margin-top: 110px; animation: mealsFade .26s ease; }
 .learn-family-planner-head { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid rgba(181, 148, 47, .36); border-radius: 16px; background: radial-gradient(circle at 88% 0%, rgba(181, 148, 47, .18), transparent 18rem), linear-gradient(135deg, #fffaf0, #f2e4c4); padding: 18px 20px; }
 .learn-family-planner-head small { color: var(--gold); letter-spacing: .16em; font-size: 11px; font-weight: 800; text-transform: uppercase; }
