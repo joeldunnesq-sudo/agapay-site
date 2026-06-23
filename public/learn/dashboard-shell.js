@@ -717,9 +717,10 @@ function renderDashboard(vm) {
 }
 
 function renderPlanner(vm) {
+  seedFamilyPrototypeState(vm);
   return shell(vm, `
     <section class="learn-prototype-embed" aria-label="AGAPAY Learn Family Planner">
-      <iframe src="/learn/Meals.dc.html" title="AGAPAY Learn Family Planner"></iframe>
+      <iframe src="/learn/Meals.dc.html" title="AGAPAY Learn Family Planner" data-family-prototype-frame></iframe>
     </section>
   `);
   const query = new URLSearchParams(window.location.search);
@@ -1167,6 +1168,329 @@ function renderFamilyPlannerScope(vm, scope, displayView = "week", mealTool = "p
       ? renderChoresScope(model, displayView)
       : renderEventsScope(model, displayView);
   return `<form data-family-planning-form id="family-planner" class="learn-family-planner-panel">${hidden}${content}${saveBar}${renderFamilyPlannerModals(model)}</form>`;
+}
+
+const PROTOTYPE_RECIPE_TITLES = {
+  b1: "Lenten Oatmeal, Apple & Cinnamon",
+  b2: "Avocado & Tomato Toast",
+  b3: "Tahini, Banana & Honey Toast",
+  b4: "Smoked Salmon on Rye",
+  b5: "Yogurt, Honey & Walnuts",
+  l1: "Lentil Soup (Fakes)",
+  l2: "Hummus & Veggie Pita",
+  l3: "Roasted Vegetable Orzo",
+  l4: "Sardines & Greens on Toast",
+  l5: "Greek Salad with Feta",
+  d1: "Gigantes — Greek Baked Beans",
+  d2: "Stuffed Peppers, Rice & Herbs",
+  d3: "Mushroom Stew over Polenta",
+  d4: "Baked Cod, Lemon & Potatoes",
+  d5: "Pan-Seared Trout, Rice Pilaf",
+  d6: "Roast Chicken & Lemon Potatoes",
+  d7: "Spanakopita",
+  d8: "Chickpea & Vegetable Stew",
+  d9: "Herb-Roasted Salmon & Greens",
+  s1: "Olive & Herb Bread",
+  s2: "Semolina Halva",
+  s3: "Chocolate Olive-Oil Cake",
+  s4: "Walnut Baklava"
+};
+
+function prototypeWeekDateMap(vm) {
+  const model = familyPlannerModel(vm);
+  const days = model.weekDays.length ? model.weekDays : plannerDates(vm).map((date) => ({ date }));
+  return Object.fromEntries(days.slice(0, 7).map((day, index) => [`d${index}`, day.date]));
+}
+
+function prototypeRecipeType(slot = "dinner") {
+  if (slot === "breakfast") return "breakfast";
+  if (slot === "lunch") return "lunch";
+  return "dinner";
+}
+
+function recipeTitleFromPrototypeId(id, state = {}) {
+  return state.userRecipes?.[id]?.name || PROTOTYPE_RECIPE_TITLES[id] || id || "";
+}
+
+function prototypeDaySeeds(vm) {
+  const model = familyPlannerModel(vm);
+  const days = model.weekDays.length ? model.weekDays : plannerDates(vm).map((date) => ({ date, ...plannerDayLabel(date) }));
+  return days.slice(0, 7).map((day, index) => ({
+    key: `d${index}`,
+    weekday: day.weekday || day.weekdayShort || ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][index] || "",
+    long: day.weekdayLong || day.long || day.weekday || "",
+    short: day.shortDate || day.short || day.date || "",
+    date: Number(day.dayNumber || String(day.date || "").slice(-2)) || index + 1,
+    level: day.isSunday ? "fish" : day.isFastDay ? (String(day.fastingType || day.fasting || "").toLowerCase().includes("strict") ? "strict" : "oilwine") : "rich",
+    feast: day.feast || day.feastTitle || (day.isFastDay ? "Fast day" : ""),
+    tag: day.isSunday ? "Sunday" : day.isFastDay ? day.fastingType || day.fasting || "Fast day" : day.feast || "Ordinary day",
+    sunday: Boolean(day.isSunday),
+    isToday: Boolean(day.isToday),
+    feastDay: Boolean(day.feast && !day.isFastDay),
+    school: index === 0 ? "Church & rest" : "Plan the day"
+  }));
+}
+
+function prototypeSetupSeed(vm) {
+  const grouping = (vm.familyPlanning?.children || []).some((child) => child.formLabel) ? "Forms" : "Grades";
+  const formMap = new Map();
+  (vm.familyPlanning?.children || []).forEach((child, index) => {
+    const label = child.formLabel || child.gradeLabel || "Household";
+    if (!formMap.has(label)) {
+      formMap.set(label, {
+        id: `form_${formMap.size + 1}`,
+        label,
+        color: child.color || ACCENTS[index % ACCENTS.length],
+        children: [],
+        subjects: []
+      });
+    }
+    formMap.get(label).children.push(child.name || child.firstName || `Child ${index + 1}`);
+  });
+  (vm.week?.formRows || []).forEach((row) => {
+    const label = row.formLabel || row.label || "Household";
+    if (!formMap.has(label)) formMap.set(label, { id: `form_${formMap.size + 1}`, label, color: row.color || ACCENTS[formMap.size % ACCENTS.length], children: [], subjects: [] });
+    const target = formMap.get(label);
+    (row.blocks || []).forEach((block) => {
+      const title = block.title || row.title;
+      if (title && !target.subjects.includes(title)) target.subjects.push(title);
+    });
+  });
+  const forms = [...formMap.values()].map((form) => ({
+    ...form,
+    subjects: form.subjects.length ? form.subjects : ["Math", "Language Arts", "History", "Science", "Literature"]
+  }));
+  return {
+    calendar: localStorage.getItem("agapay.learn.calendar") || "julian",
+    grouping,
+    enrichment: (vm.week?.householdRows || []).map((row) => row.title).filter(Boolean),
+    forms: forms.length ? forms : [{ id: "household", label: "Household", color: "#b5942f", children: [], subjects: ["Math", "Language Arts", "History", "Science", "Literature"] }]
+  };
+}
+
+function prototypeKidsSeed(vm) {
+  const chores = vm.familyPlanning?.chores || [];
+  return (vm.familyPlanning?.children || []).map((child, index) => {
+    const name = child.name || child.firstName || `Child ${index + 1}`;
+    const childChores = chores.filter((chore) => !chore.assignee || chore.assignee === name).map((chore) => chore.title).filter(Boolean);
+    return {
+      name,
+      color: child.color || ACCENTS[index % ACCENTS.length],
+      chores: childChores.length ? childChores : ["", "", "", "", ""]
+    };
+  });
+}
+
+function backendRecipeToPrototype(recipe, index = 0) {
+  const id = recipe.id || `agp_recipe_${index + 1}`;
+  const types = [prototypeRecipeType(String(recipe.category || "").toLowerCase().includes("breakfast") ? "breakfast" : String(recipe.category || "").toLowerCase().includes("lunch") ? "lunch" : "dinner")];
+  return {
+    id,
+    recipe: {
+      name: recipe.title || `Recipe ${index + 1}`,
+      types,
+      level: recipe.fastingType === "strict" ? "strict" : recipe.fastingType === "fish" ? "fish" : recipe.fastingType === "regular" ? "rich" : "oilwine",
+      time: "30 min",
+      servings: 4,
+      glyph: "🍲",
+      ingredients: String(recipe.ingredients || "").split(",").map((item) => item.trim()).filter(Boolean),
+      note: recipe.instructions || recipe.category || "Saved from AGAPAY Learn.",
+      custom: true
+    }
+  };
+}
+
+function seedFamilyPrototypeState(vm) {
+  const existing = JSON.parse(localStorage.getItem("agapay.planner.v2") || "{}");
+  const planning = vm.familyPlanning || {};
+  const dateToKey = Object.fromEntries(Object.entries(prototypeWeekDateMap(vm)).map(([key, date]) => [date, key]));
+  const userRecipes = {};
+  const recipeIdsByTitle = new Map(Object.entries(PROTOTYPE_RECIPE_TITLES).map(([id, title]) => [title.toLowerCase(), id]));
+  (planning.recipes || []).forEach((recipe, index) => {
+    const converted = backendRecipeToPrototype(recipe, index);
+    userRecipes[converted.id] = converted.recipe;
+    recipeIdsByTitle.set(converted.recipe.name.toLowerCase(), converted.id);
+  });
+  const plan = {};
+  (planning.meals || []).forEach((meal) => {
+    const dayKey = dateToKey[meal.date];
+    if (!dayKey) return;
+    ["breakfast", "lunch", "dinner"].forEach((slot) => {
+      const title = meal[slot];
+      if (!title) return;
+      let recipeId = recipeIdsByTitle.get(String(title).toLowerCase());
+      if (!recipeId) {
+        recipeId = `agp_${dayKey}_${slot}`;
+        userRecipes[recipeId] = {
+          name: title,
+          types: [slot],
+          level: "oilwine",
+          time: "30 min",
+          servings: 4,
+          glyph: "🍲",
+          ingredients: [],
+          note: "Saved from AGAPAY Learn.",
+          custom: true
+        };
+        recipeIdsByTitle.set(String(title).toLowerCase(), recipeId);
+      }
+      plan[`${dayKey}-${slot}`] = recipeId;
+    });
+  });
+  const events = (planning.events || []).map((event, index) => ({
+    id: event.id || `agp_event_${index + 1}`,
+    type: event.eventType || "Appointment",
+    title: event.title || "Family event",
+    dayKey: dateToKey[event.date] || "d3",
+    time: event.startTime || "",
+    who: event.location || "Family",
+    note: event.notes || ""
+  }));
+  const pantry = (planning.groceryItems || []).filter((item) => item.pantry || item.inPantry).map((item) => item.name).filter(Boolean);
+  const manualGroceries = (planning.groceryItems || []).filter((item) => !(item.pantry || item.inPantry)).map((item, index) => ({
+    id: item.id || `agp_grocery_${index + 1}`,
+    aisle: item.category || "Pantry",
+    label: item.quantity ? `${item.quantity} ${item.name}` : item.name
+  })).filter((item) => item.label);
+  const seed = {
+    email: learnAccountEmail(),
+    days: prototypeDaySeeds(vm),
+    setup: prototypeSetupSeed(vm),
+    kids: prototypeKidsSeed(vm),
+    pantry,
+    feast: {
+      dateLong: (vm.week?.days || []).find((day) => day.feast)?.shortDate || "",
+      name: (vm.week?.days || []).find((day) => day.feast)?.feast || "Upcoming Feast",
+      tasks: []
+    }
+  };
+  localStorage.setItem("agapay.planner.seed.v1", JSON.stringify(seed));
+  if (existing?.__agapayBackendSynced) return;
+  localStorage.setItem("agapay.planner.v2", JSON.stringify({
+    __agapayBackendSynced: true,
+    plan,
+    pantry,
+    userRecipes,
+    manualGroceries,
+    events,
+    groceryChecked: {},
+    feastPlan: {},
+    google: { open: false, connected: false, email: learnAccountEmail(), last: "", layers: { lessons: true, terms: true, feasts: true, events: true, chores: false } }
+  }));
+}
+
+function prototypeStateToFamilyPlanningPayload(vm, state) {
+  const keyToDate = prototypeWeekDateMap(vm);
+  const recipes = Object.entries(state.userRecipes || {}).map(([id, recipe]) => ({
+    id,
+    title: recipe.name || "",
+    fastingType: recipe.level || "adaptable",
+    category: Array.isArray(recipe.types) ? recipe.types.join(", ") : "Recipe",
+    sourceUrl: "",
+    ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients.join(", ") : "",
+    instructions: recipe.note || ""
+  })).filter((recipe) => recipe.title);
+  const mealsByDate = new Map();
+  Object.entries(state.plan || {}).forEach(([key, recipeId]) => {
+    const [dayKey, slot] = key.split("-");
+    const date = keyToDate[dayKey];
+    if (!date || !slot) return;
+    if (!mealsByDate.has(date)) mealsByDate.set(date, { date });
+    mealsByDate.get(date)[slot] = recipeTitleFromPrototypeId(recipeId, state);
+  });
+  const events = (state.events || []).map((event) => ({
+    id: event.id || "",
+    title: event.title || "",
+    eventType: event.type || "Appointment",
+    date: keyToDate[event.dayKey] || keyToDate.d3 || "",
+    startTime: event.time || "",
+    location: event.who || "",
+    notes: event.note || ""
+  })).filter((event) => event.title && event.date);
+  const pantryItems = (state.pantry || []).map((name, index) => ({
+    id: `pantry_${index}`,
+    name,
+    quantity: "",
+    category: "Pantry",
+    checked: false,
+    pantry: true
+  }));
+  const groceryItems = (state.manualGroceries || []).map((item) => ({
+    id: item.id || "",
+    name: item.label || "",
+    quantity: "",
+    category: item.aisle || "Other",
+    checked: Boolean(state.groceryChecked?.[item.id]),
+    pantry: false
+  })).filter((item) => item.name);
+  return {
+    household: vm.familyPlanning?.household || {},
+    childNameDays: (vm.familyPlanning?.children || []).map((child) => ({ childId: child.id || "", nameDay: child.nameDay || "" })),
+    familyPlanning: {
+      fastingPreference: vm.familyPlanning?.fastingPreference || "guidance",
+      weekStart: keyToDate.d0 || "",
+      meals: [...mealsByDate.values()],
+      recipes,
+      groceryItems: [...pantryItems, ...groceryItems],
+      events,
+      chores: vm.familyPlanning?.chores || []
+    }
+  };
+}
+
+function wireFamilyPrototypeBackend(vm, frame) {
+  let lastSeen = localStorage.getItem("agapay.planner.v2") || "";
+  let lastPosted = localStorage.getItem("agapay.planner.v2.backendHash") || "";
+  let syncTimer = null;
+  const status = document.createElement("div");
+  status.className = "learn-prototype-sync-status";
+  status.textContent = "Family Planner sync is ready.";
+  frame.closest(".learn-prototype-embed")?.prepend(status);
+
+  const syncNow = async () => {
+    const raw = localStorage.getItem("agapay.planner.v2") || "";
+    if (!raw || raw === lastPosted) return;
+    let state;
+    try {
+      state = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    status.textContent = "Saving Family Planner...";
+    status.dataset.state = "saving";
+    try {
+      await apiPost("/api/learn/family-planning", prototypeStateToFamilyPlanningPayload(vm, state));
+      lastPosted = raw;
+      localStorage.setItem("agapay.planner.v2.backendHash", raw);
+      status.textContent = "Family Planner saved.";
+      status.dataset.state = "saved";
+    } catch (error) {
+      status.textContent = error.message || "Family Planner could not save.";
+      status.dataset.state = "error";
+    }
+  };
+
+  const scheduleSync = () => {
+    window.clearTimeout(syncTimer);
+    syncTimer = window.setTimeout(syncNow, 650);
+  };
+
+  const poll = window.setInterval(() => {
+    const current = localStorage.getItem("agapay.planner.v2") || "";
+    if (current !== lastSeen) {
+      lastSeen = current;
+      scheduleSync();
+    }
+  }, 900);
+
+  frame.addEventListener("load", () => {
+    lastSeen = localStorage.getItem("agapay.planner.v2") || "";
+    scheduleSync();
+  }, { once: true });
+
+  window.addEventListener("beforeunload", () => {
+    window.clearInterval(poll);
+  }, { once: true });
 }
 
 function adjacentMonthKey(monthKey, delta) {
@@ -3062,6 +3386,8 @@ function wirePlanner(vm) {
   if (vm.activeView) localStorage.setItem("agapay.learn.plannerView", vm.activeView);
   if (vm.month?.key) localStorage.setItem("agapay.learn.plannerMonth", vm.month.key);
   if (vm.term?.activeTerm) localStorage.setItem("agapay.learn.plannerTerm", String(vm.term.activeTerm));
+  const prototypeFrame = root.querySelector("[data-family-prototype-frame]");
+  if (prototypeFrame) wireFamilyPrototypeBackend(vm, prototypeFrame);
   root.querySelector("[data-planner-month-print]")?.addEventListener("click", async (event) => {
     const button = event.currentTarget;
     const month = button.dataset.plannerMonthPrint || vm.month?.key || new Date().toISOString().slice(0, 7);

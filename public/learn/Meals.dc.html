@@ -805,40 +805,33 @@ class Component extends DCLogic {
       crafts:[{id:'c1',label:'Craft: Mary entering the Temple (cut & paste)'},{id:'c2',label:'Color the festal icon page'},{id:'c3',label:'Bake the festal bread together'},{id:'c4',label:'Dress the icon corner with flowers & a candle'}],
       tasks:[{who:'Anna',task:'Help cook the trout'},{who:'Theo',task:'Set the festal table'},{who:'Lucy',task:'Lead the craft with the little ones'},{who:'Sam',task:'Pick flowers for the icon corner'}]
     };
+    const seed=this.loadSeed();
+    if(seed.recipes) this.R={...this.R,...seed.recipes};
+    if(seed.days&&seed.days.length) this.DAYS=seed.days;
+    if(seed.setup) this.SETUP={...this.SETUP,...seed.setup};
+    if(seed.kids&&seed.kids.length) this.KIDS=seed.kids;
+    if(seed.feast) this.FEAST={...this.FEAST,...seed.feast};
     const saved=this.load();
     this.state={
       view:'week', scope:'meals', selectedDay:'d3', tab:'plan', integration:'dedicated',
-      plan: saved.plan || {
-        'd0-breakfast':'b4','d0-lunch':'l3','d0-dinner':'d4',
-        'd1-breakfast':'b3','d1-lunch':'l2','d1-dinner':'d1',
-        'd2-breakfast':'b1','d2-lunch':'l4','d2-dinner':'d9',
-        'd3-breakfast':'b1','d3-lunch':'l1','d3-dinner':'d8',
-        'd4-breakfast':'b4','d4-lunch':'l3','d4-dinner':'d4',
-        'd5-breakfast':'b2','d5-lunch':'l1','d5-dinner':'d2',
-        'd6-breakfast':'b4','d6-lunch':'l4','d6-dinner':'d5'
-      },
-      pantry: saved.pantry || ['Olive oil','Sea salt','Rice','Onion','Garlic','Brown lentils','Rolled oats','Honey','Flour','Lemon'],
+      plan: saved.plan || {},
+      pantry: saved.pantry || seed.pantry || [],
       pantryInput:'', groceryChecked: saved.groceryChecked || {},
       userRecipes: saved.userRecipes || {},
       recipeEditor:{open:false}, recipeDraft:{name:'',type:'dinner',level:'oilwine',time:'30 min',servings:4,ingredients:'',note:'',glyph:'🍲'},
       manualGroceries: saved.manualGroceries || [], groceryInput:{},
       picker:{open:false,dayKey:null,meal:null,fastingOnly:true},
       detail:{open:false,id:null}, recipeFilter:{type:'all',level:'all'},
-      events: saved.events || [
-        {id:'e1',type:'Appointment',title:'Dentist — Theo',dayKey:'d1',time:'10:00 AM',who:'Theo',note:'Cleaning'},
-        {id:'e2',type:'Field trip',title:'Co-op nature museum',dayKey:'d2',time:'9:30 AM',who:'All children',note:'Pack bag lunches'},
-        {id:'e3',type:'Extracurricular',title:'Piano lesson — Anna',dayKey:'d3',time:'4:00 PM',who:'Anna',note:''},
-        {id:'e4',type:'Extracurricular',title:'Soccer practice',dayKey:'d4',time:'5:30 PM',who:'Theo & Lucy',note:''},
-        {id:'e5',type:'Appointment',title:'Confession (Vigil)',dayKey:'d5',time:'6:00 PM',who:'Family',note:'Before the feast'}
-      ],
+      events: saved.events || [],
       eventModal:{open:false,id:null}, eventDraft:{type:'Appointment',title:'',dayKey:'d3',time:'',who:'Family',note:''},
       feast:{open:false}, feastInput:{food:'',craft:''},
       feastPlan: saved.feastPlan || {food:{f1:true,f2:true,f4:true}, crafts:{c1:true,c3:true}, extraFood:[], extraCraft:[]},
-      google: saved.google || {open:false,connected:false,email:'stephanie.k@gmail.com',last:'',layers:{lessons:true,terms:true,feasts:true,events:true,chores:false}}
+      google: saved.google || {open:false,connected:false,email:seed.email||'',last:'',layers:{lessons:true,terms:true,feasts:true,events:true,chores:false}}
     };
   }
+  loadSeed(){ try{ return JSON.parse(localStorage.getItem('agapay.planner.seed.v1'))||{}; }catch(e){ return {}; } }
   load(){ try{ return JSON.parse(localStorage.getItem('agapay.planner.v2'))||{}; }catch(e){ return {}; } }
-  save(){ try{ const s=this.state; localStorage.setItem('agapay.planner.v2', JSON.stringify({plan:s.plan,pantry:s.pantry,groceryChecked:s.groceryChecked,events:s.events,feastPlan:s.feastPlan,userRecipes:s.userRecipes,manualGroceries:s.manualGroceries,google:{...s.google,open:false}})); }catch(e){} }
+  save(){ try{ const s=this.state; localStorage.setItem('agapay.planner.v2', JSON.stringify({__agapayBackendSynced:true,plan:s.plan,pantry:s.pantry,groceryChecked:s.groceryChecked,events:s.events,feastPlan:s.feastPlan,userRecipes:s.userRecipes,manualGroceries:s.manualGroceries,google:{...s.google,open:false}})); }catch(e){} }
   rank(l){ return this.LV[l]; }
   day(k){ return this.DAYS.find(d=>d.key===k)||{}; }
   recipe(id){ if(!id)return null; return this.R[id] || (this.state.userRecipes&&this.state.userRecipes[id]) || null; }

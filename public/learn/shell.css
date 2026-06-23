@@ -2125,6 +2125,10 @@ body {
 .learn-family-lock::before { content: "🔒"; color: var(--gold); }
 .learn-prototype-embed { min-height: calc(100vh - 112px); overflow: visible; background: transparent; }
 .learn-prototype-embed iframe { display: block; width: 100%; min-height: calc(100vh - 112px); height: 1500px; border: 0; background: transparent; }
+.learn-prototype-sync-status { width: max-content; max-width: 100%; margin: 0 0 10px auto; border: 1px solid rgba(181,148,47,.28); border-radius: 999px; background: var(--paper); color: var(--muted); padding: 6px 12px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 800; }
+.learn-prototype-sync-status[data-state="saving"] { color: var(--gold); }
+.learn-prototype-sync-status[data-state="saved"] { border-color: rgba(74,90,49,.3); color: var(--olive); }
+.learn-prototype-sync-status[data-state="error"] { border-color: rgba(110,47,42,.34); color: var(--burgundy); }
 .learn-family-planner-panel { display: grid; gap: 14px; scroll-margin-top: 110px; animation: mealsFade .26s ease; }
 .learn-family-planner-head { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid rgba(181, 148, 47, .36); border-radius: 16px; background: radial-gradient(circle at 88% 0%, rgba(181, 148, 47, .18), transparent 18rem), linear-gradient(135deg, #fffaf0, #f2e4c4); padding: 18px 20px; }
 .learn-family-planner-head small { color: var(--gold); letter-spacing: .16em; font-size: 11px; font-weight: 800; text-transform: uppercase; }
