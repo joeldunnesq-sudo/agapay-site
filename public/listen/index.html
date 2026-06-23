@@ -115,9 +115,17 @@
 
   <script>
     // Register service worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js');
-    }
+   if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/listen/service-worker.js', { scope: '/listen/' })
+        .then((registration) => {
+          console.log('AGAPAY Listen PWA registered with scope:', registration.scope);
+        })
+        .catch((error) => {
+          console.error('Listen PWA scoped registration failed:', error);
+        });
+    });
+  }
   </script>
 </body>
 </html>
