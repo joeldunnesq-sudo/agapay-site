@@ -250,14 +250,14 @@ const I = {
   fwd30:   `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><polyline points="21 3 21 8 16 8"/><text x="12" y="15" fill="#F6F1E8" font-size="7" font-family="'DM Sans'" font-weight="bold" text-anchor="middle">30</text></svg>`,
 };
 
-const DEMO_EPS = [
-  { guid:'podvig-94',   title:'The Jesus Prayer in Daily Life',  show:'The Podvig',       duration:'54:32',  date: new Date(Date.now()-86400000*5).toISOString(),  url:'', image:'', description: 'A deep exploration into integrating continuous mental prayer into the rhythms of everyday secular responsibilities.' },
-  { guid:'arena-67',    title:'Passions & the Inner Warfare',    show:'The Arena',         duration:'1:02:14',date: new Date(Date.now()-86400000*8).toISOString(),  url:'', image:'', description: 'Understanding patristic classifications of internal spiritual disturbances and strategies for self-examination.' }
-];
-
+// ─── Demo / Trending data (Cleaned of Placeholders) ───────────────────────────
+const DEMO_EPS = [];
 const TRENDING = [
-  { title:'Lord of Spirits',          author:'Fr. Damick & Fr. De Young', url:'https://www.ancientfaith.com/podcasts/lordofspirits/rss' },
-  { title:'Symbolic World',           author:'Jonathan Pageau',            url:'https://feeds.buzzsprout.com/258194.rss' }
+  { title: 'Lord of Spirits', author: 'Fr. Stephen De Young & Fr. Andrew Stephen Damick', url: 'https://www.ancientfaith.com/podcasts/lordofspirits/rss' },
+  { title: 'The Symbolic World', author: 'Jonathan Pageau', url: 'https://feeds.buzzsprout.com/258194.rss' },
+  { title: 'Orthodoxy Live', author: 'Fr. Evan Armatas', url: 'https://www.ancientfaith.com/podcasts/orthodoxylive/rss' },
+  { title: 'The Areopagus', author: 'Fr. Andrew Stephen Damick & Michael Ceron', url: 'https://www.ancientfaith.com/podcasts/areopagus/rss' },
+  { title: 'Search the Scriptures', author: 'Dr. Jeannie Constantinou', url: 'https://www.ancientfaith.com/podcasts/searchthescriptures/rss' }
 ];
 
 function renderBottomNav() {
@@ -308,7 +308,7 @@ function renderRssSheet() {
 // ─── New Episode Description Drawer Module ──────────────────────────────────
 function renderDescriptionSheet() {
   if (!state.descriptionSheet) return '';
-  const ep = state.current || DEMO_EPS[0];
+  const ep = state.current || { title: 'No Track Selected', show: 'AGAPAY Listen', description: 'Select an episode from your library or discover feed to begin listening.' };
   const infoText = ep.description ? ep.description : 'No summary metadata listed for this episode channel.';
   return `
     <div id="desc-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:45"></div>
@@ -379,11 +379,17 @@ function renderHome() {
         </div>`
       ).join('')}
     </div>
+    ${!state.subs.length ? `
+    <div style="margin:24px 20px;padding:24px;background:rgba(200,162,74,0.03);border:1px solid rgba(200,162,74,0.12);border-radius:16px;text-align:center;box-shadow: inset 0 0 20px rgba(0,0,0,0.2)">
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.2rem;color:#F6F1E8;margin-bottom:6px">Expand Your Library</div>
+      <div style="font-size:0.75rem;color:${MUTED};line-height:1.5;margin-bottom:16px;padding:0 8px">Explore Discover to connect with custom Orthodox feeds or add your personal RSS link.</div>
+      <div class="tappable" data-nav="discover" style="display:inline-flex;padding:9px 22px;background:linear-gradient(135deg,${GOLD},#A97C25);border-radius:8px;font-size:0.75rem;color:${NIGHT};font-weight:700;box-shadow: 0 4px 12px rgba(200,162,74,0.15)">Browse Podcasts</div>
+    </div>` : ''}
   </div>`;
 }
 
 function renderPlayer() {
-  const ep  = state.current || DEMO_EPS[0];
+  const ep  = state.current || { title: 'No Track Selected', show: 'AGAPAY Listen', description: 'Select an episode from your library or discover feed to begin listening.' };
   const pct = state.progress.toFixed(1) + '%';
   const liked = state.liked.has(ep.guid);
 
@@ -398,7 +404,6 @@ function renderPlayer() {
       </div>
     </div>
 
-    <!-- Album Art Expanded to 280px Grid Proportion -->
     <div style="display:flex;justify-content:center;padding:12px 0 24px">
       <div style="width:280px;height:280px;border-radius:20px;background:${EP_COLORS[0]};border:2px solid rgba(200,162,74,0.3);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;overflow:hidden;box-shadow: 0 20px 48px rgba(0,0,0,0.55), 0 0 40px rgba(200,162,74,0.06)">
         <div style="position:absolute;inset:-6px;border-radius:20px;border:1px solid rgba(200,162,74,0.08)"></div>
@@ -407,13 +412,11 @@ function renderPlayer() {
       </div>
     </div>
 
-    <!-- Metadata Content Block pushes control track down -->
     <div style="padding:0 32px;text-align:center;margin-bottom:28px;margin-top:8px">
       <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.45rem;font-weight:500;color:#F6F1E8;line-height:1.25;margin-bottom:8px">${esc(ep.title)}</div>
       <div style="font-size:0.7rem;color:${GOLD};font-weight:700;letter-spacing:0.08em;text-transform:uppercase">${esc(ep.show)}</div>
     </div>
 
-    <!-- Pushed Down Slider Suite -->
     <div style="padding:0 32px;margin-bottom:18px;margin-top:auto">
       <div id="seekbar" class="tappable" style="height:24px;display:flex;align-items:center;position:relative">
         <div style="width:100%;height:3.5px;background:rgba(255,255,255,0.08);border-radius:4px;position:relative">
@@ -427,7 +430,6 @@ function renderPlayer() {
       </div>
     </div>
 
-    <!-- Primary Center Control Deck (Enlarged) -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding:0px 32px 32px">
       <div class="like-btn tappable" style="width:46px;height:46px;display:flex;align-items:center;justify-content:center">
         <svg width="25" height="25" viewBox="0 0 24 24" fill="${liked?GOLD:'none'}" stroke="${liked?GOLD:MUTED}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
@@ -444,26 +446,25 @@ function renderPlayer() {
       </div>
     </div>
 
-    <!-- Enlarged & Redesigned Utility Deck — Includes Description Dynamic Action Button -->
-     <div style="display:flex; justify-content:center; align-items:center; gap:16px; padding:12px 20px; border:1px solid rgba(255,255,255,0.04); border-radius:30px; background:rgba(0,0,0,0.15); width:fit-content; margin:auto; margin-top:auto;">
-    ${[
-      ['<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', 'Sleep'],
-      ['<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2" stroke-linecap="round"><polygon points="5,4 15,12 5,20"/><polygon points="12,4 22,12 12,20"/></svg>', '1.0×'],
-      ['open-desc-btn', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', 'Details', GOLD],
-      ['share-btn', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>', 'Share', MUTED]
-    ].map(([idOrSvg, svgOrLabel, labelOrColor, optionalColor]) => {
-      const isCustom = typeof optionalColor !== 'undefined' || idOrSvg === 'open-desc-btn';
-      const targetId = isCustom ? idOrSvg : '';
-      const visualSvg = isCustom ? svgOrLabel : idOrSvg;
-      const textLabel = isCustom ? labelOrColor : svgOrLabel;
-      const textColor = isCustom ? optionalColor : MUTED;
-      
-      return `
-        <div ${targetId ? `id="${targetId}"` : ''} class="tappable" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:20px;border:1px solid rgba(255,255,255,0.02)">
-          ${visualSvg}<span style="font-size:0.68rem;color:${textColor};font-weight:600">${textLabel}</span>
-        </div>`;
-    }).join('')}
-  </div>
+    <div style="display:flex; justify-content:center; align-items:center; gap:16px; padding:12px 20px; border:1px solid rgba(255,255,255,0.04); border-radius:30px; background:rgba(0,0,0,0.15); width:fit-content; margin:auto; margin-top:auto;">
+      ${[
+        ['<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', 'Sleep'],
+        ['<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2" stroke-linecap="round"><polygon points="5,4 15,12 5,20"/><polygon points="12,4 22,12 12,20"/></svg>', '1.0×'],
+        ['open-desc-btn', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', 'Details', GOLD],
+        ['share-btn', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>', 'Share', MUTED]
+      ].map(([idOrSvg, svgOrLabel, labelOrColor, optionalColor]) => {
+        const isCustom = typeof optionalColor !== 'undefined' || idOrSvg === 'open-desc-btn';
+        const targetId = isCustom ? idOrSvg : '';
+        const visualSvg = isCustom ? svgOrLabel : idOrSvg;
+        const textLabel = isCustom ? labelOrColor : svgOrLabel;
+        const textColor = isCustom ? optionalColor : MUTED;
+        
+        return `
+          <div ${targetId ? `id="${targetId}"` : ''} class="tappable" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:20px;border:1px solid rgba(255,255,255,0.02)">
+            ${visualSvg}<span style="font-size:0.68rem;color:${textColor};font-weight:600">${textLabel}</span>
+          </div>`;
+      }).join('')}
+    </div>
   </div>`;
 }
 
@@ -501,12 +502,10 @@ function renderDiscover() {
 }
 
 function renderLibrary() {
-  const eps = state.episodes.length ? state.episodes : DEMO_EPS;
   return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:88px;background:${NIGHT}">
     <div style="padding:16px 24px 18px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:500;color:#F6F1E8">Library</div>
 
-     <!-- Subscriptions -->
-      <div style="padding:0 20px;margin-bottom:20px">
+     <div style="padding:0 20px;margin-bottom:20px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-left:4px">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${GOLD}" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
           <span style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD};font-weight:700">Subscriptions</span>
@@ -617,14 +616,13 @@ function bindEvents() {
   document.getElementById('desc-backdrop')?.addEventListener('click', () => setState({ descriptionSheet: false }));
   document.getElementById('desc-close-btn')?.addEventListener('click', () => setState({ descriptionSheet: false }));
 
-   // ─── Search Input Fix ────────────────────────────────────────────────────────
+  // ─── Search Input Fix ────────────────────────────────────────────────────────
   document.getElementById('search-input')?.addEventListener('input', (e) => {
     state.searchQuery = e.target.value;
     doSearch(e.target.value);
-    // Removed full render() to keep the input element stable and preserve the cursor
   });
 
-    // ─── Native Web Share Handler ───────────────────────────────────────────────
+  // ─── Native Web Share Handler ───────────────────────────────────────────────
   document.getElementById('share-btn')?.addEventListener('click', async () => {
     const ep = state.current;
     if (!ep) return;
@@ -632,21 +630,18 @@ function bindEvents() {
     const shareData = {
       title: ep.title,
       text: `Listening to "${ep.title}" on AGAPAY Listen:`,
-      url: ep.url || window.location.href // Fallback to current app address if stream url is empty
+      url: ep.url || window.location.href
     };
   
-    // Attempt Native System Share Sheet
     if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
       try {
         await navigator.share(shareData);
       } catch (err) {
-        // Ignore AbortError caused by user manually dismissing the native menu
         if (err.name !== 'AbortError') {
           console.error('Share failure:', err);
         }
       }
     } else {
-      // Elegant Clipboard Fallback for Desktop/Unsupported browsers
       try {
         await navigator.clipboard.writeText(shareData.url);
         showToast('Episode link copied to clipboard!');
@@ -654,6 +649,29 @@ function bindEvents() {
         showToast('Unable to share track link.');
       }
     }
+  });
+
+  // ─── Unfollow Processing Click Trigger ──────────────────────────────────────
+  document.querySelectorAll('.unfollow-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation(); 
+      const url = btn.dataset.url;
+      const title = btn.dataset.title;
+      if (!url) return;
+
+      const updatedSubs = state.subs.filter(s => s.xmlUrl !== url);
+      const updatedEps = state.episodes.filter(ep => ep.xmlUrl !== url);
+
+      save('agp_subs', updatedSubs);
+      save('agp_eps', updatedEps);
+      
+      setState({ 
+        subs: updatedSubs,
+        episodes: updatedEps
+      });
+
+      showToast(`Unfollowed "${title}"`);
+    });
   });
 }
 
