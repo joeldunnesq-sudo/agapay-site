@@ -219,6 +219,11 @@ import {
   handleParishInterest,
 } from "./handlers/parish-interest.js";
 
+import {
+  handleListenSearch,
+  handleListenRss,
+} from "./handlers/listen.js";
+
 
 
 const marketplaceBrowseCategories = [
@@ -728,6 +733,10 @@ function canonicalDashboardPath(pathname) {
 function cleanAssetRequest(request) {
   const url = new URL(request.url);
   if (url.pathname === "/") return request;
+  if (url.pathname === '/listen' || url.pathname === '/listen/') {
+    url.pathname = '/listen.html';
+    return new Request(url, request);
+  }
   if (url.pathname === "/learn") {
     url.pathname = "/learn/";
     return new Request(url, request);
@@ -917,6 +926,8 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/stripe/webhook") {
       return handleStripeWebhook(request, env);
     }
+    if (request.method === "GET" && url.pathname === "/api/listen/search") return handleListenSearch(request, env);
+    if (request.method === "GET" && url.pathname === "/api/listen/rss")    return handleListenRss(request, env);
     if (request.method === "GET" && url.pathname === "/api/parishes") return handleParishes(request, env);
     if (request.method === "GET" && url.pathname === "/api/campaign") return handlePublicCampaign(request, env);
     if (request.method === "GET" && url.pathname === "/api/platform/summary") return handlePublicPlatformSummary(env);
