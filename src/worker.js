@@ -825,7 +825,7 @@ function canonicalCampaignPathFromLegacy(url) {
 function formatCommemorationNames(entries, field) {
   const names = entries.flatMap((entry) => Array.isArray(entry[field]) ? entry[field] : []);
   if (!names.length) return "<p style=\"margin:0;color:#6F6A60;\">No names submitted.</p>";
-  return `<ul style="margin:0 0 0 18px;padding:0;color:#171715;line-height:1.7;">${names.map((name) => `<li>${htmlEscape(name)}</li>`).join("")}</ul>`;
+  return `<ul style=\"margin:0 0 0 18px;padding:0;color:#171715;line-height:1.7;\">${names.map((name) => `<li>${htmlEscape(name)}</li>`).join("")}</ul>`;
 }
 
 async function sendWeeklyCommemorationEmails(env, scheduledTime) {
@@ -861,6 +861,13 @@ async function sendWeeklyCommemorationEmails(env, scheduledTime) {
   }
 
   return results;
+}
+
+// Helper to parse cross-app cookies from shared top-level origins
+function parseCookie(str, name) {
+  const pairs = str.split(';').map(p => p.trim().split('='));
+  const match = pairs.find(([k]) => k === name);
+  return match ? match[1] : null;
 }
 
 export default {
@@ -926,6 +933,35 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/stripe/webhook") {
       return handleStripeWebhook(request, env);
     }
+
+    // ─── Scoped Cross-Platform Account Authentication Interceptor Path ────────
+    if (request.method === "GET" && url.pathname === "/api/listen/profile") {
+      const cookieHeader = request.headers.get('Cookie') || '';
+      const token = parseCookie(cookieHeader, 'my_agapay_jwt');
+      
+      if (!token) {
+        return json({ authenticated: false, name: 'Guest Listener', initials: '--', memberStatus: 'Anonymous' });
+      }
+
+      try {
+        // Resolve target account context directly using your shared core engine verification
+        const donorSession = await resolveAdminSession(token, env); 
+        if (donorSession && donorSession.actor) {
+          const initials = donorSession.actor.name ? donorSession.actor.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'JD';
+          return json({
+            authenticated: true,
+            name: donorSession.actor.name || 'AGAPAY Listener',
+            initials: initials,
+            memberStatus: 'AGAPAY Member'
+          });
+        }
+      } catch (err) {
+        // Log locally and gracefully return default guest fallback context
+        console.warn('SSO parsing error context:', err);
+      }
+      return json({ authenticated: false, name: 'Guest Listener', initials: '--', memberStatus: 'Anonymous' });
+    }
+
     if (request.method === "GET" && url.pathname === "/api/listen/search") return handleListenSearch(request, env);
     if (request.method === "GET" && url.pathname === "/api/listen/rss")    return handleListenRss(request, env);
     if (request.method === "GET" && url.pathname === "/api/parishes") return handleParishes(request, env);
@@ -945,6 +981,9 @@ export default {
     }
     if (url.pathname === "/api/parish-interest") {
       return handleParishInterest(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/security/config") {
+      return handleSecurityConfig(env);
     }
     if (request.method === "GET" && url.pathname === "/api/security/config") {
       return handleSecurityConfig(env);
@@ -1088,15 +1127,15 @@ export default {
     if (url.pathname === "/api/admin/session") {
       return handleAdminSession(request, env);
     }
-      if (request.method === "GET" && url.pathname === "/api/admin/platform-summary") {
-        return handleAdminPlatformSummary(request, env);
-      }
-      if (request.method === "GET" && url.pathname === "/api/admin/release-status") {
-        return handleAdminReleaseStatus(request, env);
-      }
-      if (url.pathname === "/api/admin/rebuild-indexes") {
-        return handleAdminRebuildIndexes(request, env);
-      }
+    if (request.method === "GET" && url.pathname === "/api/admin/platform-summary") {
+      return handleAdminPlatformSummary(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/admin/release-status") {
+      return handleAdminReleaseStatus(request, env);
+    }
+    if (url.pathname === "/api/admin/rebuild-indexes") {
+      return handleAdminRebuildIndexes(request, env);
+    }
     if (url.pathname === "/api/admin/migrate-kv-to-d1") {
       return handleAdminMigrateKvToD1(request, env);
     }
@@ -1256,8 +1295,6 @@ export default {
       return json({ error: "Not found" }, { status: 404 });
     }
 
-    // Redirect bare .html URLs to their canonical extensionless form (e.g. /features.html → /features).
-    // This prevents Google from indexing both variants and resolves GSC "Alternate page with proper canonical tag".
     if (
       request.method === "GET" &&
       url.pathname.endsWith(".html") &&
