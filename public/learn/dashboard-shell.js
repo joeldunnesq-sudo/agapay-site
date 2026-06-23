@@ -442,6 +442,10 @@ function sidebar(vm) {
           ${item.id === "planner" ? plannerSidebarSubnav(active) : ""}
         `).join("")}
         </nav>
+        <button class="learn-product-google-sync" type="button" data-learn-google-sync>
+          <span aria-hidden="true">G</span>
+          <span><strong>Google Calendar</strong><small>Connect family sync</small></span>
+        </button>
       </div>
     </aside>
   `;
@@ -1217,6 +1221,7 @@ function prototypeDaySeeds(vm) {
   const days = model.weekDays.length ? model.weekDays : plannerDates(vm).map((date) => ({ date, ...plannerDayLabel(date) }));
   return days.slice(0, 7).map((day, index) => ({
     key: `d${index}`,
+    fullDate: day.date || "",
     weekday: day.weekday || day.weekdayShort || ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][index] || "",
     long: day.weekdayLong || day.long || day.weekday || "",
     short: day.shortDate || day.short || day.date || "",
@@ -1231,11 +1236,67 @@ function prototypeDaySeeds(vm) {
   }));
 }
 
+function prototypeMonthSeed(vm) {
+  const model = familyPlannerModel(vm);
+  const weekDateToKey = Object.fromEntries(prototypeDaySeeds(vm).map((day) => [day.fullDate, day.key]));
+  const monthDays = (model.monthDays || []).map((day) => {
+    const feast = day.feast || day.feastTitle || "";
+    const fasting = day.fastingType || day.fasting || "";
+    const key = weekDateToKey[day.date] || (day.date ? `m_${String(day.date).replaceAll("-", "")}` : "");
+    return {
+      key,
+      fullDate: day.date || "",
+      dayNumber: day.dayNumber || String(day.date || "").slice(-2).replace(/^0/, ""),
+      weekday: day.weekday || day.weekdayLong || "",
+      long: day.weekdayLong || day.long || day.weekday || "",
+      short: day.shortDate || day.short || day.date || "",
+      date: Number(day.dayNumber || String(day.date || "").slice(-2)) || 0,
+      level: day.isSunday ? "fish" : day.isFastDay ? (String(fasting).toLowerCase().includes("strict") ? "strict" : "oilwine") : "rich",
+      tag: day.isSunday ? "Sunday" : day.isFastDay ? fasting || "Fast day" : feast || "Ordinary day",
+      sunday: Boolean(day.isSunday),
+      feastDay: Boolean(feast && !day.isFastDay),
+      inMonth: day.inMonth !== false,
+      isToday: Boolean(day.isToday),
+      isSunday: Boolean(day.isSunday),
+      isFastDay: Boolean(day.isFastDay),
+      feast,
+      feastRank: day.feastRank || "",
+      fasting,
+      fastingType: day.fastingType || "",
+      meal: day.meal || null
+    };
+  });
+  const monthFeasts = monthDays
+    .filter((day) => day.inMonth !== false && (day.feast || day.isFastDay))
+    .slice(0, 6)
+    .map((day, index) => ({
+      id: `month_${day.fullDate || index}`,
+      day: day.dayNumber || "",
+      dateLabel: day.dayNumber ? String(day.dayNumber) : day.fullDate || "",
+      name: day.feast || "Fast day",
+      rank: day.isFastDay ? day.fasting || day.fastingType || "Fast day" : day.feastRank || "Feast",
+      plan: Boolean(day.feast && !index)
+    }));
+  const weekDays = model.weekDays || [];
+  const weekStart = weekDays[0]?.shortDate || weekDays[0]?.short || weekDays[0]?.date || "";
+  const weekEnd = weekDays[weekDays.length - 1]?.shortDate || weekDays[weekDays.length - 1]?.short || weekDays[weekDays.length - 1]?.date || "";
+  const fastNames = [...new Set(monthDays.filter((day) => day.inMonth !== false && day.isFastDay).map((day) => day.fasting || day.fastingType || "Fast day").filter(Boolean))];
+  return {
+    key: vm.month?.key || model.monthKey || new Date().toISOString().slice(0, 7),
+    label: model.monthLabel || vm.month?.label || "Month Calendar",
+    weekdays: vm.month?.weekdays || ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    days: monthDays,
+    feasts: monthFeasts,
+    weekRange: weekStart && weekEnd ? `${weekStart} - ${weekEnd}` : "This week",
+    fastingSummary: fastNames.length ? fastNames.slice(0, 2).join(" + ") : "Church calendar"
+  };
+}
+
 function prototypeSetupSeed(vm) {
   const grouping = (vm.familyPlanning?.children || []).some((child) => child.formLabel) ? "Forms" : "Grades";
   const formMap = new Map();
   (vm.familyPlanning?.children || []).forEach((child, index) => {
-    const label = child.formLabel || child.gradeLabel || "Household";
+    const label = child.formLabel || child.gradeLabel || child.form || child.grade || "Household";
     if (!formMap.has(label)) {
       formMap.set(label, {
         id: `form_${formMap.size + 1}`,
@@ -1253,6 +1314,14 @@ function prototypeSetupSeed(vm) {
     const target = formMap.get(label);
     (row.blocks || []).forEach((block) => {
       const title = block.title || row.title;
+      if (title && !target.subjects.includes(title)) target.subjects.push(title);
+    });
+  });
+  (vm.term?.pacingRows || []).forEach((row) => {
+    const label = row.formLabel || row.label || "";
+    const targets = label && formMap.has(label) ? [formMap.get(label)] : [...formMap.values()];
+    targets.forEach((target) => {
+      const title = row.subjectTitle || row.title || row.label;
       if (title && !target.subjects.includes(title)) target.subjects.push(title);
     });
   });
@@ -1352,12 +1421,26 @@ function seedFamilyPrototypeState(vm) {
     aisle: item.category || "Pantry",
     label: item.quantity ? `${item.quantity} ${item.name}` : item.name
   })).filter((item) => item.label);
+  const dayKeyByLabel = Object.fromEntries(prototypeDaySeeds(vm).map((day) => [String(day.long || day.weekday || "").toLowerCase(), day.key]));
+  const chores = {};
+  (planning.chores || []).forEach((chore) => {
+    const assignee = chore.assignee || "Everyone";
+    const dayKey = dayKeyByLabel[String(chore.day || "").toLowerCase()] || "";
+    if (dayKey && chore.title) chores[`${assignee}::${dayKey}`] = chore.title;
+  });
   const seed = {
     email: learnAccountEmail(),
+    ui: {
+      view: new URLSearchParams(window.location.search).get("view") || "week",
+      scope: new URLSearchParams(window.location.search).get("scope") || "lessons",
+      tab: new URLSearchParams(window.location.search).get("tool") || "plan"
+    },
     days: prototypeDaySeeds(vm),
+    month: prototypeMonthSeed(vm),
     setup: prototypeSetupSeed(vm),
     kids: prototypeKidsSeed(vm),
     pantry,
+    chores,
     feast: {
       dateLong: (vm.week?.days || []).find((day) => day.feast)?.shortDate || "",
       name: (vm.week?.days || []).find((day) => day.feast)?.feast || "Upcoming Feast",
@@ -1373,6 +1456,7 @@ function seedFamilyPrototypeState(vm) {
     userRecipes,
     manualGroceries,
     events,
+    chores,
     groceryChecked: {},
     feastPlan: {},
     google: { open: false, connected: false, email: learnAccountEmail(), last: "", layers: { lessons: true, terms: true, feasts: true, events: true, chores: false } }
@@ -1381,6 +1465,14 @@ function seedFamilyPrototypeState(vm) {
 
 function prototypeStateToFamilyPlanningPayload(vm, state) {
   const keyToDate = prototypeWeekDateMap(vm);
+  try {
+    const seed = JSON.parse(localStorage.getItem("agapay.planner.seed.v1") || "{}");
+    (seed.month?.days || []).forEach((day) => {
+      if (day.key && day.fullDate) keyToDate[day.key] = day.fullDate;
+    });
+  } catch {
+    // Keep the week map if the local seed cannot be read.
+  }
   const recipes = Object.entries(state.userRecipes || {}).map(([id, recipe]) => ({
     id,
     title: recipe.name || "",
@@ -1407,6 +1499,26 @@ function prototypeStateToFamilyPlanningPayload(vm, state) {
     location: event.who || "",
     notes: event.note || ""
   })).filter((event) => event.title && event.date);
+  const seedDays = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("agapay.planner.seed.v1") || "{}").days || [];
+    } catch {
+      return [];
+    }
+  })();
+  const dayLabelByKey = Object.fromEntries(seedDays.map((day) => [day.key, day.long || day.weekday || ""]));
+  const chores = Object.entries(state.chores || {}).map(([key, title], index) => {
+    const [assignee = "Everyone", dayKey = ""] = key.split("::");
+    return {
+      id: `prototype_chore_${index}`,
+      title,
+      assignee,
+      day: dayLabelByKey[dayKey] || "",
+      timeOfDay: "Anytime",
+      notes: "",
+      completed: false
+    };
+  }).filter((chore) => chore.title);
   const pantryItems = (state.pantry || []).map((name, index) => ({
     id: `pantry_${index}`,
     name,
@@ -1433,7 +1545,7 @@ function prototypeStateToFamilyPlanningPayload(vm, state) {
       recipes,
       groceryItems: [...pantryItems, ...groceryItems],
       events,
-      chores: vm.familyPlanning?.chores || []
+      chores: chores.length ? chores : vm.familyPlanning?.chores || []
     }
   };
 }
@@ -4036,6 +4148,10 @@ document.addEventListener("click", (event) => {
     localStorage.removeItem("agapayDonorEmail");
     localStorage.removeItem("agapay.learn.plan");
     window.location.href = "/myagapay/login";
+    return;
+  }
+  if (event.target.closest("[data-learn-google-sync]")) {
+    window.location.href = `/api/learn/google-calendar/connect?redirect=1&returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`;
     return;
   }
 

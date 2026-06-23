@@ -230,6 +230,51 @@ body {
   text-transform: uppercase;
 }
 
+.learn-product-google-sync {
+  width: calc(100% - 2rem);
+  margin: 0.2rem 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.72rem;
+  border: 1px solid rgba(200, 162, 74, 0.28);
+  border-radius: 14px;
+  background: rgba(246, 241, 232, 0.065);
+  color: #f6f1e8;
+  padding: 0.74rem 0.85rem;
+  font-family: "DM Sans", system-ui, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.learn-product-google-sync > span:first-child {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: #fff;
+  color: #1a73e8;
+  font-weight: 900;
+}
+
+.learn-product-google-sync strong,
+.learn-product-google-sync small {
+  display: block;
+  line-height: 1.15;
+}
+
+.learn-product-google-sync strong {
+  color: #f6f1e8;
+  font-size: 0.86rem;
+}
+
+.learn-product-google-sync small {
+  margin-top: 0.1rem;
+  color: rgba(246, 241, 232, 0.64);
+  font-size: 0.74rem;
+}
+
 .learn-coming-soon-page {
   display: grid;
   justify-items: center;
@@ -2123,8 +2168,8 @@ body {
 .learn-family-term-tabs a { min-width: 94px; padding-inline: 13px; }
 .learn-family-lock { margin-left: auto; color: var(--muted); font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
 .learn-family-lock::before { content: "🔒"; color: var(--gold); }
-.learn-prototype-embed { min-height: calc(100vh - 112px); overflow: visible; background: transparent; }
-.learn-prototype-embed iframe { display: block; width: 100%; min-height: calc(100vh - 112px); height: 1500px; border: 0; background: transparent; }
+.learn-prototype-embed { min-height: calc(100vh - 112px); overflow: hidden; background: transparent; }
+.learn-prototype-embed iframe { display: block; width: 100%; height: calc(100vh - 112px); min-height: 720px; border: 0; background: transparent; }
 .learn-prototype-sync-status { width: max-content; max-width: 100%; margin: 0 0 10px auto; border: 1px solid rgba(181,148,47,.28); border-radius: 999px; background: var(--paper); color: var(--muted); padding: 6px 12px; font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 800; }
 .learn-prototype-sync-status[data-state="saving"] { color: var(--gold); }
 .learn-prototype-sync-status[data-state="saved"] { border-color: rgba(74,90,49,.3); color: var(--olive); }

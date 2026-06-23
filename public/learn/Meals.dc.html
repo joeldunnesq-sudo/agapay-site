@@ -12,16 +12,16 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
 <style>
-  html,body{margin:0;background:#f3ead4;}
+  html,body{margin:0;background:#f3ead4;overflow:hidden;}
   *,*::before,*::after{box-sizing:border-box;}
   ::-webkit-scrollbar{width:10px;height:10px;}
   ::-webkit-scrollbar-thumb{background:rgba(181,148,47,.34);border-radius:9px;}
   @keyframes mealsFade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
   @keyframes mealsPop{from{opacity:0;transform:scale(.97);}to{opacity:1;transform:none;}}
   [data-print-menu]{display:none;}
-  [data-chrome]{min-height:100vh!important;}
+  [data-chrome]{height:100vh!important;min-height:100vh!important;overflow:hidden!important;}
   [data-chrome] > aside{display:none!important;}
-  [data-chrome] > main{height:auto!important;min-height:100vh!important;overflow:visible!important;}
+  [data-chrome] > main{height:100vh!important;min-height:100vh!important;overflow:auto!important;}
   [data-chrome] > main > header{display:none!important;}
   [data-chrome] > main > section{padding:0!important;}
   @media print{ [data-chrome]{display:none !important;} [data-print-menu]{display:block !important;} @page{margin:14mm;} }
@@ -64,7 +64,7 @@
     <header style="position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:68px;padding:.72rem 1.6rem;border-bottom:1px solid rgba(201,162,91,.38);background:radial-gradient(circle at 84% 0%,rgba(201,162,91,.2),transparent 22rem),linear-gradient(135deg,#061522 0%,#0a2035 62%,#101d22 100%);box-shadow:0 10px 28px rgba(6,21,34,.16);color:#fffdf8;">
       <div style="display:flex;align-items:center;gap:.7rem;min-width:0;">
         <span style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:600;">Family Planner</span>
-        <span style="color:rgba(255,253,248,.6);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.04em;white-space:nowrap;">{{ crumb }} · Nov 15 – 21 · Nativity Fast</span>
+        <span style="color:rgba(255,253,248,.6);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.04em;white-space:nowrap;">{{ crumb }} · {{ monthWeekRange }} · {{ monthFastingSummary }}</span>
       </div>
       <div style="display:flex;align-items:center;gap:.65rem;">
         <button type="button" onClick="{{ onAddEvent }}" style="display:inline-flex;align-items:center;gap:.4rem;min-height:2.6rem;padding:0 1rem;border:1px solid #c8a24a;border-radius:10px;background:#c8a24a;color:#061522;font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:900;cursor:pointer;">＋ Add to calendar</button>
@@ -223,25 +223,20 @@
 
           <sc-if value="{{ lessonsWeek }}" hint-placeholder-val="{{ false }}">
             <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:12px;padding:13px 16px;border:1px solid rgba(181,148,47,.32);border-radius:13px;background:linear-gradient(135deg,#fffaf0,#f6ead0);">
-              <div style="display:flex;align-items:center;gap:8px;"><span style="color:#b5942f;">▤</span><span style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;color:#b5942f;">Seeded from your Setup</span></div>
-              <span style="font-family:'DM Sans',sans-serif;font-size:.84rem;color:#8a7c5e;">{{ setupSummary }}</span>
-              <div style="display:flex;gap:9px;flex-wrap:wrap;margin-left:auto;">
-                <sc-for list="{{ setupForms }}" as="f" hint-placeholder-count="2">
-                  <span style="display:inline-flex;align-items:center;gap:9px;border:1px solid #e7dcc0;border-radius:999px;background:#fdf9ef;padding:5px 14px 5px 6px;"><span style="width:28px;height:28px;border-radius:50%;background:{{ f.color }};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;">{{ f.initials }}</span><span style="display:grid;line-height:1.12;"><strong style="font-family:'DM Sans',sans-serif;font-size:13px;color:#1b2c45;">{{ f.label }}</strong><small style="font-family:'DM Sans',sans-serif;font-size:10.5px;color:#8a7c5e;">{{ f.children }} · {{ f.subjectCount }}</small></span></span>
-                </sc-for>
-              </div>
+              <div style="display:flex;align-items:center;gap:8px;"><span style="color:#b5942f;">▤</span><span style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;color:#b5942f;">Forms from Setup</span></div>
+              <span style="font-family:'DM Sans',sans-serif;font-size:.84rem;color:#8a7c5e;">{{ setupSummary }} · edit Forms and subjects in Setup.</span>
             </div>
             <div style="background:#fdf9ef;border:1px solid #e7dcc0;border-radius:14px;overflow:auto;box-shadow:0 1px 3px rgba(20,40,70,.04);">
               <div style="min-width:0;">
-                <div style="display:grid;grid-template-columns:148px repeat(7,minmax(0,1fr));border-bottom:1px solid #e7dcc0;">
+                <div style="display:grid;grid-template-columns:190px repeat(7,minmax(0,1fr));border-bottom:1px solid #e7dcc0;">
                   <div style="padding:14px;color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.15em;font-weight:800;display:flex;align-items:flex-end;">LESSONS</div>
                   <sc-for list="{{ days }}" as="day" hint-placeholder-count="7">
                     <div style="padding:11px 9px;border-left:1px solid #e7dcc0;text-align:center;background:{{ day.headBg }};"><div style="color:{{ day.markColor }};font-size:15px;">{{ day.mark }}</div><strong style="font-size:13px;color:#1b2c45;">{{ day.weekday }}</strong><small style="display:block;color:#8a7c5e;">{{ day.shortDate }}</small><div style="margin:5px auto 0;width:max-content;max-width:100%;border:1px solid {{ day.tagBorder }};background:{{ day.tagBg }};color:{{ day.tagColor }};border-radius:999px;padding:2px 7px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:800;line-height:1.25;">{{ day.tag }}</div><div style="margin-top:4px;font-family:'Cormorant Garamond',serif;font-size:12.5px;line-height:1.15;color:{{ day.feastColor }};">{{ day.feast }}</div></div>
                   </sc-for>
                 </div>
                 <sc-for list="{{ lessonRows }}" as="row" hint-placeholder-count="3">
-                  <div style="display:grid;grid-template-columns:148px repeat(7,minmax(0,1fr));border-bottom:1px solid #e7dcc0;">
-                    <div style="padding:13px 14px;display:flex;align-items:center;gap:10px;"><span style="width:22px;height:22px;flex:none;border-radius:50%;background:{{ row.color }};"></span><span style="min-width:0;"><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:15px;color:#1b2c45;line-height:1.1;">{{ row.label }}</strong><small style="color:#8a7c5e;font-family:'DM Sans',sans-serif;font-size:11px;">{{ row.sub }}</small></span></div>
+                  <div style="display:grid;grid-template-columns:190px repeat(7,minmax(0,1fr));border-bottom:1px solid #e7dcc0;">
+                    <div style="padding:13px 14px;display:flex;align-items:center;gap:10px;"><span style="width:24px;height:24px;flex:none;border-radius:50%;background:{{ row.color }};"></span><span style="min-width:0;"><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;color:#1b2c45;line-height:1.1;">{{ row.label }}</strong><small style="color:#8a7c5e;font-family:'DM Sans',sans-serif;font-size:11px;line-height:1.25;display:block;margin-top:2px;">{{ row.sub }}</small></span></div>
                     <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="7">
                       <div style="padding:10px;border-left:1px solid #e7dcc0;background:{{ cell.colBg }};min-height:62px;display:flex;align-items:center;"><span style="font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;color:{{ cell.titleColor }};line-height:1.25;">{{ cell.title }}</span></div>
                     </sc-for>
@@ -403,7 +398,12 @@
                   <div style="display:grid;grid-template-columns:148px repeat(7,minmax(0,1fr));border-bottom:1px solid #e7dcc0;">
                     <div style="padding:13px 14px;display:flex;align-items:center;gap:10px;"><span style="width:22px;height:22px;flex:none;border-radius:50%;background:{{ row.color }};"></span><span style="min-width:0;"><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:15px;color:#1b2c45;line-height:1.1;">{{ row.label }}</strong><small style="color:#8a7c5e;font-family:'DM Sans',sans-serif;font-size:11px;">{{ row.sub }}</small></span></div>
                     <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="7">
-                      <div style="padding:10px;border-left:1px solid #e7dcc0;background:{{ cell.colBg }};min-height:58px;display:flex;align-items:center;"><span style="font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;color:{{ cell.titleColor }};line-height:1.25;">{{ cell.title }}</span></div>
+                      <div style="padding:7px;border-left:1px solid #e7dcc0;background:{{ cell.colBg }};min-height:58px;display:flex;align-items:stretch;">
+                        <button type="button" onClick="{{ cell.onClick }}" style="width:100%;border:1px solid #e7dcc0;border-radius:9px;background:#fffdf8;padding:8px;text-align:left;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;justify-content:center;gap:3px;" style-hover="border-color:#b5942f;box-shadow:0 4px 12px rgba(20,40,70,.08);">
+                          <span style="font-size:12.5px;font-weight:700;color:{{ cell.titleColor }};line-height:1.25;">{{ cell.title }}</span>
+                          <small style="font-size:10px;color:#a99a72;">Tap to edit</small>
+                        </button>
+                      </div>
                     </sc-for>
                   </div>
                 </sc-for>
@@ -440,7 +440,7 @@
         <div style="animation:mealsFade .3s ease;">
           <div style="background:#fdf9ef;border:1px solid #e7dcc0;border-radius:16px;padding:14px 16px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
             <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:10px;">
-              <h2 style="font-family:'Cormorant Garamond',serif;font-size:25px;margin:0;color:#1b2c45;">November 2026</h2>
+              <h2 style="font-family:'Cormorant Garamond',serif;font-size:25px;margin:0;color:#1b2c45;">{{ monthLabel }}</h2>
               <span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;">Showing {{ monthScopeLabel }}</span>
               <div style="display:flex;gap:13px;margin-left:auto;flex-wrap:wrap;align-items:center;">
                 <span style="display:flex;gap:6px;align-items:center;font-family:'DM Sans',sans-serif;font-size:.76rem;color:#33405a;"><i style="width:12px;height:12px;border-radius:4px;background:rgba(110,47,42,.12);border:1px solid #6e2f2a;"></i> Fast</span>
@@ -470,12 +470,12 @@
               <div style="display:flex;align-items:center;gap:8px;"><span style="color:#b5942f;">✥</span><span style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">Feasts this month</span></div>
               <sc-for list="{{ monthFeasts }}" as="f" hint-placeholder-count="4">
                 <div style="display:inline-flex;align-items:center;gap:9px;border:1px solid {{ f.border }};border-radius:999px;background:{{ f.bg }};padding:5px 7px 5px 12px;">
-                  <span style="font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:700;color:{{ f.accent }};">Nov {{ f.day }}</span>
+                  <span style="font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:700;color:{{ f.accent }};">{{ f.dateLabel }}</span>
                   <span style="font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:600;color:#1b2c45;">{{ f.name }}</span>
                   <button type="button" onClick="{{ f.onPlan }}" style="border:1px solid {{ f.btnBorder }};background:{{ f.btnBg }};color:{{ f.btnColor }};border-radius:999px;padding:5px 11px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.72rem;cursor:pointer;white-space:nowrap;display:{{ f.planDisplay }};">Plan →</button>
                 </div>
               </sc-for>
-              <span style="font-family:'DM Sans',sans-serif;font-size:.76rem;color:#8a7c5e;margin-left:auto;">Nativity Fast · Nov 15 – Dec 24</span>
+              <span style="font-family:'DM Sans',sans-serif;font-size:.76rem;color:#8a7c5e;margin-left:auto;">{{ monthFastingSummary }}</span>
             </div>
           </div>
         </div>
@@ -797,6 +797,7 @@ class Component extends DCLogic {
       {id:'entrance',day:'21',name:'Entrance of the Theotokos',rank:'Great Feast · fish, wine & oil',plan:true},
       {id:'andrew',day:'30',name:'Apostle Andrew the First-Called',rank:'Feast',plan:false}
     ];
+    this.MONTH={label:'November 2026',weekdays:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],days:[],weekRange:'Nov 15 - 21',fastingSummary:'Nativity Fast'};
     this.FEAST={
       id:'entrance', dateLong:'Saturday, November 21', name:'Entrance of the Theotokos', rank:'Great Feast within the Nativity Fast', allow:'Fish, wine & oil are blessed',
       blurb:'The three-year-old Mary is brought to the Temple in Jerusalem and received by the priest Zacharias — the living Temple of God entering the house of God. A joyful feast that lifts the Nativity Fast for a day.',
@@ -808,18 +809,21 @@ class Component extends DCLogic {
     const seed=this.loadSeed();
     if(seed.recipes) this.R={...this.R,...seed.recipes};
     if(seed.days&&seed.days.length) this.DAYS=seed.days;
+    if(seed.month) this.MONTH={...this.MONTH,...seed.month};
+    if(seed.month&&seed.month.feasts) this.MONTH_FEASTS=seed.month.feasts;
     if(seed.setup) this.SETUP={...this.SETUP,...seed.setup};
     if(seed.kids&&seed.kids.length) this.KIDS=seed.kids;
     if(seed.feast) this.FEAST={...this.FEAST,...seed.feast};
     const saved=this.load();
     this.state={
-      view:'week', scope:'meals', selectedDay:'d3', tab:'plan', integration:'dedicated',
+      view:(seed.ui&&seed.ui.view)||'week', scope:(seed.ui&&seed.ui.scope)||'meals', selectedDay:'d3', tab:(seed.ui&&seed.ui.tab)||'plan', integration:'dedicated',
       plan: saved.plan || {},
       pantry: saved.pantry || seed.pantry || [],
       pantryInput:'', groceryChecked: saved.groceryChecked || {},
       userRecipes: saved.userRecipes || {},
       recipeEditor:{open:false}, recipeDraft:{name:'',type:'dinner',level:'oilwine',time:'30 min',servings:4,ingredients:'',note:'',glyph:'🍲'},
       manualGroceries: saved.manualGroceries || [], groceryInput:{},
+      chores: saved.chores || seed.chores || {},
       picker:{open:false,dayKey:null,meal:null,fastingOnly:true},
       detail:{open:false,id:null}, recipeFilter:{type:'all',level:'all'},
       events: saved.events || [],
@@ -831,9 +835,9 @@ class Component extends DCLogic {
   }
   loadSeed(){ try{ return JSON.parse(localStorage.getItem('agapay.planner.seed.v1'))||{}; }catch(e){ return {}; } }
   load(){ try{ return JSON.parse(localStorage.getItem('agapay.planner.v2'))||{}; }catch(e){ return {}; } }
-  save(){ try{ const s=this.state; localStorage.setItem('agapay.planner.v2', JSON.stringify({__agapayBackendSynced:true,plan:s.plan,pantry:s.pantry,groceryChecked:s.groceryChecked,events:s.events,feastPlan:s.feastPlan,userRecipes:s.userRecipes,manualGroceries:s.manualGroceries,google:{...s.google,open:false}})); }catch(e){} }
+  save(){ try{ const s=this.state; localStorage.setItem('agapay.planner.v2', JSON.stringify({__agapayBackendSynced:true,plan:s.plan,pantry:s.pantry,groceryChecked:s.groceryChecked,events:s.events,chores:s.chores,feastPlan:s.feastPlan,userRecipes:s.userRecipes,manualGroceries:s.manualGroceries,google:{...s.google,open:false}})); }catch(e){} }
   rank(l){ return this.LV[l]; }
-  day(k){ return this.DAYS.find(d=>d.key===k)||{}; }
+  day(k){ return this.DAYS.find(d=>d.key===k)||(this.MONTH.days||[]).find(d=>d.key===k)||{}; }
   recipe(id){ if(!id)return null; return this.R[id] || (this.state.userRecipes&&this.state.userRecipes[id]) || null; }
   allR(){ return {...this.R, ...(this.state.userRecipes||{})}; }
   rName(dayKey,meal){ return (this.recipe(this.state.plan[`${dayKey}-${meal}`])||{}).name||'—'; }
@@ -845,6 +849,9 @@ class Component extends DCLogic {
   setSelectedDay(k){ this.setState({selectedDay:k}); }
   setTab(t){ this.setState({tab:t}); }
   setIntegration(v){ this.setState({integration:v}); }
+  choreKey(name,dayKey){ return `${name||'Everyone'}::${dayKey}`; }
+  choreValue(name,d){ const override=this.state.chores[this.choreKey(name,d.key)]; if(override!==undefined)return override; if(name==='Everyone')return (d.key in {d1:1,d2:1,d3:1,d4:1,d5:1})?'Evening 10-min tidy':(d.feastDay?'Prepare for the Feast':'Family rest'); const child=this.KIDS.find(k=>k.name===name); const idx={d1:0,d2:1,d3:2,d4:3,d5:4}[d.key]; if(child&&idx!==undefined)return child.chores[idx]||''; return d.feastDay?'Festal cleaning':'Rest'; }
+  editChore(name,d){ const current=this.choreValue(name,d); const next=window.prompt(`Chore for ${name||'Everyone'} on ${d.long||d.weekday}`, current||''); if(next===null)return; this.setState({chores:{...this.state.chores,[this.choreKey(name||'Everyone',d.key)]:next.trim()}},()=>this.save()); }
   openPicker(dayKey,meal){ this.setState({picker:{open:true,dayKey,meal,fastingOnly:true}}); }
   closePicker(){ this.setState({picker:{...this.state.picker,open:false}}); }
   toggleFastingOnly(){ this.setState({picker:{...this.state.picker,fastingOnly:!this.state.picker.fastingOnly}}); }
@@ -914,16 +921,16 @@ class Component extends DCLogic {
     const pairFor=(arr,i)=>{ if(!arr.length)return '—'; const a=arr[(i*2)%arr.length],b=arr[(i*2+1)%arr.length]; return a===b?a:`${a} · ${b}`; };
     const morningText=(d)=>(d.key in wIdx)?pairFor(SETUP.enrichment,wIdx[d.key]):(d.feastDay?'Vigil & Festal Prep':'Church & Rest');
     const formText=(f,d)=>(d.key in wIdx)?pairFor(f.subjects,wIdx[d.key]):(d.feastDay?'Feast — no formal work':'Church & Rest');
-    const choreText=(c,d)=>(d.key in wIdx)?c.chores[wIdx[d.key]]:(d.feastDay?'Festal cleaning':'Rest');
-    const everyoneText=(d)=>(d.key in wIdx)?'Evening 10-min tidy':(d.feastDay?'Prepare for the Feast':'Family rest');
-    const gridCell=(content,d)=>{ const rest=(content==='—'||content==='Church & Rest'||content==='Rest'||content==='Family rest'); const fest=/Feast|Festal|Vigil/.test(content); return {colBg:d.feastDay?'rgba(181,148,47,.05)':(d.sunday?'#fbf5e8':'transparent'),title:content,titleColor:rest?'#a99a72':(fest?'#6e2f2a':'#1b2c45')}; };
+    const choreText=(c,d)=>this.choreValue(c.name,d);
+    const everyoneText=(d)=>this.choreValue('Everyone',d);
+    const gridCell=(content,d,onClick=null)=>{ const rest=(content==='—'||content==='Church & Rest'||content==='Rest'||content==='Family rest'||content===''); const fest=/Feast|Festal|Vigil/.test(content); return {colBg:d.feastDay?'rgba(181,148,47,.05)':(d.sunday?'#fbf5e8':'transparent'),title:content||'＋ Add',titleColor:rest?'#a99a72':(fest?'#6e2f2a':'#1b2c45'),onClick:onClick||(()=>{})}; };
 
     const days=this.DAYS.map(d=>{ const m=LEV[d.level]; return {weekday:d.weekday,shortDate:d.short,feast:d.feast,mark:d.feastDay?'✥':(d.sunday?'☩':'·'),markColor:d.feastDay?'#b5942f':(d.sunday?'#6e2f2a':'#b5942f'),headBg:d.feastDay?'rgba(181,148,47,.1)':(d.sunday?'#f9f1df':'transparent'),feastColor:d.feastDay?'#b5942f':'#1b2c45',tag:d.tag,tagColor:m.color,tagBorder:m.color,tagBg:m.bg,school:d.school,schoolDisplay:(S.integration==='woven')?'block':'none'}; });
     const weekRows=this.MEALS.map(meal=>({label:meal.label,sub:meal.sub,cells:this.DAYS.map(d=>{ const id=S.plan[`${d.key}-${meal.key}`]; const r=this.recipe(id); const m=r?LEV[r.level]:null; return {onClick:()=>this.openPicker(d.key,meal.key),colBg:d.feastDay?'rgba(181,148,47,.05)':(d.sunday?'#fbf5e8':'transparent'),border:r?'#e7dcc0':'#e0d4b6',bg:r?'#fffdf8':'rgba(248,240,221,.5)',dot:m?m.color:'transparent',dotDisplay:r?'block':'none',name:r?r.name:'＋ Add',nameColor:r?'#1b2c45':'#a99a72',meta:r?`${LEV[r.level].label} · ${r.time}`:'',metaDisplay:r?'block':'none'}; })}));
-    const lessonRows=[{color:'#b5942f',label:'Morning Time',sub:'All children',cells:this.DAYS.map(d=>gridCell(morningText(d),d))}].concat(SETUP.forms.map(f=>({color:f.color,label:f.label,sub:f.children.join(', '),cells:this.DAYS.map(d=>gridCell(formText(f,d),d))})));
+    const lessonRows=SETUP.forms.map(f=>({color:f.color,label:f.label,sub:f.children.join(', '),cells:this.DAYS.map(d=>gridCell(formText(f,d),d))}));
     const setupForms=SETUP.forms.map(f=>({color:f.color,initials:f.children.map(n=>n[0]).join(''),label:f.label,children:f.children.join(' & '),subjectCount:`${f.subjects.length} subjects`}));
     const setupSummary=`${SETUP.forms.reduce((n,f)=>n+f.children.length,0)} children · ${SETUP.forms.length} Forms · ${SETUP.calendar}`;
-    const choresRows=[{color:'#102a4c',label:'Everyone',sub:'Together',cells:this.DAYS.map(d=>gridCell(everyoneText(d),d))}].concat(KIDS.map(c=>({color:c.color,label:c.name,sub:'',cells:this.DAYS.map(d=>gridCell(choreText(c,d),d))})));
+    const choresRows=[{color:'#102a4c',label:'Everyone',sub:'Together',cells:this.DAYS.map(d=>gridCell(everyoneText(d),d,()=>this.editChore('Everyone',d)))}].concat(KIDS.map(c=>({color:c.color,label:c.name,sub:'',cells:this.DAYS.map(d=>gridCell(choreText(c,d),d,()=>this.editChore(c.name,d)))})));
     const choreKids=KIDS.map(c=>({name:c.name,color:c.color,count:`${c.chores.length} jobs`}));
 
     // ---------- events ----------
@@ -945,7 +952,7 @@ class Component extends DCLogic {
     const im=introByScope[scope]||introByScope.meals;
     const crumbMap={lessons:'Lessons',meals:'Meals',chores:'Chores',events:'Events'};
     const viewLabelMap={day:'Day',week:'Week',month:'Month',term:'Term',year:'Year'};
-    const rangeLabel = isDay ? this.day(S.selectedDay).long+' · '+this.day(S.selectedDay).short : isMonth ? 'November 2026' : isTerm ? 'Michaelmas Term' : isYear ? '2026 – 2027' : 'Sun Nov 15 – Sat Nov 21';
+    const rangeLabel = isDay ? this.day(S.selectedDay).long+' · '+this.day(S.selectedDay).short : isMonth ? this.MONTH.label : isTerm ? 'Michaelmas Term' : isYear ? '2026 – 2027' : this.MONTH.weekRange;
 
     const out={
       // nav + chrome
@@ -953,6 +960,7 @@ class Component extends DCLogic {
       crumb:`${viewLabelMap[S.view]} · ${crumbMap[scope]}`,
       introIcon:im.icon, introKicker:im.kicker, introTitle:im.title, introDesc:im.desc,
       rangeLabel, scopeNote: sMeals?'Planning the table':sLessons?'Lessons from your Setup':sChores?'Who helps with what':'Appointments & activities',
+      monthLabel:this.MONTH.label, monthWeekRange:this.MONTH.weekRange, monthFastingSummary:this.MONTH.fastingSummary,
       printLabel: sLessons?'Print lessons':sChores?'Print chores':sEvents?'Print calendar':'Print menu',
       printTitle: sLessons?'Our Lessons This Week':sChores?'Our Chore Chart':sEvents?'Our Week Calendar':'Our Week at the Table',
       onPrint:()=>this.doPrint(), onAddEvent:()=>this.openEvent(null), onOpenGoogle:()=>this.openGoogle(), stop:(e)=>e.stopPropagation(),
@@ -1006,35 +1014,33 @@ class Component extends DCLogic {
 
     // ---------- MONTH view ----------
     if(isMonth){
-      out.monthWeekdays=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      const y=2026,mo=10, first=new Date(y,mo,1).getDay(), dim=new Date(y,mo+1,0).getDate();
-      const weekMap={15:'d0',16:'d1',17:'d2',18:'d3',19:'d4',20:'d5',21:'d6'};
-      const evByDate={}; S.events.forEach(e=>{ const dd=this.day(e.dayKey); if(dd.date){ (evByDate[dd.date]=evByDate[dd.date]||[]).push(e); } });
+      out.monthWeekdays=this.MONTH.weekdays || ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const evByDate={}; S.events.forEach(e=>{ const dd=this.day(e.dayKey); const key=dd.fullDate||dd.date; if(key){ (evByDate[key]=evByDate[key]||[]).push(e); } });
       const cells=[];
-      for(let i=0;i<first;i++) cells.push({blank:true,dayNumber:'',bg:'transparent',border:'transparent',opacity:'0',numColor:'#1b2c45',todayDisplay:'none',tagDisplay:'none',fastTag:'',tagColor:'#6e2f2a',scopeDisplay:'none',scopeText:'',scopeColor:'#33405a',eventDots:[],onClick:()=>{},cursor:'default',hoverBorder:'transparent',addDisplay:'none'});
       const monthScopeLabel = sMeals?'dinners':sChores?'chores':sEvents?'events':'lessons';
-      for(let date=1;date<=dim;date++){
-        const wd=new Date(y,mo,date).getDay(); const isSun=wd===0; const natFast=date>=15; const wf=(wd===3||wd===5); const isFeast=(date===21); const isFast=isFeast?false:(natFast||wf); const isToday=(date===18); const dk=weekMap[date];
+      const sourceDays=(this.MONTH.days&&this.MONTH.days.length)?this.MONTH.days:this.DAYS.map(d=>({...d,dayNumber:d.date,fullDate:d.fullDate,inMonth:true,isFastDay:d.level!=='rich',isSunday:d.sunday,feastRank:'',fasting:d.tag,meal:null}));
+      sourceDays.forEach((day)=>{
+        const date=Number(day.dayNumber||String(day.fullDate||'').slice(-2))||0; const isSun=!!day.isSunday; const isFeast=!!day.feast&&!day.isFastDay; const isFast=!!day.isFastDay; const isToday=!!day.isToday; const dk=day.key||'';
         let scopeText='';
-        if(sMeals){ scopeText=dk?this.rName(dk,'dinner'):''; if(scopeText==='—')scopeText=''; }
-        else if(sChores){ scopeText=(wd>=1&&wd<=6&&!isFeast)?'Chores':''; }
-        else if(sEvents){ const ev=evByDate[date]||[]; scopeText=ev.length?ev[0].title:''; }
-        else { scopeText=(wd>=1&&wd<=5&&!isFeast)?'Lessons':''; }
+        if(sMeals){ scopeText=dk?this.rName(dk,'dinner'):(day.meal&&day.meal.dinner)||''; if(scopeText==='—')scopeText=''; }
+        else if(sChores){ scopeText=(!isSun&&!isFeast&&day.inMonth!==false)?'Chores':''; }
+        else if(sEvents){ const ev=evByDate[day.fullDate]||[]; scopeText=ev.length?ev[0].title:''; }
+        else { scopeText=(!isSun&&!isFeast&&day.inMonth!==false)?'Lessons':''; }
         if(scopeText.length>20) scopeText=scopeText.slice(0,19)+'…';
-        const ev=evByDate[date]||[];
+        const ev=evByDate[day.fullDate]||[];
         cells.push({blank:false,dayNumber:String(date),opacity:'1',
-          bg: isFeast?'rgba(181,148,47,.14)':(isFast?'rgba(110,47,42,.08)':(isSun?'rgba(181,148,47,.08)':'#fffdf8')),
+          bg: day.inMonth===false?'rgba(248,240,221,.46)':(isFeast?'rgba(181,148,47,.14)':(isFast?'rgba(110,47,42,.08)':(isSun?'rgba(181,148,47,.08)':'#fffdf8'))),
           border: isToday?'#b5942f':(isFeast?'rgba(181,148,47,.5)':(isFast?'rgba(110,47,42,.28)':'#e7dcc0')),
           numColor: isFeast?'#b5942f':(isFast?'#6e2f2a':'#1b2c45'),
           todayDisplay: isToday?'inline':'none',
-          tagDisplay: (isFeast||isFast)?'block':'none', fastTag: isFeast?'Entrance':(natFast?'Nativity fast':(wf?'Fast day':'')), tagColor: isFeast?'#b5942f':'#6e2f2a',
+          tagDisplay: (isFeast||isFast)?'block':'none', fastTag: isFeast?day.feast:(day.fasting||day.fastingType||'Fast day'), tagColor: isFeast?'#b5942f':'#6e2f2a',
           scopeDisplay: scopeText?'block':'none', scopeText, scopeColor: sEvents?'#34507a':'#33405a',
           eventDots: ev.slice(0,4).map(e=>({color:evColor(e.type)})),
           onClick: dk ? (sMeals ? ()=>this.openPicker(dk,'dinner') : sEvents ? ()=>this.openEventOnDay(dk) : ()=>this.openDay(dk)) : ()=>{},
           cursor: dk?'pointer':'default', hoverBorder: dk?'#b5942f':(isToday?'#b5942f':(isFeast?'rgba(181,148,47,.5)':(isFast?'rgba(110,47,42,.28)':'#e7dcc0'))),
           addDisplay: dk?'flex':'none'
         });
-      }
+      });
       out.monthCells=cells; out.monthScopeLabel=monthScopeLabel;
       out.monthScopeBlurb = sMeals?'Each planned dinner shows on its day. Open the Week or Day view to plan breakfast and lunch too.':sChores?'Chore days are marked. The full rotation lives in the Week and Day views.':sEvents?'Every appointment, field trip, and activity appears on its day — coloured by type.':'School days are marked Mon–Fri. Lessons follow the liturgical week, easing for feasts and Sundays.';
     } else { out.monthWeekdays=[];out.monthCells=[];out.monthScopeLabel='';out.monthScopeBlurb=''; }
@@ -1121,7 +1127,7 @@ class Component extends DCLogic {
     out.onConnectGoogle=()=>this.connectGoogle(); out.onDisconnectGoogle=()=>this.disconnectGoogle(); out.onSyncNow=()=>this.syncNow(); out.onCloseGoogle=()=>this.closeGoogle();
 
     // ---------- feasts this month ----------
-    out.monthFeasts=this.MONTH_FEASTS.map(f=>({day:f.day,name:f.name,rank:f.rank,
+    out.monthFeasts=this.MONTH_FEASTS.map(f=>({day:f.day,dateLabel:f.dateLabel||f.day,name:f.name,rank:f.rank,
       border:f.plan?'rgba(181,148,47,.5)':'#e7dcc0', bg:f.plan?'#fffaf0':'#fdf9ef', accent:f.plan?'#b5942f':'#6e2f2a',
       planDisplay:f.plan?'inline-block':'none', planLabel:'Plan feast →', onPlan:()=>this.openFeast(),
       btnBorder:'#b5942f', btnBg:'#102a4c', btnColor:'#fff'}));

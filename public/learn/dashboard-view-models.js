@@ -550,7 +550,9 @@ export function toPlannerViewModel(rawPayload) {
         name: childName(child, index),
         nameDay: text(child.nameDay, ""),
         color: text(child.color, ACCENTS[index % ACCENTS.length]),
-        initial: childInitial(child, index)
+        initial: childInitial(child, index),
+        formLabel: text(child.formLabel || child.form || "", ""),
+        gradeLabel: text(child.gradeLabel || child.grade || "", "")
       }))
     },
     term: {
