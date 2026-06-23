@@ -717,6 +717,11 @@ function renderDashboard(vm) {
 }
 
 function renderPlanner(vm) {
+  return shell(vm, `
+    <section class="learn-prototype-embed" aria-label="AGAPAY Learn Family Planner">
+      <iframe src="/learn/Meals.dc.html" title="AGAPAY Learn Family Planner"></iframe>
+    </section>
+  `);
   const query = new URLSearchParams(window.location.search);
   const activeScope = plannerScopeFromQuery();
   const mealTool = mealToolFromQuery();

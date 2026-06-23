@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+<style>
+  html,body{margin:0;background:#f3ead4;}
+  *,*::before,*::after{box-sizing:border-box;}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-thumb{background:rgba(181,148,47,.34);border-radius:9px;}
+  @keyframes mealsFade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  @keyframes mealsPop{from{opacity:0;transform:scale(.97);}to{opacity:1;transform:none;}}
+  [data-print-menu]{display:none;}
+  @media print{ [data-chrome]{display:none !important;} [data-print-menu]{display:block !important;} @page{margin:14mm;} }
+</style>
+</helmet>
+<div data-chrome style="display:flex;min-height:100vh;width:100%;background:#f3ead4;color:#1b2c45;font-family:'EB Garamond',Georgia,serif;">
+
+  <aside style="position:sticky;top:0;flex:0 0 270px;width:270px;height:100vh;display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(180deg,#061522 0%,#0b2130 62%,#061522 100%);color:#f6f1e8;border-right:1px solid rgba(200,162,74,.24);">
+    <div style="display:grid;justify-items:center;gap:.6rem;padding:1.6rem 1.3rem 1.2rem;border-bottom:1px solid rgba(200,162,74,.16);text-align:center;">
+      <div style="width:64px;height:64px;display:grid;place-items:center;border:1px solid rgba(200,162,74,.32);border-radius:10px;background:rgba(200,162,74,.12);color:#c8a24a;font-size:30px;font-family:'Cormorant Garamond',serif;">✥</div>
+      <div><strong style="display:block;color:#c8a24a;font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:500;line-height:.9;letter-spacing:.06em;">AGAPAY</strong><span style="display:block;margin-top:.4rem;color:rgba(246,241,232,.78);font-family:'DM Sans',sans-serif;font-size:.7rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;">Learn</span></div>
+    </div>
+    <div style="padding:1rem 1.2rem .9rem;border-bottom:1px solid rgba(200,162,74,.13);">
+      <strong style="display:block;color:#f6f1e8;font-family:'Cormorant Garamond',serif;font-size:1.34rem;font-weight:600;">Stephanie's Household</strong>
+      <span style="display:block;margin-top:.15rem;color:rgba(246,241,232,.72);font-family:'DM Sans',sans-serif;font-size:.82rem;">4 children · New Calendar</span>
+    </div>
+    <div style="flex:1;overflow-y:auto;">
+      <div style="width:fit-content;margin:1rem 1.2rem .4rem;padding:.26rem .7rem;border:1px solid rgba(200,162,74,.34);border-radius:999px;color:#c8a24a;background:rgba(200,162,74,.1);font-family:'DM Sans',sans-serif;font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">Workspace</div>
+      <nav style="display:flex;flex-direction:column;gap:.2rem;padding:.2rem .85rem 1rem;font-family:'DM Sans',sans-serif;">
+        <a href="#" style="display:flex;align-items:center;gap:.8rem;min-height:44px;padding:.62rem .85rem;border:1px solid transparent;border-radius:13px;color:rgba(246,241,232,.82);text-decoration:none;font-size:.95rem;font-weight:700;"><span style="width:1.4rem;color:#c8a24a;text-align:center;">⌂</span>Dashboard</a>
+        <a href="#" aria-current="page" style="display:flex;align-items:center;gap:.8rem;min-height:44px;padding:.62rem .85rem;border:1px solid rgba(200,162,74,.36);border-radius:13px;color:#f6f1e8;background:rgba(246,241,232,.09);text-decoration:none;font-size:.95rem;font-weight:700;"><span style="width:1.4rem;color:#c8a24a;text-align:center;">▦</span>Family Planner<span style="margin-left:auto;border:1px solid rgba(200,162,74,.46);border-radius:999px;background:rgba(200,162,74,.16);padding:3px 7px;color:#e2bd63;font-size:.56rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">New</span></a>
+        <div style="display:flex;flex-direction:column;gap:.15rem;margin:.1rem 0 .15rem .95rem;padding-left:.7rem;border-left:1px solid rgba(200,162,74,.22);">
+          <sc-for list="{{ navScopes }}" as="n" hint-placeholder-count="4">
+            <a href="#" onClick="{{ n.onClick }}" style="display:flex;align-items:center;gap:.6rem;min-height:36px;padding:.45rem .7rem;border:1px solid {{ n.border }};border-radius:11px;color:{{ n.color }};background:{{ n.bg }};text-decoration:none;font-size:.88rem;font-weight:{{ n.weight }};"><span style="width:1.1rem;color:#c8a24a;text-align:center;font-size:.8rem;">{{ n.glyph }}</span>{{ n.label }}</a>
+          </sc-for>
+        </div>
+        <a href="#" style="display:flex;align-items:center;gap:.8rem;min-height:44px;padding:.62rem .85rem;border:1px solid transparent;border-radius:13px;color:rgba(246,241,232,.82);text-decoration:none;font-size:.95rem;font-weight:700;"><span style="width:1.4rem;color:#c8a24a;text-align:center;">✝</span>Formation</a>
+        <a href="#" style="display:flex;align-items:center;gap:.8rem;min-height:44px;padding:.62rem .85rem;border:1px solid transparent;border-radius:13px;color:rgba(246,241,232,.82);text-decoration:none;font-size:.95rem;font-weight:700;"><span style="width:1.4rem;color:#c8a24a;text-align:center;">▤</span>Books</a>
+        <a href="#" style="display:flex;align-items:center;gap:.8rem;min-height:44px;padding:.62rem .85rem;border:1px solid transparent;border-radius:13px;color:rgba(246,241,232,.82);text-decoration:none;font-size:.95rem;font-weight:700;"><span style="width:1.4rem;color:#c8a24a;text-align:center;">▣</span>Print Center</a>
+      </nav>
+    </div>
+    <button type="button" onClick="{{ onOpenGoogle }}" style="display:flex;align-items:center;gap:.6rem;margin:0 1rem 1.2rem;padding:.7rem .85rem;border:1px solid rgba(200,162,74,.28);border-radius:13px;background:rgba(246,241,232,.06);color:#f6f1e8;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;">
+      <span style="width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:8px;background:#fff;color:#1a73e8;font-weight:900;font-size:15px;">G</span>
+      <span style="display:grid;line-height:1.15;"><strong style="font-size:.84rem;">Google Calendar</strong><small style="font-size:.72rem;color:{{ googleStatusColor }};">{{ googleStatus }}</small></span>
+      <span style="margin-left:auto;width:9px;height:9px;border-radius:50%;background:{{ googleDot }};"></span>
+    </button>
+  </aside>
+
+  <main style="flex:1;min-width:0;height:100vh;overflow:auto;display:flex;flex-direction:column;">
+    <header style="position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:68px;padding:.72rem 1.6rem;border-bottom:1px solid rgba(201,162,91,.38);background:radial-gradient(circle at 84% 0%,rgba(201,162,91,.2),transparent 22rem),linear-gradient(135deg,#061522 0%,#0a2035 62%,#101d22 100%);box-shadow:0 10px 28px rgba(6,21,34,.16);color:#fffdf8;">
+      <div style="display:flex;align-items:center;gap:.7rem;min-width:0;">
+        <span style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:600;">Family Planner</span>
+        <span style="color:rgba(255,253,248,.6);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.04em;white-space:nowrap;">{{ crumb }} · Nov 15 – 21 · Nativity Fast</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:.65rem;">
+        <button type="button" onClick="{{ onAddEvent }}" style="display:inline-flex;align-items:center;gap:.4rem;min-height:2.6rem;padding:0 1rem;border:1px solid #c8a24a;border-radius:10px;background:#c8a24a;color:#061522;font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:900;cursor:pointer;">＋ Add to calendar</button>
+        <button type="button" onClick="{{ onPrint }}" style="display:inline-flex;align-items:center;gap:.4rem;min-height:2.6rem;padding:0 1rem;border:1px solid rgba(201,162,91,.5);border-radius:10px;background:rgba(255,255,255,.06);color:#fffdf8;font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:800;cursor:pointer;">▣ {{ printLabel }}</button>
+        <div style="display:flex;align-items:center;gap:10px;border:1px solid rgba(201,162,91,.32);border-radius:999px;background:rgba(255,255,255,.08);padding:.25rem .7rem .25rem .25rem;">
+          <span style="width:2.2rem;height:2.2rem;border-radius:50%;background:#c9a25b;color:#061522;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:900;">SK</span>
+          <span style="display:grid;gap:1px;line-height:1.08;"><span style="color:#fffdf8;font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:900;">Stephanie K.</span><small style="color:rgba(255,253,248,.72);font-family:'DM Sans',sans-serif;font-size:.74rem;">Family plan</small></span>
+        </div>
+      </div>
+    </header>
+
+    <div style="flex:1;padding:24px 30px 44px;">
+
+      <sc-if value="{{ fullIntro }}" hint-placeholder-val="{{ true }}">
+      <section style="position:relative;display:grid;gap:.6rem;margin-bottom:1.1rem;padding:1.4rem 1.5rem;overflow:hidden;border:1px solid rgba(181,148,47,.32);border-radius:16px;background:radial-gradient(circle at 90% 0%,rgba(201,162,39,.16),transparent 18rem),linear-gradient(135deg,rgba(255,250,240,.92),rgba(248,240,221,.84));box-shadow:0 1px 3px rgba(20,40,70,.05);">
+        <span style="position:absolute;right:1.6rem;top:50%;transform:translateY(-50%);color:rgba(181,148,47,.1);font-size:7rem;line-height:1;pointer-events:none;">{{ introIcon }}</span>
+        <div style="position:relative;z-index:1;display:flex;align-items:center;gap:1rem;">
+          <span style="width:4rem;height:4rem;flex:none;display:grid;place-items:center;border:1px solid rgba(181,148,47,.45);border-radius:15px;background:linear-gradient(180deg,rgba(253,249,239,.86),rgba(241,230,201,.78));color:#b5942f;font-size:1.9rem;">{{ introIcon }}</span>
+          <div>
+            <div style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:900;letter-spacing:.18em;text-transform:uppercase;">{{ introKicker }}</div>
+            <h1 style="margin:.08rem 0 0;color:#1b2c45;font-family:'Cormorant Garamond',serif;font-size:2.8rem;font-weight:600;line-height:.95;">{{ introTitle }}</h1>
+          </div>
+        </div>
+        <p style="position:relative;z-index:1;max-width:54rem;margin:0;color:#33405a;font-size:1.02rem;line-height:1.48;">{{ introDesc }}</p>
+      </section>
+      </sc-if>
+      <sc-if value="{{ compactIntro }}" hint-placeholder-val="{{ false }}">
+      <section style="position:relative;display:flex;align-items:center;gap:.85rem;margin-bottom:.9rem;padding:.7rem 1.1rem;overflow:hidden;border:1px solid rgba(181,148,47,.32);border-radius:13px;background:linear-gradient(135deg,rgba(255,250,240,.92),rgba(248,240,221,.84));">
+        <span style="width:2.6rem;height:2.6rem;flex:none;display:grid;place-items:center;border:1px solid rgba(181,148,47,.45);border-radius:11px;background:linear-gradient(180deg,rgba(253,249,239,.86),rgba(241,230,201,.78));color:#b5942f;font-size:1.3rem;">{{ introIcon }}</span>
+        <div style="min-width:0;"><div style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:.64rem;font-weight:900;letter-spacing:.16em;text-transform:uppercase;">{{ introKicker }}</div><h1 style="margin:.05rem 0 0;color:#1b2c45;font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:600;line-height:1;">{{ introTitle }}</h1></div>
+      </section>
+      </sc-if>
+
+      <!-- TOOLBAR: view + scope -->
+      <div style="display:flex;gap:10px 12px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+        <div style="display:flex;gap:4px;background:#fdf9ef;border:1px solid #e7dcc0;border-radius:12px;padding:5px;">
+          <sc-for list="{{ viewTabs }}" as="v" hint-placeholder-count="5">
+            <button type="button" onClick="{{ v.onClick }}" style="border:none;border-radius:8px;padding:8px 15px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;background:{{ v.bg }};color:{{ v.color }};">{{ v.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:4px;background:#fdf9ef;border:1px solid #e7dcc0;border-radius:12px;padding:5px;">
+          <sc-for list="{{ scopeTabs }}" as="s" hint-placeholder-count="4">
+            <button type="button" onClick="{{ s.onClick }}" style="display:inline-flex;align-items:center;gap:6px;border:none;border-radius:8px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;background:{{ s.bg }};color:{{ s.color }};"><span style="font-size:.9rem;">{{ s.glyph }}</span>{{ s.label }}</button>
+          </sc-for>
+        </div>
+        <span style="font-family:'Cormorant Garamond',serif;font-size:1.08rem;color:#1b2c45;">{{ rangeLabel }}</span>
+        <sc-if value="{{ scopeLockedNote }}" hint-placeholder-val="{{ false }}">
+          <span style="font-family:'DM Sans',sans-serif;font-size:.78rem;color:#8a7c5e;display:inline-flex;align-items:center;gap:6px;margin-left:auto;"><span style="color:#b5942f;">🔒</span> Meals &amp; Chores plan by day, week &amp; month</span>
+        </sc-if>
+      </div>
+
+      <!-- MEAL TOOLS (week + meals only) -->
+      <sc-if value="{{ mealsToolsVisible }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+          <div style="display:flex;gap:4px;background:#fdf9ef;border:1px solid #e7dcc0;border-radius:11px;padding:5px;">
+            <sc-for list="{{ mealTools }}" as="t" hint-placeholder-count="4">
+              <button type="button" onClick="{{ t.onClick }}" style="border:none;border-radius:8px;padding:8px 18px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;background:{{ t.bg }};color:{{ t.color }};">{{ t.label }}</button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ isPlanTool }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;gap:8px;margin-left:auto;background:#fdf9ef;border:1px solid #e7dcc0;border-radius:11px;padding:6px 8px;">
+              <span style="font-family:'DM Sans',sans-serif;font-size:.68rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#8a7c5e;padding-left:4px;">Show as</span>
+              <sc-for list="{{ integrationTabs }}" as="it" hint-placeholder-count="2">
+                <button type="button" onClick="{{ it.onClick }}" style="border:none;border-radius:8px;padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;background:{{ it.bg }};color:{{ it.color }};">{{ it.label }}</button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ============ DAY VIEW ============ -->
+      <sc-if value="{{ isDay }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:mealsFade .3s ease;">
+          <div style="display:flex;gap:8px;overflow:auto;padding-bottom:4px;margin-bottom:14px;">
+            <sc-for list="{{ daySelector }}" as="d" hint-placeholder-count="7">
+              <button type="button" onClick="{{ d.onClick }}" style="flex:none;display:grid;justify-items:center;gap:1px;min-width:88px;border:1px solid {{ d.border }};border-radius:11px;background:{{ d.bg }};padding:10px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;"><span style="color:{{ d.markColor }};font-size:13px;">{{ d.mark }}</span><strong style="font-size:13px;color:#1b2c45;">{{ d.weekday }}</strong><small style="font-size:11px;color:#8a7c5e;">{{ d.shortDate }}</small></button>
+            </sc-for>
+          </div>
+          <div style="border:1px solid rgba(181,148,47,.4);border-radius:14px;background:linear-gradient(135deg,#fffaf0,#f6ead0);padding:16px 18px;margin-bottom:14px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;">
+            <div style="min-width:0;">
+              <div style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">{{ daySel.tagText }}</div>
+              <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:#1b2c45;line-height:1.02;">{{ daySel.dateLabel }}</strong>
+              <span style="color:#33405a;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.05rem;">{{ daySel.feast }}</span>
+            </div>
+            <div style="margin-left:auto;display:flex;flex-wrap:wrap;gap:7px;align-items:center;">
+              <sc-for list="{{ dayEventPills }}" as="e" hint-placeholder-count="2">
+                <span style="display:inline-flex;align-items:center;gap:6px;border:1px solid {{ e.color }};border-radius:999px;background:#fffdf8;padding:5px 11px;font-family:'DM Sans',sans-serif;font-size:11.5px;font-weight:700;color:#1b2c45;"><span style="width:7px;height:7px;border-radius:50%;background:{{ e.color }};"></span>{{ e.time }} · {{ e.title }}</span>
+              </sc-for>
+              <span style="font-family:'DM Sans',sans-serif;font-size:11.5px;color:#8a7c5e;display:{{ dayNoEventsDisplay }};">No appointments today</span>
+            </div>
+          </div>
+
+          <sc-if value="{{ dayLessons }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">
+              <div style="border:1px solid #e7dcc0;border-radius:14px;background:#fdf9ef;padding:16px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span style="width:30px;height:30px;border-radius:50%;background:#b5942f;"></span><strong style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#1b2c45;">Morning Time</strong></div>
+                <p style="margin:0;color:#33405a;line-height:1.5;">{{ dayMorning }}</p>
+              </div>
+              <sc-for list="{{ dayLessonForms }}" as="f" hint-placeholder-count="2">
+                <div style="border:1px solid #e7dcc0;border-radius:14px;background:#fdf9ef;padding:16px;">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><span style="width:30px;height:30px;border-radius:50%;background:{{ f.color }};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;">{{ f.initials }}</span><span><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:20px;color:#1b2c45;line-height:1;">{{ f.label }}</strong><small style="color:#8a7c5e;font-family:'DM Sans',sans-serif;font-size:11px;">{{ f.children }}</small></span></div>
+                  <p style="margin:0;color:#33405a;line-height:1.5;">{{ f.work }}</p>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ dayMeals }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;">
+              <sc-for list="{{ dayMealCards }}" as="m" hint-placeholder-count="3">
+                <button type="button" onClick="{{ m.onClick }}" style="text-align:left;border:1px solid {{ m.border }};border-radius:14px;background:{{ m.bg }};padding:0;overflow:hidden;cursor:pointer;font-family:inherit;" style-hover="border-color:#b5942f;box-shadow:0 8px 22px rgba(20,40,70,.1);">
+                  <div style="padding:10px 14px;background:rgba(6,21,34,.04);border-bottom:1px solid #e7dcc0;display:flex;align-items:center;justify-content:space-between;"><span style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.12em;font-weight:800;text-transform:uppercase;color:#8a7c5e;">{{ m.meal }}</span><span style="font-size:11px;color:{{ m.dot }};font-weight:800;display:{{ m.fitDisplay }};">fits today</span></div>
+                  <div style="padding:14px;display:flex;flex-direction:column;gap:8px;min-height:96px;">
+                    <strong style="font-family:'Cormorant Garamond',serif;font-size:21px;color:{{ m.nameColor }};line-height:1.08;">{{ m.name }}</strong>
+                    <span style="display:inline-flex;align-items:center;gap:6px;border:1px solid {{ m.dot }};color:{{ m.dot }};border-radius:999px;padding:2px 9px;font-family:'DM Sans',sans-serif;font-size:10.5px;font-weight:800;width:max-content;display:{{ m.badgeDisplay }};"><span style="width:6px;height:6px;border-radius:50%;background:{{ m.dot }};"></span>{{ m.levelLabel }} · {{ m.time }}</span>
+                    <small style="font-family:'DM Sans',sans-serif;font-size:11.5px;color:#a99a72;margin-top:auto;">Tap to {{ m.action }}</small>
+                  </div>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ dayChores }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+              <sc-for list="{{ dayChoreCards }}" as="c" hint-placeholder-count="5">
+                <div style="border:1px solid #e7dcc0;border-radius:13px;background:#fdf9ef;padding:14px;display:flex;align-items:center;gap:12px;">
+                  <span style="width:38px;height:38px;flex:none;border-radius:50%;background:{{ c.color }};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:800;">{{ c.initial }}</span>
+                  <span style="min-width:0;"><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;color:#1b2c45;">{{ c.name }}</strong><small style="color:{{ c.taskColor }};font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;">{{ c.task }}</small></span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ dayEvents }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1px solid #e7dcc0;border-radius:14px;background:#fdf9ef;padding:18px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;"><span style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;color:#b5942f;">Calendar · {{ daySel.weekday }}</span><button type="button" onClick="{{ onAddEvent }}" style="border:1px solid #b5942f;background:#102a4c;color:#fff;border-radius:9px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.82rem;cursor:pointer;">＋ Add</button></div>
+              <div style="display:grid;gap:9px;">
+                <sc-for list="{{ dayEventRows }}" as="e" hint-placeholder-count="2">
+                  <button type="button" onClick="{{ e.onClick }}" style="display:flex;align-items:center;gap:13px;text-align:left;border:1px solid #e7dcc0;border-radius:11px;background:#fffdf8;padding:12px 14px;cursor:pointer;font-family:inherit;" style-hover="border-color:#b5942f;">
+                    <span style="width:62px;flex:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:800;color:#1b2c45;">{{ e.time }}</span>
+                    <span style="width:3px;align-self:stretch;border-radius:3px;background:{{ e.color }};"></span>
+                    <span style="flex:1;min-width:0;"><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;color:#1b2c45;line-height:1.1;">{{ e.title }}</strong><small style="font-family:'DM Sans',sans-serif;font-size:11.5px;color:#8a7c5e;">{{ e.type }} · {{ e.who }}</small></span>
+                    <span style="display:inline-flex;align-items:center;gap:5px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:800;color:{{ e.syncColor }};">{{ e.syncLabel }}</span>
+                  </button>
+                </sc-for>
+                <div style="color:#8a7c5e;font-style:italic;font-family:'EB Garamond',serif;padding:6px 2px;display:{{ dayNoEventsDisplay }};">Nothing scheduled — a quiet day. Tap “Add” to note an appointment, field trip, or activity.</div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ============ WEEK VIEW ============ -->
+      <sc-if value="{{ isWeek }}" hint-placeholder-val="{{ true }}">
+        <div style="animation:mealsFade .3s ease;">
+
+          <sc-if value="{{ lessonsWeek }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:12px;padding:13px 16px;border:1px solid rgba(181,148,47,.32);border-radius:13px;background:linear-gradient(135deg,#fffaf0,#f6ead0);">
+              <div style="display:flex;align-items:center;gap:8px;"><span style="color:#b5942f;">▤</span><span style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;color:#b5942f;">Seeded from your Setup</span></div>
+              <span style="font-family:'DM Sans',sans-serif;font-size:.84rem;color:#8a7c5e;">{{ setupSummary }}</span>
+              <div style="display:flex;gap:9px;flex-wrap:wrap;margin-left:auto;">
+                <sc-for list="{{ setupForms }}" as="f" hint-placeholder-count="2">
+                  <span style="display:inline-flex;align-items:center;gap:9px;border:1px solid #e7dcc0;border-radius:999px;background:#fdf9ef;padding:5px 14px 5px 6px;"><span style="width:28px;height:28px;border-radius:50%;background:{{ f.color }};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;">{{ f.initials }}</span><span style="display:grid;line-height:1.12;"><strong style="font-family:'DM Sans',sans-serif;font-size:13px;color:#1b2c45;">{{ f.label }}</strong><small style="font-family:'DM Sans',sans-serif;font-size:10.5px;color:#8a7c5e;">{{ f.children }} · {{ f.subjectCount }}</small></span></span>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#fdf9ef;border:1px solid #e7dcc0;border-radius:14px;overflow:auto;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+              <div style="min-width:0;">
+                <div style="display:grid;grid-template-columns:148px repeat(7,minmax(0,1fr));border-bottom:1px solid #e7dcc0;">
+                  <div style="padding:14px;color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.15em;font-weight:800;display:flex;align-items:flex-end;">LESSONS</div>
+                  <sc-for list="{{ days }}" as="day" hint-placeholder-count="7">
+                    <div style="padding:11px 9px;border-left:1px solid #e7dcc0;text-align:center;background:{{ day.headBg }};"><div style="color:{{ day.markColor }};font-size:15px;">{{ day.mark }}</div><strong style="font-size:13px;color:#1b2c45;">{{ day.weekday }}</strong><small style="display:block;color:#8a7c5e;">{{ day.shortDate }}</small><div style="margin:5px auto 0;width:max-content;max-width:100%;border:1px solid {{ day.tagBorder }};background:{{ day.tagBg }};color:{{ day.tagColor }};border-radius:999px;padding:2px 7px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:800;line-height:1.25;">{{ day.tag }}</div><div style="margin-top:4px;font-family:'Cormorant Garamond',serif;font-size:12.5px;line-height:1.15;color:{{ day.feastColor }};">{{ day.feast }}</div></div>
+                  </sc-for>
+                </div>
+                <sc-for list="{{ lessonRows }}" as="row" hint-placeholder-count="3">
+                  <div style="display:grid;grid-template-columns:148px repeat(7,minmax(0,1fr));border-bottom:1px solid #e7dcc0;">
+                    <div style="padding:13px 14px;display:flex;align-items:center;gap:10px;"><span style="width:22px;height:22px;flex:none;border-radius:50%;background:{{ row.color }};"></span><span style="min-width:0;"><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:15px;color:#1b2c45;line-height:1.1;">{{ row.label }}</strong><small style="color:#8a7c5e;font-family:'DM Sans',sans-serif;font-size:11px;">{{ row.sub }}</small></span></div>
+                    <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="7">
+                      <div style="padding:10px;border-left:1px solid #e7dcc0;background:{{ cell.colBg }};min-height:62px;display:flex;align-items:center;"><span style="font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;color:{{ cell.titleColor }};line-height:1.25;">{{ cell.title }}</span></div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ mealsPlanWeek }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ isWoven }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:12px;padding:11px 14px;border:1px solid rgba(52,80,122,.3);border-left:3px solid #34507a;border-radius:0 10px 10px 0;background:rgba(52,80,122,.07);font-family:'DM Sans',sans-serif;font-size:.86rem;color:#33405a;"><span style="color:#34507a;">▦</span> Woven view — meals sit under each day of the lesson week, so the kitchen and the school week live on one page.</div>
+            </sc-if>
+            <div style="background:#fdf9ef;border:1px solid #e7dcc0;border-radius:14px;overflow:auto;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+              <div style="min-width:0;">
+                <div style="display:grid;grid-template-columns:148px repeat(7,minmax(0,1fr));border-bottom:1px solid #e7dcc0;">
+                  <div style="padding:14px;color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.15em;font-weight:800;display:flex;align-items:flex-end;">THE WEEK</div>
+                  <sc-for list="{{ days }}" as="day" hint-placeholder-count="7">
+                    <div style="padding:11px 9px;border-left:1px solid #e7dcc0;text-align:center;background:{{ day.headBg }};"><div style="color:{{ day.markColor }};font-size:15px;">{{ day.mark }}</div><strong style="font-size:13px;color:#1b2c45;">{{ day.weekday }}</strong><small style="display:block;color:#8a7c5e;">{{ day.shortDate }}</small><div style="margin:5px auto 0;width:max-content;max-width:100%;border:1px solid {{ day.tagBorder }};background:{{ day.tagBg }};color:{{ day.tagColor }};border-radius:999px;padding:2px 7px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:800;line-height:1.25;">{{ day.tag }}</div><div style="margin-top:4px;font-family:'Cormorant Garamond',serif;font-size:12.5px;line-height:1.15;color:{{ day.feastColor }};">{{ day.feast }}</div><div style="margin-top:4px;font-family:'DM Sans',sans-serif;font-size:10px;color:#8a7c5e;line-height:1.2;display:{{ day.schoolDisplay }};">▦ {{ day.school }}</div></div>
+                  </sc-for>
+                </div>
+                <sc-for list="{{ weekRows }}" as="row" hint-placeholder-count="3">
+                  <div style="display:grid;grid-template-columns:148px repeat(7,minmax(0,1fr));border-bottom:1px solid #e7dcc0;">
+                    <div style="padding:14px;display:flex;flex-direction:column;justify-content:center;"><strong style="font-family:'Cormorant Garamond',serif;font-size:18px;color:#1b2c45;">{{ row.label }}</strong><small style="color:#8a7c5e;font-family:'DM Sans',sans-serif;font-size:11px;">{{ row.sub }}</small></div>
+                    <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="7">
+                      <div style="padding:7px;border-left:1px solid #e7dcc0;background:{{ cell.colBg }};">
+                        <button type="button" onClick="{{ cell.onClick }}" style="position:relative;width:100%;min-height:64px;display:flex;flex-direction:column;justify-content:center;gap:3px;text-align:left;border:1px solid {{ cell.border }};border-radius:9px;background:{{ cell.bg }};padding:8px 9px;cursor:pointer;font-family:inherit;" style-hover="border-color:#b5942f;box-shadow:0 4px 12px rgba(20,40,70,.08);">
+                          <span style="display:flex;align-items:center;gap:5px;"><span style="width:7px;height:7px;border-radius:50%;flex:none;background:{{ cell.dot }};display:{{ cell.dotDisplay }};"></span><span style="font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:700;color:{{ cell.nameColor }};line-height:1.2;">{{ cell.name }}</span></span>
+                          <small style="font-family:'DM Sans',sans-serif;font-size:10.5px;color:#8a7c5e;display:{{ cell.metaDisplay }};">{{ cell.meta }}</small>
+                        </button>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;align-items:stretch;">
+              <div style="flex:1 1 340px;border:1px solid rgba(181,148,47,.4);border-radius:14px;padding:14px 16px;background:linear-gradient(135deg,#fffaf0,#f6ead0);display:flex;flex-direction:column;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;"><span style="color:#b5942f;">✥</span><span style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;">Feast this week</span></div>
+                <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:22px;color:#1b2c45;line-height:1.05;">Entrance of the Theotokos</strong>
+                <p style="margin:4px 0 10px;color:#33405a;line-height:1.4;font-size:.9rem;">Saturday, Nov 21 — a Great Feast within the Nativity Fast. Fish, wine, and oil are blessed.</p>
+                <button type="button" onClick="{{ onPlanFeast }}" style="margin-top:auto;align-self:flex-start;border:1px solid #b5942f;background:#102a4c;color:#fff;border-radius:9px;padding:9px 15px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.84rem;cursor:pointer;">Plan the feast table →</button>
+              </div>
+              <aside style="flex:1 1 300px;border:1px solid #e7dcc0;border-radius:14px;padding:14px 16px;background:#fdf9ef;">
+                <div style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;margin-bottom:10px;">Fasting legend</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;">
+                  <span style="display:flex;gap:8px;align-items:center;font-family:'DM Sans',sans-serif;font-size:.82rem;color:#1b2c45;"><i style="width:15px;height:15px;border-radius:5px;flex:none;background:rgba(110,47,42,.12);border:1px solid #6e2f2a;"></i> Strict · no oil</span>
+                  <span style="display:flex;gap:8px;align-items:center;font-family:'DM Sans',sans-serif;font-size:.82rem;color:#1b2c45;"><i style="width:15px;height:15px;border-radius:5px;flex:none;background:rgba(74,90,49,.12);border:1px solid #4a5a31;"></i> Wine &amp; oil</span>
+                  <span style="display:flex;gap:8px;align-items:center;font-family:'DM Sans',sans-serif;font-size:.82rem;color:#1b2c45;"><i style="width:15px;height:15px;border-radius:5px;flex:none;background:rgba(52,80,122,.12);border:1px solid #34507a;"></i> Fish allowed</span>
+                  <span style="display:flex;gap:8px;align-items:center;font-family:'DM Sans',sans-serif;font-size:.82rem;color:#1b2c45;"><i style="width:15px;height:15px;border-radius:5px;flex:none;background:rgba(181,148,47,.16);border:1px solid #b5942f;"></i> Feast / fast-free</span>
+                </div>
+              </aside>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ mealsRecipes }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+              <div><div style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">Recipe library</div><span style="font-family:'Cormorant Garamond',serif;font-size:1.05rem;color:#8a7c5e;font-style:italic;">Your dishes, sorted by fast day</span></div>
+              <button type="button" onClick="{{ onAddRecipe }}" style="margin-left:auto;border:1px solid #b5942f;background:#102a4c;color:#fff;border-radius:10px;padding:10px 16px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.86rem;cursor:pointer;">＋ Add recipe</button>
+            </div>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px;">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <sc-for list="{{ typeChips }}" as="chip" hint-placeholder-count="5">
+                  <button type="button" onClick="{{ chip.onClick }}" style="border:1px solid {{ chip.border }};border-radius:999px;padding:7px 15px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;background:{{ chip.bg }};color:{{ chip.color }};">{{ chip.label }}</button>
+                </sc-for>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:auto;">
+                <sc-for list="{{ levelChips }}" as="chip" hint-placeholder-count="5">
+                  <button type="button" onClick="{{ chip.onClick }}" style="display:inline-flex;align-items:center;gap:6px;border:1px solid {{ chip.border }};border-radius:999px;padding:7px 13px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;background:{{ chip.bg }};color:{{ chip.color }};"><span style="width:7px;height:7px;border-radius:50%;background:{{ chip.dot }};display:{{ chip.dotDisplay }};"></span>{{ chip.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:14px;">
+              <button type="button" onClick="{{ onAddRecipe }}" style="border:2px dashed #d7c79f;border-radius:14px;background:rgba(181,148,47,.05);min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;font-family:inherit;color:#8a7c5e;" style-hover="border-color:#b5942f;color:#102a4c;background:rgba(181,148,47,.1);"><span style="width:42px;height:42px;border-radius:50%;border:1px solid #c8a24a;display:flex;align-items:center;justify-content:center;color:#b5942f;font-size:22px;">＋</span><strong style="font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:800;">Add your own recipe</strong></button>
+              <sc-for list="{{ recipeCards }}" as="r" hint-placeholder-count="8">
+                <button type="button" onClick="{{ r.onView }}" style="text-align:left;border:1px solid #e7dcc0;border-radius:14px;background:#fdf9ef;padding:0;overflow:hidden;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;" style-hover="border-color:#b5942f;box-shadow:0 8px 22px rgba(20,40,70,.1);transform:translateY(-2px);">
+                  <div style="position:relative;height:74px;background:repeating-linear-gradient(135deg,{{ r.bgA }},{{ r.bgA }} 11px,{{ r.bgB }} 11px,{{ r.bgB }} 22px);display:flex;align-items:center;justify-content:center;color:{{ r.dot }};font-size:26px;border-bottom:1px solid #e7dcc0;">{{ r.glyph }}<span style="position:absolute;top:7px;right:7px;display:{{ r.customDisplay }};align-items:center;border:1px solid #b5942f;border-radius:999px;background:#fdf9ef;color:#b5942f;padding:2px 8px;font-family:'DM Sans',sans-serif;font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;">My recipe</span></div>
+                  <div style="padding:13px 14px 15px;display:flex;flex-direction:column;gap:7px;flex:1;">
+                    <strong style="font-family:'Cormorant Garamond',serif;font-size:19px;color:#1b2c45;line-height:1.1;">{{ r.name }}</strong>
+                    <div style="display:flex;align-items:center;gap:7px;"><span style="display:inline-flex;align-items:center;gap:5px;border:1px solid {{ r.dot }};color:{{ r.dot }};border-radius:999px;padding:2px 8px;font-family:'DM Sans',sans-serif;font-size:10.5px;font-weight:800;"><span style="width:6px;height:6px;border-radius:50%;background:{{ r.dot }};"></span>{{ r.levelLabel }}</span><span style="font-family:'DM Sans',sans-serif;font-size:11px;color:#8a7c5e;">{{ r.typeLabel }}</span></div>
+                    <small style="font-family:'DM Sans',sans-serif;font-size:11.5px;color:#8a7c5e;margin-top:auto;">⏱ {{ r.time }} · serves {{ r.servings }}</small>
+                  </div>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ mealsGroceries }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:1.4fr .8fr;gap:16px;align-items:start;">
+              <div style="display:grid;gap:14px;">
+                <sc-for list="{{ groceryGroups }}" as="g" hint-placeholder-count="4">
+                  <div style="border:1px solid #e7dcc0;border-radius:14px;background:#fdf9ef;padding:16px 18px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="color:#b5942f;">{{ g.glyph }}</span><span style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;color:#b5942f;">{{ g.name }}</span><span style="color:#8a7c5e;font-family:'DM Sans',sans-serif;font-size:11px;">{{ g.count }}</span></div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;">
+                      <sc-for list="{{ g.items }}" as="item" hint-placeholder-count="4">
+                        <div style="display:flex;align-items:center;gap:6px;border:1px solid {{ item.border }};border-radius:9px;background:{{ item.bg }};padding:0 7px 0 0;">
+                          <button type="button" onClick="{{ item.onToggle }}" style="display:flex;align-items:center;gap:9px;flex:1;min-width:0;border:none;background:none;padding:9px 0 9px 11px;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;"><span style="width:18px;height:18px;flex:none;border-radius:5px;border:1.5px solid {{ item.boxColor }};background:{{ item.boxBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;">{{ item.check }}</span><span style="font-size:.88rem;font-weight:600;color:{{ item.textColor }};text-decoration:{{ item.strike }};">{{ item.label }}</span></button>
+                          <span style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#4a5a31;display:{{ item.pantryDisplay }};">have</span>
+                          <button type="button" onClick="{{ item.onRemove }}" style="width:20px;height:20px;flex:none;border:none;border-radius:50%;background:rgba(110,47,42,.12);color:#6e2f2a;cursor:pointer;font-size:13px;line-height:1;display:{{ item.removeDisplay }};">×</button>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <div style="display:flex;gap:6px;margin-top:9px;">
+                      <input type="text" value="{{ g.inputVal }}" onInput="{{ g.onInput }}" placeholder="Add to {{ g.name }}…" style="flex:1;min-height:38px;border:1px solid #e7dcc0;border-radius:8px;padding:0 11px;background:#fffdf8;color:#1b2c45;font:500 .84rem 'DM Sans',sans-serif;" />
+                      <button type="button" onClick="{{ g.onAdd }}" style="border:1px solid #b5942f;background:#fff;color:#102a4c;border-radius:8px;padding:0 14px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.8rem;cursor:pointer;">＋ Add</button>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <aside style="display:grid;gap:14px;position:sticky;top:84px;">
+                <div style="border:1px solid rgba(181,148,47,.4);border-radius:14px;padding:18px;background:linear-gradient(135deg,#fffaf0,#f6ead0);">
+                  <div style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;margin-bottom:6px;">Shopping list</div>
+                  <strong style="font-family:'Cormorant Garamond',serif;font-size:40px;color:#1b2c45;line-height:1;">{{ groceryRemaining }}</strong>
+                  <span style="display:block;color:#8a7c5e;margin-top:4px;font-size:.9rem;">items still to buy · {{ groceryTotal }} on the week's menu</span>
+                  <p style="margin:14px 0 0;padding-top:12px;border-top:1px solid rgba(181,148,47,.3);color:#33405a;font-size:.86rem;line-height:1.45;">Generated from this week's planned meals. Anything already in your Pantry is checked off automatically.</p>
+                </div>
+              </aside>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ mealsPantry }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:1fr .7fr;gap:16px;align-items:start;">
+              <div style="border:1px solid #e7dcc0;border-radius:14px;background:#fdf9ef;padding:18px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;"><span style="color:#b5942f;">☖</span><span style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;color:#b5942f;">In the pantry</span></div>
+                <div style="display:flex;gap:8px;margin-bottom:16px;"><input type="text" value="{{ pantryInput }}" onInput="{{ onPantryInput }}" placeholder="Add a staple you keep on hand…" style="flex:1;min-height:46px;border:1px solid #e7dcc0;border-radius:9px;padding:0 14px;background:#fffdf8;color:#1b2c45;font:500 .95rem 'DM Sans',sans-serif;" /><button type="button" onClick="{{ onAddPantry }}" style="border:1px solid #b5942f;background:#102a4c;color:#fff;border-radius:9px;padding:0 18px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.86rem;cursor:pointer;">Add</button></div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                  <sc-for list="{{ pantryItems }}" as="p" hint-placeholder-count="10">
+                    <span style="display:inline-flex;align-items:center;gap:8px;border:1px solid #e7dcc0;border-radius:999px;background:#f8f0dd;padding:8px 8px 8px 14px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;color:#1b2c45;">{{ p.label }}<button type="button" onClick="{{ p.onRemove }}" style="width:22px;height:22px;border:none;border-radius:50%;background:rgba(110,47,42,.12);color:#6e2f2a;cursor:pointer;font-size:14px;line-height:1;">×</button></span>
+                  </sc-for>
+                </div>
+              </div>
+              <aside style="border:1px solid #e7dcc0;border-radius:14px;padding:18px;background:#fdf9ef;">
+                <div style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;margin-bottom:8px;">Why it matters</div>
+                <p style="margin:0 0 12px;color:#33405a;font-size:.9rem;line-height:1.5;">Your pantry tells the grocery list what you already have. Staples here are quietly checked off so you only shop for what's missing.</p>
+                <p style="margin:0;color:#8a7c5e;font-size:.84rem;line-height:1.45;">Leftovers welcome too — add “Sunday's lentil soup” and plan it into a busy weeknight.</p>
+              </aside>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ choresWeek }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:12px;padding:13px 16px;border:1px solid rgba(181,148,47,.32);border-radius:13px;background:linear-gradient(135deg,#fffaf0,#f6ead0);">
+              <div style="display:flex;align-items:center;gap:8px;"><span style="color:#b5942f;">✦</span><span style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;color:#b5942f;">Household chore rotation</span></div>
+              <span style="font-family:'DM Sans',sans-serif;font-size:.84rem;color:#8a7c5e;">Age-fitting jobs that rotate through the week · lighter on the feast and Sunday</span>
+              <div style="display:flex;gap:7px;flex-wrap:wrap;margin-left:auto;">
+                <sc-for list="{{ choreKids }}" as="k" hint-placeholder-count="4">
+                  <span style="display:inline-flex;align-items:center;gap:7px;border:1px solid #e7dcc0;border-radius:999px;background:#fdf9ef;padding:5px 12px 5px 6px;"><span style="width:24px;height:24px;border-radius:50%;background:{{ k.color }};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;">{{ k.name }}</span><small style="font-family:'DM Sans',sans-serif;font-size:11px;color:#8a7c5e;">{{ k.count }}</small></span>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:#fdf9ef;border:1px solid #e7dcc0;border-radius:14px;overflow:auto;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+              <div style="min-width:0;">
+                <div style="display:grid;grid-template-columns:148px repeat(7,minmax(0,1fr));border-bottom:1px solid #e7dcc0;">
+                  <div style="padding:14px;color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.15em;font-weight:800;display:flex;align-items:flex-end;">CHORES</div>
+                  <sc-for list="{{ days }}" as="day" hint-placeholder-count="7">
+                    <div style="padding:11px 9px;border-left:1px solid #e7dcc0;text-align:center;background:{{ day.headBg }};"><div style="color:{{ day.markColor }};font-size:15px;">{{ day.mark }}</div><strong style="font-size:13px;color:#1b2c45;">{{ day.weekday }}</strong><small style="display:block;color:#8a7c5e;">{{ day.shortDate }}</small><div style="margin:5px auto 0;width:max-content;max-width:100%;border:1px solid {{ day.tagBorder }};background:{{ day.tagBg }};color:{{ day.tagColor }};border-radius:999px;padding:2px 7px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:800;line-height:1.25;">{{ day.tag }}</div><div style="margin-top:4px;font-family:'Cormorant Garamond',serif;font-size:12.5px;line-height:1.15;color:{{ day.feastColor }};">{{ day.feast }}</div></div>
+                  </sc-for>
+                </div>
+                <sc-for list="{{ choresRows }}" as="row" hint-placeholder-count="5">
+                  <div style="display:grid;grid-template-columns:148px repeat(7,minmax(0,1fr));border-bottom:1px solid #e7dcc0;">
+                    <div style="padding:13px 14px;display:flex;align-items:center;gap:10px;"><span style="width:22px;height:22px;flex:none;border-radius:50%;background:{{ row.color }};"></span><span style="min-width:0;"><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:15px;color:#1b2c45;line-height:1.1;">{{ row.label }}</strong><small style="color:#8a7c5e;font-family:'DM Sans',sans-serif;font-size:11px;">{{ row.sub }}</small></span></div>
+                    <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="7">
+                      <div style="padding:10px;border-left:1px solid #e7dcc0;background:{{ cell.colBg }};min-height:58px;display:flex;align-items:center;"><span style="font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;color:{{ cell.titleColor }};line-height:1.25;">{{ cell.title }}</span></div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ eventsWeek }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:14px;padding:13px 16px;border:1px solid rgba(181,148,47,.32);border-radius:13px;background:linear-gradient(135deg,#fffaf0,#f6ead0);">
+              <div style="display:flex;align-items:center;gap:8px;"><span style="color:#b5942f;">◷</span><span style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;color:#b5942f;">This week's calendar</span></div>
+              <span style="font-family:'DM Sans',sans-serif;font-size:.84rem;color:#8a7c5e;">{{ eventsCountLabel }} · {{ googleSyncLine }}</span>
+              <button type="button" onClick="{{ onAddEvent }}" style="margin-left:auto;border:1px solid #b5942f;background:#102a4c;color:#fff;border-radius:9px;padding:9px 15px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.84rem;cursor:pointer;">＋ Add to calendar</button>
+            </div>
+            <div style="display:grid;gap:12px;">
+              <sc-for list="{{ eventsByDay }}" as="d" hint-placeholder-count="7">
+                <div style="display:grid;grid-template-columns:150px 1fr;gap:14px;border:1px solid #e7dcc0;border-radius:14px;background:#fdf9ef;padding:14px 16px;align-items:start;">
+                  <div style="border-right:1px solid #e7dcc0;padding-right:12px;"><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:20px;color:#1b2c45;">{{ d.weekday }}</strong><small style="color:#8a7c5e;font-family:'DM Sans',sans-serif;font-size:11.5px;">{{ d.shortDate }}</small><div style="margin-top:5px;font-family:'Cormorant Garamond',serif;font-size:12.5px;color:#6e2f2a;font-style:italic;">{{ d.feast }}</div></div>
+                  <div style="display:grid;gap:8px;">
+                    <sc-for list="{{ d.items }}" as="e" hint-placeholder-count="2">
+                      <button type="button" onClick="{{ e.onClick }}" style="display:flex;align-items:center;gap:12px;text-align:left;border:1px solid #e7dcc0;border-radius:10px;background:#fffdf8;padding:10px 12px;cursor:pointer;font-family:inherit;" style-hover="border-color:#b5942f;"><span style="width:58px;flex:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:800;color:#1b2c45;">{{ e.time }}</span><span style="width:3px;align-self:stretch;border-radius:3px;background:{{ e.color }};"></span><span style="flex:1;min-width:0;"><strong style="display:block;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:800;color:#1b2c45;">{{ e.title }}</strong><small style="font-family:'DM Sans',sans-serif;font-size:11px;color:#8a7c5e;">{{ e.type }} · {{ e.who }}</small></span><span style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:800;color:{{ e.syncColor }};">{{ e.syncLabel }}</span></button>
+                    </sc-for>
+                    <div style="color:#a99a72;font-style:italic;font-family:'EB Garamond',serif;font-size:.9rem;padding:2px;display:{{ d.emptyDisplay }};">—</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+        </div>
+      </sc-if>
+
+      <!-- ============ MONTH VIEW ============ -->
+      <sc-if value="{{ isMonth }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:mealsFade .3s ease;">
+          <div style="background:#fdf9ef;border:1px solid #e7dcc0;border-radius:16px;padding:14px 16px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:10px;">
+              <h2 style="font-family:'Cormorant Garamond',serif;font-size:25px;margin:0;color:#1b2c45;">November 2026</h2>
+              <span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;">Showing {{ monthScopeLabel }}</span>
+              <div style="display:flex;gap:13px;margin-left:auto;flex-wrap:wrap;align-items:center;">
+                <span style="display:flex;gap:6px;align-items:center;font-family:'DM Sans',sans-serif;font-size:.76rem;color:#33405a;"><i style="width:12px;height:12px;border-radius:4px;background:rgba(110,47,42,.12);border:1px solid #6e2f2a;"></i> Fast</span>
+                <span style="display:flex;gap:6px;align-items:center;font-family:'DM Sans',sans-serif;font-size:.76rem;color:#33405a;"><i style="width:12px;height:12px;border-radius:4px;background:rgba(181,148,47,.16);border:1px solid #b5942f;"></i> Feast / Sunday</span>
+                <span style="font-family:'DM Sans',sans-serif;font-size:.76rem;color:#8a7c5e;font-style:italic;">Tap a day to plan it →</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:5px;">
+              <sc-for list="{{ monthWeekdays }}" as="w" hint-placeholder-count="7"><div style="text-align:center;font-family:'DM Sans',sans-serif;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#b5942f;">{{ w }}</div></sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;">
+              <sc-for list="{{ monthCells }}" as="c" hint-placeholder-count="35">
+                <button type="button" onClick="{{ c.onClick }}" style="min-height:52px;border:1px solid {{ c.border }};border-radius:9px;background:{{ c.bg }};padding:5px 6px;display:flex;flex-direction:column;gap:1px;opacity:{{ c.opacity }};cursor:{{ c.cursor }};text-align:left;font-family:inherit;" style-hover="border-color:{{ c.hoverBorder }};box-shadow:0 3px 10px rgba(20,40,70,.07);">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:3px;"><span style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;color:{{ c.numColor }};">{{ c.dayNumber }}</span><span style="border:1px solid #b5942f;border-radius:999px;padding:0 5px;font-family:'DM Sans',sans-serif;font-size:7.5px;font-weight:800;color:#b5942f;display:{{ c.todayDisplay }};">TODAY</span></div>
+                  <span style="font-family:'DM Sans',sans-serif;font-size:8.5px;font-weight:700;color:{{ c.tagColor }};line-height:1.1;display:{{ c.tagDisplay }};">{{ c.fastTag }}</span>
+                  <span style="font-family:'DM Sans',sans-serif;font-size:9.5px;font-weight:600;color:{{ c.scopeColor }};line-height:1.18;display:{{ c.scopeDisplay }};">{{ c.scopeText }}</span>
+                  <div style="margin-top:auto;display:flex;align-items:center;gap:3px;flex-wrap:wrap;">
+                    <sc-for list="{{ c.eventDots }}" as="d" hint-placeholder-count="0"><span style="width:5px;height:5px;border-radius:50%;background:{{ d.color }};"></span></sc-for>
+                  </div>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;border:1px solid rgba(181,148,47,.4);border-radius:14px;padding:13px 16px;background:linear-gradient(135deg,#fffaf0,#f6ead0);">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;">
+              <div style="display:flex;align-items:center;gap:8px;"><span style="color:#b5942f;">✥</span><span style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">Feasts this month</span></div>
+              <sc-for list="{{ monthFeasts }}" as="f" hint-placeholder-count="4">
+                <div style="display:inline-flex;align-items:center;gap:9px;border:1px solid {{ f.border }};border-radius:999px;background:{{ f.bg }};padding:5px 7px 5px 12px;">
+                  <span style="font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:700;color:{{ f.accent }};">Nov {{ f.day }}</span>
+                  <span style="font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:600;color:#1b2c45;">{{ f.name }}</span>
+                  <button type="button" onClick="{{ f.onPlan }}" style="border:1px solid {{ f.btnBorder }};background:{{ f.btnBg }};color:{{ f.btnColor }};border-radius:999px;padding:5px 11px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.72rem;cursor:pointer;white-space:nowrap;display:{{ f.planDisplay }};">Plan →</button>
+                </div>
+              </sc-for>
+              <span style="font-family:'DM Sans',sans-serif;font-size:.76rem;color:#8a7c5e;margin-left:auto;">Nativity Fast · Nov 15 – Dec 24</span>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ TERM VIEW ============ -->
+      <sc-if value="{{ isTerm }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:mealsFade .3s ease;display:grid;gap:16px;">
+          <div style="border:1px solid rgba(181,148,47,.4);border-radius:16px;padding:20px 22px;background:linear-gradient(135deg,#fffaf0,#f6ead0);display:flex;flex-wrap:wrap;gap:18px;align-items:center;">
+            <div><div style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;">Michaelmas Term · Term 1 of 3</div><h2 style="font-family:'Cormorant Garamond',serif;font-size:34px;margin:4px 0 0;color:#1b2c45;">Week 9 of 12</h2><span style="color:#8a7c5e;font-family:'DM Sans',sans-serif;font-size:.9rem;">September 8 – December 5 · Nativity Break follows</span></div>
+            <div style="margin-left:auto;display:flex;gap:5px;flex-wrap:wrap;max-width:420px;">
+              <sc-for list="{{ termWeeks }}" as="w" hint-placeholder-count="12"><span style="width:30px;height:30px;display:grid;place-items:center;border:1px solid {{ w.border }};border-radius:8px;background:{{ w.bg }};color:{{ w.color }};font-family:'DM Sans',sans-serif;font-size:12px;font-weight:800;">{{ w.n }}</span></sc-for>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1.3fr .9fr;gap:16px;align-items:start;">
+            <div style="border:1px solid #e7dcc0;border-radius:14px;background:#fdf9ef;padding:18px;">
+              <div style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;margin-bottom:12px;">Subject pacing</div>
+              <div style="display:grid;gap:12px;">
+                <sc-for list="{{ termSubjects }}" as="s" hint-placeholder-count="6">
+                  <div style="display:grid;gap:5px;"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:700;color:#1b2c45;"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:{{ s.color }};margin-right:7px;"></span>{{ s.label }}</span><span style="font-family:'DM Sans',sans-serif;font-size:.8rem;color:#8a7c5e;">{{ s.pct }}%</span></div><div style="height:7px;border-radius:5px;background:#efe6cd;overflow:hidden;"><div style="height:100%;width:{{ s.pct }}%;background:{{ s.color }};border-radius:5px;"></div></div></div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="border:1px solid #e7dcc0;border-radius:14px;background:#fdf9ef;padding:18px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">Term dates &amp; trips</span><button type="button" onClick="{{ onAddEvent }}" style="border:1px solid #b5942f;background:#102a4c;color:#fff;border-radius:8px;padding:6px 11px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.76rem;cursor:pointer;">＋ Add</button></div>
+              <div style="display:grid;gap:9px;">
+                <sc-for list="{{ termEvents }}" as="e" hint-placeholder-count="4">
+                  <div style="display:flex;gap:11px;align-items:center;border-top:1px solid #e7dcc0;padding-top:9px;"><span style="width:3px;align-self:stretch;border-radius:3px;background:{{ e.color }};min-height:30px;"></span><span style="flex:1;min-width:0;"><strong style="display:block;font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:800;color:#1b2c45;">{{ e.title }}</strong><small style="font-family:'DM Sans',sans-serif;font-size:11px;color:#8a7c5e;">{{ e.dateLabel }} · {{ e.type }}</small></span></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <p style="margin:0;color:#8a7c5e;font-family:'DM Sans',sans-serif;font-size:.85rem;font-style:italic;">Meals &amp; chores are planned by the day, week &amp; month — switch the view above to set them.</p>
+        </div>
+      </sc-if>
+
+      <!-- ============ YEAR VIEW ============ -->
+      <sc-if value="{{ isYear }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:mealsFade .3s ease;display:grid;gap:16px;">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+            <sc-for list="{{ yearTerms }}" as="t" hint-placeholder-count="3">
+              <div style="border:1px solid {{ t.border }};border-radius:14px;background:{{ t.bg }};padding:18px;">
+                <div style="color:{{ t.accent }};font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">{{ t.tag }}</div>
+                <h3 style="font-family:'Cormorant Garamond',serif;font-size:24px;margin:5px 0 3px;color:{{ t.titleColor }};">{{ t.name }}</h3>
+                <span style="font-family:'DM Sans',sans-serif;font-size:.85rem;color:{{ t.dateColor }};">{{ t.dates }}</span>
+                <p style="margin:9px 0 0;font-family:'DM Sans',sans-serif;font-size:.84rem;color:{{ t.noteColor }};line-height:1.4;">{{ t.note }}</p>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:16px;align-items:start;">
+            <div style="border:1px solid #e7dcc0;border-radius:14px;background:#fdf9ef;padding:18px;">
+              <div style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;margin-bottom:12px;">Great Feasts of the year</div>
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:9px;">
+                <sc-for list="{{ yearFeasts }}" as="f" hint-placeholder-count="6">
+                  <div style="display:flex;gap:9px;align-items:baseline;border-top:1px solid #e7dcc0;padding-top:8px;"><span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;color:#b5942f;width:54px;flex:none;">{{ f.date }}</span><span style="font-family:'Cormorant Garamond',serif;font-size:15px;color:#1b2c45;line-height:1.15;">{{ f.title }}</span></div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="border:1px solid #e7dcc0;border-radius:14px;background:#fdf9ef;padding:18px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><span style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">Year calendar</span><button type="button" onClick="{{ onAddEvent }}" style="border:1px solid #b5942f;background:#102a4c;color:#fff;border-radius:8px;padding:6px 11px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.76rem;cursor:pointer;">＋ Add</button></div>
+              <div style="display:grid;gap:9px;">
+                <sc-for list="{{ yearEvents }}" as="e" hint-placeholder-count="4">
+                  <div style="display:flex;gap:11px;align-items:center;border-top:1px solid #e7dcc0;padding-top:9px;"><span style="width:3px;align-self:stretch;border-radius:3px;background:{{ e.color }};min-height:30px;"></span><span style="flex:1;min-width:0;"><strong style="display:block;font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:800;color:#1b2c45;">{{ e.title }}</strong><small style="font-family:'DM Sans',sans-serif;font-size:11px;color:#8a7c5e;">{{ e.dateLabel }} · {{ e.type }}</small></span></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <p style="margin:0;color:#8a7c5e;font-family:'DM Sans',sans-serif;font-size:.85rem;font-style:italic;">Meals &amp; chores are planned by the day, week &amp; month — switch the view above to set them.</p>
+        </div>
+      </sc-if>
+
+    </div>
+  </main>
+
+  <!-- PICKER MODAL -->
+  <sc-if value="{{ pickerOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onClosePicker }}" style="position:fixed;inset:0;z-index:200;background:rgba(6,21,34,.5);display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px);">
+      <div onClick="{{ stop }}" style="width:min(560px,100%);max-height:86vh;display:flex;flex-direction:column;background:#fdf9ef;border:1px solid rgba(201,162,91,.5);border-radius:18px;overflow:hidden;box-shadow:0 30px 70px rgba(6,21,34,.4);animation:mealsPop .2s ease;">
+        <div style="padding:18px 20px;background:linear-gradient(135deg,#061522,#112b43);color:#fffaf0;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;"><div><div style="color:#c8a24a;font-family:'DM Sans',sans-serif;font-size:10.5px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">{{ pickerMealLabel }} · {{ pickerDayLabel }}</div><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:24px;margin-top:2px;">Choose a dish</strong></div><button type="button" onClick="{{ onClosePicker }}" style="width:32px;height:32px;flex:none;border:1px solid rgba(201,162,91,.4);border-radius:50%;background:rgba(255,255,255,.08);color:#fffaf0;cursor:pointer;font-size:16px;">×</button></div>
+          <div style="margin-top:10px;display:inline-flex;align-items:center;gap:7px;border:1px solid {{ pickerTagBorder }};background:{{ pickerTagBg }};color:{{ pickerTagColor }};border-radius:999px;padding:4px 10px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;">{{ pickerTag }}</div>
+        </div>
+        <div style="padding:12px 16px;border-bottom:1px solid #e7dcc0;display:flex;align-items:center;justify-content:space-between;gap:10px;"><span style="font-family:'DM Sans',sans-serif;font-size:.82rem;color:#8a7c5e;">{{ pickerHint }}</span><button type="button" onClick="{{ onToggleFastingOnly }}" style="display:inline-flex;align-items:center;gap:7px;border:1px solid {{ pickerToggleBorder }};border-radius:999px;padding:6px 12px;background:{{ pickerToggleBg }};color:{{ pickerToggleColor }};font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:800;cursor:pointer;">{{ pickerToggleLabel }}</button></div>
+        <div style="overflow:auto;padding:10px 12px;display:grid;gap:8px;">
+          <sc-for list="{{ pickerRecipes }}" as="r" hint-placeholder-count="6">
+            <button type="button" onClick="{{ r.onPick }}" style="display:flex;align-items:center;gap:12px;text-align:left;border:1px solid {{ r.border }};border-radius:11px;background:{{ r.bg }};padding:11px 13px;cursor:pointer;font-family:inherit;opacity:{{ r.opacity }};" style-hover="border-color:#b5942f;"><span style="width:36px;height:36px;flex:none;border-radius:9px;background:{{ r.tile }};display:flex;align-items:center;justify-content:center;color:{{ r.dot }};font-size:18px;">{{ r.glyph }}</span><span style="flex:1;min-width:0;"><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;color:#1b2c45;line-height:1.1;">{{ r.name }}</strong><small style="font-family:'DM Sans',sans-serif;font-size:11px;color:#8a7c5e;">⏱ {{ r.time }} · serves {{ r.servings }}</small></span><span style="display:inline-flex;align-items:center;gap:5px;border:1px solid {{ r.dot }};color:{{ r.dot }};border-radius:999px;padding:3px 9px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:800;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:{{ r.dot }};"></span>{{ r.levelLabel }}</span><span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;color:#4a5a31;display:{{ r.fitDisplay }};">fits today</span></button>
+          </sc-for>
+        </div>
+        <div style="padding:12px 16px;border-top:1px solid #e7dcc0;display:flex;justify-content:space-between;gap:10px;"><button type="button" onClick="{{ onClearMeal }}" style="border:1px solid #e7dcc0;border-radius:9px;background:#f8f0dd;color:#6e2f2a;padding:9px 14px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.82rem;cursor:pointer;display:{{ pickerClearDisplay }};">Clear this meal</button><button type="button" onClick="{{ onPickerNewRecipe }}" style="border:1px solid #b5942f;border-radius:9px;background:#fff;color:#102a4c;padding:9px 14px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.82rem;cursor:pointer;margin-left:auto;">＋ New recipe</button><button type="button" onClick="{{ onClosePicker }}" style="border:1px solid #e7dcc0;border-radius:9px;background:#fdf9ef;color:#102a4c;padding:9px 16px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.82rem;cursor:pointer;">Done</button></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- RECIPE DETAIL MODAL -->
+  <sc-if value="{{ detailOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onCloseDetail }}" style="position:fixed;inset:0;z-index:200;background:rgba(6,21,34,.5);display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px);">
+      <div onClick="{{ stop }}" style="width:min(540px,100%);max-height:88vh;display:flex;flex-direction:column;background:#fdf9ef;border:1px solid rgba(201,162,91,.5);border-radius:18px;overflow:hidden;box-shadow:0 30px 70px rgba(6,21,34,.4);animation:mealsPop .2s ease;">
+        <div style="height:120px;background:repeating-linear-gradient(135deg,{{ detailBgA }},{{ detailBgA }} 14px,{{ detailBgB }} 14px,{{ detailBgB }} 28px);display:flex;align-items:center;justify-content:center;color:{{ detailDot }};font-size:44px;position:relative;">{{ detailGlyph }}<button type="button" onClick="{{ onCloseDetail }}" style="position:absolute;top:12px;right:12px;width:32px;height:32px;border:1px solid rgba(201,162,91,.5);border-radius:50%;background:rgba(253,249,239,.9);color:#1b2c45;cursor:pointer;font-size:16px;">×</button></div>
+        <div style="padding:18px 22px;overflow:auto;">
+          <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:#1b2c45;line-height:1.02;">{{ detailName }}</strong>
+          <div style="display:flex;align-items:center;gap:9px;margin-top:9px;"><span style="display:inline-flex;align-items:center;gap:6px;border:1px solid {{ detailDot }};color:{{ detailDot }};border-radius:999px;padding:3px 10px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;"><span style="width:7px;height:7px;border-radius:50%;background:{{ detailDot }};"></span>{{ detailLevelLabel }}</span><span style="font-family:'DM Sans',sans-serif;font-size:12px;color:#8a7c5e;">⏱ {{ detailTime }} · serves {{ detailServings }} · {{ detailTypeLabel }}</span></div>
+          <p style="margin:13px 0 0;color:#33405a;font-size:.96rem;line-height:1.5;font-family:'EB Garamond',Georgia,serif;font-style:italic;">{{ detailNote }}</p>
+          <div style="margin-top:16px;color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">Ingredients</div>
+          <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:7px;"><sc-for list="{{ detailIngredients }}" as="ing" hint-placeholder-count="5"><span style="border:1px solid #e7dcc0;border-radius:8px;background:#f8f0dd;padding:6px 11px;font-family:'DM Sans',sans-serif;font-size:.85rem;color:#1b2c45;">{{ ing }}</span></sc-for></div>
+          <div style="margin-top:18px;padding-top:14px;border-top:1px solid #e7dcc0;"><div style="color:#b5942f;font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;margin-bottom:9px;">Add to the week</div><div style="display:flex;flex-wrap:wrap;gap:7px;"><sc-for list="{{ detailDayChips }}" as="d" hint-placeholder-count="7"><button type="button" onClick="{{ d.onClick }}" style="display:grid;justify-items:center;gap:1px;border:1px solid {{ d.border }};border-radius:10px;background:{{ d.bg }};padding:8px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;" style-hover="border-color:#b5942f;"><strong style="font-size:12px;color:{{ d.color }};">{{ d.weekday }}</strong><small style="font-size:10px;color:#8a7c5e;">{{ d.short }}</small></button></sc-for></div><p style="margin:9px 0 0;color:#8a7c5e;font-size:.78rem;font-family:'DM Sans',sans-serif;">Adds to <strong style="color:#4a5a31;">{{ detailMealLabel }}</strong> on the day you choose.</p></div>
+          <button type="button" onClick="{{ onDeleteRecipe }}" style="display:{{ detailDeleteDisplay }};align-items:center;gap:6px;margin-top:14px;border:1px solid #e7dcc0;border-radius:9px;background:#f8f0dd;color:#6e2f2a;padding:9px 14px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.82rem;cursor:pointer;">🗑 Remove from my library</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- EVENT MODAL -->
+  <sc-if value="{{ eventOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onCloseEvent }}" style="position:fixed;inset:0;z-index:210;background:rgba(6,21,34,.5);display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px);">
+      <div onClick="{{ stop }}" style="width:min(520px,100%);max-height:90vh;display:flex;flex-direction:column;background:#fdf9ef;border:1px solid rgba(201,162,91,.5);border-radius:18px;overflow:hidden;box-shadow:0 30px 70px rgba(6,21,34,.4);animation:mealsPop .2s ease;">
+        <div style="padding:18px 20px;background:linear-gradient(135deg,#061522,#112b43);color:#fffaf0;display:flex;align-items:center;justify-content:space-between;"><strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">{{ eventModalTitle }}</strong><button type="button" onClick="{{ onCloseEvent }}" style="width:32px;height:32px;border:1px solid rgba(201,162,91,.4);border-radius:50%;background:rgba(255,255,255,.08);color:#fffaf0;cursor:pointer;font-size:16px;">×</button></div>
+        <div style="overflow:auto;padding:18px 20px;display:grid;gap:15px;">
+          <div><div style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;margin-bottom:7px;">Type</div><div style="display:flex;gap:8px;flex-wrap:wrap;"><sc-for list="{{ eventTypeChips }}" as="t" hint-placeholder-count="3"><button type="button" onClick="{{ t.onClick }}" style="display:inline-flex;align-items:center;gap:7px;border:1px solid {{ t.border }};border-radius:10px;background:{{ t.bg }};color:{{ t.color }};padding:9px 14px;font-family:'DM Sans',sans-serif;font-size:.86rem;font-weight:700;cursor:pointer;"><span style="width:9px;height:9px;border-radius:50%;background:{{ t.dot }};"></span>{{ t.label }}</button></sc-for></div></div>
+          <label style="display:grid;gap:7px;"><span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;">Title</span><input type="text" value="{{ eventTitle }}" onInput="{{ onEventTitle }}" placeholder="e.g. Co-op nature museum" style="min-height:46px;border:1px solid #e7dcc0;border-radius:9px;padding:0 14px;background:#fffdf8;color:#1b2c45;font:500 .95rem 'DM Sans',sans-serif;" /></label>
+          <div><div style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;margin-bottom:7px;">Day</div><div style="display:flex;gap:6px;flex-wrap:wrap;"><sc-for list="{{ eventDayChips }}" as="d" hint-placeholder-count="7"><button type="button" onClick="{{ d.onClick }}" style="display:grid;justify-items:center;gap:1px;border:1px solid {{ d.border }};border-radius:9px;background:{{ d.bg }};padding:7px 11px;cursor:pointer;font-family:'DM Sans',sans-serif;"><strong style="font-size:12px;color:{{ d.color }};">{{ d.weekday }}</strong><small style="font-size:10px;color:#8a7c5e;">{{ d.short }}</small></button></sc-for></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <label style="display:grid;gap:7px;"><span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;">Time</span><input type="text" value="{{ eventTime }}" onInput="{{ onEventTime }}" placeholder="e.g. 1:00 PM" style="min-height:46px;border:1px solid #e7dcc0;border-radius:9px;padding:0 14px;background:#fffdf8;color:#1b2c45;font:500 .95rem 'DM Sans',sans-serif;" /></label>
+            <label style="display:grid;gap:7px;"><span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;">Who</span><input type="text" value="{{ eventWho }}" onInput="{{ onEventWho }}" placeholder="e.g. Anna" style="min-height:46px;border:1px solid #e7dcc0;border-radius:9px;padding:0 14px;background:#fffdf8;color:#1b2c45;font:500 .95rem 'DM Sans',sans-serif;" /></label>
+          </div>
+          <label style="display:grid;gap:7px;"><span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;">Note</span><input type="text" value="{{ eventNote }}" onInput="{{ onEventNote }}" placeholder="Optional — what to bring, etc." style="min-height:46px;border:1px solid #e7dcc0;border-radius:9px;padding:0 14px;background:#fffdf8;color:#1b2c45;font:500 .95rem 'DM Sans',sans-serif;" /></label>
+          <div style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:.82rem;color:#33405a;background:rgba(52,80,122,.07);border:1px solid rgba(52,80,122,.2);border-radius:9px;padding:10px 12px;"><span style="width:22px;height:22px;flex:none;display:grid;place-items:center;border-radius:5px;background:#fff;color:#1a73e8;font-weight:900;font-size:12px;">G</span>{{ eventSyncNote }}</div>
+        </div>
+        <div style="padding:12px 16px;border-top:1px solid #e7dcc0;display:flex;justify-content:space-between;gap:10px;"><button type="button" onClick="{{ onDeleteEvent }}" style="border:1px solid #e7dcc0;border-radius:9px;background:#f8f0dd;color:#6e2f2a;padding:10px 14px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.84rem;cursor:pointer;display:{{ eventDeleteDisplay }};">Delete</button><div style="display:flex;gap:10px;margin-left:auto;"><button type="button" onClick="{{ onCloseEvent }}" style="border:1px solid #e7dcc0;border-radius:9px;background:#fdf9ef;color:#102a4c;padding:10px 16px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.84rem;cursor:pointer;">Cancel</button><button type="button" onClick="{{ onSaveEvent }}" style="border:1px solid #b5942f;border-radius:9px;background:#102a4c;color:#fff;padding:10px 20px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.84rem;cursor:pointer;">Save event</button></div></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- GOOGLE SYNC MODAL -->
+  <sc-if value="{{ googleOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onCloseGoogle }}" style="position:fixed;inset:0;z-index:210;background:rgba(6,21,34,.5);display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px);">
+      <div onClick="{{ stop }}" style="width:min(520px,100%);max-height:90vh;display:flex;flex-direction:column;background:#fdf9ef;border:1px solid rgba(201,162,91,.5);border-radius:18px;overflow:hidden;box-shadow:0 30px 70px rgba(6,21,34,.4);animation:mealsPop .2s ease;">
+        <div style="padding:18px 20px;background:linear-gradient(135deg,#061522,#112b43);color:#fffaf0;display:flex;align-items:center;gap:12px;"><span style="width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:9px;background:#fff;color:#1a73e8;font-weight:900;font-size:19px;">G</span><div style="flex:1;"><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:23px;">Google Calendar Sync</strong><small style="color:rgba(255,253,248,.7);font-family:'DM Sans',sans-serif;font-size:.78rem;">Optional · only the Calendar events permission</small></div><button type="button" onClick="{{ onCloseGoogle }}" style="width:32px;height:32px;border:1px solid rgba(201,162,91,.4);border-radius:50%;background:rgba(255,255,255,.08);color:#fffaf0;cursor:pointer;font-size:16px;">×</button></div>
+        <div style="overflow:auto;padding:18px 20px;display:grid;gap:14px;">
+          <sc-if value="{{ googleConnected }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:12px;border:1px solid rgba(74,90,49,.32);background:rgba(74,90,49,.08);border-radius:12px;padding:13px 15px;"><span style="width:40px;height:40px;border-radius:50%;background:#4a5a31;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-weight:900;">SK</span><div style="flex:1;"><strong style="display:block;font-family:'DM Sans',sans-serif;font-size:.92rem;color:#1b2c45;">{{ googleEmail }}</strong><small style="font-family:'DM Sans',sans-serif;font-size:.8rem;color:#4a5a31;font-weight:700;">● Connected · last synced {{ googleLast }}</small></div></div>
+            <div><div style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;margin-bottom:8px;">What syncs to your calendar</div><div style="display:grid;gap:8px;"><sc-for list="{{ googleLayers }}" as="l" hint-placeholder-count="5"><button type="button" onClick="{{ l.onToggle }}" style="display:flex;align-items:center;gap:11px;border:1px solid {{ l.border }};border-radius:10px;background:{{ l.bg }};padding:11px 13px;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;"><span style="width:20px;height:20px;flex:none;border-radius:5px;border:1.5px solid {{ l.boxColor }};background:{{ l.boxBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;">{{ l.check }}</span><span style="flex:1;"><strong style="display:block;font-size:.9rem;color:#1b2c45;">{{ l.label }}</strong><small style="font-size:.78rem;color:#8a7c5e;">{{ l.desc }}</small></span></button></sc-for></div></div>
+            <div style="display:flex;gap:10px;"><button type="button" onClick="{{ onSyncNow }}" style="flex:1;border:1px solid #b5942f;border-radius:9px;background:#102a4c;color:#fff;padding:11px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.86rem;cursor:pointer;">Sync now</button><button type="button" onClick="{{ onDisconnectGoogle }}" style="border:1px solid #e7dcc0;border-radius:9px;background:#f8f0dd;color:#6e2f2a;padding:11px 16px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.86rem;cursor:pointer;">Disconnect</button></div>
+            <p style="margin:0;color:#8a7c5e;font-family:'DM Sans',sans-serif;font-size:.78rem;line-height:1.45;">AGAPAY checks previously synced events to prevent duplicates. It never sells your data or uses it for advertising. You can disconnect or revoke access anytime.</p>
+          </sc-if>
+          <sc-if value="{{ googleDisconnected }}" hint-placeholder-val="{{ true }}">
+            <p style="margin:0;color:#33405a;font-family:'EB Garamond',serif;font-size:1.02rem;line-height:1.55;">Connect Google Calendar to send selected <strong>lesson blocks, term dates, feast &amp; fast days, appointments,</strong> and reminders to your family calendar — so the whole household sees the week on every phone.</p>
+            <div style="display:grid;gap:8px;">
+              <sc-for list="{{ googleLayers }}" as="l" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:11px;border:1px solid #e7dcc0;border-radius:10px;background:#fffdf8;padding:11px 13px;"><span style="color:#b5942f;">✓</span><span><strong style="display:block;font-family:'DM Sans',sans-serif;font-size:.9rem;color:#1b2c45;">{{ l.label }}</strong><small style="font-family:'DM Sans',sans-serif;font-size:.78rem;color:#8a7c5e;">{{ l.desc }}</small></span></div></sc-for>
+            </div>
+            <button type="button" onClick="{{ onConnectGoogle }}" style="display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid #dadce0;border-radius:10px;background:#fff;color:#3c4043;padding:13px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.92rem;cursor:pointer;"><span style="width:22px;height:22px;display:grid;place-items:center;color:#1a73e8;font-weight:900;font-size:15px;">G</span>Connect Google Calendar</button>
+            <p style="margin:0;color:#8a7c5e;font-family:'DM Sans',sans-serif;font-size:.78rem;line-height:1.45;">AGAPAY requests only the Calendar events permission. Calendar connection is optional; the planner works fully without it.</p>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- RECIPE EDITOR MODAL -->
+  <sc-if value="{{ recipeEditorOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onCloseRecipeEditor }}" style="position:fixed;inset:0;z-index:215;background:rgba(6,21,34,.5);display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px);">
+      <div onClick="{{ stop }}" style="width:min(540px,100%);max-height:90vh;display:flex;flex-direction:column;background:#fdf9ef;border:1px solid rgba(201,162,91,.5);border-radius:18px;overflow:hidden;box-shadow:0 30px 70px rgba(6,21,34,.4);animation:mealsPop .2s ease;">
+        <div style="padding:18px 20px;background:linear-gradient(135deg,#061522,#112b43);color:#fffaf0;display:flex;align-items:center;justify-content:space-between;"><div><div style="color:#c8a24a;font-family:'DM Sans',sans-serif;font-size:10.5px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">Recipe library</div><strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">Add a recipe</strong></div><button type="button" onClick="{{ onCloseRecipeEditor }}" style="width:32px;height:32px;border:1px solid rgba(201,162,91,.4);border-radius:50%;background:rgba(255,255,255,.08);color:#fffaf0;cursor:pointer;font-size:16px;">×</button></div>
+        <div style="overflow:auto;padding:18px 20px;display:grid;gap:15px;">
+          <label style="display:grid;gap:7px;"><span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;">Recipe name</span><input type="text" value="{{ recipeName }}" onInput="{{ onRecipeName }}" placeholder="e.g. Grandma's white bean soup" style="min-height:46px;border:1px solid #e7dcc0;border-radius:9px;padding:0 14px;background:#fffdf8;color:#1b2c45;font:500 .95rem 'DM Sans',sans-serif;" /></label>
+          <div><div style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;margin-bottom:7px;">Meal</div><div style="display:flex;gap:7px;flex-wrap:wrap;"><sc-for list="{{ recipeTypeChips }}" as="t" hint-placeholder-count="4"><button type="button" onClick="{{ t.onClick }}" style="border:1px solid {{ t.border }};border-radius:999px;background:{{ t.bg }};color:{{ t.color }};padding:8px 15px;font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:700;cursor:pointer;">{{ t.label }}</button></sc-for></div></div>
+          <div><div style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;margin-bottom:7px;">Fasting level</div><div style="display:flex;gap:7px;flex-wrap:wrap;"><sc-for list="{{ recipeLevelChips }}" as="l" hint-placeholder-count="4"><button type="button" onClick="{{ l.onClick }}" style="display:inline-flex;align-items:center;gap:6px;border:1px solid {{ l.border }};border-radius:999px;background:{{ l.bg }};color:{{ l.color }};padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:700;cursor:pointer;"><span style="width:8px;height:8px;border-radius:50%;background:{{ l.dot }};"></span>{{ l.label }}</button></sc-for></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <label style="display:grid;gap:7px;"><span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;">Time</span><input type="text" value="{{ recipeTime }}" onInput="{{ onRecipeTime }}" placeholder="e.g. 30 min" style="min-height:46px;border:1px solid #e7dcc0;border-radius:9px;padding:0 14px;background:#fffdf8;color:#1b2c45;font:500 .95rem 'DM Sans',sans-serif;" /></label>
+            <label style="display:grid;gap:7px;"><span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;">Serves</span><input type="text" value="{{ recipeServings }}" onInput="{{ onRecipeServings }}" placeholder="e.g. 4" style="min-height:46px;border:1px solid #e7dcc0;border-radius:9px;padding:0 14px;background:#fffdf8;color:#1b2c45;font:500 .95rem 'DM Sans',sans-serif;" /></label>
+          </div>
+          <div><div style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;margin-bottom:7px;">Icon</div><div style="display:flex;gap:6px;flex-wrap:wrap;"><sc-for list="{{ recipeGlyphs }}" as="g" hint-placeholder-count="10"><button type="button" onClick="{{ g.onClick }}" style="width:42px;height:42px;border:1px solid {{ g.border }};border-radius:10px;background:{{ g.bg }};font-size:20px;cursor:pointer;">{{ g.glyph }}</button></sc-for></div></div>
+          <label style="display:grid;gap:7px;"><span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;">Ingredients <span style="color:#8a7c5e;text-transform:none;letter-spacing:0;font-weight:600;">— separate with commas</span></span><input type="text" value="{{ recipeIngredients }}" onInput="{{ onRecipeIngredients }}" placeholder="white beans, onion, sage, olive oil" style="min-height:46px;border:1px solid #e7dcc0;border-radius:9px;padding:0 14px;background:#fffdf8;color:#1b2c45;font:500 .95rem 'DM Sans',sans-serif;" /></label>
+          <label style="display:grid;gap:7px;"><span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#b5942f;">Note <span style="color:#8a7c5e;text-transform:none;letter-spacing:0;font-weight:600;">— optional</span></span><input type="text" value="{{ recipeNote }}" onInput="{{ onRecipeNote }}" placeholder="A word about when to serve it" style="min-height:46px;border:1px solid #e7dcc0;border-radius:9px;padding:0 14px;background:#fffdf8;color:#1b2c45;font:500 .95rem 'DM Sans',sans-serif;" /></label>
+        </div>
+        <div style="padding:12px 18px;border-top:1px solid #e7dcc0;display:flex;justify-content:flex-end;gap:10px;"><button type="button" onClick="{{ onCloseRecipeEditor }}" style="border:1px solid #e7dcc0;border-radius:9px;background:#fdf9ef;color:#102a4c;padding:10px 16px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.84rem;cursor:pointer;">Cancel</button><button type="button" onClick="{{ onSaveRecipe }}" style="border:1px solid #b5942f;border-radius:9px;background:#102a4c;color:#fff;padding:10px 20px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.84rem;cursor:pointer;">Save recipe</button></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- FEAST PLANNER MODAL -->
+  <sc-if value="{{ feastOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onCloseFeast }}" style="position:fixed;inset:0;z-index:210;background:rgba(6,21,34,.5);display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px);">
+      <div onClick="{{ stop }}" style="width:min(620px,100%);max-height:90vh;display:flex;flex-direction:column;background:#fdf9ef;border:1px solid rgba(201,162,91,.5);border-radius:18px;overflow:hidden;box-shadow:0 30px 70px rgba(6,21,34,.4);animation:mealsPop .2s ease;">
+        <div style="padding:20px 22px;background:radial-gradient(circle at 88% 0%,rgba(201,162,91,.32),transparent 16rem),linear-gradient(135deg,#061522,#112b43);color:#fffaf0;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+            <div><div style="display:flex;align-items:center;gap:8px;color:#c8a24a;font-family:'DM Sans',sans-serif;font-size:10.5px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">✥ {{ feastRank }}</div><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:28px;margin-top:3px;line-height:1.02;">{{ feastName }}</strong><span style="font-family:'DM Sans',sans-serif;font-size:.84rem;color:rgba(255,253,248,.78);">{{ feastDate }} · {{ feastAllow }}</span></div>
+            <button type="button" onClick="{{ onCloseFeast }}" style="width:32px;height:32px;flex:none;border:1px solid rgba(201,162,91,.4);border-radius:50%;background:rgba(255,255,255,.08);color:#fffaf0;cursor:pointer;font-size:16px;">×</button>
+          </div>
+        </div>
+        <div style="overflow:auto;padding:18px 22px;display:grid;gap:18px;">
+          <div><p style="margin:0 0 8px;color:#33405a;font-size:.96rem;line-height:1.5;">{{ feastBlurb }}</p><p style="margin:0;padding:11px 14px;border-left:3px solid #b5942f;background:rgba(181,148,47,.07);border-radius:0 9px 9px 0;color:#1b2c45;font-family:'Cormorant Garamond',serif;font-size:1.12rem;font-style:italic;line-height:1.35;">{{ feastTroparion }}</p></div>
+
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="color:#b5942f;">☖</span><span style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;color:#b5942f;">The festal table</span></div>
+            <div style="display:grid;gap:8px;">
+              <sc-for list="{{ feastFood }}" as="f" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:10px;border:1px solid {{ f.border }};border-radius:10px;background:{{ f.bg }};padding:9px 11px;">
+                  <button type="button" onClick="{{ f.onToggle }}" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;border:none;background:none;cursor:pointer;text-align:left;font-family:inherit;"><span style="width:20px;height:20px;flex:none;border-radius:5px;border:1.5px solid {{ f.boxColor }};background:{{ f.boxBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;">{{ f.check }}</span><span style="font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;color:#1b2c45;">{{ f.label }}</span></button>
+                  <button type="button" onClick="{{ f.onAdd }}" style="display:{{ f.addDisplay }};align-items:center;gap:4px;border:1px solid #b5942f;border-radius:7px;background:#fff;color:#102a4c;padding:5px 10px;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:800;cursor:pointer;white-space:nowrap;">＋ Sat dinner</button>
+                </div>
+              </sc-for>
+              <sc-for list="{{ feastFoodExtra }}" as="x" hint-placeholder-count="0">
+                <div style="display:flex;align-items:center;gap:10px;border:1px solid #cfe0cf;border-radius:10px;background:rgba(74,90,49,.06);padding:9px 11px;"><span style="width:20px;height:20px;flex:none;border-radius:5px;background:#4a5a31;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</span><span style="flex:1;font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;color:#1b2c45;">{{ x.label }}</span><button type="button" onClick="{{ x.onRemove }}" style="width:24px;height:24px;border:none;border-radius:50%;background:rgba(110,47,42,.12);color:#6e2f2a;cursor:pointer;font-size:14px;">×</button></div>
+              </sc-for>
+              <div style="display:flex;gap:8px;"><input type="text" value="{{ feastFoodInput }}" onInput="{{ onFeastFoodInput }}" placeholder="Add a festal dish…" style="flex:1;min-height:42px;border:1px solid #e7dcc0;border-radius:9px;padding:0 12px;background:#fffdf8;color:#1b2c45;font:500 .9rem 'DM Sans',sans-serif;" /><button type="button" onClick="{{ onAddFeastFood }}" style="border:1px solid #b5942f;background:#102a4c;color:#fff;border-radius:9px;padding:0 16px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.84rem;cursor:pointer;">Add</button></div>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="color:#b5942f;">✦</span><span style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;color:#b5942f;">Crafts &amp; activities</span></div>
+            <div style="display:grid;gap:8px;">
+              <sc-for list="{{ feastCrafts }}" as="c" hint-placeholder-count="4">
+                <button type="button" onClick="{{ c.onToggle }}" style="display:flex;align-items:center;gap:10px;border:1px solid {{ c.border }};border-radius:10px;background:{{ c.bg }};padding:9px 11px;cursor:pointer;text-align:left;font-family:inherit;"><span style="width:20px;height:20px;flex:none;border-radius:5px;border:1.5px solid {{ c.boxColor }};background:{{ c.boxBg }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;">{{ c.check }}</span><span style="font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;color:#1b2c45;">{{ c.label }}</span></button>
+              </sc-for>
+              <sc-for list="{{ feastCraftExtra }}" as="x" hint-placeholder-count="0">
+                <div style="display:flex;align-items:center;gap:10px;border:1px solid #cfe0cf;border-radius:10px;background:rgba(74,90,49,.06);padding:9px 11px;"><span style="width:20px;height:20px;flex:none;border-radius:5px;background:#4a5a31;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</span><span style="flex:1;font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;color:#1b2c45;">{{ x.label }}</span><button type="button" onClick="{{ x.onRemove }}" style="width:24px;height:24px;border:none;border-radius:50%;background:rgba(110,47,42,.12);color:#6e2f2a;cursor:pointer;font-size:14px;">×</button></div>
+              </sc-for>
+              <div style="display:flex;gap:8px;"><input type="text" value="{{ feastCraftInput }}" onInput="{{ onFeastCraftInput }}" placeholder="Add a craft or activity…" style="flex:1;min-height:42px;border:1px solid #e7dcc0;border-radius:9px;padding:0 12px;background:#fffdf8;color:#1b2c45;font:500 .9rem 'DM Sans',sans-serif;" /><button type="button" onClick="{{ onAddFeastCraft }}" style="border:1px solid #b5942f;background:#102a4c;color:#fff;border-radius:9px;padding:0 16px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.84rem;cursor:pointer;">Add</button></div>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="color:#b5942f;">♥</span><span style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;color:#b5942f;">Helping hands</span></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
+              <sc-for list="{{ feastTasks }}" as="t" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:10px;border:1px solid #e7dcc0;border-radius:10px;background:#fffdf8;padding:9px 11px;"><span style="width:32px;height:32px;flex:none;border-radius:50%;background:{{ t.color }};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:800;">{{ t.initial }}</span><span style="min-width:0;"><strong style="display:block;font-family:'DM Sans',sans-serif;font-size:.84rem;color:#1b2c45;">{{ t.who }}</strong><small style="font-family:'DM Sans',sans-serif;font-size:.78rem;color:#8a7c5e;">{{ t.task }}</small></span></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="padding:12px 18px;border-top:1px solid #e7dcc0;display:flex;align-items:center;justify-content:space-between;gap:10px;"><span style="font-family:'DM Sans',sans-serif;font-size:.84rem;font-weight:700;color:#4a5a31;">{{ feastSummary }}</span><div style="display:flex;gap:10px;"><button type="button" onClick="{{ onPrint }}" style="border:1px solid #e7dcc0;border-radius:9px;background:#fdf9ef;color:#102a4c;padding:10px 14px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.84rem;cursor:pointer;">▣ Print</button><button type="button" onClick="{{ onCloseFeast }}" style="border:1px solid #b5942f;border-radius:9px;background:#102a4c;color:#fff;padding:10px 20px;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.84rem;cursor:pointer;">Done</button></div></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- PRINTABLE (adapts to active section) -->
+  <div data-print-menu style="padding:8px;font-family:'EB Garamond',Georgia,serif;color:#1b2c45;">
+    <div style="text-align:center;border-bottom:2px solid #b5942f;padding-bottom:10px;margin-bottom:14px;"><div style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.2em;font-weight:800;text-transform:uppercase;color:#b5942f;">Stephanie's Household · AGAPAY Learn</div><div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:600;">{{ printTitle }}</div><div style="font-style:italic;color:#6e2f2a;">November 15 – 21 · Nativity Fast</div></div>
+    <sc-if value="{{ sMeals }}" hint-placeholder-val="{{ true }}"><sc-for list="{{ printDays }}" as="pd" hint-placeholder-count="7"><div style="display:grid;grid-template-columns:150px 1fr;gap:12px;border-bottom:1px solid #e7dcc0;padding:9px 0;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:20px;">{{ pd.weekday }}</strong><div style="font-size:12px;color:#6e2f2a;font-style:italic;">{{ pd.tag }}</div><div style="font-size:12px;color:#8a7c5e;">{{ pd.feast }}</div></div><div style="font-size:14px;line-height:1.7;"><strong>Breakfast:</strong> {{ pd.breakfast }}<br/><strong>Lunch:</strong> {{ pd.lunch }}<br/><strong>Dinner:</strong> {{ pd.dinner }}</div></div></sc-for></sc-if>
+    <sc-if value="{{ sLessons }}" hint-placeholder-val="{{ false }}"><sc-for list="{{ printLessons }}" as="pd" hint-placeholder-count="7"><div style="display:grid;grid-template-columns:150px 1fr;gap:12px;border-bottom:1px solid #e7dcc0;padding:9px 0;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:20px;">{{ pd.weekday }}</strong><div style="font-size:12px;color:#6e2f2a;font-style:italic;">{{ pd.tag }}</div><div style="font-size:12px;color:#8a7c5e;">{{ pd.feast }}</div></div><div style="font-size:14px;line-height:1.7;"><strong>Morning Time:</strong> {{ pd.morning }}<br/><sc-for list="{{ pd.forms }}" as="fm" hint-placeholder-count="2"><strong>{{ fm.label }}:</strong> {{ fm.work }}<br/></sc-for></div></div></sc-for></sc-if>
+    <sc-if value="{{ sChores }}" hint-placeholder-val="{{ false }}"><sc-for list="{{ printChores }}" as="pd" hint-placeholder-count="7"><div style="display:grid;grid-template-columns:150px 1fr;gap:12px;border-bottom:1px solid #e7dcc0;padding:9px 0;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:20px;">{{ pd.weekday }}</strong><div style="font-size:12px;color:#6e2f2a;font-style:italic;">{{ pd.tag }}</div></div><div style="font-size:14px;line-height:1.7;"><strong>Everyone:</strong> {{ pd.everyone }}<br/><sc-for list="{{ pd.kids }}" as="kid" hint-placeholder-count="4"><strong>{{ kid.name }}:</strong> {{ kid.task }}<br/></sc-for></div></div></sc-for></sc-if>
+    <sc-if value="{{ sEvents }}" hint-placeholder-val="{{ false }}"><sc-for list="{{ printEvents }}" as="pd" hint-placeholder-count="7"><div style="display:grid;grid-template-columns:150px 1fr;gap:12px;border-bottom:1px solid #e7dcc0;padding:9px 0;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:20px;">{{ pd.weekday }}</strong><div style="font-size:12px;color:#6e2f2a;font-style:italic;">{{ pd.feast }}</div></div><div style="font-size:14px;line-height:1.7;">{{ pd.summary }}</div></div></sc-for></sc-if>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:860}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.LV={strict:0,oilwine:1,fish:2,rich:3};
+    this.LEVELS={
+      strict:{label:'Strict',color:'#6e2f2a',bg:'rgba(110,47,42,.10)',tile:'rgba(110,47,42,.12)',bgB:'rgba(110,47,42,.05)'},
+      oilwine:{label:'Wine & oil',color:'#4a5a31',bg:'rgba(74,90,49,.10)',tile:'rgba(74,90,49,.12)',bgB:'rgba(74,90,49,.05)'},
+      fish:{label:'Fish',color:'#34507a',bg:'rgba(52,80,122,.10)',tile:'rgba(52,80,122,.12)',bgB:'rgba(52,80,122,.05)'},
+      rich:{label:'Fast-free',color:'#b5942f',bg:'rgba(181,148,47,.12)',tile:'rgba(181,148,47,.16)',bgB:'rgba(181,148,47,.06)'}
+    };
+    // Sunday-first week, Nov 15–21 2026, Nativity Fast
+    this.DAYS=[
+      {key:'d0',weekday:'Sun',long:'Sunday',   short:'Nov 15',date:15,level:'fish',   feast:'Nativity Fast begins', tag:'Sunday · fish', sunday:true, school:'Church & rest'},
+      {key:'d1',weekday:'Mon',long:'Monday',   short:'Nov 16',date:16,level:'oilwine',feast:'Apostle Matthew',       tag:'Fast · wine & oil', school:'Morning Time · Math'},
+      {key:'d2',weekday:'Tue',long:'Tuesday',  short:'Nov 17',date:17,level:'fish',   feast:'St Gregory the Wonderworker', tag:'Fish allowed', school:'Co-op · Science'},
+      {key:'d3',weekday:'Wed',long:'Wednesday',short:'Nov 18',date:18,level:'strict', feast:'Martyr Plato',          tag:'Strict fast', isToday:true, school:'History · Art'},
+      {key:'d4',weekday:'Thu',long:'Thursday', short:'Nov 19',date:19,level:'fish',   feast:'Prophet Obadiah',       tag:'Fish allowed', school:'Math · Nature'},
+      {key:'d5',weekday:'Fri',long:'Friday',   short:'Nov 20',date:20,level:'oilwine',feast:'Forefeast of the Entrance', tag:'Fast · wine & oil', school:'Composer · Tidy'},
+      {key:'d6',weekday:'Sat',long:'Saturday', short:'Nov 21',date:21,level:'fish',   feast:'Entrance of the Theotokos', tag:'Great Feast', feastDay:true, school:'Feast prep'}
+    ];
+    this.MEALS=[{key:'breakfast',label:'Breakfast',sub:'Morning'},{key:'lunch',label:'Lunch',sub:'Midday'},{key:'dinner',label:'Dinner',sub:'Evening'}];
+    this.R={
+      b1:{name:'Lenten Oatmeal, Apple & Cinnamon',types:['breakfast'],level:'strict',time:'10 min',servings:4,glyph:'🥣',ingredients:['Rolled oats','Apple','Cinnamon','Maple syrup','Raisins'],note:'Warm, sweet and simple — no oil needed, so it suits even the strictest fast days.'},
+      b2:{name:'Avocado & Tomato Toast',types:['breakfast'],level:'oilwine',time:'8 min',servings:4,glyph:'🥑',ingredients:['Sourdough','Avocado','Tomato','Olive oil','Lemon'],note:'A drizzle of olive oil makes this perfect for wine-and-oil days.'},
+      b3:{name:'Tahini, Banana & Honey Toast',types:['breakfast'],level:'oilwine',time:'7 min',servings:4,glyph:'🍯',ingredients:['Bread','Tahini','Banana','Honey'],note:'Naturally rich and filling for hungry mornings.'},
+      b4:{name:'Smoked Salmon on Rye',types:['breakfast'],level:'fish',time:'10 min',servings:4,glyph:'🐟',ingredients:['Rye bread','Smoked salmon','Dill','Capers','Lemon'],note:'A treat for fish days and feasts.'},
+      b5:{name:'Yogurt, Honey & Walnuts',types:['breakfast'],level:'rich',time:'5 min',servings:4,glyph:'🥛',ingredients:['Greek yogurt','Honey','Walnuts'],note:'Dairy — save for fast-free days and feasts.'},
+      l1:{name:'Lentil Soup (Fakes)',types:['lunch','dinner'],level:'strict',time:'35 min',servings:6,glyph:'🍲',ingredients:['Brown lentils','Onion','Carrot','Bay leaf','Tomato paste'],note:'The classic Lenten soup. Add a swirl of olive oil if the day allows.'},
+      l2:{name:'Hummus & Veggie Pita',types:['lunch'],level:'oilwine',time:'15 min',servings:4,glyph:'🫓',ingredients:['Pita','Chickpeas','Tahini','Cucumber','Tomato','Olive oil'],note:'Make-ahead friendly and loved by little hands.'},
+      l3:{name:'Roasted Vegetable Orzo',types:['lunch','dinner'],level:'oilwine',time:'30 min',servings:5,glyph:'🥗',ingredients:['Orzo','Zucchini','Pepper','Onion','Olive oil','Herbs'],note:'Bright and hearty; good warm or cold.'},
+      l4:{name:'Sardines & Greens on Toast',types:['lunch'],level:'fish',time:'12 min',servings:4,glyph:'🐟',ingredients:['Sardines','Sourdough','Greens','Parsley','Lemon'],note:'Quick protein for a fish day.'},
+      l5:{name:'Greek Salad with Feta',types:['lunch','dinner'],level:'rich',time:'15 min',servings:4,glyph:'🧀',ingredients:['Tomato','Cucumber','Feta','Olives','Red onion','Olive oil'],note:'The feta makes this a fast-free day dish.'},
+      d1:{name:'Gigantes — Greek Baked Beans',types:['dinner'],level:'oilwine',time:'60 min',servings:6,glyph:'🫘',ingredients:['Giant beans','Tomato','Onion','Olive oil','Dill'],note:'Slow-baked comfort for a wine-and-oil evening.'},
+      d2:{name:'Stuffed Peppers, Rice & Herbs',types:['dinner'],level:'oilwine',time:'70 min',servings:6,glyph:'🫑',ingredients:['Bell peppers','Rice','Onion','Herbs','Tomato','Olive oil'],note:'A table-filling dinner the children can help stuff.'},
+      d3:{name:'Mushroom Stew over Polenta',types:['dinner'],level:'oilwine',time:'45 min',servings:5,glyph:'🍄',ingredients:['Mushrooms','Polenta','Onion','Garlic','Thyme','Olive oil'],note:'Deep and savoury — no one misses the meat.'},
+      d4:{name:'Baked Cod, Lemon & Potatoes',types:['dinner'],level:'fish',time:'50 min',servings:5,glyph:'🐟',ingredients:['Cod','Potatoes','Lemon','Olive oil','Oregano'],note:'A gentle one-pan fish supper.'},
+      d5:{name:'Pan-Seared Trout, Rice Pilaf',types:['dinner'],level:'fish',time:'35 min',servings:4,glyph:'🐟',ingredients:['Trout','Rice','Almonds','Herbs','Lemon'],note:'Lovely for the feast of the Entrance.'},
+      d8:{name:'Chickpea & Vegetable Stew',types:['lunch','dinner'],level:'strict',time:'40 min',servings:6,glyph:'🍲',ingredients:['Chickpeas','Tomato','Carrot','Celery','Onion','Cumin'],note:'Hearty without a drop of oil — a faithful friend on strict days.'},
+      d9:{name:'Herb-Roasted Salmon & Greens',types:['dinner'],level:'fish',time:'35 min',servings:5,glyph:'🐟',ingredients:['Salmon','Greens','Lemon','Olive oil','Dill'],note:'Bright and quick for a fish day.'},
+      d6:{name:'Roast Chicken & Lemon Potatoes',types:['dinner'],level:'rich',time:'80 min',servings:6,glyph:'🍗',ingredients:['Chicken','Potatoes','Lemon','Oregano','Olive oil'],note:'Save for a fast-free Sunday or a great feast.'},
+      d7:{name:'Spanakopita',types:['dinner'],level:'rich',time:'60 min',servings:8,glyph:'🥧',ingredients:['Phyllo','Spinach','Feta','Eggs','Olive oil'],note:'Cheese and egg — a fast-free day favourite.'},
+      s1:{name:'Olive & Herb Bread',types:['sweet'],level:'oilwine',time:'40 min',servings:8,glyph:'🥖',ingredients:['Flour','Olives','Rosemary','Olive oil','Yeast'],note:'Fills the house with the smell of supper.'},
+      s2:{name:'Semolina Halva',types:['sweet'],level:'oilwine',time:'25 min',servings:8,glyph:'🍮',ingredients:['Semolina','Sugar','Olive oil','Cinnamon','Walnuts'],note:'A traditional fasting sweet — no dairy required.'},
+      s3:{name:'Chocolate Olive-Oil Cake',types:['sweet'],level:'oilwine',time:'45 min',servings:10,glyph:'🍫',ingredients:['Flour','Cocoa','Olive oil','Sugar'],note:'Surprisingly moist and entirely fast-friendly.'},
+      s4:{name:'Walnut Baklava',types:['sweet'],level:'rich',time:'90 min',servings:12,glyph:'🍯',ingredients:['Phyllo','Walnuts','Honey','Butter'],note:'A feast-day treat worth the effort.'}
+    };
+    this.AISLES=[
+      {name:'Produce',glyph:'🥬',keys:['apple','banana','tomato','cucumber','avocado','onion','carrot','pepper','peppers','zucchini','potato','potatoes','lemon','garlic','dill','parsley','herbs','greens','spinach','mushrooms','olives','celery','rosemary','thyme','oregano','raisins','red onion']},
+      {name:'Fish & Protein',glyph:'🐟',keys:['salmon','smoked salmon','cod','trout','sardines','chickpeas','lentils','brown lentils','beans','giant beans','eggs','chicken']},
+      {name:'Dairy',glyph:'🧀',keys:['yogurt','greek yogurt','feta','butter']},
+      {name:'Bakery',glyph:'🥖',keys:['bread','sourdough','rye bread','pita','phyllo','flour']},
+      {name:'Pantry',glyph:'🫙',keys:['oats','rolled oats','cinnamon','maple syrup','honey','tahini','olive oil','rice','orzo','polenta','tomato paste','bay leaf','capers','walnuts','almonds','semolina','sugar','cocoa','cumin','yeast']}
+    ];
+    this.SETUP={
+      calendar:'New Calendar',grouping:'Forms',
+      enrichment:['Morning Prayers','Hymn of the Month','Saint of the Day','Family Read-Aloud','Catechism','Composer Study','Recitation'],
+      forms:[
+        {id:'f1',label:'Form I',color:'#4a5a31',children:['Lucy','Sam'],subjects:['Phonics & Reading','Math','Copywork','Nature Study']},
+        {id:'f2',label:'Form II',color:'#34507a',children:['Anna','Theo'],subjects:['Math','Grammar & Composition','Ancient History','Latin','Science','Geography']}
+      ]
+    };
+    this.KIDS=[
+      {name:'Anna',color:'#34507a',chores:['Wash dishes','Vacuum living room','Help cook dinner','Fold laundry','Wipe counters']},
+      {name:'Theo',color:'#6e2f2a',chores:['Sweep kitchen','Take out recycling','Set the table','Feed the cat','Tidy the entry']},
+      {name:'Lucy',color:'#4a5a31',chores:['Tidy the toys','Water the plants','Wipe the table','Dust the shelves','Make her bed']},
+      {name:'Sam',color:'#b5942f',chores:['Put away shoes','Fold the napkins','Pick up books','Help feed the cat','Make his bed']}
+    ];
+    this.ETYPES={'Appointment':'#34507a','Field trip':'#4a5a31','Extracurricular':'#b5942f'};
+    this.MONTH_FEASTS=[
+      {id:'archangels',day:'8',name:'Synaxis of the Holy Archangels',rank:'Feast',plan:false},
+      {id:'chrysostom',day:'13',name:'St John Chrysostom',rank:'Commemoration',plan:false},
+      {id:'entrance',day:'21',name:'Entrance of the Theotokos',rank:'Great Feast · fish, wine & oil',plan:true},
+      {id:'andrew',day:'30',name:'Apostle Andrew the First-Called',rank:'Feast',plan:false}
+    ];
+    this.FEAST={
+      id:'entrance', dateLong:'Saturday, November 21', name:'Entrance of the Theotokos', rank:'Great Feast within the Nativity Fast', allow:'Fish, wine & oil are blessed',
+      blurb:'The three-year-old Mary is brought to the Temple in Jerusalem and received by the priest Zacharias — the living Temple of God entering the house of God. A joyful feast that lifts the Nativity Fast for a day.',
+      troparion:'Today is the prelude of the good pleasure of God, and the proclamation of the salvation of mankind. The Virgin appears openly in the Temple of God, foretelling Christ to all.',
+      food:[{id:'f1',label:'Pan-Seared Trout & Rice Pilaf',recipe:'d5'},{id:'f2',label:'Greek Salad with Feta',recipe:'l5'},{id:'f3',label:'Festal bread (artoklasia)',recipe:null},{id:'f4',label:'Walnut Baklava',recipe:'s4'}],
+      crafts:[{id:'c1',label:'Craft: Mary entering the Temple (cut & paste)'},{id:'c2',label:'Color the festal icon page'},{id:'c3',label:'Bake the festal bread together'},{id:'c4',label:'Dress the icon corner with flowers & a candle'}],
+      tasks:[{who:'Anna',task:'Help cook the trout'},{who:'Theo',task:'Set the festal table'},{who:'Lucy',task:'Lead the craft with the little ones'},{who:'Sam',task:'Pick flowers for the icon corner'}]
+    };
+    const saved=this.load();
+    this.state={
+      view:'week', scope:'meals', selectedDay:'d3', tab:'plan', integration:'dedicated',
+      plan: saved.plan || {
+        'd0-breakfast':'b4','d0-lunch':'l3','d0-dinner':'d4',
+        'd1-breakfast':'b3','d1-lunch':'l2','d1-dinner':'d1',
+        'd2-breakfast':'b1','d2-lunch':'l4','d2-dinner':'d9',
+        'd3-breakfast':'b1','d3-lunch':'l1','d3-dinner':'d8',
+        'd4-breakfast':'b4','d4-lunch':'l3','d4-dinner':'d4',
+        'd5-breakfast':'b2','d5-lunch':'l1','d5-dinner':'d2',
+        'd6-breakfast':'b4','d6-lunch':'l4','d6-dinner':'d5'
+      },
+      pantry: saved.pantry || ['Olive oil','Sea salt','Rice','Onion','Garlic','Brown lentils','Rolled oats','Honey','Flour','Lemon'],
+      pantryInput:'', groceryChecked: saved.groceryChecked || {},
+      userRecipes: saved.userRecipes || {},
+      recipeEditor:{open:false}, recipeDraft:{name:'',type:'dinner',level:'oilwine',time:'30 min',servings:4,ingredients:'',note:'',glyph:'🍲'},
+      manualGroceries: saved.manualGroceries || [], groceryInput:{},
+      picker:{open:false,dayKey:null,meal:null,fastingOnly:true},
+      detail:{open:false,id:null}, recipeFilter:{type:'all',level:'all'},
+      events: saved.events || [
+        {id:'e1',type:'Appointment',title:'Dentist — Theo',dayKey:'d1',time:'10:00 AM',who:'Theo',note:'Cleaning'},
+        {id:'e2',type:'Field trip',title:'Co-op nature museum',dayKey:'d2',time:'9:30 AM',who:'All children',note:'Pack bag lunches'},
+        {id:'e3',type:'Extracurricular',title:'Piano lesson — Anna',dayKey:'d3',time:'4:00 PM',who:'Anna',note:''},
+        {id:'e4',type:'Extracurricular',title:'Soccer practice',dayKey:'d4',time:'5:30 PM',who:'Theo & Lucy',note:''},
+        {id:'e5',type:'Appointment',title:'Confession (Vigil)',dayKey:'d5',time:'6:00 PM',who:'Family',note:'Before the feast'}
+      ],
+      eventModal:{open:false,id:null}, eventDraft:{type:'Appointment',title:'',dayKey:'d3',time:'',who:'Family',note:''},
+      feast:{open:false}, feastInput:{food:'',craft:''},
+      feastPlan: saved.feastPlan || {food:{f1:true,f2:true,f4:true}, crafts:{c1:true,c3:true}, extraFood:[], extraCraft:[]},
+      google: saved.google || {open:false,connected:false,email:'stephanie.k@gmail.com',last:'',layers:{lessons:true,terms:true,feasts:true,events:true,chores:false}}
+    };
+  }
+  load(){ try{ return JSON.parse(localStorage.getItem('agapay.planner.v2'))||{}; }catch(e){ return {}; } }
+  save(){ try{ const s=this.state; localStorage.setItem('agapay.planner.v2', JSON.stringify({plan:s.plan,pantry:s.pantry,groceryChecked:s.groceryChecked,events:s.events,feastPlan:s.feastPlan,userRecipes:s.userRecipes,manualGroceries:s.manualGroceries,google:{...s.google,open:false}})); }catch(e){} }
+  rank(l){ return this.LV[l]; }
+  day(k){ return this.DAYS.find(d=>d.key===k)||{}; }
+  recipe(id){ if(!id)return null; return this.R[id] || (this.state.userRecipes&&this.state.userRecipes[id]) || null; }
+  allR(){ return {...this.R, ...(this.state.userRecipes||{})}; }
+  rName(dayKey,meal){ return (this.recipe(this.state.plan[`${dayKey}-${meal}`])||{}).name||'—'; }
+
+  setView(v){ this.setState({view:v, ...(v==='month'?{tab:'plan'}:{})}); }
+  openDay(k){ this.setState({view:'day',selectedDay:k}); }
+  openEventOnDay(dk){ this.setState({eventModal:{open:true,id:null},eventDraft:{type:'Appointment',title:'',dayKey:dk,time:'',who:'Family',note:''}}); }
+  setScope(v){ this.setState({scope:v}); }
+  setSelectedDay(k){ this.setState({selectedDay:k}); }
+  setTab(t){ this.setState({tab:t}); }
+  setIntegration(v){ this.setState({integration:v}); }
+  openPicker(dayKey,meal){ this.setState({picker:{open:true,dayKey,meal,fastingOnly:true}}); }
+  closePicker(){ this.setState({picker:{...this.state.picker,open:false}}); }
+  toggleFastingOnly(){ this.setState({picker:{...this.state.picker,fastingOnly:!this.state.picker.fastingOnly}}); }
+  pick(id){ const p=this.state.picker; if(!p.dayKey)return; this.setState({plan:{...this.state.plan,[`${p.dayKey}-${p.meal}`]:id},picker:{...p,open:false}},()=>this.save()); }
+  clearMeal(){ const p=this.state.picker; if(!p.dayKey)return; const plan={...this.state.plan}; delete plan[`${p.dayKey}-${p.meal}`]; this.setState({plan,picker:{...p,open:false}},()=>this.save()); }
+  openDetail(id){ this.setState({detail:{open:true,id}}); }
+  closeDetail(){ this.setState({detail:{open:false,id:null}}); }
+  addFromDetail(dayKey){ const id=this.state.detail.id; const r=this.recipe(id); if(!r)return; const meal=r.types.includes('breakfast')?'breakfast':r.types.includes('lunch')?'lunch':'dinner'; this.setState({plan:{...this.state.plan,[`${dayKey}-${meal}`]:id},detail:{open:false,id:null},view:'week',scope:'meals',tab:'plan'},()=>this.save()); }
+  planFeast(){ this.setState({plan:{...this.state.plan,'d6-breakfast':'b4','d6-lunch':'l4','d6-dinner':'d5'}},()=>this.save()); }
+  openFeast(){ this.setState({feast:{open:true}}); }
+  closeFeast(){ this.setState({feast:{open:false}}); }
+  toggleFeast(kind,id){ const fp=this.state.feastPlan; this.setState({feastPlan:{...fp,[kind]:{...fp[kind],[id]:!fp[kind][id]}}},()=>this.save()); }
+  setFeastInput(kind,v){ this.setState({feastInput:{...this.state.feastInput,[kind]:v}}); }
+  addFeastExtra(kind){ const key=kind==='food'?'extraFood':'extraCraft'; const v=(this.state.feastInput[kind]||'').trim(); if(!v)return; const fp=this.state.feastPlan; this.setState({feastPlan:{...fp,[key]:[...(fp[key]||[]),v]},feastInput:{...this.state.feastInput,[kind]:''}},()=>this.save()); }
+  removeFeastExtra(kind,i){ const key=kind==='food'?'extraFood':'extraCraft'; const fp=this.state.feastPlan; this.setState({feastPlan:{...fp,[key]:(fp[key]||[]).filter((_,x)=>x!==i)}},()=>this.save()); }
+  addFeastFoodToPlan(recipe){ if(!recipe)return; this.setState({plan:{...this.state.plan,'d6-dinner':recipe}},()=>this.save()); }
+  setFilter(k,v){ this.setState({recipeFilter:{...this.state.recipeFilter,[k]:v}}); }
+  openRecipeEditor(){ this.setState({recipeEditor:{open:true}, recipeDraft:{name:'',type:'dinner',level:'oilwine',time:'30 min',servings:4,ingredients:'',note:'',glyph:'🍲'}}); }
+  closeRecipeEditor(){ this.setState({recipeEditor:{open:false}}); }
+  setRecipeField(k,v){ this.setState({recipeDraft:{...this.state.recipeDraft,[k]:v}}); }
+  saveRecipe(){ const d=this.state.recipeDraft; if(!(d.name||'').trim()){ this.closeRecipeEditor(); return; } const id='u'+Date.now(); const rec={name:d.name.trim(),types:[d.type],level:d.level,time:(d.time||'').trim()||'30 min',servings:Number(d.servings)||4,glyph:d.glyph||'🍲',ingredients:(d.ingredients||'').split(',').map(s=>s.trim()).filter(Boolean),note:(d.note||'').trim()||'A family recipe.',custom:true}; this.setState({userRecipes:{...(this.state.userRecipes||{}),[id]:rec},recipeEditor:{open:false}},()=>this.save()); }
+  deleteUserRecipe(id){ const ur={...(this.state.userRecipes||{})}; delete ur[id]; this.setState({userRecipes:ur},()=>this.save()); }
+  setGroceryInput(aisle,v){ this.setState({groceryInput:{...this.state.groceryInput,[aisle]:v}}); }
+  addGrocery(aisle){ const v=((this.state.groceryInput||{})[aisle]||'').trim(); if(!v)return; const item={id:'g'+Date.now(),aisle,label:v}; this.setState({manualGroceries:[...(this.state.manualGroceries||[]),item],groceryInput:{...this.state.groceryInput,[aisle]:''}},()=>this.save()); }
+  removeGrocery(id){ this.setState({manualGroceries:(this.state.manualGroceries||[]).filter(g=>g.id!==id)},()=>this.save()); }
+  onPantryInput(e){ this.setState({pantryInput:e.target.value}); }
+  addPantry(){ const v=(this.state.pantryInput||'').trim(); if(!v)return; this.setState({pantry:[...this.state.pantry,v],pantryInput:''},()=>this.save()); }
+  removePantry(i){ this.setState({pantry:this.state.pantry.filter((_,x)=>x!==i)},()=>this.save()); }
+  toggleGrocery(k){ this.setState({groceryChecked:{...this.state.groceryChecked,[k]:!this.state.groceryChecked[k]}},()=>this.save()); }
+  doPrint(){ window.print(); }
+  // events
+  openEvent(id){ const ev = id ? this.state.events.find(e=>e.id===id) : null; const draft = ev ? {...ev} : {type:'Appointment',title:'',dayKey:this.state.selectedDay||'d1',time:'',who:'Family',note:''}; this.setState({eventModal:{open:true,id:id||null},eventDraft:draft}); }
+  closeEvent(){ this.setState({eventModal:{open:false,id:null}}); }
+  setEvent(k,v){ this.setState({eventDraft:{...this.state.eventDraft,[k]:v}}); }
+  saveEvent(){ const d=this.state.eventDraft; if(!(d.title||'').trim()){ this.closeEvent(); return; } let events; if(this.state.eventModal.id){ events=this.state.events.map(e=>e.id===this.state.eventModal.id?{...d,id:e.id}:e); } else { events=[...this.state.events,{...d,id:'e'+Date.now()}]; } this.setState({events,eventModal:{open:false,id:null}},()=>this.save()); }
+  deleteEvent(){ const id=this.state.eventModal.id; if(!id){ this.closeEvent(); return; } this.setState({events:this.state.events.filter(e=>e.id!==id),eventModal:{open:false,id:null}},()=>this.save()); }
+  // google
+  openGoogle(){ this.setState({google:{...this.state.google,open:true}}); }
+  closeGoogle(){ this.setState({google:{...this.state.google,open:false}}); }
+  connectGoogle(){ this.setState({google:{...this.state.google,connected:true,last:'just now'}},()=>this.save()); }
+  disconnectGoogle(){ this.setState({google:{...this.state.google,connected:false,last:''}},()=>this.save()); }
+  syncNow(){ this.setState({google:{...this.state.google,last:'just now'}},()=>this.save()); }
+  toggleLayer(k){ const g=this.state.google; this.setState({google:{...g,layers:{...g.layers,[k]:!g.layers[k]}}},()=>this.save()); }
+
+  groceryData(){
+    const counts={};
+    Object.values(this.state.plan).forEach(id=>{ const r=this.recipe(id); if(!r)return; r.ingredients.forEach(ing=>{ const k=ing.toLowerCase(); if(!counts[k])counts[k]={label:ing}; }); });
+    const pantryLower=this.state.pantry.map(p=>p.toLowerCase());
+    const inPantry=(k)=>pantryLower.some(p=>p===k||p.includes(k)||k.includes(p));
+    const aisleFor=(k)=>{ for(const a of this.AISLES){ if(a.keys.some(key=>k===key||k.includes(key)))return a.name; } return 'Pantry'; };
+    const groups=this.AISLES.map(a=>({name:a.name,glyph:a.glyph,items:[]})); const byName={}; groups.forEach(g=>byName[g.name]=g);
+    Object.entries(counts).forEach(([k,v])=>{ byName[aisleFor(k)].items.push({key:k,label:v.label,have:inPantry(k)}); });
+    (this.state.manualGroceries||[]).forEach(g=>{ const grp=byName[g.aisle]||byName['Pantry']; grp.items.push({key:g.id,label:g.label,have:false,manual:true,id:g.id}); });
+    groups.forEach(g=>g.items.sort((a,b)=>a.label.localeCompare(b.label)));
+    return groups;
+  }
+
+  renderVals(){
+    const S=this.state, LEV=this.LEVELS, SETUP=this.SETUP, KIDS=this.KIDS, ET=this.ETYPES;
+    const inFirstThree=['day','week','month'].includes(S.view);
+    let scope=S.scope; if(!inFirstThree&&(scope==='meals'||scope==='chores')) scope='lessons';
+    const isDay=S.view==='day',isWeek=S.view==='week',isMonth=S.view==='month',isTerm=S.view==='term',isYear=S.view==='year';
+    const sLessons=scope==='lessons',sMeals=scope==='meals',sChores=scope==='chores',sEvents=scope==='events';
+
+    // ---------- shared week computations ----------
+    const wIdx={d1:0,d2:1,d3:2,d4:3,d5:4};
+    const pairFor=(arr,i)=>{ if(!arr.length)return '—'; const a=arr[(i*2)%arr.length],b=arr[(i*2+1)%arr.length]; return a===b?a:`${a} · ${b}`; };
+    const morningText=(d)=>(d.key in wIdx)?pairFor(SETUP.enrichment,wIdx[d.key]):(d.feastDay?'Vigil & Festal Prep':'Church & Rest');
+    const formText=(f,d)=>(d.key in wIdx)?pairFor(f.subjects,wIdx[d.key]):(d.feastDay?'Feast — no formal work':'Church & Rest');
+    const choreText=(c,d)=>(d.key in wIdx)?c.chores[wIdx[d.key]]:(d.feastDay?'Festal cleaning':'Rest');
+    const everyoneText=(d)=>(d.key in wIdx)?'Evening 10-min tidy':(d.feastDay?'Prepare for the Feast':'Family rest');
+    const gridCell=(content,d)=>{ const rest=(content==='—'||content==='Church & Rest'||content==='Rest'||content==='Family rest'); const fest=/Feast|Festal|Vigil/.test(content); return {colBg:d.feastDay?'rgba(181,148,47,.05)':(d.sunday?'#fbf5e8':'transparent'),title:content,titleColor:rest?'#a99a72':(fest?'#6e2f2a':'#1b2c45')}; };
+
+    const days=this.DAYS.map(d=>{ const m=LEV[d.level]; return {weekday:d.weekday,shortDate:d.short,feast:d.feast,mark:d.feastDay?'✥':(d.sunday?'☩':'·'),markColor:d.feastDay?'#b5942f':(d.sunday?'#6e2f2a':'#b5942f'),headBg:d.feastDay?'rgba(181,148,47,.1)':(d.sunday?'#f9f1df':'transparent'),feastColor:d.feastDay?'#b5942f':'#1b2c45',tag:d.tag,tagColor:m.color,tagBorder:m.color,tagBg:m.bg,school:d.school,schoolDisplay:(S.integration==='woven')?'block':'none'}; });
+    const weekRows=this.MEALS.map(meal=>({label:meal.label,sub:meal.sub,cells:this.DAYS.map(d=>{ const id=S.plan[`${d.key}-${meal.key}`]; const r=this.recipe(id); const m=r?LEV[r.level]:null; return {onClick:()=>this.openPicker(d.key,meal.key),colBg:d.feastDay?'rgba(181,148,47,.05)':(d.sunday?'#fbf5e8':'transparent'),border:r?'#e7dcc0':'#e0d4b6',bg:r?'#fffdf8':'rgba(248,240,221,.5)',dot:m?m.color:'transparent',dotDisplay:r?'block':'none',name:r?r.name:'＋ Add',nameColor:r?'#1b2c45':'#a99a72',meta:r?`${LEV[r.level].label} · ${r.time}`:'',metaDisplay:r?'block':'none'}; })}));
+    const lessonRows=[{color:'#b5942f',label:'Morning Time',sub:'All children',cells:this.DAYS.map(d=>gridCell(morningText(d),d))}].concat(SETUP.forms.map(f=>({color:f.color,label:f.label,sub:f.children.join(', '),cells:this.DAYS.map(d=>gridCell(formText(f,d),d))})));
+    const setupForms=SETUP.forms.map(f=>({color:f.color,initials:f.children.map(n=>n[0]).join(''),label:f.label,children:f.children.join(' & '),subjectCount:`${f.subjects.length} subjects`}));
+    const setupSummary=`${SETUP.forms.reduce((n,f)=>n+f.children.length,0)} children · ${SETUP.forms.length} Forms · ${SETUP.calendar}`;
+    const choresRows=[{color:'#102a4c',label:'Everyone',sub:'Together',cells:this.DAYS.map(d=>gridCell(everyoneText(d),d))}].concat(KIDS.map(c=>({color:c.color,label:c.name,sub:'',cells:this.DAYS.map(d=>gridCell(choreText(c,d),d))})));
+    const choreKids=KIDS.map(c=>({name:c.name,color:c.color,count:`${c.chores.length} jobs`}));
+
+    // ---------- events ----------
+    const evColor=(t)=>ET[t]||'#8a7c5e';
+    const gConnected=S.google.connected, gEventsOn=S.google.layers.events;
+    const syncMeta=()=> (gConnected&&gEventsOn)?{syncLabel:'◐ Synced',syncColor:'#4a5a31'}:{syncLabel:'',syncColor:'#8a7c5e'};
+    const eventsForDay=(k)=>S.events.filter(e=>e.dayKey===k).sort((a,b)=>String(a.time).localeCompare(String(b.time)));
+    const eventsByDay=this.DAYS.map(d=>{ const items=eventsForDay(d.key); return {weekday:d.long,shortDate:d.short,feast:d.feast,emptyDisplay:items.length?'none':'block',items:items.map(e=>{ const sm=syncMeta(); return {time:e.time||'—',title:e.title,type:e.type,who:e.who,color:evColor(e.type),onClick:()=>this.openEvent(e.id),syncLabel:sm.syncLabel,syncColor:sm.syncColor}; })}; });
+    const eventsCount=S.events.length;
+    const googleSyncLine = gConnected ? `Syncing to ${S.google.email}` : 'Not synced to Google';
+
+    // ---------- intro / scope ----------
+    const introByScope={
+      meals:{icon:'☖',kicker:'Family Planner · Household Kitchen',title:'Meals for the Week',desc:"Plan breakfast, lunch, and dinner alongside the Church year. AGAPAY gently notes each day's fast so your menu can follow the calendar — never a rule to obey, just a hand to hold."},
+      lessons:{icon:'▤',kicker:'Family Planner · Lessons & Forms',title:'The Family Week',desc:'Morning Time and Form work for all four children, drawn straight from your household Setup and set against the liturgical week.'},
+      chores:{icon:'✦',kicker:'Family Planner · Household Chores',title:'Helping Hands',desc:'A gentle rotation of age-fitting chores for each child, on the same week as lessons and meals — and ready to print for the fridge.'},
+      events:{icon:'◷',kicker:'Family Planner · Calendar',title:'Appointments & Events',desc:'Field trips, lessons out of the house, doctor visits, and activities — on the same family calendar as school and meals, and ready to sync to Google.'}
+    };
+    const im=introByScope[scope]||introByScope.meals;
+    const crumbMap={lessons:'Lessons',meals:'Meals',chores:'Chores',events:'Events'};
+    const viewLabelMap={day:'Day',week:'Week',month:'Month',term:'Term',year:'Year'};
+    const rangeLabel = isDay ? this.day(S.selectedDay).long+' · '+this.day(S.selectedDay).short : isMonth ? 'November 2026' : isTerm ? 'Michaelmas Term' : isYear ? '2026 – 2027' : 'Sun Nov 15 – Sat Nov 21';
+
+    const out={
+      // nav + chrome
+      navScopes:[['lessons','Lessons & Forms','▤'],['meals','Meals','☖'],['chores','Chores','✦'],['events','Events','◷']].map(([k,l,g])=>{ const on=scope===k; return {label:l,glyph:g,onClick:()=>this.setScope(k),border:on?'rgba(200,162,74,.3)':'transparent',bg:on?'rgba(200,162,74,.1)':'transparent',color:on?'#f6f1e8':'rgba(246,241,232,.78)',weight:on?'700':'600'}; }),
+      crumb:`${viewLabelMap[S.view]} · ${crumbMap[scope]}`,
+      introIcon:im.icon, introKicker:im.kicker, introTitle:im.title, introDesc:im.desc,
+      rangeLabel, scopeNote: sMeals?'Planning the table':sLessons?'Lessons from your Setup':sChores?'Who helps with what':'Appointments & activities',
+      printLabel: sLessons?'Print lessons':sChores?'Print chores':sEvents?'Print calendar':'Print menu',
+      printTitle: sLessons?'Our Lessons This Week':sChores?'Our Chore Chart':sEvents?'Our Week Calendar':'Our Week at the Table',
+      onPrint:()=>this.doPrint(), onAddEvent:()=>this.openEvent(null), onOpenGoogle:()=>this.openGoogle(), stop:(e)=>e.stopPropagation(),
+      // view + scope switchers
+      viewTabs:[['day','Day'],['week','Week'],['month','Month'],['term','Term'],['year','Year']].map(([k,l])=>({label:l,onClick:()=>this.setView(k),bg:S.view===k?'#102a4c':'transparent',color:S.view===k?'#fff':'#1b2c45'})),
+      scopeTabs:[['lessons','Lessons','▤'],['meals','Meals','☖'],['chores','Chores','✦'],['events','Events','◷']].filter(([k])=>inFirstThree||k==='lessons'||k==='events').map(([k,l,g])=>({label:l,glyph:g,onClick:()=>this.setScope(k),bg:scope===k?'#102a4c':'transparent',color:scope===k?'#fff':'#1b2c45'})),
+      scopeLockedNote: !inFirstThree,
+      // booleans
+      isDay,isWeek,isMonth,isTerm,isYear, sLessons,sMeals,sChores,sEvents,
+      lessonsWeek:sLessons&&isWeek, choresWeek:sChores&&isWeek, eventsWeek:sEvents&&isWeek,
+      mealsToolsVisible:sMeals&&(isWeek||isMonth), isPlanTool:S.tab==='plan'&&isWeek,
+      fullIntro:isDay, compactIntro:!isDay,
+      mealsPlanWeek:sMeals&&isWeek&&S.tab==='plan', mealsRecipes:sMeals&&isWeek&&S.tab==='recipes', mealsGroceries:sMeals&&isWeek&&S.tab==='groceries', mealsPantry:sMeals&&isWeek&&S.tab==='pantry',
+      dayLessons:sLessons&&isDay, dayMeals:sMeals&&isDay, dayChores:sChores&&isDay, dayEvents:sEvents&&isDay,
+      // shared data
+      days, weekRows, lessonRows, setupForms, setupSummary, choresRows, choreKids,
+      isWoven:S.integration==='woven',
+      mealTools:[['plan','Plan'],['recipes','Recipes'],['groceries','Groceries'],['pantry','Pantry']].map(([k,l])=>({label:l,onClick:()=> (k!=='plan'&&isMonth)?this.setState({view:'week',tab:k}):this.setTab(k),bg:(isMonth?(k==='plan'):(S.tab===k))?'#102a4c':'transparent',color:(isMonth?(k==='plan'):(S.tab===k))?'#fff':'#1b2c45'})),
+      integrationTabs:[['dedicated','Meals only'],['woven','In school week']].map(([k,l])=>({label:l,onClick:()=>this.setIntegration(k),bg:S.integration===k?'#102a4c':'transparent',color:S.integration===k?'#fff':'#1b2c45'})),
+      onPlanFeast:()=>this.openFeast(),
+      eventsByDay, eventsCountLabel:`${eventsCount} this week`, googleSyncLine,
+      // google chrome
+      googleStatus: gConnected?'Connected':'Not connected', googleStatusColor: gConnected?'#8fd19e':'rgba(246,241,232,.6)', googleDot: gConnected?'#7bb47f':'#8a7c5e',
+      // pantry
+      pantryItems:S.pantry.map((p,i)=>({label:p,onRemove:()=>this.removePantry(i)})), pantryInput:S.pantryInput, onAddPantry:()=>this.addPantry(), onPantryInput:(e)=>this.onPantryInput(e),
+      pickerOpen:S.picker.open, detailOpen:S.detail.open, eventOpen:S.eventModal.open, googleOpen:S.google.open, feastOpen:S.feast.open, recipeEditorOpen:S.recipeEditor.open,
+      onPickerNewRecipe:()=>this.openRecipeEditor(),
+    };
+
+    // ---------- print arrays ----------
+    out.printDays=this.DAYS.map(d=>({weekday:d.long,tag:d.tag,feast:d.feast,breakfast:this.rName(d.key,'breakfast'),lunch:this.rName(d.key,'lunch'),dinner:this.rName(d.key,'dinner')}));
+    out.printLessons=this.DAYS.map(d=>({weekday:d.long,tag:d.tag,feast:d.feast,morning:morningText(d),forms:SETUP.forms.map(f=>({label:f.label,work:formText(f,d)}))}));
+    out.printChores=this.DAYS.map(d=>({weekday:d.long,tag:d.tag,everyone:everyoneText(d),kids:KIDS.map(c=>({name:c.name,task:choreText(c,d)}))}));
+    out.printEvents=this.DAYS.map(d=>{ const items=eventsForDay(d.key); return {weekday:d.long,feast:d.feast,summary: items.length? items.map(e=>`${e.time} — ${e.title} (${e.who})`).join('  ·  ') : 'No events'}; });
+
+    // ---------- DAY view ----------
+    if(isDay){
+      const d=this.day(S.selectedDay), m=LEV[d.level], dayRank=this.rank(d.level);
+      out.daySelector=this.DAYS.map(x=>({weekday:x.weekday,shortDate:x.short,mark:x.feastDay?'✥':(x.sunday?'☩':'·'),markColor:x.feastDay?'#b5942f':(x.sunday?'#6e2f2a':'#b5942f'),onClick:()=>this.setSelectedDay(x.key),border:x.key===S.selectedDay?'#b5942f':'#e7dcc0',bg:x.key===S.selectedDay?'#fbf2dd':'#fdf9ef'}));
+      out.daySel={long:d.long,weekday:d.long,dateLabel:`${d.long}, ${d.short.replace('Nov ','November ')}`,feast:d.feast,tagText:d.tag};
+      out.dayMorning=morningText(d);
+      out.dayLessonForms=SETUP.forms.map(f=>({color:f.color,initials:f.children.map(n=>n[0]).join(''),label:f.label,children:f.children.join(' & '),work:formText(f,d)}));
+      out.dayMealCards=this.MEALS.map(meal=>{ const id=S.plan[`${d.key}-${meal.key}`]; const r=this.recipe(id); const lm=r?LEV[r.level]:null; const fits=r?this.rank(r.level)<=dayRank:false; return {meal:meal.label,onClick:()=>this.openPicker(d.key,meal.key),border:r?'#e7dcc0':'#e0d4b6',bg:r?'#fdf9ef':'rgba(248,240,221,.5)',name:r?r.name:'No dish yet',nameColor:r?'#1b2c45':'#a99a72',dot:lm?lm.color:'#b5942f',levelLabel:lm?lm.label:'',time:r?r.time:'',badgeDisplay:r?'inline-flex':'none',fitDisplay:fits?'inline':'none',action:r?'change it':'add a dish'}; });
+      const choreEveryone={name:'Everyone',color:'#102a4c',initial:'★',task:everyoneText(d),taskColor:/Rest|rest/.test(everyoneText(d))?'#a99a72':'#4a5a31'};
+      out.dayChoreCards=[choreEveryone].concat(KIDS.map(c=>{ const t=choreText(c,d); return {name:c.name,color:c.color,initial:c.name[0],task:t,taskColor:(t==='Rest')?'#a99a72':(/Festal/.test(t)?'#6e2f2a':'#4a5a31')}; }));
+      const dayEv=eventsForDay(d.key);
+      out.dayEventPills=dayEv.map(e=>({time:e.time,title:e.title,color:evColor(e.type)}));
+      out.dayEventRows=dayEv.map(e=>{ const sm=syncMeta(); return {time:e.time||'—',title:e.title,type:e.type,who:e.who,color:evColor(e.type),onClick:()=>this.openEvent(e.id),syncLabel:sm.syncLabel,syncColor:sm.syncColor}; });
+      out.dayNoEventsDisplay=dayEv.length?'none':'inline';
+    } else { out.daySelector=[];out.daySel={long:'',weekday:'',dateLabel:'',feast:'',tagText:''};out.dayMorning='';out.dayLessonForms=[];out.dayMealCards=[];out.dayChoreCards=[];out.dayEventPills=[];out.dayEventRows=[];out.dayNoEventsDisplay='none'; }
+
+    // ---------- MONTH view ----------
+    if(isMonth){
+      out.monthWeekdays=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const y=2026,mo=10, first=new Date(y,mo,1).getDay(), dim=new Date(y,mo+1,0).getDate();
+      const weekMap={15:'d0',16:'d1',17:'d2',18:'d3',19:'d4',20:'d5',21:'d6'};
+      const evByDate={}; S.events.forEach(e=>{ const dd=this.day(e.dayKey); if(dd.date){ (evByDate[dd.date]=evByDate[dd.date]||[]).push(e); } });
+      const cells=[];
+      for(let i=0;i<first;i++) cells.push({blank:true,dayNumber:'',bg:'transparent',border:'transparent',opacity:'0',numColor:'#1b2c45',todayDisplay:'none',tagDisplay:'none',fastTag:'',tagColor:'#6e2f2a',scopeDisplay:'none',scopeText:'',scopeColor:'#33405a',eventDots:[],onClick:()=>{},cursor:'default',hoverBorder:'transparent',addDisplay:'none'});
+      const monthScopeLabel = sMeals?'dinners':sChores?'chores':sEvents?'events':'lessons';
+      for(let date=1;date<=dim;date++){
+        const wd=new Date(y,mo,date).getDay(); const isSun=wd===0; const natFast=date>=15; const wf=(wd===3||wd===5); const isFeast=(date===21); const isFast=isFeast?false:(natFast||wf); const isToday=(date===18); const dk=weekMap[date];
+        let scopeText='';
+        if(sMeals){ scopeText=dk?this.rName(dk,'dinner'):''; if(scopeText==='—')scopeText=''; }
+        else if(sChores){ scopeText=(wd>=1&&wd<=6&&!isFeast)?'Chores':''; }
+        else if(sEvents){ const ev=evByDate[date]||[]; scopeText=ev.length?ev[0].title:''; }
+        else { scopeText=(wd>=1&&wd<=5&&!isFeast)?'Lessons':''; }
+        if(scopeText.length>20) scopeText=scopeText.slice(0,19)+'…';
+        const ev=evByDate[date]||[];
+        cells.push({blank:false,dayNumber:String(date),opacity:'1',
+          bg: isFeast?'rgba(181,148,47,.14)':(isFast?'rgba(110,47,42,.08)':(isSun?'rgba(181,148,47,.08)':'#fffdf8')),
+          border: isToday?'#b5942f':(isFeast?'rgba(181,148,47,.5)':(isFast?'rgba(110,47,42,.28)':'#e7dcc0')),
+          numColor: isFeast?'#b5942f':(isFast?'#6e2f2a':'#1b2c45'),
+          todayDisplay: isToday?'inline':'none',
+          tagDisplay: (isFeast||isFast)?'block':'none', fastTag: isFeast?'Entrance':(natFast?'Nativity fast':(wf?'Fast day':'')), tagColor: isFeast?'#b5942f':'#6e2f2a',
+          scopeDisplay: scopeText?'block':'none', scopeText, scopeColor: sEvents?'#34507a':'#33405a',
+          eventDots: ev.slice(0,4).map(e=>({color:evColor(e.type)})),
+          onClick: dk ? (sMeals ? ()=>this.openPicker(dk,'dinner') : sEvents ? ()=>this.openEventOnDay(dk) : ()=>this.openDay(dk)) : ()=>{},
+          cursor: dk?'pointer':'default', hoverBorder: dk?'#b5942f':(isToday?'#b5942f':(isFeast?'rgba(181,148,47,.5)':(isFast?'rgba(110,47,42,.28)':'#e7dcc0'))),
+          addDisplay: dk?'flex':'none'
+        });
+      }
+      out.monthCells=cells; out.monthScopeLabel=monthScopeLabel;
+      out.monthScopeBlurb = sMeals?'Each planned dinner shows on its day. Open the Week or Day view to plan breakfast and lunch too.':sChores?'Chore days are marked. The full rotation lives in the Week and Day views.':sEvents?'Every appointment, field trip, and activity appears on its day — coloured by type.':'School days are marked Mon–Fri. Lessons follow the liturgical week, easing for feasts and Sundays.';
+    } else { out.monthWeekdays=[];out.monthCells=[];out.monthScopeLabel='';out.monthScopeBlurb=''; }
+
+    // ---------- TERM view ----------
+    if(isTerm){
+      out.termWeeks=Array.from({length:12},(_,i)=>{ const n=i+1; const done=n<9,cur=n===9; return {n:String(n),border:cur?'#b5942f':(done?'#102a4c':'#e7dcc0'),bg:cur?'#fbf2dd':(done?'#102a4c':'#fdf9ef'),color:cur?'#102a4c':(done?'#fff':'#8a7c5e')}; });
+      const pcts={'Phonics & Reading':74,'Math':70,'Copywork':80,'Nature Study':66,'Grammar & Composition':72,'Ancient History':68,'Latin':64,'Science':70,'Geography':62};
+      const seen={}; const subs=[]; SETUP.forms.forEach(f=>f.subjects.forEach(s=>{ if(!seen[s]){ seen[s]=1; subs.push({label:s,color:f.color,pct:pcts[s]||70}); } }));
+      out.termSubjects=subs;
+      out.termEvents=[
+        {title:'Co-op nature museum',dateLabel:'Tue, Nov 17',type:'Field trip',color:'#4a5a31'},
+        {title:'Nativity Fast begins',dateLabel:'Sun, Nov 15',type:'Liturgical',color:'#6e2f2a'},
+        {title:'Entrance of the Theotokos',dateLabel:'Sat, Nov 21',type:'Great Feast',color:'#b5942f'},
+        {title:'Term ends · Nativity Break',dateLabel:'Fri, Dec 5',type:'Term date',color:'#34507a'}
+      ];
+    } else { out.termWeeks=[];out.termSubjects=[];out.termEvents=[]; }
+
+    // ---------- YEAR view ----------
+    if(isYear){
+      out.yearTerms=[
+        {tag:'Term 1 · current',name:'Michaelmas',dates:'Sep 8 – Dec 5',note:'Autumn term through the Nativity Fast.',border:'rgba(181,148,47,.5)',bg:'linear-gradient(135deg,#fffaf0,#f6ead0)',accent:'#b5942f',titleColor:'#1b2c45',dateColor:'#8a7c5e',noteColor:'#33405a'},
+        {tag:'Term 2',name:'Epiphany',dates:'Jan 7 – Mar 27',note:'Winter term through Theophany and into Lent.',border:'#e7dcc0',bg:'#fdf9ef',accent:'#b5942f',titleColor:'#1b2c45',dateColor:'#8a7c5e',noteColor:'#33405a'},
+        {tag:'Term 3',name:'Trinity',dates:'Apr 13 – Jun 19',note:'Spring term from Pascha to the close of the year.',border:'#e7dcc0',bg:'#fdf9ef',accent:'#b5942f',titleColor:'#1b2c45',dateColor:'#8a7c5e',noteColor:'#33405a'}
+      ];
+      out.yearFeasts=[
+        {date:'Sep 8',title:'Nativity of the Theotokos'},{date:'Nov 21',title:'Entrance of the Theotokos'},
+        {date:'Dec 25',title:'Nativity of Christ'},{date:'Jan 6',title:'Theophany'},
+        {date:'Apr 12',title:'Pascha'},{date:'Jun 21',title:'Pentecost'}
+      ];
+      out.yearEvents=[
+        {title:'Co-op year begins',dateLabel:'Sep 9',type:'Extracurricular',color:'#b5942f'},
+        {title:'Nativity recital',dateLabel:'Dec 20',type:'Extracurricular',color:'#b5942f'},
+        {title:'Standardized testing',dateLabel:'May 5',type:'Appointment',color:'#34507a'}
+      ];
+    } else { out.yearTerms=[];out.yearFeasts=[];out.yearEvents=[]; }
+
+    // ---------- recipes / groceries (week+meals) ----------
+    const RF=S.recipeFilter;
+    out.typeChips=[['all','All'],['breakfast','Breakfast'],['lunch','Lunch'],['dinner','Dinner'],['sweet','Sweets & sides']].map(([k,l])=>{ const on=RF.type===k; return {label:l,onClick:()=>this.setFilter('type',k),border:on?'#102a4c':'#e7dcc0',bg:on?'#102a4c':'#fdf9ef',color:on?'#fff':'#1b2c45'}; });
+    out.levelChips=[['all','All days',null],['strict','Strict','strict'],['oilwine','Wine & oil','oilwine'],['fish','Fish','fish'],['rich','Fast-free','rich']].map(([k,l,lv])=>{ const on=RF.level===k; return {label:l,onClick:()=>this.setFilter('level',k),border:on?'#102a4c':'#e7dcc0',bg:on?'#102a4c':'#fdf9ef',color:on?'#fff':'#1b2c45',dot:lv?LEV[lv].color:'transparent',dotDisplay:lv?'block':'none'}; });
+    const typeLabelFor=(r)=>r.types.includes('breakfast')?'Breakfast':r.types.includes('lunch')&&r.types.includes('dinner')?'Lunch · Dinner':r.types.includes('lunch')?'Lunch':r.types.includes('sweet')?'Sweet / side':'Dinner';
+    out.recipeCards=Object.entries(this.allR()).filter(([id,r])=>(RF.type==='all'||r.types.includes(RF.type))&&(RF.level==='all'||r.level===RF.level)).map(([id,r])=>{ const m=LEV[r.level]; return {name:r.name,glyph:r.glyph,dot:m.color,levelLabel:m.label,typeLabel:typeLabelFor(r),time:r.time,servings:r.servings,bgA:m.bg,bgB:m.bgB,customDisplay:r.custom?'inline-flex':'none',onView:()=>this.openDetail(id)}; });
+    out.onAddRecipe=()=>this.openRecipeEditor();
+    const groups=this.groceryData(); let total=0,remaining=0;
+    out.groceryGroups=groups.map(g=>({name:g.name,glyph:g.glyph,count:`${g.items.length}`,inputVal:(S.groceryInput||{})[g.name]||'',onInput:(e)=>this.setGroceryInput(g.name,e.target.value),onAdd:()=>this.addGrocery(g.name),items:g.items.map(it=>{ const checked=it.have||!!S.groceryChecked[it.key]; total++; if(!checked)remaining++; return {label:it.label,onToggle:()=>this.toggleGrocery(it.key),border:checked?'#cfe0cf':'#e7dcc0',bg:checked?'rgba(74,90,49,.06)':'#fffdf8',boxColor:checked?'#4a5a31':'#cbbd97',boxBg:checked?'#4a5a31':'transparent',check:checked?'✓':'',textColor:checked?'#8a7c5e':'#1b2c45',strike:checked?'line-through':'none',pantryDisplay:it.have?'inline':'none',removeDisplay:it.manual?'inline-flex':'none',onRemove:it.manual?()=>this.removeGrocery(it.id):()=>{}}; })}));
+    out.groceryTotal=String(total); out.groceryRemaining=String(remaining);
+
+    // ---------- picker ----------
+    const pk=S.picker;
+    if(pk.open){ const d=this.day(pk.dayKey),m=LEV[d.level],dayRank=this.rank(d.level); const mealLabel=(this.MEALS.find(x=>x.key===pk.meal)||{}).label||''; const candidates=Object.entries(this.allR()).filter(([id,r])=>r.types.includes(pk.meal)||(pk.meal==='dinner'&&r.types.includes('sweet'))); let list=candidates.map(([id,r])=>{ const lm=LEV[r.level]; const fits=this.rank(r.level)<=dayRank; return {id,r,lm,fits}; }); list.sort((a,b)=>(a.fits===b.fits)?(this.rank(a.r.level)-this.rank(b.r.level)):(a.fits?-1:1)); if(pk.fastingOnly)list=list.filter(x=>x.fits);
+      out.pickerMealLabel=mealLabel; out.pickerDayLabel=`${d.long} · ${d.short}`; out.pickerTag=`${d.feast} — ${d.tag}`; out.pickerTagColor=m.color; out.pickerTagBorder=m.color; out.pickerTagBg=m.bg;
+      out.pickerHint=pk.fastingOnly?'Showing dishes that fit today’s fast':'Showing every dish in your library';
+      out.pickerToggleLabel=pk.fastingOnly?'Showing fitting · tap for all':'Showing all · tap for fitting'; out.pickerToggleBg=pk.fastingOnly?'#102a4c':'#fdf9ef'; out.pickerToggleColor=pk.fastingOnly?'#fff':'#102a4c'; out.pickerToggleBorder=pk.fastingOnly?'#102a4c':'#e7dcc0';
+      out.pickerClearDisplay=S.plan[`${pk.dayKey}-${pk.meal}`]?'inline-block':'none';
+      out.pickerRecipes=list.map(({id,r,lm,fits})=>({name:r.name,glyph:r.glyph,time:r.time,servings:r.servings,levelLabel:lm.label,dot:lm.color,border:fits?'#e7dcc0':'#ecdfc4',bg:fits?'#fffdf8':'rgba(248,240,221,.55)',tile:lm.tile,opacity:fits?'1':'.62',fitDisplay:fits?'inline':'none',onPick:()=>this.pick(id)}));
+      out.onClosePicker=()=>this.closePicker(); out.onToggleFastingOnly=()=>this.toggleFastingOnly(); out.onClearMeal=()=>this.clearMeal();
+    } else { out.onClosePicker=()=>{};out.onToggleFastingOnly=()=>{};out.onClearMeal=()=>{};out.pickerMealLabel='';out.pickerDayLabel='';out.pickerTag='';out.pickerHint='';out.pickerToggleLabel='';out.pickerTagColor='#b5942f';out.pickerTagBorder='#b5942f';out.pickerTagBg='rgba(181,148,47,.12)';out.pickerToggleBg='#fdf9ef';out.pickerToggleColor='#102a4c';out.pickerToggleBorder='#e7dcc0';out.pickerClearDisplay='none';out.pickerRecipes=[]; }
+
+    // ---------- detail ----------
+    if(S.detail.open){ const r=this.recipe(S.detail.id),m=LEV[r.level]; const meal=r.types.includes('breakfast')?'Breakfast':r.types.includes('lunch')?'Lunch':'Dinner';
+      out.detailName=r.name;out.detailGlyph=r.glyph;out.detailDot=m.color;out.detailLevelLabel=m.label;out.detailTime=r.time;out.detailServings=String(r.servings);out.detailTypeLabel=typeLabelFor(r);out.detailNote=r.note;out.detailIngredients=r.ingredients;out.detailBgA=m.bg;out.detailBgB=m.bgB;out.detailMealLabel=meal;
+      out.detailDayChips=this.DAYS.map(d=>({weekday:d.weekday,short:d.short,onClick:()=>this.addFromDetail(d.key),border:d.feastDay?'#b5942f':'#e7dcc0',bg:d.feastDay?'rgba(181,148,47,.1)':'#fdf9ef',color:d.sunday?'#6e2f2a':'#1b2c45'}));
+      out.onCloseDetail=()=>this.closeDetail();
+      out.detailDeleteDisplay=r.custom?'inline-flex':'none'; out.onDeleteRecipe=()=>{ const id=S.detail.id; this.closeDetail(); this.deleteUserRecipe(id); };
+    } else { out.detailDeleteDisplay='none'; out.onDeleteRecipe=()=>{}; out.detailName='';out.detailGlyph='';out.detailDot='#b5942f';out.detailLevelLabel='';out.detailTime='';out.detailServings='';out.detailTypeLabel='';out.detailNote='';out.detailIngredients=[];out.detailBgA='rgba(181,148,47,.12)';out.detailBgB='rgba(181,148,47,.06)';out.detailMealLabel='';out.detailDayChips=[];out.onCloseDetail=()=>{}; }
+
+    // ---------- event modal ----------
+    if(S.eventModal.open){ const dr=S.eventDraft;
+      out.eventModalTitle=S.eventModal.id?'Edit event':'Add to calendar';
+      out.eventTypeChips=Object.keys(ET).map(t=>{ const on=dr.type===t; return {label:t,dot:ET[t],onClick:()=>this.setEvent('type',t),border:on?ET[t]:'#e7dcc0',bg:on?'rgba(181,148,47,.06)':'#fffdf8',color:'#1b2c45'}; });
+      out.eventTitle=dr.title;out.eventTime=dr.time;out.eventWho=dr.who;out.eventNote=dr.note;
+      out.eventDayChips=this.DAYS.map(d=>({weekday:d.weekday,short:d.short,onClick:()=>this.setEvent('dayKey',d.key),border:dr.dayKey===d.key?'#b5942f':'#e7dcc0',bg:dr.dayKey===d.key?'#fbf2dd':'#fffdf8',color:d.sunday?'#6e2f2a':'#1b2c45'}));
+      out.onEventTitle=(e)=>this.setEvent('title',e.target.value); out.onEventTime=(e)=>this.setEvent('time',e.target.value); out.onEventWho=(e)=>this.setEvent('who',e.target.value); out.onEventNote=(e)=>this.setEvent('note',e.target.value);
+      out.onSaveEvent=()=>this.saveEvent(); out.onDeleteEvent=()=>this.deleteEvent(); out.onCloseEvent=()=>this.closeEvent();
+      out.eventDeleteDisplay=S.eventModal.id?'inline-block':'none';
+      out.eventSyncNote = gConnected ? 'This event will sync to your Google Calendar.' : 'Connect Google Calendar to sync this to your phone.';
+    } else { out.eventModalTitle='';out.eventTypeChips=[];out.eventTitle='';out.eventTime='';out.eventWho='';out.eventNote='';out.eventDayChips=[];out.onEventTitle=()=>{};out.onEventTime=()=>{};out.onEventWho=()=>{};out.onEventNote=()=>{};out.onSaveEvent=()=>{};out.onDeleteEvent=()=>{};out.onCloseEvent=()=>{};out.eventDeleteDisplay='none';out.eventSyncNote=''; }
+
+    // ---------- google modal ----------
+    const g=S.google;
+    out.googleConnected=g.connected; out.googleDisconnected=!g.connected; out.googleEmail=g.email; out.googleLast=g.last||'—';
+    out.googleLayers=[['lessons','Lesson blocks','Morning Time & Form work'],['terms','Term dates','Start, end & breaks'],['feasts','Feast & fast days','Liturgical calendar'],['events','Appointments & events','Field trips, activities, visits'],['chores','Chore reminders','Daily rotation']].map(([k,l,desc])=>{ const on=g.layers[k]; return {label:l,desc,onToggle:()=>this.toggleLayer(k),border:on?'#cfe0cf':'#e7dcc0',bg:on?'rgba(74,90,49,.06)':'#fffdf8',boxColor:on?'#4a5a31':'#cbbd97',boxBg:on?'#4a5a31':'transparent',check:on?'✓':''}; });
+    out.onConnectGoogle=()=>this.connectGoogle(); out.onDisconnectGoogle=()=>this.disconnectGoogle(); out.onSyncNow=()=>this.syncNow(); out.onCloseGoogle=()=>this.closeGoogle();
+
+    // ---------- feasts this month ----------
+    out.monthFeasts=this.MONTH_FEASTS.map(f=>({day:f.day,name:f.name,rank:f.rank,
+      border:f.plan?'rgba(181,148,47,.5)':'#e7dcc0', bg:f.plan?'#fffaf0':'#fdf9ef', accent:f.plan?'#b5942f':'#6e2f2a',
+      planDisplay:f.plan?'inline-block':'none', planLabel:'Plan feast →', onPlan:()=>this.openFeast(),
+      btnBorder:'#b5942f', btnBg:'#102a4c', btnColor:'#fff'}));
+
+    // ---------- feast planner modal ----------
+    const FE=this.FEAST, fp=S.feastPlan;
+    if(S.feast.open){
+      out.feastName=FE.name; out.feastDate=FE.dateLong; out.feastRank=FE.rank; out.feastAllow=FE.allow; out.feastBlurb=FE.blurb; out.feastTroparion=FE.troparion;
+      const chk=(on)=>({border:on?'#cfe0cf':'#e7dcc0',bg:on?'rgba(74,90,49,.06)':'#fffdf8',boxColor:on?'#4a5a31':'#cbbd97',boxBg:on?'#4a5a31':'transparent',check:on?'✓':''});
+      out.feastFood=FE.food.map(it=>{ const on=!!fp.food[it.id]; return {label:it.label,onToggle:()=>this.toggleFeast('food',it.id),...chk(on),addDisplay:it.recipe?'inline-flex':'none',onAdd:it.recipe?()=>this.addFeastFoodToPlan(it.recipe):()=>{}}; });
+      out.feastFoodExtra=(fp.extraFood||[]).map((v,i)=>({label:v,onRemove:()=>this.removeFeastExtra('food',i)}));
+      out.feastCrafts=FE.crafts.map(it=>{ const on=!!fp.crafts[it.id]; return {label:it.label,onToggle:()=>this.toggleFeast('crafts',it.id),...chk(on)}; });
+      out.feastCraftExtra=(fp.extraCraft||[]).map((v,i)=>({label:v,onRemove:()=>this.removeFeastExtra('craft',i)}));
+      out.feastTasks=FE.tasks.map(t=>{ const k=this.KIDS.find(x=>x.name===t.who)||{color:'#102a4c'}; return {who:t.who,task:t.task,color:k.color,initial:t.who[0]}; });
+      out.feastFoodInput=S.feastInput.food; out.feastCraftInput=S.feastInput.craft;
+      out.onFeastFoodInput=(e)=>this.setFeastInput('food',e.target.value); out.onFeastCraftInput=(e)=>this.setFeastInput('craft',e.target.value);
+      out.onAddFeastFood=()=>this.addFeastExtra('food'); out.onAddFeastCraft=()=>this.addFeastExtra('craft'); out.onCloseFeast=()=>this.closeFeast();
+      const fc=FE.food.filter(x=>fp.food[x.id]).length+(fp.extraFood||[]).length, cc=FE.crafts.filter(x=>fp.crafts[x.id]).length+(fp.extraCraft||[]).length;
+      out.feastSummary=`${fc} dishes · ${cc} crafts planned`;
+    } else { out.feastName='';out.feastDate='';out.feastRank='';out.feastAllow='';out.feastBlurb='';out.feastTroparion='';out.feastFood=[];out.feastFoodExtra=[];out.feastCrafts=[];out.feastCraftExtra=[];out.feastTasks=[];out.feastFoodInput='';out.feastCraftInput='';out.onFeastFoodInput=()=>{};out.onFeastCraftInput=()=>{};out.onAddFeastFood=()=>{};out.onAddFeastCraft=()=>{};out.onCloseFeast=()=>{};out.feastSummary=''; }
+
+    // ---------- recipe editor ----------
+    const rd=S.recipeDraft;
+    if(S.recipeEditor.open){
+      out.recipeTypeChips=[['breakfast','Breakfast'],['lunch','Lunch'],['dinner','Dinner'],['sweet','Sweet / side']].map(([k,l])=>{ const on=rd.type===k; return {label:l,onClick:()=>this.setRecipeField('type',k),border:on?'#102a4c':'#e7dcc0',bg:on?'#102a4c':'#fffdf8',color:on?'#fff':'#1b2c45'}; });
+      out.recipeLevelChips=[['strict','Strict'],['oilwine','Wine & oil'],['fish','Fish'],['rich','Fast-free']].map(([k,l])=>{ const on=rd.level===k; const lm=LEV[k]; return {label:l,dot:lm.color,onClick:()=>this.setRecipeField('level',k),border:on?lm.color:'#e7dcc0',bg:on?lm.bg:'#fffdf8',color:'#1b2c45'}; });
+      out.recipeGlyphs=['🍲','🥗','🐟','🍞','🥣','🍝','🫘','🍮','🥘','🍫'].map(g=>({glyph:g,onClick:()=>this.setRecipeField('glyph',g),border:rd.glyph===g?'#b5942f':'#e7dcc0',bg:rd.glyph===g?'#fbf2dd':'#fffdf8'}));
+      out.recipeName=rd.name; out.recipeTime=rd.time; out.recipeServings=String(rd.servings); out.recipeIngredients=rd.ingredients; out.recipeNote=rd.note;
+      out.onRecipeName=(e)=>this.setRecipeField('name',e.target.value); out.onRecipeTime=(e)=>this.setRecipeField('time',e.target.value); out.onRecipeServings=(e)=>this.setRecipeField('servings',e.target.value); out.onRecipeIngredients=(e)=>this.setRecipeField('ingredients',e.target.value); out.onRecipeNote=(e)=>this.setRecipeField('note',e.target.value);
+      out.onSaveRecipe=()=>this.saveRecipe(); out.onCloseRecipeEditor=()=>this.closeRecipeEditor();
+    } else { out.recipeTypeChips=[];out.recipeLevelChips=[];out.recipeGlyphs=[];out.recipeName='';out.recipeTime='';out.recipeServings='';out.recipeIngredients='';out.recipeNote='';out.onRecipeName=()=>{};out.onRecipeTime=()=>{};out.onRecipeServings=()=>{};out.onRecipeIngredients=()=>{};out.onRecipeNote=()=>{};out.onSaveRecipe=()=>{};out.onCloseRecipeEditor=()=>{}; }
+
+    return out;
+  }
+}
+</script>
+</body>
+</html>
