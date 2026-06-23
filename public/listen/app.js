@@ -45,6 +45,14 @@ const state = {
   toast:              null,
   liked:              new Set(load('agp_liked', [])),
   downloads:          {},   // guid -> object URL
+  
+  // Initialized fallback properties to prevent runtime profile crashes
+  user: {
+    authenticated: false,
+    name: 'Guest Listener',
+    initials: '--',
+    status: 'Anonymous'
+  }
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -83,6 +91,7 @@ function timeAgo(str) {
   return new Date(str).toLocaleDateString('en-US', { month:'short', day:'numeric' });
 }
 
+// Fixed: Cleaned character string encoding
 function esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -528,45 +537,6 @@ function renderDiscover() {
   </div>`;
 }
 
-    ${state.searchQuery ? `
-    <div style="padding:0 20px">
-      <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${MUTED};font-weight:700;margin-bottom:12px">Results</div>
-      ${state.searchResults.map((f,i) => `
-        <div style="display:flex;gap:14px;align-items:center;padding:12px 6px;border-bottom:1px solid rgba(255,255,255,0.04)">
-          ${epArt({image: f.artwork || f.image}, 46, i)}
-          <div style="flex:1;min-width:0">
-            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.title)}</div>
-            <div style="font-size:0.62rem;color:${MUTED};margin-top:3px">${esc(f.author||'')}</div>
-          </div>
-          <div class="follow-btn tappable" data-url="${esc(f.url)}" data-title="${esc(f.title)}"
-            style="padding:6px 12px;background:${state.subs.find(s=>s.xmlUrl===f.url)?'rgba(200,162,74,0.08)':'rgba(255,255,255,0.04)'};border:1px solid ${state.subs.find(s=>s.xmlUrl===f.url)?'rgba(200,162,74,0.2)':'rgba(255,255,255,0.08)'};border-radius:12px;font-size:0.58rem;color:${state.subs.find(s=>s.xmlUrl===f.url)?GOLD:MUTED};font-weight:700;white-space:nowrap;letter-spacing:0.02em">
-            ${state.subs.find(s=>s.xmlUrl===f.url) ? 'Following' : '+ Follow'}
-          </div>
-        </div>`
-      ).join('') : `<div style="padding:32px;text-align:center;color:${MUTED};font-size:0.85rem;font-style:italic">Searching…</div>`}
-    </div>` : `
-    <div style="padding:0 20px;margin-bottom:16px">
-      <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${MUTED};font-weight:700;margin-bottom:12px;padding-left:4px">Popular Orthodox Podcasts</div>
-      <div style="background:rgba(255,255,255,0.01);border-radius:16px;border:1px solid rgba(255,255,255,0.04);overflow:hidden;box-shadow: 0 4px 20px rgba(0,0,0,0.2)">
-        ${TRENDING.map((t,i) => `
-          <div style="display:flex;gap:14px;align-items:center;padding:12px 16px;${i<TRENDING.length-1?'border-bottom:1px solid rgba(255,255,255,0.04)':''}">
-            <span style="font-size:0.8rem;color:${i<2?GOLD:STONE};font-weight:700;width:16px;text-align:center;font-family:'Cormorant Garamond',serif">${i+1}</span>
-            ${epArt({image:''}, 42, i)}
-            <div style="flex:1;min-width:0">
-              <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.95rem;color:#F6F1E8;line-height:1.2">${esc(t.title)}</div>
-              <div style="font-size:0.58rem;color:${MUTED};margin-top:2px">${esc(t.author)}</div>
-            </div>
-            <div class="follow-btn tappable" data-url="${esc(t.url)}" data-title="${esc(t.title)}"
-              style="padding:5px 12px;background:${state.subs.find(s=>s.xmlUrl===t.url)?'rgba(200,162,74,0.08)':'rgba(255,255,255,0.04)'};border:1px solid ${state.subs.find(s=>s.xmlUrl===t.url)?'rgba(200,162,74,0.18)' : 'rgba(255,255,255,0.08)'};border-radius:12px;font-size:0.58rem;color:${state.subs.find(s=>s.xmlUrl===t.url)?GOLD:MUTED};font-weight:700">
-              ${state.subs.find(s=>s.xmlUrl===t.url)?'Following':'+ Follow'}
-            </div>
-          </div>`
-        ).join('')}
-      </div>
-    </div>`}
-  </div>`;
-}
-
 function renderLibrary() {
   return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:88px;background:${NIGHT}">
     <div style="padding:16px 24px 18px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:500;color:#F6F1E8">Library</div>
@@ -595,73 +565,69 @@ function renderLibrary() {
   </div>`;
 }
 
-  function renderProfile() {
-    return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:88px;background:${NIGHT}">
-      <div style="padding:16px 24px 20px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:500;color:#F6F1E8">Profile</div>
+function renderProfile() {
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:88px;background:${NIGHT}">
+    <div style="padding:16px 24px 20px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:500;color:#F6F1E8">Profile</div>
       
-      <!-- User Avatar & Identity Card -->
-      <div style="display:flex;flex-direction:column;align-items:center;padding:4px 22px 24px">
-        <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#1C3A4A,#0B2130);border:2px solid rgba(200,162,74,0.3);display:flex;align-items:center;justify-content:center;margin-bottom:12px;box-shadow: 0 8px 24px rgba(0,0,0,0.3)">
-          <span style="font-size:1.6rem;color:${GOLD};font-weight:500;font-family:'Cormorant Garamond',Georgia,serif;letter-spacing:0.05em">JD</span>
-        </div>
-        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;color:#F6F1E8;margin-bottom:3px;letter-spacing:0.02em">Joel Dunn</div>
-        <div style="font-size:0.6rem;color:${GOLD};font-weight:700;letter-spacing:0.16em;text-transform:uppercase">AGAPAY Member</div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:4px 22px 24px">
+      <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#1C3A4A,#0B2130);border:2px solid rgba(200,162,74,0.3);display:flex;align-items:center;justify-content:center;margin-bottom:12px;box-shadow: 0 8px 24px rgba(0,0,0,0.3)">
+        <span style="font-size:1.6rem;color:${GOLD};font-weight:500;font-family:'Cormorant Garamond',Georgia,serif;letter-spacing:0.05em">${esc(state.user.initials)}</span>
       </div>
-  
-      <!-- Live Library Metric Indicators -->
-      <div style="display:flex;margin:0 20px 24px;background:rgba(255,255,255,0.02);border-radius:16px;border:1px solid rgba(255,255,255,0.05);overflow:hidden;box-shadow: 0 4px 16px rgba(0,0,0,0.15)">
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;color:#F6F1E8;margin-bottom:3px;letter-spacing:0.02em">${esc(state.user.name)}</div>
+      <div style="font-size:0.6rem;color:${GOLD};font-weight:700;letter-spacing:0.16em;text-transform:uppercase">${esc(state.user.status)}</div>
+    </div>
+
+    <div style="display:flex;margin:0 20px 24px;background:rgba(255,255,255,0.02);border-radius:16px;border:1px solid rgba(255,255,255,0.05);overflow:hidden;box-shadow: 0 4px 16px rgba(0,0,0,0.15)">
+      ${[
+        [String(state.subs.length), 'Following'],
+        [String(state.episodes.length), 'Cached Tracks'],
+        ['0h', 'Listened']
+      ].map(([v,l],i) => `
+        <div style="flex:1;padding:14px 10px;text-align:center;${i<2?'border-right:1px solid rgba(255,255,255,0.04)':''}">
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.45rem;font-weight:500;color:${GOLD}">${v}</div>
+          <div style="font-size:0.58rem;color:${MUTED};margin-top:2px;font-weight:500;letter-spacing:0.02em">${l}</div>
+        </div>`
+      ).join('')}
+    </div>
+
+    <div style="padding:0 20px;margin-bottom:16px">
+      <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px;padding-left:4px">Library Transfer</div>
+      <div style="display:flex;gap:10px">
         ${[
-          [String(state.subs.length), 'Following'],
-          [String(state.episodes.length), 'Cached Tracks'],
-          ['0h', 'Listened']
-        ].map(([v,l],i) => `
-          <div style="flex:1;padding:14px 10px;text-align:center;${i<2?'border-right:1px solid rgba(255,255,255,0.04)':''}">
-            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.45rem;font-weight:500;color:${GOLD}">${v}</div>
-            <div style="font-size:0.58rem;color:${MUTED};margin-top:2px;font-weight:500;letter-spacing:0.02em">${l}</div>
+          ['import-opml', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>', 'Import', 'OPML'],
+          ['export-opml', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>', 'Export', 'OPML'],
+          ['sync-pcasts', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2.2" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>', 'Sync', 'Pocket Casts'],
+        ].map(([id, svg, label, sub]) => `
+          <div ${id ? `id="${id}"` : ''} class="tappable action-card" style="flex:1;padding:16px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow: 0 4px 12px rgba(0,0,0,0.1);transition: all 0.2s">
+            <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,rgba(200,162,74,0.14),rgba(200,162,74,0.04));border:1px solid rgba(200,162,74,0.2);display:flex;align-items:center;justify-content:center">${svg}</div>
+            <div style="text-align:center">
+              <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.9rem;font-weight:500;color:#F6F1E8;line-height:1.2">${label}</div>
+              <div style="font-size:0.56rem;color:${MUTED};margin-top:2px;font-weight:500">${sub}</div>
+            </div>
           </div>`
         ).join('')}
       </div>
-  
-      <!-- Library Transfer Interactivity Block -->
-      <div style="padding:0 20px;margin-bottom:16px">
-        <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px;padding-left:4px">Library Transfer</div>
-        <div style="display:flex;gap:10px">
-          ${[
-            ['import-opml', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>', 'Import', 'OPML'],
-            ['export-opml', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>', 'Export', 'OPML'],
-            ['sync-pcasts', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2.2" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>', 'Sync', 'Pocket Casts'],
-          ].map(([id, svg, label, sub]) => `
-            <div ${id ? `id="${id}"` : ''} class="tappable action-card" style="flex:1;padding:16px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow: 0 4px 12px rgba(0,0,0,0.1);transition: all 0.2s">
-              <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,rgba(200,162,74,0.14),rgba(200,162,74,0.04));border:1px solid rgba(200,162,74,0.2);display:flex;align-items:center;justify-content:center">${svg}</div>
-              <div style="text-align:center">
-                <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.9rem;font-weight:500;color:#F6F1E8;line-height:1.2">${label}</div>
-                <div style="font-size:0.56rem;color:${MUTED};margin-top:2px;font-weight:500">${sub}</div>
-              </div>
-            </div>`
-          ).join('')}
+    </div>
+
+    <div style="padding:0 20px;margin-bottom:24px">
+      <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px;padding-left:4px">Preferences</div>
+      <div style="background:rgba(255,255,255,0.01);border-radius:16px;border:1px solid rgba(255,255,255,0.04);overflow:hidden;box-shadow: 0 4px 16px rgba(0,0,0,0.15)">
+        ${[['Liturgical Calendar Alerts', true], ['Auto-download on Wi-Fi', false]].map(([l, on]) => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.04)">
+            <span style="font-size:0.85rem;color:#F6F1E8;font-weight:500">${l}</span>
+            <div style="width:34px;height:18px;border-radius:10px;background:${on ? GOLD : 'rgba(255,255,255,0.08)'};position:relative;transition: background 0.2s">
+              <div style="position:absolute;${on ? 'right' : 'left'}:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow: 0 1px 4px rgba(0,0,0,0.3)"></div>
+            </div>
+          </div>`
+        ).join('')}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
+          <span style="font-size:0.85rem;color:#F6F1E8;font-weight:500">Playback Speed</span>
+          <span style="font-size:0.8rem;color:${GOLD};font-weight:700;font-family:monospace">1.0×</span>
         </div>
       </div>
-  
-      <!-- Application Preferences Suite -->
-      <div style="padding:0 20px;margin-bottom:24px">
-        <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px;padding-left:4px">Preferences</div>
-        <div style="background:rgba(255,255,255,0.01);border-radius:16px;border:1px solid rgba(255,255,255,0.04);overflow:hidden;box-shadow: 0 4px 16 rgba(0,0,0,0.15)">
-          ${[['Liturgical Calendar Alerts', true], ['Auto-download on Wi-Fi', false]].map(([l, on]) => `
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.04)">
-              <span style="font-size:0.85rem;color:#F6F1E8;font-weight:500">${l}</span>
-              <div style="width:34px;height:18px;border-radius:10px;background:${on ? GOLD : 'rgba(255,255,255,0.08)'};position:relative;transition: background 0.2s">
-                <div style="position:absolute;${on ? 'right' : 'left'}:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow: 0 1px 4px rgba(0,0,0,0.3)"></div>
-              </div>
-            </div>`
-          ).join('')}
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
-            <span style="font-size:0.85rem;color:#F6F1E8;font-weight:500">Playback Speed</span>
-            <span style="font-size:0.8rem;color:${GOLD};font-weight:700;font-family:monospace">1.0×</span>
-          </div>
-        </div>
-      </div>
-    </div>`;
-  }
+    </div>
+  </div>`;
+}
 
 // ─── Main render ──────────────────────────────────────────────────────────────
 function render() {
@@ -734,7 +700,6 @@ function bindEvents() {
   });
 
   document.getElementById('login-redirect-btn')?.addEventListener('click', () => {
-    // Redirect cleanly to your existing core account portal path
     window.location.href = '/account/login?redirect=' + encodeURIComponent(window.location.href);
   });
 
@@ -823,31 +788,27 @@ function bindEvents() {
   });
 }
 
-  async function checkGlobalAuthSession() {
-    try {
-      const resp = await fetch('/api/listen/profile');
-      if (resp.ok) {
-        const userData = await resp.json();
-        if (userData.authenticated) {
-          state.user = {
-            authenticated: true,
-            name: userData.name,
-            initials: userData.initials,
-            status: userData.memberStatus
-          };
-          render(); // Re-render once user details load successfully
-        }
+async function checkGlobalAuthSession() {
+  try {
+    const resp = await fetch('/api/listen/profile');
+    if (resp.ok) {
+      const userData = await resp.json();
+      if (userData.authenticated) {
+        state.user = {
+          authenticated: true,
+          name: userData.name,
+          initials: userData.initials,
+          status: userData.memberStatus
+        };
+        render(); // Re-render once user details load successfully
       }
-    } catch (err) {
-      console.warn('Global account sync currently unavailable:', err);
     }
+  } catch (err) {
+    console.warn('Global account sync currently unavailable:', err);
   }
-  
-  // ─── Boot Sequence ─────────────────────────────────────────────────────────────
-  render();
-  checkGlobalAuthSession(); // Silently reconciles login states across sub-apps
-  if (state.subs.length) refreshAllFeeds();
+}
 
-// ─── Boot ─────────────────────────────────────────────────────────────────────
+// ─── Boot Sequence ─────────────────────────────────────────────────────────────
 render();
+checkGlobalAuthSession(); // Silently reconciles login states across sub-apps
 if (state.subs.length) refreshAllFeeds();
