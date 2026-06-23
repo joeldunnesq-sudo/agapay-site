@@ -1,4 +1,20 @@
 const ACCENTS = ["#14294a", "#6e2f2a", "#4a5a31", "#b5942f", "#34507a"];
+const RESOURCE_TYPE_STYLES = {
+  website: { color: "#14294a", icon: "↗" },
+  reference: { color: "#34507a", icon: "⌕" },
+  reading: { color: "#6e2f2a", icon: "☰" },
+  book: { color: "#4a5a31", icon: "▤" },
+  printable: { color: "#b5942f", icon: "▦" },
+  audio: { color: "#6e2f2a", icon: "♪" },
+  video: { color: "#14294a", icon: "▷" },
+  "mixed media": { color: "#4a5a31", icon: "✥" },
+  default: { color: "#b5942f", icon: "✥" }
+};
+
+function resourceTypeStyle(value = "") {
+  const normalized = String(value || "").trim().toLowerCase();
+  return RESOURCE_TYPE_STYLES[normalized] || RESOURCE_TYPE_STYLES.default;
+}
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -848,11 +864,15 @@ export function toCommunityViewModel(rawPayload) {
       pinned: Boolean(resource.pinned || resource.vetted),
       vetted: Boolean(resource.vetted),
       flagCount: safeArray(resource.flags).length
-    })).map((resource, index) => ({
-      ...resource,
-      color: ACCENTS[index % ACCENTS.length],
-      posterColor: ACCENTS[(index + 1) % ACCENTS.length]
-    })),
+    })).map((resource, index) => {
+      const style = resourceTypeStyle(resource.resourceType);
+      return {
+        ...resource,
+        color: style.color,
+        icon: style.icon,
+        posterColor: ACCENTS[(index + 1) % ACCENTS.length]
+      };
+    }),
     categories: ["All", ...new Set(simpleList(community.communityResources, (resource) => text(resource.category, "")).filter(Boolean))],
     resourceTypes: ["All", ...new Set(simpleList(community.communityResources, (resource) => text(resource.resourceType, "")).filter(Boolean))],
     mediaTypes: ["All", ...new Set(simpleList(community.communityResources, (resource) => text(resource.mediaType, "")).filter(Boolean))],

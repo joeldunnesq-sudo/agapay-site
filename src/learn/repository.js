@@ -165,6 +165,19 @@ function childById(seed) {
   return new Map(seed.children.map((child) => [child.id, child]));
 }
 
+function communityResourceKey(resource = {}) {
+  return resource.id || `${resource.title || ""}:${resource.url || ""}`;
+}
+
+function mergeCommunityResources(...lists) {
+  const records = new Map();
+  lists.flat().filter(Boolean).forEach((resource) => {
+    const resourceKey = communityResourceKey(resource);
+    if (resourceKey) records.set(resourceKey, resource);
+  });
+  return [...records.values()];
+}
+
 function int(value, fallback = 0) {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -725,7 +738,7 @@ export class SeedLearnRepository {
       subtitle: "A growing library of trusted resources for Orthodox homeschool families.",
       detail: "Search by subject, resource type, or media format. AGAPAY curates the library; the Facebook group is the place for conversation, questions, and encouragement.",
       facebookGroupUrl,
-      communityResources: [...(this.seed.communityResources || []), ...communityResources],
+      communityResources: mergeCommunityResources(this.seed.communityResources || [], communityResources),
       sharingGuidance: [
         "Resources are reviewed before being added to the AGAPAY library.",
         "Use the Facebook group to ask questions and recommend resources.",

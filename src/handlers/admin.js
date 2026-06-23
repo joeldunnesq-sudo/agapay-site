@@ -315,7 +315,7 @@ export async function handleAdminLearnSummary(request, env) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const records = await listLearnBillingRecords(env);
   const scholarships = await listLearnScholarships(env);
-  const communityResources = await listLearnCommunityResources(env, { includeAll: true });
+  const communityResources = await listLearnCommunityResources(env, { includeAll: true, includeSeeded: true });
   return json({
     ok: true,
     learn: {

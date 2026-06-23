@@ -1,4 +1,5 @@
 import { d1, d1All, d1GetSetting, d1SetSetting, generateSecret, listKvKeys } from "../lib/core.js";
+import { getLearnSeedSnapshot } from "./demo-data.js";
 
 const COMMUNITY_RESOURCE_PREFIX = "__agapay_learn_community_resource:";
 const ALLOWED_STATUSES = new Set(["pending", "approved", "hidden", "removed"]);
@@ -30,6 +31,30 @@ function safeUrl(value) {
   }
 }
 
+function seededCommunityResources() {
+  const seed = getLearnSeedSnapshot();
+  return (Array.isArray(seed.communityResources) ? seed.communityResources : [])
+    .filter((record) => record && record.id)
+    .map((record) => ({
+      ...record,
+      source: record.source || "agapay-curated",
+      description: record.description || record.subtitle || "",
+      status: record.status || "approved",
+      vetted: record.vetted ?? true,
+      pinned: Boolean(record.pinned || record.vetted),
+      sharedBy: record.sharedBy || "AGAPAY Curated",
+      submittedBy: record.submittedBy || "AGAPAY",
+      householdId: record.householdId || "",
+      flags: Array.isArray(record.flags) ? record.flags : [],
+      seeded: true
+    }));
+}
+
+function seededCommunityResource(id) {
+  const resourceId = clean(id, 100);
+  return seededCommunityResources().find((record) => record.id === resourceId) || null;
+}
+
 async function save(env, record) {
   const raw = JSON.stringify(record);
   if (env.AGAPAY_REGISTRATIONS) await env.AGAPAY_REGISTRATIONS.put(key(record.id), raw);
@@ -44,11 +69,13 @@ export async function getLearnCommunityResource(env, id) {
     const stored = parse(await d1GetSetting(env, key(resourceId)));
     if (stored) return stored;
   }
-  return env.AGAPAY_REGISTRATIONS ? parse(await env.AGAPAY_REGISTRATIONS.get(key(resourceId))) : null;
+  const stored = env.AGAPAY_REGISTRATIONS ? parse(await env.AGAPAY_REGISTRATIONS.get(key(resourceId))) : null;
+  return stored || seededCommunityResource(resourceId);
 }
 
-export async function listLearnCommunityResources(env, { includeAll = false } = {}) {
+export async function listLearnCommunityResources(env, { includeAll = false, includeSeeded = false } = {}) {
   const records = new Map();
+  if (includeSeeded) seededCommunityResources().forEach((record) => records.set(record.id, record));
   if (d1(env)) {
     const rows = await d1All(env, "SELECT value FROM app_settings WHERE key LIKE ?1 ORDER BY updated_at DESC LIMIT 1000", `${COMMUNITY_RESOURCE_PREFIX}%`);
     rows.map((row) => parse(row.value)).filter(Boolean).forEach((record) => records.set(record.id, record));
