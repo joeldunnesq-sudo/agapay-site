@@ -310,7 +310,6 @@ export async function learnBillingCheckout(request, env = {}) {
   const plan = normalizeCheckoutPlan(body.plan);
   const interval = normalizeCheckoutInterval(body.interval || body.billingInterval);
   const identity = await learnBillingIdentity(request, env);
-  if (!identity.email) return json({ ok: false, error: "Unauthorized" }, { status: 401 });
   const priceId = learnPriceId(env, plan, interval);
   if (!env.STRIPE_SECRET_KEY) {
     return json({
@@ -344,8 +343,14 @@ export async function learnBillingCheckout(request, env = {}) {
   if (identity.email) params.set("customer_email", identity.email);
   params.set("allow_promotion_codes", "true");
   params.set("automatic_tax[enabled]", "true");
-  params.set("success_url", `${baseUrl}/myagapay/learn/setup?learn_billing=success&session_id={CHECKOUT_SESSION_ID}`);
-  params.set("cancel_url", `${baseUrl}/myagapay/learn/setup?learn_billing=cancelled`);
+  const checkoutSuccessPath = identity.email
+    ? "/myagapay/learn/setup?learn_billing=success&session_id={CHECKOUT_SESSION_ID}"
+    : `/myagapay/signup?learn_billing=success&session_id={CHECKOUT_SESSION_ID}&next=${encodeURIComponent("/myagapay/learn/setup?learn_billing=success")}`;
+  const checkoutCancelPath = identity.email
+    ? "/myagapay/learn/setup?learn_billing=cancelled"
+    : "/learn/pricing?learn_billing=cancelled";
+  params.set("success_url", `${baseUrl}${checkoutSuccessPath}`);
+  params.set("cancel_url", `${baseUrl}${checkoutCancelPath}`);
   params.set("metadata[product]", "learn");
   params.set("metadata[plan]", plan);
   params.set("metadata[interval]", interval);
