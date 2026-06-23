@@ -918,7 +918,7 @@ function renderFamilyPlannerScopeLegacy(vm, scope) {
   };
   const [title, intro, icon] = titleMap[scope] || titleMap.meals;
   const saveBar = `<div class="learn-family-planner-save"><span data-family-planning-status>Changes save to this household's Learn planner.</span><button type="submit">Save ${html(title)}</button></div>`;
-  const hidden = `<input type="hidden" name="familyPlanning.weekStart" value="${html(dates[0])}"><input type="hidden" name="familyPlanning.fastingPreference" value="${html(planning.fastingPreference || "guidance")}"><input type="hidden" name="household.motherName" value="${html(planning.household?.motherName || "")}"><input type="hidden" name="household.motherNameDay" value="${html(planning.household?.motherNameDay || "")}"><input type="hidden" name="household.fatherName" value="${html(planning.household?.fatherName || "")}"><input type="hidden" name="household.fatherNameDay" value="${html(planning.household?.fatherNameDay || "")}">${(planning.children || []).map((child) => `<span data-family-child-id="${html(child.id)}" hidden><input name="childNameDay" value="${html(child.nameDay || "")}"></span>`).join("")}`;
+  const hidden = `<input type="hidden" name="familyPlanning.weekStart" value="${html(dates[0])}"><input type="hidden" name="familyPlanning.fastingPreference" value="${html(planning.fastingPreference || "guidance")}"><input type="hidden" name="household.motherName" value="${html(planning.household?.motherName || "")}"><input type="hidden" name="household.motherNameDay" value="${html(planning.household?.motherNameDay || "")}"><input type="hidden" name="household.fatherName" value="${html(planning.household?.fatherName || "")}"><input type="hidden" name="household.fatherNameDay" value="${html(planning.household?.fatherNameDay || "")}"><input type="hidden" name="household.parishPatronalFeastName" value="${html(planning.household?.parishPatronalFeastName || "")}"><input type="hidden" name="household.parishPatronalFeastDate" value="${html(planning.household?.parishPatronalFeastDate || "")}">${(planning.children || []).map((child) => `<span data-family-child-id="${html(child.id)}" hidden><input name="childNameDay" value="${html(child.nameDay || "")}"></span>`).join("")}`;
   let content = "";
   if (scope === "meals") {
     content = `<div class="learn-family-section-note"><strong>Weekly menu</strong><span>Tap into the fields and save the week. Recipe picker and drag-and-drop meal assignment can layer on top of this without changing the data.</span></div><div class="learn-family-meal-grid">${dates.map((date) => {
@@ -1003,14 +1003,13 @@ function familyPlannerModel(vm) {
 
 function renderFeastsPanel(model, mode = "week") {
   const days = (mode === "month" ? model.monthDays : model.weekDays)
-    .filter((day) => day.inMonth !== false && (day.feast || day.feastRank || day.isFastDay))
-    .filter((day) => day.feast || day.isFastDay)
+    .filter((day) => day.inMonth !== false && isImportantPlannerFeast(day))
     .slice(0, mode === "month" ? 8 : 5);
   return `<aside class="learn-family-feasts-card">
     <div><small>${mode === "month" ? "Feasts this month" : "Feasts this week"}</small><strong>Church Calendar</strong></div>
     ${days.length ? days.map((day) => `<article class="${day.isFastDay ? "is-fast" : ""}">
       <span>${html(day.dayNumber || day.shortDate || day.short || day.date)}</span>
-      <p><strong>${html(day.feast || day.feastTitle || "Fast day")}</strong><small>${html(day.isFastDay ? day.fastingType || day.fasting || "Fast day" : day.feastRank || "Feast")}</small></p>
+      <p><strong>${html(day.feast || day.feastTitle || "Feast day")}</strong><small>${html([day.feastRank || "Feast", day.isFastDay ? day.fastingType || day.fasting || "" : ""].filter(Boolean).join(" · "))}</small></p>
     </article>`).join("") : `<p class="learn-family-empty-line">No major feast markers in this range.</p>`}
   </aside>`;
 }
@@ -1042,6 +1041,8 @@ function plannerHiddenData(model) {
     <input name="household.motherNameDay" value="${html(model.planning.household?.motherNameDay || "")}">
     <input name="household.fatherName" value="${html(model.planning.household?.fatherName || "")}">
     <input name="household.fatherNameDay" value="${html(model.planning.household?.fatherNameDay || "")}">
+    <input name="household.parishPatronalFeastName" value="${html(model.planning.household?.parishPatronalFeastName || "")}">
+    <input name="household.parishPatronalFeastDate" value="${html(model.planning.household?.parishPatronalFeastDate || "")}">
     ${model.children.map((child) => `<span data-family-child-id="${html(child.id || "")}"><input name="childNameDay" value="${html(child.nameDay || "")}"></span>`).join("")}
     <div data-setup-list="meals">${meals}</div>
     <div data-setup-list="familyEvents">${(model.planning.events || []).map(familyEventSetupRow).join("")}</div>
@@ -1227,8 +1228,8 @@ function prototypeDaySeeds(vm) {
     short: day.shortDate || day.short || day.date || "",
     date: Number(day.dayNumber || String(day.date || "").slice(-2)) || index + 1,
     level: isImportantPlannerFeast(day) ? "fish" : day.isSunday ? "fish" : day.isFastDay ? (String(day.fastingType || day.fasting || "").toLowerCase().includes("strict") ? "strict" : "oilwine") : "rich",
-    feast: day.feast || day.feastTitle || (day.isFastDay ? "Fast day" : ""),
-    tag: day.isSunday ? "Sunday" : day.isFastDay ? day.fastingType || day.fasting || "Fast day" : day.feast || "Ordinary day",
+    feast: isImportantPlannerFeast(day) ? day.feast || day.feastTitle || "" : "",
+    tag: day.fastingType || day.fasting || (isImportantPlannerFeast(day) ? day.feast || day.feastTitle || "Feast day" : "No fast"),
     sunday: Boolean(day.isSunday),
     isToday: Boolean(day.isToday),
     feastDay: isImportantPlannerFeast(day),
@@ -1241,7 +1242,8 @@ function isImportantPlannerFeast(day = {}) {
   if (!feast || /^fast day$/i.test(feast)) return false;
   const rank = String(day.feastRank || "").trim();
   const text = `${feast} ${rank}`.toLowerCase();
-  return Boolean(rank) || /nativity|forerunner|theotokos|apostle|apostles|great feast|major|vigil|polyeleos|doxology|ascension|pentecost|transfiguration|annunciation|presentation|exaltation|pascha/.test(text);
+  const realRank = rank && !/daily rhythm/i.test(rank);
+  return Boolean(realRank) || /patronal feast|nativity|forerunner|theotokos|apostle|apostles|great feast|major|vigil|polyeleos|doxology|ascension|pentecost|transfiguration|annunciation|presentation|exaltation|pascha/.test(text);
 }
 
 function prototypeMonthSeed(vm) {
@@ -1261,7 +1263,7 @@ function prototypeMonthSeed(vm) {
       short: day.shortDate || day.short || day.date || "",
       date: Number(day.dayNumber || String(day.date || "").slice(-2)) || 0,
       level: importantFeast ? "fish" : day.isSunday ? "fish" : day.isFastDay ? (String(fasting).toLowerCase().includes("strict") ? "strict" : "oilwine") : "rich",
-      tag: day.isSunday ? "Sunday" : day.isFastDay ? fasting || "Fast day" : feast || "Ordinary day",
+      tag: fasting || (importantFeast ? feast || "Feast day" : "No fast"),
       sunday: Boolean(day.isSunday),
       feastDay: importantFeast,
       inMonth: day.inMonth !== false,
@@ -1277,15 +1279,17 @@ function prototypeMonthSeed(vm) {
     };
   });
   const monthFeasts = monthDays
-    .filter((day) => day.inMonth !== false && (day.feast || day.isFastDay))
-    .slice(0, 6)
+    .filter((day) => day.inMonth !== false && day.isImportantFeast)
+    .slice(0, 8)
     .map((day, index) => ({
       id: `month_${day.fullDate || index}`,
       day: day.dayNumber || "",
       dateLabel: day.dayNumber ? String(day.dayNumber) : day.fullDate || "",
       name: day.feast || "Fast day",
-      rank: day.isFastDay ? day.fasting || day.fastingType || "Fast day" : day.feastRank || "Feast",
-      plan: Boolean(day.feast && !index)
+      rank: day.isFastDay
+        ? [day.feastRank || "Feast", day.fasting || day.fastingType || ""].filter(Boolean).join(" · ")
+        : day.feastRank || "Feast",
+      plan: index === 0
     }));
   let weekFeasts = monthDays
     .filter((day) => weekDateToKey[day.fullDate] && day.isImportantFeast)
@@ -1302,22 +1306,22 @@ function prototypeMonthSeed(vm) {
     }));
   const calendarType = String(vm.preferences?.calendarType || (typeof localStorage !== "undefined" ? localStorage.getItem("agapay.learn.calendar") : "") || "");
   const revisedLike = /revised|gregorian/i.test(calendarType);
-  const june24 = monthDays.find((day) => weekDateToKey[day.fullDate] && String(day.fullDate || "").slice(5) === "06-24");
-  if (revisedLike && june24 && !weekFeasts.some((feast) => feast.fullDate === june24.fullDate)) {
+  const june24 = monthDays.find((day) => day.inMonth !== false && String(day.fullDate || "").slice(5) === "06-24");
+  if (revisedLike && june24 && !monthFeasts.some((feast) => feast.id === `month_${june24.fullDate}`)) {
     june24.feast = june24.feast || "Nativity of St. John the Forerunner";
     june24.feastDay = true;
     june24.isImportantFeast = true;
     june24.level = "fish";
-    if (!monthFeasts.some((feast) => feast.id === `month_${june24.fullDate}`)) {
-      monthFeasts.push({
-        id: `month_${june24.fullDate}`,
-        day: june24.dayNumber || "24",
-        dateLabel: june24.dayNumber || "24",
-        name: june24.feast,
-        rank: [june24.fasting || june24.fastingType || "", "Feast"].filter(Boolean).join(" · "),
-        plan: monthFeasts.length === 0
-      });
-    }
+    monthFeasts.push({
+      id: `month_${june24.fullDate}`,
+      day: june24.dayNumber || "24",
+      dateLabel: june24.dayNumber || "24",
+      name: june24.feast,
+      rank: [june24.fasting || june24.fastingType || "", "Feast"].filter(Boolean).join(" · "),
+      plan: monthFeasts.length === 0
+    });
+  }
+  if (revisedLike && june24 && weekDateToKey[june24.fullDate] && !weekFeasts.some((feast) => feast.fullDate === june24.fullDate)) {
     weekFeasts = weekFeasts.concat({
       id: `week_${june24.fullDate}_forerunner`,
       day: june24.dayNumber || "24",
@@ -2774,7 +2778,7 @@ function renderSetup(vm) {
   const body = `
     <form data-setup-form data-screen-label="Set Up" style="display:flex;flex-direction:column;gap:18px;">
       <span id="learnSetupHousehold" class="learn-setup-anchor"></span>
-      ${panel("Household", `<div class="learn-setup-method-note"><small>Organized for ${html(vm.household.method || "your household")}</small><strong>${html(experience.note)}</strong></div><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parent name", "household.parentName", vm.household.parentName)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Unsure", homeschoolMethodOptions)}${setupSelect("Planning groups", "preferences.groupingMode", groupingMode, [{ value: "forms", label: "Forms" }, { value: "grades", label: "Traditional grades / levels" }])}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /></div>`, { icon: "⌂", largeTitle: true })}
+      ${panel("Household", `<div class="learn-setup-method-note"><small>Organized for ${html(vm.household.method || "your household")}</small><strong>${html(experience.note)}</strong></div><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parent name", "household.parentName", vm.household.parentName)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupInput("Parish patronal feast", "household.parishPatronalFeastName", vm.household.parishPatronalFeastName || "")}${setupInput("Patronal feast date", "household.parishPatronalFeastDate", vm.household.parishPatronalFeastDate || "", { type: "date" })}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Unsure", homeschoolMethodOptions)}${setupSelect("Planning groups", "preferences.groupingMode", groupingMode, [{ value: "forms", label: "Forms" }, { value: "grades", label: "Traditional grades / levels" }])}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /></div><p style="margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.4;">The patronal feast repeats annually on the Family Planner calendar so it can be honored alongside name days, fasts, and major feasts.</p>`, { icon: "⌂", largeTitle: true })}
       <span id="learnSetupChildren" class="learn-setup-anchor"></span>
       ${panel(groupingTitle, `<p style="margin:0 0 12px;color:var(--muted);">${html(groupingCopy)}</p><div data-setup-list="children" style="display:grid;gap:10px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child, groupingMode)).join("")}</div><button type="button" data-setup-add-row="children" style="margin-top:12px;width:100%;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px;font-family:inherit;">Add Child</button>`, { icon: "◎", largeTitle: true })}
       ${panel("Terms", `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Term 4 / Summer is available for year-round homeschoolers. Assign subjects, books, and formation materials to the term where they belong.</p><div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div>`, { icon: "◷", largeTitle: true })}
@@ -3037,6 +3041,8 @@ function setupPayloadFromForm(form) {
       fatherName: get("household.fatherName"),
       fatherNameDay: get("household.fatherNameDay"),
       parishName: get("household.parishName"),
+      parishPatronalFeastName: get("household.parishPatronalFeastName"),
+      parishPatronalFeastDate: get("household.parishPatronalFeastDate"),
       primaryMethod: get("household.primaryMethod")
     },
     schoolYear: {
@@ -3296,7 +3302,9 @@ function familyPlanningPayloadFromForm(form) {
       motherName: get("household.motherName"),
       motherNameDay: get("household.motherNameDay"),
       fatherName: get("household.fatherName"),
-      fatherNameDay: get("household.fatherNameDay")
+      fatherNameDay: get("household.fatherNameDay"),
+      parishPatronalFeastName: get("household.parishPatronalFeastName"),
+      parishPatronalFeastDate: get("household.parishPatronalFeastDate")
     },
     childNameDays: [...form.querySelectorAll("[data-family-child-id]")].map((row) => ({ childId: row.dataset.familyChildId || "", nameDay: row.querySelector('[name="childNameDay"]')?.value || "" })),
     familyPlanning: {

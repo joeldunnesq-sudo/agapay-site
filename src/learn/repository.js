@@ -8,6 +8,111 @@ import { getLearnSeedForIdentity, learnSetupIdentity } from "./setup-persistence
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+export const DEFAULT_FAMILY_RECIPES = [
+  {
+    id: "agapay_recipe_lentil_vegetable_soup",
+    title: "Lenten Lentil Vegetable Soup",
+    fastingType: "fast-friendly",
+    category: "Soup",
+    sourceUrl: "",
+    ingredients: "Lentils, carrots, celery, onion, garlic, crushed tomatoes, vegetable broth, olive oil, bay leaf, parsley",
+    instructions: "Saute onion, carrot, celery, and garlic. Add lentils, tomatoes, broth, and bay leaf. Simmer until tender, then finish with parsley. Serve with bread or rice."
+  },
+  {
+    id: "agapay_recipe_chickpea_sheet_pan",
+    title: "Sheet Pan Chickpeas and Vegetables",
+    fastingType: "fast-friendly",
+    category: "Dinner",
+    sourceUrl: "",
+    ingredients: "Chickpeas, sweet potatoes, broccoli or cauliflower, red onion, olive oil, lemon, garlic, paprika, salt",
+    instructions: "Roast chickpeas and chopped vegetables with olive oil, lemon, garlic, and paprika until crisp at the edges. Serve over rice, couscous, or greens."
+  },
+  {
+    id: "agapay_recipe_black_bean_tacos",
+    title: "Black Bean Tacos with Cabbage Slaw",
+    fastingType: "fast-friendly",
+    category: "Quick Dinner",
+    sourceUrl: "",
+    ingredients: "Black beans, corn tortillas, cabbage, lime, avocado, salsa, cumin, garlic, cilantro",
+    instructions: "Warm black beans with cumin and garlic. Toss cabbage with lime and salt. Serve in warm tortillas with salsa, avocado, and cilantro."
+  },
+  {
+    id: "agapay_recipe_mediterranean_pasta",
+    title: "Mediterranean Pantry Pasta",
+    fastingType: "adaptable",
+    category: "Pantry Meal",
+    sourceUrl: "",
+    ingredients: "Pasta, chickpeas or white beans, spinach, olives, tomatoes, garlic, olive oil, lemon, optional feta",
+    instructions: "Cook pasta and toss with garlic, beans, spinach, tomatoes, olives, olive oil, and lemon. Add feta on non-fasting days if desired."
+  },
+  {
+    id: "agapay_recipe_salmon_rice_bowls",
+    title: "Salmon Rice Bowls",
+    fastingType: "adaptable",
+    category: "Fish Day",
+    sourceUrl: "",
+    ingredients: "Salmon, rice, cucumber, carrots, avocado, soy sauce or coconut aminos, sesame seeds, lemon",
+    instructions: "Bake salmon and serve over rice with sliced vegetables. Add lemon, soy sauce, and sesame seeds. Use on fish-allowed fasting days or regular days."
+  },
+  {
+    id: "agapay_recipe_chicken_rice_soup",
+    title: "Chicken and Rice Soup",
+    fastingType: "regular",
+    category: "Soup",
+    sourceUrl: "",
+    ingredients: "Chicken, rice, carrots, celery, onion, garlic, chicken broth, parsley, lemon",
+    instructions: "Simmer chicken with vegetables and broth. Add rice until tender, shred the chicken, and finish with parsley and lemon."
+  },
+  {
+    id: "agapay_recipe_turkey_sweet_potato_chili",
+    title: "Turkey Sweet Potato Chili",
+    fastingType: "regular",
+    category: "Batch Cook",
+    sourceUrl: "",
+    ingredients: "Ground turkey, sweet potatoes, beans, crushed tomatoes, onion, garlic, chili powder, cumin",
+    instructions: "Brown turkey with onion and garlic. Add sweet potatoes, beans, tomatoes, and spices. Simmer until the sweet potatoes are tender."
+  },
+  {
+    id: "agapay_recipe_egg_veggie_bake",
+    title: "Simple Egg and Veggie Bake",
+    fastingType: "regular",
+    category: "Breakfast",
+    sourceUrl: "",
+    ingredients: "Eggs, spinach, bell pepper, onion, milk, cheese, salt, pepper",
+    instructions: "Whisk eggs with milk, vegetables, and cheese. Bake in a greased dish until set. Slice for breakfasts or quick lunches."
+  }
+];
+
+function familyPlanningWithDefaultRecipes(planning = {}) {
+  const recipes = Array.isArray(planning.recipes) && planning.recipes.length
+    ? planning.recipes
+    : DEFAULT_FAMILY_RECIPES;
+  return {
+    nameDays: [],
+    events: [],
+    meals: [],
+    groceryItems: [],
+    chores: [],
+    fastingPreference: "guidance",
+    ...planning,
+    recipes
+  };
+}
+
+function patronalFeastForDate(seed = {}, civilDate = "") {
+  const household = seed.setupSnapshot?.household || seed.household || {};
+  const feastDate = String(household.parishPatronalFeastDate || household.patronalFeastDate || "").trim();
+  const monthDay = /^\d{4}-\d{2}-\d{2}$/.test(feastDate) ? feastDate.slice(5) : feastDate;
+  if (!monthDay || String(civilDate || "").slice(5) !== monthDay) return null;
+  const parishName = household.parishName || "your parish";
+  return {
+    id: "parish_patronal_feast",
+    title: household.parishPatronalFeastName || `${parishName} patronal feast`,
+    rank: "Patronal Feast",
+    note: `${parishName} patronal feast`
+  };
+}
+
 function weekStartSundayIso(civilDate = new Date().toISOString().slice(0, 10)) {
   const date = new Date(`${civilDate}T12:00:00Z`);
   date.setUTCDate(date.getUTCDate() - date.getUTCDay());
@@ -441,11 +546,13 @@ function applyGraceModeToRows(rows, graceModeRule) {
 }
 
 function familyPlanForDate(seed, civilDate, liturgicalDay = {}) {
-  const planning = seed.familyPlanning || seed.setupSnapshot?.familyPlanning || {};
+  const planning = familyPlanningWithDefaultRecipes(seed.familyPlanning || seed.setupSnapshot?.familyPlanning || {});
   const monthDay = civilDate.slice(5);
+  const patronalFeast = patronalFeastForDate(seed, civilDate);
   return {
     nameDays: (planning.nameDays || []).filter((entry) => entry.monthDay === monthDay),
     events: (planning.events || []).filter((entry) => entry.date === civilDate),
+    patronalFeast,
     meal: (planning.meals || []).find((entry) => entry.date === civilDate) || null,
     fastingPreference: planning.fastingPreference || "guidance",
     fastingRule: liturgicalDay?.fastingRule || "No Fast",
@@ -455,19 +562,29 @@ function familyPlanForDate(seed, civilDate, liturgicalDay = {}) {
 
 function buildPlannerWeek(seed, calendarType) {
   const week = seed.plannerWeek;
+  const familyPlanning = familyPlanningWithDefaultRecipes(seed.familyPlanning || seed.setupSnapshot?.familyPlanning || {});
   const liturgicalDays = buildAgapayLiturgicalDays({
     calendarType,
     startDate: week.dates[0],
     endDate: week.dates[week.dates.length - 1],
     seed
-  }).filter((entry) => week.dates.includes(entry.civilDate));
+  }).filter((entry) => week.dates.includes(entry.civilDate)).map((day) => {
+    const patronalFeast = patronalFeastForDate(seed, day.civilDate);
+    if (!patronalFeast) return day;
+    return {
+      ...day,
+      feastTitle: patronalFeast.title,
+      feastRank: patronalFeast.rank,
+      isPatronalFeast: true
+    };
+  });
   const childLookup = childById(seed);
   return {
     ...week,
     liturgicalDays,
     familyDays: week.dates.map((civilDate) => familyPlanForDate(seed, civilDate, liturgicalDays.find((day) => day.civilDate === civilDate))),
-    recipes: seed.familyPlanning?.recipes || [],
-    groceryItems: seed.familyPlanning?.groceryItems || [],
+    recipes: familyPlanning.recipes || [],
+    groceryItems: familyPlanning.groceryItems || [],
     householdRows: applyGraceModeToRows(week.householdRows, seed.graceModeRule),
     childRows: applyGraceModeToRows(week.childRows, seed.graceModeRule).map((row) => ({
       ...row,
@@ -513,6 +630,9 @@ function buildPlannerMonth(seed, calendarType, month = "") {
     const liturgicalDay = liturgicalByDate.get(civilDate) || {};
     const fastingRule = liturgicalDay.fastingRule || "No Fast";
     const familyPlan = familyPlanForDate(seed, civilDate, liturgicalDay);
+    const patronalFeast = familyPlan.patronalFeast;
+    const feastTitle = patronalFeast?.title || liturgicalDay.feastTitle || "Daily Orthodox Rhythm";
+    const feastRank = patronalFeast?.rank || liturgicalDay.feastRank || "Daily Rhythm";
     return {
       civilDate,
       dayNumber: date.getUTCDate(),
@@ -521,11 +641,12 @@ function buildPlannerMonth(seed, calendarType, month = "") {
       inMonth: civilDate.startsWith(monthKey),
       isToday: civilDate === today,
       isSunday: weekday === 0,
-      feastTitle: liturgicalDay.feastTitle || "Daily Orthodox Rhythm",
-      feastRank: liturgicalDay.feastRank || "Daily Rhythm",
+      feastTitle,
+      feastRank,
       fastingRule,
       fastingType: liturgicalDay.fastingType || fastingTypeForDate(civilDate, null, fastingRule),
       isFastDay: /fast/i.test(fastingRule) && !/no fast/i.test(fastingRule),
+      isPatronalFeast: Boolean(patronalFeast),
       oldStyleDateLabel: liturgicalDay.oldStyleDateLabel || "",
       nameDays: familyPlan.nameDays,
       events: familyPlan.events,
@@ -547,6 +668,141 @@ function buildPlannerMonth(seed, calendarType, month = "") {
     feastDays: days.filter((day) => day.inMonth && day.feastRank !== "Daily Rhythm").length,
     printableTitle: `${monthLabelFromIso(`${monthKey}-01`)} Household Calendar`
   };
+}
+
+function buildFamilyPlanningPrintTemplates(seed) {
+  const householdId = seed.household?.id || "household";
+  const baseTemplates = [
+    {
+      id: "planner_lessons_week_form",
+      householdId,
+      templateType: "planner-lesson-week-form",
+      title: "Weekly Lesson Plans by Form",
+      audience: "household",
+      description: "A printable weekly lesson grid grouped by Form, including family-based enrichment and individual subjects."
+    },
+    {
+      id: "planner_lessons_month_form",
+      householdId,
+      templateType: "planner-lesson-month-form",
+      title: "Monthly Lesson Plans by Form",
+      audience: "household",
+      description: "A month-at-a-glance planner with Form lessons, feast markers, fast days, and household rhythm notes."
+    },
+    {
+      id: "planner_lessons_term_form",
+      householdId,
+      templateType: "planner-lesson-term-form",
+      title: "Term Lesson Plans by Form",
+      audience: "household",
+      description: "A term overview organized by Form, children, subjects, and planned rhythm."
+    },
+    {
+      id: "planner_meals_week",
+      householdId,
+      templateType: "planner-meals-week",
+      title: "Weekly Meal Plan",
+      audience: "household",
+      description: "Breakfast, lunch, dinner, feast-day notes, and fasting guidance for the week."
+    },
+    {
+      id: "planner_meals_month",
+      householdId,
+      templateType: "planner-meals-month",
+      title: "Monthly Meal Plan",
+      audience: "household",
+      description: "A printable month of meals with fast days and feast days clearly marked."
+    },
+    {
+      id: "planner_chores_day",
+      householdId,
+      templateType: "planner-chores-day",
+      title: "Daily Chore Chart",
+      audience: "household",
+      description: "A simple household chore chart for today's work."
+    },
+    {
+      id: "planner_chores_week",
+      householdId,
+      templateType: "planner-chores-week",
+      title: "Weekly Chore Chart",
+      audience: "household",
+      description: "All children's chores for the week, grouped by day and assignment."
+    },
+    {
+      id: "planner_chores_month",
+      householdId,
+      templateType: "planner-chores-month",
+      title: "Monthly Chore Chart",
+      audience: "household",
+      description: "A month view of recurring chores, rotating responsibilities, and household service."
+    },
+    {
+      id: "planner_events_month",
+      householdId,
+      templateType: "planner-events-month",
+      title: "Monthly Events Chart",
+      audience: "household",
+      description: "Appointments, field trips, activities, name days, feast days, and fasting notes for the household."
+    },
+    {
+      id: "planner_recipes",
+      householdId,
+      templateType: "planner-recipes",
+      title: "Recipe Collection",
+      audience: "household",
+      description: "A printable collection of saved recipes with fasting notes and ingredients."
+    },
+    {
+      id: "planner_grocery_week",
+      householdId,
+      templateType: "planner-grocery-week",
+      title: "Weekly Grocery List",
+      audience: "household",
+      description: "A week-ready grocery list grouped for shopping and meal prep."
+    }
+  ];
+
+  const childLessonTemplates = (seed.children || []).flatMap((child) => [
+    {
+      id: `planner_lessons_${child.id}_week`,
+      householdId,
+      templateType: "planner-lesson-week-child",
+      title: `${child.firstName}'s Weekly Lessons`,
+      audience: "child",
+      childId: child.id,
+      description: "A weekly lesson plan for this child, ready for checkoffs and notes."
+    },
+    {
+      id: `planner_lessons_${child.id}_month`,
+      householdId,
+      templateType: "planner-lesson-month-child",
+      title: `${child.firstName}'s Monthly Lessons`,
+      audience: "child",
+      childId: child.id,
+      description: "A month view of this child's lessons with Orthodox calendar markers."
+    },
+    {
+      id: `planner_lessons_${child.id}_term`,
+      householdId,
+      templateType: "planner-lesson-term-child",
+      title: `${child.firstName}'s Term Lessons`,
+      audience: "child",
+      childId: child.id,
+      description: "A term-level subject and book plan for this child."
+    },
+    {
+      id: `planner_chores_${child.id}_week`,
+      householdId,
+      templateType: "planner-chores-week-child",
+      title: `${child.firstName}'s Weekly Chores`,
+      audience: "child",
+      childId: child.id,
+      description: "A child-specific weekly chore chart."
+    }
+  ]);
+
+  return [...baseTemplates, ...childLessonTemplates];
 }
 
 function buildCurriculum(seed) {
@@ -777,7 +1033,7 @@ export class SeedLearnRepository {
         book: this.seed.books[0],
         assignment: this.seed.bookAssignments[0]
       },
-      familyPlanning: this.seed.familyPlanning || this.seed.setupSnapshot?.familyPlanning || { nameDays: [], events: [], meals: [], recipes: [], groceryItems: [], fastingPreference: "guidance" }
+      familyPlanning: familyPlanningWithDefaultRecipes(this.seed.familyPlanning || this.seed.setupSnapshot?.familyPlanning || {})
     };
   }
 
@@ -807,7 +1063,9 @@ export class SeedLearnRepository {
           }
         ])
       : this.seed.placeholderRecords.printTemplates.filter((template) => template.audience === "child");
-    const templates = [...householdTemplates, ...childTemplates];
+    const familyPlanning = familyPlanningWithDefaultRecipes(this.seed.familyPlanning || this.seed.setupSnapshot?.familyPlanning || {});
+    const plannerTemplates = buildFamilyPlanningPrintTemplates(this.seed);
+    const templates = [...householdTemplates, ...childTemplates, ...plannerTemplates];
     return {
       household: this.seed.household,
       children: this.seed.children,
@@ -816,6 +1074,7 @@ export class SeedLearnRepository {
       week: buildPlannerWeek(this.seed, resolvedCalendar),
       month: buildPlannerMonth(this.seed, resolvedCalendar, month),
       termSetup: this.seed.termSetup,
+      familyPlanning,
       templates: templates.map((template) => ({
         ...template,
         child: template.childId ? childLookup.get(template.childId) : null
@@ -842,6 +1101,13 @@ export class SeedLearnRepository {
           "Memory work sheet",
           "Copywork sheet",
           "Term plan"
+        ],
+        planner: [
+          "Lesson plans by week, month, and term",
+          "Meal plans with feast and fast markers",
+          "Chore charts",
+          "Events chart",
+          "Recipes and grocery lists"
         ]
       }
     };

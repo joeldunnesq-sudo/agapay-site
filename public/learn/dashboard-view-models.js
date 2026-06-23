@@ -543,7 +543,9 @@ export function toPlannerViewModel(rawPayload) {
         motherName: text(planner.household?.motherName, ""),
         motherNameDay: text(planner.household?.motherNameDay, ""),
         fatherName: text(planner.household?.fatherName, ""),
-        fatherNameDay: text(planner.household?.fatherNameDay, "")
+        fatherNameDay: text(planner.household?.fatherNameDay, ""),
+        parishPatronalFeastName: text(planner.household?.parishPatronalFeastName, ""),
+        parishPatronalFeastDate: text(planner.household?.parishPatronalFeastDate, "")
       },
       children: safeArray(planner.children).map((child, index) => ({
         id: text(child.id, ""),

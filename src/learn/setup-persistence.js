@@ -335,6 +335,8 @@ function normalizeSetupPayload(payload = {}, identity) {
     fatherNameDay: text(household.fatherNameDay, ""),
     childrenCount: 0,
     parishName: text(household.parishName, seed.household.parishName || ""),
+    parishPatronalFeastName: text(household.parishPatronalFeastName || household.patronalFeastName, ""),
+    parishPatronalFeastDate: text(household.parishPatronalFeastDate || household.patronalFeastDate, ""),
     city: text(household.city, ""),
     primaryMethod,
     liturgicalCalendarType: text(preferences.calendarType || household.liturgicalCalendarType, seed.household.liturgicalCalendarType || "julian"),
@@ -1228,7 +1230,9 @@ export async function saveLearnFamilyPlanning(env, request, payload = {}) {
       motherName: text(payload.household?.motherName, current.household?.motherName || ""),
       motherNameDay: text(payload.household?.motherNameDay, current.household?.motherNameDay || ""),
       fatherName: text(payload.household?.fatherName, current.household?.fatherName || ""),
-      fatherNameDay: text(payload.household?.fatherNameDay, current.household?.fatherNameDay || "")
+      fatherNameDay: text(payload.household?.fatherNameDay, current.household?.fatherNameDay || ""),
+      parishPatronalFeastName: text(payload.household?.parishPatronalFeastName, current.household?.parishPatronalFeastName || ""),
+      parishPatronalFeastDate: text(payload.household?.parishPatronalFeastDate, current.household?.parishPatronalFeastDate || "")
     },
     children: list(current.children).map((child) => ({
       ...child,
