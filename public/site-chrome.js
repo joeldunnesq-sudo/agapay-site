@@ -13,7 +13,7 @@
 
   const SIGN_IN_LINKS = [
     { href: "/myagapay/login", label: "My AGAPAY" },
-    { href: "/give/login", label: "Organization Dashboard" }
+    { href: "/give/login", label: "Parish Dashboard" }
   ];
 
   function activeKeyFromPath() {
@@ -156,7 +156,7 @@
             <nav class="footer-col" aria-label="Account">
               <h4>Account</h4>
               <a href="/myagapay/login">My AGAPAY</a>
-              <a href="/give/login">Organization Dashboard</a>
+              <a href="/give/login">Parish Dashboard</a>
             </nav>
             <nav class="footer-col" aria-label="Legal">
               <h4>Legal</h4>
