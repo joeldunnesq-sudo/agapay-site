@@ -694,6 +694,11 @@ function bindEvents() {
     addRssFeed(val);
   });
 
+  document.getElementById('login-redirect-btn')?.addEventListener('click', () => {
+    // Redirect cleanly to your existing core account portal path
+    window.location.href = '/account/login?redirect=' + encodeURIComponent(window.location.href);
+  });
+
   // Description Drawer Bindings
   document.getElementById('open-desc-btn')?.addEventListener('click', () => setState({ descriptionSheet: true }));
   document.getElementById('desc-backdrop')?.addEventListener('click', () => setState({ descriptionSheet: false }));
