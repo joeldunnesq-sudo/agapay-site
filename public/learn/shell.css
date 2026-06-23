@@ -2060,6 +2060,7 @@ body {
   }
 }
 /* Connected family planning */
+@keyframes mealsFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .learn-day-picker { position: relative; min-width: 0; }
 .learn-day-picker > summary { list-style: none; cursor: pointer; display: grid; gap: 5px; color: var(--gold); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
 .learn-day-picker > summary::-webkit-details-marker { display: none; }
@@ -2103,6 +2104,168 @@ body {
 .learn-family-week-footer a { color: var(--gold); }
 .learn-family-planner-save { position: sticky; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 12; display: flex; align-items: center; justify-content: space-between; gap: 14px; border: 1px solid var(--goldsoft); border-radius: 12px; background: rgba(255, 250, 240, .96); box-shadow: 0 10px 28px rgba(8, 29, 48, .16); padding: 12px 14px; color: var(--muted); }
 .learn-family-planner-save button { border: 1px solid var(--gold); border-radius: 9px; background: var(--navy); color: #fff; padding: 11px 17px; font-family: inherit; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.learn-family-page { display: flex; flex-direction: column; gap: 16px; }
+.learn-family-intro { position: relative; display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 16px; align-items: center; overflow: hidden; border: 1px solid rgba(181, 148, 47, .32); border-radius: 16px; background: radial-gradient(circle at 92% 0%, rgba(201,162,39,.16), transparent 18rem), linear-gradient(135deg, rgba(255,250,240,.95), rgba(248,240,221,.9)); box-shadow: 0 1px 3px rgba(20,40,70,.05); padding: 22px 24px; }
+.learn-family-intro-icon { width: 64px; height: 64px; display: grid; place-items: center; border: 1px solid rgba(181, 148, 47, .45); border-radius: 15px; background: linear-gradient(180deg, rgba(253,249,239,.88), rgba(241,230,201,.82)); color: var(--gold); font-size: 30px; }
+.learn-family-intro-watermark { position: absolute; right: 24px; top: 50%; transform: translateY(-50%); color: rgba(181,148,47,.1); font-size: 112px; line-height: 1; pointer-events: none; }
+.learn-family-kicker { color: var(--gold); font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; }
+.learn-family-intro h1 { margin: 3px 0 0; color: var(--ink); font-family: 'Cormorant Garamond', serif; font-size: clamp(36px, 5vw, 48px); font-weight: 600; line-height: .95; }
+.learn-family-intro p { max-width: 850px; margin: 7px 0 0; color: #33405a; font-size: 16px; line-height: 1.45; }
+.learn-family-toolbar { display: flex; gap: 10px 12px; flex-wrap: wrap; align-items: center; }
+.learn-family-tabs { display: flex; gap: 4px; overflow: auto; max-width: 100%; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); padding: 5px; }
+.learn-family-tabs a { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; border-radius: 8px; padding: 8px 15px; color: var(--ink); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 800; text-decoration: none; white-space: nowrap; }
+.learn-family-tabs a[aria-current="page"] { background: var(--navy); color: #f3ead4; }
+.learn-family-tabs a span { color: var(--gold); }
+.learn-family-tabs-wide a { min-width: 112px; }
+.learn-family-range { display: grid; gap: 1px; align-items: center; min-height: 47px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); padding: 7px 14px; }
+.learn-family-range strong { color: var(--ink); font-family: 'Cormorant Garamond', serif; font-size: 18px; line-height: 1; }
+.learn-family-range span { color: var(--gold); font-size: 12px; font-style: italic; }
+.learn-family-term-tabs a { min-width: 94px; padding-inline: 13px; }
+.learn-family-lock { margin-left: auto; color: var(--muted); font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+.learn-family-lock::before { content: "🔒"; color: var(--gold); }
+.learn-family-planner-panel { display: grid; gap: 14px; scroll-margin-top: 110px; animation: mealsFade .26s ease; }
+.learn-family-planner-head { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid rgba(181, 148, 47, .36); border-radius: 16px; background: radial-gradient(circle at 88% 0%, rgba(181, 148, 47, .18), transparent 18rem), linear-gradient(135deg, #fffaf0, #f2e4c4); padding: 18px 20px; }
+.learn-family-planner-head small { color: var(--gold); letter-spacing: .16em; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.learn-family-planner-head h2 { margin: 4px 0 2px; color: var(--ink); font-family: 'Cormorant Garamond', serif; font-size: clamp(30px, 5vw, 42px); line-height: .96; }
+.learn-family-planner-head p { max-width: 760px; margin: 0; color: #33405a; line-height: 1.45; }
+.learn-family-planner-head > span { flex: none; width: 66px; height: 66px; display: grid; place-items: center; border: 1px solid rgba(181, 148, 47, .42); border-radius: 18px; background: rgba(255, 252, 245, .62); color: var(--gold); font-size: 30px; }
+.learn-family-section-note { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; border: 1px solid rgba(181,148,47,.32); border-radius: 13px; background: linear-gradient(135deg, #fffaf0, #f6ead0); padding: 13px 16px; color: var(--muted); }
+.learn-family-section-note strong { display: inline-flex; align-items: center; gap: 8px; color: var(--gold); font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+.learn-family-section-note strong::before { content: "✥"; }
+.learn-family-meal-grid { display: grid; grid-template-columns: repeat(7, minmax(150px, 1fr)); gap: 9px; overflow-x: auto; padding-bottom: 4px; }
+.learn-family-day-card { min-height: 248px; min-width: 150px; display: grid; gap: 9px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); padding: 13px; box-shadow: 0 1px 3px rgba(20, 40, 70, .04); }
+.learn-family-day-card.is-fast { border-color: rgba(110,47,42,.32); background: linear-gradient(180deg, rgba(110,47,42,.08), var(--paper)); }
+.learn-family-day-card.is-feast { border-color: rgba(181,148,47,.36); background: linear-gradient(180deg, rgba(181,148,47,.12), var(--paper)); }
+.learn-family-day-card > div:first-child { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.learn-family-day-card small { color: var(--gold); letter-spacing: .11em; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.learn-family-day-card b { display: block; color: var(--ink); font-family: 'Cormorant Garamond', serif; font-size: 20px; line-height: .95; }
+.learn-family-day-card strong { max-width: 52%; color: var(--burgundy); font-size: 11.5px; line-height: 1.25; text-align: right; }
+.learn-family-day-card label { display: grid; gap: 5px; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.learn-family-day-card input { min-width: 0; border: 1px solid var(--line); border-radius: 9px; background: var(--paper2); color: var(--ink); padding: 9px 10px; font-family: 'EB Garamond', serif; font-size: 15px; }
+.learn-family-events-list { display: grid; gap: 12px; }
+.learn-family-date-section { display: grid; gap: 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); padding: 13px; }
+.learn-family-date-section header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.learn-family-date-section header span { display: grid; gap: 2px; }
+.learn-family-date-section header small { color: var(--gold); letter-spacing: .12em; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+.learn-family-date-section header strong { color: var(--ink); font-family: 'Cormorant Garamond', serif; font-size: 22px; line-height: 1; }
+.learn-family-date-section header em { color: var(--burgundy); font-size: 13px; line-height: 1.2; }
+.learn-family-date-section header button { border: 1px solid var(--gold); border-radius: 9px; background: var(--paper2); color: var(--ink); padding: 8px 12px; font-family: inherit; cursor: pointer; }
+.learn-family-edit-list { display: grid; gap: 10px; }
+.learn-family-chore-roster { display: flex; gap: 7px; flex-wrap: wrap; }
+.learn-family-chore-roster span { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); padding: 5px 12px 5px 6px; color: var(--muted); font-size: 12px; }
+.learn-family-chore-roster b { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; color: #f3ead4; font-size: 11px; }
+.learn-family-grocery-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.learn-family-aisle { border: 1px solid var(--line); border-radius: 12px; background: var(--paper); padding: 12px; }
+.learn-family-aisle strong { display: block; color: var(--gold); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+.learn-family-aisle span { display: block; margin-top: 5px; color: #33405a; line-height: 1.35; }
+.learn-planner-subnav { display: grid; gap: 4px; margin: -4px 0 6px 34px; padding-left: 10px; border-left: 1px solid rgba(201, 162, 91, .24); }
+.learn-planner-subnav a { min-height: 34px; display: flex; align-items: center; gap: 8px; border: 1px solid transparent; border-radius: 10px; padding: 7px 10px; color: rgba(246,241,232,.78); text-decoration: none; font-size: 13px; font-weight: 700; }
+.learn-planner-subnav a span { width: 16px; color: var(--gold); text-align: center; font-size: 12px; }
+.learn-planner-subnav a.is-active { border-color: rgba(201, 162, 91, .36); background: rgba(246,241,232,.08); color: #f6f1e8; }
+.learn-family-meal-tools { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; width: max-content; max-width: 100%; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); padding: 5px; }
+.learn-family-meal-tools a { min-height: 36px; display: inline-flex; align-items: center; gap: 7px; border-radius: 8px; padding: 8px 15px; color: var(--ink); text-decoration: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 800; }
+.learn-family-meal-tools a[aria-current="page"] { background: var(--navy); color: #f3ead4; }
+.learn-family-meal-tools a span { color: var(--gold); }
+.learn-family-prototype { display: grid; gap: 14px; animation: mealsFade .24s ease; }
+.learn-family-day-selector { display: flex; gap: 8px; overflow: auto; padding-bottom: 2px; }
+.learn-family-day-selector a { min-width: 92px; display: grid; gap: 3px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); padding: 10px; color: var(--ink); text-decoration: none; text-align: center; }
+.learn-family-day-selector a span { color: var(--gold); font-size: 15px; line-height: 1; }
+.learn-family-day-selector a strong { font-size: 13px; }
+.learn-family-day-selector a small { color: var(--muted); }
+.learn-family-day-selector a.is-active { border-color: var(--gold); background: #fbf2dd; }
+.learn-family-day-hero { display: flex; justify-content: space-between; align-items: center; gap: 16px; border: 1px solid rgba(181,148,47,.34); border-radius: 16px; background: radial-gradient(circle at 92% 0%, rgba(201,162,39,.16), transparent 18rem), linear-gradient(135deg,#fffaf0,#f3e6c8); padding: 18px 20px; }
+.learn-family-day-hero.is-fast { border-color: rgba(110,47,42,.28); background: linear-gradient(135deg, rgba(110,47,42,.09), #fffaf0); }
+.learn-family-day-hero small { color: var(--gold); letter-spacing: .16em; text-transform: uppercase; font-size: 11px; font-weight: 800; }
+.learn-family-day-hero h2 { margin: 5px 0 3px; color: var(--ink); font-family: 'Cormorant Garamond', serif; font-size: clamp(28px, 4vw, 38px); line-height: .95; }
+.learn-family-day-hero p { margin: 0; color: #33405a; }
+.learn-family-day-hero button, .learn-family-section-note button { border: 1px solid var(--gold); border-radius: 10px; background: var(--navy); color: #f3ead4; padding: 10px 14px; font-family: inherit; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.learn-family-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.learn-family-card-grid-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.learn-family-meal-card, .learn-family-person-card, .learn-family-mini-card, .learn-family-event-row { border: 1px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); font-family: inherit; text-align: left; cursor: pointer; box-shadow: 0 1px 3px rgba(20,40,70,.04); }
+.learn-family-meal-card { min-height: 142px; display: grid; align-content: center; gap: 8px; padding: 18px; }
+.learn-family-meal-card span { color: var(--gold); letter-spacing: .14em; text-transform: uppercase; font-size: 11px; font-weight: 900; }
+.learn-family-meal-card strong { font-family: 'Cormorant Garamond', serif; font-size: 27px; line-height: 1; }
+.learn-family-meal-card small { color: var(--muted); }
+.learn-family-week-board { overflow: auto; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); }
+.learn-family-week-layout, .learn-family-month-layout, .learn-family-pantry-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.learn-family-week-layout .learn-family-week-board { min-width: 0; }
+.learn-family-week-head, .learn-family-week-row { min-width: 980px; display: grid; grid-template-columns: 150px repeat(7, minmax(118px, 1fr)); }
+.learn-family-week-head { border-bottom: 1px solid var(--line); background: #fbf6e9; }
+.learn-family-week-head > span, .learn-family-week-row > strong { padding: 12px 14px; color: var(--gold); letter-spacing: .13em; text-transform: uppercase; font-size: 11px; }
+.learn-family-week-head strong { padding: 11px; border-left: 1px solid var(--line); text-align: center; color: var(--ink); }
+.learn-family-week-head small { display: block; color: var(--muted); font-weight: 500; letter-spacing: 0; text-transform: none; }
+.learn-family-week-row { border-bottom: 1px solid var(--line); }
+.learn-family-week-row > div { border-left: 1px solid var(--line); padding: 8px; min-width: 0; }
+.learn-family-week-row .learn-family-meal-card { min-height: 86px; padding: 10px; border-radius: 11px; }
+.learn-family-week-row .learn-family-meal-card strong { font-size: 18px; }
+.learn-family-tool-grid { display: grid; gap: 14px; }
+.learn-family-recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.learn-family-recipe-card { display: grid; gap: 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); padding: 15px; }
+.learn-family-recipe-card > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.learn-family-recipe-card > div span { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid var(--goldsoft); border-radius: 12px; background: #fbf2dd; color: var(--gold); }
+.learn-family-recipe-card h3 { margin: 0; color: var(--ink); font-family: 'Cormorant Garamond', serif; font-size: 24px; line-height: 1; }
+.learn-family-recipe-card p { margin: 0; color: var(--muted); }
+.learn-family-recipe-card button, .learn-family-person-card button { border: 1px solid var(--line); border-radius: 9px; background: var(--paper2); color: var(--ink); padding: 9px 11px; font-family: inherit; font-weight: 700; cursor: pointer; }
+.learn-family-month-card { display: grid; gap: 10px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); padding: 12px; box-shadow: 0 1px 3px rgba(20,40,70,.05); }
+.learn-family-month-card header { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.learn-family-month-card header small { color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.learn-family-month-card header h3 { margin: 2px 0 0; color: var(--ink); font-family: 'Cormorant Garamond', serif; font-size: 28px; line-height: .95; }
+.learn-family-month-card header a { color: var(--gold); font-weight: 800; text-decoration: none; white-space: nowrap; }
+.learn-family-month-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.learn-family-month-weekdays span { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .12em; text-align: center; text-transform: uppercase; }
+.learn-family-month-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.learn-family-month-board.is-full-month { grid-template-columns: repeat(7, minmax(110px, 1fr)); gap: 8px; }
+.learn-family-month-board article { min-height: 150px; display: grid; gap: 7px; border: 1px solid var(--line); border-radius: 13px; background: var(--paper); padding: 12px; }
+.learn-family-month-board.is-full-month article { min-height: 128px; align-content: start; }
+.learn-family-month-board article.is-muted { opacity: .56; background: rgba(248,240,221,.48); }
+.learn-family-month-board article.is-feast:not(.is-fast) { border-color: rgba(181,148,47,.36); background: linear-gradient(180deg,rgba(181,148,47,.1),var(--paper)); }
+.learn-family-month-board article.is-fast { border-color: rgba(110,47,42,.32); background: linear-gradient(180deg,rgba(110,47,42,.08),var(--paper)); }
+.learn-family-month-board article div { display: flex; justify-content: space-between; gap: 8px; color: var(--ink); }
+.learn-family-month-board small { color: var(--burgundy); font-size: 11px; }
+.learn-family-month-board p, .learn-family-month-board em { margin: 0; color: var(--muted); font-size: 13px; }
+.learn-family-feasts-card { position: sticky; top: 86px; display: grid; gap: 10px; border: 1px solid rgba(181,148,47,.28); border-radius: 16px; background: radial-gradient(circle at 100% 0%, rgba(181,148,47,.12), transparent 12rem), var(--paper); padding: 16px; box-shadow: 0 1px 3px rgba(20,40,70,.05); }
+.learn-family-feasts-card > div small { display: block; color: var(--gold); font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.learn-family-feasts-card > div strong { display: block; margin-top: 3px; color: var(--ink); font-family: 'Cormorant Garamond', serif; font-size: 26px; line-height: .95; }
+.learn-family-feasts-card article { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; align-items: start; border: 1px solid var(--line); border-radius: 13px; background: rgba(255,250,240,.74); padding: 10px; }
+.learn-family-feasts-card article.is-fast { border-color: rgba(110,47,42,.34); background: linear-gradient(180deg,rgba(110,47,42,.08),rgba(255,250,240,.76)); }
+.learn-family-feasts-card article > span { display: grid; place-items: center; min-height: 40px; border-radius: 11px; background: var(--navy); color: #f3ead4; font-family: 'DM Sans', sans-serif; font-weight: 900; }
+.learn-family-feasts-card article strong { display: block; color: var(--ink); line-height: 1.15; }
+.learn-family-feasts-card article small { display: block; margin-top: 4px; color: var(--muted); line-height: 1.25; }
+.learn-family-grocery-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.learn-family-shopping-card { border: 1px solid rgba(181,148,47,.28); border-radius: 16px; background: radial-gradient(circle at 100% 0%, rgba(181,148,47,.13), transparent 12rem), var(--paper); padding: 16px; position: sticky; top: 86px; }
+.learn-family-shopping-card small { color: var(--gold); font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.learn-family-shopping-card h3 { margin: 5px 0 6px; color: var(--ink); font-family: 'Cormorant Garamond', serif; font-size: 28px; line-height: .95; }
+.learn-family-shopping-card p { margin: 0 0 12px; color: var(--muted); line-height: 1.45; }
+.learn-family-shopping-card a { display: inline-flex; border: 1px solid var(--gold); border-radius: 999px; color: var(--gold); font-weight: 800; padding: 8px 12px; text-decoration: none; }
+.learn-family-aisle label.is-checked { color: var(--muted); text-decoration: line-through; }
+.learn-family-pantry-layout { grid-template-columns: minmax(0, 1fr) 320px; }
+.learn-family-pantry-cloud { min-height: 220px; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 10px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); padding: 18px; }
+.learn-family-pantry-cloud span { display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(181,148,47,.28); border-radius: 999px; background: #fbf2dd; color: var(--ink); padding: 8px 10px 8px 13px; font-weight: 800; }
+.learn-family-pantry-cloud button { width: 22px; height: 22px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--navy); color: #fff; cursor: pointer; }
+.learn-family-pantry-layout aside { border: 1px solid rgba(181,148,47,.26); border-radius: 16px; background: var(--paper); padding: 16px; color: var(--muted); line-height: 1.45; }
+.learn-family-pantry-layout aside small { color: var(--gold); font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.learn-family-person-card { display: grid; gap: 8px; padding: 15px; }
+.learn-family-person-card > span { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--navy); color: #f3ead4; }
+.learn-family-mini-card { width: 100%; min-height: 56px; padding: 10px; }
+.learn-family-event-row { width: 100%; display: grid; grid-template-columns: 70px 1fr auto; gap: 10px; align-items: center; padding: 11px 12px; }
+.learn-family-event-row span { color: var(--gold); font-weight: 800; }
+.learn-family-empty-line { margin: 0; color: var(--muted); font-style: italic; }
+.learn-family-modal { position: fixed; inset: 0; z-index: 100; align-items: center; justify-content: center; padding: 20px; background: rgba(6,21,34,.58); }
+.learn-family-modal-card { position: relative; width: min(640px, 100%); max-height: calc(100vh - 40px); overflow: auto; border: 1px solid var(--goldsoft); border-radius: 18px; background: var(--cream); box-shadow: 0 24px 70px rgba(6,21,34,.34); padding: 24px; }
+.learn-family-modal-close { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 50%; background: var(--paper); color: var(--ink); cursor: pointer; }
+.learn-family-modal-card > small { color: var(--gold); letter-spacing: .16em; text-transform: uppercase; font-weight: 900; }
+.learn-family-modal-card h2 { margin: 5px 0 6px; color: var(--ink); font-family: 'Cormorant Garamond', serif; font-size: 34px; line-height: 1; }
+.learn-family-modal-card p { color: var(--muted); }
+.learn-family-modal-card input, .learn-family-modal-card textarea, .learn-family-modal-card select { width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--paper2); color: var(--ink); padding: 10px; font-family: inherit; }
+.learn-family-picker-list, .learn-family-modal-grid { display: grid; gap: 10px; margin-top: 12px; }
+.learn-family-picker-list button { display: grid; gap: 3px; border: 1px solid var(--line); border-radius: 11px; background: var(--paper); color: var(--ink); padding: 12px; text-align: left; font-family: inherit; cursor: pointer; }
+.learn-family-picker-list button span { color: var(--muted); }
+.learn-family-modal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.learn-family-modal-grid label { display: grid; gap: 5px; color: var(--gold); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+.learn-family-modal-grid label:nth-last-child(-n+2) { grid-column: 1 / -1; }
+.learn-family-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+.learn-family-modal-actions button { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); padding: 10px 15px; font-family: inherit; font-weight: 800; cursor: pointer; }
+.learn-family-modal-actions button:last-child { border-color: var(--gold); background: var(--navy); color: #f3ead4; }
 
 @media (max-width: 900px) {
   .learn-child-row, .learn-event-row, .learn-recipe-row, .learn-grocery-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -2113,6 +2276,26 @@ body {
 
 @media (max-width: 560px) {
   .learn-child-row, .learn-event-row, .learn-recipe-row, .learn-grocery-row, .learn-family-adults { grid-template-columns: 1fr; }
+  .learn-family-intro { grid-template-columns: 1fr; padding: 18px; }
+  .learn-family-intro-icon { width: 52px; height: 52px; }
+  .learn-family-intro-watermark { font-size: 78px; right: 12px; top: 18px; transform: none; }
+  .learn-family-intro h1 { font-size: 34px; }
+  .learn-family-tabs { width: 100%; }
+  .learn-family-tabs a { flex: 1 0 auto; }
+  .learn-family-range { width: 100%; }
+  .learn-family-week-layout, .learn-family-month-layout, .learn-family-pantry-layout, .learn-family-grocery-layout { grid-template-columns: 1fr; }
+  .learn-family-feasts-card, .learn-family-shopping-card { position: static; }
+  .learn-family-month-board.is-full-month { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .learn-family-meal-grid { grid-template-columns: repeat(7, minmax(142px, 1fr)); }
+  .learn-family-card-grid-three, .learn-family-modal-grid { grid-template-columns: 1fr; }
+  .learn-family-day-hero { align-items: stretch; flex-direction: column; }
+  .learn-family-week-head, .learn-family-week-row { min-width: 760px; grid-template-columns: 120px repeat(7, minmax(92px, 1fr)); }
+  .learn-family-event-row { grid-template-columns: 1fr; }
   .learn-family-week-footer { flex-direction: column; }
   .learn-family-planner-save { bottom: calc(82px + env(safe-area-inset-bottom)); align-items: stretch; flex-direction: column; }
+}
+
+@media (max-width: 620px) {
+  .learn-family-month-board.is-full-month { grid-template-columns: 1fr; }
+  .learn-family-feasts-card article { grid-template-columns: 38px minmax(0, 1fr); }
 }

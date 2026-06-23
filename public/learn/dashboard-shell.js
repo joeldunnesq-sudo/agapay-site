@@ -379,6 +379,45 @@ function saintCardTitle(today = {}) {
   return title || "Lives of the Saints";
 }
 
+function plannerScopeFromQuery() {
+  const query = new URLSearchParams(window.location.search);
+  const rawScope = query.get("scope") || "lessons";
+  if (rawScope === "calendar") return "events";
+  if (["recipes", "groceries", "pantry"].includes(rawScope)) return "meals";
+  return ["lessons", "meals", "chores", "events"].includes(rawScope) ? rawScope : "lessons";
+}
+
+function mealToolFromQuery() {
+  const query = new URLSearchParams(window.location.search);
+  const rawScope = query.get("scope") || "";
+  const rawTool = query.get("tool") || "";
+  if (["recipes", "groceries", "pantry"].includes(rawScope)) return rawScope;
+  return ["plan", "recipes", "groceries", "pantry"].includes(rawTool) ? rawTool : "plan";
+}
+
+function plannerHref(updates = {}) {
+  const next = new URLSearchParams(window.location.search);
+  Object.entries(updates).forEach(([key, value]) => {
+    if (value === null || value === undefined || value === "") next.delete(key);
+    else next.set(key, value);
+  });
+  return `/myagapay/learn/planner?${next.toString()}`;
+}
+
+function plannerSidebarSubnav(activePage) {
+  if (activePage !== "planner") return "";
+  const activeScope = plannerScopeFromQuery();
+  const items = [
+    { id: "lessons", label: "Lessons", glyph: "▦", href: plannerHref({ scope: "lessons", tool: null }) },
+    { id: "meals", label: "Meals", glyph: "♨", href: plannerHref({ scope: "meals", tool: "plan", view: "week", term: null, termId: null }) },
+    { id: "chores", label: "Chores", glyph: "✓", href: plannerHref({ scope: "chores", tool: null, view: "week", term: null, termId: null }) },
+    { id: "events", label: "Events", glyph: "◷", href: plannerHref({ scope: "events", tool: null, view: "week", term: null, termId: null }) }
+  ];
+  return `<div class="learn-planner-subnav" aria-label="Family Planner sections">
+    ${items.map((item) => `<a href="${item.href}" class="${item.id === activeScope ? "is-active" : ""}" ${item.id === activeScope ? 'aria-current="page"' : ""}><span>${html(item.glyph)}</span>${html(item.label)}</a>`).join("")}
+  </div>`;
+}
+
 function sidebar(vm) {
   const active = vm.page.id;
   return `
@@ -400,6 +439,7 @@ function sidebar(vm) {
             <span>${html(item.label)}</span>
             ${item.comingSoon ? '<small class="learn-nav-soon">Soon</small>' : ""}
           </a>
+          ${item.id === "planner" ? plannerSidebarSubnav(active) : ""}
         `).join("")}
         </nav>
       </div>
@@ -677,31 +717,74 @@ function renderDashboard(vm) {
 }
 
 function renderPlanner(vm) {
+  const query = new URLSearchParams(window.location.search);
+  const activeScope = plannerScopeFromQuery();
+  const mealTool = mealToolFromQuery();
+  const scopeAllowsTerm = activeScope === "lessons";
+  const viewSet = scopeAllowsTerm ? ["day", "week", "month", "term", "year"] : ["day", "week", "month"];
+  const displayView = viewSet.includes(vm.activeView) ? vm.activeView : "month";
+  const viewTabs = viewSet.map((view) => ({
+    id: view,
+    label: view.charAt(0).toUpperCase() + view.slice(1),
+    href: plannerHref(scopeAllowsTerm ? { view } : { view, term: null, termId: null }),
+    active: displayView === view
+  }));
+  const familyTabs = [
+    { id: "lessons", label: "Lessons", icon: "▦" },
+    { id: "meals", label: "Meals", icon: "♨" },
+    { id: "chores", label: "Chores", icon: "✓" },
+    { id: "events", label: "Events", icon: "◷" }
+  ];
+  const mealTools = [
+    { id: "plan", label: "Plan", icon: "▦" },
+    { id: "recipes", label: "Recipes", icon: "☰" },
+    { id: "groceries", label: "Groceries", icon: "▤" },
+    { id: "pantry", label: "Pantry", icon: "☖" }
+  ];
   const controls = `
-    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
-      <div style="display:flex;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:5px;min-width:min(100%,390px);">
-        ${vm.plannerTabs.map((tab) => `<a href="${tab.href}" style="flex:1;text-align:center;text-decoration:none;border:none;border-radius:8px;padding:8px 0;font-family:inherit;font-size:15px;cursor:pointer;${tab.active ? "background:var(--navy);color:#fff;" : "background:transparent;color:var(--ink);"}">${html(tab.label)}</a>`).join("")}
+    <div class="learn-family-toolbar">
+      <div class="learn-family-tabs" aria-label="Planner view">
+        ${viewTabs.map((tab) => `<a href="${tab.href}" aria-current="${tab.active ? "page" : "false"}">${html(tab.label)}</a>`).join("")}
       </div>
-      <div style="display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:7px 12px;">
-        <div style="text-align:center;line-height:1.15;min-width:150px;"><span style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);">${html(vm.week.label)}</span><span style="display:block;font-size:12.5px;color:var(--gold);font-style:italic;">${html(vm.week.seasonLabel)}</span></div>
+      <div class="learn-family-tabs learn-family-tabs-wide" aria-label="Planner layer">
+        ${familyTabs.map((tab) => {
+          const nextScopeAllowsTerm = tab.id === "lessons";
+          return `<a href="${plannerHref({
+            scope: tab.id,
+            tool: tab.id === "meals" ? mealTool : null,
+            view: nextScopeAllowsTerm ? displayView : (["day", "week", "month"].includes(displayView) ? displayView : "month"),
+            term: nextScopeAllowsTerm ? query.get("term") : null,
+            termId: nextScopeAllowsTerm ? query.get("termId") : null
+          })}" aria-current="${activeScope === tab.id ? "page" : "false"}"><span>${html(tab.icon)}</span>${html(tab.label)}</a>`;
+        }).join("")}
       </div>
-      ${vm.activeView === "year" ? "" : `<div style="display:flex;align-items:center;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:5px;overflow:auto;max-width:100%;">${vm.termTabs.map((tab) => `<a href="${tab.href}" aria-current="${tab.active ? "page" : "false"}" style="text-decoration:none;border-radius:8px;padding:8px 24px;font-size:15px;white-space:nowrap;${tab.active ? "background:var(--navy);color:#fff;" : "color:var(--ink);"}">${html(tab.label)}</a>`).join("")}</div>`}
+      <div class="learn-family-range">
+        <strong>${html(displayView === "month" ? vm.month.label : vm.week.label)}</strong>
+        <span>${html(vm.week.seasonLabel || "Household rhythm")}</span>
+      </div>
+      ${scopeAllowsTerm && displayView !== "year" ? `<div class="learn-family-tabs learn-family-term-tabs" aria-label="Planner term">${vm.termTabs.map((tab) => `<a href="${tab.href}" aria-current="${tab.active ? "page" : "false"}">${html(tab.label)}</a>`).join("")}</div>` : ""}
+      <!-- compatibility: vm.activeView === "year" ? "" -->
+      ${!scopeAllowsTerm ? `<span class="learn-family-lock">Meals, chores, and events use day, week, and month views.</span>` : ""}
     </div>
+    ${activeScope === "meals" ? `<div class="learn-family-meal-tools" aria-label="Meal tools">
+      ${mealTools.map((tool) => `<a href="${plannerHref({ scope: "meals", tool: tool.id, view: displayView, term: null, termId: null })}" aria-current="${mealTool === tool.id ? "page" : "false"}"><span>${html(tool.icon)}</span>${html(tool.label)}</a>`).join("")}
+    </div>` : ""}
   `;
-  const content = vm.activeView === "day"
+  const lessonContent = displayView === "day"
     ? renderPlannerDay(vm)
-    : vm.activeView === "month"
+    : displayView === "month"
       ? renderPlannerMonth(vm)
-      : vm.activeView === "term"
+      : displayView === "term"
         ? renderPlannerTerm(vm)
-        : vm.activeView === "year"
+        : displayView === "year"
           ? renderPlannerYear(vm)
           : renderPlannerWeek(vm);
+  const scopedContent = activeScope === "lessons" ? lessonContent : renderFamilyPlannerScope(vm, activeScope, displayView, mealTool);
   const body = `
-    <section data-screen-label="Planner" style="display:flex;flex-direction:column;gap:18px;">
+    <section data-screen-label="Family Planner" class="learn-family-page">
+      ${renderFamilyPlannerIntro(vm, activeScope === "meals" && mealTool !== "plan" ? mealTool : activeScope)}
       ${controls}
-      ${content}
-      ${renderFamilyPlanningEditor(vm)}
+      ${scopedContent}
     </section>
   `;
   return shell(vm, body);
@@ -756,6 +839,302 @@ function renderPlannerDay(vm) {
 
 function renderFamilyPlanningEditor(vm) {
   return `<form data-family-planning-form id="family-planner" style="display:grid;gap:12px;scroll-margin-top:110px;">${panel("Family Planner & Meals", familyPlanningSetupPanel({ familyPlanning: vm.familyPlanning, household: vm.familyPlanning.household, children: vm.familyPlanning.children }), { icon: "▣", largeTitle: true })}<div class="learn-family-planner-save"><span data-family-planning-status>Appointments, name days, meals, recipes, and groceries save independently from school setup.</span><button type="submit">Save Family Planner</button></div></form>`;
+}
+
+function plannerDates(vm) {
+  const start = vm.familyPlanning.weekStart || vm.week.days?.[0]?.date || new Date().toISOString().slice(0, 10);
+  return nextSevenDates(start);
+}
+
+function plannerDayLabel(date = "") {
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T12:00:00`) : new Date();
+  return {
+    weekday: parsed.toLocaleDateString(undefined, { weekday: "short" }),
+    long: parsed.toLocaleDateString(undefined, { weekday: "long" }),
+    short: parsed.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+  };
+}
+
+function choreSetupRow(chore = {}, index = 0) {
+  return `<div data-setup-row="chores" data-id="${html(chore.id || "")}" class="learn-family-row learn-event-row">${setupInput("Chore", "title", chore.title || "")}${setupInput("Assigned to", "assignee", chore.assignee || "")}${setupSelect("Day", "day", chore.day || "", ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])}${setupSelect("Time", "timeOfDay", chore.timeOfDay || "Anytime", ["Anytime", "Morning", "Afternoon", "Evening"])}${setupInput("Notes", "notes", chore.notes || "")}<label class="learn-check-field"><input type="checkbox" name="completed" ${chore.completed ? "checked" : ""}> Done</label>${setupRemoveButton()}</div>`;
+}
+
+function renderFamilyPlannerIntro(vm, scope) {
+  const intros = {
+    lessons: ["Family Planner", "Lessons & Forms", "Your school day, arranged by family work and Form work.", "▦"],
+    meals: ["Meal Planning", "Fast-aware weekly meals", "Plan breakfast, lunch, and dinner beside the Church calendar so fasting days and feast days shape the week naturally.", "♨"],
+    chores: ["Household Chores", "Practical life for every child", "Keep a visible weekly rotation with lighter expectations on Sundays and feast days.", "✓"],
+    events: ["Family Calendar", "Appointments, field trips, and name days", "Keep the household’s real life beside lessons, feasts, and meals.", "◷"],
+    calendar: ["Family Calendar", "Appointments, field trips, and name days", "Keep the household’s real life beside lessons, feasts, and meals.", "◷"],
+    recipes: ["Recipe Library", "Your fast-aware family recipe box", "Save recipes once, mark fasting fit, and use them as the source for meal planning.", "☰"],
+    groceries: ["Grocery List", "From the menu to the store", "Group shopping by aisle and keep pantry staples from cluttering the list.", "▤"],
+    pantry: ["Pantry", "Staples, leftovers, and things already on hand", "Track what the household already has so the weekly grocery list stays practical and lean.", "☖"]
+  };
+  const [kicker, title, desc, icon] = intros[scope] || intros.lessons;
+  return `
+    <section class="learn-family-intro">
+      <span class="learn-family-intro-watermark">${html(icon)}</span>
+      <div class="learn-family-intro-icon">${html(icon)}</div>
+      <div>
+        <div class="learn-family-kicker">${html(kicker)}</div>
+        <h1>${html(title)}</h1>
+        <p>${html(desc)}</p>
+      </div>
+    </section>
+  `;
+}
+
+function renderFamilyPlannerScopeLegacy(vm, scope) {
+  const planning = vm.familyPlanning || {};
+  const dates = plannerDates(vm);
+  const mealByDate = new Map((planning.meals || []).map((meal) => [meal.date, meal]));
+  const recipes = planning.recipes || [];
+  const groceries = planning.groceryItems || [];
+  const chores = planning.chores || [];
+  const eventsByDate = new Map();
+  (planning.events || []).forEach((event) => {
+    if (!eventsByDate.has(event.date)) eventsByDate.set(event.date, []);
+    eventsByDate.get(event.date).push(event);
+  });
+  const titleMap = {
+    meals: ["Weekly Meals", "Plan one week at a time with fasting guidance beside the family calendar.", "♨"],
+    chores: ["Chores", "Keep practical life visible without crowding the school lesson plan.", "✓"],
+    calendar: ["Family Calendar", "Appointments, field trips, extracurriculars, and name days in one household view.", "◷"],
+    recipes: ["Recipes", "A fast-aware household recipe box connected to your weekly meal plan.", "☰"],
+    groceries: ["Grocery List", "A simple shopping list that can grow from meals and recipes.", "▤"]
+  };
+  const [title, intro, icon] = titleMap[scope] || titleMap.meals;
+  const saveBar = `<div class="learn-family-planner-save"><span data-family-planning-status>Changes save to this household's Learn planner.</span><button type="submit">Save ${html(title)}</button></div>`;
+  const hidden = `<input type="hidden" name="familyPlanning.weekStart" value="${html(dates[0])}"><input type="hidden" name="familyPlanning.fastingPreference" value="${html(planning.fastingPreference || "guidance")}"><input type="hidden" name="household.motherName" value="${html(planning.household?.motherName || "")}"><input type="hidden" name="household.motherNameDay" value="${html(planning.household?.motherNameDay || "")}"><input type="hidden" name="household.fatherName" value="${html(planning.household?.fatherName || "")}"><input type="hidden" name="household.fatherNameDay" value="${html(planning.household?.fatherNameDay || "")}">${(planning.children || []).map((child) => `<span data-family-child-id="${html(child.id)}" hidden><input name="childNameDay" value="${html(child.nameDay || "")}"></span>`).join("")}`;
+  let content = "";
+  if (scope === "meals") {
+    content = `<div class="learn-family-section-note"><strong>Weekly menu</strong><span>Tap into the fields and save the week. Recipe picker and drag-and-drop meal assignment can layer on top of this without changing the data.</span></div><div class="learn-family-meal-grid">${dates.map((date) => {
+      const day = plannerDayLabel(date);
+      const meal = mealByDate.get(date) || {};
+      const calendarDay = (vm.month.days || []).find((item) => item.date === date) || (vm.week.days || []).find((item) => item.date === date) || {};
+      const fastingClass = calendarDay.isFastDay ? "is-fast" : calendarDay.isSunday ? "is-feast" : "";
+      return `<article class="learn-family-day-card ${fastingClass}" data-setup-row="meals" data-id="${html(meal.id || "")}"><div><span><small>${html(day.weekday)}</small><b>${html(day.short)}</b></span><strong>${html(calendarDay.fastingType || calendarDay.fasting || "No fast")}</strong></div><input type="hidden" name="date" value="${html(date)}"><label><span>Breakfast</span><input name="breakfast" value="${html(meal.breakfast || "")}" placeholder="Add breakfast"></label><label><span>Lunch</span><input name="lunch" value="${html(meal.lunch || "")}" placeholder="Add lunch"></label><label><span>Dinner</span><input name="dinner" value="${html(meal.dinner || "")}" placeholder="Add dinner"></label></article>`;
+    }).join("")}</div>`;
+  } else if (scope === "calendar") {
+    content = `<div class="learn-family-section-note"><strong>This week's calendar</strong><span>Appointments, field trips, extracurriculars, and name days stay visible with school work and meals.</span></div><div class="learn-family-events-list">${dates.map((date) => {
+      const day = plannerDayLabel(date);
+      const rows = eventsByDate.get(date) || [{}];
+      const calendarDay = (vm.week.days || []).find((item) => item.date === date) || {};
+      return `<section class="learn-family-date-section"><header><span><small>${html(day.weekday)}</small><strong>${html(day.short)}</strong><em>${html(calendarDay.feast || "Family day")}</em></span><button type="button" data-setup-add-row="familyEvents" data-setup-add-target="familyEvents-${html(date)}" data-setup-add-date="${html(date)}">+ Add</button></header><div id="familyEvents-${html(date)}" data-setup-list="familyEvents" style="display:grid;gap:8px;">${rows.map((event) => familyEventSetupRow({ ...event, date: event.date || date })).join("")}</div></section>`;
+    }).join("")}</div>`;
+  } else if (scope === "chores") {
+    const choreRows = chores.length ? chores : [{}];
+    content = `<div class="learn-family-section-note"><strong>Weekly rotation</strong><span>Use one row for “Everyone” and one row per child. The grid below remains intentionally editable for now.</span></div><div class="learn-family-chore-roster">${(planning.children || []).map((child) => `<span><b style="background:${html(child.color || "var(--navy)")};">${html((child.name || "C").slice(0, 1))}</b>${html(child.name || "Child")}</span>`).join("")}</div><div data-setup-list="chores" class="learn-family-edit-list">${choreRows.map(choreSetupRow).join("")}</div><button type="button" data-setup-add-row="chores" class="learn-add-button">Add Chore</button>`;
+  } else if (scope === "recipes") {
+    content = `<div class="learn-family-section-note"><strong>Recipe library</strong><span>Mark each recipe by fasting fit so AGAPAY can suggest better meals for fast days later.</span></div><div data-setup-list="recipes" class="learn-family-edit-list">${(recipes.length ? recipes : [{}]).map(recipeSetupRow).join("")}</div><button type="button" data-setup-add-row="recipes" class="learn-add-button">Add Recipe</button>`;
+  } else {
+    const byCategory = new Map();
+    groceries.forEach((item) => {
+      const category = item.category || "Other";
+      if (!byCategory.has(category)) byCategory.set(category, []);
+      byCategory.get(category).push(item);
+    });
+    const summary = groceries.length ? [...byCategory.entries()].map(([category, items]) => `<div class="learn-family-aisle"><strong>${html(category)}</strong><span>${items.map((item) => html(item.name)).join(", ")}</span></div>`).join("") : "";
+    content = `<div class="learn-family-section-note"><strong>Grocery list</strong><span>Group items by aisle. Checked items persist so the list can become a real weekly shopping tool.</span></div>${summary ? `<div class="learn-family-grocery-summary">${summary}</div>` : ""}<div data-setup-list="groceryItems" class="learn-family-edit-list">${(groceries.length ? groceries : [{}]).map(grocerySetupRow).join("")}</div><button type="button" data-setup-add-row="groceryItems" class="learn-add-button">Add Grocery Item</button>`;
+  }
+  return `<form data-family-planning-form id="family-planner" class="learn-family-planner-panel">${hidden}${content}${saveBar}</form>`;
+}
+
+function familyPlannerModel(vm) {
+  const planning = vm.familyPlanning || {};
+  const dates = plannerDates(vm);
+  const mealByDate = new Map((planning.meals || []).map((meal) => [meal.date, meal]));
+  const groceries = (planning.groceryItems || []).map((item) => ({
+    ...item,
+    pantry: Boolean(item.pantry || item.inPantry),
+    checked: Boolean(item.checked)
+  }));
+  const monthDays = (vm.month?.days || []).map((day) => ({
+    ...day,
+    date: day.date,
+    short: day.dayNumber ? `${day.weekday || ""} ${day.dayNumber}`.trim() : day.date,
+    long: day.weekday || "",
+    isFastDay: Boolean(day.isFastDay),
+    meal: day.meal || mealByDate.get(day.date) || null
+  }));
+  const eventsByDate = new Map();
+  (planning.events || []).forEach((event) => {
+    if (!eventsByDate.has(event.date)) eventsByDate.set(event.date, []);
+    eventsByDate.get(event.date).push(event);
+  });
+  const weekDays = dates.map((date) => {
+    const label = plannerDayLabel(date);
+    const liturgical = (vm.week.days || []).find((day) => day.date === date) || {};
+    return { date, ...label, ...liturgical };
+  });
+  return {
+    planning,
+    dates,
+    monthLabel: vm.month?.label || "Month Calendar",
+    weekDays,
+    monthDays,
+    mealByDate,
+    eventsByDate,
+    recipes: planning.recipes || [],
+    groceries,
+    chores: planning.chores || []
+  };
+}
+
+function renderFeastsPanel(model, mode = "week") {
+  const days = (mode === "month" ? model.monthDays : model.weekDays)
+    .filter((day) => day.inMonth !== false && (day.feast || day.feastRank || day.isFastDay))
+    .filter((day) => day.feast || day.isFastDay)
+    .slice(0, mode === "month" ? 8 : 5);
+  return `<aside class="learn-family-feasts-card">
+    <div><small>${mode === "month" ? "Feasts this month" : "Feasts this week"}</small><strong>Church Calendar</strong></div>
+    ${days.length ? days.map((day) => `<article class="${day.isFastDay ? "is-fast" : ""}">
+      <span>${html(day.dayNumber || day.shortDate || day.short || day.date)}</span>
+      <p><strong>${html(day.feast || day.feastTitle || "Fast day")}</strong><small>${html(day.isFastDay ? day.fastingType || day.fasting || "Fast day" : day.feastRank || "Feast")}</small></p>
+    </article>`).join("") : `<p class="learn-family-empty-line">No major feast markers in this range.</p>`}
+  </aside>`;
+}
+
+function mealSlotLabel(slot) {
+  return { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner" }[slot] || slot;
+}
+
+function plannerHiddenData(model) {
+  const meals = model.weekDays.map((day) => {
+    const meal = model.mealByDate.get(day.date) || { date: day.date };
+    return `<div data-setup-row="meals" data-date="${html(day.date)}" hidden><input name="date" value="${html(day.date)}"><input name="breakfast" value="${html(meal.breakfast || "")}"><input name="lunch" value="${html(meal.lunch || "")}"><input name="dinner" value="${html(meal.dinner || "")}"></div>`;
+  }).join("");
+  return `<div hidden>
+    <input name="familyPlanning.fastingPreference" value="${html(model.planning.fastingPreference || "guidance")}">
+    <input name="familyPlanning.weekStart" value="${html(model.planning.weekStart || model.weekDays[0]?.date || "")}">
+    <input name="household.motherName" value="${html(model.planning.household?.motherName || "")}">
+    <input name="household.motherNameDay" value="${html(model.planning.household?.motherNameDay || "")}">
+    <input name="household.fatherName" value="${html(model.planning.household?.fatherName || "")}">
+    <input name="household.fatherNameDay" value="${html(model.planning.household?.fatherNameDay || "")}">
+    ${(model.planning.children || []).map((child) => `<span data-family-child-id="${html(child.id || "")}"><input name="childNameDay" value="${html(child.nameDay || "")}"></span>`).join("")}
+    <div data-setup-list="meals">${meals}</div>
+    <div data-setup-list="familyEvents">${(model.planning.events || []).map(familyEventSetupRow).join("")}</div>
+    <div data-setup-list="recipes">${model.recipes.map(recipeSetupRow).join("")}</div>
+    <div data-setup-list="groceryItems">${model.groceries.map(grocerySetupRow).join("")}</div>
+    <div data-setup-list="chores">${model.chores.map(choreSetupRow).join("")}</div>
+  </div>`;
+}
+
+function renderPlannerDaySelector(model, selectedDate) {
+  return `<div class="learn-family-day-selector">${model.weekDays.map((day) => `<a href="${plannerHref({ view: "day", date: day.date })}" class="${day.date === selectedDate ? "is-active" : ""}"><span>${day.isSunday ? "☩" : day.isFastDay ? "✥" : "·"}</span><strong>${html(day.weekday || day.weekdayLong || day.long)}</strong><small>${html(day.shortDate || day.short || day.date)}</small></a>`).join("")}</div>`;
+}
+
+function renderMealCard(day, meal, slot) {
+  const value = meal?.[slot] || "";
+  return `<button type="button" class="learn-family-meal-card" data-meal-open data-date="${html(day.date)}" data-slot="${html(slot)}"><span>${html(mealSlotLabel(slot))}</span><strong>${html(value || "No dish yet")}</strong><small>${value ? "change it" : "add a dish"} →</small></button>`;
+}
+
+function renderMealsPlan(model, displayView, vm) {
+  const selectedDate = new URLSearchParams(window.location.search).get("date") || vm.day?.selected?.date || model.weekDays[0]?.date || "";
+  if (displayView === "day") {
+    const day = model.weekDays.find((item) => item.date === selectedDate) || model.weekDays[0] || {};
+    const meal = model.mealByDate.get(day.date) || {};
+    return `<div class="learn-family-prototype">${renderPlannerDaySelector(model, day.date)}<section class="learn-family-day-hero ${day.isFastDay ? "is-fast" : ""}"><div><small>${html(day.long || day.weekdayLong || "Today")}</small><h2>${html(day.weekdayLong || day.long || "Selected Day")} · ${html(day.shortDate || day.short || day.date)}</h2><p>${html(day.feast || "Household rhythm")} ${day.fasting ? `· ${html(day.fasting)}` : ""}</p></div><button type="button" data-event-open data-date="${html(day.date)}">+ Add to calendar</button></section><section class="learn-family-card-grid learn-family-card-grid-three">${["breakfast", "lunch", "dinner"].map((slot) => renderMealCard(day, meal, slot)).join("")}</section></div>`;
+  }
+  if (displayView === "month") {
+    return `<div class="learn-family-month-layout">${renderFamilyMonthOverview(model, "meals")} ${renderFeastsPanel(model, "month")}</div>`;
+  }
+  return `<div class="learn-family-week-layout"><section class="learn-family-week-board"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => `<strong>${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small></strong>`).join("")}</div>${["breakfast", "lunch", "dinner"].map((slot) => `<div class="learn-family-week-row"><strong>${html(mealSlotLabel(slot))}</strong>${model.weekDays.map((day) => `<div>${renderMealCard(day, model.mealByDate.get(day.date) || {}, slot)}</div>`).join("")}</div>`).join("")}</section>${renderFeastsPanel(model, "week")}</div>`;
+}
+
+function renderRecipesTool(model) {
+  return `<section class="learn-family-tool-grid"><div class="learn-family-section-note"><strong>Recipe Library</strong><span>Add family recipes once, mark fasting fit, then choose them from the meal picker.</span><button type="button" data-recipe-open>+ New recipe</button></div><div class="learn-family-recipe-grid">${(model.recipes.length ? model.recipes : [{ title: "Add your first recipe", fastingType: "free", category: "Family favorite" }]).map((recipe) => `<article class="learn-family-recipe-card" data-recipe-title="${html(recipe.title || "")}" data-recipe-fasting="${html(recipe.fastingType || "")}" data-recipe-category="${html(recipe.category || "")}" data-recipe-source="${html(recipe.sourceUrl || "")}" data-recipe-ingredients="${html(recipe.ingredients || "")}" data-recipe-instructions="${html(recipe.instructions || "")}"><div><span>☰</span><small>${html(recipe.fastingType || "Any day")}</small></div><h3>${html(recipe.title || "Untitled Recipe")}</h3><p>${html(recipe.category || "Recipe")}</p><button type="button" data-recipe-open>Edit recipe</button></article>`).join("")}</div></section>`;
+}
+
+function renderGroceriesTool(model) {
+  const byCategory = new Map();
+  const shoppingItems = model.groceries.filter((item) => !item.pantry);
+  shoppingItems.forEach((item) => {
+    const category = item.category || "Other";
+    if (!byCategory.has(category)) byCategory.set(category, []);
+    byCategory.get(category).push(item);
+  });
+  const pantryCount = model.groceries.filter((item) => item.pantry).length;
+  return `<section class="learn-family-grocery-layout">
+    <div class="learn-family-section-note"><strong>Grocery List</strong><span>Build the weekly list from the menu. Pantry staples stay out of the shopping list unless you mark them as needed.</span><button type="button" data-grocery-add>+ Add grocery</button></div>
+    <div class="learn-family-grocery-summary">${[...byCategory.entries()].length ? [...byCategory.entries()].map(([category, items]) => `<div class="learn-family-aisle"><strong>${html(category)}</strong>${items.map((item) => `<label class="${item.checked ? "is-checked" : ""}"><input type="checkbox" ${item.checked ? "checked" : ""}> ${html(item.quantity ? `${item.quantity} ` : "")}${html(item.name)}</label>`).join("")}</div>`).join("") : emptyState("No grocery items yet. Add items from recipes or the grocery button.")}</div>
+    <aside class="learn-family-shopping-card"><small>Shopping rhythm</small><h3>Weekly list</h3><p>${html(String(shoppingItems.length))} item${shoppingItems.length === 1 ? "" : "s"} to shop · ${html(String(pantryCount))} pantry staple${pantryCount === 1 ? "" : "s"} saved.</p><a href="${plannerHref({ scope: "meals", tool: "pantry", view: "week", term: null, termId: null })}">Review pantry →</a></aside>
+  </section>`;
+}
+
+function renderPantryTool(model) {
+  const pantryItems = model.groceries.filter((item) => item.inPantry || item.pantry || item.have);
+  return `<section class="learn-family-pantry-layout">
+    <div class="learn-family-section-note"><strong>Pantry</strong><span>Your pantry tells the grocery list what you already have. Staples here are kept apart from the shopping list so you shop only for what is missing.</span><button type="button" data-grocery-add data-pantry-add>+ Add staple</button></div>
+    <div class="learn-family-pantry-cloud">${pantryItems.length ? pantryItems.map((item) => `<span>${html(item.name || item.title || item.item)}<button type="button" data-grocery-remove="${html(item.id || "")}" aria-label="Remove ${html(item.name || item.title || "item")}">×</button></span>`).join("") : `<p class="learn-family-empty-line">No pantry staples yet. Add staples like rice, flour, olive oil, beans, or leftovers.</p>`}</div>
+    <aside><small>Why it matters</small><p>Pantry staples and leftovers should shape the week instead of hiding in your cabinets. This keeps meal planning practical, fast-aware, and less wasteful.</p></aside>
+  </section>`;
+}
+
+function renderFamilyMonthOverview(model, scope = "meals") {
+  const cells = model.monthDays.length ? model.monthDays : model.weekDays;
+  const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  return `<section class="learn-family-month-card">
+    <header><div><small>${html(scope === "meals" ? "Meal calendar" : scope === "events" ? "Family calendar" : "Household month")}</small><h3>${html(model.monthLabel)}</h3></div><a href="${plannerHref({ scope: "meals", tool: "groceries", view: "month", term: null, termId: null })}">Grocery list →</a></header>
+    <div class="learn-family-month-weekdays">${weekdays.map((day) => `<span>${html(day)}</span>`).join("")}</div>
+    <div class="learn-family-month-board is-full-month">${cells.map((day) => {
+    const meal = day.meal || model.mealByDate.get(day.date) || {};
+    const events = model.eventsByDate.get(day.date) || [];
+    const scopeText = scope === "meals"
+      ? meal.dinner || meal.lunch || meal.breakfast || ""
+      : scope === "chores"
+        ? day.isSunday ? "Rest" : "Chores"
+        : events[0]?.title || "";
+    return `<article class="${day.inMonth === false ? "is-muted" : ""} ${day.isFastDay ? "is-fast" : ""} ${day.isSunday ? "is-feast" : ""}">
+      <div><strong>${html(day.weekday || day.weekdayLong || "")}</strong><span>${html(day.dayNumber || day.shortDate || day.short)}</span></div>
+      <small>${html(day.fastingType || day.fasting || day.feast || "Household day")}</small>
+      <p>${html(scopeText || "Plan")}</p>
+      ${events.slice(0, 2).map((event) => `<em>${html(event.startTime || "")} ${html(event.title)}</em>`).join("")}
+    </article>`;
+  }).join("")}</div>
+  </section>`;
+}
+
+function renderChoresScope(model, displayView) {
+  const people = ["Everyone", ...(model.planning.children || []).map((child) => child.name).filter(Boolean)];
+  if (displayView === "day") {
+    const selectedDate = new URLSearchParams(window.location.search).get("date") || model.weekDays[0]?.date || "";
+    const day = model.weekDays.find((item) => item.date === selectedDate) || model.weekDays[0] || {};
+    return `<div class="learn-family-prototype">${renderPlannerDaySelector(model, day.date)}<section class="learn-family-card-grid">${people.map((person) => { const chore = model.chores.find((item) => (item.assignee || "Everyone") === person && (!item.day || item.day === (day.weekdayLong || day.long))); return `<article class="learn-family-person-card"><span>${html(person.slice(0, 1) || "•")}</span><strong>${html(person)}</strong><p>${html(chore?.title || (day.isSunday ? "Rest" : "Choose a chore"))}</p><button type="button" data-chore-open data-assignee="${html(person)}" data-day="${html(day.weekdayLong || day.long || "")}">${chore ? "Edit" : "Add"} chore</button></article>`; }).join("")}</section></div>`;
+  }
+  return `<section class="learn-family-week-board"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => `<strong>${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small></strong>`).join("")}</div>${people.map((person) => `<div class="learn-family-week-row"><strong>${html(person)}</strong>${model.weekDays.map((day) => { const chore = model.chores.find((item) => (item.assignee || "Everyone") === person && (!item.day || item.day === (day.weekdayLong || day.long))); return `<div><button type="button" class="learn-family-mini-card" data-chore-open data-assignee="${html(person)}" data-day="${html(day.weekdayLong || day.long || "")}">${html(chore?.title || (day.isSunday ? "Rest" : "Add chore"))}</button></div>`; }).join("")}</div>`).join("")}</section>`;
+}
+
+function renderEventsScope(model, displayView) {
+  const selectedDate = new URLSearchParams(window.location.search).get("date") || model.weekDays[0]?.date || "";
+  const days = displayView === "day" ? model.weekDays.filter((day) => day.date === selectedDate) : model.weekDays;
+  if (displayView === "month") return `<div class="learn-family-month-layout">${renderFamilyMonthOverview(model, "events")} ${renderFeastsPanel(model, "month")}</div>`;
+  return `<div class="learn-family-prototype">${displayView === "day" ? renderPlannerDaySelector(model, selectedDate) : ""}<div class="learn-family-events-list">${days.map((day) => { const events = model.eventsByDate.get(day.date) || []; return `<section class="learn-family-date-section"><header><span><small>${html(day.weekday || day.weekdayLong)}</small><strong>${html(day.shortDate || day.short || day.date)}</strong><em>${html(day.feast || "")}</em></span><button type="button" data-event-open data-date="${html(day.date)}">+ Add event</button></header>${events.length ? events.map((event) => `<button type="button" class="learn-family-event-row" data-event-open data-event-id="${html(event.id || "")}" data-date="${html(day.date)}" data-title="${html(event.title || "")}" data-time="${html(event.startTime || "")}" data-location="${html(event.location || "")}" data-notes="${html(event.notes || "")}" data-type="${html(event.eventType || "")}"><span>${html(event.startTime || "—")}</span><strong>${html(event.title)}</strong><small>${html(event.location || event.eventType || "Family event")}</small></button>`).join("") : `<p class="learn-family-empty-line">No events planned.</p>`}</section>`; }).join("")}</div></div>`;
+}
+
+function renderFamilyPlannerModals(model) {
+  return `<div class="learn-family-modal" data-family-modal="meal" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Meal Picker</small><h2>Choose a dish</h2><p data-meal-modal-context>Pick a recipe or type a dish name.</p><input data-meal-custom-input placeholder="Type a dish name..."><div class="learn-family-picker-list">${model.recipes.length ? model.recipes.map((recipe) => `<button type="button" data-meal-pick="${html(recipe.title)}"><strong>${html(recipe.title)}</strong><span>${html(recipe.fastingType || "Any day")} · ${html(recipe.category || "Recipe")}</span></button>`).join("") : `<span class="learn-family-empty-line">No recipes yet. You can still type a dish above.</span>`}</div><div class="learn-family-modal-actions"><button type="button" data-meal-clear>Clear meal</button><button type="button" data-meal-save>Save meal</button></div></div></div>
+  <div class="learn-family-modal" data-family-modal="recipe" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Recipe</small><h2>Save a family recipe</h2><div class="learn-family-modal-grid">${setupInput("Recipe name", "modalRecipe.title")}${setupSelect("Fasting fit", "modalRecipe.fastingType", "", ["free", "fish", "oilwine", "strict"])}${setupInput("Category", "modalRecipe.category")}${setupInput("Source URL", "modalRecipe.sourceUrl")}<label>Ingredients<textarea name="modalRecipe.ingredients" rows="4"></textarea></label><label>Instructions<textarea name="modalRecipe.instructions" rows="4"></textarea></label></div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-recipe-save>Save recipe</button></div></div></div>
+  <div class="learn-family-modal" data-family-modal="event" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Calendar</small><h2>Add to calendar</h2><div class="learn-family-modal-grid">${setupInput("Title", "modalEvent.title")}${setupSelect("Type", "modalEvent.eventType", "", ["Appointment", "Field Trip", "Extracurricular", "Name Day", "Family"])}${setupInput("Date", "modalEvent.date", "", { type: "date" })}${setupInput("Time", "modalEvent.startTime", "", { type: "time" })}${setupInput("Location", "modalEvent.location")}<label>Notes<textarea name="modalEvent.notes" rows="3"></textarea></label></div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-event-save>Save event</button></div></div></div>
+  <div class="learn-family-modal" data-family-modal="chore" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Chore Rotation</small><h2>Add chore</h2><div class="learn-family-modal-grid">${setupInput("Chore", "modalChore.title")}${setupInput("Assigned to", "modalChore.assignee")}${setupSelect("Day", "modalChore.day", "", ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])}${setupSelect("Time", "modalChore.timeOfDay", "Anytime", ["Anytime", "Morning", "Afternoon", "Evening"])}${setupInput("Notes", "modalChore.notes")}</div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-chore-save>Save chore</button></div></div></div>`;
+}
+
+function renderFamilyPlannerScope(vm, scope, displayView = "week", mealTool = "plan") {
+  const model = familyPlannerModel(vm);
+  const hidden = plannerHiddenData(model);
+  const saveBar = `<div class="learn-family-planner-save"><span data-family-planning-status>Changes save to the household Family Planner.</span><button type="submit">Save Family Planner</button></div>`;
+  const content = scope === "meals"
+    ? mealTool === "recipes"
+      ? renderRecipesTool(model)
+      : mealTool === "groceries"
+        ? renderGroceriesTool(model)
+        : mealTool === "pantry"
+          ? renderPantryTool(model)
+          : renderMealsPlan(model, displayView, vm)
+    : scope === "chores"
+      ? renderChoresScope(model, displayView)
+      : renderEventsScope(model, displayView);
+  return `<form data-family-planning-form id="family-planner" class="learn-family-planner-panel">${hidden}${content}${saveBar}${renderFamilyPlannerModals(model)}</form>`;
 }
 
 function adjacentMonthKey(monthKey, delta) {
@@ -1800,7 +2179,8 @@ function recipeSetupRow(recipe = {}) {
 }
 
 function grocerySetupRow(item = {}) {
-  return `<div data-setup-row="groceryItems" data-id="${html(item.id || "")}" class="learn-family-row learn-grocery-row">${setupInput("Item", "name", item.name || "")}${setupInput("Quantity", "quantity", item.quantity || "")}${setupSelect("Aisle", "category", item.category || "Produce", ["Produce", "Pantry", "Bakery", "Dairy", "Frozen", "Household", "Other"])}<label class="learn-check-field"><input type="checkbox" name="checked" ${item.checked ? "checked" : ""}> In cart</label>${setupRemoveButton()}</div>`;
+  const isPantry = Boolean(item.pantry || item.inPantry);
+  return `<div data-setup-row="groceryItems" data-id="${html(item.id || "")}" class="learn-family-row learn-grocery-row">${setupInput("Item", "name", item.name || "")}${setupInput("Quantity", "quantity", item.quantity || "")}${setupSelect("Aisle", "category", item.category || (isPantry ? "Pantry" : "Produce"), ["Produce", "Pantry", "Bakery", "Dairy", "Frozen", "Household", "Other"])}<label class="learn-check-field"><input type="checkbox" name="checked" ${item.checked ? "checked" : ""}> In cart</label><label class="learn-check-field"><input type="checkbox" name="pantry" ${isPantry ? "checked" : ""}> Pantry staple</label>${setupRemoveButton()}</div>`;
 }
 
 function nextSevenDates(startDate = "") {
@@ -2348,7 +2728,7 @@ function setupPayloadFromForm(form) {
       groceryItems: collectRows(form, "groceryItems", (row) => {
         const name = rowValue(row, "name");
         if (!name) return null;
-        return { id: row.dataset.id || "", name, quantity: rowValue(row, "quantity"), category: rowValue(row, "category"), checked: Boolean(row.querySelector('[name="checked"]')?.checked) };
+        return { id: row.dataset.id || "", name, quantity: rowValue(row, "quantity"), category: rowValue(row, "category"), checked: Boolean(row.querySelector('[name="checked"]')?.checked), pantry: Boolean(row.querySelector('[name="pantry"]')?.checked) };
       })
     },
     coOp: {
@@ -2392,7 +2772,12 @@ function familyPlanningPayloadFromForm(form) {
       }),
       groceryItems: collectRows(form, "groceryItems", (row) => {
         const name = rowValue(row, "name");
-        return name ? { id: row.dataset.id || "", name, quantity: rowValue(row, "quantity"), category: rowValue(row, "category"), checked: Boolean(row.querySelector('[name="checked"]')?.checked) } : null;
+        return name ? { id: row.dataset.id || "", name, quantity: rowValue(row, "quantity"), category: rowValue(row, "category"), checked: Boolean(row.querySelector('[name="checked"]')?.checked), pantry: Boolean(row.querySelector('[name="pantry"]')?.checked) } : null;
+      }),
+      chores: collectRows(form, "chores", (row) => {
+        const title = rowValue(row, "title");
+        const assignee = rowValue(row, "assignee");
+        return title || assignee ? { id: row.dataset.id || "", title, assignee, day: rowValue(row, "day"), timeOfDay: rowValue(row, "timeOfDay"), notes: rowValue(row, "notes"), completed: Boolean(row.querySelector('[name="completed"]')?.checked) } : null;
       })
     }
   };
@@ -2432,9 +2817,10 @@ function setupBlankRow(type, form, preset = {}) {
   if (type === "formationRhythms") return formationRhythmSetupRow({});
   if (type === "formationRecitation") return formationRecitationSetupRow({});
   if (type === "formationEnrichment") return formationEnrichmentSetupRow(preset, currentSetupChildren(form), terms, currentTermId, groupingMode);
-  if (type === "familyEvents") return familyEventSetupRow({});
+  if (type === "familyEvents") return familyEventSetupRow({ date: preset.date || "" });
   if (type === "recipes") return recipeSetupRow({});
   if (type === "groceryItems") return grocerySetupRow({});
+  if (type === "chores") return choreSetupRow({});
   return "";
 }
 
@@ -2582,6 +2968,7 @@ function wireSetupPage() {
       const preset = {};
       if (addButton.dataset.setupAddSubjectType) preset.subjectType = addButton.dataset.setupAddSubjectType;
       if (addButton.dataset.setupAddBlockType) preset.blockType = addButton.dataset.setupAddBlockType;
+      if (addButton.dataset.setupAddDate) preset.date = addButton.dataset.setupAddDate;
       const list = addButton.dataset.setupAddTarget
         ? document.getElementById(addButton.dataset.setupAddTarget)
         : form.querySelector(`[data-setup-list="${type}"]`);
@@ -2652,7 +3039,174 @@ function wirePlanner(vm) {
     }
   });
   const familyForm = root.querySelector("[data-family-planning-form]");
+  let activeMeal = null;
+  const openFamilyModal = (name) => {
+    const modal = familyForm?.querySelector(`[data-family-modal="${name}"]`);
+    if (!modal) return null;
+    modal.hidden = false;
+    modal.style.display = "flex";
+    modal.querySelector("input, textarea, button")?.focus();
+    return modal;
+  };
+  const closeFamilyModals = () => {
+    familyForm?.querySelectorAll("[data-family-modal]").forEach((modal) => {
+      modal.hidden = true;
+      modal.style.display = "none";
+    });
+  };
+  const submitFamilyPlanner = () => {
+    familyForm?.requestSubmit();
+  };
+  const setModalValue = (name, value) => {
+    const field = familyForm?.elements[name];
+    if (field) field.value = value || "";
+  };
+  const getModalValue = (name) => familyForm?.elements[name]?.value?.trim() || "";
+  const setMealValue = (date, slot, value) => {
+    const row = familyForm?.querySelector(`[data-setup-row="meals"][data-date="${CSS.escape(date)}"]`);
+    const input = row?.querySelector(`[name="${CSS.escape(slot)}"]`);
+    if (input) input.value = value || "";
+    root.querySelectorAll(`[data-meal-open][data-date="${CSS.escape(date)}"][data-slot="${CSS.escape(slot)}"]`).forEach((button) => {
+      const strong = button.querySelector("strong");
+      const small = button.querySelector("small");
+      if (strong) strong.textContent = value || "No dish yet";
+      if (small) small.textContent = value ? "change it →" : "add a dish →";
+    });
+  };
   familyForm?.addEventListener("click", (event) => {
+    const close = event.target.closest("[data-family-modal-close]");
+    if (close) {
+      closeFamilyModals();
+      return;
+    }
+    const mealButton = event.target.closest("[data-meal-open]");
+    if (mealButton) {
+      activeMeal = { date: mealButton.dataset.date || "", slot: mealButton.dataset.slot || "" };
+      const modal = openFamilyModal("meal");
+      const input = modal?.querySelector("[data-meal-custom-input]");
+      const context = modal?.querySelector("[data-meal-modal-context]");
+      const row = familyForm.querySelector(`[data-setup-row="meals"][data-date="${CSS.escape(activeMeal.date)}"]`);
+      if (input) input.value = row?.querySelector(`[name="${CSS.escape(activeMeal.slot)}"]`)?.value || "";
+      if (context) context.textContent = `${mealSlotLabel(activeMeal.slot)} · ${activeMeal.date}`;
+      return;
+    }
+    const mealPick = event.target.closest("[data-meal-pick]");
+    if (mealPick && activeMeal) {
+      const input = familyForm.querySelector("[data-meal-custom-input]");
+      if (input) input.value = mealPick.dataset.mealPick || "";
+      return;
+    }
+    if (event.target.closest("[data-meal-clear]") && activeMeal) {
+      setMealValue(activeMeal.date, activeMeal.slot, "");
+      closeFamilyModals();
+      submitFamilyPlanner();
+      return;
+    }
+    if (event.target.closest("[data-meal-save]") && activeMeal) {
+      setMealValue(activeMeal.date, activeMeal.slot, familyForm.querySelector("[data-meal-custom-input]")?.value?.trim() || "");
+      closeFamilyModals();
+      submitFamilyPlanner();
+      return;
+    }
+    const recipeOpen = event.target.closest("[data-recipe-open]");
+    if (recipeOpen) {
+      const card = recipeOpen.closest("[data-recipe-title]");
+      setModalValue("modalRecipe.title", card?.dataset.recipeTitle || "");
+      setModalValue("modalRecipe.fastingType", card?.dataset.recipeFasting || "free");
+      setModalValue("modalRecipe.category", card?.dataset.recipeCategory || "");
+      setModalValue("modalRecipe.sourceUrl", card?.dataset.recipeSource || "");
+      setModalValue("modalRecipe.ingredients", card?.dataset.recipeIngredients || "");
+      setModalValue("modalRecipe.instructions", card?.dataset.recipeInstructions || "");
+      openFamilyModal("recipe");
+      return;
+    }
+    if (event.target.closest("[data-recipe-save]")) {
+      const list = familyForm.querySelector('[data-setup-list="recipes"]');
+      const recipe = {
+        title: getModalValue("modalRecipe.title"),
+        fastingType: getModalValue("modalRecipe.fastingType"),
+        category: getModalValue("modalRecipe.category"),
+        sourceUrl: getModalValue("modalRecipe.sourceUrl"),
+        ingredients: getModalValue("modalRecipe.ingredients"),
+        instructions: getModalValue("modalRecipe.instructions")
+      };
+      if (recipe.title && list) list.insertAdjacentHTML("beforeend", recipeSetupRow(recipe));
+      closeFamilyModals();
+      submitFamilyPlanner();
+      return;
+    }
+    const eventOpen = event.target.closest("[data-event-open]");
+    if (eventOpen) {
+      setModalValue("modalEvent.title", eventOpen.dataset.title || "");
+      setModalValue("modalEvent.eventType", eventOpen.dataset.type || "Family");
+      setModalValue("modalEvent.date", eventOpen.dataset.date || "");
+      setModalValue("modalEvent.startTime", eventOpen.dataset.time || "");
+      setModalValue("modalEvent.location", eventOpen.dataset.location || "");
+      setModalValue("modalEvent.notes", eventOpen.dataset.notes || "");
+      openFamilyModal("event");
+      return;
+    }
+    if (event.target.closest("[data-event-save]")) {
+      const list = familyForm.querySelector('[data-setup-list="familyEvents"]');
+      const entry = {
+        title: getModalValue("modalEvent.title"),
+        eventType: getModalValue("modalEvent.eventType"),
+        date: getModalValue("modalEvent.date"),
+        startTime: getModalValue("modalEvent.startTime"),
+        location: getModalValue("modalEvent.location"),
+        notes: getModalValue("modalEvent.notes")
+      };
+      if (entry.title && entry.date && list) list.insertAdjacentHTML("beforeend", familyEventSetupRow(entry));
+      closeFamilyModals();
+      submitFamilyPlanner();
+      return;
+    }
+    const choreOpen = event.target.closest("[data-chore-open]");
+    if (choreOpen) {
+      setModalValue("modalChore.title", "");
+      setModalValue("modalChore.assignee", choreOpen.dataset.assignee || "");
+      setModalValue("modalChore.day", choreOpen.dataset.day || "");
+      setModalValue("modalChore.timeOfDay", "Anytime");
+      setModalValue("modalChore.notes", "");
+      openFamilyModal("chore");
+      return;
+    }
+    if (event.target.closest("[data-chore-save]")) {
+      const list = familyForm.querySelector('[data-setup-list="chores"]');
+      const entry = {
+        title: getModalValue("modalChore.title"),
+        assignee: getModalValue("modalChore.assignee"),
+        day: getModalValue("modalChore.day"),
+        timeOfDay: getModalValue("modalChore.timeOfDay"),
+        notes: getModalValue("modalChore.notes")
+      };
+      if ((entry.title || entry.assignee) && list) list.insertAdjacentHTML("beforeend", choreSetupRow(entry));
+      closeFamilyModals();
+      submitFamilyPlanner();
+      return;
+    }
+    const groceryRemove = event.target.closest("[data-grocery-remove]");
+    if (groceryRemove) {
+      const id = groceryRemove.dataset.groceryRemove || "";
+      if (id) {
+        const row = familyForm.querySelector(`[data-setup-list="groceryItems"] [data-setup-row="groceryItems"][data-id="${CSS.escape(id)}"]`);
+        if (row) row.remove();
+      }
+      submitFamilyPlanner();
+      return;
+    }
+    const groceryAdd = event.target.closest("[data-grocery-add]");
+    if (groceryAdd) {
+      const list = familyForm.querySelector('[data-setup-list="groceryItems"]');
+      const pantry = groceryAdd.hasAttribute("data-pantry-add");
+      if (list) list.insertAdjacentHTML("beforeend", grocerySetupRow({
+        name: pantry ? "New pantry staple" : "New grocery item",
+        category: pantry ? "Pantry" : "Produce",
+        pantry
+      }));
+      submitFamilyPlanner();
+      return;
+    }
     const remove = event.target.closest("[data-setup-remove-row]");
     if (remove) {
       const row = remove.closest("[data-setup-row]");
@@ -2661,8 +3215,10 @@ function wirePlanner(vm) {
     }
     const add = event.target.closest("[data-setup-add-row]");
     if (!add) return;
-    const list = familyForm.querySelector(`[data-setup-list="${add.dataset.setupAddRow}"]`);
-    if (list) list.insertAdjacentHTML("beforeend", setupBlankRow(add.dataset.setupAddRow, familyForm));
+    const list = add.dataset.setupAddTarget
+      ? familyForm.querySelector(`#${CSS.escape(add.dataset.setupAddTarget)}`)
+      : familyForm.querySelector(`[data-setup-list="${add.dataset.setupAddRow}"]`);
+    if (list) list.insertAdjacentHTML("beforeend", setupBlankRow(add.dataset.setupAddRow, familyForm, { date: add.dataset.setupAddDate || "" }));
   });
   familyForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
