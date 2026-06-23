@@ -156,7 +156,7 @@ function pageIntro(vm) {
   const meta = pageIntroMeta(vm.page.id);
   const subtitle = vm.page.subtitle ? vm.page.subtitle : meta.description;
   return `
-    <section class="learn-page-intro ${vm.page.id === "dashboard" ? "learn-page-intro--dashboard" : ""}" aria-labelledby="learn-page-heading">
+    <section class="learn-page-intro learn-page-intro--dashboard" aria-labelledby="learn-page-heading">
       <div class="learn-page-intro-heading">
         <span class="learn-page-intro-icon">${pageIntroIcon(vm.page.id)}</span>
         <div>
