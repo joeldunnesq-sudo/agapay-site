@@ -246,8 +246,12 @@ const I = {
   person:  c => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
   play:    `<svg width="26" height="26" viewBox="0 0 24 24" fill="#061522"><polygon points="6,3 21,12 6,21"/></svg>`,
   pause:   `<svg width="26" height="26" viewBox="0 0 24 24" fill="#061522"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>`,
-  back15:  `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/><text x="12" y="15" fill="#F6F1E8" font-size="7" font-family="'DM Sans'" font-weight="bold" text-anchor="middle">15</text></svg>`,
-  fwd30:   `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><polyline points="21 3 21 8 16 8"/><text x="12" y="15" fill="#F6F1E8" font-size="7" font-family="'DM Sans'" font-weight="bold" text-anchor="middle">30</text></svg>`,
+  
+  // High-Contrast Rewind 15 Button
+  back15:  `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/><text x="12" y="15.5" fill="#F6F1E8" font-size="8px" font-family="'DM Sans', sans-serif" font-weight="800" text-anchor="middle" stroke="none">15</text></svg>`,
+  
+  // High-Contrast Fast-Forward 30 Button
+  fwd30:   `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><polyline points="21 3 21 8 16 8"/><text x="12" y="15.5" fill="#F6F1E8" font-size="8px" font-family="'DM Sans', sans-serif" font-weight="800" text-anchor="middle" stroke="none">30</text></svg>`,
 };
 
 // ─── Popular Orthodox Podcast Data preloads ──────────────────────────────────
