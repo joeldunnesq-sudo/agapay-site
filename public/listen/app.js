@@ -111,7 +111,7 @@ async function fetchFeed(xmlUrl) {
   const items = [...doc.querySelectorAll('item')].slice(0, 30).map((item, i) => {
     const enclosure = item.querySelector('enclosure');
     return {
-      guid:    (item.querySelector('guid')?.textContent || enclosure?.getAttribute('url') || String(i)).trim(),
+      guid:    (item.querySelector('guid')?.textContent || enclosure?.getAttribute('url'] || String(i)).trim(),
       title:   item.querySelector('title')?.textContent?.trim() || 'Untitled',
       show:    channelTitle,
       xmlUrl,
@@ -250,7 +250,7 @@ const I = {
   fwd30:   `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><polyline points="21 3 21 8 16 8"/><text x="12" y="15" fill="#F6F1E8" font-size="7" font-family="'DM Sans'" font-weight="bold" text-anchor="middle">30</text></svg>`,
 };
 
-// ─── Demo / Trending data (Cleaned of Placeholders) ───────────────────────────
+// ─── Popular Orthodox Podcast Data preloads ──────────────────────────────────
 const DEMO_EPS = [];
 const TRENDING = [
   { title: 'Lord of Spirits', author: 'Fr. Stephen De Young & Fr. Andrew Stephen Damick', url: 'https://www.ancientfaith.com/podcasts/lordofspirits/rss' },
@@ -305,7 +305,7 @@ function renderRssSheet() {
     </div>`;
 }
 
-// ─── New Episode Description Drawer Module ──────────────────────────────────
+// ─── Episode Description Drawer Module ──────────────────────────────────
 function renderDescriptionSheet() {
   if (!state.descriptionSheet) return '';
   const ep = state.current || { title: 'No Track Selected', show: 'AGAPAY Listen', description: 'Select an episode from your library or discover feed to begin listening.' };
@@ -436,7 +436,7 @@ function renderPlayer() {
       </div>
       <div class="skip-back tappable" style="width:52px;height:52px;display:flex;align-items:center;justify-content:center">${I.back15}</div>
       
-      <div class="play-pause tappable" style="width:74px;height:74px;border-radius:50%;background:linear-gradient(135deg,${GOLD},#A97C25);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 28px rgba(200,162,74,0.4)">
+      <div class="play-pause tappable" style="width:74px;height:74px;border-radius:50%;background:linear-gradient(135deg,${GOLD},#A97C25);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 28px rgba(200,162,74,0.45)">
         ${state.playing ? I.pause : I.play}
       </div>
       
@@ -448,8 +448,8 @@ function renderPlayer() {
 
     <div style="display:flex; justify-content:center; align-items:center; gap:16px; padding:12px 20px; border:1px solid rgba(255,255,255,0.04); border-radius:30px; background:rgba(0,0,0,0.15); width:fit-content; margin:auto; margin-top:auto;">
       ${[
-        ['<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', 'Sleep'],
-        ['<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2" stroke-linecap="round"><polygon points="5,4 15,12 5,20"/><polygon points="12,4 22,12 12,20"/></svg>', '1.0×'],
+        ['sleep-btn-dummy', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', 'Sleep', MUTED],
+        ['speed-btn-dummy', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2" stroke-linecap="round"><polygon points="5,4 15,12 5,20"/><polygon points="12,4 22,12 12,20"/></svg>', '1.0×', MUTED],
         ['open-desc-btn', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', 'Details', GOLD],
         ['share-btn', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>', 'Share', MUTED]
       ].map(([idOrSvg, svgOrLabel, labelOrColor, optionalColor]) => {
@@ -495,9 +495,32 @@ function renderDiscover() {
             <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.title)}</div>
             <div style="font-size:0.62rem;color:${MUTED};margin-top:3px">${esc(f.author||'')}</div>
           </div>
+          <div class="follow-btn tappable" data-url="${esc(f.url)}" data-title="${esc(f.title)}"
+            style="padding:6px 12px;background:${state.subs.find(s=>s.xmlUrl===f.url)?'rgba(200,162,74,0.08)':'rgba(255,255,255,0.04)'};border:1px solid ${state.subs.find(s=>s.xmlUrl===f.url)?'rgba(200,162,74,0.2)':'rgba(255,255,255,0.08)'};border-radius:12px;font-size:0.58rem;color:${state.subs.find(s=>s.xmlUrl===f.url)?GOLD:MUTED};font-weight:700;white-space:nowrap;letter-spacing:0.02em">
+            ${state.subs.find(s=>s.xmlUrl===f.url) ? 'Following' : '+ Follow'}
+          </div>
         </div>`
-      ).join('')}
-    </div>` : ''}
+      ).join('') : `<div style="padding:32px;text-align:center;color:${MUTED};font-size:0.85rem;font-style:italic">Searching…</div>`}
+    </div>` : `
+    <div style="padding:0 20px;margin-bottom:16px">
+      <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${MUTED};font-weight:700;margin-bottom:12px;padding-left:4px">Popular Orthodox Podcasts</div>
+      <div style="background:rgba(255,255,255,0.01);border-radius:16px;border:1px solid rgba(255,255,255,0.04);overflow:hidden;box-shadow: 0 4px 20px rgba(0,0,0,0.2)">
+        ${TRENDING.map((t,i) => `
+          <div style="display:flex;gap:14px;align-items:center;padding:12px 16px;${i<TRENDING.length-1?'border-bottom:1px solid rgba(255,255,255,0.04)':''}">
+            <span style="font-size:0.8rem;color:${i<2?GOLD:STONE};font-weight:700;width:16px;text-align:center;font-family:'Cormorant Garamond',serif">${i+1}</span>
+            ${epArt({image:''}, 42, i)}
+            <div style="flex:1;min-width:0">
+              <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.95rem;color:#F6F1E8;line-height:1.2">${esc(t.title)}</div>
+              <div style="font-size:0.58rem;color:${MUTED};margin-top:2px">${esc(t.author)}</div>
+            </div>
+            <div class="follow-btn tappable" data-url="${esc(t.url)}" data-title="${esc(t.title)}"
+              style="padding:5px 12px;background:${state.subs.find(s=>s.xmlUrl===t.url)?'rgba(200,162,74,0.08)':'rgba(255,255,255,0.04)'};border:1px solid ${state.subs.find(s=>s.xmlUrl===t.url)?'rgba(200,162,74,0.18)' : 'rgba(255,255,255,0.08)'};border-radius:12px;font-size:0.58rem;color:${state.subs.find(s=>s.xmlUrl===t.url)?GOLD:MUTED};font-weight:700">
+              ${state.subs.find(s=>s.xmlUrl===t.url)?'Following':'+ Follow'}
+            </div>
+          </div>`
+        ).join('')}
+      </div>
+    </div>`}
   </div>`;
 }
 
@@ -529,17 +552,73 @@ function renderLibrary() {
   </div>`;
 }
 
-function renderProfile() {
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:88px;background:${NIGHT}">
-    <div style="padding:16px 24px 20px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:500;color:#F6F1E8">Profile</div>
-    <div style="display:flex;flex-direction:column;align-items:center;padding:4px 22px 24px">
-      <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#1C3A4A,#0B2130);border:2px solid rgba(200,162,74,0.3);display:flex;align-items:center;justify-content:center;margin-bottom:12px">
-        <span style="font-size:1.6rem;color:${GOLD};font-family:'Cormorant Garamond',serif">JD</span>
+  function renderProfile() {
+    return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:88px;background:${NIGHT}">
+      <div style="padding:16px 24px 20px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:500;color:#F6F1E8">Profile</div>
+      
+      <!-- User Avatar & Identity Card -->
+      <div style="display:flex;flex-direction:column;align-items:center;padding:4px 22px 24px">
+        <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#1C3A4A,#0B2130);border:2px solid rgba(200,162,74,0.3);display:flex;align-items:center;justify-content:center;margin-bottom:12px;box-shadow: 0 8px 24px rgba(0,0,0,0.3)">
+          <span style="font-size:1.6rem;color:${GOLD};font-weight:500;font-family:'Cormorant Garamond',Georgia,serif;letter-spacing:0.05em">JD</span>
+        </div>
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;color:#F6F1E8;margin-bottom:3px;letter-spacing:0.02em">Joel Dunn</div>
+        <div style="font-size:0.6rem;color:${GOLD};font-weight:700;letter-spacing:0.16em;text-transform:uppercase">AGAPAY Member</div>
       </div>
-      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;color:#F6F1E8">Joel Dunn</div>
-    </div>
-  </div>`;
-}
+  
+      <!-- Live Library Metric Indicators -->
+      <div style="display:flex;margin:0 20px 24px;background:rgba(255,255,255,0.02);border-radius:16px;border:1px solid rgba(255,255,255,0.05);overflow:hidden;box-shadow: 0 4px 16px rgba(0,0,0,0.15)">
+        ${[
+          [String(state.subs.length), 'Following'],
+          [String(state.episodes.length), 'Cached Tracks'],
+          ['0h', 'Listened']
+        ].map(([v,l],i) => `
+          <div style="flex:1;padding:14px 10px;text-align:center;${i<2?'border-right:1px solid rgba(255,255,255,0.04)':''}">
+            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.45rem;font-weight:500;color:${GOLD}">${v}</div>
+            <div style="font-size:0.58rem;color:${MUTED};margin-top:2px;font-weight:500;letter-spacing:0.02em">${l}</div>
+          </div>`
+        ).join('')}
+      </div>
+  
+      <!-- Library Transfer Interactivity Block -->
+      <div style="padding:0 20px;margin-bottom:16px">
+        <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px;padding-left:4px">Library Transfer</div>
+        <div style="display:flex;gap:10px">
+          ${[
+            ['import-opml', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>', 'Import', 'OPML'],
+            ['export-opml', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>', 'Export', 'OPML'],
+            ['sync-pcasts', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2.2" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>', 'Sync', 'Pocket Casts'],
+          ].map(([id, svg, label, sub]) => `
+            <div ${id ? `id="${id}"` : ''} class="tappable action-card" style="flex:1;padding:16px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:10px;box-shadow: 0 4px 12px rgba(0,0,0,0.1);transition: all 0.2s">
+              <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,rgba(200,162,74,0.14),rgba(200,162,74,0.04));border:1px solid rgba(200,162,74,0.2);display:flex;align-items:center;justify-content:center">${svg}</div>
+              <div style="text-align:center">
+                <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.9rem;font-weight:500;color:#F6F1E8;line-height:1.2">${label}</div>
+                <div style="font-size:0.56rem;color:${MUTED};margin-top:2px;font-weight:500">${sub}</div>
+              </div>
+            </div>`
+          ).join('')}
+        </div>
+      </div>
+  
+      <!-- Application Preferences Suite -->
+      <div style="padding:0 20px;margin-bottom:24px">
+        <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px;padding-left:4px">Preferences</div>
+        <div style="background:rgba(255,255,255,0.01);border-radius:16px;border:1px solid rgba(255,255,255,0.04);overflow:hidden;box-shadow: 0 4px 16 rgba(0,0,0,0.15)">
+          ${[['Liturgical Calendar Alerts', true], ['Auto-download on Wi-Fi', false]].map(([l, on]) => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.04)">
+              <span style="font-size:0.85rem;color:#F6F1E8;font-weight:500">${l}</span>
+              <div style="width:34px;height:18px;border-radius:10px;background:${on ? GOLD : 'rgba(255,255,255,0.08)'};position:relative;transition: background 0.2s">
+                <div style="position:absolute;${on ? 'right' : 'left'}:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow: 0 1px 4px rgba(0,0,0,0.3)"></div>
+              </div>
+            </div>`
+          ).join('')}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
+            <span style="font-size:0.85rem;color:#F6F1E8;font-weight:500">Playback Speed</span>
+            <span style="font-size:0.8rem;color:${GOLD};font-weight:700;font-family:monospace">1.0×</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
 
 // ─── Main render ──────────────────────────────────────────────────────────────
 function render() {
@@ -575,7 +654,7 @@ function bindEvents() {
 
   document.querySelectorAll('.ep-tap').forEach(el => {
     el.addEventListener('click', (e) => {
-      if (e.target.closest('.follow-btn')) return;
+      if (e.target.closest('.follow-btn') || e.target.closest('.unfollow-btn')) return;
       try { playEpisode(JSON.parse(el.dataset.ep)); } catch {}
     });
   });
@@ -616,13 +695,33 @@ function bindEvents() {
   document.getElementById('desc-backdrop')?.addEventListener('click', () => setState({ descriptionSheet: false }));
   document.getElementById('desc-close-btn')?.addEventListener('click', () => setState({ descriptionSheet: false }));
 
-  // ─── Search Input Fix ────────────────────────────────────────────────────────
+  // Search Input Handler Fix
   document.getElementById('search-input')?.addEventListener('input', (e) => {
     state.searchQuery = e.target.value;
     doSearch(e.target.value);
   });
 
-  // ─── Native Web Share Handler ───────────────────────────────────────────────
+  // Follow Button Triggers
+  document.querySelectorAll('.follow-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const url   = btn.dataset.url;
+      const title = btn.dataset.title || url;
+      if (!url || state.subs.find(s => s.xmlUrl === url)) return;
+      state.subs.push({ title, xmlUrl: url, image: '', addedAt: Date.now() });
+      save('agp_subs', state.subs);
+      showToast(`"${title}" added`);
+      render();
+      try {
+        const { title: t, image } = await fetchFeed(url);
+        const sub = state.subs.find(s => s.xmlUrl === url);
+        if (sub) { sub.title = t || title; sub.image = image || ''; save('agp_subs', state.subs); }
+        refreshAllFeeds();
+      } catch {}
+    });
+  });
+
+  // Native Web Share Trigger
   document.getElementById('share-btn')?.addEventListener('click', async () => {
     const ep = state.current;
     if (!ep) return;
@@ -651,10 +750,11 @@ function bindEvents() {
     }
   });
 
-  // ─── Unfollow Processing Click Trigger ──────────────────────────────────────
+  // Unfollow Click Handler
   document.querySelectorAll('.unfollow-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation(); 
+      e.preventDefault();
       const url = btn.dataset.url;
       const title = btn.dataset.title;
       if (!url) return;
