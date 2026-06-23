@@ -15,6 +15,11 @@ const STATIC_ASSETS = [
   "/images/app/icon-512.png",
   "/images/app/icon-512-maskable.png",
   "/images/app/listen-icon-192.png"
+  "/listen.html",
+  "/listen/app.js",
+  "/listen/player.js",
+  "/listen/db.js",
+  "/listen/opml.js"
 ];
 
 self.addEventListener("install", (event) => {
@@ -57,6 +62,7 @@ function shouldBypassCache(request) {
 
 function isStaticShellAsset(pathname) {
   return STATIC_ASSETS.includes(pathname)
+    || pathname.startsWith("/listen/")
     || pathname.startsWith("/favicons/")
     || pathname.startsWith("/images/app/")
     || pathname.startsWith("/styles/")
@@ -69,7 +75,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (shouldBypassCache(request)) return;
 
-  if (request.mode === "navigate" && (url.pathname === "/myagapay/login" || url.pathname === "/donor/login" || url.pathname === "/donor/login.html")) {
+  if (request.mode === "navigate" && (url.pathname === "/myagapay/login" || url.pathname === "/donor/login" || url.pathname === "/donor/login.html" || url.pathname === "/listen" || url.pathname === "/listen.html")) {
     event.respondWith(
       fetch(request)
         .then((response) => {
