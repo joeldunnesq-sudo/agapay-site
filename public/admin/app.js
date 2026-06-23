@@ -667,7 +667,7 @@
           const curated = item.vetted || item.source === 'agapay-curated';
           return `<article class="learn-moderation-row ${flags.length ? 'is-flagged' : ''}">
             <div class="learn-moderation-copy"><span class="learn-moderation-status">${escapeHtml(readable(item.status || 'pending'))}${curated ? ' · AGAPAY CURATED' : ''}${flags.length ? ` · ${flags.length} flag${flags.length === 1 ? '' : 's'}` : ''}</span><strong>${escapeHtml(item.title || 'Untitled resource')}</strong><a href="${escapeHtml(item.url || '#')}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.url || '')}</a><small>${escapeHtml(item.description || '')}</small><small>${curated ? 'Published by' : 'Submitted by'} ${escapeHtml(item.submittedBy || 'Unknown')} · ${escapeHtml(shortDate(item.createdAt))}</small>${flags.length ? `<div class="learn-flag-reasons">${flags.map((flag) => `<span>${escapeHtml(flag.reason || 'Flagged for review')}</span>`).join('')}</div>` : ''}</div>
-            <div class="learn-moderation-actions"><button class="gold btn-sm" onclick="moderateLearnCommunity('${jsAttr(item.id || '')}','approved',this)">Approve</button><button class="secondary btn-sm" onclick="moderateLearnCommunity('${jsAttr(item.id || '')}','hidden',this)">Hide</button><button class="danger btn-sm" onclick="moderateLearnCommunity('${jsAttr(item.id || '')}','removed',this)">Remove</button></div>
+            <div class="learn-moderation-actions">${curated ? `<button class="secondary btn-sm" onclick="editLearnCuratedResource('${jsAttr(item.id || '')}')">Edit</button>` : ''}<button class="gold btn-sm" onclick="moderateLearnCommunity('${jsAttr(item.id || '')}','approved',this)">Approve</button><button class="secondary btn-sm" onclick="moderateLearnCommunity('${jsAttr(item.id || '')}','hidden',this)">Hide</button><button class="danger btn-sm" onclick="moderateLearnCommunity('${jsAttr(item.id || '')}','removed',this)">Remove</button></div>
           </article>`;
         }).join('') || '<div class="revenue-empty">No community submissions are waiting for review.</div>'}</div>`;
     }
@@ -756,6 +756,8 @@
     }
 
     function clearLearnCuratedResourceForm() {
+      const idField = document.getElementById('learnCuratedResourceId');
+      if (idField) idField.value = '';
       [
         'learnCuratedTitle',
         'learnCuratedUrl',
@@ -771,11 +773,45 @@
       });
       const pinned = document.getElementById('learnCuratedPinned');
       if (pinned) pinned.checked = false;
+      const submit = document.getElementById('learnCuratedResourceSubmit');
+      if (submit) submit.textContent = 'Publish curated resource';
       const status = document.getElementById('learnCuratedResourceStatus');
       if (status) {
         status.textContent = '';
         status.className = 'payment-status';
       }
+    }
+
+    function editLearnCuratedResource(resourceId) {
+      const resources = latestLearnAdmin?.communityModeration?.resources || [];
+      const item = resources.find((resource) => resource.id === resourceId);
+      if (!item) {
+        setStatus('Unable to find that curated resource. Refresh and try again.', 'error');
+        return;
+      }
+      const setValue = (id, value) => {
+        const field = document.getElementById(id);
+        if (field) field.value = value || '';
+      };
+      setValue('learnCuratedResourceId', item.id);
+      setValue('learnCuratedTitle', item.title);
+      setValue('learnCuratedUrl', item.url);
+      setValue('learnCuratedCategory', item.category);
+      setValue('learnCuratedResourceType', item.resourceType);
+      setValue('learnCuratedMediaType', item.mediaType);
+      setValue('learnCuratedAgeRange', item.ageRange);
+      setValue('learnCuratedTags', Array.isArray(item.tags) ? item.tags.join(', ') : item.tags);
+      setValue('learnCuratedDescription', item.description);
+      const pinned = document.getElementById('learnCuratedPinned');
+      if (pinned) pinned.checked = Boolean(item.pinned);
+      const submit = document.getElementById('learnCuratedResourceSubmit');
+      if (submit) submit.textContent = 'Save curated resource';
+      const status = document.getElementById('learnCuratedResourceStatus');
+      if (status) {
+        status.textContent = `Editing: ${item.title || 'Curated resource'}`;
+        status.className = 'payment-status';
+      }
+      document.getElementById('learnCuratedTitle')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     async function createLearnCuratedResource(btn) {
@@ -787,6 +823,7 @@
       }
       try {
         const payload = {
+          action: 'update',
           title: document.getElementById('learnCuratedTitle')?.value || '',
           url: document.getElementById('learnCuratedUrl')?.value || '',
           category: document.getElementById('learnCuratedCategory')?.value || '',
@@ -797,20 +834,21 @@
           description: document.getElementById('learnCuratedDescription')?.value || '',
           pinned: Boolean(document.getElementById('learnCuratedPinned')?.checked)
         };
-        const response = await fetch('/api/admin/learn/community', {
-          method: 'POST',
+        const resourceId = document.getElementById('learnCuratedResourceId')?.value || '';
+        const response = await fetch(resourceId ? `/api/admin/learn/community/${encodeURIComponent(resourceId)}` : '/api/admin/learn/community', {
+          method: resourceId ? 'PATCH' : 'POST',
           headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify(payload)
         });
         const result = await response.json().catch(() => ({}));
         if (handleAuthFailure(response, result)) return;
-        if (!response.ok) throw new Error(result.error || 'Unable to publish curated resource');
+        if (!response.ok) throw new Error(result.error || (resourceId ? 'Unable to save curated resource' : 'Unable to publish curated resource'));
         clearLearnCuratedResourceForm();
         if (status) {
-          status.textContent = `Published: ${result.resource?.title || payload.title}`;
+          status.textContent = `${resourceId ? 'Saved' : 'Published'}: ${result.resource?.title || payload.title}`;
           status.className = 'payment-status success';
         }
-        setStatus('AGAPAY curated Learn resource published.', 'success');
+        setStatus(resourceId ? 'AGAPAY curated Learn resource saved.' : 'AGAPAY curated Learn resource published.', 'success');
         await loadLearnAdmin();
       } catch (err) {
         if (status) {

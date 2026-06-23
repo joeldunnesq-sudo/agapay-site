@@ -131,6 +131,41 @@ export async function createCuratedLearnCommunityResource(env, adminContext, bod
   return { ok: true, resource: record };
 }
 
+export async function updateCuratedLearnCommunityResource(env, adminContext, id, body = {}) {
+  const record = await getLearnCommunityResource(env, id);
+  if (!record) return { ok: false, status: 404, error: "Community resource not found." };
+  if (!(record.vetted || record.source === "agapay-curated")) {
+    return { ok: false, status: 400, error: "Only AGAPAY curated resources can be edited here." };
+  }
+  const title = clean(body.title, 120);
+  const url = safeUrl(body.url);
+  const description = clean(body.description, 600);
+  if (!title || !url || !description) return { ok: false, status: 400, error: "Title, link, and description are required." };
+  const updated = {
+    ...record,
+    source: "agapay-curated",
+    title,
+    url,
+    description,
+    subtitle: description,
+    category: clean(body.category, 60) || "General",
+    resourceType: clean(body.resourceType, 60) || "Website",
+    mediaType: clean(body.mediaType, 60) || "Mixed Media",
+    ageRange: clean(body.ageRange, 40) || "Family",
+    tags: Array.isArray(body.tags) ? body.tags.map((tag) => clean(tag, 40)).filter(Boolean).slice(0, 10) : clean(body.tags, 240).split(",").map((tag) => clean(tag, 40)).filter(Boolean).slice(0, 10),
+    sharedBy: "AGAPAY",
+    status: ALLOWED_STATUSES.has(clean(body.status, 20).toLowerCase()) ? clean(body.status, 20).toLowerCase() : record.status || "approved",
+    vetted: true,
+    pinned: Boolean(body.pinned),
+    updatedAt: new Date().toISOString(),
+    curatedBy: record.curatedBy || adminContext.actor || "AGAPAY Admin",
+    lastEditedBy: adminContext.actor || "AGAPAY Admin",
+    lastEditedAt: new Date().toISOString()
+  };
+  await save(env, updated);
+  return { ok: true, resource: updated };
+}
+
 export async function flagLearnCommunityResource(env, identity, id, reason = "") {
   const record = await getLearnCommunityResource(env, id);
   if (!record || record.status !== "approved") return { ok: false, status: 404, error: "Community resource not found." };
@@ -151,6 +186,7 @@ export async function moderateLearnCommunityResource(env, adminContext, id, body
   const updated = {
     ...record,
     status,
+    flags: [],
     moderationNote: clean(body.note, 500),
     moderatedBy: adminContext.actor || "Admin",
     moderatedAt: new Date().toISOString(),

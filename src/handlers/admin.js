@@ -69,6 +69,7 @@ import {
   createCuratedLearnCommunityResource,
   listLearnCommunityResources,
   moderateLearnCommunityResource,
+  updateCuratedLearnCommunityResource,
 } from "../learn/community-store.js";
 
 import {
@@ -345,6 +346,10 @@ export async function handleAdminLearnCommunity(request, env, resourceId = "") {
   if (request.method === "POST") {
     const result = await createCuratedLearnCommunityResource(env, adminContext, body);
     return json(result, { status: result.ok ? 201 : result.status || 500 });
+  }
+  if (body.action === "update") {
+    const result = await updateCuratedLearnCommunityResource(env, adminContext, resourceId, body);
+    return json(result, { status: result.ok ? 200 : result.status || 500 });
   }
   const result = await moderateLearnCommunityResource(env, adminContext, resourceId, body);
   return json(result, { status: result.ok ? 200 : result.status || 500 });

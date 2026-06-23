@@ -389,6 +389,7 @@
             </div>
             <div class="section-body">
               <p style="margin:0 0 1rem;color:var(--stone);font-size:13px;line-height:1.65;">Publish a trusted resource directly to every Learn household. Admin-added resources are approved immediately and display with the AGAPAY CURATED label.</p>
+              <input id="learnCuratedResourceId" type="hidden" />
               <div class="form-grid">
                 <div>
                   <label for="learnCuratedTitle">Title</label>
@@ -430,7 +431,7 @@
                 </div>
               </div>
               <div class="btn-row">
-                <button class="gold" onclick="createLearnCuratedResource(this)">Publish curated resource</button>
+                <button class="gold" id="learnCuratedResourceSubmit" onclick="createLearnCuratedResource(this)">Publish curated resource</button>
                 <button class="secondary" onclick="loadLearnAdmin()">Refresh resources</button>
               </div>
               <div class="payment-status" id="learnCuratedResourceStatus"></div>
