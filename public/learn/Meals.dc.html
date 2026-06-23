@@ -223,8 +223,8 @@
 
           <sc-if value="{{ lessonsWeek }}" hint-placeholder-val="{{ false }}">
             <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:12px;padding:13px 16px;border:1px solid rgba(181,148,47,.32);border-radius:13px;background:linear-gradient(135deg,#fffaf0,#f6ead0);">
-              <div style="display:flex;align-items:center;gap:8px;"><span style="color:#b5942f;">▤</span><span style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;color:#b5942f;">Forms from Setup</span></div>
-              <span style="font-family:'DM Sans',sans-serif;font-size:.84rem;color:#8a7c5e;">{{ setupSummary }} · edit Forms and subjects in Setup.</span>
+              <div style="display:flex;align-items:center;gap:8px;"><span style="color:#b5942f;">▤</span><span style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;color:#b5942f;">Family + Forms from Setup</span></div>
+              <span style="font-family:'DM Sans',sans-serif;font-size:.84rem;color:#8a7c5e;">{{ setupSummary }} · edit family enrichment, Forms, and subjects in Setup.</span>
             </div>
             <div style="background:#fdf9ef;border:1px solid #e7dcc0;border-radius:14px;overflow:auto;box-shadow:0 1px 3px rgba(20,40,70,.04);">
               <div style="min-width:0;">
@@ -927,7 +927,8 @@ class Component extends DCLogic {
 
     const days=this.DAYS.map(d=>{ const m=LEV[d.level]; return {weekday:d.weekday,shortDate:d.short,feast:d.feast,mark:d.feastDay?'✥':(d.sunday?'☩':'·'),markColor:d.feastDay?'#b5942f':(d.sunday?'#6e2f2a':'#b5942f'),headBg:d.feastDay?'rgba(181,148,47,.1)':(d.sunday?'#f9f1df':'transparent'),feastColor:d.feastDay?'#b5942f':'#1b2c45',tag:d.tag,tagColor:m.color,tagBorder:m.color,tagBg:m.bg,school:d.school,schoolDisplay:(S.integration==='woven')?'block':'none'}; });
     const weekRows=this.MEALS.map(meal=>({label:meal.label,sub:meal.sub,cells:this.DAYS.map(d=>{ const id=S.plan[`${d.key}-${meal.key}`]; const r=this.recipe(id); const m=r?LEV[r.level]:null; return {onClick:()=>this.openPicker(d.key,meal.key),colBg:d.feastDay?'rgba(181,148,47,.05)':(d.sunday?'#fbf5e8':'transparent'),border:r?'#e7dcc0':'#e0d4b6',bg:r?'#fffdf8':'rgba(248,240,221,.5)',dot:m?m.color:'transparent',dotDisplay:r?'block':'none',name:r?r.name:'＋ Add',nameColor:r?'#1b2c45':'#a99a72',meta:r?`${LEV[r.level].label} · ${r.time}`:'',metaDisplay:r?'block':'none'}; })}));
-    const lessonRows=SETUP.forms.map(f=>({color:f.color,label:f.label,sub:f.children.join(', '),cells:this.DAYS.map(d=>gridCell(formText(f,d),d))}));
+    const familyRow={color:'#b5942f',label:'Family Work',sub:'Everyone together',cells:this.DAYS.map(d=>gridCell(morningText(d),d))};
+    const lessonRows=[familyRow].concat(SETUP.forms.map(f=>({color:f.color,label:f.label,sub:f.children.join(', '),cells:this.DAYS.map(d=>gridCell(formText(f,d),d))})));
     const setupForms=SETUP.forms.map(f=>({color:f.color,initials:f.children.map(n=>n[0]).join(''),label:f.label,children:f.children.join(' & '),subjectCount:`${f.subjects.length} subjects`}));
     const setupSummary=`${SETUP.forms.reduce((n,f)=>n+f.children.length,0)} children · ${SETUP.forms.length} Forms · ${SETUP.calendar}`;
     const choresRows=[{color:'#102a4c',label:'Everyone',sub:'Together',cells:this.DAYS.map(d=>gridCell(everyoneText(d),d,()=>this.editChore('Everyone',d)))}].concat(KIDS.map(c=>({color:c.color,label:c.name,sub:'',cells:this.DAYS.map(d=>gridCell(choreText(c,d),d,()=>this.editChore(c.name,d)))})));
