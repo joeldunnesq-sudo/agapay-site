@@ -403,8 +403,11 @@ export function toPlannerViewModel(rawPayload) {
       shortDate: parts.short,
       dayNumber: parts.dayNumber,
       isSunday: Boolean(parts.isSunday),
+      isFastDay: Boolean(day.isFastDay),
       feast: text(day.feastTitle, ""),
+      feastRank: text(day.feastRank, ""),
       fasting: text(day.fastingRule, ""),
+      fastingType: text(day.fastingType || familyDay.fastingType, ""),
       tone: text(day.tone || day.troparionTone, ""),
       epistle: text(day.epistleRef, ""),
       gospel: text(day.gospelRef, ""),
@@ -425,8 +428,8 @@ export function toPlannerViewModel(rawPayload) {
     shell,
     page: {
       id: "planner",
-      title: activeView === "term" ? "Term Planner" : activeView === "month" ? "Month Planner" : "Planner",
-      subtitle: activeView === "week" || activeView === "day" ? `${text(week.label, "This Week")}  •  ${text(week.seasonLabel, "")}` : activeView === "month" ? text(planner.month?.label, "Month Calendar") : "Plan your term with grace and intention.",
+      title: "Family Planner",
+      subtitle: activeView === "week" || activeView === "day" ? `${text(week.label, "This Week")}  •  ${text(week.seasonLabel, "")}` : activeView === "month" ? text(planner.month?.label, "Month Calendar") : "Plan lessons, meals, appointments, chores, and the household rhythm in one place.",
       ornament: true
     },
     activeView,
@@ -534,6 +537,7 @@ export function toPlannerViewModel(rawPayload) {
       groceryItems: safeArray(planner.familyPlanning?.groceryItems || week.groceryItems),
       events: safeArray(planner.familyPlanning?.events),
       meals: safeArray(planner.familyPlanning?.meals),
+      chores: safeArray(planner.familyPlanning?.chores),
       weekStart: text(planner.familyPlanning?.weekStart, ""),
       household: {
         motherName: text(planner.household?.motherName, ""),
@@ -541,7 +545,13 @@ export function toPlannerViewModel(rawPayload) {
         fatherName: text(planner.household?.fatherName, ""),
         fatherNameDay: text(planner.household?.fatherNameDay, "")
       },
-      children: safeArray(planner.children).map((child, index) => ({ id: text(child.id, ""), name: childName(child, index), nameDay: text(child.nameDay, "") }))
+      children: safeArray(planner.children).map((child, index) => ({
+        id: text(child.id, ""),
+        name: childName(child, index),
+        nameDay: text(child.nameDay, ""),
+        color: text(child.color, ACCENTS[index % ACCENTS.length]),
+        initial: childInitial(child, index)
+      }))
     },
     term: {
       activeTerm,
