@@ -1071,7 +1071,7 @@ function renderMealsPlan(model, displayView, vm) {
   if (displayView === "month") {
     return `<div class="learn-family-month-layout">${renderFamilyMonthOverview(model, "meals")}<div style="display:grid;gap:14px;">${renderFeastsPanel(model, "month")}${renderFastingLegend()}</div></div>`;
   }
-  return `<div class="learn-family-week-layout"><section class="learn-family-week-board"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => `<strong class="${day.isFastDay ? "is-fast" : day.isSunday ? "is-feast" : ""}">${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small><em>${html(day.isFastDay ? day.fastingType || day.fasting || "Fast" : day.feast || "")}</em></strong>`).join("")}</div>${["breakfast", "lunch", "dinner"].map((slot) => `<div class="learn-family-week-row"><strong>${html(mealSlotLabel(slot))}</strong>${model.weekDays.map((day) => `<div>${renderMealCard(day, model.mealByDate.get(day.date) || {}, slot)}</div>`).join("")}</div>`).join("")}</section><div style="display:grid;gap:14px;">${renderFeastsPanel(model, "week")}${renderFastingLegend()}</div></div>`;
+  return `<div class="learn-family-week-layout"><section class="learn-family-week-board"><div class="learn-family-week-scroll"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => `<strong class="${day.isFastDay ? "is-fast" : day.isSunday ? "is-feast" : ""}">${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small><em>${html(day.isFastDay ? day.fastingType || day.fasting || "Fast" : day.feast || "")}</em></strong>`).join("")}</div>${["breakfast", "lunch", "dinner"].map((slot) => `<div class="learn-family-week-row"><strong>${html(mealSlotLabel(slot))}</strong>${model.weekDays.map((day) => `<div>${renderMealCard(day, model.mealByDate.get(day.date) || {}, slot)}</div>`).join("")}</div>`).join("")}</div></section><div style="display:grid;gap:14px;">${renderFeastsPanel(model, "week")}${renderFastingLegend()}</div></div>`;
 }
 
 function renderRecipesTool(model) {
@@ -1140,7 +1140,7 @@ function renderChoresScope(model, displayView) {
     const day = model.weekDays.find((item) => item.date === selectedDate) || model.weekDays[0] || {};
     return `<div class="learn-family-prototype">${renderPlannerDaySelector(model, day.date)}<section class="learn-family-card-grid">${people.map((person) => { const chore = model.chores.find((item) => (item.assignee || "Everyone") === person.name && (!item.day || item.day === (day.weekdayLong || day.long))); return `<article class="learn-family-person-card" style="--person-color:${html(person.color)};"><span>${html(person.initial || person.name.slice(0, 1) || "•")}</span><strong>${html(person.name)}</strong><p>${html(chore?.title || (day.isSunday ? "Rest" : "Choose a chore"))}</p><button type="button" data-chore-open data-assignee="${html(person.name)}" data-day="${html(day.weekdayLong || day.long || "")}">${chore ? "Edit" : "Add"} chore</button></article>`; }).join("")}</section></div>`;
   }
-  return `<section class="learn-family-week-board"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => `<strong>${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small></strong>`).join("")}</div>${people.map((person) => `<div class="learn-family-week-row learn-family-chore-row" style="--person-color:${html(person.color)};"><strong><span>${html(person.initial || person.name.slice(0, 1) || "•")}</span>${html(person.name)}</strong>${model.weekDays.map((day) => { const chore = model.chores.find((item) => (item.assignee || "Everyone") === person.name && (!item.day || item.day === (day.weekdayLong || day.long))); return `<div><button type="button" class="learn-family-mini-card" data-chore-open data-assignee="${html(person.name)}" data-day="${html(day.weekdayLong || day.long || "")}">${html(chore?.title || (day.isSunday ? "Rest" : "Add chore"))}</button></div>`; }).join("")}</div>`).join("")}</section>`;
+  return `<section class="learn-family-week-board"><div class="learn-family-week-scroll"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => `<strong>${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small></strong>`).join("")}</div>${people.map((person) => `<div class="learn-family-week-row learn-family-chore-row" style="--person-color:${html(person.color)};"><strong><span>${html(person.initial || person.name.slice(0, 1) || "•")}</span>${html(person.name)}</strong>${model.weekDays.map((day) => { const chore = model.chores.find((item) => (item.assignee || "Everyone") === person.name && (!item.day || item.day === (day.weekdayLong || day.long))); return `<div><button type="button" class="learn-family-mini-card" data-chore-open data-assignee="${html(person.name)}" data-day="${html(day.weekdayLong || day.long || "")}">${html(chore?.title || (day.isSunday ? "Rest" : "Add chore"))}</button></div>`; }).join("")}</div>`).join("")}</div></section>`;
 }
 
 function renderEventsScope(model, displayView) {
@@ -3035,6 +3035,46 @@ function renderPrintCenter(vm) {
         </button>
       </article>`;
   };
+
+  // ── Household templates grid ────────────────────────────────────────────────
+  const householdGrid = householdTemplates.length
+    ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;">${householdTemplates.map(templateCard).join("")}</div>`
+    : emptyState("No household templates available for this setup.");
+
+  // ── Plan status bar ─────────────────────────────────────────────────────────
+  const usedPct = freePlan ? Math.round(((vm.billing.printLimit - remaining) / vm.billing.printLimit) * 100) : 0;
+  const statusBar = freePlan
+    ? `<div style="margin-top:8px;height:5px;border-radius:99px;background:var(--line);overflow:hidden;">
+         <div style="height:100%;width:${usedPct}%;background:${nearLimit ? "var(--burgundy)" : "var(--gold)"};border-radius:99px;transition:width .4s;"></div>
+       </div>
+       <small style="display:block;margin-top:5px;color:${nearLimit ? "var(--burgundy)" : "var(--muted)"};font-size:11px;">
+         ${remaining} of ${vm.billing.printLimit} free prints remaining
+       </small>`
+    : "";
+
+  // ── Plan banner ─────────────────────────────────────────────────────────────
+  const planBanner = `
+    <div style="border:1px solid ${nearLimit ? "var(--burgundy)" : freePlan ? "var(--line)" : "rgba(181,148,47,.35)"};
+      background:${freePlan ? "var(--paper)" : "linear-gradient(135deg,#fffdf5,#fdf5dc)"};
+      border-radius:14px;padding:16px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:220px;">
+        <strong style="font-family:'Cormorant Garamond',serif;font-size:21px;color:var(--ink);">
+          ${freePlan ? "Free Plan" : "✦ Family Plan Active"}
+        </strong>
+        <span style="display:block;color:var(--muted);font-size:13px;margin-top:3px;line-height:1.45;">
+          ${freePlan
+            ? "Household print packs are available. Child sheets, term packs, and unlimited prints require the Family plan."
+            : "Unlimited printing unlocked — household plans, child sheets, term packs, and all premium templates."}
+        </span>
+        ${statusBar}
+      </div>
+      ${freePlan
+        ? `<button type="button" data-print-upgrade
+             style="flex:none;background:var(--navy);color:#fff;border:1px solid var(--gold);border-radius:10px;padding:11px 20px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+             Upgrade — Family Plan
+           </button>`
+        : `<span style="flex:none;color:var(--gold);font-size:13px;font-weight:700;padding-top:4px;">Unlocked ✦</span>`}
+    </div>`;
 
   // ── Child sheet cards — one card per child, dropdown selects document type ───
   // Group all child templates by childId so families with many children each get
