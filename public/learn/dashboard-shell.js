@@ -722,17 +722,12 @@ function renderDashboard(vm) {
 
 function renderPlanner(vm) {
   seedFamilyPrototypeState(vm);
-  return shell(vm, `
-    <section class="learn-prototype-embed" aria-label="AGAPAY Learn Family Planner">
-      <iframe src="/learn/Meals.dc.html" title="AGAPAY Learn Family Planner" data-family-prototype-frame></iframe>
-    </section>
-  `);
   const query = new URLSearchParams(window.location.search);
   const activeScope = plannerScopeFromQuery();
   const mealTool = mealToolFromQuery();
   const scopeAllowsTerm = activeScope === "lessons";
   const viewSet = scopeAllowsTerm ? ["day", "week", "month", "term", "year"] : ["day", "week", "month"];
-  const displayView = viewSet.includes(vm.activeView) ? vm.activeView : "month";
+  const displayView = viewSet.includes(vm.activeView) ? vm.activeView : "week";
   if (!scopeAllowsTerm && vm.activeView !== displayView) {
     window.history.replaceState(null, "", plannerHref({ view: displayView, term: null, termId: null }));
   }
@@ -744,16 +739,29 @@ function renderPlanner(vm) {
   }));
   const familyTabs = [
     { id: "lessons", label: "Lessons", icon: "▦" },
-    { id: "meals", label: "Meals", icon: "♨" },
-    { id: "chores", label: "Chores", icon: "✓" },
-    { id: "events", label: "Events", icon: "◷" }
+    { id: "meals",   label: "Meals",   icon: "♨" },
+    { id: "chores",  label: "Chores",  icon: "✓" },
+    { id: "events",  label: "Events",  icon: "◷" }
   ];
   const mealTools = [
-    { id: "plan", label: "Plan", icon: "▦" },
-    { id: "recipes", label: "Recipes", icon: "☰" },
+    { id: "plan",      label: "Plan",      icon: "▦" },
+    { id: "recipes",   label: "Recipes",   icon: "☰" },
     { id: "groceries", label: "Groceries", icon: "▤" },
-    { id: "pantry", label: "Pantry", icon: "☖" }
+    { id: "pantry",    label: "Pantry",    icon: "☖" }
   ];
+
+  // ── Intro — shown on first visit per scope, dismissible ───────────────────────
+  const introDismissedKey = `agapay.learn.plannerIntro.${activeScope}`;
+  const introDismissed = typeof localStorage !== "undefined" && localStorage.getItem(introDismissedKey) === "1";
+  const introHtml = introDismissed ? "" : `
+    ${renderFamilyPlannerIntro(vm, activeScope === "meals" && mealTool !== "plan" ? mealTool : activeScope)}
+    <div style="margin-top:-8px;display:flex;justify-content:flex-end;">
+      <button type="button" data-planner-intro-dismiss="${introDismissedKey}"
+        style="border:0;background:none;color:var(--muted);font-family:inherit;font-size:12px;cursor:pointer;padding:4px 0;">
+        Hide this — I know what this page does
+      </button>
+    </div>`;
+
   const controls = `
     <div class="learn-family-toolbar">
       <div class="learn-family-tabs" aria-label="Planner view">
@@ -765,7 +773,7 @@ function renderPlanner(vm) {
           return `<a href="${plannerHref({
             scope: tab.id,
             tool: tab.id === "meals" ? mealTool : null,
-            view: nextScopeAllowsTerm ? displayView : (["day", "week", "month"].includes(displayView) ? displayView : "month"),
+            view: nextScopeAllowsTerm ? displayView : (["day", "week", "month"].includes(displayView) ? displayView : "week"),
             term: nextScopeAllowsTerm ? query.get("term") : null,
             termId: nextScopeAllowsTerm ? query.get("termId") : null
           })}" aria-current="${activeScope === tab.id ? "page" : "false"}"><span>${html(tab.icon)}</span>${html(tab.label)}</a>`;
@@ -776,13 +784,13 @@ function renderPlanner(vm) {
         <span>${html(vm.week.seasonLabel || "Household rhythm")}</span>
       </div>
       ${scopeAllowsTerm && displayView !== "year" ? `<div class="learn-family-tabs learn-family-term-tabs" aria-label="Planner term">${vm.termTabs.map((tab) => `<a href="${tab.href}" aria-current="${tab.active ? "page" : "false"}">${html(tab.label)}</a>`).join("")}</div>` : ""}
-      <!-- compatibility: vm.activeView === "year" ? "" -->
       ${!scopeAllowsTerm ? `<span class="learn-family-lock">Meals, chores, and events use day, week, and month views.</span>` : ""}
     </div>
     ${activeScope === "meals" ? `<div class="learn-family-meal-tools" aria-label="Meal tools">
       ${mealTools.map((tool) => `<a href="${plannerHref({ scope: "meals", tool: tool.id, view: displayView, term: null, termId: null })}" aria-current="${mealTool === tool.id ? "page" : "false"}"><span>${html(tool.icon)}</span>${html(tool.label)}</a>`).join("")}
     </div>` : ""}
   `;
+
   const lessonContent = displayView === "day"
     ? renderPlannerDay(vm)
     : displayView === "month"
@@ -793,9 +801,10 @@ function renderPlanner(vm) {
           ? renderPlannerYear(vm)
           : renderPlannerWeek(vm);
   const scopedContent = activeScope === "lessons" ? lessonContent : renderFamilyPlannerScope(vm, activeScope, displayView, mealTool);
+
   const body = `
     <section data-screen-label="Family Planner" class="learn-family-page">
-      ${renderFamilyPlannerIntro(vm, activeScope === "meals" && mealTool !== "plan" ? mealTool : activeScope)}
+      ${introHtml}
       ${controls}
       ${scopedContent}
     </section>
@@ -812,13 +821,15 @@ function statusPill(status) {
 function renderPlannerWeek(vm) {
   const dayCount = Math.max(vm.week.days.length, 1);
   return `
-    <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow-x:auto;overflow-y:visible;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+      <div style="overflow-x:auto;overflow-y:visible;">
       <div style="min-width:980px;">
         <div style="display:grid;grid-template-columns:168px repeat(${dayCount}, minmax(112px,1fr));border-bottom:1px solid var(--line);">
           <div style="padding:14px;color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;">WEEK</div>
           ${vm.week.days.map((day) => `<div style="padding:12px;border-left:1px solid var(--line);text-align:center;${day.isSunday ? "background:#f9f1df;" : ""}"><div style="color:${day.isSunday ? "var(--burgundy)" : "var(--gold)"};font-size:16px;">${day.isSunday ? "☩" : "✥"}</div><strong style="font-size:13px;color:var(--ink);">${html(day.weekday || day.weekdayLong)}</strong><small style="display:block;color:var(--muted);">${html(day.shortDate || day.date)}</small><small style="display:block;color:var(--ink);line-height:1.2;">${html(day.isSunday ? "Church & Rest" : day.feast)}</small></div>`).join("")}
         </div>
         ${vm.week.householdRows.map((row) => `<div style="display:grid;grid-template-columns:168px repeat(${dayCount}, minmax(112px,1fr));border-bottom:1px solid var(--line);"><div style="padding:12px 14px;"><strong>${html(row.title)}</strong><small style="display:block;color:var(--muted);">${html(row.sub)}</small>${row.graceModeApplied ? `<small style="display:block;color:var(--gold);">Grace adjusted</small>` : ""}</div>${vm.week.days.map((day, index) => `<div style="padding:9px;border-left:1px solid var(--line);${day.isSunday ? "background:#fbf5e8;" : ""}"><div style="background:var(--paper2);border:1px solid var(--line);border-radius:9px;padding:10px;text-align:center;color:var(--ink);min-height:46px;display:flex;align-items:center;justify-content:center;gap:6px;">${day.isSunday ? "—" : row.minutes[index] ? `${html(row.minutes[index])}m ${check(row.statuses[index] === "completed")}` : "—"}</div></div>`).join("")}</div>`).join("")}
+      </div>
       </div>
     </div>
     <div style="display:flex;gap:14px;flex-wrap:wrap;">
@@ -1704,15 +1715,17 @@ function renderPlannerMonth(vm) {
             <a href="/myagapay/learn/planner?view=month&month=${encodeURIComponent(adjacentMonthKey(month.key, 1))}&term=${encodeURIComponent(vm.term.activeTerm)}&termId=${encodeURIComponent(vm.term.activeTermId)}" style="border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);text-decoration:none;background:var(--paper2);">Next →</a>
           </div>
         </div>
-        <div style="overflow:auto;padding-bottom:4px;">
+        <div style="overflow:hidden;padding-bottom:4px;">
+          <div style="overflow-x:auto;overflow-y:visible;">
           <div style="display:grid;grid-template-columns:repeat(7,minmax(92px,1fr));gap:8px;min-width:760px;">
             ${(month.weekdays || []).map((day) => `<div style="color:var(--gold);font-size:11px;letter-spacing:.12em;font-weight:700;text-align:center;text-transform:uppercase;">${html(day)}</div>`).join("")}
             ${dayCells}
           </div>
+          </div>
         </div>
       </div>
       <aside style="display:flex;flex-direction:column;gap:14px;">
-        ${panel("Month Notes", `<div style="display:grid;gap:12px;"><div><small style="color:var(--gold);letter-spacing:.12em;">FAST DAYS</small><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--burgundy);">${html(month.fastDays)}</strong><span style="color:var(--muted);">Marked in red with fasting type.</span></div><div><small style="color:var(--gold);letter-spacing:.12em;">FEAST MARKERS</small><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--ink);">${html(month.feastDays)}</strong><span style="color:var(--muted);">Major rhythms shown from the liturgical calendar.</span></div><div style="border-top:1px solid var(--line);padding-top:12px;color:#33405a;line-height:1.45;">Use this as Stephanie's fridge calendar: plan the month, see fast days at a glance, then print a clean household copy.</div></div>`, { icon: "▣" })}
+        ${panel("Month Notes", `<div style="display:grid;gap:12px;"><div><small style="color:var(--gold);letter-spacing:.12em;">FAST DAYS</small><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--burgundy);">${html(month.fastDays)}</strong><span style="color:var(--muted);">Marked in red with fasting type.</span></div><div><small style="color:var(--gold);letter-spacing:.12em;">FEAST MARKERS</small><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--ink);">${html(month.feastDays)}</strong><span style="color:var(--muted);">Major rhythms shown from the liturgical calendar.</span></div><div style="border-top:1px solid var(--line);padding-top:12px;color:#33405a;line-height:1.45;">Print a clean household copy to use as ${html(vm.shell?.familyName || "the household")}'s fridge calendar — feast days, fasts, and the month at a glance.</div></div>`, { icon: "▣" })}
         ${panel("Legend", `<div style="display:grid;gap:10px;"><span style="display:flex;gap:9px;align-items:center;"><i style="width:18px;height:18px;border-radius:5px;background:rgba(110,47,42,.12);border:1px solid rgba(110,47,42,.38);"></i> Fast day</span><span style="display:flex;gap:9px;align-items:center;"><i style="width:18px;height:18px;border-radius:5px;background:rgba(181,148,47,.14);border:1px solid var(--line);"></i> Sunday / feast rhythm</span><span style="display:flex;gap:9px;align-items:center;"><i style="width:18px;height:18px;border-radius:5px;background:var(--paper2);border:1px solid var(--gold);"></i> Today</span></div>`, { icon: "✥" })}
       </aside>
     </div>
@@ -1724,31 +1737,102 @@ function renderPlannerTerm(vm) {
   const pacingRows = vm.term.pacingRows.map((row) => `<div style="display:grid;grid-template-columns:150px repeat(12,1fr);min-width:920px;border-top:1px solid var(--line);align-items:stretch;"><div style="padding:12px;display:flex;gap:9px;align-items:flex-start;"><span style="width:28px;height:28px;border-radius:50%;background:${html(row.color)};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-size:13px;">✥</span><span><strong>${html(row.label)}</strong><small style="display:block;color:var(--muted);">${html(row.subtitle)}</small></span></div><div style="grid-column:span 12;display:grid;grid-template-columns:repeat(12,1fr);position:relative;border-left:1px solid var(--line);background:linear-gradient(90deg,rgba(231,220,192,.32) 1px,transparent 1px);background-size:calc(100% / 12) 100%;">${row.segments.map((segment) => `<div style="grid-column:${segment.start} / span ${segment.span};margin:7px 4px;border:1px solid ${html(segment.color)};border-radius:8px;background:${softColor(segment.color, "26")};display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;font-size:13px;color:var(--ink);box-shadow:inset 0 0 0 1px rgba(255,255,255,.32);"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${html(segment.color)};margin-right:6px;"></span>${html(segment.title)}</div>`).join("")}</div></div>`).join("");
   return `
     <div style="display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px;">${vm.term.setupCards.map((card) => `<div style="background:var(--paper);border:1px solid ${html(card.color)};border-radius:12px;padding:14px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);"><small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;">${html(card.title)}</small><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:22px;margin:8px 0;color:var(--ink);">${html(card.value)}</strong><span style="color:var(--muted);line-height:1.35;">${html(card.detail)}</span></div>`).join("")}</div>
-    <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow-x:auto;overflow-y:visible;">
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;">
+      <div style="overflow-x:auto;overflow-y:visible;">
       <div style="min-width:920px;">
         <div style="display:grid;grid-template-columns:150px repeat(12,1fr);padding:12px 0;border-bottom:1px solid var(--line);"><div style="padding-left:12px;color:var(--gold);font-size:12px;letter-spacing:.15em;">TERM PACING</div>${weekCells}</div>
         ${pacingRows || emptyState("Add pacing rows in Setup.")}
       </div>
+      </div>
     </div>
-    <div style="display:grid;grid-template-columns:.9fr repeat(${Math.max(vm.term.childTracks.length, 1)}, minmax(150px,1fr));gap:12px;">
-      ${panel("Family-Based Learning", vm.term.householdSummary.map((item) => `<div style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</div>`).join(""), { icon: "⌂" })}
-      ${vm.term.childTracks.map((child) => panel(`${child.name} · Age ${child.age}`, `<div style="display:grid;gap:8px;">${child.tracks.map((track) => `<div style="border-top:1px solid var(--line);padding:8px 0;">${html(track)}</div>`).join("") || emptyState("No tracks configured.")}</div>`, { icon: child.initial, style: "min-width:0;" })).join("")}
+    <div style="display:grid;grid-template-columns:.9fr repeat(${Math.min(vm.term.childTracks.length, 4)}, minmax(150px,1fr));gap:12px;">
+      ${panel("Family-Based Learning", vm.term.householdSummary.map((item) => `<div style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</div>`).join("") || emptyState("Add household streams in Setup."), { icon: "⌂", style: "min-width:0;" })}
+      ${vm.term.childTracks.slice(0, 4).map((child) => panel(`${child.name} · Age ${child.age}`, `<div style="display:grid;gap:8px;">${child.tracks.map((track) => `<div style="border-top:1px solid var(--line);padding:8px 0;">${html(track)}</div>`).join("") || emptyState("No tracks configured.")}</div>`, { icon: child.initial, style: "min-width:0;" })).join("")}
     </div>
+    ${vm.term.childTracks.length > 4 ? `<div style="color:var(--muted);font-size:13px;padding:6px 2px;">+ ${vm.term.childTracks.length - 4} more ${vm.term.childTracks.length - 4 === 1 ? "child" : "children"} — add Setup tracks to see their columns here.</div>` : ""}
     ${vm.term.graceReserve?.length ? panel("Grace Mode Reserve", `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">${vm.term.graceReserve.map((item) => `<div style="border:1px solid ${html(item.color)};border-radius:10px;background:${softColor(item.color, "18")};padding:12px;"><strong style="display:block;color:var(--ink);">${html(item.title)}</strong><small style="display:block;color:var(--muted);line-height:1.35;margin-top:4px;">${html(item.note)}</small></div>`).join("")}</div>`, { icon: "✥" }) : ""}
   `;
 }
 
 function renderPlannerYear(vm) {
+  // ── Term timeline ─────────────────────────────────────────────────────────────
+  const totalTerms = vm.year.terms.length || 4;
+  const termTimeline = vm.year.terms.map((term, i) => {
+    const active = term.active;
+    return `
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;">
+        <div style="width:100%;height:8px;border-radius:99px;background:${active ? "var(--gold)" : "var(--line)"};position:relative;">
+          ${active ? `<div style="position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:16px;height:16px;border-radius:50%;background:var(--gold);border:2px solid #fff;box-shadow:0 0 0 2px var(--gold);"></div>` : ""}
+        </div>
+        <strong style="font-size:13px;color:${active ? "var(--ink)" : "var(--muted)"};">${html(term.label)}</strong>
+        <small style="font-size:11px;color:${active ? "var(--gold)" : "var(--muted)"};">${active ? "Current" : "Planned"}</small>
+      </div>
+      ${i < totalTerms - 1 ? `<div style="width:16px;flex:none;height:8px;margin-top:0;align-self:center;"></div>` : ""}`;
+  }).join("");
+
+  // ── Season topics by type ─────────────────────────────────────────────────────
+  const topicsByType = vm.year.topics.reduce((map, topic) => {
+    const key = topic.type || "Enrichment";
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(topic);
+    return map;
+  }, new Map());
+
+  const topicsGrid = topicsByType.size
+    ? Array.from(topicsByType.entries()).map(([type, topics]) => `
+        <div>
+          <div style="color:var(--gold);font-size:10px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;margin-bottom:8px;">${html(type)}</div>
+          ${topics.map((topic) => `
+            <div style="padding:8px 0;border-top:1px solid var(--line);">
+              <strong style="display:block;font-size:14px;color:var(--ink);">${html(topic.title)}</strong>
+              ${topic.season ? `<small style="color:var(--muted);font-size:11px;">${html(topic.season)}</small>` : ""}
+            </div>`).join("")}
+        </div>`).join("")
+    : `<div style="color:var(--muted);font-style:italic;font-size:13px;">Add curriculum subjects in Setup to populate the year view.</div>`;
+
+  // ── Curriculum packages ───────────────────────────────────────────────────────
+  const pkgCards = vm.year.curriculumPackages.length
+    ? vm.year.curriculumPackages.map((pkg) => `
+        <div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:13px;">
+          ${pkg.vendor ? `<small style="color:var(--gold);font-size:10px;letter-spacing:.1em;font-weight:800;text-transform:uppercase;">${html(pkg.vendor)}</small>` : ""}
+          <strong style="display:block;margin:4px 0 5px;font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);">${html(pkg.title)}</strong>
+          <span style="color:var(--muted);line-height:1.4;font-size:13px;">${html(pkg.summary)}</span>
+        </div>`).join("")
+    : `<div style="color:var(--muted);font-style:italic;font-size:13px;padding:8px 0;">Add curriculum packages in Setup.</div>`;
+
+  // ── Upcoming feasts ───────────────────────────────────────────────────────────
+  const feastItems = vm.year.upcomingFeasts.length
+    ? vm.year.upcomingFeasts.map((feast) => `
+        <div style="display:grid;grid-template-columns:52px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:start;">
+          <div style="text-align:center;background:linear-gradient(180deg,var(--navy),#1b2c4a);border-radius:8px;padding:7px 4px;border:1px solid rgba(181,148,47,.28);">
+            <div style="color:var(--gold);font-size:14px;">✦</div>
+            <div style="color:#f3ead4;font-size:9px;line-height:1.2;margin-top:2px;">${html(feast.date || "")}</div>
+          </div>
+          <div>
+            <strong style="font-family:'Cormorant Garamond',serif;font-size:16px;line-height:1.2;display:block;">${html(feast.title)}</strong>
+            ${feast.fasting ? `<small style="color:var(--burgundy);font-size:11px;font-weight:700;">${html(feast.fasting)}</small>` : ""}
+          </div>
+        </div>`).join("")
+    : emptyState("Connect a calendar source to see upcoming feasts.");
+
   return `
-    <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start;">
-      ${panel("School Year & Terms", `<h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0;">${html(vm.year.schoolYear)}</h2><p style="color:var(--muted);">${html(vm.year.dateRange)}</p><div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:10px;margin-top:12px;">${vm.year.terms.map((term) => `<div style="border:1px solid ${term.active ? "var(--gold)" : "var(--line)"};border-radius:10px;background:${term.active ? "#fbf2dd" : "var(--paper2)"};padding:12px;"><strong>${html(term.label)}</strong><small style="display:block;color:var(--muted);">${term.active ? "Current term" : "Planned"}</small></div>`).join("")}</div>`, { icon: "▣" })}
-      ${panel("Upcoming Feasts", vm.year.upcomingFeasts.map((feast) => `<div style="padding:10px 0;border-top:1px solid var(--line);"><strong>${html(feast.title)}</strong><small style="display:block;color:var(--muted);">${html(feast.date)} · ${html(feast.fasting)}</small></div>`).join("") || emptyState("No feasts loaded."), { icon: "✥" })}
+    <div style="display:grid;gap:16px;">
+
+      ${panel("School Year", `
+        <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0 0 4px;">${html(vm.year.schoolYear)}</h2>
+        <p style="margin:0 0 18px;color:var(--muted);font-size:13px;">${html(vm.year.dateRange)}${vm.year.cycleTitle ? ` · ${html(vm.year.cycleTitle)}` : ""}${vm.year.cycleYear ? ` · ${html(vm.year.cycleYear)}` : ""}</p>
+        <div style="display:flex;gap:0;align-items:flex-start;">
+          ${termTimeline}
+        </div>`, { icon: "▣" })}
+
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;">
+        ${panel("Season Topics", `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:20px;">${topicsGrid}</div>`, { icon: "☰" })}
+        ${panel("Upcoming Feasts", feastItems, { icon: "✦" })}
+      </div>
+
+      ${panel("Curriculum Packages", `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">${pkgCards}</div>`, { icon: "✥" })}
+
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      ${panel("Planning Structure", `<div style="padding:10px 0;border-top:1px solid var(--line);"><small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;">Adaptive setup</small><strong style="display:block;">Use Forms or grade levels, with family-based work shared once.</strong></div>`, { icon: "◎" })}
-      ${panel("Season Topics", vm.year.topics.map((topic) => `<div style="padding:10px 0;border-top:1px solid var(--line);"><small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;">${html(topic.season)} · ${html(topic.type)}</small><strong style="display:block;">${html(topic.title)}</strong></div>`).join(""), { icon: "☰" })}
-    </div>
-    ${panel("Curriculum Packages", `<div style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:12px;">${vm.year.curriculumPackages.map((pkg) => `<div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:12px;"><small style="color:var(--gold);">${html(pkg.vendor)}</small><strong style="display:block;margin:4px 0;">${html(pkg.title)}</strong><span style="color:var(--muted);line-height:1.35;">${html(pkg.summary)}</span></div>`).join("")}</div>`, { icon: "✥" })}
   `;
 }
 
@@ -3931,6 +4015,17 @@ function wirePlanner(vm) {
   if (vm.activeView) localStorage.setItem("agapay.learn.plannerView", vm.activeView);
   if (vm.month?.key) localStorage.setItem("agapay.learn.plannerMonth", vm.month.key);
   if (vm.term?.activeTerm) localStorage.setItem("agapay.learn.plannerTerm", String(vm.term.activeTerm));
+
+  // Intro dismiss — sets a localStorage flag so the intro hides on next visit
+  root.querySelector("[data-planner-intro-dismiss]")?.addEventListener("click", (event) => {
+    const key = event.currentTarget.dataset.plannerIntroDismiss;
+    if (key) localStorage.setItem(key, "1");
+    const introEl = event.currentTarget.closest(".learn-family-intro")?.parentElement;
+    // Remove the intro block and the dismiss button row together
+    event.currentTarget.closest("div[style*='justify-content:flex-end']")?.remove();
+    event.currentTarget.closest(".learn-family-intro")?.remove();
+  });
+
   const prototypeFrame = root.querySelector("[data-family-prototype-frame]");
   if (prototypeFrame) wireFamilyPrototypeBackend(vm, prototypeFrame);
   root.querySelector("[data-planner-month-print]")?.addEventListener("click", async (event) => {
