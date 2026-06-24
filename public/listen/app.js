@@ -265,9 +265,7 @@ function epArt(ep, size, colorIdx = 0) {
   const bg = EP_COLORS[colorIdx % EP_COLORS.length];
   const img = ep?.image
     ? `<img src="${esc(ep.image)}" style="width:${size}px;height:${size}px;object-fit:cover;position:absolute;inset:0;transition:transform 0.3s" onerror="this.remove()">`
-    : '';
-  const mark = `<img src="/listen/mark.png" style="width:${Math.round(size*0.55)}px;height:${Math.round(size*0.55)}px;opacity:0.4">`;
-  return `<div class="art-container" style="width:${size}px;height:${size}px;flex:none;border-radius:${Math.round(size*0.25)}px;background:${bg};box-shadow: 0 4px 12px rgba(0,0,0,0.3);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">${img}${mark}</div>`;
+  return `<div class="art-container" style="width:${size}px;height:${size}px;flex:none;border-radius:${Math.round(size*0.25)}px;background:${bg};box-shadow:0 4px 12px rgba(0,0,0,0.3);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">${img}</div>`;
 }
 
 // ─── RSS / Podcast Index API ──────────────────────────────────────────────────
@@ -707,7 +705,6 @@ function renderPlayer() {
       <div style="width:280px;height:280px;border-radius:20px;background:${EP_COLORS[0]};border:2px solid rgba(200,162,74,0.3);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;overflow:hidden;box-shadow: 0 20px 48px rgba(0,0,0,0.55), 0 0 40px rgba(200,162,74,0.06)">
         <div style="position:absolute;inset:-6px;border-radius:20px;border:1px solid rgba(200,162,74,0.08)"></div>
         ${ep.image ? `<img src="${esc(ep.image)}" style="width:280px;height:280px;border-radius:20px;object-fit:cover;position:absolute;inset:0" onerror="this.remove()">` : ''}
-        <img src="/listen/mark.png" style="width:130px;height:130px;opacity:0.6;position:relative;z-index:1">
       </div>
     </div>
 
