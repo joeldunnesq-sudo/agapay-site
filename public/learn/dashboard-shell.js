@@ -2834,94 +2834,47 @@ function renderPrintCenter(vm) {
       </article>`;
   };
 
-  // ── Child sheet card ────────────────────────────────────────────────────────
-  const childCard = (template) => {
-    const locked    = freePlan; // all child sheets require Family plan
-    const initial   = html((template.child || "").charAt(0).toUpperCase() || "C");
-    const avatarBg  = template.color || "var(--slate)";
+  // ── Child sheet cards — one card per child, dropdown selects document type ───
+  // Group all child templates by childId so families with many children each get
+  // exactly one card regardless of how many sheet types exist per child.
+  const childrenMap = new Map();
+  childTemplates.forEach((t) => {
+    const key = t.childId || t.child || t.id;
+    if (!childrenMap.has(key)) childrenMap.set(key, { name: t.child || "Child", childId: t.childId, color: t.color, sheets: [] });
+    childrenMap.get(key).sheets.push(t);
+  });
+
+  const childGroupCard = (group) => {
+    const locked    = freePlan;
+    const initial   = html((group.name || "C").charAt(0).toUpperCase());
+    const avatarBg  = group.color || "var(--slate)";
     const btnBg     = locked ? "transparent" : "var(--navy)";
     const btnBorder = locked ? "var(--gold)" : "var(--navy)";
     const btnColor  = locked ? "var(--gold)" : "#fff";
+    const selectId  = `child-sheet-sel-${html(group.childId || group.name)}`;
+    const options   = group.sheets.map((t) => `<option value="${html(t.id)}">${html(t.title)}</option>`).join("");
     return `
-      <article data-print-template="${html(template.id)}" data-print-premium="${locked ? "true" : "false"}"
-        style="border:1px solid ${locked ? "var(--gold)" : "var(--line)"};border-radius:12px;background:${locked ? "#fffaed" : "var(--paper)"};padding:14px;display:flex;flex-direction:column;gap:9px;">
+      <article style="border:1px solid ${locked ? "var(--gold)" : "var(--line)"};border-radius:12px;background:${locked ? "#fffaed" : "var(--paper)"};padding:14px;display:flex;flex-direction:column;gap:10px;">
         <div style="display:flex;align-items:center;gap:10px;">
           <span style="flex:none;width:36px;height:36px;border-radius:50%;background:${avatarBg};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;">${initial}</span>
-          <div style="min-width:0;">
-            <strong style="display:block;font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(template.title)}</strong>
-            <small style="color:var(--muted);font-size:11px;">${html(template.description)}</small>
-          </div>
-          ${accessBadge(template)}
+          <strong style="font-size:15px;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${html(group.name)}</strong>
+          ${accessBadge({ premium: true })}
         </div>
-        <button type="button" data-print-generate="${html(template.id)}"
-          style="border:1.5px solid ${btnBorder};background:${btnBg};color:${btnColor};border-radius:9px;padding:9px 12px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;text-align:center;">
+        <select id="${selectId}" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-family:inherit;font-size:13px;color:var(--ink);background:var(--paper2);cursor:${locked ? "default" : "pointer"};" ${locked ? "disabled" : ""}>
+          ${options}
+        </select>
+        <button type="button" data-child-print-group="${html(group.childId || group.name)}" data-child-select="${selectId}"
+          style="border:1.5px solid ${btnBorder};background:${btnBg};color:${btnColor};border-radius:9px;padding:10px 12px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;text-align:center;">
           ${locked ? `<span style="margin-right:5px;font-size:11px;">🔒</span>Upgrade to unlock` : "Generate PDF"}
         </button>
       </article>`;
   };
 
-  // ── Plan status bar ─────────────────────────────────────────────────────────
-  const usedPct = freePlan ? Math.round(((vm.billing.printLimit - remaining) / vm.billing.printLimit) * 100) : 0;
-  const statusBar = freePlan
-    ? `<div style="margin-top:8px;height:5px;border-radius:99px;background:var(--line);overflow:hidden;">
-         <div style="height:100%;width:${usedPct}%;background:${nearLimit ? "var(--burgundy)" : "var(--gold)"};border-radius:99px;transition:width .4s;"></div>
-       </div>
-       <small style="display:block;margin-top:5px;color:${nearLimit ? "var(--burgundy)" : "var(--muted)"};font-size:11px;">
-         ${remaining} of ${vm.billing.printLimit} free prints remaining
-       </small>`
-    : "";
-
-  // ── Draft Job panel (Weekly Family Plan — the original UI) ─────────────────
-  const draftJob = panel("Weekly Family Plan", `
-    <strong style="font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--ink);">${html(vm.job.status)}</strong>
-    <div style="margin-top:8px;color:var(--muted);line-height:1.55;">
-      ${html(vm.term.label)}<br>
-      ${html(vm.term.week)}<br>
-      ${vm.job.range ? html(vm.job.range) + " · " : ""}${html(vm.job.format)}
-    </div>
-    <button type="button" data-print-generate="weekly-pack"
-      style="margin-top:14px;width:100%;background:var(--navy);color:#fff;border:none;border-radius:10px;padding:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;">
-      Generate Print Pack
-    </button>
-    ${!freePlan ? `<button type="button" data-print-generate="print_mom_month"
-      style="margin-top:8px;width:100%;background:transparent;color:var(--navy);border:1.5px solid var(--line);border-radius:10px;padding:10px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">
-      Month Calendar
-    </button>` : ""}`, { icon: "✒" });
-
-  // ── Plan banner ─────────────────────────────────────────────────────────────
-  const planBanner = `
-    <div style="border:1px solid ${nearLimit ? "var(--burgundy)" : freePlan ? "var(--line)" : "rgba(181,148,47,.35)"};
-      background:${freePlan ? "var(--paper)" : "linear-gradient(135deg,#fffdf5,#fdf5dc)"};
-      border-radius:14px;padding:16px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
-      <div style="flex:1;min-width:220px;">
-        <strong style="font-family:'Cormorant Garamond',serif;font-size:21px;color:var(--ink);">
-          ${freePlan ? "Free Plan" : "✦ Family Plan Active"}
-        </strong>
-        <span style="display:block;color:var(--muted);font-size:13px;margin-top:3px;line-height:1.45;">
-          ${freePlan
-            ? "Household print packs are available. Child sheets, term packs, and unlimited prints require the Family plan."
-            : "Unlimited printing unlocked — household plans, child sheets, term packs, and all premium templates."}
-        </span>
-        ${statusBar}
-      </div>
-      ${freePlan
-        ? `<button type="button" data-print-upgrade
-             style="flex:none;background:var(--navy);color:#fff;border:1px solid var(--gold);border-radius:10px;padding:11px 20px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
-             Upgrade — Family Plan
-           </button>`
-        : `<span style="flex:none;color:var(--gold);font-size:13px;font-weight:700;padding-top:4px;">Unlocked ✦</span>`}
-    </div>`;
-
-  // ── Household templates grid ────────────────────────────────────────────────
-  const householdGrid = householdTemplates.length
-    ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;">${householdTemplates.map(templateCard).join("")}</div>`
-    : emptyState("No household templates available for this setup.");
-
   // ── Child sheets grid ───────────────────────────────────────────────────────
-  const childGrid = childTemplates.length
-    ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">${childTemplates.map(childCard).join("")}</div>`
+  const childGrid = childrenMap.size
+    ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">${Array.from(childrenMap.values()).map(childGroupCard).join("")}</div>`
     : `<div style="padding:16px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:13px;line-height:1.5;">
-         Child sheets appear here once children are added in Setup. Each child gets a weekly assignment sheet and term plan.
+         Child sheets appear here once children are added in Setup. Each child gets a weekly assignment sheet, term plan, and chore chart.
        </div>`;
 
   // ── Reports coming-soon section ─────────────────────────────────────────────
@@ -4234,6 +4187,52 @@ function wirePrintCenter(vm) {
       }
     });
   });
+
+  // ── Child sheet dropdown buttons ────────────────────────────────────────────
+  // Each child card has a <select> and a button with data-child-print-group.
+  // On click, resolve the selected templateId from the <select>, find its
+  // template (for childId and premium gating), then fire the same print flow.
+  root.querySelectorAll("[data-child-print-group]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const selectId  = button.dataset.childSelect;
+      const select    = selectId ? document.getElementById(selectId) : null;
+      const templateId = select?.value || "";
+      if (!templateId) return;
+      const template  = vm.templates.find((t) => t.id === templateId) || { id: templateId, title: "Child Sheet", audience: "child", premium: true, childId: "" };
+      if (!canUsePrint(vm, template)) return;
+      const title         = template.title || "Child Sheet";
+      const originalText  = button.textContent;
+      button.disabled     = true;
+      button.textContent  = "Generating...";
+      try {
+        const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
+        const response = await fetch(`/api/learn/print/${encodeURIComponent(templateId)}?calendar=${encodeURIComponent(calendar)}`, {
+          method: "POST",
+          headers: learnRequestHeaders({ "content-type": "application/json" }),
+          body: JSON.stringify({
+            childId: template.childId || "",
+            termId:  template.termId  || ""
+          })
+        });
+        const contentType = response.headers.get("content-type") || "";
+        if (!response.ok || !contentType.includes("application/pdf")) {
+          const payload = contentType.includes("application/json") ? await response.json().catch(() => ({})) : {};
+          throw new Error(payload.error || "Unable to generate the PDF. Please try again.");
+        }
+        const blob = await response.blob();
+        const disposition = response.headers.get("content-disposition") || "";
+        const fileMatch   = disposition.match(/filename="([^"]+)"/i);
+        downloadBlob(fileMatch?.[1] || `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "child-sheet"}.pdf`, blob);
+        const serverCount = Number(response.headers.get("x-agapay-learn-print-count"));
+        if (!isLearnFamilyPlan()) setPrintCount(Number.isFinite(serverCount) ? serverCount : printCount() + 1);
+      } catch (error) {
+        showLearnDialog("Print Could Not Be Generated", error.message || "Please refresh and try again.", []);
+      } finally {
+        button.disabled    = false;
+        button.textContent = originalText;
+      }
+    });
+  });
 }
 
 function wireFormation() {
@@ -4253,9 +4252,17 @@ async function mount() {
   if (new URLSearchParams(window.location.search).get("learn_billing") === "success") {
     localStorage.setItem("agapay.learn.plan", "family");
   }
+  let resolvedPrintLimit = 3;
   try {
     const billing = await apiGet("/api/learn/billing/status");
-    if (billing.plan === "family" || billing.fullAccess) localStorage.setItem("agapay.learn.plan", "family");
+    // Always clear and re-derive from the live API response so stale localStorage
+    // doesn't show a paid UI to a user whose subscription has lapsed.
+    if (billing.plan === "family" || billing.fullAccess) {
+      localStorage.setItem("agapay.learn.plan", "family");
+    } else {
+      localStorage.removeItem("agapay.learn.plan");
+    }
+    if (billing.printLimit) resolvedPrintLimit = Number(billing.printLimit) || 3;
   } catch {
     // Billing status is advisory for the shell; route-level saves still enforce limits.
   }
@@ -4302,7 +4309,7 @@ async function mount() {
   }
   if (pageKey === "print-center") {
     const raw = await apiGet(`/api/learn/print-center?calendar=${encodeURIComponent(calendar)}`);
-    const vm = toPrintCenterViewModel(raw);
+    const vm = toPrintCenterViewModel({ ...raw, printLimit: resolvedPrintLimit });
     root.innerHTML = renderPrintCenter(vm);
     wirePrintCenter(vm);
     return;
