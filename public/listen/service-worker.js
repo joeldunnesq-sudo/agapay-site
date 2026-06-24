@@ -3,7 +3,7 @@
  * Manages caching and offline audio streaming for the Listen app environment.
  */
 
-const CACHE_NAME = 'agapay-listen-v1';
+const CACHE_NAME = 'agapay-listen-v2';
 const ASSETS_TO_CACHE = [
   '/listen/',
   '/index.html', 
