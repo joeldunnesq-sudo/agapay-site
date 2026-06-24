@@ -154,16 +154,17 @@
   box-shadow: 0 8px 24px rgba(200,162,74,.28);
 }
 
-  .agp-screen-enter {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    animation: agpFade .28s ease both;
-  }
+
+.agp-screen-enter {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  animation: agpFade .28s ease both;
+}
 
 @keyframes agpFade {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 @keyframes agpRise {
   from { opacity: 0; transform: translateY(10px) scale(.985); }
