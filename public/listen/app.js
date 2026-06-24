@@ -55,6 +55,7 @@ const state = {
   sleepLabel:         '',
   toast:              null,
   liked:              new Set(load('agp_liked', [])),
+  likedEpisodes:      load('agp_liked_eps', []),
   downloads:          {},   // guid -> object URL
   
   // Platform accounts configuration profiles
@@ -160,6 +161,41 @@ function addToQueue(ep, next = false) {
   persistQueue(queue);
   showToast(next ? 'Playing next' : 'Added to queue');
   render();
+}
+
+function isLiked(ep) {
+  return state.liked.has(episodeKey(ep));
+}
+
+function toggleLikeEpisode(ep) {
+  if (!ep) return;
+  const key = episodeKey(ep);
+  const liked = new Set(state.liked);
+  let likedEpisodes = [...state.likedEpisodes];
+
+  if (liked.has(key)) {
+    liked.delete(key);
+    likedEpisodes = likedEpisodes.filter(item => episodeKey(item) !== key);
+    showToast('Removed from Likes');
+  } else {
+    liked.add(key);
+    likedEpisodes = [{ ...ep, likedAt: Date.now() }, ...likedEpisodes.filter(item => episodeKey(item) !== key)];
+    showToast('Saved to Likes');
+  }
+
+  state.liked = liked;
+  state.likedEpisodes = likedEpisodes.slice(0, 500);
+  save('agp_liked', liked);
+  save('agp_liked_eps', state.likedEpisodes);
+  render();
+}
+
+function playQueuedEpisode(index) {
+  const selected = state.queue[index];
+  if (!selected) return;
+  const remaining = state.queue.slice(index + 1);
+  persistQueue(remaining);
+  playEpisode(selected, remaining);
 }
 
 function addHistory(ep, position = 0, duration = 0, completed = false) {
@@ -486,6 +522,12 @@ function installMediaSessionHandlers() {
 
 installMediaSessionHandlers();
 
+// Preserve older GUID-only likes by hydrating them from cached episodes when possible.
+if (!state.likedEpisodes.length && state.liked.size) {
+  state.likedEpisodes = state.episodes.filter(ep => state.liked.has(episodeKey(ep)));
+  save('agp_liked_eps', state.likedEpisodes);
+}
+
 // ─── Playback ─────────────────────────────────────────────────────────────────
 player.on('progress', ({ progress, elapsed, duration }) => {
   state.progress = progress;
@@ -805,16 +847,23 @@ function renderEpisodeRow(ep, i = 0) {
   const downloading = state.downloadProgress[key];
   const history = state.history.find(item => episodeKey(item) === key);
   const status = history?.completed ? 'Played' : history?.position > 0 ? 'In progress' : '';
-  return `<div class="episode-row" style="display:flex;gap:13px;align-items:center;padding:13px 18px;margin:0 4px;border-radius:14px;border-bottom:1px solid rgba(255,255,255,.025)">
-    <div class="ep-tap tappable" data-ep="${encodeURIComponent(JSON.stringify(ep))}" style="display:flex;gap:13px;align-items:center;flex:1;min-width:0">
+  const liked = isLiked(ep);
+  const encoded = encodeURIComponent(JSON.stringify(ep));
+
+  return `<div class="episode-row" style="display:flex;gap:8px;align-items:center;padding:13px 14px;margin:0 4px;border-radius:14px;border-bottom:1px solid rgba(255,255,255,.025)">
+    <div class="ep-tap tappable" data-ep="${encoded}" style="display:flex;gap:13px;align-items:center;flex:1;min-width:0">
       ${epArt(ep, 48, i)}
       <div style="flex:1;min-width:0">
         <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;font-weight:600;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2">${esc(ep.title)}</div>
         <div style="font-size:.62rem;color:${MUTED};margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(ep.show)}${ep.duration?' · '+esc(ep.duration):''}${ep.date?' · '+timeAgo(ep.date):''}${status?' · '+status:''}</div>
       </div>
     </div>
-    <button class="ep-download-btn tappable" data-ep="${encodeURIComponent(JSON.stringify(ep))}" aria-label="${downloaded?'Remove download':'Download episode'}" style="border:0;background:transparent;color:${downloaded?GOLD:MUTED};padding:8px;font-size:.72rem">${downloading?'…':downloaded?'✓':'↓'}</button>
-    <button class="ep-queue-btn tappable" data-ep="${encodeURIComponent(JSON.stringify(ep))}" aria-label="Add to queue" style="border:0;background:transparent;color:${MUTED};padding:8px;font-size:1rem">＋</button>
+    <button class="ep-like-btn tappable" data-ep="${encoded}" aria-label="${liked?'Unlike':'Like episode'}" style="border:0;background:transparent;padding:8px;display:flex;color:${liked?GOLD:MUTED}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="${liked?GOLD:'none'}" stroke="${liked?GOLD:MUTED}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+    </button>
+    <button class="ep-play-next-btn tappable" data-ep="${encoded}" aria-label="Play next" style="border:0;background:transparent;color:${MUTED};padding:8px;font-size:.78rem;font-weight:800">NEXT</button>
+    <button class="ep-queue-btn tappable" data-ep="${encoded}" aria-label="Add to queue" style="border:0;background:transparent;color:${MUTED};padding:8px;font-size:1rem">＋</button>
+    <button class="ep-download-btn tappable" data-ep="${encoded}" aria-label="${downloaded?'Remove download':'Download episode'}" style="border:0;background:transparent;color:${downloaded?GOLD:MUTED};padding:8px;font-size:.72rem">${downloading?'…':downloaded?'✓':'↓'}</button>
   </div>`;
 }
 
@@ -872,7 +921,7 @@ function renderHome() {
 function renderPlayer() {
   const ep  = state.current || { title: 'No Track Selected', show: 'AGAPAY Listen', description: 'Select an episode from your library or discover feed to begin listening.' };
   const pct = state.progress.toFixed(1) + '%';
-  const liked = state.liked.has(ep.guid);
+  const liked = isLiked(ep);
 
   return `<div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a1d2e 0%,#061522 55%,#030a12 100%);overflow-y:auto;display:flex;flex-direction:column;padding-bottom:24px">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:24px 24px 8px">
@@ -1022,6 +1071,11 @@ function renderLibrary() {
   return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:${state.current?'158px':'92px'};background:${NIGHT}">
     <div style="padding:16px 24px 20px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.7rem;font-weight:600;color:#F6F1E8">Library</div>
 
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:0 20px 22px">
+      <button data-nav="queue" class="tappable" style="border:1px solid rgba(200,162,74,.15);background:linear-gradient(135deg,rgba(200,162,74,.09),rgba(255,255,255,.02));border-radius:17px;padding:16px;text-align:left"><div style="font-size:.57rem;letter-spacing:.14em;text-transform:uppercase;color:${GOLD};font-weight:800">Up Next</div><div style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:#F6F1E8;margin-top:5px">${state.queue.length}</div><div style="font-size:.62rem;color:${MUTED}">Queued episodes</div></button>
+      <button data-nav="likes" class="tappable" style="border:1px solid rgba(200,162,74,.15);background:linear-gradient(135deg,rgba(200,162,74,.09),rgba(255,255,255,.02));border-radius:17px;padding:16px;text-align:left"><div style="font-size:.57rem;letter-spacing:.14em;text-transform:uppercase;color:${GOLD};font-weight:800">Favorites</div><div style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:#F6F1E8;margin-top:5px">${state.likedEpisodes.length}</div><div style="font-size:.62rem;color:${MUTED}">Liked episodes</div></button>
+    </div>
+
     <section style="padding:0 20px;margin-bottom:24px">
       <div style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px;padding-left:4px">Subscriptions</div>
       <div style="background:rgba(255,255,255,.01);border-radius:17px;border:1px solid rgba(255,255,255,.05);overflow:hidden;box-shadow:0 5px 22px rgba(0,0,0,.2)">
@@ -1077,6 +1131,48 @@ function renderShowDetail() {
         </div>
       `).join('') : `<div style="padding:40px 20px;text-align:center;font-size:0.8rem;color:${MUTED};font-style:italic">No episodes cached yet. Feeds will populate during synchronization.</div>`}
     </div>
+  </div>`;
+}
+
+function renderQueuePage() {
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:${state.current?'92px':'28px'};background:${NIGHT}">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 18px">
+      <div style="display:flex;align-items:center;gap:13px">
+        <button class="library-back-btn tappable" style="width:38px;height:38px;border:0;border-radius:50%;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:600;color:#F6F1E8">Up Next</div><div style="font-size:.62rem;color:${MUTED};margin-top:2px">Plays continuously in this order</div></div>
+      </div>
+      ${state.queue.length?`<button id="queue-page-clear" style="border:0;background:transparent;color:${GOLD};font-size:.64rem;font-weight:700">Clear</button>`:''}
+    </div>
+
+    ${state.current?`<section style="margin:0 20px 20px;padding:15px;border-radius:18px;background:linear-gradient(135deg,rgba(28,58,74,.52),rgba(11,33,48,.28));border:1px solid rgba(200,162,74,.18)">
+      <div style="font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:${GOLD};font-weight:800;margin-bottom:11px">Now Playing</div>
+      <div class="tappable" data-nav="player" style="display:flex;align-items:center;gap:13px">${epArt(state.current,54,0)}<div style="min-width:0"><div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:#F6F1E8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(state.current.title)}</div><div style="font-size:.62rem;color:${MUTED};margin-top:3px">${esc(state.current.show)}</div></div></div>
+    </section>`:''}
+
+    <section style="padding:0 4px">
+      <div style="padding:0 20px 10px;display:flex;align-items:baseline;justify-content:space-between"><span style="font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:${GOLD};font-weight:800">Queued Episodes</span><span style="font-size:.62rem;color:${MUTED}">${state.queue.length}</span></div>
+      ${state.queue.length ? state.queue.map((ep,i)=>`<div class="queue-page-item" style="display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid rgba(255,255,255,.035)">
+        <div style="width:22px;text-align:center;color:${i===0?GOLD:MUTED};font-family:'Cormorant Garamond',serif;font-size:1rem">${i+1}</div>
+        ${epArt(ep,48,i)}
+        <button class="queue-page-play tappable" data-index="${i}" style="flex:1;min-width:0;text-align:left;border:0;background:transparent;padding:0"><div style="font-family:'Cormorant Garamond',serif;font-size:.98rem;font-weight:600;color:#F6F1E8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(ep.title)}</div><div style="font-size:.61rem;color:${MUTED};margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(ep.show)}</div></button>
+        <button class="queue-move-up" data-index="${i}" aria-label="Move up" style="border:0;background:transparent;color:${MUTED};padding:7px">↑</button>
+        <button class="queue-move-down" data-index="${i}" aria-label="Move down" style="border:0;background:transparent;color:${MUTED};padding:7px">↓</button>
+        <button class="queue-page-remove" data-index="${i}" aria-label="Remove" style="border:0;background:transparent;color:${MUTED};padding:7px;font-size:1.1rem">×</button>
+      </div>`).join('') : `<div style="margin:4px 20px;padding:34px 24px;border-radius:18px;border:1px solid rgba(255,255,255,.05);text-align:center"><div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:#F6F1E8;margin-bottom:7px">Your queue is empty</div><div style="font-size:.75rem;line-height:1.5;color:${MUTED}">Tap “NEXT” or “+” beside an episode to build a continuous listening queue.</div></div>`}
+    </section>
+  </div>`;
+}
+
+function renderLikesPage() {
+  const likedEpisodes = [...state.likedEpisodes].sort((a,b)=>(b.likedAt||0)-(a.likedAt||0));
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:${state.current?'92px':'28px'};background:${NIGHT}">
+    <div style="display:flex;align-items:center;gap:13px;padding:16px 20px 18px">
+      <button class="library-back-btn tappable" style="width:38px;height:38px;border:0;border-radius:50%;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <div><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:600;color:#F6F1E8">Liked Episodes</div><div style="font-size:.62rem;color:${MUTED};margin-top:2px">Your saved listening collection</div></div>
+    </div>
+    <div style="padding:0 4px">${likedEpisodes.length ? likedEpisodes.map((ep,i)=>renderEpisodeRow(ep,i)).join('') : `<div style="margin:4px 20px;padding:34px 24px;border-radius:18px;border:1px solid rgba(255,255,255,.05);text-align:center"><div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:#F6F1E8;margin-bottom:7px">No liked episodes yet</div><div style="font-size:.75rem;line-height:1.5;color:${MUTED}">Tap the heart beside any episode or in the player to save it here.</div></div>`}</div>
   </div>`;
 }
 
@@ -1188,6 +1284,8 @@ function render() {
     case 'player':   screen = renderPlayer();   break;
     case 'discover': screen = renderDiscover(); break;
     case 'library':  screen = renderLibrary();  break;
+    case 'queue':    screen = renderQueuePage(); break;
+    case 'likes':    screen = renderLikesPage(); break;
     case 'profile':  screen = renderProfile();  break;
     case 'show':     screen = renderShowDetail(); break; // Integrated Show Detail routing route
     default:         screen = renderHome();
@@ -1197,7 +1295,7 @@ function render() {
   root.innerHTML = `
     <div class="agp-screen-enter">${screen}</div>
     ${renderMiniPlayer()}
-    ${(state.screen !== 'player' && state.screen !== 'show') ? renderBottomNav() : ''}
+    ${(!['player','show','queue','likes'].includes(state.screen)) ? renderBottomNav() : ''}
     ${renderToast()}
     ${renderRssSheet()}
     ${renderDescriptionSheet()}
@@ -1232,6 +1330,16 @@ function bindEvents() {
   document.querySelectorAll('.ep-queue-btn').forEach(btn => btn.addEventListener('click', e => {
     e.stopPropagation();
     try { addToQueue(JSON.parse(decodeURIComponent(btn.dataset.ep))); } catch {}
+  }));
+
+  document.querySelectorAll('.ep-play-next-btn').forEach(btn => btn.addEventListener('click', e => {
+    e.stopPropagation();
+    try { addToQueue(JSON.parse(decodeURIComponent(btn.dataset.ep)), true); } catch (error) { console.error('Could not queue next:', error); }
+  }));
+
+  document.querySelectorAll('.ep-like-btn').forEach(btn => btn.addEventListener('click', e => {
+    e.stopPropagation();
+    try { toggleLikeEpisode(JSON.parse(decodeURIComponent(btn.dataset.ep))); } catch (error) { console.error('Could not update like:', error); }
   }));
 
   document.querySelectorAll('.ep-download-btn').forEach(btn => btn.addEventListener('click', e => {
@@ -1299,11 +1407,7 @@ function bindEvents() {
   });
 
   document.querySelector('.like-btn')?.addEventListener('click', () => {
-    if (!state.current) return;
-    const liked = new Set(state.liked);
-    liked.has(state.current.guid) ? liked.delete(state.current.guid) : liked.add(state.current.guid);
-    setState({ liked });
-    save('agp_liked', liked);
+    if (state.current) toggleLikeEpisode(state.current);
   });
 
   document.querySelector('.open-rss')?.addEventListener('click', () => setState({ rssSheet: true }));
@@ -1325,7 +1429,7 @@ function bindEvents() {
 
   document.getElementById('sleep-btn')?.addEventListener('click', () => setState({ sleepSheet: true }));
   document.getElementById('speed-btn')?.addEventListener('click', () => setState({ speedSheet: true }));
-  document.getElementById('open-queue-btn')?.addEventListener('click', () => setState({ queueSheet: true }));
+  document.getElementById('open-queue-btn')?.addEventListener('click', () => setState({ screen: 'queue' }));
   document.getElementById('utility-backdrop')?.addEventListener('click', () => setState({ queueSheet:false, speedSheet:false, sleepSheet:false }));
   document.querySelectorAll('.speed-option').forEach(btn => btn.addEventListener('click', () => { setPlaybackSpeed(btn.dataset.rate); setState({ speedSheet:false }); }));
   document.querySelectorAll('.sleep-option').forEach(btn => btn.addEventListener('click', () => { setSleepTimer(btn.dataset.minutes); state.sleepSheet=false; render(); }));
@@ -1333,6 +1437,30 @@ function bindEvents() {
   document.getElementById('sleep-cancel')?.addEventListener('click', () => clearSleepTimer());
   document.getElementById('queue-clear')?.addEventListener('click', () => { persistQueue([]); render(); });
   document.getElementById('history-clear')?.addEventListener('click', () => { state.history=[]; save('agp_history', []); render(); });
+  document.querySelectorAll('.library-back-btn').forEach(btn => btn.addEventListener('click', () => setState({ screen: 'library' })));
+  document.getElementById('queue-page-clear')?.addEventListener('click', () => { persistQueue([]); render(); });
+  document.querySelectorAll('.queue-page-play').forEach(btn => btn.addEventListener('click', () => playQueuedEpisode(Number(btn.dataset.index))));
+  document.querySelectorAll('.queue-page-remove').forEach(btn => btn.addEventListener('click', () => {
+    const index = Number(btn.dataset.index);
+    persistQueue(state.queue.filter((_,i) => i !== index));
+    render();
+  }));
+  document.querySelectorAll('.queue-move-up').forEach(btn => btn.addEventListener('click', () => {
+    const index = Number(btn.dataset.index);
+    if (index <= 0) return;
+    const queue = [...state.queue];
+    [queue[index - 1], queue[index]] = [queue[index], queue[index - 1]];
+    persistQueue(queue);
+    render();
+  }));
+  document.querySelectorAll('.queue-move-down').forEach(btn => btn.addEventListener('click', () => {
+    const index = Number(btn.dataset.index);
+    if (index < 0 || index >= state.queue.length - 1) return;
+    const queue = [...state.queue];
+    [queue[index], queue[index + 1]] = [queue[index + 1], queue[index]];
+    persistQueue(queue);
+    render();
+  }));
   document.querySelectorAll('.queue-remove').forEach(btn => btn.addEventListener('click', () => { persistQueue(state.queue.filter(ep => episodeKey(ep) !== btn.dataset.key)); render(); }));
   document.querySelectorAll('.queue-play').forEach(btn => btn.addEventListener('click', () => { try { const ep=JSON.parse(decodeURIComponent(btn.dataset.ep)); persistQueue(state.queue.filter(item=>episodeKey(item)!==episodeKey(ep))); playEpisode(ep,state.queue); } catch {} }));
 
