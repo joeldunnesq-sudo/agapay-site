@@ -699,9 +699,42 @@ function renderHome() {
 
   return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:${cur?'158px':'94px'};background:${NIGHT}">
     <div style="padding:16px 24px 12px;display:flex;align-items:center;justify-content:space-between">
-      <div><div style="font-size:.6rem;letter-spacing:.26em;text-transform:uppercase;color:${GOLD};font-weight:700">AGAPAY</div><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.9rem;font-weight:600;letter-spacing:.04em;color:#F6F1E8;line-height:1.1">Listen</div></div>
-      <div id="refresh-feeds" class="tappable" title="Refresh podcasts" style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:${GOLD};font-size:1.1rem">↻</div>
+      <div style="display:flex;align-items:center;gap:12px">
+      <img
+        src="/listen/mark.png"
+        alt="AGAPAY"
+        style="
+          width:42px;
+          height:42px;
+          object-fit:contain;
+          flex:none;
+        "
+      >
+    
+      <div>
+        <div style="
+          font-size:0.6rem;
+          letter-spacing:0.26em;
+          text-transform:uppercase;
+          color:${GOLD};
+          font-weight:700;
+        ">
+          AGAPAY
+        </div>
+    
+        <div style="
+          font-family:'Cormorant Garamond',Georgia,serif;
+          font-size:1.8rem;
+          font-weight:500;
+          letter-spacing:0.04em;
+          color:#F6F1E8;
+          line-height:1.1;
+        ">
+          Listen
+        </div>
+      </div>
     </div>
+    
 
     ${cur ? `<div class="ep-tap tappable" data-ep="${encodeURIComponent(JSON.stringify(cur))}" style="margin:8px 20px 22px;padding:16px;background:linear-gradient(135deg,rgba(28,58,74,.55),rgba(11,33,48,.3));backdrop-filter:blur(10px);border-radius:20px;border:1px solid rgba(200,162,74,.2);box-shadow:0 14px 34px rgba(0,0,0,.25)">
       <div style="font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px">Continue Listening</div>
