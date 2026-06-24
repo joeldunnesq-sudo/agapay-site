@@ -1753,24 +1753,147 @@ function renderPlannerYear(vm) {
 }
 
 function renderFormation(vm) {
-  const rhythms = vm.rhythms.length ? vm.rhythms.map((item) => `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);">${check(item.complete)}<div><strong>${html(item.title)}</strong><small style="display:block;color:var(--muted);">${html(item.note)}</small></div></div>`).join("") : emptyState("Add formation rhythms in Setup.");
-  const readings = vm.today.readingTasks?.length ? `<div style="display:grid;gap:8px;margin:12px 0 4px;">${vm.today.readingTasks.map((reading) => `<button type="button" data-reading-check aria-pressed="false" style="display:flex;align-items:center;gap:10px;text-align:left;border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:9px 11px;font-family:inherit;color:var(--ink);cursor:pointer;"><span data-reading-mark style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--gold);display:grid;place-items:center;color:var(--gold);font-size:12px;"></span><span><strong>${html(reading.label)}</strong><small style="display:block;color:var(--muted);">${html(reading.ref)}</small></span></button>`).join("")}</div>` : `<p style="margin:10px 0 0;color:#33405a;line-height:1.45;">${html(vm.today.readings)}</p>`;
-  const memory = vm.recitation.length ? vm.recitation.map((item) => `<div style="padding:10px 0;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 110px;gap:14px;align-items:center;"><div><strong>${html(item.title)}</strong><small style="display:block;color:var(--muted);">${html(item.status)}</small></div><div>${bar(item.progress, "var(--navy)")}<small style="color:var(--muted);">${item.progress}%</small></div></div>`).join("") : emptyState("No memory tracks configured yet.");
-  const enrich = vm.enrichment.length ? vm.enrichment.map((item) => `<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid var(--line);"><span><strong>${html(item.type)}:</strong> ${html(item.title)}</span><span style="color:var(--muted);">${html(item.minutes)}</span></div>`).join("") : emptyState("Add enrichment blocks in Setup.");
-  const feasts = vm.feasts.length ? vm.feasts.slice(0, 2).map((feast) => `<div style="border-top:1px solid var(--line);padding:11px 0;"><strong>${html(feast.title)}</strong><small style="display:block;color:var(--muted);margin-top:4px;">${html(feast.date)}${feast.fasting ? ` · ${html(feast.fasting)}` : ""}</small></div>`).join("") : emptyState("No upcoming feasts loaded.");
+  // ── Today panel — liturgical day, readings, saint, fasting all in one place ─
+  const fastBadge = vm.today.fasting && !/no fast/i.test(vm.today.fasting)
+    ? `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(110,47,42,.10);color:var(--burgundy);border:1px solid rgba(110,47,42,.22);border-radius:999px;padding:4px 11px;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;">✦ ${html(vm.today.fasting)}</span>`
+    : "";
+  const readingButtons = vm.today.readingTasks?.length
+    ? `<div style="display:grid;gap:8px;margin-top:14px;">${vm.today.readingTasks.map((r) => `
+        <button type="button" data-reading-check aria-pressed="false"
+          style="display:flex;align-items:center;gap:11px;text-align:left;border:1px solid var(--line);border-radius:11px;background:var(--paper2);padding:11px 13px;font-family:inherit;color:var(--ink);cursor:pointer;transition:border-color .15s;">
+          <span data-reading-mark style="flex:none;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--gold);display:grid;place-items:center;color:var(--gold);font-size:11px;"></span>
+          <span style="min-width:0;">
+            <strong style="display:block;font-size:14px;">${html(r.label)}</strong>
+            <small style="color:var(--muted);font-size:12px;">${html(r.ref)}</small>
+          </span>
+        </button>`).join("")}</div>`
+    : (vm.today.readings ? `<p style="margin:12px 0 0;color:#33405a;line-height:1.5;font-size:14px;">${html(vm.today.readings)}</p>` : "");
+
+  const saintBlock = vm.today.saint
+    ? `<div style="margin-top:14px;padding:12px;background:linear-gradient(135deg,rgba(181,148,47,.08),rgba(181,148,47,.03));border:1px solid rgba(181,148,47,.22);border-radius:10px;">
+         <div style="color:var(--gold);font-size:10px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;margin-bottom:4px;">Commemorated Today</div>
+         <strong style="font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--ink);line-height:1.25;">${html(vm.today.saint)}</strong>
+       </div>`
+    : "";
+
+  const troparionBlock = vm.today.troparion
+    ? `<div style="margin-top:12px;padding:12px 14px;border-left:3px solid var(--goldsoft);background:rgba(255,255,255,.5);border-radius:0 8px 8px 0;">
+         <div style="color:var(--gold);font-size:10px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;margin-bottom:5px;">Troparion</div>
+         <p style="margin:0;font-family:'Cormorant Garamond',serif;font-size:16px;line-height:1.55;color:#2a3550;font-style:italic;">${html(vm.today.troparion)}</p>
+       </div>`
+    : "";
+
+  const todayPanel = panel("Today in the Church", `
+    <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:10px;margin-bottom:6px;">
+      <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1.05;margin:0;color:var(--ink);">${html(vm.today.title)}</h2>
+      <small style="color:var(--muted);font-size:13px;">${html(vm.today.date)}</small>
+    </div>
+    ${fastBadge}
+    ${readingButtons}
+    ${saintBlock}
+    ${troparionBlock}`, { icon: "☩", largeTitle: false, style: "" });
+
+  // ── Church rhythms — daily household formation checklist ─────────────────────
+  const rhythmsContent = vm.rhythms.length
+    ? vm.rhythms.map((item) => `
+        <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line);">
+          ${check(item.complete)}
+          <div style="min-width:0;">
+            <strong style="font-size:14px;display:block;">${html(item.title)}</strong>
+            ${item.note ? `<small style="color:var(--muted);font-size:12px;">${html(item.note)}</small>` : ""}
+          </div>
+        </div>`).join("")
+    : emptyState("Add daily rhythms in Setup — Morning Prayer, Readings, Scripture memory.");
+  const rhythmsPanel = panel("Daily Household Rhythms", rhythmsContent, { icon: "✥" });
+
+  // ── Upcoming feasts — oriented around the week ahead ─────────────────────────
+  const feastItems = vm.feasts.length
+    ? vm.feasts.map((feast) => `
+        <div style="display:grid;grid-template-columns:56px 1fr;gap:12px;padding:11px 0;border-top:1px solid var(--line);align-items:start;">
+          <div style="text-align:center;background:linear-gradient(180deg,var(--navy),#1b2c4a);border-radius:9px;padding:8px 4px;border:1px solid rgba(181,148,47,.28);">
+            <div style="color:var(--gold);font-size:18px;">✦</div>
+            <div style="color:#f3ead4;font-size:10px;line-height:1.2;margin-top:2px;">${html(feast.date || "Soon")}</div>
+          </div>
+          <div>
+            <strong style="font-family:'Cormorant Garamond',serif;font-size:17px;line-height:1.2;display:block;">${html(feast.title)}</strong>
+            ${feast.fasting ? `<small style="color:var(--burgundy);font-size:11px;font-weight:700;">${html(feast.fasting)}</small>` : ""}
+          </div>
+        </div>`).join("")
+    : emptyState("Connect a calendar source to see upcoming feasts.");
+  const feastsPanel = panel("Upcoming Feasts", `${feastItems}<a href="/myagapay/learn/planner" style="display:block;margin-top:10px;text-align:center;font-size:13px;color:var(--gold);text-decoration:none;border:1px solid var(--line);border-radius:9px;padding:9px;">View full calendar →</a>`, { icon: "☩" });
+
+  // ── Catechesis ────────────────────────────────────────────────────────────────
+  const catechesisPanel = panel("Catechesis", `
+    <small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;font-size:10px;">${html(vm.catechesis.progress) || "Current Lesson"}</small>
+    <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:22px;margin:6px 0 8px;color:var(--ink);">${html(vm.catechesis.title)}</strong>
+    <p style="margin:0;color:#33405a;line-height:1.5;font-size:14px;">${html(vm.catechesis.currentLesson)}</p>
+    ${vm.catechesis.topic ? `<small style="display:block;margin-top:8px;color:var(--muted);">${html(vm.catechesis.topic)}</small>` : ""}`, { icon: "✥" });
+
+  // ── Recitation & Memory Work ──────────────────────────────────────────────────
+  const memoryContent = vm.recitation.length
+    ? vm.recitation.map((item) => `
+        <div style="padding:10px 0;border-top:1px solid var(--line);">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px;">
+            <strong style="font-size:14px;">${html(item.title)}</strong>
+            <small style="color:var(--muted);white-space:nowrap;font-size:11px;">${html(item.status)}</small>
+          </div>
+          ${bar(item.progress, "var(--navy)")}
+          <small style="color:var(--muted);font-size:11px;">${item.progress}% memorised</small>
+        </div>`).join("")
+    : emptyState("Add recitation tracks in Setup — Psalms, Catechism, Scripture.");
+  const memoryPanel = panel("Recitation & Memory", memoryContent, { icon: "☰" });
+
+  // ── Hymn Study ────────────────────────────────────────────────────────────────
+  const hymnContent = vm.hymns.length
+    ? vm.hymns.map((hymn) => `
+        <div style="padding:11px 0;border-top:1px solid var(--line);">
+          <strong style="display:block;font-size:14px;">${html(hymn.title)}</strong>
+          <small style="color:var(--muted);font-size:12px;">${[hymn.tone, hymn.source].filter(Boolean).join(" · ")}</small>
+        </div>`).join("")
+    : emptyState("Add hymns to study in Setup.");
+  const hymnsPanel = panel("Hymn Study", hymnContent, { icon: "♫" });
+
+  // ── Enrichment ────────────────────────────────────────────────────────────────
+  const enrichContent = vm.enrichment.length
+    ? vm.enrichment.map((item) => `
+        <div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line);align-items:center;">
+          <span style="min-width:0;">
+            <strong style="font-size:13px;display:block;">${html(item.title)}</strong>
+            ${item.type ? `<small style="color:var(--muted);font-size:11px;text-transform:capitalize;">${html(item.type)}</small>` : ""}
+          </span>
+          <span style="color:var(--muted);font-size:12px;white-space:nowrap;">${html(item.minutes)}</span>
+        </div>`).join("")
+    : emptyState("Add enrichment blocks in Setup.");
+  const enrichPanel = panel("Enrichment", enrichContent, { icon: "✣" });
+
+  // ── Nature Journal ────────────────────────────────────────────────────────────
+  const natureContent = vm.nature?.length
+    ? vm.nature.map((entry) => `
+        <div style="padding:10px 0;border-top:1px solid var(--line);">
+          <strong style="display:block;font-size:14px;">${html(entry.title)}</strong>
+          ${entry.location ? `<small style="color:var(--muted);font-size:12px;">📍 ${html(entry.location)}</small>` : ""}
+          ${entry.notes ? `<p style="margin:5px 0 0;font-size:13px;color:#33405a;line-height:1.4;">${html(entry.notes)}</p>` : ""}
+        </div>`).join("")
+    : emptyState("Nature journal entries will appear here as you add them.");
+  const naturePanel = panel("Nature Journal", natureContent, { icon: "✦" });
+
   const body = `
     <section data-screen-label="Formation" style="display:flex;flex-direction:column;gap:18px;">
-      <div style="display:grid;grid-template-columns:minmax(300px,1.2fr) minmax(270px,.9fr) minmax(230px,.7fr);gap:16px;align-items:start;">
-        ${panel("Church Rhythms", `<div style="display:grid;grid-template-columns:120px 1fr;gap:18px;"><div style="border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,#f8f0dd,#efe0ba);min-height:180px;display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:54px;">✥</div><div><h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;margin:0 0 8px;">${html(vm.today.title)}</h2><p style="margin:0;color:var(--muted);line-height:1.4;">${html(vm.today.date)} · ${html(vm.today.fasting)}</p>${readings}${rhythms}</div></div>`, { icon: "☩", style: "grid-column:span 2;" })}
-        ${panel("This Week in the Church", `<div style="display:flex;flex-direction:column;gap:13px;"><strong style="font-family:'Cormorant Garamond',serif;font-size:22px;">${html(vm.today.title)}</strong><span style="color:var(--muted);">${html(vm.today.saint)}</span><p style="margin:0;line-height:1.45;color:#33405a;">${html(vm.today.troparion)}</p><a href="/myagapay/learn/planner" style="color:var(--ink);text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center;background:var(--paper2);">View Full Calendar →</a></div>`, { icon: "✥" })}
+
+      <div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;">
+        ${todayPanel}
+        ${rhythmsPanel}
+        ${feastsPanel}
       </div>
-      <div style="display:grid;grid-template-columns:repeat(5,minmax(170px,1fr));gap:16px;">
-        ${panel("Catechesis", `<div style="display:grid;gap:10px;"><small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;">Current Lesson Cycle</small><strong style="font-family:'Cormorant Garamond',serif;font-size:23px;">${html(vm.catechesis.title)}</strong><span style="color:#33405a;line-height:1.45;">${html(vm.catechesis.currentLesson)}</span>${vm.catechesis.progress ? `<span style="border:1px solid var(--line);border-radius:999px;padding:6px 10px;width:max-content;background:var(--paper2);">${html(vm.catechesis.progress)}</span>` : ""}<p style="margin:0;color:var(--muted);line-height:1.45;">${html(vm.catechesis.topic)}</p></div>`, { icon: "✥" })}
-        ${panel("Recitation & Memory Work", memory, { icon: "☰" })}
-        ${panel("Hymn Study", vm.hymns.length ? vm.hymns.map((hymn) => `<div style="padding:11px 0;border-top:1px solid var(--line);"><strong>${html(hymn.title)}</strong><small style="display:block;color:var(--muted);">${html(hymn.tone)} · ${html(hymn.source)}</small></div>`).join("") : emptyState("Add hymn study in Setup."), { icon: "♫" })}
-        ${panel("Enrichment", enrich, { icon: "✣" })}
-        ${panel("Saints & Feasts", feasts, { icon: "✥" })}
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;align-items:start;">
+        ${catechesisPanel}
+        ${memoryPanel}
+        ${hymnsPanel}
+        ${enrichPanel}
+        ${naturePanel}
       </div>
+
     </section>`;
   return shell(vm, body);
 }
@@ -1781,36 +1904,115 @@ function bookCover(book = {}, icon = "☰") {
 }
 
 function renderBooks(vm) {
-  const filters = ["All Books", "Read-Alouds", "Independent", "Formation"];
-  const readAlouds = vm.readAlouds.length ? vm.readAlouds : [];
-  const libraryRows = vm.library.map((book) => `<div style="display:grid;grid-template-columns:2.1fr 1.1fr 1fr .55fr .7fr 1fr 36px;gap:10px;align-items:center;padding:11px 4px;border-bottom:1px solid var(--line);font-size:13.5px;"><span style="display:flex;align-items:center;gap:9px;min-width:0;">${bookCover(book, "☰")}<span style="min-width:0;"><strong style="display:block;color:var(--ink);font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(book.title)}</strong><small style="display:block;color:var(--muted);">${html(book.assignment || "")}</small></span></span><span>${html(book.author)}</span><span>${html(book.category)}</span><span>${html(book.ages || "—")}</span><span style="color:var(--gold);">${book.orthodox ? "Orthodox" : "—"}</span><span>${bar(book.progress)}<small style="color:var(--gold);font-weight:700;">${html(book.progress)}%</small></span><span style="color:var(--gold);">→</span></div>`).join("");
-  const suggestionsPanel = vm.suggestions.length
-    ? panel("Suggested Orthodox Living Books", vm.suggestions.map((s) => `<div style="display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line);"><span style="width:38px;height:38px;border-radius:50%;background:${s.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">✥</span><div><strong style="font-family:'Cormorant Garamond',serif;font-size:18px;">${html(s.title)}</strong><small style="display:block;color:var(--muted);line-height:1.3;">${html(s.subtitle)}</small></div></div>`).join(""), { icon: "✥" })
+  // ── Read-aloud cards ──────────────────────────────────────────────────────────
+  const readAloudCards = vm.readAlouds.length
+    ? vm.readAlouds.map((book) => `
+        <article style="display:flex;gap:14px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+          ${bookCover(book, "☰")}
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
+            <strong style="font-family:'Cormorant Garamond',serif;font-size:19px;line-height:1.12;color:var(--ink);">${html(book.title)}</strong>
+            <span style="font-size:12px;color:var(--muted);">${html(book.author)}</span>
+            <span style="font-size:12px;color:var(--gold);font-weight:700;letter-spacing:.04em;">${html(book.assignment || book.stream || "Household")}</span>
+            <div style="margin-top:auto;padding-top:10px;">
+              ${bar(book.progress)}
+              <small style="display:block;color:var(--gold);font-weight:700;margin-top:4px;">${html(book.progress)}% complete</small>
+            </div>
+          </div>
+        </article>`).join("")
+    : emptyState("Add read-alouds in Setup to track progress here.");
+
+  // ── Library table — fixed overflow ────────────────────────────────────────────
+  const libraryRows = vm.library.length
+    ? vm.library.map((book, i) => `
+        <div style="display:grid;grid-template-columns:2fr 1.1fr 1fr .6fr .7fr 1fr;gap:10px;align-items:center;padding:10px 4px;border-top:1px solid var(--line);font-size:13px;background:${i % 2 ? "var(--paper2)" : "transparent"};">
+          <span style="display:flex;align-items:center;gap:9px;min-width:0;">
+            ${bookCover(book, "☰")}
+            <span style="min-width:0;">
+              <strong style="display:block;color:var(--ink);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(book.title)}</strong>
+              <small style="color:var(--muted);">${html(book.assignment || "")}</small>
+            </span>
+          </span>
+          <span style="color:var(--ink);">${html(book.author)}</span>
+          <span style="color:var(--muted);">${html(book.category)}</span>
+          <span style="color:var(--muted);">${html(book.ages || "—")}</span>
+          <span style="${book.orthodox ? "color:var(--gold);font-weight:700;" : "color:var(--muted);"}">${book.orthodox ? "Orthodox" : "—"}</span>
+          <span>${bar(book.progress)}<small style="color:var(--gold);font-weight:700;">${html(book.progress)}%</small></span>
+        </div>`).join("")
+    : `<div style="padding:18px 4px;color:var(--muted);font-style:italic;">Add books in Setup to build the household library.</div>`;
+
+  const libraryHeader = `
+    <div style="display:grid;grid-template-columns:2fr 1.1fr 1fr .6fr .7fr 1fr;gap:10px;padding:0 4px 10px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.1em;color:var(--muted);font-weight:700;text-transform:uppercase;">
+      <span>Title</span><span>Author</span><span>Category</span><span>Ages</span><span>Orthodox</span><span>Progress</span>
+    </div>`;
+
+  // ── Book pacing ───────────────────────────────────────────────────────────────
+  const pacingContent = vm.pacing.weeks.length
+    ? `<strong style="font-family:'Cormorant Garamond',serif;font-size:20px;display:block;margin-bottom:4px;">${html(vm.pacing.title)}</strong>
+       <small style="color:var(--muted);">${html(vm.pacing.subtitle)}${vm.pacing.chaptersPerWeek ? ` · ${html(vm.pacing.chaptersPerWeek)} ch/wk` : ""}</small>
+       ${vm.pacing.weeks.map((week, i) => `
+         <div style="display:grid;grid-template-columns:52px 1fr 52px;gap:8px;border-top:1px solid var(--line);padding:8px 0;font-size:13px;align-items:center;">
+           <span style="color:var(--muted);">Wk ${html(week.week)}</span>
+           <strong style="font-size:14px;">${html(week.chapters)}</strong>
+           <span style="color:var(--muted);text-align:right;">${html(week.pages)}</span>
+         </div>`).join("")}`
+    : emptyState("Add a read-aloud with start and end chapters in Setup.");
+
+  // ── Copywork sources ──────────────────────────────────────────────────────────
+  const copyworkContent = vm.copywork.length
+    ? vm.copywork.map((source) => `
+        <div style="padding:9px 0;border-top:1px solid var(--line);">
+          <strong style="display:block;font-size:14px;">${html(source.title)}</strong>
+          <small style="color:var(--muted);font-size:12px;line-height:1.4;">${html(source.detail)}</small>
+        </div>`).join("")
     : "";
-  const pacingPanel = vm.pacing.weeks.length
-    ? panel("Book Pacing", `<strong style="font-family:'Cormorant Garamond',serif;font-size:22px;">${html(vm.pacing.title)}</strong><small style="display:block;color:var(--muted);margin:4px 0 12px;">${html(vm.pacing.subtitle)}${vm.pacing.chaptersPerWeek ? ` · ${html(vm.pacing.chaptersPerWeek)} chapters / week` : ""}</small>${vm.pacing.weeks.map((week) => `<div style="display:grid;grid-template-columns:60px 1fr 60px;gap:8px;border-top:1px solid var(--line);padding:8px 0;font-size:13px;"><span>Week ${html(week.week)}</span><strong>${html(week.chapters)}</strong><span>${html(week.pages)}</span></div>`).join("")}`, { icon: "♙" })
-    : panel("Book Pacing", emptyState("Add a book with start and end chapters in Setup to generate pacing."), { icon: "♙" });
-  const copyworkPanel = vm.copywork.length
-    ? panel("Copywork Sources", vm.copywork.map((source) => `<div style="padding:9px 0;border-top:1px solid var(--line);"><strong>${html(source.title)}</strong><small style="display:block;color:var(--muted);">${html(source.detail)}</small></div>`).join(""), { icon: "✒" })
+
+  // ── Orthodox suggestions ──────────────────────────────────────────────────────
+  const suggestionsContent = vm.suggestions.length
+    ? vm.suggestions.map((s) => `
+        <div style="display:flex;gap:12px;padding:11px 0;border-top:1px solid var(--line);align-items:flex-start;">
+          <span style="flex:none;width:36px;height:36px;border-radius:50%;background:${s.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-size:16px;">✥</span>
+          <div>
+            <strong style="font-family:'Cormorant Garamond',serif;font-size:17px;display:block;line-height:1.2;">${html(s.title)}</strong>
+            <small style="color:var(--muted);font-size:12px;line-height:1.3;">${html(s.subtitle)}</small>
+          </div>
+        </div>`).join("")
     : "";
+
   const body = `
     <section data-screen-label="Books" style="display:flex;flex-direction:column;gap:18px;">
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-        ${filters.map((filter) => `<button type="button" style="display:flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 14px;cursor:pointer;font-family:inherit;font-size:14px;color:var(--ink);"><span style="color:var(--gold);">☰</span>${html(filter)}<span style="color:var(--gold);">⌄</span></button>`).join("")}
-        <div style="flex:1;"></div>
-        <label style="display:flex;align-items:center;gap:9px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-width:min(260px,100%);"><span style="color:var(--gold);">⌕</span><input placeholder="Search books..." style="border:none;background:none;outline:none;font-family:inherit;font-size:14px;color:var(--ink);width:100%;"></label>
-      </div>
+
       <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+
         <div style="flex:1 1 620px;min-width:0;display:flex;flex-direction:column;gap:16px;">
-          ${panel("Current Read-Alouds", `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">${readAlouds.length ? readAlouds.map((book) => `<article style="display:flex;gap:13px;background:var(--paper2);border:1px solid var(--line);border-radius:11px;padding:13px;min-width:0;">${bookCover(book, "☰")}<div style="flex:1;min-width:0;display:flex;flex-direction:column;"><strong style="font-family:'Cormorant Garamond',serif;font-size:19px;line-height:1.12;color:var(--ink);">${html(book.title)}</strong><span style="font-size:12.5px;color:#3a4256;font-style:italic;">${html(book.assignment || book.stream || "Household")}</span><span style="font-size:12.5px;color:var(--muted);margin-top:2px;">${html(book.author)}</span><div style="margin-top:auto;padding-top:11px;">${bar(book.progress)}<small style="display:block;color:var(--gold);font-weight:700;margin-top:4px;">${html(book.progress)}% complete</small></div></div></article>`).join("") : emptyState("Add read-alouds in Setup.")}</div>`, { icon: "☰", action: "View all read-alouds →" })}
-          ${panel("Household Library", `<div style="overflow:auto;"><div style="min-width:780px;"><div style="display:grid;grid-template-columns:2.1fr 1.1fr 1fr .55fr .7fr 1fr 36px;gap:10px;padding:0 4px 10px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.1em;color:var(--muted);font-weight:700;text-transform:uppercase;"><span>Title</span><span>Author</span><span>Category</span><span>Ages</span><span>Orthodox</span><span>Progress</span><span></span></div>${libraryRows || emptyState("Add books in Setup.")}</div></div>`, { icon: "⌂" })}
+
+          ${panel("Current Read-Alouds",
+            `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;">${readAloudCards}</div>`,
+            { icon: "☰" })}
+
+          ${panel("Household Library",
+            `<div style="overflow-x:auto;overflow-y:visible;">
+               <div style="min-width:680px;">${libraryHeader}${libraryRows}</div>
+             </div>`,
+            { icon: "⌂" })}
+
         </div>
-        <aside style="flex:0 1 340px;display:flex;flex-direction:column;gap:16px;">
-          ${suggestionsPanel}
-          ${pacingPanel}
-          ${copyworkPanel}
+
+        <aside style="flex:0 1 320px;min-width:240px;display:flex;flex-direction:column;gap:16px;">
+
+          ${panel("Book Pacing", pacingContent, { icon: "♙" })}
+
+          ${vm.copywork.length
+            ? panel("Copywork Sources", copyworkContent, { icon: "✒" })
+            : ""}
+
+          ${vm.suggestions.length
+            ? panel("Suggested Orthodox Books", suggestionsContent, { icon: "✥" })
+            : ""}
+
         </aside>
+
       </div>
+
     </section>`;
   return shell(vm, body);
 }
