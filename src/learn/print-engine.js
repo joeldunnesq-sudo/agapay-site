@@ -30,11 +30,12 @@ const FONT_URLS = {
   dmSansBold:    "https://fonts.gstatic.com/s/dmsans/v15/rP2Cp2ywxg089UriASitCBimCyUsn3ux.ttf",
 };
 
-async function fetchFont(url) {
+async function fetchBytes(url) {
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Font fetch failed: ${url}`);
+  if (!res.ok) throw new Error(`Fetch failed: ${url}`);
   return res.arrayBuffer();
 }
+const fetchFont = fetchBytes; // alias kept for embedFonts
 
 async function embedFonts(pdf) {
   try {
@@ -273,17 +274,356 @@ export function buildWeeklyHouseholdPrintDocument({ household, week, calendarTog
   );
 }
 
+// ─── Planner document builders ────────────────────────────────────────────────
+// Helpers shared across planner builders
+
+const WEEKDAYS_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function choresByAssignee(chores = [], children = []) {
+  const people = [
+    { name: "Everyone", color: "#102a4c" },
+    ...children.filter((c) => c.firstName || c.name).map((c) => ({ name: c.firstName || c.name, color: c.color || "#34507a" })),
+  ];
+  const map = new Map(people.map((p) => [p.name, { ...p, byDay: new Map() }]));
+  chores.forEach((chore) => {
+    const assignee = chore.assignee || "Everyone";
+    if (!map.has(assignee)) map.set(assignee, { name: assignee, color: "#34507a", byDay: new Map() });
+    const day = chore.day || ""; // day is the full weekday name e.g. "Monday"
+    const key = day || "Any Day";
+    const bucket = map.get(assignee).byDay;
+    if (!bucket.has(key)) bucket.set(key, []);
+    bucket.get(key).push(chore);
+  });
+  return Array.from(map.values()).filter((p) => p.byDay.size > 0 || p.name === "Everyone");
+}
+
+function buildChorePlanWeek(printCenter, template, generatedAt) {
+  const doc      = baseDocument(printCenter, template, generatedAt);
+  const chores   = printCenter.familyPlanning?.chores || [];
+  const children = printCenter.children || [];
+  const childId  = template.childId || "";
+
+  if (childId) {
+    // Child-specific weekly chore chart
+    const child    = children.find((c) => c.id === childId) || {};
+    const name     = child.firstName || child.name || "Child";
+    const myChores = chores.filter((c) => (c.assignee || "Everyone") === name || (c.assignee || "Everyone") === "Everyone");
+    doc.title      = text(`${name}'s Weekly Chores`);
+    doc.footerRole = doc.title;
+    doc.subtitle   = text(`${printCenter.household?.name || "Household"} · ${printCenter.week?.label || "Current Week"}`);
+    doc.sections = [
+      cardsSection("Student", [
+        { label: "Name",  value: name,                             detail: childFormLabel(child) },
+        { label: "Week",  value: printCenter.week?.label || "—",  detail: printCenter.term?.label || "" },
+        { label: "Chores", value: String(myChores.length),        detail: `${myChores.filter((c) => c.completed).length} completed` },
+      ]),
+      tableSection("Chore Rotation", ["Chore", "Day", "Time", "Notes"],
+        myChores.map((c) => [c.title, c.day || "Any Day", c.timeOfDay || "Anytime", c.notes || ""]),
+        { flex: [3, 1.5, 1.5, 3] }),
+      { type: "checkboxes", heading: "Weekly Checkoff",
+        subjects: myChores.map((c) => text(c.title)).filter(Boolean),
+        days: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] },
+    ].filter(Boolean);
+    return doc;
+  }
+
+  // Household weekly chore chart — grouped by person, day columns
+  const assigneeGroups = choresByAssignee(chores, children);
+  const rows = assigneeGroups.flatMap((person) =>
+    WEEKDAYS_LONG.map((day) => {
+      const dayChores = (person.byDay.get(day) || []).concat(person.byDay.get("Any Day") || []);
+      return [person.name, day, dayChores.map((c) => c.title).join("; ") || "—", dayChores.map((c) => c.timeOfDay || "").filter(Boolean).join("; ")];
+    }).filter((row) => row[2] !== "—")
+  );
+
+  doc.sections = [
+    cardsSection("Chore Summary", [
+      { label: "Week",        value: printCenter.week?.label || "Current Week", detail: printCenter.term?.label || "" },
+      { label: "Total Chores", value: String(chores.length),   detail: "Across all assignees" },
+      { label: "Assigned",    value: String(new Set(chores.map((c) => c.assignee || "Everyone")).size), detail: "People with chores" },
+    ]),
+    rows.length
+      ? tableSection("Weekly Chore Rotation", ["Person", "Day", "Chores", "Time"],
+          rows, { flex: [2, 1.5, 4, 1.5] })
+      : listSection("Chores", ["No chores have been set up yet. Add chores in the Family Planner."]),
+  ].filter(Boolean);
+  return doc;
+}
+
+function buildChorePlanDay(printCenter, template, generatedAt) {
+  const doc    = baseDocument(printCenter, template, generatedAt);
+  const chores = printCenter.familyPlanning?.chores || [];
+  const today  = new Date().toISOString().slice(0, 10);
+  const todayWeekday = WEEKDAYS_LONG[new Date(today + "T12:00:00Z").getUTCDay()];
+  const todayChores  = chores.filter((c) => !c.day || c.day === todayWeekday || c.day === "");
+  doc.title = "Daily Chore Chart";
+  doc.subtitle = text(`${printCenter.household?.name || "Household"} · ${todayWeekday}`);
+  doc.sections = [
+    cardsSection("Today", [
+      { label: "Day",    value: todayWeekday,           detail: today },
+      { label: "Chores", value: String(todayChores.length), detail: "Due today (including unscheduled)" },
+    ]),
+    tableSection("Today's Chores", ["Chore", "Assigned To", "Time", "Notes"],
+      todayChores.length
+        ? todayChores.map((c) => [c.title, c.assignee || "Everyone", c.timeOfDay || "Anytime", c.notes || ""])
+        : [["No chores set for today.", "", "", ""]],
+      { flex: [3, 2, 1.5, 2.5] }),
+    { type: "checkboxes", heading: "Checkoff",
+      subjects: todayChores.map((c) => `${text(c.title)} (${c.assignee || "Everyone"})`).filter(Boolean),
+      days: ["Done"] },
+  ].filter(Boolean);
+  return doc;
+}
+
+function buildChorePlanMonth(printCenter, template, generatedAt) {
+  const doc    = baseDocument(printCenter, template, generatedAt);
+  const chores = printCenter.familyPlanning?.chores || [];
+  const byDay  = new Map();
+  chores.forEach((c) => {
+    const key = c.day || "Any Day";
+    if (!byDay.has(key)) byDay.set(key, []);
+    byDay.get(key).push(c);
+  });
+  const rows = [...WEEKDAYS_LONG, "Any Day"]
+    .filter((d) => byDay.has(d))
+    .flatMap((day) => byDay.get(day).map((c) => [day, c.title, c.assignee || "Everyone", c.timeOfDay || "Anytime", c.notes || ""]));
+  doc.title = "Monthly Chore Chart";
+  doc.subtitle = text(`${printCenter.household?.name || "Household"} · ${printCenter.month?.label || printCenter.term?.label || "Current Month"}`);
+  doc.sections = [
+    cardsSection("Chore Overview", [
+      { label: "Month",  value: printCenter.month?.label || "Current",   detail: "Recurring chore rotation" },
+      { label: "Chores", value: String(chores.length),                   detail: `${new Set(chores.map((c) => c.assignee || "Everyone")).size} people assigned` },
+    ]),
+    rows.length
+      ? tableSection("Chore Rotation", ["Day", "Chore", "Assigned To", "Time", "Notes"],
+          rows, { flex: [1.5, 3, 2, 1.5, 2] })
+      : listSection("Chores", ["No chores have been set up yet. Add chores in the Family Planner."]),
+  ].filter(Boolean);
+  return doc;
+}
+
+function buildMealPlanWeek(printCenter, template, generatedAt) {
+  const doc    = baseDocument(printCenter, template, generatedAt);
+  const meals  = printCenter.familyPlanning?.meals || [];
+  const days   = printCenter.week?.familyDays || printCenter.week?.dates?.map((d) => ({ civilDate: d })) || [];
+  const mealByDate = new Map(meals.map((m) => [m.date, m]));
+  const rows = days.map((day) => {
+    const m = mealByDate.get(day.civilDate) || {};
+    const fasting = day.isFastDay ? (day.fastingType || day.fastingRule || "Fast") : "";
+    return [
+      text(day.weekdayLabel || day.civilDate || ""),
+      text(day.feastTitle || ""),
+      fasting,
+      text(m.breakfast || m.lunch || ""),
+      text(m.dinner || ""),
+    ];
+  }).filter((row) => row[0]);
+  doc.sections = [
+    cardsSection("Week Summary", [
+      { label: "Week",       value: printCenter.week?.label || "Current Week", detail: printCenter.term?.label || "" },
+      { label: "Fast Days",  value: String(days.filter((d) => d.isFastDay).length), detail: "Days with fasting guidance" },
+      { label: "Calendar",   value: printCenter.calendarToggle?.label || "Orthodox Calendar", detail: "" },
+    ]),
+    tableSection("Weekly Meals", ["Day", "Feast/Fast", "Fasting Rule", "Lunch", "Dinner"],
+      rows, { flex: [1.5, 2.5, 2, 2.5, 2.5] }),
+  ].filter(Boolean);
+  return doc;
+}
+
+function buildMealPlanMonth(printCenter, template, generatedAt) {
+  const doc   = baseDocument(printCenter, template, generatedAt);
+  const meals = printCenter.familyPlanning?.meals || [];
+  const mealByDate = new Map(meals.map((m) => [m.date, m]));
+  const days  = (printCenter.month?.days || []).filter((d) => d?.inMonth);
+  const rows  = days.map((day) => {
+    const m = mealByDate.get(day.civilDate) || {};
+    return [
+      String(day.dayNumber || ""),
+      text(day.feastTitle || ""),
+      day.isFastDay ? text(day.fastingType || day.fastingRule || "Fast") : "",
+      text(m.breakfast || m.lunch || ""),
+      text(m.dinner || ""),
+    ];
+  }).filter((row) => row[0]);
+  doc.title    = text(printCenter.month?.label ? `${printCenter.month.label} Meal Plan` : "Monthly Meal Plan");
+  doc.subtitle = text(`${printCenter.household?.name || "Household"} · ${printCenter.calendarToggle?.label || "Orthodox Calendar"}`);
+  doc.sections = [
+    cardsSection("Month Summary", [
+      { label: "Month",      value: printCenter.month?.label || "Current", detail: "Meals beside the Orthodox calendar" },
+      { label: "Fast Days",  value: String(printCenter.month?.fastDays || 0), detail: "Days with fasting guidance" },
+      { label: "Feast Days", value: String(printCenter.month?.feastDays || 0), detail: "Major liturgical markers" },
+    ]),
+    tableSection("Monthly Meals", ["Date", "Feast", "Fasting", "Lunch/Breakfast", "Dinner"],
+      rows, { flex: [0.8, 2.5, 2, 2.5, 2.5] }),
+  ].filter(Boolean);
+  return doc;
+}
+
+function buildEventsPlanMonth(printCenter, template, generatedAt) {
+  const doc    = baseDocument(printCenter, template, generatedAt);
+  const events = printCenter.familyPlanning?.events || [];
+  const nameDays = printCenter.familyPlanning?.nameDays || [];
+  const eventsByDate = new Map();
+  events.forEach((e) => {
+    if (!eventsByDate.has(e.date)) eventsByDate.set(e.date, []);
+    eventsByDate.get(e.date).push(e);
+  });
+  const days  = (printCenter.month?.days || []).filter((d) => d?.inMonth);
+  const rows  = days
+    .filter((day) => eventsByDate.has(day.civilDate) || day.nameDays?.length || day.isFastDay || day.feastTitle)
+    .map((day) => {
+      const dayEvents = eventsByDate.get(day.civilDate) || [];
+      const feast     = text(day.feastTitle || "");
+      const fasting   = day.isFastDay ? text(day.fastingType || "Fast") : "";
+      const evtStr    = dayEvents.map((e) => `${e.startTime ? e.startTime + " " : ""}${e.title}`).join("; ");
+      return [String(day.dayNumber || ""), text(day.weekdayLabel || ""), feast, fasting, text(evtStr)];
+    });
+  doc.title    = text(printCenter.month?.label ? `${printCenter.month.label} Events` : "Monthly Events Chart");
+  doc.subtitle = text(`${printCenter.household?.name || "Household"} · ${printCenter.calendarToggle?.label || "Orthodox Calendar"}`);
+  doc.sections = [
+    cardsSection("Month Overview", [
+      { label: "Month",      value: printCenter.month?.label || "Current", detail: "Appointments, feast days, and family events" },
+      { label: "Events",     value: String(events.length),                 detail: "Household events and appointments" },
+      { label: "Fast Days",  value: String(printCenter.month?.fastDays || 0), detail: "Fasting days this month" },
+    ]),
+    rows.length
+      ? tableSection("Month Events & Calendar", ["Date", "Day", "Feast", "Fasting", "Events"],
+          rows, { flex: [0.8, 1.2, 2.5, 2, 4] })
+      : listSection("Events", ["No events have been added yet. Add events in the Family Planner."]),
+  ].filter(Boolean);
+  return doc;
+}
+
+function buildRecipeCollection(printCenter, template, generatedAt) {
+  const doc     = baseDocument(printCenter, template, generatedAt);
+  const recipes = printCenter.familyPlanning?.recipes || printCenter.week?.recipes || [];
+  doc.title = "Recipe Collection";
+  doc.subtitle = text(`${printCenter.household?.name || "Household"} · Fasting-Aware Family Recipes`);
+  doc.sections = [
+    cardsSection("Recipe Library", [
+      { label: "Recipes",    value: String(recipes.length),                                detail: "Saved family recipes" },
+      { label: "Fasting Fit", value: String(recipes.filter((r) => r.fastingType && r.fastingType !== "free").length), detail: "Fasting-compatible recipes" },
+    ]),
+    tableSection("Recipes", ["Recipe", "Fasting Fit", "Category", "Source"],
+      recipes.map((r) => [r.title, r.fastingType || "Any day", r.category || "", r.sourceUrl || ""]),
+      { flex: [4, 2, 2, 3] }),
+  ].filter(Boolean);
+  return doc;
+}
+
+function buildGroceryListWeek(printCenter, template, generatedAt) {
+  const doc    = baseDocument(printCenter, template, generatedAt);
+  const items  = printCenter.familyPlanning?.groceryItems || printCenter.week?.groceryItems || [];
+  doc.title    = "Weekly Grocery List";
+  doc.subtitle = text(`${printCenter.household?.name || "Household"} · ${printCenter.week?.label || "Current Week"}`);
+  const byCategory = new Map();
+  items.forEach((item) => {
+    const cat = text(item.category || item.aisle || "General");
+    if (!byCategory.has(cat)) byCategory.set(cat, []);
+    byCategory.get(cat).push(item);
+  });
+  const rows = Array.from(byCategory.entries()).flatMap(([cat, catItems]) =>
+    catItems.map((item) => [cat, text(item.name || item.title || ""), text(item.quantity || ""), text(item.notes || "")])
+  );
+  doc.sections = [
+    cardsSection("List Summary", [
+      { label: "Week",   value: printCenter.week?.label || "Current Week", detail: printCenter.term?.label || "" },
+      { label: "Items",  value: String(items.length), detail: `${byCategory.size} categories` },
+    ]),
+    rows.length
+      ? tableSection("Grocery List", ["Category", "Item", "Qty", "Notes"],
+          rows, { flex: [2, 4, 1, 3] })
+      : listSection("Items", ["No grocery items yet. Add items in the Family Planner."]),
+  ].filter(Boolean);
+  return doc;
+}
+
+// ─── Planner lesson builders ──────────────────────────────────────────────────
+function buildPlannerLessonWeekForm(printCenter, template, generatedAt) {
+  const doc      = baseDocument(printCenter, template, generatedAt);
+  const formRows = groupChildRowsByForm(printCenter.week?.childRows || []);
+  doc.sections = [
+    cardsSection("Week", [
+      { label: "Week",   value: printCenter.week?.label || "Current Week", detail: printCenter.term?.label || "" },
+      { label: "Forms",  value: String(formRows.length), detail: "Active forms this week" },
+    ]),
+    tableSection("Family-Based Learning", ["Rhythm", "Notes", "Min"],
+      (printCenter.week?.householdRows || []).map((r) => [r.title, r.detail, `${sumMinutes(r.minutes)}m`]),
+      { flex: [2.5, 4, 1] }),
+    tableSection("Form Plans", ["Form", "Children", "Assignments"],
+      formRows.map((r) => [r.label, Array.from(r.children).join(", "), r.details.slice(0, 5).join("; ")]),
+      { flex: [1.5, 2, 5] }),
+  ].filter(Boolean);
+  return doc;
+}
+
+function buildPlannerLessonMonthForm(printCenter, template, generatedAt) {
+  const doc = buildMonthCalendar(printCenter, template, generatedAt);
+  doc.title = text(printCenter.month?.label ? `${printCenter.month.label} Lesson Plans` : "Monthly Lesson Plans by Form");
+  return doc;
+}
+
+function buildPlannerLessonTermForm(printCenter, template, generatedAt) {
+  return buildTermPlan(printCenter, template, generatedAt);
+}
+
+function buildPlannerLessonWeekChild(printCenter, template, generatedAt) {
+  return buildChildWeekly(printCenter, template, generatedAt);
+}
+
+function buildPlannerLessonMonthChild(printCenter, template, generatedAt) {
+  const doc   = buildMonthCalendar(printCenter, template, generatedAt);
+  const child = childForTemplate(printCenter, template);
+  const name  = child?.firstName || "Child";
+  doc.title   = text(`${name}'s Monthly Lessons`);
+  doc.footerRole = doc.title;
+  return doc;
+}
+
+function buildPlannerLessonTermChild(printCenter, template, generatedAt) {
+  return buildChildTerm(printCenter, template, generatedAt);
+}
+
 export function buildLearnPrintDocument(printCenter, {
   templateId = "print_mom_weekly", childId = "", termId = "", month = "", year = "",
   generatedAt = new Date().toISOString()
 } = {}) {
   const template = templateWithParams(findTemplate(printCenter, templateId), { childId, termId, month, year });
   const type     = template.templateType || "weekly-household-plan";
-  if (type === "term-plan"                 || template.id === "print_mom_term")      return buildTermPlan(printCenter, template, generatedAt);
-  if (type === "month-calendar"            || template.id === "print_mom_month")     return buildMonthCalendar(printCenter, template, generatedAt);
-  if (type === "liturgical-school-calendar"|| template.id === "print_mom_liturgical") return buildMonthCalendar(printCenter, template, generatedAt);
-  if (type === "child-weekly-assignment")                                             return buildChildWeekly(printCenter, template, generatedAt);
-  if (type === "child-term-plan")                                                     return buildChildTerm(printCenter, template, generatedAt);
+
+  // ── Core Learn templates ──────────────────────────────────────────────────
+  if (type === "term-plan"                  || template.id === "print_mom_term")       return buildTermPlan(printCenter, template, generatedAt);
+  if (type === "month-calendar"             || template.id === "print_mom_month")      return buildMonthCalendar(printCenter, template, generatedAt);
+  if (type === "liturgical-school-calendar" || template.id === "print_mom_liturgical") return buildMonthCalendar(printCenter, template, generatedAt);
+  if (type === "child-weekly-assignment")                                               return buildChildWeekly(printCenter, template, generatedAt);
+  if (type === "child-term-plan")                                                       return buildChildTerm(printCenter, template, generatedAt);
+
+  // ── Planner: Chores ───────────────────────────────────────────────────────
+  if (type === "planner-chores-day")                                                   return buildChorePlanDay(printCenter, template, generatedAt);
+  if (type === "planner-chores-week")                                                  return buildChorePlanWeek(printCenter, template, generatedAt);
+  if (type === "planner-chores-month")                                                 return buildChorePlanMonth(printCenter, template, generatedAt);
+  if (type === "planner-chores-week-child")                                            return buildChorePlanWeek(printCenter, template, generatedAt);
+
+  // ── Planner: Meals ────────────────────────────────────────────────────────
+  if (type === "planner-meals-week")                                                   return buildMealPlanWeek(printCenter, template, generatedAt);
+  if (type === "planner-meals-month")                                                  return buildMealPlanMonth(printCenter, template, generatedAt);
+
+  // ── Planner: Events ───────────────────────────────────────────────────────
+  if (type === "planner-events-month")                                                 return buildEventsPlanMonth(printCenter, template, generatedAt);
+
+  // ── Planner: Recipes & Grocery ────────────────────────────────────────────
+  if (type === "planner-recipes")                                                      return buildRecipeCollection(printCenter, template, generatedAt);
+  if (type === "planner-grocery-week")                                                 return buildGroceryListWeek(printCenter, template, generatedAt);
+
+  // ── Planner: Lessons ──────────────────────────────────────────────────────
+  if (type === "planner-lesson-week-form")                                             return buildPlannerLessonWeekForm(printCenter, template, generatedAt);
+  if (type === "planner-lesson-month-form")                                            return buildPlannerLessonMonthForm(printCenter, template, generatedAt);
+  if (type === "planner-lesson-term-form")                                             return buildPlannerLessonTermForm(printCenter, template, generatedAt);
+  if (type === "planner-lesson-week-child")                                            return buildPlannerLessonWeekChild(printCenter, template, generatedAt);
+  if (type === "planner-lesson-month-child")                                           return buildPlannerLessonMonthChild(printCenter, template, generatedAt);
+  if (type === "planner-lesson-term-child")                                            return buildPlannerLessonTermChild(printCenter, template, generatedAt);
+
+  // ── Default ───────────────────────────────────────────────────────────────
   return buildHouseholdWeekly(printCenter, template, generatedAt);
 }
 
@@ -416,8 +756,8 @@ function addPage(state, sectionLabel) {
   // Section label on continuation pages
   const secLabel = sectionLabel || state.currentSectionHeading || "Print Shop";
   page.drawText(text(secLabel), { x: MARGIN, y: LETTER[1] - 50, size: 8, font: state.fonts.sans, color: CREAM });
-  // Small cross ornament top-right
-  drawOrthCross(page, LETTER[0] - MARGIN - 10, LETTER[1] - 36, 28, GOLD_SOFT);
+  // Small gold rule only — logo lives on cover page
+  page.drawLine({ start: { x: LETTER[0] - MARGIN - 28, y: LETTER[1] - 20 }, end: { x: LETTER[0] - MARGIN - 28, y: LETTER[1] - 60 }, thickness: 0.5, color: GOLD_SOFT });
   // Gold rule under header
   page.drawLine({ start: { x: MARGIN, y: LETTER[1] - 80 }, end: { x: LETTER[0] - MARGIN, y: LETTER[1] - 80 }, thickness: 1, color: GOLD });
   state.page  = page;
@@ -426,7 +766,7 @@ function addPage(state, sectionLabel) {
 }
 
 // ─── Cover page ───────────────────────────────────────────────────────────────
-function drawCoverPage(state, document) {
+async function drawCoverPage(state, document) {
   const page = state.pdf.addPage(LETTER);
   const W = LETTER[0], H = LETTER[1];
 
@@ -438,8 +778,24 @@ function drawCoverPage(state, document) {
   page.drawRectangle({ x: bm, y: bm, width: W - bm * 2, height: H - bm * 2,
     borderColor: GOLD_SOFT, borderWidth: 1.2, color: NAVY });
 
-  // Large centered cross
-  drawOrthCross(page, W / 2, H - 160, 72, GOLD);
+  // mark.png logo — embedded PNG, centered near top
+  try {
+    const markBytes = await fetchBytes("https://agapay.app/mark.png");
+    const markImg   = await state.pdf.embedPng(markBytes);
+    const markSize  = 80;
+    const markDims  = markImg.scale(markSize / markImg.width);
+    page.drawImage(markImg, {
+      x: (W - markDims.width) / 2,
+      y: H - 80 - markDims.height,
+      width: markDims.width,
+      height: markDims.height,
+    });
+  } catch {
+    // If the logo can't be fetched, fall back to a simple gold cross drawn with lines
+    const cx = W / 2, cy = H - 150, arm = 28, thick = 8;
+    page.drawRectangle({ x: cx - thick / 2, y: cy - arm, width: thick, height: arm * 2, color: GOLD });
+    page.drawRectangle({ x: cx - arm, y: cy - thick / 2, width: arm * 2, height: thick, color: GOLD });
+  }
 
   // Product badge
   page.drawText("AGAPAY LEARN", { x: W / 2 - 52, y: H - 232, size: 10, font: state.fonts.sansBold, color: GOLD });
@@ -730,7 +1086,7 @@ export async function renderPrintDocumentPdf(document) {
   const state = { pdf, fonts, pages: [], page: null, y: 0, currentSectionHeading: "" };
 
   // Cover page
-  drawCoverPage(state, document);
+  await drawCoverPage(state, document);
 
   // First content page
   addPage(state);
