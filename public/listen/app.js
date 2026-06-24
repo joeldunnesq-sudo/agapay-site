@@ -101,7 +101,7 @@ function epArt(ep, size, colorIdx = 0) {
   const img = ep?.image
     ? `<img src="${esc(ep.image)}" style="width:${size}px;height:${size}px;object-fit:cover;position:absolute;inset:0;transition:transform 0.3s" onerror="this.remove()">`
     : '';
-  const mark = `<img src="/listen/images/mark.png" style="width:${Math.round(size*0.55)}px;height:${Math.round(size*0.55)}px;opacity:0.4">`;
+  const mark = `<img src="/mark.png" style="width:${Math.round(size*0.55)}px;height:${Math.round(size*0.55)}px;opacity:0.4">`;
   return `<div class="art-container" style="width:${size}px;height:${size}px;flex:none;border-radius:${Math.round(size*0.25)}px;background:${bg};box-shadow: 0 4px 12px rgba(0,0,0,0.3);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">${img}${mark}</div>`;
 }
 
@@ -217,10 +217,24 @@ async function playEpisode(ep, queue = state.queue) {
   } catch {}
   const saved = await db.getProgress(ep.guid).catch(() => null);
   const startTime = saved?.position || 0;
-  player.load(audioUrl, startTime);
-  player.play();
-  save('agp_current', ep);
-  setState({ screen: 'player', current: ep, queue, playing: true, progress: (saved?.position || 0) / (saved?.duration || 1) * 100 });
+  try {
+    player.load(audioUrl, startTime);
+    const playResult = player.play();
+    if (playResult && typeof playResult.then === 'function') await playResult;
+    save('agp_current', ep);
+    setState({
+      screen: 'player',
+      current: ep,
+      queue,
+      playing: true,
+      progress: (saved?.position || 0) / (saved?.duration || 1) * 100
+    });
+  } catch (error) {
+    console.error('Audio player could not start:', error, { episode: ep, audioUrl });
+    setState({ playing: false });
+    showToast('Playback failed — the audio source may be unavailable');
+    throw error;
+  }
 }
 
 // ─── OPML ─────────────────────────────────────────────────────────────────────
@@ -353,7 +367,7 @@ function renderHome() {
     </div>
 
     ${cur ? `
-    <div class="ep-tap tappable" data-ep='${esc(JSON.stringify(cur))}' style="margin:8px 20px 20px;padding:16px;background:linear-gradient(135deg,rgba(28,58,74,0.4),rgba(11,33,48,0.2));backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:18px;border:1px solid rgba(200,162,74,0.18);box-shadow: 0 8px 24px rgba(0,0,0,0.2)">
+    <div class="ep-tap tappable" data-ep="${encodeURIComponent(JSON.stringify(cur))}" style="margin:8px 20px 20px;padding:16px;background:linear-gradient(135deg,rgba(28,58,74,0.4),rgba(11,33,48,0.2));backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:18px;border:1px solid rgba(200,162,74,0.18);box-shadow: 0 8px 24px rgba(0,0,0,0.2)">
       <div style="font-size:0.58rem;letter-spacing:0.22em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px">Continue Listening</div>
       <div style="display:flex;gap:14px;align-items:center">
         ${epArt(cur, 58, 0)}
@@ -382,7 +396,7 @@ function renderHome() {
     </div>
     <div style="padding:0 4px">
       ${eps.slice(0, 10).map((ep, i) => `
-        <div class="ep-tap tappable" data-ep='${esc(JSON.stringify(ep))}' style="display:flex;gap:14px;align-items:center;padding:12px 18px;margin:0 4px;border-radius:12px;">
+        <div class="ep-tap tappable" data-ep="${encodeURIComponent(JSON.stringify(ep))}" style="display:flex;gap:14px;align-items:center;padding:12px 18px;margin:0 4px;border-radius:12px;">
           ${epArt(ep, 46, i)}
           <div style="flex:1;min-width:0">
             <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;font-weight:500;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2">${esc(ep.title)}</div>
@@ -549,7 +563,7 @@ function renderLibrary() {
         <div style="background:rgba(255,255,255,0.01);border-radius:16px;border:1px solid rgba(255,255,255,0.04);overflow:hidden;box-shadow: 0 4px 20px rgba(0,0,0,0.2)">
           ${state.subs.length ? state.subs.map((sub,i) => `
             <div style="display:flex;gap:14px;align-items:center;padding:12px 16px;${i<state.subs.length-1?'border-bottom:1px solid rgba(255,255,255,0.04)':''}">
-              <div class="show-row-tap tappable" data-show='${esc(JSON.stringify(sub))}' style="display:flex;flex:1;gap:14px;align-items:center;min-width:0;">
+              <div class="show-row-tap tappable" data-show="${encodeURIComponent(JSON.stringify(sub))}" style="display:flex;flex:1;gap:14px;align-items:center;min-width:0;">
                 ${epArt(sub, 42, i)}
                 <div style="flex:1;min-width:0">
                   <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.95rem;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2">${esc(sub.title)}</div>
@@ -597,7 +611,7 @@ function renderShowDetail() {
       <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px;padding-left:20px">Episodes (${showEps.length})</div>
       
       ${showEps.length ? showEps.map((ep, i) => `
-        <div class="ep-tap tappable" data-ep='${esc(JSON.stringify(ep))}' style="display:flex;gap:14px;align-items:center;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.02)">
+        <div class="ep-tap tappable" data-ep="${encodeURIComponent(JSON.stringify(ep))}" style="display:flex;gap:14px;align-items:center;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.02)">
           ${epArt(ep, 42, i)}
           <div style="flex:1;min-width:0">
             <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.95rem;font-weight:500;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2">${esc(ep.title)}</div>
@@ -681,7 +695,7 @@ function mountPremiumTheme() {
   if (document.querySelector('link[data-agp-listen-premium]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = '/listen/listen-premium.css';
+  link.href = '/listen-premium.css';
   link.dataset.agpListenPremium = 'true';
   document.head.appendChild(link);
 }
@@ -739,7 +753,16 @@ function bindEvents() {
   document.querySelectorAll('.ep-tap').forEach(el => {
     el.addEventListener('click', (e) => {
       if (e.target.closest('.follow-btn') || e.target.closest('.unfollow-btn')) return;
-      try { playEpisode(JSON.parse(el.dataset.ep)); } catch {}
+      try {
+        const episode = JSON.parse(decodeURIComponent(el.dataset.ep));
+        playEpisode(episode).catch((error) => {
+          console.error('Episode playback failed:', error, episode);
+          showToast('Unable to play this episode');
+        });
+      } catch (error) {
+        console.error('Could not read episode data:', error, el.dataset.ep);
+        showToast('This episode could not be opened');
+      }
     });
   });
 
@@ -855,7 +878,7 @@ function bindEvents() {
     el.addEventListener('click', (e) => {
       if (e.target.closest('.unfollow-btn')) return; // Avoid bubble collisons with clear unfollow sweeps
       try {
-        const showData = JSON.parse(el.dataset.show);
+        const showData = JSON.parse(decodeURIComponent(el.dataset.show));
         setState({ screen: 'show', currentShow: showData });
       } catch (err) { console.error('Show detail state routing error:', err); }
     });
