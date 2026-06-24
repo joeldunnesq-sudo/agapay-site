@@ -413,16 +413,58 @@ async function addRssFeed(xmlUrl) {
 }
 
 let _searchTimer;
+let _searchRequestId = 0;
+
+function renderSearchState(updates = {}) {
+  const input = document.getElementById('search-input');
+  const shouldRestoreFocus = document.activeElement === input;
+  const selectionStart = input?.selectionStart ?? String(state.searchQuery || '').length;
+  const selectionEnd = input?.selectionEnd ?? selectionStart;
+
+  Object.assign(state, updates);
+  render();
+
+  if (!shouldRestoreFocus) return;
+
+  requestAnimationFrame(() => {
+    const nextInput = document.getElementById('search-input');
+    if (!nextInput) return;
+
+    nextInput.focus({ preventScroll: true });
+    try {
+      nextInput.setSelectionRange(selectionStart, selectionEnd);
+    } catch {}
+  });
+}
+
 async function doSearch(q) {
-  if (!q.trim()) return setState({ searchResults: [] });
   clearTimeout(_searchTimer);
+
+  const query = String(q || '').trim();
+  const requestId = ++_searchRequestId;
+
+  if (!query) {
+    renderSearchState({ searchResults: [] });
+    return;
+  }
+
   _searchTimer = setTimeout(async () => {
     try {
-      const resp = await fetch('/api/listen/search?q=' + encodeURIComponent(q));
+      const resp = await fetch('/api/listen/search?q=' + encodeURIComponent(query));
+      if (!resp.ok) throw new Error(`Search failed: ${resp.status}`);
+
       const data = await resp.json();
-      setState({ searchResults: data.feeds || [] });
-    } catch { setState({ searchResults: [] }); }
-  }, 380);
+      if (requestId !== _searchRequestId) return;
+
+      renderSearchState({
+        searchResults: Array.isArray(data.feeds) ? data.feeds : []
+      });
+    } catch (error) {
+      console.warn('Podcast search failed:', error);
+      if (requestId !== _searchRequestId) return;
+      renderSearchState({ searchResults: [] });
+    }
+  }, 650);
 }
 
 // ─── Media Session / Bluetooth metadata ───────────────────────────────────────
@@ -1557,7 +1599,7 @@ function bindEvents() {
   document.querySelectorAll('.queue-remove').forEach(btn => btn.addEventListener('click', () => { persistQueue(state.queue.filter(ep => episodeKey(ep) !== btn.dataset.key)); render(); }));
   document.querySelectorAll('.queue-play').forEach(btn => btn.addEventListener('click', () => { try { const ep=JSON.parse(decodeURIComponent(btn.dataset.ep)); persistQueue(state.queue.filter(item=>episodeKey(item)!==episodeKey(ep))); playEpisode(ep,state.queue); } catch {} }));
 
-  // Search Input Handler Fix
+  // Keep the search field focused while debounced results rerender beneath it.
   document.getElementById('search-input')?.addEventListener('input', (e) => {
     state.searchQuery = e.target.value;
     doSearch(e.target.value);
