@@ -2927,6 +2927,23 @@ function renderPrintCenter(vm) {
       </div>` : ""}
     </div>`, { icon: "✥" });
 
+  // ── Draft Job panel (Weekly Family Plan) ─────────────────────────────────────
+  const draftJob = panel("Weekly Family Plan", `
+    <strong style="font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--ink);">${html(vm.job.status)}</strong>
+    <div style="margin-top:8px;color:var(--muted);line-height:1.55;">
+      ${html(vm.term.label)}<br>
+      ${html(vm.term.week)}<br>
+      ${vm.job.range ? html(vm.job.range) + " · " : ""}${html(vm.job.format)}
+    </div>
+    <button type="button" data-print-generate="weekly-pack"
+      style="margin-top:14px;width:100%;background:var(--navy);color:#fff;border:none;border-radius:10px;padding:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;">
+      Generate Print Pack
+    </button>
+    ${!freePlan ? `<button type="button" data-print-generate="print_mom_month" data-print-month="${html(vm.term.monthKey)}"
+      style="margin-top:8px;width:100%;background:transparent;color:var(--navy);border:1.5px solid var(--line);border-radius:10px;padding:10px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">
+      Month Calendar
+    </button>` : ""}`, { icon: "✒" });
+
   const body = `
     <section data-screen-label="Print Center" style="display:flex;flex-direction:column;gap:18px;">
       ${planBanner}
@@ -3901,6 +3918,16 @@ function wirePlanner(vm) {
       const saved = await apiPost("/api/learn/family-planning", familyPlanningPayloadFromForm(familyForm));
       status.textContent = `Family planner saved${saved.savedAt ? ` at ${new Date(saved.savedAt).toLocaleTimeString()}` : ""}.`;
       status.style.color = "var(--gold)";
+      // Re-render the planner from the returned payload so calendar-type changes
+      // and other data-driven updates are immediately reflected without a full reload.
+      if (saved.planner) {
+        const params = new URLSearchParams(window.location.search);
+        const updatedVm = toPlannerViewModel({ ok: true, planner: saved.planner });
+        const scope = params.get("scope") || updatedVm.activeScope || "lessons";
+        const displayView = params.get("view") || updatedVm.activeView || "week";
+        root.innerHTML = renderPlanner(updatedVm);
+        wirePlanner(updatedVm);
+      }
     } catch (error) {
       status.textContent = error.message;
       status.style.color = "var(--burgundy)";
@@ -4165,7 +4192,8 @@ function wirePrintCenter(vm) {
           headers: learnRequestHeaders({ "content-type": "application/json" }),
           body: JSON.stringify({
             childId: template.childId || "",
-            termId: template.termId || ""
+            termId: template.termId || "",
+            month: button.dataset.printMonth || ""
           })
         });
         const contentType = response.headers.get("content-type") || "";
