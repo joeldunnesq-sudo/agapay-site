@@ -701,7 +701,7 @@ function renderHome() {
     <div style="padding:16px 24px 12px;display:flex;align-items:center;justify-content:space-between">
       <div style="display:flex;align-items:center;gap:12px">
       <img
-        src="/listen/mark.png"
+        src="/public/mark.png"
         alt="AGAPAY"
         style="
           width:42px;
