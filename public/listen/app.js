@@ -787,18 +787,17 @@ function renderBottomNav() {
       <span style="font-size:9px;color:${c};font-weight:${active?'600':'500'};letter-spacing:0.04em">${label}</span>
     </div>`;
   };
-  return `<div style="position:absolute;bottom:0;left:0;right:0;height:76px;background:rgba(6,21,34,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid rgba(200,162,74,0.08);display:flex;align-items:flex-start;justify-content:space-around;padding-top:12px;z-index:30">
+  return `<div style="position:absolute;bottom:0;left:0;right:0;min-height:76px;height:calc(76px + env(safe-area-inset-bottom));background:rgba(6,21,34,0.94);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid rgba(200,162,74,0.10);display:flex;align-items:flex-start;justify-content:space-around;padding-top:12px;padding-bottom:env(safe-area-inset-bottom);box-sizing:border-box;z-index:30">
     ${tab('home',     'Home',     I.home)}
     ${tab('discover', 'Discover', I.disc)}
     ${tab('library',  'Library',  I.lib)}
     ${tab('profile',  'Profile',  I.person)}
-    <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:130px;height:5px;background:rgba(246,241,232,0.15);border-radius:3px;pointer-events:none"></div>
   </div>`;
 }
 
 function renderToast() {
   if (!state.toast) return '';
-  return `<div style="position:absolute;bottom:88px;left:16px;right:16px;background:linear-gradient(135deg,#1C3A4A,#0B2130);border:1px solid rgba(200,162,74,0.3);border-radius:12px;padding:14px 18px;z-index:50;display:flex;align-items:center;gap:10px;box-shadow: 0 8px 24px rgba(0,0,0,0.4);pointer-events:none">
+  return `<div style="position:absolute;bottom:calc(88px + env(safe-area-inset-bottom));left:16px;right:16px;background:linear-gradient(135deg,#1C3A4A,#0B2130);border:1px solid rgba(200,162,74,0.3);border-radius:12px;padding:14px 18px;z-index:50;display:flex;align-items:center;gap:10px;box-shadow: 0 8px 24px rgba(0,0,0,0.4);pointer-events:none">
     <div style="width:20px;height:20px;flex:none;border-radius:50%;background:linear-gradient(135deg,#C8A24A,#A97C25);display:flex;align-items:center;justify-content:center">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#061522" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
@@ -810,7 +809,7 @@ function renderRssSheet() {
   if (!state.rssSheet) return '';
   return `
     <div id="rss-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:45"></div>
-    <div style="position:absolute;bottom:0;left:0;right:0;background:#0B2130;border-radius:24px 24px 0 0;border-top:1px solid rgba(200,162,74,0.22);z-index:46;padding:0 22px 36px">
+    <div style="position:absolute;bottom:0;left:0;right:0;background:#0B2130;border-radius:24px 24px 0 0;border-top:1px solid rgba(200,162,74,0.22);z-index:46;padding:0 22px calc(36px + env(safe-area-inset-bottom))">
       <div style="display:flex;justify-content:center;padding:14px 0 18px"><div style="width:40px;height:4px;background:rgba(255,255,255,0.18);border-radius:2px"></div></div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${GOLD}" stroke-width="2"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="2"/></svg>
@@ -829,7 +828,7 @@ function renderDescriptionSheet() {
   const infoText = ep.description ? ep.description : 'No summary metadata listed for this episode channel.';
   return `
     <div id="desc-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:45"></div>
-    <div style="position:absolute;bottom:0;left:0;right:0;max-height:65%;background:#0B2130;border-radius:24px 24px 0 0;border-top:1px solid rgba(200,162,74,0.22);z-index:46;padding:0 24px 40px;display:flex;flex-direction:column">
+    <div style="position:absolute;bottom:0;left:0;right:0;max-height:65%;background:#0B2130;border-radius:24px 24px 0 0;border-top:1px solid rgba(200,162,74,0.22);z-index:46;padding:0 24px calc(40px + env(safe-area-inset-bottom));display:flex;flex-direction:column">
       <div style="display:flex;justify-content:center;padding:14px 0 12px;flex-shrink:0"><div style="width:40px;height:4px;background:rgba(255,255,255,0.18);border-radius:2px"></div></div>
       <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;font-weight:500;color:#F6F1E8;margin-bottom:4px;flex-shrink:0;letter-spacing:0.01em">${esc(ep.title)}</div>
       <div style="font-size:0.65rem;color:${GOLD};font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:16px;flex-shrink:0">${esc(ep.show)}</div>
@@ -874,7 +873,7 @@ function renderHome() {
   const eps = state.activeCategory === 'All' ? allEpisodes : allEpisodes.filter(ep => episodeCategories(ep).includes(state.activeCategory));
   const cur = state.current;
 
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:${cur?'158px':'94px'};background:${NIGHT}">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:${cur?'calc(166px + env(safe-area-inset-bottom))':'calc(94px + env(safe-area-inset-bottom))'};background:${NIGHT};box-sizing:border-box">
     <div style="padding:16px 24px 12px;display:flex;align-items:center;justify-content:space-between">
       <div style="display:flex;align-items:center;gap:12px">
         <img
@@ -923,7 +922,7 @@ function renderPlayer() {
   const pct = state.progress.toFixed(1) + '%';
   const liked = isLiked(ep);
 
-  return `<div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a1d2e 0%,#061522 55%,#030a12 100%);overflow-y:auto;display:flex;flex-direction:column;padding-bottom:24px">
+  return `<div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a1d2e 0%,#061522 55%,#030a12 100%);overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:calc(20px + env(safe-area-inset-bottom));box-sizing:border-box">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:24px 24px 8px">
       <div class="back-btn tappable" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -934,10 +933,10 @@ function renderPlayer() {
       </div>
     </div>
 
-    <div style="display:flex;justify-content:center;padding:12px 0 24px">
-      <div style="width:280px;height:280px;border-radius:20px;background:${EP_COLORS[0]};border:2px solid rgba(200,162,74,0.3);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;overflow:hidden;box-shadow: 0 20px 48px rgba(0,0,0,0.55), 0 0 40px rgba(200,162,74,0.06)">
+    <div style="display:flex;justify-content:center;padding:8px 0 18px">
+      <div class="agp-player-artwork" style="width:min(72vw,280px);height:min(72vw,280px);aspect-ratio:1;border-radius:20px;background:${EP_COLORS[0]};border:2px solid rgba(200,162,74,0.3);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;overflow:hidden;box-shadow:0 20px 48px rgba(0,0,0,0.55),0 0 40px rgba(200,162,74,0.06)">
         <div style="position:absolute;inset:-6px;border-radius:20px;border:1px solid rgba(200,162,74,0.08)"></div>
-        ${ep.image ? `<img src="${esc(ep.image)}" style="width:280px;height:280px;border-radius:20px;object-fit:cover;position:absolute;inset:0" onerror="this.remove()">` : ''}
+        ${ep.image ? `<img src="${esc(ep.image)}" alt="" style="width:100%;height:100%;border-radius:20px;object-fit:cover;position:absolute;inset:0" onerror="this.remove()">` : ''}
       </div>
     </div>
 
@@ -959,13 +958,13 @@ function renderPlayer() {
       </div>
     </div>
 
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:0px 32px 32px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 22px 24px">
       <div class="like-btn tappable" style="width:46px;height:46px;display:flex;align-items:center;justify-content:center">
         <svg width="25" height="25" viewBox="0 0 24 24" fill="${liked?GOLD:'none'}" stroke="${liked?GOLD:MUTED}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
       </div>
       <div class="skip-back tappable" style="width:52px;height:52px;display:flex;align-items:center;justify-content:center">${I.back15}</div>
       
-      <div class="play-pause tappable" style="width:74px;height:74px;border-radius:50%;background:linear-gradient(135deg,${GOLD},#A97C25);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 28px rgba(200,162,74,0.45)">
+      <div class="play-pause tappable" style="width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,${GOLD},#A97C25);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 28px rgba(200,162,74,0.45)">
         ${state.playing ? I.pause : I.play}
       </div>
       
@@ -975,7 +974,7 @@ function renderPlayer() {
       </div>
     </div>
 
-    <div style="display:flex; justify-content:center; align-items:center; gap:16px; padding:12px 20px; border:1px solid rgba(255,255,255,0.04); border-radius:30px; background:rgba(0,0,0,0.15); width:fit-content; margin:auto; margin-top:auto;">
+    <div class="agp-player-tools" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:center;gap:6px;padding:10px 8px;border:1px solid rgba(255,255,255,0.04);border-radius:24px;background:rgba(0,0,0,0.15);width:calc(100% - 32px);max-width:390px;box-sizing:border-box;margin:auto;margin-top:auto;">
       ${[
         ['sleep-btn', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', state.sleepLabel || 'Sleep', state.sleepLabel ? GOLD : MUTED],
         ['speed-btn', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2" stroke-linecap="round"><polygon points="5,4 15,12 5,20"/><polygon points="12,4 22,12 12,20"/></svg>', `${state.playbackSpeed.toFixed(2).replace(/0$/, '')}×`, MUTED],
@@ -989,7 +988,7 @@ function renderPlayer() {
         const textColor = isCustom ? optionalColor : MUTED;
         
         return `
-          <div ${targetId ? `id="${targetId}"` : ''} class="tappable" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(255,255,255,0.02);border-radius:20px;border:1px solid rgba(255,255,255,0.02)">
+          <div ${targetId ? `id="${targetId}"` : ''} class="tappable" style="display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;padding:7px 5px;background:rgba(255,255,255,0.02);border-radius:20px;border:1px solid rgba(255,255,255,0.02)">
             ${visualSvg}<span style="font-size:0.68rem;color:${textColor};font-weight:600">${textLabel}</span>
           </div>`;
       }).join('')}
@@ -1002,7 +1001,7 @@ function renderDiscover() {
 
   const groups = [...new Set(CURATED_PODCASTS.map(podcast => podcast.category))];
 
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:${state.current?'158px':'92px'};background:${NIGHT}">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:${state.current?'calc(166px + env(safe-area-inset-bottom))':'calc(94px + env(safe-area-inset-bottom))'};background:${NIGHT};box-sizing:border-box">
     <div style="padding:16px 24px 14px;display:flex;align-items:center;justify-content:space-between">
       <div>
         <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.72rem;font-weight:600;letter-spacing:.03em;color:#F6F1E8">Discover</div>
@@ -1068,7 +1067,7 @@ function renderDiscover() {
 function renderLibrary() {
   const downloadedEpisodes = state.episodes.filter(ep => state.downloaded.has(episodeKey(ep)));
   const recentHistory = state.history.slice(0, 12);
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:${state.current?'158px':'92px'};background:${NIGHT}">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:${state.current?'calc(166px + env(safe-area-inset-bottom))':'calc(94px + env(safe-area-inset-bottom))'};background:${NIGHT};box-sizing:border-box">
     <div style="padding:16px 24px 20px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.7rem;font-weight:600;color:#F6F1E8">Library</div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:0 20px 22px">
@@ -1096,7 +1095,7 @@ function renderShowDetail() {
   // Filter global feeds array down to matching target show RSS references exclusively
   const showEps = state.episodes.filter(ep => ep.xmlUrl === show.xmlUrl);
 
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:88px;background:${NIGHT}">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:calc(94px + env(safe-area-inset-bottom));background:${NIGHT};box-sizing:border-box">
     <div style="display:flex;align-items:center;gap:14px;padding:16px 20px 20px;">
       <div class="show-back-btn tappable" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -1135,7 +1134,7 @@ function renderShowDetail() {
 }
 
 function renderQueuePage() {
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:${state.current?'92px':'28px'};background:${NIGHT}">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:${state.current?'calc(104px + env(safe-area-inset-bottom))':'calc(32px + env(safe-area-inset-bottom))'};background:${NIGHT};box-sizing:border-box">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 18px">
       <div style="display:flex;align-items:center;gap:13px">
         <button class="library-back-btn tappable" style="width:38px;height:38px;border:0;border-radius:50%;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center">
@@ -1167,7 +1166,7 @@ function renderQueuePage() {
 
 function renderLikesPage() {
   const likedEpisodes = [...state.likedEpisodes].sort((a,b)=>(b.likedAt||0)-(a.likedAt||0));
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:${state.current?'92px':'28px'};background:${NIGHT}">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:${state.current?'calc(104px + env(safe-area-inset-bottom))':'calc(32px + env(safe-area-inset-bottom))'};background:${NIGHT};box-sizing:border-box">
     <div style="display:flex;align-items:center;gap:13px;padding:16px 20px 18px">
       <button class="library-back-btn tappable" style="width:38px;height:38px;border:0;border-radius:50%;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
       <div><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:600;color:#F6F1E8">Liked Episodes</div><div style="font-size:.62rem;color:${MUTED};margin-top:2px">Your saved listening collection</div></div>
@@ -1177,7 +1176,7 @@ function renderLikesPage() {
 }
 
 function renderProfile() {
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:88px;background:${NIGHT}">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:calc(94px + env(safe-area-inset-bottom));background:${NIGHT};box-sizing:border-box">
     <div style="padding:16px 24px 20px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:500;color:#F6F1E8">Profile</div>
       
     <div style="display:flex;flex-direction:column;align-items:center;padding:4px 22px 24px">
