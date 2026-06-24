@@ -597,15 +597,143 @@ const I = {
   fwd30:   `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><polyline points="21 3 21 8 16 8"/><text x="12" y="15.5" fill="#F6F1E8" font-size="8px" font-family="'DM Sans', sans-serif" font-weight="800" text-anchor="middle" stroke="none">30</text></svg>`,
 };
 
-// ─── Popular Orthodox Podcast Data preloads ──────────────────────────────────
+// ─── Curated Orthodox Discover catalog ──────────────────────────────────────
 const DEMO_EPS = [];
-const TRENDING = [
-  { title: 'Lord of Spirits', author: 'Fr. Stephen De Young & Fr. Andrew Stephen Damick', url: 'https://www.ancientfaith.com/podcasts/lordofspirits/rss' },
-  { title: 'The Symbolic World', author: 'Jonathan Pageau', url: 'https://feeds.buzzsprout.com/258194.rss' },
-  { title: 'Orthodoxy Live', author: 'Fr. Evan Armatas', url: 'https://www.ancientfaith.com/podcasts/orthodoxylive/rss' },
-  { title: 'The Areopagus', author: 'Fr. Andrew Stephen Damick & Michael Ceron', url: 'https://www.ancientfaith.com/podcasts/areopagus/rss' },
-  { title: 'Search the Scriptures', author: 'Dr. Jeannie Constantinou', url: 'https://www.ancientfaith.com/podcasts/searchthescriptures/rss' }
+const CURATED_PODCASTS = [
+  {
+    title: 'The Lord of Spirits',
+    author: 'Fr. Andrew Stephen Damick & Fr. Stephen De Young',
+    category: 'Featured',
+    description: 'The seen and unseen world in Orthodox Christian tradition.',
+    url: 'https://feeds.ancientfaith.com/lordofspirits',
+    image: ''
+  },
+  {
+    title: 'Orthodoxy Live',
+    author: 'Fr. Evan Armatas',
+    category: 'Featured',
+    description: 'Answers to listener questions about Orthodox faith and practice.',
+    url: 'https://feeds.ancientfaith.com/orthodoxylive',
+    image: ''
+  },
+  {
+    title: 'Search the Scriptures Live',
+    author: 'Presvytera Dr. Jeannie Constantinou',
+    category: 'Scripture & Theology',
+    description: 'Holy Scripture read through the mind of the Church and the Fathers.',
+    url: 'https://feeds.ancientfaith.com/searchthescriptureslive',
+    image: ''
+  },
+  {
+    title: 'The Whole Counsel of God',
+    author: 'Fr. Stephen De Young',
+    category: 'Scripture & Theology',
+    description: 'A verse-by-verse study of Scripture grounded in Orthodox Tradition.',
+    url: 'https://feeds.ancientfaith.com/wholecounsel',
+    image: ''
+  },
+  {
+    title: 'Ancient Faith Today Live',
+    author: 'Fr. Thomas Soroka',
+    category: 'Faith & Culture',
+    description: 'Contemporary questions and culture considered from an Orthodox perspective.',
+    url: 'https://feeds.ancientfaith.com/aftodaylive',
+    image: ''
+  },
+  {
+    title: 'The Areopagus',
+    author: 'Fr. Andrew Stephen Damick & Pastor Michael Landsman',
+    category: 'Faith & Culture',
+    description: 'Historic Christianity in conversation with other religious traditions.',
+    url: 'https://feeds.ancientfaith.com/areopagus',
+    image: ''
+  },
+  {
+    title: 'The Orthodox Apologetics Podcast',
+    author: 'Cassian King',
+    category: 'Faith & Culture',
+    description: 'A reasoned and pastoral defense of Orthodox Christian belief.',
+    url: 'https://feeds.ancientfaith.com/the-orthodox-apologetics-podcast',
+    image: ''
+  },
+  {
+    title: 'Saint of the Day',
+    author: 'Dn. Jerome Atherholt',
+    category: 'Daily & Devotional',
+    description: 'Brief daily accounts of the saints commemorated by the Church.',
+    url: 'https://feeds.ancientfaith.com/saintoftheday',
+    image: ''
+  },
+  {
+    title: 'Daily Orthodox Scriptures for Kids',
+    author: 'Fr. Alexis Kouri',
+    category: 'Family',
+    description: 'Short daily Scripture readings and reflections created for children.',
+    url: 'https://feeds.ancientfaith.com/dailyscriptureskids',
+    image: ''
+  },
+  {
+    title: 'Readings from Under the Grapevine',
+    author: 'Dr. Chrissi Hart',
+    category: 'Family',
+    description: 'Orthodox children’s books and classic stories read aloud.',
+    url: 'https://feeds.ancientfaith.com/grapevine',
+    image: ''
+  },
+  {
+    title: 'Amon Sûl',
+    author: 'Fr. Anthony Cook and guests',
+    category: 'Faith & Culture',
+    description: 'Tolkien’s legendarium explored through the Orthodox Christian faith.',
+    url: 'https://feeds.ancientfaith.com/amonsul',
+    image: ''
+  },
+  {
+    title: 'The Roots of Everything',
+    author: 'Dr. Zachary Porcu',
+    category: 'History & Ideas',
+    description: 'The history of ideas that shaped the modern world.',
+    url: 'https://feeds.ancientfaith.com/the_roots_of_everything',
+    image: ''
+  }
 ];
+
+let curatedCatalogHydrated = false;
+let curatedCatalogLoading = false;
+
+async function hydrateCuratedCatalog() {
+  if (curatedCatalogHydrated || curatedCatalogLoading) return;
+  curatedCatalogLoading = true;
+
+  await Promise.allSettled(CURATED_PODCASTS.map(async podcast => {
+    try {
+      const feed = await fetchFeed(podcast.url);
+      podcast.title = feed.title || podcast.title;
+      podcast.image = feed.image || podcast.image;
+    } catch (error) {
+      console.warn('Curated podcast metadata unavailable:', podcast.url, error);
+    }
+  }));
+
+  curatedCatalogHydrated = true;
+  curatedCatalogLoading = false;
+  if (state.screen === 'discover') render();
+}
+
+function renderCuratedPodcastCard(podcast, index = 0) {
+  const following = state.subs.some(sub => sub.xmlUrl === podcast.url);
+  return `<article style="width:164px;flex:none;scroll-snap-align:start;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.018));border:1px solid rgba(255,255,255,.065);border-radius:19px;padding:11px;box-shadow:0 10px 26px rgba(0,0,0,.2)">
+    ${epArt({ image: podcast.image }, 142, index)}
+    <div style="padding:10px 2px 2px">
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;font-weight:650;color:#F6F1E8;line-height:1.12;min-height:2.24em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(podcast.title)}</div>
+      <div style="font-size:.58rem;color:${GOLD};font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(podcast.category)}</div>
+      <div style="font-size:.62rem;color:${MUTED};line-height:1.4;margin-top:6px;height:2.8em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(podcast.description)}</div>
+      <button class="follow-btn tappable" data-url="${esc(podcast.url)}" data-title="${esc(podcast.title)}" style="width:100%;margin-top:11px;padding:8px 10px;background:${following?'rgba(200,162,74,.11)':'linear-gradient(135deg,rgba(200,162,74,.98),rgba(169,124,37,.98))'};border:1px solid ${following?'rgba(200,162,74,.25)':'transparent'};border-radius:10px;color:${following?GOLD:NIGHT};font-size:.62rem;font-weight:800;letter-spacing:.03em">
+        ${following?'Following':'+ Follow'}
+      </button>
+    </div>
+  </article>`;
+}
 
 function renderBottomNav() {
   const s = state.screen;
@@ -821,58 +949,70 @@ function renderPlayer() {
 }
 
 function renderDiscover() {
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:88px;background:${NIGHT}">
+  if (!curatedCatalogHydrated && !curatedCatalogLoading) queueMicrotask(hydrateCuratedCatalog);
+
+  const groups = [...new Set(CURATED_PODCASTS.map(podcast => podcast.category))];
+
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:${state.current?'158px':'92px'};background:${NIGHT}">
     <div style="padding:16px 24px 14px;display:flex;align-items:center;justify-content:space-between">
-      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:500;letter-spacing:0.04em;color:#F6F1E8">Discover</div>
-      <div class="open-rss tappable" style="display:flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(200,162,74,0.06);border:1px solid rgba(200,162,74,0.22);border-radius:20px;">
+      <div>
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.72rem;font-weight:600;letter-spacing:.03em;color:#F6F1E8">Discover</div>
+        <div style="font-size:.66rem;color:${MUTED};margin-top:3px">Curated Orthodox voices, teaching, and stories</div>
+      </div>
+      <div class="open-rss tappable" style="display:flex;align-items:center;gap:6px;padding:7px 13px;background:rgba(200,162,74,.07);border:1px solid rgba(200,162,74,.22);border-radius:20px">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${GOLD}" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <span style="font-size:0.6rem;color:${GOLD};font-weight:700;letter-spacing:0.08em;text-transform:uppercase">Add RSS</span>
+        <span style="font-size:.58rem;color:${GOLD};font-weight:800;letter-spacing:.08em;text-transform:uppercase">Add RSS</span>
       </div>
     </div>
 
-    <div style="padding:0 20px 16px">
-      <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:0 16px;">
+    <div style="padding:0 20px 18px">
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);border-radius:15px;padding:0 16px;box-shadow:0 8px 22px rgba(0,0,0,.14)">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${MUTED}" stroke-width="2.5" style="flex:none"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
-        <input id="search-input" value="${esc(state.searchQuery)}" placeholder="Search podcasts worldwide…" style="flex:1;background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:0.85rem;color:#F6F1E8;padding:14px 0">
+        <input id="search-input" value="${esc(state.searchQuery)}" placeholder="Search podcasts worldwide…" style="flex:1;background:transparent;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:.84rem;color:#F6F1E8;padding:14px 0">
       </div>
     </div>
 
     ${state.searchQuery ? `
-    <div style="padding:0 20px">
-      <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${MUTED};font-weight:700;margin-bottom:12px">Results</div>
-      ${state.searchResults.length ? state.searchResults.map((f,i) => `
-        <div style="display:flex;gap:14px;align-items:center;padding:12px 6px;border-bottom:1px solid rgba(255,255,255,0.04)">
-          ${epArt({image: f.artwork || f.image}, 46, i)}
-          <div style="flex:1;min-width:0">
-            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.title)}</div>
-            <div style="font-size:0.62rem;color:${MUTED};margin-top:3px">${esc(f.author||'')}</div>
-          </div>
-          <div class="follow-btn tappable" data-url="${esc(f.url)}" data-title="${esc(f.title)}"
-            style="padding:6px 12px;background:${state.subs.find(s=>s.xmlUrl===f.url)?'rgba(200,162,74,0.08)':'rgba(255,255,255,0.04)'};border:1px solid ${state.subs.find(s=>s.xmlUrl===f.url)?'rgba(200,162,74,0.2)':'rgba(255,255,255,0.08)'};border-radius:12px;font-size:0.58rem;color:${state.subs.find(s=>s.xmlUrl===f.url)?GOLD:MUTED};font-weight:700;white-space:nowrap;letter-spacing:0.02em">
-            ${state.subs.find(s=>s.xmlUrl===f.url) ? 'Following' : '+ Follow'}
-          </div>
-        </div>`
-      ).join('') : `<div style="padding:32px;text-align:center;color:${MUTED};font-size:0.85rem;font-style:italic">Searching…</div>`}
-    </div>` : `
-    <div style="padding:0 20px;margin-bottom:16px">
-      <div style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${MUTED};font-weight:700;margin-bottom:12px;padding-left:4px">Popular Orthodox Podcasts</div>
-      <div style="background:rgba(255,255,255,0.01);border-radius:16px;border:1px solid rgba(255,255,255,0.04);overflow:hidden;box-shadow: 0 4px 20px rgba(0,0,0,0.2)">
-        ${TRENDING.map((t,i) => `
-          <div style="display:flex;gap:14px;align-items:center;padding:12px 16px;${i<TRENDING.length-1?'border-bottom:1px solid rgba(255,255,255,0.04)':''}">
-            <span style="font-size:0.8rem;color:${i<2?GOLD:STONE};font-weight:700;width:16px;text-align:center;font-family:'Cormorant Garamond',serif">${i+1}</span>
-            ${epArt({image:''}, 42, i)}
+      <section style="padding:0 20px 24px">
+        <div style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:${MUTED};font-weight:700;margin-bottom:12px">Search Results</div>
+        ${state.searchResults.length ? state.searchResults.map((feed,index) => {
+          const feedUrl = feed.url || feed.xmlUrl || '';
+          const following = state.subs.some(sub => sub.xmlUrl === feedUrl);
+          return `<div style="display:flex;gap:14px;align-items:center;padding:12px 6px;border-bottom:1px solid rgba(255,255,255,.04)">
+            ${epArt({ image: feed.artwork || feed.image }, 48, index)}
             <div style="flex:1;min-width:0">
-              <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.95rem;color:#F6F1E8;line-height:1.2">${esc(t.title)}</div>
-              <div style="font-size:0.58rem;color:${MUTED};margin-top:2px">${esc(t.author)}</div>
+              <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;font-weight:600;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(feed.title)}</div>
+              <div style="font-size:.62rem;color:${MUTED};margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(feed.author || 'Podcast')}</div>
             </div>
-            <div class="follow-btn tappable" data-url="${esc(t.url)}" data-title="${esc(t.title)}"
-              style="padding:5px 12px;background:${state.subs.find(s=>s.xmlUrl===t.url)?'rgba(200,162,74,0.08)':'rgba(255,255,255,0.04)'};border:1px solid ${state.subs.find(s=>s.xmlUrl===t.url)?'rgba(200,162,74,0.18)' : 'rgba(255,255,255,0.08)'};border-radius:12px;font-size:0.58rem;color:${state.subs.find(s=>s.xmlUrl===t.url)?GOLD:MUTED};font-weight:700">
-              ${state.subs.find(s=>s.xmlUrl===t.url)?'Following':'+ Follow'}
-            </div>
-          </div>`
-        ).join('')}
-      </div>
-    </div>`}
+            <button class="follow-btn tappable" data-url="${esc(feedUrl)}" data-title="${esc(feed.title)}" style="padding:7px 12px;background:${following?'rgba(200,162,74,.09)':'rgba(255,255,255,.045)'};border:1px solid ${following?'rgba(200,162,74,.23)':'rgba(255,255,255,.09)'};border-radius:12px;font-size:.58rem;color:${following?GOLD:MUTED};font-weight:800;white-space:nowrap">
+              ${following?'Following':'+ Follow'}
+            </button>
+          </div>`;
+        }).join('') : `<div style="padding:34px 20px;text-align:center;color:${MUTED};font-size:.8rem">Searching the podcast directory…</div>`}
+      </section>
+    ` : `
+      <section style="margin-bottom:25px">
+        <div style="padding:0 22px;margin-bottom:13px">
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;font-weight:650;color:#F6F1E8">Featured Orthodox Podcasts</div>
+          <div style="font-size:.63rem;color:${MUTED};margin-top:3px">Real feeds selected for breadth, quality, and active publication</div>
+        </div>
+        <div class="no-scrollbar" style="display:flex;gap:13px;padding:0 20px 5px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch">
+          ${CURATED_PODCASTS.filter(podcast => podcast.category === 'Featured').map((podcast,index) => renderCuratedPodcastCard(podcast,index)).join('')}
+        </div>
+      </section>
+
+      ${groups.filter(group => group !== 'Featured').map((group,groupIndex) => `
+        <section style="margin-bottom:25px">
+          <div style="padding:0 22px;margin-bottom:12px;display:flex;align-items:baseline;justify-content:space-between">
+            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.25rem;font-weight:620;color:#F6F1E8">${esc(group)}</div>
+            <div style="font-size:.58rem;color:${MUTED}">${CURATED_PODCASTS.filter(podcast => podcast.category === group).length} shows</div>
+          </div>
+          <div class="no-scrollbar" style="display:flex;gap:13px;padding:0 20px 5px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch">
+            ${CURATED_PODCASTS.filter(podcast => podcast.category === group).map((podcast,index) => renderCuratedPodcastCard(podcast,index + groupIndex * 3)).join('')}
+          </div>
+        </section>
+      `).join('')}
+    `}
   </div>`;
 }
 
