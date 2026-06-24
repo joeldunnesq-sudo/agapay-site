@@ -413,58 +413,16 @@ async function addRssFeed(xmlUrl) {
 }
 
 let _searchTimer;
-let _searchRequestId = 0;
-
-function renderSearchState(updates = {}) {
-  const input = document.getElementById('search-input');
-  const shouldRestoreFocus = document.activeElement === input;
-  const selectionStart = input?.selectionStart ?? String(state.searchQuery || '').length;
-  const selectionEnd = input?.selectionEnd ?? selectionStart;
-
-  Object.assign(state, updates);
-  render();
-
-  if (!shouldRestoreFocus) return;
-
-  requestAnimationFrame(() => {
-    const nextInput = document.getElementById('search-input');
-    if (!nextInput) return;
-
-    nextInput.focus({ preventScroll: true });
-    try {
-      nextInput.setSelectionRange(selectionStart, selectionEnd);
-    } catch {}
-  });
-}
-
 async function doSearch(q) {
+  if (!q.trim()) return setState({ searchResults: [] });
   clearTimeout(_searchTimer);
-
-  const query = String(q || '').trim();
-  const requestId = ++_searchRequestId;
-
-  if (!query) {
-    renderSearchState({ searchResults: [] });
-    return;
-  }
-
   _searchTimer = setTimeout(async () => {
     try {
-      const resp = await fetch('/api/listen/search?q=' + encodeURIComponent(query));
-      if (!resp.ok) throw new Error(`Search failed: ${resp.status}`);
-
+      const resp = await fetch('/api/listen/search?q=' + encodeURIComponent(q));
       const data = await resp.json();
-      if (requestId !== _searchRequestId) return;
-
-      renderSearchState({
-        searchResults: Array.isArray(data.feeds) ? data.feeds : []
-      });
-    } catch (error) {
-      console.warn('Podcast search failed:', error);
-      if (requestId !== _searchRequestId) return;
-      renderSearchState({ searchResults: [] });
-    }
-  }, 650);
+      setState({ searchResults: data.feeds || [] });
+    } catch { setState({ searchResults: [] }); }
+  }, 380);
 }
 
 // ─── Media Session / Bluetooth metadata ───────────────────────────────────────
@@ -890,7 +848,7 @@ function renderDescriptionSheet() {
 }
 
 // ─── Screens ──────────────────────────────────────────────────────────────────
-function renderEpisodeRow(ep, i = 0, roomy = false) {
+function renderEpisodeRow(ep, i = 0) {
   const key = episodeKey(ep);
   const downloaded = state.downloaded.has(key);
   const downloading = state.downloadProgress[key];
@@ -899,18 +857,12 @@ function renderEpisodeRow(ep, i = 0, roomy = false) {
   const liked = isLiked(ep);
   const encoded = encodeURIComponent(JSON.stringify(ep));
 
-  const rowPadding = roomy ? '17px 16px' : '13px 14px';
-  const artSize = roomy ? 62 : 48;
-  const titleSize = roomy ? '1.08rem' : '1rem';
-  const metaSize = roomy ? '.68rem' : '.62rem';
-  const rowGap = roomy ? 12 : 8;
-
-  return `<div class="episode-row ${roomy ? 'episode-row--roomy' : ''}" style="display:flex;gap:${rowGap}px;align-items:center;padding:${rowPadding};margin:0 8px 8px;border-radius:18px;border:1px solid ${roomy ? 'rgba(255,255,255,.045)' : 'transparent'};background:${roomy ? 'rgba(255,255,255,.018)' : 'transparent'}">
-    <div class="ep-tap tappable" data-ep="${encoded}" style="display:flex;gap:${roomy ? 15 : 13}px;align-items:center;flex:1;min-width:0">
-      ${epArt(ep, artSize, i)}
+  return `<div class="episode-row" style="display:flex;gap:8px;align-items:center;padding:13px 14px;margin:0 4px;border-radius:14px;border-bottom:1px solid rgba(255,255,255,.025)">
+    <div class="ep-tap tappable" data-ep="${encoded}" style="display:flex;gap:13px;align-items:center;flex:1;min-width:0">
+      ${epArt(ep, 48, i)}
       <div style="flex:1;min-width:0">
-        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:${titleSize};font-weight:600;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:${roomy ? 2 : 1};-webkit-box-orient:vertical;line-height:1.22">${esc(ep.title)}</div>
-        <div style="font-size:${metaSize};color:${MUTED};margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(ep.show)}${ep.duration?' · '+esc(ep.duration):''}${ep.date?' · '+timeAgo(ep.date):''}${status?' · '+status:''}</div>
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;font-weight:600;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2">${esc(ep.title)}</div>
+        <div style="font-size:.62rem;color:${MUTED};margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(ep.show)}${ep.duration?' · '+esc(ep.duration):''}${ep.date?' · '+timeAgo(ep.date):''}${status?' · '+status:''}</div>
       </div>
     </div>
     <button class="ep-like-btn tappable" data-ep="${encoded}" aria-label="${liked?'Unlike':'Like episode'}" style="border:0;background:transparent;padding:8px;display:flex;color:${liked?GOLD:MUTED}">
@@ -929,7 +881,7 @@ function renderHome() {
   const eps = state.activeCategory === 'All' ? allEpisodes : allEpisodes.filter(ep => episodeCategories(ep).includes(state.activeCategory));
   const cur = state.current;
 
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + var(--agp-safe-top));padding-bottom:calc(94px + var(--agp-safe-bottom));background:${NIGHT};box-sizing:border-box">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + var(--agp-safe-top));padding-bottom:${cur?'calc(166px + var(--agp-safe-bottom))':'calc(94px + var(--agp-safe-bottom))'};background:${NIGHT};box-sizing:border-box">
     <div style="padding:16px 24px 12px;display:flex;align-items:center;justify-content:space-between">
       <div style="display:flex;align-items:center;gap:12px">
         <img
@@ -957,19 +909,9 @@ function renderHome() {
       </div>
     </div>
 
-    ${cur ? `<div class="continue-card" style="margin:8px 20px 22px;padding:16px;background:linear-gradient(135deg,rgba(28,58,74,.55),rgba(11,33,48,.3));backdrop-filter:blur(10px);border-radius:20px;border:1px solid rgba(200,162,74,.2);box-shadow:0 14px 34px rgba(0,0,0,.25)">
+    ${cur ? `<div class="ep-tap tappable" data-ep="${encodeURIComponent(JSON.stringify(cur))}" style="margin:8px 20px 22px;padding:16px;background:linear-gradient(135deg,rgba(28,58,74,.55),rgba(11,33,48,.3));backdrop-filter:blur(10px);border-radius:20px;border:1px solid rgba(200,162,74,.2);box-shadow:0 14px 34px rgba(0,0,0,.25)">
       <div style="font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px">Continue Listening</div>
-      <div style="display:flex;gap:14px;align-items:center">
-        <div class="continue-open tappable" data-ep="${encodeURIComponent(JSON.stringify(cur))}" style="display:flex;gap:14px;align-items:center;flex:1;min-width:0">
-          ${epArt(cur,60,0)}
-          <div style="flex:1;min-width:0">
-            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.08rem;font-weight:600;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(cur.title)}</div>
-            <div style="font-size:.68rem;color:${MUTED};margin-top:3px">${esc(cur.show)}</div>
-            <div style="margin-top:12px;height:3px;background:rgba(255,255,255,.07);border-radius:3px"><div style="width:${state.progress.toFixed(1)}%;height:100%;background:linear-gradient(90deg,${GOLD},#E5C06A);border-radius:3px"></div></div>
-          </div>
-        </div>
-        <button class="continue-play-pause tappable" type="button" aria-label="${state.playing ? 'Pause' : 'Play'}" style="width:48px;height:48px;flex:none;border:0;border-radius:50%;background:linear-gradient(135deg,${GOLD},#A97C25);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(200,162,74,.28)">${state.playing ? I.pause : I.play}</button>
-      </div>
+      <div style="display:flex;gap:14px;align-items:center">${epArt(cur,60,0)}<div style="flex:1;min-width:0"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.08rem;font-weight:600;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(cur.title)}</div><div style="font-size:.68rem;color:${MUTED};margin-top:3px">${esc(cur.show)}</div><div style="margin-top:12px;height:3px;background:rgba(255,255,255,.07);border-radius:3px"><div style="width:${state.progress.toFixed(1)}%;height:100%;background:linear-gradient(90deg,${GOLD},#E5C06A);border-radius:3px"></div></div></div></div>
     </div>` : ''}
 
     ${state.subs.length ? `<section style="margin-bottom:22px"><div style="padding:0 22px;display:flex;justify-content:space-between;align-items:baseline;margin-bottom:13px"><span style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;font-weight:600;color:#F6F1E8">Following</span><span data-nav="library" class="tappable" style="font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:${GOLD};font-weight:700">Your Library</span></div>
@@ -978,7 +920,7 @@ function renderHome() {
     <div class="no-scrollbar" style="display:flex;gap:8px;padding:0 20px 22px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch">${categories.map(cat=>{const active=cat===state.activeCategory;return `<button class="category-chip tappable" data-category="${esc(cat)}" style="flex:none;padding:8px 16px;background:${active?`linear-gradient(135deg,${GOLD},#A97C25)`:'rgba(255,255,255,.04)'};border:${active?'1px solid transparent':'1px solid rgba(255,255,255,.07)'};border-radius:22px;font-size:.68rem;color:${active?NIGHT:MUTED};font-weight:${active?'800':'600'}">${esc(cat)}</button>`}).join('')}</div>
 
     <div style="padding:0 22px;display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px"><span style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;font-weight:600;color:#F6F1E8">${state.activeCategory==='All'?'Newest Episodes':esc(state.activeCategory)}</span><span style="font-size:.58rem;color:${MUTED}">${eps.length} episode${eps.length===1?'':'s'}</span></div>
-    <div style="padding:0 4px">${eps.length ? eps.map((ep,i)=>renderEpisodeRow(ep,i,true)).join('') : `<div style="margin:8px 20px;padding:28px;text-align:center;border:1px solid rgba(255,255,255,.05);border-radius:18px;color:${MUTED};font-size:.78rem">No followed-podcast episodes match this category yet.</div>`}</div>
+    <div style="padding:0 4px">${eps.length ? eps.map((ep,i)=>renderEpisodeRow(ep,i)).join('') : `<div style="margin:8px 20px;padding:28px;text-align:center;border:1px solid rgba(255,255,255,.05);border-radius:18px;color:${MUTED};font-size:.78rem">No followed-podcast episodes match this category yet.</div>`}</div>
     ${!state.subs.length?`<div style="margin:24px 20px;padding:26px;background:rgba(200,162,74,.035);border:1px solid rgba(200,162,74,.14);border-radius:18px;text-align:center"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.25rem;color:#F6F1E8;margin-bottom:7px">Build Your Listening Library</div><div style="font-size:.75rem;color:${MUTED};line-height:1.55;margin-bottom:17px">Follow Orthodox podcasts and their newest episodes will appear here automatically.</div><div class="tappable" data-nav="discover" style="display:inline-flex;padding:10px 22px;background:linear-gradient(135deg,${GOLD},#A97C25);border-radius:10px;font-size:.75rem;color:${NIGHT};font-weight:800">Discover Podcasts</div></div>`:''}
   </div>`;
 }
@@ -988,11 +930,14 @@ function renderPlayer() {
   const pct = state.progress.toFixed(1) + '%';
   const liked = isLiked(ep);
 
-  return `<div id="player-sheet" class="agp-player-sheet" style="position:absolute;left:0;right:0;top:calc(10px + var(--agp-safe-top));bottom:0;background:linear-gradient(180deg,#0a1d2e 0%,#061522 55%,#030a12 100%);overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;padding-bottom:calc(20px + var(--agp-safe-bottom));box-sizing:border-box;border-radius:28px 28px 0 0;box-shadow:0 -12px 55px rgba(0,0,0,.42);touch-action:pan-y">
-    <div id="player-drag-zone" style="position:sticky;top:0;z-index:8;padding:10px 20px 8px;background:linear-gradient(180deg,rgba(10,29,46,.98),rgba(10,29,46,.78),transparent);touch-action:none">
-      <div id="player-drag-handle" style="width:44px;height:5px;margin:0 auto 9px;border-radius:999px;background:rgba(246,241,232,.28)"></div>
-      <div style="display:flex;align-items:center;justify-content:center;min-height:24px">
-        <div style="font-size:0.6rem;letter-spacing:0.24em;text-transform:uppercase;color:${GOLD};font-weight:700">Now Playing</div>
+  return `<div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a1d2e 0%,#061522 55%,#030a12 100%);overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;padding-top:var(--agp-safe-top);padding-bottom:calc(20px + var(--agp-safe-bottom));box-sizing:border-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:24px 24px 8px">
+      <div class="back-btn tappable" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
+      <div style="font-size:0.6rem;letter-spacing:0.24em;text-transform:uppercase;color:${GOLD};font-weight:700">Now Playing</div>
+      <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2.5"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
       </div>
     </div>
 
@@ -1009,7 +954,7 @@ function renderPlayer() {
     </div>
 
     <div style="padding:0 32px;margin-bottom:18px;margin-top:auto">
-      <div id="seekbar" class="tappable" style="height:34px;display:flex;align-items:center;position:relative;touch-action:none;user-select:none;-webkit-user-select:none">
+      <div id="seekbar" class="tappable" style="height:24px;display:flex;align-items:center;position:relative">
         <div style="width:100%;height:3.5px;background:rgba(255,255,255,0.08);border-radius:4px;position:relative">
           <div id="pgfill" style="position:absolute;left:0;top:0;height:100%;width:${pct};background:linear-gradient(90deg,${GOLD},#E5C06A);border-radius:4px"></div>
         </div>
@@ -1064,7 +1009,7 @@ function renderDiscover() {
 
   const groups = [...new Set(CURATED_PODCASTS.map(podcast => podcast.category))];
 
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + var(--agp-safe-top));padding-bottom:calc(94px + var(--agp-safe-bottom));background:${NIGHT};box-sizing:border-box">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + var(--agp-safe-top));padding-bottom:${state.current?'calc(166px + var(--agp-safe-bottom))':'calc(94px + var(--agp-safe-bottom))'};background:${NIGHT};box-sizing:border-box">
     <div style="padding:16px 24px 14px;display:flex;align-items:center;justify-content:space-between">
       <div>
         <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.72rem;font-weight:600;letter-spacing:.03em;color:#F6F1E8">Discover</div>
@@ -1130,7 +1075,7 @@ function renderDiscover() {
 function renderLibrary() {
   const downloadedEpisodes = state.episodes.filter(ep => state.downloaded.has(episodeKey(ep)));
   const recentHistory = state.history.slice(0, 12);
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + var(--agp-safe-top));padding-bottom:calc(94px + var(--agp-safe-bottom));background:${NIGHT};box-sizing:border-box">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + var(--agp-safe-top));padding-bottom:${state.current?'calc(166px + var(--agp-safe-bottom))':'calc(94px + var(--agp-safe-bottom))'};background:${NIGHT};box-sizing:border-box">
     <div style="padding:16px 24px 20px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.7rem;font-weight:600;color:#F6F1E8">Library</div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:0 20px 22px">
@@ -1427,6 +1372,20 @@ function bindEvents() {
     });
   });
 
+  document.querySelector('.back-btn')?.addEventListener('click', () => setState({ screen: 'home' }));
+
+  document.getElementById('mini-player-open')?.addEventListener('click', (e) => {
+    if (e.target.closest('.mini-play-pause')) return;
+    setState({ screen: 'player' });
+  });
+
+  document.querySelector('.mini-play-pause')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (state.playing) { player.pause(); setState({ playing: false }); }
+    else { player.play(); setState({ playing: true }); }
+  });
+
+
   document.querySelector('.play-pause')?.addEventListener('click', async () => {
     if (state.playing) {
       player.pause();
@@ -1448,97 +1407,9 @@ function bindEvents() {
   document.querySelector('.skip-back')?.addEventListener('click', () => player.skipBack(15));
   document.querySelector('.skip-fwd')?.addEventListener('click',  () => player.skipForward(30));
 
-  const seekbar = document.getElementById('seekbar');
-  if (seekbar) {
-    let scrubbing = false;
-    const seekFromPointer = (event) => {
-      const rect = seekbar.getBoundingClientRect();
-      const clientX = event.clientX ?? event.touches?.[0]?.clientX;
-      if (!Number.isFinite(clientX) || rect.width <= 0) return;
-      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-      const pct = ratio * 100;
-      const fill = document.getElementById('pgfill');
-      const thumb = document.getElementById('pgthumb');
-      if (fill) fill.style.width = `${pct}%`;
-      if (thumb) thumb.style.left = `${pct}%`;
-      player.seek(ratio);
-    };
-    seekbar.addEventListener('pointerdown', (event) => {
-      scrubbing = true;
-      seekbar.setPointerCapture?.(event.pointerId);
-      seekFromPointer(event);
-      event.preventDefault();
-    });
-    seekbar.addEventListener('pointermove', (event) => {
-      if (!scrubbing) return;
-      seekFromPointer(event);
-      event.preventDefault();
-    });
-    const stopScrub = (event) => {
-      if (!scrubbing) return;
-      seekFromPointer(event);
-      scrubbing = false;
-      try { seekbar.releasePointerCapture?.(event.pointerId); } catch {}
-    };
-    seekbar.addEventListener('pointerup', stopScrub);
-    seekbar.addEventListener('pointercancel', () => { scrubbing = false; });
-  }
-
-  const dragZone = document.getElementById('player-drag-zone');
-  const playerSheet = document.getElementById('player-sheet');
-  if (dragZone && playerSheet) {
-    let dragStartY = 0;
-    let dragDistance = 0;
-    let draggingSheet = false;
-    dragZone.addEventListener('pointerdown', (event) => {
-      draggingSheet = true;
-      dragStartY = event.clientY;
-      dragDistance = 0;
-      dragZone.setPointerCapture?.(event.pointerId);
-      playerSheet.style.transition = 'none';
-      event.preventDefault();
-    });
-    dragZone.addEventListener('pointermove', (event) => {
-      if (!draggingSheet) return;
-      dragDistance = Math.max(0, event.clientY - dragStartY);
-      playerSheet.style.transform = `translateY(${dragDistance}px)`;
-      event.preventDefault();
-    });
-    const finishSheetDrag = (event) => {
-      if (!draggingSheet) return;
-      draggingSheet = false;
-      try { dragZone.releasePointerCapture?.(event.pointerId); } catch {}
-      playerSheet.style.transition = 'transform .28s cubic-bezier(.2,.8,.2,1), opacity .28s ease';
-      if (dragDistance > 90) {
-        playerSheet.style.transform = 'translateY(100%)';
-        playerSheet.style.opacity = '0';
-        setTimeout(() => setState({ screen: 'home' }), 220);
-      } else {
-        playerSheet.style.transform = 'translateY(0)';
-      }
-    };
-    dragZone.addEventListener('pointerup', finishSheetDrag);
-    dragZone.addEventListener('pointercancel', finishSheetDrag);
-  }
-
-  document.querySelector('.continue-open')?.addEventListener('click', () => setState({ screen: 'player' }));
-  document.querySelector('.continue-play-pause')?.addEventListener('click', async (event) => {
-    event.stopPropagation();
-    if (state.playing) {
-      player.pause();
-      updateMediaSessionPlaybackState(false);
-      setState({ playing: false });
-    } else {
-      try {
-        const result = player.play();
-        if (result && typeof result.then === 'function') await result;
-        updateMediaSessionPlaybackState(true);
-        setState({ playing: true });
-      } catch (error) {
-        console.error('Continue Listening playback failed:', error);
-        showToast('Could not resume playback');
-      }
-    }
+  document.getElementById('seekbar')?.addEventListener('click', (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    player.seek((e.clientX - r.left) / r.width);
   });
 
   document.querySelector('.like-btn')?.addEventListener('click', () => {
@@ -1599,7 +1470,7 @@ function bindEvents() {
   document.querySelectorAll('.queue-remove').forEach(btn => btn.addEventListener('click', () => { persistQueue(state.queue.filter(ep => episodeKey(ep) !== btn.dataset.key)); render(); }));
   document.querySelectorAll('.queue-play').forEach(btn => btn.addEventListener('click', () => { try { const ep=JSON.parse(decodeURIComponent(btn.dataset.ep)); persistQueue(state.queue.filter(item=>episodeKey(item)!==episodeKey(ep))); playEpisode(ep,state.queue); } catch {} }));
 
-  // Keep the search field focused while debounced results rerender beneath it.
+  // Search Input Handler Fix
   document.getElementById('search-input')?.addEventListener('input', (e) => {
     state.searchQuery = e.target.value;
     doSearch(e.target.value);
