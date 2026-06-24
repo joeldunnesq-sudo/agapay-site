@@ -2871,25 +2871,22 @@ function renderPrintCenter(vm) {
        </small>`
     : "";
 
-  // ── Quick-generate strip (most useful action, always visible) ───────────────
-  const quickStrip = `
-    <div style="background:var(--navy);border-radius:14px;padding:20px 22px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
-      <div>
-        <div style="color:var(--goldsoft);font-size:10px;letter-spacing:.18em;font-weight:800;text-transform:uppercase;margin-bottom:4px;">This week</div>
-        <strong style="font-family:'Cormorant Garamond',serif;font-size:24px;color:#fff;line-height:1.1;">${html(vm.term.label)}</strong>
-        <span style="display:block;color:var(--goldsoft);font-size:13px;margin-top:2px;">${html(vm.term.week)}${vm.job.range ? " · " + html(vm.job.range) : ""}</span>
-      </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-        <button type="button" data-print-generate="weekly-pack"
-          style="background:var(--gold);color:var(--navy2);border:none;border-radius:10px;padding:12px 22px;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap;">
-          ⬇ Weekly Pack
-        </button>
-        ${!freePlan ? `<button type="button" data-print-generate="print_mom_month"
-          style="background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.28);border-radius:10px;padding:12px 18px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
-          Month Calendar
-        </button>` : ""}
-      </div>
-    </div>`;
+  // ── Draft Job panel (Weekly Family Plan — the original UI) ─────────────────
+  const draftJob = panel("Weekly Family Plan", `
+    <strong style="font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--ink);">${html(vm.job.status)}</strong>
+    <div style="margin-top:8px;color:var(--muted);line-height:1.55;">
+      ${html(vm.term.label)}<br>
+      ${html(vm.term.week)}<br>
+      ${vm.job.range ? html(vm.job.range) + " · " : ""}${html(vm.job.format)}
+    </div>
+    <button type="button" data-print-generate="weekly-pack"
+      style="margin-top:14px;width:100%;background:var(--navy);color:#fff;border:none;border-radius:10px;padding:11px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;">
+      Generate Print Pack
+    </button>
+    ${!freePlan ? `<button type="button" data-print-generate="print_mom_month"
+      style="margin-top:8px;width:100%;background:transparent;color:var(--navy);border:1.5px solid var(--line);border-radius:10px;padding:10px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">
+      Month Calendar
+    </button>` : ""}`, { icon: "✒" });
 
   // ── Plan banner ─────────────────────────────────────────────────────────────
   const planBanner = `
@@ -2979,9 +2976,11 @@ function renderPrintCenter(vm) {
 
   const body = `
     <section data-screen-label="Print Center" style="display:flex;flex-direction:column;gap:18px;">
-      ${quickStrip}
       ${planBanner}
-      ${panel("Household Plans", householdGrid, { icon: "▤" })}
+      <div style="display:grid;grid-template-columns:1fr 330px;gap:16px;align-items:start;">
+        ${panel("Household Plans", householdGrid, { icon: "▤" })}
+        ${draftJob}
+      </div>
       ${panel("Child Sheets", childGrid, { icon: "◎" })}
       ${reportsSection}
       ${outputsPanel}
