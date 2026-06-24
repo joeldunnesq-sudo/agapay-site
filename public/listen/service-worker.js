@@ -6,7 +6,7 @@
 const CACHE_NAME = 'agapay-listen-v1';
 const ASSETS_TO_CACHE = [
   '/listen/',
-  '/listen.html', // Or index.html depending on your routing setup
+  '/index.html', 
   '/listen/app.js',
   '/listen/player.js',
   '/listen/db.js',
