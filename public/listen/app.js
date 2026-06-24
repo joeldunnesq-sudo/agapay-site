@@ -35,7 +35,7 @@ const state = {
   episodes:           load('agp_eps',      []),
   current:            load('agp_current',  null),
   currentShow:        null, // Tracks the currently active podcast channel view
-  queue:              [],
+  queue:              load('agp_queue', []),
   progress:           0,
   playing:            false,
   searchQuery:        '',
@@ -43,6 +43,16 @@ const state = {
   rssSheet:           false,
   rssUrl:             '',
   descriptionSheet:   false, // Track description modal state
+  queueSheet:         false,
+  speedSheet:         false,
+  sleepSheet:         false,
+  activeCategory:     load('agp_category', 'All'),
+  playbackSpeed:      Number(load('agp_speed', 1)) || 1,
+  history:            load('agp_history', []),
+  downloaded:         new Set(load('agp_downloaded', [])),
+  downloadProgress:   {},
+  sleepEndsAt:        null,
+  sleepLabel:         '',
   toast:              null,
   liked:              new Set(load('agp_liked', [])),
   downloads:          {},   // guid -> object URL
@@ -96,12 +106,167 @@ function esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function episodeKey(ep) {
+  return String(ep?.guid || ep?.url || `${ep?.show || ''}:${ep?.title || ''}`);
+}
+
+function normalizedDate(ep) {
+  const time = new Date(ep?.date || 0).getTime();
+  return Number.isFinite(time) ? time : 0;
+}
+
+const CATEGORY_RULES = {
+  Sermons: /\b(homily|sermon|preaching|sunday gospel|gospel reflection)\b/i,
+  Theology: /\b(theology|theological|christology|trinity|theosis|dogma|doctrine|incarnation|soteriology)\b/i,
+  Prayer: /\b(prayer|jesus prayer|hesychasm|watchfulness|vigil|devotion|spiritual life)\b/i,
+  Saints: /\b(saint|st\.|holy father|martyr|apostle|theotokos|elder)\b/i,
+  Scripture: /\b(scripture|bible|gospel|epistle|psalm|genesis|exodus|matthew|mark|luke|john|romans|corinthians)\b/i,
+  History: /\b(history|byzantine|russia|council|empire|schism|patristic)\b/i,
+  Family: /\b(marriage|family|children|parent|homeschool|husband|wife)\b/i,
+};
+
+function episodeCategories(ep) {
+  const explicit = Array.isArray(ep?.categories) ? ep.categories : [];
+  const haystack = [ep?.title, ep?.show, ep?.description, ...explicit].filter(Boolean).join(' ');
+  const matched = Object.entries(CATEGORY_RULES).filter(([, rx]) => rx.test(haystack)).map(([name]) => name);
+  explicit.forEach(cat => {
+    const clean = String(cat).trim();
+    if (clean && clean.length < 28 && !matched.includes(clean)) matched.push(clean);
+  });
+  return matched.length ? matched : ['General'];
+}
+
+function availableCategories(episodes) {
+  const counts = new Map();
+  episodes.forEach(ep => episodeCategories(ep).forEach(cat => counts.set(cat, (counts.get(cat) || 0) + 1)));
+  const preferred = ['Sermons','Theology','Prayer','Saints','Scripture','History','Family'];
+  const sorted = [...counts.entries()].sort((a,b) => {
+    const ai = preferred.indexOf(a[0]), bi = preferred.indexOf(b[0]);
+    if (ai >= 0 || bi >= 0) return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
+    return b[1] - a[1];
+  });
+  return ['All', ...sorted.slice(0, 8).map(([name]) => name)];
+}
+
+function persistQueue(queue = state.queue) {
+  state.queue = queue;
+  save('agp_queue', queue);
+}
+
+function addToQueue(ep, next = false) {
+  const key = episodeKey(ep);
+  const cleaned = state.queue.filter(item => episodeKey(item) !== key);
+  const queue = next ? [ep, ...cleaned] : [...cleaned, ep];
+  persistQueue(queue);
+  showToast(next ? 'Playing next' : 'Added to queue');
+  render();
+}
+
+function addHistory(ep, position = 0, duration = 0, completed = false) {
+  if (!ep) return;
+  const key = episodeKey(ep);
+  const entry = { ...ep, lastPlayedAt: Date.now(), position, duration, completed };
+  state.history = [entry, ...state.history.filter(item => episodeKey(item) !== key)].slice(0, 100);
+  save('agp_history', state.history);
+}
+
+function setPlaybackSpeed(rate) {
+  const safe = Math.min(3, Math.max(.5, Number(rate) || 1));
+  state.playbackSpeed = safe;
+  save('agp_speed', safe);
+  try {
+    if (typeof player.setPlaybackRate === 'function') player.setPlaybackRate(safe);
+    else if (player.audio) player.audio.playbackRate = safe;
+    else if ('playbackRate' in player) player.playbackRate = safe;
+  } catch (error) { console.warn('Playback speed could not be changed:', error); }
+  updateMediaSessionPosition(player.elapsed || 0, player.duration || 0, safe);
+}
+
+let sleepTimerId = null;
+function clearSleepTimer(showMessage = true) {
+  clearTimeout(sleepTimerId);
+  sleepTimerId = null;
+  state.sleepEndsAt = null;
+  state.sleepLabel = '';
+  if (showMessage) showToast('Sleep timer cancelled');
+  render();
+}
+
+function setSleepTimer(minutes) {
+  clearTimeout(sleepTimerId);
+  const ms = Number(minutes) * 60 * 1000;
+  state.sleepEndsAt = Date.now() + ms;
+  state.sleepLabel = `${minutes} min`;
+  sleepTimerId = setTimeout(() => {
+    player.pause();
+    state.playing = false;
+    state.sleepEndsAt = null;
+    state.sleepLabel = '';
+    updateMediaSessionPlaybackState(false);
+    showToast('Sleep timer ended');
+  }, ms);
+  showToast(`Sleep timer set for ${minutes} minutes`);
+  render();
+}
+
+function setSleepAtEpisodeEnd() {
+  clearTimeout(sleepTimerId);
+  state.sleepEndsAt = -1;
+  state.sleepLabel = 'End of episode';
+  showToast('Playback will stop at the end of this episode');
+  render();
+}
+
+const DOWNLOAD_CACHE = 'agapay-listen-audio-v1';
+async function downloadEpisode(ep) {
+  if (!ep?.url) return showToast('No downloadable audio URL');
+  const key = episodeKey(ep);
+  state.downloadProgress[key] = 1;
+  render();
+  try {
+    const response = await fetch(ep.url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const cache = await caches.open(DOWNLOAD_CACHE);
+    await cache.put(ep.url, response.clone());
+    state.downloaded.add(key);
+    save('agp_downloaded', state.downloaded);
+    showToast('Episode downloaded');
+  } catch (error) {
+    console.error('Download failed:', error);
+    showToast('Download failed');
+  } finally {
+    delete state.downloadProgress[key];
+    render();
+  }
+}
+
+async function removeDownload(ep) {
+  if (!ep?.url) return;
+  const cache = await caches.open(DOWNLOAD_CACHE);
+  await cache.delete(ep.url);
+  state.downloaded.delete(episodeKey(ep));
+  save('agp_downloaded', state.downloaded);
+  showToast('Download removed');
+  render();
+}
+
+async function cachedAudioUrl(ep) {
+  if (!ep?.url || !('caches' in window)) return null;
+  try {
+    const cache = await caches.open(DOWNLOAD_CACHE);
+    const response = await cache.match(ep.url);
+    if (!response) return null;
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  } catch { return null; }
+}
+
 function epArt(ep, size, colorIdx = 0) {
   const bg = EP_COLORS[colorIdx % EP_COLORS.length];
   const img = ep?.image
     ? `<img src="${esc(ep.image)}" style="width:${size}px;height:${size}px;object-fit:cover;position:absolute;inset:0;transition:transform 0.3s" onerror="this.remove()">`
     : '';
-  const mark = `<img src="/mark.png" style="width:${Math.round(size*0.55)}px;height:${Math.round(size*0.55)}px;opacity:0.4">`;
+  const mark = `<img src="/listen/mark.png" style="width:${Math.round(size*0.55)}px;height:${Math.round(size*0.55)}px;opacity:0.4">`;
   return `<div class="art-container" style="width:${size}px;height:${size}px;flex:none;border-radius:${Math.round(size*0.25)}px;background:${bg};box-shadow: 0 4px 12px rgba(0,0,0,0.3);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">${img}${mark}</div>`;
 }
 
@@ -117,7 +282,8 @@ async function fetchFeed(xmlUrl) {
     doc.querySelector('channel image[href]')?.getAttribute('href') ||
     doc.querySelector('channel > image > url')?.textContent?.trim() || '';
 
-  const items = [...doc.querySelectorAll('item')].slice(0, 30).map((item, i) => {
+  const channelCategories = [...doc.querySelectorAll('channel > category')].map(n => n.textContent?.trim()).filter(Boolean);
+  const items = [...doc.querySelectorAll('item')].slice(0, 50).map((item, i) => {
     const enclosure = item.querySelector('enclosure');
     return {
       guid:    (item.querySelector('guid')?.textContent || enclosure?.getAttribute('url') || String(i)).trim(),
@@ -128,7 +294,8 @@ async function fetchFeed(xmlUrl) {
       duration: item.querySelector('duration')?.textContent?.trim() || '',
       date:    item.querySelector('pubDate')?.textContent?.trim() || '',
       image:   item.querySelector('image[href]')?.getAttribute('href') || channelImage,
-      description: (item.querySelector('description')?.textContent || '').replace(/<[^>]+>/g, '').trim().slice(0, 400),
+      description: (item.querySelector('description')?.textContent || '').replace(/<[^>]+>/g, '').trim().slice(0, 1200),
+      categories: [...new Set([...channelCategories, ...[...item.querySelectorAll('category')].map(n => n.textContent?.trim()).filter(Boolean)])],
     };
   });
 
@@ -145,7 +312,7 @@ async function refreshAllFeeds() {
     } catch (e) { console.warn('Feed error:', sub.xmlUrl, e); }
   }
   all.sort((a, b) => new Date(b.date) - new Date(a.date));
-  const episodes = all.slice(0, 60);
+  const episodes = all.slice(0, 300);
   save('agp_eps', episodes);
   setState({ episodes });
 }
@@ -161,7 +328,7 @@ async function addRssFeed(xmlUrl) {
     showToast(`"${sub.title}" added`);
     const allEps = [...state.episodes.filter(e => e.xmlUrl !== sub.xmlUrl), ...items];
     allEps.sort((a, b) => new Date(b.date) - new Date(a.date));
-    const episodes = allEps.slice(0, 60);
+    const episodes = allEps.slice(0, 300);
     save('agp_eps', episodes);
     setState({ episodes });
   } catch {
@@ -182,6 +349,111 @@ async function doSearch(q) {
   }, 380);
 }
 
+// ─── Media Session / Bluetooth metadata ───────────────────────────────────────
+function updateMediaSessionMetadata(ep) {
+  if (!('mediaSession' in navigator) || !ep) return;
+
+  const artwork = [];
+  if (ep.image) {
+    artwork.push(
+      { src: ep.image, sizes: '96x96',   type: 'image/png' },
+      { src: ep.image, sizes: '192x192', type: 'image/png' },
+      { src: ep.image, sizes: '512x512', type: 'image/png' }
+    );
+  } else {
+    artwork.push(
+      { src: '/listen/images/app/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: '/listen/images/app/icon-512.png', sizes: '512x512', type: 'image/png' }
+    );
+  }
+
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: ep.title || 'Untitled Episode',
+      artist: ep.show || 'Orthodox Podcast',
+      album: 'AGAPAY Listen',
+      artwork
+    });
+  } catch (error) {
+    console.warn('Media Session metadata could not be set:', error);
+  }
+}
+
+function updateMediaSessionPlaybackState(isPlaying) {
+  if (!('mediaSession' in navigator)) return;
+  try {
+    navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+  } catch {}
+}
+
+function updateMediaSessionPosition(elapsed, duration, playbackRate = 1) {
+  if (!('mediaSession' in navigator)) return;
+  if (!Number.isFinite(duration) || duration <= 0) return;
+
+  try {
+    navigator.mediaSession.setPositionState({
+      duration,
+      playbackRate: Number.isFinite(playbackRate) && playbackRate > 0 ? playbackRate : 1,
+      position: Math.min(Math.max(Number(elapsed) || 0, 0), duration)
+    });
+  } catch {}
+}
+
+function installMediaSessionHandlers() {
+  if (!('mediaSession' in navigator)) return;
+
+  const setHandler = (action, handler) => {
+    try { navigator.mediaSession.setActionHandler(action, handler); }
+    catch {}
+  };
+
+  setHandler('play', async () => {
+    try {
+      const result = player.play();
+      if (result && typeof result.then === 'function') await result;
+      setState({ playing: true });
+      updateMediaSessionPlaybackState(true);
+    } catch (error) {
+      console.error('Bluetooth/media play action failed:', error);
+    }
+  });
+
+  setHandler('pause', () => {
+    player.pause();
+    setState({ playing: false });
+    updateMediaSessionPlaybackState(false);
+  });
+
+  setHandler('seekbackward', details => {
+    player.skipBack(details.seekOffset || 15);
+  });
+
+  setHandler('seekforward', details => {
+    player.skipForward(details.seekOffset || 30);
+  });
+
+  setHandler('seekto', details => {
+    if (!Number.isFinite(details.seekTime) || !Number.isFinite(player.duration) || player.duration <= 0) return;
+    player.seek(details.seekTime / player.duration);
+  });
+
+  setHandler('previoustrack', () => player.skipBack(15));
+
+  setHandler('nexttrack', () => {
+    if (!state.queue.length) return;
+    const [next, ...rest] = state.queue;
+    playEpisode(next, rest);
+  });
+
+  setHandler('stop', () => {
+    player.pause();
+    setState({ playing: false });
+    updateMediaSessionPlaybackState(false);
+  });
+}
+
+installMediaSessionHandlers();
+
 // ─── Playback ─────────────────────────────────────────────────────────────────
 player.on('progress', ({ progress, elapsed, duration }) => {
   state.progress = progress;
@@ -195,13 +467,23 @@ player.on('progress', ({ progress, elapsed, duration }) => {
   if (remain)  remain.textContent   = '-' + fmtTime(duration - elapsed);
   if (state.current) {
     db.saveProgress(state.current.guid, elapsed, duration);
+    if (Math.floor(elapsed) % 15 === 0) addHistory(state.current, elapsed, duration, duration > 0 && elapsed / duration >= .95);
   }
+  updateMediaSessionPosition(elapsed, duration, player.playbackRate || 1);
 });
 
 player.on('ended', () => {
   state.playing = false;
+  if (state.current) addHistory(state.current, player.duration || 0, player.duration || 0, true);
+  updateMediaSessionPlaybackState(false);
+  if (state.sleepEndsAt === -1) {
+    state.sleepEndsAt = null;
+    state.sleepLabel = '';
+    return setState({ playing: false });
+  }
   if (state.queue.length > 0) {
     const [next, ...rest] = state.queue;
+    persistQueue(rest);
     playEpisode(next, rest);
   } else {
     setState({ playing: false });
@@ -215,13 +497,19 @@ async function playEpisode(ep, queue = state.queue) {
     const localUrl = await db.getDownload(ep.guid);
     if (localUrl) audioUrl = localUrl;
   } catch {}
+  const cachedUrl = await cachedAudioUrl(ep);
+  if (cachedUrl) audioUrl = cachedUrl;
   const saved = await db.getProgress(ep.guid).catch(() => null);
   const startTime = saved?.position || 0;
   try {
     player.load(audioUrl, startTime);
+    setPlaybackSpeed(state.playbackSpeed);
+    updateMediaSessionMetadata(ep);
     const playResult = player.play();
     if (playResult && typeof playResult.then === 'function') await playResult;
     save('agp_current', ep);
+    addHistory(ep, startTime, saved?.duration || 0, false);
+    updateMediaSessionPlaybackState(true);
     setState({
       screen: 'player',
       current: ep,
@@ -351,67 +639,51 @@ function renderDescriptionSheet() {
 }
 
 // ─── Screens ──────────────────────────────────────────────────────────────────
+function renderEpisodeRow(ep, i = 0) {
+  const key = episodeKey(ep);
+  const downloaded = state.downloaded.has(key);
+  const downloading = state.downloadProgress[key];
+  const history = state.history.find(item => episodeKey(item) === key);
+  const status = history?.completed ? 'Played' : history?.position > 0 ? 'In progress' : '';
+  return `<div class="episode-row" style="display:flex;gap:13px;align-items:center;padding:13px 18px;margin:0 4px;border-radius:14px;border-bottom:1px solid rgba(255,255,255,.025)">
+    <div class="ep-tap tappable" data-ep="${encodeURIComponent(JSON.stringify(ep))}" style="display:flex;gap:13px;align-items:center;flex:1;min-width:0">
+      ${epArt(ep, 48, i)}
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;font-weight:600;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2">${esc(ep.title)}</div>
+        <div style="font-size:.62rem;color:${MUTED};margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(ep.show)}${ep.duration?' · '+esc(ep.duration):''}${ep.date?' · '+timeAgo(ep.date):''}${status?' · '+status:''}</div>
+      </div>
+    </div>
+    <button class="ep-download-btn tappable" data-ep="${encodeURIComponent(JSON.stringify(ep))}" aria-label="${downloaded?'Remove download':'Download episode'}" style="border:0;background:transparent;color:${downloaded?GOLD:MUTED};padding:8px;font-size:.72rem">${downloading?'…':downloaded?'✓':'↓'}</button>
+    <button class="ep-queue-btn tappable" data-ep="${encodeURIComponent(JSON.stringify(ep))}" aria-label="Add to queue" style="border:0;background:transparent;color:${MUTED};padding:8px;font-size:1rem">＋</button>
+  </div>`;
+}
+
 function renderHome() {
-  const eps  = state.episodes.length ? state.episodes : DEMO_EPS;
-  const cur  = state.current;
+  const allEpisodes = [...state.episodes].sort((a,b) => normalizedDate(b) - normalizedDate(a));
+  const categories = availableCategories(allEpisodes);
+  if (!categories.includes(state.activeCategory)) state.activeCategory = 'All';
+  const eps = state.activeCategory === 'All' ? allEpisodes : allEpisodes.filter(ep => episodeCategories(ep).includes(state.activeCategory));
+  const cur = state.current;
 
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:88px;background:${NIGHT}">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:${cur?'158px':'94px'};background:${NIGHT}">
     <div style="padding:16px 24px 12px;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:0.6rem;letter-spacing:0.26em;text-transform:uppercase;color:${GOLD};font-weight:700">AGAPAY</div>
-        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.8rem;font-weight:500;letter-spacing:0.04em;color:#F6F1E8;line-height:1.1">Listen</div>
-      </div>
-      <div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${GOLD}" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-      </div>
+      <div><div style="font-size:.6rem;letter-spacing:.26em;text-transform:uppercase;color:${GOLD};font-weight:700">AGAPAY</div><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.9rem;font-weight:600;letter-spacing:.04em;color:#F6F1E8;line-height:1.1">Listen</div></div>
+      <div id="refresh-feeds" class="tappable" title="Refresh podcasts" style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:${GOLD};font-size:1.1rem">↻</div>
     </div>
 
-    ${cur ? `
-    <div class="ep-tap tappable" data-ep="${encodeURIComponent(JSON.stringify(cur))}" style="margin:8px 20px 20px;padding:16px;background:linear-gradient(135deg,rgba(28,58,74,0.4),rgba(11,33,48,0.2));backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:18px;border:1px solid rgba(200,162,74,0.18);box-shadow: 0 8px 24px rgba(0,0,0,0.2)">
-      <div style="font-size:0.58rem;letter-spacing:0.22em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px">Continue Listening</div>
-      <div style="display:flex;gap:14px;align-items:center">
-        ${epArt(cur, 58, 0)}
-        <div style="flex:1;min-width:0">
-          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.05rem;font-weight:500;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2">${esc(cur.title)}</div>
-          <div style="font-size:0.68rem;color:${MUTED};margin-top:3px">${esc(cur.show)}</div>
-          <div style="margin-top:12px;height:2px;background:rgba(255,255,255,0.06);border-radius:2px;position:relative">
-            <div style="width:${state.progress.toFixed(1)}%;height:100%;background:linear-gradient(90deg,${GOLD},#D6AF5B);border-radius:2px"></div>
-          </div>
-        </div>
-        <div style="width:42px;height:42px;flex:none;border-radius:50%;background:linear-gradient(135deg,${GOLD},#A97C25);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(200,162,74,0.3)">
-          ${state.playing ? I.pause : I.play}
-        </div>
-      </div>
+    ${cur ? `<div class="ep-tap tappable" data-ep="${encodeURIComponent(JSON.stringify(cur))}" style="margin:8px 20px 22px;padding:16px;background:linear-gradient(135deg,rgba(28,58,74,.55),rgba(11,33,48,.3));backdrop-filter:blur(10px);border-radius:20px;border:1px solid rgba(200,162,74,.2);box-shadow:0 14px 34px rgba(0,0,0,.25)">
+      <div style="font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px">Continue Listening</div>
+      <div style="display:flex;gap:14px;align-items:center">${epArt(cur,60,0)}<div style="flex:1;min-width:0"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.08rem;font-weight:600;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(cur.title)}</div><div style="font-size:.68rem;color:${MUTED};margin-top:3px">${esc(cur.show)}</div><div style="margin-top:12px;height:3px;background:rgba(255,255,255,.07);border-radius:3px"><div style="width:${state.progress.toFixed(1)}%;height:100%;background:linear-gradient(90deg,${GOLD},#E5C06A);border-radius:3px"></div></div></div></div>
     </div>` : ''}
 
-    <div class="no-scrollbar" style="display:flex;gap:8px;padding:0 20px 20px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch">
-      ${['All','Sermons','Theology','Prayer','Saints','Scripture'].map((c,i) =>
-        `<div style="flex:none;padding:7px 16px;background:${i===0?`linear-gradient(135deg,${GOLD},#A97C25)`:'rgba(255,255,255,0.04)'};border:${i===0?'none':'1px solid rgba(255,255,255,0.07)'};border-radius:20px;font-size:0.68rem;color:${i===0?NIGHT:MUTED};font-weight:${i===0?'700':'500'}">${c}</div>`
-      ).join('')}
-    </div>
+    ${state.subs.length ? `<section style="margin-bottom:22px"><div style="padding:0 22px;display:flex;justify-content:space-between;align-items:baseline;margin-bottom:13px"><span style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;font-weight:600;color:#F6F1E8">Following</span><span data-nav="library" class="tappable" style="font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:${GOLD};font-weight:700">Your Library</span></div>
+      <div class="no-scrollbar" style="display:flex;gap:14px;padding:0 20px 4px;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch">${state.subs.map((sub,i)=>`<div class="show-row-tap tappable" data-show="${encodeURIComponent(JSON.stringify(sub))}" style="width:112px;flex:none;scroll-snap-align:start">${epArt(sub,112,i)}<div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:.88rem;font-weight:600;color:#F6F1E8;margin-top:9px;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(sub.title)}</div></div>`).join('')}</div></section>` : ''}
 
-    <div style="padding:0 22px;display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px">
-      <span style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.3rem;font-weight:500;color:#F6F1E8;letter-spacing:0.02em">Recent Episodes</span>
-      <span style="font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:${GOLD};font-weight:700">See All</span>
-    </div>
-    <div style="padding:0 4px">
-      ${eps.slice(0, 10).map((ep, i) => `
-        <div class="ep-tap tappable" data-ep="${encodeURIComponent(JSON.stringify(ep))}" style="display:flex;gap:14px;align-items:center;padding:12px 18px;margin:0 4px;border-radius:12px;">
-          ${epArt(ep, 46, i)}
-          <div style="flex:1;min-width:0">
-            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;font-weight:500;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2">${esc(ep.title)}</div>
-            <div style="font-size:0.62rem;color:${MUTED};margin-top:4px">${esc(ep.show)}${ep.duration?' · '+esc(ep.duration):''}${ep.date?' · '+timeAgo(ep.date):''}</div>
-          </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(200,162,74,0.35)" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>`
-      ).join('')}
-    </div>
-    ${!state.subs.length ? `
-    <div style="margin:24px 20px;padding:24px;background:rgba(200,162,74,0.03);border:1px solid rgba(200,162,74,0.12);border-radius:16px;text-align:center;box-shadow: inset 0 0 20px rgba(0,0,0,0.2)">
-      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.2rem;color:#F6F1E8;margin-bottom:6px">Expand Your Library</div>
-      <div style="font-size:0.75rem;color:${MUTED};line-height:1.5;margin-bottom:16px;padding:0 8px">Explore Discover to connect with custom Orthodox feeds or add your personal RSS link.</div>
-      <div class="tappable" data-nav="discover" style="display:inline-flex;padding:9px 22px;background:linear-gradient(135deg,${GOLD},#A97C25);border-radius:8px;font-size:0.75rem;color:${NIGHT};font-weight:700;box-shadow: 0 4px 12px rgba(200,162,74,0.15)">Browse Podcasts</div>
-    </div>` : ''}
+    <div class="no-scrollbar" style="display:flex;gap:8px;padding:0 20px 22px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch">${categories.map(cat=>{const active=cat===state.activeCategory;return `<button class="category-chip tappable" data-category="${esc(cat)}" style="flex:none;padding:8px 16px;background:${active?`linear-gradient(135deg,${GOLD},#A97C25)`:'rgba(255,255,255,.04)'};border:${active?'1px solid transparent':'1px solid rgba(255,255,255,.07)'};border-radius:22px;font-size:.68rem;color:${active?NIGHT:MUTED};font-weight:${active?'800':'600'}">${esc(cat)}</button>`}).join('')}</div>
+
+    <div style="padding:0 22px;display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px"><span style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;font-weight:600;color:#F6F1E8">${state.activeCategory==='All'?'Newest Episodes':esc(state.activeCategory)}</span><span style="font-size:.58rem;color:${MUTED}">${eps.length} episode${eps.length===1?'':'s'}</span></div>
+    <div style="padding:0 4px">${eps.length ? eps.map((ep,i)=>renderEpisodeRow(ep,i)).join('') : `<div style="margin:8px 20px;padding:28px;text-align:center;border:1px solid rgba(255,255,255,.05);border-radius:18px;color:${MUTED};font-size:.78rem">No followed-podcast episodes match this category yet.</div>`}</div>
+    ${!state.subs.length?`<div style="margin:24px 20px;padding:26px;background:rgba(200,162,74,.035);border:1px solid rgba(200,162,74,.14);border-radius:18px;text-align:center"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.25rem;color:#F6F1E8;margin-bottom:7px">Build Your Listening Library</div><div style="font-size:.75rem;color:${MUTED};line-height:1.55;margin-bottom:17px">Follow Orthodox podcasts and their newest episodes will appear here automatically.</div><div class="tappable" data-nav="discover" style="display:inline-flex;padding:10px 22px;background:linear-gradient(135deg,${GOLD},#A97C25);border-radius:10px;font-size:.75rem;color:${NIGHT};font-weight:800">Discover Podcasts</div></div>`:''}
   </div>`;
 }
 
@@ -435,7 +707,7 @@ function renderPlayer() {
       <div style="width:280px;height:280px;border-radius:20px;background:${EP_COLORS[0]};border:2px solid rgba(200,162,74,0.3);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;overflow:hidden;box-shadow: 0 20px 48px rgba(0,0,0,0.55), 0 0 40px rgba(200,162,74,0.06)">
         <div style="position:absolute;inset:-6px;border-radius:20px;border:1px solid rgba(200,162,74,0.08)"></div>
         ${ep.image ? `<img src="${esc(ep.image)}" style="width:280px;height:280px;border-radius:20px;object-fit:cover;position:absolute;inset:0" onerror="this.remove()">` : ''}
-        <img src="/mark.png" style="width:130px;height:130px;opacity:0.6;position:relative;z-index:1">
+        <img src="/listen/mark.png" style="width:130px;height:130px;opacity:0.6;position:relative;z-index:1">
       </div>
     </div>
 
@@ -468,15 +740,15 @@ function renderPlayer() {
       </div>
       
       <div class="skip-fwd tappable" style="width:52px;height:52px;display:flex;align-items:center;justify-content:center">${I.fwd30}</div>
-      <div class="tappable" data-nav="library" style="width:46px;height:46px;display:flex;align-items:center;justify-content:center">
+      <div id="open-queue-btn" class="tappable" style="width:46px;height:46px;display:flex;align-items:center;justify-content:center">
         <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="${MUTED}" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
       </div>
     </div>
 
     <div style="display:flex; justify-content:center; align-items:center; gap:16px; padding:12px 20px; border:1px solid rgba(255,255,255,0.04); border-radius:30px; background:rgba(0,0,0,0.15); width:fit-content; margin:auto; margin-top:auto;">
       ${[
-        ['sleep-btn-dummy', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', 'Sleep', MUTED],
-        ['speed-btn-dummy', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2" stroke-linecap="round"><polygon points="5,4 15,12 5,20"/><polygon points="12,4 22,12 12,20"/></svg>', '1.0×', MUTED],
+        ['sleep-btn', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>', state.sleepLabel || 'Sleep', state.sleepLabel ? GOLD : MUTED],
+        ['speed-btn', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2" stroke-linecap="round"><polygon points="5,4 15,12 5,20"/><polygon points="12,4 22,12 12,20"/></svg>', `${state.playbackSpeed.toFixed(2).replace(/0$/, '')}×`, MUTED],
         ['open-desc-btn', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C8A24A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>', 'Details', GOLD],
         ['share-btn', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A69F91" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>', 'Share', MUTED]
       ].map(([idOrSvg, svgOrLabel, labelOrColor, optionalColor]) => {
@@ -552,32 +824,21 @@ function renderDiscover() {
 }
 
 function renderLibrary() {
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:88px;background:${NIGHT}">
-    <div style="padding:16px 24px 18px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:500;color:#F6F1E8">Library</div>
+  const downloadedEpisodes = state.episodes.filter(ep => state.downloaded.has(episodeKey(ep)));
+  const recentHistory = state.history.slice(0, 12);
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-top:24px;padding-bottom:${state.current?'158px':'92px'};background:${NIGHT}">
+    <div style="padding:16px 24px 20px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.7rem;font-weight:600;color:#F6F1E8">Library</div>
 
-     <div style="padding:0 20px;margin-bottom:20px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-left:4px">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${GOLD}" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
-          <span style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:${GOLD};font-weight:700">Subscriptions</span>
-        </div>
-        <div style="background:rgba(255,255,255,0.01);border-radius:16px;border:1px solid rgba(255,255,255,0.04);overflow:hidden;box-shadow: 0 4px 20px rgba(0,0,0,0.2)">
-          ${state.subs.length ? state.subs.map((sub,i) => `
-            <div style="display:flex;gap:14px;align-items:center;padding:12px 16px;${i<state.subs.length-1?'border-bottom:1px solid rgba(255,255,255,0.04)':''}">
-              <div class="show-row-tap tappable" data-show="${encodeURIComponent(JSON.stringify(sub))}" style="display:flex;flex:1;gap:14px;align-items:center;min-width:0;">
-                ${epArt(sub, 42, i)}
-                <div style="flex:1;min-width:0">
-                  <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:0.95rem;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2">${esc(sub.title)}</div>
-                  <div style="font-size:0.58rem;color:${MUTED};margin-top:3px;font-family:monospace;opacity:0.85">${(sub.xmlUrl||'').replace(/^https?:\/\//,'').split('/')[0]}</div>
-                </div>
-              </div>
-              <div class="unfollow-btn tappable" data-url="${esc(sub.xmlUrl)}" data-title="${esc(sub.title)}"
-                style="padding:6px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;font-size:0.56rem;color:${MUTED};font-weight:600;white-space:nowrap;letter-spacing:0.02em">
-                Unfollow
-              </div>
-            </div>`
-          ).join('') : `<div style="padding:24px 16px;text-align:center;font-size:0.8rem;color:${MUTED};font-style:italic">No active subscriptions — tap Discover to begin</div>`}
-        </div>
-    </div>
+    <section style="padding:0 20px;margin-bottom:24px">
+      <div style="font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px;padding-left:4px">Subscriptions</div>
+      <div style="background:rgba(255,255,255,.01);border-radius:17px;border:1px solid rgba(255,255,255,.05);overflow:hidden;box-shadow:0 5px 22px rgba(0,0,0,.2)">
+        ${state.subs.length ? state.subs.map((sub,i)=>`<div style="display:flex;gap:14px;align-items:center;padding:12px 16px;${i<state.subs.length-1?'border-bottom:1px solid rgba(255,255,255,.04)':''}"><div class="show-row-tap tappable" data-show="${encodeURIComponent(JSON.stringify(sub))}" style="display:flex;flex:1;gap:14px;align-items:center;min-width:0">${epArt(sub,44,i)}<div style="flex:1;min-width:0"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:.98rem;font-weight:600;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(sub.title)}</div><div style="font-size:.58rem;color:${MUTED};margin-top:3px">${(sub.xmlUrl||'').replace(/^https?:\/\//,'').split('/')[0]}</div></div></div><button class="unfollow-btn tappable" data-url="${esc(sub.xmlUrl)}" data-title="${esc(sub.title)}" style="padding:6px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;font-size:.56rem;color:${MUTED};font-weight:600">Unfollow</button></div>`).join('') : `<div style="padding:25px 16px;text-align:center;font-size:.8rem;color:${MUTED}">No subscriptions yet.</div>`}
+      </div>
+    </section>
+
+    <section style="padding:0 4px;margin-bottom:24px"><div style="padding:0 22px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-family:'Cormorant Garamond',serif;font-size:1.28rem;font-weight:600;color:#F6F1E8">Downloads</span><span style="font-size:.6rem;color:${MUTED}">${downloadedEpisodes.length}</span></div>${downloadedEpisodes.length?downloadedEpisodes.map((ep,i)=>renderEpisodeRow(ep,i)).join(''):`<div style="margin:0 20px;padding:22px;text-align:center;border:1px solid rgba(255,255,255,.05);border-radius:16px;color:${MUTED};font-size:.75rem">Downloaded episodes will appear here for offline listening.</div>`}</section>
+
+    <section style="padding:0 4px;margin-bottom:24px"><div style="padding:0 22px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-family:'Cormorant Garamond',serif;font-size:1.28rem;font-weight:600;color:#F6F1E8">Listening History</span><button id="history-clear" style="border:0;background:transparent;color:${MUTED};font-size:.6rem">Clear</button></div>${recentHistory.length?recentHistory.map((ep,i)=>renderEpisodeRow(ep,i)).join(''):`<div style="margin:0 20px;padding:22px;text-align:center;border:1px solid rgba(255,255,255,.05);border-radius:16px;color:${MUTED};font-size:.75rem">Episodes you play will appear here.</div>`}</section>
   </div>`;
 }
 
@@ -695,7 +956,7 @@ function mountPremiumTheme() {
   if (document.querySelector('link[data-agp-listen-premium]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = '/listen-premium.css';
+  link.href = '/listen/listen-premium.css';
   link.dataset.agpListenPremium = 'true';
   document.head.appendChild(link);
 }
@@ -714,6 +975,14 @@ function renderMiniPlayer() {
       ${state.playing ? I.pause : I.play}
     </button>
   </div>`;
+}
+
+function renderUtilitySheets() {
+  const backdrop = (id) => `<div id="${id}" style="position:absolute;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);z-index:55"></div>`;
+  if (state.queueSheet) return `${backdrop('utility-backdrop')}<div style="position:absolute;left:0;right:0;bottom:0;max-height:72%;overflow-y:auto;background:#0B2130;border-radius:26px 26px 0 0;border-top:1px solid rgba(200,162,74,.24);z-index:56;padding:16px 20px 34px"><div style="width:42px;height:4px;background:rgba(255,255,255,.18);border-radius:4px;margin:0 auto 18px"></div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div style="font-family:'Cormorant Garamond',serif;font-size:1.45rem;color:#F6F1E8">Up Next</div><button id="queue-clear" style="border:0;background:transparent;color:${MUTED};font-size:.7rem">Clear</button></div>${state.queue.length?state.queue.map((ep,i)=>`<div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)">${epArt(ep,42,i)}<div class="queue-play tappable" data-ep="${encodeURIComponent(JSON.stringify(ep))}" style="flex:1;min-width:0"><div style="font-size:.82rem;color:#F6F1E8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(ep.title)}</div><div style="font-size:.58rem;color:${MUTED};margin-top:3px">${esc(ep.show)}</div></div><button class="queue-remove" data-key="${esc(episodeKey(ep))}" style="border:0;background:transparent;color:${MUTED};font-size:1.1rem">×</button></div>`).join(''):`<div style="padding:30px 10px;text-align:center;color:${MUTED};font-size:.8rem">Your queue is empty.</div>`}</div>`;
+  if (state.speedSheet) return `${backdrop('utility-backdrop')}<div style="position:absolute;left:0;right:0;bottom:0;background:#0B2130;border-radius:26px 26px 0 0;border-top:1px solid rgba(200,162,74,.24);z-index:56;padding:16px 22px 36px"><div style="width:42px;height:4px;background:rgba(255,255,255,.18);border-radius:4px;margin:0 auto 18px"></div><div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:#F6F1E8;margin-bottom:15px">Playback Speed</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px">${[.75,.9,1,1.1,1.2,1.3,1.5,1.75,2].map(rate=>`<button class="speed-option" data-rate="${rate}" style="padding:12px;border-radius:12px;border:1px solid ${rate===state.playbackSpeed?'rgba(200,162,74,.6)':'rgba(255,255,255,.07)'};background:${rate===state.playbackSpeed?'rgba(200,162,74,.13)':'rgba(255,255,255,.03)'};color:${rate===state.playbackSpeed?GOLD:'#F6F1E8'};font-weight:700">${rate}×</button>`).join('')}</div></div>`;
+  if (state.sleepSheet) return `${backdrop('utility-backdrop')}<div style="position:absolute;left:0;right:0;bottom:0;background:#0B2130;border-radius:26px 26px 0 0;border-top:1px solid rgba(200,162,74,.24);z-index:56;padding:16px 22px 36px"><div style="width:42px;height:4px;background:rgba(255,255,255,.18);border-radius:4px;margin:0 auto 18px"></div><div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:#F6F1E8;margin-bottom:15px">Sleep Timer</div>${[10,15,30,45,60].map(m=>`<button class="sleep-option" data-minutes="${m}" style="display:block;width:100%;padding:13px 4px;text-align:left;border:0;border-bottom:1px solid rgba(255,255,255,.04);background:transparent;color:#F6F1E8">${m} minutes</button>`).join('')}<button id="sleep-end-episode" style="display:block;width:100%;padding:13px 4px;text-align:left;border:0;border-bottom:1px solid rgba(255,255,255,.04);background:transparent;color:#F6F1E8">End of episode</button>${state.sleepLabel?`<button id="sleep-cancel" style="display:block;width:100%;padding:14px 4px;text-align:left;border:0;background:transparent;color:${GOLD}">Cancel current timer (${esc(state.sleepLabel)})</button>`:''}</div>`;
+  return '';
 }
 
 // ─── Main render ──────────────────────────────────────────────────────────────
@@ -739,6 +1008,7 @@ function render() {
     ${renderToast()}
     ${renderRssSheet()}
     ${renderDescriptionSheet()}
+    ${renderUtilitySheets()}
   `;
 
   bindEvents();
@@ -749,6 +1019,35 @@ function bindEvents() {
   document.querySelectorAll('[data-nav]').forEach(el => {
     el.addEventListener('click', () => setState({ screen: el.dataset.nav }));
   });
+
+  document.querySelectorAll('.category-chip').forEach(btn => btn.addEventListener('click', () => {
+    state.activeCategory = btn.dataset.category || 'All';
+    save('agp_category', state.activeCategory);
+    render();
+  }));
+
+  document.querySelectorAll('.show-row-tap').forEach(el => el.addEventListener('click', () => {
+    try { setState({ currentShow: JSON.parse(decodeURIComponent(el.dataset.show)), screen: 'show' }); }
+    catch (error) { console.error('Could not open podcast:', error); }
+  }));
+
+  document.getElementById('refresh-feeds')?.addEventListener('click', async () => {
+    showToast('Refreshing followed podcasts…');
+    await refreshAllFeeds();
+  });
+
+  document.querySelectorAll('.ep-queue-btn').forEach(btn => btn.addEventListener('click', e => {
+    e.stopPropagation();
+    try { addToQueue(JSON.parse(decodeURIComponent(btn.dataset.ep))); } catch {}
+  }));
+
+  document.querySelectorAll('.ep-download-btn').forEach(btn => btn.addEventListener('click', e => {
+    e.stopPropagation();
+    try {
+      const ep = JSON.parse(decodeURIComponent(btn.dataset.ep));
+      state.downloaded.has(episodeKey(ep)) ? removeDownload(ep) : downloadEpisode(ep);
+    } catch {}
+  }));
 
   document.querySelectorAll('.ep-tap').forEach(el => {
     el.addEventListener('click', (e) => {
@@ -780,9 +1079,22 @@ function bindEvents() {
   });
 
 
-  document.querySelector('.play-pause')?.addEventListener('click', () => {
-    if (state.playing) { player.pause(); setState({ playing: false }); }
-    else               { player.play();  setState({ playing: true });  }
+  document.querySelector('.play-pause')?.addEventListener('click', async () => {
+    if (state.playing) {
+      player.pause();
+      updateMediaSessionPlaybackState(false);
+      setState({ playing: false });
+    } else {
+      try {
+        const result = player.play();
+        if (result && typeof result.then === 'function') await result;
+        updateMediaSessionPlaybackState(true);
+        setState({ playing: true });
+      } catch (error) {
+        console.error('Playback resume failed:', error);
+        showToast('Could not resume playback');
+      }
+    }
   });
 
   document.querySelector('.skip-back')?.addEventListener('click', () => player.skipBack(15));
@@ -817,6 +1129,19 @@ function bindEvents() {
   document.getElementById('open-desc-btn')?.addEventListener('click', () => setState({ descriptionSheet: true }));
   document.getElementById('desc-backdrop')?.addEventListener('click', () => setState({ descriptionSheet: false }));
   document.getElementById('desc-close-btn')?.addEventListener('click', () => setState({ descriptionSheet: false }));
+
+  document.getElementById('sleep-btn')?.addEventListener('click', () => setState({ sleepSheet: true }));
+  document.getElementById('speed-btn')?.addEventListener('click', () => setState({ speedSheet: true }));
+  document.getElementById('open-queue-btn')?.addEventListener('click', () => setState({ queueSheet: true }));
+  document.getElementById('utility-backdrop')?.addEventListener('click', () => setState({ queueSheet:false, speedSheet:false, sleepSheet:false }));
+  document.querySelectorAll('.speed-option').forEach(btn => btn.addEventListener('click', () => { setPlaybackSpeed(btn.dataset.rate); setState({ speedSheet:false }); }));
+  document.querySelectorAll('.sleep-option').forEach(btn => btn.addEventListener('click', () => { setSleepTimer(btn.dataset.minutes); state.sleepSheet=false; render(); }));
+  document.getElementById('sleep-end-episode')?.addEventListener('click', () => { setSleepAtEpisodeEnd(); state.sleepSheet=false; render(); });
+  document.getElementById('sleep-cancel')?.addEventListener('click', () => clearSleepTimer());
+  document.getElementById('queue-clear')?.addEventListener('click', () => { persistQueue([]); render(); });
+  document.getElementById('history-clear')?.addEventListener('click', () => { state.history=[]; save('agp_history', []); render(); });
+  document.querySelectorAll('.queue-remove').forEach(btn => btn.addEventListener('click', () => { persistQueue(state.queue.filter(ep => episodeKey(ep) !== btn.dataset.key)); render(); }));
+  document.querySelectorAll('.queue-play').forEach(btn => btn.addEventListener('click', () => { try { const ep=JSON.parse(decodeURIComponent(btn.dataset.ep)); persistQueue(state.queue.filter(item=>episodeKey(item)!==episodeKey(ep))); playEpisode(ep,state.queue); } catch {} }));
 
   // Search Input Handler Fix
   document.getElementById('search-input')?.addEventListener('input', (e) => {
