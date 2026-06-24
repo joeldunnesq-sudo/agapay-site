@@ -98,7 +98,7 @@
   position: absolute;
   left: 12px;
   right: 12px;
-  bottom: calc(78px + env(safe-area-inset-bottom));
+  bottom: 78px;
   z-index: 34;
   display: grid;
   grid-template-columns: auto minmax(0,1fr) auto;
@@ -154,16 +154,11 @@
   box-shadow: 0 8px 24px rgba(200,162,74,.28);
 }
 
-.agp-screen-enter {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  animation: agpFade .28s ease both;
-}
+.agp-screen-enter { animation: agpFade .28s ease both; }
 
 @keyframes agpFade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 @keyframes agpRise {
   from { opacity: 0; transform: translateY(10px) scale(.985); }
@@ -190,169 +185,39 @@
 }
 
 /* ─────────────────────────────────────────────
-   Mobile viewport and platform-safe layout
+   Android / Pixel system navigation bar fix
+   Keep the browser and installed PWA in a dark color scheme so the
+   gesture-navigation area inherits AGAPAY navy instead of white.
 ───────────────────────────────────────────── */
 :root {
-  --agp-safe-top: 0px;
-  --agp-safe-bottom: 0px;
+  color-scheme: dark;
+  background-color: #061522;
 }
 
 html,
 body {
-  width: 100%;
-  height: 100%;
   margin: 0;
-  overflow: hidden;
-  background: #061522 !important;
-  overscroll-behavior: none;
-  -webkit-text-size-adjust: 100%;
+  width: 100%;
+  min-height: 100%;
+  background-color: #061522 !important;
+  color-scheme: dark;
 }
 
 body {
-  min-height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 #listen-app {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-  background-color: #061522;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: #061522 !important;
 }
 
-/* Safe areas are enabled only on Apple mobile devices. */
-html.agp-ios {
-  --agp-safe-top: env(safe-area-inset-top, 0px);
-  --agp-safe-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-html.agp-ios,
-html.agp-ios body {
-  height: 100%;
-  min-height: -webkit-fill-available;
-}
-
-html.agp-ios #listen-app {
-  height: 100%;
-  min-height: -webkit-fill-available;
-}
-
-#listen-app > div {
-  box-sizing: border-box;
-}
-
-#listen-app button,
-#listen-app .tappable {
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-}
-
-/* iOS zooms inputs smaller than 16px. This need not affect buttons. */
-html.agp-ios #listen-app input,
-html.agp-ios #listen-app textarea,
-html.agp-ios #listen-app select {
-  font-size: 16px;
-}
-
-#listen-app .no-scrollbar {
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-
-#listen-app .no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.agp-player-artwork img {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-/* Short and narrow iPhones need a more compact player. */
-@media (max-width: 430px), (max-height: 760px) {
-  .agp-player-artwork {
-    width: min(62vw, 248px) !important;
-    height: min(62vw, 248px) !important;
-  }
-}
-
-@media (max-width: 375px), (max-height: 680px) {
-  .agp-player-artwork {
-    width: min(56vw, 218px) !important;
-    height: min(56vw, 218px) !important;
-  }
-}
-
-/* Standalone Android should never expose a light page edge beneath the app. */
-html:not(.agp-ios),
-html:not(.agp-ios) body,
-html:not(.agp-ios) #listen-app {
-  background: #061522 !important;
-}
-
-/* Desktop presentation remains framed rather than fixed edge-to-edge. */
-@media (min-width: 700px) {
+@media (display-mode: standalone) {
   html,
-  body {
-    overflow: auto;
-  }
-
+  body,
   #listen-app {
-    height: calc(100vh - 48px);
-    min-height: 680px;
-  }
-}
-
-/* ─── Player sheet, touch scrubbing, and roomier home rows ─────────────── */
-.agp-player-sheet {
-  will-change: transform, opacity;
-  overscroll-behavior-y: contain;
-}
-
-#player-drag-zone {
-  cursor: grab;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-#player-drag-zone:active {
-  cursor: grabbing;
-}
-
-#seekbar {
-  cursor: ew-resize;
-}
-
-#seekbar #pgthumb {
-  transition: width .16s ease, height .16s ease, box-shadow .16s ease;
-}
-
-#seekbar:active #pgthumb {
-  width: 17px !important;
-  height: 17px !important;
-  box-shadow: 0 0 0 7px rgba(200,162,74,.15), 0 0 14px rgba(200,162,74,.8) !important;
-}
-
-.episode-row--roomy {
-  min-height: 94px;
-  box-shadow: 0 7px 22px rgba(0,0,0,.10);
-}
-
-.continue-play-pause {
-  color: #061522;
-}
-
-@media (max-width: 430px) {
-  .episode-row--roomy {
-    align-items: center !important;
-  }
-
-  .episode-row--roomy .ep-play-next-btn {
-    display: none;
-  }
-
-  .episode-row--roomy button {
-    padding-left: 6px !important;
-    padding-right: 6px !important;
+    background-color: #061522 !important;
   }
 }
