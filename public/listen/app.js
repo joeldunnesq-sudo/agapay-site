@@ -8,6 +8,14 @@ import { AudioPlayer } from './player.js';
 import { ListenDB }    from './db.js';
 import { importOpml, exportOpml } from './opml.js';
 
+// Platform flags keep iOS safe-area behavior from affecting Android.
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_STANDALONE = window.matchMedia?.('(display-mode: standalone)').matches ||
+  window.navigator.standalone === true;
+document.documentElement.classList.toggle('agp-ios', IS_IOS);
+document.documentElement.classList.toggle('agp-standalone', IS_STANDALONE);
+
 // ─── Brand tokens ────────────────────────────────────────────────────────────
 const GOLD   = '#C8A24A';
 const NIGHT  = '#061522';
@@ -787,7 +795,7 @@ function renderBottomNav() {
       <span style="font-size:9px;color:${c};font-weight:${active?'600':'500'};letter-spacing:0.04em">${label}</span>
     </div>`;
   };
-  return `<div style="position:absolute;bottom:0;left:0;right:0;min-height:76px;height:calc(76px + env(safe-area-inset-bottom));background:rgba(6,21,34,0.94);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid rgba(200,162,74,0.10);display:flex;align-items:flex-start;justify-content:space-around;padding-top:12px;padding-bottom:env(safe-area-inset-bottom);box-sizing:border-box;z-index:30">
+  return `<div style="position:absolute;bottom:0;left:0;right:0;min-height:calc(76px + var(--agp-safe-bottom));height:auto;background:rgba(6,21,34,0.94);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid rgba(200,162,74,0.10);display:flex;align-items:flex-start;justify-content:space-around;padding-top:12px;padding-bottom:var(--agp-safe-bottom);box-sizing:border-box;z-index:30;box-shadow:0 12px 0 #061522">
     ${tab('home',     'Home',     I.home)}
     ${tab('discover', 'Discover', I.disc)}
     ${tab('library',  'Library',  I.lib)}
@@ -797,7 +805,7 @@ function renderBottomNav() {
 
 function renderToast() {
   if (!state.toast) return '';
-  return `<div style="position:absolute;bottom:calc(88px + env(safe-area-inset-bottom));left:16px;right:16px;background:linear-gradient(135deg,#1C3A4A,#0B2130);border:1px solid rgba(200,162,74,0.3);border-radius:12px;padding:14px 18px;z-index:50;display:flex;align-items:center;gap:10px;box-shadow: 0 8px 24px rgba(0,0,0,0.4);pointer-events:none">
+  return `<div style="position:absolute;bottom:calc(88px + var(--agp-safe-bottom));left:16px;right:16px;background:linear-gradient(135deg,#1C3A4A,#0B2130);border:1px solid rgba(200,162,74,0.3);border-radius:12px;padding:14px 18px;z-index:50;display:flex;align-items:center;gap:10px;box-shadow: 0 8px 24px rgba(0,0,0,0.4);pointer-events:none">
     <div style="width:20px;height:20px;flex:none;border-radius:50%;background:linear-gradient(135deg,#C8A24A,#A97C25);display:flex;align-items:center;justify-content:center">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#061522" stroke-width="3.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
@@ -809,7 +817,7 @@ function renderRssSheet() {
   if (!state.rssSheet) return '';
   return `
     <div id="rss-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:45"></div>
-    <div style="position:absolute;bottom:0;left:0;right:0;background:#0B2130;border-radius:24px 24px 0 0;border-top:1px solid rgba(200,162,74,0.22);z-index:46;padding:0 22px calc(36px + env(safe-area-inset-bottom))">
+    <div style="position:absolute;bottom:0;left:0;right:0;background:#0B2130;border-radius:24px 24px 0 0;border-top:1px solid rgba(200,162,74,0.22);z-index:46;padding:0 22px calc(36px + var(--agp-safe-bottom))">
       <div style="display:flex;justify-content:center;padding:14px 0 18px"><div style="width:40px;height:4px;background:rgba(255,255,255,0.18);border-radius:2px"></div></div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${GOLD}" stroke-width="2"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="2"/></svg>
@@ -828,7 +836,7 @@ function renderDescriptionSheet() {
   const infoText = ep.description ? ep.description : 'No summary metadata listed for this episode channel.';
   return `
     <div id="desc-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:45"></div>
-    <div style="position:absolute;bottom:0;left:0;right:0;max-height:65%;background:#0B2130;border-radius:24px 24px 0 0;border-top:1px solid rgba(200,162,74,0.22);z-index:46;padding:0 24px calc(40px + env(safe-area-inset-bottom));display:flex;flex-direction:column">
+    <div style="position:absolute;bottom:0;left:0;right:0;max-height:65%;background:#0B2130;border-radius:24px 24px 0 0;border-top:1px solid rgba(200,162,74,0.22);z-index:46;padding:0 24px calc(40px + var(--agp-safe-bottom));display:flex;flex-direction:column">
       <div style="display:flex;justify-content:center;padding:14px 0 12px;flex-shrink:0"><div style="width:40px;height:4px;background:rgba(255,255,255,0.18);border-radius:2px"></div></div>
       <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;font-weight:500;color:#F6F1E8;margin-bottom:4px;flex-shrink:0;letter-spacing:0.01em">${esc(ep.title)}</div>
       <div style="font-size:0.65rem;color:${GOLD};font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:16px;flex-shrink:0">${esc(ep.show)}</div>
@@ -840,7 +848,7 @@ function renderDescriptionSheet() {
 }
 
 // ─── Screens ──────────────────────────────────────────────────────────────────
-function renderEpisodeRow(ep, i = 0) {
+function renderEpisodeRow(ep, i = 0, roomy = false) {
   const key = episodeKey(ep);
   const downloaded = state.downloaded.has(key);
   const downloading = state.downloadProgress[key];
@@ -849,12 +857,18 @@ function renderEpisodeRow(ep, i = 0) {
   const liked = isLiked(ep);
   const encoded = encodeURIComponent(JSON.stringify(ep));
 
-  return `<div class="episode-row" style="display:flex;gap:8px;align-items:center;padding:13px 14px;margin:0 4px;border-radius:14px;border-bottom:1px solid rgba(255,255,255,.025)">
-    <div class="ep-tap tappable" data-ep="${encoded}" style="display:flex;gap:13px;align-items:center;flex:1;min-width:0">
-      ${epArt(ep, 48, i)}
+  const rowPadding = roomy ? '17px 16px' : '13px 14px';
+  const artSize = roomy ? 62 : 48;
+  const titleSize = roomy ? '1.08rem' : '1rem';
+  const metaSize = roomy ? '.68rem' : '.62rem';
+  const rowGap = roomy ? 12 : 8;
+
+  return `<div class="episode-row ${roomy ? 'episode-row--roomy' : ''}" style="display:flex;gap:${rowGap}px;align-items:center;padding:${rowPadding};margin:0 8px 8px;border-radius:18px;border:1px solid ${roomy ? 'rgba(255,255,255,.045)' : 'transparent'};background:${roomy ? 'rgba(255,255,255,.018)' : 'transparent'}">
+    <div class="ep-tap tappable" data-ep="${encoded}" style="display:flex;gap:${roomy ? 15 : 13}px;align-items:center;flex:1;min-width:0">
+      ${epArt(ep, artSize, i)}
       <div style="flex:1;min-width:0">
-        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;font-weight:600;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2">${esc(ep.title)}</div>
-        <div style="font-size:.62rem;color:${MUTED};margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(ep.show)}${ep.duration?' · '+esc(ep.duration):''}${ep.date?' · '+timeAgo(ep.date):''}${status?' · '+status:''}</div>
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:${titleSize};font-weight:600;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:${roomy ? 2 : 1};-webkit-box-orient:vertical;line-height:1.22">${esc(ep.title)}</div>
+        <div style="font-size:${metaSize};color:${MUTED};margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(ep.show)}${ep.duration?' · '+esc(ep.duration):''}${ep.date?' · '+timeAgo(ep.date):''}${status?' · '+status:''}</div>
       </div>
     </div>
     <button class="ep-like-btn tappable" data-ep="${encoded}" aria-label="${liked?'Unlike':'Like episode'}" style="border:0;background:transparent;padding:8px;display:flex;color:${liked?GOLD:MUTED}">
@@ -873,7 +887,7 @@ function renderHome() {
   const eps = state.activeCategory === 'All' ? allEpisodes : allEpisodes.filter(ep => episodeCategories(ep).includes(state.activeCategory));
   const cur = state.current;
 
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:${cur?'calc(166px + env(safe-area-inset-bottom))':'calc(94px + env(safe-area-inset-bottom))'};background:${NIGHT};box-sizing:border-box">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + var(--agp-safe-top));padding-bottom:calc(94px + var(--agp-safe-bottom));background:${NIGHT};box-sizing:border-box">
     <div style="padding:16px 24px 12px;display:flex;align-items:center;justify-content:space-between">
       <div style="display:flex;align-items:center;gap:12px">
         <img
@@ -901,9 +915,19 @@ function renderHome() {
       </div>
     </div>
 
-    ${cur ? `<div class="ep-tap tappable" data-ep="${encodeURIComponent(JSON.stringify(cur))}" style="margin:8px 20px 22px;padding:16px;background:linear-gradient(135deg,rgba(28,58,74,.55),rgba(11,33,48,.3));backdrop-filter:blur(10px);border-radius:20px;border:1px solid rgba(200,162,74,.2);box-shadow:0 14px 34px rgba(0,0,0,.25)">
+    ${cur ? `<div class="continue-card" style="margin:8px 20px 22px;padding:16px;background:linear-gradient(135deg,rgba(28,58,74,.55),rgba(11,33,48,.3));backdrop-filter:blur(10px);border-radius:20px;border:1px solid rgba(200,162,74,.2);box-shadow:0 14px 34px rgba(0,0,0,.25)">
       <div style="font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:${GOLD};font-weight:700;margin-bottom:12px">Continue Listening</div>
-      <div style="display:flex;gap:14px;align-items:center">${epArt(cur,60,0)}<div style="flex:1;min-width:0"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.08rem;font-weight:600;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(cur.title)}</div><div style="font-size:.68rem;color:${MUTED};margin-top:3px">${esc(cur.show)}</div><div style="margin-top:12px;height:3px;background:rgba(255,255,255,.07);border-radius:3px"><div style="width:${state.progress.toFixed(1)}%;height:100%;background:linear-gradient(90deg,${GOLD},#E5C06A);border-radius:3px"></div></div></div></div>
+      <div style="display:flex;gap:14px;align-items:center">
+        <div class="continue-open tappable" data-ep="${encodeURIComponent(JSON.stringify(cur))}" style="display:flex;gap:14px;align-items:center;flex:1;min-width:0">
+          ${epArt(cur,60,0)}
+          <div style="flex:1;min-width:0">
+            <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.08rem;font-weight:600;color:#F6F1E8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(cur.title)}</div>
+            <div style="font-size:.68rem;color:${MUTED};margin-top:3px">${esc(cur.show)}</div>
+            <div style="margin-top:12px;height:3px;background:rgba(255,255,255,.07);border-radius:3px"><div style="width:${state.progress.toFixed(1)}%;height:100%;background:linear-gradient(90deg,${GOLD},#E5C06A);border-radius:3px"></div></div>
+          </div>
+        </div>
+        <button class="continue-play-pause tappable" type="button" aria-label="${state.playing ? 'Pause' : 'Play'}" style="width:48px;height:48px;flex:none;border:0;border-radius:50%;background:linear-gradient(135deg,${GOLD},#A97C25);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(200,162,74,.28)">${state.playing ? I.pause : I.play}</button>
+      </div>
     </div>` : ''}
 
     ${state.subs.length ? `<section style="margin-bottom:22px"><div style="padding:0 22px;display:flex;justify-content:space-between;align-items:baseline;margin-bottom:13px"><span style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;font-weight:600;color:#F6F1E8">Following</span><span data-nav="library" class="tappable" style="font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:${GOLD};font-weight:700">Your Library</span></div>
@@ -912,7 +936,7 @@ function renderHome() {
     <div class="no-scrollbar" style="display:flex;gap:8px;padding:0 20px 22px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch">${categories.map(cat=>{const active=cat===state.activeCategory;return `<button class="category-chip tappable" data-category="${esc(cat)}" style="flex:none;padding:8px 16px;background:${active?`linear-gradient(135deg,${GOLD},#A97C25)`:'rgba(255,255,255,.04)'};border:${active?'1px solid transparent':'1px solid rgba(255,255,255,.07)'};border-radius:22px;font-size:.68rem;color:${active?NIGHT:MUTED};font-weight:${active?'800':'600'}">${esc(cat)}</button>`}).join('')}</div>
 
     <div style="padding:0 22px;display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px"><span style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.35rem;font-weight:600;color:#F6F1E8">${state.activeCategory==='All'?'Newest Episodes':esc(state.activeCategory)}</span><span style="font-size:.58rem;color:${MUTED}">${eps.length} episode${eps.length===1?'':'s'}</span></div>
-    <div style="padding:0 4px">${eps.length ? eps.map((ep,i)=>renderEpisodeRow(ep,i)).join('') : `<div style="margin:8px 20px;padding:28px;text-align:center;border:1px solid rgba(255,255,255,.05);border-radius:18px;color:${MUTED};font-size:.78rem">No followed-podcast episodes match this category yet.</div>`}</div>
+    <div style="padding:0 4px">${eps.length ? eps.map((ep,i)=>renderEpisodeRow(ep,i,true)).join('') : `<div style="margin:8px 20px;padding:28px;text-align:center;border:1px solid rgba(255,255,255,.05);border-radius:18px;color:${MUTED};font-size:.78rem">No followed-podcast episodes match this category yet.</div>`}</div>
     ${!state.subs.length?`<div style="margin:24px 20px;padding:26px;background:rgba(200,162,74,.035);border:1px solid rgba(200,162,74,.14);border-radius:18px;text-align:center"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.25rem;color:#F6F1E8;margin-bottom:7px">Build Your Listening Library</div><div style="font-size:.75rem;color:${MUTED};line-height:1.55;margin-bottom:17px">Follow Orthodox podcasts and their newest episodes will appear here automatically.</div><div class="tappable" data-nav="discover" style="display:inline-flex;padding:10px 22px;background:linear-gradient(135deg,${GOLD},#A97C25);border-radius:10px;font-size:.75rem;color:${NIGHT};font-weight:800">Discover Podcasts</div></div>`:''}
   </div>`;
 }
@@ -922,14 +946,11 @@ function renderPlayer() {
   const pct = state.progress.toFixed(1) + '%';
   const liked = isLiked(ep);
 
-  return `<div style="position:absolute;inset:0;background:linear-gradient(180deg,#0a1d2e 0%,#061522 55%,#030a12 100%);overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:calc(20px + env(safe-area-inset-bottom));box-sizing:border-box">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:24px 24px 8px">
-      <div class="back-btn tappable" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-      </div>
-      <div style="font-size:0.6rem;letter-spacing:0.24em;text-transform:uppercase;color:${GOLD};font-weight:700">Now Playing</div>
-      <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2.5"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+  return `<div id="player-sheet" class="agp-player-sheet" style="position:absolute;left:0;right:0;top:calc(10px + var(--agp-safe-top));bottom:0;background:linear-gradient(180deg,#0a1d2e 0%,#061522 55%,#030a12 100%);overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;padding-bottom:calc(20px + var(--agp-safe-bottom));box-sizing:border-box;border-radius:28px 28px 0 0;box-shadow:0 -12px 55px rgba(0,0,0,.42);touch-action:pan-y">
+    <div id="player-drag-zone" style="position:sticky;top:0;z-index:8;padding:10px 20px 8px;background:linear-gradient(180deg,rgba(10,29,46,.98),rgba(10,29,46,.78),transparent);touch-action:none">
+      <div id="player-drag-handle" style="width:44px;height:5px;margin:0 auto 9px;border-radius:999px;background:rgba(246,241,232,.28)"></div>
+      <div style="display:flex;align-items:center;justify-content:center;min-height:24px">
+        <div style="font-size:0.6rem;letter-spacing:0.24em;text-transform:uppercase;color:${GOLD};font-weight:700">Now Playing</div>
       </div>
     </div>
 
@@ -946,7 +967,7 @@ function renderPlayer() {
     </div>
 
     <div style="padding:0 32px;margin-bottom:18px;margin-top:auto">
-      <div id="seekbar" class="tappable" style="height:24px;display:flex;align-items:center;position:relative">
+      <div id="seekbar" class="tappable" style="height:34px;display:flex;align-items:center;position:relative;touch-action:none;user-select:none;-webkit-user-select:none">
         <div style="width:100%;height:3.5px;background:rgba(255,255,255,0.08);border-radius:4px;position:relative">
           <div id="pgfill" style="position:absolute;left:0;top:0;height:100%;width:${pct};background:linear-gradient(90deg,${GOLD},#E5C06A);border-radius:4px"></div>
         </div>
@@ -1001,7 +1022,7 @@ function renderDiscover() {
 
   const groups = [...new Set(CURATED_PODCASTS.map(podcast => podcast.category))];
 
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:${state.current?'calc(166px + env(safe-area-inset-bottom))':'calc(94px + env(safe-area-inset-bottom))'};background:${NIGHT};box-sizing:border-box">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + var(--agp-safe-top));padding-bottom:calc(94px + var(--agp-safe-bottom));background:${NIGHT};box-sizing:border-box">
     <div style="padding:16px 24px 14px;display:flex;align-items:center;justify-content:space-between">
       <div>
         <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.72rem;font-weight:600;letter-spacing:.03em;color:#F6F1E8">Discover</div>
@@ -1067,7 +1088,7 @@ function renderDiscover() {
 function renderLibrary() {
   const downloadedEpisodes = state.episodes.filter(ep => state.downloaded.has(episodeKey(ep)));
   const recentHistory = state.history.slice(0, 12);
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:${state.current?'calc(166px + env(safe-area-inset-bottom))':'calc(94px + env(safe-area-inset-bottom))'};background:${NIGHT};box-sizing:border-box">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + var(--agp-safe-top));padding-bottom:calc(94px + var(--agp-safe-bottom));background:${NIGHT};box-sizing:border-box">
     <div style="padding:16px 24px 20px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.7rem;font-weight:600;color:#F6F1E8">Library</div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:0 20px 22px">
@@ -1095,7 +1116,7 @@ function renderShowDetail() {
   // Filter global feeds array down to matching target show RSS references exclusively
   const showEps = state.episodes.filter(ep => ep.xmlUrl === show.xmlUrl);
 
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:calc(94px + env(safe-area-inset-bottom));background:${NIGHT};box-sizing:border-box">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + var(--agp-safe-top));padding-bottom:calc(94px + var(--agp-safe-bottom));background:${NIGHT};box-sizing:border-box">
     <div style="display:flex;align-items:center;gap:14px;padding:16px 20px 20px;">
       <div class="show-back-btn tappable" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -1134,7 +1155,7 @@ function renderShowDetail() {
 }
 
 function renderQueuePage() {
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:${state.current?'calc(104px + env(safe-area-inset-bottom))':'calc(32px + env(safe-area-inset-bottom))'};background:${NIGHT};box-sizing:border-box">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + var(--agp-safe-top));padding-bottom:${state.current?'calc(104px + var(--agp-safe-bottom))':'calc(32px + var(--agp-safe-bottom))'};background:${NIGHT};box-sizing:border-box">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 18px">
       <div style="display:flex;align-items:center;gap:13px">
         <button class="library-back-btn tappable" style="width:38px;height:38px;border:0;border-radius:50%;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center">
@@ -1166,7 +1187,7 @@ function renderQueuePage() {
 
 function renderLikesPage() {
   const likedEpisodes = [...state.likedEpisodes].sort((a,b)=>(b.likedAt||0)-(a.likedAt||0));
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:${state.current?'calc(104px + env(safe-area-inset-bottom))':'calc(32px + env(safe-area-inset-bottom))'};background:${NIGHT};box-sizing:border-box">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + var(--agp-safe-top));padding-bottom:${state.current?'calc(104px + var(--agp-safe-bottom))':'calc(32px + var(--agp-safe-bottom))'};background:${NIGHT};box-sizing:border-box">
     <div style="display:flex;align-items:center;gap:13px;padding:16px 20px 18px">
       <button class="library-back-btn tappable" style="width:38px;height:38px;border:0;border-radius:50%;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F6F1E8" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
       <div><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:600;color:#F6F1E8">Liked Episodes</div><div style="font-size:.62rem;color:${MUTED};margin-top:2px">Your saved listening collection</div></div>
@@ -1176,7 +1197,7 @@ function renderLikesPage() {
 }
 
 function renderProfile() {
-  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + env(safe-area-inset-top));padding-bottom:calc(94px + env(safe-area-inset-bottom));background:${NIGHT};box-sizing:border-box">
+  return `<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(12px + var(--agp-safe-top));padding-bottom:calc(94px + var(--agp-safe-bottom));background:${NIGHT};box-sizing:border-box">
     <div style="padding:16px 24px 20px;font-family:'Cormorant Garamond',Georgia,serif;font-size:1.65rem;font-weight:500;color:#F6F1E8">Profile</div>
       
     <div style="display:flex;flex-direction:column;align-items:center;padding:4px 22px 24px">
@@ -1293,7 +1314,6 @@ function render() {
   // Build inner interface layout
   root.innerHTML = `
     <div class="agp-screen-enter">${screen}</div>
-    ${renderMiniPlayer()}
     ${(!['player','show','queue','likes'].includes(state.screen)) ? renderBottomNav() : ''}
     ${renderToast()}
     ${renderRssSheet()}
@@ -1365,20 +1385,6 @@ function bindEvents() {
     });
   });
 
-  document.querySelector('.back-btn')?.addEventListener('click', () => setState({ screen: 'home' }));
-
-  document.getElementById('mini-player-open')?.addEventListener('click', (e) => {
-    if (e.target.closest('.mini-play-pause')) return;
-    setState({ screen: 'player' });
-  });
-
-  document.querySelector('.mini-play-pause')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (state.playing) { player.pause(); setState({ playing: false }); }
-    else { player.play(); setState({ playing: true }); }
-  });
-
-
   document.querySelector('.play-pause')?.addEventListener('click', async () => {
     if (state.playing) {
       player.pause();
@@ -1400,9 +1406,97 @@ function bindEvents() {
   document.querySelector('.skip-back')?.addEventListener('click', () => player.skipBack(15));
   document.querySelector('.skip-fwd')?.addEventListener('click',  () => player.skipForward(30));
 
-  document.getElementById('seekbar')?.addEventListener('click', (e) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    player.seek((e.clientX - r.left) / r.width);
+  const seekbar = document.getElementById('seekbar');
+  if (seekbar) {
+    let scrubbing = false;
+    const seekFromPointer = (event) => {
+      const rect = seekbar.getBoundingClientRect();
+      const clientX = event.clientX ?? event.touches?.[0]?.clientX;
+      if (!Number.isFinite(clientX) || rect.width <= 0) return;
+      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const pct = ratio * 100;
+      const fill = document.getElementById('pgfill');
+      const thumb = document.getElementById('pgthumb');
+      if (fill) fill.style.width = `${pct}%`;
+      if (thumb) thumb.style.left = `${pct}%`;
+      player.seek(ratio);
+    };
+    seekbar.addEventListener('pointerdown', (event) => {
+      scrubbing = true;
+      seekbar.setPointerCapture?.(event.pointerId);
+      seekFromPointer(event);
+      event.preventDefault();
+    });
+    seekbar.addEventListener('pointermove', (event) => {
+      if (!scrubbing) return;
+      seekFromPointer(event);
+      event.preventDefault();
+    });
+    const stopScrub = (event) => {
+      if (!scrubbing) return;
+      seekFromPointer(event);
+      scrubbing = false;
+      try { seekbar.releasePointerCapture?.(event.pointerId); } catch {}
+    };
+    seekbar.addEventListener('pointerup', stopScrub);
+    seekbar.addEventListener('pointercancel', () => { scrubbing = false; });
+  }
+
+  const dragZone = document.getElementById('player-drag-zone');
+  const playerSheet = document.getElementById('player-sheet');
+  if (dragZone && playerSheet) {
+    let dragStartY = 0;
+    let dragDistance = 0;
+    let draggingSheet = false;
+    dragZone.addEventListener('pointerdown', (event) => {
+      draggingSheet = true;
+      dragStartY = event.clientY;
+      dragDistance = 0;
+      dragZone.setPointerCapture?.(event.pointerId);
+      playerSheet.style.transition = 'none';
+      event.preventDefault();
+    });
+    dragZone.addEventListener('pointermove', (event) => {
+      if (!draggingSheet) return;
+      dragDistance = Math.max(0, event.clientY - dragStartY);
+      playerSheet.style.transform = `translateY(${dragDistance}px)`;
+      event.preventDefault();
+    });
+    const finishSheetDrag = (event) => {
+      if (!draggingSheet) return;
+      draggingSheet = false;
+      try { dragZone.releasePointerCapture?.(event.pointerId); } catch {}
+      playerSheet.style.transition = 'transform .28s cubic-bezier(.2,.8,.2,1), opacity .28s ease';
+      if (dragDistance > 90) {
+        playerSheet.style.transform = 'translateY(100%)';
+        playerSheet.style.opacity = '0';
+        setTimeout(() => setState({ screen: 'home' }), 220);
+      } else {
+        playerSheet.style.transform = 'translateY(0)';
+      }
+    };
+    dragZone.addEventListener('pointerup', finishSheetDrag);
+    dragZone.addEventListener('pointercancel', finishSheetDrag);
+  }
+
+  document.querySelector('.continue-open')?.addEventListener('click', () => setState({ screen: 'player' }));
+  document.querySelector('.continue-play-pause')?.addEventListener('click', async (event) => {
+    event.stopPropagation();
+    if (state.playing) {
+      player.pause();
+      updateMediaSessionPlaybackState(false);
+      setState({ playing: false });
+    } else {
+      try {
+        const result = player.play();
+        if (result && typeof result.then === 'function') await result;
+        updateMediaSessionPlaybackState(true);
+        setState({ playing: true });
+      } catch (error) {
+        console.error('Continue Listening playback failed:', error);
+        showToast('Could not resume playback');
+      }
+    }
   });
 
   document.querySelector('.like-btn')?.addEventListener('click', () => {
