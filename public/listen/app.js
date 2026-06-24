@@ -263,9 +263,43 @@ async function cachedAudioUrl(ep) {
 
 function epArt(ep, size, colorIdx = 0) {
   const bg = EP_COLORS[colorIdx % EP_COLORS.length];
+
   const img = ep?.image
-    ? `<img src="${esc(ep.image)}" style="width:${size}px;height:${size}px;object-fit:cover;position:absolute;inset:0;transition:transform 0.3s" onerror="this.remove()">`
-  return `<div class="art-container" style="width:${size}px;height:${size}px;flex:none;border-radius:${Math.round(size*0.25)}px;background:${bg};box-shadow:0 4px 12px rgba(0,0,0,0.3);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center">${img}</div>`;
+    ? `<img
+        src="${esc(ep.image)}"
+        alt=""
+        style="
+          width:${size}px;
+          height:${size}px;
+          object-fit:cover;
+          position:absolute;
+          inset:0;
+          transition:transform 0.3s;
+        "
+        onerror="this.remove()"
+      >`
+    : '';
+
+  return `
+    <div
+      class="art-container"
+      style="
+        width:${size}px;
+        height:${size}px;
+        flex:none;
+        border-radius:${Math.round(size * 0.25)}px;
+        background:${bg};
+        box-shadow:0 4px 12px rgba(0,0,0,0.3);
+        position:relative;
+        overflow:hidden;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+      "
+    >
+      ${img}
+    </div>
+  `;
 }
 
 // ─── RSS / Podcast Index API ──────────────────────────────────────────────────
