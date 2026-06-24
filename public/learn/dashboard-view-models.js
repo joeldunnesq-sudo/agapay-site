@@ -1304,7 +1304,8 @@ export function toPrintCenterViewModel(rawPayload) {
     term: {
       label: text(printCenter.term?.label, ""),
       paceMode: text(printCenter.term?.paceMode, ""),
-      week: text(printCenter.week?.label, "")
+      week: text(printCenter.week?.label, ""),
+      monthKey: text(printCenter.month?.key, new Date().toISOString().slice(0, 7))
     },
     templates: simpleList(printCenter.templates, (template, index) => ({
       id: text(template.id, ""),
