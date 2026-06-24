@@ -2793,37 +2793,198 @@ function renderSetup(vm) {
 }
 
 function renderPrintCenter(vm) {
-  const householdTemplates = vm.templates.filter((template) => template.audience === "mom" || template.audience === "household");
-  const childTemplates = vm.templates.filter((template) => template.audience === "child");
-  const freePlan = !isLearnFamilyPlan();
+  const householdTemplates = vm.templates.filter((t) => t.audience === "mom" || t.audience === "household");
+  const childTemplates     = vm.templates.filter((t) => t.audience === "child");
+  const freePlan  = !isLearnFamilyPlan();
   const remaining = Math.max(0, vm.billing.printLimit - printCount());
-  const accessBadge = (template) => `<span style="width:max-content;border:1px solid ${template.premium ? "var(--gold)" : "var(--line)"};background:${template.premium ? "#fbf2dd" : "#edf6ef"};color:${template.premium ? "var(--gold)" : "#365f3b"};border-radius:999px;padding:4px 9px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">${template.premium ? "Family Plan" : "Free"}</span>`;
-  const templateCard = (template) => `<article data-print-template="${html(template.id)}" data-print-premium="${template.premium ? "true" : "false"}" style="border:1px solid ${template.premium ? "var(--gold)" : "var(--line)"};border-radius:10px;background:${template.premium && freePlan ? "#fff8e8" : "var(--paper2)"};padding:14px;display:flex;flex-direction:column;gap:8px;box-shadow:${template.premium && freePlan ? "inset 0 0 0 1px rgba(181,148,47,.18)" : "none"};"><div style="display:flex;justify-content:space-between;gap:10px;align-items:start;"><small style="display:block;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;">${html(template.type)}</small>${accessBadge(template)}</div><strong style="display:block;">${html(template.title)}</strong><span style="display:block;color:var(--muted);line-height:1.35;">${html(template.description)}</span><button type="button" data-print-generate="${html(template.id)}" style="margin-top:auto;border:1px solid ${template.premium && freePlan ? "var(--gold)" : "var(--line)"};background:${template.premium && freePlan ? "#f3ead4" : "var(--navy)"};color:${template.premium && freePlan ? "var(--ink)" : "#fff"};border-radius:9px;padding:9px 12px;font-family:inherit;cursor:pointer;font-weight:700;">${template.premium && freePlan ? "Upgrade to Print" : "Generate PDF"}</button></article>`;
+  const nearLimit = freePlan && remaining <= 1;
+
+  // ── Pill badge ─────────────────────────────────────────────────────────────
+  const accessBadge = (template) => {
+    const isPrem = template.premium;
+    return isPrem
+      ? `<span style="flex:none;border:1px solid var(--gold);background:#fbf2dd;color:var(--gold);border-radius:999px;padding:3px 9px;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;">Family</span>`
+      : `<span style="flex:none;border:1px solid #c2d9c4;background:#edf6ef;color:#365f3b;border-radius:999px;padding:3px 9px;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;">Free</span>`;
+  };
+
+  // ── Household template card ─────────────────────────────────────────────────
+  // Locked-for-free-plan cards show an upgrade CTA instead of Generate.
+  const templateCard = (template) => {
+    const locked = template.premium && freePlan;
+    const bg     = locked ? "#fffaed" : "var(--paper)";
+    const border = locked ? "var(--gold)" : "var(--line)";
+    const btnBg  = locked ? "transparent" : "var(--navy)";
+    const btnBorder = locked ? "var(--gold)" : "var(--navy)";
+    const btnColor  = locked ? "var(--gold)" : "#fff";
+    const btnLabel  = locked ? "Upgrade to unlock" : "Generate PDF";
+    return `
+      <article data-print-template="${html(template.id)}" data-print-premium="${locked ? "true" : "false"}"
+        style="border:1px solid ${border};border-radius:12px;background:${bg};padding:16px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;">
+        ${locked ? `<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),#dac88f);"></div>` : ""}
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <small style="color:var(--muted);font-size:10px;letter-spacing:.12em;text-transform:uppercase;line-height:1.3;">${html(template.type || "Household")}</small>
+          ${accessBadge(template)}
+        </div>
+        <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:19px;line-height:1.2;color:var(--ink);">${html(template.title)}</strong>
+        <span style="display:block;color:var(--muted);font-size:13px;line-height:1.45;flex:1;">${html(template.description)}</span>
+        <button type="button" data-print-generate="${html(template.id)}"
+          style="margin-top:4px;border:1.5px solid ${btnBorder};background:${btnBg};color:${btnColor};border-radius:9px;padding:10px 14px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;text-align:center;">
+          ${locked ? `<span style="margin-right:5px;font-size:12px;">🔒</span>` : ""}${btnLabel}
+        </button>
+      </article>`;
+  };
+
+  // ── Child sheet card ────────────────────────────────────────────────────────
+  const childCard = (template) => {
+    const locked    = freePlan; // all child sheets require Family plan
+    const initial   = html((template.child || "").charAt(0).toUpperCase() || "C");
+    const avatarBg  = template.color || "var(--slate)";
+    const btnBg     = locked ? "transparent" : "var(--navy)";
+    const btnBorder = locked ? "var(--gold)" : "var(--navy)";
+    const btnColor  = locked ? "var(--gold)" : "#fff";
+    return `
+      <article data-print-template="${html(template.id)}" data-print-premium="${locked ? "true" : "false"}"
+        style="border:1px solid ${locked ? "var(--gold)" : "var(--line)"};border-radius:12px;background:${locked ? "#fffaed" : "var(--paper)"};padding:14px;display:flex;flex-direction:column;gap:9px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="flex:none;width:36px;height:36px;border-radius:50%;background:${avatarBg};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;">${initial}</span>
+          <div style="min-width:0;">
+            <strong style="display:block;font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(template.title)}</strong>
+            <small style="color:var(--muted);font-size:11px;">${html(template.description)}</small>
+          </div>
+          ${accessBadge(template)}
+        </div>
+        <button type="button" data-print-generate="${html(template.id)}"
+          style="border:1.5px solid ${btnBorder};background:${btnBg};color:${btnColor};border-radius:9px;padding:9px 12px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;text-align:center;">
+          ${locked ? `<span style="margin-right:5px;font-size:11px;">🔒</span>Upgrade to unlock` : "Generate PDF"}
+        </button>
+      </article>`;
+  };
+
+  // ── Plan status bar ─────────────────────────────────────────────────────────
+  const usedPct = freePlan ? Math.round(((vm.billing.printLimit - remaining) / vm.billing.printLimit) * 100) : 0;
+  const statusBar = freePlan
+    ? `<div style="margin-top:8px;height:5px;border-radius:99px;background:var(--line);overflow:hidden;">
+         <div style="height:100%;width:${usedPct}%;background:${nearLimit ? "var(--burgundy)" : "var(--gold)"};border-radius:99px;transition:width .4s;"></div>
+       </div>
+       <small style="display:block;margin-top:5px;color:${nearLimit ? "var(--burgundy)" : "var(--muted)"};font-size:11px;">
+         ${remaining} of ${vm.billing.printLimit} free prints remaining
+       </small>`
+    : "";
+
+  // ── Quick-generate strip (most useful action, always visible) ───────────────
+  const quickStrip = `
+    <div style="background:var(--navy);border-radius:14px;padding:20px 22px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+      <div>
+        <div style="color:var(--goldsoft);font-size:10px;letter-spacing:.18em;font-weight:800;text-transform:uppercase;margin-bottom:4px;">This week</div>
+        <strong style="font-family:'Cormorant Garamond',serif;font-size:24px;color:#fff;line-height:1.1;">${html(vm.term.label)}</strong>
+        <span style="display:block;color:var(--goldsoft);font-size:13px;margin-top:2px;">${html(vm.term.week)}${vm.job.range ? " · " + html(vm.job.range) : ""}</span>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <button type="button" data-print-generate="weekly-pack"
+          style="background:var(--gold);color:var(--navy2);border:none;border-radius:10px;padding:12px 22px;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap;">
+          ⬇ Weekly Pack
+        </button>
+        ${!freePlan ? `<button type="button" data-print-generate="print_mom_month"
+          style="background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.28);border-radius:10px;padding:12px 18px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+          Month Calendar
+        </button>` : ""}
+      </div>
+    </div>`;
+
+  // ── Plan banner ─────────────────────────────────────────────────────────────
+  const planBanner = `
+    <div style="border:1px solid ${nearLimit ? "var(--burgundy)" : freePlan ? "var(--line)" : "rgba(181,148,47,.35)"};
+      background:${freePlan ? "var(--paper)" : "linear-gradient(135deg,#fffdf5,#fdf5dc)"};
+      border-radius:14px;padding:16px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:220px;">
+        <strong style="font-family:'Cormorant Garamond',serif;font-size:21px;color:var(--ink);">
+          ${freePlan ? "Free Plan" : "✦ Family Plan Active"}
+        </strong>
+        <span style="display:block;color:var(--muted);font-size:13px;margin-top:3px;line-height:1.45;">
+          ${freePlan
+            ? "Household print packs are available. Child sheets, term packs, and unlimited prints require the Family plan."
+            : "Unlimited printing unlocked — household plans, child sheets, term packs, and all premium templates."}
+        </span>
+        ${statusBar}
+      </div>
+      ${freePlan
+        ? `<button type="button" data-print-upgrade
+             style="flex:none;background:var(--navy);color:#fff;border:1px solid var(--gold);border-radius:10px;padding:11px 20px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+             Upgrade — Family Plan
+           </button>`
+        : `<span style="flex:none;color:var(--gold);font-size:13px;font-weight:700;padding-top:4px;">Unlocked ✦</span>`}
+    </div>`;
+
+  // ── Household templates grid ────────────────────────────────────────────────
+  const householdGrid = householdTemplates.length
+    ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;">${householdTemplates.map(templateCard).join("")}</div>`
+    : emptyState("No household templates available for this setup.");
+
+  // ── Child sheets grid ───────────────────────────────────────────────────────
+  const childGrid = childTemplates.length
+    ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">${childTemplates.map(childCard).join("")}</div>`
+    : `<div style="padding:16px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:13px;line-height:1.5;">
+         Child sheets appear here once children are added in Setup. Each child gets a weekly assignment sheet and term plan.
+       </div>`;
+
+  // ── Reports coming-soon section ─────────────────────────────────────────────
+  const upcomingReports = [
+    { label: "Progress summaries",      desc: "Term and year snapshots by child, Form, and subject." },
+    { label: "Report cards",            desc: "Narrative, complete/incomplete, percentage, and letter-grade formats." },
+    { label: "Transcripts",             desc: "Course, credit, grade, and school-year records for older students." },
+    { label: "State reporting exports", desc: "Attendance, subject progress, and portfolio-ready summaries." },
+  ];
+
+  const reportsSection = `
+    <section id="reports" style="background:linear-gradient(135deg,var(--paper),var(--paper2));border:1px solid rgba(181,148,47,.35);border-radius:14px;padding:22px;display:grid;gap:18px;scroll-margin-top:110px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div style="color:var(--gold);font-size:10px;letter-spacing:.18em;font-weight:800;text-transform:uppercase;margin-bottom:6px;">Reports &amp; Records</div>
+          <h2 style="font-family:'Cormorant Garamond',serif;font-size:30px;line-height:1.05;margin:0 0 6px;color:var(--ink);">Beautiful records, built from work already done.</h2>
+          <p style="margin:0;color:var(--muted);font-size:13px;line-height:1.5;max-width:640px;">This workspace will turn saved lessons, narrations, subject progress, and term closures into polished homeschool records. Staged for a future release.</p>
+        </div>
+        <span style="flex:none;border:1px solid var(--gold);border-radius:999px;background:var(--navy);color:#fffaf0;padding:7px 14px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">Coming Soon</span>
+      </div>
+      ${vm.reports?.stats?.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;">${vm.reports.stats.map((stat) => `
+        <article style="border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.6);padding:14px;">
+          <small style="display:block;color:var(--gold);font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;">${html(stat.label)}</small>
+          <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:26px;margin-top:4px;color:var(--ink);">${html(stat.value)}</strong>
+          <span style="display:block;color:var(--muted);font-size:12px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${html(stat.sub)}</span>
+        </article>`).join("")}</div>` : ""}
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
+        ${upcomingReports.map((r) => `
+          <article style="border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:14px;opacity:.78;">
+            <strong style="display:block;color:var(--ink);margin-bottom:4px;">${r.label}</strong>
+            <p style="margin:0;color:var(--muted);font-size:13px;line-height:1.4;">${r.desc}</p>
+          </article>`).join("")}
+      </div>
+    </section>`;
+
+  // ── Outputs reference ───────────────────────────────────────────────────────
+  const outputsPanel = panel("What You Can Print", `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;">
+      <div>
+        <div style="color:var(--gold);font-size:10px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;margin-bottom:8px;">Household</div>
+        ${(vm.outputs?.household || vm.sampleOutputs?.mom || []).map((item) => `<div style="padding:7px 0;border-top:1px solid var(--line);font-size:13px;color:var(--ink);">${html(item)}</div>`).join("")}
+      </div>
+      <div>
+        <div style="color:var(--gold);font-size:10px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;margin-bottom:8px;">Child</div>
+        ${(vm.outputs?.child || vm.sampleOutputs?.child || []).map((item) => `<div style="padding:7px 0;border-top:1px solid var(--line);font-size:13px;color:var(--ink);">${html(item)}</div>`).join("")}
+      </div>
+      ${(vm.outputs?.planner || vm.sampleOutputs?.planner || []).length ? `<div>
+        <div style="color:var(--gold);font-size:10px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;margin-bottom:8px;">Planner</div>
+        ${(vm.outputs?.planner || vm.sampleOutputs?.planner || []).map((item) => `<div style="padding:7px 0;border-top:1px solid var(--line);font-size:13px;color:var(--ink);">${html(item)}</div>`).join("")}
+      </div>` : ""}
+    </div>`, { icon: "✥" });
+
   const body = `
     <section data-screen-label="Print Center" style="display:flex;flex-direction:column;gap:18px;">
-      <div style="border:1px solid ${freePlan && (vm.billing.childCount > 2 || remaining === 0) ? "var(--gold)" : "var(--line)"};background:var(--paper);border-radius:14px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
-        <div><strong style="font-family:'Cormorant Garamond',serif;font-size:23px;">${freePlan ? "Free Print Access" : "Family Plan Active"}</strong><small style="display:block;color:var(--muted);margin-top:3px;">${freePlan ? `${remaining} of ${vm.billing.printLimit} basic household prints remaining. Family plan unlocks child sheets, term packs, and larger households.` : "Unlimited Learn printing is unlocked for this household."}</small></div>
-        ${freePlan ? `<button type="button" data-print-upgrade style="background:var(--navy);color:#fff;border:1px solid var(--gold);border-radius:10px;padding:11px 18px;font-family:inherit;cursor:pointer;">Upgrade Family Plan</button>` : `<span style="color:var(--gold);font-weight:700;">Unlocked</span>`}
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 330px;gap:16px;align-items:start;">
-        ${panel("Print Packs", `<div style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:12px;">${householdTemplates.map(templateCard).join("")}</div>`, { icon: "▤" })}
-        ${panel("Draft Job", `<strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">${html(vm.job.status)}</strong><div style="margin-top:8px;color:var(--muted);line-height:1.55;">${html(vm.term.label)}<br>${html(vm.term.week)}<br>${html(vm.job.range)} · ${html(vm.job.format)}</div><button type="button" data-print-generate="weekly-pack" style="margin-top:14px;width:100%;background:var(--navy);color:#fff;border:none;border-radius:10px;padding:11px;font-family:inherit;cursor:pointer;">Generate Print Pack</button>`, { icon: "✒" })}
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 420px;gap:16px;align-items:start;">
-        ${panel("Child Sheets", `<div style="display:grid;grid-template-columns:repeat(2,minmax(190px,1fr));gap:10px;">${childTemplates.map((template) => `<article data-print-template="${html(template.id)}" data-print-premium="${template.premium ? "true" : "false"}" style="border:1px solid ${template.premium ? "var(--gold)" : "var(--line)"};border-radius:10px;background:${template.premium && freePlan ? "#fff8e8" : "var(--paper2)"};padding:11px;display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:flex-start;"><span style="width:34px;height:34px;border-radius:50%;background:${template.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(template.child.charAt(0) || "C")}</span><span><span style="display:flex;justify-content:space-between;gap:8px;align-items:start;"><strong>${html(template.title)}</strong>${accessBadge(template)}</span><small style="display:block;color:var(--muted);">${html(template.description)}</small><button type="button" data-print-generate="${html(template.id)}" style="margin-top:9px;border:1px solid ${freePlan ? "var(--gold)" : "var(--line)"};background:${freePlan ? "#f3ead4" : "var(--navy)"};color:${freePlan ? "var(--ink)" : "#fff"};border-radius:8px;padding:7px 10px;font-family:inherit;cursor:pointer;font-weight:700;">${freePlan ? "Upgrade to Print" : "Generate PDF"}</button></span></article>`).join("")}</div>`, { icon: "◎" })}
-        ${panel("Print Preview", `<div style="border:1px solid var(--line);border-radius:10px;background:#fffaf0;padding:22px;min-height:420px;"><div style="text-align:center;color:var(--gold);font-size:30px;">✥</div><h2 style="font-family:'Cormorant Garamond',serif;text-align:center;margin:8px 0 4px;">${html(vm.document.title)}</h2><p style="text-align:center;color:var(--muted);margin:0 0 16px;">${html(vm.document.subtitle)}</p>${vm.document.sections.map((section) => `<div style="margin-top:14px;"><strong style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;font-size:12px;">${html(section.title)}</strong>${section.items.map((item) => `<div style="display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:8px 0;"><span><strong>${html(item.label)}</strong><small style="display:block;color:var(--muted);">${html(item.detail)}</small></span><span>${html(item.minutes)}m</span></div>`).join("")}</div>`).join("")}</div>`, { icon: "☰" })}
-      </div>
-      <section id="reports" style="background:linear-gradient(135deg,#fffaf0,#f5ead1);border:1px solid rgba(181,148,47,.42);border-radius:14px;padding:20px;display:grid;gap:16px;scroll-margin-top:110px;">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;"><div><div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:800;text-transform:uppercase;">Reports & Records</div><h2 style="font-family:'Cormorant Garamond',serif;font-size:32px;line-height:1;margin:7px 0 5px;color:var(--ink);">Beautiful records, built from work already completed.</h2><p style="margin:0;color:var(--muted);line-height:1.45;max-width:760px;">This workspace will turn saved lessons, subject progress, attendance, narrations, and term closures into polished homeschool records. It is intentionally staged for a later release.</p></div><span style="border:1px solid var(--gold);border-radius:999px;background:var(--navy);color:#fffaf0;padding:7px 12px;font-size:11px;font-weight:800;letter-spacing:.08em;white-space:nowrap;">COMING SOON</span></div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;">${vm.reports.stats.map((stat) => `<article style="border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.58);padding:13px;"><small style="display:block;color:var(--gold);letter-spacing:.09em;text-transform:uppercase;font-weight:800;">${html(stat.label)}</small><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:25px;margin-top:3px;">${html(stat.value)}</strong><span style="display:block;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(stat.sub)}</span></article>`).join("")}</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">
-          <article style="border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:14px;"><strong>Progress summaries</strong><p style="color:var(--muted);line-height:1.4;margin:5px 0 0;">Term and year snapshots by child, Form, and subject.</p></article>
-          <article style="border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:14px;"><strong>Report cards</strong><p style="color:var(--muted);line-height:1.4;margin:5px 0 0;">Narrative, complete/incomplete, percentage, and letter-grade formats.</p></article>
-          <article style="border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:14px;"><strong>Transcripts</strong><p style="color:var(--muted);line-height:1.4;margin:5px 0 0;">Course, credit, grade, and school-year records for older students.</p></article>
-          <article style="border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:14px;"><strong>State reporting exports</strong><p style="color:var(--muted);line-height:1.4;margin:5px 0 0;">Printable attendance, subject progress, and portfolio-ready summaries.</p></article>
-        </div>
-      </section>
-      ${panel("Available Outputs", `<div style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:14px;"><div><strong>Household</strong>${vm.outputs.household.map((item) => `<div style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</div>`).join("")}</div><div><strong>Child</strong>${vm.outputs.child.map((item) => `<div style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</div>`).join("")}</div></div>`, { icon: "✥" })}
+      ${quickStrip}
+      ${planBanner}
+      ${panel("Household Plans", householdGrid, { icon: "▤" })}
+      ${panel("Child Sheets", childGrid, { icon: "◎" })}
+      ${reportsSection}
+      ${outputsPanel}
     </section>`;
   return shell(vm, body);
 }
