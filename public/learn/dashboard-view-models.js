@@ -1286,6 +1286,18 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
 export function toPrintCenterViewModel(rawPayload) {
   const printCenter = rawPayload?.printCenter || {};
   const reports = toReportsViewModel({ reports: printCenter.reports || {} });
+  // printLimit comes from the billing API (advisory) — view model receives it via rawPayload.printLimit
+  // which mount() attaches after resolving billing status. Fall back to 3 if not present.
+  const printLimit = Math.max(1, Number(rawPayload?.printLimit || 3));
+  const PLANNER_PREMIUM_TYPES = new Set([
+    "term-plan", "liturgical-school-calendar",
+    "planner-lesson-week-form", "planner-lesson-month-form", "planner-lesson-term-form",
+    "planner-lesson-week-child", "planner-lesson-month-child", "planner-lesson-term-child",
+    "planner-chores-day", "planner-chores-week", "planner-chores-month", "planner-chores-week-child",
+    "planner-meals-week", "planner-meals-month",
+    "planner-events-month",
+    "planner-recipes", "planner-grocery-week",
+  ]);
   return {
     shell: shellFromPayload("print-center", { "print-center": printCenter }),
     page: page("print-center", "Print Center", "Prepare limited, useful print packs for the household and each child."),
@@ -1300,9 +1312,10 @@ export function toPrintCenterViewModel(rawPayload) {
       audience: text(template.audience, ""),
       type: text(template.templateType, ""),
       description: text(template.description, ""),
+      childId: text(template.childId, ""),
       child: template.child ? childName(template.child, index) : "",
       color: ACCENTS[index % ACCENTS.length],
-      premium: template.audience === "child" || template.templateType === "term-plan" || template.templateType === "liturgical-school-calendar"
+      premium: template.audience === "child" || PLANNER_PREMIUM_TYPES.has(template.templateType || "")
     })),
     document: {
       title: text(printCenter.printDocument?.title, "Print Preview"),
@@ -1324,12 +1337,13 @@ export function toPrintCenterViewModel(rawPayload) {
     },
     outputs: {
       household: safeArray(printCenter.sampleOutputs?.mom).map((item) => text(item)),
-      child: safeArray(printCenter.sampleOutputs?.child).map((item) => text(item))
+      child: safeArray(printCenter.sampleOutputs?.child).map((item) => text(item)),
+      planner: safeArray(printCenter.sampleOutputs?.planner).map((item) => text(item))
     },
     reports,
     billing: {
       childCount: safeArray(printCenter.children).length,
-      printLimit: 3
+      printLimit
     }
   };
 }
