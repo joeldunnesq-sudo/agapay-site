@@ -11,6 +11,7 @@ import {
 
 const pageKey = document.body.dataset.learnPage || "dashboard";
 const root = document.getElementById("learnRoot");
+let learnGoogleCalendarStatus = { loaded: false, configured: false, connected: false };
 
 function html(value) {
   return String(value ?? "")
@@ -420,6 +421,8 @@ function plannerSidebarSubnav(activePage) {
 
 function sidebar(vm) {
   const active = vm.page.id;
+  const gcalConfigured = learnGoogleCalendarStatus.loaded ? learnGoogleCalendarStatus.configured : vm.shell.gcalConfigured;
+  const gcalConnected = learnGoogleCalendarStatus.loaded ? learnGoogleCalendarStatus.connected : vm.shell.gcalConnected;
   return `
     <aside class="learn-product-sidebar" data-learn-sidebar>
       <div class="learn-product-sidebar-scroll">
@@ -443,10 +446,10 @@ function sidebar(vm) {
         `).join("")}
         </nav>
         <button class="learn-product-google-sync" type="button" data-learn-google-sync
-          ${vm.shell.gcalConfigured ? "" : "disabled aria-disabled=\"true\" title=\"Google Calendar sync is not yet configured\""}
-          style="${vm.shell.gcalConfigured ? "" : "opacity:.45;cursor:not-allowed;"}">
+          ${gcalConfigured ? "" : "disabled aria-disabled=\"true\" title=\"Google Calendar sync is not yet configured\""}
+          style="${gcalConfigured ? "" : "opacity:.45;cursor:not-allowed;"}">
           <span aria-hidden="true">G</span>
-          <span><strong>Google Calendar</strong><small>${vm.shell.gcalConnected ? "Sync connected" : vm.shell.gcalConfigured ? "Connect family sync" : "Not yet configured"}</small></span>
+          <span><strong>Google Calendar</strong><small>${gcalConnected ? "Sync connected" : gcalConfigured ? "Connect family sync" : "Not yet configured"}</small></span>
         </button>
       </div>
     </aside>
@@ -2455,6 +2458,37 @@ function setupDayPicker(value, legacyFrequency = "") {
   return `<details class="learn-day-picker"><summary><span>Days</span><strong data-day-summary>${html(summary)}</strong></summary><div class="learn-day-picker-menu">${setupWeekdays.map((day) => `<label><input type="checkbox" data-day-choice value="${day.value}" ${selected.includes(day.value) ? "checked" : ""}>${day.label}</label>`).join("")}</div><input type="hidden" name="scheduledDays" value="${html(selected.join(","))}"></details>`;
 }
 
+const DEFAULT_TERM_WEEK_COUNT = 12;
+
+function scheduledTermWeeks(value, totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
+  const direct = Array.isArray(value) ? value : String(value || "").split(",");
+  const selected = direct
+    .map((week) => Number.parseInt(week, 10))
+    .filter((week) => Number.isInteger(week) && week >= 1 && week <= totalWeeks);
+  return selected.length ? [...new Set(selected)].sort((a, b) => a - b) : Array.from({ length: totalWeeks }, (_, index) => index + 1);
+}
+
+function termWeekSummary(weeks = [], totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
+  const selected = scheduledTermWeeks(weeks, totalWeeks);
+  if (selected.length === totalWeeks) return `All ${totalWeeks} weeks`;
+  if (!selected.length) return "Choose weeks";
+  const ranges = [];
+  let start = selected[0];
+  let previous = selected[0];
+  for (const week of selected.slice(1)) {
+    if (week === previous + 1) { previous = week; continue; }
+    ranges.push(start === previous ? `${start}` : `${start}-${previous}`);
+    start = previous = week;
+  }
+  ranges.push(start === previous ? `${start}` : `${start}-${previous}`);
+  return `Weeks ${ranges.join(", ")}`;
+}
+
+function setupTermWeekPicker(value, totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
+  const selected = scheduledTermWeeks(value, totalWeeks);
+  return `<details class="learn-day-picker learn-term-week-picker"><summary><span>Term weeks</span><strong data-term-week-summary>${html(termWeekSummary(selected, totalWeeks))}</strong></summary><div class="learn-day-picker-menu" style="grid-template-columns:repeat(4,minmax(54px,1fr));">${Array.from({ length: totalWeeks }, (_, index) => index + 1).map((week) => `<label><input type="checkbox" data-term-week-choice value="${week}" ${selected.includes(week) ? "checked" : ""}>W${week}</label>`).join("")}</div><div style="display:flex;gap:8px;padding:8px 10px 2px;"><button type="button" data-term-weeks-all class="learn-add-button" style="padding:6px 10px;">All weeks</button><button type="button" data-term-weeks-odd class="learn-add-button" style="padding:6px 10px;">Odd weeks</button><button type="button" data-term-weeks-even class="learn-add-button" style="padding:6px 10px;">Even weeks</button></div><input type="hidden" name="scheduledWeeks" value="${html(selected.join(","))}"></details>`;
+}
+
 const sourceTypeOptions = [
   { value: "book", label: "Book - show on Books page" },
   { value: "curriculum", label: "Curriculum / lesson plan" },
@@ -2498,15 +2532,15 @@ function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId 
   const activeGroupField = groupingMode === "grades"
     ? `${setupSelect(groupLabel, "gradeLabel", subject.gradeLabel || "", [{ value: "", label: "All grades" }, ...groupOptions])}<input type="hidden" name="formLabel" value="${html(subject.formLabel || "")}" />`
     : `${setupSelect(groupLabel, "formLabel", subject.formLabel || "", [{ value: "", label: "All Forms" }, ...groupOptions])}<input type="hidden" name="gradeLabel" value="${html(subject.gradeLabel || "")}" />`;
-  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main">${setupInput("Subject / skill", "title", subject.title || "")}${setupSelect("School-day area", "subjectType", subject.subjectType || subject.type || "language-arts", subjectTypeOptions)}${setupSelect("Planning Mode", "planningMode", subject.planningMode || "forms", planningModeOptionsFor(groupingMode))}${setupInput("Book / curriculum / source", "resource", subject.resource || "")}${setupSelect("Source type", "resourceType", subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"), sourceTypeOptions)}${setupSelect("Track by", "progressionType", subject.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", subject.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", subject.currentNumber || subject.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", subject.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutes", subject.minutes || "", { type: "number" })}${setupRemoveButton()}</div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupDayPicker(subject.scheduledDays, subject.weeklyFrequency || subject.cadenceLabel || "daily")}${setupSelect("Specific child", "childId", subject.childId || "", [{ value: "", label: "Use Planning Mode" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main">${setupInput("Subject / skill", "title", subject.title || "")}${setupSelect("School-day area", "subjectType", subject.subjectType || subject.type || "language-arts", subjectTypeOptions)}${setupSelect("Planning Mode", "planningMode", subject.planningMode || "forms", planningModeOptionsFor(groupingMode))}${setupInput("Book / curriculum / source", "resource", subject.resource || "")}${setupSelect("Source type", "resourceType", subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"), sourceTypeOptions)}${setupSelect("Track by", "progressionType", subject.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", subject.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", subject.currentNumber || subject.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", subject.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutes", subject.minutes || "", { type: "number" })}${setupRemoveButton()}</div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupDayPicker(subject.scheduledDays, subject.weeklyFrequency || subject.cadenceLabel || "daily")}${setupTermWeekPicker(subject.scheduledWeeks)}${setupSelect("Specific child", "childId", subject.childId || "", [{ value: "", label: "Use Planning Mode" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function bookSetupRow(book = {}, terms = [], currentTermId = "") {
-  return `<div data-setup-row="books" data-id="${html(book.id || "")}" style="display:grid;grid-template-columns:1.1fr .9fr .7fr .75fr .55fr .55fr .55fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Title", "title", book.title || "")}${setupInput("Author", "author", book.author || "")}${setupInput("Category", "category", book.category || "")}${setupSelect("Planning Mode", "planningMode", book.planningMode || (book.formLabel ? "forms" : "family"), planningModeOptions)}${setupInput("Start Ch.", "startChapter", book.startChapter || "", { type: "number" })}${setupInput("Done Ch.", "currentChapter", book.currentChapter || book.startChapter || "", { type: "number" })}${setupInput("End Ch.", "endChapter", book.endChapter || book.totalChapters || "", { type: "number" })}${setupColorSelect("Planner Color", "color", book.color || colorChoices[2])}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;">${setupSelect("Term", "termId", book.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("Form", "formLabel", book.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupSelect("Frequency", "weeklyFrequency", book.weeklyFrequency || "daily", weeklyFrequencyOptions)}${setupSelect("Audience", "audienceLabel", book.audienceLabel || "Household", ["Household", "Morning Basket", "Independent", "Read-Aloud"])}${setupInput("Minutes", "minutes", book.minutes || "20", { type: "number" })}${setupInput("Grace Note", "graceNote", book.graceNote || "Reading moved into the reserve basket.")}</div></div>`;
+  return `<div data-setup-row="books" data-id="${html(book.id || "")}" style="display:grid;grid-template-columns:1.1fr .9fr .7fr .75fr .55fr .55fr .55fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Title", "title", book.title || "")}${setupInput("Author", "author", book.author || "")}${setupInput("Category", "category", book.category || "")}${setupSelect("Planning Mode", "planningMode", book.planningMode || (book.formLabel ? "forms" : "family"), planningModeOptions)}${setupInput("Start Ch.", "startChapter", book.startChapter || "", { type: "number" })}${setupInput("Done Ch.", "currentChapter", book.currentChapter || book.startChapter || "", { type: "number" })}${setupInput("End Ch.", "endChapter", book.endChapter || book.totalChapters || "", { type: "number" })}${setupColorSelect("Planner Color", "color", book.color || colorChoices[2])}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;">${setupSelect("Term", "termId", book.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("Form", "formLabel", book.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupSelect("Frequency", "weeklyFrequency", book.weeklyFrequency || "daily", weeklyFrequencyOptions)}${setupTermWeekPicker(book.scheduledWeeks)}${setupSelect("Audience", "audienceLabel", book.audienceLabel || "Household", ["Household", "Morning Basket", "Independent", "Read-Aloud"])}${setupInput("Minutes", "minutes", book.minutes || "20", { type: "number" })}${setupInput("Grace Note", "graceNote", book.graceNote || "Reading moved into the reserve basket.")}</div></div>`;
 }
 
 function formationSetupRow(material = {}, terms = [], currentTermId = "") {
-  return `<div data-setup-row="formationMaterials" data-id="${html(material.id || "")}" style="display:grid;grid-template-columns:1.1fr .75fr 1fr .75fr .65fr .75fr .8fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Material", "title", material.title || "")}${setupSelect("Preset", "materialType", material.materialType || "Catechesis", ["Catechesis", "Art Study", "Poetry", "Music Study"])}${setupInput("Source", "source", material.source || "")}${setupSelect("Planning Mode", "planningMode", material.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "weeklyFrequency", material.weeklyFrequency || material.cadence || "1x", weeklyFrequencyOptions)}${setupSelect("Term", "termId", material.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupInput("Minutes", "minutes", material.minutes || "", { type: "number" })}${setupColorSelect("Term Color", "color", material.color || colorChoices[3])}${setupRemoveButton()}</div>`;
+  return `<div data-setup-row="formationMaterials" data-id="${html(material.id || "")}" style="display:grid;grid-template-columns:1.1fr .75fr 1fr .75fr .65fr .75fr .8fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Material", "title", material.title || "")}${setupSelect("Preset", "materialType", material.materialType || "Catechesis", ["Catechesis", "Art Study", "Poetry", "Music Study"])}${setupInput("Source", "source", material.source || "")}${setupSelect("Planning Mode", "planningMode", material.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "weeklyFrequency", material.weeklyFrequency || material.cadence || "1x", weeklyFrequencyOptions)}${setupTermWeekPicker(material.scheduledWeeks)}${setupSelect("Term", "termId", material.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupInput("Minutes", "minutes", material.minutes || "", { type: "number" })}${setupColorSelect("Term Color", "color", material.color || colorChoices[3])}${setupRemoveButton()}</div>`;
 }
 
 function formationRhythmSetupRow(rhythm = {}) {
@@ -2523,7 +2557,7 @@ function formationEnrichmentSetupRow(block = {}, children = [], terms = [], curr
   const activeGroupField = groupingMode === "grades"
     ? `${setupSelect(groupLabel, "gradeLabel", block.gradeLabel || "", [{ value: "", label: "All grades" }, ...groupOptions])}<input type="hidden" name="formLabel" value="${html(block.formLabel || "")}" />`
     : `${setupSelect(groupLabel, "formLabel", block.formLabel || "", [{ value: "", label: "All Forms" }, ...groupOptions])}<input type="hidden" name="gradeLabel" value="${html(block.gradeLabel || "")}" />`;
-  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupInput("Title", "title", block.title || "")}${setupSelect("Planning Mode", "planningMode", block.planningMode || "family", planningModeOptionsFor(groupingMode))}${setupInput("Book / source / resource", "resource", block.resource || block.source || "")}${setupSelect("Source type", "resourceType", block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"), sourceTypeOptions)}${setupSelect("Track by", "progressionType", block.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", block.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", block.currentNumber || block.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", block.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "", { type: "number" })}${setupRemoveButton()}</div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupDayPicker(block.scheduledDays, block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x")}${setupSelect("Specific child", "childId", block.childId || "", [{ value: "", label: "Use Planning Mode" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupInput("Title", "title", block.title || "")}${setupSelect("Planning Mode", "planningMode", block.planningMode || "family", planningModeOptionsFor(groupingMode))}${setupInput("Book / source / resource", "resource", block.resource || block.source || "")}${setupSelect("Source type", "resourceType", block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"), sourceTypeOptions)}${setupSelect("Track by", "progressionType", block.progressionType || "lessons", ["lessons", "chapters", "pages", "units"])}${setupInput("Start", "startNumber", block.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", block.currentNumber || block.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", block.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "", { type: "number" })}${setupRemoveButton()}</div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupDayPicker(block.scheduledDays, block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x")}${setupTermWeekPicker(block.scheduledWeeks)}${setupSelect("Specific child", "childId", block.childId || "", [{ value: "", label: "Use Planning Mode" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function churchRhythmSetupPanel(vm) {
@@ -3921,6 +3955,7 @@ function setupPayloadFromForm(form) {
         subjectType: rowValue(row, "subjectType"),
         planningMode: rowValue(row, "planningMode"),
         scheduledDays: scheduledDays(rowValue(row, "scheduledDays"), rowValue(row, "weeklyFrequency")),
+        scheduledWeeks: scheduledTermWeeks(rowValue(row, "scheduledWeeks")),
         weeklyFrequency: rowValue(row, "weeklyFrequency"),
         cadenceLabel: rowValue(row, "weeklyFrequency"),
         formLabel: rowValue(row, "formLabel"),
@@ -3950,6 +3985,7 @@ function setupPayloadFromForm(form) {
         author: rowValue(row, "author"),
         category: rowValue(row, "category"),
         planningMode: rowValue(row, "planningMode"),
+        scheduledWeeks: scheduledTermWeeks(rowValue(row, "scheduledWeeks")),
         weeklyFrequency: rowValue(row, "weeklyFrequency"),
         minutes: rowValue(row, "minutes"),
         formLabel: rowValue(row, "formLabel"),
@@ -4025,6 +4061,7 @@ function setupPayloadFromForm(form) {
           resourceType: rowValue(row, "resourceType"),
           planningMode: rowValue(row, "planningMode"),
           scheduledDays: scheduledDays(rowValue(row, "scheduledDays"), rowValue(row, "weeklyFrequency")),
+          scheduledWeeks: scheduledTermWeeks(rowValue(row, "scheduledWeeks")),
           weeklyFrequency: rowValue(row, "weeklyFrequency"),
           cadenceLabel: rowValue(row, "weeklyFrequency"),
           formLabel: rowValue(row, "formLabel"),
@@ -4066,6 +4103,7 @@ function setupPayloadFromForm(form) {
         materialType: rowValue(row, "materialType"),
         source: rowValue(row, "source"),
         planningMode: rowValue(row, "planningMode"),
+        scheduledWeeks: scheduledTermWeeks(rowValue(row, "scheduledWeeks")),
         weeklyFrequency: rowValue(row, "weeklyFrequency"),
         cadenceLabel: rowValue(row, "weeklyFrequency"),
         minutes: rowValue(row, "minutes"),
@@ -4227,6 +4265,14 @@ function wireSetupPage() {
       picker.querySelector("[data-day-summary]").textContent = selected.length ? setupWeekdays.filter((day) => selected.includes(day.value)).map((day) => day.label).join(" · ") : "Choose days";
       return;
     }
+    const termWeekChoice = event.target.closest("[data-term-week-choice]");
+    if (termWeekChoice) {
+      const picker = termWeekChoice.closest(".learn-term-week-picker");
+      const selected = [...picker.querySelectorAll("[data-term-week-choice]:checked")].map((input) => Number(input.value));
+      picker.querySelector('[name="scheduledWeeks"]').value = selected.join(",");
+      picker.querySelector("[data-term-week-summary]").textContent = selected.length ? termWeekSummary(selected) : "Choose weeks";
+      return;
+    }
     const tileInput = event.target.closest("[data-setup-section-title-input], [data-setup-section-detail-input]");
     if (tileInput) {
       const group = tileInput.dataset.setupSectionGroup || "";
@@ -4258,6 +4304,19 @@ function wireSetupPage() {
     if (event.target.closest('[data-setup-row="children"]')) syncSetupChildLimit(form);
   });
   form.addEventListener("click", (event) => {
+    const weekPreset = event.target.closest("[data-term-weeks-all], [data-term-weeks-odd], [data-term-weeks-even]");
+    if (weekPreset) {
+      const picker = weekPreset.closest(".learn-term-week-picker");
+      const mode = weekPreset.hasAttribute("data-term-weeks-odd") ? "odd" : weekPreset.hasAttribute("data-term-weeks-even") ? "even" : "all";
+      picker.querySelectorAll("[data-term-week-choice]").forEach((input) => {
+        const week = Number(input.value);
+        input.checked = mode === "all" || (mode === "odd" ? week % 2 === 1 : week % 2 === 0);
+      });
+      const selected = [...picker.querySelectorAll("[data-term-week-choice]:checked")].map((input) => Number(input.value));
+      picker.querySelector('[name="scheduledWeeks"]').value = selected.join(",");
+      picker.querySelector("[data-term-week-summary]").textContent = termWeekSummary(selected);
+      return;
+    }
     const sectionToggle = event.target.closest("[data-setup-section-toggle]");
     if (sectionToggle) {
       const group = sectionToggle.dataset.setupSectionGroup || "";
@@ -5026,41 +5085,6 @@ function wireFormation() {
   });
 }
 
-function attachGoogleCalendarStatus(rawPayload, status) {
-  const payload = rawPayload && typeof rawPayload === "object" ? rawPayload : {};
-  const sectionKeys = [
-    "dashboard",
-    "planner",
-    "formation",
-    "books",
-    "reports",
-    "printCenter",
-    "community",
-    "coOp",
-    "onboarding"
-  ];
-  const sectionKey = sectionKeys.find((key) => payload[key] && typeof payload[key] === "object");
-  if (sectionKey) payload[sectionKey].googleCalendarSync = status;
-  if (payload.dashboard && typeof payload.dashboard === "object") {
-    payload.dashboard.googleCalendarSync = status;
-  }
-  return payload;
-}
-
-async function loadGoogleCalendarStatus() {
-  try {
-    return await apiGet("/api/learn/google-calendar/status");
-  } catch (error) {
-    console.warn("Google Calendar status could not be loaded:", error);
-    return {
-      ok: false,
-      configured: false,
-      connected: false,
-      message: error?.message || "Google Calendar status is unavailable."
-    };
-  }
-}
-
 async function mount() {
   if (new URLSearchParams(window.location.search).get("learn_billing") === "success") {
     localStorage.setItem("agapay.learn.plan", "family");
@@ -5079,15 +5103,22 @@ async function mount() {
   } catch {
     // Billing status is advisory for the shell; route-level saves still enforce limits.
   }
-
-  const googleCalendarStatus = await loadGoogleCalendarStatus();
+  try {
+    const status = await apiGet("/api/learn/google-calendar/status");
+    learnGoogleCalendarStatus = {
+      loaded: true,
+      configured: Boolean(status.configured),
+      connected: Boolean(status.connected),
+      accountEmail: status.accountEmail || ""
+    };
+  } catch (error) {
+    console.warn("Google Calendar status could not be loaded:", error);
+    learnGoogleCalendarStatus = { loaded: true, configured: false, connected: false };
+  }
   const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
   root.innerHTML = `<div style="padding:32px;font-family:Georgia,serif;color:#1b2c45;">Loading AGAPAY Learn...</div>`;
   if (pageKey === "dashboard") {
-    const raw = attachGoogleCalendarStatus(
-      await apiGet(`/api/learn/dashboard?calendar=${encodeURIComponent(calendar)}`),
-      googleCalendarStatus
-    );
+    const raw = await apiGet(`/api/learn/dashboard?calendar=${encodeURIComponent(calendar)}`);
     if (raw.setupCompleted === false) {
       window.location.replace("/myagapay/learn/setup");
       return;
@@ -5101,74 +5132,50 @@ async function mount() {
     const view = params.get("view") || localStorage.getItem("agapay.learn.plannerView") || "week";
     const month = params.get("month") || localStorage.getItem("agapay.learn.plannerMonth") || new Date().toISOString().slice(0, 7);
     const termId = params.get("termId") || "";
-    const raw = attachGoogleCalendarStatus(
-      await apiGet(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}&view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}&termId=${encodeURIComponent(termId)}`),
-      googleCalendarStatus
-    );
+    const raw = await apiGet(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}&view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}&termId=${encodeURIComponent(termId)}`);
     const vm = toPlannerViewModel(raw);
     root.innerHTML = renderPlanner(vm);
     wirePlanner(vm);
     return;
   }
   if (pageKey === "formation") {
-    const raw = attachGoogleCalendarStatus(
-      await apiGet(`/api/learn/formation?calendar=${encodeURIComponent(calendar)}`),
-      googleCalendarStatus
-    );
+    const raw = await apiGet(`/api/learn/formation?calendar=${encodeURIComponent(calendar)}`);
     root.innerHTML = renderFormation(toFormationViewModel(raw));
     wireFormation();
     return;
   }
   if (pageKey === "books") {
-    const raw = attachGoogleCalendarStatus(
-      await apiGet("/api/learn/books"),
-      googleCalendarStatus
-    );
+    const raw = await apiGet("/api/learn/books");
     root.innerHTML = renderBooks(toBooksViewModel(raw));
     return;
   }
   if (pageKey === "reports") {
-    const raw = attachGoogleCalendarStatus(
-      await apiGet("/api/learn/dashboard"),
-      googleCalendarStatus
-    );
+    const raw = await apiGet("/api/learn/dashboard");
     const vm = toDashboardViewModel(raw);
     vm.page = { id: "reports", title: "Reports", subtitle: "Academic records and transcript tools are coming soon.", ornament: true };
     root.innerHTML = renderReportsComingSoon(vm);
     return;
   }
   if (pageKey === "print-center") {
-    const raw = attachGoogleCalendarStatus(
-      await apiGet(`/api/learn/print-center?calendar=${encodeURIComponent(calendar)}`),
-      googleCalendarStatus
-    );
+    const raw = await apiGet(`/api/learn/print-center?calendar=${encodeURIComponent(calendar)}`);
     const vm = toPrintCenterViewModel({ ...raw, printLimit: resolvedPrintLimit });
     root.innerHTML = renderPrintCenter(vm);
     wirePrintCenter(vm);
     return;
   }
   if (pageKey === "community") {
-    const raw = attachGoogleCalendarStatus(
-      await apiGet("/api/learn/community"),
-      googleCalendarStatus
-    );
+    const raw = await apiGet("/api/learn/community");
     root.innerHTML = renderCommunity(toCommunityViewModel(raw));
     wireCommunity();
     return;
   }
   if (pageKey === "co-op") {
-    const raw = attachGoogleCalendarStatus(
-      await apiGet("/api/learn/co-op"),
-      googleCalendarStatus
-    );
+    const raw = await apiGet("/api/learn/co-op");
     root.innerHTML = renderCoOp(toCoOpViewModel(raw));
     return;
   }
   if (pageKey === "onboarding") {
-    const raw = attachGoogleCalendarStatus(
-      await apiGet("/api/learn/setup"),
-      googleCalendarStatus
-    );
+    const raw = await apiGet("/api/learn/setup");
     const vm = toSetupViewModel(raw, { calendar });
     const draft = loadSimpleSetupDraft(vm);
     const setupParams = new URLSearchParams(window.location.search);
@@ -5192,10 +5199,7 @@ async function mount() {
 }
 
 mount().catch((error) => {
-  console.error("AGAPAY Learn mount failed:", error);
-  if (root) {
-    root.innerHTML = `<section style="padding:32px;font-family:Georgia,serif;color:#6e2f2a;"><strong>Unable to load AGAPAY Learn</strong><p>${html(error?.message || "Unknown application error")}</p></section>`;
-  }
+  root.innerHTML = `<section style="padding:32px;font-family:Georgia,serif;color:#6e2f2a;"><strong>Unable to load AGAPAY Learn</strong><p>${html(error.message)}</p></section>`;
 });
 
 document.addEventListener("click", async (event) => {
@@ -5227,28 +5231,19 @@ document.addEventListener("click", async (event) => {
   if (googleSyncButton) {
     event.preventDefault();
     if (googleSyncButton.disabled) return;
-
     const originalHtml = googleSyncButton.innerHTML;
     googleSyncButton.disabled = true;
     googleSyncButton.setAttribute("aria-busy", "true");
-
     try {
-      const returnTo = `${window.location.pathname}${window.location.search}`;
-      const result = await apiGet(
-        `/api/learn/google-calendar/connect?format=json&returnTo=${encodeURIComponent(returnTo)}`
-      );
-      if (!result.authUrl) {
-        throw new Error("Google Calendar did not return an authorization URL.");
-      }
+      const returnTo = window.location.pathname + window.location.search;
+      const result = await apiGet(`/api/learn/google-calendar/connect?format=json&returnTo=${encodeURIComponent(returnTo)}`);
+      if (!result.authUrl) throw new Error("Google Calendar did not return an authorization URL.");
       window.location.assign(result.authUrl);
     } catch (error) {
       googleSyncButton.disabled = false;
       googleSyncButton.removeAttribute("aria-busy");
       googleSyncButton.innerHTML = originalHtml;
-      showLearnDialog(
-        "Google Calendar Connection Failed",
-        error?.message || "AGAPAY could not begin the Google Calendar connection."
-      );
+      showLearnDialog("Google Calendar Connection Failed", error?.message || "AGAPAY could not begin the Google Calendar connection.");
     }
     return;
   }
