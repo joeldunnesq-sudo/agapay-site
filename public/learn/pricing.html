@@ -42,68 +42,160 @@
       margin-bottom: 12px;
       border: 1px solid #b2d9ba;
     }
-    /* Balanced alignment for comparison matrix */
+
+    .scholarship-redesign {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(18rem, .95fr);
+      gap: clamp(1.4rem, 3.5vw, 2.4rem);
+      align-items: stretch;
+      padding: clamp(1.6rem, 3vw, 2.4rem);
+      background: linear-gradient(135deg, rgba(255,250,237,.96), rgba(248,242,231,.98));
+      border: 1px solid rgba(181,148,47,.24);
+      border-radius: 24px;
+      box-shadow: 0 18px 48px rgba(6,21,34,.08);
+      overflow: hidden;
+      position: relative;
+    }
+    .scholarship-redesign::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 13rem;
+      height: 13rem;
+      background: radial-gradient(circle at top left, rgba(201,162,91,.18), rgba(201,162,91,0));
+      pointer-events: none;
+    }
+    .scholarship-copy,
+    .scholarship-panel {
+      position: relative;
+      z-index: 1;
+    }
+    .scholarship-copy {
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+    .scholarship-copy h2 {
+      margin: 0;
+      max-width: 16ch;
+    }
+    .scholarship-lead {
+      margin: 0;
+      color: #33405a;
+      line-height: 1.72;
+      font-size: 1.02rem;
+      max-width: 58ch;
+    }
+    .scholarship-points {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: .9rem;
+      margin-top: .35rem;
+    }
+    .scholarship-point {
+      background: rgba(255,255,255,.58);
+      border: 1px solid rgba(181,148,47,.18);
+      border-radius: 16px;
+      padding: 1rem .95rem;
+      display: grid;
+      gap: .35rem;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.38);
+    }
+    .scholarship-point strong {
+      color: #07284a;
+      font-size: .98rem;
+    }
+    .scholarship-point span {
+      color: #5a6473;
+      font-size: .93rem;
+      line-height: 1.55;
+    }
+    .scholarship-actions {
+      margin-top: .35rem;
+      flex-wrap: wrap;
+    }
+    .scholarship-panel {
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+    .scholarship-panel-card {
+      background: linear-gradient(180deg, rgba(7,40,74,.96), rgba(6,21,34,.98));
+      color: #fffdf8;
+      border-radius: 20px;
+      padding: 1.35rem 1.35rem 1.45rem;
+      box-shadow: 0 16px 40px rgba(6,21,34,.18);
+      display: grid;
+      gap: .8rem;
+    }
+    .scholarship-panel-kicker {
+      display: inline-flex;
+      width: max-content;
+      padding: .35rem .7rem;
+      border-radius: 999px;
+      background: rgba(201,162,91,.16);
+      border: 1px solid rgba(201,162,91,.34);
+      color: #f3e3b0;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-size: .74rem;
+      font-weight: 700;
+    }
+    .scholarship-panel-card blockquote {
+      margin: 0;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.8rem, 3.3vw, 2.35rem);
+      line-height: 1.06;
+      font-style: italic;
+      color: #fffdf8;
+    }
+    .scholarship-panel-card p {
+      margin: 0;
+      color: rgba(255,253,248,.84);
+      line-height: 1.68;
+      font-size: .97rem;
+    }
+    .scholarship-panel-note {
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(181,148,47,.18);
+      border-radius: 16px;
+      padding: .95rem 1rem;
+      display: grid;
+      gap: .3rem;
+    }
+    .scholarship-panel-note strong {
+      color: #07284a;
+      font-size: .95rem;
+    }
+    .scholarship-panel-note span {
+      color: #5a6473;
+      line-height: 1.55;
+      font-size: .92rem;
+    }
+
+        /* Balanced alignment for comparison matrix */
     .compare-table .compare-row {
       display: grid;
       grid-template-columns: 2fr 1fr 1fr 1fr;
     }
   
-    /* AGAPAY Learn spacing refinements */
-    .learn-hero,
-    .overview-hero,
-    .pricing-wrap,
-    .scholarship,
-    .value-section,
-    .compare-section,
-    .faq-section,
-    .learn-final-cta,
-    .learn-purpose-inner,
-    .overview-feature-row,
-    .rhythm-steps,
-    .designed-section,
-    .learn-wisdom-band,
-    .ov-section {
-      width: min(1180px, calc(100% - clamp(2.5rem, 6vw, 5rem)));
+    @media (max-width: 980px) {
+      .scholarship-redesign {
+        grid-template-columns: 1fr;
+      }
+      .scholarship-points {
+        grid-template-columns: 1fr;
+      }
     }
-
-    .overview-hero {
-      width: min(1280px, calc(100% - clamp(2.5rem, 6vw, 5rem)));
-    }
-
-    .price-card {
-      padding: clamp(1.5rem, 2.5vw, 1.9rem);
-    }
-
-    .price-card.featured h3 + .discount-badge {
-      display: inline-flex;
-      width: max-content;
-      margin-top: 0.95rem;
-    }
-
     @media (max-width: 640px) {
-      .learn-hero,
-      .overview-hero,
-      .pricing-wrap,
-      .scholarship,
-      .value-section,
-      .compare-section,
-      .faq-section,
-      .learn-final-cta,
-      .learn-purpose-inner,
-      .overview-feature-row,
-      .rhythm-steps,
-      .designed-section,
-      .learn-wisdom-band,
-      .ov-section {
-        width: min(100% - 1.5rem, 1180px);
+      .scholarship-redesign {
+        padding: 1.25rem;
+        border-radius: 20px;
       }
-
-      .overview-hero {
-        width: min(100% - 1.5rem, 1280px);
-      }
-
-      .price-card {
-        padding: 1.35rem;
+      .scholarship-panel-card,
+      .scholarship-panel-note {
+        padding-left: 1rem;
+        padding-right: 1rem;
       }
     }
 
@@ -211,13 +303,41 @@
       </div>
     </section>
 
-    <section class="scholarship">
-      <div>
+    <section class="scholarship scholarship-redesign">
+      <div class="scholarship-copy">
         <p class="eyebrow">We are here for every family.</p>
-        <h2>AGAPAY Learn should remain accessible for real households.</h2>
+        <h2>Faithful planning should remain within reach for real households.</h2>
+        <p class="scholarship-lead">AGAPAY Learn was built for growing Orthodox families, not idealized households with endless margin. If cost is the only thing keeping you from using it, please reach out. We are building scholarship codes and parish-supported discounts so families can begin in peace, not pressure.</p>
+        <div class="scholarship-points" aria-label="Scholarship highlights">
+          <div class="scholarship-point">
+            <strong>Simple to request</strong>
+            <span>Tell us a little about your household and your present need.</span>
+          </div>
+          <div class="scholarship-point">
+            <strong>Made for hard seasons</strong>
+            <span>Helpful for large families, tight budgets, new babies, and other lean stretches of life.</span>
+          </div>
+          <div class="scholarship-point">
+            <strong>Growing support</strong>
+            <span>We are also developing parish-backed discounts and codes for families who need help.</span>
+          </div>
+        </div>
+        <div class="hero-actions scholarship-actions">
+          <a class="button button-primary" href="/contact?subject=AGAPAY%20Learn%20scholarship">Ask About Scholarships</a>
+          <a class="button button-secondary" href="/myagapay/learn/setup">Start Free First</a>
+        </div>
       </div>
-      <p>If you want to use AGAPAY Learn but cannot afford it right now, contact us. We are building scholarship codes and parish-supported discounts so faithful planning can remain accessible.</p>
-      <a class="button button-secondary" href="/contact?subject=AGAPAY%20Learn%20scholarship">Ask about scholarships</a>
+      <aside class="scholarship-panel" aria-label="Scholarship encouragement">
+        <div class="scholarship-panel-card">
+          <span class="scholarship-panel-kicker">Accessible by design</span>
+          <blockquote>Orthodox families should not be priced out of tools built to serve their home life.</blockquote>
+          <p>Begin with the free plan, explore the platform, and contact us if you need help moving further. We would rather welcome your household than lose it over cost alone.</p>
+        </div>
+        <div class="scholarship-panel-note">
+          <strong>Good to know</strong>
+          <span>Large families are never charged per child, and scholarship requests are handled with discretion.</span>
+        </div>
+      </aside>
     </section>
 
     <section class="value-section">
