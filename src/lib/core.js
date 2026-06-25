@@ -305,6 +305,37 @@ export function json(body, init = {}) {
   });
 }
 
+// CORS headers for public-facing API endpoints that may be called cross-origin.
+// Use AGAPAY_CORS_ORIGIN env var to restrict (e.g. "https://agapay.app").
+// Falls back to "*" when not set, which is fine for read-only public endpoints.
+export function corsHeaders(env) {
+  const origin = (env && env.AGAPAY_CORS_ORIGIN) ? env.AGAPAY_CORS_ORIGIN : "*";
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-AGAPAY-Donor-Email",
+    "Access-Control-Max-Age": "86400"
+  };
+}
+
+export function corsJson(body, env, init = {}) {
+  return Response.json(body, {
+    ...init,
+    headers: {
+      "Cache-Control": "no-store",
+      ...corsHeaders(env),
+      ...(init.headers || {})
+    }
+  });
+}
+
+export function corsPreflightResponse(env) {
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders(env)
+  });
+}
+
 export function unauthorized() {
   return json({ error: "Unauthorized" }, { status: 401 });
 }
