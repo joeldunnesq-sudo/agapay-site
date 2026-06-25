@@ -5026,6 +5026,41 @@ function wireFormation() {
   });
 }
 
+function attachGoogleCalendarStatus(rawPayload, status) {
+  const payload = rawPayload && typeof rawPayload === "object" ? rawPayload : {};
+  const sectionKeys = [
+    "dashboard",
+    "planner",
+    "formation",
+    "books",
+    "reports",
+    "printCenter",
+    "community",
+    "coOp",
+    "onboarding"
+  ];
+  const sectionKey = sectionKeys.find((key) => payload[key] && typeof payload[key] === "object");
+  if (sectionKey) payload[sectionKey].googleCalendarSync = status;
+  if (payload.dashboard && typeof payload.dashboard === "object") {
+    payload.dashboard.googleCalendarSync = status;
+  }
+  return payload;
+}
+
+async function loadGoogleCalendarStatus() {
+  try {
+    return await apiGet("/api/learn/google-calendar/status");
+  } catch (error) {
+    console.warn("Google Calendar status could not be loaded:", error);
+    return {
+      ok: false,
+      configured: false,
+      connected: false,
+      message: error?.message || "Google Calendar status is unavailable."
+    };
+  }
+}
+
 async function mount() {
   if (new URLSearchParams(window.location.search).get("learn_billing") === "success") {
     localStorage.setItem("agapay.learn.plan", "family");
@@ -5044,10 +5079,15 @@ async function mount() {
   } catch {
     // Billing status is advisory for the shell; route-level saves still enforce limits.
   }
+
+  const googleCalendarStatus = await loadGoogleCalendarStatus();
   const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
   root.innerHTML = `<div style="padding:32px;font-family:Georgia,serif;color:#1b2c45;">Loading AGAPAY Learn...</div>`;
   if (pageKey === "dashboard") {
-    const raw = await apiGet(`/api/learn/dashboard?calendar=${encodeURIComponent(calendar)}`);
+    const raw = attachGoogleCalendarStatus(
+      await apiGet(`/api/learn/dashboard?calendar=${encodeURIComponent(calendar)}`),
+      googleCalendarStatus
+    );
     if (raw.setupCompleted === false) {
       window.location.replace("/myagapay/learn/setup");
       return;
@@ -5061,50 +5101,74 @@ async function mount() {
     const view = params.get("view") || localStorage.getItem("agapay.learn.plannerView") || "week";
     const month = params.get("month") || localStorage.getItem("agapay.learn.plannerMonth") || new Date().toISOString().slice(0, 7);
     const termId = params.get("termId") || "";
-    const raw = await apiGet(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}&view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}&termId=${encodeURIComponent(termId)}`);
+    const raw = attachGoogleCalendarStatus(
+      await apiGet(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}&view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}&termId=${encodeURIComponent(termId)}`),
+      googleCalendarStatus
+    );
     const vm = toPlannerViewModel(raw);
     root.innerHTML = renderPlanner(vm);
     wirePlanner(vm);
     return;
   }
   if (pageKey === "formation") {
-    const raw = await apiGet(`/api/learn/formation?calendar=${encodeURIComponent(calendar)}`);
+    const raw = attachGoogleCalendarStatus(
+      await apiGet(`/api/learn/formation?calendar=${encodeURIComponent(calendar)}`),
+      googleCalendarStatus
+    );
     root.innerHTML = renderFormation(toFormationViewModel(raw));
     wireFormation();
     return;
   }
   if (pageKey === "books") {
-    const raw = await apiGet("/api/learn/books");
+    const raw = attachGoogleCalendarStatus(
+      await apiGet("/api/learn/books"),
+      googleCalendarStatus
+    );
     root.innerHTML = renderBooks(toBooksViewModel(raw));
     return;
   }
   if (pageKey === "reports") {
-    const raw = await apiGet("/api/learn/dashboard");
+    const raw = attachGoogleCalendarStatus(
+      await apiGet("/api/learn/dashboard"),
+      googleCalendarStatus
+    );
     const vm = toDashboardViewModel(raw);
     vm.page = { id: "reports", title: "Reports", subtitle: "Academic records and transcript tools are coming soon.", ornament: true };
     root.innerHTML = renderReportsComingSoon(vm);
     return;
   }
   if (pageKey === "print-center") {
-    const raw = await apiGet(`/api/learn/print-center?calendar=${encodeURIComponent(calendar)}`);
+    const raw = attachGoogleCalendarStatus(
+      await apiGet(`/api/learn/print-center?calendar=${encodeURIComponent(calendar)}`),
+      googleCalendarStatus
+    );
     const vm = toPrintCenterViewModel({ ...raw, printLimit: resolvedPrintLimit });
     root.innerHTML = renderPrintCenter(vm);
     wirePrintCenter(vm);
     return;
   }
   if (pageKey === "community") {
-    const raw = await apiGet("/api/learn/community");
+    const raw = attachGoogleCalendarStatus(
+      await apiGet("/api/learn/community"),
+      googleCalendarStatus
+    );
     root.innerHTML = renderCommunity(toCommunityViewModel(raw));
     wireCommunity();
     return;
   }
   if (pageKey === "co-op") {
-    const raw = await apiGet("/api/learn/co-op");
+    const raw = attachGoogleCalendarStatus(
+      await apiGet("/api/learn/co-op"),
+      googleCalendarStatus
+    );
     root.innerHTML = renderCoOp(toCoOpViewModel(raw));
     return;
   }
   if (pageKey === "onboarding") {
-    const raw = await apiGet("/api/learn/setup");
+    const raw = attachGoogleCalendarStatus(
+      await apiGet("/api/learn/setup"),
+      googleCalendarStatus
+    );
     const vm = toSetupViewModel(raw, { calendar });
     const draft = loadSimpleSetupDraft(vm);
     const setupParams = new URLSearchParams(window.location.search);
@@ -5128,10 +5192,13 @@ async function mount() {
 }
 
 mount().catch((error) => {
-  root.innerHTML = `<section style="padding:32px;font-family:Georgia,serif;color:#6e2f2a;"><strong>Unable to load AGAPAY Learn</strong><p>${html(error.message)}</p></section>`;
+  console.error("AGAPAY Learn mount failed:", error);
+  if (root) {
+    root.innerHTML = `<section style="padding:32px;font-family:Georgia,serif;color:#6e2f2a;"><strong>Unable to load AGAPAY Learn</strong><p>${html(error?.message || "Unknown application error")}</p></section>`;
+  }
 });
 
-document.addEventListener("click", (event) => {
+document.addEventListener("click", async (event) => {
   const accountToggle = event.target.closest("[data-learn-account-toggle]");
   const accountMenu = event.target.closest("[data-learn-account-menu]");
   if (accountToggle) {
@@ -5156,8 +5223,33 @@ document.addEventListener("click", (event) => {
     window.location.href = "/myagapay/login";
     return;
   }
-  if (event.target.closest("[data-learn-google-sync]")) {
-    window.location.href = `/api/learn/google-calendar/connect?redirect=1&returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+  const googleSyncButton = event.target.closest("[data-learn-google-sync]");
+  if (googleSyncButton) {
+    event.preventDefault();
+    if (googleSyncButton.disabled) return;
+
+    const originalHtml = googleSyncButton.innerHTML;
+    googleSyncButton.disabled = true;
+    googleSyncButton.setAttribute("aria-busy", "true");
+
+    try {
+      const returnTo = `${window.location.pathname}${window.location.search}`;
+      const result = await apiGet(
+        `/api/learn/google-calendar/connect?format=json&returnTo=${encodeURIComponent(returnTo)}`
+      );
+      if (!result.authUrl) {
+        throw new Error("Google Calendar did not return an authorization URL.");
+      }
+      window.location.assign(result.authUrl);
+    } catch (error) {
+      googleSyncButton.disabled = false;
+      googleSyncButton.removeAttribute("aria-busy");
+      googleSyncButton.innerHTML = originalHtml;
+      showLearnDialog(
+        "Google Calendar Connection Failed",
+        error?.message || "AGAPAY could not begin the Google Calendar connection."
+      );
+    }
     return;
   }
 
