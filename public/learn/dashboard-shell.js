@@ -253,7 +253,7 @@ function showLearnDialog(title, message, rows = [], options = {}) {
   const contentHtml = options.contentHtml || "";
   const width = options.width || "520px";
   const upgradeButton = options.upgrade
-    ? `<button type="button" data-dialog-checkout style="border:1px solid #b5942f;background:#14294a;color:#f3ead4;border-radius:9px;padding:10px 16px;font-family:inherit;">Upgrade</button>`
+    ? `<button type="button" data-dialog-checkout style="border:1px solid #b5942f;background:#14294a;color:#f3ead4;border-radius:999px;padding:10px 16px;font-family:inherit;">Upgrade</button>`
     : "";
   dialog.innerHTML = `<div style="width:min(${width},100%);max-height:min(760px,92vh);overflow:auto;background:#f3ead4;border:1px solid #b5942f;border-radius:16px;box-shadow:0 20px 60px rgba(10,20,40,.35);padding:clamp(16px,4vw,24px);color:#14294a;"><div style="display:flex;justify-content:space-between;gap:12px;align-items:start;position:sticky;top:-24px;background:#f3ead4;padding-top:2px;padding-bottom:12px;z-index:2;"><div><h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(25px,7vw,31px);line-height:1.02;margin:0;color:#14294a;">${html(title)}</h2><p style="color:#33405a;line-height:1.45;margin:8px 0 0;">${html(message)}</p></div><button type="button" data-dialog-close aria-label="Close dialog" style="border:1px solid rgba(20,41,74,.18);background:#fffaf0;color:#14294a;border-radius:999px;width:44px;height:44px;display:grid;place-items:center;font-size:24px;line-height:1;cursor:pointer;flex:none;">×</button></div>${contentHtml}${rows.map((row) => `<div style="border-top:1px solid rgba(181,148,47,.28);padding:9px 0;"><small style="color:#9b7420;letter-spacing:.12em;text-transform:uppercase;">${html(row.label)}</small><strong style="display:block;">${html(row.value)}</strong></div>`).join("")}<div style="position:sticky;bottom:-24px;background:#f3ead4;display:flex;justify-content:flex-end;gap:10px;margin-top:16px;padding-top:12px;padding-bottom:2px;"><button type="button" data-dialog-close style="border:1px solid rgba(20,41,74,.22);background:#fffaf0;border-radius:10px;padding:12px 18px;min-height:44px;font-family:inherit;color:#14294a;font-weight:700;">Close</button>${upgradeButton}</div></div>`;
   dialog.addEventListener("click", (event) => {
@@ -666,7 +666,6 @@ function renderDashboard(vm) {
     <span style="margin-left:auto;color:var(--gold);font-size:20px;flex:none;">→</span>
   </button>`;
 
-  // ── Readings — distinct actionable callout ────────────────────────────────────
   const hasReadings = today.epistleRef || today.gospelRef;
   const readingsCallout = hasReadings ? `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
@@ -686,7 +685,6 @@ function renderDashboard(vm) {
       </div>
     </div>` : "";
 
-  // ── Church Rhythms — proper grid with breathing room ──────────────────────────
   const rhythmsGrid = vm.churchRhythms.length
     ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1px;background:var(--line);border-radius:10px;overflow:hidden;">
         ${vm.churchRhythms.map((r, i) => `
@@ -700,7 +698,6 @@ function renderDashboard(vm) {
        </div>`
     : emptyState("Add church rhythms in Setup — Morning Prayer, Readings, Saint of the Day.");
 
-  // ── Together This Week ────────────────────────────────────────────────────────
   const householdGroups = vm.householdStream.reduce((groups, item) => {
     const label = item.group || "Everyone Together";
     if (!groups.has(label)) groups.set(label, []);
@@ -729,7 +726,6 @@ function renderDashboard(vm) {
         </section>`).join("")
     : `<div style="color:var(--muted);font-style:italic;">Run Quick Setup or add Enrichment in Advanced Setup to build this week together.</div>`;
 
-  // ── Week stats strip — above child columns ────────────────────────────────────
   const weekStatsStrip = `
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
       ${vm.thisWeek.map((w) => `
@@ -746,7 +742,6 @@ function renderDashboard(vm) {
       </a>
     </div>`;
 
-  // ── Child columns — with empty state ─────────────────────────────────────────
   const childColumnsGrid = vm.childColumns.length
     ? vm.childColumns.map((col) => `
         <article style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
@@ -779,7 +774,6 @@ function renderDashboard(vm) {
   const body = `
     <section data-screen-label="Dashboard" style="display:flex;flex-direction:column;gap:22px;">
 
-      <!-- Today in the Church -->
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;gap:24px;box-shadow:0 1px 3px rgba(20,40,70,.04);flex-wrap:wrap;">
         ${churchIconPanel}
         <div class="learn-today-main">
@@ -806,7 +800,6 @@ function renderDashboard(vm) {
         ${renderTodayLearnContext(vm)}
       </div>
 
-      <!-- Daily Church Rhythms — proper grid -->
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
           <span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:16px;">✥</span><span style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">DAILY CHURCH RHYTHMS</span></span>
@@ -815,7 +808,6 @@ function renderDashboard(vm) {
         ${rhythmsGrid}
       </div>
 
-      <!-- Together This Week — full width -->
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
           <span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:17px;">⌂</span><span style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;">TOGETHER THIS WEEK</span></span>
@@ -824,7 +816,6 @@ function renderDashboard(vm) {
         <div style="display:flex;flex-direction:column;gap:13px;">${togetherThisWeek}</div>
       </div>
 
-      <!-- Week stats strip + child columns -->
       <section style="display:grid;gap:14px;">
         <div style="display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div>
@@ -874,7 +865,6 @@ function renderPlanner(vm) {
     { id: "pantry",    label: "Pantry",    icon: "☖" }
   ];
 
-  // ── Intro — shown on first visit per scope, dismissible ───────────────────────
   const introDismissedKey = `agapay.learn.plannerIntro.${activeScope}`;
   const introDismissed = typeof localStorage !== "undefined" && localStorage.getItem(introDismissedKey) === "1";
   const introHtml = introDismissed ? "" : `
@@ -1829,7 +1819,6 @@ function renderPlannerMonth(vm) {
   return `
     <div style="display:flex;flex-direction:column;gap:14px;">
 
-      <!-- Full-width calendar panel -->
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 16px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
           <div>
@@ -1842,17 +1831,14 @@ function renderPlannerMonth(vm) {
             <a href="/myagapay/learn/planner?view=month&month=${encodeURIComponent(adjacentMonthKey(month.key, 1))}&term=${encodeURIComponent(vm.term.activeTerm)}&termId=${encodeURIComponent(vm.term.activeTermId)}" style="border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);text-decoration:none;background:var(--paper2);">Next →</a>
           </div>
         </div>
-        <!-- 7-column day header -->
         <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;">
           ${(month.weekdays || []).map((day) => `<div style="color:var(--gold);font-size:10px;letter-spacing:.12em;font-weight:700;text-align:center;text-transform:uppercase;padding-bottom:4px;">${html(day)}</div>`).join("")}
         </div>
-        <!-- Day cells — no min-width, fills container naturally -->
         <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">
           ${dayCells}
         </div>
       </div>
 
-      <!-- Sidebar panels below, side by side -->
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">
         ${panel("Month Notes", `
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
@@ -1903,7 +1889,6 @@ function renderPlannerTerm(vm) {
 }
 
 function renderPlannerYear(vm) {
-  // ── Term timeline ─────────────────────────────────────────────────────────────
   const totalTerms = vm.year.terms.length || 4;
   const termTimeline = vm.year.terms.map((term, i) => {
     const active = term.active;
@@ -1918,7 +1903,6 @@ function renderPlannerYear(vm) {
       ${i < totalTerms - 1 ? `<div style="width:16px;flex:none;height:8px;margin-top:0;align-self:center;"></div>` : ""}`;
   }).join("");
 
-  // ── Season topics by type ─────────────────────────────────────────────────────
   const topicsByType = vm.year.topics.reduce((map, topic) => {
     const key = topic.type || "Enrichment";
     if (!map.has(key)) map.set(key, []);
@@ -1938,7 +1922,6 @@ function renderPlannerYear(vm) {
         </div>`).join("")
     : `<div style="color:var(--muted);font-style:italic;font-size:13px;">Add curriculum subjects in Setup to populate the year view.</div>`;
 
-  // ── Curriculum packages ───────────────────────────────────────────────────────
   const pkgCards = vm.year.curriculumPackages.length
     ? vm.year.curriculumPackages.map((pkg) => `
         <div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:13px;">
@@ -1948,7 +1931,6 @@ function renderPlannerYear(vm) {
         </div>`).join("")
     : `<div style="color:var(--muted);font-style:italic;font-size:13px;padding:8px 0;">Add curriculum packages in Setup.</div>`;
 
-  // ── Upcoming feasts ───────────────────────────────────────────────────────────
   const feastItems = vm.year.upcomingFeasts.length
     ? vm.year.upcomingFeasts.map((feast) => `
         <div style="display:grid;grid-template-columns:52px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:start;">
@@ -1985,7 +1967,6 @@ function renderPlannerYear(vm) {
 }
 
 function renderFormation(vm) {
-  // ── Today panel — liturgical day, readings, saint, fasting all in one place ─
   const fastBadge = vm.today.fasting && !/no fast/i.test(vm.today.fasting)
     ? `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(110,47,42,.10);color:var(--burgundy);border:1px solid rgba(110,47,42,.22);border-radius:999px;padding:4px 11px;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;">✦ ${html(vm.today.fasting)}</span>`
     : "";
@@ -2025,7 +2006,6 @@ function renderFormation(vm) {
     ${saintBlock}
     ${troparionBlock}`, { icon: "☩", largeTitle: false, style: "" });
 
-  // ── Church rhythms — daily household formation checklist ─────────────────────
   const rhythmsContent = vm.rhythms.length
     ? vm.rhythms.map((item) => `
         <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line);">
@@ -2038,7 +2018,6 @@ function renderFormation(vm) {
     : emptyState("Add daily rhythms in Setup — Morning Prayer, Readings, Scripture memory.");
   const rhythmsPanel = panel("Daily Household Rhythms", rhythmsContent, { icon: "✥" });
 
-  // ── Upcoming feasts — oriented around the week ahead ─────────────────────────
   const feastItems = vm.feasts.length
     ? vm.feasts.map((feast) => `
         <div style="display:grid;grid-template-columns:56px 1fr;gap:12px;padding:11px 0;border-top:1px solid var(--line);align-items:start;">
@@ -2054,14 +2033,12 @@ function renderFormation(vm) {
     : emptyState("Connect a calendar source to see upcoming feasts.");
   const feastsPanel = panel("Upcoming Feasts", `${feastItems}<a href="/myagapay/learn/planner" style="display:block;margin-top:10px;text-align:center;font-size:13px;color:var(--gold);text-decoration:none;border:1px solid var(--line);border-radius:9px;padding:9px;">View full calendar →</a>`, { icon: "☩" });
 
-  // ── Catechesis ────────────────────────────────────────────────────────────────
   const catechesisPanel = panel("Catechesis", `
     <small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;font-size:10px;">${html(vm.catechesis.progress) || "Current Lesson"}</small>
     <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:22px;margin:6px 0 8px;color:var(--ink);">${html(vm.catechesis.title)}</strong>
     <p style="margin:0;color:#33405a;line-height:1.5;font-size:14px;">${html(vm.catechesis.currentLesson)}</p>
     ${vm.catechesis.topic ? `<small style="display:block;margin-top:8px;color:var(--muted);">${html(vm.catechesis.topic)}</small>` : ""}`, { icon: "✥" });
 
-  // ── Recitation & Memory Work ──────────────────────────────────────────────────
   const memoryContent = vm.recitation.length
     ? vm.recitation.map((item) => `
         <div style="padding:10px 0;border-top:1px solid var(--line);">
@@ -2075,7 +2052,6 @@ function renderFormation(vm) {
     : emptyState("Add recitation tracks in Setup — Psalms, Catechism, Scripture.");
   const memoryPanel = panel("Recitation & Memory", memoryContent, { icon: "☰" });
 
-  // ── Hymn Study ────────────────────────────────────────────────────────────────
   const hymnContent = vm.hymns.length
     ? vm.hymns.map((hymn) => `
         <div style="padding:11px 0;border-top:1px solid var(--line);">
@@ -2085,7 +2061,6 @@ function renderFormation(vm) {
     : emptyState("Add hymns to study in Setup.");
   const hymnsPanel = panel("Hymn Study", hymnContent, { icon: "♫" });
 
-  // ── Enrichment ────────────────────────────────────────────────────────────────
   const enrichContent = vm.enrichment.length
     ? vm.enrichment.map((item) => `
         <div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line);align-items:center;">
@@ -2098,7 +2073,6 @@ function renderFormation(vm) {
     : emptyState("Add enrichment blocks in Setup.");
   const enrichPanel = panel("Enrichment", enrichContent, { icon: "✣" });
 
-  // ── Nature Journal ────────────────────────────────────────────────────────────
   const natureContent = vm.nature?.length
     ? vm.nature.map((entry) => `
         <div style="padding:10px 0;border-top:1px solid var(--line);">
@@ -2136,7 +2110,6 @@ function bookCover(book = {}, icon = "☰") {
 }
 
 function renderBooks(vm) {
-  // ── Read-aloud cards ──────────────────────────────────────────────────────────
   const readAloudCards = vm.readAlouds.length
     ? vm.readAlouds.map((book) => `
         <article style="display:flex;gap:14px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0;box-shadow:0 1px 3px rgba(20,40,70,.04);">
@@ -2153,7 +2126,6 @@ function renderBooks(vm) {
         </article>`).join("")
     : emptyState("Add read-alouds in Setup to track progress here.");
 
-  // ── Library table — fixed overflow ────────────────────────────────────────────
   const libraryRows = vm.library.length
     ? vm.library.map((book, i) => `
         <div style="display:grid;grid-template-columns:2fr 1.1fr 1fr .6fr .7fr 1fr;gap:10px;align-items:center;padding:10px 4px;border-top:1px solid var(--line);font-size:13px;background:${i % 2 ? "var(--paper2)" : "transparent"};">
@@ -2177,7 +2149,6 @@ function renderBooks(vm) {
       <span>Title</span><span>Author</span><span>Category</span><span>Ages</span><span>Orthodox</span><span>Progress</span>
     </div>`;
 
-  // ── Book pacing ───────────────────────────────────────────────────────────────
   const pacingContent = vm.pacing.weeks.length
     ? `<strong style="font-family:'Cormorant Garamond',serif;font-size:20px;display:block;margin-bottom:4px;">${html(vm.pacing.title)}</strong>
        <small style="color:var(--muted);">${html(vm.pacing.subtitle)}${vm.pacing.chaptersPerWeek ? ` · ${html(vm.pacing.chaptersPerWeek)} ch/wk` : ""}</small>
@@ -2189,7 +2160,6 @@ function renderBooks(vm) {
          </div>`).join("")}`
     : emptyState("Add a read-aloud with start and end chapters in Setup.");
 
-  // ── Copywork sources ──────────────────────────────────────────────────────────
   const copyworkContent = vm.copywork.length
     ? vm.copywork.map((source) => `
         <div style="padding:9px 0;border-top:1px solid var(--line);">
@@ -2198,7 +2168,6 @@ function renderBooks(vm) {
         </div>`).join("")
     : "";
 
-  // ── Orthodox suggestions ──────────────────────────────────────────────────────
   const suggestionsContent = vm.suggestions.length
     ? vm.suggestions.map((s) => `
         <div style="display:flex;gap:12px;padding:11px 0;border-top:1px solid var(--line);align-items:flex-start;">
@@ -2284,40 +2253,6 @@ function renderCommunityLegacy(vm) {
       ${panel("Launch Focus", `<div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:12px;"><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;"><strong>Planner first</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Keep the household planning flow reliable before adding social features.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;"><strong>Curated resources</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Community sharing will launch with moderation and resource categories.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;"><strong>Family-safe</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">The future feature will be built around trust, not an open feed.</small></div></div>`, { icon: "✥" })}
     </section>
   `);
-  const chip = (label, active = false, attr = "data-community-filter") => `<button type="button" ${attr}="${html(label)}" style="border:1px solid ${active ? "var(--gold)" : "var(--line)"};background:${active ? "var(--navy)" : "var(--paper)"};color:${active ? "#f3ead4" : "var(--ink)"};border-radius:9px;padding:8px 12px;font-family:inherit;cursor:pointer;">${html(label)}</button>`;
-  const body = `
-    <section data-screen-label="Community" style="display:flex;flex-direction:column;gap:18px;">
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-        <label style="display:flex;align-items:center;gap:9px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:11px 15px;flex:1;min-width:220px;max-width:420px;"><span style="color:var(--gold);font-size:17px;">⌕</span><input data-community-search placeholder="Search resources, tags, posters..." style="border:none;background:none;outline:none;font-family:inherit;font-size:15px;color:var(--ink);width:100%;" /></label>
-        <div style="display:flex;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:4px;">${vm.sortOptions.map((label, index) => chip(label, index === 0, "data-community-sort")).join("")}</div>
-        <div style="flex:1;"></div>
-        <button type="button" data-community-share style="display:flex;align-items:center;gap:9px;background:var(--navy);border:1px solid var(--gold);border-radius:11px;padding:12px 18px;cursor:pointer;font-family:inherit;font-size:15px;color:#f3ead4;font-weight:500;"><span style="color:var(--gold2);font-size:18px;">+</span> Share a Resource</button>
-      </div>
-      <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center;">${vm.categories.map((category, index) => chip(category, index === 0)).join("")}</div>
-      <div data-community-count style="display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13.5px;"><span style="color:var(--gold);">✥</span> Showing ${vm.resources.length} resources shared by Orthodox homeschool families</div>
-      <div data-community-grid style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;">
-        ${vm.resources.map((resource) => `<article data-community-card data-category="${html(resource.category)}" data-search="${html(`${resource.title} ${resource.category} ${resource.desc} ${resource.poster} ${resource.tags.join(" ")}`.toLowerCase())}" style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:11px;box-shadow:0 1px 3px rgba(20,40,70,.04);position:relative;">
-          <div style="height:122px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(135deg,${softColor(resource.color, "33")},var(--paper2));display:flex;align-items:center;justify-content:center;color:${html(resource.color)};font-size:42px;position:relative;">✥${resource.pinned ? `<span style="position:absolute;top:9px;left:9px;display:flex;align-items:center;gap:5px;background:var(--gold);color:#1b2c45;font-size:10.5px;font-weight:700;letter-spacing:.05em;padding:4px 9px;border-radius:6px;">✥ PINNED</span>` : ""}<span style="position:absolute;top:9px;right:9px;display:flex;align-items:center;gap:5px;background:rgba(243,234,212,.92);color:var(--ink);font-size:11px;font-weight:600;padding:4px 9px;border-radius:6px;">${html(resource.category)}</span></div>
-          <strong style="font-family:'Cormorant Garamond',serif;font-size:20px;line-height:1.15;">${html(resource.title)}</strong>
-          <p style="font-size:13px;color:#3a4256;line-height:1.4;flex:1;margin:0;">${html(resource.desc)}</p>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">${resource.tags.map((tag) => `<span style="font-size:11.5px;color:var(--gold);background:var(--paper2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;">#${html(tag)}</span>`).join("")}</div>
-          <div style="display:flex;align-items:center;gap:9px;padding-top:10px;border-top:1px solid var(--line);"><span style="width:28px;height:28px;flex:none;border-radius:50%;background:${html(resource.posterColor)};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:600;border:1.5px solid var(--goldsoft);">${html(resource.posterInitial)}</span><span style="flex:1;min-width:0;font-size:12.5px;color:var(--muted);">${html(resource.poster)}</span><a href="${html(resource.url)}" target="_blank" rel="noreferrer" style="color:var(--gold);font-size:16px;text-decoration:none;">↗</a></div>
-          <div style="display:flex;align-items:center;gap:9px;"><button type="button" data-community-vote style="display:flex;align-items:center;gap:6px;background:var(--paper2);border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--ink);">↑ <span>${resource.votes}</span></button><button type="button" data-community-save style="display:flex;align-items:center;gap:6px;background:var(--paper2);border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--gold);">♡ Save</button><button type="button" data-community-add style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--ink);white-space:nowrap;">+ Add to Library</button></div>
-        </article>`).join("")}
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-        ${panel(vm.history.label, `<strong style="font-family:'Cormorant Garamond',serif;font-size:22px;">${html(vm.history.title)}</strong><small style="display:block;color:var(--gold);margin:4px 0;">${html(vm.history.year)}</small><p style="line-height:1.45;color:#33405a;">${html(vm.history.summary)}</p><small style="color:var(--muted);">${html(vm.history.source)}</small>`, { icon: "☼" })}
-        ${panel("Sharing Guidance", vm.guidance.map((item) => `<div style="padding:9px 0;border-top:1px solid var(--line);">${html(item)}</div>`).join(""), { icon: "✥" })}
-      </div>
-      <div data-community-share-panel hidden style="position:fixed;inset:0;z-index:75;background:rgba(10,20,40,.55);align-items:center;justify-content:center;padding:24px;">
-        <div style="background:var(--cream);border:1px solid var(--gold);border-radius:16px;width:min(520px,100%);box-shadow:0 20px 60px rgba(10,20,40,.4);">
-          <div style="padding:20px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;"><div><h2 style="font-family:'Cormorant Garamond',serif;margin:0;font-size:26px;">Share a Resource</h2><small style="color:var(--muted);">Bless another homeschool family with what has helped yours.</small></div><button type="button" data-community-share-close style="border:none;background:none;color:var(--muted);font-size:22px;cursor:pointer;">x</button></div>
-          <div style="padding:22px 24px;display:grid;gap:12px;">${setupInput("Title", "community.title")}${setupInput("Link", "community.url")}${setupInput("Category", "community.category")}${setupInput("Tags", "community.tags")}<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Description<textarea name="community.desc" rows="3" style="border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);"></textarea></label></div>
-          <div style="padding:16px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:11px;"><button type="button" data-community-share-close style="background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:11px 20px;cursor:pointer;font-family:inherit;color:var(--ink);">Cancel</button><button type="button" data-community-submit style="background:var(--navy);border:1px solid var(--gold);border-radius:9px;padding:11px 22px;cursor:pointer;font-family:inherit;color:#f3ead4;">Share with Community</button></div>
-        </div>
-      </div>
-    </section>`;
-  return shell(vm, body);
 }
 
 function renderCoOp(vm) {
@@ -2353,7 +2288,7 @@ function setupTermOptions(terms = [], fallbackTerm = {}) {
 
 function termSetupRow(term = {}, index = 0) {
   const termId = term.id || `term_${index + 1}`;
-  return `<div data-setup-row="terms" data-id="${html(termId)}" style="display:grid;grid-template-columns:1fr .75fr .75fr auto auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;"><input type="hidden" name="id" value="${html(termId)}" />${setupInput("Term name", "label", term.label || `Term ${index + 1}`)}${setupInput("Start", "startDate", term.startDate || "", { type: "date" })}${setupInput("End", "endDate", term.endDate || "", { type: "date" })}<button type="button" data-close-term="${html(termId)}" style="align-self:end;border:1px solid var(--gold);background:#fbf2dd;color:var(--ink);border-radius:9px;padding:10px 12px;font-family:inherit;font-weight:700;">Close Term</button>${setupRemoveButton()}</div>`;
+  return `<div data-setup-row="terms" data-id="${html(termId)}" style="display:grid;grid-template-columns:1fr .75fr .75fr auto auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;"><input type="hidden" name="id" value="${html(termId)}" />${setupInput("Term name", "label", term.label || `Term ${index + 1}`)}${setupInput("Start", "startDate", term.startDate || "", { type: "date" })}${setupInput("End", "endDate", term.endDate || "", { type: "date" })}<button type="button" data-close-term="${html(termId)}" style="align-self:end;border:1px solid var(--gold);background:#fbf2dd;color:var(--ink);border-radius:99px;padding:10px 12px;font-family:inherit;font-weight:700;">Close Term</button>${setupRemoveButton()}</div>`;
 }
 
 function setupRemoveButton() {
