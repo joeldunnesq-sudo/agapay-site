@@ -170,6 +170,44 @@ function scheduledThisTermWeek(item = {}, weekNumber = 1) {
   return scheduledWeeksValue(item.scheduledWeeks).includes(weekNumber);
 }
 
+function schedulingModeValue(value = "fixed") {
+  return ["fixed", "weekly-target", "term-target", "loop", "date-range"].includes(value) ? value : "fixed";
+}
+
+function itemActiveOnDateRange(item = {}, isoDate = "") {
+  if (!isoDate || item.schedulingMode !== "date-range") return true;
+  if (item.activeStartDate && isoDate < item.activeStartDate) return false;
+  if (item.activeEndDate && isoDate > item.activeEndDate) return false;
+  return true;
+}
+
+function planArraysForItem(item = {}, currentTermWeek = 1, weekDates = []) {
+  const active = scheduledThisTermWeek(item, currentTermWeek);
+  const mode = schedulingModeValue(item.schedulingMode);
+  const defaultDays = item.scheduledDays?.length ? item.scheduledDays : scheduledDaysValue(item.weeklyFrequency || "daily");
+  if (!active) return weeklyPlanArrays(defaultDays, item.minutes || item.minutesPlanned || 20, false);
+  let days = [...defaultDays];
+  if (mode === "weekly-target") {
+    const count = Math.max(1, Math.min(7, int(item.weeklyTarget, days.length || 1)));
+    const pool = days.length ? days : ["mon", "tue", "wed", "thu", "fri"];
+    days = pool.slice(0, count);
+  } else if (mode === "term-target") {
+    const activeWeeks = Math.max(1, scheduledWeeksValue(item.scheduledWeeks).length);
+    const sessionsThisWeek = Math.max(0, Math.ceil(int(item.termTarget, 0) / activeWeeks));
+    const pool = days.length ? days : ["mon", "tue", "wed", "thu", "fri"];
+    days = pool.slice(0, Math.min(pool.length, sessionsThisWeek));
+  } else if (mode === "loop") {
+    const pool = days.length ? days : ["mon", "tue", "wed", "thu", "fri"];
+    days = pool.length ? [pool[(Math.max(1, currentTermWeek) - 1) % pool.length]] : [];
+  }
+  const base = weeklyPlanArrays(days, item.minutes || item.minutesPlanned || 20, true);
+  if (mode === "date-range" && weekDates.length === 7) {
+    base.minutes = base.minutes.map((value, index) => itemActiveOnDateRange(item, weekDates[index]) ? value : 0);
+    base.statuses = base.statuses.map((value, index) => itemActiveOnDateRange(item, weekDates[index]) ? value : "empty");
+  }
+  return base;
+}
+
 function resourceTypeValue(value, fallback = "curriculum") {
   const raw = String(value || "").trim().toLowerCase();
   if (["book", "curriculum", "website", "hymn", "icon", "activity", "none"].includes(raw)) return raw;
@@ -397,6 +435,7 @@ function normalizeSetupPayload(payload = {}, identity) {
       label: text(entry.label, `Term ${index + 1}`),
       startDate: text(entry.startDate, index === 0 ? seed.term.startDate : ""),
       endDate: text(entry.endDate, index === 0 ? seed.term.endDate : ""),
+      weeksCount: Math.max(1, Math.min(24, int(entry.weeksCount, 12))),
       paceMode: text(preferences.paceMode || entry.paceMode, seed.term.paceMode || "steady")
     }))
     .filter((entry) => entry.label);
@@ -461,9 +500,17 @@ function normalizeSetupPayload(payload = {}, identity) {
     subjectType: text(subject.subjectType || subject.type, slug(subject.title, "subject")),
     title: text(subject.title, "Subject"),
     planningMode: text(subject.planningMode, "forms"),
+    instructionMode: text(subject.instructionMode, "parent-led"),
+    schedulingMode: schedulingModeValue(subject.schedulingMode),
     scheduledDays: subjectDays,
     scheduledWeeks: scheduledWeeksValue(subject.scheduledWeeks),
     weeklyFrequency: frequencyFromDays(subjectDays),
+    weeklyTarget: Math.max(0, int(subject.weeklyTarget, 0)),
+    termTarget: Math.max(0, int(subject.termTarget, 0)),
+    activeStartDate: text(subject.activeStartDate, ""),
+    activeEndDate: text(subject.activeEndDate, ""),
+    priorityLevel: ["essential", "important", "enrichment", "optional"].includes(subject.priorityLevel) ? subject.priorityLevel : "important",
+    missedLessonBehavior: text(subject.missedLessonBehavior, preferences.defaultMissedLessonBehavior || "next-occurrence"),
     formLabel: text(subject.formLabel, ""),
     gradeLabel: text(subject.gradeLabel, ""),
     resource: text(subject.resource, ""),
@@ -558,9 +605,17 @@ function normalizeSetupPayload(payload = {}, identity) {
       resource: text(block.resource || block.source, ""),
       resourceType: resourceTypeValue(block.resourceType || block.sourceType, block.resource || block.source ? "curriculum" : "none"),
       planningMode: text(block.planningMode, "family"),
+      instructionMode: text(block.instructionMode, "shared"),
+      schedulingMode: schedulingModeValue(block.schedulingMode),
       scheduledDays: blockDays,
       scheduledWeeks: scheduledWeeksValue(block.scheduledWeeks),
       weeklyFrequency: frequencyFromDays(blockDays),
+      weeklyTarget: Math.max(0, int(block.weeklyTarget, 0)),
+      termTarget: Math.max(0, int(block.termTarget, 0)),
+      activeStartDate: text(block.activeStartDate, ""),
+      activeEndDate: text(block.activeEndDate, ""),
+      priorityLevel: ["essential", "important", "enrichment", "optional"].includes(block.priorityLevel) ? block.priorityLevel : "enrichment",
+      missedLessonBehavior: text(block.missedLessonBehavior, preferences.defaultMissedLessonBehavior || "next-occurrence"),
       formLabel: text(block.formLabel, ""),
       gradeLabel: text(block.gradeLabel, ""),
       childId: text(block.childId, ""),
@@ -641,6 +696,9 @@ function normalizeSetupPayload(payload = {}, identity) {
     preferences: {
       calendarType: normalizedHousehold.liturgicalCalendarType,
       groupingMode,
+      defaultSchoolDays: scheduledDaysValue(preferences.defaultSchoolDays, "daily"),
+      defaultMissedLessonBehavior: text(preferences.defaultMissedLessonBehavior, "next-occurrence"),
+      defaultMaxDailyMinutes: Math.max(30, int(preferences.defaultMaxDailyMinutes, 240)),
       paceMode: normalizedHousehold.paceMode,
       evaluationModel: text(preferences.evaluationModel, "narrative-only"),
       graceModeDefault: text(preferences.graceModeDefault, "light"),
@@ -879,10 +937,11 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
     }))
   ];
   const currentTermWeek = activeTermWeek(setupSnapshot.term || next.term || {});
+  const plannerWeekWindow = currentWeekWindow();
   next.plannerWeek = {
     termWeekNumber: currentTermWeek,
     ...next.plannerWeek,
-    ...currentWeekWindow(),
+    ...plannerWeekWindow,
     seasonLabel: setupSnapshot.term?.label || next.plannerWeek.seasonLabel,
     householdRows: [
       ...list(setupSnapshot.streams).map((stream, index) => ({
@@ -911,9 +970,12 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
         groupLabel: block.planningMode === "forms" ? block.formLabel || block.gradeLabel || "Form Enrichment" : "Everyone Together",
         planningMode: block.planningMode || "family",
         href: /literature|read-aloud|read aloud/i.test(`${block.blockType} ${block.title}`) ? "/myagapay/learn/books" : "/myagapay/learn/formation",
-        priority: 70 + index,
+        priority: block.priorityLevel === "essential" ? 10 : block.priorityLevel === "important" ? 40 : block.priorityLevel === "optional" ? 95 : 70,
+        priorityLevel: block.priorityLevel,
+        instructionMode: block.instructionMode,
+        missedLessonBehavior: block.missedLessonBehavior,
         color: block.color,
-        ...weeklyPlanArrays(block.scheduledDays?.length ? block.scheduledDays : block.weeklyFrequency, block.minutesPlanned || 20, scheduledThisTermWeek(block, currentTermWeek))
+        ...planArraysForItem(block, currentTermWeek, plannerWeekWindow.dates)
       }))
     ],
     childRows: [
@@ -924,10 +986,13 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           childId: child.id,
           title: subject.title,
           detail: `${subject.resource || subject.cadenceLabel}${subject.endNumber ? ` (${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber})` : ""}${subject.weeklyFrequency ? ` • ${subject.weeklyFrequency}` : ""}`,
-          priority: index + 1,
+          priority: subject.priorityLevel === "essential" ? index : subject.priorityLevel === "important" ? 30 + index : subject.priorityLevel === "optional" ? 100 + index : 70 + index,
+          priorityLevel: subject.priorityLevel,
+          instructionMode: subject.instructionMode,
+          missedLessonBehavior: subject.missedLessonBehavior,
           color: subject.color,
           graceModeApplied: setupSnapshot.preferences?.graceModeActive && subject.gracePriority !== "keep",
-          ...weeklyPlanArrays(subject.scheduledDays?.length ? subject.scheduledDays : subject.weeklyFrequency, subject.minutes, scheduledThisTermWeek(subject, currentTermWeek))
+          ...planArraysForItem(subject, currentTermWeek, plannerWeekWindow.dates)
         }));
       }),
       ...childBooks.flatMap((book, index) => {
