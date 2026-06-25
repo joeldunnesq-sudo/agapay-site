@@ -442,9 +442,11 @@ function sidebar(vm) {
           ${item.id === "planner" ? plannerSidebarSubnav(active) : ""}
         `).join("")}
         </nav>
-        <button class="learn-product-google-sync" type="button" data-learn-google-sync>
+        <button class="learn-product-google-sync" type="button" data-learn-google-sync
+          ${vm.shell.gcalConfigured ? "" : "disabled aria-disabled=\"true\" title=\"Google Calendar sync is not yet configured\""}
+          style="${vm.shell.gcalConfigured ? "" : "opacity:.45;cursor:not-allowed;"}">
           <span aria-hidden="true">G</span>
-          <span><strong>Google Calendar</strong><small>Connect family sync</small></span>
+          <span><strong>Google Calendar</strong><small>${vm.shell.gcalConnected ? "Sync connected" : vm.shell.gcalConfigured ? "Connect family sync" : "Not yet configured"}</small></span>
         </button>
       </div>
     </aside>
@@ -3425,17 +3427,17 @@ function renderPrintCenter(vm) {
       id: "weekly",
       label: "This Week",
       icon: "▦",
-      desc: "Your most-used prints — grab these every week.",
+      desc: "Household and lesson plan prints for the current week.",
       premium: false,
-      ids: ["print_mom_weekly", "planner_chores_week", "planner_meals_week", "planner_grocery_week"]
+      ids: ["print_mom_weekly"]
     },
     {
       id: "month",
       label: "Month & Calendar",
       icon: "▣",
-      desc: "Monthly planning with feast days and fast days clearly marked.",
+      desc: "Monthly household plans with feast days and fast days clearly marked.",
       premium: false,
-      ids: ["print_mom_month", "planner_meals_month", "planner_chores_month", "planner_events_month"]
+      ids: ["print_mom_month", "planner_events_month"]
     },
     {
       id: "lessons",
@@ -3447,11 +3449,15 @@ function renderPrintCenter(vm) {
     },
     {
       id: "kitchen",
-      label: "Kitchen & Home",
+      label: "Meals, Recipes & Home",
       icon: "♨",
-      desc: "Recipes, pantry, and daily chore charts.",
+      desc: "Meal plans, recipe collections, grocery lists, and chore charts for the household.",
       premium: true,
-      ids: ["planner_recipes", "planner_chores_day"]
+      ids: [
+        "planner_meals_week", "planner_meals_month",
+        "planner_recipes", "planner_grocery_week",
+        "planner_chores_day", "planner_chores_week", "planner_chores_month"
+      ]
     }
   ];
 
@@ -3503,8 +3509,8 @@ function renderPrintCenter(vm) {
         </strong>
         <span style="display:block;color:var(--muted);font-size:13px;margin-top:3px;line-height:1.45;">
           ${freePlan
-            ? "This Week and Month & Calendar packs are free. Lesson plans, chore charts, and child sheets require the Family plan."
-            : "All household plans, child sheets, lesson packs, and planner prints are unlocked."}
+            ? "This Week and Month & Calendar packs are free. Lesson plans, meal plans, chore charts, recipes, and child sheets require the Family plan."
+            : "All household plans, child sheets, lesson packs, meal plans, recipe collections, and planner prints are unlocked."}
         </span>
         ${statusBar}
       </div>
@@ -4624,9 +4630,51 @@ function wirePlanner(vm) {
       submit.disabled = false;
     }
   });
-}
 
-function updateActiveButton(buttons, activeButton) {
+  // ── Lesson block note save ────────────────────────────────────────────────────
+  root.querySelectorAll("[data-block-note-form]").forEach((form) => {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const blockId = form.dataset.blockNoteForm || "";
+      const note = form.querySelector("[data-block-note-input]")?.value?.trim() || "";
+      const btn = form.querySelector("button[type=\"submit\"]");
+      if (btn) { btn.disabled = true; btn.textContent = "Saving..."; }
+      try {
+        await apiPost("/api/learn/planner", { action: "note", blockId, note });
+        const wrap = form.closest("[data-block-note-wrap]");
+        if (wrap) { wrap.querySelector("[data-block-note-display]").textContent = note; wrap.dataset.blockNoteOpen = ""; }
+      } catch (error) {
+        showLearnDialog("Note Could Not Be Saved", error.message || "Please try again.", []);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = "Save Note"; }
+      }
+    });
+  });
+
+  // ── Lesson block reschedule ───────────────────────────────────────────────────
+  root.querySelectorAll("[data-block-reschedule]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const blockId = button.dataset.blockReschedule || "";
+      const fromDate = button.dataset.blockFromDate || "";
+      const toDate = button.dataset.blockToDate || "";
+      if (!blockId || !fromDate || !toDate) return;
+      button.disabled = true;
+      try {
+        const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
+        const saved = await apiPost(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}`, { action: "reschedule", blockId, fromDate, toDate });
+        if (saved.planner) {
+          const updatedVm = toPlannerViewModel({ ok: true, planner: saved.planner });
+          root.innerHTML = renderPlanner(updatedVm);
+          wirePlanner(updatedVm);
+        }
+      } catch (error) {
+        showLearnDialog("Reschedule Could Not Be Saved", error.message || "Please try again.", []);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+}
   buttons.forEach((button) => {
     const active = button === activeButton;
     button.style.background = active ? "var(--navy)" : "var(--paper)";
