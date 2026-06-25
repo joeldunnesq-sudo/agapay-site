@@ -21,6 +21,11 @@ import {
 } from "../learn/billing.js";
 
 import {
+  agapayEmailHtml,
+  sendEmail,
+} from "../lib/email.js";
+
+import {
   absoluteWebsiteUrl,
   slugify,
 } from "../lib/format.js";
@@ -230,6 +235,32 @@ export async function processStripeWebhookEvent(env, event) {
         stripeSubscriptionId: object.subscription || "",
         checkoutSessionId: object.id || ""
       });
+      const toEmail = object.customer_details?.email || object.customer_email || object.metadata?.donor_email || "";
+      if (toEmail) {
+        const appUrl = env.AGAPAY_PUBLIC_URL || "https://agapay.app";
+        const setupUrl = `${appUrl}/myagapay/learn/setup`;
+        const dashUrl = `${appUrl}/myagapay/learn`;
+        await sendEmail(env, {
+          from: "AGAPAY Learn <learn@agapay.app>",
+          to: [toEmail],
+          subject: "Welcome to AGAPAY Learn",
+          html: agapayEmailHtml(appUrl, "Welcome to AGAPAY Learn", `
+            <p style="margin:0 0 18px;">Thank you for joining AGAPAY Learn. Your Family plan is now active.</p>
+            <p style="margin:0 0 18px;">AGAPAY Learn is an Orthodox Christian homeschool planning application for your household. It brings Church rhythms, lesson planning, books, Grace Mode, and printable plans into one calm workspace shaped by the liturgical calendar.</p>
+            <p style="margin:0 0 8px;"><strong>Get started in three steps:</strong></p>
+            <ol style="margin:0 0 18px;padding-left:22px;line-height:1.9;">
+              <li>Complete your household setup — name your children, set your school year and terms, and choose your Church calendar.</li>
+              <li>Add your subjects, books, and Church rhythm.</li>
+              <li>Open Today's dashboard each morning for your liturgical day, church rhythms, and household plan.</li>
+            </ol>
+            <div style="text-align:center;margin:28px 0;">
+              <a href="${setupUrl}" style="display:inline-block;background:#07284A;color:#ffffff;text-decoration:none;border-radius:10px;padding:14px 32px;font-size:16px;font-weight:700;border:1px solid #C9A25B;">Set Up Your Household →</a>
+            </div>
+            <p style="margin:0 0 10px;color:#595959;font-size:13px;">Already set up? <a href="${dashUrl}" style="color:#C9A25B;">Go to your dashboard</a>.</p>
+            <p style="margin:0;color:#595959;font-size:13px;">If you have any questions, reply to this email. We read every message.</p>
+          `)
+        }).catch(() => {});
+      }
       return;
     }
 
