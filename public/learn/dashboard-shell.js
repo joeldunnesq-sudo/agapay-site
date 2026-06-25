@@ -4675,11 +4675,24 @@ function wirePlanner(vm) {
     });
   });
 }
+
+function updateActiveButton(buttons, activeButton) {
   buttons.forEach((button) => {
     const active = button === activeButton;
-    button.style.background = active ? "var(--navy)" : "var(--paper)";
-    button.style.color = active ? "#f3ead4" : "var(--ink)";
-    button.style.borderColor = active ? "var(--gold)" : "var(--line)";
+
+    button.style.background = active
+      ? "var(--navy)"
+      : "var(--paper)";
+
+    button.style.color = active
+      ? "#f3ead4"
+      : "var(--ink)";
+
+    button.style.borderColor = active
+      ? "var(--gold)"
+      : "var(--line)";
+
+    button.setAttribute("aria-pressed", String(active));
   });
 }
 
