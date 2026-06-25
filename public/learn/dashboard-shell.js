@@ -4616,7 +4616,6 @@ function wirePlanner(vm) {
     button.style.color = active ? "#f3ead4" : "var(--ink)";
     button.style.borderColor = active ? "var(--gold)" : "var(--line)";
   });
-}
 
 function wireCommunityLegacy() {
   const search = root.querySelector("[data-community-search]");
