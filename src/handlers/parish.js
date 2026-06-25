@@ -2665,6 +2665,17 @@ export async function handleCheckout(request, env) {
     form.set("payment_intent_data[application_fee_amount]", String(agapayFeeCents));
   }
 
+  // on_behalf_of ensures card statement descriptors and branding show the
+  // parish's name rather than AGAPAY's. Required for correct Stripe Connect
+  // settlement and dispute ownership on standard connected accounts.
+  if (parish.stripeAccountId) {
+    if (recurring) {
+      form.set("subscription_data[on_behalf_of]", parish.stripeAccountId);
+    } else {
+      form.set("payment_intent_data[on_behalf_of]", parish.stripeAccountId);
+    }
+  }
+
   if (recurring) {
     form.set("line_items[0][price_data][recurring][interval]", body.frequency === "weekly" || body.frequency === "biweekly" ? "week" : "month");
     if (body.frequency === "biweekly") form.set("line_items[0][price_data][recurring][interval_count]", "2");
