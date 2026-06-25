@@ -2365,3 +2365,91 @@ body {
   .learn-family-month-board.is-full-month { grid-template-columns: 1fr; }
   .learn-family-feasts-card article { grid-template-columns: 38px minmax(0, 1fr); }
 }
+
+/* ── Additional mobile breakpoints (768px and below) ────────────────────────── */
+@media (max-width: 768px) {
+  /* Dashboard Today panel stacks */
+  .learn-today-art-panel { display: none; }
+  .learn-today-main { gap: 14px; }
+  .learn-today-meta-grid { grid-template-columns: 1fr; }
+
+  /* Planner boards become horizontally scrollable strips */
+  .learn-family-week-board,
+  .learn-lessons-week-board,
+  .learn-term-pacing-board {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Print center grid collapses to single column */
+  .learn-print-pack-grid { grid-template-columns: 1fr !important; }
+  .learn-print-center-layout { grid-template-columns: 1fr !important; }
+
+  /* Formation 3-col top row stacks */
+  .learn-formation-top-row { grid-template-columns: 1fr !important; }
+
+  /* Books layout stacks sidebar under content */
+  .learn-books-layout { grid-template-columns: 1fr !important; }
+
+  /* Reports grid collapses */
+  .learn-reports-grid { grid-template-columns: 1fr !important; }
+
+  /* Setup form grid collapses */
+  .learn-setup-layout { grid-template-columns: 1fr !important; }
+
+  /* Term pacing rows */
+  .learn-term-pacing-row { grid-template-columns: minmax(0, 1fr) !important; }
+
+  /* Child week grid stacks */
+  .learn-child-week-grid { grid-template-columns: 1fr !important; overflow-x: auto; }
+
+  /* Community card grid */
+  .learn-community-card-grid { grid-template-columns: 1fr !important; }
+
+  /* Meal setup rows: compress to 4 cols on mid-mobile */
+  .learn-meal-week { grid-template-columns: repeat(4, minmax(142px, 1fr)); }
+
+  /* Print center plan banner wraps */
+  .learn-print-plan-banner { flex-direction: column !important; }
+
+  /* Page heading utilities */
+  .learn-page-title-utility { flex-direction: column; align-items: flex-start !important; gap: 8px !important; }
+}
+
+@media (max-width: 480px) {
+  /* Topbar compact */
+  .learn-product-topbar { padding: 0.5rem 0.65rem; min-height: 56px; }
+
+  /* Page intro heading */
+  .learn-page-intro-heading { font-size: clamp(24px, 7vw, 34px) !important; }
+
+  /* Meal week becomes 2 cols */
+  .learn-meal-week { grid-template-columns: repeat(2, minmax(142px, 1fr)); }
+
+  /* Family adults 1-col */
+  .learn-family-adults { grid-template-columns: 1fr !important; }
+
+  /* Panel paddings reduce */
+  .learn-product-content { padding: 0.75rem !important; }
+
+  /* Child row ultra-narrow */
+  .learn-child-row { grid-template-columns: 1fr !important; }
+  .learn-child-monogram { grid-column: 1; }
+
+  /* Planner week family board enforces min-width for scroll */
+  .learn-family-week-head,
+  .learn-family-week-row { min-width: 680px; }
+
+  /* Print center stat cards 1-col */
+  .learn-print-stats { grid-template-columns: 1fr !important; }
+
+  /* Quick actions wrap */
+  .learn-quick-action { width: 100%; text-align: center; }
+
+  /* Week overview card stacks */
+  .learn-week-overview article { min-width: 0 !important; }
+
+  /* Formation bottom row auto-fit shrinks to 1 */
+  .learn-formation-bottom-row { grid-template-columns: 1fr !important; }
+}
