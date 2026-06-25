@@ -221,6 +221,7 @@ function shellFromPayload(page, payload) {
   const name = text(household.name, "Your Household");
   const method = text(household.primaryMethod, "Homeschool");
   const account = donorAccountFromStorage();
+  const gcalSync = section.googleCalendarSync || payload?.dashboard?.googleCalendarSync || null;
   return {
     familyName: name,
     familyInitial: name.replace(/^The\s+/i, "").trim().charAt(0).toUpperCase() || "F",
@@ -228,6 +229,8 @@ function shellFromPayload(page, payload) {
     accountName: account.name,
     accountInitials: account.initials,
     timeLabel: text(household.topbarTimeLabel, new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date())),
+    gcalConfigured: gcalSync ? Boolean(gcalSync.configured !== false) : false,
+    gcalConnected: Boolean(gcalSync?.connected),
     nav: [
       { id: "dashboard", href: "/myagapay/learn", label: "Dashboard", icon: "✥" },
       { id: "planner", href: "/myagapay/learn/planner", label: "Planner", icon: "▣" },
@@ -1295,7 +1298,6 @@ export function toPrintCenterViewModel(rawPayload) {
     "planner-lesson-week-child", "planner-lesson-month-child", "planner-lesson-term-child",
     "planner-chores-day", "planner-chores-week", "planner-chores-month", "planner-chores-week-child",
     "planner-meals-week", "planner-meals-month",
-    "planner-events-month",
     "planner-recipes", "planner-grocery-week",
   ]);
   return {
