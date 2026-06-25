@@ -642,6 +642,282 @@ function addCorsHeaders(response, env) {
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// STEWARDSHIP GIVING SUITE — inline handlers
+// These power the real-time pledge tracking add-on in the Parish dashboard.
+// Reads from: household_pledges, giving_funds, donor_offerings, donors (D1).
+// Feature-gated by parish_stewardship_settings.has_stewardship_suite = 1.
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function requireStewardshipFeature(env, parishId) {
+  const row = await env.DB.prepare(
+    `SELECT has_stewardship_suite FROM parish_stewardship_settings WHERE parish_id = ?`
+  ).bind(parishId).first();
+  if (!row || !row.has_stewardship_suite) {
+    return json({ error: "Stewardship Suite not activated for this parish." }, { status: 403 });
+  }
+  return null; // null = access granted
+}
+
+async function seedStewardshipFunds(env, parishId) {
+  const defaults = [
+    { name: "General Stewardship",    code: "stewardship", is_default: 1, sort_order: 0 },
+    { name: "Candles / Vigil Lights", code: "candle",      is_default: 0, sort_order: 1 },
+    { name: "Building Fund",          code: "building",    is_default: 0, sort_order: 2 },
+    { name: "Poor Box / Alms",        code: "alms",        is_default: 0, sort_order: 3 },
+    { name: "Campaign / Appeal",      code: "campaign",    is_default: 0, sort_order: 4 },
+    { name: "Iconography Fund",       code: "iconography", is_default: 0, sort_order: 5 },
+    { name: "Memorial / Panakhida",   code: "memorial",    is_default: 0, sort_order: 6 },
+  ];
+  const stmts = defaults.map(f =>
+    env.DB.prepare(
+      `INSERT OR IGNORE INTO giving_funds (parish_id, name, code, is_default, sort_order)
+       VALUES (?, ?, ?, ?, ?)`
+    ).bind(parishId, f.name, f.code, f.is_default, f.sort_order)
+  );
+  await env.DB.batch(stmts);
+}
+
+// POST /api/parish/dashboard/:parishId/stewardship/giving/activate
+async function handleStewardshipGivingActivate(request, env, parishId) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const auth = await verifyParishDashboardBearer(request, env, parishId);
+  if (!auth) return unauthorized();
+
+  const body = await request.json().catch(() => ({}));
+  const { stripeSubscriptionItemId } = body;
+
+  await env.DB.prepare(`
+    INSERT INTO parish_stewardship_settings (parish_id, has_stewardship_suite, stripe_subscription_item_id)
+    VALUES (?, 1, ?)
+    ON CONFLICT(parish_id) DO UPDATE SET
+      has_stewardship_suite = 1,
+      stripe_subscription_item_id = excluded.stripe_subscription_item_id,
+      updated_at = datetime('now')
+  `).bind(parishId, stripeSubscriptionItemId || null).run();
+
+  await seedStewardshipFunds(env, parishId);
+  return json({ ok: true });
+}
+
+// GET /api/parish/dashboard/:parishId/stewardship/giving/summary
+// Pledge vs actual, run rate, household/donor counts, fulfillment rate.
+async function handleStewardshipGivingSummary(request, env, parishId) {
+  const auth = await verifyParishDashboardBearer(request, env, parishId);
+  if (!auth) return unauthorized();
+  const gate = await requireStewardshipFeature(env, parishId);
+  if (gate) return gate;
+
+  const url  = new URL(request.url);
+  const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
+  const yearStart = `${year}-01-01`;
+  const yearEnd   = `${year}-12-31`;
+
+  const today     = new Date();
+  const dayOfYear = Math.max(1, Math.ceil((today - new Date(`${year}-01-01`)) / 86400000));
+  const daysInYear = (year % 4 === 0) ? 366 : 365;
+
+  const [pledgeRow, actualRow, priorRow] = await Promise.all([
+    env.DB.prepare(`
+      SELECT COUNT(*) AS pledging_donors, SUM(target_amount_cents) AS total_pledged_cents
+      FROM household_pledges WHERE parish_id = ? AND fiscal_year = ?
+    `).bind(parishId, year).first(),
+
+    env.DB.prepare(`
+      SELECT
+        COUNT(DISTINCT donor_email) AS active_donors,
+        SUM(json_extract(data, '$.giftAmountCents')) AS total_actual_cents
+      FROM donor_offerings
+      WHERE parish_id = ? AND payment_status = 'paid'
+        AND created_at BETWEEN ? AND ?
+    `).bind(parishId, yearStart, yearEnd).first(),
+
+    env.DB.prepare(`
+      SELECT SUM(json_extract(data, '$.giftAmountCents')) AS total_prior_cents
+      FROM donor_offerings
+      WHERE parish_id = ? AND payment_status = 'paid'
+        AND created_at BETWEEN ? AND ?
+    `).bind(parishId, `${year - 1}-01-01`, `${year - 1}-12-31`).first(),
+  ]);
+
+  const totalPledged = pledgeRow?.total_pledged_cents || 0;
+  const totalActual  = actualRow?.total_actual_cents  || 0;
+  const runRate      = Math.round((totalActual / dayOfYear) * daysInYear);
+  const fulfillment  = totalPledged > 0 ? Math.round((totalActual / totalPledged) * 100) : null;
+  const avgPerDonor  = (actualRow?.active_donors || 0) > 0
+    ? Math.round(totalActual / actualRow.active_donors) : 0;
+
+  return json({
+    fiscal_year:             year,
+    pledging_donors:         pledgeRow?.pledging_donors      || 0,
+    active_donors:           actualRow?.active_donors        || 0,
+    total_pledged_cents:     totalPledged,
+    total_actual_cents:      totalActual,
+    prior_year_actual_cents: priorRow?.total_prior_cents     || 0,
+    run_rate_cents:          runRate,
+    fulfillment_rate_pct:    fulfillment,
+    avg_per_donor_cents:     avgPerDonor,
+    day_of_year:             dayOfYear,
+    days_in_year:            daysInYear,
+  });
+}
+
+// GET /api/parish/dashboard/:parishId/stewardship/giving/funds
+// Giving totals broken down by fund (matches giftType in donor_offerings.data).
+async function handleStewardshipGivingFunds(request, env, parishId) {
+  const auth = await verifyParishDashboardBearer(request, env, parishId);
+  if (!auth) return unauthorized();
+  const gate = await requireStewardshipFeature(env, parishId);
+  if (gate) return gate;
+
+  const url  = new URL(request.url);
+  const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
+
+  const rows = await env.DB.prepare(`
+    SELECT
+      gf.name                                                             AS fund_name,
+      gf.code                                                             AS fund_code,
+      COUNT(o.id)                                                         AS transaction_count,
+      COALESCE(SUM(json_extract(o.data, '$.giftAmountCents')), 0)        AS total_cents
+    FROM giving_funds gf
+    LEFT JOIN donor_offerings o
+           ON json_extract(o.data, '$.giftType') = gf.code
+          AND o.parish_id = ?
+          AND o.payment_status = 'paid'
+          AND o.created_at BETWEEN ? AND ?
+    WHERE gf.parish_id = ?
+    GROUP BY gf.id, gf.name, gf.code
+    ORDER BY gf.sort_order
+  `).bind(parishId, `${year}-01-01`, `${year}-12-31`, parishId).all();
+
+  const totalCents = rows.results.reduce((s, r) => s + (r.total_cents || 0), 0);
+
+  return json({
+    fiscal_year: year,
+    total_cents: totalCents,
+    funds: rows.results.map(r => ({
+      fund_name:         r.fund_name,
+      fund_code:         r.fund_code,
+      transaction_count: r.transaction_count || 0,
+      total_cents:       r.total_cents || 0,
+      pct_of_total:      totalCents > 0
+        ? Math.round(((r.total_cents || 0) / totalCents) * 100) : 0,
+    })),
+  });
+}
+
+// GET /api/parish/dashboard/:parishId/stewardship/giving/distribution
+// Anonymized donor giving tier histogram (no individual identities exposed).
+async function handleStewardshipGivingDistribution(request, env, parishId) {
+  const auth = await verifyParishDashboardBearer(request, env, parishId);
+  if (!auth) return unauthorized();
+  const gate = await requireStewardshipFeature(env, parishId);
+  if (gate) return gate;
+
+  const url  = new URL(request.url);
+  const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
+
+  const rows = await env.DB.prepare(`
+    SELECT
+      donor_email,
+      SUM(json_extract(data, '$.giftAmountCents')) AS donor_total_cents
+    FROM donor_offerings
+    WHERE parish_id = ? AND payment_status = 'paid'
+      AND created_at BETWEEN ? AND ?
+    GROUP BY donor_email
+  `).bind(parishId, `${year}-01-01`, `${year}-12-31`).all();
+
+  const TIERS = [
+    { label: "$0–$500",        min: 0,       max: 49999   },
+    { label: "$500–$2,000",    min: 50000,   max: 199999  },
+    { label: "$2,000–$5,000",  min: 200000,  max: 499999  },
+    { label: "$5,000–$10,000", min: 500000,  max: 999999  },
+    { label: "$10,000+",       min: 1000000, max: Infinity },
+  ];
+
+  const tiers = TIERS.map(t => ({ ...t, count: 0 }));
+  for (const row of rows.results) {
+    const amt  = row.donor_total_cents || 0;
+    const tier = tiers.find(t => amt >= t.min && amt <= t.max);
+    if (tier) tier.count++;
+  }
+
+  return json({
+    fiscal_year:   year,
+    total_donors:  rows.results.length,
+    tiers: tiers.map(({ label, count }) => ({ label, count })),
+  });
+}
+
+// GET /api/parish/dashboard/:parishId/stewardship/giving/retention
+// Current vs prior year donor comparison.
+async function handleStewardshipGivingRetention(request, env, parishId) {
+  const auth = await verifyParishDashboardBearer(request, env, parishId);
+  if (!auth) return unauthorized();
+  const gate = await requireStewardshipFeature(env, parishId);
+  if (gate) return gate;
+
+  const url  = new URL(request.url);
+  const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
+
+  const [curRows, priorRows] = await Promise.all([
+    env.DB.prepare(`
+      SELECT DISTINCT donor_email FROM donor_offerings
+      WHERE parish_id = ? AND payment_status = 'paid'
+        AND created_at BETWEEN ? AND ?
+    `).bind(parishId, `${year}-01-01`, `${year}-12-31`).all(),
+
+    env.DB.prepare(`
+      SELECT DISTINCT donor_email FROM donor_offerings
+      WHERE parish_id = ? AND payment_status = 'paid'
+        AND created_at BETWEEN ? AND ?
+    `).bind(parishId, `${year - 1}-01-01`, `${year - 1}-12-31`).all(),
+  ]);
+
+  const cur   = new Set(curRows.results.map(r => r.donor_email));
+  const prior = new Set(priorRows.results.map(r => r.donor_email));
+
+  const retained  = [...prior].filter(e => cur.has(e)).length;
+  const lapsed    = [...prior].filter(e => !cur.has(e)).length;
+  const newDonors = [...cur].filter(e => !prior.has(e)).length;
+  const retention = prior.size > 0 ? Math.round((retained / prior.size) * 100) : null;
+
+  return json({
+    fiscal_year:        year,
+    prior_year:         year - 1,
+    prior_donors:       prior.size,
+    current_donors:     cur.size,
+    retained,
+    lapsed,
+    new_donors:         newDonors,
+    retention_rate_pct: retention,
+  });
+}
+
+// ── PLEDGE SYNC HELPER ───────────────────────────────────────────────────────
+// Call this from handleDonorDashboard (in handlers/donor.js) whenever a donor
+// saves their pledge amount. Pass the donor's email, their default_parish_id,
+// and the new pledgeAmountCents value.
+//
+// Usage (in handlers/donor.js, after writing pledgeAmountCents to donor row):
+//
+//   if (donorRow.default_parish_id) {
+//     await syncPledgeToHousehold(env, donorEmail, donorRow.default_parish_id, pledgeAmountCents);
+//   }
+//
+export async function syncPledgeToHousehold(env, donorEmail, parishId, pledgeAmountCents) {
+  if (!parishId || !parishId.trim()) return;
+  const year = new Date().getFullYear();
+  await env.DB.prepare(`
+    INSERT INTO household_pledges (donor_email, parish_id, fiscal_year, target_amount_cents)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(donor_email, fiscal_year) DO UPDATE SET
+      target_amount_cents = excluded.target_amount_cents,
+      parish_id           = excluded.parish_id,
+      updated_at          = datetime('now')
+  `).bind(donorEmail, parishId, year, pledgeAmountCents).run();
+}
+
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(sendWeeklyCommemorationEmails(env, event.scheduledTime));
@@ -1060,6 +1336,30 @@ export default {
         if (swAction === "pdf") return handleStewardshipMeetingPdf(request, env, swId);
         return handleStewardshipMeetingEdit(request, env, swId);
       }
+    }
+
+    // ── Stewardship Giving API ────────────────────────────────────────────
+    // Real-time pledge tracking and metrics for the Parish Stewardship Suite.
+    // All routes gated by has_stewardship_suite feature flag in D1.
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/summary")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/summary", ""));
+      return handleStewardshipGivingSummary(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/funds")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/funds", ""));
+      return handleStewardshipGivingFunds(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/distribution")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/distribution", ""));
+      return handleStewardshipGivingDistribution(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/retention")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/retention", ""));
+      return handleStewardshipGivingRetention(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/activate")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/activate", ""));
+      return handleStewardshipGivingActivate(request, env, parishId);
     }
 
     if (url.pathname.startsWith("/api/")) {
