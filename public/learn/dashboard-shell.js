@@ -1143,8 +1143,27 @@ function renderFeastsPanel(model, mode = "week") {
   const days = (mode === "month" ? model.monthDays : model.weekDays)
     .filter((day) => day.inMonth !== false && isImportantPlannerFeast(day))
     .slice(0, mode === "month" ? 8 : 5);
+
+  if (mode === "month") {
+    return `<aside class="learn-family-feasts-card" style="position:static;top:auto;display:grid;grid-template-columns:minmax(170px,.55fr) minmax(0,2.45fr);gap:12px;align-items:center;padding:12px 14px;">
+      <div style="min-width:0;">
+        <small>Feasts this month</small>
+        <strong style="font-size:24px;line-height:1;">Church Calendar</strong>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;min-width:0;">
+        ${days.length ? days.map((day) => `<article class="${day.isFastDay ? "is-fast" : ""}" style="display:flex;grid-template-columns:none;align-items:center;gap:8px;min-width:0;flex:1 1 180px;max-width:260px;padding:8px 10px;border-radius:11px;">
+          <span style="min-width:34px;min-height:34px;width:34px;height:34px;border-radius:9px;font-size:12px;flex:none;">${html(day.dayNumber || day.shortDate || day.short || day.date)}</span>
+          <p style="margin:0;min-width:0;">
+            <strong style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(day.feast || day.feastTitle || "Feast day")}</strong>
+            <small style="margin-top:2px;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html([day.feastRank || "Feast", day.isFastDay ? day.fastingType || day.fasting || "" : ""].filter(Boolean).join(" · "))}</small>
+          </p>
+        </article>`).join("") : `<p class="learn-family-empty-line" style="margin:0;">No major feast markers in this range.</p>`}
+      </div>
+    </aside>`;
+  }
+
   return `<aside class="learn-family-feasts-card">
-    <div><small>${mode === "month" ? "Feasts this month" : "Feasts this week"}</small><strong>Church Calendar</strong></div>
+    <div><small>Feasts this week</small><strong>Church Calendar</strong></div>
     ${days.length ? days.map((day) => `<article class="${day.isFastDay ? "is-fast" : ""}">
       <span>${html(day.dayNumber || day.shortDate || day.short || day.date)}</span>
       <p><strong>${html(day.feast || day.feastTitle || "Feast day")}</strong><small>${html([day.feastRank || "Feast", day.isFastDay ? day.fastingType || day.fasting || "" : ""].filter(Boolean).join(" · "))}</small></p>
