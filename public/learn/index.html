@@ -318,7 +318,115 @@
     .ov-grace-level strong { font-size: 14px; color: #14294a; }
     .ov-grace-level small { font-size: 12px; color: #6b7a91; }
     
-    /* New design extension overrides for improved sales conversion context */
+
+    .pricing-lead {
+      max-width: 56rem;
+      margin: 0.85rem auto 0;
+      color: #33405a;
+      line-height: 1.65;
+      text-align: center;
+    }
+    .overview-pricing-callout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(18rem, 0.95fr);
+      gap: clamp(1.25rem, 3vw, 2rem);
+      align-items: stretch;
+      margin-top: 2rem;
+    }
+    .overview-pricing-copy,
+    .overview-pricing-summary {
+      background: rgba(255,252,245,.82);
+      border: 1px solid rgba(181,148,47,.22);
+      border-radius: 18px;
+      box-shadow: 0 12px 32px rgba(6,21,34,.06);
+    }
+    .overview-pricing-copy {
+      padding: clamp(1.5rem, 3vw, 2.25rem);
+    }
+    .overview-pricing-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .35rem .7rem;
+      border-radius: 999px;
+      background: #edf6ef;
+      color: #28613a;
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .overview-pricing-copy h3 {
+      margin: .9rem 0 .75rem;
+      color: #061522;
+      font-size: clamp(2rem, 3.5vw, 2.7rem);
+      line-height: 1.03;
+    }
+    .overview-pricing-copy p {
+      margin: 0;
+      color: #33405a;
+      line-height: 1.68;
+    }
+    .overview-pricing-points {
+      margin: 1.1rem 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: .72rem;
+    }
+    .overview-pricing-points li {
+      display: flex;
+      gap: .6rem;
+      align-items: flex-start;
+      color: #1c2e46;
+      line-height: 1.45;
+    }
+    .overview-pricing-points li::before {
+      content: "✦";
+      color: #b5942f;
+      flex: none;
+      margin-top: .05rem;
+      font-size: .9rem;
+    }
+    .pricing-actions {
+      margin-top: 1.4rem;
+    }
+    .overview-pricing-summary {
+      padding: .9rem;
+      display: grid;
+      gap: .85rem;
+      align-content: start;
+    }
+    .pricing-summary-row {
+      padding: 1rem 1rem 1.05rem;
+      border-radius: 14px;
+      background: rgba(255,255,255,.68);
+      border: 1px solid rgba(181,148,47,.16);
+      display: grid;
+      gap: .18rem;
+    }
+    .pricing-summary-row strong {
+      color: #07284a;
+      font-size: 1rem;
+    }
+    .pricing-summary-row span {
+      color: #061522;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.7rem;
+      line-height: 1;
+    }
+    .pricing-summary-row small {
+      color: #5a6473;
+      line-height: 1.45;
+      font-size: .93rem;
+    }
+    .pricing-summary-row.is-highlighted {
+      background: linear-gradient(180deg, rgba(255,250,237,.92), rgba(253,245,224,.9));
+      border-color: rgba(181,148,47,.34);
+      box-shadow: inset 0 0 0 1px rgba(201,162,91,.12);
+    }
+
+        /* New design extension overrides for improved sales conversion context */
     .pricing-grid.compact-pricing {
       align-items: stretch !important;
     }
@@ -343,11 +451,16 @@
       .ov-two-col { grid-template-columns: 1fr; }
       .ov-stat-strip { grid-template-columns: repeat(2, 1fr); }
       .ov-meal-grid { grid-template-columns: repeat(2, 1fr); }
+      .overview-pricing-callout { grid-template-columns: 1fr; }
     }
     @media (max-width: 480px) {
       .ov-stat-strip { grid-template-columns: 1fr; }
       .ov-section { padding: 40px 16px; }
       .ov-meal-grid { grid-template-columns: 1fr; }
+      .overview-pricing-copy,
+      .overview-pricing-summary { padding: 1.1rem; }
+      .overview-pricing-summary { gap: .75rem; }
+      .pricing-summary-row { padding: .9rem; }
     }
   
     /* AGAPAY Learn spacing refinements */
@@ -957,58 +1070,41 @@
     <section class="pricing-wrap overview-pricing">
       <div class="section-heading">
         <p class="eyebrow">Simple, fair pricing</p>
-        <h2>One household price. Unlimited children.</h2>
+        <h2>Choose the plan that fits your household.</h2>
+        <p class="pricing-lead">AGAPAY Learn is priced by household, not by child, so growing families are not punished for welcoming children. Start free, then compare the Family and Founding Family plans when you are ready for the full experience.</p>
       </div>
-      <a class="button button-secondary pricing-jump" href="/learn/pricing">See Full Pricing</a>
-      <div class="pricing-grid compact-pricing">
-        <article class="price-card">
-          <p class="plan-label">Free</p>
-          <h3>$0</h3>
-          <p class="plan-note">Start with the basics — no card needed.</p>
-          <ul>
-            <li>1 household, up to 2 children</li>
-            <li>Today dashboard &amp; Church rhythms</li>
-            <li>Basic week and month planning</li>
-            <li>Weekly and monthly household PDFs</li>
+      <div class="overview-pricing-callout">
+        <div class="overview-pricing-copy">
+          <span class="overview-pricing-kicker">Start free today</span>
+          <h3>See what is included before you commit.</h3>
+          <p>Visit the pricing page to compare every plan side by side, review monthly and yearly options, and see exactly when meal planning, printables, chore charts, and the full adaptive planner unlock.</p>
+          <ul class="overview-pricing-points">
+            <li>No per-child pricing</li>
+            <li>Monthly and yearly billing options</li>
+            <li>Founding Family savings you can lock in now</li>
           </ul>
-          <a class="button button-secondary" href="/myagapay/learn/setup">Start Free</a>
-        </article>
-        
-        <article class="price-card">
-          <p class="plan-label">Family</p>
-          <h3>$89<span>/year</span></h3>
-          <p class="plan-note">Everything your household needs, or pay $9/month.</p>
-          <ul>
-            <li>Unlimited children</li>
-            <li>Full adaptive planner (all 5 views)</li>
-            <li>Meal plans, recipes &amp; grocery lists</li>
-            <li>Chore charts and family calendar</li>
-            <li>All 16 print templates</li>
-            <li>Grace Mode with custom priorities</li>
-          </ul>
-          <div class="billing-choice">
-            <a class="button button-secondary" href="/myagapay/learn/setup?plan=family&interval=year" data-learn-checkout data-plan="family" data-interval="year">Pay yearly</a>
-            <a class="button button-quiet" href="/myagapay/learn/setup?plan=family&interval=month" data-learn-checkout data-plan="family" data-interval="month">Pay monthly</a>
+          <div class="hero-actions pricing-actions">
+            <a class="button button-primary" href="/myagapay/learn/setup">Start Now for Free</a>
+            <a class="button button-secondary" href="/learn/pricing">See Full Pricing</a>
           </div>
-        </article>
-
-        <article class="price-card featured">
-          <div class="featured-ribbon">Founding pricing</div>
-          <p class="plan-label">Founding Family</p>
-          <h3>$49<span>/year</span></h3>
-          <span class="discount-badge">Save 45% permanently</span>
-          <p class="plan-note">Help shape AGAPAY Learn from the beginning, or pay $5/month. Lock in this rate before standard pricing takes effect.</p>
-          <ul>
-            <li>Everything in Family</li>
-            <li>Founding pricing, locked in forever</li>
-            <li>Early feature previews</li>
-            <li>Priority feedback channel</li>
-          </ul>
-          <div class="billing-choice">
-            <a class="button button-primary" href="/myagapay/learn/setup?plan=founding-family&interval=year" data-learn-checkout data-plan="founding-family" data-interval="year">Pay yearly</a>
-            <a class="button button-quiet" href="/myagapay/learn/setup?plan=founding-family&interval=month" data-learn-checkout data-plan="founding-family" data-interval="month">Pay monthly</a>
+        </div>
+        <aside class="overview-pricing-summary" aria-label="Pricing summary">
+          <div class="pricing-summary-row">
+            <strong>Free</strong>
+            <span>$0</span>
+            <small>Begin with the Today dashboard, Church rhythms, and basic planning.</small>
           </div>
-        </article>
+          <div class="pricing-summary-row">
+            <strong>Family</strong>
+            <span>$89/year or $9/month</span>
+            <small>Unlimited children, full planner, meals, chores, and all 16 print templates.</small>
+          </div>
+          <div class="pricing-summary-row is-highlighted">
+            <strong>Founding Family</strong>
+            <span>$49/year or $5/month</span>
+            <small>Everything in Family plus early access benefits and permanent founding pricing.</small>
+          </div>
+        </aside>
       </div>
     </section>
 
