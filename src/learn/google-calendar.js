@@ -4,7 +4,7 @@ import { learnSetupIdentity } from "./setup-persistence.js";
 const GOOGLE_AUTH_BASE_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_CALENDAR_API = "https://www.googleapis.com/calendar/v3";
-const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
+const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.app.created";
 const GOOGLE_CONNECTION_KV_PREFIX = "__agapay_learn_google_calendar:";
 const devConnections = new Map();
 
