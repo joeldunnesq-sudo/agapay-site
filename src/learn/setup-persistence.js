@@ -790,9 +790,16 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
     ]));
   }
   if (formation.catechesis?.title) next.catechesisCycles = [formation.catechesis];
+  else if (setupSnapshot) next.catechesisCycles = [];
   if (list(formation.recitationTracks).length) next.recitationTracks = list(formation.recitationTracks);
+  else if (setupSnapshot) next.recitationTracks = [];
   if (list(formation.hymnStudies).length) next.hymnStudies = list(formation.hymnStudies);
+  else if (setupSnapshot) next.hymnStudies = [];
   if (list(formation.enrichmentBlocks).length) next.enrichmentBlocks = list(formation.enrichmentBlocks);
+  else if (setupSnapshot) next.enrichmentBlocks = [];
+  // Always clear seed fixture logs for real users — they start empty and accumulate from their own data.
+  next.narrationLogs = [];
+  next.natureJournalEntries = [];
   const structuredFormationMaterials = [
     ...(formation.catechesis?.title ? [{
       id: formation.catechesis.id || "formation_catechesis",
@@ -1282,4 +1289,41 @@ export async function saveLearnGraceMode(env, request, payload = {}) {
     preferences: nextPreferences
   };
   return saveLearnSetup(env, request, nextPayload);
+}
+
+// Save a single lesson block edit (note, reschedule, or completion) to the setup snapshot.
+// Accepts: { action: "note"|"reschedule"|"complete", blockId, note, fromDate, toDate, completed }
+export async function saveLearnPlannerBlock(env, request, payload = {}) {
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return { ok: false, status: 401, error: "Unauthorized" };
+  const current = await loadLearnSetupSnapshotForIdentity(env, identity);
+  if (!current) return { ok: false, status: 409, error: "Complete Learn setup before editing lesson blocks." };
+
+  const action = text(payload.action, "");
+  const blockId = text(payload.blockId, "");
+  if (!action || !blockId) return { ok: false, status: 400, error: "action and blockId are required." };
+
+  const blockEdits = clone(current.blockEdits || {});
+
+  if (action === "note") {
+    blockEdits[blockId] = { ...(blockEdits[blockId] || {}), note: text(payload.note, ""), updatedAt: nowIso() };
+  } else if (action === "reschedule") {
+    const fromDate = text(payload.fromDate, "");
+    const toDate = text(payload.toDate, "");
+    if (!fromDate || !toDate) return { ok: false, status: 400, error: "fromDate and toDate are required for reschedule." };
+    blockEdits[blockId] = { ...(blockEdits[blockId] || {}), rescheduledFrom: fromDate, rescheduledTo: toDate, updatedAt: nowIso() };
+  } else if (action === "complete") {
+    const civilDate = /^\d{4}-\d{2}-\d{2}$/.test(String(payload.civilDate || "")) ? String(payload.civilDate) : nowIso().slice(0, 10);
+    const scope = payload.scope === "daily" ? "daily" : "weekly";
+    const date = new Date(`${civilDate}T12:00:00Z`);
+    if (scope === "weekly") date.setUTCDate(date.getUTCDate() - date.getUTCDay());
+    const periodKey = date.toISOString().slice(0, 10);
+    const completion = normalizeCompletion(current.completion);
+    completion[scope][periodKey] = { ...(completion[scope][periodKey] || {}), [blockId]: Boolean(payload.completed) };
+    return saveLearnSetup(env, request, { ...current, blockEdits, completion: normalizeCompletion(completion) });
+  } else {
+    return { ok: false, status: 400, error: `Unknown action "${action}". Valid: note, reschedule, complete.` };
+  }
+
+  return saveLearnSetup(env, request, { ...current, blockEdits });
 }
