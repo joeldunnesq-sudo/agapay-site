@@ -69,7 +69,7 @@ async function requireParishApiContext(request, env, parishId) {
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 export const STEWARDSHIP_PRODUCT_KEY = "stewardship";
-const STEWARDSHIP_COMING_SOON = flase;
+const STEWARDSHIP_COMING_SOON = false;
 
 // Active subscription states that unlock the module
 const ACTIVE_STATES = new Set(["active", "trialing"]);
