@@ -8,7 +8,7 @@ import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-s
 import { enrichLiturgicalDayWithOrthocal, fetchOrthocalDay, handleLearnReadingsStatus, orthocalSaintStories } from "./readings-source.js";
 import { buildLearnPrintDocument, buildLearnReportPrintDocument, printDocumentFilename, renderPrintDocumentPdf } from "./print-engine.js";
 import { createLearnRepositoryForRequest, SeedLearnRepository } from "./repository.js";
-import { learnSetupIdentity, saveLearnCompletion, saveLearnFamilyPlanning, saveLearnGraceMode, saveLearnSetup } from "./setup-persistence.js";
+import { learnSetupIdentity, saveLearnCompletion, saveLearnFamilyPlanning, saveLearnGraceMode, saveLearnPlannerBlock, saveLearnSetup } from "./setup-persistence.js";
 
 const LEARN_PRINT_USAGE_PREFIX = "__agapay_learn_print_usage:";
 
@@ -604,4 +604,31 @@ export function handleLearnHymnsProviderStatus(_request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   return handleLearnHymnsStatus(env);
+}
+
+export async function handleLearnPlannerBlockSave(request, env) {
+  const blocked = assertLearnEnabled(env);
+  if (blocked) return blocked;
+  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, { status: 405 });
+
+  const auth = await requireLearnRepository(request, env);
+  if (auth.response) return auth.response;
+
+  const payload = await request.json().catch(() => null);
+  if (!payload || typeof payload !== "object") {
+    return json({ ok: false, error: "Planner block payload was invalid." }, { status: 400 });
+  }
+
+  const saved = await saveLearnPlannerBlock(env, request, payload);
+  if (!saved.ok) return json({ ok: false, error: saved.error }, { status: saved.status || 500 });
+
+  // Return the refreshed planner so the UI can re-render without a full reload.
+  const url = new URL(request.url);
+  const repository = new (await import("./repository.js").then(m => m.SeedLearnRepository))(saved.onboarding);
+  const planner = repository.getPlanner({
+    calendarType: requestedCalendarType(url),
+    view: url.searchParams.get("view") || "week",
+    month: url.searchParams.get("month") || ""
+  });
+  return json({ ok: true, savedAt: saved.setupSnapshot.savedAt, planner });
 }
