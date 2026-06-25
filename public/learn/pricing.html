@@ -47,6 +47,66 @@
       display: grid;
       grid-template-columns: 2fr 1fr 1fr 1fr;
     }
+  
+    /* AGAPAY Learn spacing refinements */
+    .learn-hero,
+    .overview-hero,
+    .pricing-wrap,
+    .scholarship,
+    .value-section,
+    .compare-section,
+    .faq-section,
+    .learn-final-cta,
+    .learn-purpose-inner,
+    .overview-feature-row,
+    .rhythm-steps,
+    .designed-section,
+    .learn-wisdom-band,
+    .ov-section {
+      width: min(1180px, calc(100% - clamp(2.5rem, 6vw, 5rem)));
+    }
+
+    .overview-hero {
+      width: min(1280px, calc(100% - clamp(2.5rem, 6vw, 5rem)));
+    }
+
+    .price-card {
+      padding: clamp(1.5rem, 2.5vw, 1.9rem);
+    }
+
+    .price-card.featured h3 + .discount-badge {
+      display: inline-flex;
+      width: max-content;
+      margin-top: 0.95rem;
+    }
+
+    @media (max-width: 640px) {
+      .learn-hero,
+      .overview-hero,
+      .pricing-wrap,
+      .scholarship,
+      .value-section,
+      .compare-section,
+      .faq-section,
+      .learn-final-cta,
+      .learn-purpose-inner,
+      .overview-feature-row,
+      .rhythm-steps,
+      .designed-section,
+      .learn-wisdom-band,
+      .ov-section {
+        width: min(100% - 1.5rem, 1180px);
+      }
+
+      .overview-hero {
+        width: min(100% - 1.5rem, 1280px);
+      }
+
+      .price-card {
+        padding: 1.35rem;
+      }
+    }
+
   </style>
 </head>
 <body class="learn-pricing-page">
