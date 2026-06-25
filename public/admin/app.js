@@ -1,4 +1,4 @@
-    let selectedReference = '';
+let selectedReference = '';
     let registrationsCache = [];
     const adminSessionKey = 'agapay_admin_token';
     const adminActorKey = 'agapay_admin_actor';
@@ -679,6 +679,14 @@
       const counts = subscriptions.counts || {};
       latestLearnAdmin = data || {};
       renderProductOverview();
+
+      // Update Learn hero header
+      const learnHeaderSubs = document.getElementById('learnHeaderSubs');
+      const learnHeaderMrr = document.getElementById('learnHeaderMrr');
+      const learnActive = Number(counts.active || 0) + Number(counts.trialing || 0) + Number(counts.freeForever || 0);
+      if (learnHeaderSubs) learnHeaderSubs.textContent = learnActive || '0';
+      if (learnHeaderMrr) learnHeaderMrr.textContent = `${moneyShort(subscriptions.monthlyRecurringCents || 0)}/mo · ${counts.cancelled || 0} cancelled · ${(data.scholarships || []).length} scholarship${(data.scholarships || []).length === 1 ? '' : 's'}`;
+
       pane.innerHTML = `
         <article class="revenue-card">
           <div class="revenue-card-head">
@@ -1041,6 +1049,53 @@
       renderNextActionQueue(registrations);
       renderOnboardingHealth(registrations);
       renderProductOverview();
+      renderOverviewEmailLog(registrations);
+    }
+
+    function renderOverviewEmailLog(registrations) {
+      const container = document.getElementById('overviewEmailLog');
+      if (!container) return;
+
+      // Collect all email events across all registrations, most recent first
+      const events = [];
+      for (const reg of registrations) {
+        const name = reg.parishName || reg.reference || 'Unknown';
+        const emailFields = [
+          { key: 'adminNotificationEmailStatus', label: 'AGAPAY alert', to: 'hello@agapay.app', time: reg.receivedAt },
+          { key: 'dashboardInviteEmailStatus',    label: 'Dashboard invite', to: reg.priestEmail || reg.treasurerEmail || '', time: reg.dashboardInviteEmailSentAt || reg.reviewedAt },
+          { key: 'stripeOnboardingEmailStatus',   label: 'Stripe invite', to: reg.treasurerEmail || reg.priestEmail || '', time: reg.stripeOnboardingEmailSentAt || reg.reviewedAt },
+        ];
+        for (const f of emailFields) {
+          const status = reg[f.key];
+          if (!status || status === 'not_configured' || status === 'not_sent' || status === 'pending') continue;
+          events.push({ name, type: f.label, status, to: f.to, time: f.time || reg.updatedAt || reg.receivedAt || '' });
+        }
+        for (const e of (reg.emailLog || [])) {
+          events.push({ name, type: e.type || 'Email', status: e.status || 'sent', to: e.to || '', time: e.sentAt || '' });
+        }
+      }
+
+      if (!events.length) {
+        container.innerHTML = '<div class="email-log-empty">No email activity recorded yet. Load registrations to populate this log.</div>';
+        return;
+      }
+
+      // Sort by time descending, show 12 most recent
+      events.sort((a, b) => (parseDateMs(b.time) || 0) - (parseDateMs(a.time) || 0));
+      const recent = events.slice(0, 12);
+
+      container.innerHTML = recent.map(e => {
+        const dotClass = e.status === 'sent' ? 'sent' : e.status === 'failed' ? 'failed' : 'skipped';
+        const to = e.to ? ` → ${escapeHtml(e.to)}` : '';
+        return `<div class="email-log-entry">
+          <div class="email-log-dot ${dotClass}"></div>
+          <div>
+            <div class="email-log-type">${escapeHtml(e.name)} — ${escapeHtml(e.type)}</div>
+            <div class="email-log-detail">${escapeHtml(e.status)}${to}</div>
+          </div>
+          <div class="email-log-time">${e.time ? escapeHtml(shortDate(e.time)) : ''}</div>
+        </div>`;
+      }).join('');
     }
 
     function communityTypeOf(registration) {
@@ -1198,8 +1253,8 @@
 
     function renderFilteredList() {
       const query = (document.getElementById('searchInputMain')?.value || '').trim().toLowerCase();
-      const status = document.getElementById('statusFilterMain')?.value || 'all';
-      const sort = document.getElementById('sortOrderMain')?.value || 'newest';
+      const status = document.getElementById('statusFilterMain')?.value || 'needs_attention';
+      const sort = document.getElementById('sortOrderMain')?.value || 'urgency';
 
       let filtered = registrationsCache.filter((item) => {
         const haystack = [
@@ -1217,15 +1272,34 @@
           item.stripeAccountStatus
         ].join(' ').toLowerCase();
         const matchesQuery = !query || haystack.includes(query);
-        const matchesStatus = status === 'all' || item.status === status;
+        const itemStatus = item.status || 'pending';
+        let matchesStatus;
+        if (status === 'needs_attention') {
+          matchesStatus = Boolean(nextActionPriority(item));
+        } else if (status === 'all') {
+          matchesStatus = true;
+        } else {
+          matchesStatus = itemStatus === status;
+        }
         return matchesQuery && matchesStatus;
       });
 
-      filtered = filtered.sort((a, b) => {
-        if (sort === 'oldest') return String(a.receivedAt).localeCompare(String(b.receivedAt));
-        if (sort === 'name') return String(a.parishName).localeCompare(String(b.parishName));
-        return String(b.receivedAt).localeCompare(String(a.receivedAt));
-      });
+      if (sort === 'urgency') {
+        filtered = filtered.sort((a, b) => {
+          const pa = nextActionPriority(a);
+          const pb = nextActionPriority(b);
+          const priorityA = pa ? pa.priority : 99;
+          const priorityB = pb ? pb.priority : 99;
+          if (priorityA !== priorityB) return priorityA - priorityB;
+          return daysSince(workflowLastActivityAt(b)) - daysSince(workflowLastActivityAt(a));
+        });
+      } else {
+        filtered = filtered.sort((a, b) => {
+          if (sort === 'oldest') return String(a.receivedAt).localeCompare(String(b.receivedAt));
+          if (sort === 'name') return String(a.parishName).localeCompare(String(b.parishName));
+          return String(b.receivedAt).localeCompare(String(a.receivedAt));
+        });
+      }
 
       renderList(filtered);
     }
@@ -1247,9 +1321,17 @@
         <div class="queue-list">
           ${registrations.map((item) => {
             const action = nextAction(item);
+            const priority = nextActionPriority(item);
             const location = [item.city, item.state].filter(Boolean).join(', ') || 'Location pending';
             const community = item.communityType || 'Community';
             const jurisdiction = item.jurisdiction || 'Jurisdiction';
+            const age = daysSince(item.receivedAt);
+            const stalledAge = daysSince(workflowLastActivityAt(item));
+            const ageLabel = age === 0 ? 'Today' : age === 1 ? '1d ago' : `${age}d ago`;
+            const urgencyClass = priority && priority.priority <= 2 ? 'urgent'
+              : stalledAge >= 10 ? 'stale'
+              : age <= 2 ? 'fresh'
+              : '';
             return `
               <div class="queue-row ${item.reference === selectedReference ? 'active' : ''}" onclick="loadDetail('${jsAttr(item.reference)}')">
                 <label class="queue-check" onclick="event.stopPropagation()" aria-label="Select ${escapeAttr(item.parishName || item.reference)}">
@@ -1288,8 +1370,12 @@
                 </div>
 
                 <div class="queue-action-panel">
-                  <div class="queue-received">Received ${escapeHtml(shortDate(item.receivedAt))}</div>
+                  <div class="queue-received">
+                    Received ${escapeHtml(shortDate(item.receivedAt))}
+                    <span class="queue-age-badge ${escapeAttr(urgencyClass)}">${escapeHtml(ageLabel)}</span>
+                  </div>
                   <div class="queue-next"><strong>${escapeHtml(action.title)}</strong><br>${escapeHtml(action.body)}</div>
+                  ${priority && priority.priority <= 2 ? `<div class="queue-urgent-flag">${escapeHtml(priority.label)}</div>` : ''}
                 </div>
               </div>
             `;
