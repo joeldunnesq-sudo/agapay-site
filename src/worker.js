@@ -187,6 +187,7 @@ import {
   handleLearnFormation,
   handleLearnFamilyPlanningSave,
   handleLearnGraceModeSave,
+  handleLearnPlannerBlockSave,
   handleLearnBillingCancel,
   handleLearnBillingCheckout,
   handleLearnBillingStatus,
@@ -1076,6 +1077,9 @@ export default {
     }
     if (request.method === "POST" && url.pathname === "/api/learn/family-planning") {
       return handleLearnFamilyPlanningSave(request, env);
+    }
+    if (request.method === "POST" && url.pathname === "/api/learn/planner") {
+      return handleLearnPlannerBlockSave(request, env);
     }
     if (request.method === "POST" && url.pathname === "/api/registrations") return handleRegistrations(request, env);
     if (url.pathname === "/api/donor/signup") {
