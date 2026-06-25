@@ -174,10 +174,12 @@ export async function handleLearnPlanner(request, env) {
   const auth = await requireLearnRepository(request, env, { termId: url.searchParams.get("termId") || "" });
   if (auth.response) return auth.response;
   const { repository } = auth;
+  const civilDate = url.searchParams.get("date") || todayIso(env);
   const planner = repository.getPlanner({
     calendarType: requestedCalendarType(url),
     view: url.searchParams.get("view") || "week",
-    month: url.searchParams.get("month") || ""
+    month: url.searchParams.get("month") || "",
+    civilDate
   });
 
   return json({

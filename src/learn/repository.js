@@ -238,20 +238,38 @@ function buildChildColumns(seed, daily, civilDate) {
   }));
 }
 
-function buildUpcomingFeasts(seed, calendarType, fromDate = "2025-05-08") {
+function isImportantUpcomingFeast(entry = {}) {
+  const rank = String(entry.feastRank || "").trim();
+  const title = String(entry.feastTitle || "").trim();
+  const text = `${rank} ${title}`.toLowerCase();
+
+  if (!title || /daily rhythm|ordinary day|daily commemoration/.test(rank.toLowerCase())) {
+    return false;
+  }
+
+  return /(?:^|\b)(great feast|major feast|twelve great|vigil|polyeleos|doxology|patronal feast|apostle|apostles|equal[- ]to[- ]the[- ]apostles|nativity|forerunner|theotokos|mother of god|ascension|pentecost|transfiguration|annunciation|presentation|meeting of the lord|exaltation|elevation of the cross|dormition|theophany|epiphany|pascha|resurrection of christ|circumcision of the lord|protection of the theotokos)(?:\b|$)/.test(text);
+}
+
+function buildUpcomingFeasts(
+  seed,
+  calendarType,
+  fromDate = new Date().toISOString().slice(0, 10)
+) {
   return buildAgapayLiturgicalDays({
     calendarType,
     startDate: fromDate,
-    endDate: addDays(fromDate, 90),
+    endDate: addDays(fromDate, 180),
     seed
   })
-    .filter((entry) => entry.feastRank !== "Daily Rhythm")
-    .slice(0, 3)
+    .filter(isImportantUpcomingFeast)
+    .slice(0, 8)
     .map((entry) => ({
       civilDate: entry.civilDate,
       title: entry.feastTitle,
       fastingRule: entry.fastingRule,
-      saints: entry.saints
+      saints: entry.saints,
+      feastRank: entry.feastRank,
+      calendarType
     }));
 }
 
@@ -1003,7 +1021,12 @@ export class SeedLearnRepository {
     };
   }
 
-  getPlanner({ calendarType = "julian", view = "week", month = "" } = {}) {
+  getPlanner({
+    calendarType = "julian",
+    view = "week",
+    month = "",
+    civilDate = new Date().toISOString().slice(0, 10)
+  } = {}) {
     const resolvedCalendar = normalizeCalendarType(calendarType);
     return {
       household: this.seed.household,
@@ -1028,7 +1051,7 @@ export class SeedLearnRepository {
       week: buildPlannerWeek(this.seed, resolvedCalendar),
       month: buildPlannerMonth(this.seed, resolvedCalendar, month),
       termSetup: this.seed.termSetup,
-      upcomingFeasts: buildUpcomingFeasts(this.seed, resolvedCalendar),
+      upcomingFeasts: buildUpcomingFeasts(this.seed, resolvedCalendar, civilDate),
       readAloud: {
         book: this.seed.books[0],
         assignment: this.seed.bookAssignments[0]
