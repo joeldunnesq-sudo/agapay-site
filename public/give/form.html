@@ -19,9 +19,12 @@
   <meta name="twitter:image" content="https://agapay.app/images/app/icon-512.png" />
   <meta name="theme-color" content="#061522" />
 
+  <link rel="preload" as="image" href="/images/giving/mission-church-square.webp" type="image/webp" fetchpriority="high" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" /></noscript>
 
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -265,7 +268,37 @@
       .gift-types { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
-  <link rel="stylesheet" href="/styles/numbers.css" />
+  <style>
+    /* inlined from /styles/numbers.css */
+    /* Global numeric typography: match donor dashboard numerals sitewide */
+:root {
+  --numeric-font: var(--serif, "Cormorant Garamond", Georgia, serif);
+}
+
+body {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+:where(
+  .metric-value,
+  .metric-val,
+  .insights-total,
+  .summary-metric strong,
+  .list-amount,
+  .amount,
+  .price,
+  .currency,
+  .stat-number,
+  .phase-num,
+  .kpi-value,
+  .table-amount,
+  [data-money],
+  [data-amount]
+) {
+  font-family: var(--numeric-font);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+  </style>
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon.png" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -296,7 +329,12 @@
   <header class="parish-header">
     <div class="parish-header-inner">
       <div class="parish-avatar-lg">
-        <img src="/images/giving/mission-church-square.png" alt="Orthodox mission church sketch" />
+        <picture>
+          <source srcset="/images/giving/mission-church-square.webp" type="image/webp" />
+          <img src="/images/giving/mission-church-square.png" alt="Orthodox mission church sketch"
+               width="304" height="304" fetchpriority="high" loading="eager"
+               decoding="async" />
+        </picture>
       </div>
       <h1>St. Seraphim of Sarov Mission</h1>
       <div class="parish-header-meta">
@@ -842,7 +880,7 @@
 
     function parishSketchImage(type) {
       if (type === 'monastery') return '/images/giving/monastery-square.png';
-      if (type === 'mission') return '/images/giving/mission-church-square.png';
+      if (type === 'mission') return '<picture><source srcset="/images/giving/mission-church-square.webp" type="image/webp" /><img src="/images/giving/mission-church-square.png" alt="" width="304" height="304" /></picture>';
       return '/images/giving/parish-church-square.png';
     }
 
@@ -857,19 +895,11 @@
       if (el) el.textContent = value;
     }
 
-    async function fetchAllParishes() {
-      const parishes = [];
-      let cursor = '';
-      do {
-        const params = new URLSearchParams({ limit: '250' });
-        if (cursor) params.set('cursor', cursor);
-        const response = await fetch('/api/parishes?' + params.toString());
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Unable to load parish');
-        parishes.push(...(result.parishes || []));
-        cursor = result.cursor || '';
-      } while (cursor);
-      return parishes;
+    async function fetchParishById(id) {
+      const response = await fetch('/api/parishes?id=' + encodeURIComponent(id));
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Unable to load parish');
+      return result.parish || null;
     }
 
     function renderFunds(funds) {
@@ -967,8 +997,7 @@
           window.location.href = '/give/find-parish';
           return;
         }
-        const parishes = await fetchAllParishes();
-        const parish = parishes.find(item => item.id === slug);
+        const parish = await fetchParishById(slug);
         if (!parish) {
           alert('This parish is not currently active in AGAPAY.');
           window.location.href = '/give/find-parish';
@@ -1320,10 +1349,7 @@
 
     initGivingPage();
   </script>
-  <script src="/security.js"></script>
+  <script src="/security.js" defer></script>
 
 </body>
 </html>
-
-
-
