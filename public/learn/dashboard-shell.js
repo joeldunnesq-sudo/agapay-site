@@ -663,15 +663,121 @@ function renderDashboard(vm) {
     <span style="min-width:0;line-height:1.25;"><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">Saint of the Day</span><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(displayedSaintTitle)}</strong>${saintCentury ? `<span style="display:block;color:var(--gold);font-size:12px;font-weight:800;margin:2px 0 1px;">${html(saintCentury)}</span>` : ""}<small style="display:block;color:var(--muted);line-height:1.35;">${html(saintPreview)}</small></span>
     <span style="margin-left:auto;color:var(--gold);font-size:20px;flex:none;">→</span>
   </button>`;
+
+  // ── Readings — distinct actionable callout ────────────────────────────────────
+  const hasReadings = today.epistleRef || today.gospelRef;
+  const readingsCallout = hasReadings ? `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
+      <div style="background:linear-gradient(135deg,#fffbf0,#f7edd6);border:1px solid rgba(181,148,47,.28);border-radius:11px;padding:12px;">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+          <span style="color:var(--gold);font-size:14px;">☰</span>
+          <span style="color:var(--gold);font-size:10px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">Epistle</span>
+        </div>
+        <strong style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);line-height:1.1;">${html(today.epistleRef)}</strong>
+      </div>
+      <div style="background:linear-gradient(135deg,#fffbf0,#f7edd6);border:1px solid rgba(181,148,47,.28);border-radius:11px;padding:12px;">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+          <span style="color:var(--gold);font-size:14px;">☩</span>
+          <span style="color:var(--gold);font-size:10px;letter-spacing:.13em;font-weight:800;text-transform:uppercase;">Gospel</span>
+        </div>
+        <strong style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);line-height:1.1;">${html(today.gospelRef)}</strong>
+      </div>
+    </div>` : "";
+
+  // ── Church Rhythms — proper grid with breathing room ──────────────────────────
+  const rhythmsGrid = vm.churchRhythms.length
+    ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1px;background:var(--line);border-radius:10px;overflow:hidden;">
+        ${vm.churchRhythms.map((r, i) => `
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--paper);">
+            ${completionCheck(r, "daily", r.label)}
+            <span style="line-height:1.25;min-width:0;">
+              <span style="display:block;font-size:15px;color:var(--ink);font-weight:500;">${html(r.label)}</span>
+              ${r.sub ? `<span style="display:block;font-size:12px;color:var(--muted);">${html(r.sub)}</span>` : ""}
+            </span>
+          </div>`).join("")}
+       </div>`
+    : emptyState("Add church rhythms in Setup — Morning Prayer, Readings, Saint of the Day.");
+
+  // ── Together This Week ────────────────────────────────────────────────────────
   const householdGroups = vm.householdStream.reduce((groups, item) => {
     const label = item.group || "Everyone Together";
     if (!groups.has(label)) groups.set(label, []);
     groups.get(label).push(item);
     return groups;
   }, new Map());
-  const togetherThisWeek = householdGroups.size ? [...householdGroups.entries()].map(([group, items]) => `<section><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 8px;"><strong style="color:var(--ink);font-family:'Cormorant Garamond',serif;font-size:18px;">${html(group)}</strong><span style="font-size:11px;color:var(--muted);">${items.filter((item) => item.complete).length}/${items.length} complete</span></div><div style="display:flex;flex-direction:column;gap:9px;">${items.map((item) => `<div style="display:flex;align-items:center;gap:12px;background:var(--paper2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;"><span style="width:38px;height:38px;border-radius:50%;background:#f1e6c9;color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;">${html(item.icon)}</span><a href="${html(item.href)}" style="flex:1;min-width:0;line-height:1.2;text-decoration:none;color:inherit;"><span style="display:block;font-weight:600;font-size:15.5px;color:var(--ink);">${html(item.title)}</span><span style="display:block;font-size:12.5px;color:var(--muted);">${html(item.sub)}</span></a><span style="color:var(--muted);font-size:13px;flex:none;">${html(item.time)}</span>${completionCheck(item, "weekly", item.title)}</div>`).join("")}</div></section>`).join("") : `<div style="color:var(--muted);font-style:italic;">Run Quick Setup or add Enrichment in Advanced Setup to build this week together.</div>`;
+  const togetherThisWeek = householdGroups.size
+    ? [...householdGroups.entries()].map(([group, items]) => `
+        <section>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 8px;">
+            <strong style="color:var(--ink);font-family:'Cormorant Garamond',serif;font-size:18px;">${html(group)}</strong>
+            <span style="font-size:11px;color:var(--muted);">${items.filter((item) => item.complete).length}/${items.length} complete</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px;">
+            ${items.map((item) => `
+              <div style="display:flex;align-items:center;gap:12px;background:var(--paper2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;">
+                <span style="width:38px;height:38px;border-radius:50%;background:#f1e6c9;color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;flex:none;">${html(item.icon)}</span>
+                <a href="${html(item.href)}" style="flex:1;min-width:0;line-height:1.2;text-decoration:none;color:inherit;">
+                  <span style="display:block;font-weight:600;font-size:15.5px;color:var(--ink);">${html(item.title)}</span>
+                  <span style="display:block;font-size:12.5px;color:var(--muted);">${html(item.sub)}</span>
+                </a>
+                <span style="color:var(--muted);font-size:13px;flex:none;">${html(item.time)}</span>
+                ${completionCheck(item, "weekly", item.title)}
+              </div>`).join("")}
+          </div>
+        </section>`).join("")
+    : `<div style="color:var(--muted);font-style:italic;">Run Quick Setup or add Enrichment in Advanced Setup to build this week together.</div>`;
+
+  // ── Week stats strip — above child columns ────────────────────────────────────
+  const weekStatsStrip = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+      ${vm.thisWeek.map((w) => `
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+          <span style="width:40px;height:40px;border-radius:50%;background:${w.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none;">${html(w.icon)}</span>
+          <div style="min-width:0;">
+            <span style="display:block;font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--ink);line-height:1;">${html(w.big)}</span>
+            <span style="display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(w.label)}</span>
+            <span style="display:block;font-size:11px;color:var(--gold);font-weight:600;">${html(w.sub)}</span>
+          </div>
+        </div>`).join("")}
+      <a href="/myagapay/learn/planner" style="background:var(--navy);border:1px solid var(--gold);border-radius:12px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;color:#fffaf0;font-weight:700;text-decoration:none;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+        Open Planner <span style="color:var(--gold);">→</span>
+      </a>
+    </div>`;
+
+  // ── Child columns — with empty state ─────────────────────────────────────────
+  const childColumnsGrid = vm.childColumns.length
+    ? vm.childColumns.map((col) => `
+        <article style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line);">
+            <span style="width:34px;height:34px;border-radius:50%;background:${col.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none;">${html(col.initial)}</span>
+            <div style="line-height:1.15;min-width:0;">
+              <span style="display:block;font-size:10px;letter-spacing:.12em;color:var(--gold);font-weight:600;">${html(col.tag)}</span>
+              <span style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(col.name)} <span style="color:var(--muted);font-size:13px;">• Age ${html(col.age)}</span></span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            ${col.tasks.map((t) => `
+              <div style="display:flex;align-items:center;gap:9px;background:var(--paper2);border:1px solid var(--line);border-radius:9px;padding:9px 10px;">
+                <a href="/myagapay/learn/planner" style="flex:1;min-width:0;line-height:1.15;text-decoration:none;color:inherit;">
+                  <span style="display:block;font-weight:600;font-size:14px;color:var(--ink);">${html(t.title)}</span>
+                  <span style="display:block;font-size:11.5px;color:var(--muted);">${html(t.sub)}</span>
+                </a>
+                <span style="color:var(--muted);font-size:11.5px;flex:none;">${html(t.time)}</span>
+                ${completionCheck(t, "weekly", `${col.name}: ${t.title}`)}
+              </div>`).join("")}
+          </div>
+        </article>`).join("")
+    : `<div style="grid-column:1/-1;background:var(--paper);border:1px dashed var(--line);border-radius:14px;padding:28px;text-align:center;">
+         <div style="color:var(--gold);font-size:28px;margin-bottom:10px;">◎</div>
+         <strong style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--ink);display:block;margin-bottom:6px;">No children in the planner yet</strong>
+         <p style="color:var(--muted);margin:0 0 16px;line-height:1.5;">Add children in Setup to see their individual work here each week.</p>
+         <a href="/myagapay/learn/setup" style="display:inline-flex;align-items:center;gap:8px;background:var(--navy);color:#fff;border:1px solid var(--gold);border-radius:10px;padding:10px 18px;text-decoration:none;font-weight:700;font-size:14px;">Go to Setup →</a>
+       </div>`;
+
   const body = `
     <section data-screen-label="Dashboard" style="display:flex;flex-direction:column;gap:22px;">
+
+      <!-- Today in the Church -->
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;gap:24px;box-shadow:0 1px 3px rgba(20,40,70,.04);flex-wrap:wrap;">
         ${churchIconPanel}
         <div class="learn-today-main">
@@ -684,8 +790,7 @@ function renderDashboard(vm) {
               <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">♙</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">FASTING RULE</span><span style="font-size:16px;display:block;">${html(today.fastingRule)}</span><span style="color:var(--muted);font-size:13px;font-style:italic;">${html(today.fastingNote)}</span></span></div>
             </div>
             <div class="learn-today-readings">
-              <div><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">EPISTLE READING</span><span style="font-size:16px;">${html(today.epistleRef)}</span></div>
-              <div><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">GOSPEL READING</span><span style="font-size:16px;">${html(today.gospelRef)}</span></div>
+              ${readingsCallout}
             </div>
           </div>
           ${saintCard}
@@ -698,23 +803,40 @@ function renderDashboard(vm) {
         </div>
         ${renderTodayLearnContext(vm)}
       </div>
+
+      <!-- Daily Church Rhythms — proper grid -->
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;"><span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:16px;">✥</span><span style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">DAILY CHURCH RHYTHMS</span></span><small style="color:var(--muted);">Resets each day</small></div>
-        <div style="display:flex;gap:14px;flex-wrap:wrap;">
-          ${vm.churchRhythms.map((r) => `<div style="flex:1;min-width:170px;display:flex;align-items:center;gap:12px;">${completionCheck(r, "daily", r.label)}<span style="line-height:1.25;"><span style="display:block;font-size:16px;color:var(--ink);font-weight:500;">${html(r.label)}</span><span style="display:block;font-size:13px;color:var(--muted);">${html(r.sub)}</span></span></div>`).join("")}
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+          <span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:16px;">✥</span><span style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">DAILY CHURCH RHYTHMS</span></span>
+          <small style="color:var(--muted);">Resets each day</small>
         </div>
+        ${rhythmsGrid}
       </div>
-      <div class="learn-week-overview" style="display:grid;grid-template-columns:minmax(0,1.65fr) minmax(260px,.75fr);gap:16px;align-items:stretch;">
-        <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;"><span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:17px;">⌂</span><span style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;">TOGETHER THIS WEEK</span></span><small style="color:var(--muted);">Resets Sunday</small></div>
-          <div style="display:flex;flex-direction:column;gap:13px;">${togetherThisWeek}</div>
+
+      <!-- Together This Week — full width -->
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+          <span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:17px;">⌂</span><span style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;">TOGETHER THIS WEEK</span></span>
+          <small style="color:var(--muted);">Resets Sunday</small>
         </div>
-        <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
-          <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px;"><span style="color:var(--gold);font-size:16px;">✥</span><span style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;">WEEK AT A GLANCE</span></div>
-          <div style="display:flex;flex-direction:column;gap:16px;">${vm.thisWeek.map((w) => `<div style="display:flex;align-items:center;gap:13px;"><span style="width:44px;height:44px;border-radius:50%;background:${w.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-size:20px;">${html(w.icon)}</span><div style="line-height:1.2;"><span style="display:block;font-family:'Cormorant Garamond',serif;font-size:23px;font-weight:600;color:var(--ink);">${html(w.big)}</span><span style="display:block;font-size:13.5px;color:#3a4256;font-weight:500;">${html(w.label)}</span><span style="display:block;font-size:12.5px;color:var(--muted);">${html(w.sub)}</span></div></div>`).join("")}<a href="/myagapay/learn/planner" style="margin-top:4px;width:100%;background:var(--paper2);border:1px solid var(--line);border-radius:10px;padding:11px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;color:var(--ink);font-weight:500;text-decoration:none;">View Full Week <span style="color:var(--gold);">→</span></a></div>
-        </div>
+        <div style="display:flex;flex-direction:column;gap:13px;">${togetherThisWeek}</div>
       </div>
-      <section style="display:grid;gap:12px;"><div style="display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;"><div><div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:800;text-transform:uppercase;">Forms & Children</div><h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1;margin:5px 0 0;color:var(--ink);">Individual work this week</h2></div><small style="color:var(--muted);">${vm.childColumns.length} ${vm.childColumns.length === 1 ? "learner" : "learners"}</small></div><div class="learn-child-week-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px;align-items:start;">${vm.childColumns.map((col) => `<article style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 1px 3px rgba(20,40,70,.04);"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line);"><span style="width:34px;height:34px;border-radius:50%;background:${col.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-size:16px;">${html(col.initial)}</span><div style="line-height:1.15;"><span style="display:block;font-size:10px;letter-spacing:.12em;color:var(--gold);font-weight:600;">${html(col.tag)}</span><span style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);">${html(col.name)} <span style="color:var(--muted);font-size:13px;font-family:'EB Garamond',serif;">• Age ${html(col.age)}</span></span></div></div><div style="display:flex;flex-direction:column;gap:8px;">${col.tasks.map((t) => `<div style="display:flex;align-items:center;gap:9px;background:var(--paper2);border:1px solid var(--line);border-radius:9px;padding:9px 10px;"><a href="/myagapay/learn/planner" style="flex:1;min-width:0;line-height:1.15;text-decoration:none;color:inherit;"><span style="display:block;font-weight:600;font-size:14px;color:var(--ink);">${html(t.title)}</span><span style="display:block;font-size:11.5px;color:var(--muted);">${html(t.sub)}</span></a><span style="color:var(--muted);font-size:11.5px;flex:none;">${html(t.time)}</span>${completionCheck(t, "weekly", `${col.name}: ${t.title}`)}</div>`).join("")}</div></article>`).join("")}</div></section>
+
+      <!-- Week stats strip + child columns -->
+      <section style="display:grid;gap:14px;">
+        <div style="display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:800;text-transform:uppercase;">Forms & Children</div>
+            <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1;margin:5px 0 0;color:var(--ink);">Individual work this week</h2>
+          </div>
+          <small style="color:var(--muted);">${vm.childColumns.length} ${vm.childColumns.length === 1 ? "learner" : "learners"}</small>
+        </div>
+        ${weekStatsStrip}
+        <div class="learn-child-week-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px;align-items:start;">
+          ${childColumnsGrid}
+        </div>
+      </section>
+
     </section>
   `;
   return shell(vm, body);
@@ -1691,22 +1813,25 @@ function renderPlannerMonth(vm) {
       ...(day.meal?.dinner ? [{ title: `Dinner · ${day.meal.dinner}` }] : [])
     ];
     const plans = [...familyItems, ...(day.householdPlan || []), ...(day.formPlan || [])].slice(0, 4);
-    return `<article style="min-height:150px;border:1px solid ${border};border-radius:12px;background:${muted ? "rgba(248,240,221,.46)" : fastBg};padding:10px;display:flex;flex-direction:column;gap:7px;box-shadow:${day.isToday ? "inset 0 0 0 1px rgba(181,148,47,.45)" : "none"};opacity:${muted ? ".58" : "1"};">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-        <span style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:${day.isFastDay ? "var(--burgundy)" : "var(--ink)"};">${html(day.dayNumber)}</span>
-        ${day.isToday ? `<span style="border:1px solid var(--gold);border-radius:999px;padding:2px 7px;font-size:10px;color:var(--gold);font-weight:700;">TODAY</span>` : ""}
+    return `<article style="min-height:110px;border:1px solid ${border};border-radius:10px;background:${muted ? "rgba(248,240,221,.46)" : fastBg};padding:8px;display:flex;flex-direction:column;gap:5px;box-shadow:${day.isToday ? "inset 0 0 0 1px rgba(181,148,47,.45)" : "none"};opacity:${muted ? ".55" : "1"};">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
+        <span style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:${day.isFastDay ? "var(--burgundy)" : "var(--ink)"};">${html(day.dayNumber)}</span>
+        ${day.isToday ? `<span style="border:1px solid var(--gold);border-radius:999px;padding:2px 6px;font-size:9px;color:var(--gold);font-weight:700;">TODAY</span>` : ""}
       </div>
-      <strong style="font-size:12.5px;line-height:1.18;color:${day.isFastDay ? "var(--burgundy)" : "var(--ink)"};">${html(day.feast)}</strong>
-      ${day.isFastDay ? `<span style="border:1px solid rgba(110,47,42,.35);background:#fff8f3;color:var(--burgundy);border-radius:999px;padding:4px 7px;font-size:11px;font-weight:700;width:max-content;max-width:100%;">${html(day.fastingType || day.fasting)}</span>` : `<span style="color:var(--muted);font-size:11px;">${html(day.fastingType || "No fasting prescribed")}</span>`}
-      <div style="display:grid;gap:4px;margin-top:auto;">${plans.length ? plans.map((plan) => `<span style="font-size:11.5px;color:#33405a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(plan.title)}${plan.minutes ? ` · ${html(plan.minutes)}m` : ""}</span>`).join("") : `<span style="font-size:11.5px;color:var(--muted);font-style:italic;">Quiet household rhythm</span>`}</div>
+      <strong style="font-size:11px;line-height:1.2;color:${day.isFastDay ? "var(--burgundy)" : "var(--ink)"};">${html(day.feast)}</strong>
+      ${day.isFastDay ? `<span style="color:var(--burgundy);font-size:10px;font-weight:700;">${html(day.fastingType || day.fasting)}</span>` : ""}
+      <div style="display:grid;gap:3px;margin-top:auto;">${plans.length ? plans.map((plan) => `<span style="font-size:10.5px;color:#33405a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(plan.title)}</span>`).join("") : ""}</div>
     </article>`;
   }).join("");
+
   return `
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px;align-items:start;">
-      <div style="background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+
+      <!-- Full-width calendar panel -->
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 16px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
           <div>
-            <div style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:700;text-transform:uppercase;">Household Month</div>
+            <div style="color:var(--gold);font-size:11px;letter-spacing:.15em;font-weight:700;text-transform:uppercase;">Household Month</div>
             <h2 style="font-family:'Cormorant Garamond',serif;font-size:34px;line-height:1;margin:5px 0 0;color:var(--ink);">${html(month.label)}</h2>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -1715,19 +1840,40 @@ function renderPlannerMonth(vm) {
             <a href="/myagapay/learn/planner?view=month&month=${encodeURIComponent(adjacentMonthKey(month.key, 1))}&term=${encodeURIComponent(vm.term.activeTerm)}&termId=${encodeURIComponent(vm.term.activeTermId)}" style="border:1px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);text-decoration:none;background:var(--paper2);">Next →</a>
           </div>
         </div>
-        <div style="overflow:hidden;padding-bottom:4px;">
-          <div style="overflow-x:auto;overflow-y:visible;">
-          <div style="display:grid;grid-template-columns:repeat(7,minmax(92px,1fr));gap:8px;min-width:760px;">
-            ${(month.weekdays || []).map((day) => `<div style="color:var(--gold);font-size:11px;letter-spacing:.12em;font-weight:700;text-align:center;text-transform:uppercase;">${html(day)}</div>`).join("")}
-            ${dayCells}
-          </div>
-          </div>
+        <!-- 7-column day header -->
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;">
+          ${(month.weekdays || []).map((day) => `<div style="color:var(--gold);font-size:10px;letter-spacing:.12em;font-weight:700;text-align:center;text-transform:uppercase;padding-bottom:4px;">${html(day)}</div>`).join("")}
+        </div>
+        <!-- Day cells — no min-width, fills container naturally -->
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">
+          ${dayCells}
         </div>
       </div>
-      <aside style="display:flex;flex-direction:column;gap:14px;">
-        ${panel("Month Notes", `<div style="display:grid;gap:12px;"><div><small style="color:var(--gold);letter-spacing:.12em;">FAST DAYS</small><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--burgundy);">${html(month.fastDays)}</strong><span style="color:var(--muted);">Marked in red with fasting type.</span></div><div><small style="color:var(--gold);letter-spacing:.12em;">FEAST MARKERS</small><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--ink);">${html(month.feastDays)}</strong><span style="color:var(--muted);">Major rhythms shown from the liturgical calendar.</span></div><div style="border-top:1px solid var(--line);padding-top:12px;color:#33405a;line-height:1.45;">Print a clean household copy to use as ${html(vm.shell?.familyName || "the household")}'s fridge calendar — feast days, fasts, and the month at a glance.</div></div>`, { icon: "▣" })}
-        ${panel("Legend", `<div style="display:grid;gap:10px;"><span style="display:flex;gap:9px;align-items:center;"><i style="width:18px;height:18px;border-radius:5px;background:rgba(110,47,42,.12);border:1px solid rgba(110,47,42,.38);"></i> Fast day</span><span style="display:flex;gap:9px;align-items:center;"><i style="width:18px;height:18px;border-radius:5px;background:rgba(181,148,47,.14);border:1px solid var(--line);"></i> Sunday / feast rhythm</span><span style="display:flex;gap:9px;align-items:center;"><i style="width:18px;height:18px;border-radius:5px;background:var(--paper2);border:1px solid var(--gold);"></i> Today</span></div>`, { icon: "✥" })}
-      </aside>
+
+      <!-- Sidebar panels below, side by side -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">
+        ${panel("Month Notes", `
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+              <small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;font-size:10px;">Fast Days</small>
+              <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--burgundy);line-height:1;">${html(month.fastDays)}</strong>
+              <span style="color:var(--muted);font-size:13px;">Marked in red.</span>
+            </div>
+            <div>
+              <small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;font-size:10px;">Feast Markers</small>
+              <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--ink);line-height:1;">${html(month.feastDays)}</strong>
+              <span style="color:var(--muted);font-size:13px;">Major liturgical rhythms.</span>
+            </div>
+          </div>
+          <p style="margin:12px 0 0;font-size:13px;color:#33405a;line-height:1.45;border-top:1px solid var(--line);padding-top:12px;">Print a clean household copy — feast days, fasts, and the month at a glance.</p>`, { icon: "▣" })}
+        ${panel("Legend", `
+          <div style="display:grid;gap:10px;">
+            <span style="display:flex;gap:9px;align-items:center;font-size:13px;"><i style="flex:none;width:18px;height:18px;border-radius:5px;background:rgba(110,47,42,.12);border:1px solid rgba(110,47,42,.38);"></i> Fast day</span>
+            <span style="display:flex;gap:9px;align-items:center;font-size:13px;"><i style="flex:none;width:18px;height:18px;border-radius:5px;background:rgba(181,148,47,.14);border:1px solid var(--line);"></i> Sunday / feast rhythm</span>
+            <span style="display:flex;gap:9px;align-items:center;font-size:13px;"><i style="flex:none;width:18px;height:18px;border-radius:5px;background:var(--paper2);border:1px solid var(--gold);"></i> Today</span>
+          </div>`, { icon: "✥" })}
+      </div>
+
     </div>
   `;
 }
