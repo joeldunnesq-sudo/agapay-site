@@ -338,6 +338,42 @@ function stewardshipHomeHtml(registration, meetings, env) {
         </table>
       </section>
 
+      <!-- ── Giving Metrics (Stewardship Suite) ── -->
+      <section class="module-card" id="giving-metrics-card">
+        <div class="module-card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+          <h2>📊 Pledge &amp; Giving Metrics</h2>
+          <div style="display:flex;align-items:center;gap:.75rem">
+            <select id="giving-year-select" class="form-select" style="font-size:.85rem;padding:.3rem .6rem" onchange="loadGivingMetrics()">
+              ${[0,1,2,3,4].map(n => {
+                const y = new Date().getFullYear() - n;
+                return `<option value="${y}">${y}</option>`;
+              }).join("")}
+            </select>
+            <a href="/parish/stewardship/giving" class="btn btn-ghost" style="font-size:.82rem">Full Report →</a>
+          </div>
+        </div>
+
+        <!-- KPI row -->
+        <div id="giving-kpis" class="giving-kpi-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem;margin:1rem 0">
+          <div class="giving-kpi-skeleton" style="height:72px;border-radius:10px;background:var(--surface-3,rgba(255,255,255,.06));animation:giving-shimmer 1.4s infinite"></div>
+          <div class="giving-kpi-skeleton" style="height:72px;border-radius:10px;background:var(--surface-3,rgba(255,255,255,.06));animation:giving-shimmer 1.4s infinite"></div>
+          <div class="giving-kpi-skeleton" style="height:72px;border-radius:10px;background:var(--surface-3,rgba(255,255,255,.06));animation:giving-shimmer 1.4s infinite"></div>
+          <div class="giving-kpi-skeleton" style="height:72px;border-radius:10px;background:var(--surface-3,rgba(255,255,255,.06));animation:giving-shimmer 1.4s infinite"></div>
+        </div>
+
+        <!-- Pledge progress bar -->
+        <div id="giving-progress" style="margin-bottom:1rem"></div>
+
+        <!-- Fund breakdown table -->
+        <div id="giving-funds" style="overflow-x:auto"></div>
+
+        <!-- Upgrade prompt (shown when feature not activated) -->
+        <div id="giving-upgrade" style="display:none;text-align:center;padding:2rem 1rem;border:1px dashed var(--border);border-radius:12px;margin-top:.5rem">
+          <p style="color:var(--text-muted);margin:0 0 1rem;font-size:.9rem">Giving Metrics requires the Stewardship Suite add-on.</p>
+          <a href="/parish/stewardship/giving/activate" class="btn btn-primary" style="font-size:.85rem">Add Giving Metrics — $9/mo</a>
+        </div>
+      </section>
+
       <section class="module-card coming-soon-card">
         <h2 style="color:var(--text-muted)">Coming Soon</h2>
         <div class="coming-soon-grid">
@@ -348,6 +384,148 @@ function stewardshipHomeHtml(registration, meetings, env) {
       </section>
     </main>
   </div>
+
+  <style>
+    @keyframes giving-shimmer {
+      0%   { opacity:.4 }
+      50%  { opacity:.9 }
+      100% { opacity:.4 }
+    }
+    .giving-kpi-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .9rem 1rem;
+    }
+    .giving-kpi-label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--text-muted);
+      margin-bottom: .3rem;
+    }
+    .giving-kpi-value {
+      font-family: var(--font-serif, Georgia, serif);
+      font-size: 1.55rem;
+      font-weight: 600;
+      color: var(--gold, #C49C50);
+      line-height: 1;
+    }
+    .giving-kpi-sub { font-size: .72rem; color: var(--text-muted); margin-top: .25rem; }
+    .giving-progress-track {
+      background: rgba(255,255,255,.08);
+      border-radius: 6px;
+      height: 10px;
+      overflow: hidden;
+      margin: .35rem 0 .25rem;
+    }
+    .giving-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold,#C49C50) 0%, #DABB70 100%);
+      border-radius: 6px;
+      transition: width .5s ease;
+    }
+    .giving-fund-table { width: 100%; border-collapse: collapse; font-size: .85rem; margin-top: .75rem; }
+    .giving-fund-table th {
+      font-size: .72rem; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--text-muted); text-align: left; padding: .4rem .5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .giving-fund-table td { padding: .55rem .5rem; border-bottom: 1px solid rgba(255,255,255,.04); }
+    .giving-fund-table tr:last-child td { border-bottom: none; }
+    .giving-mini-bar { background: rgba(255,255,255,.07); border-radius:3px; height:5px; }
+    .giving-mini-fill { height:100%; background:var(--gold,#C49C50); border-radius:3px; }
+  </style>
+
+  <script>
+    (function() {
+      var qs        = new URLSearchParams(window.location.search);
+      var parishId  = qs.get("parishId") || "";
+      var token     = qs.get("t") || "";
+      var base      = "/api/parish/dashboard/" + encodeURIComponent(parishId);
+
+      function fmt(cents) {
+        return "$" + (cents / 100).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      }
+
+      function loadGivingMetrics() {
+        var year = document.getElementById("giving-year-select").value;
+        Promise.all([
+          fetch(base + "/stewardship/giving/summary?year=" + year, { headers: { Authorization: "Bearer " + token } }).then(function(r){ return r.json(); }),
+          fetch(base + "/stewardship/giving/funds?year=" + year,   { headers: { Authorization: "Bearer " + token } }).then(function(r){ return r.json(); })
+        ]).then(function(results) {
+          renderKpis(results[0]);
+          renderProgress(results[0]);
+          renderFunds(results[1]);
+        }).catch(function(err) {
+          // Check if 403 (not activated)
+          fetch(base + "/stewardship/giving/summary?year=" + year, { headers: { Authorization: "Bearer " + token } })
+            .then(function(r) {
+              if (r.status === 403) {
+                document.getElementById("giving-kpis").style.display = "none";
+                document.getElementById("giving-progress").style.display = "none";
+                document.getElementById("giving-funds").style.display = "none";
+                document.getElementById("giving-upgrade").style.display = "";
+              }
+            });
+        });
+      }
+
+      function renderKpis(s) {
+        if (!s || s.error) {
+          if (s && s.error && s.error.includes("not activated")) {
+            document.getElementById("giving-kpis").style.display = "none";
+            document.getElementById("giving-progress").style.display = "none";
+            document.getElementById("giving-funds").style.display = "none";
+            document.getElementById("giving-upgrade").style.display = "";
+          }
+          return;
+        }
+        var yoy = s.prior_year_actual_cents > 0
+          ? Math.round(((s.total_actual_cents - s.prior_year_actual_cents) / s.prior_year_actual_cents) * 100)
+          : null;
+        var yoyHtml = yoy !== null
+          ? "<span style='color:" + (yoy >= 0 ? "var(--green,#4ade80)" : "var(--red,#f87171)") + ";font-size:.72rem;font-weight:600'>" + (yoy >= 0 ? "▲" : "▼") + " " + Math.abs(yoy) + "% vs prior year</span>"
+          : "";
+        document.getElementById("giving-kpis").innerHTML =
+          kpiCard("Total Collected", fmt(s.total_actual_cents), yoyHtml) +
+          kpiCard("Total Pledged", fmt(s.total_pledged_cents), s.pledging_donors + " pledging donors") +
+          kpiCard("Fulfillment", s.fulfillment_rate_pct !== null ? s.fulfillment_rate_pct + "%" : "—", "of pledge goal") +
+          kpiCard("Avg / Donor", fmt(s.avg_per_donor_cents), s.active_donors + " active donors");
+      }
+
+      function kpiCard(label, value, sub) {
+        return "<div class='giving-kpi-card'><div class='giving-kpi-label'>" + label + "</div><div class='giving-kpi-value'>" + value + "</div><div class='giving-kpi-sub'>" + sub + "</div></div>";
+      }
+
+      function renderProgress(s) {
+        if (!s || s.error || !s.total_pledged_cents) { document.getElementById("giving-progress").innerHTML = ""; return; }
+        var pct = Math.min(100, Math.round((s.total_actual_cents / s.total_pledged_cents) * 100));
+        document.getElementById("giving-progress").innerHTML =
+          "<div style='font-size:.78rem;color:var(--text-muted);margin-bottom:.25rem'>Collected vs pledge goal — " + pct + "% (" + fmt(s.total_actual_cents) + " of " + fmt(s.total_pledged_cents) + ")</div>" +
+          "<div class='giving-progress-track'><div class='giving-progress-fill' style='width:" + pct + "%'></div></div>" +
+          "<div style='font-size:.72rem;color:var(--text-muted)'>Projected year-end: " + fmt(s.run_rate_cents) + "</div>";
+      }
+
+      function renderFunds(f) {
+        if (!f || f.error || !f.funds || !f.funds.length) { document.getElementById("giving-funds").innerHTML = ""; return; }
+        var rows = f.funds.filter(function(x){ return x.total_cents > 0; }).map(function(fund) {
+          return "<tr><td>" + escH(fund.fund_name) + "</td><td style='text-align:right;color:var(--gold,#C49C50)'>" + fmt(fund.total_cents) + "</td><td style='text-align:right;color:var(--text-muted)'>" + fund.pct_of_total + "%</td><td style='width:80px'><div class='giving-mini-bar'><div class='giving-mini-fill' style='width:" + fund.pct_of_total + "%'></div></div></td></tr>";
+        }).join("");
+        if (!rows) { document.getElementById("giving-funds").innerHTML = ""; return; }
+        document.getElementById("giving-funds").innerHTML =
+          "<table class='giving-fund-table'><thead><tr><th>Fund</th><th style='text-align:right'>Total</th><th style='text-align:right'>%</th><th></th></tr></thead><tbody>" + rows + "</tbody></table>";
+      }
+
+      function escH(s) {
+        return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+      }
+
+      // Kick off load
+      loadGivingMetrics();
+    })();
+  </script>
+
   ${stewardshipSessionScript()}
 </body>
 </html>`;
@@ -1627,6 +1805,226 @@ export async function handleStewardshipMeetingPdf(request, env, meetingId) {
 }
 
 // ─── Stripe webhook handler for Stewardship subscriptions ────────────────────
+
+// ─── Stewardship Giving Metrics — full page ───────────────────────────────────
+
+export async function handleStewardshipGivingMetricsPage(request, env) {
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const ctx = await requireParishContext(request, env);
+  if (!ctx.ok) return ctx.response;
+  const { registration } = ctx;
+  if (!hasStewardshipAccess(registration)) {
+    return new Response(paywallHtml(registration, env), { headers: { "Content-Type": "text/html;charset=utf-8" } });
+  }
+
+  const base = absoluteWebsiteUrl(env);
+  const parishName = registration.parishName || registration.name || "Parish";
+  const currentYear = new Date().getFullYear();
+  const yearOptions = [0,1,2,3,4].map(n => {
+    const y = currentYear - n;
+    return `<option value="${y}">${y}</option>`;
+  }).join("");
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Giving Metrics — AGAPAY Stewardship</title>
+  <link rel="stylesheet" href="${base}/site-chrome.css" />
+  <link rel="stylesheet" href="${base}/parish/style.css" />
+  <link rel="stylesheet" href="${base}/styles/stewardship.css" />
+</head>
+<body class="dashboard-body">
+  <div class="dashboard-shell">
+    ${dashboardNav(registration, "stewardship", base)}
+    <main class="dashboard-main">
+      <div class="page-header">
+        <div>
+          <h1>Giving Metrics</h1>
+          <p style="color:var(--text-muted);margin:0"><a href="/parish/stewardship">← Back to Stewardship</a></p>
+        </div>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <select id="year-select" class="form-select" onchange="loadAll()">
+            ${yearOptions}
+          </select>
+          <button onclick="downloadReport()" class="btn btn-primary" id="pdf-btn">Download Report PDF</button>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div id="kpi-grid" class="giving-kpi-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem"></div>
+
+      <!-- Pledge progress -->
+      <section class="module-card" style="margin-bottom:1.5rem">
+        <h2 style="font-size:1rem;margin-bottom:.75rem">Pledge vs. Actual &amp; Run Rate</h2>
+        <div id="progress-bars"></div>
+      </section>
+
+      <!-- Fund breakdown -->
+      <section class="module-card" style="margin-bottom:1.5rem">
+        <h2 style="font-size:1rem;margin-bottom:.75rem">Giving by Fund</h2>
+        <div id="funds-table" style="overflow-x:auto"></div>
+      </section>
+
+      <!-- Two-col: distribution + retention -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+        <section class="module-card">
+          <h2 style="font-size:1rem;margin-bottom:.75rem">Giving Distribution</h2>
+          <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:.75rem">Anonymized — no individual identities disclosed.</p>
+          <div id="tier-chart"></div>
+        </section>
+        <section class="module-card">
+          <h2 style="font-size:1rem;margin-bottom:.75rem">Donor Retention</h2>
+          <div id="retention-cards" style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <style>
+    .giving-kpi-card { background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem; }
+    .giving-kpi-label { font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:.3rem; }
+    .giving-kpi-value { font-family:var(--font-serif,Georgia,serif);font-size:1.65rem;font-weight:600;color:var(--gold,#C49C50);line-height:1; }
+    .giving-kpi-sub { font-size:.72rem;color:var(--text-muted);margin-top:.25rem; }
+    .progress-track { background:rgba(255,255,255,.08);border-radius:6px;height:10px;overflow:hidden;margin:.3rem 0 .2rem; }
+    .progress-fill { height:100%;background:linear-gradient(90deg,var(--gold,#C49C50) 0%,#DABB70 100%);border-radius:6px;transition:width .5s ease; }
+    .progress-fill.dim { opacity:.35;border-right:2px dashed var(--gold,#C49C50); }
+    .giving-fund-table { width:100%;border-collapse:collapse;font-size:.85rem; }
+    .giving-fund-table th { font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:left;padding:.4rem .5rem;border-bottom:1px solid var(--border); }
+    .giving-fund-table td { padding:.55rem .5rem;border-bottom:1px solid rgba(255,255,255,.04); }
+    .tier-row { display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem; }
+    .tier-label { width:120px;flex-shrink:0;font-size:.78rem;color:var(--text-muted); }
+    .tier-bar-wrap { flex:1;background:rgba(255,255,255,.06);border-radius:5px;height:18px;overflow:hidden; }
+    .tier-bar-fill { height:100%;background:var(--gold,#C49C50);border-radius:5px; }
+    .tier-count { width:80px;font-size:.78rem;text-align:right; }
+    .ret-card { background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;text-align:center; }
+    .ret-num { font-family:var(--font-serif,Georgia,serif);font-size:1.8rem;font-weight:600;color:var(--gold,#C49C50); }
+    .ret-lbl { font-size:.72rem;color:var(--text-muted);margin-top:.2rem; }
+    @media(max-width:640px) { div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns:1fr!important; } }
+  </style>
+
+  <script>
+    (function() {
+      var qs       = new URLSearchParams(window.location.search);
+      var parishId = qs.get("parishId") || "";
+      var token    = qs.get("t") || "";
+      var base     = "/api/parish/dashboard/" + encodeURIComponent(parishId);
+
+      function authFetch(path) {
+        var year = document.getElementById("year-select").value;
+        return fetch(base + path + "?year=" + year, { headers: { Authorization: "Bearer " + token } }).then(function(r){ return r.json(); });
+      }
+
+      function fmt(cents) {
+        return "$" + (cents / 100).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      }
+
+      function escH(s) {
+        return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+      }
+
+      function loadAll() {
+        Promise.all([
+          authFetch("/stewardship/giving/summary"),
+          authFetch("/stewardship/giving/funds"),
+          authFetch("/stewardship/giving/distribution"),
+          authFetch("/stewardship/giving/retention")
+        ]).then(function(d) {
+          renderKpis(d[0]);
+          renderProgress(d[0]);
+          renderFunds(d[1]);
+          renderTiers(d[2]);
+          renderRetention(d[3]);
+        }).catch(function(e) { console.error("Giving metrics error", e); });
+      }
+
+      function renderKpis(s) {
+        if (!s || s.error) return;
+        var yoy = s.prior_year_actual_cents > 0
+          ? Math.round(((s.total_actual_cents - s.prior_year_actual_cents) / s.prior_year_actual_cents) * 100) : null;
+        var yoyBadge = yoy !== null
+          ? "<span style='color:" + (yoy>=0?"var(--green,#4ade80)":"var(--red,#f87171)") + ";font-weight:600'>" + (yoy>=0?"▲":"▼") + " " + Math.abs(yoy) + "% vs prior year</span>" : "";
+        document.getElementById("kpi-grid").innerHTML =
+          kpi("Total Collected", fmt(s.total_actual_cents), yoyBadge) +
+          kpi("Total Pledged", fmt(s.total_pledged_cents), s.pledging_donors + " pledging donors") +
+          kpi("Fulfillment Rate", s.fulfillment_rate_pct !== null ? s.fulfillment_rate_pct + "%" : "—", "of pledged amounts collected") +
+          kpi("Avg per Donor", fmt(s.avg_per_donor_cents), s.active_donors + " active this year");
+      }
+
+      function kpi(label, value, sub) {
+        return "<div class='giving-kpi-card'><div class='giving-kpi-label'>" + label + "</div><div class='giving-kpi-value'>" + value + "</div><div class='giving-kpi-sub'>" + sub + "</div></div>";
+      }
+
+      function renderProgress(s) {
+        if (!s || s.error) return;
+        var pct = s.total_pledged_cents > 0 ? Math.min(100, Math.round((s.total_actual_cents / s.total_pledged_cents) * 100)) : 0;
+        var rrPct = s.total_pledged_cents > 0 ? Math.min(100, Math.round((s.run_rate_cents / s.total_pledged_cents) * 100)) : 0;
+        document.getElementById("progress-bars").innerHTML =
+          "<div style='font-size:.8rem;color:var(--text-muted);margin-bottom:.2rem'>Collected — " + fmt(s.total_actual_cents) + " (" + pct + "% of goal)</div>" +
+          "<div class='progress-track'><div class='progress-fill' style='width:" + pct + "%'></div></div>" +
+          "<div style='font-size:.78rem;color:var(--text-muted);margin:1rem 0 .2rem'>Run Rate Projection — " + fmt(s.run_rate_cents) + " <span style='opacity:.5;font-size:.72rem'>(day " + s.day_of_year + " of " + s.days_in_year + ")</span></div>" +
+          "<div class='progress-track'><div class='progress-fill dim' style='width:" + rrPct + "%'></div></div>" +
+          "<div style='font-size:.72rem;color:var(--text-muted);margin-top:.2rem'>Pledge goal: " + fmt(s.total_pledged_cents) + "</div>";
+      }
+
+      function renderFunds(f) {
+        if (!f || f.error) return;
+        var rows = (f.funds || []).map(function(fd) {
+          return "<tr><td>" + escH(fd.fund_name) + "</td><td style='text-align:center;color:var(--text-muted)'>" + fd.transaction_count + "</td><td style='text-align:right;color:var(--gold,#C49C50)'>" + fmt(fd.total_cents) + "</td><td style='text-align:right;color:var(--text-muted)'>" + fd.pct_of_total + "%</td><td style='width:80px'><div style='background:rgba(255,255,255,.07);border-radius:3px;height:5px'><div style='width:" + fd.pct_of_total + "%;height:100%;background:var(--gold,#C49C50);border-radius:3px'></div></div></td></tr>";
+        }).join("");
+        document.getElementById("funds-table").innerHTML =
+          "<table class='giving-fund-table'><thead><tr><th>Fund</th><th style='text-align:center'>Transactions</th><th style='text-align:right'>Total</th><th style='text-align:right'>%</th><th></th></tr></thead><tbody>" + rows + "</tbody></table>";
+      }
+
+      function renderTiers(d) {
+        if (!d || d.error) return;
+        var max = Math.max.apply(null, (d.tiers||[]).map(function(t){ return t.count; }).concat([1]));
+        document.getElementById("tier-chart").innerHTML = (d.tiers||[]).map(function(t) {
+          var w = Math.round((t.count / max) * 100);
+          return "<div class='tier-row'><div class='tier-label'>" + escH(t.label) + "</div><div class='tier-bar-wrap'><div class='tier-bar-fill' style='width:" + w + "%'></div></div><div class='tier-count'>" + t.count + " donor" + (t.count !== 1 ? "s" : "") + "</div></div>";
+        }).join("");
+      }
+
+      function renderRetention(r) {
+        if (!r || r.error) return;
+        document.getElementById("retention-cards").innerHTML =
+          "<div class='ret-card'><div class='ret-num'>" + (r.retention_rate_pct !== null ? r.retention_rate_pct + "%" : "—") + "</div><div class='ret-lbl'>Retention Rate<br>vs " + r.prior_year + "</div></div>" +
+          "<div class='ret-card'><div class='ret-num' style='color:var(--green,#4ade80)'>" + r.new_donors + "</div><div class='ret-lbl'>New Donors<br>first gift this year</div></div>" +
+          "<div class='ret-card'><div class='ret-num'>" + r.retained + "</div><div class='ret-lbl'>Retained<br>gave both years</div></div>" +
+          "<div class='ret-card'><div class='ret-num' style='color:var(--red,#f87171)'>" + r.lapsed + "</div><div class='ret-lbl'>Lapsed<br>gave " + r.prior_year + ", not yet this year</div></div>";
+      }
+
+      function downloadReport() {
+        var year = document.getElementById("year-select").value;
+        var btn = document.getElementById("pdf-btn");
+        btn.disabled = true; btn.textContent = "Generating…";
+        fetch(base + "/stewardship/giving/generate-pdf?year=" + year, {
+          method: "POST", headers: { Authorization: "Bearer " + token }
+        }).then(function(r) {
+          if (!r.ok) throw new Error("PDF failed");
+          return r.blob();
+        }).then(function(blob) {
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url; a.download = "AGAPAY-Stewardship-" + year + ".pdf"; a.click();
+          URL.revokeObjectURL(url);
+        }).catch(function() {
+          alert("PDF generation failed. Please try again.");
+        }).finally(function() {
+          btn.disabled = false; btn.textContent = "Download Report PDF";
+        });
+      }
+
+      loadAll();
+    })();
+  </script>
+  ${stewardshipSessionScript()}
+</body>
+</html>`;
+
+  return new Response(html, { headers: { "Content-Type": "text/html;charset=utf-8" } });
+}
 
 export async function handleStewardshipWebhook(request, env) {
   const body = await request.text();
