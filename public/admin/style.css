@@ -2201,3 +2201,81 @@
       .topbar > div:last-child { grid-template-columns: 1fr 1fr; }
       .mobile-tab-link { font-size: 10px; }
     }
+
+
+    /* ─────────────────────────────────────────
+       QUEUE AGE BADGES & URGENCY FLAGS
+    ───────────────────────────────────────── */
+    .queue-age-badge {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid rgba(110,104,96,0.18);
+      border-radius: 999px;
+      background: var(--paper);
+      color: var(--stone);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 7px;
+      margin-left: 6px;
+      letter-spacing: 0.04em;
+      vertical-align: middle;
+    }
+    .queue-age-badge.fresh {
+      background: #edf6ef;
+      color: #2a5936;
+      border-color: rgba(42,89,54,0.2);
+    }
+    .queue-age-badge.stale {
+      background: #fff6df;
+      color: #7a5814;
+      border-color: rgba(196,150,62,0.28);
+    }
+    .queue-age-badge.urgent {
+      background: #fdf2f2;
+      color: #8a2828;
+      border-color: rgba(138,40,40,0.22);
+    }
+    .queue-urgent-flag {
+      margin-top: 5px;
+      border: 1px solid rgba(138,40,40,0.22);
+      border-radius: 8px;
+      background: #fdf2f2;
+      color: #8a2828;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      line-height: 1.4;
+    }
+
+    /* ─────────────────────────────────────────
+       STATUS BADGES (used in queue rows)
+    ───────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      border: 1px solid rgba(110,104,96,0.18);
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      background: var(--paper);
+      color: var(--stone);
+      white-space: nowrap;
+    }
+    .badge.verified        { background: #edf6ef; color: #2a5936; border-color: rgba(42,89,54,0.22); }
+    .badge.pending         { background: #fff9ec; color: #7a5814; border-color: rgba(196,150,62,0.28); }
+    .badge.needs_more_info { background: #f4edf6; color: #5c3d65; border-color: rgba(92,61,101,0.2); }
+    .badge.rejected,
+    .badge.restricted      { background: #fdf2f2; color: #8a2828; border-color: rgba(138,40,40,0.22); }
+    .badge.cancelled       { background: var(--paper); color: var(--muted); }
+    .badge.charges_enabled,
+    .badge.payouts_enabled,
+    .badge.active          { background: #edf6ef; color: #2a5936; border-color: rgba(42,89,54,0.22); }
+    .badge.not_started,
+    .badge.not_configured  { background: var(--paper); color: var(--muted); }
+    .badge.onboarding,
+    .badge.invited,
+    .badge.checkout_created,
+    .badge.trialing        { background: #fff9ec; color: #7a5814; border-color: rgba(196,150,62,0.28); }
+    .badge.past_due        { background: #fdf2f2; color: #8a2828; border-color: rgba(138,40,40,0.22); }
+    .badge.free_forever    { background: #edf6ef; color: #2a5936; border-color: rgba(42,89,54,0.22); }
