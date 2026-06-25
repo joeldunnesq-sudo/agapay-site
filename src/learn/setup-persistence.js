@@ -147,6 +147,29 @@ function frequencyFromDays(days = []) {
   return count >= 5 ? "daily" : count ? `${count}x` : "as-needed";
 }
 
+const DEFAULT_TERM_WEEK_COUNT = 12;
+
+function scheduledWeeksValue(value, totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
+  const direct = Array.isArray(value) ? value : String(value || "").split(",");
+  const selected = direct
+    .map((week) => int(week, 0))
+    .filter((week) => week >= 1 && week <= totalWeeks);
+  return selected.length ? [...new Set(selected)].sort((a, b) => a - b) : Array.from({ length: totalWeeks }, (_, index) => index + 1);
+}
+
+function activeTermWeek(term = {}, reference = new Date(), totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
+  const startDate = String(term.startDate || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return 1;
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const current = new Date(Date.UTC(reference.getUTCFullYear(), reference.getUTCMonth(), reference.getUTCDate()));
+  const elapsedDays = Math.floor((current - start) / 86400000);
+  return Math.max(1, Math.min(totalWeeks, Math.floor(elapsedDays / 7) + 1));
+}
+
+function scheduledThisTermWeek(item = {}, weekNumber = 1) {
+  return scheduledWeeksValue(item.scheduledWeeks).includes(weekNumber);
+}
+
 function resourceTypeValue(value, fallback = "curriculum") {
   const raw = String(value || "").trim().toLowerCase();
   if (["book", "curriculum", "website", "hymn", "icon", "activity", "none"].includes(raw)) return raw;
@@ -220,8 +243,8 @@ function distributeRangeSegments({ label = "", start = 1, end = 0, color = "" } 
   });
 }
 
-function weeklyPlanArrays(schedule = "daily", minutes = 20) {
-  const amount = Math.max(0, int(minutes, 20));
+function weeklyPlanArrays(schedule = "daily", minutes = 20, active = true) {
+  const amount = active ? Math.max(0, int(minutes, 20)) : 0;
   const activeDays = scheduledDaysValue(schedule, Array.isArray(schedule) ? "as-needed" : schedule).map((day) => WEEKDAY_KEYS.indexOf(day));
   const planMinutes = Array.from({ length: 7 }, (_, index) => activeDays.includes(index) ? amount : 0);
   const statuses = Array.from({ length: 7 }, (_, index) => activeDays.includes(index) ? "planned" : "empty");
@@ -417,6 +440,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     author: text(book.author, ""),
     category: text(book.category, "Living Books"),
     planningMode: text(book.planningMode, book.formLabel ? "forms" : "family"),
+    scheduledWeeks: scheduledWeeksValue(book.scheduledWeeks),
     weeklyFrequency: weeklyFrequencyValue(book.weeklyFrequency || book.cadenceLabel || book.cadence, "daily"),
     minutes: int(book.minutes, 20),
     formLabel: text(book.formLabel, ""),
@@ -438,6 +462,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     title: text(subject.title, "Subject"),
     planningMode: text(subject.planningMode, "forms"),
     scheduledDays: subjectDays,
+    scheduledWeeks: scheduledWeeksValue(subject.scheduledWeeks),
     weeklyFrequency: frequencyFromDays(subjectDays),
     formLabel: text(subject.formLabel, ""),
     gradeLabel: text(subject.gradeLabel, ""),
@@ -465,6 +490,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     materialType: text(material.materialType || material.type, "Catechesis"),
     source: text(material.source || material.author, ""),
     planningMode: text(material.planningMode, "family"),
+    scheduledWeeks: scheduledWeeksValue(material.scheduledWeeks),
     weeklyFrequency: weeklyFrequencyValue(material.weeklyFrequency || material.cadenceLabel || material.cadence, "1x"),
     cadenceLabel: text(material.weeklyFrequency || material.cadenceLabel || material.cadence, "Weekly"),
     minutes: int(material.minutes, 0),
@@ -533,6 +559,7 @@ function normalizeSetupPayload(payload = {}, identity) {
       resourceType: resourceTypeValue(block.resourceType || block.sourceType, block.resource || block.source ? "curriculum" : "none"),
       planningMode: text(block.planningMode, "family"),
       scheduledDays: blockDays,
+      scheduledWeeks: scheduledWeeksValue(block.scheduledWeeks),
       weeklyFrequency: frequencyFromDays(blockDays),
       formLabel: text(block.formLabel, ""),
       gradeLabel: text(block.gradeLabel, ""),
@@ -851,7 +878,9 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
       sortOrder: index + 100
     }))
   ];
+  const currentTermWeek = activeTermWeek(setupSnapshot.term || next.term || {});
   next.plannerWeek = {
+    termWeekNumber: currentTermWeek,
     ...next.plannerWeek,
     ...currentWeekWindow(),
     seasonLabel: setupSnapshot.term?.label || next.plannerWeek.seasonLabel,
@@ -871,7 +900,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
         title: book.audienceLabel === "Morning Basket" ? book.title : `Read-Aloud: ${book.title}`,
         detail: `${book.author || book.category}${book.endChapter ? ` • chapters ${book.startChapter || 1}-${book.endChapter}` : ""}${book.weeklyFrequency ? ` • ${book.weeklyFrequency}` : ""}`,
         priority: 50 + index,
-        ...weeklyPlanArrays(book.weeklyFrequency, book.minutes || 20)
+        ...weeklyPlanArrays(book.weeklyFrequency, book.minutes || 20, scheduledThisTermWeek(book, currentTermWeek))
       })),
       ...list(formation.enrichmentBlocks).filter(forCurrentTerm).map((block, index) => ({
         id: `week_enrichment_${block.id}`,
@@ -884,7 +913,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
         href: /literature|read-aloud|read aloud/i.test(`${block.blockType} ${block.title}`) ? "/myagapay/learn/books" : "/myagapay/learn/formation",
         priority: 70 + index,
         color: block.color,
-        ...weeklyPlanArrays(block.scheduledDays?.length ? block.scheduledDays : block.weeklyFrequency, block.minutesPlanned || 20)
+        ...weeklyPlanArrays(block.scheduledDays?.length ? block.scheduledDays : block.weeklyFrequency, block.minutesPlanned || 20, scheduledThisTermWeek(block, currentTermWeek))
       }))
     ],
     childRows: [
@@ -898,7 +927,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           priority: index + 1,
           color: subject.color,
           graceModeApplied: setupSnapshot.preferences?.graceModeActive && subject.gracePriority !== "keep",
-          ...weeklyPlanArrays(subject.scheduledDays?.length ? subject.scheduledDays : subject.weeklyFrequency, subject.minutes)
+          ...weeklyPlanArrays(subject.scheduledDays?.length ? subject.scheduledDays : subject.weeklyFrequency, subject.minutes, scheduledThisTermWeek(subject, currentTermWeek))
         }));
       }),
       ...childBooks.flatMap((book, index) => {
@@ -911,7 +940,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           priority: index + 100,
           color: book.color,
           graceModeApplied: setupSnapshot.preferences?.graceModeActive,
-          ...weeklyPlanArrays(book.weeklyFrequency, book.minutes || 20)
+          ...weeklyPlanArrays(book.weeklyFrequency, book.minutes || 20, scheduledThisTermWeek(book, currentTermWeek))
         }));
       })
     ]
