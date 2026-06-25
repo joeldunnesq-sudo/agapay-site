@@ -135,6 +135,29 @@
             </div>
           </section>
 
+          <section class="health-card" id="onboardingHealthCard">
+          <div class="health-header">
+            <div>
+              <div class="health-title">Needs Attention</div>
+              <div class="health-subtitle">Onboarding blockers across all registrations. Act on these first.</div>
+            </div>
+            <div class="health-readiness" aria-label="0 percent ready">
+              <svg class="health-ring" viewBox="0 0 44 44" aria-hidden="true">
+                <circle class="health-ring-track" cx="22" cy="22" r="18"></circle>
+                <circle class="health-ring-fill" id="healthReadyRing" cx="22" cy="22" r="18" pathLength="100"></circle>
+              </svg>
+              <strong id="healthReadyPercent">0%</strong>
+              <span>Ready</span>
+            </div>
+          </div>
+          <div class="health-body" id="onboardingHealthPane">
+            <div class="health-item"><strong>0</strong><span>Awaiting review</span><p>Canonical standing still needs a decision.</p></div>
+            <div class="health-item"><strong>0</strong><span>Invites needed</span><p>Verified parishes that still need dashboard access.</p></div>
+            <div class="health-item"><strong>0</strong><span>Stripe needed</span><p>Verified parishes without connected payments.</p></div>
+            <div class="health-item"><strong>0</strong><span>Billing needed</span><p>Stripe-ready parishes without active billing.</p></div>
+          </div>
+        </section>
+
           <section class="product-overview-grid" id="productOverviewGrid">
             <article class="product-overview-card"><div class="revenue-empty">Load platform data to see product health.</div></article>
           </section>
@@ -162,6 +185,21 @@
           </div>
         </section>
 
+          <section class="section-card" id="overviewEmailLogCard">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+              Recent Platform Emails
+            </div>
+            <button class="secondary btn-sm" onclick="loadRegistrations()">Refresh</button>
+          </div>
+          <div class="section-body">
+            <div class="email-log" id="overviewEmailLog">
+              <div class="email-log-empty">Load registrations to see recent email activity.</div>
+            </div>
+          </div>
+        </section>
+
           <section class="growth-card" id="platformGrowthCard">
           <div class="growth-header">
             <div>
@@ -180,29 +218,6 @@
               <div class="revenue-empty">Revenue cards load with the platform summary.</div>
             </article>
           </section>
-
-          <section class="health-card" id="onboardingHealthCard">
-          <div class="health-header">
-            <div>
-              <div class="health-title">Onboarding Health</div>
-              <div class="health-subtitle">A quick view of where parish onboarding is getting stuck.</div>
-            </div>
-            <div class="health-readiness" aria-label="0 percent ready">
-              <svg class="health-ring" viewBox="0 0 44 44" aria-hidden="true">
-                <circle class="health-ring-track" cx="22" cy="22" r="18"></circle>
-                <circle class="health-ring-fill" id="healthReadyRing" cx="22" cy="22" r="18" pathLength="100"></circle>
-              </svg>
-              <strong id="healthReadyPercent">0%</strong>
-              <span>Ready</span>
-            </div>
-          </div>
-          <div class="health-body" id="onboardingHealthPane">
-            <div class="health-item"><strong>0</strong><span>Awaiting review</span><p>Canonical standing still needs a decision.</p></div>
-            <div class="health-item"><strong>0</strong><span>Invites needed</span><p>Verified parishes that still need dashboard access.</p></div>
-            <div class="health-item"><strong>0</strong><span>Stripe needed</span><p>Verified parishes without connected payments.</p></div>
-            <div class="health-item"><strong>0</strong><span>Billing needed</span><p>Stripe-ready parishes without active billing.</p></div>
-          </div>
-        </section>
         </div>
 
         <div class="tab-panel" id="tab-giving">
@@ -223,6 +238,7 @@
             <div>
               <label for="statusFilterMain">Status</label>
               <select id="statusFilterMain" onchange="renderFilteredList()">
+                <option value="needs_attention">Needs attention</option>
                 <option value="all">All statuses</option>
                 <option value="pending">Pending</option>
                 <option value="needs_more_info">Needs more info</option>
@@ -234,6 +250,7 @@
             <div>
               <label for="sortOrderMain">Sort</label>
               <select id="sortOrderMain" onchange="renderFilteredList()">
+                <option value="urgency">By urgency</option>
                 <option value="newest">Newest first</option>
                 <option value="oldest">Oldest first</option>
                 <option value="name">Parish name</option>
@@ -330,6 +347,19 @@
         </div>
 
         <div class="tab-panel" id="tab-learn">
+          <section class="admin-command-hero">
+            <div>
+              <div class="admin-kicker">Product Operations</div>
+              <h1 style="font-size:clamp(32px,4vw,50px)">AGAPAY Learn</h1>
+              <p>Orthodox homeschool curriculum for families. Manage subscriptions, scholarships, curated resources, and community moderation.</p>
+            </div>
+            <div class="admin-command-status" id="learnCommandStatus">
+              <strong id="learnHeaderSubs">—</strong>
+              <span>Active households</span>
+              <small id="learnHeaderMrr">Load Learn to see revenue</small>
+            </div>
+          </section>
+
           <section class="growth-card learn-admin-card">
             <div class="growth-header">
               <div>
@@ -533,4 +563,3 @@
   <script src="/admin/app.js"></script>
 </body>
 </html>
-
