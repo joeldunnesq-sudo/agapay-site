@@ -534,6 +534,54 @@
       max-width: none;
       font-style: italic;
     }
+  
+    /* Clear, elegant visual cue between major page sections */
+    .section-transition {
+      width: min(1180px, calc(100% - clamp(2.5rem, 6vw, 5rem)));
+      height: 2rem;
+      margin: .35rem auto;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: .85rem;
+      color: #b5942f;
+    }
+    .section-transition::before,
+    .section-transition::after {
+      content: "";
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(181,148,47,.55));
+    }
+    .section-transition::after {
+      background: linear-gradient(90deg, rgba(181,148,47,.55), transparent);
+    }
+    .section-transition span {
+      display: grid;
+      place-items: center;
+      width: 1.8rem;
+      height: 1.8rem;
+      border: 1px solid rgba(181,148,47,.42);
+      border-radius: 999px;
+      background: rgba(255,252,245,.82);
+      font-size: .8rem;
+      box-shadow: 0 4px 14px rgba(6,21,34,.06);
+    }
+
+    .learn-wisdom-band-single {
+      margin-top: clamp(1rem, 2.5vw, 2rem);
+      margin-bottom: clamp(1rem, 2.5vw, 2rem);
+    }
+    .learn-wisdom-band-single blockquote {
+      font-style: italic;
+    }
+
+    @media (max-width: 640px) {
+      .section-transition {
+        width: min(100% - 1.5rem, 1180px);
+        margin-block: .15rem;
+      }
+    }
+
   </style>
 </head>
 <body class="learn-pricing-page learn-overview-page">
@@ -564,6 +612,17 @@
       </div>
     </section>
 
+    <!-- ── Wisdom ────────────────────────────────────────────────────────────── -->
+    <section class="learn-wisdom-band learn-wisdom-band-single" aria-label="Orthodox wisdom on formation">
+      <div>
+        <p class="eyebrow">Formation over friction</p>
+        <blockquote><em>With us everything should be secondary compared to our concern with children, and their upbringing in the instruction and teaching of the Lord.</em></blockquote>
+        <cite>St. John Chrysostom</cite>
+      </div>
+    </section>
+
+    <div class="section-transition" aria-hidden="true"><span>✦</span></div>
+
     <!-- ── What's inside ────────────────────────────────────────────────────── -->
     <section class="ov-section" id="features" aria-labelledby="features-heading">
       <div class="ov-section-head">
@@ -579,7 +638,7 @@
       </div>
     </section>
 
-    <hr class="ov-divider" />
+    <div class="section-transition" aria-hidden="true"><span>✦</span></div>
 
     <!-- ── Today Dashboard ──────────────────────────────────────────────────── -->
     <section class="ov-section" aria-labelledby="today-heading">
@@ -630,7 +689,7 @@
       </div>
     </section>
 
-    <hr class="ov-divider" />
+    <div class="section-transition" aria-hidden="true"><span>✦</span></div>
 
     <!-- ── Adaptive Planner ─────────────────────────────────────────────────── -->
     <section class="ov-section" aria-labelledby="planner-heading">
@@ -687,7 +746,7 @@
       </div>
     </section>
 
-    <hr class="ov-divider" />
+    <div class="section-transition" aria-hidden="true"><span>✦</span></div>
 
     <!-- ── Formation ────────────────────────────────────────────────────────── -->
     <section class="ov-section" aria-labelledby="formation-heading">
@@ -734,7 +793,7 @@
       </div>
     </section>
 
-    <hr class="ov-divider" />
+    <div class="section-transition" aria-hidden="true"><span>✦</span></div>
 
     <!-- ── Books ────────────────────────────────────────────────────────────── -->
     <section class="ov-section" aria-labelledby="books-heading">
@@ -772,7 +831,7 @@
       </div>
     </section>
 
-    <hr class="ov-divider" />
+    <div class="section-transition" aria-hidden="true"><span>✦</span></div>
 
     <!-- ── Family Planning (Meals, Recipes, Calendar) ──────────────────────── -->
     <section class="ov-section" aria-labelledby="meal-heading">
@@ -831,7 +890,7 @@
       </div>
     </section>
 
-    <hr class="ov-divider" />
+    <div class="section-transition" aria-hidden="true"><span>✦</span></div>
 
     <!-- ── Grace Mode ───────────────────────────────────────────────────────── -->
     <section class="ov-section" aria-labelledby="grace-heading">
@@ -891,7 +950,7 @@
       </div>
     </section>
 
-    <hr class="ov-divider" />
+    <div class="section-transition" aria-hidden="true"><span>✦</span></div>
 
     <!-- ── Print Center ─────────────────────────────────────────────────────── -->
     <section class="ov-section" aria-labelledby="print-heading">
@@ -927,7 +986,7 @@
       </div>
     </section>
 
-    <hr class="ov-divider" />
+    <div class="section-transition" aria-hidden="true"><span>✦</span></div>
 
     <!-- ── Planning model ───────────────────────────────────────────────────── -->
     <section class="ov-section" aria-labelledby="model-heading">
@@ -960,7 +1019,7 @@
       </div>
     </section>
 
-    <hr class="ov-divider" />
+    <div class="section-transition" aria-hidden="true"><span>✦</span></div>
 
     <!-- ── Community ────────────────────────────────────────────────────────── -->
     <section class="ov-section" aria-labelledby="community-heading">
@@ -997,7 +1056,7 @@
       </div>
     </section>
 
-    <hr class="ov-divider" />
+    <div class="section-transition" aria-hidden="true"><span>✦</span></div>
 
     <!-- ── Setup & Onboarding ───────────────────────────────────────────────── -->
     <section class="ov-section" aria-labelledby="setup-heading">
@@ -1040,7 +1099,7 @@
       </div>
     </section>
 
-    <hr class="ov-divider" />
+    <div class="section-transition" aria-hidden="true"><span>✦</span></div>
 
     <!-- ── Google Calendar disclosure ──────────────────────────────────────── -->
     <section class="ov-section" aria-labelledby="gcal-heading">
@@ -1057,16 +1116,7 @@
       </div>
     </section>
 
-    <hr class="ov-divider" />
-
-    <!-- ── Wisdom ────────────────────────────────────────────────────────────── -->
-    <section class="learn-wisdom-band learn-wisdom-band-single" aria-label="Orthodox wisdom on formation">
-      <div>
-        <p class="eyebrow">Formation over friction</p>
-        <blockquote><em>With us everything should be secondary compared to our concern with children, and their upbringing in the instruction and teaching of the Lord.</em></blockquote>
-        <cite>St. John Chrysostom</cite>
-      </div>
-    </section>
+    <div class="section-transition" aria-hidden="true"><span>✦</span></div>
 
     <!-- ── Pricing ───────────────────────────────────────────────────────────── -->
     <section class="pricing-wrap overview-pricing">
@@ -1109,6 +1159,8 @@
         </aside>
       </div>
     </section>
+
+    <div class="section-transition" aria-hidden="true"><span>✦</span></div>
 
     <!-- ── Final CTA ─────────────────────────────────────────────────────────── -->
     <section class="learn-final-cta">
