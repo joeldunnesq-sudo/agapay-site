@@ -81,6 +81,9 @@ import {
   verifyParishDashboardPassword,
   verifyPasswordRecord,
   verifyTurnstileIfConfigured,
+  corsJson,
+  corsHeaders,
+  corsPreflightResponse,
 } from "./lib/core.js";
 
 import {
@@ -224,244 +227,9 @@ import {
   handleListenRss,
 } from "./handlers/listen.js";
 
-
-
-const marketplaceBrowseCategories = [
-  { id: "all", label: "All Categories", icon: "grid" },
-  { id: "books-media", label: "Books & Media", icon: "book-open" },
-  { id: "icons-artwork", label: "Icons & Artwork", icon: "image" },
-  { id: "church-supplies", label: "Church Supplies", icon: "cross" },
-  { id: "vestments-apparel", label: "Vestments & Apparel", icon: "shirt" },
-  { id: "jewelry-crosses", label: "Jewelry & Crosses", icon: "jewel" },
-  { id: "monastery-goods", label: "Monastery Goods", icon: "church" },
-  { id: "home-gifts", label: "Home & Gifts", icon: "gift" },
-  { id: "children-education", label: "Children & Education", icon: "users" },
-  { id: "music-chant", label: "Music & Chant", icon: "music" },
-  { id: "digital-products", label: "Digital Products", icon: "monitor" }
-];
-
-const marketplaceFeaturedFilters = [
-  { id: "all", label: "All Listings", icon: "star" },
-  { id: "new-arrivals", label: "New Arrivals", icon: "spark" },
-  { id: "best-sellers", label: "Best Sellers", icon: "chart" },
-  { id: "orthodox-makers", label: "Orthodox Makers", icon: "shield" },
-  { id: "monastery-shops", label: "Monastery Shops", icon: "church" },
-  { id: "on-sale", label: "On Sale", icon: "tag" }
-];
-
-const marketplaceShops = [
-  {
-    id: "holy-cross-monastery",
-    name: "Holy Cross Monastery",
-    subtitle: "Monastery Shop",
-    location: "Wayne, WV",
-    rating: 4.9,
-    reviewCount: 230,
-    badge: "Top Rated",
-    imageType: "icon",
-    imageUrl: "",
-    category: "monastery-goods",
-    tags: ["orthodox-makers", "best-sellers", "monastery-shops"]
-  },
-  {
-    id: "mount-athos-icons",
-    name: "Mount Athos Icons",
-    subtitle: "Icons & Artwork",
-    location: "Athos, Greece",
-    rating: 4.9,
-    reviewCount: 184,
-    badge: "Top Rated",
-    imageType: "photo",
-    imageUrl: "/images/marketplace/interior-iconostasis.jpg",
-    category: "icons-artwork",
-    tags: ["best-sellers", "orthodox-makers"]
-  },
-  {
-    id: "ancient-faith-publishing",
-    name: "Ancient Faith Publishing",
-    subtitle: "Books & Media",
-    location: "West Chester, PA",
-    rating: 4.8,
-    reviewCount: 312,
-    badge: "Top Rated",
-    imageType: "photo",
-    imageUrl: "/images/marketplace/mosaic-dome.jpg",
-    category: "books-media",
-    tags: ["best-sellers", "new-arrivals"]
-  },
-  {
-    id: "orthodox-jewelry-co",
-    name: "Orthodox Jewelry Co.",
-    subtitle: "Jewelry & Crosses",
-    location: "Boston, MA",
-    rating: 4.8,
-    reviewCount: 156,
-    badge: "Top Rated",
-    imageType: "photo",
-    imageUrl: "/images/marketplace/enamel-lampada.jpg",
-    category: "jewelry-crosses",
-    tags: ["best-sellers", "new-arrivals"]
-  },
-  {
-    id: "st-elizabeth-convent",
-    name: "St. Elizabeth Convent",
-    subtitle: "Candles & Goods",
-    location: "Minsk, BY",
-    rating: 4.7,
-    reviewCount: 98,
-    badge: "Orthodox Maker",
-    imageType: "photo",
-    imageUrl: "/images/marketplace/candle-stand.jpg",
-    category: "church-supplies",
-    tags: ["orthodox-makers", "new-arrivals"]
-  }
-];
-
-const marketplaceProducts = [
-  {
-    id: "theotokos-of-tenderness-icon",
-    title: "Theotokos of Tenderness Icon",
-    shopName: "Mount Athos Icons",
-    priceCents: 18900,
-    imageUrl: "/images/marketplace/interior-iconostasis.jpg",
-    category: "icons-artwork",
-    tags: ["best-sellers", "orthodox-makers"]
-  },
-  {
-    id: "the-way-of-a-pilgrim",
-    title: "The Way of a Pilgrim",
-    shopName: "Ancient Faith Publishing",
-    priceCents: 1495,
-    imageUrl: "/images/marketplace/dome-cross.jpg",
-    category: "books-media",
-    tags: ["best-sellers", "new-arrivals"]
-  },
-  {
-    id: "wool-prayer-rope-100-knot",
-    title: "Wool Prayer Rope 100 Knot",
-    shopName: "Holy Cross Monastery",
-    priceCents: 3300,
-    imageUrl: "/images/marketplace/gilded-censer.jpg",
-    category: "jewelry-crosses",
-    tags: ["orthodox-makers", "best-sellers", "monastery-shops"]
-  },
-  {
-    id: "beeswax-altar-candle",
-    title: "Beeswax Altar Candle",
-    shopName: "St. Elizabeth Convent",
-    priceCents: 1200,
-    imageUrl: "/images/marketplace/candle-stand.jpg",
-    category: "church-supplies",
-    tags: ["new-arrivals", "orthodox-makers"]
-  },
-  {
-    id: "hand-carved-orthodox-cross",
-    title: "Hand Carved Orthodox Cross",
-    shopName: "Orthodox Woodworker",
-    priceCents: 4500,
-    imageUrl: "/images/marketplace/enamel-lampada.jpg",
-    category: "home-gifts",
-    tags: ["orthodox-makers", "best-sellers"]
-  },
-  {
-    id: "akathist-prayer-book",
-    title: "Akathist Prayer Book",
-    shopName: "Ancient Faith Publishing",
-    priceCents: 1895,
-    imageUrl: "/images/marketplace/mosaic-dome.jpg",
-    category: "books-media",
-    tags: ["new-arrivals", "on-sale"]
-  },
-  {
-    id: "incense-charcoal-set",
-    title: "Incense + Charcoal Set",
-    shopName: "Holy Cross Monastery",
-    priceCents: 2200,
-    imageUrl: "/images/marketplace/gilded-censer.jpg",
-    category: "church-supplies",
-    tags: ["monastery-shops", "best-sellers"]
-  },
-  {
-    id: "orthodox-childrens-primer",
-    title: "Orthodox Children's Primer",
-    shopName: "Ancient Faith Publishing",
-    priceCents: 2495,
-    imageUrl: "/images/marketplace/dome-cross.jpg",
-    category: "children-education",
-    tags: ["new-arrivals"]
-  }
-];
-
-function marketplaceSearchText(entry = {}) {
-  return [
-    entry.name,
-    entry.title,
-    entry.subtitle,
-    entry.shopName,
-    entry.location,
-    entry.category,
-    ...(entry.tags || [])
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-}
-
-function matchMarketplaceFilters(entry, { query, category, spotlight }) {
-  if (category && category !== "all" && entry.category !== category) return false;
-  if (spotlight && spotlight !== "all" && !(entry.tags || []).includes(spotlight)) return false;
-  if (query && !marketplaceSearchText(entry).includes(query)) return false;
-  return true;
-}
-
-function buildMarketplaceCategorySummaries(products = []) {
-  const counts = new Map();
-  for (const product of products) {
-    const key = product.category || "all";
-    counts.set(key, (counts.get(key) || 0) + 1);
-  }
-  return marketplaceBrowseCategories
-    .filter((category) => category.id !== "all")
-    .map((category) => ({
-      ...category,
-      itemCount: counts.get(category.id) || 0
-    }));
-}
-
-function handleMarketplaceCatalog(request) {
-  const url = new URL(request.url);
-  const query = (url.searchParams.get("q") || "").trim().toLowerCase();
-  const category = (url.searchParams.get("category") || "all").trim().toLowerCase();
-  const spotlight = (url.searchParams.get("spotlight") || "all").trim().toLowerCase();
-
-  const filteredShops = marketplaceShops.filter((entry) =>
-    matchMarketplaceFilters(entry, { query, category, spotlight })
-  );
-  const filteredProducts = marketplaceProducts.filter((entry) =>
-    matchMarketplaceFilters(entry, { query, category, spotlight })
-  );
-
-  const featuredShops = filteredShops.slice(0, 8);
-  const curatedPicks = filteredProducts.slice(0, 12);
-  const popularCategories = buildMarketplaceCategorySummaries(filteredProducts.length ? filteredProducts : marketplaceProducts);
-
-  return json({
-    query: {
-      q: query,
-      category,
-      spotlight
-    },
-    browseCategories: marketplaceBrowseCategories,
-    featuredFilters: marketplaceFeaturedFilters,
-    featuredShops,
-    popularCategories,
-    curatedPicks,
-    totals: {
-      shops: filteredShops.length,
-      products: filteredProducts.length
-    }
-  });
-}
+import {
+  handleMarketplaceCatalog,
+} from "./handlers/marketplace.js";
 
 async function handleWaitlist(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
@@ -863,6 +631,17 @@ async function sendWeeklyCommemorationEmails(env, scheduledTime) {
   return results;
 }
 
+// Stamp CORS headers onto an existing Response object (for handlers that
+// return their own Response rather than calling json() directly).
+function addCorsHeaders(response, env) {
+  const headers = new Headers(response.headers);
+  const cors = corsHeaders(env);
+  for (const [k, v] of Object.entries(cors)) {
+    headers.set(k, v);
+  }
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(sendWeeklyCommemorationEmails(env, event.scheduledTime));
@@ -870,6 +649,12 @@ export default {
 
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    // OPTIONS preflight for public API endpoints called cross-origin
+    if (request.method === "OPTIONS" && url.pathname.startsWith("/api/")) {
+      return corsPreflightResponse(env);
+    }
+
     if (request.method === "GET" || request.method === "HEAD") {
       if (url.pathname === "/giving" || url.pathname === "/giving/" || url.pathname.startsWith("/giving/")) {
         url.pathname = url.pathname.replace(/^\/giving/, "/give");
@@ -945,14 +730,14 @@ export default {
 
     if (request.method === "GET" && url.pathname === "/api/listen/search") return handleListenSearch(request, env);
     if (request.method === "GET" && url.pathname === "/api/listen/rss")    return handleListenRss(request, env);
-    if (request.method === "GET" && url.pathname === "/api/parishes") return handleParishes(request, env);
-    if (request.method === "GET" && url.pathname === "/api/campaign") return handlePublicCampaign(request, env);
-    if (request.method === "GET" && url.pathname === "/api/platform/summary") return handlePublicPlatformSummary(env);
+    if (request.method === "GET" && url.pathname === "/api/parishes") { const r = await handleParishes(request, env); return addCorsHeaders(r, env); }
+    if (request.method === "GET" && url.pathname === "/api/campaign") { const r = await handlePublicCampaign(request, env); return addCorsHeaders(r, env); }
+    if (request.method === "GET" && url.pathname === "/api/platform/summary") { const r = await handlePublicPlatformSummary(env); return addCorsHeaders(r, env); }
     if (request.method === "GET" && url.pathname === "/api/subscription-tiers") {
-      return json({ tiers: publicSubscriptionTiers() });
+      return corsJson({ tiers: publicSubscriptionTiers() }, env);
     }
     if (request.method === "GET" && url.pathname === "/api/marketplace/catalog") {
-      return handleMarketplaceCatalog(request);
+      const r = await handleMarketplaceCatalog(request); return addCorsHeaders(r, env);
     }
     if (url.pathname === "/api/waitlist") {
       return handleWaitlist(request, env);
@@ -967,7 +752,7 @@ export default {
       return handleSecurityConfig(env);
     }
     if (request.method === "GET" && url.pathname === "/api/liturgical-calendar") {
-      return handleLiturgicalCalendar(request);
+      const r = await handleLiturgicalCalendar(request); return addCorsHeaders(r, env);
     }
     if (request.method === "GET" && url.pathname === "/api/learn/meta") {
       return handleLearnMeta(env);
@@ -1118,6 +903,11 @@ export default {
       return handleAdminRebuildIndexes(request, env);
     }
     if (url.pathname === "/api/admin/migrate-kv-to-d1") {
+      // One-time migration tool — gated by env flag to prevent accidental re-runs.
+      // Set AGAPAY_ENABLE_KV_MIGRATION=true in Cloudflare dashboard only when needed.
+      if (env.AGAPAY_ENABLE_KV_MIGRATION !== "true") {
+        return json({ error: "Migration endpoint is disabled. Set AGAPAY_ENABLE_KV_MIGRATION=true to enable." }, { status: 403 });
+      }
       return handleAdminMigrateKvToD1(request, env);
     }
     if (url.pathname === "/api/admin/password") {
