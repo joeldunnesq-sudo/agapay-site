@@ -1206,9 +1206,10 @@ function renderMealsPlan(model, displayView, vm) {
     const meal = model.mealByDate.get(day.date) || {};
     return `<div class="learn-family-prototype">${renderPlannerDaySelector(model, day.date)}<section class="learn-family-day-hero ${day.isFastDay ? "is-fast" : ""}"><div><small>${html(day.long || day.weekdayLong || "Today")}</small><h2>${html(day.weekdayLong || day.long || "Selected Day")} · ${html(day.shortDate || day.short || day.date)}</h2><p>${html(day.feast || "Household rhythm")} ${day.fasting ? `· ${html(day.fasting)}` : ""}</p></div><button type="button" data-event-open data-date="${html(day.date)}">+ Add to calendar</button></section><section class="learn-family-card-grid learn-family-card-grid-three">${["breakfast", "lunch", "dinner"].map((slot) => renderMealCard(day, meal, slot)).join("")}</section></div>`;
   }
-  if (displayView === "month") {
-    return `<div class="learn-family-month-layout">${renderFamilyMonthOverview(model, "meals")}<div style="display:grid;gap:14px;">${renderFeastsPanel(model, "month")}${renderFastingLegend()}</div></div>`;
-  }
+   if (displayView === "month") {
+-    return `<div class="learn-family-month-layout">${renderFamilyMonthOverview(model, "meals")}<div style="display:grid;gap:14px;">${renderFeastsPanel(model, "month")}${renderFastingLegend()}</div></div>`;
++    return `<div style="display:flex;flex-direction:column;gap:14px;">${renderFeastsPanel(model, "month")}${renderFamilyMonthOverview(model, "meals")}${renderFastingLegend()}</div>`;
+   }
   return `<div class="learn-family-week-layout"><section class="learn-family-week-board"><div class="learn-family-week-scroll"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => `<strong class="${day.isFastDay ? "is-fast" : day.isSunday ? "is-feast" : ""}">${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small><em>${html(day.isFastDay ? day.fastingType || day.fasting || "Fast" : day.feast || "")}</em></strong>`).join("")}</div>${["breakfast", "lunch", "dinner"].map((slot) => `<div class="learn-family-week-row"><strong>${html(mealSlotLabel(slot))}</strong>${model.weekDays.map((day) => `<div>${renderMealCard(day, model.mealByDate.get(day.date) || {}, slot)}</div>`).join("")}</div>`).join("")}</div></section><div style="display:grid;gap:14px;">${renderFeastsPanel(model, "week")}${renderFastingLegend()}</div></div>`;
 }
 
