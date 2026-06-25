@@ -3,17 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AGAPAY Learn | Orthodox Homeschool Planning</title>
+  <title>AGAPAY Learn | Orthodox Homeschool Planner</title>
   <meta name="application-name" content="AGAPAY Learn" />
-  <meta name="description" content="AGAPAY Learn is an Orthodox Christian homeschool planning application for parents to organize children, terms, lessons, books, Church rhythms, weekly progress, printable plans, and optional Google Calendar events." />
+  <meta name="description" content="AGAPAY Learn is an Orthodox Christian homeschool planning application. Today dashboard, adaptive planner, Grace Mode, meal planning, print center, formation, books, and more — shaped by the liturgical calendar." />
   <link rel="canonical" href="https://agapay.app/learn/" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="AGAPAY" />
-  <meta property="og:title" content="AGAPAY Learn" />
-  <meta property="og:description" content="An Orthodox Christian homeschool planning application for household setup, lesson planning, liturgical calendars, books, progress tracking, printables, and optional Google Calendar sync." />
+  <meta property="og:title" content="AGAPAY Learn — Orthodox Homeschool Planning" />
+  <meta property="og:description" content="Plan with peace. Teach with purpose. Raise saints. AGAPAY Learn organizes your household, lessons, Church rhythms, books, meals, and printable plans in one place shaped by the liturgical calendar." />
   <meta property="og:url" content="https://agapay.app/learn/" />
   <meta property="og:image" content="https://agapay.app/images/learn/agapay-learn-hero-dashboard.png" />
-  <meta name="theme-color" content="#061522" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="theme-color" content="$#061522" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -22,140 +23,839 @@
   <link rel="stylesheet" href="/site-chrome.css" />
   <script src="/site-chrome.js" defer></script>
   <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "AGAPAY Learn",
-      "url": "https://agapay.app/learn/",
-      "applicationCategory": "EducationalApplication",
-      "operatingSystem": "Web",
-      "description": "AGAPAY Learn is an Orthodox Christian homeschool planning application that helps parents organize children, school terms, lessons, books, Church rhythms, liturgical calendars, and printable plans.",
-      "privacyPolicy": "https://agapay.app/privacy"
-    }
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "AGAPAY Learn",
+    "url": "https://agapay.app/learn/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web",
+    "description": "AGAPAY Learn is an Orthodox Christian homeschool planning application. It brings household setup, adaptive lesson planning, liturgical calendars, books, formation, meal planning, Grace Mode, and beautiful printable plans into one workspace shaped by the Church year.",
+    "privacyPolicy": "https://agapay.app/privacy"
+  }
   </script>
+  <style>
+    /* ── Learn overview page extensions ────────────────────────────────────── */
+    .ov-feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      margin-top: 2.5rem;
+    }
+    .ov-feature-card {
+      background: rgba(255,252,245,.72);
+      border: 1px solid rgba(181,148,47,.22);
+      border-radius: 16px;
+      padding: 22px 24px 24px;
+    }
+    .ov-feature-icon {
+      font-size: 26px;
+      color: var(--gold, #b5942f);
+      display: block;
+      margin-bottom: 10px;
+    }
+    .ov-feature-card h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 600;
+      margin: 0 0 8px;
+      color: #14294a;
+    }
+    .ov-feature-card p {
+      margin: 0;
+      color: #33405a;
+      line-height: 1.55;
+      font-size: 15px;
+    }
+    .ov-feature-card ul {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      color: #33405a;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .ov-section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 60px 24px;
+    }
+    .ov-section-head {
+      text-align: center;
+      margin-bottom: 0;
+    }
+    .ov-section-head .eyebrow { margin-bottom: 8px; }
+    .ov-section-head h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(30px, 5vw, 44px);
+      font-weight: 500;
+      color: #061522;
+      margin: 0 0 14px;
+      line-height: 1.08;
+    }
+    .ov-section-head p {
+      color: #33405a;
+      max-width: 640px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    .ov-divider {
+      border: 0;
+      border-top: 1px solid rgba(181,148,47,.2);
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    /* Two-col feature reveal */
+    .ov-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+    .ov-two-col-text h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 500;
+      color: #061522;
+      margin: 0 0 16px;
+      line-height: 1.1;
+    }
+    .ov-two-col-text p {
+      color: #33405a;
+      line-height: 1.6;
+      margin: 0 0 14px;
+    }
+    .ov-checklist {
+      list-style: none;
+      margin: 16px 0 0;
+      padding: 0;
+      display: grid;
+      gap: 10px;
+    }
+    .ov-checklist li {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      color: #1c2e46;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .ov-checklist li::before {
+      content: "✦";
+      color: #b5942f;
+      flex-shrink: 0;
+      margin-top: 1px;
+      font-size: 13px;
+    }
+    .ov-screen-mock {
+      background: #f3ead4;
+      border: 1px solid rgba(181,148,47,.3);
+      border-radius: 14px;
+      padding: 18px;
+      display: grid;
+      gap: 10px;
+    }
+    .ov-mock-row {
+      background: #fff;
+      border: 1px solid rgba(181,148,47,.18);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .ov-mock-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #07284a;
+      color: #c9a25b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .ov-mock-label { font-size: 13px; color: #14294a; font-weight: 600; }
+    .ov-mock-sub { font-size: 12px; color: #6b7a91; }
+    .ov-mock-badge {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 999px;
+    }
+    .ov-mock-badge.feast { background: #fffaed; color: #b07800; border: 1px solid #e8c84a; }
+    .ov-mock-badge.fast { background: #f0f4ff; color: #3a4f8a; border: 1px solid #b0bde8; }
+    .ov-mock-badge.done { background: #edf6ef; color: #28613a; border: 1px solid #b2d9ba; }
+    .ov-mock-header {
+      font-size: 10px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: #b5942f;
+      font-weight: 700;
+      padding: 2px 0 6px;
+      border-bottom: 1px solid rgba(181,148,47,.18);
+    }
+    /* Print mockup */
+    .ov-print-mock {
+      background: #fff;
+      border: 1px solid #e0d9cc;
+      border-radius: 10px;
+      padding: 18px 20px;
+      box-shadow: 0 4px 16px rgba(6,21,34,.08);
+    }
+    .ov-print-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #07284a;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+    .ov-print-head strong { font-size: 16px; color: #07284a; font-family: 'Cormorant Garamond', serif; }
+    .ov-print-head small { font-size: 11px; color: #888; }
+    .ov-print-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      border-bottom: 1px solid #f0ebe0;
+      padding: 7px 0;
+    }
+    .ov-print-row span { font-size: 13px; color: #333; }
+    .ov-print-row small { font-size: 11px; color: #888; }
+    .ov-print-check { width: 14px; height: 14px; border: 1.5px solid #07284a; border-radius: 3px; }
+    /* Meal plan mockup */
+    .ov-meal-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .ov-meal-day {
+      border: 1px solid rgba(181,148,47,.22);
+      border-radius: 9px;
+      padding: 10px;
+      background: rgba(255,252,245,.8);
+    }
+    .ov-meal-day .day-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #b5942f;
+      margin-bottom: 6px;
+    }
+    .ov-meal-day .meal-slot {
+      font-size: 11px;
+      color: #33405a;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(181,148,47,.12);
+      line-height: 1.35;
+    }
+    .ov-meal-day .meal-slot:last-child { border-bottom: 0; }
+    .ov-meal-day .fast-tag {
+      font-size: 9px;
+      background: #f0f4ff;
+      color: #3a4f8a;
+      border-radius: 4px;
+      padding: 1px 5px;
+      display: inline-block;
+      margin-top: 4px;
+    }
+    /* Stat strip */
+    .ov-stat-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: rgba(181,148,47,.18);
+      border: 1px solid rgba(181,148,47,.22);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-top: 2.5rem;
+    }
+    .ov-stat {
+      background: rgba(255,252,245,.9);
+      padding: 22px 20px;
+      text-align: center;
+    }
+    .ov-stat strong {
+      display: block;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 38px;
+      font-weight: 600;
+      color: #07284a;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .ov-stat span {
+      font-size: 13px;
+      color: #6b7a91;
+      line-height: 1.4;
+    }
+    /* Grace Mode illustraton */
+    .ov-grace-levels {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .ov-grace-level {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(181,148,47,.2);
+      background: rgba(255,252,245,.8);
+    }
+    .ov-grace-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .ov-grace-level strong { font-size: 14px; color: #14294a; }
+    .ov-grace-level small { font-size: 12px; color: #6b7a91; }
+    /* Responsive overrides */
+    @media (max-width: 800px) {
+      .ov-two-col { grid-template-columns: 1fr; }
+      .ov-stat-strip { grid-template-columns: repeat(2, 1fr); }
+      .ov-meal-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .ov-stat-strip { grid-template-columns: 1fr; }
+      .ov-section { padding: 40px 16px; }
+      .ov-meal-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body class="learn-pricing-page learn-overview-page">
   <main>
+
+    <!-- ── Hero ─────────────────────────────────────────────────────────────── -->
     <section class="learn-hero overview-hero">
       <div class="learn-hero-copy">
         <p class="eyebrow">Orthodox homeschool planning</p>
         <h1>AGAPAY Learn</h1>
         <p class="learn-hero-line">Plan with peace. Teach with purpose. Raise saints.</p>
-        <p class="hero-text"><strong>AGAPAY Learn is an Orthodox Christian homeschool planning application for parents.</strong> Its purpose is to help families set up their household, organize children and school terms, plan lessons, follow the Church year, track weekly work, manage books, and print useful homeschool plans in one place.</p>
+        <p class="hero-text"><strong>AGAPAY Learn is an Orthodox Christian homeschool planning application for parents.</strong> It organizes your household, school year, lessons, Church rhythms, books, meals, and printable plans in one calm workspace shaped by the liturgical calendar — Julian or Revised Julian.</p>
         <div class="hero-actions">
-          <a class="button button-primary" href="/onboarding">Start Free</a>
+          <a class="button button-primary" href="/myagapay/learn/setup">Start Free</a>
           <a class="button button-secondary" href="#features">Explore Features</a>
         </div>
         <div class="hero-proof">
-          <span>Liturgical calendars</span>
+          <span>Julian &amp; Revised Julian calendars</span>
           <span>Family-based + Form-based planning</span>
           <span>Grace Mode for hard seasons</span>
+          <span>Meal planning with fast-day guidance</span>
           <span>Printable household and child plans</span>
         </div>
       </div>
       <div class="learn-product overview-product learn-hero-art" aria-label="AGAPAY Learn dashboard shown on a laptop">
         <div class="learn-hero-art-glow"></div>
-        <img src="/images/learn/agapay-learn-hero-dashboard.png" alt="AGAPAY Learn dashboard preview on a laptop with Orthodox homeschool planning tools" loading="eager" fetchpriority="high" />
+        <img src="/images/learn/agapay-learn-hero-dashboard.png" alt="AGAPAY Learn dashboard preview showing Today, Church rhythms, household plan, and liturgical calendar" loading="eager" fetchpriority="high" />
       </div>
     </section>
 
-    <section class="overview-band learn-purpose-band" aria-labelledby="learn-purpose-heading">
-      <div class="learn-purpose-inner">
-        <header class="learn-purpose-header">
-          <p class="eyebrow">What AGAPAY Learn does</p>
-          <h2 id="learn-purpose-heading">One peaceful place to shape the school year.</h2>
-          <p>AGAPAY Learn is an Orthodox Christian homeschool planning application for parents. It brings household setup, lessons, books, Church rhythms, weekly progress, and beautiful printable plans into one thoughtful workspace.</p>
-        </header>
+    <!-- ── What's inside ────────────────────────────────────────────────────── -->
+    <section class="ov-section" id="features" aria-labelledby="features-heading">
+      <div class="ov-section-head">
+        <p class="eyebrow">Everything inside AGAPAY Learn</p>
+        <h2 id="features-heading">One place for your whole homeschool.</h2>
+        <p>From the morning liturgical reading to the weekly grocery list, every part of faithful family life lives in a single workspace shaped by the Church year.</p>
+      </div>
+      <div class="ov-stat-strip" aria-label="AGAPAY Learn at a glance">
+        <div class="ov-stat"><strong>8</strong><span>Planning surfaces in one app</span></div>
+        <div class="ov-stat"><strong>16</strong><span>Print templates available</span></div>
+        <div class="ov-stat"><strong>5</strong><span>Planner views — day through year</span></div>
+        <div class="ov-stat"><strong>5</strong><span>Grace Mode levels</span></div>
+      </div>
+    </section>
 
-        <div class="learn-purpose-layout">
-          <div class="learn-purpose-story">
-            <p class="learn-purpose-lead">Families can use familiar grade levels or group children at a similar developmental stage into Forms. Shared enrichment is planned once for the household, while core subjects and books are assigned where they belong.</p>
-          <div class="learn-planning-model" aria-label="Family-based and Form-based planning explained">
-            <article>
-              <span class="learn-model-number">01</span>
-              <h3>Family-based</h3>
-              <p>Learning everyone shares together, such as Church rhythms, Catechesis, read-alouds, hymns, saints, poetry, artists, and composers.</p>
-            </article>
-            <article>
-              <span class="learn-model-number">02</span>
-              <h3>What is a Form?</h3>
-              <p>A Form is simply a group of children learning at a similar stage. Instead of planning separately for every grade, you can teach shared history, science, literature, or geography together and adjust the work for each child.</p>
-            </article>
-          </div>
-          </div>
+    <hr class="ov-divider" />
 
-          <div class="learn-capability-panel" aria-label="Current AGAPAY Learn functionality">
-            <h3>Everything working together</h3>
-            <ul class="learn-function-list">
-              <li><strong>Set up your household</strong><span>Children, Forms or grades, terms, and calendar preference.</span></li>
-              <li><strong>Plan every horizon</strong><span>Day, week, month, term, and year views.</span></li>
-              <li><strong>Follow the Church year</strong><span>Feasts, fasts, readings, saints, hymns, and rhythms.</span></li>
-              <li><strong>Organize books and curriculum</strong><span>Connect real materials to subjects and children.</span></li>
-              <li><strong>See weekly progress</strong><span>Check off household and child lessons as you go.</span></li>
-              <li><strong>Use Grace Mode</strong><span>Lighten hard seasons without losing the plan.</span></li>
-              <li><strong>Print useful plans</strong><span>Household plans, child sheets, calendars, and PDFs.</span></li>
-              <li><strong>Find trusted resources</strong><span>Search the moderated Orthodox homeschool library.</span></li>
-            </ul>
-            <p class="learn-coming-note"><strong>Coming soon:</strong> formal reports and transcripts.</p>
+    <!-- ── Today Dashboard ──────────────────────────────────────────────────── -->
+    <section class="ov-section" aria-labelledby="today-heading">
+      <div class="ov-two-col">
+        <div class="ov-two-col-text">
+          <p class="eyebrow">Today dashboard</p>
+          <h2 id="today-heading">The liturgical day, front and center.</h2>
+          <p>Open AGAPAY Learn each morning and find the feast, fasting rule, saint of the day, epistle and gospel references, the day's troparion, and your household plan — all in one place. Church rhythms are checked off as the day unfolds.</p>
+          <ul class="ov-checklist">
+            <li>Feast name, rank, and fasting rule drawn from your chosen calendar</li>
+            <li>Lives of the Saints via Orthocal.info (live connection)</li>
+            <li>Gospel and Epistle references</li>
+            <li>Troparion and Kontakion text (when source is connected)</li>
+            <li>Household stream cards with progress checkoffs</li>
+            <li>Child column lesson blocks — tick off as you go</li>
+            <li>Upcoming feasts strip for the next 90 days</li>
+            <li>Weekly progress summary (lessons done, narrations logged)</li>
+          </ul>
+        </div>
+        <div class="ov-screen-mock" aria-label="Today dashboard preview">
+          <div class="ov-mock-header">Today in the Church — Julian</div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">☩</div>
+            <div><div class="ov-mock-label">St. Emmelia, Mother of Basil the Great</div><div class="ov-mock-sub">Minor feast · Epistle: Heb 13:17-21 · Gospel: Lk 6:17-23</div></div>
+            <span class="ov-mock-badge feast">Feast</span>
+          </div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">⊕</div>
+            <div><div class="ov-mock-label">Fasting Rule</div><div class="ov-mock-sub">Wednesday fast — abstain from meat, dairy, fish, oil, wine</div></div>
+            <span class="ov-mock-badge fast">Fast</span>
+          </div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">☰</div>
+            <div><div class="ov-mock-label">Morning Prayers</div><div class="ov-mock-sub">Church Rhythm</div></div>
+            <span class="ov-mock-badge done">✓ Done</span>
+          </div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">▣</div>
+            <div><div class="ov-mock-label">Read-Aloud: Ch. 14 · The Bronze Bow</div><div class="ov-mock-sub">Household stream · 20 min</div></div>
+            <span class="ov-mock-badge done">✓ Done</span>
+          </div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">✎</div>
+            <div><div class="ov-mock-label">Latin Grammar · Maria</div><div class="ov-mock-sub">Lesson 32 · Form II · 25 min</div></div>
+            <span class="ov-mock-badge" style="background:#fff3f0;color:#8a3a28;border:1px solid #e8b5a0;">Planned</span>
           </div>
         </div>
+      </div>
+    </section>
 
-        <div class="google-sync-disclosure" aria-label="Google Calendar Sync disclosure">
-          <div class="google-sync-copy">
-            <p class="eyebrow">Optional Google Calendar Sync</p>
-            <h3>Your plan can travel with your family calendar.</h3>
-            <p>When a signed-in parent chooses to connect Google Calendar, AGAPAY Learn requests only the Calendar events permission. It creates and updates selected lesson blocks, term dates, feast days, and reminders in the user's primary calendar, and checks previously synced AGAPAY Learn events to prevent duplicates. Calendar connection is optional; AGAPAY Learn works without it. AGAPAY Learn does not sell Google user data or use Google Calendar data for advertising. Users may disconnect or revoke access at any time.</p>
+    <hr class="ov-divider" />
+
+    <!-- ── Adaptive Planner ─────────────────────────────────────────────────── -->
+    <section class="ov-section" aria-labelledby="planner-heading">
+      <div class="ov-two-col">
+        <div class="ov-screen-mock" aria-label="Planner week view preview">
+          <div class="ov-mock-header">Week of June 23 · Term 2 · Pentecost Season</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:6px;">
+            <div style="background:#07284a;color:#c9a25b;border-radius:7px;padding:7px 8px;text-align:center;font-size:11px;font-weight:700;">Mon</div>
+            <div style="background:#07284a;color:#c9a25b;border-radius:7px;padding:7px 8px;text-align:center;font-size:11px;font-weight:700;">Tue</div>
+            <div style="background:#07284a;color:#c9a25b;border-radius:7px;padding:7px 8px;text-align:center;font-size:11px;font-weight:700;">Wed</div>
+            <div style="background:#07284a;color:#c9a25b;border-radius:7px;padding:7px 8px;text-align:center;font-size:11px;font-weight:700;">Thu</div>
+            <div style="background:#07284a;color:#c9a25b;border-radius:7px;padding:7px 8px;text-align:center;font-size:11px;font-weight:700;">Fri</div>
           </div>
-          <div class="google-sync-actions">
-            <a class="button button-secondary" href="/privacy">Read the Privacy Policy</a>
-            <a class="button button-secondary" href="https://myaccount.google.com/permissions" rel="noopener noreferrer">Manage Google Access</a>
+          <div class="ov-mock-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+            <div class="ov-mock-label">Household Enrichment</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;width:100%;">
+              <div style="height:30px;background:#edf6ef;border-radius:5px;border:1px solid #b2d9ba;"></div>
+              <div style="height:30px;background:#edf6ef;border-radius:5px;border:1px solid #b2d9ba;"></div>
+              <div style="height:30px;background:#f0f4ff;border-radius:5px;border:1px solid #b0bde8;font-size:9px;display:flex;align-items:center;justify-content:center;color:#3a4f8a;">Fast</div>
+              <div style="height:30px;background:#edf6ef;border-radius:5px;border:1px solid #b2d9ba;"></div>
+              <div style="height:30px;background:#edf6ef;border-radius:5px;border:1px solid #b2d9ba;"></div>
+            </div>
+          </div>
+          <div class="ov-mock-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+            <div class="ov-mock-label" style="color:#7a3a1a;">Form I · Maria &amp; Elias</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;width:100%;">
+              <div style="height:30px;background:#fff3f0;border-radius:5px;border:1px solid #e8b5a0;"></div>
+              <div style="height:30px;background:#fff3f0;border-radius:5px;border:1px solid #e8b5a0;"></div>
+              <div style="height:30px;background:#f0f4ff;border-radius:5px;border:1px solid #b0bde8;font-size:9px;display:flex;align-items:center;justify-content:center;color:#3a4f8a;">Rest</div>
+              <div style="height:30px;background:#fff3f0;border-radius:5px;border:1px solid #e8b5a0;"></div>
+              <div style="height:30px;background:#edf6ef;border-radius:5px;border:1px solid #b2d9ba;"></div>
+            </div>
+          </div>
+          <div class="ov-mock-row" style="gap:6px;">
+            <div class="ov-mock-icon" style="background:#5c3510;">▤</div>
+            <div><div class="ov-mock-label">Grace Mode: Light</div><div class="ov-mock-sub">Lower-priority subjects reduced — prayer and read-aloud kept</div></div>
+          </div>
+        </div>
+        <div class="ov-two-col-text">
+          <p class="eyebrow">Adaptive planner</p>
+          <h2 id="planner-heading">Day, week, month, term, and year — all connected.</h2>
+          <p>The AGAPAY Learn planner gives your household five views. Plan at the horizon that fits the moment: a quick look at today, the full week board, a month calendar with feast and fast days marked, a term pacing grid, and a year-level overview of your cycle and season topics.</p>
+          <ul class="ov-checklist">
+            <li>Week board with household stream rows and per-child lesson columns</li>
+            <li>Month calendar with feast tiles, fast day shading, and liturgical season color</li>
+            <li>Term view with 12-week pacing grid and curriculum summaries</li>
+            <li>Year view with cycle framework, season topics, and feast tiles</li>
+            <li>Grace Mode ribbon adjusts priorities without deleting the plan</li>
+            <li>Lesson block edits (notes and reschedule) save to your household account</li>
+            <li>Term selector — switch between terms mid-year without losing your setup</li>
+            <li>Completion checkoffs persist across sessions</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <hr class="ov-divider" />
+
+    <!-- ── Formation ────────────────────────────────────────────────────────── -->
+    <section class="ov-section" aria-labelledby="formation-heading">
+      <div class="ov-two-col">
+        <div class="ov-two-col-text">
+          <p class="eyebrow">Formation</p>
+          <h2 id="formation-heading">Church life woven into the school day.</h2>
+          <p>The Formation page brings catechesis, recitation, hymn study, enrichment rotations, saints and feasts, and nature journal records together in one place — organized by what the household has set up, not by a generic template.</p>
+          <ul class="ov-checklist">
+            <li>Today panel — fasting badge, readings, saint block, troparion — all in one</li>
+            <li>Church Rhythms checklist with live feast and fasting data</li>
+            <li>Catechesis cycle tracker — current lesson, doctrinal topic, and evaluation model</li>
+            <li>Recitation tracks — psalms, prayers, scripture memory, and copywork</li>
+            <li>Hymn study roster with tone and source</li>
+            <li>Enrichment rotation blocks — art, poetry, composer, nature, Shakespeare</li>
+            <li>Upcoming Feasts panel with date tiles for the next 90 days</li>
+            <li>Nature Journal records</li>
+          </ul>
+        </div>
+        <div class="ov-screen-mock" aria-label="Formation page preview">
+          <div class="ov-mock-header">Formation · Wednesday</div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">☩</div>
+            <div><div class="ov-mock-label">Catechesis · Week 18</div><div class="ov-mock-sub">The Holy Eucharist — The Real Presence · narrative-only evaluation</div></div>
+          </div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">♪</div>
+            <div><div class="ov-mock-label">Hymn Study</div><div class="ov-mock-sub">Tone 5 — O Heavenly King · Memorizing</div></div>
+          </div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">✎</div>
+            <div><div class="ov-mock-label">Recitation</div><div class="ov-mock-sub">Psalm 51 — 72% memorized</div></div>
+          </div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">🎨</div>
+            <div><div class="ov-mock-label">Art Study · Rotation 2</div><div class="ov-mock-sub">Andrei Rublev — Holy Trinity icon · picture study and narration</div></div>
+          </div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">☩</div>
+            <div><div class="ov-mock-label">Upcoming: Apostles' Fast begins</div><div class="ov-mock-sub">Monday, June 28 · 6 days away</div></div>
+            <span class="ov-mock-badge feast">June 28</span>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="overview-band" id="features">
-      <div class="section-heading centered">
-        <p class="eyebrow">Why families love AGAPAY Learn</p>
-        <h2>Built for the way Orthodox families really live.</h2>
-        <p>Homeschooling in an Orthodox home is not one-size-fits-all. AGAPAY Learn helps you build a plan around feasts and fasts, living books, and the beautiful chaos of family life.</p>
-      </div>
-      <div class="overview-feature-row">
-        <article><span>☩</span><h3>Church First</h3><p>Your plan flows with the Church year, not against it.</p></article>
-        <article><span>👨‍👩‍👧</span><h3>Family + Flexible Groups</h3><p>Share enrichment as a family and organize core subjects by Form, grade, or child.</p></article>
-        <article><span>📖</span><h3>Living Education</h3><p>Designed for living books, conversation, and real learning.</p></article>
-        <article><span>♡</span><h3>Grace in Every Season</h3><p>Flexible plans for illness, travel, or new babies.</p></article>
-        <article><span>▣</span><h3>Print What You Need</h3><p>Generate household plans, child sheets, and practical planning pages.</p></article>
-        <article><span>⌂</span><h3>Forms or Grades</h3><p>Use Forms when they help, or keep the familiar grade-level structure you already know.</p></article>
-      </div>
-      <div class="learn-quote-row" aria-label="Orthodox wisdom on education">
-        <figure>
-          <span aria-hidden="true">“</span>
-          <blockquote>Of all holy works, the education of children is the most holy.</blockquote>
-          <figcaption>St. Theophan the Recluse</figcaption>
-        </figure>
-        <figure>
-          <span aria-hidden="true">“</span>
-          <blockquote>We must not only teach our children to read and write, but we must also teach them to know God.</blockquote>
-          <figcaption>St. Kosmas Aitolos</figcaption>
-        </figure>
+    <hr class="ov-divider" />
+
+    <!-- ── Books ────────────────────────────────────────────────────────────── -->
+    <section class="ov-section" aria-labelledby="books-heading">
+      <div class="ov-two-col">
+        <div class="ov-screen-mock" aria-label="Books page preview">
+          <div class="ov-mock-header">Books &amp; Library</div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">📖</div>
+            <div><div class="ov-mock-label">The Bronze Bow — Elizabeth George Speare</div><div class="ov-mock-sub">Household Read-Aloud · Ch. 1–24 · 67% complete</div></div>
+          </div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">📖</div>
+            <div><div class="ov-mock-label">Carry On, Mr. Bowditch — Jean Lee Latham</div><div class="ov-mock-sub">Form I Reading · Elias · Ch. 1–18 · 40% complete</div></div>
+          </div>
+          <div class="ov-mock-row" style="background:#fffaed;border-color:#e8c84a;">
+            <div class="ov-mock-icon" style="background:#b07800;">☰</div>
+            <div><div class="ov-mock-label">Book Pacing</div><div class="ov-mock-sub">The Bronze Bow · 4 chapters/week · 3 weeks left</div></div>
+          </div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">✎</div>
+            <div><div class="ov-mock-label">Copywork Sources</div><div class="ov-mock-sub">KJV Psalm 23 · O Heavenly King (Tone 5) · Feast troparia</div></div>
+          </div>
+        </div>
+        <div class="ov-two-col-text">
+          <p class="eyebrow">Books</p>
+          <h2 id="books-heading">Living books at the center, not the margin.</h2>
+          <p>The Books page shows your household library — read-alouds, form readings, and independent books — with progress tracking, pacing guidance, and copywork sources all in one place.</p>
+          <ul class="ov-checklist">
+            <li>Current read-alouds with chapter progress and weekly pacing</li>
+            <li>Household library table with all assigned books and resources</li>
+            <li>Book pacing calculator — chapters per week, weeks remaining</li>
+            <li>Copywork sources — pulled from your recitation tracks, hymn studies, and formation materials</li>
+            <li>Orthodox book suggestions (for families without a full library setup)</li>
+            <li>Books drawn from your setup — no manual re-entry</li>
+          </ul>
+        </div>
       </div>
     </section>
 
-    <section class="rhythm-section">
-      <div class="section-heading centered">
-        <p class="eyebrow">How it works</p>
-        <h2>A simple rhythm for your homeschool.</h2>
+    <hr class="ov-divider" />
+
+    <!-- ── Family Planning (Meals, Recipes, Calendar) ──────────────────────── -->
+    <section class="ov-section" aria-labelledby="meal-heading">
+      <div class="ov-section-head" style="margin-bottom:2rem;">
+        <p class="eyebrow">Family planning — Family plan</p>
+        <h2 id="meal-heading">Meals, recipes, chores, and the family calendar.</h2>
+        <p>Practical household life lives beside the school plan. Meal planning, grocery lists, the recipe box, family events, and chore charts are organized in the Planner and protected by the Family plan.</p>
       </div>
-      <div class="rhythm-steps">
-        <article><b>1</b><h3>Choose Your Calendar</h3><p>Select Old or New Calendar with one click.</p></article>
-        <article><b>2</b><h3>Choose Your Groups</h3><p>Use flexible Forms or organize children by traditional grade and level.</p></article>
-        <article><b>3</b><h3>Build Two Layers</h3><p>Plan shared family enrichment, then schedule subjects for each active group.</p></article>
-        <article><b>4</b><h3>Live & Adapt</h3><p>Use Grace Mode and tweak as real life happens.</p></article>
-        <article><b>5</b><h3>Print Your Plan</h3><p>Generate useful household and child planning pages when you need paper.</p></article>
+      <div class="ov-two-col">
+        <div>
+          <div class="ov-meal-grid" aria-label="Meal plan preview">
+            <div class="ov-meal-day">
+              <div class="day-label">Mon</div>
+              <div class="meal-slot">🍳 Egg &amp; veggie bake</div>
+              <div class="meal-slot">🥗 Lentil soup</div>
+              <div class="meal-slot">🍝 Mediterranean pasta</div>
+            </div>
+            <div class="ov-meal-day">
+              <div class="day-label">Tue</div>
+              <div class="meal-slot">🥣 Oatmeal</div>
+              <div class="meal-slot">🍲 Leftovers</div>
+              <div class="meal-slot">🐟 Salmon rice bowls</div>
+              <span class="fast-tag">Fish allowed</span>
+            </div>
+            <div class="ov-meal-day" style="border-color:#b0bde8;background:#f0f4ff;">
+              <div class="day-label" style="color:#3a4f8a;">Wed · Fast</div>
+              <div class="meal-slot">☕ Coffee &amp; fruit</div>
+              <div class="meal-slot">🥙 Chickpea pitas</div>
+              <div class="meal-slot">🫘 Black bean tacos</div>
+              <span class="fast-tag">No oil or wine</span>
+            </div>
+            <div class="ov-meal-day">
+              <div class="day-label">Thu</div>
+              <div class="meal-slot">🍳 Pancakes</div>
+              <div class="meal-slot">🥗 Salad</div>
+              <div class="meal-slot">🍗 Chicken soup</div>
+            </div>
+          </div>
+        </div>
+        <div class="ov-two-col-text">
+          <p style="color:#33405a;margin:0 0 14px;line-height:1.6;">Meal planning is aware of the fasting calendar. When a day is a fast day, AGAPAY marks it and pulls from your fast-friendly recipes. When wine and oil are allowed, it notes that too.</p>
+          <ul class="ov-checklist">
+            <li>Weekly meal plan with breakfast, lunch, and dinner per day</li>
+            <li>Monthly meal calendar with feast and fast days marked</li>
+            <li>Household recipe box — save and organize family recipes with fasting category</li>
+            <li>Grocery list by aisle — generated alongside the week</li>
+            <li>Weekly and monthly chore charts by child or household</li>
+            <li>Family calendar — appointments, field trips, name days, and feast celebrations</li>
+            <li>All of these print beautifully from the Print Center</li>
+          </ul>
+          <div style="margin-top:16px;padding:12px 16px;background:rgba(181,148,47,.1);border:1px solid rgba(181,148,47,.3);border-radius:10px;">
+            <strong style="font-size:13px;color:#07284a;">Family plan feature.</strong>
+            <span style="font-size:13px;color:#33405a;"> Meal plans, recipe collection, grocery lists, and chore chart prints are included in the Family and Founding Family plans.</span>
+          </div>
+        </div>
       </div>
     </section>
 
+    <hr class="ov-divider" />
+
+    <!-- ── Grace Mode ───────────────────────────────────────────────────────── -->
+    <section class="ov-section" aria-labelledby="grace-heading">
+      <div class="ov-two-col">
+        <div class="ov-two-col-text">
+          <p class="eyebrow">Grace Mode</p>
+          <h2 id="grace-heading">Your plan should serve your family, not punish it.</h2>
+          <p>Grace Mode lets you lighten a difficult day without deleting work or pretending the plan never existed. Choose a mode for the day, and AGAPAY automatically adjusts which subjects are full, reduced, or deferred — while keeping prayer, read-aloud, and core rhythms intact.</p>
+          <ul class="ov-checklist">
+            <li>Five modes: Full, Light, Minimum Viable, Feast Only, and Custom</li>
+            <li>Each subject can be marked Keep, Reduce First, or Defer If Needed</li>
+            <li>Deferred work moves to the reserve list — not deleted</li>
+            <li>Works for illness, travel, new babies, feast days, or any hard season</li>
+            <li>Change Grace Mode from day to day as family life changes</li>
+            <li>Mode is visible in the planner week board as a ribbon on each row</li>
+          </ul>
+        </div>
+        <div>
+          <div class="ov-grace-levels" aria-label="Grace Mode levels">
+            <div class="ov-grace-level">
+              <div class="ov-grace-dot" style="background:#28613a;"></div>
+              <div>
+                <strong>Full</strong>
+                <small style="display:block;margin-top:2px;">Runs the complete day as planned. Best for settled weeks.</small>
+              </div>
+            </div>
+            <div class="ov-grace-level" style="border-color:rgba(181,148,47,.4);background:#fffaed;">
+              <div class="ov-grace-dot" style="background:#b07800;"></div>
+              <div>
+                <strong>Light</strong>
+                <small style="display:block;margin-top:2px;">Keeps essentials and softens lower-priority work. Most common.</small>
+              </div>
+            </div>
+            <div class="ov-grace-level">
+              <div class="ov-grace-dot" style="background:#7a3a1a;"></div>
+              <div>
+                <strong>Minimum Viable</strong>
+                <small style="display:block;margin-top:2px;">Keeps prayer, one shared touchpoint, and the next right thing.</small>
+              </div>
+            </div>
+            <div class="ov-grace-level">
+              <div class="ov-grace-dot" style="background:#3a4f8a;"></div>
+              <div>
+                <strong>Feast Only</strong>
+                <small style="display:block;margin-top:2px;">Church rhythm and feast celebration only — everything academic steps aside.</small>
+              </div>
+            </div>
+            <div class="ov-grace-level">
+              <div class="ov-grace-dot" style="background:#555;"></div>
+              <div>
+                <strong>Custom</strong>
+                <small style="display:block;margin-top:2px;">You decide exactly what stays, reduces, and defers.</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="ov-divider" />
+
+    <!-- ── Print Center ─────────────────────────────────────────────────────── -->
+    <section class="ov-section" aria-labelledby="print-heading">
+      <div class="ov-two-col">
+        <div class="ov-print-mock" aria-label="Print Center preview">
+          <div class="ov-print-head">
+            <strong>Weekly Household Plan — June 23</strong>
+            <small>AGAPAY Learn</small>
+          </div>
+          <div class="ov-print-row"><span>☩ Morning Prayers</span><div class="ov-print-check"></div></div>
+          <div class="ov-print-row"><span>📖 Read-Aloud: The Bronze Bow · Ch. 14</span><div class="ov-print-check"></div></div>
+          <div class="ov-print-row"><span>✎ Catechesis · Week 18</span><div class="ov-print-check"></div></div>
+          <div class="ov-print-row"><span>🎨 Art Study: Andrei Rublev</span><div class="ov-print-check"></div></div>
+          <div class="ov-print-row"><span>♪ Hymn Practice: O Heavenly King</span><div class="ov-print-check"></div></div>
+          <div style="height:1px;background:#e0d9cc;margin:10px 0;"></div>
+          <div style="font-size:11px;color:#888;text-align:right;">Generated by AGAPAY Learn · agapay.app</div>
+        </div>
+        <div class="ov-two-col-text">
+          <p class="eyebrow">Print Center</p>
+          <h2 id="print-heading">Sixteen print templates, ready when you need paper.</h2>
+          <p>The Print Center generates clean, useful PDFs from your actual household setup data. Free plans include weekly and monthly household plans. Family plans unlock lessons, meal plans, recipes, grocery lists, and chore charts.</p>
+          <ul class="ov-checklist">
+            <li><strong>Free:</strong> Weekly Household Plan, Monthly Calendar with feasts and fasts</li>
+            <li><strong>Family:</strong> Lesson plans by Form (week, month, term)</li>
+            <li><strong>Family:</strong> Weekly and monthly meal plans</li>
+            <li><strong>Family:</strong> Recipe collection with fasting categories</li>
+            <li><strong>Family:</strong> Weekly grocery list</li>
+            <li><strong>Family:</strong> Daily, weekly, and monthly chore charts</li>
+            <li><strong>Family:</strong> Child weekly, monthly, and term lesson sheets</li>
+            <li>All PDFs use Cormorant Garamond and your household name — ready to print or download</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <hr class="ov-divider" />
+
+    <!-- ── Planning model ───────────────────────────────────────────────────── -->
+    <section class="ov-section" aria-labelledby="model-heading">
+      <div class="ov-section-head">
+        <p class="eyebrow">How planning works</p>
+        <h2 id="model-heading">Two layers. One household. Total flexibility.</h2>
+        <p>AGAPAY Learn uses a two-layer model. Shared enrichment — Church rhythms, read-alouds, catechesis, hymns — is planned once for the household. Core subjects are assigned by Form, grade, or individual child.</p>
+      </div>
+      <div class="ov-feature-grid" style="margin-top:2rem;">
+        <div class="ov-feature-card">
+          <span class="ov-feature-icon">⌂</span>
+          <h3>Family-based</h3>
+          <p>Shared learning for everyone together: Church rhythms, morning basket, read-alouds, catechesis, hymns, saints, poetry, artists, and nature walks.</p>
+        </div>
+        <div class="ov-feature-card">
+          <span class="ov-feature-icon">◎</span>
+          <h3>Form-based or grade-based</h3>
+          <p>Group children at a similar stage into Forms and plan their core subjects once — or keep traditional grade and level assignments if you prefer.</p>
+        </div>
+        <div class="ov-feature-card">
+          <span class="ov-feature-icon">▣</span>
+          <h3>Individual child tracks</h3>
+          <p>Assign specific books, subjects, or tasks to a single child where needed. Child-level lesson sheets print from the Print Center.</p>
+        </div>
+        <div class="ov-feature-card">
+          <span class="ov-feature-icon">☩</span>
+          <h3>Church calendar backbone</h3>
+          <p>Both Julian and Revised Julian calendars are supported. Feast days, fasting rules, and season markers shape every view in the planner.</p>
+        </div>
+      </div>
+    </section>
+
+    <hr class="ov-divider" />
+
+    <!-- ── Community ────────────────────────────────────────────────────────── -->
+    <section class="ov-section" aria-labelledby="community-heading">
+      <div class="ov-two-col">
+        <div class="ov-two-col-text">
+          <p class="eyebrow">Community</p>
+          <h2 id="community-heading">A moderated library of trusted Orthodox homeschool resources.</h2>
+          <p>The Community page gives families access to a growing, vetted library of Orthodox homeschool resources — curricula, books, unit studies, videos, and guides. Vetted resources are marked with a gold stripe. Families can submit resources for review and discuss them in the AGAPAY Facebook group.</p>
+          <ul class="ov-checklist">
+            <li>Curated library of Orthodox and classical resources</li>
+            <li>Vetted picks separated above the general grid</li>
+            <li>Submit a resource for review</li>
+            <li>Flag content that doesn't belong</li>
+            <li>AGAPAY Facebook group link for real conversation</li>
+            <li>This Day in Church History panel in the sidebar</li>
+          </ul>
+        </div>
+        <div class="ov-screen-mock" aria-label="Community page preview">
+          <div class="ov-mock-header">Vetted Resources</div>
+          <div class="ov-mock-row" style="border-top:3px solid #c9a25b;">
+            <div class="ov-mock-icon">📚</div>
+            <div><div class="ov-mock-label">Ancient Faith for Little Ones</div><div class="ov-mock-sub">Catechesis · Ages 4–8 · Vetted by AGAPAY</div></div>
+          </div>
+          <div class="ov-mock-row" style="border-top:3px solid #c9a25b;">
+            <div class="ov-mock-icon">📖</div>
+            <div><div class="ov-mock-label">Orthodox Catechism for Families</div><div class="ov-mock-sub">Theology · All ages · Vetted by AGAPAY</div></div>
+          </div>
+          <div class="ov-mock-header" style="margin-top:8px;">Community Submissions</div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">🎬</div>
+            <div><div class="ov-mock-label">Byzantine Chant for Children (video series)</div><div class="ov-mock-sub">Hymnody · Ages 6–14 · Submitted by family</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="ov-divider" />
+
+    <!-- ── Setup & Onboarding ───────────────────────────────────────────────── -->
+    <section class="ov-section" aria-labelledby="setup-heading">
+      <div class="ov-section-head">
+        <p class="eyebrow">Getting started</p>
+        <h2 id="setup-heading">A guided setup wizard. A real first week.</h2>
+        <p>The AGAPAY Learn Setup Wizard walks you through your household in five steps. When you finish, Learn can create a real, editable starter week — not a demo.</p>
+      </div>
+      <div class="ov-feature-grid" style="margin-top:2rem;">
+        <div class="ov-feature-card">
+          <span class="ov-feature-icon" style="font-size:20px;font-weight:700;color:#07284a;">1</span>
+          <h3>Household basics</h3>
+          <p>Name your household, choose your Church calendar (Julian or Revised Julian), and set your school year dates.</p>
+        </div>
+        <div class="ov-feature-card">
+          <span class="ov-feature-icon" style="font-size:20px;font-weight:700;color:#07284a;">2</span>
+          <h3>Method &amp; groups</h3>
+          <p>Choose Charlotte Mason, Orthodox Classical, Traditional, Eclectic, or Unsure. Pick Forms or grade levels.</p>
+        </div>
+        <div class="ov-feature-card">
+          <span class="ov-feature-icon" style="font-size:20px;font-weight:700;color:#07284a;">3</span>
+          <h3>Add your children</h3>
+          <p>First name, age, grade or Form. The free plan includes up to two children; Family plans are unlimited.</p>
+        </div>
+        <div class="ov-feature-card">
+          <span class="ov-feature-icon" style="font-size:20px;font-weight:700;color:#07284a;">4</span>
+          <h3>Grace Mode</h3>
+          <p>Learn how Grace Mode works and choose your household default. You can change it any day.</p>
+        </div>
+        <div class="ov-feature-card">
+          <span class="ov-feature-icon" style="font-size:20px;font-weight:700;color:#07284a;">5</span>
+          <h3>Starter week</h3>
+          <p>Optionally create a real editable first term — Morning Prayers, Daily Readings, Saint of the Day, read-aloud, nature walk, and starter subjects for every Form or grade.</p>
+        </div>
+        <div class="ov-feature-card">
+          <span class="ov-feature-icon">⚙</span>
+          <h3>Advanced Setup</h3>
+          <p>Add subjects, books, formation materials, enrichment blocks, and terms. Connect Google Calendar when ready. Set Grace Mode priorities per subject.</p>
+        </div>
+      </div>
+    </section>
+
+    <hr class="ov-divider" />
+
+    <!-- ── Google Calendar disclosure ──────────────────────────────────────── -->
+    <section class="ov-section" aria-labelledby="gcal-heading">
+      <div class="google-sync-disclosure">
+        <div class="google-sync-copy">
+          <p class="eyebrow">Optional Google Calendar Sync</p>
+          <h3 id="gcal-heading">Your plan can travel with your family calendar.</h3>
+          <p>When a signed-in parent chooses to connect Google Calendar, AGAPAY Learn requests only the Calendar events permission. It creates and updates selected lesson blocks, term dates, feast days, and reminders in the user's primary calendar, and checks previously synced AGAPAY Learn events to prevent duplicates. Calendar connection is optional; AGAPAY Learn works without it. AGAPAY Learn does not sell Google user data or use Google Calendar data for advertising. Users may disconnect or revoke access at any time.</p>
+        </div>
+        <div class="google-sync-actions">
+          <a class="button button-secondary" href="/privacy">Read the Privacy Policy</a>
+          <a class="button button-secondary" href="https://myaccount.google.com/permissions" rel="noopener noreferrer">Manage Google Access</a>
+        </div>
+      </div>
+    </section>
+
+    <hr class="ov-divider" />
+
+    <!-- ── Wisdom ────────────────────────────────────────────────────────────── -->
     <section class="learn-wisdom-band" aria-label="Orthodox wisdom on formation">
       <div>
         <p class="eyebrow">Formation over friction</p>
@@ -164,50 +864,17 @@
       </div>
       <div class="wisdom-mini-quotes">
         <figure>
-          <blockquote>If good foundations are laid early, children will grow up to be great.</blockquote>
-          <figcaption>St. John Chrysostom</figcaption>
+          <blockquote>Of all holy works, the education of children is the most holy.</blockquote>
+          <figcaption>St. Theophan the Recluse</figcaption>
         </figure>
         <figure>
-          <blockquote>A word of advice is a seed. If the soil is good, it will bring forth fruit.</blockquote>
-          <figcaption>Elder Thaddeus of Vitovnica</figcaption>
+          <blockquote>We must not only teach our children to read and write, but we must also teach them to know God.</blockquote>
+          <figcaption>St. Kosmas Aitolos</figcaption>
         </figure>
       </div>
     </section>
 
-    <section class="designed-section">
-      <div class="designed-image">
-        <img src="/images/how-it-works/hero-desk-sketch.png" alt="Orthodox homeschool desk with planner and books" />
-      </div>
-      <div>
-        <p class="eyebrow">Thoughtfully designed</p>
-        <h2>Everything in one place.</h2>
-        <div class="designed-list">
-          <span>Daily dashboard with feast, readings, and tasks</span>
-          <span>Family-based enrichment and Church rhythms</span>
-          <span>Form- or grade-based subjects with flexible child assignments</span>
-          <span>Books, formation, and habit tracking</span>
-          <span>Grace Mode for light weeks and hard seasons</span>
-          <span>Printable plans for Mom and each child</span>
-          <span>Simple Setup Wizard with a real starter week</span>
-          <span>Works on desktop, tablet, and mobile</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="overview-band" aria-labelledby="learn-roadmap-heading">
-      <div class="section-heading centered">
-        <p class="eyebrow">Clearly on the roadmap</p>
-        <h2 id="learn-roadmap-heading">Coming after the core planner is settled.</h2>
-        <p>These features are planned, but they are not represented as available in the current AGAPAY Learn release.</p>
-      </div>
-      <div class="overview-feature-row">
-        <article><span>▥</span><h3>Reports & Transcripts</h3><p>Progress summaries, report cards, transcripts, and state-reporting exports.</p></article>
-        <article><span>▣</span><h3>Google Calendar Sync</h3><p>Optional export of selected lesson blocks, terms, feasts, and reminders.</p></article>
-        <article><span>◎</span><h3>Co-op Tools</h3><p>Shared schedules, classes, invitations, and group planning.</p></article>
-        <article><span>♡</span><h3>Community</h3><p>A moderated Orthodox homeschool resource exchange built around trust.</p></article>
-      </div>
-    </section>
-
+    <!-- ── Pricing ───────────────────────────────────────────────────────────── -->
     <section class="pricing-wrap overview-pricing">
       <div class="section-heading">
         <p class="eyebrow">Simple, fair pricing</p>
@@ -215,20 +882,64 @@
       </div>
       <a class="button button-secondary pricing-jump" href="/learn/pricing">See Full Pricing</a>
       <div class="pricing-grid compact-pricing">
-        <article class="price-card"><p class="plan-label">Free</p><h3>$0</h3><p class="plan-note">Perfect for getting started.</p><ul><li>1 household</li><li>Up to 2 children</li><li>Basic planning tools</li><li>Limited printables</li></ul><a class="button button-secondary" href="/onboarding">Start Free</a></article>
-        <article class="price-card featured"><div class="featured-ribbon">Most loved</div><p class="plan-label">Founding Family</p><h3>$49<span>/year</span></h3><p class="plan-note">Help shape AGAPAY Learn from the beginning, or pay $5/month.</p><ul><li>Everything in Family</li><li>Founding pricing</li><li>Early feature previews</li><li>Priority feedback</li></ul><div class="billing-choice"><a class="button button-primary" href="/myagapay/learn/setup?plan=founding-family&interval=year" data-learn-checkout data-plan="founding-family" data-interval="year">Pay yearly</a><a class="button button-quiet" href="/myagapay/learn/setup?plan=founding-family&interval=month" data-learn-checkout data-plan="founding-family" data-interval="month">Pay monthly</a></div></article>
-        <article class="price-card"><p class="plan-label">Family</p><h3>$59<span>/year</span></h3><p class="plan-note">Everything your household needs, or pay $6/month.</p><ul><li>Unlimited children</li><li>Full adaptive planner</li><li>Grace Mode</li><li>Full Print Center access</li></ul><div class="billing-choice"><a class="button button-secondary" href="/myagapay/learn/setup?plan=family&interval=year" data-learn-checkout data-plan="family" data-interval="year">Pay yearly</a><a class="button button-quiet" href="/myagapay/learn/setup?plan=family&interval=month" data-learn-checkout data-plan="family" data-interval="month">Pay monthly</a></div></article>
+        <article class="price-card">
+          <p class="plan-label">Free</p>
+          <h3>$0</h3>
+          <p class="plan-note">Start with the basics — no card needed.</p>
+          <ul>
+            <li>1 household, up to 2 children</li>
+            <li>Today dashboard &amp; Church rhythms</li>
+            <li>Basic week and month planning</li>
+            <li>Weekly and monthly household PDFs</li>
+          </ul>
+          <a class="button button-secondary" href="/myagapay/learn/setup">Start Free</a>
+        </article>
+        <article class="price-card featured">
+          <div class="featured-ribbon">Founding pricing</div>
+          <p class="plan-label">Founding Family</p>
+          <h3>$49<span>/year</span></h3>
+          <p class="plan-note">Help shape AGAPAY Learn from the beginning, or pay $5/month.</p>
+          <ul>
+            <li>Everything in Family</li>
+            <li>Founding pricing, locked in</li>
+            <li>Early feature previews</li>
+            <li>Priority feedback channel</li>
+          </ul>
+          <div class="billing-choice">
+            <a class="button button-primary" href="/myagapay/learn/setup?plan=founding-family&interval=year" data-learn-checkout data-plan="founding-family" data-interval="year">Pay yearly</a>
+            <a class="button button-quiet" href="/myagapay/learn/setup?plan=founding-family&interval=month" data-learn-checkout data-plan="founding-family" data-interval="month">Pay monthly</a>
+          </div>
+        </article>
+        <article class="price-card">
+          <p class="plan-label">Family</p>
+          <h3>$59<span>/year</span></h3>
+          <p class="plan-note">Everything your household needs, or pay $6/month.</p>
+          <ul>
+            <li>Unlimited children</li>
+            <li>Full adaptive planner (all 5 views)</li>
+            <li>Meal plans, recipes &amp; grocery lists</li>
+            <li>Chore charts and family calendar</li>
+            <li>All 16 print templates</li>
+            <li>Grace Mode with custom priorities</li>
+          </ul>
+          <div class="billing-choice">
+            <a class="button button-secondary" href="/myagapay/learn/setup?plan=family&interval=year" data-learn-checkout data-plan="family" data-interval="year">Pay yearly</a>
+            <a class="button button-quiet" href="/myagapay/learn/setup?plan=family&interval=month" data-learn-checkout data-plan="family" data-interval="month">Pay monthly</a>
+          </div>
+        </article>
       </div>
     </section>
 
+    <!-- ── Final CTA ─────────────────────────────────────────────────────────── -->
     <section class="learn-final-cta">
       <p class="eyebrow">A better way to plan your homeschool year.</p>
-      <h2>Faithful. Flexible. Family-centered.</h2>
+      <h2>Plan with peace. Teach with purpose. Raise saints.</h2>
       <div class="hero-actions centered-actions">
-        <a class="button button-primary" href="/onboarding">Start Free Today</a>
+        <a class="button button-primary" href="/myagapay/learn/setup">Start Free Today</a>
         <a class="button button-secondary" href="/learn/pricing">Explore Pricing</a>
       </div>
     </section>
+
   </main>
 
   <footer class="site-footer" data-shell="canonical">
@@ -246,12 +957,13 @@
           <a href="/vision">Vision</a>
           <a href="/give">AGAPAY Give</a>
           <a href="/learn">AGAPAY Learn</a>
-          <a href="/onboarding">Get Started</a>
+          <a href="/myagapay/learn/setup">Get Started</a>
         </nav>
         <nav aria-label="AGAPAY Learn">
           <strong>AGAPAY Learn</strong>
           <a href="/learn">Overview</a>
           <a href="/learn/pricing">Pricing</a>
+          <a href="#features">Features</a>
         </nav>
         <nav aria-label="Company">
           <strong>Company</strong>
@@ -299,7 +1011,7 @@
             return;
           }
           if (response.status === 401) {
-            window.location.href = `/my-agapay/login?next=${encodeURIComponent(link.getAttribute("href") || "/myagapay/learn/setup")}`;
+            window.location.href = `/myagapay/login?next=${encodeURIComponent(link.getAttribute("href") || "/myagapay/learn/setup")}`;
             return;
           }
           errorMessage = payload.error || errorMessage;
