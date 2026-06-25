@@ -176,6 +176,7 @@ import {
   handleStewardshipMeetingPreview,
   handleStewardshipMeetingPdf,
   handleStewardshipWebhook,
+  handleStewardshipGivingMetricsPage,
 } from "./handlers/stewardship.js";
 
 import {
@@ -1322,6 +1323,7 @@ export default {
 
     // ── Stewardship module routes ─────────────────────────────────────────
     if (url.pathname === "/parish/stewardship") return handleStewardshipHome(request, env);
+    if (url.pathname === "/parish/stewardship/giving") return handleStewardshipGivingMetricsPage(request, env);
     if (request.method === "POST" && url.pathname === "/parish/stewardship/subscribe") return handleStewardshipSubscribe(request, env);
     if (url.pathname === "/parish/stewardship/billing") return handleStewardshipBilling(request, env);
     if (request.method === "POST" && url.pathname === "/parish/stewardship/billing-portal") return handleStewardshipBillingPortal(request, env);
