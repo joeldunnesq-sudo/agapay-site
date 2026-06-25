@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AGAPAY Learn Pricing | Orthodox Homeschool Planning</title>
+  <title>AGAPAY Learn Pricing | Orthodox Homeschool Planner</title>
   <meta name="description" content="Pricing for AGAPAY Learn: Orthodox homeschool planning shaped by the Church year, living books, large families, and real home life." />
   <link rel="canonical" href="https://agapay.app/learn/pricing" />
   <meta property="og:type" content="website" />
@@ -21,6 +21,33 @@
   <link rel="stylesheet" href="/learn/pricing.css" />
   <link rel="stylesheet" href="/site-chrome.css" />
   <script src="/site-chrome.js" defer></script>
+  <style>
+    /* Design extensions to match the main learn page improvements */
+    .pricing-grid {
+      align-items: stretch !important;
+    }
+    .price-card.featured {
+      box-shadow: 0 12px 32px rgba(181,148,47,.18) !important;
+      border: 2px solid #b5942f !important;
+      position: relative;
+    }
+    .discount-badge {
+      display: inline-block;
+      background: #edf6ef;
+      color: #28613a;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      border: 1px solid #b2d9ba;
+    }
+    /* Balanced alignment for comparison matrix */
+    .compare-table .compare-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+    }
+  </style>
 </head>
 <body class="learn-pricing-page">
   <main>
@@ -84,28 +111,10 @@
           <a class="button button-secondary" href="/myagapay/learn/setup">Start Free</a>
         </article>
 
-        <article class="price-card featured">
-          <div class="featured-ribbon">Founding pricing</div>
-          <p class="plan-label">Founding Family</p>
-          <h3>$49<span>/year</span></h3>
-          <p class="plan-note">For families helping shape AGAPAY Learn from the beginning. Monthly is available at $5/month.</p>
-          <ul>
-            <li>Everything in Family</li>
-            <li>Founding pricing</li>
-            <li>Early feature previews</li>
-            <li>Priority feedback</li>
-            <li>Direct impact on the future of AGAPAY Learn</li>
-          </ul>
-          <div class="billing-choice">
-            <a class="button button-primary" href="/myagapay/learn/setup?plan=founding-family&interval=year" data-learn-checkout data-plan="founding-family" data-interval="year">Pay yearly</a>
-            <a class="button button-quiet" href="/myagapay/learn/setup?plan=founding-family&interval=month" data-learn-checkout data-plan="founding-family" data-interval="month">Pay monthly</a>
-          </div>
-        </article>
-
         <article class="price-card">
           <p class="plan-label">Family</p>
-          <h3>$59<span>/year</span></h3>
-          <p class="plan-note">Best value for the full household planner. Monthly is available at $6/month.</p>
+          <h3>$89<span>/year</span></h3>
+          <p class="plan-note">Best value for the full household planner. Monthly is available at $9/month.</p>
           <ul>
             <li>Unlimited children</li>
             <li>Full planner</li>
@@ -118,6 +127,25 @@
           <div class="billing-choice">
             <a class="button button-secondary" href="/myagapay/learn/setup?plan=family&interval=year" data-learn-checkout data-plan="family" data-interval="year">Pay yearly</a>
             <a class="button button-quiet" href="/myagapay/learn/setup?plan=family&interval=month" data-learn-checkout data-plan="family" data-interval="month">Pay monthly</a>
+          </div>
+        </article>
+
+        <article class="price-card featured">
+          <div class="featured-ribbon">Founding pricing</div>
+          <p class="plan-label">Founding Family</p>
+          <h3>$49<span>/year</span></h3>
+          <span class="discount-badge">Save 45% permanently</span>
+          <p class="plan-note">For families helping shape AGAPAY Learn from the beginning. Monthly is available at $5/month. Lock in this rate before standard pricing takes effect.</p>
+          <ul>
+            <li>Everything in Family</li>
+            <li>Founding pricing, locked in forever</li>
+            <li>Early feature previews</li>
+            <li>Priority feedback</li>
+            <li>Direct impact on the future of AGAPAY Learn</li>
+          </ul>
+          <div class="billing-choice">
+            <a class="button button-primary" href="/myagapay/learn/setup?plan=founding-family&interval=year" data-learn-checkout data-plan="founding-family" data-interval="year">Pay yearly</a>
+            <a class="button button-quiet" href="/myagapay/learn/setup?plan=founding-family&interval=month" data-learn-checkout data-plan="founding-family" data-interval="month">Pay monthly</a>
           </div>
         </article>
       </div>
@@ -154,19 +182,19 @@
         <div class="compare-row compare-head" role="row">
           <div role="columnheader">Feature</div>
           <div role="columnheader">Free</div>
-          <div class="is-featured" role="columnheader">Founding Family</div>
           <div role="columnheader">Family</div>
+          <div class="is-featured" role="columnheader">Founding Family</div>
         </div>
-        <div class="compare-row"><div>Dashboard</div><div>Yes</div><div class="is-featured">Yes</div><div>Yes</div></div>
-        <div class="compare-row"><div>Calendar Toggle</div><div>Yes</div><div class="is-featured">Yes</div><div>Yes</div></div>
-        <div class="compare-row"><div>Church Rhythms</div><div>Yes</div><div class="is-featured">Yes</div><div>Yes</div></div>
-        <div class="compare-row"><div>Full Planner</div><div>Basic</div><div class="is-featured">Yes</div><div>Yes</div></div>
-        <div class="compare-row"><div>Forms or Grade-Level Planning</div><div>Basic</div><div class="is-featured">Full</div><div>Full</div></div>
-        <div class="compare-row"><div>Grace Mode</div><div>No</div><div class="is-featured">Yes</div><div>Yes</div></div>
-        <div class="compare-row"><div>Printables</div><div>Limited</div><div class="is-featured">Full</div><div>Full</div></div>
-        <div class="compare-row"><div>Reports</div><div>Coming Soon</div><div class="is-featured">Coming Soon</div><div>Coming Soon</div></div>
-        <div class="compare-row"><div>Report Cards</div><div>Coming Soon</div><div class="is-featured">Coming Soon</div><div>Coming Soon</div></div>
-        <div class="compare-row"><div>Transcripts</div><div>Coming Soon</div><div class="is-featured">Coming Soon</div><div>Coming Soon</div></div>
+        <div class="compare-row"><div>Dashboard</div><div>Yes</div><div>Yes</div><div class="is-featured">Yes</div></div>
+        <div class="compare-row"><div>Calendar Toggle</div><div>Yes</div><div>Yes</div><div class="is-featured">Yes</div></div>
+        <div class="compare-row"><div>Church Rhythms</div><div>Yes</div><div>Yes</div><div class="is-featured">Yes</div></div>
+        <div class="compare-row"><div>Full Planner</div><div>Basic</div><div>Yes</div><div class="is-featured">Yes</div></div>
+        <div class="compare-row"><div>Forms or Grade-Level Planning</div><div>Basic</div><div>Full</div><div class="is-featured">Full</div></div>
+        <div class="compare-row"><div>Grace Mode</div><div>No</div><div>Yes</div><div class="is-featured">Yes</div></div>
+        <div class="compare-row"><div>Printables</div><div>Limited</div><div>Full</div><div class="is-featured">Full</div></div>
+        <div class="compare-row"><div>Reports</div><div>Coming Soon</div><div>Coming Soon</div><div class="is-featured">Coming Soon</div></div>
+        <div class="compare-row"><div>Report Cards</div><div>Coming Soon</div><div>Coming Soon</div><div class="is-featured">Coming Soon</div></div>
+        <div class="compare-row"><div>Transcripts</div><div>Coming Soon</div><div>Coming Soon</div><div class="is-featured">Coming Soon</div></div>
       </div>
     </section>
 
