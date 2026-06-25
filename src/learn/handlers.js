@@ -624,7 +624,7 @@ export async function handleLearnPlannerBlockSave(request, env) {
 
   // Return the refreshed planner so the UI can re-render without a full reload.
   const url = new URL(request.url);
-  const repository = new (await import("./repository.js").then(m => m.SeedLearnRepository))(saved.onboarding);
+  const repository = new SeedLearnRepository(saved.onboarding);
   const planner = repository.getPlanner({
     calendarType: requestedCalendarType(url),
     view: url.searchParams.get("view") || "week",
