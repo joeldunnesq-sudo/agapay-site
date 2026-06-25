@@ -3393,45 +3393,93 @@ function renderPrintCenter(vm) {
   const remaining = Math.max(0, vm.billing.printLimit - printCount());
   const nearLimit = freePlan && remaining <= 1;
 
-  // ── Pill badge ─────────────────────────────────────────────────────────────
-  const accessBadge = (template) => {
-    const isPrem = template.premium;
-    return isPrem
-      ? `<span style="flex:none;border:1px solid var(--gold);background:#fbf2dd;color:var(--gold);border-radius:999px;padding:3px 9px;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;">Family</span>`
-      : `<span style="flex:none;border:1px solid #c2d9c4;background:#edf6ef;color:#365f3b;border-radius:999px;padding:3px 9px;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;">Free</span>`;
-  };
+  // ── Shared helpers ────────────────────────────────────────────────────────────
+  const accessBadge = (isPrem) => isPrem
+    ? `<span style="flex:none;border:1px solid var(--gold);background:#fbf2dd;color:var(--gold);border-radius:999px;padding:3px 9px;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;">Family</span>`
+    : `<span style="flex:none;border:1px solid #c2d9c4;background:#edf6ef;color:#365f3b;border-radius:999px;padding:3px 9px;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;">Free</span>`;
 
-  // ── Household template card ─────────────────────────────────────────────────
-  // Locked-for-free-plan cards show an upgrade CTA instead of Generate.
-  const templateCard = (template) => {
+  // ── Row-style template item (for grouped lists) ───────────────────────────────
+  const templateRow = (template) => {
     const locked = template.premium && freePlan;
-    const bg     = locked ? "#fffaed" : "var(--paper)";
-    const border = locked ? "var(--gold)" : "var(--line)";
-    const btnBg  = locked ? "transparent" : "var(--navy)";
-    const btnBorder = locked ? "var(--gold)" : "var(--navy)";
-    const btnColor  = locked ? "var(--gold)" : "#fff";
-    const btnLabel  = locked ? "Upgrade to unlock" : "Generate PDF";
     return `
-      <article data-print-template="${html(template.id)}" data-print-premium="${locked ? "true" : "false"}"
-        style="border:1px solid ${border};border-radius:12px;background:${bg};padding:16px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;">
-        ${locked ? `<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),#dac88f);"></div>` : ""}
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-          <small style="color:var(--muted);font-size:10px;letter-spacing:.12em;text-transform:uppercase;line-height:1.3;">${html(template.type || "Household")}</small>
-          ${accessBadge(template)}
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);${locked ? "opacity:.72;" : ""}">
+        <div style="flex:1;min-width:0;">
+          <strong style="display:block;font-size:14px;color:var(--ink);">${html(template.title)}</strong>
+          <small style="color:var(--muted);font-size:12px;line-height:1.35;">${html(template.description)}</small>
         </div>
-        <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:19px;line-height:1.2;color:var(--ink);">${html(template.title)}</strong>
-        <span style="display:block;color:var(--muted);font-size:13px;line-height:1.45;flex:1;">${html(template.description)}</span>
-        <button type="button" data-print-generate="${html(template.id)}"
-          style="margin-top:4px;border:1.5px solid ${btnBorder};background:${btnBg};color:${btnColor};border-radius:9px;padding:10px 14px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;text-align:center;">
-          ${locked ? `<span style="margin-right:5px;font-size:12px;">🔒</span>` : ""}${btnLabel}
-        </button>
-      </article>`;
+        ${locked
+          ? `<button type="button" data-print-upgrade
+               style="flex:none;border:1px solid var(--gold);background:transparent;color:var(--gold);border-radius:8px;padding:7px 12px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+               🔒 Upgrade
+             </button>`
+          : `<button type="button" data-print-generate="${html(template.id)}"
+               style="flex:none;border:none;background:var(--navy);color:#fff;border-radius:8px;padding:7px 14px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+               Print PDF
+             </button>`}
+      </div>`;
   };
 
-  // ── Household templates grid ────────────────────────────────────────────────
-  const householdGrid = householdTemplates.length
-    ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;">${householdTemplates.map(templateCard).join("")}</div>`
-    : emptyState("No household templates available for this setup.");
+  // ── Group household templates by purpose ──────────────────────────────────────
+  const GROUPS = [
+    {
+      id: "weekly",
+      label: "This Week",
+      icon: "▦",
+      desc: "Your most-used prints — grab these every week.",
+      premium: false,
+      ids: ["print_mom_weekly", "planner_chores_week", "planner_meals_week", "planner_grocery_week"]
+    },
+    {
+      id: "month",
+      label: "Month & Calendar",
+      icon: "▣",
+      desc: "Monthly planning with feast days and fast days clearly marked.",
+      premium: false,
+      ids: ["print_mom_month", "planner_meals_month", "planner_chores_month", "planner_events_month"]
+    },
+    {
+      id: "lessons",
+      label: "Lesson Plans",
+      icon: "☰",
+      desc: "Structured lesson grids by Form, term, or month.",
+      premium: true,
+      ids: ["planner_lessons_week_form", "planner_lessons_month_form", "planner_lessons_term_form", "print_mom_term", "print_mom_liturgical"]
+    },
+    {
+      id: "kitchen",
+      label: "Kitchen & Home",
+      icon: "♨",
+      desc: "Recipes, pantry, and daily chore charts.",
+      premium: true,
+      ids: ["planner_recipes", "planner_chores_day"]
+    }
+  ];
+
+  const tmplById = new Map(householdTemplates.map((t) => [t.id, t]));
+  const assignedIds = new Set(GROUPS.flatMap((g) => g.ids));
+  const ungrouped = householdTemplates.filter((t) => !assignedIds.has(t.id));
+
+  const groupSection = (group) => {
+    const members = group.ids.map((id) => tmplById.get(id)).filter(Boolean);
+    if (group.id === "kitchen") members.push(...ungrouped.filter((t) => t.premium));
+    else if (group.id === "weekly") members.push(...ungrouped.filter((t) => !t.premium));
+    if (!members.length) return "";
+    const groupLocked = group.premium && freePlan;
+    return `
+      <div style="background:var(--paper);border:1px solid ${groupLocked ? "rgba(181,148,47,.3)" : "var(--line)"};border-radius:12px;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:13px 14px;background:${groupLocked ? "linear-gradient(90deg,#fffaed,var(--paper))" : "var(--paper2)"};border-bottom:1px solid var(--line);">
+          <span style="font-size:16px;color:var(--gold);">${group.icon}</span>
+          <div style="flex:1;min-width:0;">
+            <strong style="font-size:15px;color:var(--ink);">${group.label}</strong>
+            <small style="display:block;color:var(--muted);font-size:12px;">${group.desc}</small>
+          </div>
+          ${groupLocked
+            ? `<span style="flex:none;border:1px solid var(--gold);background:#fbf2dd;color:var(--gold);border-radius:999px;padding:3px 10px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">Family Plan</span>`
+            : `<span style="flex:none;border:1px solid #c2d9c4;background:#edf6ef;color:#365f3b;border-radius:999px;padding:3px 10px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">Free</span>`}
+        </div>
+        ${members.map(templateRow).join("")}
+      </div>`;
+  };
 
   // ── Plan status bar ─────────────────────────────────────────────────────────
   const usedPct = freePlan ? Math.round(((vm.billing.printLimit - remaining) / vm.billing.printLimit) * 100) : 0;
@@ -3455,8 +3503,8 @@ function renderPrintCenter(vm) {
         </strong>
         <span style="display:block;color:var(--muted);font-size:13px;margin-top:3px;line-height:1.45;">
           ${freePlan
-            ? "Household print packs are available. Child sheets, term packs, and unlimited prints require the Family plan."
-            : "Unlimited printing unlocked — household plans, child sheets, term packs, and all premium templates."}
+            ? "This Week and Month & Calendar packs are free. Lesson plans, chore charts, and child sheets require the Family plan."
+            : "All household plans, child sheets, lesson packs, and planner prints are unlocked."}
         </span>
         ${statusBar}
       </div>
@@ -3468,9 +3516,7 @@ function renderPrintCenter(vm) {
         : `<span style="flex:none;color:var(--gold);font-size:13px;font-weight:700;padding-top:4px;">Unlocked ✦</span>`}
     </div>`;
 
-  // ── Child sheet cards — one card per child, dropdown selects document type ───
-  // Group all child templates by childId so families with many children each get
-  // exactly one card regardless of how many sheet types exist per child.
+  // ── Child sheet cards — one per child with dropdown ───────────────────────────
   const childrenMap = new Map();
   childTemplates.forEach((t) => {
     const key = t.childId || t.child || t.id;
@@ -3479,32 +3525,28 @@ function renderPrintCenter(vm) {
   });
 
   const childGroupCard = (group) => {
-    const locked    = freePlan;
-    const initial   = html((group.name || "C").charAt(0).toUpperCase());
-    const avatarBg  = group.color || "var(--slate)";
-    const btnBg     = locked ? "transparent" : "var(--navy)";
-    const btnBorder = locked ? "var(--gold)" : "var(--navy)";
-    const btnColor  = locked ? "var(--gold)" : "#fff";
-    const selectId  = `child-sheet-sel-${html(group.childId || group.name)}`;
-    const options   = group.sheets.map((t) => `<option value="${html(t.id)}">${html(t.title)}</option>`).join("");
+    const locked   = freePlan;
+    const initial  = html((group.name || "C").charAt(0).toUpperCase());
+    const avatarBg = group.color || "var(--slate)";
+    const selectId = `child-sheet-sel-${html(group.childId || group.name)}`;
+    const options  = group.sheets.map((t) => `<option value="${html(t.id)}">${html(t.title)}</option>`).join("");
     return `
       <article style="border:1px solid ${locked ? "var(--gold)" : "var(--line)"};border-radius:12px;background:${locked ? "#fffaed" : "var(--paper)"};padding:14px;display:flex;flex-direction:column;gap:10px;">
         <div style="display:flex;align-items:center;gap:10px;">
           <span style="flex:none;width:36px;height:36px;border-radius:50%;background:${avatarBg};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;">${initial}</span>
           <strong style="font-size:15px;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${html(group.name)}</strong>
-          ${accessBadge({ premium: true })}
+          ${accessBadge(true)}
         </div>
         <select id="${selectId}" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-family:inherit;font-size:13px;color:var(--ink);background:var(--paper2);cursor:${locked ? "default" : "pointer"};" ${locked ? "disabled" : ""}>
           ${options}
         </select>
         <button type="button" data-child-print-group="${html(group.childId || group.name)}" data-child-select="${selectId}"
-          style="border:1.5px solid ${btnBorder};background:${btnBg};color:${btnColor};border-radius:9px;padding:10px 12px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;text-align:center;">
+          style="border:1.5px solid ${locked ? "var(--gold)" : "var(--navy)"};background:${locked ? "transparent" : "var(--navy)"};color:${locked ? "var(--gold)" : "#fff"};border-radius:9px;padding:10px 12px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;text-align:center;">
           ${locked ? `<span style="margin-right:5px;font-size:11px;">🔒</span>Upgrade to unlock` : "Generate PDF"}
         </button>
       </article>`;
   };
 
-  // ── Child sheets grid ───────────────────────────────────────────────────────
   const childGrid = childrenMap.size
     ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">${Array.from(childrenMap.values()).map(childGroupCard).join("")}</div>`
     : `<div style="padding:16px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:13px;line-height:1.5;">
@@ -3561,7 +3603,7 @@ function renderPrintCenter(vm) {
       </div>` : ""}
     </div>`, { icon: "✥" });
 
-  // ── Draft Job panel (Weekly Family Plan) ─────────────────────────────────────
+  // ── Draft Job panel ─────────────────────────────────────────────────────────
   const draftJob = panel("Weekly Family Plan", `
     <strong style="font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--ink);">${html(vm.job.status)}</strong>
     <div style="margin-top:8px;color:var(--muted);line-height:1.55;">
@@ -3582,7 +3624,9 @@ function renderPrintCenter(vm) {
     <section data-screen-label="Print Center" style="display:flex;flex-direction:column;gap:18px;">
       ${planBanner}
       <div style="display:grid;grid-template-columns:1fr 330px;gap:16px;align-items:start;">
-        ${panel("Household Plans", householdGrid, { icon: "▤" })}
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          ${GROUPS.map(groupSection).join("")}
+        </div>
         ${draftJob}
       </div>
       ${panel("Child Sheets", childGrid, { icon: "◎" })}
