@@ -2695,32 +2695,194 @@ function renderSimpleSetupWizard(vm, draft) {
 
 function renderCommunity(vm) {
   const filterOptions = (values) => values.map((value) => `<option value="${html(value)}">${html(value)}</option>`).join("");
-  const facebookAction = vm.facebookGroupUrl
-    ? `<a href="${html(vm.facebookGroupUrl)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;background:var(--navy);color:#fffaf0;border:1px solid var(--gold);border-radius:10px;padding:11px 17px;text-decoration:none;font-weight:800;">Visit the Facebook Group <span aria-hidden="true">↗</span></a>`
-    : `<span style="display:inline-flex;align-items:center;border:1px solid var(--line);background:var(--paper2);border-radius:999px;padding:7px 12px;color:var(--gold);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">Facebook group opening soon</span>`;
-  const cards = vm.resources.map((resource) => `<article data-community-card data-category="${html(resource.category)}" data-resource-type="${html(resource.resourceType)}" data-media-type="${html(resource.mediaType)}" data-search="${html(`${resource.title} ${resource.category} ${resource.resourceType} ${resource.mediaType} ${resource.ageRange} ${resource.desc} ${resource.tags.join(" ")}`.toLowerCase())}" style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 3px rgba(20,40,70,.04);min-height:286px;">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;"><span style="width:46px;height:46px;border-radius:12px;background:${softColor(resource.color, "28")};color:${html(resource.color)};display:grid;place-items:center;font-size:23px;border:1px solid ${softColor(resource.color, "44")};">${html(resource.icon || "✥")}</span>${resource.vetted ? `<span style="border:1px solid rgba(54,95,59,.28);background:#edf6ef;color:#365f3b;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:800;letter-spacing:.08em;">AGAPAY CURATED</span>` : ""}</div>
-    <div><small style="display:block;color:var(--gold);font-weight:800;letter-spacing:.1em;text-transform:uppercase;">${html(resource.category)}</small><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:24px;line-height:1.08;margin-top:4px;color:var(--ink);">${html(resource.title)}</strong></div>
-    <p style="font-size:14px;color:#3a4256;line-height:1.45;flex:1;margin:0;">${html(resource.desc)}</p>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;"><span style="font-size:11px;border:1px solid var(--line);border-radius:6px;padding:4px 7px;color:var(--muted);">${html(resource.resourceType)}</span><span style="font-size:11px;border:1px solid var(--line);border-radius:6px;padding:4px 7px;color:var(--muted);">${html(resource.mediaType)}</span><span style="font-size:11px;border:1px solid var(--line);border-radius:6px;padding:4px 7px;color:var(--muted);">${html(resource.ageRange)}</span></div>
-    <div style="display:flex;align-items:center;gap:9px;border-top:1px solid var(--line);padding-top:11px;"><a href="${html(resource.url)}" target="_blank" rel="noopener noreferrer" style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--navy);font-weight:800;text-decoration:none;">Open resource <span style="color:var(--gold);">↗</span></a>${resource.source === "community" ? `<button type="button" data-community-flag="${html(resource.id)}" title="Flag this resource for admin review" style="border:1px solid var(--line);background:var(--paper2);color:var(--muted);border-radius:8px;padding:6px 9px;font:inherit;font-size:12px;cursor:pointer;">Flag</button>` : ""}</div>
-  </article>`).join("");
+
+  // ── Facebook / community CTA ──────────────────────────────────────────────────
+  const facebookCta = vm.facebookGroupUrl
+    ? `<a href="${html(vm.facebookGroupUrl)}" target="_blank" rel="noopener noreferrer"
+         style="display:inline-flex;align-items:center;gap:9px;background:var(--navy);color:#fffaf0;border:1.5px solid var(--gold);border-radius:11px;padding:12px 20px;text-decoration:none;font-weight:800;font-size:14px;">
+         Join the Facebook Group <span style="color:var(--gold);">↗</span>
+       </a>`
+    : `<span style="display:inline-flex;align-items:center;border:1px solid var(--line);background:var(--paper2);border-radius:999px;padding:7px 13px;color:var(--gold);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">
+         Facebook group opening soon
+       </span>`;
+
+  // ── Resource cards — scannable, type-forward ───────────────────────────────────
+  const typeLabel = (resource) => {
+    const parts = [resource.resourceType, resource.ageRange].filter(Boolean);
+    return parts.join(" · ");
+  };
+
+  const card = (resource) => `
+    <article data-community-card
+      data-category="${html(resource.category)}"
+      data-resource-type="${html(resource.resourceType)}"
+      data-media-type="${html(resource.mediaType)}"
+      data-search="${html(`${resource.title} ${resource.category} ${resource.resourceType} ${resource.mediaType} ${resource.ageRange} ${resource.desc} ${resource.tags.join(" ")}`.toLowerCase())}"
+      style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 3px rgba(20,40,70,.04);position:relative;">
+
+      ${resource.vetted ? `<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),#dac88f);border-radius:14px 14px 0 0;"></div>` : ""}
+
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <span style="flex:none;width:36px;height:36px;border-radius:9px;background:${softColor(resource.color, "22")};color:${html(resource.color)};display:grid;place-items:center;font-size:17px;border:1px solid ${softColor(resource.color, "38")};">${html(resource.icon || "✥")}</span>
+          <div>
+            <div style="color:var(--gold);font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">${html(resource.category)}</div>
+            <div style="color:var(--muted);font-size:11px;">${html(typeLabel(resource))}</div>
+          </div>
+        </div>
+        ${resource.vetted ? `<span style="flex:none;border:1px solid rgba(54,95,59,.28);background:#edf6ef;color:#365f3b;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:800;letter-spacing:.07em;white-space:nowrap;">AGAPAY CURATED</span>` : ""}
+      </div>
+
+      <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:21px;line-height:1.1;color:var(--ink);">${html(resource.title)}</strong>
+      <p style="font-size:13px;color:#3a4256;line-height:1.5;flex:1;margin:0;">${html(resource.desc)}</p>
+
+      <div style="display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);padding-top:10px;margin-top:auto;">
+        <a href="${html(resource.url)}" target="_blank" rel="noopener noreferrer"
+           style="flex:1;font-size:13px;font-weight:800;color:var(--navy);text-decoration:none;display:flex;align-items:center;gap:6px;">
+          Open <span style="color:var(--gold);">↗</span>
+        </a>
+        ${resource.source === "community"
+          ? `<button type="button" data-community-flag="${html(resource.id)}" title="Flag for review"
+               style="border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:7px;padding:5px 9px;font:inherit;font-size:11px;cursor:pointer;">Flag</button>`
+          : ""}
+      </div>
+    </article>`;
+
+  // ── Pinned / curated cards separate from the grid ────────────────────────────
+  const pinnedResources = vm.resources.filter((r) => r.vetted || r.pinned);
+  const regularResources = vm.resources.filter((r) => !r.vetted && !r.pinned);
+
+  const pinnedGrid = pinnedResources.length
+    ? `<div style="margin-bottom:6px;">
+         <div style="color:var(--gold);font-size:10px;letter-spacing:.16em;font-weight:800;text-transform:uppercase;margin-bottom:10px;">✦ AGAPAY Curated Picks</div>
+         <div data-community-pinned style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px;">
+           ${pinnedResources.map(card).join("")}
+         </div>
+       </div>`
+    : "";
+
+  // ── Guidance sidebar ──────────────────────────────────────────────────────────
+  const guidancePanel = vm.guidance?.length
+    ? panel("How This Works", `
+        ${vm.guidance.map((item) => `
+          <div style="display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--line);align-items:flex-start;">
+            <span style="flex:none;width:20px;height:20px;border-radius:50%;background:var(--paper2);border:1px solid var(--line);display:grid;place-items:center;color:var(--gold);font-size:11px;">✦</span>
+            <span style="font-size:13px;color:#33405a;line-height:1.45;">${html(item)}</span>
+          </div>`).join("")}
+        <button type="button" data-community-suggest
+          style="margin-top:12px;width:100%;border:1.5px solid var(--gold);background:var(--paper2);color:var(--navy);border-radius:10px;padding:11px;font:inherit;font-weight:800;font-size:13px;cursor:pointer;">
+          Suggest a resource
+        </button>`, { icon: "✥" })
+    : "";
+
+  // ── This Day in History widget ────────────────────────────────────────────────
+  const historyPanel = vm.history?.title
+    ? panel("This Day in Church History", `
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:flex-start;">
+          <div style="background:linear-gradient(180deg,var(--navy),#1b2c4a);border-radius:10px;padding:10px 12px;text-align:center;border:1px solid rgba(181,148,47,.28);min-width:52px;">
+            <div style="color:var(--gold);font-size:20px;">✦</div>
+            <div style="color:#f3ead4;font-size:11px;font-weight:700;margin-top:2px;">${html(vm.history.year)}</div>
+          </div>
+          <div>
+            <strong style="font-family:'Cormorant Garamond',serif;font-size:19px;line-height:1.15;display:block;color:var(--ink);">${html(vm.history.title)}</strong>
+            ${vm.history.summary ? `<p style="margin:6px 0 0;font-size:13px;color:#33405a;line-height:1.45;">${html(vm.history.summary)}</p>` : ""}
+            ${vm.history.source ? `<small style="display:block;margin-top:6px;color:var(--muted);">Source: ${html(vm.history.source)}</small>` : ""}
+          </div>
+        </div>`, { icon: "☩" })
+    : "";
+
   return shell(vm, `
     <section data-screen-label="Community Resources" style="display:flex;flex-direction:column;gap:18px;">
-      <div class="learn-community-hero" style="background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:clamp(20px,4vw,30px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:22px;align-items:center;color:var(--ink);box-shadow:0 1px 3px rgba(20,40,70,.04);">
-        <div><div style="color:var(--gold);font-size:11px;letter-spacing:.18em;font-weight:800;text-transform:uppercase;">Moms helping moms</div><h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(34px,5vw,50px);line-height:.98;margin:8px 0 10px;color:var(--ink);">A thoughtful Orthodox homeschool community.</h2><p style="line-height:1.55;color:#3a4256;margin:0;max-width:700px;">Ask practical questions, share encouragement, and learn from families walking the same road. The conversation lives in our moderated Facebook group.</p></div>
-        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:11px;border-left:1px solid var(--line);padding-left:22px;"><strong style="font-family:'Cormorant Garamond',serif;font-size:25px;color:var(--ink);">Join the conversation</strong><span style="color:var(--muted);line-height:1.4;">Questions, curriculum experiences, feast-day ideas, and the ordinary wisdom of Orthodox homeschool life.</span>${facebookAction}<button type="button" data-community-suggest style="border:1px solid var(--gold);background:var(--paper2);color:var(--navy);border-radius:10px;padding:10px 15px;font:inherit;font-weight:800;cursor:pointer;">Suggest a resource</button></div>
+
+      <!-- Hero -->
+      <div style="background:linear-gradient(135deg,var(--navy),#0a1c30);border-radius:16px;padding:clamp(20px,4vw,32px);display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;box-shadow:0 2px 8px rgba(4,20,39,.18);">
+        <div>
+          <div style="color:var(--goldsoft);font-size:10px;letter-spacing:.2em;font-weight:800;text-transform:uppercase;margin-bottom:8px;">Moms helping moms</div>
+          <h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(30px,5vw,44px);line-height:.98;margin:0 0 10px;color:#fff;">A thoughtful Orthodox homeschool community.</h2>
+          <p style="line-height:1.55;color:rgba(246,241,232,.78);margin:0 0 18px;max-width:600px;font-size:15px;">Ask practical questions, share encouragement, and learn from families walking the same road.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            ${facebookCta}
+          </div>
+        </div>
+        <div style="display:none;width:80px;height:80px;border-radius:20px;border:1px solid rgba(181,148,47,.32);background:rgba(181,148,47,.1);place-items:center;color:var(--gold);font-size:38px;" class="learn-community-mark">✥</div>
       </div>
-      <div class="learn-community-filters" style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;grid-template-columns:minmax(220px,1.5fr) repeat(3,minmax(150px,.7fr));gap:10px;align-items:end;">
-        <label style="display:grid;gap:5px;color:var(--gold);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">Search<input data-community-search type="search" placeholder="Search saints, history, audio, books..." style="border:1px solid var(--line);border-radius:9px;background:var(--paper2);padding:11px 12px;font:inherit;color:var(--ink);min-width:0;"></label>
-        <label style="display:grid;gap:5px;color:var(--gold);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">Subject<select data-community-category style="border:1px solid var(--line);border-radius:9px;background:var(--paper2);padding:11px 10px;font:inherit;color:var(--ink);min-width:0;">${filterOptions(vm.categories)}</select></label>
-        <label style="display:grid;gap:5px;color:var(--gold);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">Resource type<select data-community-resource-type style="border:1px solid var(--line);border-radius:9px;background:var(--paper2);padding:11px 10px;font:inherit;color:var(--ink);min-width:0;">${filterOptions(vm.resourceTypes)}</select></label>
-        <label style="display:grid;gap:5px;color:var(--gold);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">Media<select data-community-media-type style="border:1px solid var(--line);border-radius:9px;background:var(--paper2);padding:11px 10px;font:inherit;color:var(--ink);min-width:0;">${filterOptions(vm.mediaTypes)}</select></label>
+
+      <!-- Filters + count -->
+      <div style="display:grid;grid-template-columns:minmax(200px,1.6fr) repeat(3,minmax(130px,.7fr));gap:10px;align-items:end;">
+        <label style="display:grid;gap:5px;color:var(--gold);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">
+          Search
+          <input data-community-search type="search" placeholder="Saints, catechesis, audio, printables..."
+            style="border:1px solid var(--line);border-radius:9px;background:var(--paper);padding:11px 12px;font:inherit;color:var(--ink);min-width:0;">
+        </label>
+        <label style="display:grid;gap:5px;color:var(--gold);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">
+          Subject
+          <select data-community-category style="border:1px solid var(--line);border-radius:9px;background:var(--paper);padding:11px 10px;font:inherit;color:var(--ink);min-width:0;">${filterOptions(vm.categories)}</select>
+        </label>
+        <label style="display:grid;gap:5px;color:var(--gold);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">
+          Type
+          <select data-community-resource-type style="border:1px solid var(--line);border-radius:9px;background:var(--paper);padding:11px 10px;font:inherit;color:var(--ink);min-width:0;">${filterOptions(vm.resourceTypes)}</select>
+        </label>
+        <label style="display:grid;gap:5px;color:var(--gold);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">
+          Media
+          <select data-community-media-type style="border:1px solid var(--line);border-radius:9px;background:var(--paper);padding:11px 10px;font:inherit;color:var(--ink);min-width:0;">${filterOptions(vm.mediaTypes)}</select>
+        </label>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;"><div data-community-count style="color:var(--muted);font-size:13px;">Showing ${vm.resources.length} curated resources</div><small style="color:var(--muted);">Links open in a new tab.</small></div>
-      <div data-community-empty hidden style="border:1px dashed var(--gold);border-radius:14px;background:var(--paper);padding:28px;text-align:center;color:var(--muted);">No resources match those filters yet. Try a broader search.</div>
-      <div data-community-grid style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,275px),1fr));gap:14px;">${cards}</div>
-      <div data-community-suggest-dialog hidden style="position:fixed;inset:0;z-index:90;background:rgba(4,20,39,.72);padding:20px;align-items:center;justify-content:center;"><form data-community-suggest-form style="width:min(560px,100%);max-height:90vh;overflow:auto;background:var(--cream);border:1px solid var(--gold);border-radius:16px;box-shadow:0 22px 70px rgba(0,0,0,.35);"><div style="padding:19px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;"><div><h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0;">Suggest a Resource</h2><small style="color:var(--muted);">Submissions are reviewed before appearing in the library.</small></div><button type="button" data-community-suggest-close aria-label="Close" style="border:0;background:transparent;font-size:24px;color:var(--muted);cursor:pointer;">×</button></div><div style="padding:20px 22px;display:grid;grid-template-columns:1fr 1fr;gap:12px;"><label style="grid-column:1/-1;display:grid;gap:5px;">Title<input name="title" required maxlength="120" style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label><label style="grid-column:1/-1;display:grid;gap:5px;">Link<input name="url" type="url" required style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label><label style="display:grid;gap:5px;">Subject<input name="category" placeholder="Catechesis, History..." style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label><label style="display:grid;gap:5px;">Resource type<input name="resourceType" placeholder="Book, Website, Printable..." style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label><label style="display:grid;gap:5px;">Media type<input name="mediaType" placeholder="Article, Audio, PDF..." style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label><label style="display:grid;gap:5px;">Age range<input name="ageRange" placeholder="Family, Form II..." style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label><label style="grid-column:1/-1;display:grid;gap:5px;">Tags<input name="tags" placeholder="saints, narration, feast days" style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label><label style="grid-column:1/-1;display:grid;gap:5px;">Why it is helpful<textarea name="description" required maxlength="600" rows="4" style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;resize:vertical;"></textarea></label><div data-community-suggest-status style="grid-column:1/-1;color:var(--muted);font-size:13px;"></div></div><div style="padding:15px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:9px;"><button type="button" data-community-suggest-close style="border:1px solid var(--line);background:var(--paper);border-radius:9px;padding:10px 15px;font:inherit;cursor:pointer;">Cancel</button><button type="submit" style="border:1px solid var(--gold);background:var(--navy);color:#fff;border-radius:9px;padding:10px 16px;font:inherit;font-weight:800;cursor:pointer;">Send for Review</button></div></form></div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <span data-community-count style="color:var(--muted);font-size:13px;">Showing ${vm.resources.length} curated ${vm.resources.length === 1 ? "resource" : "resources"}</span>
+        <small style="color:var(--muted);">Links open in a new tab · <button type="button" data-community-suggest style="border:0;background:none;color:var(--gold);font:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:0;">Suggest a resource →</button></small>
+      </div>
+
+      <!-- Main two-column layout: cards + sidebar -->
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;">
+
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          ${pinnedGrid}
+          <div data-community-empty hidden
+            style="border:1px dashed var(--gold);border-radius:14px;background:var(--paper);padding:28px;text-align:center;color:var(--muted);">
+            No resources match those filters yet. Try a broader search.
+          </div>
+          ${regularResources.length ? `
+            <div data-community-grid style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:12px;">
+              ${regularResources.map(card).join("")}
+            </div>` : ""}
+        </div>
+
+        <aside style="display:flex;flex-direction:column;gap:14px;">
+          ${historyPanel}
+          ${guidancePanel}
+        </aside>
+
+      </div>
+
+      <!-- Suggest dialog (unchanged from existing wiring) -->
+      <div data-community-suggest-dialog hidden style="position:fixed;inset:0;z-index:90;background:rgba(4,20,39,.72);padding:20px;align-items:center;justify-content:center;">
+        <form data-community-suggest-form style="width:min(560px,100%);max-height:90vh;overflow:auto;background:var(--cream);border:1px solid var(--gold);border-radius:16px;box-shadow:0 22px 70px rgba(0,0,0,.35);">
+          <div style="padding:19px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;">
+            <div>
+              <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0;">Suggest a Resource</h2>
+              <small style="color:var(--muted);">Submissions are reviewed before appearing in the library.</small>
+            </div>
+            <button type="button" data-community-suggest-close aria-label="Close" style="border:0;background:transparent;font-size:24px;color:var(--muted);cursor:pointer;">×</button>
+          </div>
+          <div style="padding:20px 22px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <label style="grid-column:1/-1;display:grid;gap:5px;">Title<input name="title" required maxlength="120" style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label>
+            <label style="grid-column:1/-1;display:grid;gap:5px;">Link<input name="url" type="url" required style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label>
+            <label style="display:grid;gap:5px;">Subject<input name="category" placeholder="Catechesis, History..." style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label>
+            <label style="display:grid;gap:5px;">Resource type<input name="resourceType" placeholder="Book, Website, Printable..." style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label>
+            <label style="display:grid;gap:5px;">Media type<input name="mediaType" placeholder="Article, Audio, PDF..." style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label>
+            <label style="display:grid;gap:5px;">Age range<input name="ageRange" placeholder="Family, Form II..." style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label>
+            <label style="grid-column:1/-1;display:grid;gap:5px;">Tags<input name="tags" placeholder="saints, narration, feast days" style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;"></label>
+            <label style="grid-column:1/-1;display:grid;gap:5px;">Why it is helpful<textarea name="description" required maxlength="600" rows="4" style="border:1px solid var(--line);border-radius:9px;padding:10px;font:inherit;resize:vertical;"></textarea></label>
+            <div data-community-suggest-status style="grid-column:1/-1;color:var(--muted);font-size:13px;"></div>
+          </div>
+          <div style="padding:15px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:9px;">
+            <button type="button" data-community-suggest-close style="border:1px solid var(--line);background:var(--paper);border-radius:9px;padding:10px 15px;font:inherit;cursor:pointer;">Cancel</button>
+            <button type="submit" style="border:1px solid var(--gold);background:var(--navy);color:#fff;border-radius:9px;padding:10px 16px;font:inherit;font-weight:800;cursor:pointer;">Send for Review</button>
+          </div>
+        </form>
+      </div>
+
     </section>
   `);
 }
