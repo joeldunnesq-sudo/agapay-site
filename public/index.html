@@ -823,6 +823,30 @@
       text-transform: uppercase;
     }
 
+
+
+    /* Ensure the trust-section heading remains visible over shared styles. */
+    .trust-section .center-heading {
+      position: relative;
+      z-index: 1;
+    }
+
+    .trust-section .center-heading .eyebrow {
+      display: block;
+      margin-bottom: 0.9rem;
+      color: var(--gold2) !important;
+      font-size: clamp(0.82rem, 1.4vw, 0.96rem);
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    .trust-section .center-heading h2 {
+      color: var(--night) !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
     .trust-card {
       border: 1px solid rgba(166, 159, 145, 0.28);
       border-radius: 5px;
