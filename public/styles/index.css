@@ -1,5 +1,4 @@
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       --night: #061522;
@@ -31,14 +30,6 @@
     a { color: inherit; text-decoration: none; }
     img { max-width: 100%; display: block; }
 
-    .site-header {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 20;
-      padding: 1.25rem clamp(1rem, 3vw, 3rem);
-    }
     .nav {
       max-width: 1240px;
       margin: 0 auto;
@@ -250,6 +241,8 @@
       display: block;
       color: var(--gold);
       font-style: italic;
+      font-size: clamp(2.1rem, 4vw, 3.4rem);
+      line-height: 1.08;
     }
     .hero-rule {
       width: 66px;
@@ -1329,7 +1322,7 @@
     }
 
     @media (max-width: 720px) {
-      .site-header { position: absolute; padding-top: 1rem; }
+
       .brand-name strong { font-size: 1.75rem; letter-spacing: 0.07em; }
       .brand-name span { display: none; }
       .nav-actions .nav-login { display: none; }
@@ -1381,4 +1374,3 @@
         opacity: 0.38;
       }
     }
-  
