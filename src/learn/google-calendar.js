@@ -214,24 +214,84 @@ async function googleCalendarRequest(accessToken, path, init = {}) {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.error?.message || payload.error_description || payload.error || "Google Calendar request failed.");
+    const error = new Error(payload.error?.message || payload.error_description || payload.error || "Google Calendar request failed.");
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
   }
   return payload;
 }
 
-async function upsertGoogleEvent(accessToken, event, index, env) {
+async function createAgapayCalendar(accessToken, env = {}) {
+  const timeZone = env.AGAPAY_LEARN_TIME_ZONE || env.TZ || "America/Chicago";
+  const calendar = await googleCalendarRequest(accessToken, "/calendars", {
+    method: "POST",
+    body: JSON.stringify({
+      summary: "AGAPAY Learn",
+      description: "Homeschool lessons, Orthodox feast days, and household learning events synchronized by AGAPAY Learn.",
+      timeZone
+    })
+  });
+
+  if (!calendar?.id) {
+    throw new Error("Google did not return an AGAPAY Learn calendar ID.");
+  }
+
+  return {
+    calendarId: calendar.id,
+    calendarName: calendar.summary || "AGAPAY Learn",
+    calendarTimeZone: calendar.timeZone || timeZone
+  };
+}
+
+async function ensureAgapayCalendar(env, householdId, connection) {
+  if (!connection?.accessToken) {
+    throw new Error("Google Calendar is not connected. Please reconnect Google Calendar.");
+  }
+
+  if (connection.calendarId) {
+    try {
+      const calendar = await googleCalendarRequest(
+        connection.accessToken,
+        `/calendars/${encodeURIComponent(connection.calendarId)}`
+      );
+      return {
+        ...connection,
+        calendarName: calendar.summary || connection.calendarName || "AGAPAY Learn",
+        calendarTimeZone: calendar.timeZone || connection.calendarTimeZone || ""
+      };
+    } catch (error) {
+      if (error?.status !== 404 && error?.status !== 410) throw error;
+    }
+  }
+
+  const calendarDetails = await createAgapayCalendar(connection.accessToken, env);
+  const updated = {
+    ...connection,
+    ...calendarDetails,
+    calendarCreatedAt: new Date().toISOString()
+  };
+  await saveConnection(env, householdId, updated);
+  return updated;
+}
+
+async function upsertGoogleEvent(accessToken, calendarId, event, index, env) {
   const { syncKey, body } = googleEventFromPreview(event, index, env);
+  const encodedCalendarId = encodeURIComponent(calendarId);
   const listParams = new URLSearchParams({
     privateExtendedProperty: `agapaySyncKey=${syncKey}`,
     maxResults: "1",
     singleEvents: "true"
   });
-  const existing = await googleCalendarRequest(accessToken, `/calendars/primary/events?${listParams.toString()}`);
+  const existing = await googleCalendarRequest(
+    accessToken,
+    `/calendars/${encodedCalendarId}/events?${listParams.toString()}`
+  );
   const existingEvent = existing.items?.[0];
   if (existingEvent?.id) {
     const updated = await googleCalendarRequest(
       accessToken,
-      `/calendars/primary/events/${encodeURIComponent(existingEvent.id)}`,
+      `/calendars/${encodedCalendarId}/events/${encodeURIComponent(existingEvent.id)}`,
       { method: "PATCH", body: JSON.stringify(body) }
     );
     return { id: updated.id, title: event.title, status: "updated" };
@@ -239,7 +299,7 @@ async function upsertGoogleEvent(accessToken, event, index, env) {
 
   const inserted = await googleCalendarRequest(
     accessToken,
-    "/calendars/primary/events",
+    `/calendars/${encodedCalendarId}/events`,
     { method: "POST", body: JSON.stringify(body) }
   );
   return { id: inserted.id, title: event.title, status: "created" };
@@ -253,9 +313,12 @@ export async function googleCalendarStatus(request, env = {}) {
   return json({
     ok: true,
     configured: configured(env),
-    connected: Boolean(connection?.refreshToken),
+    connected: Boolean(connection?.refreshToken && connection?.calendarId),
+    reconnectRequired: Boolean(connection?.refreshToken && !connection?.calendarId),
     provider: "google-calendar",
     scope: CALENDAR_SCOPE,
+    calendarId: connection?.calendarId || "",
+    calendarName: connection?.calendarName || "AGAPAY Learn",
     redirectUri: `${baseUrl}/api/learn/google-calendar/callback`,
     connectedAt: connection?.connectedAt || null,
     accountEmail: connection?.accountEmail || "",
@@ -321,12 +384,38 @@ export async function googleCalendarCallback(request, env = {}) {
   try {
     const previous = await loadConnection(env, householdId);
     const tokens = await exchangeAuthorizationCode(request, env, code);
+    const accessToken = tokens.access_token;
+    if (!accessToken) throw new Error("Google did not return an access token.");
+
+    let calendarDetails = {};
+    if (previous?.calendarId) {
+      try {
+        const calendar = await googleCalendarRequest(
+          accessToken,
+          `/calendars/${encodeURIComponent(previous.calendarId)}`
+        );
+        calendarDetails = {
+          calendarId: previous.calendarId,
+          calendarName: calendar.summary || previous.calendarName || "AGAPAY Learn",
+          calendarTimeZone: calendar.timeZone || previous.calendarTimeZone || ""
+        };
+      } catch (error) {
+        if (error?.status !== 404 && error?.status !== 410 && error?.status !== 403) throw error;
+      }
+    }
+
+    if (!calendarDetails.calendarId) {
+      calendarDetails = await createAgapayCalendar(accessToken, env);
+    }
+
     await saveConnection(env, householdId, {
-      accessToken: tokens.access_token,
+      accessToken,
       refreshToken: tokens.refresh_token || previous?.refreshToken || "",
       expiresAt: Date.now() + Math.max(60, Number(tokens.expires_in || 3600) - 60) * 1000,
       scope: tokens.scope || CALENDAR_SCOPE,
       tokenType: tokens.token_type || "Bearer",
+      ...calendarDetails,
+      calendarCreatedAt: previous?.calendarCreatedAt || new Date().toISOString(),
       connectedAt: previous?.connectedAt || new Date().toISOString()
     });
     return googleRedirect(request, returnTo, "connected");
@@ -365,16 +454,19 @@ export async function googleCalendarSync(repository, request, env = {}) {
   }
 
   connection = await refreshAccessToken(env, identity.householdId, connection);
+  connection = await ensureAgapayCalendar(env, identity.householdId, connection);
   const { calendarType, events } = previewEvents(repository, request);
   const results = [];
   for (const [index, event] of events.entries()) {
-    results.push(await upsertGoogleEvent(connection.accessToken, event, index, env));
+    results.push(await upsertGoogleEvent(connection.accessToken, connection.calendarId, event, index, env));
   }
 
   return json({
     ok: true,
     connected: true,
     calendarType,
+    calendarId: connection.calendarId,
+    calendarName: connection.calendarName || "AGAPAY Learn",
     syncedCount: results.length,
     createdCount: results.filter((event) => event.status === "created").length,
     updatedCount: results.filter((event) => event.status === "updated").length,
