@@ -781,6 +781,24 @@ export async function handleDonorDashboard(request, env) {
       await deleteDonor(env, donor.email);
     }
     await saveDonor(env, updated);
+
+    // Sync pledge amount to household_pledges for parish stewardship reporting.
+    // Runs whenever the donor saves settings — harmless no-op if D1 isn't available
+    // or if the donor hasn't set a home parish yet.
+    const pledgeSyncParish = updated.defaultParishId || "";
+    const pledgeSyncAmount = Number(updated.pledgeAmountCents || 0);
+    if (d1(env) && pledgeSyncParish.trim() && pledgeSyncAmount > 0) {
+      const pledgeSyncYear = parseInt(updated.pledgeYear || new Date().getFullYear(), 10);
+      await env.DB.prepare(`
+        INSERT INTO household_pledges (donor_email, parish_id, fiscal_year, target_amount_cents)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(donor_email, fiscal_year) DO UPDATE SET
+          target_amount_cents = excluded.target_amount_cents,
+          parish_id           = excluded.parish_id,
+          updated_at          = datetime('now')
+      `).bind(updated.email, pledgeSyncParish, pledgeSyncYear, pledgeSyncAmount).run().catch(() => {});
+    }
+
     return json({ ok: true, donor: publicDonor(updated) });
   }
 
