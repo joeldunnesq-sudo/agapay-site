@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AGAPAY Marketplace Waitlist</title>
+  <title>AGAPAY | Marketplace</title>
   <meta name="description" content="Join the AGAPAY Marketplace waitlist for Orthodox goods, books, icons, monastery products, and trusted makers." />
   <link rel="canonical" href="https://agapay.app/marketplace" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
@@ -32,52 +32,8 @@
       font-family: var(--sans);
     }
     a { color: inherit; }
-    .top {
-      background: linear-gradient(135deg, var(--navy), var(--navy-2));
-      color: var(--paper);
-      border-bottom: 1px solid rgba(201, 162, 91, 0.44);
-    }
-    .top-inner {
-      width: min(1180px, calc(100% - 2rem));
-      min-height: 76px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.75rem;
-      text-decoration: none;
-    }
-    .brand img { width: 42px; height: 42px; }
-    .brand strong {
-      display: block;
-      color: var(--gold);
-      font-family: var(--serif);
-      font-size: 1.55rem;
-      letter-spacing: 0.12em;
-    }
-    .brand span {
-      display: block;
-      margin-top: -0.25rem;
-      font-size: 0.68rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-    }
-    nav {
-      display: flex;
-      gap: 1rem;
-      font-size: 0.78rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    nav a { text-decoration: none; opacity: 0.86; }
     main {
-      min-height: calc(100vh - 76px);
+      min-height: calc(100vh - 84px);
       display: grid;
       place-items: center;
       padding: 3rem 1rem;
@@ -216,28 +172,15 @@
       form { grid-template-columns: minmax(0, 1fr) auto; }
     }
     @media (max-width: 640px) {
-      nav { display: none; }
-      .top-inner { width: min(100% - 1.5rem, 1180px); }
       main { padding: 1rem 0.75rem 2rem; }
       .brand strong { font-size: 1.25rem; }
       h1 { font-size: clamp(2.9rem, 14vw, 4.2rem); }
     }
   </style>
+  <link rel="stylesheet" href="/site-chrome.css" />
+  <script src="/site-chrome.js" defer></script>
 </head>
 <body>
-  <header class="top">
-    <div class="top-inner">
-      <a class="brand" href="/" aria-label="AGAPAY home">
-        <img src="/mark.png" alt="" />
-        <span><strong>AGAPAY</strong><span>Faith in Action. Together.</span></span>
-      </a>
-      <nav aria-label="Main navigation">
-        <a href="/give">Giving</a>
-        <a href="/learn">Learn</a>
-        <a href="/directory">Directory</a>
-      </nav>
-    </div>
-  </header>
   <main>
     <section class="shell">
       <div class="hero">
