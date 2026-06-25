@@ -7,7 +7,7 @@ import {
   toPlannerViewModel,
   toPrintCenterViewModel,
   toSetupViewModel
-} from "./dashboard-view-models.js?v=20260621c";
+} from "./dashboard-view-models.js";
 
 const pageKey = document.body.dataset.learnPage || "dashboard";
 const root = document.getElementById("learnRoot");
