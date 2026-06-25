@@ -1,4 +1,4 @@
-  // ── STATE ────────────────────────────────────────────────
+// ── STATE ────────────────────────────────────────────────
   let currentParish     = null;
   let currentQrSvg      = '';
   let editableFunds     = [];
@@ -309,15 +309,135 @@
       meetingsPane.innerHTML = '<p class="muted">Load your parish dashboard to view annual meeting packets.</p>';
       return;
     }
-    stewardshipState = {
-      loaded: true,
-      stewardship: { status: 'coming_soon', active: false },
-      meetings: [],
-      subscribePlans: [],
-      setupRequired: false,
-      selectedMeeting: null
-    };
+    if (stewardshipState.loaded && !force) { renderStewardshipPanel(); return; }
+    if (status) status.textContent = 'Loading…';
+    try {
+      const res = await fetch(stewardshipApi(), { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      stewardshipState = {
+        loaded: true,
+        stewardship: data.stewardship || { status: 'coming_soon', active: false },
+        meetings: data.meetings || [],
+        subscribePlans: data.subscribePlans || [],
+        setupRequired: !!data.setupRequired,
+        comingSoon: !!data.comingSoon,
+        selectedMeeting: null
+      };
+    } catch (err) {
+      stewardshipState = {
+        loaded: true,
+        stewardship: { status: 'coming_soon', active: false },
+        meetings: [], subscribePlans: [], setupRequired: false, comingSoon: true, selectedMeeting: null
+      };
+    }
     renderStewardshipPanel();
+    // Load giving metrics in parallel if the panel is visible
+    loadGivingMetricsPanel();
+  }
+
+  // ── Giving Metrics Panel ─────────────────────────────────────────────────
+  let givingMetricsState = { loaded: false, year: new Date().getFullYear() };
+
+  async function loadGivingMetricsPanel(year) {
+    const pane = document.getElementById('givingMetricsPane');
+    if (!pane || !currentParish) return;
+    if (year) givingMetricsState.year = year;
+    pane.innerHTML = '<p class="muted" style="padding:.5rem 0">Loading giving metrics…</p>';
+    try {
+      const y = givingMetricsState.year;
+      const base = stewardshipApi().replace('/stewardship', '/stewardship/giving');
+      const [summary, funds] = await Promise.all([
+        fetch(base + '/summary?year=' + y, { headers: authHeaders() }).then(r => r.json()),
+        fetch(base + '/funds?year=' + y, { headers: authHeaders() }).then(r => r.json())
+      ]);
+      if (summary.error && summary.error.includes('not activated')) {
+        pane.innerHTML = renderGivingMetricsUpgrade();
+        return;
+      }
+      givingMetricsState.loaded = true;
+      pane.innerHTML = renderGivingMetrics(summary, funds, y);
+    } catch (e) {
+      pane.innerHTML = '<p class="muted">Giving metrics unavailable.</p>';
+    }
+  }
+
+  function fmtDollars(cents) {
+    return '$' + ((cents || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  function renderGivingMetrics(s, f, year) {
+    const pct = s.total_pledged_cents > 0 ? Math.min(100, Math.round((s.total_actual_cents / s.total_pledged_cents) * 100)) : 0;
+    const rrPct = s.total_pledged_cents > 0 ? Math.min(100, Math.round((s.run_rate_cents / s.total_pledged_cents) * 100)) : 0;
+    const yoy = s.prior_year_actual_cents > 0
+      ? Math.round(((s.total_actual_cents - s.prior_year_actual_cents) / s.prior_year_actual_cents) * 100) : null;
+    const yoyBadge = yoy !== null
+      ? `<span style="color:${yoy >= 0 ? 'var(--green,#4ade80)' : 'var(--red,#f87171)'};font-size:.72rem;font-weight:600">${yoy >= 0 ? '▲' : '▼'} ${Math.abs(yoy)}% vs prior year</span>` : '';
+
+    const fundRows = (f.funds || []).filter(fd => fd.total_cents > 0).map(fd =>
+      `<tr><td>${escapeHtml(fd.fund_name)}</td><td style="text-align:right;color:var(--gold,#C49C50)">${fmtDollars(fd.total_cents)}</td><td style="text-align:right;color:var(--text-muted,#888)">${fd.pct_of_total}%</td></tr>`
+    ).join('');
+
+    const yearOptions = [0,1,2,3,4].map(n => {
+      const y = new Date().getFullYear() - n;
+      return `<option value="${y}"${y === givingMetricsState.year ? ' selected' : ''}>${y}</option>`;
+    }).join('');
+
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap">
+        <span style="font-size:.8rem;color:var(--text-muted,#888)">Fiscal Year</span>
+        <select class="form-select" style="font-size:.82rem;padding:.25rem .5rem" onchange="loadGivingMetricsPanel(+this.value)">
+          ${yearOptions}
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.6rem;margin-bottom:.9rem">
+        ${gm_kpi('Collected', fmtDollars(s.total_actual_cents), yoyBadge)}
+        ${gm_kpi('Pledged', fmtDollars(s.total_pledged_cents), s.pledging_donors + ' pledging donors')}
+        ${gm_kpi('Fulfillment', s.fulfillment_rate_pct !== null ? s.fulfillment_rate_pct + '%' : '—', 'of pledge goal')}
+        ${gm_kpi('Avg / Donor', fmtDollars(s.avg_per_donor_cents), s.active_donors + ' active')}
+      </div>
+      ${s.total_pledged_cents > 0 ? `
+        <div style="font-size:.75rem;color:var(--text-muted,#888);margin-bottom:.2rem">Collected vs pledge goal — ${pct}%</div>
+        <div style="background:rgba(255,255,255,.08);border-radius:5px;height:8px;overflow:hidden;margin-bottom:.6rem">
+          <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,var(--gold,#C49C50),#DABB70);border-radius:5px;transition:width .5s ease"></div>
+        </div>
+        <div style="font-size:.72rem;color:var(--text-muted,#888);margin-bottom:.75rem">Run rate year-end projection: ${fmtDollars(s.run_rate_cents)}</div>
+      ` : ''}
+      ${fundRows ? `
+        <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+          <thead><tr>
+            <th style="text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted,#888);padding:.3rem .25rem;border-bottom:1px solid var(--border,rgba(255,255,255,.1))">Fund</th>
+            <th style="text-align:right;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted,#888);padding:.3rem .25rem;border-bottom:1px solid var(--border,rgba(255,255,255,.1))">Total</th>
+            <th style="text-align:right;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted,#888);padding:.3rem .25rem;border-bottom:1px solid var(--border,rgba(255,255,255,.1))">%</th>
+          </tr></thead>
+          <tbody>${fundRows}</tbody>
+        </table>
+        <div style="margin-top:.6rem;text-align:right">
+          <a href="${stewardshipGivingPageUrl()}" style="font-size:.78rem;color:var(--gold,#C49C50)">Full metrics report →</a>
+        </div>
+      ` : ''}`;
+  }
+
+  function gm_kpi(label, value, sub) {
+    return `<div style="background:var(--surface-2,rgba(255,255,255,.05));border:1px solid var(--border,rgba(255,255,255,.1));border-radius:8px;padding:.65rem .75rem">
+      <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted,#888);margin-bottom:.2rem">${label}</div>
+      <div style="font-family:var(--font-serif,Georgia,serif);font-size:1.35rem;font-weight:600;color:var(--gold,#C49C50);line-height:1">${value}</div>
+      <div style="font-size:.68rem;color:var(--text-muted,#888);margin-top:.2rem">${sub}</div>
+    </div>`;
+  }
+
+  function renderGivingMetricsUpgrade() {
+    return `<div style="text-align:center;padding:1.5rem 1rem;border:1px dashed var(--border,rgba(255,255,255,.15));border-radius:10px">
+      <p style="color:var(--text-muted,#888);margin:0 0 .75rem;font-size:.85rem">Pledge tracking and giving analytics require the Stewardship Giving add-on.</p>
+      <a href="${stewardshipGivingPageUrl()}" style="display:inline-block;background:var(--gold,#C49C50);color:#000;font-weight:600;padding:.5rem 1.25rem;border-radius:7px;text-decoration:none;font-size:.85rem">Activate Giving Metrics</a>
+    </div>`;
+  }
+
+  function stewardshipGivingPageUrl() {
+    const token = document.getElementById('parishToken')?.value.trim() || sessionStorage.getItem(parishSessionStorageKey) || '';
+    const url = new URL('/parish/stewardship/giving', window.location.origin);
+    url.searchParams.set('parishId', currentParish?.parishId || '');
+    url.searchParams.set('t', token);
+    return url.pathname + url.search;
   }
 
   function renderStewardshipPanel() {
@@ -325,7 +445,9 @@
     const planPane = document.getElementById('stewardshipPlanPane');
     const meetingsPane = document.getElementById('stewardshipMeetingsPane');
     if (!planPane || !meetingsPane) return;
-    if (status) status.textContent = 'Coming soon';
+    const sw = stewardshipState.stewardship || {};
+    const isActive = sw.active || ['active','trialing'].includes(sw.status);
+    if (status) status.textContent = isActive ? (sw.status === 'trialing' ? 'Trial' : 'Active') : 'Coming soon';
     planPane.innerHTML = `
       <div class="stewardship-soon-hero-card">
         <div class="stewardship-soon-mark" aria-hidden="true">
@@ -353,6 +475,15 @@
           <strong>Financial snapshots</strong>
           <span>Restricted funds, giving progress, campaign summaries, and council-ready reporting in one place.</span>
         </div>
+      </div>
+
+      <!-- Giving Metrics card — always shown; content loads from API -->
+      <div style="margin-top:1.25rem;border:1px solid var(--border,rgba(255,255,255,.12));border-radius:12px;padding:1rem 1.1rem;background:var(--surface-2,rgba(255,255,255,.04))">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
+          <strong style="font-size:.9rem">📊 Pledge &amp; Giving Metrics</strong>
+          <button class="btn btn-ghost btn-sm" type="button" onclick="loadGivingMetricsPanel()" style="font-size:.75rem">Refresh</button>
+        </div>
+        <div id="givingMetricsPane"><p class="muted" style="font-size:.8rem">Loading…</p></div>
       </div>
     `;
     meetingsPane.innerHTML = `
