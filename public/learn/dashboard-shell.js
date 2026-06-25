@@ -3893,6 +3893,7 @@ function setupPayloadFromForm(form) {
       label,
       startDate: rowValue(row, "startDate"),
       endDate: rowValue(row, "endDate"),
+      weeksCount: Math.max(1, Math.min(24, Number(rowValue(row, "weeksCount") || 12))),
       paceMode: "steady"
     };
   });

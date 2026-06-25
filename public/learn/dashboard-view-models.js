@@ -944,26 +944,25 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
   const schoolYear = setupCompleted ? setup.schoolYear || snapshot.schoolYear || {} : {};
   const term = setupCompleted ? setup.term || snapshot.term || {} : {};
   const termsSource = safeArray(snapshot.terms).length ? snapshot.terms : safeArray(setup.terms);
-  const baseSetupTerms = (termsSource.length ? termsSource : [
+  const starterTerms = [
     term,
-    { id: "term_2", label: "Term 2", startDate: "", endDate: "", paceMode: preferences.paceMode || term.paceMode || "steady" },
-    { id: "term_3", label: "Term 3", startDate: "", endDate: "", paceMode: preferences.paceMode || term.paceMode || "steady" },
-    { id: "term_4", label: "Term 4 / Summer", startDate: "", endDate: "", paceMode: preferences.paceMode || term.paceMode || "steady" }
-  ]);
-  while (baseSetupTerms.length < 4) {
-    baseSetupTerms.push({
-      id: `term_${baseSetupTerms.length + 1}`,
-      label: baseSetupTerms.length === 3 ? "Term 4 / Summer" : `Term ${baseSetupTerms.length + 1}`,
-      startDate: "",
-      endDate: "",
-      paceMode: preferences.paceMode || term.paceMode || "steady"
-    });
-  }
+    { id: "term_2", label: "Term 2", startDate: "", endDate: "", weeksCount: 12, paceMode: preferences.paceMode || term.paceMode || "steady" },
+    { id: "term_3", label: "Term 3", startDate: "", endDate: "", weeksCount: 12, paceMode: preferences.paceMode || term.paceMode || "steady" },
+    { id: "term_4", label: "Term 4 / Summer", startDate: "", endDate: "", weeksCount: 12, paceMode: preferences.paceMode || term.paceMode || "steady" }
+  ];
+  // Only seed four terms for a brand-new household. Once setup has been saved,
+  // preserve the exact saved term list so intentionally removed terms stay removed.
+  const baseSetupTerms = termsSource.length
+    ? [...termsSource]
+    : setupCompleted
+      ? [term].filter((entry) => entry && (entry.id || entry.label))
+      : starterTerms;
   const setupTerms = baseSetupTerms.map((entry, index) => ({
     id: text(entry.id, `term_${index + 1}`),
     label: text(entry.label, `Term ${index + 1}`),
     startDate: text(entry.startDate, ""),
     endDate: text(entry.endDate, ""),
+    weeksCount: Math.max(1, Math.min(24, Number(entry.weeksCount || 12))),
     paceMode: text(entry.paceMode, preferences.paceMode || term.paceMode || "steady")
   }));
   const currentTermId = text(schoolYear.currentTermId || term.id || setupTerms[0]?.id, "term_1");
