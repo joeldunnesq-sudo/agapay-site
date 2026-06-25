@@ -67,8 +67,6 @@ import {
   randomHex,
   rateLimit,
   recordStripeEvent,
-  resolveAdminSession,
-  resolveParishDashboardSession,
   safeParseJsonRow,
   saveAdminSessionStore,
   saveDonor,
@@ -111,6 +109,7 @@ import {
   handleCheckoutSessionStatus,
   handleParishPasswordResetRequest,
   handleParishPasswordResetConfirm,
+  requireDonor,
 } from "./handlers/parish.js";
 
 import {
@@ -864,13 +863,6 @@ async function sendWeeklyCommemorationEmails(env, scheduledTime) {
   return results;
 }
 
-// Helper to parse cross-app cookies from shared top-level origins
-function parseCookie(str, name) {
-  const pairs = str.split(';').map(p => p.trim().split('='));
-  const match = pairs.find(([k]) => k === name);
-  return match ? match[1] : null;
-}
-
 export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(sendWeeklyCommemorationEmails(env, event.scheduledTime));
@@ -935,32 +927,20 @@ export default {
       return handleStripeWebhook(request, env);
     }
 
-    // ─── Scoped Cross-Platform Account Authentication Interceptor Path ────────
+    // ─── Listen profile SSO — resolves the signed-in donor using the standard
+    //     Bearer token + X-AGAPAY-Donor-Email header sent by the donor dashboard.
     if (request.method === "GET" && url.pathname === "/api/listen/profile") {
-      const cookieHeader = request.headers.get('Cookie') || '';
-      const token = parseCookie(cookieHeader, 'my_agapay_jwt');
-      
-      if (!token) {
-        return json({ authenticated: false, name: 'Guest Listener', initials: '--', memberStatus: 'Anonymous' });
-      }
-
       try {
-        // Resolve target account context directly using your shared core engine verification
-        const donorSession = await resolveAdminSession(token, env); 
-        if (donorSession && donorSession.actor) {
-          const initials = donorSession.actor.name ? donorSession.actor.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'JD';
-          return json({
-            authenticated: true,
-            name: donorSession.actor.name || 'AGAPAY Listener',
-            initials: initials,
-            memberStatus: 'AGAPAY Member'
-          });
+        const donor = await requireDonor(request, env);
+        if (donor) {
+          const name = donor.donorName || donor.householdName || "AGAPAY Member";
+          const initials = name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "--";
+          return json({ authenticated: true, name, initials, memberStatus: "AGAPAY Member" });
         }
       } catch (err) {
-        // Log locally and gracefully return default guest fallback context
-        console.warn('SSO parsing error context:', err);
+        console.warn("Listen profile SSO error:", err);
       }
-      return json({ authenticated: false, name: 'Guest Listener', initials: '--', memberStatus: 'Anonymous' });
+      return json({ authenticated: false, name: "Guest Listener", initials: "--", memberStatus: "Anonymous" });
     }
 
     if (request.method === "GET" && url.pathname === "/api/listen/search") return handleListenSearch(request, env);
@@ -982,9 +962,6 @@ export default {
     }
     if (url.pathname === "/api/parish-interest") {
       return handleParishInterest(request, env);
-    }
-    if (request.method === "GET" && url.pathname === "/api/security/config") {
-      return handleSecurityConfig(env);
     }
     if (request.method === "GET" && url.pathname === "/api/security/config") {
       return handleSecurityConfig(env);
