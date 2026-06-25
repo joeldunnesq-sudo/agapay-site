@@ -146,6 +146,19 @@
       margin-top: 1px;
       font-size: 13px;
     }
+
+    .ov-books-layout {
+      align-items: center;
+    }
+    .ov-books-section .ov-two-col-text {
+      max-width: 34rem;
+    }
+    .ov-books-section .ov-screen-mock {
+      max-width: 32rem;
+      width: 100%;
+      justify-self: end;
+      box-shadow: 0 14px 34px rgba(6,21,34,.08);
+    }
     .ov-screen-mock {
       background: #f3ead4;
       border: 1px solid rgba(181,148,47,.3);
@@ -796,38 +809,40 @@
     <div class="section-transition" aria-hidden="true"><span>✦</span></div>
 
     <!-- ── Books ────────────────────────────────────────────────────────────── -->
-    <section class="ov-section" aria-labelledby="books-heading">
-      <div class="ov-screen-mock" aria-label="Books page preview">
-        <div class="ov-mock-header">Books &amp; Library</div>
-        <div class="ov-mock-row">
-          <div class="ov-mock-icon">📖</div>
-          <div><div class="ov-mock-label">The Bronze Bow — Elizabeth George Speare</div><div class="ov-mock-sub">Household Read-Aloud · Ch. 1–24 · 67% complete</div></div>
+    <section class="ov-section ov-books-section" aria-labelledby="books-heading">
+      <div class="ov-two-col ov-books-layout">
+        <div class="ov-two-col-text">
+          <p class="eyebrow">Books</p>
+          <h2 id="books-heading">Living books at the center, not the margin.</h2>
+          <p>The Books page shows your household library — read-alouds, form readings, and independent books — with progress tracking, pacing guidance, and copywork sources all in one place.</p>
+          <ul class="ov-checklist">
+            <li>Current read-alouds with chapter progress and weekly pacing</li>
+            <li>Household library table with all assigned books and resources</li>
+            <li>Book pacing calculator — chapters per week, weeks remaining</li>
+            <li>Copywork sources — pulled from your recitation tracks, hymn studies, and formation materials</li>
+            <li>Orthodox book suggestions (for families without a full library setup)</li>
+            <li>Books drawn from your setup — no manual re-entry</li>
+          </ul>
         </div>
-        <div class="ov-mock-row">
-          <div class="ov-mock-icon">📖</div>
-          <div><div class="ov-mock-label">Carry On, Mr. Bowditch — Jean Lee Latham</div><div class="ov-mock-sub">Form I Reading · Elias · Ch. 1–18 · 40% complete</div></div>
+        <div class="ov-screen-mock" aria-label="Books page preview">
+          <div class="ov-mock-header">Books &amp; Library</div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">📖</div>
+            <div><div class="ov-mock-label">The Bronze Bow — Elizabeth George Speare</div><div class="ov-mock-sub">Household Read-Aloud · Ch. 1–24 · 67% complete</div></div>
+          </div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">📖</div>
+            <div><div class="ov-mock-label">Carry On, Mr. Bowditch — Jean Lee Latham</div><div class="ov-mock-sub">Form I Reading · Elias · Ch. 1–18 · 40% complete</div></div>
+          </div>
+          <div class="ov-mock-row" style="background:#fffaed;border-color:#e8c84a;">
+            <div class="ov-mock-icon" style="background:#b07800;">☰</div>
+            <div><div class="ov-mock-label">Book Pacing</div><div class="ov-mock-sub">The Bronze Bow · 4 chapters/week · 3 weeks left</div></div>
+          </div>
+          <div class="ov-mock-row">
+            <div class="ov-mock-icon">✎</div>
+            <div><div class="ov-mock-label">Copywork Sources</div><div class="ov-mock-sub">KJV Psalm 23 · O Heavenly King (Tone 5) · Feast troparia</div></div>
+          </div>
         </div>
-        <div class="ov-mock-row" style="background:#fffaed;border-color:#e8c84a;">
-          <div class="ov-mock-icon" style="background:#b07800;">☰</div>
-          <div><div class="ov-mock-label">Book Pacing</div><div class="ov-mock-sub">The Bronze Bow · 4 chapters/week · 3 weeks left</div></div>
-        </div>
-        <div class="ov-mock-row">
-          <div class="ov-mock-icon">✎</div>
-          <div><div class="ov-mock-label">Copywork Sources</div><div class="ov-mock-sub">KJV Psalm 23 · O Heavenly King (Tone 5) · Feast troparia</div></div>
-        </div>
-      </div>
-      <div class="ov-two-col-text">
-        <p class="eyebrow">Books</p>
-        <h2 id="books-heading">Living books at the center, not the margin.</h2>
-        <p>The Books page shows your household library — read-alouds, form readings, and independent books — with progress tracking, pacing guidance, and copywork sources all in one place.</p>
-        <ul class="ov-checklist">
-          <li>Current read-alouds with chapter progress and weekly pacing</li>
-          <li>Household library table with all assigned books and resources</li>
-          <li>Book pacing calculator — chapters per week, weeks remaining</li>
-          <li>Copywork sources — pulled from your recitation tracks, hymn studies, and formation materials</li>
-          <li>Orthodox book suggestions (for families without a full library setup)</li>
-          <li>Books drawn from your setup — no manual re-entry</li>
-        </ul>
       </div>
     </section>
 
