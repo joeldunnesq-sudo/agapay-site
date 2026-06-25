@@ -14,7 +14,7 @@ const STATIC_ASSETS = [
   "/images/app/icon-192.png",
   "/images/app/icon-512.png",
   "/images/app/icon-512-maskable.png",
-  "/images/app/listen-icon-192.png"
+  "/images/app/listen-icon-192.png",
   "/listen.html",
   "/listen/app.js",
   "/listen/player.js",
