@@ -2230,6 +2230,19 @@ export async function enrichParishGivingOptions(env, parish) {
 
 export async function handleParishes(request, env) {
   const url = new URL(request.url);
+
+  // Fast single-parish lookup: /api/parishes?id=st-fiacre
+  // Used by the give/form page to avoid fetching all parishes just to find one.
+  const singleId = (url.searchParams.get("id") || "").trim();
+  if (singleId) {
+    const found = await findRegistrationByParishId(env, singleId);
+    if (!found) return json({ error: "Parish not found" }, { status: 404 });
+    const parish = parishFromRegistration(found.registration);
+    if (parish.status !== "verified") return json({ error: "Parish not found" }, { status: 404 });
+    const enriched = await enrichParishGivingOptions(env, parish);
+    return json({ parish: enriched, source: "d1" });
+  }
+
   const page = await loadVerifiedRegistrationParishPage(env, {
     limit: url.searchParams.get("limit"),
     cursor: url.searchParams.get("cursor"),
