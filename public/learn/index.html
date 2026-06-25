@@ -317,6 +317,27 @@
     }
     .ov-grace-level strong { font-size: 14px; color: #14294a; }
     .ov-grace-level small { font-size: 12px; color: #6b7a91; }
+    
+    /* New design extension overrides for improved sales conversion context */
+    .pricing-grid.compact-pricing {
+      align-items: stretch !important;
+    }
+    .price-card.featured {
+      box-shadow: 0 12px 32px rgba(181,148,47,.18) !important;
+      border: 2px solid #b5942f !important;
+      position: relative;
+    }
+    .discount-badge {
+      display: inline-block;
+      background: #edf6ef;
+      color: #28613a;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      border: 1px solid #b2d9ba;
+    }
     /* Responsive overrides */
     @media (max-width: 800px) {
       .ov-two-col { grid-template-columns: 1fr; }
@@ -532,39 +553,37 @@
 
     <!-- ── Books ────────────────────────────────────────────────────────────── -->
     <section class="ov-section" aria-labelledby="books-heading">
-      <div class="ov-two-col">
-        <div class="ov-screen-mock" aria-label="Books page preview">
-          <div class="ov-mock-header">Books &amp; Library</div>
-          <div class="ov-mock-row">
-            <div class="ov-mock-icon">📖</div>
-            <div><div class="ov-mock-label">The Bronze Bow — Elizabeth George Speare</div><div class="ov-mock-sub">Household Read-Aloud · Ch. 1–24 · 67% complete</div></div>
-          </div>
-          <div class="ov-mock-row">
-            <div class="ov-mock-icon">📖</div>
-            <div><div class="ov-mock-label">Carry On, Mr. Bowditch — Jean Lee Latham</div><div class="ov-mock-sub">Form I Reading · Elias · Ch. 1–18 · 40% complete</div></div>
-          </div>
-          <div class="ov-mock-row" style="background:#fffaed;border-color:#e8c84a;">
-            <div class="ov-mock-icon" style="background:#b07800;">☰</div>
-            <div><div class="ov-mock-label">Book Pacing</div><div class="ov-mock-sub">The Bronze Bow · 4 chapters/week · 3 weeks left</div></div>
-          </div>
-          <div class="ov-mock-row">
-            <div class="ov-mock-icon">✎</div>
-            <div><div class="ov-mock-label">Copywork Sources</div><div class="ov-mock-sub">KJV Psalm 23 · O Heavenly King (Tone 5) · Feast troparia</div></div>
-          </div>
+      <div class="ov-screen-mock" aria-label="Books page preview">
+        <div class="ov-mock-header">Books &amp; Library</div>
+        <div class="ov-mock-row">
+          <div class="ov-mock-icon">📖</div>
+          <div><div class="ov-mock-label">The Bronze Bow — Elizabeth George Speare</div><div class="ov-mock-sub">Household Read-Aloud · Ch. 1–24 · 67% complete</div></div>
         </div>
-        <div class="ov-two-col-text">
-          <p class="eyebrow">Books</p>
-          <h2 id="books-heading">Living books at the center, not the margin.</h2>
-          <p>The Books page shows your household library — read-alouds, form readings, and independent books — with progress tracking, pacing guidance, and copywork sources all in one place.</p>
-          <ul class="ov-checklist">
-            <li>Current read-alouds with chapter progress and weekly pacing</li>
-            <li>Household library table with all assigned books and resources</li>
-            <li>Book pacing calculator — chapters per week, weeks remaining</li>
-            <li>Copywork sources — pulled from your recitation tracks, hymn studies, and formation materials</li>
-            <li>Orthodox book suggestions (for families without a full library setup)</li>
-            <li>Books drawn from your setup — no manual re-entry</li>
-          </ul>
+        <div class="ov-mock-row">
+          <div class="ov-mock-icon">📖</div>
+          <div><div class="ov-mock-label">Carry On, Mr. Bowditch — Jean Lee Latham</div><div class="ov-mock-sub">Form I Reading · Elias · Ch. 1–18 · 40% complete</div></div>
         </div>
+        <div class="ov-mock-row" style="background:#fffaed;border-color:#e8c84a;">
+          <div class="ov-mock-icon" style="background:#b07800;">☰</div>
+          <div><div class="ov-mock-label">Book Pacing</div><div class="ov-mock-sub">The Bronze Bow · 4 chapters/week · 3 weeks left</div></div>
+        </div>
+        <div class="ov-mock-row">
+          <div class="ov-mock-icon">✎</div>
+          <div><div class="ov-mock-label">Copywork Sources</div><div class="ov-mock-sub">KJV Psalm 23 · O Heavenly King (Tone 5) · Feast troparia</div></div>
+        </div>
+      </div>
+      <div class="ov-two-col-text">
+        <p class="eyebrow">Books</p>
+        <h2 id="books-heading">Living books at the center, not the margin.</h2>
+        <p>The Books page shows your household library — read-alouds, form readings, and independent books — with progress tracking, pacing guidance, and copywork sources all in one place.</p>
+        <ul class="ov-checklist">
+          <li>Current read-alouds with chapter progress and weekly pacing</li>
+          <li>Household library table with all assigned books and resources</li>
+          <li>Book pacing calculator — chapters per week, weeks remaining</li>
+          <li>Copywork sources — pulled from your recitation tracks, hymn studies, and formation materials</li>
+          <li>Orthodox book suggestions (for families without a full library setup)</li>
+          <li>Books drawn from your setup — no manual re-entry</li>
+        </ul>
       </div>
     </section>
 
@@ -894,26 +913,11 @@
           </ul>
           <a class="button button-secondary" href="/myagapay/learn/setup">Start Free</a>
         </article>
-        <article class="price-card featured">
-          <div class="featured-ribbon">Founding pricing</div>
-          <p class="plan-label">Founding Family</p>
-          <h3>$49<span>/year</span></h3>
-          <p class="plan-note">Help shape AGAPAY Learn from the beginning, or pay $5/month.</p>
-          <ul>
-            <li>Everything in Family</li>
-            <li>Founding pricing, locked in</li>
-            <li>Early feature previews</li>
-            <li>Priority feedback channel</li>
-          </ul>
-          <div class="billing-choice">
-            <a class="button button-primary" href="/myagapay/learn/setup?plan=founding-family&interval=year" data-learn-checkout data-plan="founding-family" data-interval="year">Pay yearly</a>
-            <a class="button button-quiet" href="/myagapay/learn/setup?plan=founding-family&interval=month" data-learn-checkout data-plan="founding-family" data-interval="month">Pay monthly</a>
-          </div>
-        </article>
+        
         <article class="price-card">
           <p class="plan-label">Family</p>
-          <h3>$59<span>/year</span></h3>
-          <p class="plan-note">Everything your household needs, or pay $6/month.</p>
+          <h3>$89<span>/year</span></h3>
+          <p class="plan-note">Everything your household needs, or pay $9/month.</p>
           <ul>
             <li>Unlimited children</li>
             <li>Full adaptive planner (all 5 views)</li>
@@ -925,6 +929,24 @@
           <div class="billing-choice">
             <a class="button button-secondary" href="/myagapay/learn/setup?plan=family&interval=year" data-learn-checkout data-plan="family" data-interval="year">Pay yearly</a>
             <a class="button button-quiet" href="/myagapay/learn/setup?plan=family&interval=month" data-learn-checkout data-plan="family" data-interval="month">Pay monthly</a>
+          </div>
+        </article>
+
+        <article class="price-card featured">
+          <div class="featured-ribbon">Founding pricing</div>
+          <p class="plan-label">Founding Family</p>
+          <h3>$49<span>/year</span></h3>
+          <span class="discount-badge">Save 45% permanently</span>
+          <p class="plan-note">Help shape AGAPAY Learn from the beginning, or pay $5/month. Lock in this rate before standard pricing takes effect.</p>
+          <ul>
+            <li>Everything in Family</li>
+            <li>Founding pricing, locked in forever</li>
+            <li>Early feature previews</li>
+            <li>Priority feedback channel</li>
+          </ul>
+          <div class="billing-choice">
+            <a class="button button-primary" href="/myagapay/learn/setup?plan=founding-family&interval=year" data-learn-checkout data-plan="founding-family" data-interval="year">Pay yearly</a>
+            <a class="button button-quiet" href="/myagapay/learn/setup?plan=founding-family&interval=month" data-learn-checkout data-plan="founding-family" data-interval="month">Pay monthly</a>
           </div>
         </article>
       </div>
