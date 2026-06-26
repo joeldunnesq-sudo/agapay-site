@@ -928,7 +928,7 @@ function renderPlanner(vm) {
         : displayView === "year"
           ? renderPlannerYear(vm)
           : renderPlannerWeek(vm);
-  const scopedContent = activeScope === "lessons" ? lessonContent : renderFamilyPlannerScope(vm, activeScope, displayView, mealTool);
+  const scopedContent = activeScope === "lessons" ? `${lessonContent}${renderPlannerReserveCard(vm)}` : renderFamilyPlannerScope(vm, activeScope, displayView, mealTool);
 
   const body = `
     <section data-screen-label="Family Planner" class="learn-family-page">
@@ -944,6 +944,26 @@ function statusPill(status) {
   const normalized = String(status || "").toLowerCase();
   const color = normalized === "completed" ? "var(--navy)" : normalized === "deferred" ? "var(--burgundy)" : normalized === "reduced" ? "var(--gold)" : "var(--muted)";
   return `<span style="border:1px solid ${color};color:${color};border-radius:999px;padding:2px 8px;font-size:11px;text-transform:capitalize;">${html(status || "planned")}</span>`;
+}
+
+function renderPlannerReserveCard(vm) {
+  const items = vm.term?.graceReserve || [];
+  const currentMode = vm.term?.graceMode?.rule?.mode || vm.graceMode?.mode || "";
+  const body = items.length
+    ? `<div class="learn-reserve-grid">${items.map((item) => `<article style="border-color:${html(item.color)};background:${softColor(item.color, "18")};"><strong>${html(item.title)}</strong><small>${html(item.note || "Saved in the reserve list for a roomier day.")}</small></article>`).join("")}</div>`
+    : `<p class="learn-reserve-empty">No subjects are currently deferred into the reserve list.</p>`;
+  return `
+    <section class="learn-planner-reserve-card">
+      <div class="learn-planner-reserve-head">
+        <div>
+          <small>GRACE RESERVE</small>
+          <h2>Deferred Subjects</h2>
+        </div>
+        ${currentMode ? `<span>${html(currentMode)}</span>` : ""}
+      </div>
+      ${body}
+    </section>
+  `;
 }
 
 function renderWeeklyAssignmentBoard(vm) {
@@ -1947,7 +1967,6 @@ function renderPlannerTerm(vm) {
       ${vm.term.childTracks.slice(0, 4).map((child) => panel(`${child.name} · Age ${child.age}`, `<div style="display:grid;gap:8px;">${child.tracks.map((track) => `<div style="border-top:1px solid var(--line);padding:8px 0;">${html(track)}</div>`).join("") || emptyState("No tracks configured.")}</div>`, { icon: child.initial, style: "min-width:0;" })).join("")}
     </div>
     ${vm.term.childTracks.length > 4 ? `<div style="color:var(--muted);font-size:13px;padding:6px 2px;">+ ${vm.term.childTracks.length - 4} more ${vm.term.childTracks.length - 4 === 1 ? "child" : "children"} — add Setup tracks to see their columns here.</div>` : ""}
-    ${vm.term.graceReserve?.length ? panel("Grace Mode Reserve", `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">${vm.term.graceReserve.map((item) => `<div style="border:1px solid ${html(item.color)};border-radius:10px;background:${softColor(item.color, "18")};padding:12px;"><strong style="display:block;color:var(--ink);">${html(item.title)}</strong><small style="display:block;color:var(--muted);line-height:1.35;margin-top:4px;">${html(item.note)}</small></div>`).join("")}</div>`, { icon: "✥" }) : ""}
   `;
 }
 
@@ -2584,6 +2603,20 @@ function setupWeeklyPlanFields(value = []) {
   return `<details class="learn-weekly-plan-fields"><summary><span>Weekly chapters / lessons / pages</span><strong>Optional</strong></summary><div class="learn-weekly-plan-grid">${Array.from({ length: DEFAULT_TERM_WEEK_COUNT }, (_, index) => `<label>Week ${index + 1}<input type="text" name="weeklyPlans.${index + 1}" value="${html(entries[index] || "")}" placeholder="Ch. 1, pp. 4-9, lesson 2..." /></label>`).join("")}</div></details>`;
 }
 
+function setupPlanningModePicker(item = {}, children = [], groupingMode = "forms") {
+  const label = groupingMode === "grades" ? "Grades / levels" : "Forms";
+  const groupOptions = setupGroupOptions(children, groupingMode);
+  const selected = Array.isArray(item.formLabels)
+    ? item.formLabels
+    : String(item.formLabels || item.formLabel || "").split(",");
+  const selectedGroups = [...new Set(selected.map((value) => String(value || "").trim()).filter(Boolean))];
+  const familyBased = (item.planningMode || "family") !== "forms" || !selectedGroups.length;
+  const summary = familyBased
+    ? "Family-Based"
+    : `${groupingMode === "grades" ? "Grade-Based" : "Forms-Based"}: ${selectedGroups.join(", ")}`;
+  return `<details class="learn-day-picker learn-planning-mode-picker" data-planning-group-label="${html(groupingMode === "grades" ? "Grade-Based" : "Forms-Based")}"><summary><span>Planning Mode</span><strong data-planning-mode-summary>${html(summary)}</strong></summary><div class="learn-day-picker-menu">${groupOptions.map((option) => `<label><input type="checkbox" data-planning-form-choice value="${html(option)}" ${selectedGroups.includes(option) ? "checked" : ""}>${html(option)}</label>`).join("")}</div><input type="hidden" name="planningMode" value="${familyBased ? "family" : "forms"}"><input type="hidden" name="formLabel" value="${html(selectedGroups[0] || "")}"><input type="hidden" name="formLabels" value="${html(selectedGroups.join(","))}"><input type="hidden" name="gradeLabel" value="${html(groupingMode === "grades" ? selectedGroups[0] || "" : item.gradeLabel || "")}"></details>`;
+}
+
 const sourceTypeOptions = [
   { value: "book", label: "Book - show on Books page" },
   { value: "curriculum", label: "Curriculum / lesson plan" },
@@ -2647,12 +2680,7 @@ function formationRecitationSetupRow(track = {}) {
 }
 
 function formationEnrichmentSetupRow(block = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms") {
-  const groupLabel = groupingMode === "grades" ? "Grade / level" : "Form";
-  const groupOptions = setupGroupOptions(children, groupingMode);
-  const activeGroupField = groupingMode === "grades"
-    ? `${setupSelect(groupLabel, "gradeLabel", block.gradeLabel || "", [{ value: "", label: "All grades" }, ...groupOptions])}<input type="hidden" name="formLabel" value="${html(block.formLabel || "")}" />`
-    : `${setupSelect(groupLabel, "formLabel", block.formLabel || "", [{ value: "", label: "All Forms" }, ...groupOptions])}<input type="hidden" name="gradeLabel" value="${html(block.gradeLabel || "")}" />`;
-  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupSourceInput("Source", "title", block.title || block.resource || block.source || "")}${setupSelect("Schedule type", "weeklyFrequency", block.weeklyFrequency === "1x" ? "weekly" : block.weeklyFrequency || block.cadenceLabel || block.cadence || "weekly", simpleScheduleOptions)}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "20", { type: "number" })}${setupRemoveButton()}<input type="hidden" name="planningMode" value="${html(block.planningMode || "family")}" /><input type="hidden" name="instructionMode" value="${html(block.instructionMode || "shared")}" /><input type="hidden" name="resourceType" value="${html(block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(block.progressionType || "lessons")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupTermWeekPicker(block.scheduledWeeks)}${setupWeeklyPlanFields(block.weeklyPlans)}${setupSelect("Specific child", "childId", block.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupSelect("Priority", "priorityLevel", block.priorityLevel || "enrichment", lessonPriorityOptions)}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "reduce first", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupSourceInput("Source", "title", block.title || block.resource || block.source || "")}${setupPlanningModePicker(block, children, groupingMode)}${setupSelect("Schedule type", "weeklyFrequency", block.weeklyFrequency === "1x" ? "weekly" : block.weeklyFrequency || block.cadenceLabel || block.cadence || "weekly", simpleScheduleOptions)}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "20", { type: "number" })}${setupRemoveButton()}<input type="hidden" name="instructionMode" value="${html(block.instructionMode || "shared")}" /><input type="hidden" name="resourceType" value="${html(block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(block.progressionType || "lessons")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupTermWeekPicker(block.scheduledWeeks)}${setupWeeklyPlanFields(block.weeklyPlans)}${setupSelect("Specific child", "childId", block.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupSelect("Priority", "priorityLevel", block.priorityLevel || "enrichment", lessonPriorityOptions)}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "reduce first", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function churchRhythmSetupPanel(vm) {
@@ -4183,6 +4211,7 @@ function setupPayloadFromForm(form) {
           weeklyPlans: rowWeeklyPlans(row),
           cadenceLabel: rowValue(row, "weeklyFrequency"),
           formLabel: rowValue(row, "formLabel"),
+          formLabels: rowValue(row, "formLabels").split(",").map((value) => value.trim()).filter(Boolean),
           gradeLabel: rowValue(row, "gradeLabel"),
           childId: rowValue(row, "childId"),
           progressionType: rowValue(row, "progressionType"),
@@ -4389,6 +4418,20 @@ function wireSetupPage() {
       const selected = [...picker.querySelectorAll("[data-term-week-choice]:checked")].map((input) => Number(input.value));
       picker.querySelector('[name="scheduledWeeks"]').value = selected.join(",");
       picker.querySelector("[data-term-week-summary]").textContent = selected.length ? termWeekSummary(selected) : "Choose weeks";
+      return;
+    }
+    const planningFormChoice = event.target.closest("[data-planning-form-choice]");
+    if (planningFormChoice) {
+      const picker = planningFormChoice.closest(".learn-planning-mode-picker");
+      const selected = [...picker.querySelectorAll("[data-planning-form-choice]:checked")].map((input) => input.value);
+      const planningMode = selected.length ? "forms" : "family";
+      picker.querySelector('[name="planningMode"]').value = planningMode;
+      picker.querySelector('[name="formLabel"]').value = selected[0] || "";
+      picker.querySelector('[name="formLabels"]').value = selected.join(",");
+      const gradeField = picker.querySelector('[name="gradeLabel"]');
+      if (gradeField) gradeField.value = selected[0] || "";
+      const label = picker.querySelector("[data-planning-mode-summary]");
+      if (label) label.textContent = selected.length ? `${picker.dataset.planningGroupLabel || "Forms-Based"}: ${selected.join(", ")}` : "Family-Based";
       return;
     }
     const tileInput = event.target.closest("[data-setup-section-title-input], [data-setup-section-detail-input]");

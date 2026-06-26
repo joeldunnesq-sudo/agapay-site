@@ -152,6 +152,11 @@ function weeklyPlansValue(value) {
   return direct.slice(0, DEFAULT_TERM_WEEK_COUNT).map((entry) => text(entry, ""));
 }
 
+function labelsValue(value) {
+  const direct = Array.isArray(value) ? value : String(value || "").split(",");
+  return [...new Set(direct.map((entry) => text(entry, "")).filter(Boolean))];
+}
+
 const DEFAULT_TERM_WEEK_COUNT = 12;
 
 function scheduledWeeksValue(value, totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
@@ -610,7 +615,7 @@ function normalizeSetupPayload(payload = {}, identity) {
       title: text(block.title, ""),
       resource: text(block.resource || block.source, ""),
       resourceType: resourceTypeValue(block.resourceType || block.sourceType, block.resource || block.source ? "curriculum" : "none"),
-      planningMode: text(block.planningMode, "family"),
+      planningMode: labelsValue(block.formLabels || block.formLabel).length ? "forms" : text(block.planningMode, "family"),
       instructionMode: text(block.instructionMode, "shared"),
       schedulingMode: schedulingModeValue(block.schedulingMode),
       scheduledDays: blockDays,
@@ -623,7 +628,8 @@ function normalizeSetupPayload(payload = {}, identity) {
       activeEndDate: text(block.activeEndDate, ""),
       priorityLevel: ["essential", "important", "enrichment", "optional"].includes(block.priorityLevel) ? block.priorityLevel : "enrichment",
       missedLessonBehavior: text(block.missedLessonBehavior, preferences.defaultMissedLessonBehavior || "next-occurrence"),
-      formLabel: text(block.formLabel, ""),
+      formLabels: labelsValue(block.formLabels || block.formLabel),
+      formLabel: text(block.formLabel, labelsValue(block.formLabels || block.formLabel)[0] || ""),
       gradeLabel: text(block.gradeLabel, ""),
       childId: text(block.childId, ""),
       progressionType: text(block.progressionType, "lessons"),
@@ -975,7 +981,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
         kind: "enrichment",
         title: block.title,
         detail: `${block.resource || block.blockType || "Enrichment"}${currentWeekPlan(block) ? ` • ${currentWeekPlan(block)}` : ""}${block.weeklyFrequency ? ` • ${block.weeklyFrequency}` : ""}`,
-        groupLabel: block.planningMode === "forms" ? block.formLabel || block.gradeLabel || "Form Enrichment" : "Everyone Together",
+        groupLabel: block.planningMode === "forms" ? list(block.formLabels).length ? block.formLabels.join(", ") : block.formLabel || block.gradeLabel || "Form Enrichment" : "Everyone Together",
         planningMode: block.planningMode || "family",
         href: /literature|read-aloud|read aloud/i.test(`${block.blockType} ${block.title}`) ? "/myagapay/learn/books" : "/myagapay/learn/formation",
         priority: block.priorityLevel === "essential" ? 10 : block.priorityLevel === "important" ? 40 : block.priorityLevel === "optional" ? 95 : 70,
