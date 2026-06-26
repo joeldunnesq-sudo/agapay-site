@@ -1186,12 +1186,19 @@ let selectedReference = '';
       };
 
       container.innerHTML = events.map(e => {
-        const sub = e.sub ? `<div class="activity-sub">${escapeHtml(e.sub)}</div>` : '';
+        const isDonor = e.type === 'donor_signup';
+        const name = isDonor && e.name ? `<div class="activity-name">${escapeHtml(e.name)}</div>` : '';
+        const email = isDonor && e.detail ? `<a class="activity-email" href="mailto:${escapeAttr(e.detail)}">${escapeHtml(e.detail)}</a>` : escapeHtml(e.detail || '');
+        const church = isDonor && (e.church || e.sub)
+          ? `<span class="activity-chip">${escapeHtml(e.church || e.sub)}</span>`
+          : e.sub ? `<div class="activity-sub">${escapeHtml(e.sub)}</div>` : '';
         return `<div class="activity-entry activity-${escapeAttr(e.type)}">
           <div class="activity-icon">${iconFor(e.type)}</div>
           <div class="activity-body">
             <div class="activity-label">${escapeHtml(e.label)}</div>
-            <div class="activity-detail">${escapeHtml(e.detail || '')}${sub}</div>
+            ${name}
+            <div class="activity-detail">${email}</div>
+            ${church ? `<div class="activity-meta">${church}</div>` : ''}
           </div>
           <div class="activity-time">${e.time ? escapeHtml(shortDate(e.time)) : ''}</div>
         </div>`;

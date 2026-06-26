@@ -684,18 +684,36 @@ async function handleAdminRecentActivity(request, env) {
 
   const events = [];
 
-  // Recent donor signups
+  // Recent My AGAPAY user signups
   try {
     const donors = await d1All(env,
-      `SELECT email, default_parish_id, created_at FROM donors
-       ORDER BY created_at DESC LIMIT 20`
+      `SELECT
+         d.email,
+         d.default_parish_id,
+         d.created_at,
+         COALESCE(
+           NULLIF(json_extract(d.data, '$.donorName'), ''),
+           NULLIF(json_extract(d.data, '$.displayName'), ''),
+           TRIM(COALESCE(json_extract(d.data, '$.firstName'), '') || ' ' || COALESCE(json_extract(d.data, '$.lastName'), ''))
+         ) AS donor_name,
+         COALESCE(
+           NULLIF(r.parish_name, ''),
+           NULLIF(json_extract(r.data, '$.parishName'), '')
+         ) AS parish_name
+       FROM donors d
+       LEFT JOIN registrations r ON r.parish_id = d.default_parish_id
+       ORDER BY d.created_at DESC LIMIT 20`
     );
     for (const d of (donors || [])) {
+      const church = d.parish_name || d.default_parish_id || "";
       events.push({
         type: 'donor_signup',
-        label: 'New donor',
+        label: 'New My AGAPAY user',
         detail: d.email,
-        sub: d.default_parish_id || null,
+        sub: church || null,
+        name: d.donor_name || "",
+        church,
+        churchId: d.default_parish_id || "",
         time: d.created_at,
       });
     }
