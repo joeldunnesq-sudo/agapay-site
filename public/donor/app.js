@@ -2058,42 +2058,58 @@ function renderPledgeTracker(donor) {
   // Mobile tracker
   const mobileCard = document.getElementById("pledgeTrackerCard");
   if (mobileCard) {
-    if (!pledgeCents) { mobileCard.hidden = true; return; }
     mobileCard.hidden = false;
-    const pct  = Math.min(100, Math.round((ytdCents / pledgeCents) * 100));
-    const fill = document.getElementById("pledgeBarFill");
-    const track = document.getElementById("pledgeBarTrack");
-    if (fill)  { setTimeout(() => { fill.style.width = pct + "%"; }, 120); fill.classList.toggle("pledge-complete", pct >= 100); }
-    if (track) track.setAttribute("aria-valuenow", pct);
-    const label = document.getElementById("pledgeTrackerLabel");
-    if (label) label.textContent = pledgeYear + " Annual Pledge";
-    const raised = document.getElementById("pledgeRaised");
-    if (raised) raised.textContent = money(ytdCents) + " given";
-    const pctEl = document.getElementById("pledgePct");
-    if (pctEl)  pctEl.textContent = pct + "%";
-    const goal = document.getElementById("pledgeGoal");
-    if (goal)   goal.textContent = "of " + money(pledgeCents) + " pledge";
-    const editLink = mobileCard.querySelector(".pledge-tracker-edit");
-    if (editLink) editLink.href = "/myagapay/account#pledge";
+    const activeState = document.getElementById("pledgeActiveState");
+    const emptyState  = document.getElementById("pledgeEmptyState");
+    if (!pledgeCents) {
+      if (activeState) activeState.hidden = true;
+      if (emptyState) emptyState.hidden = false;
+    } else {
+      if (activeState) activeState.hidden = false;
+      if (emptyState) emptyState.hidden = true;
+      const pct  = Math.min(100, Math.round((ytdCents / pledgeCents) * 100));
+      const fill = document.getElementById("pledgeBarFill");
+      const track = document.getElementById("pledgeBarTrack");
+      if (fill)  { setTimeout(() => { fill.style.width = pct + "%"; }, 120); fill.classList.toggle("pledge-complete", pct >= 100); }
+      if (track) track.setAttribute("aria-valuenow", pct);
+      const label = document.getElementById("pledgeTrackerLabel");
+      if (label) label.textContent = pledgeYear + " Annual Pledge";
+      const raised = document.getElementById("pledgeRaised");
+      if (raised) raised.textContent = money(ytdCents) + " given";
+      const pctEl = document.getElementById("pledgePct");
+      if (pctEl)  pctEl.textContent = pct + "%";
+      const goal = document.getElementById("pledgeGoal");
+      if (goal)   goal.textContent = "of " + money(pledgeCents) + " pledge";
+      const editLink = mobileCard.querySelector(".pledge-tracker-edit");
+      if (editLink) editLink.href = "/myagapay/account#pledge";
+    }
   }
 
   // Desktop tracker
   const desktopCard = document.getElementById("desktopPledgeTracker");
   if (desktopCard) {
-    if (!pledgeCents) { desktopCard.hidden = true; return; }
     desktopCard.hidden = false;
-    const pct  = Math.min(100, Math.round((ytdCents / pledgeCents) * 100));
-    const fill = document.getElementById("desktopPledgeBarFill");
-    const track = document.getElementById("desktopPledgeBarTrack");
-    if (fill)  { setTimeout(() => { fill.style.width = pct + "%"; }, 120); fill.classList.toggle("pledge-complete", pct >= 100); }
-    if (track) track.setAttribute("aria-valuenow", pct);
-    const title = document.getElementById("desktopPledgeTitle");
-    if (title) title.textContent = pledgeYear + " Annual Pledge";
-    const raised = document.getElementById("desktopPledgeRaised");
-    if (raised) raised.textContent = money(ytdCents) + " given";
-    const pctEl = document.getElementById("desktopPledgePct");
-    if (pctEl)  pctEl.textContent = pct + "%";
-    const goal = document.getElementById("desktopPledgeGoal");
-    if (goal)   goal.textContent = "of " + money(pledgeCents) + " pledge";
+    const activeState = document.getElementById("desktopPledgeActiveState");
+    const emptyState  = document.getElementById("desktopPledgeEmptyState");
+    if (!pledgeCents) {
+      if (activeState) activeState.hidden = true;
+      if (emptyState) emptyState.hidden = false;
+    } else {
+      if (activeState) activeState.hidden = false;
+      if (emptyState) emptyState.hidden = true;
+      const pct  = Math.min(100, Math.round((ytdCents / pledgeCents) * 100));
+      const fill = document.getElementById("desktopPledgeBarFill");
+      const track = document.getElementById("desktopPledgeBarTrack");
+      if (fill)  { setTimeout(() => { fill.style.width = pct + "%"; }, 120); fill.classList.toggle("pledge-complete", pct >= 100); }
+      if (track) track.setAttribute("aria-valuenow", pct);
+      const title = document.getElementById("desktopPledgeTitle");
+      if (title) title.textContent = pledgeYear + " Annual Pledge";
+      const raised = document.getElementById("desktopPledgeRaised");
+      if (raised) raised.textContent = money(ytdCents) + " given";
+      const pctEl = document.getElementById("desktopPledgePct");
+      if (pctEl)  pctEl.textContent = pct + "%";
+      const goal = document.getElementById("desktopPledgeGoal");
+      if (goal)   goal.textContent = "of " + money(pledgeCents) + " pledge";
+    }
   }
 }

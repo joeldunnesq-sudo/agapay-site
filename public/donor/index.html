@@ -274,7 +274,8 @@
 
         <div class="desktop-dashboard-top">
           <div class="desktop-pledge-tracker" id="desktopPledgeTracker" hidden>
-            <div class="desktop-pledge-inner">
+            <!-- Active pledge state -->
+            <div class="desktop-pledge-inner" id="desktopPledgeActiveState">
               <div class="desktop-pledge-label">
                 <span id="desktopPledgeTitle">Annual Pledge</span>
                 <a href="/myagapay/account#pledge" class="desktop-pledge-edit">Edit pledge</a>
@@ -286,6 +287,18 @@
                 <span id="desktopPledgeRaised">$0 given</span>
                 <span id="desktopPledgePct">0%</span>
                 <span id="desktopPledgeGoal">of $0 pledge</span>
+              </div>
+            </div>
+            <!-- Empty/encourage state -->
+            <div class="desktop-pledge-inner" id="desktopPledgeEmptyState" hidden>
+              <div class="desktop-pledge-label">
+                <span>Set Annual Pledge</span>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+                <p style="margin: 0; font-size: 13px; line-height: 1.45; color: rgba(246, 241, 232, 0.8); max-width: 440px;">
+                  Support your parish's mission and enable real-time stewardship tracking by setting your annual pledge.
+                </p>
+                <a href="/myagapay/account#pledge" style="flex: none; display: inline-block; background: var(--gold); color: #061522; font-weight: 700; font-size: 12px; padding: 8px 18px; border-radius: 4px; text-decoration: none;">Set Pledge Amount</a>
               </div>
             </div>
           </div>
@@ -395,17 +408,32 @@
         </header>
 
         <section class="pledge-tracker-card" id="pledgeTrackerCard" hidden aria-label="Annual pledge progress">
-          <div class="pledge-tracker-head">
-            <span class="pledge-tracker-label" id="pledgeTrackerLabel">Annual Pledge</span>
-            <a class="pledge-tracker-edit" href="/myagapay/account#pledge" aria-label="Edit pledge">Edit</a>
+          <!-- Active pledge state -->
+          <div id="pledgeActiveState">
+            <div class="pledge-tracker-head">
+              <span class="pledge-tracker-label" id="pledgeTrackerLabel">Annual Pledge</span>
+              <a class="pledge-tracker-edit" href="/myagapay/account#pledge" aria-label="Edit pledge">Edit</a>
+            </div>
+            <div class="pledge-bar-track" role="progressbar" aria-labelledby="pledgeTrackerLabel" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="pledgeBarTrack">
+              <div class="pledge-bar-fill" id="pledgeBarFill" style="width:0%"></div>
+            </div>
+            <div class="pledge-tracker-meta">
+              <span id="pledgeRaised">$0 given</span>
+              <span id="pledgePct">0%</span>
+              <span id="pledgeGoal">of $0 pledge</span>
+            </div>
           </div>
-          <div class="pledge-bar-track" role="progressbar" aria-labelledby="pledgeTrackerLabel" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="pledgeBarTrack">
-            <div class="pledge-bar-fill" id="pledgeBarFill" style="width:0%"></div>
-          </div>
-          <div class="pledge-tracker-meta">
-            <span id="pledgeRaised">$0 given</span>
-            <span id="pledgePct">0%</span>
-            <span id="pledgeGoal">of $0 pledge</span>
+          <!-- Empty/encourage state -->
+          <div id="pledgeEmptyState" hidden>
+            <div class="pledge-tracker-head">
+              <span class="pledge-tracker-label">Set Annual Pledge</span>
+            </div>
+            <p style="margin: 0 0 0.75rem 0; font-size: 13px; line-height: 1.45; color: rgba(246, 241, 232, 0.8);">
+              Support your parish's mission and enable real-time stewardship tracking by setting your annual pledge.
+            </p>
+            <div style="text-align: right;">
+              <a href="/myagapay/account#pledge" style="display: inline-block; background: var(--gold); color: #061522; font-weight: 700; font-size: 12px; padding: 6px 16px; border-radius: 4px; text-decoration: none;">Set Pledge Amount</a>
+            </div>
           </div>
         </section>
 
