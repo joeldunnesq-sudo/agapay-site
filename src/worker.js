@@ -151,6 +151,7 @@ import {
   handleAdminRebuildIndexes,
   handleAdminPassword,
   handleAdminRegistrationDetail,
+  requireAdmin,
 } from "./handlers/admin.js";
 
 import {
@@ -659,6 +660,63 @@ async function requireStewardshipFeature(env, parishId) {
   }
   return null; // null = access granted
 }
+
+// ── GET /api/admin/recent-activity ────────────────────────────────────────────
+// Returns a merged, chronological feed of recent donors and stewardship
+// activations for the admin overview tab. Limit 20 events.
+async function handleAdminRecentActivity(request, env) {
+  const limited = await rateLimit(request, env, "admin-auth", { limit: 60, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!await requireAdmin(request, env)) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const events = [];
+
+  // Recent donor signups
+  try {
+    const donors = await d1All(env,
+      `SELECT email, default_parish_id, created_at FROM donors
+       ORDER BY created_at DESC LIMIT 20`
+    );
+    for (const d of (donors || [])) {
+      events.push({
+        type: 'donor_signup',
+        label: 'New donor',
+        detail: d.email,
+        sub: d.default_parish_id || null,
+        time: d.created_at,
+      });
+    }
+  } catch {}
+
+  // Recent stewardship activations
+  try {
+    const activations = await d1All(env,
+      `SELECT parish_id, updated_at FROM parish_stewardship_settings
+       WHERE has_stewardship_suite = 1
+       ORDER BY updated_at DESC LIMIT 10`
+    );
+    for (const a of (activations || [])) {
+      events.push({
+        type: 'stewardship_activated',
+        label: 'Stewardship Suite activated',
+        detail: a.parish_id,
+        sub: null,
+        time: a.updated_at,
+      });
+    }
+  } catch {}
+
+  // Sort merged feed newest-first, cap at 20
+  events.sort((a, b) => {
+    const ta = a.time ? new Date(a.time).getTime() : 0;
+    const tb = b.time ? new Date(b.time).getTime() : 0;
+    return tb - ta;
+  });
+
+  return json({ ok: true, events: events.slice(0, 20) });
+}
+
 
 async function seedStewardshipFunds(env, parishId) {
   const defaults = [
@@ -1172,6 +1230,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/admin/platform-summary") {
       return handleAdminPlatformSummary(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/admin/recent-activity") {
+      return handleAdminRecentActivity(request, env);
     }
     if (request.method === "GET" && url.pathname === "/api/admin/release-status") {
       return handleAdminReleaseStatus(request, env);
