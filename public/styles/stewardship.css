@@ -319,3 +319,413 @@
   font-size: 1.6rem;
   font-family: var(--font-serif, Georgia, serif);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   STEWARDSHIP DASHBOARD — active-subscriber & upsell components
+   Uses the parish dashboard token set:
+     --deep, --gold, --cream, --paper, --stone, --muted,
+     --serif, --sans, --line, --soft-shadow, --shadow
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Active-subscriber status card ─────────────────────────────── */
+.sw-status-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1.1rem 1.25rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(201,162,91,.3);
+  background: linear-gradient(135deg, rgba(201,162,91,.1), rgba(201,162,91,.04));
+}
+.sw-status-card.sw-status-trial {
+  border-color: rgba(53,106,138,.3);
+  background: linear-gradient(135deg, rgba(53,106,138,.1), rgba(53,106,138,.04));
+}
+.sw-status-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(201,162,91,.36);
+  background: rgba(201,162,91,.12);
+  color: var(--gold);
+  flex-shrink: 0;
+}
+.sw-status-icon svg { width: 20px; height: 20px; }
+.sw-status-eyebrow {
+  display: block;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: .15rem;
+}
+.sw-status-heading {
+  display: block;
+  color: var(--deep);
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  font-weight: 500;
+  line-height: 1.1;
+}
+.sw-status-sub {
+  margin: .2rem 0 0;
+  color: var(--stone);
+  font-size: .8rem;
+  line-height: 1.45;
+}
+.sw-manage-btn {
+  padding: .45rem .9rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: white;
+  color: var(--deep);
+  font: 600 .78rem var(--sans);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .15s;
+}
+.sw-manage-btn:hover { border-color: var(--gold); }
+@media (max-width: 640px) {
+  .sw-status-card { grid-template-columns: auto 1fr; }
+  .sw-manage-btn  { grid-column: 1 / -1; }
+}
+
+/* ── Giving metrics card ────────────────────────────────────────── */
+.sw-metrics-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--paper);
+  box-shadow: var(--soft-shadow);
+}
+.sw-metrics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: 1rem 1.15rem .75rem;
+  border-bottom: 1px solid var(--line);
+}
+.sw-section-eyebrow {
+  display: block;
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: .1rem;
+}
+.sw-section-heading {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: var(--deep);
+  line-height: 1;
+}
+.sw-metrics-actions { display: flex; align-items: center; gap: .4rem; }
+.sw-year-select {
+  height: 32px;
+  padding: 0 .5rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  color: var(--deep);
+  font: inherit;
+  font-size: .8rem;
+  cursor: pointer;
+}
+.sw-refresh-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  color: var(--stone);
+  cursor: pointer;
+}
+.sw-refresh-btn svg { width: 13px; height: 13px; }
+.sw-refresh-btn:hover { border-color: var(--gold); color: var(--gold); }
+.sw-metrics-body { padding: 1rem 1.15rem; }
+.sw-loading { color: var(--muted); font-size: .85rem; }
+.sw-metrics-footer {
+  padding: .6rem 1.15rem;
+  border-top: 1px solid var(--line);
+  background: rgba(246,241,232,.5);
+}
+.sw-full-report-link {
+  color: var(--gold);
+  font-size: .78rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.sw-full-report-link:hover { text-decoration: underline; }
+
+/* ── KPI grid (giving metrics body) ────────────────────────────── */
+.sw-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: .6rem;
+  margin-bottom: .9rem;
+}
+.sw-kpi-card {
+  display: grid;
+  gap: .15rem;
+  padding: .7rem .8rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 1px 3px rgba(6,21,34,.04);
+}
+.sw-kpi-label {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sw-kpi-value {
+  font-family: var(--serif);
+  font-size: 1.45rem;
+  font-weight: 500;
+  color: var(--deep);
+  line-height: 1;
+}
+.sw-kpi-sub {
+  font-size: .72rem;
+  color: var(--stone);
+  line-height: 1.3;
+}
+.sw-yoy { font-size: .72rem; font-weight: 700; }
+.sw-yoy-up   { color: #2e6b4a; }
+.sw-yoy-down { color: #8a2929; }
+
+/* ── Progress bars (metrics body) ──────────────────────────────── */
+.sw-progress-block { margin-bottom: .9rem; }
+.sw-progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: .25rem;
+}
+.sw-progress-label span { font-size: .75rem; color: var(--stone); }
+.sw-progress-label strong { font-size: .82rem; font-weight: 700; color: var(--deep); }
+.sw-progress-label--runrate { margin-top: .6rem; }
+.sw-progress-track {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(6,21,34,.08);
+  overflow: hidden;
+}
+.sw-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--gold), #d4ab58);
+  transition: width .6s ease;
+}
+.sw-progress-fill--dim { opacity: .4; }
+
+/* ── Fund breakdown table (metrics body) ────────────────────────── */
+.sw-fund-table-wrap { margin-top: .5rem; overflow-x: auto; }
+.sw-fund-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.sw-fund-table thead th {
+  padding: .3rem .4rem;
+  text-align: left;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.sw-fund-row { border-bottom: 1px solid rgba(111,106,96,.12); }
+.sw-fund-row:last-child { border-bottom: none; }
+.sw-fund-name { padding: .5rem .4rem; color: var(--deep); font-weight: 500; }
+.sw-fund-total { padding: .5rem .4rem; text-align: right; color: var(--deep); font-family: var(--serif); font-size: .98rem; }
+.sw-fund-pct {
+  padding: .5rem .4rem;
+  text-align: right;
+  color: var(--stone);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .2rem;
+}
+.sw-fund-bar {
+  display: block;
+  width: 60px;
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(6,21,34,.1);
+  overflow: hidden;
+}
+.sw-fund-bar i {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+  border-radius: inherit;
+}
+
+/* ── Upgrade nudge (non-subscriber metrics state) ───────────────── */
+.sw-upgrade-nudge {
+  display: grid;
+  gap: .75rem;
+  padding: 1.25rem;
+  border: 1px dashed rgba(201,162,91,.34);
+  border-radius: 8px;
+  background: rgba(246,241,232,.6);
+  text-align: center;
+}
+.sw-upgrade-nudge p { color: var(--stone); font-size: .85rem; margin: 0; }
+.sw-upgrade-btn {
+  display: inline-block;
+  padding: .55rem 1.25rem;
+  border-radius: 7px;
+  background: var(--gold);
+  color: var(--deep);
+  font: 700 .85rem var(--sans);
+  text-decoration: none;
+  transition: background .15s;
+}
+.sw-upgrade-btn:hover { background: #a97c25; color: white; }
+
+/* ── Upsell CTA block ────────────────────────────────────────────── */
+.sw-upsell-cta {
+  display: grid;
+  gap: .65rem;
+  padding: 1.15rem 1.25rem;
+  border: 1px solid rgba(201,162,91,.3);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(201,162,91,.09), rgba(255,253,248,.7));
+  margin-top: .85rem;
+  text-align: center;
+}
+.sw-upsell-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: .3rem;
+}
+.sw-upsell-price strong { font-family: var(--serif); font-size: 2.4rem; font-weight: 500; color: var(--deep); line-height: 1; }
+.sw-upsell-price span { color: var(--stone); font-size: .85rem; }
+.sw-subscribe-btn {
+  display: block;
+  width: 100%;
+  padding: .85rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--deep);
+  color: var(--cream);
+  font: 700 .92rem var(--sans);
+  cursor: pointer;
+  letter-spacing: .02em;
+  transition: background .15s, transform .1s;
+}
+.sw-subscribe-btn:hover { background: #0d2030; transform: translateY(-1px); }
+.sw-upsell-note { color: var(--muted); font-size: .74rem; margin: 0; }
+
+/* ── Meetings pane header ────────────────────────────────────────── */
+.sw-meetings-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+.sw-new-packet-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  height: 36px;
+  padding: 0 .9rem;
+  border: 1px solid rgba(201,162,91,.36);
+  border-radius: 7px;
+  background: var(--deep);
+  color: var(--cream);
+  font: 600 .8rem var(--sans);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s;
+}
+.sw-new-packet-btn svg { width: 13px; height: 13px; }
+.sw-new-packet-btn:hover { background: #0d2030; }
+
+/* ── Meetings list ───────────────────────────────────────────────── */
+.sw-meetings-list { display: grid; gap: 0; }
+.sw-meeting-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: .75rem 1rem;
+  align-items: center;
+  padding: .9rem 0;
+  border-bottom: 1px solid rgba(201,162,91,.15);
+}
+.sw-meeting-row:last-child { border-bottom: none; }
+.sw-meeting-title { display: block; color: var(--deep); font-family: var(--serif); font-size: 1.15rem; font-weight: 500; line-height: 1.1; margin-bottom: .2rem; }
+.sw-meeting-meta { font-size: .78rem; color: var(--stone); }
+.sw-meeting-actions { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; justify-content: flex-end; }
+.sw-action-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 .6rem;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: white;
+  color: var(--deep);
+  font: 600 .74rem var(--sans);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color .12s;
+}
+.sw-action-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── Status pills ────────────────────────────────────────────────── */
+.sw-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 .5rem;
+  border-radius: 999px;
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.sw-pill-draft     { background: rgba(111,106,96,.12); color: var(--stone); }
+.sw-pill-ready     { background: rgba(46,107,74,.12);  color: #2e6b4a; }
+.sw-pill-generated { background: rgba(201,162,91,.16); color: #745516; }
+.sw-pill-archived  { background: rgba(111,106,96,.08); color: var(--muted); }
+
+/* ── Empty meetings state ────────────────────────────────────────── */
+.sw-meetings-empty {
+  display: grid;
+  gap: .65rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  border: 1px dashed rgba(201,162,91,.32);
+  border-radius: 10px;
+  background: rgba(255,253,248,.7);
+  place-items: center;
+}
+.sw-meetings-empty-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(201,162,91,.28);
+  background: rgba(201,162,91,.08);
+  color: var(--gold);
+}
+.sw-meetings-empty-icon svg { width: 22px; height: 22px; }
+.sw-meetings-empty strong { font-family: var(--serif); font-size: 1.35rem; font-weight: 500; color: var(--deep); }
+.sw-meetings-empty span { max-width: 34ch; color: var(--stone); font-size: .85rem; line-height: 1.55; }
