@@ -787,7 +787,7 @@ export async function handleDonorDashboard(request, env) {
     // or if the donor hasn't set a home parish yet.
     const pledgeSyncParish = updated.defaultParishId || "";
     const pledgeSyncAmount = Number(updated.pledgeAmountCents || 0);
-    if (d1(env) && pledgeSyncParish.trim() && pledgeSyncAmount > 0) {
+    if (d1(env) && pledgeSyncParish.trim()) {
       const pledgeSyncYear = parseInt(updated.pledgeYear || new Date().getFullYear(), 10);
       await env.DB.prepare(`
         INSERT INTO household_pledges (donor_email, parish_id, fiscal_year, target_amount_cents)

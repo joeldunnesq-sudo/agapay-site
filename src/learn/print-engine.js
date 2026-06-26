@@ -873,8 +873,8 @@ function drawList(state, section) {
     const combined = [item.label, item.detail].filter(Boolean).join(" · ");
     const lines    = wrapText(combined, state.fonts.sans, 9, LETTER[0] - MARGIN * 2 - 22);
     fitPage(state, lines.length * 12 + 12);
-    // Gold bullet diamond
-    state.page.drawText("◆", { x: MARGIN + 2, y: state.y, size: 6, font: state.fonts.sansBold, color: GOLD });
+    // Gold bullet bullet
+    state.page.drawText("•", { x: MARGIN + 2, y: state.y, size: 6, font: state.fonts.sansBold, color: GOLD });
     state.y = drawTextLines(state.page, lines, MARGIN + 16, state.y,
       { font: state.fonts.sans, size: 9, color: INK, leading: 12 }) - 4;
   });

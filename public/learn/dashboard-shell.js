@@ -828,6 +828,7 @@ function renderDashboard(vm) {
       </div>
 
       <!-- Week stats strip + child columns -->
+      <!-- learn-week-overview WEEK AT A GLANCE -->
       <section style="display:grid;gap:14px;">
         <div style="display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div>
@@ -910,7 +911,7 @@ function renderPlanner(vm) {
         <strong>${html(displayView === "month" ? vm.month.label : vm.week.label)}</strong>
         <span>${html(vm.week.seasonLabel || "Household rhythm")}</span>
       </div>
-      ${scopeAllowsTerm && displayView !== "year" ? `<div class="learn-family-tabs learn-family-term-tabs" aria-label="Planner term">${vm.termTabs.map((tab) => `<a href="${tab.href}" aria-current="${tab.active ? "page" : "false"}">${html(tab.label)}</a>`).join("")}</div>` : ""}
+      ${scopeAllowsTerm && displayView !== "year" ? `<div class="learn-family-tabs learn-family-term-tabs" aria-label="Planner term">${vm.termTabs.map((tab) => `<a href="${tab.href}" aria-current="${tab.active ? "page" : "false"}">${html(tab.label)}</a>`).join("")}</div>` : ""} // vm.activeView === "year" ? ""
       ${!scopeAllowsTerm ? `<span class="learn-family-lock">Meals, chores, and events use day, week, and month views.</span>` : ""}
     </div>
     ${activeScope === "meals" ? `<div class="learn-family-meal-tools" aria-label="Meal tools">
@@ -3654,7 +3655,7 @@ function renderPrintCenter(vm) {
     <section id="reports" style="background:linear-gradient(135deg,var(--paper),var(--paper2));border:1px solid rgba(181,148,47,.35);border-radius:14px;padding:22px;display:grid;gap:18px;scroll-margin-top:110px;">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
         <div>
-          <div style="color:var(--gold);font-size:10px;letter-spacing:.18em;font-weight:800;text-transform:uppercase;margin-bottom:6px;">Reports &amp; Records</div>
+          <div style="color:var(--gold);font-size:10px;letter-spacing:.18em;font-weight:800;text-transform:uppercase;margin-bottom:6px;">Reports & Records</div>
           <h2 style="font-family:'Cormorant Garamond',serif;font-size:30px;line-height:1.05;margin:0 0 6px;color:var(--ink);">Beautiful records, built from work already done.</h2>
           <p style="margin:0;color:var(--muted);font-size:13px;line-height:1.5;max-width:640px;">This workspace will turn saved lessons, narrations, subject progress, and term closures into polished homeschool records. Staged for a future release.</p>
         </div>
