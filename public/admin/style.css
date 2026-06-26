@@ -2279,3 +2279,18 @@
     .badge.trialing        { background: #fff9ec; color: #7a5814; border-color: rgba(196,150,62,0.28); }
     .badge.past_due        { background: #fdf2f2; color: #8a2828; border-color: rgba(138,40,40,0.22); }
     .badge.free_forever    { background: #edf6ef; color: #2a5936; border-color: rgba(42,89,54,0.22); }
+
+/* ─────────────────────────────────────────
+   ACTIVITY FEED
+───────────────────────────────────────── */
+.activity-feed { display: flex; flex-direction: column; }
+.activity-entry { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.activity-entry:last-child { border-bottom: none; }
+.activity-icon { width: 18px; height: 18px; flex-shrink: 0; color: var(--text-muted); }
+.activity-icon svg { width: 18px; height: 18px; }
+.activity-body { flex: 1; min-width: 0; }
+.activity-label { font-size: .78rem; font-weight: 600; }
+.activity-detail { font-size: .75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.activity-sub { font-size: .72rem; color: var(--text-muted); }
+.activity-time { font-size: .72rem; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
+.activity-feed-empty { font-size: .8rem; color: var(--text-muted); padding: 12px 0; }
