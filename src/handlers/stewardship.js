@@ -2118,6 +2118,46 @@ async function updateStewardshipStatus(env, parishId, data) {
       JSON.stringify({ parishId })
     );
   }
+
+  // Bundled Stewardship Suite: sync D1 feature flag with subscription status
+  if (hasProductionStore(env)) {
+    const isActive = ["active", "trialing"].includes(data.status);
+    if (isActive) {
+      await env.DB.prepare(`
+        INSERT INTO parish_stewardship_settings (parish_id, has_stewardship_suite, stripe_subscription_item_id)
+        VALUES (?, 1, ?)
+        ON CONFLICT(parish_id) DO UPDATE SET
+          has_stewardship_suite = 1,
+          stripe_subscription_item_id = excluded.stripe_subscription_item_id,
+          updated_at = datetime('now')
+      `).bind(parishId, data.stripeSubscriptionItemId || null).run().catch(() => {});
+
+      // Seed default giving funds (INSERT OR IGNORE — safe to call repeatedly)
+      const defaults = [
+        { name: "General Stewardship",    code: "stewardship", is_default: 1, sort_order: 0 },
+        { name: "Candles / Vigil Lights", code: "candle",      is_default: 0, sort_order: 1 },
+        { name: "Building Fund",          code: "building",    is_default: 0, sort_order: 2 },
+        { name: "Poor Box / Alms",        code: "alms",        is_default: 0, sort_order: 3 },
+        { name: "Campaign / Appeal",      code: "campaign",    is_default: 0, sort_order: 4 },
+        { name: "Iconography Fund",       code: "iconography", is_default: 0, sort_order: 5 },
+        { name: "Memorial / Panakhida",   code: "memorial",    is_default: 0, sort_order: 6 },
+      ];
+      await env.DB.batch(
+        defaults.map(f =>
+          env.DB.prepare(
+            `INSERT OR IGNORE INTO giving_funds (parish_id, name, code, is_default, sort_order)
+             VALUES (?, ?, ?, ?, ?)`
+          ).bind(parishId, f.name, f.code, f.is_default, f.sort_order)
+        )
+      ).catch(() => {});
+    } else if (data.status === "canceled") {
+      await env.DB.prepare(`
+        UPDATE parish_stewardship_settings
+        SET has_stewardship_suite = 0, updated_at = datetime('now')
+        WHERE parish_id = ?
+      `).bind(parishId).run().catch(() => {});
+    }
+  }
 }
 
 async function loadRegistrationByStripeCustomer(env, customerId) {
