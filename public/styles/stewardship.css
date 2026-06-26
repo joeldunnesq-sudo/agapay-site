@@ -430,15 +430,16 @@
 }
 .sw-metrics-actions { display: flex; align-items: center; gap: .4rem; }
 .sw-year-select {
-  height: 32px;
-  padding: 0 .5rem;
+  height: 28px;
+  padding: 0 .35rem;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: white;
   color: var(--deep);
   font: inherit;
-  font-size: .8rem;
+  font-size: .75rem;
   cursor: pointer;
+  max-width: 72px;
 }
 .sw-refresh-btn {
   display: grid;
@@ -1048,8 +1049,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.4rem;
   padding: 0.65rem 1.1rem 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .sw-tool-card-title {
@@ -1060,6 +1063,10 @@
   font-weight: 600;
   color: var(--deep);
   line-height: 1.1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 /* When title is inside header-row, remove its own padding */
 .sw-tool-card-header-row .sw-tool-card-title {
@@ -1069,8 +1076,9 @@
 .sw-tool-card-actions {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
   flex-shrink: 0;
+  margin-right: -0.1rem;
 }
 
 .sw-tool-card-desc {
