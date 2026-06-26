@@ -700,7 +700,7 @@ function timeLabel(value = "") {
 }
 
 function eventsForDate(vm, date) {
-  return (vm.familyPlanning?.events || []).filter((event) => event.date === date);
+  return expandFamilyEvents(vm.familyPlanning?.events || [], [date]).get(date) || [];
 }
 
 function mealForDate(vm, date) {
@@ -752,9 +752,15 @@ function renderDashboardDesignedLessons(vm) {
 function renderDashboardFamilyCards(vm) {
   const date = vm.todayInChurch?.civilDate || "";
   const todayEvents = eventsForDate(vm, date);
-  const upcomingEvents = (vm.familyPlanning?.events || [])
-    .filter((event) => event.date && event.date >= date)
-    .sort((a, b) => `${a.date} ${a.startTime || ""}`.localeCompare(`${b.date} ${b.startTime || ""}`))
+  const upcomingDates = nextSevenDates(date).concat(Array.from({ length: 84 }, (_, index) => {
+    const parsed = new Date(`${date}T00:00:00.000Z`);
+    parsed.setUTCDate(parsed.getUTCDate() + index + 8);
+    return parsed.toISOString().slice(0, 10);
+  }));
+  const upcomingEvents = [...expandFamilyEvents(vm.familyPlanning?.events || [], upcomingDates).entries()]
+    .flatMap(([eventDate, events]) => events.map((event) => ({ ...event, occurrenceDate: eventDate })))
+    .filter((event) => event.occurrenceDate >= date)
+    .sort((a, b) => `${a.occurrenceDate} ${a.startTime || ""}`.localeCompare(`${b.occurrenceDate} ${b.startTime || ""}`))
     .slice(0, 4);
   const meal = mealForDate(vm, date);
   const chores = choresForDate(vm, date).slice(0, 6);
@@ -764,7 +770,7 @@ function renderDashboardFamilyCards(vm) {
     <div class="learn-dashboard-family-grid">
       <section class="learn-dashboard-family-card">
         <div><small>APPOINTMENTS</small><h3>${html(appointmentTitle)}</h3></div>
-        ${appointmentItems.length ? `<div class="learn-dashboard-mini-list">${appointmentItems.map((event) => `<span><strong>${html(event.title || "Appointment")}</strong><small>${html(event.date === date ? timeLabel(event.startTime) : `${event.date} · ${timeLabel(event.startTime)}`)}${event.location ? ` · ${html(event.location)}` : ""}</small></span>`).join("")}</div>` : emptyState("Add appointments in Planner > Events.")}
+        ${appointmentItems.length ? `<div class="learn-dashboard-mini-list">${appointmentItems.map((event) => { const eventDate = event.occurrenceDate || event.date; return `<span><strong>${html(event.title || "Appointment")}</strong><small>${html(eventDate === date ? timeLabel(event.startTime) : `${eventDate} · ${timeLabel(event.startTime)}`)}${event.location ? ` · ${html(event.location)}` : ""}${eventRecurrence(event.recurrence) !== "none" ? ` · ${html(eventRecurrenceLabel(event.recurrence))}` : ""}</small></span>`; }).join("")}</div>` : emptyState("Add appointments in Planner > Events.")}
       </section>
       <section class="learn-dashboard-family-card">
         <div><small>MEALS</small><h3>Meal Plan</h3></div>
@@ -1220,6 +1226,60 @@ function dayOfMonthOptions() {
   return [{ value: "", label: "Choose day" }, ...Array.from({ length: 31 }, (_, index) => ({ value: String(index + 1), label: `${index + 1}` }))];
 }
 
+const eventRecurrenceOptions = [
+  { value: "none", label: "Does not repeat" },
+  { value: "weekly", label: "Weekly" },
+  { value: "biweekly", label: "Bi-weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "quarterly", label: "Quarterly" },
+  { value: "yearly", label: "Yearly" }
+];
+
+function eventRecurrence(value = "") {
+  const raw = String(value || "").toLowerCase();
+  return ["weekly", "biweekly", "monthly", "quarterly", "yearly"].includes(raw) ? raw : "none";
+}
+
+function eventRecurrenceLabel(value = "") {
+  return eventRecurrenceOptions.find((option) => option.value === eventRecurrence(value))?.label || "Does not repeat";
+}
+
+function isoDateParts(value = "") {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
+}
+
+function eventOccursOnDate(event = {}, date = "") {
+  if (!event.date || !date || date < event.date) return false;
+  const recurrence = eventRecurrence(event.recurrence);
+  if (recurrence === "none") return event.date === date;
+  const start = new Date(`${event.date}T00:00:00.000Z`);
+  const target = new Date(`${date}T00:00:00.000Z`);
+  const diffDays = Math.round((target - start) / 86400000);
+  if (diffDays < 0) return false;
+  if (recurrence === "weekly") return diffDays % 7 === 0;
+  if (recurrence === "biweekly") return diffDays % 14 === 0;
+  const startParts = isoDateParts(event.date);
+  const targetParts = isoDateParts(date);
+  if (!startParts || !targetParts || startParts.day !== targetParts.day) return false;
+  const monthDiff = (targetParts.year - startParts.year) * 12 + (targetParts.month - startParts.month);
+  if (recurrence === "monthly") return monthDiff >= 0;
+  if (recurrence === "quarterly") return monthDiff >= 0 && monthDiff % 3 === 0;
+  return recurrence === "yearly" && startParts.month === targetParts.month;
+}
+
+function expandFamilyEvents(events = [], dates = []) {
+  const byDate = new Map();
+  dates.filter(Boolean).forEach((date) => {
+    const matches = events
+      .filter((event) => eventOccursOnDate(event, date))
+      .map((event) => ({ ...event, occurrenceDate: date }));
+    if (matches.length) byDate.set(date, matches);
+  });
+  return byDate;
+}
+
 function choreSetupRow(chore = {}, index = 0, planning = {}) {
   const cadence = choreCadence(chore);
   const assignees = choreAssigneeOptions(planning);
@@ -1273,11 +1333,7 @@ function renderFamilyPlannerScopeLegacy(vm, scope) {
   const recipes = planning.recipes || [];
   const groceries = planning.groceryItems || [];
   const chores = planning.chores || [];
-  const eventsByDate = new Map();
-  (planning.events || []).forEach((event) => {
-    if (!eventsByDate.has(event.date)) eventsByDate.set(event.date, []);
-    eventsByDate.get(event.date).push(event);
-  });
+  const eventsByDate = expandFamilyEvents(planning.events || [], dates);
   const titleMap = {
     meals: ["Weekly Meals", "Plan one week at a time with fasting guidance beside the family calendar.", "♨"],
     chores: ["Chores", "Keep practical life visible without crowding the school lesson plan.", "✓"],
@@ -1351,11 +1407,8 @@ function familyPlannerModel(vm) {
     isFastDay: Boolean(day.isFastDay),
     meal: day.meal || mealByDate.get(day.date) || null
   }));
-  const eventsByDate = new Map();
-  (planning.events || []).forEach((event) => {
-    if (!eventsByDate.has(event.date)) eventsByDate.set(event.date, []);
-    eventsByDate.get(event.date).push(event);
-  });
+  const calendarDates = [...new Set([...dates, ...monthDays.map((day) => day.date)].filter(Boolean))];
+  const eventsByDate = expandFamilyEvents(planning.events || [], calendarDates);
   const weekDays = dates.map((date) => {
     const label = plannerDayLabel(date);
     const liturgical = (vm.week.days || []).find((day) => day.date === date) || {};
@@ -1566,13 +1619,13 @@ function renderEventsScope(model, displayView) {
   const selectedDate = new URLSearchParams(window.location.search).get("date") || model.weekDays[0]?.date || "";
   const days = displayView === "day" ? model.weekDays.filter((day) => day.date === selectedDate) : model.weekDays;
   if (displayView === "month") return `<div class="learn-family-month-layout">${renderFamilyMonthOverview(model, "events")} ${renderFeastsPanel(model, "month")}</div>`;
-  return `<div class="learn-family-prototype">${displayView === "day" ? renderPlannerDaySelector(model, selectedDate) : ""}<div class="learn-family-events-list">${days.map((day) => { const events = model.eventsByDate.get(day.date) || []; return `<section class="learn-family-date-section"><header><span><small>${html(day.weekday || day.weekdayLong)}</small><strong>${html(day.shortDate || day.short || day.date)}</strong><em>${html(day.feast || "")}</em></span><button type="button" data-event-open data-date="${html(day.date)}">+ Add event</button></header>${events.length ? events.map((event) => `<button type="button" class="learn-family-event-row" data-event-open data-event-id="${html(event.id || "")}" data-date="${html(day.date)}" data-title="${html(event.title || "")}" data-time="${html(event.startTime || "")}" data-location="${html(event.location || "")}" data-notes="${html(event.notes || "")}" data-type="${html(event.eventType || "")}"><span>${html(event.startTime || "—")}</span><strong>${html(event.title)}</strong><small>${html(event.location || event.eventType || "Family event")}</small></button>`).join("") : `<p class="learn-family-empty-line">No events planned.</p>`}</section>`; }).join("")}</div></div>`;
+  return `<div class="learn-family-prototype">${displayView === "day" ? renderPlannerDaySelector(model, selectedDate) : ""}<div class="learn-family-events-list">${days.map((day) => { const events = model.eventsByDate.get(day.date) || []; return `<section class="learn-family-date-section"><header><span><small>${html(day.weekday || day.weekdayLong)}</small><strong>${html(day.shortDate || day.short || day.date)}</strong><em>${html(day.feast || "")}</em></span><button type="button" data-event-open data-date="${html(day.date)}">+ Add event</button></header>${events.length ? events.map((event) => `<button type="button" class="learn-family-event-row" data-event-open data-event-id="${html(event.id || "")}" data-date="${html(event.date || day.date)}" data-title="${html(event.title || "")}" data-time="${html(event.startTime || "")}" data-location="${html(event.location || "")}" data-notes="${html(event.notes || "")}" data-type="${html(event.eventType || "")}" data-recurrence="${html(event.recurrence || "none")}"><span>${html(event.startTime || "—")}</span><strong>${html(event.title)}</strong><small>${html([event.location || event.eventType || "Family event", eventRecurrence(event.recurrence) !== "none" ? eventRecurrenceLabel(event.recurrence) : ""].filter(Boolean).join(" · "))}</small></button>`).join("") : `<p class="learn-family-empty-line">No events planned.</p>`}</section>`; }).join("")}</div></div>`;
 }
 
 function renderFamilyPlannerModals(model) {
   return `<div class="learn-family-modal" data-family-modal="meal" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Meal Picker</small><h2>Choose a dish</h2><p data-meal-modal-context>Pick a recipe or type a dish name.</p><input data-meal-custom-input placeholder="Type a dish name..."><div class="learn-family-picker-list">${model.recipes.length ? model.recipes.map((recipe) => `<button type="button" data-meal-pick="${html(recipe.title)}"><strong>${html(recipe.title)}</strong><span>${html(recipe.fastingType || "Any day")} · ${html(recipe.category || "Recipe")}</span></button>`).join("") : `<span class="learn-family-empty-line">No recipes yet. You can still type a dish above.</span>`}</div><div class="learn-family-modal-actions"><button type="button" data-meal-clear>Clear meal</button><button type="button" data-meal-save>Save meal</button></div></div></div>
   <div class="learn-family-modal" data-family-modal="recipe" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Recipe</small><h2>Save a family recipe</h2><div class="learn-family-modal-grid">${setupInput("Recipe name", "modalRecipe.title")}${setupSelect("Fasting fit", "modalRecipe.fastingType", "", ["free", "fish", "oilwine", "strict"])}${setupInput("Category", "modalRecipe.category")}${setupInput("Source URL", "modalRecipe.sourceUrl")}<label>Ingredients<textarea name="modalRecipe.ingredients" rows="4"></textarea></label><label>Instructions<textarea name="modalRecipe.instructions" rows="4"></textarea></label></div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-recipe-save>Save recipe</button></div></div></div>
-  <div class="learn-family-modal" data-family-modal="event" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Calendar</small><h2>Add to calendar</h2><div class="learn-family-modal-grid">${setupInput("Title", "modalEvent.title")}${setupSelect("Type", "modalEvent.eventType", "", ["Appointment", "Field Trip", "Extracurricular", "Name Day", "Family"])}${setupInput("Date", "modalEvent.date", "", { type: "date" })}${setupInput("Time", "modalEvent.startTime", "", { type: "time" })}${setupInput("Location", "modalEvent.location")}<label>Notes<textarea name="modalEvent.notes" rows="3"></textarea></label></div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-event-save>Save event</button></div></div></div>
+  <div class="learn-family-modal" data-family-modal="event" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Calendar</small><h2>Add to calendar</h2><div class="learn-family-modal-grid">${setupInput("Title", "modalEvent.title")}${setupSelect("Type", "modalEvent.eventType", "", ["Appointment", "Field Trip", "Extracurricular", "Name Day", "Family"])}${setupInput("Date", "modalEvent.date", "", { type: "date" })}${setupInput("Time", "modalEvent.startTime", "", { type: "time" })}${setupSelect("Repeats", "modalEvent.recurrence", "none", eventRecurrenceOptions)}${setupInput("Location", "modalEvent.location")}<label>Notes<textarea name="modalEvent.notes" rows="3"></textarea></label></div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-event-save>Save event</button></div></div></div>
   <div class="learn-family-modal" data-family-modal="chore" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Chore Rhythm</small><h2>Add chore</h2><div class="learn-family-modal-grid">${setupInput("Chore", "modalChore.title")}${setupInput("Assigned to", "modalChore.assignee")}${setupSelect("Type", "modalChore.cadence", "weekly", [{ value: "daily", label: "Daily" }, { value: "weekly", label: "Weekly" }, { value: "monthly", label: "Monthly" }, { value: "quarterly", label: "Quarterly" }])}${setupSelect("Weekly day", "modalChore.day", "", ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])}${setupSelect("Monthly day", "modalChore.dayOfMonth", "", dayOfMonthOptions())}${setupSelect("Quarter month", "modalChore.quarterMonth", "1", [{ value: "1", label: "1st month" }, { value: "2", label: "2nd month" }, { value: "3", label: "3rd month" }])}${setupSelect("Time", "modalChore.timeOfDay", "Anytime", ["Anytime", "Morning", "Afternoon", "Evening"])}${setupInput("Notes", "modalChore.notes")}</div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-chore-save>Save chore</button></div></div></div>`;
 }
 
@@ -3693,7 +3746,7 @@ function setupExperience(method = "Unsure", groupingMode = "forms") {
 }
 
 function familyEventSetupRow(event = {}) {
-  return `<div data-setup-row="familyEvents" data-id="${html(event.id || "")}" class="learn-family-row learn-event-row">${setupInput("Event", "title", event.title || "")}${setupSelect("Type", "eventType", event.eventType || "appointment", [{ value: "appointment", label: "Appointment" }, { value: "field-trip", label: "Field trip" }, { value: "extracurricular", label: "Extracurricular" }, { value: "family", label: "Family" }, { value: "other", label: "Other" }])}${setupInput("Date", "date", event.date || "", { type: "date" })}${setupInput("Starts", "startTime", event.startTime || "", { type: "time" })}${setupInput("Location", "location", event.location || "")}${setupInput("Notes", "notes", event.notes || "")}${setupRemoveButton()}</div>`;
+  return `<div data-setup-row="familyEvents" data-id="${html(event.id || "")}" class="learn-family-row learn-event-row">${setupInput("Event", "title", event.title || "")}${setupSelect("Type", "eventType", event.eventType || "appointment", [{ value: "appointment", label: "Appointment" }, { value: "field-trip", label: "Field trip" }, { value: "extracurricular", label: "Extracurricular" }, { value: "family", label: "Family" }, { value: "other", label: "Other" }])}${setupInput("Date", "date", event.date || "", { type: "date" })}${setupInput("Starts", "startTime", event.startTime || "", { type: "time" })}${setupSelect("Repeats", "recurrence", event.recurrence || "none", eventRecurrenceOptions)}${setupInput("Location", "location", event.location || "")}${setupInput("Notes", "notes", event.notes || "")}${setupRemoveButton()}</div>`;
 }
 
 function recipeSetupRow(recipe = {}) {
@@ -4071,6 +4124,22 @@ async function apiPost(path, body) {
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || payload.error) throw new Error(payload.error || `Request failed with ${response.status}`);
   return payload;
+}
+
+async function syncLearnGoogleCalendar(extraEvents = [], statusEl = null) {
+  if (!learnGoogleCalendarStatus.configured || !learnGoogleCalendarStatus.connected) return null;
+  try {
+    const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
+    const result = await apiPost(`/api/learn/google-calendar/sync?calendar=${encodeURIComponent(calendar)}&returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`, { extraEvents });
+    if (statusEl && result?.syncedCount) {
+      statusEl.textContent = `${statusEl.textContent} Google Calendar synced ${result.syncedCount} item${result.syncedCount === 1 ? "" : "s"}.`;
+    }
+    return result;
+  } catch (error) {
+    console.warn("Google Calendar sync skipped:", error);
+    if (statusEl) statusEl.textContent = `${statusEl.textContent} Google Calendar sync needs attention.`;
+    return null;
+  }
 }
 
 function localIsoDate() {
@@ -4494,7 +4563,7 @@ function setupPayloadFromForm(form) {
       events: collectRows(form, "familyEvents", (row) => {
         const title = rowValue(row, "title");
         if (!title || !rowValue(row, "date")) return null;
-        return { id: row.dataset.id || "", title, eventType: rowValue(row, "eventType"), date: rowValue(row, "date"), startTime: rowValue(row, "startTime"), location: rowValue(row, "location"), notes: rowValue(row, "notes") };
+        return { id: row.dataset.id || "", title, eventType: rowValue(row, "eventType"), date: rowValue(row, "date"), startTime: rowValue(row, "startTime"), recurrence: rowValue(row, "recurrence") || "none", location: rowValue(row, "location"), notes: rowValue(row, "notes") };
       }),
       meals: collectRows(form, "meals", (row) => ({ id: row.dataset.id || "", date: rowValue(row, "date"), breakfast: rowValue(row, "breakfast"), lunch: rowValue(row, "lunch"), dinner: rowValue(row, "dinner") })).filter((meal) => meal.date),
       recipes: collectRows(form, "recipes", (row) => {
@@ -4862,6 +4931,7 @@ function wireWeeklyAssignmentBoard(vm) {
       };
     });
     localStorage.setItem(storageKey, JSON.stringify(state));
+    scheduleDesignedWeekCalendarSync();
   };
   const designedWeekPayload = () => {
     const itemLookup = new Map((vm.week?.weeklyAssignmentItems || []).map((item) => [item.id, item]));
@@ -4891,6 +4961,23 @@ function wireWeeklyAssignmentBoard(vm) {
       }),
       unassigned: [...(board.querySelector('[data-week-assignment-zone="pool"]')?.querySelectorAll("[data-week-assignment-card]") || [])].map(assignmentForCard)
     };
+  };
+  const designedWeekCalendarEvents = () => designedWeekPayload().days.flatMap((day) => (day.assignments || []).map((assignment, index) => ({
+    type: "designed-lesson",
+    title: assignment.title || "Lesson",
+    date: day.date,
+    allDay: false,
+    durationMinutes: 30,
+    description: [day.weekday, assignment.sub, assignment.note].filter(Boolean).join("\n"),
+    startTime: `${String(9 + Math.min(index, 6)).padStart(2, "0")}:00`
+  })));
+  let designedWeekSyncTimer = null;
+  const scheduleDesignedWeekCalendarSync = () => {
+    if (!learnGoogleCalendarStatus.configured || !learnGoogleCalendarStatus.connected) return;
+    clearTimeout(designedWeekSyncTimer);
+    designedWeekSyncTimer = setTimeout(() => {
+      syncLearnGoogleCalendar(designedWeekCalendarEvents());
+    }, 900);
   };
   const restore = () => {
     const state = readState();
@@ -5123,6 +5210,7 @@ function wirePlanner(vm) {
       setModalValue("modalEvent.eventType", eventOpen.dataset.type || "Family");
       setModalValue("modalEvent.date", eventOpen.dataset.date || "");
       setModalValue("modalEvent.startTime", eventOpen.dataset.time || "");
+      setModalValue("modalEvent.recurrence", eventOpen.dataset.recurrence || "none");
       setModalValue("modalEvent.location", eventOpen.dataset.location || "");
       setModalValue("modalEvent.notes", eventOpen.dataset.notes || "");
       openFamilyModal("event");
@@ -5135,6 +5223,7 @@ function wirePlanner(vm) {
         eventType: getModalValue("modalEvent.eventType"),
         date: getModalValue("modalEvent.date"),
         startTime: getModalValue("modalEvent.startTime"),
+        recurrence: getModalValue("modalEvent.recurrence") || "none",
         location: getModalValue("modalEvent.location"),
         notes: getModalValue("modalEvent.notes")
       };
@@ -5221,6 +5310,7 @@ function wirePlanner(vm) {
       const saved = await apiPost("/api/learn/family-planning", familyPlanningPayloadFromForm(familyForm));
       status.textContent = `Family planner saved${saved.savedAt ? ` at ${new Date(saved.savedAt).toLocaleTimeString()}` : ""}.`;
       status.style.color = "var(--gold)";
+      await syncLearnGoogleCalendar([], status);
       // Re-render the planner from the returned payload so calendar-type changes
       // and other data-driven updates are immediately reflected without a full reload.
       if (saved.planner) {
@@ -5270,6 +5360,7 @@ function wirePlanner(vm) {
       try {
         const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
         const saved = await apiPost(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}`, { action: "reschedule", blockId, fromDate, toDate });
+        await syncLearnGoogleCalendar();
         if (saved.planner) {
           const updatedVm = toPlannerViewModel({ ok: true, planner: saved.planner });
           root.innerHTML = renderPlanner(updatedVm);

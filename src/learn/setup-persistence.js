@@ -671,7 +671,19 @@ function normalizeSetupPayload(payload = {}, identity) {
       normalizedHousehold.fatherNameDay && normalizedHousehold.fatherName ? { id: "name_day_father", personName: normalizedHousehold.fatherName, relationship: "father", monthDay: normalizedHousehold.fatherNameDay.slice(-5) } : null,
       ...children.map((child) => child.nameDay ? { id: `name_day_${child.id}`, personId: child.id, personName: child.firstName, relationship: "child", monthDay: child.nameDay.slice(-5) } : null)
     ].filter(Boolean),
-    events: list(rawFamilyPlanning.events).slice(0, 250).map((event, index) => ({ id: text(event.id, stableId("event", event.title, index)), title: text(event.title, "Event"), eventType: text(event.eventType, "appointment"), date: text(event.date, ""), startTime: text(event.startTime, ""), location: text(event.location, ""), notes: text(event.notes, "") })).filter((event) => event.date),
+    events: list(rawFamilyPlanning.events).slice(0, 250).map((event, index) => {
+      const recurrence = text(event.recurrence || event.repeat || "", "").toLowerCase();
+      return {
+        id: text(event.id, stableId("event", event.title, index)),
+        title: text(event.title, "Event"),
+        eventType: text(event.eventType, "appointment"),
+        date: text(event.date, ""),
+        startTime: text(event.startTime, ""),
+        recurrence: ["weekly", "biweekly", "monthly", "quarterly", "yearly"].includes(recurrence) ? recurrence : "none",
+        location: text(event.location, ""),
+        notes: text(event.notes, "")
+      };
+    }).filter((event) => event.date),
     meals: list(rawFamilyPlanning.meals).slice(0, 120).map((meal, index) => ({ id: text(meal.id, stableId("meal", meal.date, index)), date: text(meal.date, ""), breakfast: text(meal.breakfast, ""), lunch: text(meal.lunch, ""), dinner: text(meal.dinner, "") })).filter((meal) => meal.date),
     recipes: list(rawFamilyPlanning.recipes).slice(0, 250).map((recipe, index) => ({ id: text(recipe.id, stableId("recipe", recipe.title, index)), title: text(recipe.title, ""), fastingType: ["fast-friendly", "adaptable", "regular"].includes(recipe.fastingType) ? recipe.fastingType : "adaptable", category: text(recipe.category, "Dinner"), sourceUrl: text(recipe.sourceUrl, ""), ingredients: text(recipe.ingredients, ""), instructions: text(recipe.instructions, "") })).filter((recipe) => recipe.title),
     groceryItems: list(rawFamilyPlanning.groceryItems).slice(0, 250).map((item, index) => ({ id: text(item.id, stableId("grocery", item.name, index)), name: text(item.name, ""), quantity: text(item.quantity, ""), category: text(item.category, "Other"), checked: Boolean(item.checked), pantry: Boolean(item.pantry || item.inPantry) })).filter((item) => item.name),

@@ -123,6 +123,36 @@ function addDays(isoDate, days) {
   return date.toISOString().slice(0, 10);
 }
 
+function isoDateParts(value = "") {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
+}
+
+function eventRecurrence(value = "") {
+  const raw = String(value || "").toLowerCase();
+  return ["weekly", "biweekly", "monthly", "quarterly", "yearly"].includes(raw) ? raw : "none";
+}
+
+function recurringEventOccursOnDate(event = {}, date = "") {
+  if (!event.date || !date || date < event.date) return false;
+  const recurrence = eventRecurrence(event.recurrence);
+  if (recurrence === "none") return event.date === date;
+  const start = new Date(`${event.date}T00:00:00.000Z`);
+  const target = new Date(`${date}T00:00:00.000Z`);
+  const diffDays = Math.round((target - start) / 86400000);
+  if (diffDays < 0) return false;
+  if (recurrence === "weekly") return diffDays % 7 === 0;
+  if (recurrence === "biweekly") return diffDays % 14 === 0;
+  const startParts = isoDateParts(event.date);
+  const targetParts = isoDateParts(date);
+  if (!startParts || !targetParts || startParts.day !== targetParts.day) return false;
+  const monthDiff = (targetParts.year - startParts.year) * 12 + (targetParts.month - startParts.month);
+  if (recurrence === "monthly") return monthDiff >= 0;
+  if (recurrence === "quarterly") return monthDiff >= 0 && monthDiff % 3 === 0;
+  return recurrence === "yearly" && startParts.month === targetParts.month;
+}
+
 function slug(value) {
   return String(value || "")
     .toLowerCase()
@@ -131,10 +161,52 @@ function slug(value) {
     .slice(0, 60) || "event";
 }
 
-function previewEvents(repository, request) {
+function previewEvents(repository, request, extraEvents = []) {
   const url = new URL(request.url);
   const calendarType = url.searchParams.get("calendar") || "julian";
   const planner = repository.getPlanner({ calendarType, view: "week" });
+  const weekDates = planner.week?.dates || [];
+  const familyPlanning = planner.familyPlanning || {};
+  const lessonEvents = [];
+  const lessonRows = [
+    ...(planner.week?.householdRows || []).map((row) => ({ ...row, rowType: "Household" })),
+    ...(planner.week?.childRows || []).map((row) => ({ ...row, rowType: row.child?.firstName || row.child?.name || "Form" }))
+  ];
+  lessonRows.forEach((row) => {
+    weekDates.forEach((date, index) => {
+      const minutes = Number(row.minutes?.[index] || 0);
+      if (minutes > 0) lessonEvents.push({
+        type: "lesson",
+        title: row.title,
+        date,
+        allDay: false,
+        durationMinutes: minutes,
+        description: [row.rowType, row.subtitle || row.detail || ""].filter(Boolean).join(" - ")
+      });
+    });
+  });
+  const mealEvents = (familyPlanning.meals || []).filter((meal) => weekDates.includes(meal.date)).map((meal) => ({
+    type: "meal",
+    title: "Meal Plan",
+    date: meal.date,
+    allDay: true,
+    description: [
+      meal.breakfast ? `Breakfast: ${meal.breakfast}` : "",
+      meal.lunch ? `Lunch: ${meal.lunch}` : "",
+      meal.dinner ? `Dinner: ${meal.dinner}` : ""
+    ].filter(Boolean).join("\n")
+  }));
+  const familyEvents = weekDates.flatMap((date) => (familyPlanning.events || [])
+    .filter((event) => recurringEventOccursOnDate(event, date))
+    .map((event) => ({
+      type: "family-event",
+      title: event.title || "Family Event",
+      date,
+      startTime: event.startTime || "",
+      allDay: !event.startTime,
+      durationMinutes: 60,
+      description: [event.eventType, event.location, event.notes, eventRecurrence(event.recurrence) !== "none" ? `Repeats: ${event.recurrence}` : ""].filter(Boolean).join("\n")
+    })));
   const events = [
     ...planner.week.liturgicalDays
       .filter((day) => day.feastRank !== "Daily Rhythm")
@@ -145,14 +217,10 @@ function previewEvents(repository, request) {
         allDay: true,
         description: `${day.fastingRule} - ${day.saints.join(", ")}`
       })),
-    ...planner.week.householdRows.slice(0, 4).map((row, index) => ({
-      type: "lesson",
-      title: row.title,
-      date: planner.week.dates[index] || planner.week.dates[0],
-      allDay: false,
-      durationMinutes: row.minutes[index] || 20,
-      description: row.subtitle
-    }))
+    ...lessonEvents,
+    ...mealEvents,
+    ...familyEvents,
+    ...extraEvents
   ];
   return { calendarType, events };
 }
@@ -187,9 +255,11 @@ function googleEventFromPreview(event, index, env = {}) {
     };
   }
 
-  const startHour = 9 + Math.min(index, 6);
-  const start = `${event.date}T${String(startHour).padStart(2, "0")}:00:00`;
-  const endDate = new Date(`${event.date}T${String(startHour).padStart(2, "0")}:00:00`);
+  const timeMatch = String(event.startTime || "").match(/^(\d{2}):(\d{2})$/);
+  const startHour = timeMatch ? Number(timeMatch[1]) : 9 + Math.min(index % 7, 6);
+  const startMinute = timeMatch ? Number(timeMatch[2]) : 0;
+  const start = `${event.date}T${String(startHour).padStart(2, "0")}:${String(startMinute).padStart(2, "0")}:00`;
+  const endDate = new Date(`${event.date}T${String(startHour).padStart(2, "0")}:${String(startMinute).padStart(2, "0")}:00`);
   endDate.setMinutes(endDate.getMinutes() + Math.max(15, Number(event.durationMinutes || 30)));
   const end = `${event.date}T${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}:00`;
 
@@ -455,7 +525,9 @@ export async function googleCalendarSync(repository, request, env = {}) {
 
   connection = await refreshAccessToken(env, identity.householdId, connection);
   connection = await ensureAgapayCalendar(env, identity.householdId, connection);
-  const { calendarType, events } = previewEvents(repository, request);
+  const body = await request.json().catch(() => ({}));
+  const extraEvents = Array.isArray(body?.extraEvents) ? body.extraEvents : [];
+  const { calendarType, events } = previewEvents(repository, request, extraEvents);
   const results = [];
   for (const [index, event] of events.entries()) {
     results.push(await upsertGoogleEvent(connection.accessToken, connection.calendarId, event, index, env));

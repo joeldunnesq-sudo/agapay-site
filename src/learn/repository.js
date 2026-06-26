@@ -450,6 +450,36 @@ function eachIsoDate(startDate, endDate) {
   return dates;
 }
 
+function isoDateParts(value = "") {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
+}
+
+function eventRecurrence(value = "") {
+  const raw = String(value || "").toLowerCase();
+  return ["weekly", "biweekly", "monthly", "quarterly", "yearly"].includes(raw) ? raw : "none";
+}
+
+function eventOccursOnDate(event = {}, civilDate = "") {
+  if (!event.date || !civilDate || civilDate < event.date) return false;
+  const recurrence = eventRecurrence(event.recurrence);
+  if (recurrence === "none") return event.date === civilDate;
+  const start = new Date(`${event.date}T00:00:00.000Z`);
+  const target = new Date(`${civilDate}T00:00:00.000Z`);
+  const diffDays = Math.round((target - start) / 86400000);
+  if (diffDays < 0) return false;
+  if (recurrence === "weekly") return diffDays % 7 === 0;
+  if (recurrence === "biweekly") return diffDays % 14 === 0;
+  const startParts = isoDateParts(event.date);
+  const targetParts = isoDateParts(civilDate);
+  if (!startParts || !targetParts || startParts.day !== targetParts.day) return false;
+  const monthDiff = (targetParts.year - startParts.year) * 12 + (targetParts.month - startParts.month);
+  if (recurrence === "monthly") return monthDiff >= 0;
+  if (recurrence === "quarterly") return monthDiff >= 0 && monthDiff % 3 === 0;
+  return recurrence === "yearly" && startParts.month === targetParts.month;
+}
+
 function dateLabelFromIso(iso) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
     .format(new Date(`${iso}T00:00:00.000Z`));
@@ -534,7 +564,7 @@ function buildAgapayLiturgicalDays({ calendarType = "julian", startDate, endDate
     return {
       civilDate,
       calendarType: normalizeCalendarType(calendarType),
-      feastTitle: feast?.name || (isSunday ? "Sunday Orthodox Rhythm" : "Daily Orthodox Rhythm"),
+      feastTitle: feast?.name || (isSunday ? "Sunday: Worship & Rest" : "Ordinary Church Day"),
       feastRank: feast?.rank ? `${feast.rank.charAt(0).toUpperCase()}${feast.rank.slice(1)}` : "Daily Rhythm",
       fastingRule: seededReadings.fastingRule || fastingRuleForDate(civilDate, feast),
       fastingType: fastingTypeForDate(civilDate, feast, seededReadings.fastingRule || fastingRuleForDate(civilDate, feast)),
@@ -569,7 +599,7 @@ function familyPlanForDate(seed, civilDate, liturgicalDay = {}) {
   const patronalFeast = patronalFeastForDate(seed, civilDate);
   return {
     nameDays: (planning.nameDays || []).filter((entry) => entry.monthDay === monthDay),
-    events: (planning.events || []).filter((entry) => entry.date === civilDate),
+    events: (planning.events || []).filter((entry) => eventOccursOnDate(entry, civilDate)).map((entry) => ({ ...entry, occurrenceDate: civilDate })),
     patronalFeast,
     meal: (planning.meals || []).find((entry) => entry.date === civilDate) || null,
     fastingPreference: planning.fastingPreference || "guidance",
@@ -649,7 +679,7 @@ function buildPlannerMonth(seed, calendarType, month = "") {
     const fastingRule = liturgicalDay.fastingRule || "No Fast";
     const familyPlan = familyPlanForDate(seed, civilDate, liturgicalDay);
     const patronalFeast = familyPlan.patronalFeast;
-    const feastTitle = patronalFeast?.title || liturgicalDay.feastTitle || "Daily Orthodox Rhythm";
+    const feastTitle = patronalFeast?.title || liturgicalDay.feastTitle || "Ordinary Church Day";
     const feastRank = patronalFeast?.rank || liturgicalDay.feastRank || "Daily Rhythm";
     return {
       civilDate,

@@ -236,9 +236,9 @@ function shellFromPayload(page, payload) {
       { id: "planner", href: "/myagapay/learn/planner", label: "Planner", icon: "▣" },
       { id: "formation", href: "/myagapay/learn/formation", label: "Formation", icon: "⌂" },
       { id: "books", href: "/myagapay/learn/books", label: "Books", icon: "☰" },
-      { id: "print-center", href: "/myagapay/learn/print", label: "Print", icon: "▤" },
-      { id: "co-op", href: "/myagapay/learn/co-op", label: "Co-op", icon: "◎", comingSoon: true },
       { id: "community", href: "/myagapay/learn/community", label: "Community", icon: "♡" },
+      { id: "co-op", href: "/myagapay/learn/co-op", label: "Co-op", icon: "◎", comingSoon: true },
+      { id: "print-center", href: "/myagapay/learn/print", label: "Print", icon: "▤" },
       { id: "onboarding", href: "/myagapay/learn/setup", label: "Set Up", icon: "⚙" }
     ]
   };
