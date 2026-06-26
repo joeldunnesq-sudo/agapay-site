@@ -1288,6 +1288,19 @@
 }
 .sw-nudge-btn svg { width: 13px; height: 13px; color: var(--gold); }
 .sw-nudge-btn:hover { background: rgba(184,144,47,.16); border-color: var(--gold); }
+.sw-nudge-btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  color: var(--muted);
+  border-color: var(--line);
+  background: transparent;
+}
+.sw-nudge-btn--ready {
+  border-color: var(--gold);
+  background: rgba(184,144,47,.13);
+  color: var(--deep);
+}
+.sw-nudge-btn--ready:hover { background: rgba(184,144,47,.22); }
 
 /* Admin preview modal */
 .sw-nudge-admin-modal-backdrop {
