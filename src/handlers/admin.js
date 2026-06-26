@@ -93,6 +93,8 @@ import {
   storeDonorOffering,
 } from "./parish.js";
 
+export { requireAdmin };
+
 // src/handlers/admin.js
 // Admin registrations, platform summary, password, and management handlers.
 
