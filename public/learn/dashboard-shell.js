@@ -146,8 +146,8 @@ function pageIntroMeta(id) {
     onboarding: {
       kicker: "SETUP",
       description: "Shape the household profile, children, Forms, books, term dates, subjects, and Church rhythm that power Learn.",
-      quote: "Prepare your work outside; get everything ready.",
-      ref: "Proverbs 24:27"
+      quote: "And let us not be weary in well doing: for in due season we shall reap, if we faint not.",
+      ref: "Galatians 6:9"
     }
   };
   return meta[id] || meta.dashboard;
