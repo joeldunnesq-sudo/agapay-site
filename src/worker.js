@@ -179,6 +179,7 @@ import {
   handleStewardshipMeetingPdf,
   handleStewardshipWebhook,
   handleStewardshipGivingMetricsPage,
+  handleStewardshipFinancials,
 } from "./handlers/stewardship.js";
 
 import {
@@ -1431,6 +1432,10 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/activate")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/activate", ""));
       return handleStewardshipGivingActivate(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/financials")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/financials", ""));
+      return handleStewardshipFinancials(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", ""));
