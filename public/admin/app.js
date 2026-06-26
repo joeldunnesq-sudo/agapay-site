@@ -672,6 +672,36 @@ let selectedReference = '';
         }).join('') || '<div class="revenue-empty">No community submissions are waiting for review.</div>'}</div>`;
     }
 
+    function renderLearnFeedbackQueue(feedback = {}) {
+      const list = document.getElementById('learnFeedbackQueue');
+      if (!list) return;
+      const counts = feedback.counts || {};
+      const suggestions = feedback.suggestions || [];
+      list.innerHTML = `
+        <div class="learn-moderation-summary">
+          <span><strong>${Number(counts.new || 0)}</strong> New</span>
+          <span><strong>${Number(counts['seen-considered'] || 0)}</strong> Seen</span>
+          <span><strong>${Number(counts.archived || 0)}</strong> Archived</span>
+          <span><strong>${Number(counts.total || 0)}</strong> Total</span>
+        </div>
+        <div class="learn-feedback-list">${suggestions.map((item) => {
+          const isNew = (item.status || 'new') === 'new';
+          const notification = item.userNotification || {};
+          return `<article class="learn-feedback-row ${isNew ? 'is-new' : ''}">
+            <div class="learn-moderation-copy">
+              <span class="learn-moderation-status">${escapeHtml(readable(item.status || 'new'))}${notification.status ? ` · Notification: ${escapeHtml(readable(notification.status))}` : ''}</span>
+              <strong>${escapeHtml(item.subject || 'Learn Dashboard suggestion')}</strong>
+              <p>${escapeHtml(item.message || '')}</p>
+              <small>${escapeHtml(item.submittedBy || 'Unknown household')} · ${escapeHtml(item.familyName || 'AGAPAY Learn')} · ${escapeHtml(item.page || 'dashboard')} · ${escapeHtml(shortDate(item.createdAt))}</small>
+              ${item.consideredBy ? `<small>Considered by ${escapeHtml(item.consideredBy)} · ${escapeHtml(shortDate(item.consideredAt))}</small>` : ''}
+            </div>
+            <div class="learn-moderation-actions">
+              ${isNew ? `<button class="gold btn-sm" onclick="acknowledgeLearnFeedback('${jsAttr(item.id || '')}',this)">Seen & considered</button>` : '<span class="learn-feedback-done">Done</span>'}
+            </div>
+          </article>`;
+        }).join('') || '<div class="revenue-empty">No Learn dashboard suggestions have been submitted yet.</div>'}</div>`;
+    }
+
     function renderLearnAdmin(data = {}) {
       const pane = document.getElementById('learnAdminPane');
       if (!pane) return;
@@ -685,7 +715,8 @@ let selectedReference = '';
       const learnHeaderMrr = document.getElementById('learnHeaderMrr');
       const learnActive = Number(counts.active || 0) + Number(counts.trialing || 0) + Number(counts.freeForever || 0);
       if (learnHeaderSubs) learnHeaderSubs.textContent = learnActive || '0';
-      if (learnHeaderMrr) learnHeaderMrr.textContent = `${moneyShort(subscriptions.monthlyRecurringCents || 0)}/mo · ${counts.cancelled || 0} cancelled · ${(data.scholarships || []).length} scholarship${(data.scholarships || []).length === 1 ? '' : 's'}`;
+      const newFeedbackCount = Number(data.feedback?.counts?.new || 0);
+      if (learnHeaderMrr) learnHeaderMrr.textContent = `${moneyShort(subscriptions.monthlyRecurringCents || 0)}/mo · ${counts.cancelled || 0} cancelled · ${newFeedbackCount} new suggestion${newFeedbackCount === 1 ? '' : 's'}`;
 
       pane.innerHTML = `
         <article class="revenue-card">
@@ -739,7 +770,32 @@ let selectedReference = '';
         </article>
       `;
       renderLearnScholarships(data.scholarships || []);
+      renderLearnFeedbackQueue(data.feedback || {});
       renderLearnCommunityModeration(data.communityModeration || {});
+    }
+
+    async function acknowledgeLearnFeedback(feedbackId, btn) {
+      if (!feedbackId) return;
+      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+      try {
+        const response = await fetch(`/api/admin/learn/feedback/${encodeURIComponent(feedbackId)}`, {
+          method: 'PATCH',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ status: 'seen-considered' })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (handleAuthFailure(response, result)) return;
+        if (!response.ok) throw new Error(result.error || 'Unable to acknowledge suggestion');
+        const notice = result.feedback?.userNotification?.status === 'sent'
+          ? 'Suggestion marked seen and considered. Thank-you notification sent.'
+          : `Suggestion marked seen and considered. Notification status: ${readable(result.feedback?.userNotification?.status || 'unknown')}.`;
+        setStatus(notice, 'success');
+        await loadLearnAdmin();
+      } catch (err) {
+        setStatus(err.message, 'error');
+      } finally {
+        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+      }
     }
 
     async function moderateLearnCommunity(resourceId, status, btn) {

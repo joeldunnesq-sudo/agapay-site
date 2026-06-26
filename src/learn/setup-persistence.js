@@ -688,10 +688,11 @@ function normalizeSetupPayload(payload = {}, identity) {
               text(tileKey, ""),
               {
                 title: text(tile.title, ""),
-                detail: text(tile.detail, "")
+                detail: text(tile.detail, ""),
+                minutes: text(tile.minutes, "")
               }
             ])
-            .filter(([tileKey, tile]) => tileKey && (tile.title || tile.detail))
+            .filter(([tileKey, tile]) => tileKey && (tile.title || tile.detail || tile.minutes))
         )
       ])
       .filter(([groupKey, group]) => groupKey && Object.keys(group).length)

@@ -479,6 +479,13 @@ body {
   font-size: 0.9rem;
   font-weight: 900;
   text-decoration: none;
+  cursor: pointer;
+}
+
+.learn-feedback-action {
+  background: transparent;
+  border-color: rgba(201, 162, 91, 0.55);
+  color: #f6f1e8 !important;
 }
 
 .learn-account-utility {

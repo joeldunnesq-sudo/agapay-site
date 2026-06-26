@@ -1739,6 +1739,20 @@
     .learn-moderation-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
     .learn-flag-reasons { display: grid; gap: 3px; margin-top: 5px; }
     .learn-flag-reasons span { border-left: 3px solid #9a4040; padding-left: 7px; color: #7a3533; font-size: 12px; }
+    .learn-feedback-queue, .learn-feedback-list { display: grid; gap: 9px; }
+    .learn-feedback-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      padding: 12px;
+      background: white;
+    }
+    .learn-feedback-row.is-new { border-color: rgba(201,162,91,0.7); box-shadow: inset 4px 0 0 var(--gold); }
+    .learn-feedback-row p { margin: 0; color: var(--deep); font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+    .learn-feedback-done { color: var(--stone); font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 
     /* ─────────────────────────────────────────
        STATUS & GIVING PANELS

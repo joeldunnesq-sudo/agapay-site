@@ -264,6 +264,27 @@ function showLearnDialog(title, message, rows = [], options = {}) {
   document.body.append(dialog);
 }
 
+function showLearnFeedbackDialog() {
+  const pageLabel = pageIntroMeta(pageKey).kicker || "AGAPAY Learn";
+  showLearnDialog("Suggest an Improvement", "Share what would make AGAPAY Learn clearer, calmer, or more useful for your household.", [], {
+    width: "620px",
+    contentHtml: `
+      <form data-learn-feedback-form style="border-top:1px solid rgba(181,148,47,.28);padding-top:16px;display:grid;gap:12px;">
+        <label style="display:grid;gap:6px;color:#9b7420;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;">Subject
+          <input name="subject" value="${html(`${pageLabel} suggestion`)}" maxlength="120" style="border:1px solid rgba(20,41,74,.18);border-radius:10px;padding:11px;background:#fffaf0;color:#14294a;font:inherit;letter-spacing:0;text-transform:none;" />
+        </label>
+        <label style="display:grid;gap:6px;color:#9b7420;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;">Suggestion
+          <textarea name="message" rows="7" maxlength="1600" placeholder="What felt confusing, missing, too many steps, or worth improving?" style="border:1px solid rgba(20,41,74,.18);border-radius:10px;padding:11px;background:#fffaf0;color:#14294a;font:inherit;line-height:1.45;resize:vertical;letter-spacing:0;text-transform:none;"></textarea>
+        </label>
+        <div data-learn-feedback-status style="min-height:20px;color:#33405a;font-size:13px;"></div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;">
+          <button type="button" data-dialog-close style="border:1px solid rgba(20,41,74,.22);background:#fffaf0;border-radius:10px;padding:12px 18px;min-height:44px;font-family:inherit;color:#14294a;font-weight:700;">Cancel</button>
+          <button type="submit" style="border:1px solid #b5942f;background:#14294a;color:#f3ead4;border-radius:10px;padding:12px 18px;min-height:44px;font-family:inherit;font-weight:800;">Send suggestion</button>
+        </div>
+      </form>`
+  });
+}
+
 function saintStoryDialogHtml(saints = [], unavailableMessage = "") {
   if (unavailableMessage) {
     return `<div style="border-top:1px solid rgba(181,148,47,.28);padding:14px 0;color:#33405a;line-height:1.5;">${html(unavailableMessage)}</div>`;
@@ -502,6 +523,7 @@ function topbar(vm) {
         ${vm.page.subtitle ? `<div style="font-size:14.5px;color:var(--muted);margin-top:2px;">${html(vm.page.subtitle)}</div>` : ""}
       </div>
       <div class="learn-utility-actions" style="display:flex;align-items:center;gap:18px;flex:none;">
+        <button class="learn-quick-action learn-feedback-action" type="button" data-learn-feedback-open>Suggest</button>
         <a class="learn-quick-action" href="/myagapay/learn/setup?simple=1">Quick Setup</a>
         <div class="learn-account-menu" data-learn-account-menu>
           <button class="learn-account-utility" type="button" data-learn-account-toggle aria-haspopup="true" aria-expanded="false">
@@ -2654,13 +2676,14 @@ function childSetupRow(child = {}, groupingMode = "forms") {
   return `<div data-setup-row="children" data-id="${html(child.id || "")}" class="learn-family-row learn-child-row"><span class="learn-child-monogram" style="background:${html(child.color || colorChoices[0])};">${html((child.firstName || child.name || "C").charAt(0))}</span>${setupInput("Child name", "firstName", child.firstName || child.name || "")}${setupInput("Age", "ageYears", child.age || "", { type: "number" })}${setupInput("Grade / level", "gradeLabel", child.gradeLabel || child.grade || "")}${groupingField}${setupColorSelect("Color", "color", child.color || colorChoices[0])}${setupRemoveButton()}</div>`;
 }
 
-function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms") {
+function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms", tileMinutes = "") {
   const groupLabel = groupingMode === "grades" ? "Grade / level" : "Form";
   const groupOptions = setupGroupOptions(children, groupingMode);
+  const minutes = subject.minutes || tileMinutes || "20";
   const activeGroupField = groupingMode === "grades"
     ? `${setupSelect(groupLabel, "gradeLabel", subject.gradeLabel || "", [{ value: "", label: "All grades" }, ...groupOptions])}<input type="hidden" name="formLabel" value="${html(subject.formLabel || "")}" />`
     : `${setupSelect(groupLabel, "formLabel", subject.formLabel || "", [{ value: "", label: "All Forms" }, ...groupOptions])}<input type="hidden" name="gradeLabel" value="${html(subject.gradeLabel || "")}" />`;
-  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main">${setupInput("Subject / skill", "title", subject.title || "")}${setupSourceInput("Book / source / resource", "resource", subject.resource || "")}${setupSelect("Schedule type", "weeklyFrequency", subject.weeklyFrequency === "1x" ? "weekly" : subject.weeklyFrequency || subject.cadenceLabel || "daily", simpleScheduleOptions)}${setupInput("Minutes", "minutes", subject.minutes || "20", { type: "number" })}${setupRemoveButton()}<input type="hidden" name="subjectType" value="${html(subject.subjectType || subject.type || "custom")}" /><input type="hidden" name="planningMode" value="forms" /><input type="hidden" name="instructionMode" value="${html(subject.instructionMode || "parent-led")}" /><input type="hidden" name="resourceType" value="${html(subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(subject.progressionType || "lessons")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupTermWeekPicker(subject.scheduledWeeks)}${setupWeeklyPlanFields(subject.weeklyPlans)}${setupSelect("Specific child", "childId", subject.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupSelect("Priority", "priorityLevel", subject.priorityLevel || "important", lessonPriorityOptions)}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main">${setupInput("Subject / skill", "title", subject.title || "")}${setupSourceInput("Book / source / resource", "resource", subject.resource || "")}${setupSelect("Schedule type", "weeklyFrequency", subject.weeklyFrequency === "1x" ? "weekly" : subject.weeklyFrequency || subject.cadenceLabel || "daily", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutes" value="${html(minutes)}" /><input type="hidden" name="subjectType" value="${html(subject.subjectType || subject.type || "custom")}" /><input type="hidden" name="planningMode" value="forms" /><input type="hidden" name="instructionMode" value="${html(subject.instructionMode || "parent-led")}" /><input type="hidden" name="resourceType" value="${html(subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(subject.progressionType || "lessons")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupTermWeekPicker(subject.scheduledWeeks)}${setupWeeklyPlanFields(subject.weeklyPlans)}${setupSelect("Specific child", "childId", subject.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupSelect("Priority", "priorityLevel", subject.priorityLevel || "important", lessonPriorityOptions)}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function bookSetupRow(book = {}, terms = [], currentTermId = "") {
@@ -2679,8 +2702,9 @@ function formationRecitationSetupRow(track = {}) {
   return `<div data-setup-row="formationRecitation" data-id="${html(track.id || "")}" style="display:grid;grid-template-columns:1fr .75fr .75fr .65fr .55fr .45fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Memory Work", "title", track.title || "")}${setupInput("Source", "sourceKind", track.sourceKind || track.source || "")}${setupSelect("Planning Mode", "planningMode", track.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "weeklyFrequency", track.weeklyFrequency || "daily", weeklyFrequencyOptions)}${setupInput("Minutes", "minutes", track.minutes || "", { type: "number" })}${setupSelect("Status", "status", track.status || "memorizing", ["planned", "memorizing", "memorized"])}${setupInput("Progress %", "progressPercent", track.progressPercent ?? track.progress ?? "", { type: "number" })}${setupRemoveButton()}</div>`;
 }
 
-function formationEnrichmentSetupRow(block = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms") {
-  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupSourceInput("Source", "title", block.title || block.resource || block.source || "")}${setupPlanningModePicker(block, children, groupingMode)}${setupSelect("Schedule type", "weeklyFrequency", block.weeklyFrequency === "1x" ? "weekly" : block.weeklyFrequency || block.cadenceLabel || block.cadence || "weekly", simpleScheduleOptions)}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "20", { type: "number" })}${setupRemoveButton()}<input type="hidden" name="instructionMode" value="${html(block.instructionMode || "shared")}" /><input type="hidden" name="resourceType" value="${html(block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(block.progressionType || "lessons")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupTermWeekPicker(block.scheduledWeeks)}${setupWeeklyPlanFields(block.weeklyPlans)}${setupSelect("Specific child", "childId", block.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupSelect("Priority", "priorityLevel", block.priorityLevel || "enrichment", lessonPriorityOptions)}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "reduce first", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+function formationEnrichmentSetupRow(block = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms", tileMinutes = "") {
+  const minutes = block.minutesPlanned || block.minutes || tileMinutes || "20";
+  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupSourceInput("Source", "title", block.title || block.resource || block.source || "")}${setupPlanningModePicker(block, children, groupingMode)}${setupSelect("Schedule type", "weeklyFrequency", block.weeklyFrequency === "1x" ? "weekly" : block.weeklyFrequency || block.cadenceLabel || block.cadence || "weekly", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutesPlanned" value="${html(minutes)}" /><input type="hidden" name="instructionMode" value="${html(block.instructionMode || "shared")}" /><input type="hidden" name="resourceType" value="${html(block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(block.progressionType || "lessons")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupTermWeekPicker(block.scheduledWeeks)}${setupWeeklyPlanFields(block.weeklyPlans)}${setupSelect("Specific child", "childId", block.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupSelect("Priority", "priorityLevel", block.priorityLevel || "enrichment", lessonPriorityOptions)}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "reduce first", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function churchRhythmSetupPanel(vm) {
@@ -2703,7 +2727,8 @@ function setupTileValue(vm, group, panelId, fallback) {
   return {
     ...fallback,
     title: tile.title || fallback.title,
-    detail: tile.detail || fallback.detail
+    detail: tile.detail || fallback.detail,
+    minutes: tile.minutes || fallback.minutes || "20"
   };
 }
 
@@ -2713,9 +2738,10 @@ function setupSectionCard({ group, panel: panelId, title, detail, count = 0, ico
   return `<button type="button" class="learn-setup-section-card" data-setup-section-toggle data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" aria-expanded="false" aria-controls="${html(controls)}"><small><span class="learn-setup-card-icon" aria-hidden="true">${html(icon)}</span><span>${html(countLabel)}</span></small><strong data-setup-section-card-title>${html(title)}</strong><span data-setup-section-card-detail>${html(detail)}</span><em>Open</em></button>`;
 }
 
-function setupSectionPanel({ group, panel: panelId, title, detail = "", content }) {
+function setupSectionPanel({ group, panel: panelId, title, detail = "", minutes = "20", content }) {
   const id = `learnSetupPanel-${group}-${panelId}`;
-  return `<div id="${html(id)}" class="learn-setup-subsection" data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" hidden><div class="learn-setup-subsection-header"><div><strong data-setup-section-panel-title>${html(title)}</strong>${detail ? `<span data-setup-section-panel-detail>${html(detail)}</span>` : ""}</div><button type="button" class="learn-setup-subsection-close" data-setup-section-close data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}">Collapse</button></div><div class="learn-setup-tile-editor"><label>Tile title<input name="setupTiles.${html(group)}.${html(panelId)}.title" data-setup-section-title-input data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" value="${html(title)}" /></label><label>Tile description<textarea name="setupTiles.${html(group)}.${html(panelId)}.detail" data-setup-section-detail-input data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" rows="2">${html(detail)}</textarea></label></div>${content}</div>`;
+  const hasTileMinutes = group === "subjects" || (group === "formation" && panelId !== "recitation");
+  return `<div id="${html(id)}" class="learn-setup-subsection" data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" hidden><div class="learn-setup-subsection-header"><div><strong data-setup-section-panel-title>${html(title)}</strong>${detail ? `<span data-setup-section-panel-detail>${html(detail)}</span>` : ""}</div><button type="button" class="learn-setup-subsection-close" data-setup-section-close data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}">Collapse</button></div><div class="learn-setup-tile-editor"><label>Tile title<input name="setupTiles.${html(group)}.${html(panelId)}.title" data-setup-section-title-input data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" value="${html(title)}" /></label><label>Tile description<textarea name="setupTiles.${html(group)}.${html(panelId)}.detail" data-setup-section-detail-input data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" rows="2">${html(detail)}</textarea></label>${hasTileMinutes ? `<label>Minutes<input type="number" name="setupTiles.${html(group)}.${html(panelId)}.minutes" data-setup-section-minutes-input value="${html(minutes || "20")}" /></label>` : ""}</div>${content}</div>`;
 }
 
 function formationSetupPanel(vm) {
@@ -2759,7 +2785,7 @@ function formationSetupPanel(vm) {
     ? (section.rows.length ? section.rows : [{}]).map((track) => formationRecitationSetupRow(track)).join("")
     : (enrichmentBlocks.filter((block) => String(block.blockType || block.type || "").toLowerCase() === section.type.toLowerCase()).length
       ? enrichmentBlocks.filter((block) => String(block.blockType || block.type || "").toLowerCase() === section.type.toLowerCase())
-      : [{ blockType: section.type }]).map((block) => formationEnrichmentSetupRow({ ...block, blockType: block.blockType || section.type }, vm.children, vm.terms, currentTermId, vm.preferences.groupingMode)).join("");
+      : [{ blockType: section.type }]).map((block) => formationEnrichmentSetupRow({ ...block, blockType: block.blockType || section.type }, vm.children, vm.terms, currentTermId, vm.preferences.groupingMode, section.minutes)).join("");
   const sectionContent = (section) => section.rowKind === "recitation"
     ? `<div data-setup-list="formationRecitation" style="display:grid;gap:10px;">${sectionRows(section)}</div><button type="button" data-setup-add-row="formationRecitation" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Recitation</button>`
     : `<div id="learnSetupFormation-${html(section.panel)}" data-setup-list="formationEnrichment" style="display:grid;gap:10px;">${sectionRows(section)}</div><button type="button" data-setup-add-row="formationEnrichment" data-setup-add-target="learnSetupFormation-${html(section.panel)}" data-setup-add-block-type="${html(section.type)}" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add ${html(section.title)}</button>`;
@@ -2767,7 +2793,7 @@ function formationSetupPanel(vm) {
     <div style="display:grid;gap:14px;">
       <p style="margin:0;color:var(--muted);line-height:1.45;">Choose whether each item is shared by the whole family or assigned by ${vm.preferences.groupingMode === "grades" ? "grade" : "Form"}, then set how often it appears and how long it usually takes.</p>
       <div class="learn-setup-section-grid">${sections.map((section) => setupSectionCard({ group: "formation", ...section, count: section.rowKind === "recitation" ? section.rows.length : countByType(section.type) })).join("")}</div>
-      ${sections.map((section) => setupSectionPanel({ group: "formation", panel: section.panel, title: section.title, detail: section.detail, content: sectionContent(section) })).join("")}
+      ${sections.map((section) => setupSectionPanel({ group: "formation", panel: section.panel, title: section.title, detail: section.detail, minutes: section.minutes, content: sectionContent(section) })).join("")}
     </div>`;
 }
 
@@ -2840,9 +2866,9 @@ function formSubjectsSetupPanel(vm, currentTermId) {
     ${groups.map((group) => {
       const rows = subjectsForGroup(group);
       const listId = `learnSetupSubjects-${group.panel}`;
-      const renderedRows = (rows.length ? rows : [{ subjectType: group.defaultType }]).map((subject) => subjectSetupRow(subject, vm.children, vm.terms, currentTermId, vm.preferences.groupingMode)).join("");
+      const renderedRows = (rows.length ? rows : [{ subjectType: group.defaultType }]).map((subject) => subjectSetupRow(subject, vm.children, vm.terms, currentTermId, vm.preferences.groupingMode, group.minutes)).join("");
       const content = `<div id="${html(listId)}" data-setup-list="subjects" style="display:grid;gap:10px;">${renderedRows}</div><button type="button" data-setup-add-row="subjects" data-setup-add-target="${html(listId)}" data-setup-add-subject-type="${html(group.defaultType)}" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add ${html(group.title)} Subject</button>`;
-      return setupSectionPanel({ group: "subjects", panel: group.panel, title: group.title, detail: group.detail, content });
+      return setupSectionPanel({ group: "subjects", panel: group.panel, title: group.title, detail: group.detail, minutes: group.minutes, content });
     }).join("")}`;
 }
 
@@ -3866,6 +3892,10 @@ function rowWeeklyPlans(row) {
   return Array.from({ length: DEFAULT_TERM_WEEK_COUNT }, (_, index) => rowValue(row, `weeklyPlans.${index + 1}`));
 }
 
+function rowTileMinutes(row) {
+  return row.closest(".learn-setup-subsection")?.querySelector("[data-setup-section-minutes-input]")?.value?.trim() || rowValue(row, "minutes") || rowValue(row, "minutesPlanned");
+}
+
 function collectRows(form, rowType, mapper) {
   return [...form.querySelectorAll(`[data-setup-row="${rowType}"]`)]
     .map((row, index) => mapper(row, index))
@@ -4003,9 +4033,10 @@ function setupPayloadFromForm(form) {
     if (!group || !panelId) return;
     const title = section.querySelector("[data-setup-section-title-input]")?.value?.trim() || "";
     const detail = section.querySelector("[data-setup-section-detail-input]")?.value?.trim() || "";
-    if (!title && !detail) return;
+    const minutes = section.querySelector("[data-setup-section-minutes-input]")?.value?.trim() || "";
+    if (!title && !detail && !minutes) return;
     setupTiles[group] = setupTiles[group] || {};
-    setupTiles[group][panelId] = { title, detail };
+    setupTiles[group][panelId] = { title, detail, minutes };
   });
   return {
     household: {
@@ -4099,7 +4130,7 @@ function setupPayloadFromForm(form) {
         gradeLabel: rowValue(row, "gradeLabel"),
         resource: rowValue(row, "resource"),
         resourceType: rowValue(row, "resourceType"),
-        minutes: rowValue(row, "minutes"),
+        minutes: rowTileMinutes(row),
         childId: rowValue(row, "childId"),
         progressionType: rowValue(row, "progressionType"),
         startNumber: rowValue(row, "startNumber"),
@@ -4218,7 +4249,7 @@ function setupPayloadFromForm(form) {
           startNumber: rowValue(row, "startNumber"),
           currentNumber: rowValue(row, "currentNumber"),
           endNumber: rowValue(row, "endNumber"),
-          minutesPlanned: rowValue(row, "minutesPlanned"),
+          minutesPlanned: rowTileMinutes(row),
           credits: rowValue(row, "credits"),
           finalGradeOverride: rowValue(row, "finalGradeOverride"),
           color: rowValue(row, "color"),
@@ -4360,12 +4391,12 @@ function setupBlankRow(type, form, preset = {}) {
   const groupingMode = form.elements["preferences.groupingMode"]?.value === "grades" ? "grades" : "forms";
   if (type === "children") return childSetupRow({}, groupingMode);
   if (type === "terms") return termSetupRow({}, terms.length);
-  if (type === "subjects") return subjectSetupRow(preset, currentSetupChildren(form), terms, currentTermId, groupingMode);
+  if (type === "subjects") return subjectSetupRow(preset, currentSetupChildren(form), terms, currentTermId, groupingMode, preset.minutes || "");
   if (type === "books") return bookSetupRow({}, terms, currentTermId);
   if (type === "formationMaterials") return formationSetupRow({}, terms, currentTermId);
   if (type === "formationRhythms") return formationRhythmSetupRow({});
   if (type === "formationRecitation") return formationRecitationSetupRow({});
-  if (type === "formationEnrichment") return formationEnrichmentSetupRow(preset, currentSetupChildren(form), terms, currentTermId, groupingMode);
+  if (type === "formationEnrichment") return formationEnrichmentSetupRow(preset, currentSetupChildren(form), terms, currentTermId, groupingMode, preset.minutesPlanned || "");
   if (type === "familyEvents") return familyEventSetupRow({ date: preset.date || "" });
   if (type === "recipes") return recipeSetupRow({});
   if (type === "groceryItems") return grocerySetupRow({});
@@ -4553,6 +4584,9 @@ function wireSetupPage() {
       if (addButton.dataset.setupAddSubjectType) preset.subjectType = addButton.dataset.setupAddSubjectType;
       if (addButton.dataset.setupAddBlockType) preset.blockType = addButton.dataset.setupAddBlockType;
       if (addButton.dataset.setupAddDate) preset.date = addButton.dataset.setupAddDate;
+      const tileMinutes = addButton.closest(".learn-setup-subsection")?.querySelector("[data-setup-section-minutes-input]")?.value?.trim() || "";
+      if (tileMinutes && type === "subjects") preset.minutes = tileMinutes;
+      if (tileMinutes && type === "formationEnrichment") preset.minutesPlanned = tileMinutes;
       const list = addButton.dataset.setupAddTarget
         ? document.getElementById(addButton.dataset.setupAddTarget)
         : form.querySelector(`[data-setup-list="${type}"]`);
@@ -5430,6 +5464,12 @@ mount().catch((error) => {
 });
 
 document.addEventListener("click", async (event) => {
+  const feedbackOpen = event.target.closest("[data-learn-feedback-open]");
+  if (feedbackOpen) {
+    event.preventDefault();
+    showLearnFeedbackDialog();
+    return;
+  }
   const accountToggle = event.target.closest("[data-learn-account-toggle]");
   const accountMenu = event.target.closest("[data-learn-account-menu]");
   if (accountToggle) {
@@ -5494,6 +5534,44 @@ document.addEventListener("click", async (event) => {
   const open = toggle ? !document.body.classList.contains("learn-menu-open") : false;
   document.body.classList.toggle("learn-menu-open", open);
   document.querySelector("[data-learn-menu-toggle]")?.setAttribute("aria-expanded", String(open));
+});
+
+document.addEventListener("submit", async (event) => {
+  const form = event.target.closest("[data-learn-feedback-form]");
+  if (!form) return;
+  event.preventDefault();
+  const submit = form.querySelector('button[type="submit"]');
+  const status = form.querySelector("[data-learn-feedback-status]");
+  const subject = form.elements.subject?.value?.trim() || "";
+  const message = form.elements.message?.value?.trim() || "";
+  if (!message || message.length < 8) {
+    if (status) status.textContent = "Please add a little more detail before sending.";
+    return;
+  }
+  if (submit) {
+    submit.disabled = true;
+    submit.textContent = "Sending...";
+  }
+  if (status) status.textContent = "Sending your suggestion...";
+  try {
+    await apiPost("/api/learn/feedback", {
+      subject,
+      message,
+      page: pageKey,
+      path: window.location.pathname + window.location.search,
+      familyName: document.querySelector(".learn-product-profile strong")?.textContent || "",
+      userAgent: navigator.userAgent || ""
+    });
+    if (status) status.textContent = "Thank you. Your suggestion is now in the AGAPAY Learn admin queue.";
+    form.querySelector("textarea")?.setAttribute("readonly", "readonly");
+    window.setTimeout(() => document.querySelector("[data-learn-dialog]")?.remove(), 1800);
+  } catch (error) {
+    if (status) status.textContent = error.message || "Unable to send your suggestion right now.";
+    if (submit) {
+      submit.disabled = false;
+      submit.textContent = "Send suggestion";
+    }
+  }
 });
 
 document.addEventListener("keydown", (event) => {

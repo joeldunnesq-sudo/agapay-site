@@ -4,6 +4,7 @@ import { assertLearnEnabled, enabledProductSlugs, LEARN_PRODUCT_SLUG, learnCoOpE
 import { LEARN_FREE_PRINT_LIMIT, learnBillingCancel, learnBillingCheckout, learnBillingStatus, learnRequestHasFamilyAccessAsync } from "./billing.js";
 import { googleCalendarCallback, googleCalendarConnect, googleCalendarPreview, googleCalendarStatus, googleCalendarSync } from "./google-calendar.js";
 import { flagLearnCommunityResource, listLearnCommunityResources, submitLearnCommunityResource } from "./community-store.js";
+import { submitLearnFeedback } from "./feedback-store.js";
 import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-source.js";
 import { enrichLiturgicalDayWithOrthocal, fetchOrthocalDay, handleLearnReadingsStatus, orthocalSaintStories } from "./readings-source.js";
 import { buildLearnPrintDocument, buildLearnReportPrintDocument, printDocumentFilename, renderPrintDocumentPdf } from "./print-engine.js";
@@ -431,6 +432,20 @@ export async function handleLearnReports(request, env) {
     ok: true,
     reports: repository.getReports()
   });
+}
+
+export async function handleLearnFeedbackSubmit(request, env) {
+  const blocked = assertLearnEnabled(env);
+  if (blocked) return blocked;
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "learn-feedback", { limit: 12, windowSeconds: 300 });
+  if (limited) return limited;
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return unauthorized();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") return json({ ok: false, error: "Suggestion payload was invalid." }, { status: 400 });
+  const result = await submitLearnFeedback(env, identity, body);
+  return json(result, { status: result.ok ? 201 : result.status || 500 });
 }
 
 export async function handleLearnTermClose(request, env, termId = "") {

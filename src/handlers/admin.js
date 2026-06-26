@@ -73,6 +73,11 @@ import {
 } from "../learn/community-store.js";
 
 import {
+  listLearnFeedback,
+  updateLearnFeedbackStatus,
+} from "../learn/feedback-store.js";
+
+import {
   listYtdStripeCharges,
   stripeAccountStatus,
   stripeFormRequest,
@@ -318,6 +323,7 @@ export async function handleAdminLearnSummary(request, env) {
   const records = await listLearnBillingRecords(env);
   const scholarships = await listLearnScholarships(env);
   const communityResources = await listLearnCommunityResources(env, { includeAll: true, includeSeeded: true });
+  const feedback = await listLearnFeedback(env, { limit: 200 });
   return json({
     ok: true,
     learn: {
@@ -331,10 +337,31 @@ export async function handleAdminLearnSummary(request, env) {
         }, { pending: 0, approved: 0, hidden: 0, removed: 0, flagged: 0 }),
         resources: communityResources.slice(0, 100)
       },
+      feedback: {
+        counts: feedback.reduce((counts, item) => {
+          const status = item.status || "new";
+          counts[status] = (counts[status] || 0) + 1;
+          counts.total += 1;
+          return counts;
+        }, { total: 0, new: 0, "seen-considered": 0, archived: 0 }),
+        suggestions: feedback.slice(0, 100)
+      },
       stripeConfigured: Boolean(env.STRIPE_SECRET_KEY),
       promotionCodesEnabled: true
     }
   });
+}
+
+export async function handleAdminLearnFeedback(request, env, feedbackId = "") {
+  if (request.method !== "PATCH") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "admin-learn-feedback", { limit: 60, windowSeconds: 300 });
+  if (limited) return limited;
+  const adminContext = await requireAdminContext(request, env);
+  if (!adminContext) return unauthorized();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object") return json({ ok: false, error: "Suggestion update was invalid." }, { status: 400 });
+  const result = await updateLearnFeedbackStatus(env, request, adminContext, feedbackId, body);
+  return json(result, { status: result.ok ? 200 : result.status || 500 });
 }
 
 export async function handleAdminLearnCommunity(request, env, resourceId = "") {

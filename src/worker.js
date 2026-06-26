@@ -147,6 +147,7 @@ import {
   handleAdminRegistrationGivingSummary,
   handleAdminLearnScholarship,
   handleAdminLearnCommunity,
+  handleAdminLearnFeedback,
   handleAdminLearnSummary,
   handleAdminReleaseStatus,
   handleAdminRebuildIndexes,
@@ -190,6 +191,7 @@ import {
   handleLearnCompletionSave,
   handleLearnCoOp,
   handleLearnDashboard,
+  handleLearnFeedbackSubmit,
   handleLearnFormation,
   handleLearnFamilyPlanningSave,
   handleLearnGraceModeSave,
@@ -1141,6 +1143,9 @@ export default {
       const resourceId = decodeURIComponent(url.pathname.slice("/api/learn/community/resources/".length, -"/flag".length));
       return handleLearnCommunityFlag(request, env, resourceId);
     }
+    if (request.method === "POST" && url.pathname === "/api/learn/feedback") {
+      return handleLearnFeedbackSubmit(request, env);
+    }
     if (request.method === "GET" && url.pathname === "/api/learn/reports") {
       return handleLearnReports(request, env);
     }
@@ -1274,6 +1279,9 @@ export default {
     }
     if (url.pathname.startsWith("/api/admin/learn/community/")) {
       return handleAdminLearnCommunity(request, env, decodeURIComponent(url.pathname.slice("/api/admin/learn/community/".length)));
+    }
+    if (url.pathname.startsWith("/api/admin/learn/feedback/")) {
+      return handleAdminLearnFeedback(request, env, decodeURIComponent(url.pathname.slice("/api/admin/learn/feedback/".length)));
     }
     if (url.pathname.startsWith("/api/admin/registrations/") && url.pathname.endsWith("/subscription-checkout")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/subscription-checkout", ""));
