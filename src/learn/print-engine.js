@@ -191,6 +191,43 @@ function buildHouseholdWeekly(printCenter, template, generatedAt) {
   return doc;
 }
 
+function cleanDesignedAssignment(item = {}) {
+  return {
+    title: text(item.title || "Subject"),
+    sub: text(item.sub || ""),
+    note: text(item.note || ""),
+    color: text(item.color || "")
+  };
+}
+
+function buildDesignedWeek(printCenter, designedWeek = {}, generatedAt) {
+  const doc = baseDocument(printCenter, { id: "print_mom_weekly", title: "Designed Weekly Lesson Plan" }, generatedAt);
+  const days = Array.isArray(designedWeek.days) ? designedWeek.days : [];
+  const normalizedDays = days.slice(0, 7).map((day) => ({
+    date: text(day.date || ""),
+    weekday: text(day.weekday || ""),
+    shortDate: text(day.shortDate || ""),
+    feast: text(day.feast || ""),
+    isSunday: Boolean(day.isSunday),
+    assignments: Array.isArray(day.assignments) ? day.assignments.map(cleanDesignedAssignment).filter((item) => item.title) : []
+  }));
+  const unassigned = Array.isArray(designedWeek.unassigned) ? designedWeek.unassigned.map(cleanDesignedAssignment).filter((item) => item.title) : [];
+  doc.title = "Designed Weekly Lesson Plan";
+  doc.subtitle = text(`${printCenter.household?.name || "Household"} · ${designedWeek.label || printCenter.week?.label || "Current Week"}${designedWeek.termLabel || printCenter.term?.label ? " · " + (designedWeek.termLabel || printCenter.term?.label) : ""}`);
+  doc.footerRole = "Designed Week";
+  doc.sections = [
+    cardsSection("Week Summary", [
+      { label: "Week", value: designedWeek.label || printCenter.week?.label || "Current Week", detail: "Personally arranged from the weekly planner." },
+      { label: "Scheduled", value: String(normalizedDays.reduce((count, day) => count + day.assignments.length, 0)), detail: "Subject cards placed into days." },
+      { label: "Unplaced", value: String(unassigned.length), detail: "Still waiting in the available-subject tray." }
+    ]),
+    { type: "designed-week", heading: "Mom's Designed Week", days: normalizedDays },
+    unassigned.length ? listSection("Available Subjects Not Placed", unassigned.map((item) => ({ label: item.title, detail: item.note || item.sub }))) : null,
+    liturgicalSection("Liturgical Notes", (printCenter.week?.liturgicalDays || []).slice(0, 7))
+  ].filter(Boolean);
+  return doc;
+}
+
 function buildTermPlan(printCenter, template, generatedAt) {
   const doc   = baseDocument(printCenter, template, generatedAt);
   const setup = printCenter.termSetup || {};
@@ -586,8 +623,9 @@ function buildPlannerLessonTermChild(printCenter, template, generatedAt) {
 
 export function buildLearnPrintDocument(printCenter, {
   templateId = "print_mom_weekly", childId = "", termId = "", month = "", year = "",
-  generatedAt = new Date().toISOString()
+  generatedAt = new Date().toISOString(), designedWeek = null
 } = {}) {
+  if (designedWeek && typeof designedWeek === "object") return buildDesignedWeek(printCenter, designedWeek, generatedAt);
   const template = templateWithParams(findTemplate(printCenter, templateId), { childId, termId, month, year });
   const type     = template.templateType || "weekly-household-plan";
 
@@ -1068,6 +1106,61 @@ function drawCalendarGrid(state, section) {
   state.y -= 10;
 }
 
+function drawDesignedWeek(state, section) {
+  drawHeading(state, section.heading);
+  const days = (section.days || []).slice(0, 7);
+  days.forEach((day) => {
+    const assignments = day.assignments || [];
+    const assignmentHeights = assignments.map((item) => {
+      const note = item.note || item.sub || "";
+      const noteLines = note ? wrapText(note, state.fonts.sans, 7.5, LETTER[0] - MARGIN * 2 - 44).slice(0, 3) : [];
+      return 34 + noteLines.length * 9;
+    });
+    const dayHeight = Math.max(78, 42 + (assignments.length ? assignmentHeights.reduce((sum, value) => sum + value + 7, 0) : 30));
+    fitPage(state, dayHeight + 14);
+    const x = MARGIN;
+    const y = state.y;
+    const width = LETTER[0] - MARGIN * 2;
+    const accent = day.isSunday ? BURGUNDY : GOLD;
+    state.page.drawRectangle({ x, y: y - dayHeight, width, height: dayHeight, borderColor: LINE, borderWidth: 0.6, color: CREAM });
+    state.page.drawRectangle({ x, y: y - 7, width, height: 7, color: accent });
+    state.page.drawText(text(day.weekday || "Day"), { x: x + 14, y: y - 25, size: 15, font: state.fonts.serifBold, color: NAVY });
+    state.page.drawText(text([day.shortDate || day.date, day.feast].filter(Boolean).join(" · ")), { x: x + 150, y: y - 22, size: 8, font: state.fonts.sans, color: MUTED });
+    let innerY = y - 45;
+    if (!assignments.length) {
+      state.page.drawText(day.isSunday ? "Church, rest, and family rhythm." : "Open space for lessons, reading, or recovery.", {
+        x: x + 14, y: innerY, size: 9, font: state.fonts.sans, color: MUTED
+      });
+    }
+    assignments.forEach((item, index) => {
+      const note = item.note || item.sub || "";
+      const noteLines = note ? wrapText(note, state.fonts.sans, 7.5, width - 44).slice(0, 3) : [];
+      const blockHeight = 28 + noteLines.length * 9;
+      const blockY = innerY;
+      state.page.drawRectangle({
+        x: x + 14,
+        y: blockY - blockHeight + 8,
+        width: width - 28,
+        height: blockHeight,
+        borderColor: LINE,
+        borderWidth: 0.35,
+        color: index % 2 === 0 ? PAPER : rgb(1, 0.98, 0.92)
+      });
+      state.page.drawRectangle({ x: x + 14, y: blockY - blockHeight + 8, width: 4, height: blockHeight, color: accent });
+      state.page.drawText(text(item.title), { x: x + 25, y: blockY - 6, size: 9, font: state.fonts.sansBold, color: INK });
+      if (item.sub && item.sub !== note) {
+        state.page.drawText(text(item.sub).slice(0, 82), { x: x + 25, y: blockY - 17, size: 7, font: state.fonts.sans, color: MUTED });
+      }
+      noteLines.forEach((line, li) => {
+        state.page.drawText(line, { x: x + 25, y: blockY - 18 - li * 9, size: 7.5, font: state.fonts.sans, color: MUTED });
+      });
+      innerY -= blockHeight + 7;
+    });
+    state.y -= dayHeight + 13;
+  });
+  state.y -= 4;
+}
+
 // ─── Section dispatcher ───────────────────────────────────────────────────────
 function drawSection(state, section) {
   if (!section) return;
@@ -1076,6 +1169,7 @@ function drawSection(state, section) {
   if (section.type === "checkboxes")    return drawCheckboxes(state, section);
   if (section.type === "liturgical")    return drawLiturgicalStrip(state, section);
   if (section.type === "calendar-grid") return drawCalendarGrid(state, section);
+  if (section.type === "designed-week") return drawDesignedWeek(state, section);
   return drawList(state, section);
 }
 

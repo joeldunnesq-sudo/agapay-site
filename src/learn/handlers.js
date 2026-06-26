@@ -281,6 +281,7 @@ export async function handleLearnPrintPdf(request, env, templateId = "") {
         termId: body.termId || "",
         month: body.month || "",
         year: body.year || "",
+        designedWeek: body.designedWeek || null,
         generatedAt: new Date().toISOString()
       });
   const pdfBytes = await renderPrintDocumentPdf(document);

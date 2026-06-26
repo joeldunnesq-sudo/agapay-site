@@ -667,6 +667,113 @@ function renderTodayLearnContext(vm) {
   `;
 }
 
+function weekAssignmentStorageKey(vm, explicitWeekKey = "") {
+  const itemIds = (vm.week?.weeklyAssignmentItems || []).map((item) => item.id).join(",");
+  const weekKey = explicitWeekKey || [vm.week?.days?.[0]?.date, vm.week?.days?.[6]?.date].filter(Boolean).join("_") || "week";
+  return `agapay.learn.weekAssignments.${weekKey}.${itemIds}`;
+}
+
+function readWeekAssignmentState(vm, explicitWeekKey = "") {
+  try {
+    return JSON.parse(localStorage.getItem(weekAssignmentStorageKey(vm, explicitWeekKey)) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function designedAssignmentsForDate(vm, date) {
+  if (!date) return [];
+  const state = readWeekAssignmentState(vm);
+  const items = vm.week?.weeklyAssignmentItems || [];
+  return items.map((item) => {
+    const saved = state[item.id];
+    return saved?.zone === date ? {
+      ...item,
+      note: saved.note || "",
+      sub: saved.note || item.sub || ""
+    } : null;
+  }).filter(Boolean);
+}
+
+function timeLabel(value = "") {
+  return value ? value : "All day";
+}
+
+function eventsForDate(vm, date) {
+  return (vm.familyPlanning?.events || []).filter((event) => event.date === date);
+}
+
+function mealForDate(vm, date) {
+  return (vm.familyPlanning?.meals || []).find((meal) => meal.date === date) || null;
+}
+
+function choresForDate(vm, date) {
+  const label = plannerDayLabel(date).long;
+  return (vm.familyPlanning?.chores || []).filter((chore) => {
+    const day = String(chore.day || "").trim();
+    return !day || day === "Any Day" || day === label;
+  });
+}
+
+function renderDesignedLessonList(assignments, emptyMessage) {
+  return assignments.length
+    ? `<div class="learn-designed-lesson-list">${assignments.map((item) => `
+        <article class="learn-designed-lesson-card" style="border-left-color:${html(item.color || "var(--gold)")};">
+          <strong>${html(item.title)}</strong>
+          ${item.sub ? `<small>${html(item.sub)}</small>` : ""}
+          ${item.note && item.note !== item.sub ? `<em>${html(item.note)}</em>` : ""}
+        </article>`).join("")}</div>`
+    : emptyState(emptyMessage);
+}
+
+function renderDashboardDesignedLessons(vm) {
+  const date = vm.todayInChurch?.civilDate || "";
+  const assignments = designedAssignmentsForDate(vm, date);
+  const dayHref = `/myagapay/learn/planner?view=day&date=${encodeURIComponent(date)}`;
+  return `
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+        <span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:16px;">▦</span><span style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">TODAY'S DESIGNED LESSONS</span></span>
+        <a href="${html(dayHref)}" style="color:var(--gold);font-size:12px;font-weight:800;text-decoration:none;">Open day</a>
+      </div>
+      ${renderDesignedLessonList(assignments, "Drag subjects into this day from the Week view to seed today's Dashboard lessons.")}
+    </div>
+  `;
+}
+
+function renderDashboardFamilyCards(vm) {
+  const date = vm.todayInChurch?.civilDate || "";
+  const todayEvents = eventsForDate(vm, date);
+  const upcomingEvents = (vm.familyPlanning?.events || [])
+    .filter((event) => event.date && event.date >= date)
+    .sort((a, b) => `${a.date} ${a.startTime || ""}`.localeCompare(`${b.date} ${b.startTime || ""}`))
+    .slice(0, 4);
+  const meal = mealForDate(vm, date);
+  const chores = choresForDate(vm, date).slice(0, 6);
+  const appointmentItems = todayEvents.length ? todayEvents : upcomingEvents;
+  const appointmentTitle = todayEvents.length ? "Today's Appointments" : "Upcoming Appointments";
+  return `
+    <div class="learn-dashboard-family-grid">
+      <section class="learn-dashboard-family-card">
+        <div><small>APPOINTMENTS</small><h3>${html(appointmentTitle)}</h3></div>
+        ${appointmentItems.length ? `<div class="learn-dashboard-mini-list">${appointmentItems.map((event) => `<span><strong>${html(event.title || "Appointment")}</strong><small>${html(event.date === date ? timeLabel(event.startTime) : `${event.date} · ${timeLabel(event.startTime)}`)}${event.location ? ` · ${html(event.location)}` : ""}</small></span>`).join("")}</div>` : emptyState("Add appointments in Planner > Events.")}
+      </section>
+      <section class="learn-dashboard-family-card">
+        <div><small>MEALS</small><h3>Meal Plan</h3></div>
+        ${meal ? `<div class="learn-dashboard-mini-list">
+          <span><strong>Breakfast</strong><small>${html(meal.breakfast || "Open")}</small></span>
+          <span><strong>Lunch</strong><small>${html(meal.lunch || "Open")}</small></span>
+          <span><strong>Dinner</strong><small>${html(meal.dinner || "Open")}</small></span>
+        </div>` : emptyState("Plan today's meals in Planner > Meals.")}
+      </section>
+      <section class="learn-dashboard-family-card">
+        <div><small>CHORES</small><h3>Household Chores</h3></div>
+        ${chores.length ? `<div class="learn-dashboard-mini-list">${chores.map((chore) => `<span><strong>${html(chore.title || "Chore")}</strong><small>${html([chore.assignee, chore.timeOfDay, chore.notes].filter(Boolean).join(" · "))}</small></span>`).join("")}</div>` : emptyState("Add chores in Planner > Chores.")}
+      </section>
+    </div>
+  `;
+}
+
 function renderDashboard(vm) {
   const today = vm.todayInChurch;
   const todayArtworkUrl = today.iconUrl || "/images/learn/today-in-the-church.jpg";
@@ -840,6 +947,9 @@ function renderDashboard(vm) {
         ${rhythmsGrid}
       </div>
 
+      ${renderDashboardDesignedLessons(vm)}
+      ${renderDashboardFamilyCards(vm)}
+
       <!-- Together This Week — full width -->
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
@@ -996,9 +1106,12 @@ function renderWeeklyAssignmentBoard(vm) {
       <div class="learn-week-assignment-head">
         <div>
           <div>THIS WEEK</div>
-          <h2>Subject Placement</h2>
+          <h2>Weekly Lesson Calendar</h2>
         </div>
-        <small>Drag a subject into a day. Edits here stay in week view.</small>
+        <span>
+          <small>Drag a subject into a day. Edits here stay in week view.</small>
+          <button type="button" data-week-designed-print>Print designed week</button>
+        </span>
       </div>
       <div class="learn-week-assignment-layout">
         <div class="learn-week-assignment-pool">
@@ -1006,7 +1119,10 @@ function renderWeeklyAssignmentBoard(vm) {
           <div class="learn-week-assignment-dropzone" data-week-assignment-zone="pool">${items.length ? items.map(card).join("") : emptyState("No setup subjects are active this week.")}</div>
         </div>
         <div class="learn-week-assignment-days">
-          ${vm.week.days.map((day) => `<div class="learn-week-assignment-day"><strong>${html(day.weekday || day.weekdayLong)}<span>${html(day.shortDate || day.date)}</span></strong><div class="learn-week-assignment-dropzone" data-week-assignment-zone="${html(day.date)}"></div></div>`).join("")}
+          ${vm.week.days.map((day) => {
+            const appointments = day.events || [];
+            return `<div class="learn-week-assignment-day"><strong>${html(day.weekday || day.weekdayLong)}<span>${html(day.shortDate || day.date)}</span></strong>${appointments.length ? `<div class="learn-week-assignment-events">${appointments.slice(0, 3).map((event) => `<span>${html(event.startTime || "")}${event.startTime ? " · " : ""}${html(event.title || "Appointment")}</span>`).join("")}${appointments.length > 3 ? `<small>+ ${appointments.length - 3} more</small>` : ""}</div>` : ""}<div class="learn-week-assignment-dropzone" data-week-assignment-zone="${html(day.date)}"></div></div>`;
+          }).join("")}
         </div>
       </div>
     </section>
@@ -1014,19 +1130,7 @@ function renderWeeklyAssignmentBoard(vm) {
 }
 
 function renderPlannerWeek(vm) {
-  const dayCount = Math.max(vm.week.days.length, 1);
   return `
-    <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(20,40,70,.04);">
-      <div style="overflow-x:auto;overflow-y:visible;">
-      <div style="min-width:980px;">
-        <div style="display:grid;grid-template-columns:168px repeat(${dayCount}, minmax(112px,1fr));border-bottom:1px solid var(--line);">
-          <div style="padding:14px;color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;">WEEK</div>
-          ${vm.week.days.map((day) => `<div style="padding:12px;border-left:1px solid var(--line);text-align:center;${day.isSunday ? "background:#f9f1df;" : ""}"><div style="color:${day.isSunday ? "var(--burgundy)" : "var(--gold)"};font-size:16px;">${day.isSunday ? "☩" : "✥"}</div><strong style="font-size:13px;color:var(--ink);">${html(day.weekday || day.weekdayLong)}</strong><small style="display:block;color:var(--muted);">${html(day.shortDate || day.date)}</small><small style="display:block;color:var(--ink);line-height:1.2;">${html(day.isSunday ? "Church & Rest" : day.feast)}</small></div>`).join("")}
-        </div>
-        ${vm.week.householdRows.map((row) => `<div style="display:grid;grid-template-columns:168px repeat(${dayCount}, minmax(112px,1fr));border-bottom:1px solid var(--line);"><div style="padding:12px 14px;"><strong>${html(row.title)}</strong><small style="display:block;color:var(--muted);">${html(row.sub)}</small>${row.graceModeApplied ? `<small style="display:block;color:var(--gold);">Grace adjusted</small>` : ""}</div>${vm.week.days.map((day, index) => `<div style="padding:9px;border-left:1px solid var(--line);${day.isSunday ? "background:#fbf5e8;" : ""}"><div style="background:var(--paper2);border:1px solid var(--line);border-radius:9px;padding:10px;text-align:center;color:var(--ink);min-height:46px;display:flex;align-items:center;justify-content:center;gap:6px;">${day.isSunday ? "—" : row.minutes[index] ? `${html(row.minutes[index])}m ${check(row.statuses[index] === "completed")}` : "—"}</div></div>`).join("")}</div>`).join("")}
-      </div>
-      </div>
-    </div>
     ${renderWeeklyAssignmentBoard(vm)}
     <div style="display:flex;gap:14px;flex-wrap:wrap;">
       <div style="flex:1 1 620px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;">
@@ -1045,14 +1149,26 @@ function renderPlannerWeek(vm) {
 function renderPlannerDay(vm) {
   const day = vm.day.selected || {};
   const dayLinks = vm.week.days.map((item) => `<a href="/myagapay/learn/planner?view=day&date=${encodeURIComponent(item.date)}&term=${encodeURIComponent(vm.term.activeTerm)}&termId=${encodeURIComponent(vm.term.activeTermId)}" style="text-decoration:none;color:var(--ink);border:1px solid ${item.date === day.date ? "var(--gold)" : "var(--line)"};background:${item.date === day.date ? "#fbf2dd" : "var(--paper)"};border-radius:10px;padding:10px;text-align:center;min-width:92px;"><strong style="display:block;color:${item.isSunday ? "var(--burgundy)" : "var(--gold)"};">${html(item.weekday)}</strong><small>${html(item.shortDate)}</small></a>`).join("");
-  const household = day.isSunday ? emptyState("Sunday is reserved for worship, rest, and family rhythm. No school blocks are scheduled.") : vm.day.householdBlocks.map((block) => `<div style="display:grid;grid-template-columns:1fr 70px 100px;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);"><span><strong>${html(block.title)}</strong><small style="display:block;color:var(--muted);">${html(block.sub)}</small></span><span>${html(block.minutes)}m</span>${statusPill(block.status)}</div>`).join("");
+  const designedAssignments = designedAssignmentsForDate(vm, day.date);
+  const household = designedAssignments.length
+    ? renderDesignedLessonList(designedAssignments, "")
+    : day.isSunday
+      ? emptyState("Sunday is reserved for worship, rest, and family rhythm. No school blocks are scheduled.")
+      : vm.day.householdBlocks.length
+        ? vm.day.householdBlocks.map((block) => `<div style="display:grid;grid-template-columns:1fr 70px 100px;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);"><span><strong>${html(block.title)}</strong><small style="display:block;color:var(--muted);">${html(block.sub)}</small></span><span>${html(block.minutes)}m</span>${statusPill(block.status)}</div>`).join("")
+        : emptyState("Drag subjects into this day from the Week view, or add setup subjects for this week.");
   const forms = day.isSunday ? "" : vm.day.formBlocks.map((form) => `<div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:12px;display:grid;gap:10px;"><div style="display:flex;gap:10px;align-items:center;"><span style="width:34px;height:34px;border-radius:50%;background:${form.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(form.initials.slice(0, 2).join(""))}</span><span><strong>${html(form.formLabel)}</strong><small style="display:block;color:var(--muted);">${html(form.childNames.join(", "))}</small></span></div>${form.items.map((item) => `<div style="display:grid;grid-template-columns:1fr 60px 90px;gap:10px;align-items:center;border-top:1px solid var(--line);padding-top:8px;"><span><strong>${html(item.title)}</strong><small style="display:block;color:var(--muted);">${html(item.sub)}</small></span><span>${html(item.minutes)}m</span>${statusPill(item.status)}</div>`).join("")}</div>`).join("");
+  const appointments = day.events || eventsForDate(vm, day.date);
+  const appointmentPanel = appointments.length
+    ? `<div style="display:grid;gap:9px;">${appointments.map((event) => `<div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:10px 12px;"><strong>${html(event.title || "Appointment")}</strong><small style="display:block;color:var(--muted);">${html([timeLabel(event.startTime), event.location, event.notes].filter(Boolean).join(" · "))}</small></div>`).join("")}</div>`
+    : emptyState("No appointments are scheduled for this day.");
   return `
     <div style="display:flex;gap:8px;overflow:auto;padding-bottom:2px;">${dayLinks}</div>
     <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:16px;align-items:start;">
       ${panel("Daily Plan", `<h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0;">${html(day.weekdayLong || day.weekday)} · ${html(day.shortDate || day.date)}</h2><p style="margin:6px 0 14px;color:var(--muted);">${html(day.feast)} · ${html(day.fasting)}</p>${household}`, { icon: day.isSunday ? "☩" : "▣" })}
       ${panel("Form Work", day.isSunday ? `<div style="color:var(--muted);line-height:1.45;">No Form work is scheduled on Sunday.</div>` : `<div style="display:grid;gap:10px;">${forms || emptyState("No Form blocks for this day.")}</div>`, { icon: "◎" })}
     </div>
+    ${panel("Appointments", appointmentPanel, { icon: "◷" })}
     ${panel("Church Notes", `<div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:12px;"><div><small style="color:var(--gold);letter-spacing:.12em;">EPISTLE</small><strong style="display:block;">${html(day.epistle || "Set readings source")}</strong></div><div><small style="color:var(--gold);letter-spacing:.12em;">GOSPEL</small><strong style="display:block;">${html(day.gospel || "Set readings source")}</strong></div><div><small style="color:var(--gold);letter-spacing:.12em;">TONE</small><strong style="display:block;">${html(day.tone || "Tone")}</strong></div></div>`, { icon: "✥" })}
   `;
 }
@@ -4626,8 +4742,7 @@ function wireSetupPage() {
 function wireWeeklyAssignmentBoard(vm) {
   const board = root.querySelector("[data-week-assignment-board]");
   if (!board) return;
-  const itemIds = (vm.week?.weeklyAssignmentItems || []).map((item) => item.id).join(",");
-  const storageKey = `agapay.learn.weekAssignments.${board.dataset.weekKey || "week"}.${itemIds}`;
+  const storageKey = weekAssignmentStorageKey(vm, board.dataset.weekKey || "week");
   const zones = [...board.querySelectorAll("[data-week-assignment-zone]")];
   const readState = () => {
     try {
@@ -4646,6 +4761,35 @@ function wireWeeklyAssignmentBoard(vm) {
       };
     });
     localStorage.setItem(storageKey, JSON.stringify(state));
+  };
+  const designedWeekPayload = () => {
+    const itemLookup = new Map((vm.week?.weeklyAssignmentItems || []).map((item) => [item.id, item]));
+    const assignmentForCard = (card) => {
+      const item = itemLookup.get(card.dataset.itemId) || {};
+      return {
+        id: card.dataset.itemId || "",
+        title: card.querySelector("strong")?.textContent?.trim() || item.title || "Subject",
+        sub: card.querySelector("small")?.textContent?.trim() || item.sub || "",
+        note: card.querySelector("[data-week-assignment-note]")?.value?.trim() || "",
+        color: item.color || ""
+      };
+    };
+    return {
+      label: vm.week?.label || "",
+      termLabel: vm.term?.label || vm.week?.termLabel || "",
+      days: (vm.week?.days || []).map((day) => {
+        const zone = board.querySelector(`[data-week-assignment-zone="${CSS.escape(day.date)}"]`);
+        return {
+          date: day.date || "",
+          weekday: day.weekdayLong || day.weekday || "",
+          shortDate: day.shortDate || "",
+          feast: day.isSunday ? "Church & Rest" : day.feast || "",
+          isSunday: Boolean(day.isSunday),
+          assignments: zone ? [...zone.querySelectorAll("[data-week-assignment-card]")].map(assignmentForCard) : []
+        };
+      }),
+      unassigned: [...(board.querySelector('[data-week-assignment-zone="pool"]')?.querySelectorAll("[data-week-assignment-card]") || [])].map(assignmentForCard)
+    };
   };
   const restore = () => {
     const state = readState();
@@ -4685,6 +4829,40 @@ function wireWeeklyAssignmentBoard(vm) {
         writeState();
       }
     });
+  });
+  board.querySelector("[data-week-designed-print]")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.textContent = "Generating...";
+    writeState();
+    try {
+      const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
+      const response = await fetch(`/api/learn/print/print_mom_weekly?calendar=${encodeURIComponent(calendar)}`, {
+        method: "POST",
+        headers: learnRequestHeaders({ "content-type": "application/json" }),
+        body: JSON.stringify({
+          templateId: "print_mom_weekly",
+          designedWeek: designedWeekPayload()
+        })
+      });
+      if (waitForLearnSignIn(response)) return;
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Unable to generate the designed week PDF.");
+      }
+      const blob = await response.blob();
+      const disposition = response.headers.get("content-disposition") || "";
+      const fileMatch = disposition.match(/filename="([^"]+)"/);
+      downloadBlob(fileMatch?.[1] || "agapay-learn-designed-week.pdf", blob);
+      const serverCount = Number(response.headers.get("x-agapay-learn-print-count"));
+      if (!isLearnFamilyPlan()) setPrintCount(Number.isFinite(serverCount) ? serverCount : printCount() + 1);
+    } catch (error) {
+      showLearnDialog("Print Could Not Be Generated", error.message || "Please refresh and try again.", []);
+    } finally {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
   });
 }
 
@@ -5393,7 +5571,8 @@ async function mount() {
     const view = params.get("view") || localStorage.getItem("agapay.learn.plannerView") || "week";
     const month = params.get("month") || localStorage.getItem("agapay.learn.plannerMonth") || new Date().toISOString().slice(0, 7);
     const termId = params.get("termId") || "";
-    const raw = await apiGet(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}&view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}&termId=${encodeURIComponent(termId)}`);
+    const date = params.get("date") || "";
+    const raw = await apiGet(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}&view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}&termId=${encodeURIComponent(termId)}&date=${encodeURIComponent(date)}`);
     const vm = toPlannerViewModel(raw);
     root.innerHTML = renderPlanner(vm);
     wirePlanner(vm);

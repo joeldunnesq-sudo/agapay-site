@@ -2512,6 +2512,32 @@ body {
   margin-bottom: 14px;
 }
 
+.learn-week-assignment-head > span {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--muted);
+}
+
+.learn-week-assignment-head button {
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  background: var(--navy);
+  color: #f3ead4;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 800;
+  min-height: 38px;
+  padding: 9px 13px;
+}
+
+.learn-week-assignment-head button:disabled {
+  cursor: wait;
+  opacity: .72;
+}
+
 .learn-week-assignment-head div div {
   color: var(--gold);
   font-size: 11px;
@@ -2529,7 +2555,7 @@ body {
 
 .learn-week-assignment-layout {
   display: grid;
-  grid-template-columns: minmax(210px, .8fr) minmax(0, 2.2fr);
+  grid-template-columns: minmax(220px, .72fr) minmax(0, 2.6fr);
   gap: 14px;
   align-items: start;
 }
@@ -2544,14 +2570,25 @@ body {
   display: grid;
   grid-template-columns: repeat(7, minmax(128px, 1fr));
   gap: 10px;
+  align-items: start;
   overflow-x: auto;
   padding-bottom: 2px;
+}
+
+.learn-week-assignment-day {
+  min-width: 128px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: linear-gradient(180deg, #fffaf0, var(--paper));
+  padding: 10px;
 }
 
 .learn-week-assignment-day > strong {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
   color: var(--ink);
   font-size: 13px;
 }
@@ -2562,14 +2599,38 @@ body {
   font-weight: 400;
 }
 
+.learn-week-assignment-events {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 8px;
+}
+
+.learn-week-assignment-events span,
+.learn-week-assignment-events small {
+  display: block;
+  border: 1px solid rgba(181,148,47,.28);
+  border-radius: 8px;
+  background: #fffaf0;
+  color: #6f5a22;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  padding: 5px 7px;
+}
+
 .learn-week-assignment-dropzone {
-  min-height: 132px;
+  min-height: 160px;
   display: grid;
   align-content: start;
   gap: 9px;
-  border: 1px dashed var(--line);
+  border: 1px dashed transparent;
   border-radius: 12px;
-  background: rgba(255,252,245,.58);
+  background: rgba(255,252,245,.42);
+  padding: 10px 0 0;
+}
+
+.learn-week-assignment-pool .learn-week-assignment-dropzone {
+  border-color: var(--line);
   padding: 10px;
 }
 
@@ -2616,6 +2677,98 @@ body {
   font-size: 13px;
   line-height: 1.35;
   padding: 8px;
+}
+
+.learn-designed-lesson-list {
+  display: grid;
+  gap: 10px;
+}
+
+.learn-designed-lesson-card {
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--gold);
+  border-radius: 10px;
+  background: var(--paper2);
+  padding: 11px 13px;
+}
+
+.learn-designed-lesson-card strong,
+.learn-designed-lesson-card small,
+.learn-designed-lesson-card em {
+  display: block;
+}
+
+.learn-designed-lesson-card strong {
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.learn-designed-lesson-card small,
+.learn-designed-lesson-card em {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  margin-top: 3px;
+}
+
+.learn-dashboard-family-grid {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 14px;
+}
+
+.learn-dashboard-family-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  box-shadow: 0 1px 3px rgba(20,40,70,.04);
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.learn-dashboard-family-card small {
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .15em;
+}
+
+.learn-dashboard-family-card h3 {
+  color: var(--ink);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  line-height: 1;
+  margin: 4px 0 0;
+}
+
+.learn-dashboard-mini-list {
+  display: grid;
+  gap: 9px;
+}
+
+.learn-dashboard-mini-list span {
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper2);
+  padding: 10px 12px;
+}
+
+.learn-dashboard-mini-list strong {
+  display: block;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.learn-dashboard-mini-list small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.35;
+  margin-top: 2px;
 }
 
 .learn-planner-reserve-card {
@@ -2686,6 +2839,10 @@ body {
 }
 
 @media (max-width: 860px) {
+  .learn-dashboard-family-grid {
+    grid-template-columns: 1fr;
+  }
+
   .learn-week-assignment-layout {
     grid-template-columns: 1fr;
   }

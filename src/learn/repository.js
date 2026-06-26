@@ -915,6 +915,8 @@ export class SeedLearnRepository {
     const children = hasSetup ? this.seed.children : [];
     const liturgicalDay = this.liturgical.getDay(civilDate, resolvedCalendar)
       || buildAgapayLiturgicalDays({ calendarType: resolvedCalendar, startDate: civilDate, endDate: civilDate, seed: this.seed })[0];
+    const plannerWeek = hasSetup ? buildPlannerWeek(this.seed, resolvedCalendar) : null;
+    const familyPlanning = hasSetup ? familyPlanningWithDefaultRecipes(this.seed.familyPlanning || this.seed.setupSnapshot?.familyPlanning || {}) : {};
     const daily = this.seed.dashboardDaily[civilDate] || {
       churchRhythms: [
         { id: "rhythm_prayers", title: "Morning Prayers", status: "planned", note: "Ready" },
@@ -954,6 +956,8 @@ export class SeedLearnRepository {
       paceProfile: this.seed.paceProfile,
       seasonAdjustment: this.seed.seasonAdjustment,
       calendarToggle: buildCalendarToggle(resolvedCalendar),
+      week: plannerWeek,
+      familyPlanning,
       googleCalendarSync: daily.googleCalendarSync || this.seed.googleCalendarSync,
       thisDayInHistory: daily.thisDayInHistory || this.seed.thisDayInHistory,
       today: {

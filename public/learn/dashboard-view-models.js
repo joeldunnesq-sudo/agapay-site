@@ -252,11 +252,62 @@ function simpleList(items, mapper) {
   return safeArray(items).map(mapper).filter(Boolean);
 }
 
+function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
+  return [
+    ...safeArray(rawHouseholdRows).map((row, index) => ({
+      id: text(row.id, `household-${index}`),
+      kind: text(row.kind, "household"),
+      title: text(row.title, "Household block"),
+      sub: text(row.detail || row.subtitle, ""),
+      color: text(row.color, ACCENTS[index % ACCENTS.length]),
+      minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20)
+    })),
+    ...safeArray(rawChildRows).map((row, index) => ({
+      id: text(row.id, `child-${index}`),
+      kind: "form",
+      title: text(row.title, "Lesson"),
+      sub: [text(row.child?.firstName || row.child?.name, ""), text(row.detail || row.subtitle, "")].filter(Boolean).join(" · "),
+      color: text(row.color || row.child?.color, ACCENTS[(index + safeArray(rawHouseholdRows).length) % ACCENTS.length]),
+      minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20)
+    }))
+  ].filter((item, index, all) => item.id && item.title && all.findIndex((candidate) => candidate.id === item.id) === index);
+}
+
+function plannerDaysFromWeek(week) {
+  return safeArray(week.liturgicalDays).map((day, index) => {
+    const parts = dateParts(day.civilDate || safeArray(week.dates)[index]);
+    const familyDay = safeArray(week.familyDays)[index] || {};
+    return {
+      weekday: text(day.weekdayLabel || parts.weekday, ""),
+      weekdayLong: text(day.weekdayLong || parts.weekdayLong, ""),
+      date: text(day.civilDate || safeArray(week.dates)[index], ""),
+      shortDate: parts.short,
+      dayNumber: parts.dayNumber,
+      isSunday: Boolean(parts.isSunday),
+      isFastDay: Boolean(day.isFastDay),
+      feast: text(day.feastTitle, ""),
+      feastRank: text(day.feastRank, ""),
+      fasting: text(day.fastingRule, ""),
+      fastingType: text(day.fastingType || familyDay.fastingType, ""),
+      tone: text(day.tone || day.troparionTone, ""),
+      epistle: text(day.epistleRef, ""),
+      gospel: text(day.gospelRef, ""),
+      nameDays: safeArray(familyDay.nameDays),
+      events: safeArray(familyDay.events),
+      meal: familyDay.meal || null,
+      fastingPreference: text(familyDay.fastingPreference, "guidance")
+    };
+  });
+}
+
 export function toDashboardViewModel(rawPayload, context = {}) {
   const dashboard = rawPayload?.dashboard || {};
   const today = dashboard.today || {};
   const liturgicalDay = today.liturgicalDay || {};
   const summary = dashboard.weeklySummary || {};
+  const dashboardWeek = dashboard.week || {};
+  const dashboardWeekHouseholdRows = safeArray(dashboardWeek.householdRows);
+  const dashboardWeekChildRows = safeArray(dashboardWeek.childRows);
   const shell = shellFromPayload("dashboard", rawPayload);
   const saintNames = safeArray(liturgicalDay.saints)
     .map((saint) => text(typeof saint === "string" ? saint : saint.name || saint.title, ""))
@@ -332,6 +383,21 @@ export function toDashboardViewModel(rawPayload, context = {}) {
         complete: block.status === "completed"
       }))
     })),
+    week: {
+      label: text(dashboardWeek.label, "This Week"),
+      seasonLabel: text(dashboardWeek.seasonLabel, ""),
+      days: plannerDaysFromWeek(dashboardWeek),
+      weeklyAssignmentItems: weeklyAssignmentItemsFromRows(dashboardWeekHouseholdRows, dashboardWeekChildRows)
+    },
+    familyPlanning: {
+      fastingPreference: text(dashboard.familyPlanning?.fastingPreference, "guidance"),
+      recipes: safeArray(dashboard.familyPlanning?.recipes),
+      groceryItems: safeArray(dashboard.familyPlanning?.groceryItems),
+      events: safeArray(dashboard.familyPlanning?.events),
+      meals: safeArray(dashboard.familyPlanning?.meals),
+      chores: safeArray(dashboard.familyPlanning?.chores),
+      weekStart: text(dashboard.familyPlanning?.weekStart, "")
+    },
     thisWeek: [
       {
         icon: "☩",
@@ -396,30 +462,7 @@ export function toPlannerViewModel(rawPayload) {
   const activeTermIndex = requestedTermIndex >= 0 ? requestedTermIndex : numericTermIndex;
   const activeTermId = termOptions[activeTermIndex]?.id || requestedTermId;
   const activeTerm = activeTermIndex + 1;
-  const days = safeArray(week.liturgicalDays).map((day, index) => {
-    const parts = dateParts(day.civilDate || safeArray(week.dates)[index]);
-    const familyDay = safeArray(week.familyDays)[index] || {};
-    return {
-      weekday: text(day.weekdayLabel || parts.weekday, ""),
-      weekdayLong: text(day.weekdayLong || parts.weekdayLong, ""),
-      date: text(day.civilDate || safeArray(week.dates)[index], ""),
-      shortDate: parts.short,
-      dayNumber: parts.dayNumber,
-      isSunday: Boolean(parts.isSunday),
-      isFastDay: Boolean(day.isFastDay),
-      feast: text(day.feastTitle, ""),
-      feastRank: text(day.feastRank, ""),
-      fasting: text(day.fastingRule, ""),
-      fastingType: text(day.fastingType || familyDay.fastingType, ""),
-      tone: text(day.tone || day.troparionTone, ""),
-      epistle: text(day.epistleRef, ""),
-      gospel: text(day.gospelRef, ""),
-      nameDays: safeArray(familyDay.nameDays),
-      events: safeArray(familyDay.events),
-      meal: familyDay.meal || null,
-      fastingPreference: text(familyDay.fastingPreference, "guidance")
-    };
-  });
+  const days = plannerDaysFromWeek(week);
   const selectedDate = query.get("date") || days.find((day) => !day.isSunday)?.date || days[0]?.date || "";
   const selectedDayIndex = Math.max(0, days.findIndex((day) => day.date === selectedDate));
   const selectedDay = days[selectedDayIndex] || days[0] || {};
@@ -427,24 +470,7 @@ export function toPlannerViewModel(rawPayload) {
   const childTrackById = new Map(childTrackSummary.map((track) => [track.childId, safeArray(track.tracks)]));
   const rawHouseholdRows = safeArray(week.householdRows);
   const rawChildRows = safeArray(week.childRows);
-  const currentWeekItems = [
-    ...rawHouseholdRows.map((row, index) => ({
-      id: text(row.id, `household-${index}`),
-      kind: text(row.kind, "household"),
-      title: text(row.title, "Household block"),
-      sub: text(row.detail || row.subtitle, ""),
-      color: text(row.color, ACCENTS[index % ACCENTS.length]),
-      minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20)
-    })),
-    ...rawChildRows.map((row, index) => ({
-      id: text(row.id, `child-${index}`),
-      kind: "form",
-      title: text(row.title, "Lesson"),
-      sub: [text(row.child?.firstName || row.child?.name, ""), text(row.detail || row.subtitle, "")].filter(Boolean).join(" · "),
-      color: text(row.color || row.child?.color, ACCENTS[(index + rawHouseholdRows.length) % ACCENTS.length]),
-      minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20)
-    }))
-  ].filter((item, index, all) => item.id && item.title && all.findIndex((candidate) => candidate.id === item.id) === index);
+  const currentWeekItems = weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows);
 
   return {
     shell,
