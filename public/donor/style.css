@@ -5031,3 +5031,133 @@ body.donor-home {
   }
 }
 
+
+/* ── Pledge nudge notification modal (donor My AGAPAY) ──────────────────── */
+.nudge-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(6,21,34,.6);
+  backdrop-filter: blur(4px);
+}
+.nudge-modal {
+  width: min(480px, 100%);
+  border-radius: var(--rlg);
+  border: 1px solid rgba(200,162,74,.3);
+  background: var(--paper);
+  box-shadow: 0 24px 60px rgba(6,21,34,.2);
+  overflow: hidden;
+}
+.nudge-modal-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 1.25rem .75rem;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(135deg, #061522 0%, #0b2130 100%);
+  color: var(--cream);
+}
+.nudge-modal-icon {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  padding: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(200,162,74,.4);
+  background: rgba(200,162,74,.14);
+  color: var(--gold);
+}
+.nudge-modal-title {
+  margin: 0 0 .2rem;
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--cream);
+  line-height: 1.1;
+}
+.nudge-modal-parish {
+  margin: 0;
+  font-size: .75rem;
+  color: rgba(246,241,232,.6);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 600;
+}
+.nudge-modal-body {
+  padding: 1.1rem 1.25rem;
+}
+.nudge-modal-message {
+  font-size: .88rem;
+  line-height: 1.65;
+  color: var(--stone);
+  margin: 0 0 1rem;
+}
+.nudge-modal-figures {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .6rem;
+}
+.nudge-figure {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  padding: .65rem .75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: white;
+}
+.nudge-figure span {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.nudge-figure strong {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--deep);
+}
+.nudge-figure--remaining strong { color: #8a2929; }
+.nudge-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .85rem 1.25rem;
+  border-top: 1px solid var(--line);
+  background: rgba(246,241,232,.5);
+}
+.nudge-modal-give-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  border-radius: 8px;
+  background: var(--gold);
+  color: var(--deep);
+  font: 700 .88rem var(--sans);
+  text-decoration: none;
+  transition: background .15s;
+}
+.nudge-modal-give-btn:hover { background: #b08c35; }
+.nudge-modal-dismiss-btn {
+  height: 42px;
+  padding: 0 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--stone);
+  font: 500 .85rem var(--sans);
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.nudge-modal-dismiss-btn:hover { border-color: var(--stone); color: var(--ink); }
+@media (max-width: 480px) {
+  .nudge-modal-figures { grid-template-columns: 1fr 1fr; }
+  .nudge-figure--remaining { grid-column: 1 / -1; }
+}
