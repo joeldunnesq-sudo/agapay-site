@@ -134,6 +134,56 @@ img { display: block; max-width: 100%; }
 .lightbox img { max-width: 92vw; max-height: 88vh; border-radius: 8px; }
 .lightbox-close { position: absolute; top: 18px; right: 18px; width: 44px; height: 44px; border: 0; background: transparent; color: #fff; cursor: pointer; font-size: 2rem; }
 
+/* ── Section error boundaries ───────────────────────────────────────────── */
+.section-error-boundary {
+  border: 1px dashed rgba(177, 138, 62, 0.35);
+  border-radius: 8px;
+  padding: 18px 20px;
+  background: rgba(177, 138, 62, 0.06);
+  color: var(--campaign-muted);
+}
+.section-error-boundary h3 {
+  margin: 0 0 6px;
+  color: var(--campaign-gold-dark);
+  font: 600 1.05rem var(--campaign-serif);
+  letter-spacing: 0.01em;
+}
+.section-error-boundary p {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.section-error-boundary code {
+  display: block;
+  overflow: auto;
+  max-height: 72px;
+  padding: 7px 10px;
+  border-radius: 5px;
+  background: rgba(11, 31, 48, 0.07);
+  color: var(--campaign-ink);
+  font-size: 0.72rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+/* Hero boundary fills the hero container flush */
+.campaign-hero .section-error-boundary {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  border-radius: 0;
+  text-align: center;
+}
+/* Gallery boundary spans both columns */
+.campaign-gallery .section-error-boundary,
+#photoGallery .section-error-boundary {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 899px) {
   .campaign-layout { grid-template-columns: 1fr; }
   .campaign-donate-column { position: static; order: -1; }
