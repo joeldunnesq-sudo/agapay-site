@@ -2036,6 +2036,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderNextFeast(null);
   updateQuickGiveLinks(null);
   updateDonorAuthState();
+  checkDonorNotifications();
   const emailInput = document.getElementById("donorEmail");
   if (emailInput && donorSession().email) emailInput.value = donorSession().email;
   initDonorPasswordResetPage();
@@ -2111,5 +2112,84 @@ function renderPledgeTracker(donor) {
       const goal = document.getElementById("desktopPledgeGoal");
       if (goal)   goal.textContent = "of " + money(pledgeCents) + " pledge";
     }
+  }
+}
+
+
+// ── Pledge nudge notifications ────────────────────────────────────────────────
+
+let _nudgeQueue = [];
+let _nudgeCurrent = null;
+
+async function checkDonorNotifications() {
+  const session = donorSession();
+  if (!session.email || !session.token) return;
+  try {
+    const data = await donorApi("/api/donor/notifications");
+    const notifications = data.notifications || [];
+    if (!notifications.length) return;
+    _nudgeQueue = notifications;
+    showNextNudge();
+  } catch {
+    // Silent — never block the dashboard for a failed notification fetch
+  }
+}
+
+function showNextNudge() {
+  if (!_nudgeQueue.length) return;
+  _nudgeCurrent = _nudgeQueue.shift();
+  const modal     = document.getElementById("pledgeNudgeModal");
+  const parishEl  = document.getElementById("nudgeModalParish");
+  const messageEl = document.getElementById("nudgeModalMessage");
+  const figuresEl = document.getElementById("nudgeModalFigures");
+  const giveBtn   = document.getElementById("nudgeModalGiveBtn");
+  const dismissBtn = document.getElementById("nudgeModalDismissBtn");
+  if (!modal) return;
+
+  const fmt = (cents) => "$" + ((cents || 0) / 100).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const year       = _nudgeCurrent.fiscalYear;
+  const pledge     = _nudgeCurrent.pledgeCents;
+  const given      = _nudgeCurrent.givenCents;
+  const remaining  = Math.max(0, pledge - given);
+  const parishId   = _nudgeCurrent.parishId;
+
+  if (parishEl)  parishEl.textContent  = parishId || "Your parish";
+  if (messageEl) messageEl.textContent = _nudgeCurrent.message || "";
+
+  if (figuresEl) {
+    figuresEl.innerHTML =
+      '<div class="nudge-figure"><span>' + year + ' Pledge</span><strong>' + fmt(pledge) + '</strong></div>' +
+      '<div class="nudge-figure"><span>Given so far</span><strong>' + fmt(given) + '</strong></div>' +
+      '<div class="nudge-figure nudge-figure--remaining"><span>Remaining</span><strong>' + fmt(remaining) + '</strong></div>';
+  }
+
+  if (giveBtn) {
+    giveBtn.href = "/myagapay?parish=" + encodeURIComponent(parishId) + "&giftType=stewardship";
+  }
+
+  if (dismissBtn) {
+    dismissBtn.onclick = () => dismissNudge(_nudgeCurrent.id);
+  }
+
+  modal.hidden = false;
+  document.body.style.overflow = "hidden";
+
+  // Also close on backdrop click
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) dismissNudge(_nudgeCurrent?.id);
+  }, { once: true });
+}
+
+async function dismissNudge(id) {
+  const modal = document.getElementById("pledgeNudgeModal");
+  if (modal) { modal.hidden = true; document.body.style.overflow = ""; }
+  if (id) {
+    try {
+      await donorApi("/api/donor/notifications/" + encodeURIComponent(id) + "/dismiss", { method: "POST" });
+    } catch { /* silent */ }
+  }
+  // Show next nudge if any
+  if (_nudgeQueue.length) {
+    setTimeout(showNextNudge, 300);
   }
 }
