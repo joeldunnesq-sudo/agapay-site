@@ -796,14 +796,14 @@ async function handleStewardshipGivingSummary(request, env, parishId) {
         COUNT(DISTINCT donor_email) AS active_donors,
         SUM(json_extract(data, '$.giftAmountCents')) AS total_actual_cents
       FROM donor_offerings
-      WHERE parish_id = ? AND payment_status = 'paid'
+      WHERE parish_id = ? AND payment_status IN ('paid', 'succeeded')
         AND created_at BETWEEN ? AND ?
     `).bind(parishId, yearStart, yearEnd).first(),
 
     env.AGAPAY_DB.prepare(`
       SELECT SUM(json_extract(data, '$.giftAmountCents')) AS total_prior_cents
       FROM donor_offerings
-      WHERE parish_id = ? AND payment_status = 'paid'
+      WHERE parish_id = ? AND payment_status IN ('paid', 'succeeded')
         AND created_at BETWEEN ? AND ?
     `).bind(parishId, `${year - 1}-01-01`, `${year - 1}-12-31`).first(),
   ]);
