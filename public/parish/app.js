@@ -366,70 +366,66 @@
   }
 
   function renderGivingMetrics(s, f, year) {
-    const pct = s.total_pledged_cents > 0 ? Math.min(100, Math.round((s.total_actual_cents / s.total_pledged_cents) * 100)) : 0;
-    const rrPct = s.total_pledged_cents > 0 ? Math.min(100, Math.round((s.run_rate_cents / s.total_pledged_cents) * 100)) : 0;
-    const yoy = s.prior_year_actual_cents > 0
+    const pct   = s.total_pledged_cents > 0 ? Math.min(100, Math.round((s.total_actual_cents / s.total_pledged_cents) * 100)) : 0;
+    const rrPct = s.total_pledged_cents > 0 ? Math.min(100, Math.round((s.run_rate_cents   / s.total_pledged_cents) * 100)) : 0;
+    const yoy   = s.prior_year_actual_cents > 0
       ? Math.round(((s.total_actual_cents - s.prior_year_actual_cents) / s.prior_year_actual_cents) * 100) : null;
-    const yoyBadge = yoy !== null
-      ? `<span style="color:${yoy >= 0 ? 'var(--green,#4ade80)' : 'var(--red,#f87171)'};font-size:.72rem;font-weight:600">${yoy >= 0 ? '▲' : '▼'} ${Math.abs(yoy)}% vs prior year</span>` : '';
+    const yoyHtml = yoy !== null
+      ? '<span class="sw-yoy sw-yoy-' + (yoy >= 0 ? 'up' : 'down') + '">' + (yoy >= 0 ? '▲' : '▼') + ' ' + Math.abs(yoy) + '% vs prior year</span>' : '';
 
     const fundRows = (f.funds || []).filter(fd => fd.total_cents > 0).map(fd =>
-      `<tr><td>${escapeHtml(fd.fund_name)}</td><td style="text-align:right;color:var(--gold,#C49C50)">${fmtDollars(fd.total_cents)}</td><td style="text-align:right;color:var(--text-muted,#888)">${fd.pct_of_total}%</td></tr>`
+      '<tr class="sw-fund-row">' +
+        '<td class="sw-fund-name">' + escapeHtml(fd.fund_name) + '</td>' +
+        '<td class="sw-fund-total">' + fmtDollars(fd.total_cents) + '</td>' +
+        '<td class="sw-fund-pct">' + fd.pct_of_total + '%' +
+          '<span class="sw-fund-bar"><i style="width:' + Math.min(100, fd.pct_of_total) + '%"></i></span>' +
+        '</td>' +
+      '</tr>'
     ).join('');
 
-    const yearOptions = [0,1,2,3,4].map(n => {
-      const y = new Date().getFullYear() - n;
-      return `<option value="${y}"${y === givingMetricsState.year ? ' selected' : ''}>${y}</option>`;
-    }).join('');
-
-    return `
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap">
-        <span style="font-size:.8rem;color:var(--text-muted,#888)">Fiscal Year</span>
-        <select class="form-select" style="font-size:.82rem;padding:.25rem .5rem" onchange="loadGivingMetricsPanel(+this.value)">
-          ${yearOptions}
-        </select>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.6rem;margin-bottom:.9rem">
-        ${gm_kpi('Collected', fmtDollars(s.total_actual_cents), yoyBadge)}
-        ${gm_kpi('Pledged', fmtDollars(s.total_pledged_cents), s.pledging_donors + ' pledging donors')}
-        ${gm_kpi('Fulfillment', s.fulfillment_rate_pct !== null ? s.fulfillment_rate_pct + '%' : '—', 'of pledge goal')}
-        ${gm_kpi('Avg / Donor', fmtDollars(s.avg_per_donor_cents), s.active_donors + ' active')}
-      </div>
-      ${s.total_pledged_cents > 0 ? `
-        <div style="font-size:.75rem;color:var(--text-muted,#888);margin-bottom:.2rem">Collected vs pledge goal — ${pct}%</div>
-        <div style="background:rgba(255,255,255,.08);border-radius:5px;height:8px;overflow:hidden;margin-bottom:.6rem">
-          <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,var(--gold,#C49C50),#DABB70);border-radius:5px;transition:width .5s ease"></div>
-        </div>
-        <div style="font-size:.72rem;color:var(--text-muted,#888);margin-bottom:.75rem">Run rate year-end projection: ${fmtDollars(s.run_rate_cents)}</div>
-      ` : ''}
-      ${fundRows ? `
-        <table style="width:100%;border-collapse:collapse;font-size:.82rem">
-          <thead><tr>
-            <th style="text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted,#888);padding:.3rem .25rem;border-bottom:1px solid var(--border,rgba(255,255,255,.1))">Fund</th>
-            <th style="text-align:right;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted,#888);padding:.3rem .25rem;border-bottom:1px solid var(--border,rgba(255,255,255,.1))">Total</th>
-            <th style="text-align:right;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted,#888);padding:.3rem .25rem;border-bottom:1px solid var(--border,rgba(255,255,255,.1))">%</th>
-          </tr></thead>
-          <tbody>${fundRows}</tbody>
-        </table>
-        <div style="margin-top:.6rem;text-align:right">
-          <a href="${stewardshipGivingPageUrl()}" style="font-size:.78rem;color:var(--gold,#C49C50)">Full metrics report →</a>
-        </div>
-      ` : ''}`;
+    return (
+      '<div class="sw-kpi-grid">' +
+        gmKpi('Collected',   fmtDollars(s.total_actual_cents),  yoyHtml || (s.active_donors + ' donors')) +
+        gmKpi('Pledged',     fmtDollars(s.total_pledged_cents), s.pledging_donors + ' pledging households') +
+        gmKpi('Fulfillment', s.fulfillment_rate_pct !== null ? s.fulfillment_rate_pct + '%' : '—', 'of pledge goal') +
+        gmKpi('Avg / Donor', fmtDollars(s.avg_per_donor_cents), s.active_donors + ' active this year') +
+      '</div>' +
+      (s.total_pledged_cents > 0 ?
+        '<div class="sw-progress-block">' +
+          '<div class="sw-progress-label"><span>Collected vs pledge goal</span><strong>' + pct + '%</strong></div>' +
+          '<div class="sw-progress-track"><div class="sw-progress-fill" style="width:' + pct + '%"></div></div>' +
+          '<div class="sw-progress-label sw-progress-label--runrate"><span>Run-rate projection</span><strong>' + fmtDollars(s.run_rate_cents) + '</strong></div>' +
+          '<div class="sw-progress-track"><div class="sw-progress-fill sw-progress-fill--dim" style="width:' + rrPct + '%"></div></div>' +
+        '</div>'
+      : '') +
+      (fundRows ?
+        '<div class="sw-fund-table-wrap">' +
+          '<table class="sw-fund-table">' +
+            '<thead><tr><th>Fund</th><th class="sw-th-right">Total</th><th class="sw-th-right">Share</th></tr></thead>' +
+            '<tbody>' + fundRows + '</tbody>' +
+          '</table>' +
+        '</div>'
+      : '')
+    );
   }
 
-  function gm_kpi(label, value, sub) {
-    return `<div style="background:var(--surface-2,rgba(255,255,255,.05));border:1px solid var(--border,rgba(255,255,255,.1));border-radius:8px;padding:.65rem .75rem">
-      <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted,#888);margin-bottom:.2rem">${label}</div>
-      <div style="font-family:var(--font-serif,Georgia,serif);font-size:1.35rem;font-weight:600;color:var(--gold,#C49C50);line-height:1">${value}</div>
-      <div style="font-size:.68rem;color:var(--text-muted,#888);margin-top:.2rem">${sub}</div>
-    </div>`;
+  function gmKpi(label, value, sub) {
+    return (
+      '<div class="sw-kpi-card">' +
+        '<span class="sw-kpi-label">' + label + '</span>' +
+        '<strong class="sw-kpi-value">' + value + '</strong>' +
+        '<span class="sw-kpi-sub">' + sub + '</span>' +
+      '</div>'
+    );
   }
 
   function renderGivingMetricsUpgrade() {
-    return `<div style="text-align:center;padding:1.5rem 1rem;border:1px dashed var(--border,rgba(255,255,255,.15));border-radius:10px">
-      <p style="color:var(--text-muted,#888);margin:0 0 .75rem;font-size:.85rem">Pledge tracking and giving analytics require the Stewardship Giving add-on.</p>
-      <a href="${stewardshipGivingPageUrl()}" style="display:inline-block;background:var(--gold,#C49C50);color:#000;font-weight:600;padding:.5rem 1.25rem;border-radius:7px;text-decoration:none;font-size:.85rem">Activate Giving Metrics</a>
-    </div>`;
+    return (
+      '<div class="sw-upgrade-nudge">' +
+        '<p>Pledge tracking and giving analytics require the Stewardship Suite add-on.</p>' +
+        '<a href="' + stewardshipGivingPageUrl() + '" class="sw-upgrade-btn">Activate Giving Metrics</a>' +
+      '</div>'
+    );
   }
 
   function stewardshipGivingPageUrl() {
@@ -441,22 +437,139 @@
   }
 
   function renderStewardshipPanel() {
-    const status = document.getElementById('stewardshipStatusLabel');
+    const statusEl = document.getElementById('stewardshipStatusLabel');
     const planPane = document.getElementById('stewardshipPlanPane');
     const meetingsPane = document.getElementById('stewardshipMeetingsPane');
     if (!planPane || !meetingsPane) return;
+
     const sw = stewardshipState.stewardship || {};
-    const isActive = sw.active || ['active','trialing'].includes(sw.status);
-    if (status) status.textContent = isActive ? (sw.status === 'trialing' ? 'Trial' : 'Active') : 'Coming soon';
+    const isActive = sw.active || ['active', 'trialing'].includes(sw.status);
+    const isTrialing = sw.status === 'trialing';
+
+    if (statusEl) {
+      statusEl.textContent = isActive ? (isTrialing ? 'Trial' : 'Active') : 'Add-on';
+    }
+
+    if (isActive) {
+      renderStewardshipActivePanel(planPane, meetingsPane, sw, isTrialing);
+    } else {
+      renderStewardshipUpsellPanel(planPane, meetingsPane);
+    }
+  }
+
+  function renderStewardshipActivePanel(planPane, meetingsPane, sw, isTrialing) {
+    const yearOpts = [0,1,2,3,4].map(n => {
+      const y = new Date().getFullYear()-n;
+      return `<option value="${y}"${y===givingMetricsState.year?' selected':''}>${y}</option>`;
+    }).join('');
+
+    planPane.innerHTML = `
+      <div class="sw-status-card ${isTrialing ? 'sw-status-trial' : 'sw-status-active'}">
+        <div class="sw-status-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/>
+            <path d="M9 12l2 2 4-5"/>
+          </svg>
+        </div>
+        <div class="sw-status-copy">
+          <span class="sw-status-eyebrow">${isTrialing ? 'Trial period active' : 'Stewardship Suite'}</span>
+          <strong class="sw-status-heading">Your subscription is active.</strong>
+          <p class="sw-status-sub">Packet builder, giving metrics, and pledge tracking are available for ${currentParish?.parishName || 'your parish'}.</p>
+        </div>
+        <button class="sw-manage-btn" type="button" onclick="openStewardshipBilling(this)">Manage billing</button>
+      </div>
+
+      <div class="sw-metrics-card">
+        <div class="sw-metrics-header">
+          <div>
+            <span class="sw-section-eyebrow">Pledge &amp; Giving</span>
+            <h3 class="sw-section-heading">Giving Metrics</h3>
+          </div>
+          <div class="sw-metrics-actions">
+            <select class="sw-year-select" onchange="loadGivingMetricsPanel(+this.value)" id="swYearSelect">
+              ${yearOpts}
+            </select>
+            <button class="sw-refresh-btn" type="button" onclick="loadGivingMetricsPanel()" title="Refresh">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
+            </button>
+          </div>
+        </div>
+        <div id="givingMetricsPane" class="sw-metrics-body"><p class="sw-loading">Loading metrics…</p></div>
+        <div class="sw-metrics-footer">
+          <a href="${stewardshipGivingPageUrl()}" class="sw-full-report-link">Full metrics report →</a>
+        </div>
+      </div>`;
+
+    const meetings = stewardshipState.meetings || [];
+    const year = new Date().getFullYear();
+    meetingsPane.innerHTML = `
+      <div class="sw-meetings-header">
+        <div>
+          <span class="sw-section-eyebrow">Annual Meeting</span>
+          <h3 class="sw-section-heading">Meeting Packets</h3>
+        </div>
+        <button class="sw-new-packet-btn" type="button" onclick="newStewardshipMeeting()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>
+          New packet
+        </button>
+      </div>
+      ${meetings.length ? renderMeetingsList(meetings) : renderMeetingsEmpty(year)}`;
+  }
+
+  function renderMeetingsList(meetings) {
+    const statusLabels = { draft:'Draft', ready:'Ready', generated:'Generated', archived:'Archived' };
+    const statusClasses = { draft:'sw-pill-draft', ready:'sw-pill-ready', generated:'sw-pill-generated', archived:'sw-pill-archived' };
+    return '<div class="sw-meetings-list">' +
+      meetings.map(m => {
+        const statusKey = (m.status || 'draft').toLowerCase();
+        const label = statusLabels[statusKey] || statusKey;
+        const cls = statusClasses[statusKey] || 'sw-pill-draft';
+        const dateStr = m.meetingDate ? new Date(m.meetingDate).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }) : '';
+        const metaParts = [m.fiscalYear, dateStr, m.location ? escapeHtml(m.location) : ''].filter(Boolean).join(' · ');
+        return '<div class="sw-meeting-row">' +
+          '<div class="sw-meeting-info">' +
+            '<strong class="sw-meeting-title">' + escapeHtml(m.title || (m.fiscalYear + ' Annual Meeting')) + '</strong>' +
+            '<span class="sw-meeting-meta">' + metaParts + '</span>' +
+          '</div>' +
+          '<div class="sw-meeting-actions">' +
+            '<span class="sw-pill ' + cls + '">' + label + '</span>' +
+            '<button class="sw-action-btn" type="button" onclick="editStewardshipMeeting('' + escapeAttr(m.id) + '')">Edit</button>' +
+            '<a class="sw-action-btn" href="' + escapeAttr(stewardshipPreviewUrl(m.id)) + '" target="_blank" rel="noopener">Preview</a>' +
+            '<a class="sw-action-btn" href="' + escapeAttr(stewardshipPreviewUrl(m.id, 'pdf')) + '" target="_blank" rel="noopener">PDF</a>' +
+          '</div>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+
+  function renderMeetingsEmpty(year) {
+    return '<div class="sw-meetings-empty">' +
+      '<div class="sw-meetings-empty-icon" aria-hidden="true">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+          '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>' +
+          '<line x1="8" y1="14" x2="8" y2="14" stroke-width="2.5"/><line x1="12" y1="14" x2="12" y2="14" stroke-width="2.5"/><line x1="16" y1="14" x2="16" y2="14" stroke-width="2.5"/>' +
+        '</svg>' +
+      '</div>' +
+      '<strong>No packets yet</strong>' +
+      '<span>Create your first ' + year + ' Annual Parish Meeting packet — agenda, reports, financial summary, nominees, and resolutions in one print-ready document.</span>' +
+      '<button class="sw-new-packet-btn" type="button" onclick="newStewardshipMeeting()">Create ' + year + ' packet</button>' +
+    '</div>';
+  }
+
+  function renderStewardshipUpsellPanel(planPane, meetingsPane) {
+    const year = new Date().getFullYear();
     planPane.innerHTML = `
       <div class="stewardship-soon-hero-card">
         <div class="stewardship-soon-mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-5"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/>
+            <path d="M9 12l2 2 4-5"/>
+          </svg>
         </div>
         <div>
-          <span>Native AGAPAY add-on</span>
+          <span>Native AGAPAY add-on · $39/mo</span>
           <strong>Beautiful stewardship materials without the spreadsheet scramble.</strong>
-          <p>Annual parish meeting packets, pledge materials, restricted fund snapshots, and parish-ready reports are being shaped as a focused add-on inside AGAPAY Give.</p>
+          <p>Annual parish meeting packets, pledge tracking, giving metrics, and restricted fund snapshots — all inside your existing AGAPAY dashboard.</p>
         </div>
       </div>
       <div class="stewardship-soon-feature-grid">
@@ -467,8 +580,8 @@
         </div>
         <div class="stewardship-soon-feature">
           <i>02</i>
-          <strong>Pledge campaigns</strong>
-          <span>Parish stewardship messaging, follow-up cadence, and giving goals tied to the dashboard.</span>
+          <strong>Giving metrics</strong>
+          <span>Pledge vs. actual, fulfillment rate, fund breakdown, donor retention, and year-over-year comparison.</span>
         </div>
         <div class="stewardship-soon-feature">
           <i>03</i>
@@ -476,30 +589,30 @@
           <span>Restricted funds, giving progress, campaign summaries, and council-ready reporting in one place.</span>
         </div>
       </div>
-
-      <!-- Giving Metrics card — always shown; content loads from API -->
-      <div style="margin-top:1.25rem;border:1px solid var(--border,rgba(255,255,255,.12));border-radius:12px;padding:1rem 1.1rem;background:var(--surface-2,rgba(255,255,255,.04))">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
-          <strong style="font-size:.9rem">📊 Pledge &amp; Giving Metrics</strong>
-          <button class="btn btn-ghost btn-sm" type="button" onclick="loadGivingMetricsPanel()" style="font-size:.75rem">Refresh</button>
+      <div class="sw-upsell-cta">
+        <div class="sw-upsell-price">
+          <strong>$39</strong><span>/mo · Stewardship Suite</span>
         </div>
-        <div id="givingMetricsPane"><p class="muted" style="font-size:.8rem">Loading…</p></div>
-      </div>
-    `;
+        <button class="sw-subscribe-btn" type="button" onclick="startStewardshipSubscription('monthly', this)">Start 14-day free trial</button>
+        <p class="sw-upsell-note">No commitment. Cancel anytime from your dashboard.</p>
+      </div>`;
+
     meetingsPane.innerHTML = `
       <div class="stewardship-soon-preview">
         <div class="stewardship-soon-preview-head">
-          <span>Coming soon</span>
-          <strong>2026 Annual Parish Meeting Packet</strong>
+          <span>Included in Stewardship Suite</span>
+          <strong>${year} Annual Parish Meeting Packet</strong>
         </div>
         <div class="stewardship-soon-preview-list">
           <div><b>Agenda</b><span>Opening prayer, quorum, reports, elections, resolutions</span></div>
           <div><b>Reports</b><span>Rector, treasurer, stewardship, ministries, restricted funds</span></div>
-          <div><b>Output</b><span>Polished PDF packet for parish council and faithful</span></div>
+          <div><b>Financials</b><span>Income, expenses, net, budget vs. actual, restricted fund snapshots</span></div>
+          <div><b>Giving data</b><span>Pledge fulfillment and fund breakdown pulled from AGAPAY</span></div>
+          <div><b>Output</b><span>Polished, print-ready PDF packet for parish council and faithful</span></div>
         </div>
         <div class="stewardship-soon-note">
-          <strong>Not enabled yet.</strong>
-          <span>We are keeping this dormant until the workflow, billing, and generated packets are reliable enough for live parish use.</span>
+          <strong>Subscribe to unlock</strong>
+          <span>Packet creation, giving metrics, and pledge tracking activate immediately after subscribing.</span>
         </div>
       </div>`;
   }
