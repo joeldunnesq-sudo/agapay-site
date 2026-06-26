@@ -88,42 +88,60 @@
   }
 
   function renderThermometer(campaign) {
-    const raised = Number(campaign.raisedCents || 0);
-    const goal   = Number(campaign.goalCents   || 0);
-    const pct    = goal > 0 ? Math.min(100, Math.round((raised / goal) * 100)) : 0;
-    const count  = Number(campaign.giftCount || 0);
-    el("thermoRaised").textContent      = usd(raised);
-    el("thermoGoal").textContent        = goal > 0 ? "of " + usd(goal) + " goal" : "raised so far";
-    el("thermoPct").textContent         = goal > 0 ? pct + "%" : "";
-    el("thermoGiftCount").textContent   = count + " gift" + (count !== 1 ? "s" : "");
-    setTimeout(() => { el("thermoFill").style.width = pct + "%"; }, 120);
+    const container = el("thermoContainer");
+    try {
+      const raised = Number(campaign.raisedCents || 0);
+      const goal   = Number(campaign.goalCents   || 0);
+      const pct    = goal > 0 ? Math.min(100, Math.round((raised / goal) * 100)) : 0;
+      const count  = Number(campaign.giftCount || 0);
+      el("thermoRaised").textContent      = usd(raised);
+      el("thermoGoal").textContent        = goal > 0 ? "of " + usd(goal) + " goal" : "raised so far";
+      el("thermoPct").textContent         = goal > 0 ? pct + "%" : "";
+      el("thermoGiftCount").textContent   = count + " gift" + (count !== 1 ? "s" : "");
+      setTimeout(() => { el("thermoFill").style.width = pct + "%"; }, 120);
+    } catch (err) {
+      displaySectionError("giving progress", container, err);
+    }
   }
 
   function renderHero(campaign, parish) {
-    const src = campaignPhotoUrl(campaign, parish);
-    if (src) {
-      const img = el("heroImg");
-      img.onload  = () => { el("heroSkeleton").hidden = true; img.hidden = false; el("heroOverlay").hidden = false; el("heroBadge").hidden = false; };
-      img.onerror = () => { img.hidden = true; el("heroSkeleton").hidden = false; el("heroBadge").hidden = false; };
-      img.src = src; img.alt = campaign.name;
-    } else {
-      el("heroSkeleton").hidden = false;
-      el("heroOverlay").hidden = true;
-      el("heroBadge").hidden = false;
+    const container = el("campaignHero") || document.querySelector(".campaign-hero");
+    try {
+      const src = campaignPhotoUrl(campaign, parish);
+      if (src) {
+        const img = el("heroImg");
+        img.onload  = () => { el("heroSkeleton").hidden = true; img.hidden = false; el("heroOverlay").hidden = false; el("heroBadge").hidden = false; };
+        img.onerror = () => {
+          img.hidden = true;
+          displaySectionError("campaign image", container, new Error("Image failed to load: " + src));
+        };
+        img.src = src; img.alt = campaign.name;
+      } else {
+        el("heroSkeleton").hidden = false;
+        el("heroOverlay").hidden = true;
+        el("heroBadge").hidden = false;
+      }
+    } catch (err) {
+      displaySectionError("campaign image", container, err);
     }
   }
 
   function renderGallery(photos) {
     const gallery = el("photoGallery");
-    if (!photos || !photos.length) { gallery.hidden = true; return; }
-    photos.forEach(photo => {
-      const url = typeof photo === "string" ? photo : photo.url;
-      if (!url) return;
-      const img = document.createElement("img");
-      img.src = url; img.alt = "Campaign photo"; img.loading = "lazy";
-      img.addEventListener("click", () => openLightbox(url));
-      gallery.appendChild(img);
-    });
+    if (!photos || !photos.length) { if (gallery) gallery.hidden = true; return; }
+    try {
+      photos.forEach(photo => {
+        const url = typeof photo === "string" ? photo : photo.url;
+        if (!url) return;
+        const img = document.createElement("img");
+        img.src = url; img.alt = "Campaign photo"; img.loading = "lazy";
+        img.onerror = () => { img.remove(); };
+        img.addEventListener("click", () => openLightbox(url));
+        gallery.appendChild(img);
+      });
+    } catch (err) {
+      displaySectionError("photo gallery", gallery, err);
+    }
   }
 
   function openLightbox(src) { el("lightboxImg").src = src; el("lightbox").hidden = false; document.body.style.overflow = "hidden"; }
@@ -131,16 +149,21 @@
 
   function renderUpdates(updates) {
     if (!updates || !updates.length) return;
-    el("updatesSection").hidden = false;
-    const list   = el("updatesList");
-    const sorted = [...updates].sort((a, b) => new Date(b.date) - new Date(a.date));
-    el("updatesCount").textContent = sorted.length + " " + (sorted.length === 1 ? "post" : "posts");
-    sorted.forEach(u => {
-      const div = document.createElement("div");
-      div.className = "update-item";
-      div.innerHTML = '<div class="update-line"></div><div><div class="update-date">' + formatDate(u.date) + '</div><div class="update-body">' + escHtml(u.body || "") + '</div></div>';
-      list.appendChild(div);
-    });
+    const section = el("updatesSection");
+    try {
+      section.hidden = false;
+      const list   = el("updatesList");
+      const sorted = [...updates].sort((a, b) => new Date(b.date) - new Date(a.date));
+      el("updatesCount").textContent = sorted.length + " " + (sorted.length === 1 ? "post" : "posts");
+      sorted.forEach(u => {
+        const div = document.createElement("div");
+        div.className = "update-item";
+        div.innerHTML = '<div class="update-line"></div><div><div class="update-date">' + formatDate(u.date) + '</div><div class="update-body">' + escHtml(u.body || "") + '</div></div>';
+        list.appendChild(div);
+      });
+    } catch (err) {
+      displaySectionError("parish updates", section, err);
+    }
   }
 
   function selectedCampaignKey(campaign) {
@@ -235,6 +258,18 @@
 
   function escHtml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
+  function displaySectionError(name, container, err) {
+    console.error("[AGAPAY] " + name + " failed:", err);
+    if (!container) return;
+    const msg = err && err.message ? escHtml(err.message) : "Unknown error";
+    container.innerHTML =
+      "<div class='section-error-boundary'>" +
+        "<h3>Unable to load " + escHtml(name) + "</h3>" +
+        "<p>This section could not be displayed. The rest of the page is unaffected.</p>" +
+        "<code>" + msg + "</code>" +
+      "</div>";
+  }
+
   function wireShareButtons(canonicalUrl, title) {
     el("shareFacebook").href = "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(canonicalUrl);
     el("shareTwitter").href  = "https://twitter.com/intent/tweet?url=" + encodeURIComponent(canonicalUrl) + "&text=" + encodeURIComponent(title);
@@ -323,7 +358,7 @@
       el("loadingState").hidden    = true;
       el("campaignContent").hidden = false;
     } catch (err) {
-      console.error(err);
+      console.error("[AGAPAY] Campaign page init failed — parish:", parishId, "slug:", slug, err);
       el("loadingState").hidden = true;
       el("errorState").hidden   = false;
     }
