@@ -64,11 +64,6 @@
           <span class="nav-label">Text-to-Give</span>
           <span class="nav-soon-badge">Coming soon</span>
         </div>
-        <div class="sidebar-nav-item" onclick="switchTab('stewardship')" id="nav-stewardship">
-          <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
-          <span class="nav-label">Stewardship</span>
-          <span class="nav-soon-badge">Coming soon</span>
-        </div>
         <div class="sidebar-nav-item" onclick="switchTab('qr')" id="nav-qr">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="19" y="14" width="2" height="2"/><rect x="14" y="19" width="2" height="2"/><rect x="18" y="18" width="3" height="3"/></svg>
           QR Code &amp; Link
@@ -76,6 +71,11 @@
         <div class="sidebar-nav-item" onclick="switchTab('settings')" id="nav-settings">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Settings
+        </div>
+        <div class="sidebar-nav-item sidebar-nav-item--suite" onclick="switchTab('stewardship')" id="nav-stewardship">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-5"/></svg>
+          <span class="nav-label">Stewardship Suite</span>
+          <span class="nav-upgrade-badge">Upgrade</span>
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('history')" id="nav-history">
           <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
@@ -719,81 +719,108 @@
         </div>
       </div>
 
-      <!-- ── STEWARDSHIP TAB ─────────────────────────────────── -->
+      <!-- ── STEWARDSHIP SUITE TAB ──────────────────────────── -->
       <div class="tab-panel" id="tab-stewardship">
-        <div class="feature-tab-hero stewardship-native-hero">
-          <div>
-            <div class="feature-tab-kicker">Coming soon add-on</div>
-            <h2>AGAPAY Stewardship</h2>
-            <p>Annual meeting packets, parish council records, restricted fund reporting, and faithful parish administration tools are planned as a native add-on inside this Organization Dashboard.</p>
+
+        <!-- Hero banner — dark, premium, status-aware -->
+        <div class="sw-suite-hero">
+          <div class="sw-suite-hero-copy">
+            <span class="sw-suite-eyebrow">AGAPAY Add-on</span>
+            <h1 class="sw-suite-heading">Stewardship Suite</h1>
+            <p class="sw-suite-subhead">Annual meeting packets, pledge analytics, financial snapshots, and print-ready parish reports — built into your dashboard.</p>
           </div>
-          <div class="feature-tab-summary">
-            <span>Planned module</span>
-            <strong id="stewardshipStatusLabel">Not loaded</strong>
-            <button class="btn btn-gold btn-sm" type="button" onclick="loadStewardshipPanel(true)">Refresh</button>
+          <div class="sw-suite-hero-status" id="stewardshipHeroStatus">
+            <span class="sw-suite-status-label" id="stewardshipStatusLabel">Loading…</span>
+            <div class="sw-suite-hero-actions">
+              <button class="sw-suite-refresh-btn" type="button" onclick="loadStewardshipPanel(true)" title="Refresh">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div class="stewardship-native-grid">
-          <section class="section-card stewardship-plan-card" id="stewardshipPlanCard">
-            <div class="section-header">
-              <div class="section-title">
-                <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-5"/></svg></div>
-                Add-on status
-              </div>
-            </div>
-            <div class="section-body" id="stewardshipPlanPane">
-              <p class="muted">Load the dashboard to view Stewardship access.</p>
-            </div>
-          </section>
+        <!-- Three tool cards — always visible, content swaps with JS state -->
+        <div class="sw-suite-tool-grid">
 
-          <section class="section-card stewardship-tools-card">
-            <div class="section-header">
-              <div class="section-title">
-                <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></div>
-                Stewardship Tools
+          <div class="sw-suite-tool-card sw-tool-giving">
+            <div class="sw-tool-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+              </svg>
+            </div>
+            <strong class="sw-tool-card-title">Giving Metrics</strong>
+            <p class="sw-tool-card-desc">Pledge vs. actual, fulfillment rate, fund breakdown, donor retention, and year-over-year trends.</p>
+            <div class="sw-tool-card-body" id="givingMetricsPane">
+              <p class="sw-tool-loading">Loading…</p>
+            </div>
+            <a class="sw-tool-card-link" id="swGivingFullLink" href="#" hidden>Full metrics report →</a>
+          </div>
+
+          <div class="sw-suite-tool-card sw-tool-meetings">
+            <div class="sw-tool-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </div>
+            <strong class="sw-tool-card-title">Annual Meeting Packets</strong>
+            <p class="sw-tool-card-desc">Agenda, clergy reports, treasurer notes, nominees, resolutions, and a print-ready PDF packet.</p>
+            <div class="sw-tool-card-body" id="stewardshipMeetingsPane">
+              <p class="sw-tool-loading">Loading…</p>
+            </div>
+          </div>
+
+          <div class="sw-suite-tool-card sw-tool-financials">
+            <div class="sw-tool-card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+            <div class="sw-tool-card-header-row">
+              <strong class="sw-tool-card-title">Financial Snapshots</strong>
+              <div class="sw-tool-card-actions" id="financialsHeaderActions" hidden>
+                <select class="sw-year-select" id="financialsYearSelect" onchange="loadFinancialSnapshotsPanel(+this.value)"></select>
+                <button class="sw-action-btn" type="button" onclick="openFinancialsEditor(null)">+ New</button>
               </div>
             </div>
-            <div class="section-body stewardship-tool-list">
-              <div>
-                <strong>Annual meeting packets</strong>
-                <span>Agenda, reports, finances, nominees, and resolutions.</span>
-              </div>
-              <div>
-                <strong>Restricted fund snapshots</strong>
-                <span>Track beginning balance, received, disbursed, and ending balance.</span>
-              </div>
-              <div>
-                <strong>Print-ready packets</strong>
-                <span>Generate a packet preview and print-to-PDF from the dashboard.</span>
-              </div>
+            <p class="sw-tool-card-desc">Income, expenses, and restricted fund balances by fiscal year across all meeting packets.</p>
+            <div class="sw-tool-card-body" id="stewardshipFinancialsPane">
+              <p class="sw-tool-loading">Loading…</p>
             </div>
-          </section>
+          </div>
+
         </div>
 
-        <section class="section-card stewardship-meetings-card">
-          <div class="section-header">
-            <div class="section-title">
-              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></div>
-              Annual Meeting Packets
-            </div>
-            <span class="status-pill">Coming soon</span>
-          </div>
-          <div class="section-body" id="stewardshipMeetingsPane">
-            <p class="muted">Load the dashboard to view annual meeting packets.</p>
-          </div>
-        </section>
+        <!-- Subscription / plan pane — renders inside .sw-suite-plan-row -->
+        <div class="sw-suite-plan-row" id="stewardshipPlanPane"></div>
 
-        <section class="section-card stewardship-editor-card" id="stewardshipEditorCard" hidden>
+        <!-- Packet editor — full-width card, hidden until opened -->
+        <section class="section-card sw-suite-editor-card" id="stewardshipEditorCard" hidden>
           <div class="section-header">
             <div class="section-title">
-              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></div>
+              <div class="section-title-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </div>
               <span id="stewardshipEditorTitle">Annual Meeting Packet</span>
             </div>
             <button class="btn btn-ghost btn-sm" type="button" onclick="closeStewardshipEditor()">Close</button>
           </div>
           <div class="section-body stewardship-editor-body" id="stewardshipEditorPane"></div>
         </section>
+
+        <!-- Financial snapshot editor — full-width, hidden until opened -->
+        <section class="section-card sw-suite-editor-card" id="stewardshipFinancialsEditorCard" hidden>
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-title-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <span id="financialsEditorTitle">Financial Snapshot</span>
+            </div>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="closeFinancialsEditor()">Close</button>
+          </div>
+          <div class="section-body" id="stewardshipFinancialsEditorPane"></div>
+        </section>
+
       </div>
 
       <!-- ── TEXT-TO-GIVE TAB ─────────────────────────────── -->
@@ -945,8 +972,8 @@
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="stewardship" onclick="switchTab('stewardship')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 5h16v18H6z"/><path d="M10 10h8"/><path d="M10 14h8"/><path d="M10 18h5"/></svg>
-    <span>Steward</span>
-    <em class="mobile-soon-badge">Soon</em>
+    <span>Suite</span>
+    <em class="mobile-upgrade-badge">+</em>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="settings" onclick="switchTab('settings')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="3"/><path d="M14 5v3"/><path d="M14 20v3"/><path d="M5 14h3"/><path d="M20 14h3"/><path d="m7.6 7.6 2.1 2.1"/><path d="m18.3 18.3 2.1 2.1"/><path d="m20.4 7.6-2.1 2.1"/><path d="m9.7 18.3-2.1 2.1"/></svg>
@@ -969,4 +996,3 @@
 <script src="/parish/app.js"></script>
 </body>
 </html>
-
