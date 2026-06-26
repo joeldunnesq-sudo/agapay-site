@@ -2430,6 +2430,209 @@ export async function handleStewardshipGivingMetricsPage(request, env) {
   return new Response(html, { headers: { "Content-Type": "text/html;charset=utf-8" } });
 }
 
+// GET  /api/parish/dashboard/:parishId/stewardship/financials?year=YYYY
+// POST /api/parish/dashboard/:parishId/stewardship/financials
+// Standalone financial snapshots — income, expenses, and restricted funds for a fiscal year,
+// aggregated across all annual meeting packets for the parish (or as a standalone record).
+export async function handleStewardshipFinancials(request, env, parishId) {
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish not found" }, { status: 404 });
+  if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return unauthorized();
+  if (!hasStewardshipAccess(found.registration)) return json({ error: "Stewardship Suite not active." }, { status: 403 });
+
+  const url = new URL(request.url);
+  const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
+
+  // ── GET: return aggregated financials for the year ──────────────────────
+  if (request.method === "GET") {
+    // Pull all meetings for this parish + year
+    const meetings = await d1All(env,
+      `SELECT id, title, fiscal_year, meeting_date, status FROM stewardship_annual_meetings
+       WHERE parish_id = ? AND fiscal_year = ? ORDER BY created_at ASC`,
+      [parishId, year]
+    );
+
+    if (!meetings.length) {
+      return json({ year, meetings: [], financialSummaries: [], restrictedFunds: [], totals: null });
+    }
+
+    const meetingIds = meetings.map(m => m.id);
+    const placeholders = meetingIds.map(() => "?").join(",");
+
+    const [financialSummaries, restrictedFunds] = await Promise.all([
+      d1All(env,
+        `SELECT fs.*, am.title AS meeting_title, am.fiscal_year, am.meeting_date
+         FROM stewardship_financial_summaries fs
+         JOIN stewardship_annual_meetings am ON am.id = fs.annual_meeting_id
+         WHERE fs.annual_meeting_id IN (${placeholders})
+         ORDER BY am.meeting_date ASC`,
+        meetingIds
+      ),
+      d1All(env,
+        `SELECT rf.*, am.title AS meeting_title, am.fiscal_year
+         FROM stewardship_restricted_fund_snapshots rf
+         JOIN stewardship_annual_meetings am ON am.id = rf.annual_meeting_id
+         WHERE rf.annual_meeting_id IN (${placeholders})
+         ORDER BY rf.sort_order ASC`,
+        meetingIds
+      )
+    ]);
+
+    // Aggregate totals across all summaries for the year
+    const totals = financialSummaries.length ? financialSummaries.reduce((acc, fs) => ({
+      totalIncomeCents:  acc.totalIncomeCents  + (fs.total_income_cents  || 0),
+      totalExpenseCents: acc.totalExpenseCents + (fs.total_expense_cents || 0),
+      netCents:          acc.netCents          + (fs.net_cents           || 0),
+    }), { totalIncomeCents: 0, totalExpenseCents: 0, netCents: 0 }) : null;
+
+    return json({
+      year,
+      meetings: meetings.map(m => ({ id: m.id, title: m.title, fiscalYear: m.fiscal_year, meetingDate: m.meeting_date, status: m.status })),
+      financialSummaries: financialSummaries.map(fs => ({
+        id: fs.id,
+        annualMeetingId: fs.annual_meeting_id,
+        meetingTitle: fs.meeting_title,
+        meetingDate: fs.meeting_date,
+        totalIncomeCents:  fs.total_income_cents  || 0,
+        totalExpenseCents: fs.total_expense_cents || 0,
+        netCents:          fs.net_cents           || 0,
+        notes:             fs.notes               || "",
+        snapshotTakenAt:   fs.snapshot_taken_at   || ""
+      })),
+      restrictedFunds: restrictedFunds.map(rf => ({
+        id:                    rf.id,
+        annualMeetingId:       rf.annual_meeting_id,
+        meetingTitle:          rf.meeting_title,
+        fundName:              rf.fund_name              || "",
+        beginningBalanceCents: rf.beginning_balance_cents || 0,
+        totalReceivedCents:    rf.total_received_cents   || 0,
+        totalDisbursedCents:   rf.total_disbursed_cents  || 0,
+        endingBalanceCents:    rf.ending_balance_cents   || 0,
+        notes:                 rf.notes                  || "",
+        sortOrder:             rf.sort_order             || 0
+      })),
+      totals
+    });
+  }
+
+  // ── POST: save a standalone financial snapshot (not tied to a meeting packet) ──
+  if (request.method === "POST") {
+    let body;
+    try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, { status: 400 }); }
+
+    const meetingId = body.annualMeetingId || null;
+
+    // If annualMeetingId provided, upsert into that meeting's financial summary
+    if (meetingId) {
+      const meeting = await d1First(env,
+        "SELECT id FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
+        [meetingId, parishId]
+      );
+      if (!meeting) return json({ error: "Meeting not found for this parish" }, { status: 404 });
+
+      const existing = await d1First(env,
+        "SELECT id FROM stewardship_financial_summaries WHERE annual_meeting_id = ?",
+        [meetingId]
+      );
+      const income  = Math.round(Number(body.totalIncomeCents  || 0));
+      const expense = Math.round(Number(body.totalExpenseCents || 0));
+      const net     = Math.round(Number(body.netCents ?? (income - expense)));
+      const now     = new Date().toISOString();
+
+      if (existing) {
+        await d1Run(env,
+          `UPDATE stewardship_financial_summaries
+           SET total_income_cents = ?, total_expense_cents = ?, net_cents = ?, notes = ?,
+               snapshot_taken_at = ?, updated_at = ?
+           WHERE id = ?`,
+          [income, expense, net, body.notes || null, now, now, existing.id]
+        );
+      } else {
+        await d1Run(env,
+          `INSERT INTO stewardship_financial_summaries
+             (id, annual_meeting_id, total_income_cents, total_expense_cents, net_cents, notes, snapshot_taken_at, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [await newId(), meetingId, income, expense, net, body.notes || null, now, now, now]
+        );
+      }
+
+      // Upsert restricted funds if provided
+      if (Array.isArray(body.restrictedFunds) && body.restrictedFunds.length) {
+        // Delete and re-insert for simplicity (same pattern as packet editor)
+        await d1Run(env,
+          "DELETE FROM stewardship_restricted_fund_snapshots WHERE annual_meeting_id = ?",
+          [meetingId]
+        );
+        for (let i = 0; i < body.restrictedFunds.length; i++) {
+          const rf = body.restrictedFunds[i];
+          if (!rf.fundName?.trim()) continue;
+          await d1Run(env,
+            `INSERT INTO stewardship_restricted_fund_snapshots
+               (id, annual_meeting_id, fund_name, beginning_balance_cents, total_received_cents,
+                total_disbursed_cents, ending_balance_cents, notes, sort_order, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [await newId(), meetingId, rf.fundName.trim(),
+             Math.round(Number(rf.beginningBalanceCents || 0)),
+             Math.round(Number(rf.totalReceivedCents    || 0)),
+             Math.round(Number(rf.totalDisbursedCents   || 0)),
+             Math.round(Number(rf.endingBalanceCents    || 0)),
+             rf.notes || null, i, now]
+          );
+        }
+      }
+
+      return json({ ok: true });
+    }
+
+    // No meeting ID — create a new minimal meeting record as the container
+    const fiscalYear = parseInt(body.fiscalYear || year, 10);
+    const newMeetingId = await newId();
+    const now = new Date().toISOString();
+    await d1Run(env,
+      `INSERT INTO stewardship_annual_meetings
+         (id, parish_id, title, fiscal_year, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, 'draft', ?, ?)`,
+      [newMeetingId, parishId,
+       body.title || (fiscalYear + " Financial Snapshot"),
+       fiscalYear, now, now]
+    );
+
+    const income  = Math.round(Number(body.totalIncomeCents  || 0));
+    const expense = Math.round(Number(body.totalExpenseCents || 0));
+    const net     = Math.round(Number(body.netCents ?? (income - expense)));
+    await d1Run(env,
+      `INSERT INTO stewardship_financial_summaries
+         (id, annual_meeting_id, total_income_cents, total_expense_cents, net_cents, notes, snapshot_taken_at, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [await newId(), newMeetingId, income, expense, net, body.notes || null, now, now, now]
+    );
+
+    if (Array.isArray(body.restrictedFunds)) {
+      for (let i = 0; i < body.restrictedFunds.length; i++) {
+        const rf = body.restrictedFunds[i];
+        if (!rf.fundName?.trim()) continue;
+        await d1Run(env,
+          `INSERT INTO stewardship_restricted_fund_snapshots
+             (id, annual_meeting_id, fund_name, beginning_balance_cents, total_received_cents,
+              total_disbursed_cents, ending_balance_cents, notes, sort_order, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [await newId(), newMeetingId, rf.fundName.trim(),
+           Math.round(Number(rf.beginningBalanceCents || 0)),
+           Math.round(Number(rf.totalReceivedCents    || 0)),
+           Math.round(Number(rf.totalDisbursedCents   || 0)),
+           Math.round(Number(rf.endingBalanceCents    || 0)),
+           rf.notes || null, i, now]
+        );
+      }
+    }
+
+    return json({ ok: true, annualMeetingId: newMeetingId });
+  }
+
+  return json({ error: "Method not allowed" }, { status: 405 });
+}
+
 export async function handleStewardshipWebhook(request, env) {
   const body = await request.text();
   const sig = request.headers.get("stripe-signature") || "";
