@@ -1018,7 +1018,7 @@
     linear-gradient(135deg, rgba(184,144,47,0.09), rgba(11,33,48,0.04) 46%, rgba(255,255,255,0.96) 100%),
     #fff;
   box-shadow: 0 7px 22px rgba(6,21,34,0.06);
-  overflow: hidden;
+  overflow: visible;
   position: relative;
 }
 /* Gold accent bar at top of each card */
@@ -1052,7 +1052,6 @@
   gap: 0.4rem;
   padding: 0.65rem 1.1rem 0;
   min-width: 0;
-  overflow: hidden;
 }
 
 .sw-tool-card-title {
