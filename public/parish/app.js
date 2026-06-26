@@ -737,9 +737,17 @@
       statusEl.className = 'sw-suite-status-label ' + (isActive ? 'sw-suite-status--active' : 'sw-suite-status--upsell');
     }
 
-    // Nav badge: hide "Upgrade" if already subscribed
+    // Nav badges: gold when upsell, green when active (sidebar + mobile)
     const badge = document.querySelector('#nav-stewardship .nav-upgrade-badge');
-    if (badge) badge.hidden = isActive;
+    if (badge) {
+      badge.textContent = isActive ? 'Active' : 'Upgrade';
+      badge.classList.toggle('nav-upgrade-badge--active', isActive);
+    }
+    const mobileBadge = document.getElementById('mobileStewBadge');
+    if (mobileBadge) {
+      mobileBadge.textContent = isActive ? 'Active' : 'Upgrade';
+      mobileBadge.classList.toggle('mobile-upgrade-badge--active', isActive);
+    }
 
     if (isActive) {
       renderStewardshipActiveState(planPane, meetingsPane, sw, isTrialing);
