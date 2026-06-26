@@ -1,4 +1,4 @@
-    * { box-sizing: border-box; }
+* { box-sizing: border-box; }
     [hidden] { display: none !important; }
     :root {
       --deep-hero: #061522;
@@ -165,6 +165,8 @@
     .sidebar-nav-item svg { color: var(--gold); }
     .sidebar-nav-item .nav-label { min-width: 0; }
     .nav-soon-badge { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(184,144,47,0.42); border-radius: 999px; background: rgba(184,144,47,0.14); color: var(--gold); padding: 0.16rem 0.45rem; font-size: 8px; font-weight: 800; letter-spacing: 0.08em; line-height: 1; text-transform: uppercase; white-space: nowrap; }
+    .nav-upgrade-badge { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(184,144,47,0.42); border-radius: 999px; background: rgba(184,144,47,0.14); color: var(--gold); padding: 0.16rem 0.45rem; font-size: 8px; font-weight: 800; letter-spacing: 0.08em; line-height: 1; text-transform: uppercase; white-space: nowrap; }
+    .nav-upgrade-badge--active { border-color: rgba(46,107,74,0.45); background: rgba(46,107,74,0.12); color: #3a8f5f; }
     .sidebar-links { padding: 1rem 1.25rem; margin-top: auto; }
     .sidebar-link { display: flex; align-items: center; gap: 8px; color: rgba(166,159,145,0.62); font-size: 12px; text-decoration: none; margin-bottom: 0.5rem; transition: color 0.15s ease; }
     .sidebar-link:hover { color: var(--cream); }
@@ -2213,4 +2215,3 @@
       .reconcile-transaction-table { min-width: 620px; }
       .reconcile-close-card { padding: 1rem; }
     }
-
