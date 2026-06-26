@@ -2633,6 +2633,101 @@ export async function handleStewardshipFinancials(request, env, parishId) {
   return json({ error: "Method not allowed" }, { status: 405 });
 }
 
+// POST /api/parish/dashboard/:parishId/stewardship/nudge
+// Identifies donors who are behind on their pledge and writes a notification
+// record for each. Returns a preview list before sending (dry_run=true) or
+// sends and returns the count (dry_run=false).
+export async function handleStewardshipNudge(request, env, parishId) {
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const ctx = await requireParishApiContext(request, env, parishId);
+  if (!ctx.ok) return ctx.response;
+  const { registration } = ctx;
+  if (!hasStewardshipAccess(registration)) {
+    return json({ error: "Stewardship Suite not active." }, { status: 403 });
+  }
+  if (request.method !== "GET" && request.method !== "POST") {
+    return json({ error: "Method not allowed" }, { status: 405 });
+  }
+
+  const url        = new URL(request.url);
+  const year       = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
+  const dryRun     = request.method === "GET" || url.searchParams.get("dry_run") === "true";
+  const parishName = registration.parishName || registration.name || "your parish";
+
+  // Pro-rate: donors should have given at least (dayOfYear/daysInYear * 85%) of pledge.
+  const today      = new Date();
+  const yearStart  = new Date(`${year}-01-01`);
+  const daysInYear = (year % 4 === 0) ? 366 : 365;
+  const dayOfYear  = Math.max(1, Math.ceil((today - yearStart) / 86400000));
+  const graceRate  = 0.85; // 15% grace buffer
+  const expectedRate = (dayOfYear / daysInYear) * graceRate;
+
+  // Load all pledges for this parish + year
+  const pledges = await d1All(env,
+    `SELECT donor_email, target_amount_cents FROM household_pledges
+     WHERE parish_id = ? AND fiscal_year = ? AND target_amount_cents > 0`,
+    parishId, year
+  );
+
+  if (!pledges.length) {
+    return json({ ok: true, behind: [], message: "No pledging donors found for " + year + "." });
+  }
+
+  // Load actual giving for each pledging donor this year
+  const yearEnd = year + "-12-31";
+  const yearStartStr = year + "-01-01";
+  const givenRows = await d1All(env,
+    `SELECT donor_email, SUM(json_extract(data, '$.giftAmountCents')) AS given_cents
+     FROM donor_offerings
+     WHERE parish_id = ? AND payment_status IN ('paid','succeeded')
+       AND created_at BETWEEN ? AND ?
+       AND donor_email IN (${pledges.map(() => "?").join(",")})
+     GROUP BY donor_email`,
+    parishId, yearStartStr, yearEnd, ...pledges.map(p => p.donor_email)
+  );
+
+  const givenMap = {};
+  for (const row of givenRows) {
+    givenMap[row.donor_email] = Number(row.given_cents || 0);
+  }
+
+  // Identify behind donors
+  const behind = pledges
+    .map(p => {
+      const given    = givenMap[p.donor_email] || 0;
+      const expected = Math.round(p.target_amount_cents * expectedRate);
+      const behind   = given < expected;
+      return { donorEmail: p.donor_email, pledgeCents: p.target_amount_cents, givenCents: given, expectedCents: expected, behind };
+    })
+    .filter(d => d.behind);
+
+  if (dryRun) {
+    return json({ ok: true, behind, year, dryRun: true, parishName });
+  }
+
+  // Send: write a notification row for each behind donor
+  const now = new Date().toISOString();
+  const message =
+    "Your stewardship campaign team at " + parishName + " wanted to gently reach out. " +
+    "Based on your " + year + " pledge, you may be a little behind schedule. " +
+    "If life has been full this season, please don’t be discouraged — " +
+    "any gift, large or small, makes a difference. Thank you for your faithfulness.";
+
+  let sent = 0;
+  for (const donor of behind) {
+    await d1Run(env,
+      `INSERT INTO donor_notifications
+         (id, donor_email, parish_id, type, fiscal_year, pledge_cents, given_cents, message, sent_at)
+       VALUES (?, ?, ?, 'pledge_nudge', ?, ?, ?, ?, ?)`,
+      await newId(), donor.donorEmail, parishId, year,
+      donor.pledgeCents, donor.givenCents, message, now
+    );
+    sent++;
+  }
+
+  return json({ ok: true, sent, year, parishName });
+}
+
 export async function handleStewardshipWebhook(request, env) {
   const body = await request.text();
   const sig = request.headers.get("stripe-signature") || "";
