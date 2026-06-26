@@ -792,9 +792,8 @@ export async function handleDonorDashboard(request, env) {
       await env.AGAPAY_DB.prepare(`
         INSERT INTO household_pledges (donor_email, parish_id, fiscal_year, target_amount_cents)
         VALUES (?, ?, ?, ?)
-        ON CONFLICT(donor_email, fiscal_year) DO UPDATE SET
+        ON CONFLICT(donor_email, parish_id, fiscal_year) DO UPDATE SET
           target_amount_cents = excluded.target_amount_cents,
-          parish_id           = excluded.parish_id,
           updated_at          = datetime('now')
       `).bind(updated.email, pledgeSyncParish, pledgeSyncYear, pledgeSyncAmount).run().catch(() => {});
     }
