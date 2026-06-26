@@ -1028,6 +1028,7 @@ let selectedReference = '';
           await loadDetail(selectedReference, { silent: true, noScroll: true });
         }
         loadPlatformSummary();
+        loadRecentActivity();
         loadLearnAdmin();
         lastDataLoadedAt = new Date();
         refreshDataAsOf();
@@ -1097,6 +1098,50 @@ let selectedReference = '';
         </div>`;
       }).join('');
     }
+
+    async function loadRecentActivity() {
+      const container = document.getElementById('recentActivityFeed');
+      if (!container) return;
+      container.innerHTML = '<div class="activity-feed-empty">Loading…</div>';
+      try {
+        const response = await fetch('/api/admin/recent-activity', { headers: authHeaders() });
+        const result = await response.json();
+        if (handleAuthFailure(response, result)) return;
+        if (!response.ok) throw new Error(result.error || 'Failed to load activity');
+        renderRecentActivity(result.events || []);
+      } catch (err) {
+        container.innerHTML = `<div class="activity-feed-empty">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function renderRecentActivity(events) {
+      const container = document.getElementById('recentActivityFeed');
+      if (!container) return;
+
+      if (!events.length) {
+        container.innerHTML = '<div class="activity-feed-empty">No activity yet.</div>';
+        return;
+      }
+
+      const iconFor = (type) => {
+        if (type === 'donor_signup') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+        if (type === 'stewardship_activated') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
+        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
+      };
+
+      container.innerHTML = events.map(e => {
+        const sub = e.sub ? `<div class="activity-sub">${escapeHtml(e.sub)}</div>` : '';
+        return `<div class="activity-entry activity-${escapeAttr(e.type)}">
+          <div class="activity-icon">${iconFor(e.type)}</div>
+          <div class="activity-body">
+            <div class="activity-label">${escapeHtml(e.label)}</div>
+            <div class="activity-detail">${escapeHtml(e.detail || '')}${sub}</div>
+          </div>
+          <div class="activity-time">${e.time ? escapeHtml(shortDate(e.time)) : ''}</div>
+        </div>`;
+      }).join('');
+    }
+
 
     function communityTypeOf(registration) {
       const raw = `${registration.communityType || ''} ${registration.parishName || ''}`.toLowerCase();
