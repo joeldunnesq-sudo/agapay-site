@@ -872,23 +872,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Sidebar nav upgrade badge ───────────────────────────────── */
-.nav-upgrade-badge {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(200,162,74,0.55);
-  border-radius: 999px;
-  background: rgba(200,162,74,0.18);
-  color: var(--gold);
-  padding: 0.16rem 0.5rem;
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  line-height: 1;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
+/* nav-upgrade-badge in parish/style.css */
 
 /* Distinct treatment for the suite nav item */
 .sidebar-nav-item--suite {
