@@ -1639,7 +1639,7 @@ export async function handleParishStewardshipSummary(request, env, parishId) {
       WHERE parish_id = ?
       ORDER BY fiscal_year DESC, created_at DESC
       LIMIT 50
-    `, [registration.parishId]);
+    `, registration.parishId);
   } catch (error) {
     if (!isMissingStewardshipSchema(error)) throw error;
     setupRequired = true;
@@ -1752,7 +1752,7 @@ export async function handleParishStewardshipMeetings(request, env, parishId) {
         WHERE parish_id = ?
         ORDER BY fiscal_year DESC, created_at DESC
         LIMIT 50
-      `, [registration.parishId]);
+      `, registration.parishId);
     } catch (error) {
       if (!isMissingStewardshipSchema(error)) throw error;
       return json({ ok: false, error: "Stewardship database tables are not installed yet.", setupRequired: true }, { status: 503 });
@@ -1772,7 +1772,7 @@ export async function handleParishStewardshipMeetings(request, env, parishId) {
       (id, parish_id, title, fiscal_year, meeting_date, meeting_time, location,
        parish_name_override, jurisdiction, address, status, created_by, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `, [
+  `, 
     meetingId, registration.parishId,
     form.title || "Annual Meeting",
     parseInt(form.fiscal_year) || new Date().getFullYear(),
@@ -1785,7 +1785,7 @@ export async function handleParishStewardshipMeetings(request, env, parishId) {
     form.action === "ready" ? "ready" : "draft",
     null,
     now, now,
-  ]);
+  );
 
   await saveMeetingSubRecords(env, meetingId, form);
   return handleParishStewardshipMeetingDetail(request, env, parishId, meetingId);
@@ -1828,7 +1828,7 @@ export async function handleParishStewardshipMeetingDetail(request, env, parishI
       parish_name_override = ?, jurisdiction = ?, address = ?,
       status = ?, updated_at = ?
     WHERE id = ? AND parish_id = ?
-  `, [
+  `, 
     form.title || meeting.title,
     parseInt(form.fiscal_year) || meeting.fiscal_year,
     form.meeting_date || null,
@@ -1840,7 +1840,7 @@ export async function handleParishStewardshipMeetingDetail(request, env, parishI
     form.action === "ready" ? "ready" : "draft",
     now,
     meetingId, registration.parishId,
-  ]);
+  );
   await deleteMeetingSubRecords(env, meetingId);
   await saveMeetingSubRecords(env, meetingId, form);
 
@@ -1880,7 +1880,7 @@ export async function handleStewardshipHome(request, env) {
     WHERE parish_id = ?
     ORDER BY fiscal_year DESC, created_at DESC
     LIMIT 50
-  `, [registration.parishId]);
+  `, registration.parishId);
 
   return new Response(stewardshipHomeHtml(registration, meetings || [], env), {
     headers: { "Content-Type": "text/html;charset=utf-8" },
@@ -2043,7 +2043,7 @@ export async function handleStewardshipMeetingNew(request, env) {
       (id, parish_id, title, fiscal_year, meeting_date, meeting_time, location,
        parish_name_override, jurisdiction, address, status, created_by, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `, [
+  `, 
     meetingId, registration.parishId,
     form.title || "Annual Meeting",
     parseInt(form.fiscal_year) || new Date().getFullYear(),
@@ -2056,7 +2056,7 @@ export async function handleStewardshipMeetingNew(request, env) {
     form.action === "ready" ? "ready" : "draft",
     ctx.userEmail || null,
     now, now,
-  ]);
+  );
 
   await saveMeetingSubRecords(env, meetingId, form);
 
@@ -2107,7 +2107,7 @@ export async function handleStewardshipMeetingEdit(request, env, meetingId) {
       parish_name_override = ?, jurisdiction = ?, address = ?,
       status = ?, updated_at = ?
     WHERE id = ? AND parish_id = ?
-  `, [
+  `, 
     form.title || meeting.title,
     parseInt(form.fiscal_year) || meeting.fiscal_year,
     form.meeting_date || null,
@@ -2119,7 +2119,7 @@ export async function handleStewardshipMeetingEdit(request, env, meetingId) {
     form.action === "ready" ? "ready" : (form.action === "save" ? "draft" : meeting.status),
     now,
     meetingId, registration.parishId,
-  ]);
+  );
 
   // Delete and re-insert sub-records (simplest approach for MVP)
   await deleteMeetingSubRecords(env, meetingId);
@@ -2190,7 +2190,7 @@ export async function handleStewardshipMeetingPdf(request, env, meetingId) {
   await d1Run(env, `
     INSERT INTO stewardship_generated_packets (id, annual_meeting_id, generated_by, generated_at)
     VALUES (?, ?, ?, ?)
-  `, [await newId(), meetingId, ctx.userEmail || null, new Date().toISOString()]);
+  `, await newId(), meetingId, ctx.userEmail || null, new Date().toISOString());
 
   // Update status to generated
   await d1Run(env,
@@ -2782,23 +2782,23 @@ async function loadRegistrationByStripeCustomer(env, customerId) {
 
 async function loadMeetingSubRecords(env, meetingId) {
   return Promise.all([
-    d1All(env, "SELECT * FROM stewardship_agenda_items WHERE annual_meeting_id = ? ORDER BY sort_order", [meetingId]),
-    d1All(env, "SELECT * FROM stewardship_reports WHERE annual_meeting_id = ? ORDER BY sort_order", [meetingId]),
-    d1First(env, "SELECT * FROM stewardship_financial_summaries WHERE annual_meeting_id = ?", [meetingId]),
-    d1All(env, "SELECT * FROM stewardship_restricted_fund_snapshots WHERE annual_meeting_id = ? ORDER BY sort_order", [meetingId]),
-    d1All(env, "SELECT * FROM stewardship_nominees WHERE annual_meeting_id = ? ORDER BY sort_order", [meetingId]),
-    d1All(env, "SELECT * FROM stewardship_resolutions WHERE annual_meeting_id = ? ORDER BY sort_order", [meetingId]),
+    d1All(env, "SELECT * FROM stewardship_agenda_items WHERE annual_meeting_id = ? ORDER BY sort_order", meetingId),
+    d1All(env, "SELECT * FROM stewardship_reports WHERE annual_meeting_id = ? ORDER BY sort_order", meetingId),
+    d1First(env, "SELECT * FROM stewardship_financial_summaries WHERE annual_meeting_id = ?", meetingId),
+    d1All(env, "SELECT * FROM stewardship_restricted_fund_snapshots WHERE annual_meeting_id = ? ORDER BY sort_order", meetingId),
+    d1All(env, "SELECT * FROM stewardship_nominees WHERE annual_meeting_id = ? ORDER BY sort_order", meetingId),
+    d1All(env, "SELECT * FROM stewardship_resolutions WHERE annual_meeting_id = ? ORDER BY sort_order", meetingId),
   ]);
 }
 
 async function deleteMeetingSubRecords(env, meetingId) {
   await Promise.all([
-    d1Run(env, "DELETE FROM stewardship_agenda_items WHERE annual_meeting_id = ?", [meetingId]),
-    d1Run(env, "DELETE FROM stewardship_reports WHERE annual_meeting_id = ?", [meetingId]),
-    d1Run(env, "DELETE FROM stewardship_financial_summaries WHERE annual_meeting_id = ?", [meetingId]),
-    d1Run(env, "DELETE FROM stewardship_restricted_fund_snapshots WHERE annual_meeting_id = ?", [meetingId]),
-    d1Run(env, "DELETE FROM stewardship_nominees WHERE annual_meeting_id = ?", [meetingId]),
-    d1Run(env, "DELETE FROM stewardship_resolutions WHERE annual_meeting_id = ?", [meetingId]),
+    d1Run(env, "DELETE FROM stewardship_agenda_items WHERE annual_meeting_id = ?", meetingId),
+    d1Run(env, "DELETE FROM stewardship_reports WHERE annual_meeting_id = ?", meetingId),
+    d1Run(env, "DELETE FROM stewardship_financial_summaries WHERE annual_meeting_id = ?", meetingId),
+    d1Run(env, "DELETE FROM stewardship_restricted_fund_snapshots WHERE annual_meeting_id = ?", meetingId),
+    d1Run(env, "DELETE FROM stewardship_nominees WHERE annual_meeting_id = ?", meetingId),
+    d1Run(env, "DELETE FROM stewardship_resolutions WHERE annual_meeting_id = ?", meetingId),
   ]);
 }
 
@@ -2837,7 +2837,7 @@ async function saveMeetingSubRecords(env, meetingId, form) {
       INSERT INTO stewardship_financial_summaries
         (id, annual_meeting_id, total_income_cents, total_expense_cents, net_cents, notes, snapshot_taken_at, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [await newId(), meetingId, income, expense, income - expense, form.fin_notes || null, now, now, now]);
+    `, await newId(), meetingId, income, expense, income - expense, form.fin_notes || null, now, now, now);
   }
 
   // Restricted funds
