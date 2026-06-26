@@ -2654,13 +2654,18 @@ export async function handleStewardshipNudge(request, env, parishId) {
   const dryRun     = request.method === "GET" || url.searchParams.get("dry_run") === "true";
   const parishName = registration.parishName || registration.name || "your parish";
 
-  // Pro-rate: donors should have given at least (dayOfYear/daysInYear * 85%) of pledge.
-  const today      = new Date();
-  const yearStart  = new Date(`${year}-01-01`);
-  const daysInYear = (year % 4 === 0) ? 366 : 365;
-  const dayOfYear  = Math.max(1, Math.ceil((today - yearStart) / 86400000));
-  const graceRate  = 0.85; // 15% grace buffer
-  const expectedRate = (dayOfYear / daysInYear) * graceRate;
+  // A donor is "3 months behind" if their actual giving is less than what
+  // they should have given by 3 months ago (92 days). This avoids nudging
+  // donors who are only a few weeks off pace.
+  const today          = new Date();
+  const yearStart      = new Date(`${year}-01-01`);
+  const daysInYear     = (year % 4 === 0) ? 366 : 365;
+  const threeMonthsAgo = new Date(today.getTime() - 92 * 86400000);
+  // If 3 months ago was before the fiscal year started, no one can be 3 months behind yet.
+  const comparisonDate = threeMonthsAgo < yearStart ? yearStart : threeMonthsAgo;
+  const daysElapsed    = Math.max(0, Math.ceil((comparisonDate - yearStart) / 86400000));
+  // Donors must be behind relative to what they should have given 3 months ago.
+  const expectedRate   = daysElapsed / daysInYear;
 
   // Load all pledges for this parish + year
   const pledges = await d1All(env,
@@ -2702,7 +2707,7 @@ export async function handleStewardshipNudge(request, env, parishId) {
     .filter(d => d.behind);
 
   if (dryRun) {
-    return json({ ok: true, behind, year, dryRun: true, parishName });
+    return json({ ok: true, behind, year, dryRun: true, parishName, thresholdActive: daysElapsed >= 1 });
   }
 
   // Send: write a notification row for each behind donor
