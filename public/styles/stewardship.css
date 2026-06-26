@@ -903,15 +903,24 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--gold);
-  color: var(--deep);
-  font-size: 9px;
-  font-weight: 800;
+  margin-top: -0.08rem;
+  border: 1px solid rgba(184,144,47,0.42);
+  border-radius: 999px;
+  background: rgba(184,144,47,0.12);
+  color: var(--gold);
+  padding: 0.08rem 0.34rem;
+  font-size: 7px;
   font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.08em;
   line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.mobile-upgrade-badge--active {
+  border-color: rgba(46,107,74,0.45);
+  background: rgba(46,107,74,0.12);
+  color: #3a8f5f;
 }
 
 /* ── Hero banner ─────────────────────────────────────────────── */
