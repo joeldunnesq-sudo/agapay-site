@@ -354,6 +354,8 @@
       }
       givingMetricsState.loaded = true;
       pane.innerHTML = renderGivingMetrics(summary, funds, y);
+      // Background check — enable nudge button only if donors are 3+ months behind
+      checkNudgeEligibility();
     } catch (e) {
       pane.innerHTML = '<p class="muted">Giving metrics unavailable.</p>';
     }
@@ -405,12 +407,12 @@
         '</div>'
       : '') +
       '<div class="sw-nudge-row">' +
-        '<button class="sw-nudge-btn" type="button" onclick="openNudgeModal()">'
+        '<button class="sw-nudge-btn" id="nudgeBtn" type="button" disabled title="Checking pledge status…">'
           + '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">'
           + '<path d="M8 1a5 5 0 0 1 5 5c0 3.5-5 9-5 9S3 9.5 3 6a5 5 0 0 1 5-5z"/>'
           + '<circle cx="8" cy="6" r="1.5"/>'
           + '</svg>'
-          + ' Nudge behind-schedule donors</button>' +
+          + ' Checking pledge status…</button>' +
       '</div>'
     );
   }
@@ -722,6 +724,49 @@
   // ── Pledge nudge modal ───────────────────────────────────────────────────
   let nudgePreviewData = null;
 
+  async function checkNudgeEligibility() {
+    if (!currentParish) return;
+    const btn = document.getElementById('nudgeBtn');
+    if (!btn) return;
+    try {
+      const res  = await fetch(stewardshipApi('/nudge?year=' + new Date().getFullYear()), { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.thresholdActive) {
+        // Too early in the year — no one can be 3 months behind yet
+        btn.disabled = true;
+        btn.title    = 'No donors are 3+ months behind on their pledge yet.';
+        btn.querySelector('svg + span, svg').nextSibling && (btn.lastChild.textContent = ' Nudge donors (none behind)');
+        // Rebuild label safely
+        const svg = btn.querySelector('svg');
+        btn.innerHTML = '';
+        if (svg) btn.appendChild(svg);
+        btn.appendChild(document.createTextNode(' Nudge donors (none behind)'));
+        return;
+      }
+      const count = (data.behind || []).length;
+      if (count === 0) {
+        btn.disabled = true;
+        btn.title    = 'All pledging donors are on track — no nudges needed.';
+        const svg = btn.querySelector('svg');
+        btn.innerHTML = '';
+        if (svg) btn.appendChild(svg);
+        btn.appendChild(document.createTextNode(' All donors on track'));
+      } else {
+        btn.disabled = false;
+        btn.title    = count + ' donor' + (count !== 1 ? 's are' : ' is') + ' at least 3 months behind on their pledge.';
+        btn.onclick  = () => openNudgeModal();
+        const svg = btn.querySelector('svg');
+        btn.innerHTML = '';
+        if (svg) btn.appendChild(svg);
+        btn.appendChild(document.createTextNode(' Nudge ' + count + ' behind-schedule donor' + (count !== 1 ? 's' : '')));
+        btn.classList.add('sw-nudge-btn--ready');
+      }
+    } catch {
+      // Silent — leave button disabled
+    }
+  }
+
+
   async function openNudgeModal() {
     if (!currentParish) return;
     const modal = document.getElementById('nudgeAdminModal');
@@ -824,42 +869,6 @@
     return url.pathname + url.search;
   }
 
-  function updateStewardshipBadges(isActive) {
-    const badge = document.querySelector('#nav-stewardship .nav-upgrade-badge');
-    if (badge) {
-      badge.textContent = isActive ? 'Active' : 'Upgrade';
-      badge.classList.toggle('nav-upgrade-badge--active', isActive);
-    }
-    const mobileBadge = document.getElementById('mobileStewBadge');
-    if (mobileBadge) {
-      mobileBadge.textContent = isActive ? 'Active' : 'Upgrade';
-      mobileBadge.classList.toggle('mobile-upgrade-badge--active', isActive);
-    }
-  }
-
-  // Fetch stewardship status in the background on dashboard load so the
-  // nav badge updates immediately without waiting for the tab to be clicked.
-  async function prefetchStewardshipBadge() {
-    if (!currentParish) return;
-    try {
-      const res  = await fetch(stewardshipApi(), { headers: authHeaders() });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) return;
-      stewardshipState = {
-        loaded: true,
-        stewardship:    data.stewardship    || { status: 'coming_soon', active: false },
-        meetings:       data.meetings       || [],
-        subscribePlans: data.subscribePlans || [],
-        setupRequired:  !!data.setupRequired,
-        comingSoon:     !!data.comingSoon,
-        selectedMeeting: null
-      };
-      const sw = stewardshipState.stewardship || {};
-      const isActive = sw.active || ['active', 'trialing'].includes(sw.status);
-      updateStewardshipBadges(isActive);
-    } catch { /* silent — badge stays gold */ }
-  }
-
   function renderStewardshipPanel() {
     const statusEl  = document.getElementById('stewardshipStatusLabel');
     const planPane  = document.getElementById('stewardshipPlanPane');
@@ -879,7 +888,16 @@
     }
 
     // Nav badges: gold when upsell, green when active (sidebar + mobile)
-    updateStewardshipBadges(isActive);
+    const badge = document.querySelector('#nav-stewardship .nav-upgrade-badge');
+    if (badge) {
+      badge.textContent = isActive ? 'Active' : 'Upgrade';
+      badge.classList.toggle('nav-upgrade-badge--active', isActive);
+    }
+    const mobileBadge = document.getElementById('mobileStewBadge');
+    if (mobileBadge) {
+      mobileBadge.textContent = isActive ? 'Active' : 'Upgrade';
+      mobileBadge.classList.toggle('mobile-upgrade-badge--active', isActive);
+    }
 
     if (isActive) {
       renderStewardshipActiveState(planPane, meetingsPane, sw, isTrialing);
@@ -1437,7 +1455,6 @@
       saveSession();
       renderDashboard();
       renderCampaignList(currentParish);
-      prefetchStewardshipBadge();
       loadGivingSummary();
       loadRecurringHealth();
       loadCommemorations();
