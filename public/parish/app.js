@@ -869,6 +869,40 @@
     return url.pathname + url.search;
   }
 
+  function updateStewardshipBadges(isActive) {
+    const badge = document.querySelector('#nav-stewardship .nav-upgrade-badge');
+    if (badge) {
+      badge.textContent = isActive ? 'Active' : 'Upgrade';
+      badge.classList.toggle('nav-upgrade-badge--active', isActive);
+    }
+    const mobileBadge = document.getElementById('mobileStewBadge');
+    if (mobileBadge) {
+      mobileBadge.textContent = isActive ? 'Active' : 'Upgrade';
+      mobileBadge.classList.toggle('mobile-upgrade-badge--active', isActive);
+    }
+  }
+
+  async function prefetchStewardshipBadge() {
+    if (!currentParish) return;
+    try {
+      const res  = await fetch(stewardshipApi(), { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return;
+      stewardshipState = {
+        loaded:          true,
+        stewardship:     data.stewardship    || { status: 'coming_soon', active: false },
+        meetings:        data.meetings        || [],
+        subscribePlans:  data.subscribePlans  || [],
+        setupRequired:   !!data.setupRequired,
+        comingSoon:      !!data.comingSoon,
+        selectedMeeting: null
+      };
+      const sw       = stewardshipState.stewardship || {};
+      const isActive = sw.active || ['active', 'trialing'].includes(sw.status);
+      updateStewardshipBadges(isActive);
+    } catch { /* silent — badge stays gold */ }
+  }
+
   function renderStewardshipPanel() {
     const statusEl  = document.getElementById('stewardshipStatusLabel');
     const planPane  = document.getElementById('stewardshipPlanPane');
@@ -887,17 +921,7 @@
       statusEl.className = 'sw-suite-status-label ' + (isActive ? 'sw-suite-status--active' : 'sw-suite-status--upsell');
     }
 
-    // Nav badges: gold when upsell, green when active (sidebar + mobile)
-    const badge = document.querySelector('#nav-stewardship .nav-upgrade-badge');
-    if (badge) {
-      badge.textContent = isActive ? 'Active' : 'Upgrade';
-      badge.classList.toggle('nav-upgrade-badge--active', isActive);
-    }
-    const mobileBadge = document.getElementById('mobileStewBadge');
-    if (mobileBadge) {
-      mobileBadge.textContent = isActive ? 'Active' : 'Upgrade';
-      mobileBadge.classList.toggle('mobile-upgrade-badge--active', isActive);
-    }
+    updateStewardshipBadges(isActive);
 
     if (isActive) {
       renderStewardshipActiveState(planPane, meetingsPane, sw, isTrialing);
@@ -1455,6 +1479,7 @@
       saveSession();
       renderDashboard();
       renderCampaignList(currentParish);
+      prefetchStewardshipBadge();
       loadGivingSummary();
       loadRecurringHealth();
       loadCommemorations();
