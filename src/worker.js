@@ -1330,6 +1330,7 @@ export default {
     if (url.pathname === "/parish/stewardship/annual-meetings") return handleStewardshipMeetingList(request, env);
     if ((request.method === "GET" || request.method === "POST") && url.pathname === "/parish/stewardship/annual-meetings/new") return handleStewardshipMeetingNew(request, env);
     if (request.method === "POST" && url.pathname === "/webhooks/stewardship") return handleStewardshipWebhook(request, env);
+    if (request.method === "POST" && url.pathname === "/api/parish/stewardship/webhook") return handleStewardshipWebhook(request, env);
     if (url.pathname.startsWith("/parish/stewardship/annual-meetings/")) {
       const swPath = url.pathname.replace("/parish/stewardship/annual-meetings/", "");
       const [swId, swAction] = swPath.split("/");
