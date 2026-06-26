@@ -2252,6 +2252,11 @@ body {
 .learn-family-chore-roster { display: flex; gap: 7px; flex-wrap: wrap; }
 .learn-family-chore-roster span { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); padding: 5px 12px 5px 6px; color: var(--muted); font-size: 12px; }
 .learn-family-chore-roster b { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; color: #f3ead4; font-size: 11px; }
+.learn-chore-editor { display: grid; gap: 12px; border: 1px solid rgba(181, 148, 47, .24); border-radius: 16px; background: linear-gradient(135deg, #fffaf0, var(--paper)); padding: 14px; box-shadow: 0 1px 3px rgba(20, 40, 70, .04); }
+.learn-chore-editor-main { display: grid; grid-template-columns: minmax(190px, 1.3fr) minmax(150px, .8fr) minmax(130px, .7fr) auto; gap: 10px; align-items: end; }
+.learn-chore-editor-schedule { display: grid; grid-template-columns: repeat(6, minmax(118px, 1fr)); gap: 10px; align-items: end; padding-top: 10px; border-top: 1px solid var(--line); }
+.learn-chore-editor label { min-width: 0; }
+.learn-chore-editor .learn-remove-row { align-self: end; }
 .learn-family-grocery-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
 .learn-family-aisle { border: 1px solid var(--line); border-radius: 12px; background: var(--paper); padding: 12px; }
 .learn-family-aisle strong { display: block; color: var(--gold); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
@@ -2357,7 +2362,9 @@ body {
 .learn-family-pantry-layout aside small { color: var(--gold); font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .learn-family-person-card { display: grid; gap: 8px; padding: 15px; }
 .learn-family-person-card > span { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--person-color, var(--navy)); color: #f3ead4; }
-.learn-family-mini-card { width: 100%; min-height: 56px; padding: 10px; }
+.learn-family-mini-card { width: 100%; min-height: 56px; display: grid; gap: 3px; align-content: center; padding: 10px; }
+.learn-family-mini-card strong { color: var(--ink); font-size: 13px; line-height: 1.2; }
+.learn-family-mini-card small, .learn-family-person-card small { color: var(--gold); font-size: 10.5px; font-weight: 800; line-height: 1.25; }
 .learn-family-chore-row > strong { display: flex; align-items: center; gap: 8px; }
 .learn-family-chore-row > strong span { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--person-color, var(--navy)); color: #f3ead4; font-size: 11px; letter-spacing: 0; }
 .learn-family-event-row { width: 100%; display: grid; grid-template-columns: 70px 1fr auto; gap: 10px; align-items: center; padding: 11px 12px; }
@@ -2384,11 +2391,15 @@ body {
   .learn-child-row, .learn-event-row, .learn-recipe-row, .learn-grocery-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .learn-child-monogram { grid-column: 1 / -1; }
   .learn-family-adults { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .learn-chore-editor-main { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .learn-chore-editor-main .learn-remove-row { grid-column: 1 / -1; width: max-content; }
+  .learn-chore-editor-schedule { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .learn-planning-section > summary { align-items: flex-start; flex-direction: column; }
 }
 
 @media (max-width: 560px) {
   .learn-child-row, .learn-event-row, .learn-recipe-row, .learn-grocery-row, .learn-family-adults { grid-template-columns: 1fr; }
+  .learn-chore-editor-main, .learn-chore-editor-schedule { grid-template-columns: 1fr; }
   .learn-family-intro { grid-template-columns: 1fr; padding: 18px; }
   .learn-family-intro-icon { width: 52px; height: 52px; }
   .learn-family-intro-watermark { font-size: 78px; right: 12px; top: 18px; transform: none; }
