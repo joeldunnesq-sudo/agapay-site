@@ -537,7 +537,7 @@ function cleanAssetRequest(request) {
     url.pathname = "/give/parish-giving/index.html";
     return new Request(url, request);
   }
-  if (url.pathname.startsWith("/give/parish-giving/")) {
+   if (url.pathname.startsWith("/give/parish-giving/") && !url.pathname.includes(".")) {
     url.pathname = "/give/parish-giving/index.html";
     return new Request(url, request);
   }
