@@ -1260,3 +1260,153 @@
   .sw-tool-financials { grid-column: auto; }
   .sw-upsell-row-inner { grid-template-columns: 1fr; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   PLEDGE NUDGE — Parish admin modal
+   ═══════════════════════════════════════════════════════════════ */
+
+.sw-nudge-row {
+  margin-top: .85rem;
+  padding-top: .75rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+}
+.sw-nudge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  height: 32px;
+  padding: 0 .85rem;
+  border: 1px solid rgba(184,144,47,.4);
+  border-radius: 7px;
+  background: rgba(184,144,47,.08);
+  color: var(--gold);
+  font: 600 .78rem var(--sans);
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.sw-nudge-btn svg { width: 13px; height: 13px; color: var(--gold); }
+.sw-nudge-btn:hover { background: rgba(184,144,47,.16); border-color: var(--gold); }
+
+/* Admin preview modal */
+.sw-nudge-admin-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(6,21,34,.55);
+  backdrop-filter: blur(4px);
+}
+.sw-nudge-admin-modal {
+  width: min(560px, 100%);
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: white;
+  box-shadow: 0 24px 60px rgba(6,21,34,.18);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+}
+.sw-nudge-admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, #fff, var(--paper));
+}
+.sw-nudge-admin-header h3 {
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--deep);
+  margin: 0;
+}
+.sw-nudge-admin-close {
+  width: 30px; height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  color: var(--stone);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.sw-nudge-admin-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+}
+.sw-nudge-summary {
+  font-size: .85rem;
+  color: var(--stone);
+  margin-bottom: .75rem;
+}
+.sw-nudge-none {
+  color: var(--stone);
+  font-size: .88rem;
+  line-height: 1.6;
+  text-align: center;
+  padding: 1rem 0;
+}
+.sw-nudge-list { display: grid; gap: .5rem; }
+.sw-nudge-row-preview {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .6rem .75rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  flex-wrap: wrap;
+}
+.sw-nudge-email {
+  font-size: .82rem;
+  font-weight: 500;
+  color: var(--deep);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sw-nudge-amounts {
+  display: flex;
+  gap: .75rem;
+  font-size: .75rem;
+  color: var(--stone);
+  flex-shrink: 0;
+}
+.sw-nudge-behind { color: #8a2929; font-weight: 600; }
+.sw-nudge-admin-footer {
+  padding: .85rem 1.25rem;
+  border-top: 1px solid var(--line);
+  background: rgba(246,241,232,.5);
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+.sw-nudge-admin-note {
+  font-size: .75rem;
+  color: var(--stone);
+  line-height: 1.5;
+  margin: 0;
+}
+.sw-nudge-send-btn {
+  align-self: flex-end;
+  padding: .55rem 1.25rem;
+  border: 0;
+  border-radius: 7px;
+  background: var(--deep);
+  color: var(--cream);
+  font: 700 .85rem var(--sans);
+  cursor: pointer;
+  transition: background .15s;
+}
+.sw-nudge-send-btn:hover { background: #0d2030; }
+.sw-nudge-send-btn:disabled { opacity: .6; cursor: wait; }
