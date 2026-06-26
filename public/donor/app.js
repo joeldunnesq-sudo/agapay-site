@@ -475,8 +475,8 @@ function donorNavIcon(kind) {
 
 function donorNavKind(href) {
   const path = String(href || "");
-  if (path.includes("#giving-dashboard")) return "giving";
-  if (path.includes("/myagapay/giving")) return "giving";
+  if (path.includes("#giving-dashboard")) return "give";
+  if (path.includes("/myagapay/giving")) return "give";
   if (path.includes("/learn")) return "learn";
   if (path.includes("/marketplace")) return "marketplace";
   if (path.includes("/directory")) return "directory";
