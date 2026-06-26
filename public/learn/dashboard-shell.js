@@ -1057,7 +1057,7 @@ function renderPlanner(vm) {
         <strong>${html(displayView === "month" ? vm.month.label : vm.week.label)}</strong>
         <span>${html(vm.week.seasonLabel || "Household rhythm")}</span>
       </div>
-      ${scopeAllowsTerm && displayView !== "year" ? `<div class="learn-family-tabs learn-family-term-tabs" aria-label="Planner term">${vm.termTabs.map((tab) => `<a href="${tab.href}" aria-current="${tab.active ? "page" : "false"}">${html(tab.label)}</a>`).join("")}</div>` : ""} // vm.activeView === "year" ? ""
+      ${scopeAllowsTerm && displayView !== "year" ? `<div class="learn-family-tabs learn-family-term-tabs" aria-label="Planner term">${vm.termTabs.map((tab) => `<a href="${tab.href}" aria-current="${tab.active ? "page" : "false"}">${html(tab.label)}</a>`).join("")}</div>` : ""}
       ${!scopeAllowsTerm ? `<span class="learn-family-lock">Meals, chores, and events use day, week, and month views.</span>` : ""}
     </div>
     ${activeScope === "meals" ? `<div class="learn-family-meal-tools" aria-label="Meal tools">
