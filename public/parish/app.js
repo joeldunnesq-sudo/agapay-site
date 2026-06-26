@@ -794,6 +794,45 @@
   }
 
   // Upsell state: lock all three tool cards, show subscribe CTA in plan row
+  function renderMeetingsList(meetings) {
+    const statusLabels = { draft:'Draft', ready:'Ready', generated:'Generated', archived:'Archived' };
+    const statusClasses = { draft:'sw-pill-draft', ready:'sw-pill-ready', generated:'sw-pill-generated', archived:'sw-pill-archived' };
+    return '<div class="sw-meetings-list">' +
+      meetings.map(m => {
+        const statusKey = (m.status || 'draft').toLowerCase();
+        const label = statusLabels[statusKey] || statusKey;
+        const cls = statusClasses[statusKey] || 'sw-pill-draft';
+        const dateStr = m.meetingDate ? new Date(m.meetingDate).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }) : '';
+        const metaParts = [m.fiscalYear, dateStr, m.location ? escapeHtml(m.location) : ''].filter(Boolean).join(' · ');
+        return '<div class="sw-meeting-row">' +
+          '<div class="sw-meeting-info">' +
+            '<strong class="sw-meeting-title">' + escapeHtml(m.title || (m.fiscalYear + ' Annual Meeting')) + '</strong>' +
+            '<span class="sw-meeting-meta">' + metaParts + '</span>' +
+          '</div>' +
+          '<div class="sw-meeting-actions">' +
+            '<span class="sw-pill ' + cls + '">' + label + '</span>' +
+            '<button class="sw-action-btn" type="button" onclick="editStewardshipMeeting(\'' + escapeAttr(m.id) + '\')">Edit</button>' +
+            '<a class="sw-action-btn" href="' + escapeAttr(stewardshipPreviewUrl(m.id)) + '" target="_blank" rel="noopener">Preview</a>' +
+            '<a class="sw-action-btn" href="' + escapeAttr(stewardshipPreviewUrl(m.id, 'pdf')) + '" target="_blank" rel="noopener">PDF</a>' +
+          '</div>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+
+  function renderMeetingsEmpty(year) {
+    return '<div class="sw-meetings-empty">' +
+      '<div class="sw-meetings-empty-icon" aria-hidden="true">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+          '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>' +
+        '</svg>' +
+      '</div>' +
+      '<strong>No packets yet</strong>' +
+      '<span>Create your first ' + year + ' Annual Parish Meeting packet.</span>' +
+      '<button class="sw-new-packet-btn" type="button" onclick="newStewardshipMeeting()">Create ' + year + ' packet</button>' +
+    '</div>';
+  }
+
   function renderStewardshipUpsellState(planPane, meetingsPane) {
     const year = new Date().getFullYear();
 
