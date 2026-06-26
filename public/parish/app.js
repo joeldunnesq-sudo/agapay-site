@@ -122,7 +122,7 @@
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Suite', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
@@ -301,12 +301,9 @@
   async function loadStewardshipPanel(force = false) {
     const status = document.getElementById('stewardshipStatusLabel');
     const planPane = document.getElementById('stewardshipPlanPane');
-    const meetingsPane = document.getElementById('stewardshipMeetingsPane');
-    if (!planPane || !meetingsPane) return;
+    if (!planPane) return;
     if (!currentParish) {
       if (status) status.textContent = 'Not loaded';
-      planPane.innerHTML = '<p class="muted">Load your parish dashboard to view Stewardship access.</p>';
-      meetingsPane.innerHTML = '<p class="muted">Load your parish dashboard to view annual meeting packets.</p>';
       return;
     }
     if (stewardshipState.loaded && !force) { renderStewardshipPanel(); return; }
@@ -331,8 +328,9 @@
       };
     }
     renderStewardshipPanel();
-    // Load giving metrics in parallel if the panel is visible
+    // Load giving metrics and financial snapshots in parallel
     loadGivingMetricsPanel();
+    loadFinancialSnapshotsPanel();
   }
 
   // ── Giving Metrics Panel ─────────────────────────────────────────────────
@@ -342,7 +340,7 @@
     const pane = document.getElementById('givingMetricsPane');
     if (!pane || !currentParish) return;
     if (year) givingMetricsState.year = year;
-    pane.innerHTML = '<p class="muted" style="padding:.5rem 0">Loading giving metrics…</p>';
+    if (!pane.querySelector('.sw-kpi-grid')) pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
     try {
       const y = givingMetricsState.year;
       const base = stewardshipApi().replace('/stewardship', '/stewardship/giving');
@@ -428,6 +426,291 @@
     );
   }
 
+  // ── Financial Snapshots Panel ───────────────────────────────────────────
+  let financialsState = { loaded: false, year: new Date().getFullYear(), data: null };
+
+  async function loadFinancialSnapshotsPanel(year) {
+    const pane = document.getElementById('stewardshipFinancialsPane');
+    if (!pane || !currentParish) return;
+
+    const sw = stewardshipState.stewardship || {};
+    const isActive = sw.active || ['active', 'trialing'].includes(sw.status);
+    if (!isActive) { pane.innerHTML = '<p class="muted">Subscribe to Stewardship Suite to access financial snapshots.</p>'; return; }
+
+    if (year) financialsState.year = year;
+
+    // Populate year selector
+    const sel = document.getElementById('financialsYearSelect');
+    if (sel && !sel.options.length) {
+      const cy = new Date().getFullYear();
+      for (let y = cy; y >= cy - 4; y--) {
+        const opt = document.createElement('option');
+        opt.value = y; opt.textContent = y;
+        if (y === financialsState.year) opt.selected = true;
+        sel.appendChild(opt);
+      }
+    }
+    if (sel) sel.value = financialsState.year;
+
+    pane.innerHTML = '<p class="muted sw-loading">Loading financial snapshots\u2026</p>';
+    try {
+      const res = await fetch(stewardshipApi('/financials?year=' + financialsState.year), { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to load financials');
+      financialsState.data = data;
+      financialsState.loaded = true;
+      pane.innerHTML = renderFinancialSnapshots(data);
+    } catch (e) {
+      pane.innerHTML = '<p class="muted">Unable to load financial snapshots: ' + escapeHtml(e.message) + '</p>';
+    }
+  }
+
+  function renderFinancialSnapshots(data) {
+    const fmt = (c) => '$' + ((c || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const { financialSummaries = [], restrictedFunds = [], totals, meetings = [] } = data;
+
+    if (!meetings.length) {
+      return '<div class="sw-financials-empty">' +
+        '<p>No financial data for ' + financialsState.year + ' yet.</p>' +
+        '<p class="muted" style="font-size:.82rem">Create a meeting packet or standalone snapshot to record income, expenses, and restricted fund balances.</p>' +
+        '<button class="sw-new-packet-btn" type="button" onclick="openFinancialsEditor(null)" style="margin-top:.5rem">+ New financial snapshot</button>' +
+      '</div>';
+    }
+
+    // Income / expense summary cards
+    let summaryHtml = '';
+    if (totals) {
+      const netSign = totals.netCents >= 0 ? 'surplus' : 'deficit';
+      summaryHtml =
+        '<div class="sw-fin-kpi-grid">' +
+          swFinKpi('Total Income',  fmt(totals.totalIncomeCents),  financialSummaries.length + ' packet' + (financialSummaries.length !== 1 ? 's' : ''), 'income') +
+          swFinKpi('Total Expenses', fmt(totals.totalExpenseCents), 'across all packets', 'expense') +
+          swFinKpi('Net ' + (totals.netCents >= 0 ? 'Surplus' : 'Deficit'), fmt(Math.abs(totals.netCents)), 'fiscal year ' + financialsState.year, netSign) +
+        '</div>';
+    }
+
+    // Per-packet breakdown
+    let packetsHtml = '';
+    if (financialSummaries.length) {
+      packetsHtml =
+        '<div class="sw-fin-section-label">By packet</div>' +
+        '<div class="sw-fin-packets">' +
+        financialSummaries.map(fs => {
+          const net = fs.netCents;
+          const netCls = net >= 0 ? 'sw-fin-surplus' : 'sw-fin-deficit';
+          return '<div class="sw-fin-packet-row">' +
+            '<div class="sw-fin-packet-info">' +
+              '<span class="sw-fin-packet-title">' + escapeHtml(fs.meetingTitle || 'Packet') + '</span>' +
+              (fs.meetingDate ? '<span class="sw-fin-packet-date">' + new Date(fs.meetingDate + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) + '</span>' : '') +
+            '</div>' +
+            '<div class="sw-fin-packet-amounts">' +
+              '<span class="sw-fin-income-lbl">' + fmt(fs.totalIncomeCents) + '</span>' +
+              '<span class="sw-fin-expense-lbl">' + fmt(fs.totalExpenseCents) + '</span>' +
+              '<span class="' + netCls + '">' + (net >= 0 ? '+' : '') + fmt(net) + '</span>' +
+            '</div>' +
+            '<button class="sw-action-btn" type="button" onclick="openFinancialsEditor(\'' + escapeAttr(fs.annualMeetingId) + '\')">Edit</button>' +
+          '</div>';
+        }).join('') +
+        '</div>';
+    }
+
+    // Restricted funds table
+    let fundsHtml = '';
+    if (restrictedFunds.length) {
+      // Group by fund name across packets, show each row
+      const rows = restrictedFunds.map(rf =>
+        '<tr class="sw-fund-row">' +
+          '<td class="sw-td sw-fund-name">' + escapeHtml(rf.fundName) + '</td>' +
+          '<td class="sw-td sw-td-right">' + fmt(rf.beginningBalanceCents) + '</td>' +
+          '<td class="sw-td sw-td-right sw-fin-income-lbl">' + fmt(rf.totalReceivedCents) + '</td>' +
+          '<td class="sw-td sw-td-right sw-fin-expense-lbl">' + fmt(rf.totalDisbursedCents) + '</td>' +
+          '<td class="sw-td sw-td-right ' + (rf.endingBalanceCents >= 0 ? 'sw-fin-surplus' : 'sw-fin-deficit') + '">' + fmt(rf.endingBalanceCents) + '</td>' +
+          '<td class="sw-td sw-td-muted" style="font-size:.78rem">' + escapeHtml(rf.meetingTitle || '') + '</td>' +
+        '</tr>'
+      ).join('');
+
+      fundsHtml =
+        '<div class="sw-fin-section-label" style="margin-top:1.25rem">Restricted funds</div>' +
+        '<div class="sw-fin-table-wrap">' +
+          '<table class="sw-fin-table">' +
+            '<thead><tr>' +
+              '<th class="sw-th">Fund</th>' +
+              '<th class="sw-th sw-th-right">Beginning</th>' +
+              '<th class="sw-th sw-th-right">Received</th>' +
+              '<th class="sw-th sw-th-right">Disbursed</th>' +
+              '<th class="sw-th sw-th-right">Ending</th>' +
+              '<th class="sw-th">Source packet</th>' +
+            '</tr></thead>' +
+            '<tbody>' + rows + '</tbody>' +
+          '</table>' +
+        '</div>';
+    }
+
+    return summaryHtml + packetsHtml + fundsHtml;
+  }
+
+  function swFinKpi(label, value, sub, type) {
+    const cls = type === 'income' ? 'sw-fin-income-lbl' : type === 'expense' ? 'sw-fin-expense-lbl' : type === 'surplus' ? 'sw-fin-surplus' : 'sw-fin-deficit';
+    return '<div class="sw-kpi-card">' +
+      '<span class="sw-kpi-label">' + label + '</span>' +
+      '<strong class="sw-kpi-value ' + cls + '">' + value + '</strong>' +
+      '<span class="sw-kpi-sub">' + sub + '</span>' +
+    '</div>';
+  }
+
+  function openFinancialsEditor(meetingId) {
+    const card = document.getElementById('stewardshipFinancialsEditorCard');
+    const pane = document.getElementById('stewardshipFinancialsEditorPane');
+    const title = document.getElementById('financialsEditorTitle');
+    if (!card || !pane) return;
+
+    // Find existing data for this meeting if provided
+    const existing = meetingId && financialsState.data
+      ? {
+          summary: financialsState.data.financialSummaries.find(fs => fs.annualMeetingId === meetingId),
+          funds:   financialsState.data.restrictedFunds.filter(rf => rf.annualMeetingId === meetingId),
+          meeting: financialsState.data.meetings.find(m => m.id === meetingId)
+        }
+      : null;
+
+    if (title) title.textContent = existing?.meeting ? 'Edit: ' + (existing.meeting.title || 'Packet') : 'New Financial Snapshot';
+
+    const fs = existing?.summary || {};
+    const funds = existing?.funds || [];
+    const fmt100 = (c) => c ? (c / 100).toFixed(2) : '';
+
+    const fundRows = funds.length
+      ? funds.map((rf, i) => renderFinancialsEditorFundRow(rf, i)).join('')
+      : renderFinancialsEditorFundRow({}, 0);
+
+    pane.innerHTML =
+      '<form id="financialsEditorForm" onsubmit="saveFinancialsSnapshot(event)">' +
+        (meetingId ? '<input type="hidden" name="annualMeetingId" value="' + escapeAttr(meetingId) + '" />' : '') +
+        (!meetingId ? '<div class="stewardship-form-grid" style="margin-bottom:.85rem">' +
+          '<label>Snapshot title<input name="title" value="' + financialsState.year + ' Financial Snapshot" /></label>' +
+          '<label>Fiscal year<input name="fiscalYear" type="number" value="' + financialsState.year + '" /></label>' +
+        '</div>' : '') +
+        '<div class="stewardship-editor-section">' +
+          '<div><h3>Income &amp; Expenses</h3></div>' +
+          '<div class="stewardship-form-grid">' +
+            '<label>Total income ($)<input name="totalIncomeDollars" type="number" step="0.01" min="0" value="' + fmt100(fs.totalIncomeCents) + '" placeholder="0.00" /></label>' +
+            '<label>Total expenses ($)<input name="totalExpenseDollars" type="number" step="0.01" min="0" value="' + fmt100(fs.totalExpenseCents) + '" placeholder="0.00" /></label>' +
+            '<label style="grid-column:1/-1">Notes<textarea name="notes" rows="2" placeholder="Budget notes, audit status, carryover details\u2026">' + escapeHtml(fs.notes || '') + '</textarea></label>' +
+          '</div>' +
+        '</div>' +
+        '<div class="stewardship-editor-section">' +
+          '<div>' +
+            '<h3>Restricted Funds</h3>' +
+            '<button class="btn btn-ghost btn-sm" type="button" onclick="addFinancialsFundRow()">Add fund</button>' +
+          '</div>' +
+          '<div class="sw-fin-fund-header">'+
+            '<span>Fund name</span><span>Beginning</span><span>Received</span><span>Disbursed</span><span>Ending</span><span></span>' +
+          '</div>' +
+          '<div id="financialsFundRows">' + fundRows + '</div>' +
+        '</div>' +
+        '<div class="btn-row">' +
+          '<button class="btn btn-gold" type="submit" id="financialsSaveBtn">Save snapshot</button>' +
+          '<button class="btn btn-ghost" type="button" onclick="closeFinancialsEditor()">Cancel</button>' +
+          '<span id="financialsSaveStatus" style="font-size:.82rem;color:var(--stone)"></span>' +
+        '</div>' +
+      '</form>';
+
+    card.hidden = false;
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderFinancialsEditorFundRow(rf, i) {
+    const fmt100 = (c) => c ? (c / 100).toFixed(2) : '';
+    return '<div class="stewardship-repeat-row sw-fin-fund-row-edit" data-row-type="fund">' +
+      '<input type="text" data-field="fundName" value="' + escapeAttr(rf.fundName || '') + '" placeholder="Fund name" />' +
+      '<input type="number" step="0.01" min="0" data-field="beginningBalance" value="' + fmt100(rf.beginningBalanceCents) + '" placeholder="0.00" />' +
+      '<input type="number" step="0.01" min="0" data-field="totalReceived" value="' + fmt100(rf.totalReceivedCents) + '" placeholder="0.00" />' +
+      '<input type="number" step="0.01" min="0" data-field="totalDisbursed" value="' + fmt100(rf.totalDisbursedCents) + '" placeholder="0.00" />' +
+      '<input type="number" step="0.01" min="0" data-field="endingBalance" value="' + fmt100(rf.endingBalanceCents) + '" placeholder="0.00" />' +
+      '<button class="btn btn-ghost btn-sm" type="button" onclick="removeFinancialsFundRow(this)">×</button>' +
+    '</div>';
+  }
+
+  function addFinancialsFundRow() {
+    const container = document.getElementById('financialsFundRows');
+    if (!container) return;
+    const count = container.querySelectorAll('.sw-fin-fund-row-edit').length;
+    container.insertAdjacentHTML('beforeend', renderFinancialsEditorFundRow({}, count));
+  }
+
+  function removeFinancialsFundRow(btn) {
+    const row = btn?.closest('.sw-fin-fund-row-edit');
+    const parent = row?.parentElement;
+    if (!row || !parent) return;
+    if (parent.querySelectorAll('.sw-fin-fund-row-edit').length <= 1) {
+      row.querySelectorAll('input').forEach(inp => inp.value = '');
+    } else {
+      row.remove();
+    }
+  }
+
+  async function saveFinancialsSnapshot(event) {
+    event.preventDefault();
+    const form = document.getElementById('financialsEditorForm');
+    const status = document.getElementById('financialsSaveStatus');
+    const btn = document.getElementById('financialsSaveBtn');
+    if (!form || !currentParish) return;
+
+    const fd = new FormData(form);
+    const annualMeetingId = fd.get('annualMeetingId') || null;
+    const totalIncomeCents  = Math.round(parseFloat(fd.get('totalIncomeDollars') || '0') * 100);
+    const totalExpenseCents = Math.round(parseFloat(fd.get('totalExpenseDollars') || '0') * 100);
+
+    const fundRows = [...form.querySelectorAll('.sw-fin-fund-row-edit')];
+    const restrictedFunds = fundRows.map(row => {
+      const get = (f) => row.querySelector('[data-field="' + f + '"]')?.value || '';
+      return {
+        fundName:              get('fundName').trim(),
+        beginningBalanceCents: Math.round(parseFloat(get('beginningBalance') || '0') * 100),
+        totalReceivedCents:    Math.round(parseFloat(get('totalReceived')    || '0') * 100),
+        totalDisbursedCents:   Math.round(parseFloat(get('totalDisbursed')   || '0') * 100),
+        endingBalanceCents:    Math.round(parseFloat(get('endingBalance')    || '0') * 100),
+      };
+    }).filter(rf => rf.fundName);
+
+    const payload = {
+      annualMeetingId,
+      totalIncomeCents,
+      totalExpenseCents,
+      netCents: totalIncomeCents - totalExpenseCents,
+      notes: fd.get('notes') || '',
+      fiscalYear: parseInt(fd.get('fiscalYear') || financialsState.year, 10),
+      title: fd.get('title') || '',
+      restrictedFunds
+    };
+
+    if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+    if (status) status.textContent = 'Saving\u2026';
+    try {
+      const res = await fetch(stewardshipApi('/financials'), {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Save failed');
+      if (status) status.textContent = '\u2713 Saved';
+      setTimeout(() => { if (status) status.textContent = ''; }, 3000);
+      closeFinancialsEditor();
+      financialsState.loaded = false;
+      loadFinancialSnapshotsPanel();
+    } catch (e) {
+      if (status) status.textContent = 'Error: ' + e.message;
+    } finally {
+      if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+    }
+  }
+
+  function closeFinancialsEditor() {
+    const card = document.getElementById('stewardshipFinancialsEditorCard');
+    if (card) card.hidden = true;
+  }
+
   function stewardshipGivingPageUrl() {
     const token = document.getElementById('parishToken')?.value.trim() || sessionStorage.getItem(parishSessionStorageKey) || '';
     const url = new URL('/parish/stewardship/giving', window.location.origin);
@@ -437,184 +720,131 @@
   }
 
   function renderStewardshipPanel() {
-    const statusEl = document.getElementById('stewardshipStatusLabel');
-    const planPane = document.getElementById('stewardshipPlanPane');
+    const statusEl  = document.getElementById('stewardshipStatusLabel');
+    const planPane  = document.getElementById('stewardshipPlanPane');
     const meetingsPane = document.getElementById('stewardshipMeetingsPane');
     if (!planPane || !meetingsPane) return;
 
     const sw = stewardshipState.stewardship || {};
-    const isActive = sw.active || ['active', 'trialing'].includes(sw.status);
+    const isActive   = sw.active || ['active', 'trialing'].includes(sw.status);
     const isTrialing = sw.status === 'trialing';
 
+    // Hero status label
     if (statusEl) {
-      statusEl.textContent = isActive ? (isTrialing ? 'Trial' : 'Active') : 'Add-on';
+      statusEl.textContent = isActive
+        ? (isTrialing ? 'Trial active' : 'Active')
+        : 'Add-on · $39/mo';
+      statusEl.className = 'sw-suite-status-label ' + (isActive ? 'sw-suite-status--active' : 'sw-suite-status--upsell');
     }
+
+    // Nav badge: hide "Upgrade" if already subscribed
+    const badge = document.querySelector('#nav-stewardship .nav-upgrade-badge');
+    if (badge) badge.hidden = isActive;
 
     if (isActive) {
-      renderStewardshipActivePanel(planPane, meetingsPane, sw, isTrialing);
+      renderStewardshipActiveState(planPane, meetingsPane, sw, isTrialing);
     } else {
-      renderStewardshipUpsellPanel(planPane, meetingsPane);
+      renderStewardshipUpsellState(planPane, meetingsPane);
     }
   }
 
-  function renderStewardshipActivePanel(planPane, meetingsPane, sw, isTrialing) {
-    const yearOpts = [0,1,2,3,4].map(n => {
-      const y = new Date().getFullYear()-n;
-      return `<option value="${y}"${y===givingMetricsState.year?' selected':''}>${y}</option>`;
-    }).join('');
+  // Active state: populate the plan row (billing management) + meetings tool card
+  function renderStewardshipActiveState(planPane, meetingsPane, sw, isTrialing) {
+    // ── Plan row — billing status + manage button ──────────────────────────
+    planPane.innerHTML =
+      '<div class="sw-plan-row-inner">' +
+        '<div class="sw-plan-row-copy">' +
+          '<span class="sw-plan-badge">' + (isTrialing ? 'Trial' : 'Active') + '</span>' +
+          '<span class="sw-plan-name">Stewardship Suite</span>' +
+          '<span class="sw-plan-parish">' + escapeHtml(currentParish?.parishName || '') + '</span>' +
+        '</div>' +
+        '<button class="sw-manage-btn" type="button" onclick="openStewardshipBilling(this)">Manage billing</button>' +
+      '</div>';
 
-    planPane.innerHTML = `
-      <div class="sw-status-card ${isTrialing ? 'sw-status-trial' : 'sw-status-active'}">
-        <div class="sw-status-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/>
-            <path d="M9 12l2 2 4-5"/>
-          </svg>
-        </div>
-        <div class="sw-status-copy">
-          <span class="sw-status-eyebrow">${isTrialing ? 'Trial period active' : 'Stewardship Suite'}</span>
-          <strong class="sw-status-heading">Your subscription is active.</strong>
-          <p class="sw-status-sub">Packet builder, giving metrics, and pledge tracking are available for ${currentParish?.parishName || 'your parish'}.</p>
-        </div>
-        <button class="sw-manage-btn" type="button" onclick="openStewardshipBilling(this)">Manage billing</button>
-      </div>
-
-      <div class="sw-metrics-card">
-        <div class="sw-metrics-header">
-          <div>
-            <span class="sw-section-eyebrow">Pledge &amp; Giving</span>
-            <h3 class="sw-section-heading">Giving Metrics</h3>
-          </div>
-          <div class="sw-metrics-actions">
-            <select class="sw-year-select" onchange="loadGivingMetricsPanel(+this.value)" id="swYearSelect">
-              ${yearOpts}
-            </select>
-            <button class="sw-refresh-btn" type="button" onclick="loadGivingMetricsPanel()" title="Refresh">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
-            </button>
-          </div>
-        </div>
-        <div id="givingMetricsPane" class="sw-metrics-body"><p class="sw-loading">Loading metrics…</p></div>
-        <div class="sw-metrics-footer">
-          <a href="${stewardshipGivingPageUrl()}" class="sw-full-report-link">Full metrics report →</a>
-        </div>
-      </div>`;
-
+    // ── Meetings tool card ─────────────────────────────────────────────────
     const meetings = stewardshipState.meetings || [];
     const year = new Date().getFullYear();
-    meetingsPane.innerHTML = `
-      <div class="sw-meetings-header">
-        <div>
-          <span class="sw-section-eyebrow">Annual Meeting</span>
-          <h3 class="sw-section-heading">Meeting Packets</h3>
-        </div>
-        <button class="sw-new-packet-btn" type="button" onclick="newStewardshipMeeting()">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>
-          New packet
-        </button>
-      </div>
-      ${meetings.length ? renderMeetingsList(meetings) : renderMeetingsEmpty(year)}`;
-  }
-
-  function renderMeetingsList(meetings) {
-    const statusLabels = { draft:'Draft', ready:'Ready', generated:'Generated', archived:'Archived' };
-    const statusClasses = { draft:'sw-pill-draft', ready:'sw-pill-ready', generated:'sw-pill-generated', archived:'sw-pill-archived' };
-    return '<div class="sw-meetings-list">' +
-      meetings.map(m => {
-        const statusKey = (m.status || 'draft').toLowerCase();
-        const label = statusLabels[statusKey] || statusKey;
-        const cls = statusClasses[statusKey] || 'sw-pill-draft';
-        const dateStr = m.meetingDate ? new Date(m.meetingDate).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }) : '';
-        const metaParts = [m.fiscalYear, dateStr, m.location ? escapeHtml(m.location) : ''].filter(Boolean).join(' · ');
-        return '<div class="sw-meeting-row">' +
-          '<div class="sw-meeting-info">' +
-            '<strong class="sw-meeting-title">' + escapeHtml(m.title || (m.fiscalYear + ' Annual Meeting')) + '</strong>' +
-            '<span class="sw-meeting-meta">' + metaParts + '</span>' +
-          '</div>' +
-          '<div class="sw-meeting-actions">' +
-            '<span class="sw-pill ' + cls + '">' + label + '</span>' +
-            '<button class="sw-action-btn" type="button" onclick="editStewardshipMeeting(\'' + escapeAttr(m.id) + '\')">Edit</button>' +
-            '<a class="sw-action-btn" href="' + escapeAttr(stewardshipPreviewUrl(m.id)) + '" target="_blank" rel="noopener">Preview</a>' +
-            '<a class="sw-action-btn" href="' + escapeAttr(stewardshipPreviewUrl(m.id, 'pdf')) + '" target="_blank" rel="noopener">PDF</a>' +
-          '</div>' +
-        '</div>';
-      }).join('') +
-    '</div>';
-  }
-
-  function renderMeetingsEmpty(year) {
-    return '<div class="sw-meetings-empty">' +
-      '<div class="sw-meetings-empty-icon" aria-hidden="true">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
-          '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>' +
-          '<line x1="8" y1="14" x2="8" y2="14" stroke-width="2.5"/><line x1="12" y1="14" x2="12" y2="14" stroke-width="2.5"/><line x1="16" y1="14" x2="16" y2="14" stroke-width="2.5"/>' +
-        '</svg>' +
+    meetingsPane.innerHTML =
+      '<div class="sw-tool-meetings-header">' +
+        '<button class="sw-new-packet-btn" type="button" onclick="newStewardshipMeeting()">' +
+          '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>' +
+          ' New packet' +
+        '</button>' +
       '</div>' +
-      '<strong>No packets yet</strong>' +
-      '<span>Create your first ' + year + ' Annual Parish Meeting packet — agenda, reports, financial summary, nominees, and resolutions in one print-ready document.</span>' +
-      '<button class="sw-new-packet-btn" type="button" onclick="newStewardshipMeeting()">Create ' + year + ' packet</button>' +
-    '</div>';
+      (meetings.length ? renderMeetingsList(meetings) : renderMeetingsEmpty(year));
+
+    // Show the financials year select + new button
+    const finActions = document.getElementById('financialsHeaderActions');
+    if (finActions) finActions.hidden = false;
+
+    // Wire the full metrics report link
+    const reportLink = document.getElementById('swGivingFullLink');
+    if (reportLink) {
+      reportLink.href = stewardshipGivingPageUrl();
+      reportLink.hidden = false;
+    }
   }
 
-  function renderStewardshipUpsellPanel(planPane, meetingsPane) {
+  // Upsell state: lock all three tool cards, show subscribe CTA in plan row
+  function renderStewardshipUpsellState(planPane, meetingsPane) {
     const year = new Date().getFullYear();
-    planPane.innerHTML = `
-      <div class="stewardship-soon-hero-card">
-        <div class="stewardship-soon-mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/>
-            <path d="M9 12l2 2 4-5"/>
-          </svg>
-        </div>
-        <div>
-          <span>Native AGAPAY add-on · $39/mo</span>
-          <strong>Beautiful stewardship materials without the spreadsheet scramble.</strong>
-          <p>Annual parish meeting packets, pledge tracking, giving metrics, and restricted fund snapshots — all inside your existing AGAPAY dashboard.</p>
-        </div>
-      </div>
-      <div class="stewardship-soon-feature-grid">
-        <div class="stewardship-soon-feature">
-          <i>01</i>
-          <strong>Packet builder</strong>
-          <span>Agenda, clergy reports, treasurer notes, nominees, resolutions, and print-ready annual meeting materials.</span>
-        </div>
-        <div class="stewardship-soon-feature">
-          <i>02</i>
-          <strong>Giving metrics</strong>
-          <span>Pledge vs. actual, fulfillment rate, fund breakdown, donor retention, and year-over-year comparison.</span>
-        </div>
-        <div class="stewardship-soon-feature">
-          <i>03</i>
-          <strong>Financial snapshots</strong>
-          <span>Restricted funds, giving progress, campaign summaries, and council-ready reporting in one place.</span>
-        </div>
-      </div>
-      <div class="sw-upsell-cta">
-        <div class="sw-upsell-price">
-          <strong>$39</strong><span>/mo · Stewardship Suite</span>
-        </div>
-        <button class="sw-subscribe-btn" type="button" onclick="startStewardshipSubscription('monthly', this)">Start 14-day free trial</button>
-        <p class="sw-upsell-note">No commitment. Cancel anytime from your dashboard.</p>
-      </div>`;
 
-    meetingsPane.innerHTML = `
-      <div class="stewardship-soon-preview">
-        <div class="stewardship-soon-preview-head">
-          <span>Included in Stewardship Suite</span>
-          <strong>${year} Annual Parish Meeting Packet</strong>
-        </div>
-        <div class="stewardship-soon-preview-list">
-          <div><b>Agenda</b><span>Opening prayer, quorum, reports, elections, resolutions</span></div>
-          <div><b>Reports</b><span>Rector, treasurer, stewardship, ministries, restricted funds</span></div>
-          <div><b>Financials</b><span>Income, expenses, net, budget vs. actual, restricted fund snapshots</span></div>
-          <div><b>Giving data</b><span>Pledge fulfillment and fund breakdown pulled from AGAPAY</span></div>
-          <div><b>Output</b><span>Polished, print-ready PDF packet for parish council and faithful</span></div>
-        </div>
-        <div class="stewardship-soon-note">
-          <strong>Subscribe to unlock</strong>
-          <span>Packet creation, giving metrics, and pledge tracking activate immediately after subscribing.</span>
-        </div>
-      </div>`;
+    // ── Plan row — subscribe CTA ───────────────────────────────────────────
+    planPane.innerHTML =
+      '<div class="sw-upsell-row-inner">' +
+        '<div class="sw-upsell-row-copy">' +
+          '<strong>$39<span>/mo</span></strong>' +
+          '<p>Annual meeting packets, pledge analytics, financial snapshots, and print-ready parish reports — all in your dashboard.</p>' +
+        '</div>' +
+        '<div class="sw-upsell-row-actions">' +
+          '<button class="sw-subscribe-btn" type="button" onclick="startStewardshipSubscription(\'monthly\', this)">Start 14-day free trial</button>' +
+          '<p class="sw-upsell-note">No commitment. Cancel anytime.</p>' +
+        '</div>' +
+      '</div>';
+
+    // ── Meetings tool card — locked preview ────────────────────────────────
+    meetingsPane.innerHTML =
+      '<div class="sw-tool-locked">' +
+        '<div class="sw-tool-locked-items">' +
+          '<div><span>✓</span> Agenda, opening prayer, quorum call</div>' +
+          '<div><span>✓</span> Rector, treasurer &amp; ministry reports</div>' +
+          '<div><span>✓</span> Financial summary &amp; restricted funds</div>' +
+          '<div><span>✓</span> Nominees, elections, resolutions</div>' +
+          '<div><span>✓</span> Sign-in sheet &amp; minutes template</div>' +
+          '<div><span>✓</span> Print-ready PDF packet</div>' +
+        '</div>' +
+        '<div class="sw-tool-locked-badge">Subscribe to unlock</div>' +
+      '</div>';
+
+    // ── Giving metrics tool card — locked ─────────────────────────────────
+    const metricPane = document.getElementById('givingMetricsPane');
+    if (metricPane) {
+      metricPane.innerHTML =
+        '<div class="sw-tool-locked">' +
+          '<div class="sw-tool-locked-items">' +
+            '<div><span>✓</span> Pledge vs. actual fulfillment</div>' +
+            '<div><span>✓</span> Fund breakdown &amp; share</div>' +
+            '<div><span>✓</span> Donor retention &amp; new givers</div>' +
+            '<div><span>✓</span> Year-over-year comparison</div>' +
+          '</div>' +
+          '<div class="sw-tool-locked-badge">Subscribe to unlock</div>' +
+        '</div>';
+    }
+
+    // ── Financials tool card — locked ──────────────────────────────────────
+    const finPane = document.getElementById('stewardshipFinancialsPane');
+    if (finPane) {
+      finPane.innerHTML =
+        '<div class="sw-tool-locked">' +
+          '<div class="sw-tool-locked-items">' +
+            '<div><span>✓</span> Income &amp; expense by fiscal year</div>' +
+            '<div><span>✓</span> Restricted fund ledger</div>' +
+            '<div><span>✓</span> Net surplus / deficit tracking</div>' +
+            '<div><span>✓</span> Linked to meeting packets</div>' +
+          '</div>' +
+          '<div class="sw-tool-locked-badge">Subscribe to unlock</div>' +
+        '</div>';
+    }
   }
 
   function stewardshipPreviewUrl(meetingId, suffix = 'preview') {
