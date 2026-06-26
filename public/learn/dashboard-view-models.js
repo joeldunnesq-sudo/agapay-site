@@ -101,7 +101,7 @@ function text(value, fallback = "") {
 
 function weeklyFrequencyValue(value, fallback = "1x") {
   const raw = String(value || "").trim().toLowerCase();
-  if (["daily", "4x", "3x", "2x", "1x", "as-needed"].includes(raw)) return raw;
+  if (["daily", "weekly", "4x", "3x", "2x", "1x", "as-needed"].includes(raw)) return raw;
   if (raw.includes("daily") || raw.includes("every")) return "daily";
   if (raw.includes("4")) return "4x";
   if (raw.includes("3")) return "3x";
@@ -425,7 +425,26 @@ export function toPlannerViewModel(rawPayload) {
   const selectedDay = days[selectedDayIndex] || days[0] || {};
   const childTrackSummary = safeArray(planner.termSetup?.childTrackSummary);
   const childTrackById = new Map(childTrackSummary.map((track) => [track.childId, safeArray(track.tracks)]));
+  const rawHouseholdRows = safeArray(week.householdRows);
   const rawChildRows = safeArray(week.childRows);
+  const currentWeekItems = [
+    ...rawHouseholdRows.map((row, index) => ({
+      id: text(row.id, `household-${index}`),
+      kind: text(row.kind, "household"),
+      title: text(row.title, "Household block"),
+      sub: text(row.detail || row.subtitle, ""),
+      color: text(row.color, ACCENTS[index % ACCENTS.length]),
+      minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20)
+    })),
+    ...rawChildRows.map((row, index) => ({
+      id: text(row.id, `child-${index}`),
+      kind: "form",
+      title: text(row.title, "Lesson"),
+      sub: [text(row.child?.firstName || row.child?.name, ""), text(row.detail || row.subtitle, "")].filter(Boolean).join(" · "),
+      color: text(row.color || row.child?.color, ACCENTS[(index + rawHouseholdRows.length) % ACCENTS.length]),
+      minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20)
+    }))
+  ].filter((item, index, all) => item.id && item.title && all.findIndex((candidate) => candidate.id === item.id) === index);
 
   return {
     shell,
@@ -452,11 +471,13 @@ export function toPlannerViewModel(rawPayload) {
       label: text(week.label, "This Week"),
       seasonLabel: text(week.seasonLabel, ""),
       days,
-      householdRows: safeArray(week.householdRows).map((row) => ({
+      householdRows: rawHouseholdRows.map((row, index) => ({
+        id: text(row.id, `household-${index}`),
         title: text(row.title, "Household block"),
         sub: text(row.subtitle || row.detail, ""),
         minutes: safeArray(row.minutes),
         statuses: safeArray(row.statuses),
+        color: text(row.color, ACCENTS[index % ACCENTS.length]),
         graceModeApplied: Boolean(row.graceModeApplied)
       })),
       childRows: rawChildRows.map((row, index) => ({
@@ -475,6 +496,7 @@ export function toPlannerViewModel(rawPayload) {
         statuses: safeArray(row.statuses),
         graceModeApplied: Boolean(row.graceModeApplied)
       })),
+      weeklyAssignmentItems: currentWeekItems,
       formRows: groupRowsByForm(rawChildRows)
     },
     day: {
@@ -1116,6 +1138,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       planningMode: text(subject.planningMode, subject.childId ? "forms" : "forms"),
       scheduledDays: safeArray(subject.scheduledDays),
       scheduledWeeks: safeArray(subject.scheduledWeeks),
+      weeklyPlans: safeArray(subject.weeklyPlans),
       weeklyFrequency: weeklyFrequencyValue(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "daily"),
       formLabel: text(subject.formLabel, ""),
       gradeLabel: text(subject.gradeLabel, ""),
@@ -1216,6 +1239,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         planningMode: text(block.planningMode, "family"),
         scheduledDays: safeArray(block.scheduledDays),
         scheduledWeeks: safeArray(block.scheduledWeeks),
+        weeklyPlans: safeArray(block.weeklyPlans),
         weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
         formLabel: text(block.formLabel, ""),
         gradeLabel: text(block.gradeLabel, ""),
@@ -1241,6 +1265,7 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         planningMode: text(block.planningMode, "family"),
         scheduledDays: safeArray(block.scheduledDays),
         scheduledWeeks: safeArray(block.scheduledWeeks),
+        weeklyPlans: safeArray(block.weeklyPlans),
         weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
         formLabel: text(block.formLabel, ""),
         gradeLabel: text(block.gradeLabel, ""),

@@ -117,7 +117,7 @@ function text(value, fallback = "") {
 
 function weeklyFrequencyValue(value, fallback = "1x") {
   const raw = String(value || "").trim().toLowerCase();
-  if (["daily", "4x", "3x", "2x", "1x", "as-needed"].includes(raw)) return raw;
+  if (["daily", "weekly", "4x", "3x", "2x", "1x", "as-needed"].includes(raw)) return raw;
   if (raw.includes("daily") || raw.includes("every")) return "daily";
   if (raw.includes("4")) return "4x";
   if (raw.includes("3")) return "3x";
@@ -138,13 +138,18 @@ function scheduledDaysValue(value, legacyFrequency = "") {
     : frequency === "4x" ? ["mon", "tue", "wed", "thu"]
     : frequency === "3x" ? ["mon", "wed", "fri"]
     : frequency === "2x" ? ["tue", "thu"]
-    : frequency === "1x" ? ["wed"]
+    : frequency === "1x" || frequency === "weekly" ? ["wed"]
     : [];
 }
 
 function frequencyFromDays(days = []) {
   const count = scheduledDaysValue(days, "as-needed").length;
-  return count >= 5 ? "daily" : count ? `${count}x` : "as-needed";
+  return count >= 5 ? "daily" : count === 1 ? "weekly" : count ? `${count}x` : "as-needed";
+}
+
+function weeklyPlansValue(value) {
+  const direct = Array.isArray(value) ? value : String(value || "").split("|");
+  return direct.slice(0, DEFAULT_TERM_WEEK_COUNT).map((entry) => text(entry, ""));
 }
 
 const DEFAULT_TERM_WEEK_COUNT = 12;
@@ -505,6 +510,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     scheduledDays: subjectDays,
     scheduledWeeks: scheduledWeeksValue(subject.scheduledWeeks),
     weeklyFrequency: frequencyFromDays(subjectDays),
+    weeklyPlans: weeklyPlansValue(subject.weeklyPlans),
     weeklyTarget: Math.max(0, int(subject.weeklyTarget, 0)),
     termTarget: Math.max(0, int(subject.termTarget, 0)),
     activeStartDate: text(subject.activeStartDate, ""),
@@ -610,6 +616,7 @@ function normalizeSetupPayload(payload = {}, identity) {
       scheduledDays: blockDays,
       scheduledWeeks: scheduledWeeksValue(block.scheduledWeeks),
       weeklyFrequency: frequencyFromDays(blockDays),
+      weeklyPlans: weeklyPlansValue(block.weeklyPlans),
       weeklyTarget: Math.max(0, int(block.weeklyTarget, 0)),
       termTarget: Math.max(0, int(block.termTarget, 0)),
       activeStartDate: text(block.activeStartDate, ""),
@@ -938,6 +945,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
   ];
   const currentTermWeek = activeTermWeek(setupSnapshot.term || next.term || {});
   const plannerWeekWindow = currentWeekWindow();
+  const currentWeekPlan = (item = {}) => text(list(item.weeklyPlans)[Math.max(0, currentTermWeek - 1)], "");
   next.plannerWeek = {
     termWeekNumber: currentTermWeek,
     ...next.plannerWeek,
@@ -966,7 +974,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
         sourceId: block.id,
         kind: "enrichment",
         title: block.title,
-        detail: `${block.resource || block.blockType || "Enrichment"}${block.weeklyFrequency ? ` • ${block.weeklyFrequency}` : ""}`,
+        detail: `${block.resource || block.blockType || "Enrichment"}${currentWeekPlan(block) ? ` • ${currentWeekPlan(block)}` : ""}${block.weeklyFrequency ? ` • ${block.weeklyFrequency}` : ""}`,
         groupLabel: block.planningMode === "forms" ? block.formLabel || block.gradeLabel || "Form Enrichment" : "Everyone Together",
         planningMode: block.planningMode || "family",
         href: /literature|read-aloud|read aloud/i.test(`${block.blockType} ${block.title}`) ? "/myagapay/learn/books" : "/myagapay/learn/formation",
@@ -985,7 +993,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           id: `week_${subject.id}_${child.id}`,
           childId: child.id,
           title: subject.title,
-          detail: `${subject.resource || subject.cadenceLabel}${subject.endNumber ? ` (${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber})` : ""}${subject.weeklyFrequency ? ` • ${subject.weeklyFrequency}` : ""}`,
+          detail: `${subject.resource || subject.cadenceLabel}${currentWeekPlan(subject) ? ` • ${currentWeekPlan(subject)}` : ""}${subject.endNumber ? ` (${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber})` : ""}${subject.weeklyFrequency ? ` • ${subject.weeklyFrequency}` : ""}`,
           priority: subject.priorityLevel === "essential" ? index : subject.priorityLevel === "important" ? 30 + index : subject.priorityLevel === "optional" ? 100 + index : 70 + index,
           priorityLevel: subject.priorityLevel,
           instructionMode: subject.instructionMode,

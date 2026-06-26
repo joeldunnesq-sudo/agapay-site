@@ -226,6 +226,8 @@ async function resolveStaticPath(urlPath) {
   if (pathname === "/learn" || pathname === "/learn/") pathname = "/learn/index.html";
   if (pathname.startsWith("/learn/") && !path.extname(pathname)) pathname = `${pathname}.html`;
   if (pathname === "/myagapay/learn" || pathname === "/myagapay/learn/") pathname = "/learn/dashboard.html";
+  if (pathname === "/myagapay/learn/setup" || pathname === "/myagapay/learn/setup/") pathname = "/learn/onboarding.html";
+  if (pathname === "/myagapay/learn/onboarding" || pathname === "/myagapay/learn/onboarding/") pathname = "/learn/onboarding.html";
   if (pathname.startsWith("/myagapay/learn/") && !path.extname(pathname)) pathname = pathname.replace(/^\/myagapay/, "") + ".html";
   if (
     pathname === "/my-agapay" ||

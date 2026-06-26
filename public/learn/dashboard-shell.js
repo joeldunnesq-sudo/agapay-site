@@ -946,6 +946,31 @@ function statusPill(status) {
   return `<span style="border:1px solid ${color};color:${color};border-radius:999px;padding:2px 8px;font-size:11px;text-transform:capitalize;">${html(status || "planned")}</span>`;
 }
 
+function renderWeeklyAssignmentBoard(vm) {
+  const items = vm.week.weeklyAssignmentItems || [];
+  const card = (item) => `<article class="learn-week-assignment-card" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" style="border-left-color:${html(item.color || "var(--gold)")};"><strong>${html(item.title)}</strong>${item.sub ? `<small>${html(item.sub)}</small>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
+  return `
+    <section class="learn-week-assignment-board" data-week-assignment-board data-week-key="${html([vm.week.days[0]?.date, vm.week.days[6]?.date].filter(Boolean).join("_"))}">
+      <div class="learn-week-assignment-head">
+        <div>
+          <div>THIS WEEK</div>
+          <h2>Subject Placement</h2>
+        </div>
+        <small>Drag a subject into a day. Edits here stay in week view.</small>
+      </div>
+      <div class="learn-week-assignment-layout">
+        <div class="learn-week-assignment-pool">
+          <strong>Available subjects</strong>
+          <div class="learn-week-assignment-dropzone" data-week-assignment-zone="pool">${items.length ? items.map(card).join("") : emptyState("No setup subjects are active this week.")}</div>
+        </div>
+        <div class="learn-week-assignment-days">
+          ${vm.week.days.map((day) => `<div class="learn-week-assignment-day"><strong>${html(day.weekday || day.weekdayLong)}<span>${html(day.shortDate || day.date)}</span></strong><div class="learn-week-assignment-dropzone" data-week-assignment-zone="${html(day.date)}"></div></div>`).join("")}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
 function renderPlannerWeek(vm) {
   const dayCount = Math.max(vm.week.days.length, 1);
   return `
@@ -960,6 +985,7 @@ function renderPlannerWeek(vm) {
       </div>
       </div>
     </div>
+    ${renderWeeklyAssignmentBoard(vm)}
     <div style="display:flex;gap:14px;flex-wrap:wrap;">
       <div style="flex:1 1 620px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;">
         <div style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;margin-bottom:12px;">FORM PLANS</div>
@@ -2477,6 +2503,11 @@ const weeklyFrequencyOptions = [
   { value: "as-needed", label: "As needed" }
 ];
 
+const simpleScheduleOptions = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" }
+];
+
 const setupWeekdays = [
   { value: "sun", label: "Sun" },
   { value: "mon", label: "Mon" },
@@ -2496,6 +2527,7 @@ function scheduledDays(value, legacyFrequency = "") {
     "4x": ["mon", "tue", "wed", "thu"],
     "3x": ["mon", "wed", "fri"],
     "2x": ["tue", "thu"],
+    weekly: ["wed"],
     "1x": ["wed"],
     "as-needed": []
   };
@@ -2537,6 +2569,19 @@ function termWeekSummary(weeks = [], totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
 function setupTermWeekPicker(value, totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
   const selected = scheduledTermWeeks(value, totalWeeks);
   return `<details class="learn-day-picker learn-term-week-picker"><summary><span>Term weeks</span><strong data-term-week-summary>${html(termWeekSummary(selected, totalWeeks))}</strong></summary><div class="learn-day-picker-menu" style="grid-template-columns:repeat(4,minmax(54px,1fr));">${Array.from({ length: totalWeeks }, (_, index) => index + 1).map((week) => `<label><input type="checkbox" data-term-week-choice value="${week}" ${selected.includes(week) ? "checked" : ""}>W${week}</label>`).join("")}</div><div style="display:flex;gap:8px;padding:8px 10px 2px;"><button type="button" data-term-weeks-all class="learn-add-button" style="padding:6px 10px;">All weeks</button><button type="button" data-term-weeks-odd class="learn-add-button" style="padding:6px 10px;">Odd weeks</button><button type="button" data-term-weeks-even class="learn-add-button" style="padding:6px 10px;">Even weeks</button></div><input type="hidden" name="scheduledWeeks" value="${html(selected.join(","))}"></details>`;
+}
+
+function setupSourceInput(label, name, value = "") {
+  const resolved = String(value || "").trim();
+  const link = /^https?:\/\//i.test(resolved)
+    ? `<a href="${html(resolved)}" target="_blank" rel="noopener noreferrer" class="learn-source-link">Open source</a>`
+    : "";
+  return `<label>${html(label)}<input type="text" name="${html(name)}" value="${html(resolved)}" inputmode="url" placeholder="Book title, source note, or https://..." />${link}</label>`;
+}
+
+function setupWeeklyPlanFields(value = []) {
+  const entries = Array.isArray(value) ? value : String(value || "").split("|");
+  return `<details class="learn-weekly-plan-fields"><summary><span>Weekly chapters / lessons / pages</span><strong>Optional</strong></summary><div class="learn-weekly-plan-grid">${Array.from({ length: DEFAULT_TERM_WEEK_COUNT }, (_, index) => `<label>Week ${index + 1}<input type="text" name="weeklyPlans.${index + 1}" value="${html(entries[index] || "")}" placeholder="Ch. 1, pp. 4-9, lesson 2..." /></label>`).join("")}</div></details>`;
 }
 
 const sourceTypeOptions = [
@@ -2582,7 +2627,7 @@ function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId 
   const activeGroupField = groupingMode === "grades"
     ? `${setupSelect(groupLabel, "gradeLabel", subject.gradeLabel || "", [{ value: "", label: "All grades" }, ...groupOptions])}<input type="hidden" name="formLabel" value="${html(subject.formLabel || "")}" />`
     : `${setupSelect(groupLabel, "formLabel", subject.formLabel || "", [{ value: "", label: "All Forms" }, ...groupOptions])}<input type="hidden" name="gradeLabel" value="${html(subject.gradeLabel || "")}" />`;
-  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main">${setupInput("Subject / skill", "title", subject.title || "")}${setupSelect("School-day area", "subjectType", subject.subjectType || subject.type || "language-arts", subjectTypeOptions)}${setupSelect("Planning Mode", "planningMode", subject.planningMode || "forms", planningModeOptionsFor(groupingMode))}${setupSelect("Instruction", "instructionMode", subject.instructionMode || "parent-led", instructionModeOptions)}${setupInput("Book / curriculum / source", "resource", subject.resource || "")}${setupSelect("Source type", "resourceType", subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"), sourceTypeOptions)}${setupSelect("Track by", "progressionType", subject.progressionType || "lessons", ["lessons", "chapters", "pages", "units", "sessions"])}${setupInput("Start", "startNumber", subject.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", subject.currentNumber || subject.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", subject.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutes", subject.minutes || "20", { type: "number" })}${setupRemoveButton()}</div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupSelect("Schedule type", "schedulingMode", subject.schedulingMode || "fixed", schedulingModeOptions)}${setupDayPicker(subject.scheduledDays, subject.weeklyFrequency || subject.cadenceLabel || "daily")}${setupTermWeekPicker(subject.scheduledWeeks)}${setupInput("Weekly target", "weeklyTarget", subject.weeklyTarget || "", { type: "number" })}${setupInput("Term target", "termTarget", subject.termTarget || "", { type: "number" })}${setupInput("Active from", "activeStartDate", subject.activeStartDate || "", { type: "date" })}${setupInput("Active through", "activeEndDate", subject.activeEndDate || "", { type: "date" })}${setupSelect("Specific child", "childId", subject.childId || "", [{ value: "", label: "Use Planning Mode" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupSelect("Priority", "priorityLevel", subject.priorityLevel || "important", lessonPriorityOptions)}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main">${setupInput("Subject / skill", "title", subject.title || "")}${setupSourceInput("Book / source / resource", "resource", subject.resource || "")}${setupSelect("Schedule type", "weeklyFrequency", subject.weeklyFrequency === "1x" ? "weekly" : subject.weeklyFrequency || subject.cadenceLabel || "daily", simpleScheduleOptions)}${setupInput("Minutes", "minutes", subject.minutes || "20", { type: "number" })}${setupRemoveButton()}<input type="hidden" name="subjectType" value="${html(subject.subjectType || subject.type || "custom")}" /><input type="hidden" name="planningMode" value="forms" /><input type="hidden" name="instructionMode" value="${html(subject.instructionMode || "parent-led")}" /><input type="hidden" name="resourceType" value="${html(subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(subject.progressionType || "lessons")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupTermWeekPicker(subject.scheduledWeeks)}${setupWeeklyPlanFields(subject.weeklyPlans)}${setupSelect("Specific child", "childId", subject.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupSelect("Priority", "priorityLevel", subject.priorityLevel || "important", lessonPriorityOptions)}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function bookSetupRow(book = {}, terms = [], currentTermId = "") {
@@ -2607,7 +2652,7 @@ function formationEnrichmentSetupRow(block = {}, children = [], terms = [], curr
   const activeGroupField = groupingMode === "grades"
     ? `${setupSelect(groupLabel, "gradeLabel", block.gradeLabel || "", [{ value: "", label: "All grades" }, ...groupOptions])}<input type="hidden" name="formLabel" value="${html(block.formLabel || "")}" />`
     : `${setupSelect(groupLabel, "formLabel", block.formLabel || "", [{ value: "", label: "All Forms" }, ...groupOptions])}<input type="hidden" name="gradeLabel" value="${html(block.gradeLabel || "")}" />`;
-  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupInput("Title", "title", block.title || "")}${setupSelect("Planning Mode", "planningMode", block.planningMode || "family", planningModeOptionsFor(groupingMode))}${setupSelect("Instruction", "instructionMode", block.instructionMode || "shared", instructionModeOptions)}${setupInput("Book / source / resource", "resource", block.resource || block.source || "")}${setupSelect("Source type", "resourceType", block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"), sourceTypeOptions)}${setupSelect("Track by", "progressionType", block.progressionType || "lessons", ["lessons", "chapters", "pages", "units", "sessions"])}${setupInput("Start", "startNumber", block.startNumber || "", { type: "number" })}${setupInput("Done", "currentNumber", block.currentNumber || block.startNumber || "", { type: "number" })}${setupInput("End", "endNumber", block.endNumber || "", { type: "number" })}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "20", { type: "number" })}${setupRemoveButton()}</div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupSelect("Schedule type", "schedulingMode", block.schedulingMode || "fixed", schedulingModeOptions)}${setupDayPicker(block.scheduledDays, block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x")}${setupTermWeekPicker(block.scheduledWeeks)}${setupInput("Weekly target", "weeklyTarget", block.weeklyTarget || "", { type: "number" })}${setupInput("Term target", "termTarget", block.termTarget || "", { type: "number" })}${setupInput("Active from", "activeStartDate", block.activeStartDate || "", { type: "date" })}${setupInput("Active through", "activeEndDate", block.activeEndDate || "", { type: "date" })}${setupSelect("Specific child", "childId", block.childId || "", [{ value: "", label: "Use Planning Mode" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupSelect("Priority", "priorityLevel", block.priorityLevel || "enrichment", lessonPriorityOptions)}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "reduce first", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupSourceInput("Source", "title", block.title || block.resource || block.source || "")}${setupSelect("Schedule type", "weeklyFrequency", block.weeklyFrequency === "1x" ? "weekly" : block.weeklyFrequency || block.cadenceLabel || block.cadence || "weekly", simpleScheduleOptions)}${setupInput("Minutes", "minutesPlanned", block.minutesPlanned || block.minutes || "20", { type: "number" })}${setupRemoveButton()}<input type="hidden" name="planningMode" value="${html(block.planningMode || "family")}" /><input type="hidden" name="instructionMode" value="${html(block.instructionMode || "shared")}" /><input type="hidden" name="resourceType" value="${html(block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(block.progressionType || "lessons")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupTermWeekPicker(block.scheduledWeeks)}${setupWeeklyPlanFields(block.weeklyPlans)}${setupSelect("Specific child", "childId", block.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupSelect("Priority", "priorityLevel", block.priorityLevel || "enrichment", lessonPriorityOptions)}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "reduce first", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function churchRhythmSetupPanel(vm) {
@@ -3789,6 +3834,10 @@ function rowValue(row, name) {
   return control.value.trim();
 }
 
+function rowWeeklyPlans(row) {
+  return Array.from({ length: DEFAULT_TERM_WEEK_COUNT }, (_, index) => rowValue(row, `weeklyPlans.${index + 1}`));
+}
+
 function collectRows(form, rowType, mapper) {
   return [...form.querySelectorAll(`[data-setup-row="${rowType}"]`)]
     .map((row, index) => mapper(row, index))
@@ -4010,6 +4059,7 @@ function setupPayloadFromForm(form) {
         scheduledDays: scheduledDays(rowValue(row, "scheduledDays"), rowValue(row, "weeklyFrequency")),
         scheduledWeeks: scheduledTermWeeks(rowValue(row, "scheduledWeeks")),
         weeklyFrequency: rowValue(row, "weeklyFrequency"),
+        weeklyPlans: rowWeeklyPlans(row),
         weeklyTarget: rowValue(row, "weeklyTarget"),
         termTarget: rowValue(row, "termTarget"),
         activeStartDate: rowValue(row, "activeStartDate"),
@@ -4122,7 +4172,7 @@ function setupPayloadFromForm(form) {
           id: row.dataset.id || "",
           blockType: rowValue(row, "blockType"),
           title,
-          resource: rowValue(row, "resource"),
+          resource: rowValue(row, "resource") || title,
           resourceType: rowValue(row, "resourceType"),
           planningMode: rowValue(row, "planningMode"),
           instructionMode: rowValue(row, "instructionMode"),
@@ -4130,6 +4180,7 @@ function setupPayloadFromForm(form) {
           scheduledDays: scheduledDays(rowValue(row, "scheduledDays"), rowValue(row, "weeklyFrequency")),
           scheduledWeeks: scheduledTermWeeks(rowValue(row, "scheduledWeeks")),
           weeklyFrequency: rowValue(row, "weeklyFrequency"),
+          weeklyPlans: rowWeeklyPlans(row),
           cadenceLabel: rowValue(row, "weeklyFrequency"),
           formLabel: rowValue(row, "formLabel"),
           gradeLabel: rowValue(row, "gradeLabel"),
@@ -4495,10 +4546,76 @@ function wireSetupPage() {
   });
 }
 
+function wireWeeklyAssignmentBoard(vm) {
+  const board = root.querySelector("[data-week-assignment-board]");
+  if (!board) return;
+  const itemIds = (vm.week?.weeklyAssignmentItems || []).map((item) => item.id).join(",");
+  const storageKey = `agapay.learn.weekAssignments.${board.dataset.weekKey || "week"}.${itemIds}`;
+  const zones = [...board.querySelectorAll("[data-week-assignment-zone]")];
+  const readState = () => {
+    try {
+      return JSON.parse(localStorage.getItem(storageKey) || "{}");
+    } catch {
+      return {};
+    }
+  };
+  const writeState = () => {
+    const state = {};
+    board.querySelectorAll("[data-week-assignment-card]").forEach((card) => {
+      const zone = card.closest("[data-week-assignment-zone]");
+      state[card.dataset.itemId] = {
+        zone: zone?.dataset.weekAssignmentZone || "pool",
+        note: card.querySelector("[data-week-assignment-note]")?.value || ""
+      };
+    });
+    localStorage.setItem(storageKey, JSON.stringify(state));
+  };
+  const restore = () => {
+    const state = readState();
+    board.querySelectorAll("[data-week-assignment-card]").forEach((card) => {
+      const saved = state[card.dataset.itemId];
+      const target = saved?.zone ? board.querySelector(`[data-week-assignment-zone="${CSS.escape(saved.zone)}"]`) : null;
+      if (target) target.appendChild(card);
+      const note = card.querySelector("[data-week-assignment-note]");
+      if (note && saved?.note) note.value = saved.note;
+    });
+  };
+  restore();
+  board.querySelectorAll("[data-week-assignment-card]").forEach((card) => {
+    card.addEventListener("dragstart", (event) => {
+      event.dataTransfer?.setData("text/plain", card.dataset.itemId || "");
+      card.classList.add("is-dragging");
+    });
+    card.addEventListener("dragend", () => {
+      card.classList.remove("is-dragging");
+      writeState();
+    });
+    card.querySelector("[data-week-assignment-note]")?.addEventListener("input", writeState);
+  });
+  zones.forEach((zone) => {
+    zone.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      zone.classList.add("is-over");
+    });
+    zone.addEventListener("dragleave", () => zone.classList.remove("is-over"));
+    zone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      zone.classList.remove("is-over");
+      const id = event.dataTransfer?.getData("text/plain") || "";
+      const card = id ? board.querySelector(`[data-week-assignment-card][data-item-id="${CSS.escape(id)}"]`) : null;
+      if (card) {
+        zone.appendChild(card);
+        writeState();
+      }
+    });
+  });
+}
+
 function wirePlanner(vm) {
   if (vm.activeView) localStorage.setItem("agapay.learn.plannerView", vm.activeView);
   if (vm.month?.key) localStorage.setItem("agapay.learn.plannerMonth", vm.month.key);
   if (vm.term?.activeTerm) localStorage.setItem("agapay.learn.plannerTerm", String(vm.term.activeTerm));
+  wireWeeklyAssignmentBoard(vm);
 
   // Intro dismiss — sets a localStorage flag so the intro hides on next visit
   root.querySelector("[data-planner-intro-dismiss]")?.addEventListener("click", (event) => {

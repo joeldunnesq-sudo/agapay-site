@@ -2453,3 +2453,170 @@ body {
   /* Formation bottom row auto-fit shrinks to 1 */
   .learn-formation-bottom-row { grid-template-columns: 1fr !important; }
 }
+
+.learn-source-link {
+  display: inline-flex;
+  width: max-content;
+  margin-top: 6px;
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.learn-weekly-plan-fields {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper2);
+}
+
+.learn-weekly-plan-fields summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.learn-weekly-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
+.learn-week-assignment-board {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 1px 3px rgba(20,40,70,.04);
+}
+
+.learn-week-assignment-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.learn-week-assignment-head div div {
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+
+.learn-week-assignment-head h2 {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.learn-week-assignment-layout {
+  display: grid;
+  grid-template-columns: minmax(210px, .8fr) minmax(0, 2.2fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.learn-week-assignment-pool,
+.learn-week-assignment-day {
+  display: grid;
+  gap: 9px;
+}
+
+.learn-week-assignment-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(128px, 1fr));
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.learn-week-assignment-day > strong {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.learn-week-assignment-day > strong span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.learn-week-assignment-dropzone {
+  min-height: 132px;
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: rgba(255,252,245,.58);
+  padding: 10px;
+}
+
+.learn-week-assignment-dropzone.is-over {
+  border-color: var(--gold);
+  background: #fff8e8;
+}
+
+.learn-week-assignment-card {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--gold);
+  border-radius: 10px;
+  background: var(--paper2);
+  padding: 10px;
+  cursor: grab;
+}
+
+.learn-week-assignment-card.is-dragging {
+  opacity: .6;
+}
+
+.learn-week-assignment-card strong {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.learn-week-assignment-card small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.learn-week-assignment-card textarea {
+  min-height: 54px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffdf8;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.35;
+  padding: 8px;
+}
+
+@media (max-width: 860px) {
+  .learn-week-assignment-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .learn-week-assignment-days {
+    grid-template-columns: repeat(7, minmax(160px, 1fr));
+  }
+}
