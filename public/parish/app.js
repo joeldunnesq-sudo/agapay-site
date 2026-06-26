@@ -306,7 +306,14 @@
       if (status) status.textContent = 'Not loaded';
       return;
     }
-    if (stewardshipState.loaded && !force) { renderStewardshipPanel(); return; }
+    if (stewardshipState.loaded && !force) {
+      renderStewardshipPanel();
+      // Always reload metrics/financials when switching to the tab
+      const _sw = stewardshipState.stewardship || {};
+      const _active = _sw.active || ['active','trialing'].includes(_sw.status);
+      if (_active) { loadGivingMetricsPanel(); loadFinancialSnapshotsPanel(); }
+      return;
+    }
     if (status) status.textContent = 'Loading…';
     try {
       const res = await fetch(stewardshipApi(), { headers: authHeaders() });
@@ -901,6 +908,29 @@
       const isActive = sw.active || ['active', 'trialing'].includes(sw.status);
       updateStewardshipBadges(isActive);
     } catch { /* silent — badge stays gold */ }
+  }
+
+
+
+  async function prefetchStewardshipBadge() {
+    if (!currentParish) return;
+    try {
+      const res  = await fetch(stewardshipApi(), { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return;
+      stewardshipState = {
+        loaded:          true,
+        stewardship:     data.stewardship    || { status: 'coming_soon', active: false },
+        meetings:        data.meetings        || [],
+        subscribePlans:  data.subscribePlans  || [],
+        setupRequired:   !!data.setupRequired,
+        comingSoon:      !!data.comingSoon,
+        selectedMeeting: null
+      };
+      const sw       = stewardshipState.stewardship || {};
+      const isActive = sw.active || ['active', 'trialing'].includes(sw.status);
+      updateStewardshipBadges(isActive);
+    } catch { /* silent */ }
   }
 
   function renderStewardshipPanel() {
