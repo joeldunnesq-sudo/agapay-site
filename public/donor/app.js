@@ -6,7 +6,7 @@ const donorStore = {
   shellVersion: "agapayDonorShellVersion"
 };
 
-const DONOR_SHELL_VERSION = "2026-06-19-myagapay-auth-redirect";
+const DONOR_SHELL_VERSION = "2026-06-26-pledge-tracker";
 
 async function refreshStaleDashboardShell() {
   if (!("serviceWorker" in navigator) || !("caches" in window)) return;

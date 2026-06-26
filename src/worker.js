@@ -88,6 +88,7 @@ import {
 
 import {
   verifyParishDashboardBearer,
+  findRegistrationByParishId,
   handleParishStripeRefresh,
   handleDashboardInvite,
   handleParishStripeOnboarding,
@@ -651,8 +652,16 @@ function addCorsHeaders(response, env) {
 // Feature-gated by parish_stewardship_settings.has_stewardship_suite = 1.
 // ═══════════════════════════════════════════════════════════════════════════
 
+async function verifyParishDashboard(request, env, parishId) {
+  const token = getBearerToken(request);
+  if (!parishId || !token) return false;
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return false;
+  return verifyParishDashboardBearer(found.registration, token);
+}
+
 async function requireStewardshipFeature(env, parishId) {
-  const row = await env.DB.prepare(
+  const row = await env.AGAPAY_DB.prepare(
     `SELECT has_stewardship_suite FROM parish_stewardship_settings WHERE parish_id = ?`
   ).bind(parishId).first();
   if (!row || !row.has_stewardship_suite) {
@@ -729,24 +738,24 @@ async function seedStewardshipFunds(env, parishId) {
     { name: "Memorial / Panakhida",   code: "memorial",    is_default: 0, sort_order: 6 },
   ];
   const stmts = defaults.map(f =>
-    env.DB.prepare(
+    env.AGAPAY_DB.prepare(
       `INSERT OR IGNORE INTO giving_funds (parish_id, name, code, is_default, sort_order)
        VALUES (?, ?, ?, ?, ?)`
     ).bind(parishId, f.name, f.code, f.is_default, f.sort_order)
   );
-  await env.DB.batch(stmts);
+  await env.AGAPAY_DB.batch(stmts);
 }
 
 // POST /api/parish/dashboard/:parishId/stewardship/giving/activate
 async function handleStewardshipGivingActivate(request, env, parishId) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  const auth = await verifyParishDashboardBearer(request, env, parishId);
+  const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
 
   const body = await request.json().catch(() => ({}));
   const { stripeSubscriptionItemId } = body;
 
-  await env.DB.prepare(`
+  await env.AGAPAY_DB.prepare(`
     INSERT INTO parish_stewardship_settings (parish_id, has_stewardship_suite, stripe_subscription_item_id)
     VALUES (?, 1, ?)
     ON CONFLICT(parish_id) DO UPDATE SET
@@ -762,7 +771,7 @@ async function handleStewardshipGivingActivate(request, env, parishId) {
 // GET /api/parish/dashboard/:parishId/stewardship/giving/summary
 // Pledge vs actual, run rate, household/donor counts, fulfillment rate.
 async function handleStewardshipGivingSummary(request, env, parishId) {
-  const auth = await verifyParishDashboardBearer(request, env, parishId);
+  const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
@@ -777,12 +786,12 @@ async function handleStewardshipGivingSummary(request, env, parishId) {
   const daysInYear = (year % 4 === 0) ? 366 : 365;
 
   const [pledgeRow, actualRow, priorRow] = await Promise.all([
-    env.DB.prepare(`
+    env.AGAPAY_DB.prepare(`
       SELECT COUNT(*) AS pledging_donors, SUM(target_amount_cents) AS total_pledged_cents
       FROM household_pledges WHERE parish_id = ? AND fiscal_year = ?
     `).bind(parishId, year).first(),
 
-    env.DB.prepare(`
+    env.AGAPAY_DB.prepare(`
       SELECT
         COUNT(DISTINCT donor_email) AS active_donors,
         SUM(json_extract(data, '$.giftAmountCents')) AS total_actual_cents
@@ -791,7 +800,7 @@ async function handleStewardshipGivingSummary(request, env, parishId) {
         AND created_at BETWEEN ? AND ?
     `).bind(parishId, yearStart, yearEnd).first(),
 
-    env.DB.prepare(`
+    env.AGAPAY_DB.prepare(`
       SELECT SUM(json_extract(data, '$.giftAmountCents')) AS total_prior_cents
       FROM donor_offerings
       WHERE parish_id = ? AND payment_status = 'paid'
@@ -824,7 +833,7 @@ async function handleStewardshipGivingSummary(request, env, parishId) {
 // GET /api/parish/dashboard/:parishId/stewardship/giving/funds
 // Giving totals broken down by fund (matches giftType in donor_offerings.data).
 async function handleStewardshipGivingFunds(request, env, parishId) {
-  const auth = await verifyParishDashboardBearer(request, env, parishId);
+  const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
@@ -832,7 +841,7 @@ async function handleStewardshipGivingFunds(request, env, parishId) {
   const url  = new URL(request.url);
   const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
 
-  const rows = await env.DB.prepare(`
+  const rows = await env.AGAPAY_DB.prepare(`
     SELECT
       gf.name                                                             AS fund_name,
       gf.code                                                             AS fund_code,
@@ -868,7 +877,7 @@ async function handleStewardshipGivingFunds(request, env, parishId) {
 // GET /api/parish/dashboard/:parishId/stewardship/giving/distribution
 // Anonymized donor giving tier histogram (no individual identities exposed).
 async function handleStewardshipGivingDistribution(request, env, parishId) {
-  const auth = await verifyParishDashboardBearer(request, env, parishId);
+  const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
@@ -876,7 +885,7 @@ async function handleStewardshipGivingDistribution(request, env, parishId) {
   const url  = new URL(request.url);
   const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
 
-  const rows = await env.DB.prepare(`
+  const rows = await env.AGAPAY_DB.prepare(`
     SELECT
       donor_email,
       SUM(json_extract(data, '$.giftAmountCents')) AS donor_total_cents
@@ -911,7 +920,7 @@ async function handleStewardshipGivingDistribution(request, env, parishId) {
 // GET /api/parish/dashboard/:parishId/stewardship/giving/retention
 // Current vs prior year donor comparison.
 async function handleStewardshipGivingRetention(request, env, parishId) {
-  const auth = await verifyParishDashboardBearer(request, env, parishId);
+  const auth = await verifyParishDashboard(request, env, parishId);
   if (!auth) return unauthorized();
   const gate = await requireStewardshipFeature(env, parishId);
   if (gate) return gate;
@@ -920,13 +929,13 @@ async function handleStewardshipGivingRetention(request, env, parishId) {
   const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
 
   const [curRows, priorRows] = await Promise.all([
-    env.DB.prepare(`
+    env.AGAPAY_DB.prepare(`
       SELECT DISTINCT donor_email FROM donor_offerings
       WHERE parish_id = ? AND payment_status = 'paid'
         AND created_at BETWEEN ? AND ?
     `).bind(parishId, `${year}-01-01`, `${year}-12-31`).all(),
 
-    env.DB.prepare(`
+    env.AGAPAY_DB.prepare(`
       SELECT DISTINCT donor_email FROM donor_offerings
       WHERE parish_id = ? AND payment_status = 'paid'
         AND created_at BETWEEN ? AND ?
@@ -967,7 +976,7 @@ async function handleStewardshipGivingRetention(request, env, parishId) {
 export async function syncPledgeToHousehold(env, donorEmail, parishId, pledgeAmountCents) {
   if (!parishId || !parishId.trim()) return;
   const year = new Date().getFullYear();
-  await env.DB.prepare(`
+  await env.AGAPAY_DB.prepare(`
     INSERT INTO household_pledges (donor_email, parish_id, fiscal_year, target_amount_cents)
     VALUES (?, ?, ?, ?)
     ON CONFLICT(donor_email, fiscal_year) DO UPDATE SET
@@ -979,10 +988,12 @@ export async function syncPledgeToHousehold(env, donorEmail, parishId, pledgeAmo
 
 export default {
   async scheduled(event, env, ctx) {
+    if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
     ctx.waitUntil(sendWeeklyCommemorationEmails(env, event.scheduledTime));
   },
 
   async fetch(request, env) {
+    if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
     const url = new URL(request.url);
 
     // OPTIONS preflight for public API endpoints called cross-origin

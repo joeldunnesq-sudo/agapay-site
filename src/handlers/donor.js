@@ -789,7 +789,7 @@ export async function handleDonorDashboard(request, env) {
     const pledgeSyncAmount = Number(updated.pledgeAmountCents || 0);
     if (d1(env) && pledgeSyncParish.trim()) {
       const pledgeSyncYear = parseInt(updated.pledgeYear || new Date().getFullYear(), 10);
-      await env.DB.prepare(`
+      await env.AGAPAY_DB.prepare(`
         INSERT INTO household_pledges (donor_email, parish_id, fiscal_year, target_amount_cents)
         VALUES (?, ?, ?, ?)
         ON CONFLICT(donor_email, fiscal_year) DO UPDATE SET

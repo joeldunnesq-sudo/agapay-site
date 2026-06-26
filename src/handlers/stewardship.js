@@ -2123,7 +2123,7 @@ async function updateStewardshipStatus(env, parishId, data) {
   if (hasProductionStore(env)) {
     const isActive = ["active", "trialing"].includes(data.status);
     if (isActive) {
-      await env.DB.prepare(`
+      await env.AGAPAY_DB.prepare(`
         INSERT INTO parish_stewardship_settings (parish_id, has_stewardship_suite, stripe_subscription_item_id)
         VALUES (?, 1, ?)
         ON CONFLICT(parish_id) DO UPDATE SET
@@ -2142,16 +2142,16 @@ async function updateStewardshipStatus(env, parishId, data) {
         { name: "Iconography Fund",       code: "iconography", is_default: 0, sort_order: 5 },
         { name: "Memorial / Panakhida",   code: "memorial",    is_default: 0, sort_order: 6 },
       ];
-      await env.DB.batch(
+      await env.AGAPAY_DB.batch(
         defaults.map(f =>
-          env.DB.prepare(
+          env.AGAPAY_DB.prepare(
             `INSERT OR IGNORE INTO giving_funds (parish_id, name, code, is_default, sort_order)
              VALUES (?, ?, ?, ?, ?)`
           ).bind(parishId, f.name, f.code, f.is_default, f.sort_order)
         )
       ).catch(() => {});
     } else if (data.status === "canceled") {
-      await env.DB.prepare(`
+      await env.AGAPAY_DB.prepare(`
         UPDATE parish_stewardship_settings
         SET has_stewardship_suite = 0, updated_at = datetime('now')
         WHERE parish_id = ?
