@@ -129,6 +129,8 @@ import {
   handleDonorOfferings,
   handleDonorSubscriptionPortal,
   handleDonorCommemorations,
+  handleDonorNotifications,
+  handleDonorNotificationDismiss,
 } from "./handlers/donor.js";
 
 import {
@@ -181,6 +183,7 @@ import {
   handleStewardshipWebhook,
   handleStewardshipGivingMetricsPage,
   handleStewardshipFinancials,
+  handleStewardshipNudge,
 } from "./handlers/stewardship.js";
 
 import {
@@ -1245,6 +1248,13 @@ export default {
     if (url.pathname === "/api/donor/claim-checkout") {
       return handleDonorClaimCheckout(request, env);
     }
+    if (url.pathname === "/api/donor/notifications") {
+      return handleDonorNotifications(request, env);
+    }
+    if (url.pathname.startsWith("/api/donor/notifications/") && url.pathname.endsWith("/dismiss")) {
+      const notifId = decodeURIComponent(url.pathname.replace("/api/donor/notifications/", "").replace("/dismiss", ""));
+      return handleDonorNotificationDismiss(request, env, notifId);
+    }
     if (url.pathname === "/api/donor/dashboard") {
       return handleDonorDashboard(request, env);
     }
@@ -1458,6 +1468,10 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/activate")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/activate", ""));
       return handleStewardshipGivingActivate(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/nudge")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/nudge", ""));
+      return handleStewardshipNudge(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/financials")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/financials", ""));
