@@ -533,7 +533,7 @@
           '</div>' +
           '<div class="sw-meeting-actions">' +
             '<span class="sw-pill ' + cls + '">' + label + '</span>' +
-            '<button class="sw-action-btn" type="button" onclick="editStewardshipMeeting('' + escapeAttr(m.id) + '')">Edit</button>' +
+            '<button class="sw-action-btn" type="button" onclick="editStewardshipMeeting(\'' + escapeAttr(m.id) + '\')">Edit</button>' +
             '<a class="sw-action-btn" href="' + escapeAttr(stewardshipPreviewUrl(m.id)) + '" target="_blank" rel="noopener">Preview</a>' +
             '<a class="sw-action-btn" href="' + escapeAttr(stewardshipPreviewUrl(m.id, 'pdf')) + '" target="_blank" rel="noopener">PDF</a>' +
           '</div>' +
