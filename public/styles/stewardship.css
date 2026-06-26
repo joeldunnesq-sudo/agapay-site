@@ -729,3 +729,533 @@
 .sw-meetings-empty-icon svg { width: 22px; height: 22px; }
 .sw-meetings-empty strong { font-family: var(--serif); font-size: 1.35rem; font-weight: 500; color: var(--deep); }
 .sw-meetings-empty span { max-width: 34ch; color: var(--stone); font-size: .85rem; line-height: 1.55; }
+
+/* ═══════════════════════════════════════════════════════════════
+   FINANCIAL SNAPSHOTS — dashboard panel styles
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── KPI row ─────────────────────────────────────────────────── */
+.sw-fin-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: .6rem;
+  margin-bottom: 1.25rem;
+}
+
+/* colour overrides for financial values */
+.sw-fin-income-lbl  { color: var(--green, #2e6b4a) !important; }
+.sw-fin-expense-lbl { color: var(--red,   #8a2929) !important; }
+.sw-fin-surplus     { color: var(--green, #2e6b4a) !important; font-weight: 600; }
+.sw-fin-deficit     { color: var(--red,   #8a2929) !important; font-weight: 600; }
+
+/* ── Section label ───────────────────────────────────────────── */
+.sw-fin-section-label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .6rem;
+}
+
+/* ── Per-packet breakdown ────────────────────────────────────── */
+.sw-fin-packets { display: grid; gap: 0; }
+
+.sw-fin-packet-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: .5rem 1rem;
+  align-items: center;
+  padding: .75rem 0;
+  border-bottom: 1px solid rgba(201,162,91,.14);
+}
+.sw-fin-packet-row:last-child { border-bottom: none; }
+
+.sw-fin-packet-info {
+  display: grid;
+  gap: .15rem;
+  min-width: 0;
+}
+.sw-fin-packet-title {
+  font-weight: 500;
+  color: var(--deep);
+  font-family: var(--serif);
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sw-fin-packet-date {
+  font-size: .74rem;
+  color: var(--muted);
+}
+
+.sw-fin-packet-amounts {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  font-size: .85rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.sw-fin-packet-amounts span {
+  min-width: 80px;
+  text-align: right;
+}
+
+/* ── Restricted funds table ──────────────────────────────────── */
+.sw-fin-table-wrap { overflow-x: auto; margin-top: .25rem; }
+.sw-fin-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+  font-size: .85rem;
+}
+.sw-fin-table .sw-th {
+  padding: .4rem .6rem;
+  text-align: left;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 2px solid var(--line);
+}
+.sw-fin-table .sw-th-right { text-align: right; }
+.sw-fin-table .sw-td {
+  padding: .6rem .6rem;
+  border-bottom: 1px solid rgba(201,162,91,.12);
+  vertical-align: middle;
+}
+.sw-fin-table .sw-td-right  { text-align: right; font-variant-numeric: tabular-nums; }
+.sw-fin-table .sw-td-muted  { color: var(--stone); }
+.sw-fin-table .sw-fund-name { font-weight: 500; color: var(--deep); }
+.sw-fin-table .sw-fund-row:last-child .sw-td { border-bottom: none; }
+
+/* ── Editor fund row grid ────────────────────────────────────── */
+.sw-fin-fund-header {
+  display: grid;
+  grid-template-columns: minmax(140px,1fr) repeat(4, minmax(80px,.45fr)) 36px;
+  gap: .4rem;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 0 .3rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: .4rem;
+}
+.sw-fin-fund-row-edit {
+  grid-template-columns: minmax(140px,1fr) repeat(4, minmax(80px,.45fr)) 36px !important;
+}
+
+/* ── Empty state ─────────────────────────────────────────────── */
+.sw-financials-empty {
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px dashed rgba(201,162,91,.3);
+  border-radius: 8px;
+  background: rgba(255,253,248,.6);
+  color: var(--stone);
+  font-size: .88rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+  .sw-fin-packet-amounts { display: none; }
+  .sw-fin-packet-row { grid-template-columns: 1fr auto; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STEWARDSHIP SUITE TAB — redesigned premium layout
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Sidebar nav upgrade badge ───────────────────────────────── */
+.nav-upgrade-badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(200,162,74,0.55);
+  border-radius: 999px;
+  background: rgba(200,162,74,0.18);
+  color: var(--gold);
+  padding: 0.16rem 0.5rem;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Distinct treatment for the suite nav item */
+.sidebar-nav-item--suite {
+  margin-top: .35rem;
+  border-top: 1px solid rgba(184,144,47,0.14);
+  padding-top: 1rem;
+}
+.sidebar-nav-item--suite svg { color: var(--gold); }
+
+/* Mobile badge */
+.mobile-upgrade-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--deep);
+  font-size: 9px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: 1;
+}
+
+/* ── Hero banner ─────────────────────────────────────────────── */
+.sw-suite-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding: 1.5rem 1.75rem;
+  border-radius: 16px;
+  border: 1px solid rgba(184,144,47,0.3);
+  background:
+    radial-gradient(ellipse 70% 120% at 100% 50%, rgba(184,144,47,0.22), transparent),
+    linear-gradient(135deg, #061522 0%, #0b2130 60%, #061522 100%);
+  color: var(--cream);
+  box-shadow: 0 24px 60px rgba(6,21,34,0.18);
+}
+
+.sw-suite-eyebrow {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 0.4rem;
+}
+
+.sw-suite-heading {
+  margin: 0 0 0.5rem;
+  font-family: var(--serif);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--cream);
+  letter-spacing: -0.01em;
+}
+
+.sw-suite-subhead {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(246,241,232,0.68);
+  max-width: 54ch;
+}
+
+.sw-suite-hero-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.sw-suite-status-label {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.sw-suite-status--active {
+  background: rgba(46,107,74,0.22);
+  color: #a6d8af;
+  border: 1px solid rgba(46,107,74,0.4);
+}
+.sw-suite-status--upsell {
+  background: rgba(184,144,47,0.18);
+  color: var(--gold);
+  border: 1px solid rgba(184,144,47,0.36);
+}
+
+.sw-suite-hero-actions { display: flex; gap: 0.5rem; }
+.sw-suite-refresh-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(246,241,232,0.14);
+  background: rgba(246,241,232,0.06);
+  color: rgba(246,241,232,0.55);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.sw-suite-refresh-btn svg { width: 13px; height: 13px; }
+.sw-suite-refresh-btn:hover { background: rgba(246,241,232,0.12); color: var(--cream); }
+
+/* ── Three-column tool grid ──────────────────────────────────── */
+.sw-suite-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.sw-suite-tool-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(135deg, rgba(184,144,47,0.09), rgba(11,33,48,0.04) 46%, rgba(255,255,255,0.96) 100%),
+    #fff;
+  box-shadow: 0 7px 22px rgba(6,21,34,0.06);
+  overflow: hidden;
+  position: relative;
+}
+/* Gold accent bar at top of each card */
+.sw-suite-tool-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold), rgba(184,144,47,0.55));
+  pointer-events: none;
+}
+
+.sw-tool-card-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  border: 1px solid rgba(184,144,47,0.28);
+  background: rgba(184,144,47,0.1);
+  color: var(--gold);
+  margin: 1.1rem 1.1rem 0;
+  flex-shrink: 0;
+}
+.sw-tool-card-icon svg { width: 18px; height: 18px; }
+
+.sw-tool-card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.65rem 1.1rem 0;
+}
+
+.sw-tool-card-title {
+  display: block;
+  padding: 0.65rem 1.1rem 0;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--deep);
+  line-height: 1.1;
+}
+/* When title is inside header-row, remove its own padding */
+.sw-tool-card-header-row .sw-tool-card-title {
+  padding: 0;
+}
+
+.sw-tool-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.sw-tool-card-desc {
+  padding: 0.35rem 1.1rem 0.75rem;
+  font-size: 12px;
+  color: var(--stone);
+  line-height: 1.55;
+  border-bottom: 1px solid var(--line);
+  margin: 0;
+}
+
+.sw-tool-card-body {
+  flex: 1;
+  padding: 0.85rem 1.1rem;
+  font-size: 13px;
+  overflow: auto;
+}
+
+.sw-tool-loading {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0;
+}
+
+.sw-tool-card-link {
+  display: block;
+  padding: 0.55rem 1.1rem;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+  text-decoration: none;
+  background: rgba(184,144,47,0.04);
+}
+.sw-tool-card-link:hover { text-decoration: underline; }
+
+/* ── Meetings tool card header ───────────────────────────────── */
+.sw-tool-meetings-header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 0 0.5rem;
+}
+
+/* ── Locked state (upsell) ───────────────────────────────────── */
+.sw-tool-locked {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.sw-tool-locked-items {
+  display: grid;
+  gap: 0.3rem;
+}
+.sw-tool-locked-items > div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  font-size: 12px;
+  color: var(--stone);
+}
+.sw-tool-locked-items > div > span {
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.sw-tool-locked-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  border: 1px dashed rgba(184,144,47,0.42);
+  background: rgba(184,144,47,0.07);
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Plan row (bottom — active state) ────────────────────────── */
+.sw-suite-plan-row {
+  margin-bottom: 1rem;
+}
+.sw-plan-row-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.15rem;
+  border-radius: 10px;
+  border: 1px solid rgba(46,107,74,0.22);
+  background: rgba(46,107,74,0.05);
+}
+.sw-plan-row-copy {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.sw-plan-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: rgba(46,107,74,0.14);
+  color: #2e6b4a;
+  border: 1px solid rgba(46,107,74,0.28);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.sw-plan-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--deep);
+}
+.sw-plan-parish {
+  font-size: 12px;
+  color: var(--stone);
+}
+
+/* ── Upsell row (bottom — upsell state) ─────────────────────── */
+.sw-upsell-row-inner {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-radius: 14px;
+  border: 1px solid rgba(184,144,47,0.3);
+  background:
+    radial-gradient(ellipse 60% 120% at 0% 50%, rgba(184,144,47,0.14), transparent),
+    linear-gradient(135deg, #061522, #0b2130);
+  color: var(--cream);
+}
+.sw-upsell-row-copy strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 2.8rem;
+  font-weight: 500;
+  color: var(--cream);
+  line-height: 1;
+  margin-bottom: 0.35rem;
+}
+.sw-upsell-row-copy strong span {
+  font-size: 1rem;
+  color: rgba(246,241,232,0.6);
+}
+.sw-upsell-row-copy p {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(246,241,232,0.68);
+  line-height: 1.55;
+  max-width: 52ch;
+}
+.sw-upsell-row-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* ── Editor card ─────────────────────────────────────────────── */
+.sw-suite-editor-card { margin-bottom: 1rem; }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .sw-suite-tool-grid { grid-template-columns: 1fr 1fr; }
+  .sw-tool-financials { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+  .sw-suite-hero { grid-template-columns: 1fr; }
+  .sw-suite-hero-status { align-items: flex-start; }
+  .sw-suite-tool-grid { grid-template-columns: 1fr; }
+  .sw-tool-financials { grid-column: auto; }
+  .sw-upsell-row-inner { grid-template-columns: 1fr; }
+}
