@@ -42,7 +42,7 @@
   function parseParams() {
     const url   = new URL(window.location.href);
     const parts = url.pathname.split("/").filter(Boolean);
-    const isCanonicalCampaign = parts[0] === "giving" && parts.length >= 3 && parts[2].endsWith("-campaign");
+    const isCanonicalCampaign = parts[0] === "give" && parts.length >= 3 && parts[2].endsWith("-campaign");
     const slug = isCanonicalCampaign
       ? decodeURIComponent(parts[2]).replace(/-campaign$/, "")
       : decodeURIComponent(parts[2] || url.searchParams.get("c") || "");
