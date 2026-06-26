@@ -2814,8 +2814,8 @@ function formationRhythmSetupRow(rhythm = {}) {
   return `<div data-setup-row="formationRhythms" data-id="${html(rhythm.id || "")}" style="display:grid;grid-template-columns:1fr 1.15fr .65fr .45fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Rhythm", "title", rhythm.title || "")}${setupInput("Note", "note", rhythm.note || "")}${setupSelect("Frequency", "weeklyFrequency", rhythm.weeklyFrequency || rhythm.cadenceLabel || rhythm.cadence || "daily", weeklyFrequencyOptions)}${setupInput("Minutes", "minutes", rhythm.minutes || rhythm.minutesPlanned || "", { type: "number" })}${setupRemoveButton()}</div>`;
 }
 
-function formationRecitationSetupRow(track = {}) {
-  return `<div data-setup-row="formationRecitation" data-id="${html(track.id || "")}" style="display:grid;grid-template-columns:1fr .75fr .75fr .65fr .55fr .45fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Memory Work", "title", track.title || "")}${setupInput("Source", "sourceKind", track.sourceKind || track.source || "")}${setupSelect("Planning Mode", "planningMode", track.planningMode || "family", planningModeOptions)}${setupSelect("Frequency", "weeklyFrequency", track.weeklyFrequency || "daily", weeklyFrequencyOptions)}${setupInput("Minutes", "minutes", track.minutes || "", { type: "number" })}${setupSelect("Status", "status", track.status || "memorizing", ["planned", "memorizing", "memorized"])}${setupInput("Progress %", "progressPercent", track.progressPercent ?? track.progress ?? "", { type: "number" })}${setupRemoveButton()}</div>`;
+function formationRecitationSetupRow(track = {}, children = [], groupingMode = "forms") {
+  return `<div data-setup-row="formationRecitation" data-id="${html(track.id || "")}" style="display:grid;grid-template-columns:1fr .85fr .95fr .65fr .85fr .55fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Memory Work", "title", track.title || "")}${setupInput("Source", "sourceKind", track.sourceKind || track.source || "")}${setupPlanningModePicker(track, children, groupingMode)}${setupSelect("Frequency", "weeklyFrequency", track.weeklyFrequency || "daily", weeklyFrequencyOptions)}${setupTermWeekPicker(track.scheduledWeeks)}${setupInput("Minutes", "minutes", track.minutes || "", { type: "number" })}${setupRemoveButton()}</div>`;
 }
 
 function formationEnrichmentSetupRow(block = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms", tileMinutes = "") {
@@ -2898,7 +2898,7 @@ function formationSetupPanel(vm) {
     { panel: "shakespeare", title: "Shakespeare", detail: "Plays, scenes, narration, and performance notes.", icon: "♜", type: "Shakespeare" }
   ].map((section) => setupTileValue(vm, "formation", section.panel, section));
   const sectionRows = (section) => section.rowKind === "recitation"
-    ? (section.rows.length ? section.rows : [{}]).map((track) => formationRecitationSetupRow(track)).join("")
+    ? (section.rows.length ? section.rows : [{}]).map((track) => formationRecitationSetupRow(track, vm.children, vm.preferences.groupingMode)).join("")
     : (enrichmentBlocks.filter((block) => String(block.blockType || block.type || "").toLowerCase() === section.type.toLowerCase()).length
       ? enrichmentBlocks.filter((block) => String(block.blockType || block.type || "").toLowerCase() === section.type.toLowerCase())
       : [{ blockType: section.type }]).map((block) => formationEnrichmentSetupRow({ ...block, blockType: block.blockType || section.type }, vm.children, vm.terms, currentTermId, vm.preferences.groupingMode, section.minutes)).join("");
@@ -4320,10 +4320,12 @@ function setupPayloadFromForm(form) {
           title,
           sourceKind: rowValue(row, "sourceKind"),
           planningMode: rowValue(row, "planningMode"),
+          formLabel: rowValue(row, "formLabel"),
+          formLabels: rowValue(row, "formLabels").split(",").map((value) => value.trim()).filter(Boolean),
+          gradeLabel: rowValue(row, "gradeLabel"),
+          scheduledWeeks: scheduledTermWeeks(rowValue(row, "scheduledWeeks")),
           weeklyFrequency: rowValue(row, "weeklyFrequency"),
-          minutes: rowValue(row, "minutes"),
-          status: rowValue(row, "status"),
-          progressPercent: rowValue(row, "progressPercent")
+          minutes: rowValue(row, "minutes")
         };
       }),
       hymnStudies: collectRows(form, "formationHymns", (row) => {

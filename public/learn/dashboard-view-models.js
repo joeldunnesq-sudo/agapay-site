@@ -1240,10 +1240,12 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         title: text(track.title, "Memory Work"),
         sourceKind: text(track.sourceKind || track.source, ""),
         planningMode: text(track.planningMode, "family"),
+        formLabel: text(track.formLabel, ""),
+        formLabels: safeArray(track.formLabels),
+        gradeLabel: text(track.gradeLabel, ""),
+        scheduledWeeks: safeArray(track.scheduledWeeks),
         weeklyFrequency: weeklyFrequencyValue(track.weeklyFrequency || track.cadenceLabel || track.cadence, "daily"),
-        minutes: text(track.minutes, ""),
-        status: text(track.status, "memorizing"),
-        progressPercent: text(track.progressPercent || track.progress, "")
+        minutes: text(track.minutes, "")
       })),
       hymnStudies: simpleList(formation.hymnStudies, (hymn) => ({
         id: text(hymn.id, ""),

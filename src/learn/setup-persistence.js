@@ -587,11 +587,13 @@ function normalizeSetupPayload(payload = {}, identity) {
       householdId: identity.householdId,
       title: text(track.title, ""),
       sourceKind: text(track.sourceKind || track.source, "memory"),
-      planningMode: text(track.planningMode, "family"),
+      planningMode: labelsValue(track.formLabels || track.formLabel).length ? "forms" : text(track.planningMode, "family"),
+      formLabel: labelsValue(track.formLabels || track.formLabel)[0] || "",
+      formLabels: labelsValue(track.formLabels || track.formLabel),
+      gradeLabel: text(track.gradeLabel, ""),
+      scheduledWeeks: scheduledWeeksValue(track.scheduledWeeks),
       weeklyFrequency: weeklyFrequencyValue(track.weeklyFrequency || track.cadenceLabel || track.cadence, "daily"),
-      minutes: int(track.minutes, 0),
-      progressPercent: int(track.progressPercent || track.progress, 0),
-      status: text(track.status, "memorizing")
+      minutes: int(track.minutes, 0)
     })).filter((track) => track.title),
     hymnStudies: list(rawFormation.hymnStudies).map((hymn, index) => ({
       id: text(hymn.id, stableId("hymn", hymn.title, index)),
