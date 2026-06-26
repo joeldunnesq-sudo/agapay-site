@@ -613,6 +613,30 @@
       applyDonorProductView();
     });
   </script>
+
+  <!-- ── Pledge nudge notification modal ─────────────────────────────── -->
+  <div id="pledgeNudgeModal" hidden role="dialog" aria-modal="true" aria-labelledby="nudgeModalTitle" class="nudge-modal-backdrop">
+    <div class="nudge-modal">
+      <div class="nudge-modal-header">
+        <svg class="nudge-modal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/>
+          <path d="M9 12l2 2 4-5"/>
+        </svg>
+        <div>
+          <h2 class="nudge-modal-title" id="nudgeModalTitle">A note about your pledge</h2>
+          <p class="nudge-modal-parish" id="nudgeModalParish"></p>
+        </div>
+      </div>
+      <div class="nudge-modal-body">
+        <p class="nudge-modal-message" id="nudgeModalMessage"></p>
+        <div class="nudge-modal-figures" id="nudgeModalFigures"></div>
+      </div>
+      <div class="nudge-modal-actions">
+        <a class="nudge-modal-give-btn" id="nudgeModalGiveBtn" href="/myagapay">Give now</a>
+        <button class="nudge-modal-dismiss-btn" type="button" id="nudgeModalDismissBtn">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
-
