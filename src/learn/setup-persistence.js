@@ -1105,24 +1105,45 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
     childRows: [
       ...currentSubjects.flatMap((subject, index) => {
         const resourceAssignments = list(subject.resources).length
-          ? list(subject.resources).map((resource, resourceIndex) => ({ ...subject, ...resource, resourceTitle: resource.title || resource.resource || subject.resource, resourceIndex }))
-          : [{ ...subject, resourceTitle: subject.resource, resourceIndex: 0 }];
-        return resourceAssignments.flatMap((assignment) => {
-          const assignedChildren = childrenForAssignment(assignment, next.children);
-          return assignedChildren.map((child) => ({
-          id: `week_${subject.id}_${assignment.resourceIndex + 1}_${child.id}`,
-          childId: child.id,
-          title: subject.title,
-          detail: `${assignment.resourceTitle || subject.cadenceLabel}${currentWeekPlan(assignment) ? ` • ${currentWeekPlan(assignment)}` : ""}${subject.endNumber ? ` (${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber})` : ""}${subject.weeklyFrequency ? ` • ${subject.weeklyFrequency}` : ""}`,
-          priority: subject.priorityLevel === "essential" ? index : subject.priorityLevel === "important" ? 30 + index : subject.priorityLevel === "optional" ? 100 + index : 70 + index,
-          priorityLevel: subject.priorityLevel,
-          gracePriority: gracePriorityValue(subject.gracePriority, "core"),
-          instructionMode: subject.instructionMode,
-          missedLessonBehavior: subject.missedLessonBehavior,
-          color: subject.color,
-          graceModeApplied: setupSnapshot.preferences?.graceModeActive && gracePriorityValue(subject.gracePriority, "core") !== "core",
-          ...planArraysForItem(assignment, currentTermWeek, plannerWeekWindow.dates)
-        }));
+          ? list(subject.resources).map((resource, resourceIndex) => ({ ...resource, resourceTitle: resource.title || resource.resource || subject.resource, resourceIndex }))
+          : [{ resourceTitle: subject.resource, resourceIndex: 0 }];
+        const childrenById = new Map();
+        for (const assignment of resourceAssignments.length ? resourceAssignments : [subject]) {
+          const assignedChildren = childrenForAssignment({ ...subject, ...assignment }, next.children);
+          for (const child of assignedChildren) childrenById.set(child.id, child);
+        }
+        if (!childrenById.size) {
+          for (const child of childrenForAssignment(subject, next.children)) childrenById.set(child.id, child);
+        }
+        return Array.from(childrenById.values()).map((child) => {
+          const childResources = resourceAssignments.filter((assignment) =>
+            childrenForAssignment({ ...subject, ...assignment }, next.children).some((assignedChild) => assignedChild.id === child.id)
+          );
+          const resourceDetails = (childResources.length ? childResources : resourceAssignments)
+            .map((assignment) => {
+              const plan = currentWeekPlan(assignment);
+              return [assignment.resourceTitle || subject.resource, plan].filter(Boolean).join(": ");
+            })
+            .filter(Boolean);
+          const detailParts = [
+            resourceDetails.join(" • ") || subject.cadenceLabel,
+            subject.endNumber ? `${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber}` : "",
+            subject.weeklyFrequency
+          ].filter(Boolean);
+          return {
+            id: `week_${subject.id}_${child.id}`,
+            childId: child.id,
+            title: subject.title,
+            detail: detailParts.join(" • "),
+            priority: subject.priorityLevel === "essential" ? index : subject.priorityLevel === "important" ? 30 + index : subject.priorityLevel === "optional" ? 100 + index : 70 + index,
+            priorityLevel: subject.priorityLevel,
+            gracePriority: gracePriorityValue(subject.gracePriority, "core"),
+            instructionMode: subject.instructionMode,
+            missedLessonBehavior: subject.missedLessonBehavior,
+            color: subject.color,
+            graceModeApplied: setupSnapshot.preferences?.graceModeActive && gracePriorityValue(subject.gracePriority, "core") !== "core",
+            ...planArraysForItem(subject, currentTermWeek, plannerWeekWindow.dates)
+          };
         });
       }),
       ...childBooks.flatMap((book, index) => {
