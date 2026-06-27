@@ -1240,19 +1240,63 @@ function renderWeeklyAssignmentBoard(vm) {
   `;
 }
 
+function renderTermAtAGlance(vm) {
+  const weekNum    = vm.week.termWeekNumber || 0;
+  const totalWeeks = vm.week.totalTermWeeks || 12;
+  const percent    = totalWeeks > 0 && weekNum > 0 ? Math.round((weekNum / totalWeeks) * 100) : 0;
+  const hasDescription = Boolean(vm.term.description);
+
+  if (hasDescription) {
+    // Description mode: two-column — text left, week-dot track right
+    const dots = Array.from({ length: totalWeeks }, (_, i) => {
+      const w = i + 1;
+      const isCurrent = w === weekNum;
+      const isPast    = w < weekNum;
+      return `<span title="Week ${w}" style="display:inline-block;width:${isCurrent ? 12 : 8}px;height:${isCurrent ? 12 : 8}px;border-radius:50%;background:${isCurrent ? "var(--gold)" : isPast ? "rgba(181,148,47,.38)" : "var(--line)"};${isCurrent ? "box-shadow:0 0 0 3px rgba(181,148,47,.22);" : ""}vertical-align:middle;"></span>`;
+    }).join("");
+    return `
+      <section style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;display:grid;grid-template-columns:1fr minmax(180px,.55fr);gap:22px;align-items:start;">
+        <div>
+          <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Term at a Glance</div>
+          <strong style="font-family:'Cormorant Garamond',serif;font-size:22px;display:block;line-height:1.1;">${html(vm.term.label)}</strong>
+          ${vm.term.dateRange ? `<div style="color:var(--muted);font-size:13px;margin:3px 0 10px;">${html(vm.term.dateRange)}</div>` : `<div style="margin-bottom:10px;"></div>`}
+          <p style="margin:0;font-size:14px;line-height:1.6;color:var(--ink);">${html(vm.term.description)}</p>
+        </div>
+        <div style="padding-top:2px;">
+          <div style="color:var(--gold);font-size:11px;letter-spacing:.14em;font-weight:700;text-transform:uppercase;margin-bottom:10px;">Week progress</div>
+          ${weekNum && totalWeeks ? `<p style="margin:0 0 10px;font-size:13px;color:var(--muted);">Week ${weekNum} of ${totalWeeks}${vm.term.dateRange ? ` · ${html(vm.term.dateRange)}` : ""}</p>` : `<p style="margin:0 0 10px;font-size:13px;color:var(--muted);">Set term dates in Setup</p>`}
+          <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;">${dots}</div>
+        </div>
+      </section>
+    `;
+  }
+
+  // Progress-bar mode (no description): matches renderTermProgressPanel style
+  return `
+    <section style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;display:grid;grid-template-columns:minmax(200px,.75fr) 1fr;gap:22px;align-items:center;">
+      <div>
+        <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:700;text-transform:uppercase;">Term at a Glance</div>
+        <h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1.05;margin:5px 0 4px;color:var(--ink);">${html(vm.term.label || "Current Term")}</h2>
+        <p style="margin:0;color:var(--muted);font-size:13px;line-height:1.4;">${weekNum && totalWeeks ? `Week ${weekNum} of ${totalWeeks}` : "Set term dates in Setup"}${vm.term.dateRange ? ` · ${html(vm.term.dateRange)}` : ""}</p>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:8px;color:#33405a;font-size:13px;"><span>Term progress</span><strong>${percent}%</strong></div>
+        ${bar(percent, "var(--gold)")}
+        <p style="margin:8px 0 0;font-size:12px;color:var(--muted);">Add a term description in Setup → Terms to show cycle and focus notes here.</p>
+      </div>
+    </section>
+  `;
+}
+
 function renderPlannerWeek(vm) {
   return `
+    ${renderTermAtAGlance(vm)}
     ${renderWeeklyAssignmentBoard(vm)}
     <div style="display:flex;gap:14px;flex-wrap:wrap;">
       <div style="flex:1 1 620px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;">
         <div style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;margin-bottom:12px;">FORM PLANS</div>
-        ${vm.week.formRows.length ? vm.week.formRows.map((form) => `<div style="display:grid;grid-template-columns:42px 150px 1fr;gap:12px;align-items:start;border-top:1px solid var(--line);padding:12px 0;"><span style="width:38px;height:38px;border-radius:50%;background:${form.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(form.initials.slice(0, 2).join(""))}</span><span><strong style="display:block;">${html(form.formLabel)}</strong><small style="color:var(--muted);">${html(form.childNames.join(", "))}</small></span><span style="color:var(--muted);display:grid;gap:5px;">${form.items.slice(0, 4).map((item) => `<span>${html(item.title)}${item.sub ? ` · ${html(item.sub)}` : ""}</span>`).join("")}${form.items.length > 4 ? `<small style="color:var(--gold);">+ ${form.items.length - 4} more lessons</small>` : ""}</span></div>`).join("") : emptyState("Add children and subjects in Setup to generate Form plans.")}
+        ${vm.week.formRows.length ? vm.week.formRows.map((form) => `<div style="display:grid;grid-template-columns:42px 150px 1fr;gap:12px;align-items:start;border-top:1px solid var(--line);padding:12px 0;"><span style="width:38px;height:38px;border-radius:50%;background:${form.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(form.initials.slice(0, 2).join(""))}</span><span><strong style="display:block;">${html(form.formLabel)}</strong><small style="color:var(--muted);">${html(form.childNames.join(", "))}</small></span><span style="color:var(--muted);display:grid;gap:5px;">${form.items.slice(0, 4).map((item) => `<span>${html(item.title)}${item.sub ? \` · \${html(item.sub)}\` : ""}</span>`).join("")}${form.items.length > 4 ? `<small style="color:var(--gold);">+ ${form.items.length - 4} more lessons</small>` : ""}</span></div>`).join("") : emptyState("Add children and subjects in Setup to generate Form plans.")}
       </div>
-      <aside style="flex:0 1 330px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;">
-        <div style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;margin-bottom:12px;">TERM AT A GLANCE</div>
-        <strong style="font-family:'Cormorant Garamond',serif;font-size:22px;">${html(vm.term.cycleTitle)}</strong>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">${vm.term.settings.length ? vm.term.settings.map((item) => `<span style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</span>`).join("") : emptyState("Add term dates and subject plans in Setup.")}</div>
-      </aside>
     </div>
   `;
 }
@@ -3093,7 +3137,7 @@ function setupTermOptions(terms = [], fallbackTerm = {}) {
 
 function termSetupRow(term = {}, index = 0) {
   const termId = term.id || `term_${index + 1}`;
-  return `<div data-setup-row="terms" data-id="${html(termId)}" style="display:grid;grid-template-columns:1fr .7fr .7fr .55fr auto auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;"><input type="hidden" name="id" value="${html(termId)}" />${setupInput("Term name", "label", term.label || `Term ${index + 1}`)}${setupInput("Start", "startDate", term.startDate || "", { type: "date" })}${setupInput("End", "endDate", term.endDate || "", { type: "date" })}${setupInput("Weeks", "weeksCount", term.weeksCount || 12, { type: "number" })}<button type="button" data-close-term="${html(termId)}" style="align-self:end;border:1px solid var(--gold);background:#fbf2dd;color:var(--ink);border-radius:9px;padding:10px 12px;font-family:inherit;font-weight:700;">Close Term</button>${setupRemoveButton()}</div>`;
+  return `<div data-setup-row="terms" data-id="${html(termId)}" style="display:grid;grid-template-columns:1fr .7fr .7fr .55fr auto auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;"><input type="hidden" name="id" value="${html(termId)}" />${setupInput("Term name", "label", term.label || `Term ${index + 1}`)}${setupInput("Start", "startDate", term.startDate || "", { type: "date" })}${setupInput("End", "endDate", term.endDate || "", { type: "date" })}${setupInput("Weeks", "weeksCount", term.weeksCount || 12, { type: "number" })}<button type="button" data-close-term="${html(termId)}" style="align-self:end;border:1px solid var(--gold);background:#fbf2dd;color:var(--ink);border-radius:9px;padding:10px 12px;font-family:inherit;font-weight:700;">Close Term</button>${setupRemoveButton()}<label style="grid-column:1 / -1;display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Term description — cycle, focus, or notes<textarea name="description" rows="2" style="min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);resize:vertical;font-size:13px;">${html(term.description || "")}</textarea></label></div>`;
 }
 
 function setupRemoveButton() {
@@ -4861,6 +4905,7 @@ function setupPayloadFromForm(form) {
       startDate: rowValue(row, "startDate"),
       endDate: rowValue(row, "endDate"),
       weeksCount: Math.max(1, Math.min(24, Number(rowValue(row, "weeksCount") || 12))),
+      description: rowValue(row, "description") || "",
       paceMode: "steady"
     };
   });
