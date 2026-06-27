@@ -1114,18 +1114,31 @@ function renderPlannerReserveCard(vm) {
 
 function renderWeeklyAssignmentBoard(vm) {
   const items = vm.week.weeklyAssignmentItems || [];
-  const card = (item) => `<article class="learn-week-assignment-card" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" style="border-left-color:${html(item.color || "var(--gold)")};"><strong>${html(item.title)}</strong>${item.sub ? `<small>${html(item.sub)}</small>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
+  const card = (item) => `<article class="learn-week-assignment-card" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" style="border-left-color:${html(item.color || "var(--gold)")};"><strong>${html(item.title)}</strong>${item.sub ? `<small>${html(item.sub)}</small>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
+  const weekNum = vm.week.termWeekNumber || 0;
+  const totalWeeks = vm.week.totalTermWeeks || 0;
+  const weekLabel = weekNum && totalWeeks ? `Week ${weekNum} of ${totalWeeks}` : vm.week.label || "This Week";
+  const weekStartDate = vm.week.weekStartDate || vm.week.days?.[0]?.date || "";
+  const weekEndDate = vm.week.weekEndDate || vm.week.days?.[6]?.date || "";
   return `
-    <section class="learn-week-assignment-board" data-week-assignment-board data-week-key="${html([vm.week.days[0]?.date, vm.week.days[6]?.date].filter(Boolean).join("_"))}">
+    <section class="learn-week-assignment-board" data-week-assignment-board data-week-key="${html([vm.week.days[0]?.date, vm.week.days[6]?.date].filter(Boolean).join("_"))}" data-week-start="${html(weekStartDate)}" data-week-end="${html(weekEndDate)}">
       <div class="learn-week-assignment-head">
         <div>
-          <div>THIS WEEK</div>
-          <h2>Weekly Lesson Calendar</h2>
+          <div>WEEKLY PLANNER</div>
+          <h2>${html(vm.week.label || "This Week")}</h2>
         </div>
-        <span>
-          <small>Drag a subject into a day. Edits here stay in week view.</small>
-          <button type="button" data-week-designed-print>Print designed week</button>
-        </span>
+        <div class="learn-week-nav" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button type="button" data-week-nav="-1" aria-label="Previous week" style="border:1px solid var(--line);background:var(--paper2);border-radius:9px;padding:8px 12px;font-family:inherit;cursor:pointer;">← Prev</button>
+            <span style="font-size:13px;color:var(--muted);white-space:nowrap;padding:0 4px;">${html(weekLabel)}</span>
+            <button type="button" data-week-nav="1" aria-label="Next week" style="border:1px solid var(--line);background:var(--paper2);border-radius:9px;padding:8px 12px;font-family:inherit;cursor:pointer;">Next →</button>
+            <button type="button" data-week-nav="today" style="border:1px solid var(--goldsoft);background:var(--paper);border-radius:9px;padding:8px 12px;font-family:inherit;cursor:pointer;color:var(--gold);font-weight:600;">Today</button>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <small style="color:var(--muted);">Drag a subject into a day.</small>
+            <button type="button" data-week-designed-print>Print designed week</button>
+          </div>
+        </div>
       </div>
       <div class="learn-week-assignment-layout">
         <div class="learn-week-assignment-pool">
@@ -2915,6 +2928,17 @@ function setupColorSelect(label, name, value = colorChoices[0]) {
   return `<label class="learn-color-field" style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">${html(label)}<span style="display:flex;gap:8px;align-items:center;"><input name="${html(name)}" type="color" value="${html(resolved)}" list="learnColorChoices" style="width:44px;height:40px;flex:0 0 auto;border:1px solid var(--line);border-radius:9px;padding:3px;background:var(--paper2);"><input name="${html(name)}Hex" type="text" value="${html(resolved)}" pattern="#[0-9A-Fa-f]{6}" style="min-width:0;flex:1;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);"><span data-color-preview style="width:34px;height:34px;border-radius:50%;background:${html(resolved)};border:1px solid var(--goldsoft);"></span></span><datalist id="learnColorChoices">${colorChoices.map((color) => `<option value="${html(color)}"></option>`).join("")}</datalist></label>`;
 }
 
+function setupMultiChildPicker(children = [], selectedIds = []) {
+  // Normalise: selectedIds may be a comma-joined string or an array
+  const selected = Array.isArray(selectedIds)
+    ? selectedIds
+    : String(selectedIds || "").split(",").map((v) => v.trim()).filter(Boolean);
+  const summary = selected.length
+    ? children.filter((child) => selected.includes(child.id)).map((child) => child.name || child.firstName || child.id).join(", ")
+    : "Use Form Assignment";
+  return `<details class="learn-day-picker learn-child-multi-picker"><summary><span>Specific children</span><strong data-child-multi-summary>${html(summary)}</strong></summary><div class="learn-day-picker-menu">${children.map((child) => `<label><input type="checkbox" data-child-multi-choice value="${html(child.id)}" ${selected.includes(child.id) ? "checked" : ""}>${html(child.name || child.firstName || child.id)}</label>`).join("")}</div><input type="hidden" name="childIds" value="${html(selected.join(","))}"></details>`;
+}
+
 function childSetupRow(child = {}, groupingMode = "forms") {
   const groupingField = groupingMode === "forms"
     ? setupSelect("Form", "formLabel", child.formLabel || child.form || "", formOptions)
@@ -2929,7 +2953,7 @@ function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId 
   const activeGroupField = groupingMode === "grades"
     ? `${setupSelect(groupLabel, "gradeLabel", subject.gradeLabel || "", [{ value: "", label: "All grades" }, ...groupOptions])}<input type="hidden" name="formLabel" value="${html(subject.formLabel || "")}" />`
     : `${setupSelect(groupLabel, "formLabel", subject.formLabel || "", [{ value: "", label: "All Forms" }, ...groupOptions])}<input type="hidden" name="gradeLabel" value="${html(subject.gradeLabel || "")}" />`;
-  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main">${setupInput("Subject / skill", "title", subject.title || "")}${setupSourceInput("Book / source / resource", "resource", subject.resource || "")}${setupSelect("Schedule type", "weeklyFrequency", subject.weeklyFrequency === "1x" ? "weekly" : subject.weeklyFrequency || subject.cadenceLabel || "daily", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutes" value="${html(minutes)}" /><input type="hidden" name="subjectType" value="${html(subject.subjectType || subject.type || "custom")}" /><input type="hidden" name="planningMode" value="forms" /><input type="hidden" name="instructionMode" value="${html(subject.instructionMode || "parent-led")}" /><input type="hidden" name="resourceType" value="${html(subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(subject.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(subject.priorityLevel || "important")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupTermWeekPicker(subject.scheduledWeeks)}${setupWeeklyPlanFields(subject.weeklyPlans)}${setupSelect("Specific child", "childId", subject.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main">${setupInput("Subject / skill", "title", subject.title || "")}${setupSourceInput("Book / source / resource", "resource", subject.resource || "")}${setupSelect("Schedule type", "weeklyFrequency", subject.weeklyFrequency === "1x" ? "weekly" : subject.weeklyFrequency || subject.cadenceLabel || "daily", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutes" value="${html(minutes)}" /><input type="hidden" name="subjectType" value="${html(subject.subjectType || subject.type || "custom")}" /><input type="hidden" name="planningMode" value="forms" /><input type="hidden" name="instructionMode" value="${html(subject.instructionMode || "parent-led")}" /><input type="hidden" name="resourceType" value="${html(subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(subject.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(subject.priorityLevel || "important")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${activeGroupField}${setupTermWeekPicker(subject.scheduledWeeks)}${setupWeeklyPlanFields(subject.weeklyPlans)}${setupMultiChildPicker(children, subject.childIds || (subject.childId ? [subject.childId] : []))}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function bookSetupRow(book = {}, terms = [], currentTermId = "") {
@@ -2950,7 +2974,7 @@ function formationRecitationSetupRow(track = {}, children = [], groupingMode = "
 
 function formationEnrichmentSetupRow(block = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms", tileMinutes = "") {
   const minutes = block.minutesPlanned || block.minutes || tileMinutes || "20";
-  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupSourceInput("Source", "title", block.title || block.resource || block.source || "")}${setupPlanningModePicker(block, children, groupingMode)}${setupSelect("Schedule type", "weeklyFrequency", block.weeklyFrequency === "1x" ? "weekly" : block.weeklyFrequency || block.cadenceLabel || block.cadence || "weekly", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutesPlanned" value="${html(minutes)}" /><input type="hidden" name="instructionMode" value="${html(block.instructionMode || "shared")}" /><input type="hidden" name="resourceType" value="${html(block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(block.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(block.priorityLevel || "enrichment")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupTermWeekPicker(block.scheduledWeeks)}${setupWeeklyPlanFields(block.weeklyPlans)}${setupSelect("Specific child", "childId", block.childId || "", [{ value: "", label: "Use Form Assignment" }, ...children.map((child) => ({ value: child.id, label: child.name }))])}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "reduce first", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupSourceInput("Source", "title", block.title || block.resource || block.source || "")}${setupPlanningModePicker(block, children, groupingMode)}${setupSelect("Schedule type", "weeklyFrequency", block.weeklyFrequency === "1x" ? "weekly" : block.weeklyFrequency || block.cadenceLabel || block.cadence || "weekly", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutesPlanned" value="${html(minutes)}" /><input type="hidden" name="instructionMode" value="${html(block.instructionMode || "shared")}" /><input type="hidden" name="resourceType" value="${html(block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(block.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(block.priorityLevel || "enrichment")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupTermWeekPicker(block.scheduledWeeks)}${setupWeeklyPlanFields(block.weeklyPlans)}${setupMultiChildPicker(children, block.childIds || (block.childId ? [block.childId] : []))}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "reduce first", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function churchRhythmSetupPanel(vm) {
@@ -4398,6 +4422,7 @@ function setupPayloadFromForm(form) {
         resourceType: rowValue(row, "resourceType"),
         minutes: rowTileMinutes(row),
         childId: rowValue(row, "childId"),
+        childIds: rowValue(row, "childIds").split(",").map((v) => v.trim()).filter(Boolean),
         progressionType: rowValue(row, "progressionType"),
         startNumber: rowValue(row, "startNumber"),
         currentNumber: rowValue(row, "currentNumber"),
@@ -4513,7 +4538,7 @@ function setupPayloadFromForm(form) {
           formLabels: rowValue(row, "formLabels").split(",").map((value) => value.trim()).filter(Boolean),
           gradeLabel: rowValue(row, "gradeLabel"),
           childId: rowValue(row, "childId"),
-          progressionType: rowValue(row, "progressionType"),
+          childIds: rowValue(row, "childIds").split(",").map((v) => v.trim()).filter(Boolean),
           startNumber: rowValue(row, "startNumber"),
           currentNumber: rowValue(row, "currentNumber"),
           endNumber: rowValue(row, "endNumber"),
@@ -4751,6 +4776,15 @@ function wireSetupPage() {
       if (label) label.textContent = selected.length ? `${picker.dataset.planningGroupLabel || "Forms-Based"}: ${selected.join(", ")}` : "Family-Based";
       return;
     }
+    const childMultiChoice = event.target.closest("[data-child-multi-choice]");
+    if (childMultiChoice) {
+      const picker = childMultiChoice.closest(".learn-child-multi-picker");
+      const selected = [...picker.querySelectorAll("[data-child-multi-choice]:checked")].map((input) => input.value);
+      picker.querySelector('[name="childIds"]').value = selected.join(",");
+      const names = [...picker.querySelectorAll("[data-child-multi-choice]:checked")].map((input) => input.closest("label")?.textContent?.trim() || input.value);
+      picker.querySelector("[data-child-multi-summary]").textContent = selected.length ? names.join(", ") : "Use Form Assignment";
+      return;
+    }
     const tileInput = event.target.closest("[data-setup-section-title-input], [data-setup-section-detail-input]");
     if (tileInput) {
       const group = tileInput.dataset.setupSectionGroup || "";
@@ -4925,20 +4959,95 @@ function wireWeeklyAssignmentBoard(vm) {
     const state = {};
     board.querySelectorAll("[data-week-assignment-card]").forEach((card) => {
       const zone = card.closest("[data-week-assignment-zone]");
-      state[card.dataset.itemId] = {
-        zone: zone?.dataset.weekAssignmentZone || "pool",
-        note: card.querySelector("[data-week-assignment-note]")?.value || ""
-      };
+      const zoneKey = zone?.dataset.weekAssignmentZone || "pool";
+      const itemId = card.dataset.itemId;
+      const sourceId = card.dataset.sourceItemId || itemId;
+      const note = card.querySelector("[data-week-assignment-note]")?.value || "";
+      if (card.dataset.autoPlaced) {
+        // Auto-placed clones: key by sourceId__zone so each day slot is independent
+        state[`${sourceId}__auto__${zoneKey}`] = { zone: zoneKey, note, autoPlaced: true, sourceId };
+        // Also mark the source item as auto-distributed so restore knows
+        if (!state[sourceId]) state[sourceId] = { zone: "auto", autoPlaced: true };
+      } else {
+        state[itemId] = { zone: zoneKey, note };
+      }
     });
     localStorage.setItem(storageKey, JSON.stringify(state));
     scheduleDesignedWeekCalendarSync();
   };
+  const wireCard = (card) => {
+    card.addEventListener("dragstart", (event) => {
+      event.dataTransfer?.setData("text/plain", card.dataset.itemId || "");
+      card.classList.add("is-dragging");
+    });
+    card.addEventListener("dragend", () => {
+      card.classList.remove("is-dragging");
+      writeState();
+    });
+    card.querySelector("[data-week-assignment-note]")?.addEventListener("input", writeState);
+  };
+  const restore = () => {
+    const state = readState();
+    // Day zones in DOM order (Sun=index 0, Mon=1 … Sat=6 matching statuses array)
+    const dayZones = [...board.querySelectorAll("[data-week-assignment-zone]:not([data-week-assignment-zone='pool'])")];
+    board.querySelectorAll("[data-week-assignment-card]").forEach((card) => {
+      const id = card.dataset.itemId;
+      const saved = state[id];
+      if (saved && saved.zone && saved.zone !== "auto") {
+        // Manual placement from a previous session — honour it exactly
+        const target = board.querySelector(`[data-week-assignment-zone="${CSS.escape(saved.zone)}"]`);
+        if (target) target.appendChild(card);
+        const note = card.querySelector("[data-week-assignment-note]");
+        if (note && saved.note) note.value = saved.note;
+        return;
+      }
+      // Determine auto-placement eligibility from statuses
+      const statuses = (card.dataset.statuses || "").split(",");
+      const activeDayIndexes = statuses
+        .map((s, i) => s === "planned" ? i : -1)
+        .filter((i) => i >= 0);
+      const isAutoEligible = activeDayIndexes.length >= 2;
+      if (!isAutoEligible) return; // single-day or unscheduled — leave in pool for drag
+      // Auto-place: hide the pool original, clone into each active day zone
+      card.style.display = "none";
+      card.dataset.autoOriginal = "true";
+      activeDayIndexes.forEach((dayIndex) => {
+        // dayZones[0] = Sunday, [1] = Mon … match statuses array positions
+        const zone = dayZones[dayIndex];
+        if (!zone) return;
+        const autoKey = `${id}__auto__${zone.dataset.weekAssignmentZone}`;
+        const savedClone = state[autoKey];
+        const clone = card.cloneNode(true);
+        clone.dataset.itemId = autoKey;
+        clone.dataset.sourceItemId = id;
+        clone.dataset.autoPlaced = "true";
+        clone.style.display = ""; // visible
+        const cloneNote = clone.querySelector("[data-week-assignment-note]");
+        if (cloneNote) {
+          cloneNote.value = savedClone?.note || "";
+          cloneNote.placeholder = "Specify chapters, pages, lessons, or notes for this day";
+        }
+        // If a saved clone was moved to a different zone, honour that
+        const targetZoneKey = savedClone?.zone && savedClone.zone !== zone.dataset.weekAssignmentZone
+          ? savedClone.zone
+          : zone.dataset.weekAssignmentZone;
+        const targetZone = board.querySelector(`[data-week-assignment-zone="${CSS.escape(targetZoneKey)}"]`) || zone;
+        targetZone.appendChild(clone);
+        wireCard(clone);
+      });
+    });
+  };
+  restore();
+  // Wire drag + note events for pool originals (non-auto cards)
+  board.querySelectorAll("[data-week-assignment-card]:not([data-auto-placed])").forEach(wireCard);
   const designedWeekPayload = () => {
     const itemLookup = new Map((vm.week?.weeklyAssignmentItems || []).map((item) => [item.id, item]));
     const assignmentForCard = (card) => {
-      const item = itemLookup.get(card.dataset.itemId) || {};
+      // Resolve metadata from source item for auto-placed clones
+      const sourceId = card.dataset.sourceItemId || card.dataset.itemId;
+      const item = itemLookup.get(sourceId) || itemLookup.get(card.dataset.itemId) || {};
       return {
-        id: card.dataset.itemId || "",
+        id: sourceId || "",
         title: card.querySelector("strong")?.textContent?.trim() || item.title || "Subject",
         sub: card.querySelector("small")?.textContent?.trim() || item.sub || "",
         note: card.querySelector("[data-week-assignment-note]")?.value?.trim() || "",
@@ -4979,28 +5088,6 @@ function wireWeeklyAssignmentBoard(vm) {
       syncLearnGoogleCalendar(designedWeekCalendarEvents());
     }, 900);
   };
-  const restore = () => {
-    const state = readState();
-    board.querySelectorAll("[data-week-assignment-card]").forEach((card) => {
-      const saved = state[card.dataset.itemId];
-      const target = saved?.zone ? board.querySelector(`[data-week-assignment-zone="${CSS.escape(saved.zone)}"]`) : null;
-      if (target) target.appendChild(card);
-      const note = card.querySelector("[data-week-assignment-note]");
-      if (note && saved?.note) note.value = saved.note;
-    });
-  };
-  restore();
-  board.querySelectorAll("[data-week-assignment-card]").forEach((card) => {
-    card.addEventListener("dragstart", (event) => {
-      event.dataTransfer?.setData("text/plain", card.dataset.itemId || "");
-      card.classList.add("is-dragging");
-    });
-    card.addEventListener("dragend", () => {
-      card.classList.remove("is-dragging");
-      writeState();
-    });
-    card.querySelector("[data-week-assignment-note]")?.addEventListener("input", writeState);
-  });
   zones.forEach((zone) => {
     zone.addEventListener("dragover", (event) => {
       event.preventDefault();
@@ -5059,6 +5146,29 @@ function wirePlanner(vm) {
   if (vm.month?.key) localStorage.setItem("agapay.learn.plannerMonth", vm.month.key);
   if (vm.term?.activeTerm) localStorage.setItem("agapay.learn.plannerTerm", String(vm.term.activeTerm));
   wireWeeklyAssignmentBoard(vm);
+
+  // Week navigation — prev / next / today
+  root.querySelectorAll("[data-week-nav]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const board = root.querySelector("[data-week-assignment-board]");
+      const weekStart = board?.dataset.weekStart || "";
+      const direction = button.dataset.weekNav;
+      let targetDate;
+      if (direction === "today") {
+        targetDate = new Date().toISOString().slice(0, 10);
+      } else {
+        const offset = Number(direction) * 7;
+        const base = weekStart ? new Date(`${weekStart}T12:00:00Z`) : new Date();
+        base.setUTCDate(base.getUTCDate() + offset);
+        targetDate = base.toISOString().slice(0, 10);
+      }
+      const params = new URLSearchParams(window.location.search);
+      params.set("date", targetDate);
+      params.set("view", "week");
+      window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+      mount();
+    });
+  });
 
   // Intro dismiss — sets a localStorage flag so the intro hides on next visit
   root.querySelector("[data-planner-intro-dismiss]")?.addEventListener("click", (event) => {
