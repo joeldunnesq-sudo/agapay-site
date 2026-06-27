@@ -1196,7 +1196,8 @@ function renderWeeklyAssignmentBoard(vm) {
       : graceActive && isReducible
         ? "opacity:.8;"
         : "";
-    return `<article class="learn-week-assignment-card${graceActive && isDeferrable ? " is-grace-deferred" : graceActive && isReducible ? " is-grace-reduced" : ""}" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" data-grace-priority="${html(priority)}" style="border-left-color:${html(item.color || "var(--gold)")};${activeStyle}"><div class="learn-week-assignment-card-head"><strong>${html(item.title)}</strong>${badge}</div>${item.sub ? `<small>${html(item.sub)}</small>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
+    const minutesLabel = item.minutes > 0 ? `${item.minutes} min` : "";
+    return `<article class="learn-week-assignment-card${graceActive && isDeferrable ? " is-grace-deferred" : graceActive && isReducible ? " is-grace-reduced" : ""}" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" data-grace-priority="${html(priority)}" style="border-left-color:${html(item.color || "var(--gold)")};${activeStyle}"><div class="learn-week-assignment-card-head"><strong>${html(item.title)}</strong>${badge}</div>${item.sub ? `<small>${html(item.sub)}</small>` : ""}${minutesLabel ? `<span class="learn-week-assignment-minutes">${html(minutesLabel)}</span>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
   };
   const weekNum = vm.week.termWeekNumber || 0;
   const totalWeeks = vm.week.totalTermWeeks || 0;
