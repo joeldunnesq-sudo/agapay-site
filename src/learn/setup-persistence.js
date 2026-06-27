@@ -331,6 +331,7 @@ function normalizeCompletion(value = {}) {
 }
 
 function childrenForAssignment(item = {}, children = []) {
+  if (Array.isArray(item.childIds) && item.childIds.length) return children.filter((child) => item.childIds.includes(child.id));
   if (item.childId) return children.filter((child) => child.id === item.childId);
   if (item.formLabel) return children.filter((child) => child.formLabel === item.formLabel || child.gradeLabel === item.formLabel);
   if (item.gradeLabel) return children.filter((child) => child.gradeLabel === item.gradeLabel);
@@ -529,7 +530,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     cadenceLabel: text(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "Weekly"),
     minutes: int(subject.minutes, 20),
     childId: text(subject.childId, ""),
-    progressionType: text(subject.progressionType, "lessons"),
+    childIds: Array.isArray(subject.childIds) ? subject.childIds.filter(Boolean) : [],
     startNumber: int(subject.startNumber, 1),
     currentNumber: int(subject.currentNumber || subject.completedThroughNumber || subject.startNumber, int(subject.startNumber, 1)),
     endNumber: int(subject.endNumber, 0),
@@ -634,7 +635,7 @@ function normalizeSetupPayload(payload = {}, identity) {
       formLabel: text(block.formLabel, labelsValue(block.formLabels || block.formLabel)[0] || ""),
       gradeLabel: text(block.gradeLabel, ""),
       childId: text(block.childId, ""),
-      progressionType: text(block.progressionType, "lessons"),
+      childIds: Array.isArray(block.childIds) ? block.childIds.filter(Boolean) : [],
       startNumber: text(block.startNumber, ""),
       currentNumber: text(block.currentNumber || block.completedThroughNumber, ""),
       endNumber: text(block.endNumber, ""),
@@ -764,7 +765,7 @@ function normalizeSetupPayload(payload = {}, identity) {
   };
 }
 
-export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSnapshot = null) {
+export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSnapshot = null, { weekDate = "" } = {}) {
   if (!setupSnapshot) return seed;
   const next = clone(seed);
   next.familyPlanning = clone(setupSnapshot.familyPlanning || { nameDays: [], events: [], meals: [], recipes: [], groceryItems: [], fastingPreference: "guidance" });
@@ -978,8 +979,9 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
       sortOrder: index + 100
     }))
   ];
-  const currentTermWeek = activeTermWeek(setupSnapshot.term || next.term || {});
-  const plannerWeekWindow = currentWeekWindow();
+  const weekReference = weekDate && /^\d{4}-\d{2}-\d{2}$/.test(weekDate) ? new Date(`${weekDate}T12:00:00.000Z`) : new Date();
+  const currentTermWeek = activeTermWeek(setupSnapshot.term || next.term || {}, weekReference);
+  const plannerWeekWindow = currentWeekWindow(weekReference);
   const currentWeekPlan = (item = {}) => text(list(item.weeklyPlans)[Math.max(0, currentTermWeek - 1)], "");
   next.plannerWeek = {
     termWeekNumber: currentTermWeek,
@@ -1173,7 +1175,7 @@ export async function saveLearnCompletion(env, request, payload = {}) {
   return { ok: true, setupSnapshot, scope, periodKey, itemId, completed: Boolean(payload.completed) };
 }
 
-export async function getLearnSeedForIdentity(env, identity, { termId = "" } = {}) {
+export async function getLearnSeedForIdentity(env, identity, { termId = "", weekDate = "" } = {}) {
   if (!identity) return null;
   let setupSnapshot = await loadLearnSetupSnapshotForIdentity(env, identity);
   const selectedTerm = setupSnapshot?.terms?.find((term) => term.id === termId);
@@ -1184,7 +1186,7 @@ export async function getLearnSeedForIdentity(env, identity, { termId = "" } = {
       term: { ...selectedTerm }
     };
   }
-  const seed = applySetupSnapshotToSeed(getLearnSeedSnapshot(), setupSnapshot);
+  const seed = applySetupSnapshotToSeed(getLearnSeedSnapshot(), setupSnapshot, { weekDate });
   const academicSnapshot = await loadLearnAcademicSnapshot(env, identity.householdId);
   seed.closedAcademicRecords = academicSnapshot.academicRecords;
   seed.closedReportCards = academicSnapshot.reportCards;
