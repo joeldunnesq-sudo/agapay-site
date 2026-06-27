@@ -844,7 +844,7 @@ function renderDashboardFamilyCards(vm) {
       </section>
       <section class="learn-dashboard-family-card">
         <div><small>CHORES</small><h3>Household Chores</h3></div>
-        ${chores.length ? `<div class="learn-dashboard-mini-list">${chores.map((chore) => `<span><strong>${html(chore.title || "Chore")}</strong><small>${html([chore.assignee, choreScheduleLabel(chore), chore.timeOfDay, chore.notes].filter(Boolean).join(" · "))}</small></span>`).join("")}</div>` : emptyState("Add chores in Planner > Chores.")}
+        ${chores.length ? `<div class="learn-dashboard-mini-list">${chores.map((chore) => `<span><strong>${html(chore.title || "Chore")}</strong><small>${html([chore.assignee, choreScheduleLabel(chore), chore.notes].filter(Boolean).join(" · "))}</small></span>`).join("")}</div>` : emptyState("Add chores in Planner > Chores.")}
       </section>
     </div>
   `;
@@ -1370,6 +1370,23 @@ function dayOfMonthOptions() {
   return [{ value: "", label: "Choose day" }, ...Array.from({ length: 31 }, (_, index) => ({ value: String(index + 1), label: `${index + 1}` }))];
 }
 
+const choreTimeOptions = ["Morning", "Afternoon", "Evening"];
+
+function choreTimeValues(value = "") {
+  const values = Array.isArray(value) ? value : String(value || "").split(/[,\u00b7|]/);
+  return values.map((item) => item.trim()).filter((item) => choreTimeOptions.includes(item));
+}
+
+function choreTimeLabel(value = "") {
+  const selected = choreTimeValues(value);
+  return selected.length ? selected.join(" & ") : "Anytime";
+}
+
+function choreTimeCheckboxes(name, value = "") {
+  const selected = choreTimeValues(value);
+  return `<fieldset class="learn-chore-time-field"><legend>Time</legend>${choreTimeOptions.map((option) => `<label><input type="checkbox" name="${html(name)}" value="${html(option)}" ${selected.includes(option) ? "checked" : ""}> ${html(option)}</label>`).join("")}<small>Select one or more.</small></fieldset>`;
+}
+
 const eventRecurrenceOptions = [
   { value: "none", label: "Does not repeat" },
   { value: "weekly", label: "Weekly" },
@@ -1438,7 +1455,7 @@ function choreSetupRow(chore = {}, index = 0, planning = {}) {
       ${setupSelect("Weekly day", "day", chore.day || "", ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])}
       ${setupSelect("Monthly day", "dayOfMonth", String(chore.dayOfMonth || ""), dayOfMonthOptions())}
       ${setupSelect("Quarter month", "quarterMonth", String(chore.quarterMonth || "1"), [{ value: "1", label: "1st month" }, { value: "2", label: "2nd month" }, { value: "3", label: "3rd month" }])}
-      ${setupSelect("Time", "timeOfDay", chore.timeOfDay || "Anytime", ["Anytime", "Morning", "Afternoon", "Evening"])}
+      ${choreTimeCheckboxes("timeOfDay", chore.timeOfDay || "")}
       ${setupInput("Notes", "notes", chore.notes || "")}
       <label class="learn-check-field"><input type="checkbox" name="completed" ${chore.completed ? "checked" : ""}> Done</label>
     </div>
@@ -1640,10 +1657,15 @@ function choreDueOnDay(chore = {}, day = {}) {
 
 function choreScheduleLabel(chore = {}) {
   const cadence = choreCadence(chore);
-  if (cadence === "daily") return "Daily";
-  if (cadence === "weekly") return chore.day ? `Weekly · ${chore.day}` : "Weekly";
-  if (cadence === "monthly") return chore.dayOfMonth ? `Monthly · day ${chore.dayOfMonth}` : "Monthly";
-  return `Quarterly${chore.quarterMonth ? ` · month ${chore.quarterMonth}` : ""}${chore.dayOfMonth ? ` · day ${chore.dayOfMonth}` : ""}`;
+  const time = choreTimeLabel(chore.timeOfDay);
+  const schedule = cadence === "daily"
+    ? "Daily"
+    : cadence === "weekly"
+      ? (chore.day ? `Weekly · ${chore.day}` : "Weekly")
+      : cadence === "monthly"
+        ? (chore.dayOfMonth ? `Monthly · day ${chore.dayOfMonth}` : "Monthly")
+        : `Quarterly${chore.quarterMonth ? ` · month ${chore.quarterMonth}` : ""}${chore.dayOfMonth ? ` · day ${chore.dayOfMonth}` : ""}`;
+  return `${schedule} · ${time}`;
 }
 
 function choreOpenAttributes(chore = null, personName = "", day = {}) {
@@ -1672,12 +1694,15 @@ function choreOpenAttributes(chore = null, personName = "", day = {}) {
 
 function renderChoresScope(model, displayView) {
   const people = [{ name: "Everyone", color: "var(--navy)", initial: "✥" }, ...model.children.filter((child) => child.name)];
+  const choresForPersonDay = (person, day) => model.chores.filter((item) => (item.assignee || "Everyone") === person.name && choreDueOnDay(item, day));
+  const renderChoreButton = (chore, person, day) => `<button type="button" class="learn-family-mini-card" ${choreOpenAttributes(chore, person.name, day)}><strong>${html(chore.title || "Chore")}</strong><small>${html(choreScheduleLabel(chore))}</small></button>`;
+  const addChoreButton = (person, day, compact = false) => `<button type="button" class="${compact ? "learn-family-mini-card learn-family-add-chore-card" : "learn-family-add-chore-card"}" ${choreOpenAttributes(null, person.name, day)}><strong>+ Add chore</strong><small>${html(day.weekday || day.weekdayLong || day.long || "Day")}</small></button>`;
   if (displayView === "day") {
     const selectedDate = new URLSearchParams(window.location.search).get("date") || model.weekDays[0]?.date || "";
     const day = model.weekDays.find((item) => item.date === selectedDate) || model.weekDays[0] || {};
-    return `<div class="learn-family-prototype">${renderPlannerDaySelector(model, day.date)}<section class="learn-family-card-grid">${people.map((person) => { const chore = model.chores.find((item) => (item.assignee || "Everyone") === person.name && choreDueOnDay(item, day)); return `<article class="learn-family-person-card" style="--person-color:${html(person.color)};"><span>${html(person.initial || person.name.slice(0, 1) || "•")}</span><strong>${html(person.name)}</strong><p>${html(chore?.title || (day.isSunday ? "Rest" : "Choose a chore"))}</p>${chore ? `<small>${html(choreScheduleLabel(chore))}</small>` : ""}<button type="button" ${choreOpenAttributes(chore, person.name, day)}>${chore ? "Edit" : "Add"} chore</button></article>`; }).join("")}</section></div>`;
+    return `<div class="learn-family-prototype">${renderPlannerDaySelector(model, day.date)}<section class="learn-family-card-grid">${people.map((person) => { const chores = choresForPersonDay(person, day); return `<article class="learn-family-person-card" style="--person-color:${html(person.color)};"><span>${html(person.initial || person.name.slice(0, 1) || "•")}</span><strong>${html(person.name)}</strong>${chores.length ? `<div class="learn-family-chore-stack">${chores.map((chore) => renderChoreButton(chore, person, day)).join("")}</div>` : `<p>${html(day.isSunday ? "Rest" : "Choose a chore")}</p>`}<button type="button" ${choreOpenAttributes(null, person.name, day)}>Add chore</button></article>`; }).join("")}</section></div>`;
   }
-  return `<section class="learn-family-week-board"><div class="learn-family-week-scroll"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => `<strong>${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small></strong>`).join("")}</div>${people.map((person) => `<div class="learn-family-week-row learn-family-chore-row" style="--person-color:${html(person.color)};"><strong><span>${html(person.initial || person.name.slice(0, 1) || "•")}</span>${html(person.name)}</strong>${model.weekDays.map((day) => { const chore = model.chores.find((item) => (item.assignee || "Everyone") === person.name && choreDueOnDay(item, day)); return `<div><button type="button" class="learn-family-mini-card" ${choreOpenAttributes(chore, person.name, day)}><strong>${html(chore?.title || (day.isSunday ? "Rest" : "Add chore"))}</strong>${chore ? `<small>${html(choreScheduleLabel(chore))}</small>` : ""}</button></div>`; }).join("")}</div>`).join("")}</div></section>`;
+  return `<section class="learn-family-week-board"><div class="learn-family-week-scroll"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => `<strong>${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small></strong>`).join("")}</div>${people.map((person) => `<div class="learn-family-week-row learn-family-chore-row" style="--person-color:${html(person.color)};"><strong><span>${html(person.initial || person.name.slice(0, 1) || "•")}</span>${html(person.name)}</strong>${model.weekDays.map((day) => { const chores = choresForPersonDay(person, day); return `<div><div class="learn-family-chore-stack">${chores.map((chore) => renderChoreButton(chore, person, day)).join("")}${addChoreButton(person, day, true)}</div></div>`; }).join("")}</div>`).join("")}</div></section>`;
 }
 
 function renderEventsScope(model, displayView) {
@@ -1691,7 +1716,7 @@ function renderFamilyPlannerModals(model) {
   return `<div class="learn-family-modal" data-family-modal="meal" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Meal Picker</small><h2>Choose a dish</h2><p data-meal-modal-context>Pick a recipe or type a dish name.</p><input data-meal-custom-input placeholder="Type a dish name..."><div class="learn-family-picker-list">${model.recipes.length ? model.recipes.map((recipe) => `<button type="button" data-meal-pick="${html(recipe.title)}"><strong>${html(recipe.title)}</strong><span>${html(recipe.fastingType || "Any day")} · ${html(recipe.category || "Recipe")}</span></button>`).join("") : `<span class="learn-family-empty-line">No recipes yet. You can still type a dish above.</span>`}</div><div class="learn-family-modal-actions"><button type="button" data-meal-clear>Clear meal</button><button type="button" data-meal-save>Save meal</button></div></div></div>
   <div class="learn-family-modal" data-family-modal="recipe" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Recipe</small><h2>Save a family recipe</h2><div class="learn-family-modal-grid">${setupInput("Recipe name", "modalRecipe.title")}${setupSelect("Fasting fit", "modalRecipe.fastingType", "", ["free", "fish", "oilwine", "strict"])}${setupInput("Category", "modalRecipe.category")}${setupInput("Source URL", "modalRecipe.sourceUrl")}<label>Ingredients<textarea name="modalRecipe.ingredients" rows="4"></textarea></label><label>Instructions<textarea name="modalRecipe.instructions" rows="4"></textarea></label></div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-recipe-save>Save recipe</button></div></div></div>
   <div class="learn-family-modal" data-family-modal="event" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Calendar</small><h2>Add to calendar</h2><div class="learn-family-modal-grid">${setupInput("Title", "modalEvent.title")}${setupSelect("Type", "modalEvent.eventType", "", ["Appointment", "Field Trip", "Extracurricular", "Name Day", "Family"])}${setupInput("Date", "modalEvent.date", "", { type: "date" })}${setupInput("Time", "modalEvent.startTime", "", { type: "time" })}${setupSelect("Repeats", "modalEvent.recurrence", "none", eventRecurrenceOptions)}${setupInput("Location", "modalEvent.location")}<label>Notes<textarea name="modalEvent.notes" rows="3"></textarea></label></div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-event-save>Save event</button></div></div></div>
-  <div class="learn-family-modal" data-family-modal="chore" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Chore Rhythm</small><h2 data-chore-modal-title>Add chore</h2><div class="learn-family-modal-grid">${setupInput("Chore", "modalChore.title")}${setupSelect("Assigned to", "modalChore.assignee", "Everyone", choreAssigneeOptions(model.planning))}${setupSelect("Type", "modalChore.cadence", "weekly", [{ value: "daily", label: "Daily" }, { value: "weekly", label: "Weekly" }, { value: "monthly", label: "Monthly" }, { value: "quarterly", label: "Quarterly" }])}${setupSelect("Weekly day", "modalChore.day", "", ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])}${setupSelect("Monthly day", "modalChore.dayOfMonth", "", dayOfMonthOptions())}${setupSelect("Quarter month", "modalChore.quarterMonth", "1", [{ value: "1", label: "1st month" }, { value: "2", label: "2nd month" }, { value: "3", label: "3rd month" }])}${setupSelect("Time", "modalChore.timeOfDay", "Anytime", ["Anytime", "Morning", "Afternoon", "Evening"])}<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Notes<input name="modalChore.notes" type="text" value="" style="min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);" /></label></div><div class="learn-family-modal-actions"><button type="button" data-chore-delete hidden>Delete chore</button><button type="button" data-family-modal-close>Cancel</button><button type="button" data-chore-save>Save chore</button></div></div></div>`;
+  <div class="learn-family-modal" data-family-modal="chore" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Chore Rhythm</small><h2 data-chore-modal-title>Add chore</h2><div class="learn-family-modal-grid">${setupInput("Chore", "modalChore.title")}${setupSelect("Assigned to", "modalChore.assignee", "Everyone", choreAssigneeOptions(model.planning))}${setupSelect("Type", "modalChore.cadence", "weekly", [{ value: "daily", label: "Daily" }, { value: "weekly", label: "Weekly" }, { value: "monthly", label: "Monthly" }, { value: "quarterly", label: "Quarterly" }])}${setupSelect("Weekly day", "modalChore.day", "", ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])}${setupSelect("Monthly day", "modalChore.dayOfMonth", "", dayOfMonthOptions())}${setupSelect("Quarter month", "modalChore.quarterMonth", "1", [{ value: "1", label: "1st month" }, { value: "2", label: "2nd month" }, { value: "3", label: "3rd month" }])}${choreTimeCheckboxes("modalChore.timeOfDay")}<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Notes<input name="modalChore.notes" type="text" value="" style="min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);" /></label></div><div class="learn-family-modal-actions"><button type="button" data-chore-delete hidden>Delete chore</button><button type="button" data-family-modal-close>Cancel</button><button type="button" data-chore-save>Save chore</button></div></div></div>`;
 }
 
 function dayKeyForChore(chore = {}, vm = {}) {
@@ -3022,6 +3047,15 @@ const subjectTypeOptions = [
   { value: "geography", label: "Geography" },
   { value: "math", label: "Math" },
   { value: "sciences-nature", label: "Sciences & Nature" },
+  { value: "science", label: "Science" },
+  { value: "social-studies", label: "Social Studies" },
+  { value: "fine-arts", label: "Fine Arts" },
+  { value: "health-education", label: "Health Education" },
+  { value: "physical-education", label: "Physical Education (PE)" },
+  { value: "technology-applications", label: "Technology Applications" },
+  { value: "languages-other-than-english", label: "Languages Other Than English (LOTE)" },
+  { value: "career-technical-education", label: "Career and Technical Education (CTE)" },
+  { value: "speech-communication", label: "Speech/Communication" },
   { value: "custom", label: "Custom" }
 ];
 
@@ -3427,7 +3461,7 @@ function formationSetupPanel(vm) {
 
 function formSubjectsSetupPanel(vm, currentTermId) {
   const subjects = vm.subjects || [];
-  const groups = [
+  const standardGroups = [
     {
       panel: "language",
       title: "Language Arts",
@@ -3484,14 +3518,127 @@ function formSubjectsSetupPanel(vm, currentTermId) {
       types: ["sciences-nature", "science", "nature-study"],
       defaultType: "sciences-nature"
     }
-  ].map((group) => setupTileValue(vm, "subjects", group.panel, group));
+  ];
+  const teksFoundationGroups = [
+    {
+      panel: "teks-elar",
+      title: "English Language Arts and Reading (ELAR)",
+      detail: "Reading, writing, speaking, listening, composition, grammar, and literacy foundations.",
+      icon: "✎",
+      types: ["language-arts", "tales", "literature"],
+      defaultType: "language-arts"
+    },
+    {
+      panel: "teks-mathematics",
+      title: "Mathematics",
+      detail: "Number sense, operations, algebraic reasoning, geometry, measurement, data, and problem solving.",
+      icon: "◎",
+      types: ["math", "maths"],
+      defaultType: "math"
+    },
+    {
+      panel: "teks-science",
+      title: "Science",
+      detail: "Scientific practices, lab work, earth and space, life science, physical science, and nature study.",
+      icon: "✦",
+      types: ["science", "sciences-nature", "nature-study"],
+      defaultType: "science"
+    },
+    {
+      panel: "teks-social-studies",
+      title: "Social Studies",
+      detail: "History, geography, civics, economics, cultures, citizenship, timelines, and primary sources.",
+      icon: "⌁",
+      types: ["social-studies", "history", "geography"],
+      defaultType: "social-studies"
+    }
+  ];
+  const teksEnrichmentGroups = [
+    {
+      panel: "teks-fine-arts",
+      title: "Fine Arts",
+      detail: "Visual art, music, composer study, artist study, performance, and creative expression.",
+      icon: "♪",
+      types: ["fine-arts", "art", "music"],
+      defaultType: "fine-arts"
+    },
+    {
+      panel: "teks-health-education",
+      title: "Health Education",
+      detail: "Personal wellness, nutrition, safety, emotional health, family life, and healthy habits.",
+      icon: "✚",
+      types: ["health-education"],
+      defaultType: "health-education"
+    },
+    {
+      panel: "teks-physical-education",
+      title: "Physical Education (PE)",
+      detail: "Movement, fitness, coordination, outdoor activity, skill practice, and lifelong physical health.",
+      icon: "◉",
+      types: ["physical-education", "pe"],
+      defaultType: "physical-education"
+    },
+    {
+      panel: "teks-technology-applications",
+      title: "Technology Applications",
+      detail: "Digital citizenship, computer use, productivity tools, research, coding, and applied technology.",
+      icon: "▣",
+      types: ["technology-applications", "technology"],
+      defaultType: "technology-applications"
+    },
+    {
+      panel: "teks-lote",
+      title: "Languages Other Than English (LOTE)",
+      detail: "Modern languages, classical languages, vocabulary, grammar, conversation, and translation.",
+      icon: "Α",
+      types: ["languages-other-than-english", "classical-foreign-languages", "foreign-language", "classical-languages", "latin", "greek"],
+      defaultType: "languages-other-than-english"
+    },
+    {
+      panel: "teks-cte",
+      title: "Career and Technical Education (CTE)",
+      detail: "Career exploration, practical skills, applied projects, entrepreneurship, and technical pathways.",
+      icon: "⌘",
+      types: ["career-technical-education", "cte"],
+      defaultType: "career-technical-education"
+    },
+    {
+      panel: "teks-speech-communication",
+      title: "Speech/Communication",
+      detail: "Public speaking, discussion, presentation, listening, rhetoric, and interpersonal communication.",
+      icon: "✦",
+      types: ["speech-communication", "speech", "communication"],
+      defaultType: "speech-communication"
+    }
+  ];
+  const groupSets = isOdysseyLearnContext()
+    ? [
+        {
+          title: "Foundation Curriculum",
+          note: "Core, form-based academic subjects required for all students.",
+          groups: teksFoundationGroups
+        },
+        {
+          title: "Enrichment Curriculum",
+          note: "Mandated enrichment subjects offered to provide a well-rounded education.",
+          groups: teksEnrichmentGroups
+        }
+      ]
+    : [{ title: "", note: "", groups: standardGroups }];
+  const groups = groupSets.flatMap((set) => set.groups).map((group) => setupTileValue(vm, "subjects", group.panel, group));
   const subjectsForGroup = (group) => subjects.filter((subject) => group.types.includes(subject.subjectType || subject.type || "language-arts"));
+  const renderGroupSet = (set) => {
+    const setGroups = set.groups.map((group) => setupTileValue(vm, "subjects", group.panel, group));
+    return `
+      ${set.title ? `<div class="learn-setup-helper-note"><strong>${html(set.title)}:</strong> ${html(set.note)}</div>` : ""}
+      <div class="learn-setup-section-grid">
+        ${setGroups.map((group) => setupSectionCard({ group: "subjects", panel: group.panel, title: group.title, detail: group.detail, count: subjectsForGroup(group).length, icon: group.icon })).join("")}
+      </div>`;
+  };
   return `
     <p style="margin:0 0 12px;color:var(--muted);">Each tile is a subject family. Open only the subject family you are planning right now, then add the books, resources, and lesson streams that belong there.</p>
     <p class="learn-setup-helper-note"><strong>How this becomes a week:</strong> These Form-based subjects become draggable cards in the Planner Week view. After Setup, you will place them into the days you want and can edit the day-specific chapters, pages, lessons, or notes right inside the week.</p>
-    <div class="learn-setup-section-grid">
-      ${groups.map((group) => setupSectionCard({ group: "subjects", panel: group.panel, title: group.title, detail: group.detail, count: subjectsForGroup(group).length, icon: group.icon })).join("")}
-    </div>
+    ${groupSets.map(renderGroupSet).join("")}
     ${groups.map((group) => {
       const rows = subjectsForGroup(group);
       const listId = `learnSetupSubjects-${group.panel}`;
@@ -4566,6 +4713,10 @@ function localIsoDate() {
 function rowValue(row, name) {
   const control = row.querySelector(`[name="${name}"]`);
   if (!control) return "";
+  const controls = row.querySelectorAll(`[name="${name}"]`);
+  if (controls.length > 1 && control.type === "checkbox") {
+    return [...controls].filter((item) => item.checked).map((item) => item.value).join(", ");
+  }
   if (control.type === "checkbox") return control.checked;
   return control.value.trim();
 }
@@ -5765,14 +5916,27 @@ function wirePlanner(vm) {
     live.innerHTML = renderChoresScope(familyPlannerModel(nextVm), displayView);
   };
   const setModalValue = (name, value) => {
-    const field = familyForm?.querySelector(`[name="${CSS.escape(name)}"]`);
-    if (field) field.value = value || "";
+    const fields = familyForm?.querySelectorAll(`[name="${CSS.escape(name)}"]`) || [];
+    if (!fields.length) return;
+    if (fields.length > 1 && fields[0].type === "checkbox") {
+      const selected = choreTimeValues(value);
+      fields.forEach((field) => { field.checked = selected.includes(field.value); });
+      return;
+    }
+    fields[0].value = value || "";
   };
-  const getModalValue = (name) => (familyForm?.querySelector(`[name="${CSS.escape(name)}"]`)?.value?.trim()) || "";
+  const getModalValue = (name) => {
+    const fields = familyForm?.querySelectorAll(`[name="${CSS.escape(name)}"]`) || [];
+    if (!fields.length) return "";
+    if (fields.length > 1 && fields[0].type === "checkbox") {
+      return [...fields].filter((field) => field.checked).map((field) => field.value).join(", ");
+    }
+    return fields[0].value?.trim() || "";
+  };
   let activeChore = null;
   const choreStorageKey = (chore = {}) => {
     const dayKey = dayKeyForChore(chore, vm);
-    return dayKey ? `${chore.assignee || "Everyone"}::${dayKey}` : "";
+    return dayKey ? `${chore.assignee || "Everyone"}::${dayKey}::${chore.id || chore.title || "chore"}` : "";
   };
   const removeChoreRows = (chore = {}) => {
     if (!familyForm) return;
@@ -5972,7 +6136,7 @@ function wirePlanner(vm) {
         try {
           const dayKey = dayKeyForChore(entry, vm);
           if (dayKey) {
-            const key = `${entry.assignee || "Everyone"}::${dayKey}`;
+            const key = `${entry.assignee || "Everyone"}::${dayKey}::${entry.id || entry.title || Date.now()}`;
             const state = JSON.parse(localStorage.getItem("agapay.planner.v2") || "{}");
             state.chores = { ...(state.chores || {}), [key]: entry.title || "" };
             state.choreDetails = {
