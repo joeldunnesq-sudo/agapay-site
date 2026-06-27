@@ -217,6 +217,7 @@ import {
   handleLearnSaints,
   handleLearnTermClose,
 } from "./learn/handlers.js";
+import { activateLearnOdysseyAccount } from "./learn/billing.js";
 
 import {
   agapayEmailHtml,
@@ -460,7 +461,15 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
   ["/myagapay/learn/print-center", "/learn/print-center"],
   ["/myagapay/learn/setup", "/learn/onboarding"],
   ["/myagapay/learn/onboarding", "/learn/onboarding"],
-  ["/myagapay/learn/co-op", "/learn/co-op"]
+  ["/myagapay/learn/co-op", "/learn/co-op"],
+  ["/learn/odyssey", "/learn/odyssey/index.html"],
+  ["/learn/odyssey/", "/learn/odyssey/index.html"],
+  ["/learn/odyssey/dashboard", "/learn/odyssey/dashboard/index.html"],
+  ["/learn/odyssey/dashboard/", "/learn/odyssey/dashboard/index.html"],
+  ["/learn/odyssey/dashboard/login", "/learn/odyssey/dashboard/login.html"],
+  ["/learn/odyssey/dashboard/login/", "/learn/odyssey/dashboard/login.html"],
+  ["/learn/odyssey/dashboard/activate", "/learn/odyssey/dashboard/activate.html"],
+  ["/learn/odyssey/dashboard/activate/", "/learn/odyssey/dashboard/activate.html"]
 ]);
 
 const DASHBOARD_LEGACY_REDIRECTS = new Map([
@@ -642,6 +651,31 @@ async function sendWeeklyCommemorationEmails(env, scheduledTime) {
 
 // Stamp CORS headers onto an existing Response object (for handlers that
 // return their own Response rather than calling json() directly).
+async function handleLearnOdysseyActivate(request, env) {
+  let body;
+  try { body = await request.json(); } catch { return Response.json({ ok: false, error: "Invalid JSON" }, { status: 400 }); }
+  const email   = String(body.email      || "").trim().toLowerCase();
+  const password = String(body.password  || "").trim();
+  const odysseyRef = String(body.odysseyRef || "").trim();
+  if (!email || !password || !odysseyRef) {
+    return Response.json({ ok: false, error: "Email, password, and Odyssey reference are required." }, { status: 400 });
+  }
+  // Authenticate against the existing My AGAPAY donor account
+  const loginRes  = await fetch(new Request(new URL("/api/donor/login", request.url), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  }));
+  const loginData = await loginRes.json().catch(() => ({}));
+  if (!loginRes.ok || !loginData.token) {
+    return Response.json({ ok: false, error: loginData.error || "Invalid email or password." }, { status: 401 });
+  }
+  // Activate Odyssey Learn plan
+  const result = await activateLearnOdysseyAccount(env, email, odysseyRef);
+  if (!result.ok) return Response.json({ ok: false, error: result.error }, { status: 500 });
+  return Response.json({ ok: true, token: loginData.token, email, plan: "family", source: "odyssey", alreadyActive: result.alreadyActive || false });
+}
+
 function addCorsHeaders(response, env) {
   const headers = new Headers(response.headers);
   const cors = corsHeaders(env);
@@ -1176,6 +1210,9 @@ export default {
     }
     if (request.method === "GET" && (url.pathname === "/api/learn/onboarding" || url.pathname === "/api/learn/setup")) {
       return handleLearnOnboarding(request, env);
+    }
+    if (url.pathname === "/api/learn/odyssey/activate" && request.method === "POST") {
+      return handleLearnOdysseyActivate(request, env);
     }
     if (request.method === "GET" && url.pathname === "/api/learn/billing/status") {
       return handleLearnBillingStatus(request, env);
