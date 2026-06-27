@@ -3300,6 +3300,37 @@ function setupProgressCard(step) {
   return `<button type="button" class="learn-setup-step ${setupStepState(step)}" data-setup-progress-target="${setupStepTarget(step)}"><small>${html(step.status)}</small><strong>${html(step.title)}</strong><span>${html(step.summary)}</span></button>`;
 }
 
+function setupPanelCollapsed(panelId, defaultCollapsed = false) {
+  try {
+    const saved = localStorage.getItem(`agapay.learn.setupPanel.${panelId}`);
+    if (saved === "collapsed") return true;
+    if (saved === "expanded") return false;
+  } catch {
+    // Local storage is only a convenience for setup layout preferences.
+  }
+  return defaultCollapsed;
+}
+
+function collapsibleSetupPanel(panelId, title, content, options = {}) {
+  const collapsed = setupPanelCollapsed(panelId, Boolean(options.defaultCollapsed));
+  const icon = options.icon || "✥";
+  const bodyId = `learnSetupPanel-${panelId}`;
+  return `
+    <section class="learn-setup-collapse-panel ${collapsed ? "is-collapsed" : ""}" data-setup-collapse-panel="${html(panelId)}">
+      <header class="learn-setup-collapse-header">
+        <div>
+          <span aria-hidden="true">${html(icon)}</span>
+          <strong>${html(title)}</strong>
+          ${options.summary ? `<small>${html(options.summary)}</small>` : ""}
+        </div>
+        <button type="button" data-setup-panel-toggle="${html(panelId)}" aria-expanded="${collapsed ? "false" : "true"}" aria-controls="${html(bodyId)}">${collapsed ? "Expand" : "Minimize"}</button>
+      </header>
+      <div id="${html(bodyId)}" class="learn-setup-collapse-body" ${collapsed ? "hidden" : ""}>
+        ${content}
+      </div>
+    </section>`;
+}
+
 const SIMPLE_SETUP_STEPS = ["Household", "Rhythm", "Forms or Grades", "Children", "Grace Mode", "Starter Week"];
 
 function simpleSetupDraftKey() {
@@ -3962,13 +3993,17 @@ function renderSetup(vm) {
     enrichment: `<span id="learnSetupFormation" class="learn-setup-anchor"></span>${panel("Enrichment", formationSetupPanel(vm), { icon: "✥", largeTitle: true })}`,
     subjects: `<span id="learnSetupSubjects" class="learn-setup-anchor"></span>${panel(experience.subjectTitle, formSubjectsSetupPanel(vm, currentTermId), { icon: "✎", largeTitle: true })}`
   };
+  const collapseDefault = Boolean(vm.setupCompleted);
+  const householdContent = `<div class="learn-setup-method-note"><small>Organized for ${html(vm.household.method || "your household")}</small><strong>${html(experience.note)}</strong></div><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parent name", "household.parentName", vm.household.parentName)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupInput("Parish patronal feast", "household.parishPatronalFeastName", vm.household.parishPatronalFeastName || "")}${setupInput("Patronal feast date", "household.parishPatronalFeastDate", vm.household.parishPatronalFeastDate || "", { type: "date" })}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Unsure", homeschoolMethodOptions)}${setupSelect("Planning groups", "preferences.groupingMode", groupingMode, [{ value: "forms", label: "Forms" }, { value: "grades", label: "Traditional grades / levels" }])}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}${`<details class="learn-day-picker"><summary><span>Default school days</span><strong data-day-summary>${html(setupWeekdays.filter((day) => (vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value)).map((day) => day.label).join(" · "))}</strong></summary><div class="learn-day-picker-menu">${setupWeekdays.map((day) => `<label><input type="checkbox" data-day-choice value="${day.value}" ${(vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value) ? "checked" : ""}>${day.label}</label>`).join("")}</div><input type="hidden" name="preferences.defaultSchoolDays" value="${html((vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).join(","))}"></details>`}${setupSelect("Default missed lesson", "preferences.defaultMissedLessonBehavior", vm.preferences.defaultMissedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Default max minutes / child", "preferences.defaultMaxDailyMinutes", vm.preferences.defaultMaxDailyMinutes || "240", { type: "number" })}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /></div><p style="margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.4;">The patronal feast repeats annually on the Family Planner calendar so it can be honored alongside name days, fasts, and major feasts.</p>`;
+  const childrenContent = `<p style="margin:0 0 12px;color:var(--muted);">${html(groupingCopy)}</p><div data-setup-list="children" style="display:grid;gap:10px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child, groupingMode)).join("")}</div><button type="button" data-setup-add-row="children" style="margin-top:12px;width:100%;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px;font-family:inherit;">Add Child</button>`;
+  const termsContent = `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Term 4 / Summer is available for year-round homeschoolers. Assign subjects, books, and formation materials to the term where they belong.</p><div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div>`;
   const body = `
     <form data-setup-form data-screen-label="Set Up" style="display:flex;flex-direction:column;gap:18px;">
       <span id="learnSetupHousehold" class="learn-setup-anchor"></span>
-      ${panel("Household", `<div class="learn-setup-method-note"><small>Organized for ${html(vm.household.method || "your household")}</small><strong>${html(experience.note)}</strong></div><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parent name", "household.parentName", vm.household.parentName)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupInput("Parish patronal feast", "household.parishPatronalFeastName", vm.household.parishPatronalFeastName || "")}${setupInput("Patronal feast date", "household.parishPatronalFeastDate", vm.household.parishPatronalFeastDate || "", { type: "date" })}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Unsure", homeschoolMethodOptions)}${setupSelect("Planning groups", "preferences.groupingMode", groupingMode, [{ value: "forms", label: "Forms" }, { value: "grades", label: "Traditional grades / levels" }])}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}${`<details class="learn-day-picker"><summary><span>Default school days</span><strong data-day-summary>${html(setupWeekdays.filter((day) => (vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value)).map((day) => day.label).join(" · "))}</strong></summary><div class="learn-day-picker-menu">${setupWeekdays.map((day) => `<label><input type="checkbox" data-day-choice value="${day.value}" ${(vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value) ? "checked" : ""}>${day.label}</label>`).join("")}</div><input type="hidden" name="preferences.defaultSchoolDays" value="${html((vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).join(","))}"></details>`}${setupSelect("Default missed lesson", "preferences.defaultMissedLessonBehavior", vm.preferences.defaultMissedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Default max minutes / child", "preferences.defaultMaxDailyMinutes", vm.preferences.defaultMaxDailyMinutes || "240", { type: "number" })}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /></div><p style="margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.4;">The patronal feast repeats annually on the Family Planner calendar so it can be honored alongside name days, fasts, and major feasts.</p>`, { icon: "⌂", largeTitle: true })}
+      ${collapsibleSetupPanel("household", "Household", householdContent, { icon: "⌂", summary: "Profile, method, school year, calendar, and defaults", defaultCollapsed: collapseDefault })}
       <span id="learnSetupChildren" class="learn-setup-anchor"></span>
-      ${panel(groupingTitle, `<p style="margin:0 0 12px;color:var(--muted);">${html(groupingCopy)}</p><div data-setup-list="children" style="display:grid;gap:10px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child, groupingMode)).join("")}</div><button type="button" data-setup-add-row="children" style="margin-top:12px;width:100%;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px;font-family:inherit;">Add Child</button>`, { icon: "◎", largeTitle: true })}
-      ${panel("Terms", `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Term 4 / Summer is available for year-round homeschoolers. Assign subjects, books, and formation materials to the term where they belong.</p><div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div>`, { icon: "◷", largeTitle: true })}
+      ${collapsibleSetupPanel("children", groupingTitle, childrenContent, { icon: "◎", summary: `${vm.children.length || 0} ${vm.children.length === 1 ? "child" : "children"} configured`, defaultCollapsed: collapseDefault })}
+      ${collapsibleSetupPanel("terms", "Terms", termsContent, { icon: "◷", summary: `${(vm.terms?.length || 1)} term${(vm.terms?.length || 1) === 1 ? "" : "s"} in this school year`, defaultCollapsed: collapseDefault })}
       ${experience.order.map((key) => adaptivePanels[key]).join("")}
       ${panel("Co-op", `<div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">Coming Soon</strong><p style="margin:4px 0 0;color:var(--muted);line-height:1.4;">Co-op tools are deferred while Learn focuses on setup, Today, planning, formation, books, Grace Mode, and printable household plans.</p></div><span style="border:1px solid var(--gold);border-radius:999px;color:var(--gold);padding:7px 12px;white-space:nowrap;">Future add-on</span></div>`, { icon: "◎" })}
       <div class="learn-setup-savebar">
@@ -4971,6 +5006,24 @@ function wireSetupPage() {
     if (event.target.closest('[data-setup-row="children"]')) syncSetupChildLimit(form);
   });
   form.addEventListener("click", (event) => {
+    const setupPanelToggle = event.target.closest("[data-setup-panel-toggle]");
+    if (setupPanelToggle) {
+      const panel = setupPanelToggle.closest("[data-setup-collapse-panel]");
+      const body = panel?.querySelector(".learn-setup-collapse-body");
+      if (!panel || !body) return;
+      const expanded = setupPanelToggle.getAttribute("aria-expanded") === "true";
+      const nextExpanded = !expanded;
+      setupPanelToggle.setAttribute("aria-expanded", nextExpanded ? "true" : "false");
+      setupPanelToggle.textContent = nextExpanded ? "Minimize" : "Expand";
+      body.hidden = !nextExpanded;
+      panel.classList.toggle("is-collapsed", !nextExpanded);
+      try {
+        localStorage.setItem(`agapay.learn.setupPanel.${setupPanelToggle.dataset.setupPanelToggle}`, nextExpanded ? "expanded" : "collapsed");
+      } catch {
+        // Collapsed state persistence is optional.
+      }
+      return;
+    }
     const addResource = event.target.closest("[data-add-resource]");
     if (addResource) {
       const list = addResource.closest("[data-resource-list]");
@@ -5116,16 +5169,15 @@ function wireSetupPage() {
     const submit = form.querySelector("button[type='submit']");
     const payload = setupPayloadFromForm(form);
     status.textContent = "Saving setup...";
+    status.style.color = "var(--muted)";
     submit.disabled = true;
     try {
       const saved = await apiPost("/api/learn/setup", payload);
       const calendar = payload.preferences.calendarType || "julian";
       const savedAt = saved.savedAt ? ` at ${new Date(saved.savedAt).toLocaleTimeString()}` : "";
       localStorage.setItem("agapay.learn.calendar", calendar);
-      root.innerHTML = renderSetup(toSetupViewModel(saved, { calendar }));
-      wireSetupPage();
-      const nextStatus = root.querySelector("[data-setup-status]");
-      if (nextStatus) nextStatus.textContent = `Setup saved${savedAt}.`;
+      status.style.color = "var(--gold)";
+      status.textContent = `Setup saved${savedAt}.`;
     } catch (error) {
       status.textContent = error.message;
       status.style.color = "var(--burgundy)";

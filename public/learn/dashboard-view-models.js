@@ -1247,7 +1247,12 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       weeklyFrequency: weeklyFrequencyValue(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "daily"),
       formLabel: text(subject.formLabel, ""),
       gradeLabel: text(subject.gradeLabel, ""),
-      resource: text(subject.resource || subject.title, ""),
+      resource: text(subject.resource || safeArray(subject.resources)[0]?.title || subject.title, ""),
+      resources: safeArray(subject.resources).length
+        ? safeArray(subject.resources).map((resource) => typeof resource === "string"
+          ? { title: text(resource, ""), scheduledWeeks: [] }
+          : { title: text(resource.title || resource.resource, ""), scheduledWeeks: safeArray(resource.scheduledWeeks) }).filter((resource) => resource.title)
+        : (subject.resource ? [{ title: text(subject.resource, ""), scheduledWeeks: safeArray(subject.scheduledWeeks) }] : []),
       resourceType: text(subject.resourceType || subject.sourceType, subject.resource ? "curriculum" : "none"),
       cadence: text(subject.cadenceLabel || subject.cadence, ""),
       minutes: text(subject.minutes, ""),

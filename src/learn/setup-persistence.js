@@ -794,19 +794,28 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
     color: block.color || "",
     sourceKind: "enrichment"
   })).filter(Boolean);
-  const subjectBooks = currentSubjects.filter(isBookResource).map((subject, index) => resourceBookLike({
-    id: `subject_resource_${subject.id || index + 1}`,
-    title: subject.resource,
-    category: subject.title || subject.subjectType || "Form Subject",
-    termId: subject.termId || currentTermId,
-    formLabel: subject.formLabel || "",
-    audienceLabel: subject.childId ? "Child Resource" : "Form Resource",
-    planningMode: subject.planningMode || "forms",
-    weeklyFrequency: subject.weeklyFrequency || "1x",
-    minutes: subject.minutes || "",
-    color: subject.color || "",
-    sourceKind: "form-subject"
-  })).filter(Boolean);
+  const subjectBooks = currentSubjects.flatMap((subject, subjectIndex) => {
+    if (subject.resourceType !== "book") return [];
+    const subjectResources = list(subject.resources).length
+      ? list(subject.resources)
+      : (subject.resource ? [{ title: subject.resource, scheduledWeeks: subject.scheduledWeeks }] : []);
+    return subjectResources.map((resource, resourceIndex) => {
+      const title = typeof resource === "string" ? resource : resource.title || resource.resource;
+      return resourceBookLike({
+        id: `subject_resource_${subject.id || subjectIndex + 1}_${resourceIndex + 1}`,
+        title,
+        category: subject.title || subject.subjectType || "Form Subject",
+        termId: subject.termId || currentTermId,
+        formLabel: subject.formLabel || "",
+        audienceLabel: subject.childId ? "Child Resource" : "Form Resource",
+        planningMode: subject.planningMode || "forms",
+        weeklyFrequency: subject.weeklyFrequency || "1x",
+        minutes: subject.minutes || "",
+        color: subject.color || "",
+        sourceKind: "form-subject"
+      });
+    });
+  }).filter(Boolean);
   const materialBooks = currentFormationMaterials.map((material, index) => resourceBookLike({
     id: `formation_material_${material.id || index + 1}`,
     title: material.source || material.title,
@@ -963,16 +972,25 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
     ? currentFormationMaterials
     : structuredFormationMaterials;
   next.curriculumResources = [
-    ...currentSubjects.filter((subject) => subject.resource).map((subject, index) => ({
-      id: `resource_${subject.id}`,
-      curriculumPackageId: next.curriculumPackage.id,
-      curriculumSubjectId: subject.id,
-      title: subject.resource,
-      author: "",
-      resourceType: subject.resourceType || subject.subjectType,
-      sourceKind: "household",
-      sortOrder: index + 1
-    })),
+    ...currentSubjects.flatMap((subject, subjectIndex) => {
+      const subjectResources = list(subject.resources).length
+        ? list(subject.resources)
+        : (subject.resource ? [{ title: subject.resource, scheduledWeeks: subject.scheduledWeeks }] : []);
+      return subjectResources.map((resource, resourceIndex) => {
+        const title = typeof resource === "string" ? resource : resource.title || resource.resource;
+        if (!title) return null;
+        return {
+          id: `resource_${subject.id || subjectIndex + 1}_${resourceIndex + 1}`,
+          curriculumPackageId: next.curriculumPackage.id,
+          curriculumSubjectId: subject.id,
+          title,
+          author: "",
+          resourceType: subject.resourceType || subject.subjectType,
+          sourceKind: "household",
+          sortOrder: subjectIndex * 10 + resourceIndex + 1
+        };
+      }).filter(Boolean);
+    }),
     ...formationMaterialsForPlanning.map((material, index) => ({
       id: material.id,
       curriculumPackageId: next.curriculumPackage.id,

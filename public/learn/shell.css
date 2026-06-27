@@ -1004,6 +1004,98 @@ body {
   display: none !important;
 }
 
+.learn-setup-collapse-panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  box-shadow: 0 1px 3px rgba(20, 40, 70, 0.04);
+  overflow: hidden;
+}
+
+.learn-setup-collapse-panel.is-collapsed {
+  background: rgba(255, 252, 245, 0.74);
+}
+
+.learn-setup-collapse-header {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.learn-setup-collapse-panel.is-collapsed .learn-setup-collapse-header {
+  border-bottom: 0;
+}
+
+.learn-setup-collapse-header > div {
+  align-items: center;
+  display: grid;
+  gap: 3px 10px;
+  grid-template-columns: auto 1fr;
+  min-width: 0;
+}
+
+.learn-setup-collapse-header > div > span {
+  align-items: center;
+  background: rgba(201, 162, 91, 0.12);
+  border: 1px solid rgba(201, 162, 91, 0.38);
+  border-radius: 50%;
+  color: var(--gold);
+  display: inline-grid;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 16px;
+  font-weight: 700;
+  height: 30px;
+  justify-items: center;
+  letter-spacing: 0;
+  line-height: 1;
+  width: 30px;
+}
+
+.learn-setup-collapse-header strong {
+  color: var(--ink);
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 25px;
+  line-height: 1;
+}
+
+.learn-setup-collapse-header small {
+  color: var(--muted);
+  font-size: 12px;
+  grid-column: 2;
+  line-height: 1.35;
+}
+
+.learn-setup-collapse-header button {
+  background: var(--paper2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--ink);
+  cursor: pointer;
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 12px;
+}
+
+.learn-setup-collapse-header button:hover,
+.learn-setup-collapse-header button:focus-visible {
+  border-color: rgba(181, 148, 47, 0.6);
+  color: var(--gold);
+  outline: none;
+}
+
+.learn-setup-collapse-body {
+  padding: 16px;
+}
+
+.learn-setup-collapse-body[hidden] {
+  display: none !important;
+}
+
 .learn-setup-method-note {
   display: grid;
   gap: 4px;
