@@ -540,7 +540,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     formLabel: text(book.formLabel, ""),
     audienceLabel: text(book.audienceLabel, "Household"),
     startChapter: int(book.startChapter, 1),
-    currentChapter: int(book.currentChapter || book.completedThroughChapter || book.startChapter, int(book.startChapter, 1)),
+    currentChapter: int(book.currentChapter ?? book.completedThroughChapter ?? book.startChapter, int(book.startChapter, 1)),
     endChapter: int(book.endChapter || book.totalChapters, 0),
     totalChapters: int(book.endChapter || book.totalChapters, 0),
     color: text(book.color, ""),
@@ -642,7 +642,9 @@ function normalizeSetupPayload(payload = {}, identity) {
       gradeLabel: text(track.gradeLabel, ""),
       scheduledWeeks: scheduledWeeksValue(track.scheduledWeeks),
       weeklyFrequency: weeklyFrequencyValue(track.weeklyFrequency || track.cadenceLabel || track.cadence, "daily"),
-      minutes: int(track.minutes, 0)
+      minutes: int(track.minutes, 0),
+      progressPercent: Math.max(0, Math.min(100, int(track.progressPercent, 0))),
+      status: text(track.status, int(track.progressPercent, 0) >= 100 ? "memorized" : "memorizing")
     })).filter((track) => track.title),
     hymnStudies: list(rawFormation.hymnStudies).map((hymn, index) => ({
       id: text(hymn.id, stableId("hymn", hymn.title, index)),

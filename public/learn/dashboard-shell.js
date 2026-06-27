@@ -121,6 +121,24 @@ function bar(value, color = "var(--gold)") {
   return `<span style="display:block;height:6px;border-radius:99px;background:#e9dfc7;overflow:hidden;"><span style="display:block;height:100%;width:${Number(value) || 0}%;background:${color};border-radius:99px;"></span></span>`;
 }
 
+function progressEditor(item = {}, kind = "book", options = {}) {
+  const id = String(item.id || "");
+  const value = Math.max(0, Math.min(100, Number(item.progress) || 0));
+  if (!id) {
+    return `${bar(value, options.color || "var(--gold)")}<small style="display:block;color:var(--gold);font-weight:700;margin-top:4px;">${html(value)}% ${html(options.suffix || "complete")}</small>`;
+  }
+  return `
+    <div data-progress-editor data-progress-kind="${html(kind)}" data-progress-id="${html(id)}" style="display:grid;gap:7px;margin-top:8px;">
+      ${bar(value, options.color || "var(--gold)")}
+      <div style="display:grid;grid-template-columns:1fr 58px auto;gap:8px;align-items:center;">
+        <input data-progress-range type="range" min="0" max="100" step="5" value="${html(value)}" aria-label="${html(options.label || "Progress")}" style="width:100%;accent-color:var(--gold);" />
+        <input data-progress-number type="number" min="0" max="100" step="5" value="${html(value)}" aria-label="${html(options.label || "Progress percent")}" style="width:58px;border:1px solid var(--line);border-radius:8px;background:var(--paper2);color:var(--ink);font:inherit;font-size:12px;padding:7px 6px;" />
+        <button type="button" data-progress-save style="border:1px solid var(--gold);background:var(--navy);color:#f3ead4;border-radius:8px;padding:8px 10px;font-family:inherit;font-size:12px;font-weight:800;white-space:nowrap;">Save</button>
+      </div>
+      <small data-progress-status style="min-height:15px;color:var(--muted);font-size:11px;">${html(value)}% ${html(options.suffix || "complete")}</small>
+    </div>`;
+}
+
 function emptyState(label) {
   return `<div style="padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-style:italic;background:rgba(255,255,255,.22);">${html(label)}</div>`;
 }
@@ -2609,8 +2627,7 @@ function renderFormation(vm) {
             <strong style="font-size:14px;">${html(item.title)}</strong>
             <small style="color:var(--muted);white-space:nowrap;font-size:11px;">${html(item.status)}</small>
           </div>
-          ${bar(item.progress, "var(--navy)")}
-          <small style="color:var(--muted);font-size:11px;">${item.progress}% memorised</small>
+          ${progressEditor(item, "recitation", { color: "var(--navy)", label: `${item.title} memory progress`, suffix: "memorized" })}
         </div>`).join("")
     : emptyState("Add recitation tracks in Setup — Psalms, Catechism, Scripture.");
   const memoryPanel = panel("Recitation & Memory", memoryContent, { icon: "☰" });
@@ -2686,8 +2703,7 @@ function renderBooks(vm) {
             <span style="font-size:12px;color:var(--muted);">${html(book.author)}</span>
             <span style="font-size:12px;color:var(--gold);font-weight:700;letter-spacing:.04em;">${html(book.assignment || book.stream || "Household")}</span>
             <div style="margin-top:auto;padding-top:10px;">
-              ${bar(book.progress)}
-              <small style="display:block;color:var(--gold);font-weight:700;margin-top:4px;">${html(book.progress)}% complete</small>
+              ${progressEditor(book, "book", { label: `${book.title} reading progress`, suffix: "complete" })}
             </div>
           </div>
         </article>`).join("")
@@ -2708,7 +2724,7 @@ function renderBooks(vm) {
           <span style="color:var(--muted);">${html(book.category)}</span>
           <span style="color:var(--muted);">${html(book.ages || "—")}</span>
           <span style="${book.orthodox ? "color:var(--gold);font-weight:700;" : "color:var(--muted);"}">${book.orthodox ? "Orthodox" : "—"}</span>
-          <span>${bar(book.progress)}<small style="color:var(--gold);font-weight:700;">${html(book.progress)}%</small></span>
+          <span>${progressEditor(book, "book", { label: `${book.title} reading progress`, suffix: "complete" })}</span>
         </div>`).join("")
     : `<div style="padding:18px 4px;color:var(--muted);font-style:italic;">Add books in Setup to build the household library.</div>`;
 
@@ -4888,6 +4904,118 @@ async function apiPost(path, body) {
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || payload.error) throw new Error(payload.error || `Request failed with ${response.status}`);
   return payload;
+}
+
+function clampProgress(value) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.max(0, Math.min(100, parsed));
+}
+
+function currentChapterFromProgress(book = {}, progress = 0) {
+  const start = Math.max(1, Number.parseInt(book.startChapter || 1, 10) || 1);
+  const end = Math.max(start, Number.parseInt(book.endChapter || book.totalChapters || start, 10) || start);
+  const total = Math.max(1, end - start + 1);
+  const completed = Math.round((clampProgress(progress) / 100) * total);
+  return completed <= 0 ? start - 1 : Math.min(end, start + completed - 1);
+}
+
+async function loadLearnSetupSnapshotForPatch() {
+  const raw = await apiGet("/api/learn/setup");
+  const setup = raw.onboarding?.setupSnapshot || raw.onboarding || {};
+  return JSON.parse(JSON.stringify(setup));
+}
+
+async function saveInlineProgress(kind, id, progress) {
+  const setup = await loadLearnSetupSnapshotForPatch();
+  if (kind === "book") {
+    let matched = false;
+    setup.books = Array.isArray(setup.books) ? setup.books.map((book) => {
+      if (String(book.id || book.bookId || "") !== String(id)) return book;
+      matched = true;
+      return {
+        ...book,
+        currentChapter: currentChapterFromProgress(book, progress)
+      };
+    }) : [];
+    if (!matched) throw new Error("That book was not found in setup. Refresh and try again.");
+  } else if (kind === "recitation") {
+    const formation = setup.formation && typeof setup.formation === "object" ? setup.formation : {};
+    let matched = false;
+    formation.recitationTracks = Array.isArray(formation.recitationTracks) ? formation.recitationTracks.map((track) => {
+      if (String(track.id || "") !== String(id)) return track;
+      matched = true;
+      const nextProgress = clampProgress(progress);
+      return {
+        ...track,
+        progressPercent: nextProgress,
+        status: nextProgress >= 100 ? "memorized" : (track.status || "memorizing")
+      };
+    }) : [];
+    setup.formation = formation;
+    if (!matched) throw new Error("That recitation track was not found in setup. Refresh and try again.");
+  } else {
+    throw new Error("Unsupported progress type.");
+  }
+  return apiPost("/api/learn/setup", setup);
+}
+
+function wireInlineProgressEditors({ afterSave } = {}) {
+  root.querySelectorAll("[data-progress-editor]").forEach((editor) => {
+    const range = editor.querySelector("[data-progress-range]");
+    const number = editor.querySelector("[data-progress-number]");
+    const status = editor.querySelector("[data-progress-status]");
+    const fill = editor.querySelector("span span");
+    const sync = (value) => {
+      const next = clampProgress(value);
+      if (range) range.value = String(next);
+      if (number) number.value = String(next);
+      if (fill) fill.style.width = `${next}%`;
+      if (status && !status.dataset.saving) {
+        const suffix = /recitation/i.test(editor.dataset.progressKind || "") ? "memorized" : "complete";
+        status.style.color = "var(--muted)";
+        status.textContent = `${next}% ${suffix}`;
+      }
+    };
+    range?.addEventListener("input", () => sync(range.value));
+    number?.addEventListener("input", () => sync(number.value));
+  });
+
+  root.querySelectorAll("[data-progress-save]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const editor = button.closest("[data-progress-editor]");
+      if (!editor) return;
+      const status = editor.querySelector("[data-progress-status]");
+      const value = clampProgress(editor.querySelector("[data-progress-number]")?.value || editor.querySelector("[data-progress-range]")?.value || 0);
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = "Saving...";
+      if (status) {
+        status.dataset.saving = "true";
+        status.style.color = "var(--muted)";
+        status.textContent = "Saving progress...";
+      }
+      try {
+        await saveInlineProgress(editor.dataset.progressKind || "", editor.dataset.progressId || "", value);
+        if (status) {
+          status.style.color = "var(--gold)";
+          status.textContent = "Progress saved.";
+        }
+        await afterSave?.();
+      } catch (error) {
+        if (status) {
+          status.style.color = "var(--burgundy)";
+          status.textContent = error.message || "Progress could not be saved.";
+        }
+      } finally {
+        if (button.isConnected) {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+        if (status) delete status.dataset.saving;
+      }
+    });
+  });
 }
 
 async function syncLearnGoogleCalendar(extraEvents = [], statusEl = null) {
@@ -7166,6 +7294,24 @@ function wireFormation() {
       if (mark) mark.textContent = active ? "✓" : "";
     });
   });
+  wireInlineProgressEditors({
+    afterSave: async () => {
+      const calendar = new URLSearchParams(window.location.search).get("calendar") || storedLearnCalendar("");
+      const raw = await apiGet(learnApiUrl("/api/learn/formation", { calendar }));
+      root.innerHTML = renderFormation(toFormationViewModel(raw));
+      wireFormation();
+    }
+  });
+}
+
+function wireBooks() {
+  wireInlineProgressEditors({
+    afterSave: async () => {
+      const raw = await apiGet("/api/learn/books");
+      root.innerHTML = renderBooks(toBooksViewModel(raw));
+      wireBooks();
+    }
+  });
 }
 
 async function mount() {
@@ -7231,6 +7377,7 @@ async function mount() {
   if (pageKey === "books") {
     const raw = await apiGet("/api/learn/books");
     root.innerHTML = renderBooks(toBooksViewModel(raw));
+    wireBooks();
     return;
   }
   if (pageKey === "grades") {

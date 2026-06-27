@@ -761,11 +761,13 @@ export function toFormationViewModel(rawPayload) {
     },
     recitation: [
       ...simpleList(formation.recitationTracks, (track) => ({
+      id: text(track.id, ""),
       title: text(track.title, "Memory Work"),
       status: text(track.status, ""),
       progress: percent(track.progressPercent)
       })),
       ...mappedMemory.map((item) => ({
+        id: "",
         title: item.title,
         status: item.frequency || item.type,
         progress: 0
@@ -814,21 +816,29 @@ export function toBooksViewModel(rawPayload) {
     shell: shellFromPayload("books", rawPayload),
     page: page("books", "Books", "Living books for the mind, the heart, and the soul."),
     readAlouds: simpleList(books.currentReadAlouds, (book) => ({
+      id: text(book.id || book.bookId, ""),
       title: text(book.title, "Untitled Book"),
       author: text(book.author, ""),
       assignment: text(book.assignmentLabel || book.assignedTerm || book.assignment || book.audienceLabel, ""),
       progress: percent(book.progressPercent),
+      startChapter: Number(book.startChapter || 1),
+      currentChapter: Number(book.currentChapter ?? book.completedThroughChapter ?? book.startChapter ?? 0),
+      endChapter: Number(book.endChapter || book.totalChapters || 0),
       stream: text(book.streamLabel || book.audienceLabel, ""),
       list: text(book.listLabel, "")
     })),
     library: simpleList(books.libraryBooks, (book) => ({
+      id: text(book.id || book.bookId, ""),
       title: text(book.title, "Untitled Book"),
       author: text(book.author, ""),
       category: text(book.category, ""),
       ages: text(book.ageRange || book.ages, ""),
       orthodox: Boolean(book.orthodox),
       assignment: text(book.assignmentLabel || book.assignment || book.audienceLabel || book.formLabel, ""),
-      progress: percent(book.progressPercent)
+      progress: percent(book.progressPercent),
+      startChapter: Number(book.startChapter || 1),
+      currentChapter: Number(book.currentChapter ?? book.completedThroughChapter ?? book.startChapter ?? 0),
+      endChapter: Number(book.endChapter || book.totalChapters || 0)
     })),
     suggestions: simpleList(books.orthodoxSuggestions, (item, index) => ({
       title: text(item.title, "Suggestion"),
