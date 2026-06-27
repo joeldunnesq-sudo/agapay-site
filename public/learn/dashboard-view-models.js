@@ -556,6 +556,7 @@ export function toDashboardViewModel(rawPayload, context = {}) {
     },
     termProgress: {
       label: text(dashboard.termProgress?.label || dashboard.term?.label, "Current Term"),
+      description: text(dashboard.termProgress?.description || dashboard.term?.description, ""),
       currentWeek: Number(dashboard.termProgress?.currentWeek || 0),
       totalWeeks: Number(dashboard.termProgress?.totalWeeks || 0),
       percent: percent(dashboard.termProgress?.percent),
