@@ -176,7 +176,11 @@ function progressFromTerm(term = {}, civilDate = "") {
       dateRange: [term.startDate, term.endDate].filter(Boolean).join(" - ")
     };
   }
-  const totalWeeks = Math.max(1, Math.ceil((end - start + 1) / (7 * 24 * 60 * 60 * 1000)));
+  // Prefer the saved weeksCount from Setup; fall back to date-span arithmetic only
+  // if weeksCount was never stored (e.g. very old records).
+  const totalWeeks = term.weeksCount
+    ? Math.max(1, Math.min(24, Number(term.weeksCount)))
+    : Math.max(1, Math.ceil((end - start + 1) / (7 * 24 * 60 * 60 * 1000)));
   const currentWeek = Math.max(1, Math.min(totalWeeks, Math.floor((current - start) / (7 * 24 * 60 * 60 * 1000)) + 1));
   return {
     label: term.label || "Current Term",
