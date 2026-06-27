@@ -3072,30 +3072,81 @@ function setupSourceInput(label, name, value = "") {
   return `<label>${html(label)}<input type="text" name="${html(name)}" value="${html(resolved)}" inputmode="url" placeholder="Book title, source note, or https://..." />${link}</label>`;
 }
 
+function resourceFieldName(index, field) {
+  return `resources.${index}.${field}`;
+}
+
 function setupResourceWeekPicker(index, scheduledWeeks = [], totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
   const selected = scheduledTermWeeks(scheduledWeeks, totalWeeks);
   const allWeeks = selected.length === totalWeeks;
   const summary = allWeeks ? "All weeks" : termWeekSummary(selected, totalWeeks);
-  const name = `resources.${index}.scheduledWeeks`;
-  return `<details class="learn-day-picker learn-term-week-picker learn-resource-week-picker" data-resource-week-picker="${index}"><summary><span>Weeks</span><strong data-term-week-summary>${html(summary)}</strong></summary><div class="learn-day-picker-menu" style="grid-template-columns:repeat(4,minmax(54px,1fr));">${Array.from({ length: totalWeeks }, (_, i) => i + 1).map((week) => `<label><input type="checkbox" data-term-week-choice value="${week}" ${selected.includes(week) ? "checked" : ""}>W${week}</label>`).join("")}</div><div style="display:flex;gap:8px;padding:8px 10px 2px;"><button type="button" data-term-weeks-all class="learn-add-button" style="padding:6px 10px;">All</button><button type="button" data-term-weeks-odd class="learn-add-button" style="padding:6px 10px;">Odd</button><button type="button" data-term-weeks-even class="learn-add-button" style="padding:6px 10px;">Even</button></div><input type="hidden" name="${html(name)}" value="${html(selected.join(","))}"></details>`;
+  const name = resourceFieldName(index, "scheduledWeeks");
+  return `<details class="learn-day-picker learn-term-week-picker learn-resource-week-picker" data-resource-week-picker="${index}"><summary><span>Active weeks</span><strong data-term-week-summary>${html(summary)}</strong></summary><div class="learn-day-picker-menu" style="grid-template-columns:repeat(4,minmax(54px,1fr));">${Array.from({ length: totalWeeks }, (_, i) => i + 1).map((week) => `<label><input type="checkbox" data-term-week-choice value="${week}" ${selected.includes(week) ? "checked" : ""}>W${week}</label>`).join("")}</div><div style="display:flex;gap:8px;padding:8px 10px 2px;"><button type="button" data-term-weeks-all class="learn-add-button" style="padding:6px 10px;">All</button><button type="button" data-term-weeks-odd class="learn-add-button" style="padding:6px 10px;">Odd</button><button type="button" data-term-weeks-even class="learn-add-button" style="padding:6px 10px;">Even</button></div><input type="hidden" data-resource-field="scheduledWeeks" name="${html(name)}" value="${html(selected.join(","))}"></details>`;
 }
 
-function setupResourceList(resources = []) {
+function setupResourceWeeklyPlanFields(index, value = []) {
+  const entries = Array.isArray(value) ? value : String(value || "").split("|");
+  return `<div class="learn-weekly-plan-grid">${Array.from({ length: DEFAULT_TERM_WEEK_COUNT }, (_, weekIndex) => `<label>Week ${weekIndex + 1}<input type="text" data-resource-field="weeklyPlans.${weekIndex + 1}" name="${html(resourceFieldName(index, `weeklyPlans.${weekIndex + 1}`))}" value="${html(entries[weekIndex] || "")}" placeholder="Ch. 1, pp. 4-9, lesson 2..." /></label>`).join("")}</div>`;
+}
+
+function setupResourcePlanningModePicker(index, item = {}, children = [], groupingMode = "forms") {
+  const label = groupingMode === "grades" ? "Grades / levels" : "Forms";
+  const groupOptions = setupGroupOptions(children, groupingMode);
+  const selected = Array.isArray(item.formLabels)
+    ? item.formLabels
+    : String(item.formLabels || item.formLabel || "").split(",");
+  const selectedGroups = [...new Set(selected.map((value) => String(value || "").trim()).filter(Boolean))];
+  const familyBased = (item.planningMode || "forms") !== "forms" || !selectedGroups.length;
+  const summary = familyBased
+    ? "Family-Based"
+    : `${groupingMode === "grades" ? "Grade-Based" : "Forms-Based"}: ${selectedGroups.join(", ")}`;
+  return `<details class="learn-day-picker learn-planning-mode-picker" data-planning-group-label="${html(groupingMode === "grades" ? "Grade-Based" : "Forms-Based")}"><summary><span>${html(label)}</span><strong data-planning-mode-summary>${html(summary)}</strong></summary><div class="learn-day-picker-menu">${groupOptions.map((option) => `<label><input type="checkbox" data-planning-form-choice value="${html(option)}" ${selectedGroups.includes(option) ? "checked" : ""}>${html(option)}</label>`).join("")}</div><input type="hidden" data-planning-mode-field data-resource-field="planningMode" name="${html(resourceFieldName(index, "planningMode"))}" value="${familyBased ? "family" : "forms"}"><input type="hidden" data-form-label-field data-resource-field="formLabel" name="${html(resourceFieldName(index, "formLabel"))}" value="${html(selectedGroups[0] || "")}"><input type="hidden" data-form-labels-field data-resource-field="formLabels" name="${html(resourceFieldName(index, "formLabels"))}" value="${html(selectedGroups.join(","))}"><input type="hidden" data-grade-label-field data-resource-field="gradeLabel" name="${html(resourceFieldName(index, "gradeLabel"))}" value="${html(groupingMode === "grades" ? selectedGroups[0] || "" : item.gradeLabel || "")}"></details>`;
+}
+
+function setupResourceChildPicker(index, children = [], selectedIds = []) {
+  const selected = Array.isArray(selectedIds)
+    ? selectedIds
+    : String(selectedIds || "").split(",").map((value) => value.trim()).filter(Boolean);
+  const summary = selected.length
+    ? children.filter((child) => selected.includes(child.id)).map((child) => child.name || child.firstName || child.id).join(", ")
+    : "Use Forms";
+  return `<details class="learn-day-picker learn-child-multi-picker"><summary><span>Specific children</span><strong data-child-multi-summary>${html(summary)}</strong></summary><div class="learn-day-picker-menu">${children.map((child) => `<label><input type="checkbox" data-child-multi-choice value="${html(child.id)}" ${selected.includes(child.id) ? "checked" : ""}>${html(child.name || child.firstName || child.id)}</label>`).join("")}</div><input type="hidden" data-child-ids-field data-resource-field="childIds" name="${html(resourceFieldName(index, "childIds"))}" value="${html(selected.join(","))}"></details>`;
+}
+
+function setupResourcePlanningCard(index, resource = {}, children = [], groupingMode = "forms") {
+  return `<details class="learn-weekly-plan-fields learn-resource-plan-fields" open><summary><span>Weekly chapters / lessons / pages</span><strong>${html(termWeekSummary(resource.scheduledWeeks || []))}</strong></summary><div class="learn-resource-plan-controls">${setupResourceWeekPicker(index, resource.scheduledWeeks || [])}${setupResourcePlanningModePicker(index, resource, children, groupingMode)}${setupResourceChildPicker(index, children, resource.childIds || [])}</div>${setupResourceWeeklyPlanFields(index, resource.weeklyPlans || [])}</details>`;
+}
+
+function normalizeSetupResource(resource, subject = {}) {
+  const raw = typeof resource === "string" ? { title: resource } : (resource || {});
+  return {
+    title: String(raw.title || raw.resource || ""),
+    scheduledWeeks: raw.scheduledWeeks || subject.scheduledWeeks || [],
+    weeklyPlans: raw.weeklyPlans || subject.weeklyPlans || [],
+    planningMode: raw.planningMode || subject.planningMode || "forms",
+    formLabel: raw.formLabel || subject.formLabel || "",
+    formLabels: Array.isArray(raw.formLabels) && raw.formLabels.length ? raw.formLabels : (Array.isArray(subject.formLabels) ? subject.formLabels : []),
+    gradeLabel: raw.gradeLabel || subject.gradeLabel || "",
+    childIds: Array.isArray(raw.childIds) && raw.childIds.length ? raw.childIds : (Array.isArray(subject.childIds) ? subject.childIds : [])
+  };
+}
+
+function setupResourceRow(resource = {}, index = 0, children = [], groupingMode = "forms") {
+  const resolved = String(resource.title || "").trim();
+  const link = /^https?:\/\//i.test(resolved)
+    ? `<a href="${html(resolved)}" target="_blank" rel="noopener noreferrer" class="learn-source-link" style="font-size:12px;color:var(--gold);white-space:nowrap;align-self:end;padding-bottom:11px;">Open ↗</a>`
+    : "";
+  const removeBtn = index > 0
+    ? `<button type="button" data-remove-resource aria-label="Remove resource" style="align-self:end;flex:0 0 auto;border:1px solid var(--line);background:var(--paper);color:var(--burgundy);border-radius:9px;padding:9px 10px;font-family:inherit;line-height:1;">×</button>`
+    : "";
+  return `<div data-resource-row="${index}" class="learn-resource-card"><label style="grid-column:1;min-width:0;">${index === 0 ? "Book / source / resource" : `Resource ${index + 1}`}<div style="display:flex;gap:6px;align-items:center;margin-top:4px;"><input type="text" data-resource-field="title" name="${html(resourceFieldName(index, "title"))}" value="${html(resolved)}" inputmode="url" placeholder="Book title, source note, or https://..." style="flex:1;min-width:0;" />${link}</div></label>${removeBtn}<div class="learn-resource-card-plan">${setupResourcePlanningCard(index, resource, children, groupingMode)}</div></div>`;
+}
+
+function setupResourceList(resources = [], children = [], groupingMode = "forms", subject = {}) {
   // resources: array of {title, scheduledWeeks} objects, or plain strings (legacy)
   const entries = Array.isArray(resources) && resources.length ? resources : [{ title: "", scheduledWeeks: [] }];
-  const normalised = entries.map((r) =>
-    typeof r === "string" ? { title: r, scheduledWeeks: [] } : { title: String(r.title || r.resource || ""), scheduledWeeks: r.scheduledWeeks || [] }
-  );
-  const rows = normalised.map((r, index) => {
-    const resolved = String(r.title || "").trim();
-    const link = /^https?:\/\//i.test(resolved)
-      ? `<a href="${html(resolved)}" target="_blank" rel="noopener noreferrer" class="learn-source-link" style="font-size:12px;color:var(--gold);white-space:nowrap;align-self:end;padding-bottom:11px;">Open ↗</a>`
-      : "";
-    const removeBtn = index > 0
-      ? `<button type="button" data-remove-resource aria-label="Remove resource" style="align-self:end;flex:0 0 auto;border:1px solid var(--line);background:var(--paper);color:var(--burgundy);border-radius:9px;padding:9px 10px;font-family:inherit;line-height:1;">×</button>`
-      : "";
-    return `<div data-resource-row="${index}" style="display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:end;border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:10px;margin-bottom:4px;"><label style="grid-column:1;min-width:0;">${index === 0 ? "Book / source / resource" : `Resource ${index + 1}`}<div style="display:flex;gap:6px;align-items:center;margin-top:4px;"><input type="text" name="resources.${index}.title" value="${html(resolved)}" inputmode="url" placeholder="Book title, source note, or https://..." style="flex:1;min-width:0;" />${link}</div></label>${removeBtn}<div style="grid-column:1 / -1;">${setupResourceWeekPicker(index, r.scheduledWeeks)}</div></div>`;
-  }).join("");
+  const normalised = entries.map((entry) => normalizeSetupResource(entry, subject));
+  const rows = normalised.map((resource, index) => setupResourceRow(resource, index, children, groupingMode)).join("");
   return `<div data-resource-list style="display:grid;gap:0;">${rows}<button type="button" data-add-resource style="justify-self:start;margin-top:4px;border:1px solid var(--line);background:var(--paper2);color:var(--ink);border-radius:9px;padding:6px 12px;font-family:inherit;font-size:13px;cursor:pointer;">+ Add resource</button></div>`;
 }
 
@@ -3168,7 +3219,7 @@ function childSetupRow(child = {}, groupingMode = "forms") {
 
 function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms", tileMinutes = "") {
   const minutes = subject.minutes || tileMinutes || "20";
-  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main">${setupInput("Subject / skill", "title", subject.title || "")}${setupResourceList(subject.resources?.length ? subject.resources : (subject.resource ? [{ title: subject.resource, scheduledWeeks: [] }] : []))}${setupSelect("Schedule type", "weeklyFrequency", subject.weeklyFrequency === "1x" ? "weekly" : subject.weeklyFrequency || subject.cadenceLabel || "daily", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutes" value="${html(minutes)}" /><input type="hidden" name="subjectType" value="${html(subject.subjectType || subject.type || "custom")}" /><input type="hidden" name="instructionMode" value="${html(subject.instructionMode || "parent-led")}" /><input type="hidden" name="resourceType" value="${html(subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(subject.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(subject.priorityLevel || "important")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupPlanningModePicker(subject, children, groupingMode)}${setupTermWeekPicker(subject.scheduledWeeks)}${setupWeeklyPlanFields(subject.weeklyPlans)}${setupMultiChildPicker(children, subject.childIds || (subject.childId ? [subject.childId] : []))}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main">${setupInput("Subject / skill", "title", subject.title || "")}${setupResourceList(subject.resources?.length ? subject.resources : (subject.resource ? [{ title: subject.resource, scheduledWeeks: [] }] : []), children, groupingMode, subject)}${setupSelect("Schedule type", "weeklyFrequency", subject.weeklyFrequency === "1x" ? "weekly" : subject.weeklyFrequency || subject.cadenceLabel || "daily", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutes" value="${html(minutes)}" /><input type="hidden" name="subjectType" value="${html(subject.subjectType || subject.type || "custom")}" /><input type="hidden" name="instructionMode" value="${html(subject.instructionMode || "parent-led")}" /><input type="hidden" name="resourceType" value="${html(subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(subject.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(subject.priorityLevel || "important")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function bookSetupRow(book = {}, terms = [], currentTermId = "") {
@@ -4428,8 +4479,33 @@ function rowValue(row, name) {
   return control.value.trim();
 }
 
+function setupChildRowsFromForm(form) {
+  if (!form) return [];
+  return [...form.querySelectorAll('[data-setup-row="children"]')].map((row, index) => {
+    const firstName = rowValue(row, "firstName");
+    const id = row.dataset.id || `child_${index + 1}`;
+    return {
+      id,
+      firstName,
+      name: firstName || `Child ${index + 1}`,
+      formLabel: rowValue(row, "formLabel"),
+      gradeLabel: rowValue(row, "gradeLabel")
+    };
+  }).filter((child) => child.firstName || child.formLabel || child.gradeLabel);
+}
+
 function rowWeeklyPlans(row) {
   return Array.from({ length: DEFAULT_TERM_WEEK_COUNT }, (_, index) => rowValue(row, `weeklyPlans.${index + 1}`));
+}
+
+function rowResourceValue(resourceRow, index, field) {
+  const control = resourceRow.querySelector(`[name="${resourceFieldName(index, field)}"]`);
+  if (!control) return "";
+  return control.value.trim();
+}
+
+function rowResourceWeeklyPlans(resourceRow, index) {
+  return Array.from({ length: DEFAULT_TERM_WEEK_COUNT }, (_, weekIndex) => rowResourceValue(resourceRow, index, `weeklyPlans.${weekIndex + 1}`));
 }
 
 function rowResources(row) {
@@ -4441,7 +4517,16 @@ function rowResources(row) {
       const weeksInput = resourceRow.querySelector(`[name="resources.${i}.scheduledWeeks"]`);
       const title = titleInput?.value?.trim() || "";
       const scheduledWeeks = scheduledTermWeeks(weeksInput?.value || "");
-      return { title, scheduledWeeks };
+      return {
+        title,
+        scheduledWeeks,
+        weeklyPlans: rowResourceWeeklyPlans(resourceRow, i),
+        planningMode: rowResourceValue(resourceRow, i, "planningMode"),
+        formLabel: rowResourceValue(resourceRow, i, "formLabel"),
+        formLabels: rowResourceValue(resourceRow, i, "formLabels").split(",").map((value) => value.trim()).filter(Boolean),
+        gradeLabel: rowResourceValue(resourceRow, i, "gradeLabel"),
+        childIds: rowResourceValue(resourceRow, i, "childIds").split(",").map((value) => value.trim()).filter(Boolean)
+      };
     }).filter((r) => r.title);
   }
   // Legacy fallback: single resource field
@@ -4665,17 +4750,19 @@ function setupPayloadFromForm(form) {
     subjects: collectRows(form, "subjects", (row) => {
       const title = rowValue(row, "title");
       if (!title) return null;
+      const resources = rowResources(row);
+      const primaryResource = resources[0] || {};
       return {
         id: row.dataset.id || "",
         title,
         subjectType: rowValue(row, "subjectType"),
-        planningMode: rowValue(row, "planningMode"),
+        planningMode: rowValue(row, "planningMode") || primaryResource.planningMode || "forms",
         instructionMode: rowValue(row, "instructionMode"),
         schedulingMode: rowValue(row, "schedulingMode"),
         scheduledDays: scheduledDays(rowValue(row, "scheduledDays"), rowValue(row, "weeklyFrequency")),
-        scheduledWeeks: scheduledTermWeeks(rowValue(row, "scheduledWeeks")),
+        scheduledWeeks: scheduledTermWeeks(rowValue(row, "scheduledWeeks") || primaryResource.scheduledWeeks || ""),
         weeklyFrequency: rowValue(row, "weeklyFrequency"),
-        weeklyPlans: rowWeeklyPlans(row),
+        weeklyPlans: rowWeeklyPlans(row).some(Boolean) ? rowWeeklyPlans(row) : primaryResource.weeklyPlans || [],
         weeklyTarget: rowValue(row, "weeklyTarget"),
         termTarget: rowValue(row, "termTarget"),
         activeStartDate: rowValue(row, "activeStartDate"),
@@ -4683,16 +4770,15 @@ function setupPayloadFromForm(form) {
         priorityLevel: rowValue(row, "priorityLevel"),
         missedLessonBehavior: rowValue(row, "missedLessonBehavior"),
         cadenceLabel: rowValue(row, "weeklyFrequency"),
-        planningMode: rowValue(row, "planningMode"),
-        formLabel: rowValue(row, "formLabel"),
-        formLabels: rowValue(row, "formLabels").split(",").map((v) => v.trim()).filter(Boolean),
-        gradeLabel: rowValue(row, "gradeLabel"),
-        resource: rowResources(row)[0]?.title || rowValue(row, "resource"),
-        resources: rowResources(row),
+        formLabel: rowValue(row, "formLabel") || primaryResource.formLabel || "",
+        formLabels: (rowValue(row, "formLabels") || (primaryResource.formLabels || []).join(",")).split(",").map((v) => v.trim()).filter(Boolean),
+        gradeLabel: rowValue(row, "gradeLabel") || primaryResource.gradeLabel || "",
+        resource: resources[0]?.title || rowValue(row, "resource"),
+        resources,
         resourceType: rowValue(row, "resourceType"),
         minutes: rowTileMinutes(row),
         childId: rowValue(row, "childId"),
-        childIds: rowValue(row, "childIds").split(",").map((v) => v.trim()).filter(Boolean),
+        childIds: (rowValue(row, "childIds") || (primaryResource.childIds || []).join(",")).split(",").map((v) => v.trim()).filter(Boolean),
         progressionType: rowValue(row, "progressionType"),
         startNumber: rowValue(row, "startNumber"),
         currentNumber: rowValue(row, "currentNumber"),
@@ -5038,10 +5124,13 @@ function wireSetupPage() {
       const picker = planningFormChoice.closest(".learn-planning-mode-picker");
       const selected = [...picker.querySelectorAll("[data-planning-form-choice]:checked")].map((input) => input.value);
       const planningMode = selected.length ? "forms" : "family";
-      picker.querySelector('[name="planningMode"]').value = planningMode;
-      picker.querySelector('[name="formLabel"]').value = selected[0] || "";
-      picker.querySelector('[name="formLabels"]').value = selected.join(",");
-      const gradeField = picker.querySelector('[name="gradeLabel"]');
+      const planningModeField = picker.querySelector("[data-planning-mode-field]") || picker.querySelector('[name="planningMode"]');
+      const formLabelField = picker.querySelector("[data-form-label-field]") || picker.querySelector('[name="formLabel"]');
+      const formLabelsField = picker.querySelector("[data-form-labels-field]") || picker.querySelector('[name="formLabels"]');
+      const gradeField = picker.querySelector("[data-grade-label-field]") || picker.querySelector('[name="gradeLabel"]');
+      if (planningModeField) planningModeField.value = planningMode;
+      if (formLabelField) formLabelField.value = selected[0] || "";
+      if (formLabelsField) formLabelsField.value = selected.join(",");
       if (gradeField) gradeField.value = selected[0] || "";
       const label = picker.querySelector("[data-planning-mode-summary]");
       if (label) label.textContent = selected.length ? `${picker.dataset.planningGroupLabel || "Forms-Based"}: ${selected.join(", ")}` : "Family-Based";
@@ -5051,7 +5140,8 @@ function wireSetupPage() {
     if (childMultiChoice) {
       const picker = childMultiChoice.closest(".learn-child-multi-picker");
       const selected = [...picker.querySelectorAll("[data-child-multi-choice]:checked")].map((input) => input.value);
-      picker.querySelector('[name="childIds"]').value = selected.join(",");
+      const childIdsField = picker.querySelector("[data-child-ids-field]") || picker.querySelector('[name="childIds"]');
+      if (childIdsField) childIdsField.value = selected.join(",");
       const names = [...picker.querySelectorAll("[data-child-multi-choice]:checked")].map((input) => input.closest("label")?.textContent?.trim() || input.value);
       picker.querySelector("[data-child-multi-summary]").textContent = selected.length ? names.join(", ") : "Use Form Assignment";
       return;
@@ -5111,7 +5201,11 @@ function wireSetupPage() {
       if (!list) return;
       const existingRows = list.querySelectorAll("[data-resource-row]");
       const index = existingRows.length;
-      const newRowHtml = `<div data-resource-row="${index}" style="display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:end;border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:10px;margin-bottom:4px;"><label style="grid-column:1;min-width:0;">Resource ${index + 1}<div style="display:flex;gap:6px;align-items:center;margin-top:4px;"><input type="text" name="resources.${index}.title" value="" inputmode="url" placeholder="Book title, source note, or https://..." style="flex:1;min-width:0;" /></div></label><button type="button" data-remove-resource aria-label="Remove resource" style="align-self:end;flex:0 0 auto;border:1px solid var(--line);background:var(--paper);color:var(--burgundy);border-radius:9px;padding:9px 10px;font-family:inherit;line-height:1;">×</button><div style="grid-column:1 / -1;">${setupResourceWeekPicker(index, [])}</div></div>`;
+      const subjectRow = addResource.closest('[data-setup-row="subjects"]');
+      const groupingMode = document.querySelector('[name="preferences.groupingMode"]')?.value || "forms";
+      const children = setupChildRowsFromForm(addResource.closest("[data-setup-form]"));
+      const firstResource = rowResources(subjectRow || document.createElement("div"))[0] || {};
+      const newRowHtml = setupResourceRow({ planningMode: firstResource.planningMode || "forms", formLabels: firstResource.formLabels || [], childIds: firstResource.childIds || [] }, index, children, groupingMode);
       addResource.insertAdjacentHTML("beforebegin", newRowHtml);
       list.querySelector(`[data-resource-row="${index}"] input[type="text"]`)?.focus();
       return;
@@ -5125,10 +5219,10 @@ function wireSetupPage() {
       if (list) {
         list.querySelectorAll("[data-resource-row]").forEach((row, i) => {
           row.dataset.resourceRow = i;
-          const titleInput = row.querySelector("input[type='text']");
-          if (titleInput) titleInput.name = `resources.${i}.title`;
-          const weeksInput = row.querySelector("input[type='hidden'][name^='resources.']");
-          if (weeksInput) weeksInput.name = `resources.${i}.scheduledWeeks`;
+          row.querySelectorAll("[data-resource-field]").forEach((field) => {
+            const key = field.dataset.resourceField || "";
+            if (key) field.name = resourceFieldName(i, key);
+          });
           const weekPicker = row.querySelector("[data-resource-week-picker]");
           if (weekPicker) weekPicker.dataset.resourceWeekPicker = i;
           // Update label text for rows after the first

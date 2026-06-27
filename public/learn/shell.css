@@ -1168,6 +1168,41 @@ body {
   min-height: 42px;
 }
 
+.learn-resource-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 12px;
+  align-items: end;
+  border: 1px solid rgba(201, 162, 91, 0.32);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255, 252, 245, 0.92), rgba(248, 241, 227, 0.86));
+  padding: 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(20,40,70,.04);
+}
+
+.learn-resource-card-plan {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.learn-resource-plan-fields {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.learn-resource-plan-fields summary strong {
+  color: var(--ink);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.learn-resource-plan-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
 .learn-color-field {
   min-width: 0;
 }

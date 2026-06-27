@@ -157,6 +157,26 @@ function labelsValue(value) {
   return [...new Set(direct.map((entry) => text(entry, "")).filter(Boolean))];
 }
 
+function setupResourceValue(resource, subject = {}) {
+  const raw = typeof resource === "string" ? { title: resource } : (resource || {});
+  const title = text(raw.title || raw.resource, "");
+  if (!title) return null;
+  const formLabels = labelsValue(raw.formLabels || raw.formLabel || subject.formLabels || subject.formLabel);
+  const childIds = Array.isArray(raw.childIds) && raw.childIds.length
+    ? raw.childIds.filter(Boolean)
+    : (Array.isArray(subject.childIds) ? subject.childIds.filter(Boolean) : []);
+  return {
+    title,
+    scheduledWeeks: scheduledWeeksValue(raw.scheduledWeeks || subject.scheduledWeeks),
+    weeklyPlans: weeklyPlansValue(raw.weeklyPlans || subject.weeklyPlans),
+    planningMode: formLabels.length ? "forms" : text(raw.planningMode || subject.planningMode, "forms"),
+    formLabel: text(raw.formLabel || formLabels[0] || subject.formLabel, ""),
+    formLabels,
+    gradeLabel: text(raw.gradeLabel || subject.gradeLabel, ""),
+    childIds
+  };
+}
+
 const DEFAULT_TERM_WEEK_COUNT = 12;
 
 function scheduledWeeksValue(value, totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
@@ -350,7 +370,7 @@ function bookBelongsToHouseholdStream(book = {}) {
   );
 }
 
-function resourceBookLike({ id = "", title = "", author = "", category = "", termId = "", formLabel = "", audienceLabel = "", planningMode = "", weeklyFrequency = "1x", minutes = "", color = "", sourceKind = "setup" } = {}) {
+function resourceBookLike({ id = "", title = "", author = "", category = "", termId = "", formLabel = "", formLabels = [], gradeLabel = "", childId = "", childIds = [], audienceLabel = "", planningMode = "", weeklyFrequency = "1x", scheduledWeeks = [], weeklyPlans = [], minutes = "", color = "", sourceKind = "setup" } = {}) {
   const resolvedTitle = text(title, "");
   if (!resolvedTitle) return null;
   return {
@@ -360,9 +380,15 @@ function resourceBookLike({ id = "", title = "", author = "", category = "", ter
     category,
     termId,
     formLabel,
+    formLabels,
+    gradeLabel,
+    childId,
+    childIds,
     audienceLabel,
     planningMode,
     weeklyFrequency,
+    scheduledWeeks,
+    weeklyPlans,
     minutes,
     color,
     sourceKind,
@@ -529,8 +555,8 @@ function normalizeSetupPayload(payload = {}, identity) {
     gradeLabel: text(subject.gradeLabel, ""),
     resource: text(Array.isArray(subject.resources) && subject.resources.length ? (subject.resources[0]?.title || subject.resources[0]) : subject.resource, ""),
     resources: Array.isArray(subject.resources) && subject.resources.length
-      ? subject.resources.map((r) => typeof r === "string" ? { title: r, scheduledWeeks: [] } : { title: text(r.title || r.resource || "", ""), scheduledWeeks: Array.isArray(r.scheduledWeeks) ? r.scheduledWeeks : [] }).filter((r) => r.title)
-      : (subject.resource ? [{ title: subject.resource, scheduledWeeks: [] }] : []),
+      ? subject.resources.map((resource) => setupResourceValue(resource, subject)).filter(Boolean)
+      : (subject.resource ? [setupResourceValue({ title: subject.resource }, subject)].filter(Boolean) : []),
     resourceType: resourceTypeValue(subject.resourceType || subject.sourceType, subject.resource ? "curriculum" : "none"),
     cadenceLabel: text(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "Weekly"),
     minutes: int(subject.minutes, 20),
@@ -801,17 +827,23 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
       : (subject.resource ? [{ title: subject.resource, scheduledWeeks: subject.scheduledWeeks }] : []);
     return subjectResources.map((resource, resourceIndex) => {
       const title = typeof resource === "string" ? resource : resource.title || resource.resource;
+      const assignment = typeof resource === "string" ? subject : { ...subject, ...resource };
       return resourceBookLike({
         id: `subject_resource_${subject.id || subjectIndex + 1}_${resourceIndex + 1}`,
         title,
         category: subject.title || subject.subjectType || "Form Subject",
         termId: subject.termId || currentTermId,
-        formLabel: subject.formLabel || "",
-        audienceLabel: subject.childId ? "Child Resource" : "Form Resource",
-        planningMode: subject.planningMode || "forms",
+        formLabel: assignment.formLabel || "",
+        audienceLabel: list(assignment.childIds).length || assignment.childId ? "Child Resource" : "Form Resource",
+        planningMode: assignment.planningMode || "forms",
         weeklyFrequency: subject.weeklyFrequency || "1x",
         minutes: subject.minutes || "",
         color: subject.color || "",
+        childIds: list(assignment.childIds),
+        gradeLabel: assignment.gradeLabel || "",
+        formLabels: list(assignment.formLabels),
+        scheduledWeeks: list(assignment.scheduledWeeks).length ? assignment.scheduledWeeks : subject.scheduledWeeks,
+        weeklyPlans: list(assignment.weeklyPlans).length ? assignment.weeklyPlans : subject.weeklyPlans,
         sourceKind: "form-subject"
       });
     });
@@ -894,14 +926,19 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
     }));
   });
   next.childTracks = currentSubjects.flatMap((subject, index) => {
-    const assignedChildren = childrenForAssignment(subject, next.children);
+    const resourceAssignments = list(subject.resources).length
+      ? list(subject.resources).map((resource) => ({ ...subject, ...resource, title: subject.title }))
+      : [subject];
+    return resourceAssignments.flatMap((assignment, assignmentIndex) => {
+    const assignedChildren = childrenForAssignment(assignment, next.children);
     return assignedChildren.map((child) => ({
-      id: `${subject.id}_${child.id || index}`,
+      id: `${subject.id}_${assignmentIndex + 1}_${child.id || index}`,
       childId: child.id,
       subjectType: subject.subjectType,
       title: subject.title,
-      formLabel: subject.formLabel
+      formLabel: assignment.formLabel || subject.formLabel
     }));
+    });
   }).concat(childBooks.flatMap((book, index) => {
     const assignedChildren = childrenForAssignment(book, next.children);
     return assignedChildren.map((child) => ({
@@ -1048,20 +1085,25 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
     ],
     childRows: [
       ...currentSubjects.flatMap((subject, index) => {
-        const assignedChildren = childrenForAssignment(subject, next.children);
-        return assignedChildren.map((child) => ({
-          id: `week_${subject.id}_${child.id}`,
+        const resourceAssignments = list(subject.resources).length
+          ? list(subject.resources).map((resource, resourceIndex) => ({ ...subject, ...resource, resourceTitle: resource.title || resource.resource || subject.resource, resourceIndex }))
+          : [{ ...subject, resourceTitle: subject.resource, resourceIndex: 0 }];
+        return resourceAssignments.flatMap((assignment) => {
+          const assignedChildren = childrenForAssignment(assignment, next.children);
+          return assignedChildren.map((child) => ({
+          id: `week_${subject.id}_${assignment.resourceIndex + 1}_${child.id}`,
           childId: child.id,
           title: subject.title,
-          detail: `${subject.resource || subject.cadenceLabel}${currentWeekPlan(subject) ? ` • ${currentWeekPlan(subject)}` : ""}${subject.endNumber ? ` (${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber})` : ""}${subject.weeklyFrequency ? ` • ${subject.weeklyFrequency}` : ""}`,
+          detail: `${assignment.resourceTitle || subject.cadenceLabel}${currentWeekPlan(assignment) ? ` • ${currentWeekPlan(assignment)}` : ""}${subject.endNumber ? ` (${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber})` : ""}${subject.weeklyFrequency ? ` • ${subject.weeklyFrequency}` : ""}`,
           priority: subject.priorityLevel === "essential" ? index : subject.priorityLevel === "important" ? 30 + index : subject.priorityLevel === "optional" ? 100 + index : 70 + index,
           priorityLevel: subject.priorityLevel,
           instructionMode: subject.instructionMode,
           missedLessonBehavior: subject.missedLessonBehavior,
           color: subject.color,
           graceModeApplied: setupSnapshot.preferences?.graceModeActive && subject.gracePriority !== "keep",
-          ...planArraysForItem(subject, currentTermWeek, plannerWeekWindow.dates)
+          ...planArraysForItem(assignment, currentTermWeek, plannerWeekWindow.dates)
         }));
+        });
       }),
       ...childBooks.flatMap((book, index) => {
         const assignedChildren = childrenForAssignment(book, next.children);

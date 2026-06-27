@@ -1281,8 +1281,26 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
       resources: safeArray(subject.resources).length
         ? safeArray(subject.resources).map((resource) => typeof resource === "string"
           ? { title: text(resource, ""), scheduledWeeks: [] }
-          : { title: text(resource.title || resource.resource, ""), scheduledWeeks: safeArray(resource.scheduledWeeks) }).filter((resource) => resource.title)
-        : (subject.resource ? [{ title: text(subject.resource, ""), scheduledWeeks: safeArray(subject.scheduledWeeks) }] : []),
+          : {
+            title: text(resource.title || resource.resource, ""),
+            scheduledWeeks: safeArray(resource.scheduledWeeks),
+            weeklyPlans: safeArray(resource.weeklyPlans),
+            planningMode: text(resource.planningMode, subject.planningMode || "forms"),
+            formLabel: text(resource.formLabel, subject.formLabel || ""),
+            formLabels: safeArray(resource.formLabels).length ? safeArray(resource.formLabels) : safeArray(subject.formLabels),
+            gradeLabel: text(resource.gradeLabel, subject.gradeLabel || ""),
+            childIds: safeArray(resource.childIds).length ? safeArray(resource.childIds) : safeArray(subject.childIds)
+          }).filter((resource) => resource.title)
+        : (subject.resource ? [{
+          title: text(subject.resource, ""),
+          scheduledWeeks: safeArray(subject.scheduledWeeks),
+          weeklyPlans: safeArray(subject.weeklyPlans),
+          planningMode: text(subject.planningMode, "forms"),
+          formLabel: text(subject.formLabel, ""),
+          formLabels: safeArray(subject.formLabels),
+          gradeLabel: text(subject.gradeLabel, ""),
+          childIds: safeArray(subject.childIds)
+        }] : []),
       resourceType: text(subject.resourceType || subject.sourceType, subject.resource ? "curriculum" : "none"),
       cadence: text(subject.cadenceLabel || subject.cadence, ""),
       minutes: text(subject.minutes, ""),
