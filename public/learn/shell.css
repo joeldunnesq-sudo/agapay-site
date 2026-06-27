@@ -2567,6 +2567,11 @@ body {
 .learn-family-modal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .learn-family-modal-grid label { display: grid; gap: 5px; color: var(--gold); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
 .learn-family-modal-grid label:nth-last-child(-n+2) { grid-column: 1 / -1; }
+.learn-chore-batch-list { display: grid; gap: 7px; margin-top: 14px; border: 1px solid rgba(181,148,47,.24); border-radius: 12px; background: rgba(255,250,240,.72); padding: 10px; }
+.learn-chore-batch-list span { display: grid; gap: 2px; border-bottom: 1px solid rgba(181,148,47,.16); padding-bottom: 7px; }
+.learn-chore-batch-list span:last-child { border-bottom: 0; padding-bottom: 0; }
+.learn-chore-batch-list strong { color: var(--ink); font-size: 13px; line-height: 1.2; }
+.learn-chore-batch-list small { color: var(--muted); font-size: 11px; line-height: 1.25; }
 .learn-family-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
 .learn-family-modal-actions button { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); padding: 10px 15px; font-family: inherit; font-weight: 800; cursor: pointer; }
 .learn-family-modal-actions [data-chore-delete] { margin-right: auto; border-color: rgba(138, 43, 43, .35); color: #8a2b2b; }
