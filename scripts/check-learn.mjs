@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { buildReportCardExport, buildTranscriptExport } from "../src/learn/academic-exports.js";
 import { normalizeCalendarType, SeedLiturgicalSource } from "../src/learn/liturgical-source.js";
-import { buildLearnPrintDocument, buildLearnReportPrintDocument, buildPrintJobRequest, buildWeeklyHouseholdPrintDocument, renderPrintDocumentPdf } from "../src/learn/print-engine.js";
+import { buildLearnPrintDocument, buildLearnReportPrintDocument, buildPrintJobRequest, buildWeeklyHouseholdPrintDocument, renderPrintDocumentPdf } from "../src/learn/print-documents.js";
 import { getLearnSeedSnapshot } from "../src/learn/demo-data.js";
 import { createSeedLearnRepository } from "../src/learn/repository.js";
 

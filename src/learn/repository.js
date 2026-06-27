@@ -3,7 +3,7 @@ import { buildReportCardExport, buildTranscriptExport } from "./academic-exports
 import { buildTranscriptsFromAcademicRecords } from "./academic-records.js";
 import { getLearnSeedSnapshot } from "./demo-data.js";
 import { normalizeCalendarType, SeedLiturgicalSource } from "./liturgical-source.js";
-import { buildPrintJobRequest, buildWeeklyHouseholdPrintDocument } from "./print-engine.js";
+import { buildPrintJobRequest, buildWeeklyHouseholdPrintDocument } from "./print-documents.js";
 import { getLearnSeedForIdentity, learnSetupIdentity } from "./setup-persistence.js";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

@@ -8,7 +8,8 @@ import { flagLearnCommunityResource, listLearnCommunityResources, submitLearnCom
 import { submitLearnFeedback } from "./feedback-store.js";
 import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-source.js";
 import { enrichLiturgicalDayWithOrthocal, fetchOrthocalDay, handleLearnReadingsStatus, orthocalSaintStories } from "./readings-source.js";
-import { buildLearnPrintDocument, buildLearnReportPrintDocument, printDocumentFilename, renderPrintDocumentPdf } from "./print-engine.js";
+import { renderPrintDocumentPdf } from "./print-engine.js";
+import { buildLearnPrintDocument, buildLearnReportPrintDocument, renderPrintDocumentPdf as renderLocalPrintDocumentPdf } from "./print-documents.js";
 import { createLearnRepositoryForRequest, SeedLearnRepository } from "./repository.js";
 import { learnSetupIdentity, saveLearnCompletion, saveLearnFamilyPlanning, saveLearnGraceMode, saveLearnPlannerBlock, saveLearnSetup } from "./setup-persistence.js";
 
@@ -288,13 +289,15 @@ export async function handleLearnPrintPdf(request, env, templateId = "") {
         designedWeek: body.designedWeek || null,
         generatedAt: new Date().toISOString()
       });
-  const pdfBytes = await renderPrintDocumentPdf(document);
+  const pdfBuffer = env.AGAPAY_TEST_MODE && !env.BROWSER
+    ? await renderLocalPrintDocumentPdf(document)
+    : await renderPrintDocumentPdf(document, env);
 
-  return new Response(pdfBytes, {
+  return new Response(pdfBuffer, {
     headers: {
-      "content-type": "application/pdf",
-      "content-disposition": `attachment; filename="${printDocumentFilename(document)}"`,
-      "cache-control": "no-store",
+      "Content-Type": "application/pdf",
+      "Content-Disposition": "attachment; filename=agapay-lesson-plan.pdf",
+      "Cache-Control": "no-store",
       "x-agapay-learn-print-count": String(limit.count),
       "x-agapay-learn-print-limit": String(limit.limit)
     }
