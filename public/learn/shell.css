@@ -2905,6 +2905,103 @@ body {
   padding: 8px;
 }
 
+/* ── Grace Mode card anatomy ─────────────────────────────── */
+
+.learn-week-assignment-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.learn-grace-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.learn-grace-badge--keep {
+  background: rgba(6, 21, 34, .08);
+  color: var(--navy);
+  border: 1px solid rgba(6, 21, 34, .18);
+}
+
+.learn-grace-badge--reduce {
+  background: rgba(181, 148, 47, .10);
+  color: var(--gold);
+  border: 1px solid rgba(181, 148, 47, .28);
+}
+
+.learn-grace-badge--defer {
+  background: rgba(143, 62, 72, .08);
+  color: var(--burgundy, #8f3e48);
+  border: 1px solid rgba(143, 62, 72, .22);
+}
+
+.learn-week-assignment-card.is-grace-deferred {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--paper2),
+    var(--paper2) 6px,
+    rgba(143, 62, 72, .04) 6px,
+    rgba(143, 62, 72, .04) 12px
+  );
+  border-style: dashed;
+}
+
+.learn-week-assignment-card.is-grace-reduced {
+  background: linear-gradient(135deg, var(--paper2), rgba(181, 148, 47, .05));
+}
+
+/* ── Grace Mode context banner in board header ───────────── */
+
+.learn-grace-mode-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 5px 11px;
+  cursor: default;
+}
+
+.learn-grace-mode-banner--light {
+  background: rgba(181, 148, 47, .12);
+  color: var(--gold);
+  border: 1px solid rgba(181, 148, 47, .30);
+}
+
+.learn-grace-mode-banner--minimum {
+  background: rgba(6, 21, 34, .08);
+  color: var(--navy);
+  border: 1px solid rgba(6, 21, 34, .20);
+}
+
+.learn-grace-mode-banner--full {
+  background: rgba(60, 100, 70, .08);
+  color: #3c6446;
+  border: 1px solid rgba(60, 100, 70, .22);
+}
+
+.learn-week-assignment-hint {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ── end Grace Mode planner bridge ──────────────────────── */
+
 .learn-designed-lesson-list {
   display: grid;
   gap: 10px;
