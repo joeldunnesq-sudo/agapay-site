@@ -99,6 +99,33 @@ function text(value, fallback = "") {
   return String(value || fallback);
 }
 
+function learnDashboardHref(section = "dashboard") {
+  const isOdyssey = typeof document !== "undefined" && document.body?.dataset?.learnContext === "odyssey";
+  const regular = {
+    dashboard: "/myagapay/learn",
+    planner: "/myagapay/learn/planner",
+    formation: "/myagapay/learn/formation",
+    books: "/myagapay/learn/books",
+    grades: "/myagapay/learn/grades",
+    community: "/myagapay/learn/community",
+    "co-op": "/myagapay/learn/co-op",
+    "print-center": "/myagapay/learn/print",
+    onboarding: "/myagapay/learn/setup"
+  };
+  const odyssey = {
+    dashboard: "/learn/odyssey/dashboard",
+    planner: "/learn/odyssey/dashboard/planner",
+    formation: "/learn/odyssey/dashboard/formation",
+    books: "/learn/odyssey/dashboard/books",
+    grades: "/learn/odyssey/dashboard/grades",
+    community: "/learn/odyssey/dashboard/community",
+    "co-op": "/learn/odyssey/dashboard/co-op",
+    "print-center": "/learn/odyssey/dashboard/print",
+    onboarding: "/learn/odyssey/dashboard/setup"
+  };
+  return (isOdyssey ? odyssey : regular)[section] || (isOdyssey ? odyssey.dashboard : regular.dashboard);
+}
+
 function weeklyFrequencyValue(value, fallback = "1x") {
   const raw = String(value || "").trim().toLowerCase();
   if (["daily", "weekly", "4x", "3x", "2x", "1x", "as-needed"].includes(raw)) return raw;
@@ -232,15 +259,15 @@ function shellFromPayload(page, payload) {
     gcalConfigured: gcalSync ? Boolean(gcalSync.configured !== false) : false,
     gcalConnected: Boolean(gcalSync?.connected),
     nav: [
-      { id: "dashboard", href: "/myagapay/learn", label: "Dashboard", icon: "✥" },
-      { id: "planner", href: "/myagapay/learn/planner", label: "Planner", icon: "▣" },
-      { id: "formation", href: "/myagapay/learn/formation", label: "Formation", icon: "⌂" },
-      { id: "books", href: "/myagapay/learn/books", label: "Books", icon: "☰" },
-      { id: "grades", href: "/myagapay/learn/grades", label: "Grades & Attendance", icon: "A+" },
-      { id: "community", href: "/myagapay/learn/community", label: "Community", icon: "♡" },
-      { id: "co-op", href: "/myagapay/learn/co-op", label: "Co-op", icon: "◎", comingSoon: true },
-      { id: "print-center", href: "/myagapay/learn/print", label: "Print", icon: "▤" },
-      { id: "onboarding", href: "/myagapay/learn/setup", label: "Set Up", icon: "⚙" }
+      { id: "dashboard", href: learnDashboardHref("dashboard"), label: "Dashboard", icon: "✥" },
+      { id: "planner", href: learnDashboardHref("planner"), label: "Planner", icon: "▣" },
+      { id: "formation", href: learnDashboardHref("formation"), label: "Formation", icon: "⌂" },
+      { id: "books", href: learnDashboardHref("books"), label: "Books", icon: "☰" },
+      { id: "grades", href: learnDashboardHref("grades"), label: "Grades & Attendance", icon: "A+" },
+      { id: "community", href: learnDashboardHref("community"), label: "Community", icon: "♡" },
+      { id: "co-op", href: learnDashboardHref("co-op"), label: "Co-op", icon: "◎", comingSoon: true },
+      { id: "print-center", href: learnDashboardHref("print-center"), label: "Print", icon: "▤" },
+      { id: "onboarding", href: learnDashboardHref("onboarding"), label: "Set Up", icon: "⚙" }
     ]
   };
 }

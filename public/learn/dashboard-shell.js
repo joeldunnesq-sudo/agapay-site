@@ -10,9 +10,60 @@ import {
   toSetupViewModel
 } from "./dashboard-view-models.js";
 
-const pageKey = document.body.dataset.learnPage || "dashboard";
+const odysseyPageMap = {
+  planner: "planner",
+  formation: "formation",
+  books: "books",
+  grades: "grades",
+  community: "community",
+  "co-op": "co-op",
+  print: "print-center",
+  "print-center": "print-center",
+  setup: "onboarding",
+  onboarding: "onboarding"
+};
+
+function resolveLearnPageKey() {
+  const base = document.body.dataset.learnPage || "dashboard";
+  if (document.body.dataset.learnContext !== "odyssey") return base;
+  const match = window.location.pathname.match(/^\/learn\/odyssey\/dashboard\/([^/]+)/);
+  return match ? odysseyPageMap[match[1]] || base : base;
+}
+
+const pageKey = resolveLearnPageKey();
 const root = document.getElementById("learnRoot");
 let learnGoogleCalendarStatus = { loaded: false, configured: false, connected: false };
+
+function isOdysseyLearnContext() {
+  return document.body.dataset.learnContext === "odyssey";
+}
+
+function learnSectionHref(section = "dashboard", query = "") {
+  const regular = {
+    dashboard: "/myagapay/learn",
+    planner: "/myagapay/learn/planner",
+    formation: "/myagapay/learn/formation",
+    books: "/myagapay/learn/books",
+    grades: "/myagapay/learn/grades",
+    community: "/myagapay/learn/community",
+    "co-op": "/myagapay/learn/co-op",
+    "print-center": "/myagapay/learn/print",
+    onboarding: "/myagapay/learn/setup"
+  };
+  const odyssey = {
+    dashboard: "/learn/odyssey/dashboard",
+    planner: "/learn/odyssey/dashboard/planner",
+    formation: "/learn/odyssey/dashboard/formation",
+    books: "/learn/odyssey/dashboard/books",
+    grades: "/learn/odyssey/dashboard/grades",
+    community: "/learn/odyssey/dashboard/community",
+    "co-op": "/learn/odyssey/dashboard/co-op",
+    "print-center": "/learn/odyssey/dashboard/print",
+    onboarding: "/learn/odyssey/dashboard/setup"
+  };
+  const base = (isOdysseyLearnContext() ? odyssey : regular)[section] || (isOdysseyLearnContext() ? odyssey.dashboard : regular.dashboard);
+  return query ? `${base}?${query}` : base;
+}
 
 function html(value) {
   return String(value ?? "")
@@ -431,7 +482,7 @@ function plannerHref(updates = {}) {
     if (value === null || value === undefined || value === "") next.delete(key);
     else next.set(key, value);
   });
-  return `/myagapay/learn/planner?${next.toString()}`;
+  return learnSectionHref("planner", next.toString());
 }
 
 function plannerSidebarSubnav(activePage) {
@@ -455,9 +506,9 @@ function sidebar(vm) {
   return `
     <aside class="learn-product-sidebar" data-learn-sidebar>
       <div class="learn-product-sidebar-scroll">
-        <a class="learn-product-back" href="/myagapay" aria-label="Back to My AGAPAY">
+        <a class="learn-product-back" href="${isOdysseyLearnContext() ? "/learn/odyssey" : "/myagapay"}" aria-label="${isOdysseyLearnContext() ? "Back to AGAPAY Learn Odyssey" : "Back to My AGAPAY"}">
           <span aria-hidden="true">←</span>
-          <strong>My AGAPAY</strong>
+          <strong>${isOdysseyLearnContext() ? "TEFA Portal" : "My AGAPAY"}</strong>
         </a>
         <div class="learn-product-profile">
           <strong>${html(vm.shell.familyName || "Faithful Household")}</strong>
@@ -1626,14 +1677,38 @@ function choreScheduleLabel(chore = {}) {
   return `Quarterly${chore.quarterMonth ? ` · month ${chore.quarterMonth}` : ""}${chore.dayOfMonth ? ` · day ${chore.dayOfMonth}` : ""}`;
 }
 
+function choreOpenAttributes(chore = null, personName = "", day = {}) {
+  const dayLabel = day.weekdayLong || day.long || "";
+  const attrs = [
+    `data-chore-open`,
+    `data-assignee="${html(personName)}"`,
+    `data-day="${html(dayLabel)}"`
+  ];
+  if (chore) {
+    attrs.push(
+      `data-chore-existing="1"`,
+      `data-chore-id="${html(chore.id || "")}"`,
+      `data-chore-title="${html(chore.title || "")}"`,
+      `data-chore-assignee="${html(chore.assignee || "Everyone")}"`,
+      `data-chore-cadence="${html(choreCadence(chore))}"`,
+      `data-chore-day="${html(chore.day || dayLabel)}"`,
+      `data-chore-day-of-month="${html(chore.dayOfMonth || "")}"`,
+      `data-chore-quarter-month="${html(chore.quarterMonth || "1")}"`,
+      `data-chore-time-of-day="${html(chore.timeOfDay || "Anytime")}"`,
+      `data-chore-notes="${html(chore.notes || "")}"`
+    );
+  }
+  return attrs.join(" ");
+}
+
 function renderChoresScope(model, displayView) {
   const people = [{ name: "Everyone", color: "var(--navy)", initial: "✥" }, ...model.children.filter((child) => child.name)];
   if (displayView === "day") {
     const selectedDate = new URLSearchParams(window.location.search).get("date") || model.weekDays[0]?.date || "";
     const day = model.weekDays.find((item) => item.date === selectedDate) || model.weekDays[0] || {};
-    return `<div class="learn-family-prototype">${renderPlannerDaySelector(model, day.date)}<section class="learn-family-card-grid">${people.map((person) => { const chore = model.chores.find((item) => (item.assignee || "Everyone") === person.name && choreDueOnDay(item, day)); return `<article class="learn-family-person-card" style="--person-color:${html(person.color)};"><span>${html(person.initial || person.name.slice(0, 1) || "•")}</span><strong>${html(person.name)}</strong><p>${html(chore?.title || (day.isSunday ? "Rest" : "Choose a chore"))}</p>${chore ? `<small>${html(choreScheduleLabel(chore))}</small>` : ""}<button type="button" data-chore-open data-assignee="${html(person.name)}" data-day="${html(day.weekdayLong || day.long || "")}">${chore ? "Edit" : "Add"} chore</button></article>`; }).join("")}</section></div>`;
+    return `<div class="learn-family-prototype">${renderPlannerDaySelector(model, day.date)}<section class="learn-family-card-grid">${people.map((person) => { const chore = model.chores.find((item) => (item.assignee || "Everyone") === person.name && choreDueOnDay(item, day)); return `<article class="learn-family-person-card" style="--person-color:${html(person.color)};"><span>${html(person.initial || person.name.slice(0, 1) || "•")}</span><strong>${html(person.name)}</strong><p>${html(chore?.title || (day.isSunday ? "Rest" : "Choose a chore"))}</p>${chore ? `<small>${html(choreScheduleLabel(chore))}</small>` : ""}<button type="button" ${choreOpenAttributes(chore, person.name, day)}>${chore ? "Edit" : "Add"} chore</button></article>`; }).join("")}</section></div>`;
   }
-  return `<section class="learn-family-week-board"><div class="learn-family-week-scroll"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => `<strong>${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small></strong>`).join("")}</div>${people.map((person) => `<div class="learn-family-week-row learn-family-chore-row" style="--person-color:${html(person.color)};"><strong><span>${html(person.initial || person.name.slice(0, 1) || "•")}</span>${html(person.name)}</strong>${model.weekDays.map((day) => { const chore = model.chores.find((item) => (item.assignee || "Everyone") === person.name && choreDueOnDay(item, day)); return `<div><button type="button" class="learn-family-mini-card" data-chore-open data-assignee="${html(person.name)}" data-day="${html(day.weekdayLong || day.long || "")}"><strong>${html(chore?.title || (day.isSunday ? "Rest" : "Add chore"))}</strong>${chore ? `<small>${html(choreScheduleLabel(chore))}</small>` : ""}</button></div>`; }).join("")}</div>`).join("")}</div></section>`;
+  return `<section class="learn-family-week-board"><div class="learn-family-week-scroll"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => `<strong>${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small></strong>`).join("")}</div>${people.map((person) => `<div class="learn-family-week-row learn-family-chore-row" style="--person-color:${html(person.color)};"><strong><span>${html(person.initial || person.name.slice(0, 1) || "•")}</span>${html(person.name)}</strong>${model.weekDays.map((day) => { const chore = model.chores.find((item) => (item.assignee || "Everyone") === person.name && choreDueOnDay(item, day)); return `<div><button type="button" class="learn-family-mini-card" ${choreOpenAttributes(chore, person.name, day)}><strong>${html(chore?.title || (day.isSunday ? "Rest" : "Add chore"))}</strong>${chore ? `<small>${html(choreScheduleLabel(chore))}</small>` : ""}</button></div>`; }).join("")}</div>`).join("")}</div></section>`;
 }
 
 function renderEventsScope(model, displayView) {
@@ -1647,7 +1722,15 @@ function renderFamilyPlannerModals(model) {
   return `<div class="learn-family-modal" data-family-modal="meal" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Meal Picker</small><h2>Choose a dish</h2><p data-meal-modal-context>Pick a recipe or type a dish name.</p><input data-meal-custom-input placeholder="Type a dish name..."><div class="learn-family-picker-list">${model.recipes.length ? model.recipes.map((recipe) => `<button type="button" data-meal-pick="${html(recipe.title)}"><strong>${html(recipe.title)}</strong><span>${html(recipe.fastingType || "Any day")} · ${html(recipe.category || "Recipe")}</span></button>`).join("") : `<span class="learn-family-empty-line">No recipes yet. You can still type a dish above.</span>`}</div><div class="learn-family-modal-actions"><button type="button" data-meal-clear>Clear meal</button><button type="button" data-meal-save>Save meal</button></div></div></div>
   <div class="learn-family-modal" data-family-modal="recipe" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Recipe</small><h2>Save a family recipe</h2><div class="learn-family-modal-grid">${setupInput("Recipe name", "modalRecipe.title")}${setupSelect("Fasting fit", "modalRecipe.fastingType", "", ["free", "fish", "oilwine", "strict"])}${setupInput("Category", "modalRecipe.category")}${setupInput("Source URL", "modalRecipe.sourceUrl")}<label>Ingredients<textarea name="modalRecipe.ingredients" rows="4"></textarea></label><label>Instructions<textarea name="modalRecipe.instructions" rows="4"></textarea></label></div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-recipe-save>Save recipe</button></div></div></div>
   <div class="learn-family-modal" data-family-modal="event" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Calendar</small><h2>Add to calendar</h2><div class="learn-family-modal-grid">${setupInput("Title", "modalEvent.title")}${setupSelect("Type", "modalEvent.eventType", "", ["Appointment", "Field Trip", "Extracurricular", "Name Day", "Family"])}${setupInput("Date", "modalEvent.date", "", { type: "date" })}${setupInput("Time", "modalEvent.startTime", "", { type: "time" })}${setupSelect("Repeats", "modalEvent.recurrence", "none", eventRecurrenceOptions)}${setupInput("Location", "modalEvent.location")}<label>Notes<textarea name="modalEvent.notes" rows="3"></textarea></label></div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-event-save>Save event</button></div></div></div>
-  <div class="learn-family-modal" data-family-modal="chore" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Chore Rhythm</small><h2>Add chore</h2><div class="learn-family-modal-grid">${setupInput("Chore", "modalChore.title")}${setupSelect("Assigned to", "modalChore.assignee", "Everyone", choreAssigneeOptions(model.planning))}${setupSelect("Type", "modalChore.cadence", "weekly", [{ value: "daily", label: "Daily" }, { value: "weekly", label: "Weekly" }, { value: "monthly", label: "Monthly" }, { value: "quarterly", label: "Quarterly" }])}${setupSelect("Weekly day", "modalChore.day", "", ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])}${setupSelect("Monthly day", "modalChore.dayOfMonth", "", dayOfMonthOptions())}${setupSelect("Quarter month", "modalChore.quarterMonth", "1", [{ value: "1", label: "1st month" }, { value: "2", label: "2nd month" }, { value: "3", label: "3rd month" }])}${setupSelect("Time", "modalChore.timeOfDay", "Anytime", ["Anytime", "Morning", "Afternoon", "Evening"])}<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Notes<input name="modalChore.notes" type="text" value="" style="min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);" /></label></div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-chore-save>Save chore</button></div></div></div>`;
+  <div class="learn-family-modal" data-family-modal="chore" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Chore Rhythm</small><h2 data-chore-modal-title>Add chore</h2><div class="learn-family-modal-grid">${setupInput("Chore", "modalChore.title")}${setupSelect("Assigned to", "modalChore.assignee", "Everyone", choreAssigneeOptions(model.planning))}${setupSelect("Type", "modalChore.cadence", "weekly", [{ value: "daily", label: "Daily" }, { value: "weekly", label: "Weekly" }, { value: "monthly", label: "Monthly" }, { value: "quarterly", label: "Quarterly" }])}${setupSelect("Weekly day", "modalChore.day", "", ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])}${setupSelect("Monthly day", "modalChore.dayOfMonth", "", dayOfMonthOptions())}${setupSelect("Quarter month", "modalChore.quarterMonth", "1", [{ value: "1", label: "1st month" }, { value: "2", label: "2nd month" }, { value: "3", label: "3rd month" }])}${setupSelect("Time", "modalChore.timeOfDay", "Anytime", ["Anytime", "Morning", "Afternoon", "Evening"])}<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Notes<input name="modalChore.notes" type="text" value="" style="min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);" /></label></div><div class="learn-family-modal-actions"><button type="button" data-chore-delete hidden>Delete chore</button><button type="button" data-family-modal-close>Cancel</button><button type="button" data-chore-save>Save chore</button></div></div></div>`;
+}
+
+function dayKeyForChore(chore = {}, vm = {}) {
+  const dayLabel = String(chore.day || "").toLowerCase();
+  return Object.entries(prototypeWeekDateMap(vm)).find(([, date]) => {
+    const label = plannerDayLabel(date).long.toLowerCase();
+    return label === dayLabel;
+  })?.[0] || "";
 }
 
 function renderFamilyPlannerScope(vm, scope, displayView = "week", mealTool = "plan") {
@@ -1973,10 +2056,26 @@ function seedFamilyPrototypeState(vm) {
   })).filter((item) => item.label);
   const dayKeyByLabel = Object.fromEntries(prototypeDaySeeds(vm).map((day) => [String(day.long || day.weekday || "").toLowerCase(), day.key]));
   const chores = {};
+  const choreDetails = {};
   (planning.chores || []).forEach((chore) => {
     const assignee = chore.assignee || "Everyone";
     const dayKey = dayKeyByLabel[String(chore.day || "").toLowerCase()] || "";
-    if (dayKey && chore.title) chores[`${assignee}::${dayKey}`] = chore.title;
+    if (dayKey && chore.title) {
+      const key = `${assignee}::${dayKey}`;
+      chores[key] = chore.title;
+      choreDetails[key] = {
+        id: chore.id || "",
+        title: chore.title || "",
+        assignee,
+        cadence: chore.cadence || "weekly",
+        day: chore.day || "",
+        dayOfMonth: chore.dayOfMonth || "",
+        quarterMonth: chore.quarterMonth || "",
+        timeOfDay: chore.timeOfDay || "Anytime",
+        notes: chore.notes || "",
+        completed: Boolean(chore.completed)
+      };
+    }
   });
   const seed = {
     email: learnAccountEmail(),
@@ -2007,6 +2106,7 @@ function seedFamilyPrototypeState(vm) {
     manualGroceries,
     events,
     chores,
+    choreDetails,
     groceryChecked: {},
     feastPlan: {},
     google: { open: false, connected: false, email: learnAccountEmail(), last: "", layers: { lessons: true, terms: true, feasts: true, events: true, chores: false } }
@@ -2057,16 +2157,21 @@ function prototypeStateToFamilyPlanningPayload(vm, state) {
     }
   })();
   const dayLabelByKey = Object.fromEntries(seedDays.map((day) => [day.key, day.long || day.weekday || ""]));
+  const choreDetails = state.choreDetails || {};
   const chores = Object.entries(state.chores || {}).map(([key, title], index) => {
     const [assignee = "Everyone", dayKey = ""] = key.split("::");
+    const detail = choreDetails[key] || {};
     return {
-      id: `prototype_chore_${index}`,
-      title,
-      assignee,
-      day: dayLabelByKey[dayKey] || "",
-      timeOfDay: "Anytime",
-      notes: "",
-      completed: false
+      id: detail.id || `prototype_chore_${index}`,
+      title: detail.title || title,
+      assignee: detail.assignee || assignee,
+      cadence: detail.cadence || "weekly",
+      day: detail.day || dayLabelByKey[dayKey] || "",
+      dayOfMonth: detail.dayOfMonth || "",
+      quarterMonth: detail.quarterMonth || "",
+      timeOfDay: detail.timeOfDay || "Anytime",
+      notes: detail.notes || "",
+      completed: Boolean(detail.completed)
     };
   }).filter((chore) => chore.title);
   const pantryItems = (state.pantry || []).map((name, index) => ({
@@ -2682,28 +2787,31 @@ function renderAttendanceTracker(vm) {
   }).join("");
   const guidance = `<div class="learn-attendance-guidance"><strong>Attendance is optional.</strong><span>Texas homeschools do not need this tracker, but families in states that require attendance can keep a clean household log here.</span></div>`;
   return `
-    <section data-attendance-form class="learn-attendance-panel">
+    <section data-attendance-form class="learn-attendance-panel is-collapsed">
       <div class="learn-attendance-toolbar">
         <div>
           <small>Household Attendance</small>
           <h2>Weekly attendance log</h2>
+          <em data-attendance-status aria-live="polite">Attendance card minimized. Mark the week present or expand for details.</em>
         </div>
         <div class="learn-attendance-actions">
-          <button type="button" data-attendance-present-week>Mark Week Present</button>
+          <button type="button" data-attendance-present-week>Mark All Present</button>
+          <button type="button" data-attendance-toggle aria-expanded="false">Expand</button>
           <button type="button" data-attendance-save>Save Attendance</button>
         </div>
       </div>
-      ${guidance}
-      <div class="learn-attendance-grid" style="--attendance-cols:${dates.length};">
-        <div class="learn-attendance-head"><span></span>${head}</div>
-        ${rows}
-      </div>
-      <div class="learn-attendance-legend">
-        <span><b class="is-present">P</b> Present</span>
-        <span><b class="is-absent">A</b> Absent</span>
-        <span><b class="is-excused">E</b> Excused</span>
-        <span><b class="is-holiday">H</b> Holiday</span>
-        <em data-attendance-status aria-live="polite">Click a day to cycle its status.</em>
+      <div class="learn-attendance-body" data-attendance-body hidden>
+        ${guidance}
+        <div class="learn-attendance-grid" style="--attendance-cols:${dates.length};">
+          <div class="learn-attendance-head"><span></span>${head}</div>
+          ${rows}
+        </div>
+        <div class="learn-attendance-legend">
+          <span><b class="is-present">P</b> Present</span>
+          <span><b class="is-absent">A</b> Absent</span>
+          <span><b class="is-excused">E</b> Excused</span>
+          <span><b class="is-holiday">H</b> Holiday</span>
+        </div>
       </div>
     </section>`;
 }
@@ -2805,7 +2913,7 @@ function renderGrades(vm) {
         </div>
       </form>
 
-      ${panel("Transcript Readiness", `<div style="overflow:auto;"><table class="learn-grade-transcript-table"><thead><tr><th>Course</th><th>Subject</th><th>Level</th><th>Credit</th><th>Final</th></tr></thead><tbody>${transcriptRows}</tbody></table></div><div class="learn-grade-print-actions"><a href="/myagapay/learn/print">Open Print Center</a><button type="button" data-report-export="Report Card">Print Report Card</button><button type="button" data-report-export="Transcript">Print Transcript</button></div>`, { icon: "▤" })}
+      ${panel("Transcript Readiness", `<div style="overflow:auto;"><table class="learn-grade-transcript-table"><thead><tr><th>Course</th><th>Subject</th><th>Level</th><th>Credit</th><th>Final</th></tr></thead><tbody>${transcriptRows}</tbody></table></div><div class="learn-grade-print-actions"><a href="${learnSectionHref("print-center")}">Open Print Center</a><button type="button" data-report-export="Report Card">Print Report Card</button><button type="button" data-report-export="Transcript">Print Transcript</button></div>`, { icon: "▤" })}
     </section>
   `;
   return shell(vm, body);
@@ -3114,7 +3222,7 @@ function setupResourceChildPicker(index, children = [], selectedIds = []) {
 }
 
 function setupResourcePlanningCard(index, resource = {}, children = [], groupingMode = "forms") {
-  return `<details class="learn-weekly-plan-fields learn-resource-plan-fields" open><summary><span>Weekly chapters / lessons / pages</span><strong>${html(termWeekSummary(resource.scheduledWeeks || []))}</strong></summary><div class="learn-resource-plan-controls">${setupResourceWeekPicker(index, resource.scheduledWeeks || [])}${setupResourcePlanningModePicker(index, resource, children, groupingMode)}${setupResourceChildPicker(index, children, resource.childIds || [])}</div>${setupResourceWeeklyPlanFields(index, resource.weeklyPlans || [])}</details>`;
+  return `<details class="learn-weekly-plan-fields learn-resource-plan-fields"><summary><span>Weekly chapters / lessons / pages</span><strong>${html(termWeekSummary(resource.scheduledWeeks || []))}</strong></summary><div class="learn-resource-plan-controls">${setupResourceWeekPicker(index, resource.scheduledWeeks || [])}${setupResourcePlanningModePicker(index, resource, children, groupingMode)}${setupResourceChildPicker(index, children, resource.childIds || [])}</div>${setupResourceWeeklyPlanFields(index, resource.weeklyPlans || [])}</details>`;
 }
 
 function normalizeSetupResource(resource, subject = {}) {
@@ -3147,7 +3255,7 @@ function setupResourceList(resources = [], children = [], groupingMode = "forms"
   const entries = Array.isArray(resources) && resources.length ? resources : [{ title: "", scheduledWeeks: [] }];
   const normalised = entries.map((entry) => normalizeSetupResource(entry, subject));
   const rows = normalised.map((resource, index) => setupResourceRow(resource, index, children, groupingMode)).join("");
-  return `<div data-resource-list style="display:grid;gap:0;">${rows}<button type="button" data-add-resource style="justify-self:start;margin-top:4px;border:1px solid var(--line);background:var(--paper2);color:var(--ink);border-radius:9px;padding:6px 12px;font-family:inherit;font-size:13px;cursor:pointer;">+ Add resource</button></div>`;
+  return `<div data-resource-list class="learn-resource-list">${rows}<button type="button" data-add-resource>+ Add resource</button></div>`;
 }
 
 function setupWeeklyPlanFields(value = []) {
@@ -5654,6 +5762,34 @@ function wirePlanner(vm) {
     if (field) field.value = value || "";
   };
   const getModalValue = (name) => (familyForm?.querySelector(`[name="${CSS.escape(name)}"]`)?.value?.trim()) || "";
+  let activeChore = null;
+  const choreStorageKey = (chore = {}) => {
+    const dayKey = dayKeyForChore(chore, vm);
+    return dayKey ? `${chore.assignee || "Everyone"}::${dayKey}` : "";
+  };
+  const removeChoreRows = (chore = {}) => {
+    if (!familyForm) return;
+    familyForm.querySelectorAll('[data-setup-list="chores"] [data-setup-row="chores"]').forEach((row) => {
+      const sameId = chore.id && row.dataset.id === chore.id;
+      const sameDetails = !chore.id
+        && rowValue(row, "title") === (chore.title || "")
+        && rowValue(row, "assignee") === (chore.assignee || "Everyone")
+        && rowValue(row, "day") === (chore.day || "");
+      if (sameId || sameDetails) row.remove();
+    });
+  };
+  const removeChoreFromDraftState = (chore = {}) => {
+    const key = choreStorageKey(chore);
+    if (!key) return;
+    try {
+      const state = JSON.parse(localStorage.getItem("agapay.planner.v2") || "{}");
+      if (state.chores) delete state.chores[key];
+      if (state.choreDetails) delete state.choreDetails[key];
+      localStorage.setItem("agapay.planner.v2", JSON.stringify(state));
+    } catch {
+      // The hidden setup row removal is still enough for the backend save.
+    }
+  };
   const setMealValue = (date, slot, value) => {
     if (!date || !slot) return;
     let row = familyForm?.querySelector(`[data-setup-row="meals"][data-date="${CSS.escape(date)}"]`);
@@ -5763,20 +5899,47 @@ function wirePlanner(vm) {
     }
     const choreOpen = event.target.closest("[data-chore-open]");
     if (choreOpen) {
-      setModalValue("modalChore.title", "");
-      setModalValue("modalChore.assignee", choreOpen.dataset.assignee || "");
-      setModalValue("modalChore.cadence", "weekly");
-      setModalValue("modalChore.day", choreOpen.dataset.day || "");
-      setModalValue("modalChore.dayOfMonth", "");
-      setModalValue("modalChore.quarterMonth", "1");
-      setModalValue("modalChore.timeOfDay", "Anytime");
-      setModalValue("modalChore.notes", "");
+      const existing = choreOpen.dataset.choreExisting === "1";
+      activeChore = existing ? {
+        id: choreOpen.dataset.choreId || "",
+        title: choreOpen.dataset.choreTitle || "",
+        assignee: choreOpen.dataset.choreAssignee || choreOpen.dataset.assignee || "Everyone",
+        cadence: choreOpen.dataset.choreCadence || "weekly",
+        day: choreOpen.dataset.choreDay || choreOpen.dataset.day || "",
+        dayOfMonth: choreOpen.dataset.choreDayOfMonth || "",
+        quarterMonth: choreOpen.dataset.choreQuarterMonth || "1",
+        timeOfDay: choreOpen.dataset.choreTimeOfDay || "Anytime",
+        notes: choreOpen.dataset.choreNotes || ""
+      } : null;
+      setModalValue("modalChore.title", activeChore?.title || "");
+      setModalValue("modalChore.assignee", activeChore?.assignee || choreOpen.dataset.assignee || "Everyone");
+      setModalValue("modalChore.cadence", activeChore?.cadence || "weekly");
+      setModalValue("modalChore.day", activeChore?.day || choreOpen.dataset.day || "");
+      setModalValue("modalChore.dayOfMonth", activeChore?.dayOfMonth || "");
+      setModalValue("modalChore.quarterMonth", activeChore?.quarterMonth || "1");
+      setModalValue("modalChore.timeOfDay", activeChore?.timeOfDay || "Anytime");
+      setModalValue("modalChore.notes", activeChore?.notes || "");
+      const deleteButton = familyForm.querySelector("[data-chore-delete]");
+      if (deleteButton) deleteButton.hidden = !existing;
+      const title = familyForm.querySelector("[data-chore-modal-title]");
+      if (title) title.textContent = existing ? "Edit chore" : "Add chore";
       openFamilyModal("chore");
+      return;
+    }
+    if (event.target.closest("[data-chore-delete]")) {
+      if (activeChore) {
+        removeChoreRows(activeChore);
+        removeChoreFromDraftState(activeChore);
+      }
+      activeChore = null;
+      closeFamilyModals();
+      submitFamilyPlanner();
       return;
     }
     if (event.target.closest("[data-chore-save]")) {
       const list = familyForm.querySelector('[data-setup-list="chores"]');
       const entry = {
+        id: activeChore?.id || "",
         title: getModalValue("modalChore.title"),
         assignee: getModalValue("modalChore.assignee"),
         cadence: getModalValue("modalChore.cadence") || "weekly",
@@ -5788,8 +5951,33 @@ function wirePlanner(vm) {
       };
       if ((entry.title || entry.assignee) && list) {
         const payload = familyPlanningPayloadFromForm(familyForm);
-        list.insertAdjacentHTML("beforeend", choreSetupRow(entry, 0, { ...(payload.familyPlanning || {}), household: payload.household || {} }));
+        const planningForRow = {
+          ...(payload.familyPlanning || {}),
+          household: payload.household || {},
+          children: vm.familyPlanning?.children || []
+        };
+        if (activeChore) {
+          removeChoreRows(activeChore);
+          removeChoreFromDraftState(activeChore);
+        }
+        list.insertAdjacentHTML("beforeend", choreSetupRow(entry, 0, planningForRow));
+        try {
+          const dayKey = dayKeyForChore(entry, vm);
+          if (dayKey) {
+            const key = `${entry.assignee || "Everyone"}::${dayKey}`;
+            const state = JSON.parse(localStorage.getItem("agapay.planner.v2") || "{}");
+            state.chores = { ...(state.chores || {}), [key]: entry.title || "" };
+            state.choreDetails = {
+              ...(state.choreDetails || {}),
+              [key]: { ...entry, day: entry.day || plannerDayLabel(prototypeWeekDateMap(vm)[dayKey]).long }
+            };
+            localStorage.setItem("agapay.planner.v2", JSON.stringify(state));
+          }
+        } catch {
+          // Hidden setup rows still carry the chore if local planner state cannot be updated.
+        }
       }
+      activeChore = null;
       closeFamilyModals();
       submitFamilyPlanner();
       return;
@@ -6217,6 +6405,18 @@ function wireGrades(vm) {
     attendanceStatus.dataset.tone = tone;
   };
   attendanceForm?.addEventListener("click", (event) => {
+    const toggle = event.target.closest("[data-attendance-toggle]");
+    if (toggle) {
+      const body = attendanceForm.querySelector("[data-attendance-body]");
+      const expanded = toggle.getAttribute("aria-expanded") === "true";
+      const nextExpanded = !expanded;
+      toggle.setAttribute("aria-expanded", nextExpanded ? "true" : "false");
+      toggle.textContent = nextExpanded ? "Minimize" : "Expand";
+      if (body) body.hidden = !nextExpanded;
+      attendanceForm.classList.toggle("is-collapsed", !nextExpanded);
+      setAttendanceStatus(nextExpanded ? "Click a day to cycle its status." : "Attendance card minimized. Mark the week present or expand for details.");
+      return;
+    }
     const cell = event.target.closest("[data-attendance-cell]");
     if (!cell) return;
     const statuses = ["present", "absent", "excused", "holiday"];
@@ -6478,7 +6678,7 @@ async function mount() {
   if (pageKey === "dashboard") {
     const raw = await apiGet(`/api/learn/dashboard?calendar=${encodeURIComponent(calendar)}`);
     if (raw.setupCompleted === false) {
-      window.location.replace("/myagapay/learn/setup");
+      window.location.replace(learnSectionHref("onboarding"));
       return;
     }
     root.innerHTML = renderDashboard(toDashboardViewModel(raw));
@@ -6599,7 +6799,7 @@ document.addEventListener("click", async (event) => {
     localStorage.removeItem("agapayDonorProfile");
     localStorage.removeItem("agapayDonorEmail");
     localStorage.removeItem("agapay.learn.plan");
-    window.location.href = "/myagapay/login";
+    window.location.href = isOdysseyLearnContext() ? "/learn/odyssey/dashboard/login" : "/myagapay/login";
     return;
   }
   const googleSyncButton = event.target.closest("[data-learn-google-sync]");

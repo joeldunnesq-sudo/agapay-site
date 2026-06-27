@@ -1168,6 +1168,27 @@ body {
   min-height: 42px;
 }
 
+.learn-resource-list {
+  align-items: stretch;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.learn-resource-list > [data-add-resource] {
+  align-self: stretch;
+  background: linear-gradient(180deg, rgba(255, 252, 245, 0.7), rgba(248, 241, 227, 0.78));
+  border: 1px dashed rgba(181, 148, 47, 0.58);
+  border-radius: 12px;
+  color: var(--gold);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  min-height: 92px;
+  padding: 12px;
+}
+
 .learn-resource-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1180,24 +1201,6 @@ body {
   box-shadow: 0 1px 3px rgba(20,40,70,.04);
 }
 
-[data-resource-list] {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: stretch;
-}
-
-[data-resource-list] [data-resource-row] {
-  flex: 1 1 220px;
-  min-width: 0;
-}
-
-[data-resource-list] > [data-add-resource] {
-  align-self: end;
-  white-space: nowrap;
-  flex: 0 0 auto;
-}
-
 .learn-resource-card-plan {
   grid-column: 1 / -1;
   min-width: 0;
@@ -1205,12 +1208,23 @@ body {
 
 .learn-resource-plan-fields {
   background: rgba(255, 255, 255, 0.42);
+  min-width: 0;
 }
 
 .learn-resource-plan-fields summary strong {
   color: var(--ink);
   letter-spacing: 0;
   text-transform: none;
+}
+
+.learn-resource-plan-fields:not([open]) summary {
+  border-radius: 10px;
+}
+
+.learn-resource-plan-fields:not([open]) summary strong::after {
+  content: " · Expand";
+  color: var(--gold);
+  font-weight: 800;
 }
 
 .learn-resource-plan-controls {
@@ -2529,6 +2543,7 @@ body {
 .learn-family-modal-grid label:nth-last-child(-n+2) { grid-column: 1 / -1; }
 .learn-family-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
 .learn-family-modal-actions button { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); padding: 10px 15px; font-family: inherit; font-weight: 800; cursor: pointer; }
+.learn-family-modal-actions [data-chore-delete] { margin-right: auto; border-color: rgba(138, 43, 43, .35); color: #8a2b2b; }
 .learn-family-modal-actions button:last-child { border-color: var(--gold); background: var(--navy); color: #f3ead4; }
 
 @media (max-width: 900px) {
@@ -3110,6 +3125,23 @@ body {
   padding: 16px;
 }
 
+.learn-attendance-panel.is-collapsed {
+  gap: 0;
+}
+
+.learn-attendance-panel.is-collapsed .learn-attendance-toolbar {
+  border-bottom: 0;
+}
+
+.learn-attendance-body {
+  display: grid;
+  gap: 14px;
+}
+
+.learn-attendance-body[hidden] {
+  display: none;
+}
+
 .learn-attendance-toolbar {
   align-items: center;
   display: flex;
@@ -3131,6 +3163,25 @@ body {
   font-size: 27px;
   line-height: 1;
   margin: 4px 0 0;
+}
+
+.learn-attendance-toolbar em {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.35;
+  margin-top: 5px;
+}
+
+.learn-attendance-toolbar em[data-tone="success"] {
+  color: var(--olive);
+  font-weight: 800;
+}
+
+.learn-attendance-toolbar em[data-tone="error"] {
+  color: var(--burgundy);
+  font-weight: 800;
 }
 
 .learn-attendance-actions {
@@ -3156,7 +3207,7 @@ body {
   color: #fff;
 }
 
-.learn-attendance-actions button:first-child {
+.learn-attendance-actions button:not(:last-child) {
   background: var(--paper2);
   color: var(--ink);
 }
