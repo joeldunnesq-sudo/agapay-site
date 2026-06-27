@@ -568,8 +568,14 @@ export async function handleLearnFamilyPlanningSave(request, env) {
   if (!payload || typeof payload !== "object") return json({ ok: false, error: "Family planner data was invalid." }, { status: 400 });
   const saved = await saveLearnFamilyPlanning(env, request, payload);
   if (!saved.ok) return json({ ok: false, error: saved.error }, { status: saved.status || 500 });
+  const url = new URL(request.url);
   const repository = new SeedLearnRepository(saved.onboarding);
-  return json({ ok: true, savedAt: saved.setupSnapshot.savedAt, planner: repository.getPlanner({ calendarType: saved.setupSnapshot.preferences?.calendarType || "julian" }) });
+  return json({ ok: true, savedAt: saved.setupSnapshot.savedAt, planner: repository.getPlanner({
+    calendarType: requestedCalendarType(url) || saved.setupSnapshot.preferences?.calendarType || "julian",
+    view: url.searchParams.get("view") || "week",
+    month: url.searchParams.get("month") || "",
+    civilDate: url.searchParams.get("date") || todayIso(env)
+  }) });
 }
 
 export async function handleLearnGoogleCalendarConnect(request, env) {

@@ -648,7 +648,7 @@ function buildPlannerWeek(seed, calendarType) {
 }
 
 function buildPlannerMonth(seed, calendarType, month = "") {
-  const monthKey = /^\d{4}-\d{2}$/.test(String(month || "")) ? month : monthKeyFromIso(seed.term?.startDate || new Date().toISOString());
+  const monthKey = /^\d{4}-\d{2}$/.test(String(month || "")) ? month : monthKeyFromIso(new Date().toISOString());
   const [year, monthNumber] = monthKey.split("-").map(Number);
   const first = new Date(Date.UTC(year, monthNumber - 1, 1));
   const last = new Date(Date.UTC(year, monthNumber, 0));

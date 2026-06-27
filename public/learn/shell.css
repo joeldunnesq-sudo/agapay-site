@@ -2509,6 +2509,10 @@ body {
 .learn-family-month-board p, .learn-family-month-board em { margin: 0; color: var(--muted); font-size: 13px; }
 .learn-family-month-board article button { margin-top: auto; border: 1px solid var(--goldsoft); border-radius: 9px; background: var(--paper2); color: var(--ink); padding: 7px 9px; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
 .learn-family-month-board article.is-fast button { border-color: rgba(110,47,42,.28); color: var(--burgundy); }
+.learn-family-month-chore-list { display: grid; gap: 5px; }
+.learn-family-month-chore-list span { display: grid; gap: 2px; border: 1px solid rgba(181,148,47,.22); border-radius: 9px; background: rgba(255,250,240,.72); padding: 6px 7px; }
+.learn-family-month-chore-list strong { color: var(--ink); font-size: 12px; line-height: 1.15; }
+.learn-family-month-chore-list small { color: var(--muted); font-size: 10.5px; line-height: 1.25; }
 .learn-family-fasting-legend { display: grid; gap: 8px; border: 1px solid rgba(181,148,47,.28); border-radius: 16px; background: var(--paper); padding: 14px 16px; box-shadow: 0 1px 3px rgba(20,40,70,.04); }
 .learn-family-fasting-legend span { display: flex; align-items: center; gap: 8px; color: #33405a; font-size: 13px; font-weight: 700; }
 .learn-family-fasting-legend i { width: 16px; height: 16px; flex: none; border: 1px solid var(--line); border-radius: 5px; }
