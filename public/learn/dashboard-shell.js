@@ -2879,19 +2879,31 @@ function setupSourceInput(label, name, value = "") {
   return `<label>${html(label)}<input type="text" name="${html(name)}" value="${html(resolved)}" inputmode="url" placeholder="Book title, source note, or https://..." />${link}</label>`;
 }
 
+function setupResourceWeekPicker(index, scheduledWeeks = [], totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
+  const selected = scheduledTermWeeks(scheduledWeeks, totalWeeks);
+  const allWeeks = selected.length === totalWeeks;
+  const summary = allWeeks ? "All weeks" : termWeekSummary(selected, totalWeeks);
+  const name = `resources.${index}.scheduledWeeks`;
+  return `<details class="learn-day-picker learn-term-week-picker learn-resource-week-picker" data-resource-week-picker="${index}"><summary><span>Weeks</span><strong data-term-week-summary>${html(summary)}</strong></summary><div class="learn-day-picker-menu" style="grid-template-columns:repeat(4,minmax(54px,1fr));">${Array.from({ length: totalWeeks }, (_, i) => i + 1).map((week) => `<label><input type="checkbox" data-term-week-choice value="${week}" ${selected.includes(week) ? "checked" : ""}>W${week}</label>`).join("")}</div><div style="display:flex;gap:8px;padding:8px 10px 2px;"><button type="button" data-term-weeks-all class="learn-add-button" style="padding:6px 10px;">All</button><button type="button" data-term-weeks-odd class="learn-add-button" style="padding:6px 10px;">Odd</button><button type="button" data-term-weeks-even class="learn-add-button" style="padding:6px 10px;">Even</button></div><input type="hidden" name="${html(name)}" value="${html(selected.join(","))}"></details>`;
+}
+
 function setupResourceList(resources = []) {
-  const entries = Array.isArray(resources) && resources.length ? resources : [""];
-  const rows = entries.map((value, index) => {
-    const resolved = String(value || "").trim();
+  // resources: array of {title, scheduledWeeks} objects, or plain strings (legacy)
+  const entries = Array.isArray(resources) && resources.length ? resources : [{ title: "", scheduledWeeks: [] }];
+  const normalised = entries.map((r) =>
+    typeof r === "string" ? { title: r, scheduledWeeks: [] } : { title: String(r.title || r.resource || ""), scheduledWeeks: r.scheduledWeeks || [] }
+  );
+  const rows = normalised.map((r, index) => {
+    const resolved = String(r.title || "").trim();
     const link = /^https?:\/\//i.test(resolved)
-      ? `<a href="${html(resolved)}" target="_blank" rel="noopener noreferrer" class="learn-source-link" style="font-size:12px;color:var(--gold);white-space:nowrap;">Open ↗</a>`
+      ? `<a href="${html(resolved)}" target="_blank" rel="noopener noreferrer" class="learn-source-link" style="font-size:12px;color:var(--gold);white-space:nowrap;align-self:end;padding-bottom:11px;">Open ↗</a>`
       : "";
     const removeBtn = index > 0
       ? `<button type="button" data-remove-resource aria-label="Remove resource" style="align-self:end;flex:0 0 auto;border:1px solid var(--line);background:var(--paper);color:var(--burgundy);border-radius:9px;padding:9px 10px;font-family:inherit;line-height:1;">×</button>`
       : "";
-    return `<div data-resource-row style="display:flex;gap:6px;align-items:end;"><label style="flex:1;min-width:0;">${index === 0 ? "Book / source / resource" : `Resource ${index + 1}`}<input type="text" name="resource.${index}" value="${html(resolved)}" inputmode="url" placeholder="Book title, source note, or https://..." style="width:100%;" /></label>${link}${removeBtn}</div>`;
+    return `<div data-resource-row="${index}" style="display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:end;border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:10px;margin-bottom:4px;"><label style="grid-column:1;min-width:0;">${index === 0 ? "Book / source / resource" : `Resource ${index + 1}`}<div style="display:flex;gap:6px;align-items:center;margin-top:4px;"><input type="text" name="resources.${index}.title" value="${html(resolved)}" inputmode="url" placeholder="Book title, source note, or https://..." style="flex:1;min-width:0;" />${link}</div></label>${removeBtn}<div style="grid-column:1 / -1;">${setupResourceWeekPicker(index, r.scheduledWeeks)}</div></div>`;
   }).join("");
-  return `<div data-resource-list style="display:grid;gap:6px;"><div data-resource-rows style="display:grid;gap:6px;">${rows}</div><button type="button" data-add-resource style="justify-self:start;border:1px solid var(--line);background:var(--paper2);color:var(--ink);border-radius:9px;padding:6px 12px;font-family:inherit;font-size:13px;cursor:pointer;">+ Add resource</button><input type="hidden" name="resource" value="${html(entries[0] || "")}" /><input type="hidden" name="resources" value="${html(entries.join("|"))}" /></div>`;
+  return `<div data-resource-list style="display:grid;gap:0;">${rows}<button type="button" data-add-resource style="justify-self:start;margin-top:4px;border:1px solid var(--line);background:var(--paper2);color:var(--ink);border-radius:9px;padding:6px 12px;font-family:inherit;font-size:13px;cursor:pointer;">+ Add resource</button></div>`;
 }
 
 function setupWeeklyPlanFields(value = []) {
@@ -2963,7 +2975,7 @@ function childSetupRow(child = {}, groupingMode = "forms") {
 
 function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms", tileMinutes = "") {
   const minutes = subject.minutes || tileMinutes || "20";
-  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main">${setupInput("Subject / skill", "title", subject.title || "")}${setupResourceList(subject.resources || (subject.resource ? [subject.resource] : []))}${setupSelect("Schedule type", "weeklyFrequency", subject.weeklyFrequency === "1x" ? "weekly" : subject.weeklyFrequency || subject.cadenceLabel || "daily", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutes" value="${html(minutes)}" /><input type="hidden" name="subjectType" value="${html(subject.subjectType || subject.type || "custom")}" /><input type="hidden" name="instructionMode" value="${html(subject.instructionMode || "parent-led")}" /><input type="hidden" name="resourceType" value="${html(subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(subject.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(subject.priorityLevel || "important")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupPlanningModePicker(subject, children, groupingMode)}${setupTermWeekPicker(subject.scheduledWeeks)}${setupWeeklyPlanFields(subject.weeklyPlans)}${setupMultiChildPicker(children, subject.childIds || (subject.childId ? [subject.childId] : []))}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main">${setupInput("Subject / skill", "title", subject.title || "")}${setupResourceList(subject.resources?.length ? subject.resources : (subject.resource ? [{ title: subject.resource, scheduledWeeks: [] }] : []))}${setupSelect("Schedule type", "weeklyFrequency", subject.weeklyFrequency === "1x" ? "weekly" : subject.weeklyFrequency || subject.cadenceLabel || "daily", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutes" value="${html(minutes)}" /><input type="hidden" name="subjectType" value="${html(subject.subjectType || subject.type || "custom")}" /><input type="hidden" name="instructionMode" value="${html(subject.instructionMode || "parent-led")}" /><input type="hidden" name="resourceType" value="${html(subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(subject.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(subject.priorityLevel || "important")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupPlanningModePicker(subject, children, groupingMode)}${setupTermWeekPicker(subject.scheduledWeeks)}${setupWeeklyPlanFields(subject.weeklyPlans)}${setupMultiChildPicker(children, subject.childIds || (subject.childId ? [subject.childId] : []))}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function bookSetupRow(book = {}, terms = [], currentTermId = "") {
@@ -4193,13 +4205,20 @@ function rowWeeklyPlans(row) {
 }
 
 function rowResources(row) {
-  const inputs = [...row.querySelectorAll("[data-resource-list] input[name^='resource.']")];
-  if (!inputs.length) {
-    // Fall back to legacy single resource field
-    const legacy = rowValue(row, "resource");
-    return legacy ? [legacy] : [];
+  // Read resources.N.title / resources.N.scheduledWeeks from [data-resource-list]
+  const resourceRows = [...row.querySelectorAll("[data-resource-list] [data-resource-row]")];
+  if (resourceRows.length) {
+    return resourceRows.map((resourceRow, i) => {
+      const titleInput = resourceRow.querySelector(`[name="resources.${i}.title"]`) || resourceRow.querySelector("input[type='text']");
+      const weeksInput = resourceRow.querySelector(`[name="resources.${i}.scheduledWeeks"]`);
+      const title = titleInput?.value?.trim() || "";
+      const scheduledWeeks = scheduledTermWeeks(weeksInput?.value || "");
+      return { title, scheduledWeeks };
+    }).filter((r) => r.title);
   }
-  return inputs.map((input) => input.value.trim()).filter(Boolean);
+  // Legacy fallback: single resource field
+  const legacy = rowValue(row, "resource");
+  return legacy ? [{ title: legacy, scheduledWeeks: [] }] : [];
 }
 
 function rowTileMinutes(row) {
@@ -4440,7 +4459,7 @@ function setupPayloadFromForm(form) {
         formLabel: rowValue(row, "formLabel"),
         formLabels: rowValue(row, "formLabels").split(",").map((v) => v.trim()).filter(Boolean),
         gradeLabel: rowValue(row, "gradeLabel"),
-        resource: rowResources(row)[0] || rowValue(row, "resource"),
+        resource: rowResources(row)[0]?.title || rowValue(row, "resource"),
         resources: rowResources(row),
         resourceType: rowValue(row, "resourceType"),
         minutes: rowTileMinutes(row),
@@ -4781,7 +4800,8 @@ function wireSetupPage() {
     if (termWeekChoice) {
       const picker = termWeekChoice.closest(".learn-term-week-picker");
       const selected = [...picker.querySelectorAll("[data-term-week-choice]:checked")].map((input) => Number(input.value));
-      picker.querySelector('[name="scheduledWeeks"]').value = selected.join(",");
+      const hiddenField = picker.querySelector("input[type='hidden']");
+      if (hiddenField) hiddenField.value = selected.join(",");
       picker.querySelector("[data-term-week-summary]").textContent = selected.length ? termWeekSummary(selected) : "Choose weeks";
       return;
     }
@@ -4843,32 +4863,35 @@ function wireSetupPage() {
     if (addResource) {
       const list = addResource.closest("[data-resource-list]");
       if (!list) return;
-      const rows = list.querySelector("[data-resource-rows]");
-      const index = rows.querySelectorAll("[data-resource-row]").length;
-      const newRow = document.createElement("div");
-      newRow.dataset.resourceRow = "";
-      newRow.style.cssText = "display:flex;gap:6px;align-items:end;";
-      newRow.innerHTML = `<label style="flex:1;min-width:0;">Resource ${index + 1}<input type="text" name="resource.${index}" value="" inputmode="url" placeholder="Book title, source note, or https://..." style="width:100%;" /></label><button type="button" data-remove-resource aria-label="Remove resource" style="align-self:end;flex:0 0 auto;border:1px solid var(--line);background:var(--paper);color:var(--burgundy);border-radius:9px;padding:9px 10px;font-family:inherit;line-height:1;">×</button>`;
-      rows.appendChild(newRow);
-      newRow.querySelector("input")?.focus();
+      const existingRows = list.querySelectorAll("[data-resource-row]");
+      const index = existingRows.length;
+      const newRowHtml = `<div data-resource-row="${index}" style="display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:end;border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:10px;margin-bottom:4px;"><label style="grid-column:1;min-width:0;">Resource ${index + 1}<div style="display:flex;gap:6px;align-items:center;margin-top:4px;"><input type="text" name="resources.${index}.title" value="" inputmode="url" placeholder="Book title, source note, or https://..." style="flex:1;min-width:0;" /></div></label><button type="button" data-remove-resource aria-label="Remove resource" style="align-self:end;flex:0 0 auto;border:1px solid var(--line);background:var(--paper);color:var(--burgundy);border-radius:9px;padding:9px 10px;font-family:inherit;line-height:1;">×</button><div style="grid-column:1 / -1;">${setupResourceWeekPicker(index, [])}</div></div>`;
+      addResource.insertAdjacentHTML("beforebegin", newRowHtml);
+      list.querySelector(`[data-resource-row="${index}"] input[type="text"]`)?.focus();
       return;
     }
     const removeResource = event.target.closest("[data-remove-resource]");
     if (removeResource) {
       const list = removeResource.closest("[data-resource-list]");
-      removeResource.closest("[data-resource-row]")?.remove();
+      const removedRow = removeResource.closest("[data-resource-row]");
+      removedRow?.remove();
+      // Re-index remaining rows
       if (list) {
         list.querySelectorAll("[data-resource-row]").forEach((row, i) => {
-          const input = row.querySelector("input[type='text']");
+          row.dataset.resourceRow = i;
+          const titleInput = row.querySelector("input[type='text']");
+          if (titleInput) titleInput.name = `resources.${i}.title`;
+          const weeksInput = row.querySelector("input[type='hidden'][name^='resources.']");
+          if (weeksInput) weeksInput.name = `resources.${i}.scheduledWeeks`;
+          const weekPicker = row.querySelector("[data-resource-week-picker]");
+          if (weekPicker) weekPicker.dataset.resourceWeekPicker = i;
+          // Update label text for rows after the first
           const label = row.querySelector("label");
-          if (input) input.name = `resource.${i}`;
-          if (label && i > 0) label.firstChild.textContent = `Resource ${i + 1}`;
+          if (label && i > 0) {
+            const labelText = label.firstChild;
+            if (labelText?.nodeType === Node.TEXT_NODE) labelText.textContent = `Resource ${i + 1}`;
+          }
         });
-        const firstInput = list.querySelector("input[name='resource.0']");
-        const hiddenFirst = list.querySelector('[name="resource"]');
-        const hiddenAll = list.querySelector('[name="resources"]');
-        if (hiddenFirst) hiddenFirst.value = firstInput?.value || "";
-        if (hiddenAll) hiddenAll.value = [...list.querySelectorAll("input[name^='resource.']")].map((i) => i.value.trim()).filter(Boolean).join("|");
       }
       return;
     }
@@ -4881,7 +4904,8 @@ function wireSetupPage() {
         input.checked = mode === "all" || (mode === "odd" ? week % 2 === 1 : week % 2 === 0);
       });
       const selected = [...picker.querySelectorAll("[data-term-week-choice]:checked")].map((input) => Number(input.value));
-      picker.querySelector('[name="scheduledWeeks"]').value = selected.join(",");
+      const hiddenField = picker.querySelector("input[type='hidden']");
+      if (hiddenField) hiddenField.value = selected.join(",");
       picker.querySelector("[data-term-week-summary]").textContent = termWeekSummary(selected);
       return;
     }
