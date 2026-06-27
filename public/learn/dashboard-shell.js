@@ -121,6 +121,24 @@ function bar(value, color = "var(--gold)") {
   return `<span style="display:block;height:6px;border-radius:99px;background:#e9dfc7;overflow:hidden;"><span style="display:block;height:100%;width:${Number(value) || 0}%;background:${color};border-radius:99px;"></span></span>`;
 }
 
+function progressEditor(item = {}, kind = "book", options = {}) {
+  const id = String(item.id || "");
+  const value = Math.max(0, Math.min(100, Number(item.progress) || 0));
+  if (!id) {
+    return `${bar(value, options.color || "var(--gold)")}<small style="display:block;color:var(--gold);font-weight:700;margin-top:4px;">${html(value)}% ${html(options.suffix || "complete")}</small>`;
+  }
+  return `
+    <div data-progress-editor data-progress-kind="${html(kind)}" data-progress-id="${html(id)}" style="display:grid;gap:7px;margin-top:8px;">
+      ${bar(value, options.color || "var(--gold)")}
+      <div style="display:grid;grid-template-columns:1fr 58px auto;gap:8px;align-items:center;">
+        <input data-progress-range type="range" min="0" max="100" step="5" value="${html(value)}" aria-label="${html(options.label || "Progress")}" style="width:100%;accent-color:var(--gold);" />
+        <input data-progress-number type="number" min="0" max="100" step="5" value="${html(value)}" aria-label="${html(options.label || "Progress percent")}" style="width:58px;border:1px solid var(--line);border-radius:8px;background:var(--paper2);color:var(--ink);font:inherit;font-size:12px;padding:7px 6px;" />
+        <button type="button" data-progress-save style="border:1px solid var(--gold);background:var(--navy);color:#f3ead4;border-radius:8px;padding:8px 10px;font-family:inherit;font-size:12px;font-weight:800;white-space:nowrap;">Save</button>
+      </div>
+      <small data-progress-status style="min-height:15px;color:var(--muted);font-size:11px;">${html(value)}% ${html(options.suffix || "complete")}</small>
+    </div>`;
+}
+
 function emptyState(label) {
   return `<div style="padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-style:italic;background:rgba(255,255,255,.22);">${html(label)}</div>`;
 }
@@ -228,11 +246,6 @@ function pageIntro(vm) {
       <div class="learn-page-intro-quote">
         <span aria-hidden="true">“</span>
         <p>${html(meta.quote)} <strong>${html(meta.ref)}</strong></p>
-      </div>
-      <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(181,148,47,.2);">
-        <button type="button" data-grace-mode="full" style="border:1px solid ${currentMode === 'full' ? 'var(--navy)' : 'rgba(181,148,47,.3)'};border-radius:9px;background:${currentMode === 'full' ? 'rgba(6,21,34,.06)' : 'transparent'};color:${currentMode === 'full' ? 'var(--navy)' : 'var(--muted)'};padding:7px 14px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:${currentMode === 'full' ? '700' : '400'};">
-          ${currentMode === 'full' ? '✓ Full plan active — Grace Mode off' : 'Return to full plan — no Grace Mode'}
-        </button>
       </div>
     </section>
   `;
@@ -627,29 +640,29 @@ function renderGraceModePanel(vm) {
   const currentMode = vm.graceMode?.active ? vm.graceMode.mode || "light" : "full";
   const modes = [
     {
+      id: "full",
+      title: "Full Rhythm",
+      subtitle: "Keep the complete plan for an ordinary, steady week.",
+      detail: "Every scheduled subject, book, and enrichment block stays at its planned time."
+    },
+    {
       id: "light",
-      title: "Light",
-      subtitle: "Keep the essentials and soften the rest.",
-      detail: "Protects prayer, readings, catechesis, and gentle family-based learning while reducing lower-priority lessons."
+      title: "Medium Day",
+      subtitle: "Cap the day without shrinking the whole plan.",
+      detail: "Each child keeps up to 4 ranked subjects. Household enrichment keeps up to 3 blocks. Lower-ranked work moves to reserve."
     },
     {
-      id: "minimum",
-      title: "Minimum",
+      id: "minimum viable",
+      title: "Light Day",
       subtitle: "A faithful tiny plan for hard days.",
-      detail: "Keeps the smallest meaningful rhythm: prayer, one shared learning touchpoint, and the next right thing."
-    },
-    {
-      id: "feast only",
-      title: "Feast Only",
-      subtitle: "Let the Church year carry the day.",
-      detail: "Centers the feast, readings, prayers, and family worship when schoolwork should yield to holy time."
+      detail: "Each child keeps up to 2 top-ranked subjects. Household enrichment keeps 1 block. Kept work becomes a short touchpoint."
     }
   ];
   return `
     <section data-grace-mode-panel style="background:linear-gradient(135deg,#fffaf0 0%,#f7edd6 100%);border:1px solid rgba(181,148,47,.34);border-radius:16px;padding:18px 20px;box-shadow:0 1px 3px rgba(20,40,70,.05);">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
         <div>
-          <div class="learn-eyebrow">Grace Mode</div>
+          <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:700;text-transform:uppercase;">Grace Mode</div>
           <h2 style="font-family:'Cormorant Garamond',serif;font-size:30px;line-height:1.05;margin:4px 0 4px;color:var(--ink);">Choose today's household rhythm.</h2>
           <p style="margin:0;color:#4c5870;line-height:1.45;max-width:720px;">Adjust the day without abandoning the plan. AGAPAY keeps what matters most and gently moves the rest into reserve.</p>
         </div>
@@ -678,10 +691,9 @@ function renderTermProgressPanel(vm) {
   return `
     <section style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;grid-template-columns:minmax(220px,.8fr) 1fr;gap:18px;align-items:center;box-shadow:0 1px 3px rgba(20,40,70,.04);">
       <div>
-        <div class="learn-eyebrow">Term at a Glance</div>
+        <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:700;text-transform:uppercase;">Current Term</div>
         <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1.05;margin:5px 0 4px;color:var(--ink);">${html(term.label || "Current Term")}</h2>
         <p style="margin:0;color:var(--muted);line-height:1.4;">${term.currentWeek && term.totalWeeks ? `Week ${html(term.currentWeek)} of ${html(term.totalWeeks)}` : "Set term dates in Setup"}${term.dateRange ? ` · ${html(term.dateRange)}` : ""}</p>
-        ${term.description ? `<p style="margin:10px 0 0;font-size:14px;line-height:1.55;color:var(--ink);">${html(term.description)}</p>` : ""}
       </div>
       <div>
         <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:8px;color:#33405a;font-size:13px;"><span>Term progress</span><strong>${html(progress)}%</strong></div>
@@ -696,34 +708,30 @@ function renderTodayLearnContext(vm) {
   const progress = Number(term.percent || 0);
   const currentMode = vm.graceMode?.active ? vm.graceMode.mode || "light" : "full";
   const modes = [
-    { id: "light", title: "Light", detail: "Keep essentials and soften lower-priority work." },
-    { id: "minimum", title: "Minimum", detail: "Prayer, one shared touchpoint, and the next right thing." },
-    { id: "feast only", title: "Feast Only", detail: "Church rhythm and feast celebration — everything academic steps aside." }
+    { id: "full", title: "Full", detail: "Run every scheduled item as planned." },
+    { id: "light", title: "Medium", detail: "Keep up to 4 ranked child subjects; reserve the rest." },
+    { id: "minimum viable", title: "Light", detail: "Keep up to 2 top-ranked child subjects as short touchpoints." }
   ];
   return `
     <div style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:12px;margin-top:18px;width:100%;">
       <section style="border:1px solid var(--line);border-radius:14px;background:rgba(255,252,245,.72);padding:14px;">
-        <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:800;text-transform:uppercase;">Term at a Glance</div>
+        <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:800;text-transform:uppercase;">Current Term</div>
         <h3 style="font-family:'Cormorant Garamond',serif;font-size:25px;line-height:1.05;margin:5px 0 4px;color:var(--ink);">${html(term.label || "Current Term")}</h3>
         <p style="margin:0 0 10px;color:var(--muted);line-height:1.35;">${term.currentWeek && term.totalWeeks ? `Week ${html(term.currentWeek)} of ${html(term.totalWeeks)}` : "Set term dates in Setup"}${term.dateRange ? ` · ${html(term.dateRange)}` : ""}</p>
-        ${term.description ? `<p style="margin:-2px 0 10px;font-size:13px;line-height:1.5;color:var(--ink);">${html(term.description)}</p>` : ""}
         <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:7px;color:#33405a;font-size:13px;"><span>Term progress</span><strong>${html(progress)}%</strong></div>
         ${bar(progress, "var(--gold)")}
       </section>
       <section style="border:1px solid rgba(181,148,47,.34);border-radius:14px;background:linear-gradient(135deg,#fffaf0 0%,#f7edd6 100%);padding:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
           <span><span style="display:block;color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:800;text-transform:uppercase;">Grace Mode</span><strong style="font-family:'Cormorant Garamond',serif;font-size:25px;">Today’s rhythm</strong></span>
-          <span data-grace-mode-status style="color:var(--muted);font-size:12px;min-height:18px;">${vm.graceMode?.active ? "" : "Full plan · no Grace Mode"}</span>
+          <span data-grace-mode-status style="color:var(--muted);font-size:12px;min-height:18px;"></span>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(100px,1fr));gap:8px;">
           ${modes.map((mode) => {
             const active = mode.id === currentMode;
             return `<button type="button" data-grace-mode="${html(mode.id)}" aria-pressed="${active ? "true" : "false"}" title="${html(mode.detail)}" style="border:1px solid ${active ? "var(--gold)" : "var(--line)"};border-radius:11px;background:${active ? "var(--navy)" : "rgba(255,255,255,.62)"};color:${active ? "#fffaf0" : "var(--ink)"};padding:10px;text-align:left;cursor:pointer;font-family:inherit;min-height:84px;"><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:20px;line-height:1;">${html(mode.title)}</strong><small style="display:block;margin-top:5px;line-height:1.25;color:${active ? "rgba(255,250,240,.82)" : "var(--muted)"};">${html(mode.detail)}</small></button>`;
           }).join("")}
         </div>
-        <button type="button" data-grace-mode="full" style="margin-top:8px;width:100%;border:1px solid ${currentMode === 'full' ? 'var(--navy)' : 'var(--line)'};border-radius:9px;background:${currentMode === 'full' ? 'rgba(6,21,34,.06)' : 'transparent'};color:var(--muted);padding:7px 10px;text-align:center;cursor:pointer;font-family:inherit;font-size:13px;">
-          ${currentMode === 'full' ? '✓ Full plan — no Grace Mode active' : 'Return to full plan'}
-        </button>
       </section>
     </div>
   `;
@@ -770,19 +778,10 @@ function mealForDate(vm, date) {
 }
 
 function choresForDate(vm, date) {
-  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T12:00:00`) : new Date();
-  const label = plannerDayLabel(date).long;
-  const dayOfMonth = parsed.getDate();
-  const quarterSlot = ((parsed.getMonth() % 3) + 1).toString();
-  return (vm.familyPlanning?.chores || []).filter((chore) => {
-    const cadence = choreCadence(chore);
-    const day = String(chore.day || "").trim();
-    const choreDay = Number(chore.dayOfMonth || 0);
-    if (cadence === "daily") return true;
-    if (cadence === "monthly") return !choreDay || choreDay === dayOfMonth;
-    if (cadence === "quarterly") return (!chore.quarterMonth || String(chore.quarterMonth) === quarterSlot) && (!choreDay || choreDay === dayOfMonth);
-    return !day || day === "Any Day" || day === label;
-  });
+  return (vm.familyPlanning?.chores || []).filter((chore) => choreDueOnDay(chore, {
+    date,
+    long: plannerDayLabel(date).long
+  }));
 }
 
 function renderDesignedLessonList(assignments, emptyMessage) {
@@ -801,8 +800,8 @@ function renderDashboardDesignedLessons(vm) {
   const assignments = designedAssignmentsForDate(vm, date);
   const dayHref = `/myagapay/learn/planner?view=day&date=${encodeURIComponent(date)}`;
   return `
-    <div class="learn-card">
-      <div class="learn-section-head">
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
         <span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:16px;">▦</span><span style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">TODAY'S DESIGNED LESSONS</span></span>
         <a href="${html(dayHref)}" style="color:var(--gold);font-size:12px;font-weight:800;text-decoration:none;">Open day</a>
       </div>
@@ -844,7 +843,7 @@ function renderDashboardFamilyCards(vm) {
       </section>
       <section class="learn-dashboard-family-card">
         <div><small>CHORES</small><h3>Household Chores</h3></div>
-        ${chores.length ? `<div class="learn-dashboard-mini-list">${chores.map((chore) => `<span><strong>${html(chore.title || "Chore")}</strong><small>${html([chore.assignee, choreScheduleLabel(chore), chore.timeOfDay, chore.notes].filter(Boolean).join(" · "))}</small></span>`).join("")}</div>` : emptyState("Add chores in Planner > Chores.")}
+        ${chores.length ? `<div class="learn-dashboard-mini-list">${chores.map((chore) => `<span><strong>${html(chore.title || "Chore")}</strong><small>${html([chore.assignee, choreScheduleLabel(chore), chore.notes].filter(Boolean).join(" · "))}</small></span>`).join("")}</div>` : emptyState("Add chores in Planner > Chores.")}
       </section>
     </div>
   `;
@@ -962,7 +961,7 @@ function renderDashboard(vm) {
             <span style="width:34px;height:34px;border-radius:50%;background:${col.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none;">${html(col.initial)}</span>
             <div style="line-height:1.15;min-width:0;">
               <span style="display:block;font-size:10px;letter-spacing:.12em;color:var(--gold);font-weight:600;">${html(col.tag)}</span>
-              <span style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(col.name)} <span class="learn-muted-sm">• Age ${html(col.age)}</span></span>
+              <span style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(col.name)} <span style="color:var(--muted);font-size:13px;">• Age ${html(col.age)}</span></span>
             </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;">
@@ -988,37 +987,46 @@ function renderDashboard(vm) {
     <section data-screen-label="Dashboard" style="display:flex;flex-direction:column;gap:22px;">
 
       <!-- Today in the Church -->
-      <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;gap:24px;box-shadow:0 1px 3px rgba(20,40,70,.04);flex-wrap:wrap;">
-        ${churchIconPanel}
-        <div class="learn-today-main">
-          <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">${html(today.kicker)}</div>
-          <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;color:var(--ink);line-height:1.1;">${html(displayedSaintTitle)}</div>
-          <div class="learn-today-meta-grid">
-            <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">▣</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">LITURGICAL DATE</span><span style="font-size:16px;display:block;">${html(today.liturgicalDateLabel)}</span>${today.annoMundiLabel ? `<span style="color:var(--muted);font-size:13px;font-style:italic;">${html(today.annoMundiLabel)}</span>` : ""}</span></div>
-            <div style="display:flex;flex-direction:column;gap:12px;">
-              <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">✥</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">TONE OF THE WEEK</span><span style="font-size:16px;">${html(today.toneLabel)}</span></span></div>
-              <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">♙</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">FASTING RULE</span><span style="font-size:16px;display:block;">${html(today.fastingRule)}</span><span style="color:var(--muted);font-size:13px;font-style:italic;">${html(today.fastingNote)}</span></span></div>
+      <div data-church-card style="background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 3px rgba(20,40,70,.04);overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);background:rgba(255,250,240,.72);">
+          <span style="display:flex;align-items:center;gap:8px;"><span style="color:var(--gold);font-size:15px;">☩</span><span style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:800;text-transform:uppercase;">Today in the Church</span></span>
+          <button type="button" data-church-toggle aria-expanded="true" aria-controls="learn-church-body" style="border:none;background:none;cursor:pointer;color:var(--muted);font-family:inherit;font-size:12px;display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:6px;" title="Minimize or expand the Church calendar card">
+            <span data-church-toggle-label>Minimize</span>
+            <span data-church-toggle-icon style="font-size:10px;">▲</span>
+          </button>
+        </div>
+        <div id="learn-church-body" data-church-body style="padding:22px;display:flex;gap:24px;flex-wrap:wrap;">
+          ${churchIconPanel}
+          <div class="learn-today-main">
+            <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">${html(today.kicker)}</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;color:var(--ink);line-height:1.1;">${html(displayedSaintTitle)}</div>
+            <div class="learn-today-meta-grid">
+              <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">▣</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">LITURGICAL DATE</span><span style="font-size:16px;display:block;">${html(today.liturgicalDateLabel)}</span>${today.annoMundiLabel ? `<span style="color:var(--muted);font-size:13px;font-style:italic;">${html(today.annoMundiLabel)}</span>` : ""}</span></div>
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">✥</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">TONE OF THE WEEK</span><span style="font-size:16px;">${html(today.toneLabel)}</span></span></div>
+                <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:17px;margin-top:2px;">♙</span><span><span style="display:block;color:var(--gold);font-size:10.5px;letter-spacing:.13em;font-weight:600;">FASTING RULE</span><span style="font-size:16px;display:block;">${html(today.fastingRule)}</span><span style="color:var(--muted);font-size:13px;font-style:italic;">${html(today.fastingNote)}</span></span></div>
+              </div>
+              <div class="learn-today-readings">
+                ${readingsCallout}
+              </div>
             </div>
-            <div class="learn-today-readings">
-              ${readingsCallout}
-            </div>
+            ${saintCard}
           </div>
-          ${saintCard}
+          <div class="learn-today-hymns">
+            <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:600;">${html(today.troparionLabel)}</div>
+            <p style="margin:6px 0 16px;font-size:15.5px;line-height:1.5;color:#33405a;">${html(today.troparionText)}</p>
+            <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:600;">${html(today.kontakionLabel)}</div>
+            <p style="margin:6px 0 0;font-size:15.5px;line-height:1.5;color:#33405a;">${html(today.kontakionText)}</p>
+          </div>
+          ${renderTodayLearnContext(vm)}
         </div>
-        <div class="learn-today-hymns">
-          <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:600;">${html(today.troparionLabel)}</div>
-          <p style="margin:6px 0 16px;font-size:15.5px;line-height:1.5;color:#33405a;">${html(today.troparionText)}</p>
-          <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:600;">${html(today.kontakionLabel)}</div>
-          <p style="margin:6px 0 0;font-size:15.5px;line-height:1.5;color:#33405a;">${html(today.kontakionText)}</p>
-        </div>
-        ${renderTodayLearnContext(vm)}
       </div>
 
       <!-- Daily Church Rhythms — proper grid -->
-      <div class="learn-card">
-        <div class="learn-section-head">
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
           <span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:16px;">✥</span><span style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">DAILY CHURCH RHYTHMS</span></span>
-          <small class="learn-muted">Resets each day</small>
+          <small style="color:var(--muted);">Resets each day</small>
         </div>
         ${rhythmsGrid}
       </div>
@@ -1027,10 +1035,10 @@ function renderDashboard(vm) {
       ${renderDashboardFamilyCards(vm)}
 
       <!-- Together This Week — full width -->
-      <div class="learn-card">
-        <div class="learn-section-head">
-          <span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:17px;">⌂</span><span class="learn-eyebrow">TOGETHER THIS WEEK</span></span>
-          <small class="learn-muted">Resets Sunday</small>
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+          <span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:17px;">⌂</span><span style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;">TOGETHER THIS WEEK</span></span>
+          <small style="color:var(--muted);">Resets Sunday</small>
         </div>
         <div style="display:flex;flex-direction:column;gap:13px;">${togetherThisWeek}</div>
       </div>
@@ -1043,7 +1051,7 @@ function renderDashboard(vm) {
             <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:800;text-transform:uppercase;">Forms & Children</div>
             <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1;margin:5px 0 0;color:var(--ink);">Individual work this week</h2>
           </div>
-          <small class="learn-muted">${vm.childColumns.length} ${vm.childColumns.length === 1 ? "learner" : "learners"}</small>
+          <small style="color:var(--muted);">${vm.childColumns.length} ${vm.childColumns.length === 1 ? "learner" : "learners"}</small>
         </div>
         ${weekStatsStrip}
         <div class="learn-child-week-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px;align-items:start;">
@@ -1174,34 +1182,9 @@ function renderPlannerReserveCard(vm) {
   `;
 }
 
-function gracePriorityBadge(priority) {
-  if (!priority || priority === "keep") {
-    return `<span class="learn-grace-badge learn-grace-badge--keep" title="Grace Mode: always kept">✦ Keep</span>`;
-  }
-  if (priority === "reduce first") {
-    return `<span class="learn-grace-badge learn-grace-badge--reduce" title="Grace Mode: reduce minutes first">◐ Reduce</span>`;
-  }
-  // "bump if needed" / "defer if needed"
-  return `<span class="learn-grace-badge learn-grace-badge--defer" title="Grace Mode: defer to reserve if needed">○ Defer</span>`;
-}
-
 function renderWeeklyAssignmentBoard(vm) {
   const items = vm.week.weeklyAssignmentItems || [];
-  const graceActive = vm.graceMode?.active;
-  const graceMode = vm.graceMode?.mode || "light";
-  const card = (item) => {
-    const priority = item.gracePriority || "keep";
-    const badge = gracePriorityBadge(priority);
-    const isDeferrable = priority === "bump if needed" || priority === "defer if needed";
-    const isReducible = priority === "reduce first";
-    const activeStyle = graceActive && isDeferrable
-      ? "opacity:.55;"
-      : graceActive && isReducible
-        ? "opacity:.8;"
-        : "";
-    const minutesLabel = item.minutes > 0 ? `${item.minutes} min` : "";
-    return `<article class="learn-week-assignment-card${graceActive && isDeferrable ? " is-grace-deferred" : graceActive && isReducible ? " is-grace-reduced" : ""}" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" data-grace-priority="${html(priority)}" style="border-left-color:${html(item.color || "var(--gold)")};${activeStyle}"><div class="learn-week-assignment-card-head"><strong>${html(item.title)}</strong>${badge}</div>${item.sub ? `<small>${html(item.sub)}</small>` : ""}${minutesLabel ? `<span class="learn-week-assignment-minutes">${html(minutesLabel)}</span>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
-  };
+  const card = (item) => `<article class="learn-week-assignment-card" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" style="border-left-color:${html(item.color || "var(--gold)")};"><strong>${html(item.title)}</strong>${item.sub ? `<small>${html(item.sub)}</small>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
   const weekNum = vm.week.termWeekNumber || 0;
   const totalWeeks = vm.week.totalTermWeeks || 0;
   const weekLabel = weekNum && totalWeeks ? `Week ${weekNum} of ${totalWeeks}` : vm.week.label || "This Week";
@@ -1222,7 +1205,7 @@ function renderWeeklyAssignmentBoard(vm) {
             <button type="button" data-week-nav="today" style="border:1px solid var(--goldsoft);background:var(--paper);border-radius:9px;padding:8px 12px;font-family:inherit;cursor:pointer;color:var(--gold);font-weight:600;">Today</button>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
-            ${graceActive ? `<span class="learn-grace-mode-banner learn-grace-mode-banner--${html(graceMode)}" title="Grace Mode is active — badges show what will be kept, reduced, or deferred"><span>${graceMode === "minimum" ? "✦" : graceMode === "light" ? "◐" : "✦"}</span> Grace Mode: ${html(graceMode.charAt(0).toUpperCase() + graceMode.slice(1))}</span>` : `<small class="learn-week-assignment-hint">Drag a subject into a day.</small>`}
+            <small style="color:var(--muted);">Drag a subject into a day.</small>
             <button type="button" data-week-designed-print>Print designed week</button>
           </div>
         </div>
@@ -1243,63 +1226,19 @@ function renderWeeklyAssignmentBoard(vm) {
   `;
 }
 
-function renderTermAtAGlance(vm) {
-  const weekNum    = vm.week.termWeekNumber || 0;
-  const totalWeeks = vm.week.totalTermWeeks || 12;
-  const percent    = totalWeeks > 0 && weekNum > 0 ? Math.round((weekNum / totalWeeks) * 100) : 0;
-  const hasDescription = Boolean(vm.term.description);
-
-  if (hasDescription) {
-    // Description mode: two-column — text left, week-dot track right
-    const dots = Array.from({ length: totalWeeks }, (_, i) => {
-      const w = i + 1;
-      const isCurrent = w === weekNum;
-      const isPast    = w < weekNum;
-      return `<span title="Week ${w}" style="display:inline-block;width:${isCurrent ? 12 : 8}px;height:${isCurrent ? 12 : 8}px;border-radius:50%;background:${isCurrent ? "var(--gold)" : isPast ? "rgba(181,148,47,.38)" : "var(--line)"};${isCurrent ? "box-shadow:0 0 0 3px rgba(181,148,47,.22);" : ""}vertical-align:middle;"></span>`;
-    }).join("");
-    return `
-      <section style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;display:grid;grid-template-columns:1fr minmax(180px,.55fr);gap:22px;align-items:start;">
-        <div>
-          <div class="learn-eyebrow">Term at a Glance</div>
-          <strong style="font-family:'Cormorant Garamond',serif;font-size:22px;display:block;line-height:1.1;">${html(vm.term.label)}</strong>
-          ${vm.term.dateRange ? `<div style="color:var(--muted);font-size:13px;margin:3px 0 10px;">${html(vm.term.dateRange)}</div>` : `<div style="margin-bottom:10px;"></div>`}
-          <p style="margin:0;font-size:14px;line-height:1.6;color:var(--ink);">${html(vm.term.description)}</p>
-        </div>
-        <div style="padding-top:2px;">
-          <div style="color:var(--gold);font-size:11px;letter-spacing:.14em;font-weight:700;text-transform:uppercase;margin-bottom:10px;">Week progress</div>
-          ${weekNum && totalWeeks ? `<p style="margin:0 0 10px;font-size:13px;color:var(--muted);">Week ${weekNum} of ${totalWeeks}${vm.term.dateRange ? ` · ${html(vm.term.dateRange)}` : ""}</p>` : `<p style="margin:0 0 10px;font-size:13px;color:var(--muted);">Set term dates in Setup</p>`}
-          <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;">${dots}</div>
-        </div>
-      </section>
-    `;
-  }
-
-  // Progress-bar mode (no description): matches renderTermProgressPanel style
-  return `
-    <section style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;display:grid;grid-template-columns:minmax(200px,.75fr) 1fr;gap:22px;align-items:center;">
-      <div>
-        <div class="learn-eyebrow">Term at a Glance</div>
-        <h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1.05;margin:5px 0 4px;color:var(--ink);">${html(vm.term.label || "Current Term")}</h2>
-        <p style="margin:0;color:var(--muted);font-size:13px;line-height:1.4;">${weekNum && totalWeeks ? `Week ${weekNum} of ${totalWeeks}` : "Set term dates in Setup"}${vm.term.dateRange ? ` · ${html(vm.term.dateRange)}` : ""}</p>
-      </div>
-      <div>
-        <div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:8px;color:#33405a;font-size:13px;"><span>Term progress</span><strong>${percent}%</strong></div>
-        ${bar(percent, "var(--gold)")}
-        <p style="margin:8px 0 0;font-size:12px;color:var(--muted);">Add a term description in Setup → Terms to show cycle and focus notes here.</p>
-      </div>
-    </section>
-  `;
-}
-
 function renderPlannerWeek(vm) {
   return `
-    ${renderTermAtAGlance(vm)}
     ${renderWeeklyAssignmentBoard(vm)}
     <div style="display:flex;gap:14px;flex-wrap:wrap;">
       <div style="flex:1 1 620px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;">
-        <div class="learn-eyebrow">FORM PLANS</div>
-        ${vm.week.formRows.length ? vm.week.formRows.map((form) => `<div style="display:grid;grid-template-columns:42px 150px 1fr;gap:12px;align-items:start;border-top:1px solid var(--line);padding:12px 0;"><span style="width:38px;height:38px;border-radius:50%;background:${form.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(form.initials.slice(0, 2).join(""))}</span><span><strong style="display:block;">${html(form.formLabel)}</strong><small class="learn-muted">${html(form.childNames.join(", "))}</small></span><span style="color:var(--muted);display:grid;gap:5px;">${form.items.slice(0, 4).map((item) => `<span>${html(item.title)}${item.sub ? ` · ${html(item.sub)}` : ""}</span>`).join("")}${form.items.length > 4 ? `<small style="color:var(--gold);">+ ${form.items.length - 4} more lessons</small>` : ""}</span></div>`).join("") : emptyState("Add children and subjects in Setup to generate Form plans.")}
+        <div style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;margin-bottom:12px;">FORM PLANS</div>
+        ${vm.week.formRows.length ? vm.week.formRows.map((form) => `<div style="display:grid;grid-template-columns:42px 150px 1fr;gap:12px;align-items:start;border-top:1px solid var(--line);padding:12px 0;"><span style="width:38px;height:38px;border-radius:50%;background:${form.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(form.initials.slice(0, 2).join(""))}</span><span><strong style="display:block;">${html(form.formLabel)}</strong><small style="color:var(--muted);">${html(form.childNames.join(", "))}</small></span><span style="color:var(--muted);display:grid;gap:5px;">${form.items.slice(0, 4).map((item) => `<span>${html(item.title)}${item.sub ? ` · ${html(item.sub)}` : ""}</span>`).join("")}${form.items.length > 4 ? `<small style="color:var(--gold);">+ ${form.items.length - 4} more lessons</small>` : ""}</span></div>`).join("") : emptyState("Add children and subjects in Setup to generate Form plans.")}
       </div>
+      <aside style="flex:0 1 330px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;">
+        <div style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;margin-bottom:12px;">TERM AT A GLANCE</div>
+        <strong style="font-family:'Cormorant Garamond',serif;font-size:22px;">${html(vm.term.cycleTitle)}</strong>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">${vm.term.settings.length ? vm.term.settings.map((item) => `<span style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</span>`).join("") : emptyState("Add term dates and subject plans in Setup.")}</div>
+      </aside>
     </div>
   `;
 }
@@ -1351,7 +1290,7 @@ function plannerDayLabel(date = "") {
 
 function choreCadence(chore = {}) {
   const raw = String(chore.cadence || chore.frequency || "").toLowerCase();
-  if (["daily", "weekly", "monthly", "quarterly"].includes(raw)) return raw;
+  if (["daily", "weekly", "monthly", "quarterly", "yearly"].includes(raw)) return raw;
   return chore.day ? "weekly" : "daily";
 }
 
@@ -1368,6 +1307,23 @@ function choreAssigneeOptions(planning = {}) {
 
 function dayOfMonthOptions() {
   return [{ value: "", label: "Choose day" }, ...Array.from({ length: 31 }, (_, index) => ({ value: String(index + 1), label: `${index + 1}` }))];
+}
+
+const choreTimeOptions = ["Morning", "Afternoon", "Evening"];
+
+function choreTimeValues(value = "") {
+  const values = Array.isArray(value) ? value : String(value || "").split(/[,\u00b7|]/);
+  return values.map((item) => item.trim()).filter((item) => choreTimeOptions.includes(item));
+}
+
+function choreTimeLabel(value = "") {
+  const selected = choreTimeValues(value);
+  return selected.length ? selected.join(" & ") : "Anytime";
+}
+
+function choreTimeCheckboxes(name, value = "") {
+  const selected = choreTimeValues(value);
+  return `<fieldset class="learn-chore-time-field"><legend>Time</legend>${choreTimeOptions.map((option) => `<label><input type="checkbox" name="${html(name)}" value="${html(option)}" ${selected.includes(option) ? "checked" : ""}> ${html(option)}</label>`).join("")}<small>Select one or more.</small></fieldset>`;
 }
 
 const eventRecurrenceOptions = [
@@ -1431,14 +1387,15 @@ function choreSetupRow(chore = {}, index = 0, planning = {}) {
     <div class="learn-chore-editor-main">
       ${setupInput("Chore", "title", chore.title || "")}
       ${setupSelect("Assigned to", "assignee", chore.assignee || "Everyone", assignees)}
-      ${setupSelect("Type", "cadence", cadence, [{ value: "daily", label: "Daily" }, { value: "weekly", label: "Weekly" }, { value: "monthly", label: "Monthly" }, { value: "quarterly", label: "Quarterly" }])}
+      ${setupSelect("Type", "cadence", cadence, [{ value: "daily", label: "Daily" }, { value: "weekly", label: "Weekly" }, { value: "monthly", label: "Monthly" }, { value: "quarterly", label: "Quarterly" }, { value: "yearly", label: "Yearly" }])}
       ${setupRemoveButton()}
     </div>
     <div class="learn-chore-editor-schedule">
       ${setupSelect("Weekly day", "day", chore.day || "", ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])}
       ${setupSelect("Monthly day", "dayOfMonth", String(chore.dayOfMonth || ""), dayOfMonthOptions())}
       ${setupSelect("Quarter month", "quarterMonth", String(chore.quarterMonth || "1"), [{ value: "1", label: "1st month" }, { value: "2", label: "2nd month" }, { value: "3", label: "3rd month" }])}
-      ${setupSelect("Time", "timeOfDay", chore.timeOfDay || "Anytime", ["Anytime", "Morning", "Afternoon", "Evening"])}
+      ${setupInput("Starts on", "assignedDate", chore.assignedDate || "", { type: "date" })}
+      ${choreTimeCheckboxes("timeOfDay", chore.timeOfDay || "")}
       ${setupInput("Notes", "notes", chore.notes || "")}
       <label class="learn-check-field"><input type="checkbox" name="completed" ${chore.completed ? "checked" : ""}> Done</label>
     </div>
@@ -1468,6 +1425,110 @@ function renderFamilyPlannerIntro(vm, scope) {
       </div>
     </section>
   `;
+}
+
+function renderFamilyPlannerScopeLegacy(vm, scope) {
+  const planning = vm.familyPlanning || {};
+  const dates = plannerDates(vm);
+  const mealByDate = new Map((planning.meals || []).map((meal) => [meal.date, meal]));
+  const recipes = planning.recipes || [];
+  const groceries = planning.groceryItems || [];
+  const chores = planning.chores || [];
+  const eventsByDate = expandFamilyEvents(planning.events || [], dates);
+  const titleMap = {
+    meals: ["Weekly Meals", "Plan one week at a time with fasting guidance beside the family calendar.", "♨"],
+    chores: ["Chores", "Keep practical life visible without crowding the school lesson plan.", "✓"],
+    calendar: ["Family Calendar", "Appointments, field trips, extracurriculars, and name days in one household view.", "◷"],
+    recipes: ["Recipes", "A fast-aware household recipe box connected to your weekly meal plan.", "☰"],
+    groceries: ["Grocery List", "A simple shopping list that can grow from meals and recipes.", "▤"]
+  };
+  const [title, intro, icon] = titleMap[scope] || titleMap.meals;
+  const saveBar = `<div class="learn-family-planner-save"><span data-family-planning-status>Changes save to this household's Learn planner.</span><button type="submit">Save ${html(title)}</button></div>`;
+  const hidden = `<input type="hidden" name="familyPlanning.weekStart" value="${html(dates[0])}"><input type="hidden" name="familyPlanning.fastingPreference" value="${html(planning.fastingPreference || "guidance")}"><input type="hidden" name="household.motherName" value="${html(planning.household?.motherName || "")}"><input type="hidden" name="household.motherNameDay" value="${html(planning.household?.motherNameDay || "")}"><input type="hidden" name="household.fatherName" value="${html(planning.household?.fatherName || "")}"><input type="hidden" name="household.fatherNameDay" value="${html(planning.household?.fatherNameDay || "")}"><input type="hidden" name="household.parishPatronalFeastName" value="${html(planning.household?.parishPatronalFeastName || "")}"><input type="hidden" name="household.parishPatronalFeastDate" value="${html(planning.household?.parishPatronalFeastDate || "")}">${(planning.children || []).map((child) => `<span data-family-child-id="${html(child.id)}" data-family-child-name="${html(child.name || "")}" hidden><input name="childNameDay" value="${html(child.nameDay || "")}"></span>`).join("")}`;
+  let content = "";
+  if (scope === "meals") {
+    content = `<div class="learn-family-section-note"><strong>Weekly menu</strong><span>Tap into the fields and save the week. Recipe picker and drag-and-drop meal assignment can layer on top of this without changing the data.</span></div><div class="learn-family-meal-grid">${dates.map((date) => {
+      const day = plannerDayLabel(date);
+      const meal = mealByDate.get(date) || {};
+      const calendarDay = (vm.month.days || []).find((item) => item.date === date) || (vm.week.days || []).find((item) => item.date === date) || {};
+      const fastingClass = calendarDay.isFastDay ? "is-fast" : calendarDay.isSunday ? "is-feast" : "";
+      return `<article class="learn-family-day-card ${fastingClass}" data-setup-row="meals" data-id="${html(meal.id || "")}"><div><span><small>${html(day.weekday)}</small><b>${html(day.short)}</b></span><strong>${html(calendarDay.fastingType || calendarDay.fasting || "No fast")}</strong></div><input type="hidden" name="date" value="${html(date)}"><label><span>Breakfast</span><input name="breakfast" value="${html(meal.breakfast || "")}" placeholder="Add breakfast"></label><label><span>Lunch</span><input name="lunch" value="${html(meal.lunch || "")}" placeholder="Add lunch"></label><label><span>Dinner</span><input name="dinner" value="${html(meal.dinner || "")}" placeholder="Add dinner"></label></article>`;
+    }).join("")}</div>`;
+  } else if (scope === "calendar") {
+    content = `<div class="learn-family-section-note"><strong>This week's calendar</strong><span>Appointments, field trips, extracurriculars, and name days stay visible with school work and meals.</span></div><div class="learn-family-events-list">${dates.map((date) => {
+      const day = plannerDayLabel(date);
+      const rows = eventsByDate.get(date) || [{}];
+      const calendarDay = (vm.week.days || []).find((item) => item.date === date) || {};
+      return `<section class="learn-family-date-section"><header><span><small>${html(day.weekday)}</small><strong>${html(day.short)}</strong><em>${html(calendarDay.feast || "Family day")}</em></span><button type="button" data-setup-add-row="familyEvents" data-setup-add-target="familyEvents-${html(date)}" data-setup-add-date="${html(date)}">+ Add</button></header><div id="familyEvents-${html(date)}" data-setup-list="familyEvents" style="display:grid;gap:8px;">${rows.map((event) => familyEventSetupRow({ ...event, date: event.date || date })).join("")}</div></section>`;
+    }).join("")}</div>`;
+  } else if (scope === "chores") {
+    const choreRows = chores.length ? chores : [{}];
+    const household = planning.household || {};
+    const roster = [
+      { name: household.motherName || "Mom", color: "var(--burgundy)" },
+      { name: household.fatherName || "Dad", color: "var(--navy)" },
+      ...(planning.children || []).map((child) => ({ name: child.name || "Child", color: child.color || "var(--gold)" }))
+    ];
+    content = `<div class="learn-family-section-note"><strong>Chore rhythm</strong><span>Create daily, weekly, monthly, quarterly, and yearly chores. Assign each one to Mom, Dad, Everyone, or a specific child.</span></div><div class="learn-family-chore-roster">${roster.map((person) => `<span><b style="background:${html(person.color)};">${html(String(person.name || "C").slice(0, 1))}</b>${html(person.name)}</span>`).join("")}</div><div data-setup-list="chores" class="learn-family-edit-list">${choreRows.map((chore, index) => choreSetupRow(chore, index, planning)).join("")}</div><button type="button" data-setup-add-row="chores" class="learn-add-button">Add Chore</button>`;
+  } else if (scope === "recipes") {
+    content = `<div class="learn-family-section-note"><strong>Recipe library</strong><span>Mark each recipe by fasting fit so AGAPAY can suggest better meals for fast days later.</span></div><div data-setup-list="recipes" class="learn-family-edit-list">${(recipes.length ? recipes : [{}]).map(recipeSetupRow).join("")}</div><button type="button" data-setup-add-row="recipes" class="learn-add-button">Add Recipe</button>`;
+  } else {
+    const byCategory = new Map();
+    groceries.forEach((item) => {
+      const category = item.category || "Other";
+      if (!byCategory.has(category)) byCategory.set(category, []);
+      byCategory.get(category).push(item);
+    });
+    const summary = groceries.length ? [...byCategory.entries()].map(([category, items]) => `<div class="learn-family-aisle"><strong>${html(category)}</strong><span>${items.map((item) => html(item.name)).join(", ")}</span></div>`).join("") : "";
+    content = `<div class="learn-family-section-note"><strong>Grocery list</strong><span>Group items by aisle. Checked items persist so the list can become a real weekly shopping tool.</span></div>${summary ? `<div class="learn-family-grocery-summary">${summary}</div>` : ""}<div data-setup-list="groceryItems" class="learn-family-edit-list">${(groceries.length ? groceries : [{}]).map(grocerySetupRow).join("")}</div><button type="button" data-setup-add-row="groceryItems" class="learn-add-button">Add Grocery Item</button>`;
+  }
+  return `<form data-family-planning-form id="family-planner" class="learn-family-planner-panel">${hidden}${content}${saveBar}</form>`;
+}
+
+function familyPlannerModel(vm) {
+  const planning = vm.familyPlanning || {};
+  const dates = plannerDates(vm);
+  const mealByDate = new Map((planning.meals || []).map((meal) => [meal.date, meal]));
+  const children = (planning.children || []).map((child, index) => ({
+    ...child,
+    name: child.name || child.firstName || `Child ${index + 1}`,
+    color: child.color || ACCENTS[index % ACCENTS.length],
+    initial: child.initial || String(child.name || child.firstName || "?").charAt(0).toUpperCase()
+  }));
+  const groceries = (planning.groceryItems || []).map((item) => ({
+    ...item,
+    pantry: Boolean(item.pantry || item.inPantry),
+    checked: Boolean(item.checked)
+  }));
+  const monthDays = (vm.month?.days || []).map((day) => ({
+    ...day,
+    date: day.date,
+    short: day.dayNumber ? `${day.weekday || ""} ${day.dayNumber}`.trim() : day.date,
+    long: day.weekday || "",
+    isFastDay: Boolean(day.isFastDay),
+    meal: day.meal || mealByDate.get(day.date) || null
+  }));
+  const calendarDates = [...new Set([...dates, ...monthDays.map((day) => day.date)].filter(Boolean))];
+  const eventsByDate = expandFamilyEvents(planning.events || [], calendarDates);
+  const weekDays = dates.map((date) => {
+    const label = plannerDayLabel(date);
+    const liturgical = (vm.week.days || []).find((day) => day.date === date) || {};
+    return { date, ...label, ...liturgical };
+  });
+  return {
+    planning,
+    dates,
+    monthKey: vm.month?.key || "",
+    monthLabel: vm.month?.label || "Month Calendar",
+    weekDays,
+    monthDays,
+    mealByDate,
+    eventsByDate,
+    recipes: planning.recipes || [],
+    groceries,
+    chores: planning.chores || [],
+    children
+  };
 }
 
 function renderFeastsPanel(model, mode = "week") {
@@ -1540,6 +1601,11 @@ function plannerHiddenData(model) {
   </div>`;
 }
 
+function plannerMonthQuery(model) {
+  const firstInMonth = (model.monthDays || []).find((day) => day.inMonth !== false && day.date)?.date || "";
+  return String(model.monthKey || firstInMonth.slice(0, 7) || new Date().toISOString().slice(0, 7));
+}
+
 function renderPlannerDaySelector(model, selectedDate) {
   return `<div class="learn-family-day-selector">${model.weekDays.map((day) => `<a href="${plannerHref({ view: "day", date: day.date })}" class="${day.date === selectedDate ? "is-active" : ""}"><span>${day.isSunday ? "☩" : day.isFastDay ? "✥" : "·"}</span><strong>${html(day.weekday || day.weekdayLong || day.long)}</strong><small>${html(day.shortDate || day.short || day.date)}</small></a>`).join("")}</div>`;
 }
@@ -1556,7 +1622,7 @@ function renderMealsPlan(model, displayView, vm) {
     const meal = model.mealByDate.get(day.date) || {};
     return `<div class="learn-family-prototype">${renderPlannerDaySelector(model, day.date)}<section class="learn-family-day-hero ${day.isFastDay ? "is-fast" : ""}"><div><small>${html(day.long || day.weekdayLong || "Today")}</small><h2>${html(day.weekdayLong || day.long || "Selected Day")} · ${html(day.shortDate || day.short || day.date)}</h2><p>${html(day.feast || "Household rhythm")} ${day.fasting ? `· ${html(day.fasting)}` : ""}</p></div><button type="button" data-event-open data-date="${html(day.date)}">+ Add to calendar</button></section><section class="learn-family-card-grid learn-family-card-grid-three">${["breakfast", "lunch", "dinner"].map((slot) => renderMealCard(day, meal, slot)).join("")}</section></div>`;
   }
-   if (displayView === "month") {
+  if (displayView === "month") {
     return `<div style="display:flex;flex-direction:column;gap:14px;">${renderFeastsPanel(model, "month")}${renderFamilyMonthOverview(model, "meals")}${renderFastingLegend()}</div>`;
   }
   return `<div class="learn-family-week-layout"><section class="learn-family-week-board"><div class="learn-family-week-scroll"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => `<strong class="${day.isFastDay ? "is-fast" : day.isSunday ? "is-feast" : ""}">${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small><em>${html(day.isFastDay ? day.fastingType || day.fasting || "Fast" : day.feast || "")}</em></strong>`).join("")}</div>${["breakfast", "lunch", "dinner"].map((slot) => `<div class="learn-family-week-row"><strong>${html(mealSlotLabel(slot))}</strong>${model.weekDays.map((day) => `<div>${renderMealCard(day, model.mealByDate.get(day.date) || {}, slot)}</div>`).join("")}</div>`).join("")}</div></section><div style="display:grid;gap:14px;">${renderFeastsPanel(model, "week")}${renderFastingLegend()}</div></div>`;
@@ -1594,31 +1660,64 @@ function renderPantryTool(model) {
 function renderFamilyMonthOverview(model, scope = "meals") {
   const cells = model.monthDays.length ? model.monthDays : model.weekDays;
   const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const monthlyChoresForDay = (day) => (model.chores || []).filter((chore) => {
+    if (!["monthly", "quarterly", "yearly"].includes(choreCadence(chore))) return false;
+    return choreDueOnDay(chore, day);
+  });
+  const monthlyChoresByAssignee = (day) => {
+    const groups = new Map();
+    monthlyChoresForDay(day).forEach((chore) => {
+      const key = chore.assignee || "Everyone";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(chore);
+    });
+    return [...groups.entries()];
+  };
+  const headerAction = scope === "meals"
+    ? `<a href="${plannerHref({ scope: "meals", tool: "groceries", view: "month", month: plannerMonthQuery(model), term: null, termId: null })}">Grocery list →</a>`
+    : scope === "chores"
+      ? `<a href="${plannerHref({ scope: "chores", view: "week", month: plannerMonthQuery(model), term: null, termId: null })}">Week view →</a>`
+      : `<span></span>`;
   return `<section class="learn-family-month-card">
-    <header><div><small>${html(scope === "meals" ? "Meal calendar" : scope === "events" ? "Family calendar" : "Household month")}</small><h3>${html(model.monthLabel)}</h3></div><a href="${plannerHref({ scope: "meals", tool: "groceries", view: "month", term: null, termId: null })}">Grocery list →</a></header>
+    <header><div><small>${html(scope === "meals" ? "Meal calendar" : scope === "events" ? "Family calendar" : "Scheduled chores")}</small><h3>${html(model.monthLabel)}</h3></div>${headerAction}</header>
     <div class="learn-family-month-weekdays">${weekdays.map((day) => `<span>${html(day)}</span>`).join("")}</div>
     <div class="learn-family-month-board is-full-month">${cells.map((day) => {
     const meal = day.meal || model.mealByDate.get(day.date) || {};
     const events = model.eventsByDate.get(day.date) || [];
+    const monthlyChores = monthlyChoresByAssignee(day);
+    const feastLabel = day.feast || day.feastTitle || "";
+    const fastingLabel = day.fastingType || day.fasting || day.fastingRule || "";
     const scopeText = scope === "meals"
       ? meal.dinner || meal.lunch || meal.breakfast || ""
       : scope === "chores"
-        ? day.isSunday ? "Rest" : "Chores"
+        ? monthlyChores.length ? `${monthlyChores.reduce((sum, [, chores]) => sum + chores.length, 0)} scheduled chore${monthlyChores.reduce((sum, [, chores]) => sum + chores.length, 0) === 1 ? "" : "s"}` : ""
         : events[0]?.title || "";
     const addButton = scope === "meals"
       ? `<button type="button" data-meal-open data-date="${html(day.date)}" data-slot="dinner">${html(scopeText ? "Edit dinner" : "+ Dinner")}</button>`
       : scope === "events"
         ? `<button type="button" data-event-open data-date="${html(day.date)}">${html(scopeText ? "Edit" : "+ Event")}</button>`
-        : "";
+        : `<button type="button" data-chore-open data-cadence="monthly" data-day-of-month="${html(day.dayNumber || "")}" data-assigned-date="${html(day.date || "")}" data-assignee="Everyone">+ Monthly chore</button>`;
     return `<article class="${day.inMonth === false ? "is-muted" : ""} ${day.isFastDay ? "is-fast" : ""} ${day.isSunday ? "is-feast" : ""}">
       <div><strong>${html(day.weekday || day.weekdayLong || "")}</strong><span>${html(day.dayNumber || day.shortDate || day.short)}</span></div>
-      <small>${html(day.fastingType || day.fasting || day.feast || "Household day")}</small>
-      <p>${html(scopeText || "Plan")}</p>
+      <small>${html([fastingLabel, feastLabel].filter(Boolean).join(" · ") || "Household day")}</small>
+      ${scope === "meals"
+        ? `<p>${html(scopeText || (day.isFastDay ? "Fast-aware meal plan" : day.isSunday || feastLabel ? "Feast-day meal plan" : "Plan dinner"))}</p>${["breakfast", "lunch", "dinner"].filter((slot) => meal[slot]).map((slot) => `<em>${html(mealSlotLabel(slot))}: ${html(meal[slot])}</em>`).join("")}`
+        : scope === "chores"
+          ? (monthlyChores.length ? `<div class="learn-family-month-chore-list">${monthlyChores.map(([assignee, chores]) => `<span><strong>${html(assignee)}</strong><small>${html(chores.map((chore) => `${chore.title || "Chore"} (${choreTimeLabel(chore.timeOfDay)})`).join(", "))}</small></span>`).join("")}</div>` : `<p>${html(day.inMonth === false ? "" : "No monthly chores")}</p>`)
+          : `<p>${html(scopeText || "Plan")}</p>`}
       ${events.slice(0, 2).map((event) => `<em>${html(event.startTime || "")} ${html(event.title)}</em>`).join("")}
       ${addButton}
     </article>`;
   }).join("")}</div>
   </section>`;
+}
+
+function monthDiffBetween(startParts, targetParts) {
+  return (targetParts.year - startParts.year) * 12 + (targetParts.month - startParts.month);
+}
+
+function choreAssignedParts(chore = {}) {
+  return isoDateParts(chore.assignedDate || chore.startDate || chore.date || "");
 }
 
 function choreDueOnDay(chore = {}, day = {}) {
@@ -1629,21 +1728,40 @@ function choreDueOnDay(chore = {}, day = {}) {
   if (cadence === "daily") return true;
   if (cadence === "weekly") return !chore.day || chore.day === weekday;
   if (!parsed) return false;
+  const assigned = choreAssignedParts(chore);
+  const target = isoDateParts(date);
+  if (assigned && target) {
+    const monthDiff = monthDiffBetween(assigned, target);
+    const dueDay = Number(chore.dayOfMonth || assigned.day);
+    if (monthDiff < 0 || (monthDiff === 0 && target.day < assigned.day)) return false;
+    if (target.day !== dueDay) return false;
+    if (cadence === "monthly") return true;
+    if (cadence === "quarterly") return monthDiff % 3 === 0;
+    if (cadence === "yearly") return monthDiff % 12 === 0;
+  }
   const choreDay = Number(chore.dayOfMonth || 0);
   if (cadence === "monthly") return !choreDay || choreDay === parsed.getDate();
   if (cadence === "quarterly") {
     const quarterSlot = String((parsed.getMonth() % 3) + 1);
     return (!chore.quarterMonth || String(chore.quarterMonth) === quarterSlot) && (!choreDay || choreDay === parsed.getDate());
   }
+  if (cadence === "yearly") return false;
   return false;
 }
 
 function choreScheduleLabel(chore = {}) {
   const cadence = choreCadence(chore);
-  if (cadence === "daily") return "Daily";
-  if (cadence === "weekly") return chore.day ? `Weekly · ${chore.day}` : "Weekly";
-  if (cadence === "monthly") return chore.dayOfMonth ? `Monthly · day ${chore.dayOfMonth}` : "Monthly";
-  return `Quarterly${chore.quarterMonth ? ` · month ${chore.quarterMonth}` : ""}${chore.dayOfMonth ? ` · day ${chore.dayOfMonth}` : ""}`;
+  const time = choreTimeLabel(chore.timeOfDay);
+  const schedule = cadence === "daily"
+    ? "Daily"
+    : cadence === "weekly"
+      ? (chore.day ? `Weekly · ${chore.day}` : "Weekly")
+      : cadence === "monthly"
+        ? (chore.dayOfMonth ? `Monthly · day ${chore.dayOfMonth}` : "Monthly")
+        : cadence === "quarterly"
+          ? `Quarterly${chore.assignedDate ? ` · from ${chore.assignedDate}` : chore.quarterMonth ? ` · month ${chore.quarterMonth}` : ""}${chore.dayOfMonth ? ` · day ${chore.dayOfMonth}` : ""}`
+          : `Yearly${chore.assignedDate ? ` · ${chore.assignedDate.slice(5)}` : ""}${chore.dayOfMonth ? ` · day ${chore.dayOfMonth}` : ""}`;
+  return `${schedule} · ${time}`;
 }
 
 function choreOpenAttributes(chore = null, personName = "", day = {}) {
@@ -1651,7 +1769,8 @@ function choreOpenAttributes(chore = null, personName = "", day = {}) {
   const attrs = [
     `data-chore-open`,
     `data-assignee="${html(personName)}"`,
-    `data-day="${html(dayLabel)}"`
+    `data-day="${html(dayLabel)}"`,
+    `data-assigned-date="${html(day.date || "")}"`
   ];
   if (chore) {
     attrs.push(
@@ -1663,6 +1782,7 @@ function choreOpenAttributes(chore = null, personName = "", day = {}) {
       `data-chore-day="${html(chore.day || dayLabel)}"`,
       `data-chore-day-of-month="${html(chore.dayOfMonth || "")}"`,
       `data-chore-quarter-month="${html(chore.quarterMonth || "1")}"`,
+      `data-chore-assigned-date="${html(chore.assignedDate || "")}"`,
       `data-chore-time-of-day="${html(chore.timeOfDay || "Anytime")}"`,
       `data-chore-notes="${html(chore.notes || "")}"`
     );
@@ -1672,18 +1792,24 @@ function choreOpenAttributes(chore = null, personName = "", day = {}) {
 
 function renderChoresScope(model, displayView) {
   const people = [{ name: "Everyone", color: "var(--navy)", initial: "✥" }, ...model.children.filter((child) => child.name)];
+  const choresForPersonDay = (person, day) => model.chores.filter((item) => (item.assignee || "Everyone") === person.name && choreDueOnDay(item, day));
+  const renderChoreButton = (chore, person, day) => `<button type="button" class="learn-family-mini-card" ${choreOpenAttributes(chore, person.name, day)}><strong>${html(chore.title || "Chore")}</strong><small>${html(choreScheduleLabel(chore))}</small></button>`;
+  const addChoreButton = (person, day, compact = false) => `<button type="button" class="${compact ? "learn-family-mini-card learn-family-add-chore-card" : "learn-family-add-chore-card"}" ${choreOpenAttributes(null, person.name, day)}><strong>+ Add chore</strong><small>${html(day.weekday || day.weekdayLong || day.long || "Day")}</small></button>`;
+  if (displayView === "month") {
+    return `<div style="display:flex;flex-direction:column;gap:14px;">${renderFamilyMonthOverview(model, "chores")}${renderFastingLegend()}</div>`;
+  }
   if (displayView === "day") {
     const selectedDate = new URLSearchParams(window.location.search).get("date") || model.weekDays[0]?.date || "";
     const day = model.weekDays.find((item) => item.date === selectedDate) || model.weekDays[0] || {};
-    return `<div class="learn-family-prototype">${renderPlannerDaySelector(model, day.date)}<section class="learn-family-card-grid">${people.map((person) => { const chore = model.chores.find((item) => (item.assignee || "Everyone") === person.name && choreDueOnDay(item, day)); return `<article class="learn-family-person-card" style="--person-color:${html(person.color)};"><span>${html(person.initial || person.name.slice(0, 1) || "•")}</span><strong>${html(person.name)}</strong><p>${html(chore?.title || (day.isSunday ? "Rest" : "Choose a chore"))}</p>${chore ? `<small>${html(choreScheduleLabel(chore))}</small>` : ""}<button type="button" ${choreOpenAttributes(chore, person.name, day)}>${chore ? "Edit" : "Add"} chore</button></article>`; }).join("")}</section></div>`;
+    return `<div class="learn-family-prototype">${renderPlannerDaySelector(model, day.date)}<section class="learn-family-card-grid">${people.map((person) => { const chores = choresForPersonDay(person, day); return `<article class="learn-family-person-card" style="--person-color:${html(person.color)};"><span>${html(person.initial || person.name.slice(0, 1) || "•")}</span><strong>${html(person.name)}</strong>${chores.length ? `<div class="learn-family-chore-stack">${chores.map((chore) => renderChoreButton(chore, person, day)).join("")}</div>` : `<p>${html(day.isSunday ? "Rest" : "Choose a chore")}</p>`}<button type="button" ${choreOpenAttributes(null, person.name, day)}>Add chore</button></article>`; }).join("")}</section></div>`;
   }
-  return `<section class="learn-family-week-board"><div class="learn-family-week-scroll"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => `<strong>${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small></strong>`).join("")}</div>${people.map((person) => `<div class="learn-family-week-row learn-family-chore-row" style="--person-color:${html(person.color)};"><strong><span>${html(person.initial || person.name.slice(0, 1) || "•")}</span>${html(person.name)}</strong>${model.weekDays.map((day) => { const chore = model.chores.find((item) => (item.assignee || "Everyone") === person.name && choreDueOnDay(item, day)); return `<div><button type="button" class="learn-family-mini-card" ${choreOpenAttributes(chore, person.name, day)}><strong>${html(chore?.title || (day.isSunday ? "Rest" : "Add chore"))}</strong>${chore ? `<small>${html(choreScheduleLabel(chore))}</small>` : ""}</button></div>`; }).join("")}</div>`).join("")}</div></section>`;
+  return `<section class="learn-family-week-board"><div class="learn-family-week-scroll"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => `<strong>${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small></strong>`).join("")}</div>${people.map((person) => `<div class="learn-family-week-row learn-family-chore-row" style="--person-color:${html(person.color)};"><strong><span>${html(person.initial || person.name.slice(0, 1) || "•")}</span>${html(person.name)}</strong>${model.weekDays.map((day) => { const chores = choresForPersonDay(person, day); return `<div><div class="learn-family-chore-stack">${chores.map((chore) => renderChoreButton(chore, person, day)).join("")}${addChoreButton(person, day, true)}</div></div>`; }).join("")}</div>`).join("")}</div></section>`;
 }
 
 function renderEventsScope(model, displayView) {
   const selectedDate = new URLSearchParams(window.location.search).get("date") || model.weekDays[0]?.date || "";
   const days = displayView === "day" ? model.weekDays.filter((day) => day.date === selectedDate) : model.weekDays;
-  if (displayView === "month") return `<div class="learn-family-month-layout">${renderFamilyMonthOverview(model, "events")} ${renderFeastsPanel(model, "month")}</div>`;
+  if (displayView === "month") return `<div style="display:flex;flex-direction:column;gap:14px;">${renderFeastsPanel(model, "month")}${renderFamilyMonthOverview(model, "events")}</div>`;
   return `<div class="learn-family-prototype">${displayView === "day" ? renderPlannerDaySelector(model, selectedDate) : ""}<div class="learn-family-events-list">${days.map((day) => { const events = model.eventsByDate.get(day.date) || []; return `<section class="learn-family-date-section"><header><span><small>${html(day.weekday || day.weekdayLong)}</small><strong>${html(day.shortDate || day.short || day.date)}</strong><em>${html(day.feast || "")}</em></span><button type="button" data-event-open data-date="${html(day.date)}">+ Add event</button></header>${events.length ? events.map((event) => `<button type="button" class="learn-family-event-row" data-event-open data-event-id="${html(event.id || "")}" data-date="${html(event.date || day.date)}" data-title="${html(event.title || "")}" data-time="${html(event.startTime || "")}" data-location="${html(event.location || "")}" data-notes="${html(event.notes || "")}" data-type="${html(event.eventType || "")}" data-recurrence="${html(event.recurrence || "none")}"><span>${html(event.startTime || "—")}</span><strong>${html(event.title)}</strong><small>${html([event.location || event.eventType || "Family event", eventRecurrence(event.recurrence) !== "none" ? eventRecurrenceLabel(event.recurrence) : ""].filter(Boolean).join(" · "))}</small></button>`).join("") : `<p class="learn-family-empty-line">No events planned.</p>`}</section>`; }).join("")}</div></div>`;
 }
 
@@ -1691,7 +1817,7 @@ function renderFamilyPlannerModals(model) {
   return `<div class="learn-family-modal" data-family-modal="meal" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Meal Picker</small><h2>Choose a dish</h2><p data-meal-modal-context>Pick a recipe or type a dish name.</p><input data-meal-custom-input placeholder="Type a dish name..."><div class="learn-family-picker-list">${model.recipes.length ? model.recipes.map((recipe) => `<button type="button" data-meal-pick="${html(recipe.title)}"><strong>${html(recipe.title)}</strong><span>${html(recipe.fastingType || "Any day")} · ${html(recipe.category || "Recipe")}</span></button>`).join("") : `<span class="learn-family-empty-line">No recipes yet. You can still type a dish above.</span>`}</div><div class="learn-family-modal-actions"><button type="button" data-meal-clear>Clear meal</button><button type="button" data-meal-save>Save meal</button></div></div></div>
   <div class="learn-family-modal" data-family-modal="recipe" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Recipe</small><h2>Save a family recipe</h2><div class="learn-family-modal-grid">${setupInput("Recipe name", "modalRecipe.title")}${setupSelect("Fasting fit", "modalRecipe.fastingType", "", ["free", "fish", "oilwine", "strict"])}${setupInput("Category", "modalRecipe.category")}${setupInput("Source URL", "modalRecipe.sourceUrl")}<label>Ingredients<textarea name="modalRecipe.ingredients" rows="4"></textarea></label><label>Instructions<textarea name="modalRecipe.instructions" rows="4"></textarea></label></div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-recipe-save>Save recipe</button></div></div></div>
   <div class="learn-family-modal" data-family-modal="event" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Calendar</small><h2>Add to calendar</h2><div class="learn-family-modal-grid">${setupInput("Title", "modalEvent.title")}${setupSelect("Type", "modalEvent.eventType", "", ["Appointment", "Field Trip", "Extracurricular", "Name Day", "Family"])}${setupInput("Date", "modalEvent.date", "", { type: "date" })}${setupInput("Time", "modalEvent.startTime", "", { type: "time" })}${setupSelect("Repeats", "modalEvent.recurrence", "none", eventRecurrenceOptions)}${setupInput("Location", "modalEvent.location")}<label>Notes<textarea name="modalEvent.notes" rows="3"></textarea></label></div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-event-save>Save event</button></div></div></div>
-  <div class="learn-family-modal" data-family-modal="chore" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Chore Rhythm</small><h2 data-chore-modal-title>Add chore</h2><div class="learn-family-modal-grid">${setupInput("Chore", "modalChore.title")}${setupSelect("Assigned to", "modalChore.assignee", "Everyone", choreAssigneeOptions(model.planning))}${setupSelect("Type", "modalChore.cadence", "weekly", [{ value: "daily", label: "Daily" }, { value: "weekly", label: "Weekly" }, { value: "monthly", label: "Monthly" }, { value: "quarterly", label: "Quarterly" }])}${setupSelect("Weekly day", "modalChore.day", "", ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])}${setupSelect("Monthly day", "modalChore.dayOfMonth", "", dayOfMonthOptions())}${setupSelect("Quarter month", "modalChore.quarterMonth", "1", [{ value: "1", label: "1st month" }, { value: "2", label: "2nd month" }, { value: "3", label: "3rd month" }])}${setupSelect("Time", "modalChore.timeOfDay", "Anytime", ["Anytime", "Morning", "Afternoon", "Evening"])}<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Notes<input name="modalChore.notes" type="text" value="" style="min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);" /></label></div><div class="learn-family-modal-actions"><button type="button" data-chore-delete hidden>Delete chore</button><button type="button" data-family-modal-close>Cancel</button><button type="button" data-chore-save>Save chore</button></div></div></div>`;
+  <div class="learn-family-modal" data-family-modal="chore" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Chore Rhythm</small><h2 data-chore-modal-title>Add chore</h2><div class="learn-family-modal-grid">${setupInput("Chore", "modalChore.title")}${setupSelect("Assigned to", "modalChore.assignee", "Everyone", choreAssigneeOptions(model.planning))}${setupSelect("Type", "modalChore.cadence", "weekly", [{ value: "daily", label: "Daily" }, { value: "weekly", label: "Weekly" }, { value: "monthly", label: "Monthly" }, { value: "quarterly", label: "Quarterly" }, { value: "yearly", label: "Yearly" }])}${setupSelect("Weekly day", "modalChore.day", "", ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])}${setupSelect("Monthly day", "modalChore.dayOfMonth", "", dayOfMonthOptions())}${setupSelect("Quarter month", "modalChore.quarterMonth", "1", [{ value: "1", label: "1st month" }, { value: "2", label: "2nd month" }, { value: "3", label: "3rd month" }])}${setupInput("Starts on", "modalChore.assignedDate", "", { type: "date" })}${choreTimeCheckboxes("modalChore.timeOfDay")}<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Notes<input name="modalChore.notes" type="text" value="" style="min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);" /></label></div><div class="learn-chore-batch-list" data-chore-batch-list hidden></div><div class="learn-family-modal-actions"><button type="button" data-chore-delete hidden>Delete chore</button><button type="button" data-family-modal-close>Cancel</button><button type="button" data-chore-save-add>Save & add another</button><button type="button" data-chore-save>Save chore</button></div></div></div>`;
 }
 
 function dayKeyForChore(chore = {}, vm = {}) {
@@ -1932,7 +2058,7 @@ function prototypeSetupSeed(vm) {
     subjects: form.subjects.length ? form.subjects : ["Math", "Language Arts", "History", "Science", "Literature"]
   }));
   return {
-    calendar: localStorage.getItem("agapay.learn.calendar") || "julian",
+    calendar: storedLearnCalendar(vm.preferences?.calendarType || ""),
     grouping,
     enrichment: (vm.week?.householdRows || []).map((row) => row.title).filter(Boolean),
     forms: forms.length ? forms : [{ id: "household", label: "Household", color: "#b5942f", children: [], subjects: ["Math", "Language Arts", "History", "Science", "Literature"] }]
@@ -2138,6 +2264,7 @@ function prototypeStateToFamilyPlanningPayload(vm, state) {
       day: detail.day || dayLabelByKey[dayKey] || "",
       dayOfMonth: detail.dayOfMonth || "",
       quarterMonth: detail.quarterMonth || "",
+      assignedDate: detail.assignedDate || "",
       timeOfDay: detail.timeOfDay || "Anytime",
       notes: detail.notes || "",
       completed: Boolean(detail.completed)
@@ -2291,12 +2418,12 @@ function renderPlannerMonth(vm) {
             <div>
               <small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;font-size:10px;">Fast Days</small>
               <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--burgundy);line-height:1;">${html(month.fastDays)}</strong>
-              <span class="learn-muted-sm">Marked in red.</span>
+              <span style="color:var(--muted);font-size:13px;">Marked in red.</span>
             </div>
             <div>
               <small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;font-size:10px;">Feast Markers</small>
               <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--ink);line-height:1;">${html(month.feastDays)}</strong>
-              <span class="learn-muted-sm">Major liturgical rhythms.</span>
+              <span style="color:var(--muted);font-size:13px;">Major liturgical rhythms.</span>
             </div>
           </div>
           <p style="margin:12px 0 0;font-size:13px;color:#33405a;line-height:1.45;border-top:1px solid var(--line);padding-top:12px;">Print a clean household copy — feast days, fasts, and the month at a glance.</p>`, { icon: "▣" })}
@@ -2326,7 +2453,7 @@ function renderPlannerTerm(vm) {
       </div>
     </div>
     <div style="display:grid;grid-template-columns:.9fr repeat(${Math.min(vm.term.childTracks.length, 4)}, minmax(150px,1fr));gap:12px;">
-      ${panel("Family-Based Learning", vm.term.householdSummary.map((item) => `<div class="learn-list-row">${html(item)}</div>`).join("") || emptyState("Add household streams in Setup."), { icon: "⌂", style: "min-width:0;" })}
+      ${panel("Family-Based Learning", vm.term.householdSummary.map((item) => `<div style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</div>`).join("") || emptyState("Add household streams in Setup."), { icon: "⌂", style: "min-width:0;" })}
       ${vm.term.childTracks.slice(0, 4).map((child) => panel(`${child.name} · Age ${child.age}`, `<div style="display:grid;gap:8px;">${child.tracks.map((track) => `<div style="border-top:1px solid var(--line);padding:8px 0;">${html(track)}</div>`).join("") || emptyState("No tracks configured.")}</div>`, { icon: child.initial, style: "min-width:0;" })).join("")}
     </div>
     ${vm.term.childTracks.length > 4 ? `<div style="color:var(--muted);font-size:13px;padding:6px 2px;">+ ${vm.term.childTracks.length - 4} more ${vm.term.childTracks.length - 4 === 1 ? "child" : "children"} — add Setup tracks to see their columns here.</div>` : ""}
@@ -2362,7 +2489,7 @@ function renderPlannerYear(vm) {
         <div>
           <div style="color:var(--gold);font-size:10px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;margin-bottom:8px;">${html(type)}</div>
           ${topics.map((topic) => `
-            <div class="learn-list-row">
+            <div style="padding:8px 0;border-top:1px solid var(--line);">
               <strong style="display:block;font-size:14px;color:var(--ink);">${html(topic.title)}</strong>
               ${topic.season ? `<small style="color:var(--muted);font-size:11px;">${html(topic.season)}</small>` : ""}
             </div>`).join("")}
@@ -2449,7 +2576,7 @@ function renderFormation(vm) {
   const todayPanel = panel("Today in the Church", `
     <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:10px;margin-bottom:6px;">
       <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1.05;margin:0;color:var(--ink);">${html(vm.today.title)}</h2>
-      <small class="learn-muted-sm">${html(vm.today.date)}</small>
+      <small style="color:var(--muted);font-size:13px;">${html(vm.today.date)}</small>
     </div>
     ${fastBadge}
     ${readingButtons}
@@ -2500,8 +2627,7 @@ function renderFormation(vm) {
             <strong style="font-size:14px;">${html(item.title)}</strong>
             <small style="color:var(--muted);white-space:nowrap;font-size:11px;">${html(item.status)}</small>
           </div>
-          ${bar(item.progress, "var(--navy)")}
-          <small style="color:var(--muted);font-size:11px;">${item.progress}% memorised</small>
+          ${progressEditor(item, "recitation", { color: "var(--navy)", label: `${item.title} memory progress`, suffix: "memorized" })}
         </div>`).join("")
     : emptyState("Add recitation tracks in Setup — Psalms, Catechism, Scripture.");
   const memoryPanel = panel("Recitation & Memory", memoryContent, { icon: "☰" });
@@ -2541,7 +2667,7 @@ function renderFormation(vm) {
   const naturePanel = panel("Nature Journal", natureContent, { icon: "✦" });
 
   const body = `
-    <section data-screen-label="Formation" class="learn-stack">
+    <section data-screen-label="Formation" style="display:flex;flex-direction:column;gap:18px;">
 
       <div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;">
         ${todayPanel}
@@ -2577,8 +2703,7 @@ function renderBooks(vm) {
             <span style="font-size:12px;color:var(--muted);">${html(book.author)}</span>
             <span style="font-size:12px;color:var(--gold);font-weight:700;letter-spacing:.04em;">${html(book.assignment || book.stream || "Household")}</span>
             <div style="margin-top:auto;padding-top:10px;">
-              ${bar(book.progress)}
-              <small style="display:block;color:var(--gold);font-weight:700;margin-top:4px;">${html(book.progress)}% complete</small>
+              ${progressEditor(book, "book", { label: `${book.title} reading progress`, suffix: "complete" })}
             </div>
           </div>
         </article>`).join("")
@@ -2592,14 +2717,14 @@ function renderBooks(vm) {
             ${bookCover(book, "☰")}
             <span style="min-width:0;">
               <strong style="display:block;color:var(--ink);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(book.title)}</strong>
-              <small class="learn-muted">${html(book.assignment || "")}</small>
+              <small style="color:var(--muted);">${html(book.assignment || "")}</small>
             </span>
           </span>
           <span style="color:var(--ink);">${html(book.author)}</span>
-          <span class="learn-muted">${html(book.category)}</span>
-          <span class="learn-muted">${html(book.ages || "—")}</span>
+          <span style="color:var(--muted);">${html(book.category)}</span>
+          <span style="color:var(--muted);">${html(book.ages || "—")}</span>
           <span style="${book.orthodox ? "color:var(--gold);font-weight:700;" : "color:var(--muted);"}">${book.orthodox ? "Orthodox" : "—"}</span>
-          <span>${bar(book.progress)}<small style="color:var(--gold);font-weight:700;">${html(book.progress)}%</small></span>
+          <span>${progressEditor(book, "book", { label: `${book.title} reading progress`, suffix: "complete" })}</span>
         </div>`).join("")
     : `<div style="padding:18px 4px;color:var(--muted);font-style:italic;">Add books in Setup to build the household library.</div>`;
 
@@ -2611,10 +2736,10 @@ function renderBooks(vm) {
   // ── Book pacing ───────────────────────────────────────────────────────────────
   const pacingContent = vm.pacing.weeks.length
     ? `<strong style="font-family:'Cormorant Garamond',serif;font-size:20px;display:block;margin-bottom:4px;">${html(vm.pacing.title)}</strong>
-       <small class="learn-muted">${html(vm.pacing.subtitle)}${vm.pacing.chaptersPerWeek ? ` · ${html(vm.pacing.chaptersPerWeek)} ch/wk` : ""}</small>
+       <small style="color:var(--muted);">${html(vm.pacing.subtitle)}${vm.pacing.chaptersPerWeek ? ` · ${html(vm.pacing.chaptersPerWeek)} ch/wk` : ""}</small>
        ${vm.pacing.weeks.map((week, i) => `
          <div style="display:grid;grid-template-columns:52px 1fr 52px;gap:8px;border-top:1px solid var(--line);padding:8px 0;font-size:13px;align-items:center;">
-           <span class="learn-muted">Wk ${html(week.week)}</span>
+           <span style="color:var(--muted);">Wk ${html(week.week)}</span>
            <strong style="font-size:14px;">${html(week.chapters)}</strong>
            <span style="color:var(--muted);text-align:right;">${html(week.pages)}</span>
          </div>`).join("")}`
@@ -2642,7 +2767,7 @@ function renderBooks(vm) {
     : "";
 
   const body = `
-    <section data-screen-label="Books" class="learn-stack">
+    <section data-screen-label="Books" style="display:flex;flex-direction:column;gap:18px;">
 
       <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
 
@@ -2683,14 +2808,14 @@ function renderBooks(vm) {
 function renderReports(vm) {
   const exportButtons = vm.exports.map((item) => {
     const label = item.label || item.title || "Learn Report";
-    return `<button type="button" data-report-export="${html(label)}" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:12px;font-family:inherit;color:var(--ink);display:grid;gap:5px;text-align:left;cursor:pointer;"><strong>${html(label)}</strong><small class="learn-muted">${html(item.format)}</small></button>`;
+    return `<button type="button" data-report-export="${html(label)}" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:12px;font-family:inherit;color:var(--ink);display:grid;gap:5px;text-align:left;cursor:pointer;"><strong>${html(label)}</strong><small style="color:var(--muted);">${html(item.format)}</small></button>`;
   }).join("");
   const subjectRows = vm.subjectProgress.length ? vm.subjectProgress.map((row) => `<tr style="border-top:1px solid var(--line);"><td style="padding:10px;font-weight:700;">${html(row.subjectTitle)}</td><td style="padding:10px;">${html(row.childName)}</td><td style="padding:10px;">${html(row.formLabel)}</td><td style="padding:10px;">${html(row.source || row.subjectType)}</td><td style="padding:10px;">${html(row.completed)} / ${html(row.total)} ${html(row.progressionType)}</td><td style="padding:10px;min-width:130px;">${bar(row.percent, row.color)}<small>${html(row.percent)}%</small></td><td style="padding:10px;text-transform:capitalize;color:var(--gold);">${html(row.status)}</td></tr>`).join("") : `<tr><td colspan="7" style="padding:18px;color:var(--muted);">Add subject ranges and Done Through progress in Setup to generate state-reporting rows.</td></tr>`;
   const body = `
-    <section data-screen-label="Reports" class="learn-stack">
+    <section data-screen-label="Reports" style="display:flex;flex-direction:column;gap:18px;">
       <div style="display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:14px;">${vm.stats.map((stat) => `<div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;gap:13px;align-items:center;"><span style="width:44px;height:44px;border-radius:50%;background:${stat.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">✥</span><span><small style="display:block;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;">${html(stat.label)}</small><strong style="font-family:'Cormorant Garamond',serif;font-size:25px;">${html(stat.value)}</strong><small style="display:block;color:var(--muted);">${html(stat.sub)}</small></span></div>`).join("")}</div>
       <div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start;">
-        ${panel("Child Progress Overview", vm.children.map((child) => `<div style="display:grid;grid-template-columns:42px 1fr 150px;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);"><span style="width:38px;height:38px;border-radius:50%;background:${child.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(child.initial)}</span><div><strong>${html(child.name)}</strong><small style="display:block;color:var(--muted);">${html(child.grade)} · Age ${html(child.age)} · ${html(child.summary)}</small><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;"><span><small class="learn-muted">Lessons ${html(child.lessons.done)} / ${html(child.lessons.total)}</small>${bar(child.lessons.percent, child.color)}</span><span><small class="learn-muted">Read-aloud ${html(child.readAloud.percent)}%</small>${bar(child.readAloud.percent, child.color)}</span></div></div><span style="text-transform:capitalize;color:var(--gold);">${html(child.status)}</span></div>`).join(""), { icon: "✥" })}
+        ${panel("Child Progress Overview", vm.children.map((child) => `<div style="display:grid;grid-template-columns:42px 1fr 150px;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);"><span style="width:38px;height:38px;border-radius:50%;background:${child.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(child.initial)}</span><div><strong>${html(child.name)}</strong><small style="display:block;color:var(--muted);">${html(child.grade)} · Age ${html(child.age)} · ${html(child.summary)}</small><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;"><span><small style="color:var(--muted);">Lessons ${html(child.lessons.done)} / ${html(child.lessons.total)}</small>${bar(child.lessons.percent, child.color)}</span><span><small style="color:var(--muted);">Read-aloud ${html(child.readAloud.percent)}%</small>${bar(child.readAloud.percent, child.color)}</span></div></div><span style="text-transform:capitalize;color:var(--gold);">${html(child.status)}</span></div>`).join(""), { icon: "✥" })}
         ${panel("Year-End Report Preview", `<div style="border:1px solid var(--line);background:#fffaf0;border-radius:10px;min-height:260px;padding:26px;text-align:center;"><div style="color:var(--gold);font-size:32px;">✥</div><h2 style="font-family:'Cormorant Garamond',serif;margin:12px 0 4px;">${html(vm.pdf.title)}</h2><p>${html(vm.pdf.familyName)}</p><small style="display:block;color:var(--muted);">Generated from Learn setup progress, narrations, lessons, and attendance.</small><div style="text-align:left;margin-top:18px;color:#34405a;font-size:13px;">${vm.pdf.summary.map((line) => `<div style="border-top:1px solid var(--line);padding:8px 0;">${html(line)}</div>`).join("")}</div></div><button type="button" data-report-pdf style="margin-top:12px;width:100%;background:var(--navy);color:#fff;border:none;border-radius:10px;padding:11px;font-family:inherit;cursor:pointer;">Print Beautiful Report</button>`, { icon: "☰" })}
       </div>
       ${panel("State Reporting Subject Progress", `<div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;"><thead><tr style="color:var(--gold);font-size:11px;letter-spacing:.12em;text-transform:uppercase;"><th style="text-align:left;padding:8px;">Subject</th><th style="text-align:left;padding:8px;">Student</th><th style="text-align:left;padding:8px;">Form</th><th style="text-align:left;padding:8px;">Source</th><th style="text-align:left;padding:8px;">Progress</th><th style="text-align:left;padding:8px;">Complete</th><th style="text-align:left;padding:8px;">Status</th></tr></thead><tbody>${subjectRows}</tbody></table></div>`, { icon: "▤" })}
@@ -2953,13 +3078,64 @@ function renderGrades(vm) {
   return shell(vm, body);
 }
 
+function renderCommunityLegacy(vm) {
+  return shell(vm, `
+    <section data-screen-label="Community" style="display:grid;gap:18px;">
+      <div style="background:linear-gradient(135deg,#fffaf0 0%,#f5ead1 100%);border:1px solid rgba(181,148,47,.34);border-radius:18px;padding:28px;display:grid;grid-template-columns:1fr 220px;gap:24px;align-items:center;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+        <div>
+          <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:700;text-transform:uppercase;">Coming Soon</div>
+          <h2 style="font-family:'Cormorant Garamond',serif;font-size:42px;line-height:1;margin:8px 0;color:var(--ink);">${html(vm.title || "Community is coming soon")}</h2>
+          <p style="font-size:17px;line-height:1.5;color:#33405a;max-width:760px;margin:0;">${html(vm.subtitle || "A curated Orthodox homeschool resource exchange is planned after the core Learn workflow is settled.")}</p>
+          ${vm.detail ? `<p style="color:var(--muted);line-height:1.45;margin:12px 0 0;max-width:720px;">${html(vm.detail)}</p>` : ""}
+        </div>
+        <div style="border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.6);min-height:190px;display:grid;place-items:center;color:var(--gold);font-size:58px;">✥</div>
+      </div>
+      ${panel("Launch Focus", `<div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:12px;"><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;"><strong>Planner first</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Keep the household planning flow reliable before adding social features.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;"><strong>Curated resources</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Community sharing will launch with moderation and resource categories.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;"><strong>Family-safe</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">The future feature will be built around trust, not an open feed.</small></div></div>`, { icon: "✥" })}
+    </section>
+  `);
+  const chip = (label, active = false, attr = "data-community-filter") => `<button type="button" ${attr}="${html(label)}" style="border:1px solid ${active ? "var(--gold)" : "var(--line)"};background:${active ? "var(--navy)" : "var(--paper)"};color:${active ? "#f3ead4" : "var(--ink)"};border-radius:9px;padding:8px 12px;font-family:inherit;cursor:pointer;">${html(label)}</button>`;
+  const body = `
+    <section data-screen-label="Community" style="display:flex;flex-direction:column;gap:18px;">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+        <label style="display:flex;align-items:center;gap:9px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:11px 15px;flex:1;min-width:220px;max-width:420px;"><span style="color:var(--gold);font-size:17px;">⌕</span><input data-community-search placeholder="Search resources, tags, posters..." style="border:none;background:none;outline:none;font-family:inherit;font-size:15px;color:var(--ink);width:100%;" /></label>
+        <div style="display:flex;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:4px;">${vm.sortOptions.map((label, index) => chip(label, index === 0, "data-community-sort")).join("")}</div>
+        <div style="flex:1;"></div>
+        <button type="button" data-community-share style="display:flex;align-items:center;gap:9px;background:var(--navy);border:1px solid var(--gold);border-radius:11px;padding:12px 18px;cursor:pointer;font-family:inherit;font-size:15px;color:#f3ead4;font-weight:500;"><span style="color:var(--gold2);font-size:18px;">+</span> Share a Resource</button>
+      </div>
+      <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center;">${vm.categories.map((category, index) => chip(category, index === 0)).join("")}</div>
+      <div data-community-count style="display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13.5px;"><span style="color:var(--gold);">✥</span> Showing ${vm.resources.length} resources shared by Orthodox homeschool families</div>
+      <div data-community-grid style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;">
+        ${vm.resources.map((resource) => `<article data-community-card data-category="${html(resource.category)}" data-search="${html(`${resource.title} ${resource.category} ${resource.desc} ${resource.poster} ${resource.tags.join(" ")}`.toLowerCase())}" style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:11px;box-shadow:0 1px 3px rgba(20,40,70,.04);position:relative;">
+          <div style="height:122px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(135deg,${softColor(resource.color, "33")},var(--paper2));display:flex;align-items:center;justify-content:center;color:${html(resource.color)};font-size:42px;position:relative;">✥${resource.pinned ? `<span style="position:absolute;top:9px;left:9px;display:flex;align-items:center;gap:5px;background:var(--gold);color:#1b2c45;font-size:10.5px;font-weight:700;letter-spacing:.05em;padding:4px 9px;border-radius:6px;">✥ PINNED</span>` : ""}<span style="position:absolute;top:9px;right:9px;display:flex;align-items:center;gap:5px;background:rgba(243,234,212,.92);color:var(--ink);font-size:11px;font-weight:600;padding:4px 9px;border-radius:6px;">${html(resource.category)}</span></div>
+          <strong style="font-family:'Cormorant Garamond',serif;font-size:20px;line-height:1.15;">${html(resource.title)}</strong>
+          <p style="font-size:13px;color:#3a4256;line-height:1.4;flex:1;margin:0;">${html(resource.desc)}</p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">${resource.tags.map((tag) => `<span style="font-size:11.5px;color:var(--gold);background:var(--paper2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;">#${html(tag)}</span>`).join("")}</div>
+          <div style="display:flex;align-items:center;gap:9px;padding-top:10px;border-top:1px solid var(--line);"><span style="width:28px;height:28px;flex:none;border-radius:50%;background:${html(resource.posterColor)};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:600;border:1.5px solid var(--goldsoft);">${html(resource.posterInitial)}</span><span style="flex:1;min-width:0;font-size:12.5px;color:var(--muted);">${html(resource.poster)}</span><a href="${html(resource.url)}" target="_blank" rel="noreferrer" style="color:var(--gold);font-size:16px;text-decoration:none;">↗</a></div>
+          <div style="display:flex;align-items:center;gap:9px;"><button type="button" data-community-vote style="display:flex;align-items:center;gap:6px;background:var(--paper2);border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--ink);">↑ <span>${resource.votes}</span></button><button type="button" data-community-save style="display:flex;align-items:center;gap:6px;background:var(--paper2);border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--gold);">♡ Save</button><button type="button" data-community-add style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--ink);white-space:nowrap;">+ Add to Library</button></div>
+        </article>`).join("")}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        ${panel(vm.history.label, `<strong style="font-family:'Cormorant Garamond',serif;font-size:22px;">${html(vm.history.title)}</strong><small style="display:block;color:var(--gold);margin:4px 0;">${html(vm.history.year)}</small><p style="line-height:1.45;color:#33405a;">${html(vm.history.summary)}</p><small style="color:var(--muted);">${html(vm.history.source)}</small>`, { icon: "☼" })}
+        ${panel("Sharing Guidance", vm.guidance.map((item) => `<div style="padding:9px 0;border-top:1px solid var(--line);">${html(item)}</div>`).join(""), { icon: "✥" })}
+      </div>
+      <div data-community-share-panel hidden style="position:fixed;inset:0;z-index:75;background:rgba(10,20,40,.55);align-items:center;justify-content:center;padding:24px;">
+        <div style="background:var(--cream);border:1px solid var(--gold);border-radius:16px;width:min(520px,100%);box-shadow:0 20px 60px rgba(10,20,40,.4);">
+          <div style="padding:20px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;"><div><h2 style="font-family:'Cormorant Garamond',serif;margin:0;font-size:26px;">Share a Resource</h2><small style="color:var(--muted);">Bless another homeschool family with what has helped yours.</small></div><button type="button" data-community-share-close style="border:none;background:none;color:var(--muted);font-size:22px;cursor:pointer;">x</button></div>
+          <div style="padding:22px 24px;display:grid;gap:12px;">${setupInput("Title", "community.title")}${setupInput("Link", "community.url")}${setupInput("Category", "community.category")}${setupInput("Tags", "community.tags")}<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Description<textarea name="community.desc" rows="3" style="border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);"></textarea></label></div>
+          <div style="padding:16px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:11px;"><button type="button" data-community-share-close style="background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:11px 20px;cursor:pointer;font-family:inherit;color:var(--ink);">Cancel</button><button type="button" data-community-submit style="background:var(--navy);border:1px solid var(--gold);border-radius:9px;padding:11px 22px;cursor:pointer;font-family:inherit;color:#f3ead4;">Share with Community</button></div>
+        </div>
+      </div>
+    </section>`;
+  return shell(vm, body);
+}
+
 function renderCoOp(vm) {
   const body = `
-    <section data-screen-label="Co-op" class="learn-stack">
+    <section data-screen-label="Co-op" style="display:flex;flex-direction:column;gap:18px;">
       ${panel("Co-op Coming Soon", `<div style="display:grid;grid-template-columns:130px 1fr;gap:22px;align-items:center;"><div style="height:132px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,#f8f0dd,#efe0ba);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:54px;">◎</div><div><small style="color:var(--gold);letter-spacing:.16em;text-transform:uppercase;">Future Learn Add-On</small><h2 style="font-family:'Cormorant Garamond',serif;font-size:34px;margin:8px 0 6px;">Co-op tools are coming soon</h2><p style="margin:0;color:#34405a;line-height:1.5;max-width:760px;">For launch, AGAPAY Learn is focused on setup, Today, planning, Church rhythms, formation, books, Grace Mode, and printable household plans. Co-op creation, invitations, and shared schedules will come in a later release.</p></div></div>`, { icon: "◎" })}
       <div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:16px;">
-        ${panel("Planned Later", `<div class="learn-list-row">Create or join a co-op</div><div class="learn-list-row">Invite AGAPAY member families</div><div class="learn-list-row">Shared schedules and rotation</div>`, { icon: "▣" })}
-        ${panel("Launch Focus", `<div class="learn-list-row">Simple and Advanced Setup</div><div class="learn-list-row">Planner and Print Center</div><div class="learn-list-row">Formation, books, and Grace Mode</div>`, { icon: "✥" })}
+        ${panel("Planned Later", `<div style="padding:8px 0;border-top:1px solid var(--line);">Create or join a co-op</div><div style="padding:8px 0;border-top:1px solid var(--line);">Invite AGAPAY member families</div><div style="padding:8px 0;border-top:1px solid var(--line);">Shared schedules and rotation</div>`, { icon: "▣" })}
+        ${panel("Launch Focus", `<div style="padding:8px 0;border-top:1px solid var(--line);">Simple and Advanced Setup</div><div style="padding:8px 0;border-top:1px solid var(--line);">Planner and Print Center</div><div style="padding:8px 0;border-top:1px solid var(--line);">Formation, books, and Grace Mode</div>`, { icon: "✥" })}
         ${panel("Status", `<strong style="font-family:'Cormorant Garamond',serif;font-size:26px;">Coming Soon</strong><small style="display:block;color:var(--muted);margin-top:6px;">This tab is intentionally parked for the first revenue-focused launch.</small>`, { icon: "♢" })}
       </div>
     </section>`;
@@ -2986,7 +3162,7 @@ function setupTermOptions(terms = [], fallbackTerm = {}) {
 
 function termSetupRow(term = {}, index = 0) {
   const termId = term.id || `term_${index + 1}`;
-  return `<div data-setup-row="terms" data-id="${html(termId)}" style="display:grid;grid-template-columns:1fr .7fr .7fr .55fr auto auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;"><input type="hidden" name="id" value="${html(termId)}" />${setupInput("Term name", "label", term.label || `Term ${index + 1}`)}${setupInput("Start", "startDate", term.startDate || "", { type: "date" })}${setupInput("End", "endDate", term.endDate || "", { type: "date" })}${setupInput("Weeks", "weeksCount", term.weeksCount || 12, { type: "number" })}<button type="button" data-close-term="${html(termId)}" style="align-self:end;border:1px solid var(--gold);background:#fbf2dd;color:var(--ink);border-radius:9px;padding:10px 12px;font-family:inherit;font-weight:700;">Close Term</button>${setupRemoveButton()}<label style="grid-column:1 / -1;display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Term description — cycle, focus, or notes<textarea name="description" rows="2" style="min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);resize:vertical;font-size:13px;">${html(term.description || "")}</textarea></label></div>`;
+  return `<div data-setup-row="terms" data-id="${html(termId)}" style="display:grid;grid-template-columns:1fr .7fr .7fr .55fr auto auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;"><input type="hidden" name="id" value="${html(termId)}" />${setupInput("Term name", "label", term.label || `Term ${index + 1}`)}${setupInput("Start", "startDate", term.startDate || "", { type: "date" })}${setupInput("End", "endDate", term.endDate || "", { type: "date" })}${setupInput("Weeks", "weeksCount", term.weeksCount || 12, { type: "number" })}<button type="button" data-close-term="${html(termId)}" style="align-self:end;border:1px solid var(--gold);background:#fbf2dd;color:var(--ink);border-radius:9px;padding:10px 12px;font-family:inherit;font-weight:700;">Close Term</button>${setupRemoveButton()}</div>`;
 }
 
 function setupRemoveButton() {
@@ -3022,14 +3198,37 @@ const subjectTypeOptions = [
   { value: "geography", label: "Geography" },
   { value: "math", label: "Math" },
   { value: "sciences-nature", label: "Sciences & Nature" },
+  { value: "science", label: "Science" },
+  { value: "social-studies", label: "Social Studies" },
+  { value: "fine-arts", label: "Fine Arts" },
+  { value: "health-education", label: "Health Education" },
+  { value: "physical-education", label: "Physical Education (PE)" },
+  { value: "technology-applications", label: "Technology Applications" },
+  { value: "languages-other-than-english", label: "Languages Other Than English (LOTE)" },
+  { value: "career-technical-education", label: "Career and Technical Education (CTE)" },
+  { value: "speech-communication", label: "Speech/Communication" },
   { value: "custom", label: "Custom" }
 ];
 
 const graceModeOptions = [
-  { value: "keep", label: "Keep in Grace Mode" },
-  { value: "reduce first", label: "Reduce first" },
-  { value: "bump if needed", label: "Defer if needed" }
+  { value: "core", label: "1 Core: chosen first in every mode" },
+  { value: "high", label: "2 High: keep after Core" },
+  { value: "medium", label: "3 Medium: keep if the cap has room" },
+  { value: "low", label: "4 Low: first moved to reserve" }
 ];
+
+function setupGracePriorityValue(value = "core") {
+  const normalized = String(value || "").toLowerCase().replace(/[-_]+/g, " ").trim();
+  if (normalized === "keep" || normalized === "always keep") return "core";
+  if (normalized === "important") return "high";
+  if (normalized === "reduce first" || normalized === "shorten" || normalized === "helpful") return "medium";
+  if (normalized === "bump if needed" || normalized === "defer if needed" || normalized === "minimum only" || normalized === "optional") return "low";
+  return ["core", "high", "medium", "low"].includes(normalized) ? normalized : "core";
+}
+
+function setupGraceModeBehavior(value = "core") {
+  return `<span class="learn-grace-behavior-field">${setupSelect("Grace priority", "gracePriority", setupGracePriorityValue(value), graceModeOptions)}<small>Full runs all scheduled work. Medium keeps up to 4 ranked child subjects per day. Light keeps up to 2 and turns kept work into short touchpoints.</small></span>`;
+}
 
 const schedulingModeOptions = [
   { value: "fixed", label: "Fixed days" },
@@ -3225,12 +3424,31 @@ function normalizeSetupResource(resource, subject = {}) {
 function setupResourceRow(resource = {}, index = 0, children = [], groupingMode = "forms") {
   const resolved = String(resource.title || "").trim();
   const link = /^https?:\/\//i.test(resolved)
-    ? `<a href="${html(resolved)}" target="_blank" rel="noopener noreferrer" class="learn-source-link" style="font-size:12px;color:var(--gold);white-space:nowrap;align-self:end;padding-bottom:11px;">Open ↗</a>`
+    ? `<a href="${html(resolved)}" target="_blank" rel="noopener noreferrer" class="learn-source-link">Open</a>`
     : "";
   const removeBtn = index > 0
-    ? `<button type="button" data-remove-resource aria-label="Remove resource" style="align-self:end;flex:0 0 auto;border:1px solid var(--line);background:var(--paper);color:var(--burgundy);border-radius:9px;padding:9px 10px;font-family:inherit;line-height:1;">×</button>`
+    ? `<button type="button" data-remove-resource aria-label="Remove resource">×</button>`
     : "";
-  return `<div data-resource-row="${index}" class="learn-resource-card"><label style="grid-column:1;min-width:0;">${index === 0 ? "Book / source / resource" : `Resource ${index + 1}`}<div style="display:flex;gap:6px;align-items:center;margin-top:4px;"><input type="text" data-resource-field="title" name="${html(resourceFieldName(index, "title"))}" value="${html(resolved)}" inputmode="url" placeholder="Book title, source note, or https://..." style="flex:1;min-width:0;" />${link}</div></label>${removeBtn}<div class="learn-resource-card-plan">${setupResourcePlanningCard(index, resource, children, groupingMode)}</div></div>`;
+  const summary = termWeekSummary(resource.scheduledWeeks || []);
+  return `<div data-resource-row="${index}" class="learn-resource-card">
+    <div class="learn-resource-card-summary">
+      <small>${html(index === 0 ? "Book / source / resource" : `Resource ${index + 1}`)}</small>
+      <strong data-resource-summary-title>${html(resolved || "Untitled resource")}</strong>
+      <span data-resource-summary-detail>${html(summary)}</span>
+      ${link}
+    </div>
+    <div class="learn-resource-card-actions"><button type="button" data-edit-resource>Edit</button>${removeBtn}</div>
+    <div class="learn-resource-modal" data-resource-modal hidden>
+      <div class="learn-resource-modal-card">
+        <button type="button" class="learn-family-modal-close" data-resource-modal-close aria-label="Close">×</button>
+        <small>${html(index === 0 ? "Book / source / resource" : `Resource ${index + 1}`)}</small>
+        <h2>Resource details</h2>
+        <label>Title, source note, or URL<input type="text" data-resource-field="title" name="${html(resourceFieldName(index, "title"))}" value="${html(resolved)}" inputmode="url" placeholder="Book title, source note, or https://..." /></label>
+        <div class="learn-resource-card-plan">${setupResourcePlanningCard(index, resource, children, groupingMode)}</div>
+        <div class="learn-family-modal-actions"><button type="button" data-resource-modal-close>Cancel</button><button type="button" data-resource-modal-save>Save resource</button></div>
+      </div>
+    </div>
+  </div>`;
 }
 
 function setupResourceList(resources = [], children = [], groupingMode = "forms", subject = {}) {
@@ -3243,7 +3461,38 @@ function setupResourceList(resources = [], children = [], groupingMode = "forms"
 
 function setupWeeklyPlanFields(value = []) {
   const entries = Array.isArray(value) ? value : String(value || "").split("|");
-  return `<details class="learn-weekly-plan-fields"><summary><span>Weekly chapters / lessons / pages</span><strong>Optional</strong></summary><div class="learn-weekly-plan-grid">${Array.from({ length: DEFAULT_TERM_WEEK_COUNT }, (_, index) => `<label>Week ${index + 1}<input type="text" name="weeklyPlans.${index + 1}" value="${html(entries[index] || "")}" placeholder="Ch. 1, pp. 4-9, lesson 2..." /></label>`).join("")}</div></details>`;
+  return `<details class="learn-weekly-plan-fields"><summary><span>Weekly chapters / lessons / pages</span><strong>Optional</strong></summary>${setupWeeklyPlanGrid(entries)}</details>`;
+}
+
+function setupWeeklyPlanGrid(value = []) {
+  const entries = Array.isArray(value) ? value : String(value || "").split("|");
+  return `<div class="learn-weekly-plan-grid">${Array.from({ length: DEFAULT_TERM_WEEK_COUNT }, (_, index) => `<label>Week ${index + 1}<input type="text" name="weeklyPlans.${index + 1}" value="${html(entries[index] || "")}" placeholder="Ch. 1, pp. 4-9, lesson 2..." /></label>`).join("")}</div>`;
+}
+
+function setupPlannerRulesPanel(item = {}, options = {}) {
+  const includeRange = options.range !== false;
+  const includeWeeklyPlans = Boolean(options.weeklyPlans);
+  const rangeLabel = item.progressionType || options.progressionType || "lessons";
+  const weeklyPlanFields = includeWeeklyPlans
+    ? setupWeeklyPlanGrid(item.weeklyPlans || [])
+    : "";
+  return `<details class="learn-weekly-plan-fields"><summary><span>Planner rules</span><strong>Optional</strong></summary>
+    <div style="display:grid;gap:12px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
+        ${setupDayPicker(item.scheduledDays, item.weeklyFrequency || item.cadenceLabel || item.cadence || "daily")}
+        ${setupInput("Weekly target", "weeklyTarget", item.weeklyTarget || "", { type: "number" })}
+        ${setupInput("Term target", "termTarget", item.termTarget || "", { type: "number" })}
+        ${setupInput("Starts", "activeStartDate", item.activeStartDate || "", { type: "date" })}
+        ${setupInput("Ends", "activeEndDate", item.activeEndDate || "", { type: "date" })}
+      </div>
+      ${includeRange ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
+        ${setupInput(`Start ${rangeLabel}`, "startNumber", item.startNumber || "", { type: "number" })}
+        ${setupInput(`Done ${rangeLabel}`, "currentNumber", item.currentNumber || item.completedThroughNumber || "", { type: "number" })}
+        ${setupInput(`End ${rangeLabel}`, "endNumber", item.endNumber || "", { type: "number" })}
+      </div>` : ""}
+      ${weeklyPlanFields}
+    </div>
+  </details>`;
 }
 
 function setupPlanningModePicker(item = {}, children = [], groupingMode = "forms") {
@@ -3310,7 +3559,7 @@ function childSetupRow(child = {}, groupingMode = "forms") {
 
 function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms", tileMinutes = "") {
   const minutes = subject.minutes || tileMinutes || "20";
-  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main"><div class="learn-setup-row-identity">${setupInput("Subject / skill", "title", subject.title || "")}${setupSelect("Schedule type", "weeklyFrequency", subject.weeklyFrequency === "1x" ? "weekly" : subject.weeklyFrequency || subject.cadenceLabel || "daily", simpleScheduleOptions)}${setupRemoveButton()}</div>${setupResourceList(subject.resources?.length ? subject.resources : (subject.resource ? [{ title: subject.resource, scheduledWeeks: [] }] : []), children, groupingMode, subject)}<input type="hidden" name="minutes" value="${html(minutes)}" /><input type="hidden" name="subjectType" value="${html(subject.subjectType || subject.type || "custom")}" /><input type="hidden" name="instructionMode" value="${html(subject.instructionMode || "parent-led")}" /><input type="hidden" name="resourceType" value="${html(subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(subject.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(subject.priorityLevel || "important")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main"><div class="learn-setup-row-identity">${setupInput("Subject / skill", "title", subject.title || "")}${setupSelect("Schedule type", "weeklyFrequency", subject.weeklyFrequency === "1x" ? "weekly" : subject.weeklyFrequency || subject.cadenceLabel || "daily", simpleScheduleOptions)}${setupRemoveButton()}</div>${setupResourceList(subject.resources?.length ? subject.resources : (subject.resource ? [{ title: subject.resource, scheduledWeeks: [] }] : []), children, groupingMode, subject)}<input type="hidden" name="minutes" value="${html(minutes)}" /><input type="hidden" name="subjectType" value="${html(subject.subjectType || subject.type || "custom")}" /><input type="hidden" name="instructionMode" value="${html(subject.instructionMode || "parent-led")}" /><input type="hidden" name="resourceType" value="${html(subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(subject.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(subject.priorityLevel || "important")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupTermWeekPicker(subject.scheduledWeeks)}${setupPlannerRulesPanel(subject)}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupGraceModeBehavior(subject.gracePriority || "core")}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function bookSetupRow(book = {}, terms = [], currentTermId = "") {
@@ -3331,7 +3580,7 @@ function formationRecitationSetupRow(track = {}, children = [], groupingMode = "
 
 function formationEnrichmentSetupRow(block = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms", tileMinutes = "") {
   const minutes = block.minutesPlanned || block.minutes || tileMinutes || "20";
-  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupSourceInput("Source", "title", block.title || block.resource || block.source || "")}${setupPlanningModePicker(block, children, groupingMode)}${setupSelect("Schedule type", "weeklyFrequency", block.weeklyFrequency === "1x" ? "weekly" : block.weeklyFrequency || block.cadenceLabel || block.cadence || "weekly", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutesPlanned" value="${html(minutes)}" /><input type="hidden" name="instructionMode" value="${html(block.instructionMode || "shared")}" /><input type="hidden" name="resourceType" value="${html(block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(block.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(block.priorityLevel || "enrichment")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupTermWeekPicker(block.scheduledWeeks)}${setupWeeklyPlanFields(block.weeklyPlans)}${setupMultiChildPicker(children, block.childIds || (block.childId ? [block.childId] : []))}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "reduce first", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupSourceInput("Source", "title", block.title || block.resource || block.source || "")}${setupPlanningModePicker(block, children, groupingMode)}${setupSelect("Schedule type", "weeklyFrequency", block.weeklyFrequency === "1x" ? "weekly" : block.weeklyFrequency || block.cadenceLabel || block.cadence || "weekly", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutesPlanned" value="${html(minutes)}" /><input type="hidden" name="instructionMode" value="${html(block.instructionMode || "shared")}" /><input type="hidden" name="resourceType" value="${html(block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(block.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(block.priorityLevel || "enrichment")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupTermWeekPicker(block.scheduledWeeks)}${setupPlannerRulesPanel(block, { weeklyPlans: true })}${setupMultiChildPicker(children, block.childIds || (block.childId ? [block.childId] : []))}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupGraceModeBehavior(block.gracePriority || "medium")}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function churchRhythmSetupPanel(vm) {
@@ -3427,7 +3676,7 @@ function formationSetupPanel(vm) {
 
 function formSubjectsSetupPanel(vm, currentTermId) {
   const subjects = vm.subjects || [];
-  const groups = [
+  const standardGroups = [
     {
       panel: "language",
       title: "Language Arts",
@@ -3484,14 +3733,127 @@ function formSubjectsSetupPanel(vm, currentTermId) {
       types: ["sciences-nature", "science", "nature-study"],
       defaultType: "sciences-nature"
     }
-  ].map((group) => setupTileValue(vm, "subjects", group.panel, group));
+  ];
+  const teksFoundationGroups = [
+    {
+      panel: "teks-elar",
+      title: "English Language Arts and Reading (ELAR)",
+      detail: "Reading, writing, speaking, listening, composition, grammar, and literacy foundations.",
+      icon: "✎",
+      types: ["language-arts", "tales", "literature"],
+      defaultType: "language-arts"
+    },
+    {
+      panel: "teks-mathematics",
+      title: "Mathematics",
+      detail: "Number sense, operations, algebraic reasoning, geometry, measurement, data, and problem solving.",
+      icon: "◎",
+      types: ["math", "maths"],
+      defaultType: "math"
+    },
+    {
+      panel: "teks-science",
+      title: "Science",
+      detail: "Scientific practices, lab work, earth and space, life science, physical science, and nature study.",
+      icon: "✦",
+      types: ["science", "sciences-nature", "nature-study"],
+      defaultType: "science"
+    },
+    {
+      panel: "teks-social-studies",
+      title: "Social Studies",
+      detail: "History, geography, civics, economics, cultures, citizenship, timelines, and primary sources.",
+      icon: "⌁",
+      types: ["social-studies", "history", "geography"],
+      defaultType: "social-studies"
+    }
+  ];
+  const teksEnrichmentGroups = [
+    {
+      panel: "teks-fine-arts",
+      title: "Fine Arts",
+      detail: "Visual art, music, composer study, artist study, performance, and creative expression.",
+      icon: "♪",
+      types: ["fine-arts", "art", "music"],
+      defaultType: "fine-arts"
+    },
+    {
+      panel: "teks-health-education",
+      title: "Health Education",
+      detail: "Personal wellness, nutrition, safety, emotional health, family life, and healthy habits.",
+      icon: "✚",
+      types: ["health-education"],
+      defaultType: "health-education"
+    },
+    {
+      panel: "teks-physical-education",
+      title: "Physical Education (PE)",
+      detail: "Movement, fitness, coordination, outdoor activity, skill practice, and lifelong physical health.",
+      icon: "◉",
+      types: ["physical-education", "pe"],
+      defaultType: "physical-education"
+    },
+    {
+      panel: "teks-technology-applications",
+      title: "Technology Applications",
+      detail: "Digital citizenship, computer use, productivity tools, research, coding, and applied technology.",
+      icon: "▣",
+      types: ["technology-applications", "technology"],
+      defaultType: "technology-applications"
+    },
+    {
+      panel: "teks-lote",
+      title: "Languages Other Than English (LOTE)",
+      detail: "Modern languages, classical languages, vocabulary, grammar, conversation, and translation.",
+      icon: "Α",
+      types: ["languages-other-than-english", "classical-foreign-languages", "foreign-language", "classical-languages", "latin", "greek"],
+      defaultType: "languages-other-than-english"
+    },
+    {
+      panel: "teks-cte",
+      title: "Career and Technical Education (CTE)",
+      detail: "Career exploration, practical skills, applied projects, entrepreneurship, and technical pathways.",
+      icon: "⌘",
+      types: ["career-technical-education", "cte"],
+      defaultType: "career-technical-education"
+    },
+    {
+      panel: "teks-speech-communication",
+      title: "Speech/Communication",
+      detail: "Public speaking, discussion, presentation, listening, rhetoric, and interpersonal communication.",
+      icon: "✦",
+      types: ["speech-communication", "speech", "communication"],
+      defaultType: "speech-communication"
+    }
+  ];
+  const groupSets = isOdysseyLearnContext()
+    ? [
+        {
+          title: "Foundation Curriculum",
+          note: "Core, form-based academic subjects required for all students.",
+          groups: teksFoundationGroups
+        },
+        {
+          title: "Enrichment Curriculum",
+          note: "Mandated enrichment subjects offered to provide a well-rounded education.",
+          groups: teksEnrichmentGroups
+        }
+      ]
+    : [{ title: "", note: "", groups: standardGroups }];
+  const groups = groupSets.flatMap((set) => set.groups).map((group) => setupTileValue(vm, "subjects", group.panel, group));
   const subjectsForGroup = (group) => subjects.filter((subject) => group.types.includes(subject.subjectType || subject.type || "language-arts"));
+  const renderGroupSet = (set) => {
+    const setGroups = set.groups.map((group) => setupTileValue(vm, "subjects", group.panel, group));
+    return `
+      ${set.title ? `<div class="learn-setup-helper-note"><strong>${html(set.title)}:</strong> ${html(set.note)}</div>` : ""}
+      <div class="learn-setup-section-grid">
+        ${setGroups.map((group) => setupSectionCard({ group: "subjects", panel: group.panel, title: group.title, detail: group.detail, count: subjectsForGroup(group).length, icon: group.icon })).join("")}
+      </div>`;
+  };
   return `
     <p style="margin:0 0 12px;color:var(--muted);">Each tile is a subject family. Open only the subject family you are planning right now, then add the books, resources, and lesson streams that belong there.</p>
     <p class="learn-setup-helper-note"><strong>How this becomes a week:</strong> These Form-based subjects become draggable cards in the Planner Week view. After Setup, you will place them into the days you want and can edit the day-specific chapters, pages, lessons, or notes right inside the week.</p>
-    <div class="learn-setup-section-grid">
-      ${groups.map((group) => setupSectionCard({ group: "subjects", panel: group.panel, title: group.title, detail: group.detail, count: subjectsForGroup(group).length, icon: group.icon })).join("")}
-    </div>
+    ${groupSets.map(renderGroupSet).join("")}
     ${groups.map((group) => {
       const rows = subjectsForGroup(group);
       const listId = `learnSetupSubjects-${group.panel}`;
@@ -3669,7 +4031,7 @@ function simpleSetupStepBody(draft) {
     return `<div class="learn-wizard-step-copy"><span>Your learners</span><h2>Add the children learning at home.</h2><p>First name plus either age or grade is enough.${draft.useForms ? " Learn will suggest a Form for each child as you enter them." : " Learn will use the grade or level you enter."}</p></div><div class="learn-wizard-plan-note"><strong>Free plan: up to 2 children</strong><span>Family plans include unlimited children, Forms, child sheets, and full household planning.</span></div><div class="learn-wizard-children">${draft.children.map((child, index) => { const suggested = child.formLabel || suggestedFormForChild(child); const formField = draft.useForms ? `<label class="learn-wizard-field"><span>Suggested Form</span><select name="formLabel">${formOptions.map((option) => `<option value="${html(option)}" ${option === suggested ? "selected" : ""}>${html(option)}</option>`).join("")}</select></label>` : ""; return `<div class="learn-wizard-child${draft.useForms ? " uses-forms" : ""}" data-wizard-child="${index}" data-client-id="${html(child.clientId)}"><span class="learn-wizard-child-number">${index + 1}</span>${simpleSetupField("First name", "firstName", child.firstName, { placeholder: "Maria" })}${simpleSetupField("Age", "ageYears", child.ageYears, { type: "number", min: 0, max: 21 })}${simpleSetupField("Grade or level", "gradeLabel", child.gradeLabel, { placeholder: "Grade 3 or Kindergarten" })}${formField}${draft.children.length > 1 ? `<button type="button" class="learn-wizard-icon-button" data-wizard-remove-child="${index}" aria-label="Remove ${html(child.firstName || `child ${index + 1}`)}">×</button>` : ""}</div>`; }).join("")}</div><button type="button" class="learn-wizard-add" data-wizard-add-child>${!isLearnFamilyPlan() && draft.children.length >= 2 ? "Upgrade to add another child" : "+ Add another child"}</button>`;
   }
   if (draft.step === 4) {
-    return `<div class="learn-wizard-step-copy"><span>A gentler way through real life</span><h2>Meet Grace Mode.</h2><p>Your plan should serve your family, not punish it. Grace Mode lets you lighten a difficult day without deleting work or pretending the plan never existed.</p></div><aside class="learn-wizard-grace-explainer"><div><small>Built for real family life</small><h3>Grace Mode lightens a day without erasing the plan.</h3><p>Use it for illness, a new baby, travel, feast days, difficult mornings, or any season when the full plan is too much. Deferred work stays in your plan and can return when the household is ready.</p></div><div class="learn-wizard-grace-levels"><span><strong>Light</strong><small>Keeps essentials, softens lower-priority work. Most common.</small></span><span><strong>Minimum</strong><small>Keeps prayer, one shared touchpoint, and the next right thing.</small></span><span><strong>Feast Only</strong><small>Church rhythm and feast celebration — academics step aside.</small></span></div><p class="learn-wizard-grace-tip"><strong>How to use it:</strong> choose Light, Minimum, or Feast Only at the top of the Learn Dashboard. In Setup, each subject can be marked “keep,” “reduce first,” or “defer if needed,” so you remain in control. The full plan runs automatically when no Grace Mode is active.</p></aside><div class="learn-wizard-gentle-note"><strong>No permanent choice is required.</strong><span>You can change Grace Mode from day to day as family life changes.</span></div>`;
+    return `<div class="learn-wizard-step-copy"><span>A gentler way through real life</span><h2>Meet Grace Mode.</h2><p>Your plan should serve your family, not punish it. Grace Mode lets you choose Full, Medium, or Light without deleting work or pretending the plan never existed.</p></div><aside class="learn-wizard-grace-explainer"><div><small>Built for real family life</small><h3>Grace Mode changes the day according to each subject’s priority rank.</h3><p>Use it for illness, a new baby, travel, feast days, difficult mornings, or any season when the full plan is too much. Deferred work stays in your plan and can return when the household is ready.</p></div><div class="learn-wizard-grace-levels"><span><strong>Full</strong><small>Every scheduled item runs at its normal time.</small></span><span><strong>Medium</strong><small>Each child keeps up to 4 ranked subjects. Household enrichment keeps up to 3 blocks.</small></span><span><strong>Light</strong><small>Each child keeps up to 2 top-ranked subjects as short touchpoints. Household enrichment keeps 1 block.</small></span></div><p class="learn-wizard-grace-tip"><strong>How to use it:</strong> choose today’s mode on the Learn Dashboard. In Advanced Setup, rank each subject as Core, High, Medium, or Low so Mom knows exactly what survives first when the day gets lighter.</p></aside><div class="learn-wizard-gentle-note"><strong>No permanent choice is required.</strong><span>You can change Grace Mode from day to day as family life changes.</span></div>`;
   }
   return `<div class="learn-wizard-step-copy"><span>Ready for Today</span><h2>Would you like a simple starter week?</h2><p>AGAPAY will save a real editable first term, Daily Church Rhythms, family read-aloud, nature walk, and starter subject plan organized by ${draft.useForms ? "Form" : "grade or level"}. Nothing is sample-only or locked.</p></div><label class="learn-wizard-starter"><input type="checkbox" name="wizard.starterWeek" ${draft.starterWeek ? "checked" : ""}><span><strong>Create a gentle starter week</strong><small>Creates Morning Prayers, Daily Readings, Saint of the Day, family read-aloud, nature walk, plus editable Language Arts, Mathematics, History, Geography, Literature, and Science subjects for every ${draft.useForms ? "Form" : "grade or level"}.</small></span></label><div class="learn-wizard-summary"><div><small>Household</small><strong>${html(draft.householdName || "Your household")}</strong></div><div><small>Children</small><strong>${draft.children.filter((child) => child.firstName).length}</strong></div><div><small>Planning</small><strong>${draft.useForms ? "Family + Forms" : "Family + grades"}</strong></div><div><small>Style</small><strong>${html(draft.method === "Orthodox Classical" ? "Classical" : draft.method)}</strong></div></div>`;
 }
@@ -3785,7 +4147,7 @@ function renderCommunity(vm) {
     : "";
 
   return shell(vm, `
-    <section data-screen-label="Community Resources" class="learn-stack">
+    <section data-screen-label="Community Resources" style="display:flex;flex-direction:column;gap:18px;">
 
       <!-- Hero -->
       <div style="background:linear-gradient(135deg,var(--navy),#0a1c30);border-radius:16px;padding:clamp(20px,4vw,32px);display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;box-shadow:0 2px 8px rgba(4,20,39,.18);">
@@ -3822,8 +4184,8 @@ function renderCommunity(vm) {
       </div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-        <span data-community-count class="learn-muted-sm">Showing ${vm.resources.length} curated ${vm.resources.length === 1 ? "resource" : "resources"}</span>
-        <small class="learn-muted">Links open in a new tab · <button type="button" data-community-suggest style="border:0;background:none;color:var(--gold);font:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:0;">Suggest a resource →</button></small>
+        <span data-community-count style="color:var(--muted);font-size:13px;">Showing ${vm.resources.length} curated ${vm.resources.length === 1 ? "resource" : "resources"}</span>
+        <small style="color:var(--muted);">Links open in a new tab · <button type="button" data-community-suggest style="border:0;background:none;color:var(--gold);font:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:0;">Suggest a resource →</button></small>
       </div>
 
       <!-- Main two-column layout: cards + sidebar -->
@@ -3854,7 +4216,7 @@ function renderCommunity(vm) {
           <div style="padding:19px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;">
             <div>
               <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0;">Suggest a Resource</h2>
-              <small class="learn-muted">Submissions are reviewed before appearing in the library.</small>
+              <small style="color:var(--muted);">Submissions are reviewed before appearing in the library.</small>
             </div>
             <button type="button" data-community-suggest-close aria-label="Close" style="border:0;background:transparent;font-size:24px;color:var(--muted);cursor:pointer;">×</button>
           </div>
@@ -3984,12 +4346,12 @@ function simpleSetupPayload(draft, existingSnapshot = null) {
     daily: ["mon", "tue", "wed", "thu", "fri"]
   };
   const starterSubjectSlate = [
-    { title: "Language Arts", subjectType: "language-arts", weeklyFrequency: "4x", minutes: "20", gracePriority: "keep" },
-    { title: "Mathematics", subjectType: "math", weeklyFrequency: "4x", minutes: "20", gracePriority: "keep" },
-    { title: "History", subjectType: "history", weeklyFrequency: "3x", minutes: "25", gracePriority: "keep" },
-    { title: "Geography", subjectType: "geography", weeklyFrequency: "2x", minutes: "20", gracePriority: "reduce first" },
-    { title: "Literature", subjectType: "literature", weeklyFrequency: "3x", minutes: "20", gracePriority: "keep" },
-    { title: "Science", subjectType: "sciences-nature", weeklyFrequency: "2x", minutes: "25", gracePriority: "reduce first" }
+    { title: "Language Arts", subjectType: "language-arts", weeklyFrequency: "4x", minutes: "20", gracePriority: "core" },
+    { title: "Mathematics", subjectType: "math", weeklyFrequency: "4x", minutes: "20", gracePriority: "core" },
+    { title: "History", subjectType: "history", weeklyFrequency: "3x", minutes: "25", gracePriority: "high" },
+    { title: "Geography", subjectType: "geography", weeklyFrequency: "2x", minutes: "20", gracePriority: "medium" },
+    { title: "Literature", subjectType: "literature", weeklyFrequency: "3x", minutes: "20", gracePriority: "high" },
+    { title: "Science", subjectType: "sciences-nature", weeklyFrequency: "2x", minutes: "25", gracePriority: "medium" }
   ];
   const subjects = createStarterWeek ? planningGroups.flatMap((groupLabel, groupIndex) => starterSubjectSlate.map((subject, subjectIndex) => ({
     ...subject,
@@ -4010,8 +4372,8 @@ function simpleSetupPayload(draft, existingSnapshot = null) {
     ],
     recitationTracks: [], hymnStudies: [], feasts: [],
     enrichmentBlocks: [
-      { blockType: "Literature", title: "Family Read-Aloud", planningMode: "family", weeklyFrequency: "daily", daysOfWeek: subjectDays.daily, minutesPlanned: 20, termId: "term_1", gracePriority: "keep" },
-      { blockType: "Nature Study", title: "Nature Walk", planningMode: "family", weeklyFrequency: "1x", daysOfWeek: subjectDays["1x"], minutesPlanned: 30, termId: "term_1", gracePriority: "reduce first" }
+      { blockType: "Literature", title: "Family Read-Aloud", planningMode: "family", weeklyFrequency: "daily", daysOfWeek: subjectDays.daily, minutesPlanned: 20, termId: "term_1", gracePriority: "high" },
+      { blockType: "Nature Study", title: "Nature Walk", planningMode: "family", weeklyFrequency: "1x", daysOfWeek: subjectDays["1x"], minutesPlanned: 30, termId: "term_1", gracePriority: "medium" }
     ]
   };
   return {
@@ -4212,8 +4574,10 @@ function renderSetup(vm) {
     ? "Keep each child's familiar grade or level. Forms stay out of the way, and Planner and Print organize assignments by grade or individual child."
     : "Assign each child a Form and color. Forms let siblings at similar stages share work without duplicating the plan.";
   const collapseDefault = Boolean(vm.setupCompleted);
+  const rhythmSetupTitle = isOdysseyLearnContext() ? "Daily Rhythm" : "Church Rhythm";
+  const rhythmSetupSummary = isOdysseyLearnContext() ? "Daily prayers, readings, saints, feasts, and fasting notes" : "Daily prayers, readings, saints, feasts, and fasting rhythm";
   const adaptivePanels = {
-    church: `<span id="learnSetupChurchRhythm" class="learn-setup-anchor"></span>${collapsibleSetupPanel("churchRhythm", "Church Rhythm", churchRhythmSetupPanel(vm), { icon: "☩", summary: "Daily prayers, readings, saints, feasts, and fasting rhythm", defaultCollapsed: collapseDefault })}`,
+    church: `<span id="learnSetupChurchRhythm" class="learn-setup-anchor"></span>${collapsibleSetupPanel("churchRhythm", rhythmSetupTitle, churchRhythmSetupPanel(vm), { icon: "☩", summary: rhythmSetupSummary, defaultCollapsed: collapseDefault })}`,
     enrichment: `<span id="learnSetupFormation" class="learn-setup-anchor"></span>${panel("Enrichment", formationSetupPanel(vm), { icon: "✥", largeTitle: true })}`,
     subjects: `<span id="learnSetupSubjects" class="learn-setup-anchor"></span>${panel(experience.subjectTitle, formSubjectsSetupPanel(vm, currentTermId), { icon: "✎", largeTitle: true })}`
   };
@@ -4221,7 +4585,7 @@ function renderSetup(vm) {
   const childrenContent = `<p style="margin:0 0 12px;color:var(--muted);">${html(groupingCopy)}</p><div data-setup-list="children" style="display:grid;gap:10px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child, groupingMode)).join("")}</div><button type="button" data-setup-add-row="children" style="margin-top:12px;width:100%;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px;font-family:inherit;">Add Child</button>`;
   const termsContent = `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Term 4 / Summer is available for year-round homeschoolers. Assign subjects, books, and formation materials to the term where they belong.</p><div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div>`;
   const body = `
-    <form data-setup-form data-screen-label="Set Up" class="learn-stack">
+    <form data-setup-form data-screen-label="Set Up" style="display:flex;flex-direction:column;gap:18px;">
       <span id="learnSetupHousehold" class="learn-setup-anchor"></span>
       ${collapsibleSetupPanel("household", "Household", householdContent, { icon: "⌂", summary: "Profile, method, school year, calendar, and defaults", defaultCollapsed: collapseDefault })}
       <span id="learnSetupChildren" class="learn-setup-anchor"></span>
@@ -4230,7 +4594,7 @@ function renderSetup(vm) {
       ${experience.order.map((key) => adaptivePanels[key]).join("")}
       ${panel("Co-op", `<div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">Coming Soon</strong><p style="margin:4px 0 0;color:var(--muted);line-height:1.4;">Co-op tools are deferred while Learn focuses on setup, Today, planning, formation, books, Grace Mode, and printable household plans.</p></div><span style="border:1px solid var(--gold);border-radius:999px;color:var(--gold);padding:7px 12px;white-space:nowrap;">Future add-on</span></div>`, { icon: "◎" })}
       <div class="learn-setup-savebar">
-        <span data-setup-status class="learn-muted">Setup saves to the household profile and D1-backed Learn records.</span>
+        <span data-setup-status style="color:var(--muted);">Setup saves to the household profile and D1-backed Learn records.</span>
         <button type="submit" style="border:none;background:var(--navy);color:#fff;border-radius:10px;padding:12px 20px;font-family:inherit;font-weight:700;">Save Setup</button>
       </div>
     </form>`;
@@ -4476,7 +4840,7 @@ function renderPrintCenter(vm) {
     </button>` : ""}`, { icon: "✒" });
 
   const body = `
-    <section data-screen-label="Print Center" class="learn-stack">
+    <section data-screen-label="Print Center" style="display:flex;flex-direction:column;gap:18px;">
       ${planBanner}
       <div style="display:grid;grid-template-columns:1fr 330px;gap:16px;align-items:start;">
         <div style="display:flex;flex-direction:column;gap:10px;">
@@ -4542,11 +4906,123 @@ async function apiPost(path, body) {
   return payload;
 }
 
+function clampProgress(value) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.max(0, Math.min(100, parsed));
+}
+
+function currentChapterFromProgress(book = {}, progress = 0) {
+  const start = Math.max(1, Number.parseInt(book.startChapter || 1, 10) || 1);
+  const end = Math.max(start, Number.parseInt(book.endChapter || book.totalChapters || start, 10) || start);
+  const total = Math.max(1, end - start + 1);
+  const completed = Math.round((clampProgress(progress) / 100) * total);
+  return completed <= 0 ? start - 1 : Math.min(end, start + completed - 1);
+}
+
+async function loadLearnSetupSnapshotForPatch() {
+  const raw = await apiGet("/api/learn/setup");
+  const setup = raw.onboarding?.setupSnapshot || raw.onboarding || {};
+  return JSON.parse(JSON.stringify(setup));
+}
+
+async function saveInlineProgress(kind, id, progress) {
+  const setup = await loadLearnSetupSnapshotForPatch();
+  if (kind === "book") {
+    let matched = false;
+    setup.books = Array.isArray(setup.books) ? setup.books.map((book) => {
+      if (String(book.id || book.bookId || "") !== String(id)) return book;
+      matched = true;
+      return {
+        ...book,
+        currentChapter: currentChapterFromProgress(book, progress)
+      };
+    }) : [];
+    if (!matched) throw new Error("That book was not found in setup. Refresh and try again.");
+  } else if (kind === "recitation") {
+    const formation = setup.formation && typeof setup.formation === "object" ? setup.formation : {};
+    let matched = false;
+    formation.recitationTracks = Array.isArray(formation.recitationTracks) ? formation.recitationTracks.map((track) => {
+      if (String(track.id || "") !== String(id)) return track;
+      matched = true;
+      const nextProgress = clampProgress(progress);
+      return {
+        ...track,
+        progressPercent: nextProgress,
+        status: nextProgress >= 100 ? "memorized" : (track.status || "memorizing")
+      };
+    }) : [];
+    setup.formation = formation;
+    if (!matched) throw new Error("That recitation track was not found in setup. Refresh and try again.");
+  } else {
+    throw new Error("Unsupported progress type.");
+  }
+  return apiPost("/api/learn/setup", setup);
+}
+
+function wireInlineProgressEditors({ afterSave } = {}) {
+  root.querySelectorAll("[data-progress-editor]").forEach((editor) => {
+    const range = editor.querySelector("[data-progress-range]");
+    const number = editor.querySelector("[data-progress-number]");
+    const status = editor.querySelector("[data-progress-status]");
+    const fill = editor.querySelector("span span");
+    const sync = (value) => {
+      const next = clampProgress(value);
+      if (range) range.value = String(next);
+      if (number) number.value = String(next);
+      if (fill) fill.style.width = `${next}%`;
+      if (status && !status.dataset.saving) {
+        const suffix = /recitation/i.test(editor.dataset.progressKind || "") ? "memorized" : "complete";
+        status.style.color = "var(--muted)";
+        status.textContent = `${next}% ${suffix}`;
+      }
+    };
+    range?.addEventListener("input", () => sync(range.value));
+    number?.addEventListener("input", () => sync(number.value));
+  });
+
+  root.querySelectorAll("[data-progress-save]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const editor = button.closest("[data-progress-editor]");
+      if (!editor) return;
+      const status = editor.querySelector("[data-progress-status]");
+      const value = clampProgress(editor.querySelector("[data-progress-number]")?.value || editor.querySelector("[data-progress-range]")?.value || 0);
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = "Saving...";
+      if (status) {
+        status.dataset.saving = "true";
+        status.style.color = "var(--muted)";
+        status.textContent = "Saving progress...";
+      }
+      try {
+        await saveInlineProgress(editor.dataset.progressKind || "", editor.dataset.progressId || "", value);
+        if (status) {
+          status.style.color = "var(--gold)";
+          status.textContent = "Progress saved.";
+        }
+        await afterSave?.();
+      } catch (error) {
+        if (status) {
+          status.style.color = "var(--burgundy)";
+          status.textContent = error.message || "Progress could not be saved.";
+        }
+      } finally {
+        if (button.isConnected) {
+          button.disabled = false;
+          button.textContent = originalText;
+        }
+        if (status) delete status.dataset.saving;
+      }
+    });
+  });
+}
+
 async function syncLearnGoogleCalendar(extraEvents = [], statusEl = null) {
   if (!learnGoogleCalendarStatus.configured || !learnGoogleCalendarStatus.connected) return null;
   try {
-    const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
-    const result = await apiPost(`/api/learn/google-calendar/sync?calendar=${encodeURIComponent(calendar)}&returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`, { extraEvents });
+    const calendar = storedLearnCalendar("");
+    const result = await apiPost(learnApiUrl("/api/learn/google-calendar/sync", { calendar, returnTo: window.location.pathname + window.location.search }), { extraEvents });
     if (statusEl && result?.syncedCount) {
       statusEl.textContent = `${statusEl.textContent} Google Calendar synced ${result.syncedCount} item${result.syncedCount === 1 ? "" : "s"}.`;
     }
@@ -4563,9 +5039,29 @@ function localIsoDate() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
+function storedLearnCalendar(fallback = "") {
+  try {
+    return localStorage.getItem("agapay.learn.calendar") || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function learnApiUrl(path, params = {}) {
+  const url = new URL(path, window.location.origin);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value) !== "") url.searchParams.set(key, String(value));
+  });
+  return `${url.pathname}${url.search}`;
+}
+
 function rowValue(row, name) {
   const control = row.querySelector(`[name="${name}"]`);
   if (!control) return "";
+  const controls = row.querySelectorAll(`[name="${name}"]`);
+  if (controls.length > 1 && control.type === "checkbox") {
+    return [...controls].filter((item) => item.checked).map((item) => item.value).join(", ");
+  }
   if (control.type === "checkbox") return control.checked;
   return control.value.trim();
 }
@@ -4625,6 +5121,50 @@ function rowResources(row) {
   return legacy ? [{ title: legacy, scheduledWeeks: [] }] : [];
 }
 
+function refreshResourceSummary(resourceRow) {
+  if (!resourceRow) return;
+  const index = Number(resourceRow.dataset.resourceRow || 0);
+  const title = resourceRow.querySelector(`[name="${resourceFieldName(index, "title")}"]`)?.value?.trim() || "";
+  const weeks = scheduledTermWeeks(resourceRow.querySelector(`[name="${resourceFieldName(index, "scheduledWeeks")}"]`)?.value || "");
+  const groups = (resourceRow.querySelector(`[name="${resourceFieldName(index, "formLabels")}"]`)?.value || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const children = (resourceRow.querySelector(`[name="${resourceFieldName(index, "childIds")}"]`)?.value || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const titleEl = resourceRow.querySelector("[data-resource-summary-title]");
+  const detailEl = resourceRow.querySelector("[data-resource-summary-detail]");
+  if (titleEl) titleEl.textContent = title || "Untitled resource";
+  if (detailEl) detailEl.textContent = [termWeekSummary(weeks), groups.length ? groups.join(", ") : "", children.length ? `${children.length} child-specific` : ""].filter(Boolean).join(" · ");
+}
+
+function snapshotResourceModal(modal) {
+  if (!modal) return;
+  const fields = [...modal.querySelectorAll("input, select, textarea")].map((field) => ({
+    name: field.name || "",
+    value: field.value || "",
+    checked: Boolean(field.checked)
+  }));
+  modal.dataset.resourceSnapshot = JSON.stringify(fields);
+}
+
+function restoreResourceModal(modal) {
+  if (!modal?.dataset.resourceSnapshot) return;
+  try {
+    const fields = JSON.parse(modal.dataset.resourceSnapshot);
+    fields.forEach((state, index) => {
+      const field = modal.querySelectorAll("input, select, textarea")[index];
+      if (!field || field.name !== state.name) return;
+      if (field.type === "checkbox") field.checked = Boolean(state.checked);
+      else field.value = state.value || "";
+    });
+  } catch {
+    // A stale modal snapshot should not block editing the resource.
+  }
+}
+
 function rowTileMinutes(row) {
   return row.closest(".learn-setup-subsection")?.querySelector("[data-setup-section-minutes-input]")?.value?.trim() || rowValue(row, "minutes") || rowValue(row, "minutesPlanned");
 }
@@ -4637,14 +5177,14 @@ function collectRows(form, rowType, mapper) {
 
 async function openSaintOfDay(button) {
   const date = button.dataset.date || "";
-  const calendar = button.dataset.calendar || localStorage.getItem("agapay.learn.calendar") || "julian";
+  const calendar = button.dataset.calendar || storedLearnCalendar("");
   const previousText = button.querySelector("small")?.textContent || "";
   button.disabled = true;
   button.style.cursor = "wait";
   const small = button.querySelector("small");
   if (small) small.textContent = "Loading the lives of the saints...";
   try {
-    const payload = await apiGet(`/api/learn/saints?date=${encodeURIComponent(date)}&calendar=${encodeURIComponent(calendar)}`);
+    const payload = await apiGet(learnApiUrl("/api/learn/saints", { date, calendar }));
     const unavailable = payload.sourceConnected === false
       ? payload.message || "Lives of the Saints are unavailable right now. Please try again later."
       : "";
@@ -4674,7 +5214,28 @@ async function openSaintOfDay(button) {
   }
 }
 
+function wireChurchCardToggle() {
+  const storageKey = "agapay.learn.churchCardMinimized";
+  const card = root.querySelector("[data-church-card]");
+  if (!card) return;
+  const body = card.querySelector("[data-church-body]");
+  const button = card.querySelector("[data-church-toggle]");
+  const label = card.querySelector("[data-church-toggle-label]");
+  const icon = card.querySelector("[data-church-toggle-icon]");
+  if (!body || !button) return;
+  const setMinimized = (minimized) => {
+    body.hidden = minimized;
+    button.setAttribute("aria-expanded", minimized ? "false" : "true");
+    if (label) label.textContent = minimized ? "Expand" : "Minimize";
+    if (icon) icon.textContent = minimized ? "▼" : "▲";
+    localStorage.setItem(storageKey, minimized ? "true" : "false");
+  };
+  setMinimized(localStorage.getItem(storageKey) === "true");
+  button.addEventListener("click", () => setMinimized(!body.hidden));
+}
+
 function wireDashboard() {
+  wireChurchCardToggle();
   root.querySelectorAll("[data-saint-of-day]").forEach((button) => {
     button.addEventListener("click", () => openSaintOfDay(button));
   });
@@ -4684,11 +5245,11 @@ function wireDashboard() {
       const itemId = button.dataset.completionId || "";
       const scope = button.dataset.completionScope || "";
       const completed = button.getAttribute("aria-pressed") !== "true";
-      const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
+      const calendar = storedLearnCalendar("");
       button.disabled = true;
       button.style.cursor = "wait";
       try {
-        const saved = await apiPost(`/api/learn/completion?calendar=${encodeURIComponent(calendar)}`, {
+        const saved = await apiPost(learnApiUrl("/api/learn/completion", { calendar }), {
           itemId,
           scope,
           completed,
@@ -4708,7 +5269,7 @@ function wireDashboard() {
     button.addEventListener("click", async () => {
       const mode = button.dataset.graceMode || "light";
       const status = root.querySelector("[data-grace-mode-status]");
-      const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
+      const calendar = storedLearnCalendar("");
       if (status) {
         status.style.color = "var(--muted)";
         status.textContent = "Saving rhythm...";
@@ -4718,7 +5279,7 @@ function wireDashboard() {
         item.style.cursor = "wait";
       });
       try {
-        const saved = await apiPost(`/api/learn/grace-mode?calendar=${encodeURIComponent(calendar)}`, {
+        const saved = await apiPost(learnApiUrl("/api/learn/grace-mode", { calendar }), {
           mode,
           active: mode !== "full"
         });
@@ -4754,7 +5315,6 @@ function setupPayloadFromForm(form) {
       startDate: rowValue(row, "startDate"),
       endDate: rowValue(row, "endDate"),
       weeksCount: Math.max(1, Math.min(24, Number(rowValue(row, "weeksCount") || 12))),
-      description: rowValue(row, "description") || "",
       paceMode: "steady"
     };
   });
@@ -5106,6 +5666,7 @@ function familyPlanningPayloadFromForm(form) {
           day: rowValue(row, "day"),
           dayOfMonth: rowValue(row, "dayOfMonth"),
           quarterMonth: rowValue(row, "quarterMonth"),
+          assignedDate: rowValue(row, "assignedDate"),
           timeOfDay: rowValue(row, "timeOfDay"),
           notes: rowValue(row, "notes"),
           completed: Boolean(row.querySelector('[name="completed"]')?.checked)
@@ -5299,7 +5860,37 @@ function wireSetupPage() {
       const firstResource = rowResources(subjectRow || document.createElement("div"))[0] || {};
       const newRowHtml = setupResourceRow({ planningMode: firstResource.planningMode || "forms", formLabels: firstResource.formLabels || [], childIds: firstResource.childIds || [] }, index, children, groupingMode);
       addResource.insertAdjacentHTML("beforebegin", newRowHtml);
-      list.querySelector(`[data-resource-row="${index}"] input[type="text"]`)?.focus();
+      const newRow = list.querySelector(`[data-resource-row="${index}"]`);
+      const modal = newRow?.querySelector("[data-resource-modal]");
+      if (modal) {
+        snapshotResourceModal(modal);
+        modal.hidden = false;
+        modal.style.display = "flex";
+        modal.querySelector("input")?.focus();
+      }
+      return;
+    }
+    const editResource = event.target.closest("[data-edit-resource]");
+    if (editResource) {
+      const modal = editResource.closest("[data-resource-row]")?.querySelector("[data-resource-modal]");
+      if (!modal) return;
+      snapshotResourceModal(modal);
+      modal.hidden = false;
+      modal.style.display = "flex";
+      modal.querySelector("input")?.focus();
+      return;
+    }
+    const closeResourceModal = event.target.closest("[data-resource-modal-close], [data-resource-modal-save]");
+    if (closeResourceModal) {
+      const savingResource = closeResourceModal.hasAttribute("data-resource-modal-save");
+      const modal = closeResourceModal.closest("[data-resource-modal]");
+      if (!savingResource) restoreResourceModal(modal);
+      const resourceRow = closeResourceModal.closest("[data-resource-row]");
+      refreshResourceSummary(resourceRow);
+      if (modal) {
+        modal.hidden = true;
+        modal.style.display = "none";
+      }
       return;
     }
     const removeResource = event.target.closest("[data-remove-resource]");
@@ -5318,11 +5909,10 @@ function wireSetupPage() {
           const weekPicker = row.querySelector("[data-resource-week-picker]");
           if (weekPicker) weekPicker.dataset.resourceWeekPicker = i;
           // Update label text for rows after the first
-          const label = row.querySelector("label");
-          if (label && i > 0) {
-            const labelText = label.firstChild;
-            if (labelText?.nodeType === Node.TEXT_NODE) labelText.textContent = `Resource ${i + 1}`;
-          }
+          row.querySelectorAll(".learn-resource-card-summary small, .learn-resource-modal-card > small").forEach((label) => {
+            label.textContent = i === 0 ? "Book / source / resource" : `Resource ${i + 1}`;
+          });
+          refreshResourceSummary(row);
         });
       }
       return;
@@ -5623,8 +6213,8 @@ function wireWeeklyAssignmentBoard(vm) {
     button.textContent = "Generating...";
     writeState();
     try {
-      const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
-      const response = await fetch(`/api/learn/print/print_mom_weekly?calendar=${encodeURIComponent(calendar)}`, {
+      const calendar = storedLearnCalendar("");
+      const response = await fetch(learnApiUrl("/api/learn/print/print_mom_weekly", { calendar }), {
         method: "POST",
         headers: learnRequestHeaders({ "content-type": "application/json" }),
         body: JSON.stringify({
@@ -5700,8 +6290,8 @@ function wirePlanner(vm) {
     button.disabled = true;
     button.textContent = "Generating...";
     try {
-      const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
-      const response = await fetch(`/api/learn/print/print_mom_month?calendar=${encodeURIComponent(calendar)}&month=${encodeURIComponent(month)}`, {
+      const calendar = storedLearnCalendar("");
+      const response = await fetch(learnApiUrl("/api/learn/print/print_mom_month", { calendar, month }), {
         method: "POST",
         headers: learnRequestHeaders({ "content-type": "application/json" }),
         body: JSON.stringify({ month })
@@ -5765,14 +6355,39 @@ function wirePlanner(vm) {
     live.innerHTML = renderChoresScope(familyPlannerModel(nextVm), displayView);
   };
   const setModalValue = (name, value) => {
-    const field = familyForm?.querySelector(`[name="${CSS.escape(name)}"]`);
-    if (field) field.value = value || "";
+    const fields = familyForm?.querySelectorAll(`[name="${CSS.escape(name)}"]`) || [];
+    if (!fields.length) return;
+    if (fields.length > 1 && fields[0].type === "checkbox") {
+      const selected = choreTimeValues(value);
+      fields.forEach((field) => { field.checked = selected.includes(field.value); });
+      return;
+    }
+    fields[0].value = value || "";
   };
-  const getModalValue = (name) => (familyForm?.querySelector(`[name="${CSS.escape(name)}"]`)?.value?.trim()) || "";
+  const getModalValue = (name) => {
+    const fields = familyForm?.querySelectorAll(`[name="${CSS.escape(name)}"]`) || [];
+    if (!fields.length) return "";
+    if (fields.length > 1 && fields[0].type === "checkbox") {
+      return [...fields].filter((field) => field.checked).map((field) => field.value).join(", ");
+    }
+    return fields[0].value?.trim() || "";
+  };
+  const resetChoreBatchList = () => {
+    const batchList = familyForm?.querySelector("[data-chore-batch-list]");
+    if (!batchList) return;
+    batchList.innerHTML = "";
+    batchList.hidden = true;
+  };
+  const addChoreToBatchList = (entry = {}) => {
+    const batchList = familyForm?.querySelector("[data-chore-batch-list]");
+    if (!batchList || !entry.title) return;
+    batchList.hidden = false;
+    batchList.insertAdjacentHTML("beforeend", `<span><strong>${html(entry.title)}</strong><small>${html([entry.assignee || "Everyone", choreScheduleLabel(entry)].filter(Boolean).join(" · "))}</small></span>`);
+  };
   let activeChore = null;
   const choreStorageKey = (chore = {}) => {
     const dayKey = dayKeyForChore(chore, vm);
-    return dayKey ? `${chore.assignee || "Everyone"}::${dayKey}` : "";
+    return dayKey ? `${chore.assignee || "Everyone"}::${dayKey}::${chore.id || chore.title || "chore"}` : "";
   };
   const removeChoreRows = (chore = {}) => {
     if (!familyForm) return;
@@ -5915,19 +6530,24 @@ function wirePlanner(vm) {
         day: choreOpen.dataset.choreDay || choreOpen.dataset.day || "",
         dayOfMonth: choreOpen.dataset.choreDayOfMonth || "",
         quarterMonth: choreOpen.dataset.choreQuarterMonth || "1",
+        assignedDate: choreOpen.dataset.choreAssignedDate || choreOpen.dataset.assignedDate || "",
         timeOfDay: choreOpen.dataset.choreTimeOfDay || "Anytime",
         notes: choreOpen.dataset.choreNotes || ""
       } : null;
       setModalValue("modalChore.title", activeChore?.title || "");
       setModalValue("modalChore.assignee", activeChore?.assignee || choreOpen.dataset.assignee || "Everyone");
-      setModalValue("modalChore.cadence", activeChore?.cadence || "weekly");
+      setModalValue("modalChore.cadence", activeChore?.cadence || choreOpen.dataset.cadence || "weekly");
       setModalValue("modalChore.day", activeChore?.day || choreOpen.dataset.day || "");
-      setModalValue("modalChore.dayOfMonth", activeChore?.dayOfMonth || "");
+      setModalValue("modalChore.dayOfMonth", activeChore?.dayOfMonth || choreOpen.dataset.dayOfMonth || "");
       setModalValue("modalChore.quarterMonth", activeChore?.quarterMonth || "1");
+      setModalValue("modalChore.assignedDate", activeChore?.assignedDate || choreOpen.dataset.assignedDate || "");
       setModalValue("modalChore.timeOfDay", activeChore?.timeOfDay || "Anytime");
       setModalValue("modalChore.notes", activeChore?.notes || "");
       const deleteButton = familyForm.querySelector("[data-chore-delete]");
       if (deleteButton) deleteButton.hidden = !existing;
+      const addAnotherButton = familyForm.querySelector("[data-chore-save-add]");
+      if (addAnotherButton) addAnotherButton.hidden = existing;
+      resetChoreBatchList();
       const title = familyForm.querySelector("[data-chore-modal-title]");
       if (title) title.textContent = existing ? "Edit chore" : "Add chore";
       openFamilyModal("chore");
@@ -5944,7 +6564,9 @@ function wirePlanner(vm) {
       submitFamilyPlanner();
       return;
     }
-    if (event.target.closest("[data-chore-save]")) {
+    const saveChoreButton = event.target.closest("[data-chore-save], [data-chore-save-add]");
+    if (saveChoreButton) {
+      const addAnother = saveChoreButton.hasAttribute("data-chore-save-add");
       const list = familyForm.querySelector('[data-setup-list="chores"]');
       const entry = {
         id: activeChore?.id || "",
@@ -5954,10 +6576,16 @@ function wirePlanner(vm) {
         day: getModalValue("modalChore.day"),
         dayOfMonth: getModalValue("modalChore.dayOfMonth"),
         quarterMonth: getModalValue("modalChore.quarterMonth"),
+        assignedDate: getModalValue("modalChore.assignedDate"),
         timeOfDay: getModalValue("modalChore.timeOfDay"),
         notes: getModalValue("modalChore.notes")
       };
-      if ((entry.title || entry.assignee) && list) {
+      if (!entry.title) {
+        const titleInput = familyForm.querySelector('[name="modalChore.title"]');
+        if (titleInput) titleInput.focus();
+        return;
+      }
+      if (list) {
         const payload = familyPlanningPayloadFromForm(familyForm);
         const planningForRow = {
           ...(payload.familyPlanning || {}),
@@ -5972,7 +6600,7 @@ function wirePlanner(vm) {
         try {
           const dayKey = dayKeyForChore(entry, vm);
           if (dayKey) {
-            const key = `${entry.assignee || "Everyone"}::${dayKey}`;
+            const key = `${entry.assignee || "Everyone"}::${dayKey}::${entry.id || entry.title || Date.now()}`;
             const state = JSON.parse(localStorage.getItem("agapay.planner.v2") || "{}");
             state.chores = { ...(state.chores || {}), [key]: entry.title || "" };
             state.choreDetails = {
@@ -5986,9 +6614,18 @@ function wirePlanner(vm) {
         }
       }
       activeChore = null;
-      closeFamilyModals();
       refreshChoreCalendar();
-      submitFamilyPlanner();
+      if (addAnother) {
+        addChoreToBatchList(entry);
+        setModalValue("modalChore.title", "");
+        setModalValue("modalChore.timeOfDay", "");
+        setModalValue("modalChore.notes", "");
+        const titleInput = familyForm.querySelector('[name="modalChore.title"]');
+        if (titleInput) titleInput.focus();
+      } else {
+        closeFamilyModals();
+        submitFamilyPlanner();
+      }
       return;
     }
     const groceryRemove = event.target.closest("[data-grocery-remove]");
@@ -6033,14 +6670,20 @@ function wirePlanner(vm) {
     status.textContent = "Saving family planner...";
     submit.disabled = true;
     try {
-      const saved = await apiPost("/api/learn/family-planning", familyPlanningPayloadFromForm(familyForm));
+      const params = new URLSearchParams(window.location.search);
+      const saveQuery = new URLSearchParams({
+        calendar: params.get("calendar") || storedLearnCalendar(""),
+        view: params.get("view") || vm.activeView || "week",
+        month: params.get("month") || vm.month?.key || new Date().toISOString().slice(0, 7),
+        date: params.get("date") || vm.day?.selected?.date || new Date().toISOString().slice(0, 10)
+      });
+      const saved = await apiPost(`/api/learn/family-planning?${saveQuery.toString()}`, familyPlanningPayloadFromForm(familyForm));
       status.textContent = `Family planner saved${saved.savedAt ? ` at ${new Date(saved.savedAt).toLocaleTimeString()}` : ""}.`;
       status.style.color = "var(--gold)";
       await syncLearnGoogleCalendar([], status);
       // Re-render the planner from the returned payload so calendar-type changes
       // and other data-driven updates are immediately reflected without a full reload.
       if (saved.planner) {
-        const params = new URLSearchParams(window.location.search);
         const updatedVm = toPlannerViewModel({ ok: true, planner: saved.planner });
         const scope = params.get("scope") || updatedVm.activeScope || "lessons";
         const displayView = params.get("view") || updatedVm.activeView || "week";
@@ -6084,8 +6727,8 @@ function wirePlanner(vm) {
       if (!blockId || !fromDate || !toDate) return;
       button.disabled = true;
       try {
-        const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
-        const saved = await apiPost(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}`, { action: "reschedule", blockId, fromDate, toDate });
+        const calendar = storedLearnCalendar("");
+        const saved = await apiPost(learnApiUrl("/api/learn/planner", { calendar }), { action: "reschedule", blockId, fromDate, toDate });
         await syncLearnGoogleCalendar();
         if (saved.planner) {
           const updatedVm = toPlannerViewModel({ ok: true, planner: saved.planner });
@@ -6563,8 +7206,8 @@ function wirePrintCenter(vm) {
       button.disabled = true;
       button.textContent = "Generating...";
       try {
-        const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
-        const response = await fetch(`/api/learn/print/${encodeURIComponent(templateId)}?calendar=${encodeURIComponent(calendar)}`, {
+        const calendar = storedLearnCalendar("");
+        const response = await fetch(learnApiUrl(`/api/learn/print/${encodeURIComponent(templateId)}`, { calendar }), {
           method: "POST",
           headers: learnRequestHeaders({ "content-type": "application/json" }),
           body: JSON.stringify({
@@ -6610,8 +7253,8 @@ function wirePrintCenter(vm) {
       button.disabled     = true;
       button.textContent  = "Generating...";
       try {
-        const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
-        const response = await fetch(`/api/learn/print/${encodeURIComponent(templateId)}?calendar=${encodeURIComponent(calendar)}`, {
+        const calendar = storedLearnCalendar("");
+        const response = await fetch(learnApiUrl(`/api/learn/print/${encodeURIComponent(templateId)}`, { calendar }), {
           method: "POST",
           headers: learnRequestHeaders({ "content-type": "application/json" }),
           body: JSON.stringify({
@@ -6651,6 +7294,24 @@ function wireFormation() {
       if (mark) mark.textContent = active ? "✓" : "";
     });
   });
+  wireInlineProgressEditors({
+    afterSave: async () => {
+      const calendar = new URLSearchParams(window.location.search).get("calendar") || storedLearnCalendar("");
+      const raw = await apiGet(learnApiUrl("/api/learn/formation", { calendar }));
+      root.innerHTML = renderFormation(toFormationViewModel(raw));
+      wireFormation();
+    }
+  });
+}
+
+function wireBooks() {
+  wireInlineProgressEditors({
+    afterSave: async () => {
+      const raw = await apiGet("/api/learn/books");
+      root.innerHTML = renderBooks(toBooksViewModel(raw));
+      wireBooks();
+    }
+  });
 }
 
 async function mount() {
@@ -6683,10 +7344,11 @@ async function mount() {
     console.warn("Google Calendar status could not be loaded:", error);
     learnGoogleCalendarStatus = { loaded: true, configured: false, connected: false };
   }
-  const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
+  const params = new URLSearchParams(window.location.search);
+  const calendar = params.get("calendar") || storedLearnCalendar("");
   root.innerHTML = `<div style="padding:32px;font-family:Georgia,serif;color:#1b2c45;">Loading AGAPAY Learn...</div>`;
   if (pageKey === "dashboard") {
-    const raw = await apiGet(`/api/learn/dashboard?calendar=${encodeURIComponent(calendar)}`);
+    const raw = await apiGet(learnApiUrl("/api/learn/dashboard", { calendar }));
     if (raw.setupCompleted === false) {
       window.location.replace(learnSectionHref("onboarding"));
       return;
@@ -6696,19 +7358,18 @@ async function mount() {
     return;
   }
   if (pageKey === "planner") {
-    const params = new URLSearchParams(window.location.search);
     const view = params.get("view") || localStorage.getItem("agapay.learn.plannerView") || "week";
-    const month = params.get("month") || localStorage.getItem("agapay.learn.plannerMonth") || new Date().toISOString().slice(0, 7);
+    const month = params.get("month") || new Date().toISOString().slice(0, 7);
     const termId = params.get("termId") || "";
     const date = params.get("date") || "";
-    const raw = await apiGet(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}&view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}&termId=${encodeURIComponent(termId)}&date=${encodeURIComponent(date)}`);
+    const raw = await apiGet(learnApiUrl("/api/learn/planner", { calendar, view, month, termId, date }));
     const vm = toPlannerViewModel(raw);
     root.innerHTML = renderPlanner(vm);
     wirePlanner(vm);
     return;
   }
   if (pageKey === "formation") {
-    const raw = await apiGet(`/api/learn/formation?calendar=${encodeURIComponent(calendar)}`);
+    const raw = await apiGet(learnApiUrl("/api/learn/formation", { calendar }));
     root.innerHTML = renderFormation(toFormationViewModel(raw));
     wireFormation();
     return;
@@ -6716,6 +7377,7 @@ async function mount() {
   if (pageKey === "books") {
     const raw = await apiGet("/api/learn/books");
     root.innerHTML = renderBooks(toBooksViewModel(raw));
+    wireBooks();
     return;
   }
   if (pageKey === "grades") {
@@ -6736,7 +7398,7 @@ async function mount() {
     return;
   }
   if (pageKey === "print-center") {
-    const raw = await apiGet(`/api/learn/print-center?calendar=${encodeURIComponent(calendar)}`);
+    const raw = await apiGet(learnApiUrl("/api/learn/print-center", { calendar }));
     const vm = toPrintCenterViewModel({ ...raw, printLimit: resolvedPrintLimit });
     root.innerHTML = renderPrintCenter(vm);
     wirePrintCenter(vm);

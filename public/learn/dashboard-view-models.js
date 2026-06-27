@@ -281,10 +281,8 @@ function simpleList(items, mapper) {
 }
 
 function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
-  // ── Household rows: already one-per-block, no grouping needed ──────────────
-  const householdItems = safeArray(rawHouseholdRows)
-    .filter((row) => safeArray(row.statuses).some((s) => s !== "empty") || safeArray(row.minutes).some((m) => Number(m) > 0))
-    .map((row, index) => ({
+  return [
+    ...safeArray(rawHouseholdRows).map((row, index) => ({
       id: text(row.id, `household-${index}`),
       kind: text(row.kind, "household"),
       title: text(row.title, "Household block"),
@@ -292,101 +290,19 @@ function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
       color: text(row.color, ACCENTS[index % ACCENTS.length]),
       minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20),
       statuses: safeArray(row.statuses),
-      weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, ""),
-      gracePriority: text(row.gracePriority, "keep"),
-      graceNote: text(row.graceNote, "")
-    }));
-
-  // ── Child rows: group to avoid duplicates based on planning mode ───────────
-  // Two levels of grouping:
-  //   Level 1 — planning mode (determines card count per subject):
-  //     family   → planningMode !== "forms" (or no formLabels/childIds) → one card
-  //     form     → formLabels set, no childIds                          → one card per form label
-  //     specific → childIds set                                         → one card, all children listed
-  //   Level 2 — resources: multiple resources on the same subject collapse into
-  //     one card; resource titles accumulate and are joined in the sub line.
-  //     minutes/statuses are merged via per-day OR so the card is active whenever
-  //     any of its resources is active.
-  const grouped = new Map(); // groupKey → merged card
-  safeArray(rawChildRows).forEach((row, index) => {
-    const planningMode = text(row.planningMode, "forms");
-    const formLabels   = safeArray(row.formLabels);
-    const childIds     = safeArray(row.childIds);
-    const sourceId     = text(row.sourceId || row.id, `child-src-${index}`);
-    const childName    = text(row.child?.firstName || row.child?.name, "");
-    const childFormLabel = text(row.child?.formLabel || row.child?.gradeLabel, "");
-    const resourceTitle = text(row.resourceTitle || row.detail || row.subtitle, "");
-    const color        = text(row.color || row.child?.color, ACCENTS[(index + rawHouseholdRows.length) % ACCENTS.length]);
-    const rowMinutes   = safeArray(row.minutes);
-    const statuses     = safeArray(row.statuses);
-    const weeklyFreq   = text(row.weeklyFrequency || row.cadenceLabel, "");
-    const gracePriority = text(row.gracePriority, "keep");
-    const graceNote    = text(row.graceNote, "");
-
-    const isFamily   = planningMode !== "forms" || (!formLabels.length && !childIds.length);
-    const isSpecific = childIds.length > 0;
-
-    // Skip rows where the subject is not active this week
-    const isActiveThisWeek = statuses.some((s) => s !== "empty") || rowMinutes.some((m) => Number(m) > 0);
-    if (!isActiveThisWeek) return;
-
-    // Group key: no resourceIndex — all resources for the same subject+scope collapse
-    let groupKey;
-    let kind;
-    if (isFamily) {
-      groupKey = `family:${sourceId}`;
-      kind = "family";
-    } else if (isSpecific) {
-      groupKey = `specific:${sourceId}`;
-      kind = "specific";
-    } else {
-      const formKey = childFormLabel || formLabels[0] || "form";
-      groupKey = `form:${sourceId}:${formKey}`;
-      kind = "form";
-    }
-
-    if (grouped.has(groupKey)) {
-      const existing = grouped.get(groupKey);
-      // Accumulate child names
-      if (childName && !existing._childNames.includes(childName)) {
-        existing._childNames.push(childName);
-      }
-      // Accumulate resource titles
-      if (resourceTitle && !existing._resourceTitles.includes(resourceTitle)) {
-        existing._resourceTitles.push(resourceTitle);
-      }
-      // Merge minutes and statuses per-day via OR
-      existing._minutesArr = existing._minutesArr.map((m, i) => Math.max(m, Number(rowMinutes[i] || 0)));
-      existing._statusesArr = existing._statusesArr.map((s, i) => s !== "empty" ? s : (statuses[i] || "empty"));
-    } else {
-      grouped.set(groupKey, {
-        id: groupKey,
-        kind,
-        title: text(row.title, "Lesson"),
-        _childNames: childName ? [childName] : [],
-        _formLabel: isFamily ? "" : (!isSpecific ? (childFormLabel || formLabels[0] || "") : ""),
-        _resourceTitles: resourceTitle ? [resourceTitle] : [],
-        _minutesArr: rowMinutes.map((m) => Number(m || 0)),
-        _statusesArr: [...statuses],
-        color,
-        weeklyFrequency: weeklyFreq,
-        gracePriority,
-        graceNote
-      });
-    }
-  });
-
-  const childItems = Array.from(grouped.values()).map((item) => {
-    const { _childNames, _formLabel, _resourceTitles, _minutesArr, _statusesArr, ...rest } = item;
-    const resourceLine = _resourceTitles.join(", ");
-    const prefixParts = [...(_childNames.length ? [_childNames.join(", ")] : (_formLabel ? [_formLabel] : []))];
-    const sub = [...prefixParts, resourceLine].filter(Boolean).join(" · ");
-    const minutes = Math.max(..._minutesArr.filter(Boolean), 0) || (_minutesArr.find((m) => m > 0) ?? 20);
-    return { ...rest, sub, minutes, statuses: _statusesArr };
-  });
-
-  // Household items already unique by id; child items unique by groupKey
-  return [...householdItems, ...childItems].filter((item) => item.id && item.title);
+      weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, "")
+    })),
+    ...safeArray(rawChildRows).map((row, index) => ({
+      id: text(row.id, `child-${index}`),
+      kind: "form",
+      title: text(row.title, "Lesson"),
+      sub: [text(row.child?.firstName || row.child?.name, ""), text(row.detail || row.subtitle, "")].filter(Boolean).join(" · "),
+      color: text(row.color || row.child?.color, ACCENTS[(index + safeArray(rawHouseholdRows).length) % ACCENTS.length]),
+      minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20),
+      statuses: safeArray(row.statuses),
+      weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, "")
+    }))
+  ].filter((item, index, all) => item.id && item.title && all.findIndex((candidate) => candidate.id === item.id) === index);
 }
 
 function plannerDaysFromWeek(week) {
@@ -556,7 +472,6 @@ export function toDashboardViewModel(rawPayload, context = {}) {
     },
     termProgress: {
       label: text(dashboard.termProgress?.label || dashboard.term?.label, "Current Term"),
-      description: text(dashboard.termProgress?.description || dashboard.term?.description, ""),
       currentWeek: Number(dashboard.termProgress?.currentWeek || 0),
       totalWeeks: Number(dashboard.termProgress?.totalWeeks || 0),
       percent: percent(dashboard.termProgress?.percent),
@@ -591,10 +506,6 @@ export function toPlannerViewModel(rawPayload) {
 
   return {
     shell,
-    graceMode: {
-      active: Boolean(planner.graceMode?.active ?? planner.preferences?.graceModeActive),
-      mode: text(planner.graceMode?.mode ?? planner.preferences?.graceModeDefault, "light")
-    },
     page: {
       id: "planner",
       title: "Family Planner",
@@ -738,7 +649,6 @@ export function toPlannerViewModel(rawPayload) {
       activeTermId,
       label: text(planner.term?.label, `Term ${activeTerm}`),
       dateRange: [text(planner.term?.startDate, ""), text(planner.term?.endDate, "")].filter(Boolean).join(" - "),
-      description: text(planner.term?.description, ""),
       paceMode: text(planner.term?.paceMode, ""),
       settings: planner.curriculum?.mappingSummary || [],
       cycleTitle: text(planner.cycle?.year?.title, "Household Cycle"),
@@ -851,11 +761,13 @@ export function toFormationViewModel(rawPayload) {
     },
     recitation: [
       ...simpleList(formation.recitationTracks, (track) => ({
+      id: text(track.id, ""),
       title: text(track.title, "Memory Work"),
       status: text(track.status, ""),
       progress: percent(track.progressPercent)
       })),
       ...mappedMemory.map((item) => ({
+        id: "",
         title: item.title,
         status: item.frequency || item.type,
         progress: 0
@@ -904,21 +816,29 @@ export function toBooksViewModel(rawPayload) {
     shell: shellFromPayload("books", rawPayload),
     page: page("books", "Books", "Living books for the mind, the heart, and the soul."),
     readAlouds: simpleList(books.currentReadAlouds, (book) => ({
+      id: text(book.id || book.bookId, ""),
       title: text(book.title, "Untitled Book"),
       author: text(book.author, ""),
       assignment: text(book.assignmentLabel || book.assignedTerm || book.assignment || book.audienceLabel, ""),
       progress: percent(book.progressPercent),
+      startChapter: Number(book.startChapter || 1),
+      currentChapter: Number(book.currentChapter ?? book.completedThroughChapter ?? book.startChapter ?? 0),
+      endChapter: Number(book.endChapter || book.totalChapters || 0),
       stream: text(book.streamLabel || book.audienceLabel, ""),
       list: text(book.listLabel, "")
     })),
     library: simpleList(books.libraryBooks, (book) => ({
+      id: text(book.id || book.bookId, ""),
       title: text(book.title, "Untitled Book"),
       author: text(book.author, ""),
       category: text(book.category, ""),
       ages: text(book.ageRange || book.ages, ""),
       orthodox: Boolean(book.orthodox),
       assignment: text(book.assignmentLabel || book.assignment || book.audienceLabel || book.formLabel, ""),
-      progress: percent(book.progressPercent)
+      progress: percent(book.progressPercent),
+      startChapter: Number(book.startChapter || 1),
+      currentChapter: Number(book.currentChapter ?? book.completedThroughChapter ?? book.startChapter ?? 0),
+      endChapter: Number(book.endChapter || book.totalChapters || 0)
     })),
     suggestions: simpleList(books.orthodoxSuggestions, (item, index) => ({
       title: text(item.title, "Suggestion"),

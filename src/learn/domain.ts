@@ -35,7 +35,7 @@ export type NarrationType = typeof NARRATION_TYPES[number];
 export const PACE_MODES = ["steady", "grace", "recovery"] as const;
 export type PaceMode = typeof PACE_MODES[number];
 
-export const GRACE_MODES = ["full", "light", "minimum-viable", "feast-only", "custom"] as const;
+export const GRACE_MODES = ["full", "medium", "light"] as const;
 export type GraceMode = typeof GRACE_MODES[number];
 
 export const CYCLE_FRAMEWORK_TYPES = ["history", "catechesis", "combined"] as const;
