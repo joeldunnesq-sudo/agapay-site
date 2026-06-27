@@ -244,6 +244,23 @@ function resourceTypeValue(value, fallback = "curriculum") {
   return fallback;
 }
 
+function graceModeValue(value = "", fallback = "light") {
+  const raw = String(value || "").trim().toLowerCase().replace(/[-_]+/g, " ");
+  if (raw === "full") return "full";
+  if (raw === "medium" || raw === "light") return "light";
+  if (raw === "minimum" || raw === "minimum viable" || raw === "feast only") return "minimum viable";
+  return fallback;
+}
+
+function gracePriorityValue(value = "", fallback = "medium") {
+  const raw = String(value || "").trim().toLowerCase().replace(/[-_]+/g, " ");
+  if (raw === "core" || raw === "always keep" || raw === "keep") return "core";
+  if (raw === "high" || raw === "important") return "high";
+  if (raw === "medium" || raw === "helpful" || raw === "reduce first" || raw === "shorten") return "medium";
+  if (raw === "low" || raw === "optional" || raw === "bump if needed" || raw === "defer if needed" || raw === "defer in minimum" || raw === "minimum only") return "low";
+  return fallback;
+}
+
 function normalizeHomeschoolMethod(value) {
   const candidate = text(value, "Charlotte Mason");
   return HOMESCHOOL_METHODS.includes(candidate) ? candidate : "Charlotte Mason";
@@ -474,7 +491,6 @@ function normalizeSetupPayload(payload = {}, identity) {
       startDate: text(entry.startDate, index === 0 ? seed.term.startDate : ""),
       endDate: text(entry.endDate, index === 0 ? seed.term.endDate : ""),
       weeksCount: Math.max(1, Math.min(24, int(entry.weeksCount, 12))),
-      description: text(entry.description, ""),
       paceMode: text(preferences.paceMode || entry.paceMode, seed.term.paceMode || "steady")
     }))
     .filter((entry) => entry.label);
@@ -570,7 +586,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     finalGradeOverride: text(subject.finalGradeOverride, ""),
     color: text(subject.color, ""),
     termId: text(subject.termId || subject.assignedTermId, normalizedTerm.id),
-    gracePriority: text(subject.gracePriority, "keep"),
+    gracePriority: gracePriorityValue(subject.gracePriority, "core"),
     graceNote: text(subject.graceNote, "Deferred gracefully to the reserve list.")
   });
   }).filter((subject) => subject.title);
@@ -676,7 +692,7 @@ function normalizeSetupPayload(payload = {}, identity) {
       finalGradeOverride: text(block.finalGradeOverride, ""),
       cadenceLabel: text(block.weeklyFrequency || block.cadenceLabel || block.cadence, "Weekly"),
       color: text(block.color, ""),
-      gracePriority: text(block.gracePriority, "keep"),
+      gracePriority: gracePriorityValue(block.gracePriority, "medium"),
       graceNote: text(block.graceNote, "Deferred gracefully to the reserve list.")
     });
     }).filter((block) => block.title),
@@ -721,7 +737,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     recipes: list(rawFamilyPlanning.recipes).slice(0, 250).map((recipe, index) => ({ id: text(recipe.id, stableId("recipe", recipe.title, index)), title: text(recipe.title, ""), fastingType: ["fast-friendly", "adaptable", "regular"].includes(recipe.fastingType) ? recipe.fastingType : "adaptable", category: text(recipe.category, "Dinner"), sourceUrl: text(recipe.sourceUrl, ""), ingredients: text(recipe.ingredients, ""), instructions: text(recipe.instructions, "") })).filter((recipe) => recipe.title),
     groceryItems: list(rawFamilyPlanning.groceryItems).slice(0, 250).map((item, index) => ({ id: text(item.id, stableId("grocery", item.name, index)), name: text(item.name, ""), quantity: text(item.quantity, ""), category: text(item.category, "Other"), checked: Boolean(item.checked), pantry: Boolean(item.pantry || item.inPantry) })).filter((item) => item.name),
     chores: list(rawFamilyPlanning.chores).slice(0, 250).map((chore, index) => {
-      const cadence = ["daily", "weekly", "monthly", "quarterly"].includes(text(chore.cadence || chore.frequency, "").toLowerCase()) ? text(chore.cadence || chore.frequency, "").toLowerCase() : chore.day ? "weekly" : "daily";
+      const cadence = ["daily", "weekly", "monthly", "quarterly", "yearly"].includes(text(chore.cadence || chore.frequency, "").toLowerCase()) ? text(chore.cadence || chore.frequency, "").toLowerCase() : chore.day ? "weekly" : "daily";
       return {
         id: text(chore.id, stableId("chore", chore.title || chore.assignee, index)),
         title: text(chore.title, ""),
@@ -730,6 +746,7 @@ function normalizeSetupPayload(payload = {}, identity) {
         day: text(chore.day, ""),
         dayOfMonth: int(chore.dayOfMonth, 0) ? String(Math.max(1, Math.min(31, int(chore.dayOfMonth, 0)))) : "",
         quarterMonth: ["1", "2", "3"].includes(text(chore.quarterMonth, "")) ? text(chore.quarterMonth, "") : "1",
+        assignedDate: /^\d{4}-\d{2}-\d{2}$/.test(text(chore.assignedDate || chore.startDate || chore.date, "")) ? text(chore.assignedDate || chore.startDate || chore.date, "") : "",
         timeOfDay: text(chore.timeOfDay, "Anytime"),
         notes: text(chore.notes, ""),
         completed: Boolean(chore.completed)
@@ -776,7 +793,7 @@ function normalizeSetupPayload(payload = {}, identity) {
       defaultMaxDailyMinutes: Math.max(30, int(preferences.defaultMaxDailyMinutes, 240)),
       paceMode: normalizedHousehold.paceMode,
       evaluationModel: text(preferences.evaluationModel, "narrative-only"),
-      graceModeDefault: text(preferences.graceModeDefault, "light"),
+      graceModeDefault: graceModeValue(preferences.graceModeDefault, "light"),
       graceModeActive: normalizedHousehold.graceModeActive,
       printPack: text(preferences.printPack, "weekly-household")
     },
@@ -1065,8 +1082,6 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
         title: book.audienceLabel === "Morning Basket" ? book.title : `Read-Aloud: ${book.title}`,
         detail: `${book.author || book.category}${book.endChapter ? ` • chapters ${book.startChapter || 1}-${book.endChapter}` : ""}${book.weeklyFrequency ? ` • ${book.weeklyFrequency}` : ""}`,
         priority: 50 + index,
-        gracePriority: book.gracePriority || "reduce first",
-        graceNote: book.graceNote || "Reading moved into the reserve basket.",
         ...weeklyPlanArrays(book.weeklyFrequency, book.minutes || 20, scheduledThisTermWeek(book, currentTermWeek))
       })),
       ...list(formation.enrichmentBlocks).filter(forCurrentTerm).map((block, index) => ({
@@ -1080,11 +1095,10 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
         href: /literature|read-aloud|read aloud/i.test(`${block.blockType} ${block.title}`) ? "/myagapay/learn/books" : "/myagapay/learn/formation",
         priority: block.priorityLevel === "essential" ? 10 : block.priorityLevel === "important" ? 40 : block.priorityLevel === "optional" ? 95 : 70,
         priorityLevel: block.priorityLevel,
+        gracePriority: gracePriorityValue(block.gracePriority, "medium"),
         instructionMode: block.instructionMode,
         missedLessonBehavior: block.missedLessonBehavior,
         color: block.color,
-        gracePriority: block.gracePriority || "reduce first",
-        graceNote: block.graceNote || "Deferred gracefully to the reserve list.",
         ...planArraysForItem(block, currentTermWeek, plannerWeekWindow.dates)
       }))
     ],
@@ -1097,22 +1111,16 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           const assignedChildren = childrenForAssignment(assignment, next.children);
           return assignedChildren.map((child) => ({
           id: `week_${subject.id}_${assignment.resourceIndex + 1}_${child.id}`,
-          sourceId: subject.id,
-          resourceIndex: assignment.resourceIndex,
           childId: child.id,
-          childIds: subject.childIds || [],
-          planningMode: subject.planningMode,
-          formLabels: subject.formLabels || [],
           title: subject.title,
           detail: `${assignment.resourceTitle || subject.cadenceLabel}${currentWeekPlan(assignment) ? ` • ${currentWeekPlan(assignment)}` : ""}${subject.endNumber ? ` (${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber})` : ""}${subject.weeklyFrequency ? ` • ${subject.weeklyFrequency}` : ""}`,
           priority: subject.priorityLevel === "essential" ? index : subject.priorityLevel === "important" ? 30 + index : subject.priorityLevel === "optional" ? 100 + index : 70 + index,
           priorityLevel: subject.priorityLevel,
+          gracePriority: gracePriorityValue(subject.gracePriority, "core"),
           instructionMode: subject.instructionMode,
           missedLessonBehavior: subject.missedLessonBehavior,
           color: subject.color,
-          gracePriority: subject.gracePriority || "keep",
-          graceNote: subject.graceNote || "Deferred gracefully to the reserve list.",
-          graceModeApplied: setupSnapshot.preferences?.graceModeActive && subject.gracePriority !== "keep",
+          graceModeApplied: setupSnapshot.preferences?.graceModeActive && gracePriorityValue(subject.gracePriority, "core") !== "core",
           ...planArraysForItem(assignment, currentTermWeek, plannerWeekWindow.dates)
         }));
         });
@@ -1126,9 +1134,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           detail: `${book.author || book.category}${book.endChapter ? ` (chapters ${book.startChapter || 1}-${book.endChapter})` : ""}${book.weeklyFrequency ? ` • ${book.weeklyFrequency}` : ""}`,
           priority: index + 100,
           color: book.color,
-          gracePriority: book.gracePriority || "bump if needed",
-          graceNote: book.graceNote || "Reading moved into the reserve basket.",
-          graceModeApplied: setupSnapshot.preferences?.graceModeActive && (book.gracePriority || "bump if needed") !== "keep",
+          graceModeApplied: setupSnapshot.preferences?.graceModeActive,
           ...weeklyPlanArrays(book.weeklyFrequency, book.minutes || 20, scheduledThisTermWeek(book, currentTermWeek))
         }));
       })
@@ -1174,7 +1180,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
       }))
     ],
     graceReserve: [
-      ...currentSubjects.filter((subject) => setupSnapshot.preferences?.graceModeActive && subject.gracePriority !== "keep").map((subject) => ({
+      ...currentSubjects.filter((subject) => setupSnapshot.preferences?.graceModeActive && gracePriorityValue(subject.gracePriority, "core") !== "core").map((subject) => ({
         title: subject.title,
         note: subject.graceNote,
         color: subject.color
@@ -1479,7 +1485,7 @@ export async function saveLearnGraceMode(env, request, payload = {}) {
   const current = await loadLearnSetupSnapshotForIdentity(env, identity);
   const nextPreferences = {
     ...(current?.preferences || {}),
-    graceModeDefault: text(payload.mode || payload.graceModeDefault, current?.preferences?.graceModeDefault || "light"),
+    graceModeDefault: graceModeValue(payload.mode || payload.graceModeDefault || current?.preferences?.graceModeDefault || "light"),
     graceModeActive: Boolean(payload.active ?? payload.graceModeActive ?? true)
   };
   const nextPayload = current ? {

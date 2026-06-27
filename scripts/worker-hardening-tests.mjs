@@ -34,6 +34,7 @@ function env() {
     AGAPAY_ADMIN_TOKEN: "root-admin-token-for-tests",
     AGAPAY_APP_URL: "https://agapay.test",
     AGAPAY_ENABLED_PRODUCTS: "give,learn",
+    AGAPAY_TEST_MODE: "1",
     STRIPE_WEBHOOK_SECRET: "whsec_test_secret",
     STRIPE_WEBHOOK_SECRET_CONNECT: "whsec_connect_test_secret",
     STRIPE_SECRET_KEY: "sk_test_worker_hardening"

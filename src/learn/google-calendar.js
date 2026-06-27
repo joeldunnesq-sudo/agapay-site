@@ -163,7 +163,11 @@ function slug(value) {
 
 function previewEvents(repository, request, extraEvents = []) {
   const url = new URL(request.url);
-  const calendarType = url.searchParams.get("calendar") || "julian";
+  const calendarType = url.searchParams.get("calendar")
+    || repository?.seed?.setupSnapshot?.preferences?.calendarType
+    || repository?.seed?.setupSnapshot?.household?.liturgicalCalendarType
+    || repository?.seed?.household?.liturgicalCalendarType
+    || "julian";
   const planner = repository.getPlanner({ calendarType, view: "week" });
   const weekDates = planner.week?.dates || [];
   const familyPlanning = planner.familyPlanning || {};
