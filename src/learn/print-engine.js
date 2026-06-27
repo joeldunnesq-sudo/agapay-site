@@ -62,26 +62,35 @@ function normalizeColumns(section) {
 
 function orthodoxCrossSvg() {
   return `
-    <svg class="orthodox-cross" viewBox="0 0 96 132" role="img" aria-label="Orthodox Cross" xmlns="http://www.w3.org/2000/svg">
+    <svg class="orthodox-cross" viewBox="0 0 240 300" role="img" aria-label="Gold Orthodox budded cross" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="crossGold" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stop-color="#f7e7b4"/>
           <stop offset="0.48" stop-color="#b78b32"/>
           <stop offset="1" stop-color="#6e4c14"/>
         </linearGradient>
+        <filter id="crossShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="1.2" stdDeviation="1.2" flood-color="#4c330d" flood-opacity="0.22"/>
+        </filter>
       </defs>
-      <path d="M45 7h6v118h-6z" fill="url(#crossGold)"/>
-      <path d="M25 24h46v6H25z" fill="url(#crossGold)"/>
-      <path d="M16 49h64v7H16z" fill="url(#crossGold)"/>
-      <path d="M25.6 94.1 70.8 79l1.9 5.7-45.2 15.1z" fill="url(#crossGold)"/>
-      <circle cx="48" cy="10" r="4" fill="#f7e7b4"/>
-      <circle cx="48" cy="122" r="4" fill="#f7e7b4"/>
-      <circle cx="25" cy="27" r="3.5" fill="#f7e7b4"/>
-      <circle cx="71" cy="27" r="3.5" fill="#f7e7b4"/>
-      <circle cx="16" cy="52.5" r="3.5" fill="#f7e7b4"/>
-      <circle cx="80" cy="52.5" r="3.5" fill="#f7e7b4"/>
-      <circle cx="27.5" cy="97" r="3.5" fill="#f7e7b4"/>
-      <circle cx="70.8" cy="82" r="3.5" fill="#f7e7b4"/>
+      <path
+        d="m 120,6.5 c -10.67737,0 -19.33309,8.65572 -19.33309,19.33309 0,3.59159 0.96899,6.96328 2.67524,9.84489 -10.67736,0 -19.33308,8.65572 -19.33308,19.3331 0,9.1766 6.4058,16.8551 14.98136,18.8337 l 0,14.4106 -25.46831,0 C 71.54356,79.67988 63.86503,73.27408 54.68841,73.27408 c -10.67736,0 -19.33308,8.6557 -19.33308,19.3331 -2.88161,-1.7063 -6.2533,-2.6753 -9.84489,-2.6753 -10.67737,0 -19.33309,8.6557 -19.33309,19.3331 0,10.6774 8.65572,19.3331 19.33309,19.3331 3.59159,0 6.96328,-0.969 9.84489,-2.6753 0,10.6774 8.65572,19.3331 19.33308,19.3331 9.17662,0 16.85515,-6.4058 18.83371,-14.9813 l 25.46831,0 0,95.8807 c -8.57556,1.9785 -14.98136,9.657 -14.98136,18.8337 0,10.6773 8.65572,19.333 19.33308,19.333 -1.70625,2.8817 -2.67524,6.2533 -2.67524,9.8449 0,10.6774 8.65572,19.3331 19.33309,19.3331 10.67736,0 19.33308,-8.6557 19.33308,-19.3331 0,-3.5916 -0.96898,-6.9632 -2.67524,-9.8449 10.67737,0 19.33308,-8.6557 19.33308,-19.333 0,-9.1767 -6.4058,-16.8552 -14.98135,-18.8337 l 0,-95.8807 25.4683,0 c 1.97857,8.5755 9.65709,14.9813 18.83371,14.9813 10.67737,0 19.33309,-8.6557 19.33309,-19.3331 2.8816,1.7063 6.25329,2.6753 9.84489,2.6753 10.67736,0 19.33308,-8.6557 19.33308,-19.3331 0,-10.6774 -8.65572,-19.3331 -19.33308,-19.3331 -3.5916,0 -6.96329,0.969 -9.84489,2.6753 0,-10.6774 -8.65572,-19.3331 -19.33309,-19.3331 -9.17662,0 -16.85514,6.4058 -18.83371,14.9813 l -25.4683,0 0,-14.4106 c 8.57555,-1.9786 14.98135,-9.6571 14.98135,-18.8337 0,-10.67738 -8.65571,-19.3331 -19.33308,-19.3331 1.70626,-2.88161 2.67524,-6.2533 2.67524,-9.84489 C 139.33308,15.15572 130.67736,6.5 120,6.5 z"
+        fill="none"
+        stroke="url(#crossGold)"
+        stroke-width="7"
+        stroke-linejoin="round"
+        filter="url(#crossShadow)"
+      />
+      <path
+        d="M120 54v190M104 79h32M75 109h90M103 203l36 16"
+        fill="none"
+        stroke="url(#crossGold)"
+        stroke-width="7"
+        stroke-linecap="square"
+        stroke-linejoin="round"
+      />
+      <text x="45" y="118" font-family="Georgia, 'Times New Roman', serif" font-size="24" font-weight="700" fill="#b78b32" letter-spacing="1.5">IC</text>
+      <text x="171" y="118" font-family="Georgia, 'Times New Roman', serif" font-size="24" font-weight="700" fill="#b78b32" letter-spacing="1.5">XC</text>
     </svg>`;
 }
 
