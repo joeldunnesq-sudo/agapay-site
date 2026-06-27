@@ -281,32 +281,102 @@ function simpleList(items, mapper) {
 }
 
 function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
-  return [
-    ...safeArray(rawHouseholdRows).map((row, index) => ({
-      id: text(row.id, `household-${index}`),
-      kind: text(row.kind, "household"),
-      title: text(row.title, "Household block"),
-      sub: text(row.detail || row.subtitle, ""),
-      color: text(row.color, ACCENTS[index % ACCENTS.length]),
-      minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20),
-      statuses: safeArray(row.statuses),
-      weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, ""),
-      gracePriority: text(row.gracePriority, "keep"),
-      graceNote: text(row.graceNote, "")
-    })),
-    ...safeArray(rawChildRows).map((row, index) => ({
-      id: text(row.id, `child-${index}`),
-      kind: "form",
-      title: text(row.title, "Lesson"),
-      sub: [text(row.child?.firstName || row.child?.name, ""), text(row.detail || row.subtitle, "")].filter(Boolean).join(" · "),
-      color: text(row.color || row.child?.color, ACCENTS[(index + safeArray(rawHouseholdRows).length) % ACCENTS.length]),
-      minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20),
-      statuses: safeArray(row.statuses),
-      weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, ""),
-      gracePriority: text(row.gracePriority, "keep"),
-      graceNote: text(row.graceNote, "")
-    }))
-  ].filter((item, index, all) => item.id && item.title && all.findIndex((candidate) => candidate.id === item.id) === index);
+  // ── Household rows: already one-per-block, no grouping needed ──────────────
+  const householdItems = safeArray(rawHouseholdRows).map((row, index) => ({
+    id: text(row.id, `household-${index}`),
+    kind: text(row.kind, "household"),
+    title: text(row.title, "Household block"),
+    sub: text(row.detail || row.subtitle, ""),
+    color: text(row.color, ACCENTS[index % ACCENTS.length]),
+    minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20),
+    statuses: safeArray(row.statuses),
+    weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, ""),
+    gracePriority: text(row.gracePriority, "keep"),
+    graceNote: text(row.graceNote, "")
+  }));
+
+  // ── Child rows: group to avoid duplicates based on planning mode ───────────
+  // Three cases per subject+resource:
+  //   family   → planningMode !== "forms" (or no formLabels/childIds) → one card, no child listed
+  //   form     → formLabels set, no childIds                          → one card per form label
+  //   specific → childIds set                                         → one card, all children listed
+  const grouped = new Map(); // key → merged card
+  safeArray(rawChildRows).forEach((row, index) => {
+    const planningMode = text(row.planningMode, "forms");
+    const formLabels   = safeArray(row.formLabels);
+    const childIds     = safeArray(row.childIds);
+    const sourceId     = text(row.sourceId || row.id, `child-src-${index}`);
+    const resourceIdx  = Number(row.resourceIndex ?? 0);
+    const childName    = text(row.child?.firstName || row.child?.name, "");
+    const childFormLabel = text(row.child?.formLabel || row.child?.gradeLabel, "");
+    const detail       = text(row.detail || row.subtitle, "");
+    const color        = text(row.color || row.child?.color, ACCENTS[(index + rawHouseholdRows.length) % ACCENTS.length]);
+    const minutes      = Number(safeArray(row.minutes).find((m) => Number(m) > 0) || row.minutesPlanned || 20);
+    const statuses     = safeArray(row.statuses);
+    const weeklyFreq   = text(row.weeklyFrequency || row.cadenceLabel, "");
+    const gracePriority = text(row.gracePriority, "keep");
+    const graceNote    = text(row.graceNote, "");
+
+    const isFamily   = planningMode !== "forms" || (!formLabels.length && !childIds.length);
+    const isSpecific = childIds.length > 0;
+    // form-based without specific children = !isFamily && !isSpecific
+
+    let groupKey;
+    let kind;
+    let subFn; // () => string — computed after grouping
+
+    if (isFamily) {
+      // One card for the whole family — key on sourceId + resourceIdx only
+      groupKey = `family:${sourceId}:${resourceIdx}`;
+      kind = "family";
+    } else if (isSpecific) {
+      // One card listing all named children — key on sourceId + resourceIdx
+      groupKey = `specific:${sourceId}:${resourceIdx}`;
+      kind = "specific";
+    } else {
+      // One card per form label — key on sourceId + resourceIdx + formLabel of this child
+      const formKey = childFormLabel || formLabels[0] || "form";
+      groupKey = `form:${sourceId}:${resourceIdx}:${formKey}`;
+      kind = "form";
+    }
+
+    if (grouped.has(groupKey)) {
+      // Merge: accumulate child names for specific and form cards
+      const existing = grouped.get(groupKey);
+      if (childName && !existing._childNames.includes(childName)) {
+        existing._childNames.push(childName);
+      }
+    } else {
+      grouped.set(groupKey, {
+        id: groupKey,
+        kind,
+        title: text(row.title, "Lesson"),
+        _detail: detail,
+        _childNames: childName ? [childName] : [],
+        _formLabel: isFamily ? "" : (!isSpecific ? (childFormLabel || formLabels[0] || "") : ""),
+        color,
+        minutes,
+        statuses,
+        weeklyFrequency: weeklyFreq,
+        gracePriority,
+        graceNote
+      });
+    }
+  });
+
+  const childItems = Array.from(grouped.values()).map((item) => {
+    const { _detail, _childNames, _formLabel, ...rest } = item;
+    let sub = _detail;
+    if (_childNames.length) {
+      sub = [_childNames.join(", "), _detail].filter(Boolean).join(" · ");
+    } else if (_formLabel) {
+      sub = [_formLabel, _detail].filter(Boolean).join(" · ");
+    }
+    return { ...rest, sub };
+  });
+
+  // Household items already unique by id; child items unique by groupKey
+  return [...householdItems, ...childItems].filter((item) => item.id && item.title);
 }
 
 function plannerDaysFromWeek(week) {
