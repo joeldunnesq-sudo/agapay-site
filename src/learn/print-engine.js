@@ -235,16 +235,18 @@ function buildTermPlan(printCenter, template, generatedAt) {
   doc.sections = [
     cardsSection("Current Term", [
       { label: "Term",      value: activeTerm.label || printCenter.term?.label || "Current Term", detail: printCenter.term?.week || "" },
+      ...(printCenter.term?.description ? [{ label: "Description", value: printCenter.term.description, detail: "" }] : []),
       { label: "Calendar",  value: printCenter.calendarToggle?.label || "Orthodox Calendar", detail: printCenter.calendarToggle?.description || "" },
       { label: "Grace Mode", value: "Available", detail: "Use lighter weeks without losing the term rhythm." },
     ]),
     tableSection("Children and Forms", ["Child", "Form", "Age"],
       (printCenter.children || []).map((c) => [c.firstName || c.name, childFormLabel(c), c.ageYears ? `${c.ageYears}` : ""]),
       { flex: [2, 2, 1] }),
-    tableSection("Term Options", ["Term", "Status", "Notes"],
+    tableSection("Term Options", ["Term", "Status", "Dates", "Description"],
       (setup.termOptions || []).map((t) => [t.label, t.id === setup.activeTermId ? "Current" : "Planned",
-        t.startDate && t.endDate ? `${t.startDate} to ${t.endDate}` : "Set in Setup"]),
-      { flex: [2, 1, 3] }),
+        t.startDate && t.endDate ? `${t.startDate} to ${t.endDate}` : "Set in Setup",
+        t.description || ""]),
+      { flex: [2, 1, 2, 3] }),
   ].filter(Boolean);
   return doc;
 }
