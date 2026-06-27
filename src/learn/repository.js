@@ -169,6 +169,7 @@ function progressFromTerm(term = {}, civilDate = "") {
   if ([start, end, current].some((date) => Number.isNaN(date.getTime())) || end <= start) {
     return {
       label: term.label || "Current Term",
+      description: term.description || "",
       currentWeek: 0,
       totalWeeks: 0,
       percent: 0,
@@ -179,6 +180,7 @@ function progressFromTerm(term = {}, civilDate = "") {
   const currentWeek = Math.max(1, Math.min(totalWeeks, Math.floor((current - start) / (7 * 24 * 60 * 60 * 1000)) + 1));
   return {
     label: term.label || "Current Term",
+    description: term.description || "",
     currentWeek,
     totalWeeks,
     percent: Math.round((currentWeek / totalWeeks) * 100),
