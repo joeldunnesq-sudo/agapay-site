@@ -1171,9 +1171,33 @@ function renderPlannerReserveCard(vm) {
   `;
 }
 
+function gracePriorityBadge(priority) {
+  if (!priority || priority === "keep") {
+    return `<span class="learn-grace-badge learn-grace-badge--keep" title="Grace Mode: always kept">✦ Keep</span>`;
+  }
+  if (priority === "reduce first") {
+    return `<span class="learn-grace-badge learn-grace-badge--reduce" title="Grace Mode: reduce minutes first">◐ Reduce</span>`;
+  }
+  // "bump if needed" / "defer if needed"
+  return `<span class="learn-grace-badge learn-grace-badge--defer" title="Grace Mode: defer to reserve if needed">○ Defer</span>`;
+}
+
 function renderWeeklyAssignmentBoard(vm) {
   const items = vm.week.weeklyAssignmentItems || [];
-  const card = (item) => `<article class="learn-week-assignment-card" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" style="border-left-color:${html(item.color || "var(--gold)")};"><strong>${html(item.title)}</strong>${item.sub ? `<small>${html(item.sub)}</small>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
+  const graceActive = vm.graceMode?.active;
+  const graceMode = vm.graceMode?.mode || "light";
+  const card = (item) => {
+    const priority = item.gracePriority || "keep";
+    const badge = gracePriorityBadge(priority);
+    const isDeferrable = priority === "bump if needed" || priority === "defer if needed";
+    const isReducible = priority === "reduce first";
+    const activeStyle = graceActive && isDeferrable
+      ? "opacity:.55;"
+      : graceActive && isReducible
+        ? "opacity:.8;"
+        : "";
+    return `<article class="learn-week-assignment-card${graceActive && isDeferrable ? " is-grace-deferred" : graceActive && isReducible ? " is-grace-reduced" : ""}" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" data-grace-priority="${html(priority)}" style="border-left-color:${html(item.color || "var(--gold)")};${activeStyle}"><div class="learn-week-assignment-card-head"><strong>${html(item.title)}</strong>${badge}</div>${item.sub ? `<small>${html(item.sub)}</small>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
+  };
   const weekNum = vm.week.termWeekNumber || 0;
   const totalWeeks = vm.week.totalTermWeeks || 0;
   const weekLabel = weekNum && totalWeeks ? `Week ${weekNum} of ${totalWeeks}` : vm.week.label || "This Week";
@@ -1194,7 +1218,7 @@ function renderWeeklyAssignmentBoard(vm) {
             <button type="button" data-week-nav="today" style="border:1px solid var(--goldsoft);background:var(--paper);border-radius:9px;padding:8px 12px;font-family:inherit;cursor:pointer;color:var(--gold);font-weight:600;">Today</button>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <small style="color:var(--muted);">Drag a subject into a day.</small>
+            ${graceActive ? `<span class="learn-grace-mode-banner learn-grace-mode-banner--${html(graceMode)}" title="Grace Mode is active — badges show what will be kept, reduced, or deferred"><span>${graceMode === "minimum" ? "✦" : graceMode === "light" ? "◐" : "✦"}</span> Grace Mode: ${html(graceMode.charAt(0).toUpperCase() + graceMode.slice(1))}</span>` : `<small class="learn-week-assignment-hint">Drag a subject into a day.</small>`}
             <button type="button" data-week-designed-print>Print designed week</button>
           </div>
         </div>
