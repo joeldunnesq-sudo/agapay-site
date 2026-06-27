@@ -290,7 +290,9 @@ function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
       color: text(row.color, ACCENTS[index % ACCENTS.length]),
       minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20),
       statuses: safeArray(row.statuses),
-      weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, "")
+      weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, ""),
+      gracePriority: text(row.gracePriority, "keep"),
+      graceNote: text(row.graceNote, "")
     })),
     ...safeArray(rawChildRows).map((row, index) => ({
       id: text(row.id, `child-${index}`),
@@ -300,7 +302,9 @@ function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
       color: text(row.color || row.child?.color, ACCENTS[(index + safeArray(rawHouseholdRows).length) % ACCENTS.length]),
       minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20),
       statuses: safeArray(row.statuses),
-      weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, "")
+      weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, ""),
+      gracePriority: text(row.gracePriority, "keep"),
+      graceNote: text(row.graceNote, "")
     }))
   ].filter((item, index, all) => item.id && item.title && all.findIndex((candidate) => candidate.id === item.id) === index);
 }
@@ -506,6 +510,10 @@ export function toPlannerViewModel(rawPayload) {
 
   return {
     shell,
+    graceMode: {
+      active: Boolean(planner.graceMode?.active ?? planner.preferences?.graceModeActive),
+      mode: text(planner.graceMode?.mode ?? planner.preferences?.graceModeDefault, "light")
+    },
     page: {
       id: "planner",
       title: "Family Planner",
