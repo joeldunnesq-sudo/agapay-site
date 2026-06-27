@@ -260,7 +260,9 @@ function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
       title: text(row.title, "Household block"),
       sub: text(row.detail || row.subtitle, ""),
       color: text(row.color, ACCENTS[index % ACCENTS.length]),
-      minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20)
+      minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20),
+      statuses: safeArray(row.statuses),
+      weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, "")
     })),
     ...safeArray(rawChildRows).map((row, index) => ({
       id: text(row.id, `child-${index}`),
@@ -268,7 +270,9 @@ function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
       title: text(row.title, "Lesson"),
       sub: [text(row.child?.firstName || row.child?.name, ""), text(row.detail || row.subtitle, "")].filter(Boolean).join(" · "),
       color: text(row.color || row.child?.color, ACCENTS[(index + safeArray(rawHouseholdRows).length) % ACCENTS.length]),
-      minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20)
+      minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20),
+      statuses: safeArray(row.statuses),
+      weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, "")
     }))
   ].filter((item, index, all) => item.id && item.title && all.findIndex((candidate) => candidate.id === item.id) === index);
 }
@@ -496,6 +500,10 @@ export function toPlannerViewModel(rawPayload) {
     week: {
       label: text(week.label, "This Week"),
       seasonLabel: text(week.seasonLabel, ""),
+      termWeekNumber: Number(week.termWeekNumber || 0),
+      totalTermWeeks: Number(planner.term?.weeksCount || planner.schoolYear?.terms?.find?.((t) => t.id === (planner.term?.id || ""))?.weeksCount || 12),
+      weekStartDate: text(safeArray(week.dates)[0], ""),
+      weekEndDate: text(safeArray(week.dates)[6] || safeArray(week.dates)[safeArray(week.dates).length - 1], ""),
       days,
       householdRows: rawHouseholdRows.map((row, index) => ({
         id: text(row.id, `household-${index}`),
