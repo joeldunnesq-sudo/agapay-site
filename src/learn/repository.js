@@ -863,9 +863,9 @@ function buildCurriculum(seed) {
     resources: seed.curriculumResources,
     mappings: seed.curriculumMappings,
     mappingSummary: [
-      "AGAPAY defaults map Scripture, catechesis, hymnody, and enrichment into the active cycle.",
-      "Household custom resources map The Wingfeather Saga into the family read-aloud stream.",
-      "The Bronze Bow maps directly to Elias's independent reading track."
+      ...(seed.cycleYear?.title ? [`Planning cycle: ${seed.cycleYear.title}`] : []),
+      ...(seed.curriculumPackage?.title ? [`Curriculum: ${seed.curriculumPackage.title}`] : []),
+      ...(seed.books?.slice(0, 2).map((book) => `${book.audienceLabel || "Read-aloud"}: ${book.title}`) || [])
     ]
   };
 }
@@ -1075,12 +1075,12 @@ export class SeedLearnRepository {
         framework: this.seed.cycleFramework,
         year: this.seed.cycleYear,
         topics: this.seed.cycleTopics,
-        visibleFrameworks: [
-          { type: "history", label: "Cycle 2: Medieval / Byzantine focus" },
-          { type: "catechesis", label: "Cycle 2: The Creed and sacramental life" },
-          { type: "enrichment", label: "Picture, poet, composer, and nature rotation" },
-          { type: "recitation", label: "Psalms, hymns, Scripture, and prayers" }
-        ]
+        visibleFrameworks: seed.cycleTopics?.length
+          ? [...new Set(seed.cycleTopics.map((t) => t.subjectType))].map((type) => ({
+              type,
+              label: seed.cycleTopics.find((t) => t.subjectType === type)?.title || type
+            }))
+          : []
       },
       curriculum: buildCurriculum(this.seed),
       graceMode: buildGraceMode(this.seed),
