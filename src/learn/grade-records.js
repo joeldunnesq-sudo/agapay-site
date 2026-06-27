@@ -2,6 +2,8 @@ import { d1, d1All, d1Run, json, unauthorized } from "../lib/core.js";
 import { calculateCumulativeGPA } from "./gpa.js";
 import { getLearnSeedForIdentity, learnSetupIdentity, loadLearnSetupSnapshotForIdentity } from "./setup-persistence.js";
 
+const devAttendanceEntries = new Map();
+
 function list(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -47,6 +49,10 @@ function courseId(householdId, childId, academicYearName, title) {
 
 function gradeId(courseIdValue, termIndex) {
   return `grade_${stableSegment(courseIdValue, "course")}_term_${termIndex}`;
+}
+
+function attendanceId(childId, academicYearName, date) {
+  return `attendance_${stableSegment(childId, "child")}_${stableSegment(academicYearName, "year")}_${stableSegment(date, "date")}`;
 }
 
 function defaultAcademicYearName(setupSnapshot = {}) {
@@ -104,6 +110,73 @@ function courseSummary(courses = []) {
     missingGrades: list(courses).reduce((sum, course) => sum + list(course.grades).filter((grade) => !grade.letterGrade).length, 0),
     courseCount: list(courses).length
   };
+}
+
+function isoDate(value) {
+  const normalized = text(value, "");
+  return /^\d{4}-\d{2}-\d{2}$/.test(normalized) ? normalized : "";
+}
+
+function attendanceStatus(value) {
+  const status = text(value, "present").toLowerCase();
+  return ["present", "absent", "excused", "holiday"].includes(status) ? status : "present";
+}
+
+function mondayForDate(date = new Date()) {
+  const copy = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const day = copy.getUTCDay();
+  const offset = day === 0 ? -6 : 1 - day;
+  copy.setUTCDate(copy.getUTCDate() + offset);
+  return copy;
+}
+
+function attendanceWeekDates(reference = new Date()) {
+  const monday = mondayForDate(reference);
+  return Array.from({ length: 5 }, (_, index) => {
+    const date = new Date(monday);
+    date.setUTCDate(monday.getUTCDate() + index);
+    return date.toISOString().slice(0, 10);
+  });
+}
+
+function attendanceSummary(children = [], entries = []) {
+  const byChild = new Map(children.map((child) => [child.id, { childId: child.id, present: 0, absent: 0, excused: 0, holiday: 0, instructionalDays: 0 }]));
+  for (const entry of list(entries)) {
+    if (!byChild.has(entry.childId)) continue;
+    const row = byChild.get(entry.childId);
+    row[entry.status] = (row[entry.status] || 0) + 1;
+    if (entry.status === "present" || entry.status === "excused") row.instructionalDays += 1;
+  }
+  const rows = [...byChild.values()];
+  return {
+    totalPresent: rows.reduce((sum, row) => sum + row.present, 0),
+    totalAbsent: rows.reduce((sum, row) => sum + row.absent, 0),
+    totalExcused: rows.reduce((sum, row) => sum + row.excused, 0),
+    instructionalDays: rows.reduce((sum, row) => sum + row.instructionalDays, 0),
+    byChild: rows
+  };
+}
+
+function attendanceStoreKey(householdId, academicYearName) {
+  return `${householdId}::${academicYearName}`;
+}
+
+function devAttendanceFor(householdId, academicYearName) {
+  return list(devAttendanceEntries.get(attendanceStoreKey(householdId, academicYearName)));
+}
+
+function saveDevAttendance(householdId, academicYearName, entries = []) {
+  const key = attendanceStoreKey(householdId, academicYearName);
+  const byEntry = new Map(devAttendanceFor(householdId, academicYearName).map((entry) => [`${entry.childId}::${entry.date}`, entry]));
+  for (const entry of entries) {
+    byEntry.set(`${entry.childId}::${entry.date}`, {
+      id: attendanceId(entry.childId, academicYearName, entry.date),
+      ...entry
+    });
+  }
+  const saved = [...byEntry.values()].sort((a, b) => b.date.localeCompare(a.date) || a.childId.localeCompare(b.childId));
+  devAttendanceEntries.set(key, saved);
+  return saved;
 }
 
 async function loadSetup(env, householdId) {
@@ -199,6 +272,32 @@ async function loadCourses(env, householdId, academicYearName) {
   }));
 }
 
+async function loadAttendance(env, householdId, academicYearName) {
+  if (!d1(env)) return [];
+  try {
+    const rows = await d1All(
+      env,
+      `SELECT a.id, a.household_id, a.child_id, a.attendance_date, a.status, a.minutes, a.notes
+       FROM learn_attendance_days a
+       JOIN academic_years ay ON ay.id = a.academic_year_id
+       WHERE a.household_id = ?1 AND ay.name = ?2
+       ORDER BY a.attendance_date DESC, a.child_id`,
+      householdId,
+      academicYearName
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      childId: row.child_id,
+      date: row.attendance_date,
+      status: attendanceStatus(row.status),
+      minutes: integer(row.minutes, 0),
+      notes: row.notes || ""
+    }));
+  } catch {
+    return [];
+  }
+}
+
 async function ensureLearnBaseRows(env, identity, setupSnapshot, children) {
   if (!d1(env) || !identity?.householdId) return;
   const timestamp = new Date().toISOString();
@@ -248,7 +347,7 @@ async function ensureLearnBaseRows(env, identity, setupSnapshot, children) {
   }
 }
 
-function buildGradesPayload({ householdId, setupSnapshot, children, academicYearName, courses }) {
+function buildGradesPayload({ householdId, setupSnapshot, children, academicYearName, courses, attendanceEntries = [] }) {
   const selectedChildId = children[0]?.id || "";
   return {
     household: {
@@ -267,6 +366,12 @@ function buildGradesPayload({ householdId, setupSnapshot, children, academicYear
       gradeLevel: gradeLevelForChild(child)
     })),
     courses,
+    attendance: {
+      entries: attendanceEntries,
+      weekDates: attendanceWeekDates(),
+      statuses: ["present", "absent", "excused", "holiday"],
+      summary: attendanceSummary(children, attendanceEntries)
+    },
     selectedChildId,
     summary: courseSummary(courses)
   };
@@ -285,7 +390,8 @@ export async function handleLearnGrades(request, env) {
         setupSnapshot: seed?.setupSnapshot || seed,
         children: list(seed?.children),
         academicYearName,
-        courses: []
+        courses: [],
+        attendanceEntries: devAttendanceFor(identity.householdId, academicYearName)
       })
     });
   }
@@ -295,6 +401,7 @@ export async function handleLearnGrades(request, env) {
   const url = new URL(request.url);
   const academicYearName = text(url.searchParams.get("academicYear") || defaultAcademicYearName(setupSnapshot), defaultAcademicYearName(setupSnapshot));
   const courses = await loadCourses(env, identity.householdId, academicYearName);
+  const attendanceEntries = await loadAttendance(env, identity.householdId, academicYearName);
 
   return json({
     ok: true,
@@ -303,7 +410,8 @@ export async function handleLearnGrades(request, env) {
       setupSnapshot,
       children,
       academicYearName,
-      courses
+      courses,
+      attendanceEntries
     })
   });
 }
@@ -417,7 +525,99 @@ export async function handleLearnGradesSave(request, env) {
       setupSnapshot,
       children,
       academicYearName,
-      courses: savedCourses
+      courses: savedCourses,
+      attendanceEntries: await loadAttendance(env, identity.householdId, academicYearName)
+    })
+  });
+}
+
+export async function handleLearnAttendanceSave(request, env) {
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return unauthorized();
+
+  const payload = await request.json().catch(() => null);
+  if (!payload || typeof payload !== "object") return json({ ok: false, error: "Attendance payload was invalid." }, { status: 400 });
+
+  const setupSnapshot = d1(env) ? await loadSetupForIdentity(env, identity) : null;
+  const seed = !d1(env) ? await getLearnSeedForIdentity(env, identity) : null;
+  const setupForPayload = setupSnapshot || seed?.setupSnapshot || seed;
+  const children = await loadChildren(env, identity.householdId, setupSnapshot);
+  const resolvedChildren = children.length ? children : list(seed?.children);
+  const childIds = new Set(resolvedChildren.map((child) => child.id));
+  const academicYearName = text(payload.academicYearName || payload.academicYear?.name || defaultAcademicYearName(setupForPayload), defaultAcademicYearName(setupForPayload));
+  const resolvedAcademicYearId = academicYearId(identity.householdId, academicYearName);
+  const timestamp = new Date().toISOString();
+  const entries = list(payload.entries)
+    .map((entry) => ({
+      childId: text(entry.childId, ""),
+      date: isoDate(entry.date),
+      status: attendanceStatus(entry.status),
+      minutes: Math.max(0, integer(entry.minutes, 0)),
+      notes: text(entry.notes, "").slice(0, 800)
+    }))
+    .filter((entry) => childIds.has(entry.childId) && entry.date);
+
+  if (!d1(env)) {
+    const attendanceEntries = saveDevAttendance(identity.householdId, academicYearName, entries);
+    return json({
+      ok: true,
+      savedAt: timestamp,
+      grades: buildGradesPayload({
+        householdId: identity.householdId,
+        setupSnapshot: setupForPayload,
+        children: resolvedChildren,
+        academicYearName,
+        courses: [],
+        attendanceEntries
+      })
+    });
+  }
+
+  await ensureLearnBaseRows(env, identity, setupSnapshot, resolvedChildren);
+  await d1Run(
+    env,
+    `INSERT INTO academic_years (id, household_id, name, created_at, updated_at)
+     VALUES (?1, ?2, ?3, ?4, ?4)
+     ON CONFLICT(household_id, name) DO UPDATE SET updated_at = excluded.updated_at`,
+    resolvedAcademicYearId,
+    identity.householdId,
+    academicYearName,
+    timestamp
+  );
+
+  for (const entry of entries) {
+    await d1Run(
+      env,
+      `INSERT INTO learn_attendance_days (id, household_id, child_id, academic_year_id, attendance_date, status, minutes, notes, created_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)
+       ON CONFLICT(child_id, academic_year_id, attendance_date) DO UPDATE SET
+         status = excluded.status,
+         minutes = excluded.minutes,
+         notes = excluded.notes,
+         updated_at = excluded.updated_at`,
+      attendanceId(entry.childId, academicYearName, entry.date),
+      identity.householdId,
+      entry.childId,
+      resolvedAcademicYearId,
+      entry.date,
+      entry.status,
+      entry.minutes,
+      entry.notes,
+      timestamp
+    );
+  }
+
+  const courses = await loadCourses(env, identity.householdId, academicYearName);
+  return json({
+    ok: true,
+    savedAt: timestamp,
+    grades: buildGradesPayload({
+      householdId: identity.householdId,
+      setupSnapshot,
+      children: resolvedChildren,
+      academicYearName,
+      courses,
+      attendanceEntries: await loadAttendance(env, identity.householdId, academicYearName)
     })
   });
 }

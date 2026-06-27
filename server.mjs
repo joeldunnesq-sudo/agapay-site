@@ -12,6 +12,7 @@ import {
   handleLearnDashboard,
   handleLearnFormation,
   handleLearnFamilyPlanningSave,
+  handleLearnAttendanceSave,
   handleLearnGrades,
   handleLearnGradesSave,
   handleLearnGoogleCalendarCallback,
@@ -164,6 +165,10 @@ async function handleApi(req, res) {
   }
   if (req.method === "POST" && pathname === "/api/learn/grades") {
     await sendResponse(handleLearnGradesSave(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "POST" && pathname === "/api/learn/attendance") {
+    await sendResponse(handleLearnAttendanceSave(learnRequest(), learnEnv));
     return true;
   }
   if (req.method === "GET" && pathname === "/api/learn/reports") {

@@ -197,6 +197,7 @@ import {
   handleLearnFeedbackSubmit,
   handleLearnFormation,
   handleLearnFamilyPlanningSave,
+  handleLearnAttendanceSave,
   handleLearnGrades,
   handleLearnGradesSave,
   handleLearnGraceModeSave,
@@ -1197,6 +1198,9 @@ export default {
     }
     if (request.method === "POST" && url.pathname === "/api/learn/grades") {
       return handleLearnGradesSave(request, env);
+    }
+    if (request.method === "POST" && url.pathname === "/api/learn/attendance") {
+      return handleLearnAttendanceSave(request, env);
     }
     if (request.method === "GET" && url.pathname === "/api/learn/community") {
       return handleLearnCommunity(request, env);

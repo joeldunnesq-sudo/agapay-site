@@ -236,7 +236,7 @@ function shellFromPayload(page, payload) {
       { id: "planner", href: "/myagapay/learn/planner", label: "Planner", icon: "▣" },
       { id: "formation", href: "/myagapay/learn/formation", label: "Formation", icon: "⌂" },
       { id: "books", href: "/myagapay/learn/books", label: "Books", icon: "☰" },
-      { id: "grades", href: "/myagapay/learn/grades", label: "Grades", icon: "A" },
+      { id: "grades", href: "/myagapay/learn/grades", label: "Grades & Attendance", icon: "A+" },
       { id: "community", href: "/myagapay/learn/community", label: "Community", icon: "♡" },
       { id: "co-op", href: "/myagapay/learn/co-op", label: "Co-op", icon: "◎", comingSoon: true },
       { id: "print-center", href: "/myagapay/learn/print", label: "Print", icon: "▤" },
@@ -953,9 +953,26 @@ export function toGradesViewModel(rawPayload, context = {}) {
   const gpaCredits = finalRows.reduce((sum, row) => Object.hasOwn(gpaPoints, row.grade) && row.credits > 0 ? sum + row.credits : sum, 0);
   const weightedGpa = finalRows.reduce((sum, row) => Object.hasOwn(gpaPoints, row.grade) && row.credits > 0 ? sum + (gpaPoints[row.grade] * row.credits) : sum, 0);
   const summary = grades.summary || {};
+  const attendanceEntries = simpleList(grades.attendance?.entries, (entry) => ({
+    id: text(entry.id, ""),
+    childId: text(entry.childId || entry.child_id, ""),
+    date: text(entry.date || entry.attendanceDate || entry.attendance_date, ""),
+    status: text(entry.status, "present"),
+    minutes: Number(entry.minutes || 0),
+    notes: text(entry.notes, "")
+  }));
+  const attendanceByChild = grades.attendance?.summary?.byChild || [];
+  const attendanceSummaryForChild = (childId) => attendanceByChild.find((row) => row.childId === childId) || {
+    childId,
+    present: attendanceEntries.filter((entry) => entry.childId === childId && entry.status === "present").length,
+    absent: attendanceEntries.filter((entry) => entry.childId === childId && entry.status === "absent").length,
+    excused: attendanceEntries.filter((entry) => entry.childId === childId && entry.status === "excused").length,
+    holiday: attendanceEntries.filter((entry) => entry.childId === childId && entry.status === "holiday").length,
+    instructionalDays: attendanceEntries.filter((entry) => entry.childId === childId && ["present", "excused"].includes(entry.status)).length
+  };
   return {
     shell,
-    page: page("grades", "Grades", "Record term grades, attendance, credits, and narrative notes for report cards and transcripts."),
+    page: page("grades", "Grades & Attendance", "Record term grades, credits, attendance days, and narrative notes for report cards and transcripts."),
     household: {
       name: text(grades.household?.name || shell.familyName, "Your Household")
     },
@@ -972,7 +989,20 @@ export function toGradesViewModel(rawPayload, context = {}) {
       totalCredits: earnedCredits.toFixed(1),
       cumulativeGpa: gpaCredits ? (weightedGpa / gpaCredits).toFixed(2) : "0.00",
       missingGrades: childCourses.reduce((sum, course) => sum + course.grades.filter((grade) => !grade.letterGrade).length, 0),
-      courseCount: childCourses.length || Number(summary.courseCount || 0)
+      courseCount: childCourses.length || Number(summary.courseCount || 0),
+      attendanceDays: attendanceSummaryForChild(selectedChildId).instructionalDays || 0
+    },
+    attendance: {
+      entries: attendanceEntries,
+      weekDates: safeArray(grades.attendance?.weekDates),
+      statuses: safeArray(grades.attendance?.statuses).length ? grades.attendance.statuses : ["present", "absent", "excused", "holiday"],
+      summary: {
+        totalPresent: Number(grades.attendance?.summary?.totalPresent || 0),
+        totalAbsent: Number(grades.attendance?.summary?.totalAbsent || 0),
+        totalExcused: Number(grades.attendance?.summary?.totalExcused || 0),
+        instructionalDays: Number(grades.attendance?.summary?.instructionalDays || 0),
+        byChild: children.map((child) => attendanceSummaryForChild(child.id))
+      }
     },
     subjectCategories: ["English", "Math", "Science", "History", "Theology/Formation", "World Language", "Fine Arts", "Elective"],
     letterGrades: ["", "A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"]

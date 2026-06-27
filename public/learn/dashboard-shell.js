@@ -2630,6 +2630,84 @@ function gradeOption(value, selectedValue) {
   return `<option value="${html(value)}" ${value === selectedValue ? "selected" : ""}>${html(value || "Select")}</option>`;
 }
 
+function attendanceDateLabel(date = "") {
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T12:00:00Z`) : null;
+  if (!parsed || Number.isNaN(parsed.getTime())) return { day: "Day", short: date };
+  return {
+    day: new Intl.DateTimeFormat("en-US", { weekday: "short", timeZone: "UTC" }).format(parsed),
+    short: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(parsed)
+  };
+}
+
+function attendanceStatusLabel(status = "present") {
+  return {
+    present: "Present",
+    absent: "Absent",
+    excused: "Excused",
+    holiday: "Holiday"
+  }[status] || "Present";
+}
+
+function attendanceStatusMark(status = "present") {
+  return {
+    present: "P",
+    absent: "A",
+    excused: "E",
+    holiday: "H"
+  }[status] || "P";
+}
+
+function renderAttendanceTracker(vm) {
+  const dates = vm.attendance.weekDates.length ? vm.attendance.weekDates : [];
+  const byKey = new Map(vm.attendance.entries.map((entry) => [`${entry.childId}::${entry.date}`, entry]));
+  const childSummary = new Map(vm.attendance.summary.byChild.map((row) => [row.childId, row]));
+  const head = dates.map((date) => {
+    const label = attendanceDateLabel(date);
+    return `<span><strong>${html(label.day)}</strong><small>${html(label.short)}</small></span>`;
+  }).join("");
+  const rows = vm.children.map((child) => {
+    const summary = childSummary.get(child.id) || {};
+    return `<div class="learn-attendance-row" data-attendance-child="${html(child.id)}">
+      <div class="learn-attendance-student">
+        <span style="background:${html(child.color)};">${html(child.initial)}</span>
+        <strong>${html(child.name)}</strong>
+        <small>${html(summary.instructionalDays || 0)} instructional day${Number(summary.instructionalDays || 0) === 1 ? "" : "s"}</small>
+      </div>
+      ${dates.map((date) => {
+        const entry = byKey.get(`${child.id}::${date}`) || { status: "present", minutes: 0, notes: "" };
+        const status = entry.status || "present";
+        return `<button type="button" class="learn-attendance-cell is-${html(status)}" data-attendance-cell data-child-id="${html(child.id)}" data-date="${html(date)}" data-status="${html(status)}" data-minutes="${html(entry.minutes || "")}" data-notes="${html(entry.notes || "")}" aria-label="${html(`${child.name} ${date}: ${attendanceStatusLabel(status)}`)}"><strong>${html(attendanceStatusMark(status))}</strong><small>${html(attendanceStatusLabel(status))}</small></button>`;
+      }).join("")}
+    </div>`;
+  }).join("");
+  const guidance = `<div class="learn-attendance-guidance"><strong>Attendance is optional.</strong><span>Texas homeschools do not need this tracker, but families in states that require attendance can keep a clean household log here.</span></div>`;
+  return `
+    <section data-attendance-form class="learn-attendance-panel">
+      <div class="learn-attendance-toolbar">
+        <div>
+          <small>Household Attendance</small>
+          <h2>Weekly attendance log</h2>
+        </div>
+        <div class="learn-attendance-actions">
+          <button type="button" data-attendance-present-week>Mark Week Present</button>
+          <button type="button" data-attendance-save>Save Attendance</button>
+        </div>
+      </div>
+      ${guidance}
+      <div class="learn-attendance-grid" style="--attendance-cols:${dates.length};">
+        <div class="learn-attendance-head"><span></span>${head}</div>
+        ${rows}
+      </div>
+      <div class="learn-attendance-legend">
+        <span><b class="is-present">P</b> Present</span>
+        <span><b class="is-absent">A</b> Absent</span>
+        <span><b class="is-excused">E</b> Excused</span>
+        <span><b class="is-holiday">H</b> Holiday</span>
+        <em data-attendance-status aria-live="polite">Click a day to cycle its status.</em>
+      </div>
+    </section>`;
+}
+
 function renderGradeTermFields(course, grade) {
   return `
     <fieldset class="learn-grade-term" data-grade-term="${grade.termIndex}">
@@ -2715,7 +2793,10 @@ function renderGrades(vm) {
           <article><small>Courses</small><strong>${html(String(selectedCourses.length))}</strong><span>For selected student</span></article>
           <article><small>Credits Earned</small><strong data-grade-summary-credits>${html(vm.summary.totalCredits)}</strong><span>Transcript total</span></article>
           <article><small>Unweighted GPA</small><strong data-grade-summary-gpa>${html(vm.summary.cumulativeGpa)}</strong><span>4.0 scale</span></article>
+          <article><small>Attendance</small><strong>${html(String(vm.summary.attendanceDays || 0))}</strong><span>Instructional days</span></article>
         </div>
+
+        ${renderAttendanceTracker(vm)}
 
         <div data-grades-status class="learn-grades-status" aria-live="polite"></div>
 
@@ -6003,6 +6084,28 @@ function blankGradeCourse(vm) {
   };
 }
 
+function attendanceEntryFromCell(cell) {
+  return {
+    childId: cell.dataset.childId || "",
+    date: cell.dataset.date || "",
+    status: cell.dataset.status || "present",
+    minutes: cell.dataset.minutes || "",
+    notes: cell.dataset.notes || ""
+  };
+}
+
+function setAttendanceCellStatus(cell, status) {
+  const next = status || "present";
+  cell.dataset.status = next;
+  cell.classList.remove("is-present", "is-absent", "is-excused", "is-holiday");
+  cell.classList.add(`is-${next}`);
+  const strong = cell.querySelector("strong");
+  const small = cell.querySelector("small");
+  if (strong) strong.textContent = attendanceStatusMark(next);
+  if (small) small.textContent = attendanceStatusLabel(next);
+  cell.setAttribute("aria-label", `${cell.dataset.childId || "Student"} ${cell.dataset.date || ""}: ${attendanceStatusLabel(next)}`);
+}
+
 function wireGrades(vm) {
   const form = root.querySelector("[data-grades-form]");
   if (!form) return;
@@ -6012,6 +6115,47 @@ function wireGrades(vm) {
     status.textContent = message;
     status.dataset.tone = tone;
   };
+  const attendanceForm = root.querySelector("[data-attendance-form]");
+  const attendanceStatus = root.querySelector("[data-attendance-status]");
+  const setAttendanceStatus = (message, tone = "muted") => {
+    if (!attendanceStatus) return;
+    attendanceStatus.textContent = message;
+    attendanceStatus.dataset.tone = tone;
+  };
+  attendanceForm?.addEventListener("click", (event) => {
+    const cell = event.target.closest("[data-attendance-cell]");
+    if (!cell) return;
+    const statuses = ["present", "absent", "excused", "holiday"];
+    const index = statuses.indexOf(cell.dataset.status || "present");
+    setAttendanceCellStatus(cell, statuses[(index + 1) % statuses.length]);
+    setAttendanceStatus("Attendance changed. Save when ready.");
+  });
+  attendanceForm?.querySelector("[data-attendance-present-week]")?.addEventListener("click", () => {
+    attendanceForm.querySelectorAll("[data-attendance-cell]").forEach((cell) => setAttendanceCellStatus(cell, "present"));
+    setAttendanceStatus("Week marked present. Save when ready.");
+  });
+  attendanceForm?.querySelector("[data-attendance-save]")?.addEventListener("click", async () => {
+    const save = attendanceForm.querySelector("[data-attendance-save]");
+    if (save) {
+      save.disabled = true;
+      save.textContent = "Saving...";
+    }
+    setAttendanceStatus("Saving attendance...");
+    try {
+      await apiPost("/api/learn/attendance", {
+        academicYearName: form.elements.academicYearName?.value?.trim() || vm.academicYear.name,
+        entries: [...attendanceForm.querySelectorAll("[data-attendance-cell]")].map(attendanceEntryFromCell)
+      });
+      setAttendanceStatus("Attendance saved.", "success");
+    } catch (error) {
+      setAttendanceStatus(error.message || "Attendance could not be saved.", "error");
+    } finally {
+      if (save) {
+        save.disabled = false;
+        save.textContent = "Save Attendance";
+      }
+    }
+  });
   form.querySelector("[data-grades-child]")?.addEventListener("change", (event) => {
     const params = new URLSearchParams(window.location.search);
     params.set("childId", event.currentTarget.value);
