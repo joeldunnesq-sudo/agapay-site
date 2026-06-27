@@ -333,6 +333,7 @@ function normalizeCompletion(value = {}) {
 function childrenForAssignment(item = {}, children = []) {
   if (Array.isArray(item.childIds) && item.childIds.length) return children.filter((child) => item.childIds.includes(child.id));
   if (item.childId) return children.filter((child) => child.id === item.childId);
+  if (Array.isArray(item.formLabels) && item.formLabels.length) return children.filter((child) => item.formLabels.includes(child.formLabel) || item.formLabels.includes(child.gradeLabel));
   if (item.formLabel) return children.filter((child) => child.formLabel === item.formLabel || child.gradeLabel === item.formLabel);
   if (item.gradeLabel) return children.filter((child) => child.gradeLabel === item.gradeLabel);
   return children;
@@ -510,7 +511,6 @@ function normalizeSetupPayload(payload = {}, identity) {
     id: text(subject.id, stableId("subject", subject.title, index)),
     subjectType: text(subject.subjectType || subject.type, slug(subject.title, "subject")),
     title: text(subject.title, "Subject"),
-    planningMode: text(subject.planningMode, "forms"),
     instructionMode: text(subject.instructionMode, "parent-led"),
     schedulingMode: schedulingModeValue(subject.schedulingMode),
     scheduledDays: subjectDays,
@@ -523,9 +523,12 @@ function normalizeSetupPayload(payload = {}, identity) {
     activeEndDate: text(subject.activeEndDate, ""),
     priorityLevel: ["essential", "important", "enrichment", "optional"].includes(subject.priorityLevel) ? subject.priorityLevel : "important",
     missedLessonBehavior: text(subject.missedLessonBehavior, preferences.defaultMissedLessonBehavior || "next-occurrence"),
-    formLabel: text(subject.formLabel, ""),
+    planningMode: labelsValue(subject.formLabels || subject.formLabel).length ? "forms" : text(subject.planningMode, "forms"),
+    formLabel: text(subject.formLabel, labelsValue(subject.formLabels || "")[0] || ""),
+    formLabels: labelsValue(subject.formLabels || subject.formLabel),
     gradeLabel: text(subject.gradeLabel, ""),
-    resource: text(subject.resource, ""),
+    resource: text(Array.isArray(subject.resources) && subject.resources.length ? subject.resources[0] : subject.resource, ""),
+    resources: Array.isArray(subject.resources) && subject.resources.length ? subject.resources.filter(Boolean) : (subject.resource ? [subject.resource] : []),
     resourceType: resourceTypeValue(subject.resourceType || subject.sourceType, subject.resource ? "curriculum" : "none"),
     cadenceLabel: text(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "Weekly"),
     minutes: int(subject.minutes, 20),
