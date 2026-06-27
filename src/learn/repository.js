@@ -586,17 +586,123 @@ function buildAgapayLiturgicalDays({ calendarType = "julian", startDate, endDate
   });
 }
 
+function normalizeGraceMode(value = "") {
+  const raw = String(value || "").toLowerCase().replace(/[-_]+/g, " ").trim();
+  if (raw === "minimum" || raw === "minimum viable" || raw === "feast only") return "minimum viable";
+  if (raw === "medium" || raw === "light") return "light";
+  return "full";
+}
+
+const GRACE_PRIORITY_RANKS = {
+  core: 0,
+  "always keep": 0,
+  keep: 0,
+  high: 1,
+  important: 1,
+  medium: 2,
+  "reduce first": 2,
+  shorten: 2,
+  helpful: 2,
+  low: 3,
+  optional: 3,
+  "bump if needed": 3,
+  "defer if needed": 3,
+  "defer in minimum": 3,
+  "minimum only": 3
+};
+
+const GRACE_MODE_CAPS = {
+  light: { child: 4, household: 3, shortenKeptWork: false },
+  "minimum viable": { child: 2, household: 1, shortenKeptWork: true }
+};
+
+function gracePriorityRank(row = {}, graceModeRule = {}) {
+  const raw = String(row.gracePriority || row.priorityLevel || "").toLowerCase().replace(/[-_]+/g, " ").trim();
+  if (Object.prototype.hasOwnProperty.call(GRACE_PRIORITY_RANKS, raw)) return GRACE_PRIORITY_RANKS[raw];
+  return Number(row.priority || 0) < Number(graceModeRule.reducePriorityThreshold || 4) ? 0 : 2;
+}
+
+function gracePriorityLabel(row = {}, graceModeRule = {}) {
+  const rank = gracePriorityRank(row, graceModeRule);
+  if (rank <= 0) return "core";
+  if (rank === 1) return "high";
+  if (rank === 2) return "medium";
+  return "low";
+}
+
+function shortenMinutes(minutes, mode) {
+  const value = Number(minutes || 0);
+  if (!value) return value;
+  if (mode === "minimum viable") return Math.min(15, Math.max(10, Math.round(value * 0.4)));
+  return value > 15 ? Math.max(10, Math.round(value * 0.5)) : value;
+}
+
 function applyGraceModeToRows(rows, graceModeRule) {
-  if (!graceModeRule?.mode || graceModeRule.mode === "full") return rows.map((row) => ({ ...row, graceModeApplied: false }));
-  return rows.map((row) => {
-    if (row.priority < graceModeRule.reducePriorityThreshold) return { ...row, graceModeApplied: false };
-    return {
+  const mode = normalizeGraceMode(graceModeRule?.mode);
+  if (mode === "full") {
+    return rows.map((row) => ({
       ...row,
-      graceModeApplied: true,
-      statuses: row.statuses.map((status) => status === "planned" ? "reduced" : status),
-      minutes: row.minutes.map((minutes) => minutes > 15 ? Math.max(10, Math.round(minutes * 0.5)) : minutes)
-    };
-  });
+      graceModeApplied: false,
+      graceModePriority: gracePriorityLabel(row, graceModeRule),
+      graceModeBehavior: "full"
+    }));
+  }
+
+  const cap = GRACE_MODE_CAPS[mode] || GRACE_MODE_CAPS.light;
+  const nextRows = rows.map((row) => ({
+    ...row,
+    statuses: [...(row.statuses || [])],
+    minutes: [...(row.minutes || [])],
+    graceModeApplied: false,
+    graceModePriority: gracePriorityLabel(row, graceModeRule),
+    graceModeBehavior: "kept"
+  }));
+
+  for (let dayIndex = 0; dayIndex < DAYS.length; dayIndex += 1) {
+    const groups = new Map();
+    nextRows.forEach((row, rowIndex) => {
+      const status = row.statuses?.[dayIndex];
+      if (status !== "planned" && status !== "reduced") return;
+      const key = row.childId ? `child:${row.childId}` : "household";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push({
+        rowIndex,
+        rank: gracePriorityRank(row, graceModeRule),
+        priority: Number(row.priority || 999)
+      });
+    });
+
+    groups.forEach((items, key) => {
+      const dailyCap = key.startsWith("child:") ? cap.child : cap.household;
+      const kept = items
+        .sort((left, right) => left.rank - right.rank || left.priority - right.priority || left.rowIndex - right.rowIndex)
+        .slice(0, dailyCap)
+        .map((item) => item.rowIndex);
+      const keptSet = new Set(kept);
+
+      items.forEach((item) => {
+        const row = nextRows[item.rowIndex];
+        if (!keptSet.has(item.rowIndex)) {
+          row.statuses[dayIndex] = "deferred";
+          row.minutes[dayIndex] = 0;
+          row.graceModeApplied = true;
+          row.graceModeBehavior = "deferred-by-cap";
+          return;
+        }
+        if (cap.shortenKeptWork) {
+          const shortened = shortenMinutes(row.minutes[dayIndex], mode);
+          if (shortened !== row.minutes[dayIndex]) {
+            row.minutes[dayIndex] = shortened;
+            row.statuses[dayIndex] = row.statuses[dayIndex] === "planned" ? "reduced" : row.statuses[dayIndex];
+            row.graceModeApplied = true;
+            row.graceModeBehavior = row.graceModeBehavior === "deferred-by-cap" ? row.graceModeBehavior : "shortened-by-mode";
+          }
+        }
+      });
+    });
+  }
+
+  return nextRows;
 }
 
 function familyPlanForDate(seed, civilDate, liturgicalDay = {}) {
@@ -880,8 +986,8 @@ function buildGraceMode(seed) {
     seasonAdjustment: seed.seasonAdjustment,
     rule: seed.graceModeRule,
     reasons: ["new baby", "illness", "travel", "caregiving", "feast season", "custom"],
-    modes: ["full", "light", "minimum viable", "feast only", "custom"],
-    preserved: ["Church Rhythms", "Morning Basket", "Catechesis"],
+    modes: ["full", "medium", "light"],
+    preserved: ["Core-ranked work", "High-ranked work until the daily cap", "Orthodox household rhythm"],
     changed: seed.graceModeRule.changedSummary
   };
 }

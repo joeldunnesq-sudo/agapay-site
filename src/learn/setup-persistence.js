@@ -244,6 +244,23 @@ function resourceTypeValue(value, fallback = "curriculum") {
   return fallback;
 }
 
+function graceModeValue(value = "", fallback = "light") {
+  const raw = String(value || "").trim().toLowerCase().replace(/[-_]+/g, " ");
+  if (raw === "full") return "full";
+  if (raw === "medium" || raw === "light") return "light";
+  if (raw === "minimum" || raw === "minimum viable" || raw === "feast only") return "minimum viable";
+  return fallback;
+}
+
+function gracePriorityValue(value = "", fallback = "medium") {
+  const raw = String(value || "").trim().toLowerCase().replace(/[-_]+/g, " ");
+  if (raw === "core" || raw === "always keep" || raw === "keep") return "core";
+  if (raw === "high" || raw === "important") return "high";
+  if (raw === "medium" || raw === "helpful" || raw === "reduce first" || raw === "shorten") return "medium";
+  if (raw === "low" || raw === "optional" || raw === "bump if needed" || raw === "defer if needed" || raw === "defer in minimum" || raw === "minimum only") return "low";
+  return fallback;
+}
+
 function normalizeHomeschoolMethod(value) {
   const candidate = text(value, "Charlotte Mason");
   return HOMESCHOOL_METHODS.includes(candidate) ? candidate : "Charlotte Mason";
@@ -570,7 +587,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     finalGradeOverride: text(subject.finalGradeOverride, ""),
     color: text(subject.color, ""),
     termId: text(subject.termId || subject.assignedTermId, normalizedTerm.id),
-    gracePriority: text(subject.gracePriority, "keep"),
+    gracePriority: gracePriorityValue(subject.gracePriority, "core"),
     graceNote: text(subject.graceNote, "Deferred gracefully to the reserve list.")
   });
   }).filter((subject) => subject.title);
@@ -676,7 +693,7 @@ function normalizeSetupPayload(payload = {}, identity) {
       finalGradeOverride: text(block.finalGradeOverride, ""),
       cadenceLabel: text(block.weeklyFrequency || block.cadenceLabel || block.cadence, "Weekly"),
       color: text(block.color, ""),
-      gracePriority: text(block.gracePriority, "keep"),
+      gracePriority: gracePriorityValue(block.gracePriority, "medium"),
       graceNote: text(block.graceNote, "Deferred gracefully to the reserve list.")
     });
     }).filter((block) => block.title),
@@ -777,7 +794,7 @@ function normalizeSetupPayload(payload = {}, identity) {
       defaultMaxDailyMinutes: Math.max(30, int(preferences.defaultMaxDailyMinutes, 240)),
       paceMode: normalizedHousehold.paceMode,
       evaluationModel: text(preferences.evaluationModel, "narrative-only"),
-      graceModeDefault: text(preferences.graceModeDefault, "light"),
+      graceModeDefault: graceModeValue(preferences.graceModeDefault, "light"),
       graceModeActive: normalizedHousehold.graceModeActive,
       printPack: text(preferences.printPack, "weekly-household")
     },
@@ -1081,6 +1098,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
         href: /literature|read-aloud|read aloud/i.test(`${block.blockType} ${block.title}`) ? "/myagapay/learn/books" : "/myagapay/learn/formation",
         priority: block.priorityLevel === "essential" ? 10 : block.priorityLevel === "important" ? 40 : block.priorityLevel === "optional" ? 95 : 70,
         priorityLevel: block.priorityLevel,
+        gracePriority: gracePriorityValue(block.gracePriority, "medium"),
         instructionMode: block.instructionMode,
         missedLessonBehavior: block.missedLessonBehavior,
         color: block.color,
@@ -1108,12 +1126,12 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           detail: `${assignment.resourceTitle || subject.cadenceLabel}${currentWeekPlan(assignment) ? ` • ${currentWeekPlan(assignment)}` : ""}${subject.endNumber ? ` (${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber})` : ""}${subject.weeklyFrequency ? ` • ${subject.weeklyFrequency}` : ""}`,
           priority: subject.priorityLevel === "essential" ? index : subject.priorityLevel === "important" ? 30 + index : subject.priorityLevel === "optional" ? 100 + index : 70 + index,
           priorityLevel: subject.priorityLevel,
+          gracePriority: gracePriorityValue(subject.gracePriority, "core"),
           instructionMode: subject.instructionMode,
           missedLessonBehavior: subject.missedLessonBehavior,
           color: subject.color,
-          gracePriority: subject.gracePriority || "keep",
           graceNote: subject.graceNote || "Deferred gracefully to the reserve list.",
-          graceModeApplied: setupSnapshot.preferences?.graceModeActive && subject.gracePriority !== "keep",
+          graceModeApplied: setupSnapshot.preferences?.graceModeActive && gracePriorityValue(subject.gracePriority, "core") !== "core",
           ...planArraysForItem(assignment, currentTermWeek, plannerWeekWindow.dates)
         }));
         });
@@ -1175,7 +1193,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
       }))
     ],
     graceReserve: [
-      ...currentSubjects.filter((subject) => setupSnapshot.preferences?.graceModeActive && subject.gracePriority !== "keep").map((subject) => ({
+      ...currentSubjects.filter((subject) => setupSnapshot.preferences?.graceModeActive && gracePriorityValue(subject.gracePriority, "core") !== "core").map((subject) => ({
         title: subject.title,
         note: subject.graceNote,
         color: subject.color
@@ -1480,7 +1498,7 @@ export async function saveLearnGraceMode(env, request, payload = {}) {
   const current = await loadLearnSetupSnapshotForIdentity(env, identity);
   const nextPreferences = {
     ...(current?.preferences || {}),
-    graceModeDefault: text(payload.mode || payload.graceModeDefault, current?.preferences?.graceModeDefault || "light"),
+    graceModeDefault: graceModeValue(payload.mode || payload.graceModeDefault || current?.preferences?.graceModeDefault || "light"),
     graceModeActive: Boolean(payload.active ?? payload.graceModeActive ?? true)
   };
   const nextPayload = current ? {

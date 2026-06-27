@@ -109,7 +109,11 @@ assert(!learnShell.includes('// vm.activeView') && learnShell.includes('displayV
 assert(learnShell.includes("TOGETHER THIS WEEK") && learnShell.includes("DAILY CHURCH RHYTHMS"), "Learn dashboard should distinguish weekly family work from daily Church rhythms.");
 assert(learnShell.includes("learn-week-overview") && learnShell.includes("learn-child-week-grid") && learnShell.includes("WEEK AT A GLANCE"), "Learn dashboard should keep household summaries separate from a scalable child grid.");
 assert(learnShell.includes("data-learn-completion") && learnShell.includes("/api/learn/completion"), "Learn dashboard should persist daily and weekly completion through the backend.");
-assert(learnShell.includes("Grace Mode lightens a day without erasing the plan"), "The setup wizard should explain Grace Mode and its non-destructive behavior.");
+assert(learnShell.includes("Full, Medium, or Light") && learnShell.includes("Each child keeps up to 4 ranked subjects") && learnShell.includes("Each child keeps up to 2 top-ranked subjects"), "The setup wizard should explain the exact Full, Medium, and Light Grace Mode caps.");
+assert(learnShell.includes("1 Core: chosen first in every mode") && learnShell.includes("4 Low: first moved to reserve"), "Advanced Setup should expose granular Grace priority ranking for each subject.");
+assert(learnRepository.includes("GRACE_MODE_CAPS") && learnRepository.includes("deferred-by-cap"), "Grace Mode should enforce daily caps in the planner engine.");
+assert(learnRepository.includes('modes: ["full", "medium", "light"]'), "Learn APIs should expose the three mom-facing Grace Mode options.");
+assert(learnSetupPersistence.includes("gracePriorityValue") && learnSetupPersistence.includes("graceModeValue"), "Learn setup persistence should normalize legacy and current Grace Mode values.");
 assert(learnShell.includes("No permanent choice is required"), "The Grace Mode wizard step should explain that families can change modes day by day.");
 assert(learnShell.includes('id="reports"') && learnShell.includes("Reports & Records"), "Print Center should contain the staged Reports and Records workspace.");
 assert(!learnShell.includes('apiGet("/api/learn/reports")'), "The Learn shell should not load a standalone Reports screen.");

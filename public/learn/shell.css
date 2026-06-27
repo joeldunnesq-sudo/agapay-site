@@ -1278,6 +1278,18 @@ body {
   min-width: 0;
 }
 
+.learn-grace-behavior-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.learn-grace-behavior-field small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 @media (min-width: 1100px) {
   .learn-setup-grace-note {
     grid-column: span 2;

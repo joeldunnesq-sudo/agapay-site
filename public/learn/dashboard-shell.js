@@ -627,22 +627,22 @@ function renderGraceModePanel(vm) {
   const currentMode = vm.graceMode?.active ? vm.graceMode.mode || "light" : "full";
   const modes = [
     {
+      id: "full",
+      title: "Full Rhythm",
+      subtitle: "Keep the complete plan for an ordinary, steady week.",
+      detail: "Every scheduled subject, book, and enrichment block stays at its planned time."
+    },
+    {
       id: "light",
-      title: "Light",
-      subtitle: "Keep the essentials and soften the rest.",
-      detail: "Protects prayer, readings, catechesis, and gentle family-based learning while reducing lower-priority lessons."
+      title: "Medium Day",
+      subtitle: "Cap the day without shrinking the whole plan.",
+      detail: "Each child keeps up to 4 ranked subjects. Household enrichment keeps up to 3 blocks. Lower-ranked work moves to reserve."
     },
     {
-      id: "minimum",
-      title: "Minimum",
+      id: "minimum viable",
+      title: "Light Day",
       subtitle: "A faithful tiny plan for hard days.",
-      detail: "Keeps the smallest meaningful rhythm: prayer, one shared learning touchpoint, and the next right thing."
-    },
-    {
-      id: "feast only",
-      title: "Feast Only",
-      subtitle: "Let the Church year carry the day.",
-      detail: "Centers the feast, readings, prayers, and family worship when schoolwork should yield to holy time."
+      detail: "Each child keeps up to 2 top-ranked subjects. Household enrichment keeps 1 block. Kept work becomes a short touchpoint."
     }
   ];
   return `
@@ -696,9 +696,9 @@ function renderTodayLearnContext(vm) {
   const progress = Number(term.percent || 0);
   const currentMode = vm.graceMode?.active ? vm.graceMode.mode || "light" : "full";
   const modes = [
-    { id: "light", title: "Light", detail: "Keep essentials and soften lower-priority work." },
-    { id: "minimum", title: "Minimum", detail: "Prayer, one shared touchpoint, and the next right thing." },
-    { id: "feast only", title: "Feast Only", detail: "Church rhythm and feast celebration — everything academic steps aside." }
+    { id: "full", title: "Full", detail: "Run every scheduled item as planned." },
+    { id: "light", title: "Medium", detail: "Keep up to 4 ranked child subjects; reserve the rest." },
+    { id: "minimum viable", title: "Light", detail: "Keep up to 2 top-ranked child subjects as short touchpoints." }
   ];
   return `
     <div style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:12px;margin-top:18px;width:100%;">
@@ -715,7 +715,7 @@ function renderTodayLearnContext(vm) {
           <span><span style="display:block;color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:800;text-transform:uppercase;">Grace Mode</span><strong style="font-family:'Cormorant Garamond',serif;font-size:25px;">Today’s rhythm</strong></span>
           <span data-grace-mode-status style="color:var(--muted);font-size:12px;min-height:18px;">${vm.graceMode?.active ? "" : "Full plan · no Grace Mode"}</span>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(100px,1fr));gap:8px;">
           ${modes.map((mode) => {
             const active = mode.id === currentMode;
             return `<button type="button" data-grace-mode="${html(mode.id)}" aria-pressed="${active ? "true" : "false"}" title="${html(mode.detail)}" style="border:1px solid ${active ? "var(--gold)" : "var(--line)"};border-radius:11px;background:${active ? "var(--navy)" : "rgba(255,255,255,.62)"};color:${active ? "#fffaf0" : "var(--ink)"};padding:10px;text-align:left;cursor:pointer;font-family:inherit;min-height:84px;"><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:20px;line-height:1;">${html(mode.title)}</strong><small style="display:block;margin-top:5px;line-height:1.25;color:${active ? "rgba(255,250,240,.82)" : "var(--muted)"};">${html(mode.detail)}</small></button>`;
@@ -3214,10 +3214,24 @@ const subjectTypeOptions = [
 ];
 
 const graceModeOptions = [
-  { value: "keep", label: "Keep in Grace Mode" },
-  { value: "reduce first", label: "Reduce first" },
-  { value: "bump if needed", label: "Defer if needed" }
+  { value: "core", label: "1 Core: chosen first in every mode" },
+  { value: "high", label: "2 High: keep after Core" },
+  { value: "medium", label: "3 Medium: keep if the cap has room" },
+  { value: "low", label: "4 Low: first moved to reserve" }
 ];
+
+function setupGracePriorityValue(value = "core") {
+  const normalized = String(value || "").toLowerCase().replace(/[-_]+/g, " ").trim();
+  if (normalized === "keep" || normalized === "always keep") return "core";
+  if (normalized === "important") return "high";
+  if (normalized === "reduce first" || normalized === "shorten" || normalized === "helpful") return "medium";
+  if (normalized === "bump if needed" || normalized === "defer if needed" || normalized === "minimum only" || normalized === "optional") return "low";
+  return ["core", "high", "medium", "low"].includes(normalized) ? normalized : "core";
+}
+
+function setupGraceModeBehavior(value = "core") {
+  return `<span class="learn-grace-behavior-field">${setupSelect("Grace priority", "gracePriority", setupGracePriorityValue(value), graceModeOptions)}<small>Full runs all scheduled work. Medium keeps up to 4 ranked child subjects per day. Light keeps up to 2 and turns kept work into short touchpoints.</small></span>`;
+}
 
 const schedulingModeOptions = [
   { value: "fixed", label: "Fixed days" },
@@ -3517,7 +3531,7 @@ function childSetupRow(child = {}, groupingMode = "forms") {
 
 function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms", tileMinutes = "") {
   const minutes = subject.minutes || tileMinutes || "20";
-  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main"><div class="learn-setup-row-identity">${setupInput("Subject / skill", "title", subject.title || "")}${setupSelect("Schedule type", "weeklyFrequency", subject.weeklyFrequency === "1x" ? "weekly" : subject.weeklyFrequency || subject.cadenceLabel || "daily", simpleScheduleOptions)}${setupRemoveButton()}</div>${setupResourceList(subject.resources?.length ? subject.resources : (subject.resource ? [{ title: subject.resource, scheduledWeeks: [] }] : []), children, groupingMode, subject)}<input type="hidden" name="minutes" value="${html(minutes)}" /><input type="hidden" name="subjectType" value="${html(subject.subjectType || subject.type || "custom")}" /><input type="hidden" name="instructionMode" value="${html(subject.instructionMode || "parent-led")}" /><input type="hidden" name="resourceType" value="${html(subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(subject.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(subject.priorityLevel || "important")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main"><div class="learn-setup-row-identity">${setupInput("Subject / skill", "title", subject.title || "")}${setupSelect("Schedule type", "weeklyFrequency", subject.weeklyFrequency === "1x" ? "weekly" : subject.weeklyFrequency || subject.cadenceLabel || "daily", simpleScheduleOptions)}${setupRemoveButton()}</div>${setupResourceList(subject.resources?.length ? subject.resources : (subject.resource ? [{ title: subject.resource, scheduledWeeks: [] }] : []), children, groupingMode, subject)}<input type="hidden" name="minutes" value="${html(minutes)}" /><input type="hidden" name="subjectType" value="${html(subject.subjectType || subject.type || "custom")}" /><input type="hidden" name="instructionMode" value="${html(subject.instructionMode || "parent-led")}" /><input type="hidden" name="resourceType" value="${html(subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(subject.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(subject.priorityLevel || "important")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupGraceModeBehavior(subject.gracePriority || "core")}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function bookSetupRow(book = {}, terms = [], currentTermId = "") {
@@ -3538,7 +3552,7 @@ function formationRecitationSetupRow(track = {}, children = [], groupingMode = "
 
 function formationEnrichmentSetupRow(block = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms", tileMinutes = "") {
   const minutes = block.minutesPlanned || block.minutes || tileMinutes || "20";
-  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupSourceInput("Source", "title", block.title || block.resource || block.source || "")}${setupPlanningModePicker(block, children, groupingMode)}${setupSelect("Schedule type", "weeklyFrequency", block.weeklyFrequency === "1x" ? "weekly" : block.weeklyFrequency || block.cadenceLabel || block.cadence || "weekly", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutesPlanned" value="${html(minutes)}" /><input type="hidden" name="instructionMode" value="${html(block.instructionMode || "shared")}" /><input type="hidden" name="resourceType" value="${html(block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(block.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(block.priorityLevel || "enrichment")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupTermWeekPicker(block.scheduledWeeks)}${setupWeeklyPlanFields(block.weeklyPlans)}${setupMultiChildPicker(children, block.childIds || (block.childId ? [block.childId] : []))}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupSelect("Grace Mode behavior", "gracePriority", block.gracePriority || "reduce first", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupSourceInput("Source", "title", block.title || block.resource || block.source || "")}${setupPlanningModePicker(block, children, groupingMode)}${setupSelect("Schedule type", "weeklyFrequency", block.weeklyFrequency === "1x" ? "weekly" : block.weeklyFrequency || block.cadenceLabel || block.cadence || "weekly", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutesPlanned" value="${html(minutes)}" /><input type="hidden" name="instructionMode" value="${html(block.instructionMode || "shared")}" /><input type="hidden" name="resourceType" value="${html(block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(block.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(block.priorityLevel || "enrichment")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupTermWeekPicker(block.scheduledWeeks)}${setupWeeklyPlanFields(block.weeklyPlans)}${setupMultiChildPicker(children, block.childIds || (block.childId ? [block.childId] : []))}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupGraceModeBehavior(block.gracePriority || "medium")}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function churchRhythmSetupPanel(vm) {
@@ -3989,7 +4003,7 @@ function simpleSetupStepBody(draft) {
     return `<div class="learn-wizard-step-copy"><span>Your learners</span><h2>Add the children learning at home.</h2><p>First name plus either age or grade is enough.${draft.useForms ? " Learn will suggest a Form for each child as you enter them." : " Learn will use the grade or level you enter."}</p></div><div class="learn-wizard-plan-note"><strong>Free plan: up to 2 children</strong><span>Family plans include unlimited children, Forms, child sheets, and full household planning.</span></div><div class="learn-wizard-children">${draft.children.map((child, index) => { const suggested = child.formLabel || suggestedFormForChild(child); const formField = draft.useForms ? `<label class="learn-wizard-field"><span>Suggested Form</span><select name="formLabel">${formOptions.map((option) => `<option value="${html(option)}" ${option === suggested ? "selected" : ""}>${html(option)}</option>`).join("")}</select></label>` : ""; return `<div class="learn-wizard-child${draft.useForms ? " uses-forms" : ""}" data-wizard-child="${index}" data-client-id="${html(child.clientId)}"><span class="learn-wizard-child-number">${index + 1}</span>${simpleSetupField("First name", "firstName", child.firstName, { placeholder: "Maria" })}${simpleSetupField("Age", "ageYears", child.ageYears, { type: "number", min: 0, max: 21 })}${simpleSetupField("Grade or level", "gradeLabel", child.gradeLabel, { placeholder: "Grade 3 or Kindergarten" })}${formField}${draft.children.length > 1 ? `<button type="button" class="learn-wizard-icon-button" data-wizard-remove-child="${index}" aria-label="Remove ${html(child.firstName || `child ${index + 1}`)}">×</button>` : ""}</div>`; }).join("")}</div><button type="button" class="learn-wizard-add" data-wizard-add-child>${!isLearnFamilyPlan() && draft.children.length >= 2 ? "Upgrade to add another child" : "+ Add another child"}</button>`;
   }
   if (draft.step === 4) {
-    return `<div class="learn-wizard-step-copy"><span>A gentler way through real life</span><h2>Meet Grace Mode.</h2><p>Your plan should serve your family, not punish it. Grace Mode lets you lighten a difficult day without deleting work or pretending the plan never existed.</p></div><aside class="learn-wizard-grace-explainer"><div><small>Built for real family life</small><h3>Grace Mode lightens a day without erasing the plan.</h3><p>Use it for illness, a new baby, travel, feast days, difficult mornings, or any season when the full plan is too much. Deferred work stays in your plan and can return when the household is ready.</p></div><div class="learn-wizard-grace-levels"><span><strong>Light</strong><small>Keeps essentials, softens lower-priority work. Most common.</small></span><span><strong>Minimum</strong><small>Keeps prayer, one shared touchpoint, and the next right thing.</small></span><span><strong>Feast Only</strong><small>Church rhythm and feast celebration — academics step aside.</small></span></div><p class="learn-wizard-grace-tip"><strong>How to use it:</strong> choose Light, Minimum, or Feast Only at the top of the Learn Dashboard. In Setup, each subject can be marked “keep,” “reduce first,” or “defer if needed,” so you remain in control. The full plan runs automatically when no Grace Mode is active.</p></aside><div class="learn-wizard-gentle-note"><strong>No permanent choice is required.</strong><span>You can change Grace Mode from day to day as family life changes.</span></div>`;
+    return `<div class="learn-wizard-step-copy"><span>A gentler way through real life</span><h2>Meet Grace Mode.</h2><p>Your plan should serve your family, not punish it. Grace Mode lets you choose Full, Medium, or Light without deleting work or pretending the plan never existed.</p></div><aside class="learn-wizard-grace-explainer"><div><small>Built for real family life</small><h3>Grace Mode changes the day according to each subject’s priority rank.</h3><p>Use it for illness, a new baby, travel, feast days, difficult mornings, or any season when the full plan is too much. Deferred work stays in your plan and can return when the household is ready.</p></div><div class="learn-wizard-grace-levels"><span><strong>Full</strong><small>Every scheduled item runs at its normal time.</small></span><span><strong>Medium</strong><small>Each child keeps up to 4 ranked subjects. Household enrichment keeps up to 3 blocks.</small></span><span><strong>Light</strong><small>Each child keeps up to 2 top-ranked subjects as short touchpoints. Household enrichment keeps 1 block.</small></span></div><p class="learn-wizard-grace-tip"><strong>How to use it:</strong> choose today’s mode on the Learn Dashboard. In Advanced Setup, rank each subject as Core, High, Medium, or Low so Mom knows exactly what survives first when the day gets lighter.</p></aside><div class="learn-wizard-gentle-note"><strong>No permanent choice is required.</strong><span>You can change Grace Mode from day to day as family life changes.</span></div>`;
   }
   return `<div class="learn-wizard-step-copy"><span>Ready for Today</span><h2>Would you like a simple starter week?</h2><p>AGAPAY will save a real editable first term, Daily Church Rhythms, family read-aloud, nature walk, and starter subject plan organized by ${draft.useForms ? "Form" : "grade or level"}. Nothing is sample-only or locked.</p></div><label class="learn-wizard-starter"><input type="checkbox" name="wizard.starterWeek" ${draft.starterWeek ? "checked" : ""}><span><strong>Create a gentle starter week</strong><small>Creates Morning Prayers, Daily Readings, Saint of the Day, family read-aloud, nature walk, plus editable Language Arts, Mathematics, History, Geography, Literature, and Science subjects for every ${draft.useForms ? "Form" : "grade or level"}.</small></span></label><div class="learn-wizard-summary"><div><small>Household</small><strong>${html(draft.householdName || "Your household")}</strong></div><div><small>Children</small><strong>${draft.children.filter((child) => child.firstName).length}</strong></div><div><small>Planning</small><strong>${draft.useForms ? "Family + Forms" : "Family + grades"}</strong></div><div><small>Style</small><strong>${html(draft.method === "Orthodox Classical" ? "Classical" : draft.method)}</strong></div></div>`;
 }
@@ -4304,12 +4318,12 @@ function simpleSetupPayload(draft, existingSnapshot = null) {
     daily: ["mon", "tue", "wed", "thu", "fri"]
   };
   const starterSubjectSlate = [
-    { title: "Language Arts", subjectType: "language-arts", weeklyFrequency: "4x", minutes: "20", gracePriority: "keep" },
-    { title: "Mathematics", subjectType: "math", weeklyFrequency: "4x", minutes: "20", gracePriority: "keep" },
-    { title: "History", subjectType: "history", weeklyFrequency: "3x", minutes: "25", gracePriority: "keep" },
-    { title: "Geography", subjectType: "geography", weeklyFrequency: "2x", minutes: "20", gracePriority: "reduce first" },
-    { title: "Literature", subjectType: "literature", weeklyFrequency: "3x", minutes: "20", gracePriority: "keep" },
-    { title: "Science", subjectType: "sciences-nature", weeklyFrequency: "2x", minutes: "25", gracePriority: "reduce first" }
+    { title: "Language Arts", subjectType: "language-arts", weeklyFrequency: "4x", minutes: "20", gracePriority: "core" },
+    { title: "Mathematics", subjectType: "math", weeklyFrequency: "4x", minutes: "20", gracePriority: "core" },
+    { title: "History", subjectType: "history", weeklyFrequency: "3x", minutes: "25", gracePriority: "high" },
+    { title: "Geography", subjectType: "geography", weeklyFrequency: "2x", minutes: "20", gracePriority: "medium" },
+    { title: "Literature", subjectType: "literature", weeklyFrequency: "3x", minutes: "20", gracePriority: "high" },
+    { title: "Science", subjectType: "sciences-nature", weeklyFrequency: "2x", minutes: "25", gracePriority: "medium" }
   ];
   const subjects = createStarterWeek ? planningGroups.flatMap((groupLabel, groupIndex) => starterSubjectSlate.map((subject, subjectIndex) => ({
     ...subject,
@@ -4330,8 +4344,8 @@ function simpleSetupPayload(draft, existingSnapshot = null) {
     ],
     recitationTracks: [], hymnStudies: [], feasts: [],
     enrichmentBlocks: [
-      { blockType: "Literature", title: "Family Read-Aloud", planningMode: "family", weeklyFrequency: "daily", daysOfWeek: subjectDays.daily, minutesPlanned: 20, termId: "term_1", gracePriority: "keep" },
-      { blockType: "Nature Study", title: "Nature Walk", planningMode: "family", weeklyFrequency: "1x", daysOfWeek: subjectDays["1x"], minutesPlanned: 30, termId: "term_1", gracePriority: "reduce first" }
+      { blockType: "Literature", title: "Family Read-Aloud", planningMode: "family", weeklyFrequency: "daily", daysOfWeek: subjectDays.daily, minutesPlanned: 20, termId: "term_1", gracePriority: "high" },
+      { blockType: "Nature Study", title: "Nature Walk", planningMode: "family", weeklyFrequency: "1x", daysOfWeek: subjectDays["1x"], minutesPlanned: 30, termId: "term_1", gracePriority: "medium" }
     ]
   };
   return {
