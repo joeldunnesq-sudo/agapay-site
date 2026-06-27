@@ -2762,13 +2762,77 @@ function attendanceStatusMark(status = "present") {
   }[status] || "P";
 }
 
+const US_FEDERAL_HOLIDAY_CACHE = new Map();
+
+function isoDateFromUTC(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function utcHolidayDate(year, monthIndex, day) {
+  return new Date(Date.UTC(year, monthIndex, day, 12));
+}
+
+function addHoliday(map, date, name) {
+  map.set(isoDateFromUTC(date), name);
+}
+
+function addObservedFixedHoliday(map, year, monthIndex, day, name) {
+  const actual = utcHolidayDate(year, monthIndex, day);
+  const observed = utcHolidayDate(year, monthIndex, day);
+  const weekday = actual.getUTCDay();
+  if (weekday === 6) observed.setUTCDate(observed.getUTCDate() - 1);
+  if (weekday === 0) observed.setUTCDate(observed.getUTCDate() + 1);
+  addHoliday(map, observed, name);
+}
+
+function nthWeekdayOfMonth(year, monthIndex, weekday, nth) {
+  const date = utcHolidayDate(year, monthIndex, 1);
+  const offset = (weekday - date.getUTCDay() + 7) % 7;
+  date.setUTCDate(1 + offset + ((nth - 1) * 7));
+  return date;
+}
+
+function lastWeekdayOfMonth(year, monthIndex, weekday) {
+  const date = utcHolidayDate(year, monthIndex + 1, 0);
+  const offset = (date.getUTCDay() - weekday + 7) % 7;
+  date.setUTCDate(date.getUTCDate() - offset);
+  return date;
+}
+
+function usFederalHolidayMap(year) {
+  if (US_FEDERAL_HOLIDAY_CACHE.has(year)) return US_FEDERAL_HOLIDAY_CACHE.get(year);
+  const holidays = new Map();
+  addObservedFixedHoliday(holidays, year, 0, 1, "New Year's Day");
+  addHoliday(holidays, nthWeekdayOfMonth(year, 0, 1, 3), "Martin Luther King Jr. Day");
+  addHoliday(holidays, nthWeekdayOfMonth(year, 1, 1, 3), "Washington's Birthday");
+  addHoliday(holidays, lastWeekdayOfMonth(year, 4, 1), "Memorial Day");
+  addObservedFixedHoliday(holidays, year, 5, 19, "Juneteenth National Independence Day");
+  addObservedFixedHoliday(holidays, year, 6, 4, "Independence Day");
+  addHoliday(holidays, nthWeekdayOfMonth(year, 8, 1, 1), "Labor Day");
+  addHoliday(holidays, nthWeekdayOfMonth(year, 9, 1, 2), "Columbus Day");
+  addObservedFixedHoliday(holidays, year, 10, 11, "Veterans Day");
+  addHoliday(holidays, nthWeekdayOfMonth(year, 10, 4, 4), "Thanksgiving Day");
+  addObservedFixedHoliday(holidays, year, 11, 25, "Christmas Day");
+  US_FEDERAL_HOLIDAY_CACHE.set(year, holidays);
+  return holidays;
+}
+
+function nationalHolidayForDate(date = "") {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return "";
+  const year = Number(date.slice(0, 4));
+  return [year - 1, year, year + 1]
+    .map((candidateYear) => usFederalHolidayMap(candidateYear).get(date))
+    .find(Boolean) || "";
+}
+
 function renderAttendanceTracker(vm) {
   const dates = vm.attendance.weekDates.length ? vm.attendance.weekDates : [];
   const byKey = new Map(vm.attendance.entries.map((entry) => [`${entry.childId}::${entry.date}`, entry]));
   const childSummary = new Map(vm.attendance.summary.byChild.map((row) => [row.childId, row]));
   const head = dates.map((date) => {
     const label = attendanceDateLabel(date);
-    return `<span><strong>${html(label.day)}</strong><small>${html(label.short)}</small></span>`;
+    const holiday = nationalHolidayForDate(date);
+    return `<span><strong>${html(label.day)}</strong><small>${html(label.short)}${holiday ? ` · ${html(holiday)}` : ""}</small></span>`;
   }).join("");
   const rows = vm.children.map((child) => {
     const summary = childSummary.get(child.id) || {};
@@ -2779,9 +2843,10 @@ function renderAttendanceTracker(vm) {
         <small>${html(summary.instructionalDays || 0)} instructional day${Number(summary.instructionalDays || 0) === 1 ? "" : "s"}</small>
       </div>
       ${dates.map((date) => {
-        const entry = byKey.get(`${child.id}::${date}`) || { status: "present", minutes: 0, notes: "" };
+        const holiday = nationalHolidayForDate(date);
+        const entry = byKey.get(`${child.id}::${date}`) || { status: holiday ? "holiday" : "present", minutes: 0, notes: holiday };
         const status = entry.status || "present";
-        return `<button type="button" class="learn-attendance-cell is-${html(status)}" data-attendance-cell data-child-id="${html(child.id)}" data-date="${html(date)}" data-status="${html(status)}" data-minutes="${html(entry.minutes || "")}" data-notes="${html(entry.notes || "")}" aria-label="${html(`${child.name} ${date}: ${attendanceStatusLabel(status)}`)}"><strong>${html(attendanceStatusMark(status))}</strong><small>${html(attendanceStatusLabel(status))}</small></button>`;
+        return `<button type="button" class="learn-attendance-cell is-${html(status)}" data-attendance-cell data-child-id="${html(child.id)}" data-date="${html(date)}" data-status="${html(status)}" data-default-status="${holiday ? "holiday" : "present"}" data-holiday-name="${html(holiday)}" data-minutes="${html(entry.minutes || "")}" data-notes="${html(entry.notes || holiday || "")}" aria-label="${html(`${child.name} ${date}: ${attendanceStatusLabel(status)}${holiday ? ` (${holiday})` : ""}`)}"><strong>${html(attendanceStatusMark(status))}</strong><small>${html(holiday && status === "holiday" ? holiday : attendanceStatusLabel(status))}</small></button>`;
       }).join("")}
     </div>`;
   }).join("");
@@ -6403,14 +6468,15 @@ function attendanceEntryFromCell(cell) {
 
 function setAttendanceCellStatus(cell, status) {
   const next = status || "present";
+  const holidayName = cell.dataset.holidayName || "";
   cell.dataset.status = next;
   cell.classList.remove("is-present", "is-absent", "is-excused", "is-holiday");
   cell.classList.add(`is-${next}`);
   const strong = cell.querySelector("strong");
   const small = cell.querySelector("small");
   if (strong) strong.textContent = attendanceStatusMark(next);
-  if (small) small.textContent = attendanceStatusLabel(next);
-  cell.setAttribute("aria-label", `${cell.dataset.childId || "Student"} ${cell.dataset.date || ""}: ${attendanceStatusLabel(next)}`);
+  if (small) small.textContent = holidayName && next === "holiday" ? holidayName : attendanceStatusLabel(next);
+  cell.setAttribute("aria-label", `${cell.dataset.childId || "Student"} ${cell.dataset.date || ""}: ${attendanceStatusLabel(next)}${holidayName && next === "holiday" ? ` (${holidayName})` : ""}`);
 }
 
 function wireGrades(vm) {
@@ -6450,8 +6516,8 @@ function wireGrades(vm) {
     setAttendanceStatus("Attendance changed. Save when ready.");
   });
   attendanceForm?.querySelector("[data-attendance-present-week]")?.addEventListener("click", () => {
-    attendanceForm.querySelectorAll("[data-attendance-cell]").forEach((cell) => setAttendanceCellStatus(cell, "present"));
-    setAttendanceStatus("Week marked present. Save when ready.");
+    attendanceForm.querySelectorAll("[data-attendance-cell]").forEach((cell) => setAttendanceCellStatus(cell, cell.dataset.defaultStatus === "holiday" ? "holiday" : "present"));
+    setAttendanceStatus("Week marked present with national holidays preserved. Save when ready.");
   });
   attendanceForm?.querySelector("[data-attendance-save]")?.addEventListener("click", async () => {
     const save = attendanceForm.querySelector("[data-attendance-save]");
