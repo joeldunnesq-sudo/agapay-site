@@ -163,6 +163,7 @@ export async function saveLearnBillingRecord(env = {}, record = {}) {
     stripeCustomerId: record.stripeCustomerId || "",
     stripeSubscriptionId: record.stripeSubscriptionId || "",
     stripeCheckoutSessionId: record.stripeCheckoutSessionId || "",
+    source: record.source || "",
     interval: normalizeCheckoutInterval(record.interval || record.billingInterval),
     learnBillingInterval: normalizeCheckoutInterval(record.interval || record.billingInterval),
     currentPeriodEnd: record.currentPeriodEnd || "",
@@ -469,4 +470,33 @@ export async function persistLearnBillingFromStripe(env = {}, source = {}) {
     cancelAtPeriodEnd: Boolean(source.cancel_at_period_end),
     cancelledAt: source.canceled_at ? new Date(source.canceled_at * 1000).toISOString() : ""
   });
+}
+
+// ── Odyssey activation ──────────────────────────────────────────────────────────
+// Called when a family enters their Odyssey purchase reference code.
+// Creates a family billing record with no Stripe IDs and source: 'odyssey'.
+export async function activateLearnOdysseyAccount(env = {}, email = "", odysseyRef = "") {
+  if (!email) return { ok: false, error: "Email is required." };
+  const existing = await loadLearnBillingRecord(env, email);
+  if (existing && billingGrantsPaidAccess(existing) && existing.source !== "odyssey") {
+    // Already has a paid subscription via another channel — don't overwrite
+    return { ok: true, alreadyActive: true, plan: existing.plan };
+  }
+  const record = {
+    email,
+    plan: LEARN_FAMILY_PLAN,
+    status: "active",
+    source: "odyssey",
+    odysseyRef: String(odysseyRef || "").trim().slice(0, 100),
+    interval: "year",
+    learnSubscriptionCents: 7900,
+    stripeCustomerId: "",
+    stripeSubscriptionId: "",
+    stripeCheckoutSessionId: "",
+    currentPeriodEnd: "",
+    cancelAtPeriodEnd: false
+  };
+  const result = await saveLearnBillingRecord(env, record);
+  if (!result.ok) return { ok: false, error: result.reason || "Failed to activate." };
+  return { ok: true, plan: LEARN_FAMILY_PLAN, source: "odyssey" };
 }
