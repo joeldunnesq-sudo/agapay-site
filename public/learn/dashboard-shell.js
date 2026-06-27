@@ -4808,40 +4808,6 @@ function wireSetupPage() {
       picker.querySelector("[data-child-multi-summary]").textContent = selected.length ? names.join(", ") : "Use Form Assignment";
       return;
     }
-    const addResource = event.target.closest("[data-add-resource]");
-    if (addResource) {
-      const list = addResource.closest("[data-resource-list]");
-      if (!list) return;
-      const rows = list.querySelector("[data-resource-rows]");
-      const index = rows.querySelectorAll("[data-resource-row]").length;
-      const newRow = document.createElement("div");
-      newRow.dataset.resourceRow = "";
-      newRow.style.cssText = "display:flex;gap:6px;align-items:end;";
-      newRow.innerHTML = `<label style="flex:1;min-width:0;">Resource ${index + 1}<input type="text" name="resource.${index}" value="" inputmode="url" placeholder="Book title, source note, or https://..." style="width:100%;" /></label><button type="button" data-remove-resource aria-label="Remove resource" style="align-self:end;flex:0 0 auto;border:1px solid var(--line);background:var(--paper);color:var(--burgundy);border-radius:9px;padding:9px 10px;font-family:inherit;line-height:1;">×</button>`;
-      rows.appendChild(newRow);
-      newRow.querySelector("input")?.focus();
-      return;
-    }
-    const removeResource = event.target.closest("[data-remove-resource]");
-    if (removeResource) {
-      const list = removeResource.closest("[data-resource-list]");
-      removeResource.closest("[data-resource-row]")?.remove();
-      // Re-index remaining rows so names stay sequential
-      if (list) {
-        list.querySelectorAll("[data-resource-row]").forEach((row, i) => {
-          const input = row.querySelector("input[type='text']");
-          const label = row.querySelector("label");
-          if (input) input.name = `resource.${i}`;
-          if (label && i > 0) label.firstChild.textContent = `Resource ${i + 1}`;
-        });
-        const firstInput = list.querySelector("input[name='resource.0']");
-        const hiddenFirst = list.querySelector('[name="resource"]');
-        const hiddenAll = list.querySelector('[name="resources"]');
-        if (hiddenFirst) hiddenFirst.value = firstInput?.value || "";
-        if (hiddenAll) hiddenAll.value = [...list.querySelectorAll("input[name^='resource.']")].map((i) => i.value.trim()).filter(Boolean).join("|");
-      }
-      return;
-    }
     const tileInput = event.target.closest("[data-setup-section-title-input], [data-setup-section-detail-input]");
     if (tileInput) {
       const group = tileInput.dataset.setupSectionGroup || "";
@@ -4873,6 +4839,39 @@ function wireSetupPage() {
     if (event.target.closest('[data-setup-row="children"]')) syncSetupChildLimit(form);
   });
   form.addEventListener("click", (event) => {
+    const addResource = event.target.closest("[data-add-resource]");
+    if (addResource) {
+      const list = addResource.closest("[data-resource-list]");
+      if (!list) return;
+      const rows = list.querySelector("[data-resource-rows]");
+      const index = rows.querySelectorAll("[data-resource-row]").length;
+      const newRow = document.createElement("div");
+      newRow.dataset.resourceRow = "";
+      newRow.style.cssText = "display:flex;gap:6px;align-items:end;";
+      newRow.innerHTML = `<label style="flex:1;min-width:0;">Resource ${index + 1}<input type="text" name="resource.${index}" value="" inputmode="url" placeholder="Book title, source note, or https://..." style="width:100%;" /></label><button type="button" data-remove-resource aria-label="Remove resource" style="align-self:end;flex:0 0 auto;border:1px solid var(--line);background:var(--paper);color:var(--burgundy);border-radius:9px;padding:9px 10px;font-family:inherit;line-height:1;">×</button>`;
+      rows.appendChild(newRow);
+      newRow.querySelector("input")?.focus();
+      return;
+    }
+    const removeResource = event.target.closest("[data-remove-resource]");
+    if (removeResource) {
+      const list = removeResource.closest("[data-resource-list]");
+      removeResource.closest("[data-resource-row]")?.remove();
+      if (list) {
+        list.querySelectorAll("[data-resource-row]").forEach((row, i) => {
+          const input = row.querySelector("input[type='text']");
+          const label = row.querySelector("label");
+          if (input) input.name = `resource.${i}`;
+          if (label && i > 0) label.firstChild.textContent = `Resource ${i + 1}`;
+        });
+        const firstInput = list.querySelector("input[name='resource.0']");
+        const hiddenFirst = list.querySelector('[name="resource"]');
+        const hiddenAll = list.querySelector('[name="resources"]');
+        if (hiddenFirst) hiddenFirst.value = firstInput?.value || "";
+        if (hiddenAll) hiddenAll.value = [...list.querySelectorAll("input[name^='resource.']")].map((i) => i.value.trim()).filter(Boolean).join("|");
+      }
+      return;
+    }
     const weekPreset = event.target.closest("[data-term-weeks-all], [data-term-weeks-odd], [data-term-weeks-even]");
     if (weekPreset) {
       const picker = weekPreset.closest(".learn-term-week-picker");
