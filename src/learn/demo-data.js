@@ -1,3 +1,14 @@
+// ── DEVELOPMENT / DEMO DATA ONLY ────────────────────────────────────────────
+// This file contains the Martin family seed used for local development and
+// unauthenticated preview paths. It is NOT used for real user data.
+// getLearnSeedSnapshot() is the default parameter fallback on SeedLearnRepository
+// and is only reached when no real seed is passed (i.e. createSeedLearnRepository()
+// with no arguments, used in dev/preview contexts only).
+//
+// DO NOT reference specific titles, names, or book data from this file in
+// any production code path (repository.js, handlers.js, print-engine.js).
+// ─────────────────────────────────────────────────────────────────────────────
+
 const nowIso = "2026-06-15T12:00:00.000Z";
 
 const learnHousehold = {
