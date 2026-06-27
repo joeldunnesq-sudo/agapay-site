@@ -2110,7 +2110,7 @@ function prototypeSetupSeed(vm) {
     subjects: form.subjects.length ? form.subjects : ["Math", "Language Arts", "History", "Science", "Literature"]
   }));
   return {
-    calendar: localStorage.getItem("agapay.learn.calendar") || "julian",
+    calendar: storedLearnCalendar(vm.preferences?.calendarType || ""),
     grouping,
     enrichment: (vm.week?.householdRows || []).map((row) => row.title).filter(Boolean),
     forms: forms.length ? forms : [{ id: "household", label: "Household", color: "#b5942f", children: [], subjects: ["Math", "Language Arts", "History", "Science", "Literature"] }]
@@ -3413,12 +3413,31 @@ function normalizeSetupResource(resource, subject = {}) {
 function setupResourceRow(resource = {}, index = 0, children = [], groupingMode = "forms") {
   const resolved = String(resource.title || "").trim();
   const link = /^https?:\/\//i.test(resolved)
-    ? `<a href="${html(resolved)}" target="_blank" rel="noopener noreferrer" class="learn-source-link" style="font-size:12px;color:var(--gold);white-space:nowrap;align-self:end;padding-bottom:11px;">Open ↗</a>`
+    ? `<a href="${html(resolved)}" target="_blank" rel="noopener noreferrer" class="learn-source-link">Open</a>`
     : "";
   const removeBtn = index > 0
-    ? `<button type="button" data-remove-resource aria-label="Remove resource" style="align-self:end;flex:0 0 auto;border:1px solid var(--line);background:var(--paper);color:var(--burgundy);border-radius:9px;padding:9px 10px;font-family:inherit;line-height:1;">×</button>`
+    ? `<button type="button" data-remove-resource aria-label="Remove resource">×</button>`
     : "";
-  return `<div data-resource-row="${index}" class="learn-resource-card"><label style="grid-column:1;min-width:0;">${index === 0 ? "Book / source / resource" : `Resource ${index + 1}`}<div style="display:flex;gap:6px;align-items:center;margin-top:4px;"><input type="text" data-resource-field="title" name="${html(resourceFieldName(index, "title"))}" value="${html(resolved)}" inputmode="url" placeholder="Book title, source note, or https://..." style="flex:1;min-width:0;" />${link}</div></label>${removeBtn}<div class="learn-resource-card-plan">${setupResourcePlanningCard(index, resource, children, groupingMode)}</div></div>`;
+  const summary = termWeekSummary(resource.scheduledWeeks || []);
+  return `<div data-resource-row="${index}" class="learn-resource-card">
+    <div class="learn-resource-card-summary">
+      <small>${html(index === 0 ? "Book / source / resource" : `Resource ${index + 1}`)}</small>
+      <strong data-resource-summary-title>${html(resolved || "Untitled resource")}</strong>
+      <span data-resource-summary-detail>${html(summary)}</span>
+      ${link}
+    </div>
+    <div class="learn-resource-card-actions"><button type="button" data-edit-resource>Edit</button>${removeBtn}</div>
+    <div class="learn-resource-modal" data-resource-modal hidden>
+      <div class="learn-resource-modal-card">
+        <button type="button" class="learn-family-modal-close" data-resource-modal-close aria-label="Close">×</button>
+        <small>${html(index === 0 ? "Book / source / resource" : `Resource ${index + 1}`)}</small>
+        <h2>Resource details</h2>
+        <label>Title, source note, or URL<input type="text" data-resource-field="title" name="${html(resourceFieldName(index, "title"))}" value="${html(resolved)}" inputmode="url" placeholder="Book title, source note, or https://..." /></label>
+        <div class="learn-resource-card-plan">${setupResourcePlanningCard(index, resource, children, groupingMode)}</div>
+        <div class="learn-family-modal-actions"><button type="button" data-resource-modal-close>Cancel</button><button type="button" data-resource-modal-save>Save resource</button></div>
+      </div>
+    </div>
+  </div>`;
 }
 
 function setupResourceList(resources = [], children = [], groupingMode = "forms", subject = {}) {
@@ -4846,8 +4865,8 @@ async function apiPost(path, body) {
 async function syncLearnGoogleCalendar(extraEvents = [], statusEl = null) {
   if (!learnGoogleCalendarStatus.configured || !learnGoogleCalendarStatus.connected) return null;
   try {
-    const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
-    const result = await apiPost(`/api/learn/google-calendar/sync?calendar=${encodeURIComponent(calendar)}&returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`, { extraEvents });
+    const calendar = storedLearnCalendar("");
+    const result = await apiPost(learnApiUrl("/api/learn/google-calendar/sync", { calendar, returnTo: window.location.pathname + window.location.search }), { extraEvents });
     if (statusEl && result?.syncedCount) {
       statusEl.textContent = `${statusEl.textContent} Google Calendar synced ${result.syncedCount} item${result.syncedCount === 1 ? "" : "s"}.`;
     }
@@ -4862,6 +4881,22 @@ async function syncLearnGoogleCalendar(extraEvents = [], statusEl = null) {
 function localIsoDate() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+function storedLearnCalendar(fallback = "") {
+  try {
+    return localStorage.getItem("agapay.learn.calendar") || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function learnApiUrl(path, params = {}) {
+  const url = new URL(path, window.location.origin);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value) !== "") url.searchParams.set(key, String(value));
+  });
+  return `${url.pathname}${url.search}`;
 }
 
 function rowValue(row, name) {
@@ -4930,6 +4965,50 @@ function rowResources(row) {
   return legacy ? [{ title: legacy, scheduledWeeks: [] }] : [];
 }
 
+function refreshResourceSummary(resourceRow) {
+  if (!resourceRow) return;
+  const index = Number(resourceRow.dataset.resourceRow || 0);
+  const title = resourceRow.querySelector(`[name="${resourceFieldName(index, "title")}"]`)?.value?.trim() || "";
+  const weeks = scheduledTermWeeks(resourceRow.querySelector(`[name="${resourceFieldName(index, "scheduledWeeks")}"]`)?.value || "");
+  const groups = (resourceRow.querySelector(`[name="${resourceFieldName(index, "formLabels")}"]`)?.value || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const children = (resourceRow.querySelector(`[name="${resourceFieldName(index, "childIds")}"]`)?.value || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const titleEl = resourceRow.querySelector("[data-resource-summary-title]");
+  const detailEl = resourceRow.querySelector("[data-resource-summary-detail]");
+  if (titleEl) titleEl.textContent = title || "Untitled resource";
+  if (detailEl) detailEl.textContent = [termWeekSummary(weeks), groups.length ? groups.join(", ") : "", children.length ? `${children.length} child-specific` : ""].filter(Boolean).join(" · ");
+}
+
+function snapshotResourceModal(modal) {
+  if (!modal) return;
+  const fields = [...modal.querySelectorAll("input, select, textarea")].map((field) => ({
+    name: field.name || "",
+    value: field.value || "",
+    checked: Boolean(field.checked)
+  }));
+  modal.dataset.resourceSnapshot = JSON.stringify(fields);
+}
+
+function restoreResourceModal(modal) {
+  if (!modal?.dataset.resourceSnapshot) return;
+  try {
+    const fields = JSON.parse(modal.dataset.resourceSnapshot);
+    fields.forEach((state, index) => {
+      const field = modal.querySelectorAll("input, select, textarea")[index];
+      if (!field || field.name !== state.name) return;
+      if (field.type === "checkbox") field.checked = Boolean(state.checked);
+      else field.value = state.value || "";
+    });
+  } catch {
+    // A stale modal snapshot should not block editing the resource.
+  }
+}
+
 function rowTileMinutes(row) {
   return row.closest(".learn-setup-subsection")?.querySelector("[data-setup-section-minutes-input]")?.value?.trim() || rowValue(row, "minutes") || rowValue(row, "minutesPlanned");
 }
@@ -4942,14 +5021,14 @@ function collectRows(form, rowType, mapper) {
 
 async function openSaintOfDay(button) {
   const date = button.dataset.date || "";
-  const calendar = button.dataset.calendar || localStorage.getItem("agapay.learn.calendar") || "julian";
+  const calendar = button.dataset.calendar || storedLearnCalendar("");
   const previousText = button.querySelector("small")?.textContent || "";
   button.disabled = true;
   button.style.cursor = "wait";
   const small = button.querySelector("small");
   if (small) small.textContent = "Loading the lives of the saints...";
   try {
-    const payload = await apiGet(`/api/learn/saints?date=${encodeURIComponent(date)}&calendar=${encodeURIComponent(calendar)}`);
+    const payload = await apiGet(learnApiUrl("/api/learn/saints", { date, calendar }));
     const unavailable = payload.sourceConnected === false
       ? payload.message || "Lives of the Saints are unavailable right now. Please try again later."
       : "";
@@ -4989,11 +5068,11 @@ function wireDashboard() {
       const itemId = button.dataset.completionId || "";
       const scope = button.dataset.completionScope || "";
       const completed = button.getAttribute("aria-pressed") !== "true";
-      const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
+      const calendar = storedLearnCalendar("");
       button.disabled = true;
       button.style.cursor = "wait";
       try {
-        const saved = await apiPost(`/api/learn/completion?calendar=${encodeURIComponent(calendar)}`, {
+        const saved = await apiPost(learnApiUrl("/api/learn/completion", { calendar }), {
           itemId,
           scope,
           completed,
@@ -5013,7 +5092,7 @@ function wireDashboard() {
     button.addEventListener("click", async () => {
       const mode = button.dataset.graceMode || "light";
       const status = root.querySelector("[data-grace-mode-status]");
-      const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
+      const calendar = storedLearnCalendar("");
       if (status) {
         status.style.color = "var(--muted)";
         status.textContent = "Saving rhythm...";
@@ -5023,7 +5102,7 @@ function wireDashboard() {
         item.style.cursor = "wait";
       });
       try {
-        const saved = await apiPost(`/api/learn/grace-mode?calendar=${encodeURIComponent(calendar)}`, {
+        const saved = await apiPost(learnApiUrl("/api/learn/grace-mode", { calendar }), {
           mode,
           active: mode !== "full"
         });
@@ -5605,7 +5684,37 @@ function wireSetupPage() {
       const firstResource = rowResources(subjectRow || document.createElement("div"))[0] || {};
       const newRowHtml = setupResourceRow({ planningMode: firstResource.planningMode || "forms", formLabels: firstResource.formLabels || [], childIds: firstResource.childIds || [] }, index, children, groupingMode);
       addResource.insertAdjacentHTML("beforebegin", newRowHtml);
-      list.querySelector(`[data-resource-row="${index}"] input[type="text"]`)?.focus();
+      const newRow = list.querySelector(`[data-resource-row="${index}"]`);
+      const modal = newRow?.querySelector("[data-resource-modal]");
+      if (modal) {
+        snapshotResourceModal(modal);
+        modal.hidden = false;
+        modal.style.display = "flex";
+        modal.querySelector("input")?.focus();
+      }
+      return;
+    }
+    const editResource = event.target.closest("[data-edit-resource]");
+    if (editResource) {
+      const modal = editResource.closest("[data-resource-row]")?.querySelector("[data-resource-modal]");
+      if (!modal) return;
+      snapshotResourceModal(modal);
+      modal.hidden = false;
+      modal.style.display = "flex";
+      modal.querySelector("input")?.focus();
+      return;
+    }
+    const closeResourceModal = event.target.closest("[data-resource-modal-close], [data-resource-modal-save]");
+    if (closeResourceModal) {
+      const savingResource = closeResourceModal.hasAttribute("data-resource-modal-save");
+      const modal = closeResourceModal.closest("[data-resource-modal]");
+      if (!savingResource) restoreResourceModal(modal);
+      const resourceRow = closeResourceModal.closest("[data-resource-row]");
+      refreshResourceSummary(resourceRow);
+      if (modal) {
+        modal.hidden = true;
+        modal.style.display = "none";
+      }
       return;
     }
     const removeResource = event.target.closest("[data-remove-resource]");
@@ -5624,11 +5733,10 @@ function wireSetupPage() {
           const weekPicker = row.querySelector("[data-resource-week-picker]");
           if (weekPicker) weekPicker.dataset.resourceWeekPicker = i;
           // Update label text for rows after the first
-          const label = row.querySelector("label");
-          if (label && i > 0) {
-            const labelText = label.firstChild;
-            if (labelText?.nodeType === Node.TEXT_NODE) labelText.textContent = `Resource ${i + 1}`;
-          }
+          row.querySelectorAll(".learn-resource-card-summary small, .learn-resource-modal-card > small").forEach((label) => {
+            label.textContent = i === 0 ? "Book / source / resource" : `Resource ${i + 1}`;
+          });
+          refreshResourceSummary(row);
         });
       }
       return;
@@ -5929,8 +6037,8 @@ function wireWeeklyAssignmentBoard(vm) {
     button.textContent = "Generating...";
     writeState();
     try {
-      const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
-      const response = await fetch(`/api/learn/print/print_mom_weekly?calendar=${encodeURIComponent(calendar)}`, {
+      const calendar = storedLearnCalendar("");
+      const response = await fetch(learnApiUrl("/api/learn/print/print_mom_weekly", { calendar }), {
         method: "POST",
         headers: learnRequestHeaders({ "content-type": "application/json" }),
         body: JSON.stringify({
@@ -6006,8 +6114,8 @@ function wirePlanner(vm) {
     button.disabled = true;
     button.textContent = "Generating...";
     try {
-      const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
-      const response = await fetch(`/api/learn/print/print_mom_month?calendar=${encodeURIComponent(calendar)}&month=${encodeURIComponent(month)}`, {
+      const calendar = storedLearnCalendar("");
+      const response = await fetch(learnApiUrl("/api/learn/print/print_mom_month", { calendar, month }), {
         method: "POST",
         headers: learnRequestHeaders({ "content-type": "application/json" }),
         body: JSON.stringify({ month })
@@ -6388,7 +6496,7 @@ function wirePlanner(vm) {
     try {
       const params = new URLSearchParams(window.location.search);
       const saveQuery = new URLSearchParams({
-        calendar: params.get("calendar") || localStorage.getItem("agapay.learn.calendar") || "julian",
+        calendar: params.get("calendar") || storedLearnCalendar(""),
         view: params.get("view") || vm.activeView || "week",
         month: params.get("month") || vm.month?.key || new Date().toISOString().slice(0, 7),
         date: params.get("date") || vm.day?.selected?.date || new Date().toISOString().slice(0, 10)
@@ -6443,8 +6551,8 @@ function wirePlanner(vm) {
       if (!blockId || !fromDate || !toDate) return;
       button.disabled = true;
       try {
-        const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
-        const saved = await apiPost(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}`, { action: "reschedule", blockId, fromDate, toDate });
+        const calendar = storedLearnCalendar("");
+        const saved = await apiPost(learnApiUrl("/api/learn/planner", { calendar }), { action: "reschedule", blockId, fromDate, toDate });
         await syncLearnGoogleCalendar();
         if (saved.planner) {
           const updatedVm = toPlannerViewModel({ ok: true, planner: saved.planner });
@@ -6922,8 +7030,8 @@ function wirePrintCenter(vm) {
       button.disabled = true;
       button.textContent = "Generating...";
       try {
-        const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
-        const response = await fetch(`/api/learn/print/${encodeURIComponent(templateId)}?calendar=${encodeURIComponent(calendar)}`, {
+        const calendar = storedLearnCalendar("");
+        const response = await fetch(learnApiUrl(`/api/learn/print/${encodeURIComponent(templateId)}`, { calendar }), {
           method: "POST",
           headers: learnRequestHeaders({ "content-type": "application/json" }),
           body: JSON.stringify({
@@ -6969,8 +7077,8 @@ function wirePrintCenter(vm) {
       button.disabled     = true;
       button.textContent  = "Generating...";
       try {
-        const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
-        const response = await fetch(`/api/learn/print/${encodeURIComponent(templateId)}?calendar=${encodeURIComponent(calendar)}`, {
+        const calendar = storedLearnCalendar("");
+        const response = await fetch(learnApiUrl(`/api/learn/print/${encodeURIComponent(templateId)}`, { calendar }), {
           method: "POST",
           headers: learnRequestHeaders({ "content-type": "application/json" }),
           body: JSON.stringify({
@@ -7042,10 +7150,11 @@ async function mount() {
     console.warn("Google Calendar status could not be loaded:", error);
     learnGoogleCalendarStatus = { loaded: true, configured: false, connected: false };
   }
-  const calendar = localStorage.getItem("agapay.learn.calendar") || "julian";
+  const params = new URLSearchParams(window.location.search);
+  const calendar = params.get("calendar") || storedLearnCalendar("");
   root.innerHTML = `<div style="padding:32px;font-family:Georgia,serif;color:#1b2c45;">Loading AGAPAY Learn...</div>`;
   if (pageKey === "dashboard") {
-    const raw = await apiGet(`/api/learn/dashboard?calendar=${encodeURIComponent(calendar)}`);
+    const raw = await apiGet(learnApiUrl("/api/learn/dashboard", { calendar }));
     if (raw.setupCompleted === false) {
       window.location.replace(learnSectionHref("onboarding"));
       return;
@@ -7055,19 +7164,18 @@ async function mount() {
     return;
   }
   if (pageKey === "planner") {
-    const params = new URLSearchParams(window.location.search);
     const view = params.get("view") || localStorage.getItem("agapay.learn.plannerView") || "week";
     const month = params.get("month") || new Date().toISOString().slice(0, 7);
     const termId = params.get("termId") || "";
     const date = params.get("date") || "";
-    const raw = await apiGet(`/api/learn/planner?calendar=${encodeURIComponent(calendar)}&view=${encodeURIComponent(view)}&month=${encodeURIComponent(month)}&termId=${encodeURIComponent(termId)}&date=${encodeURIComponent(date)}`);
+    const raw = await apiGet(learnApiUrl("/api/learn/planner", { calendar, view, month, termId, date }));
     const vm = toPlannerViewModel(raw);
     root.innerHTML = renderPlanner(vm);
     wirePlanner(vm);
     return;
   }
   if (pageKey === "formation") {
-    const raw = await apiGet(`/api/learn/formation?calendar=${encodeURIComponent(calendar)}`);
+    const raw = await apiGet(learnApiUrl("/api/learn/formation", { calendar }));
     root.innerHTML = renderFormation(toFormationViewModel(raw));
     wireFormation();
     return;
@@ -7095,7 +7203,7 @@ async function mount() {
     return;
   }
   if (pageKey === "print-center") {
-    const raw = await apiGet(`/api/learn/print-center?calendar=${encodeURIComponent(calendar)}`);
+    const raw = await apiGet(learnApiUrl("/api/learn/print-center", { calendar }));
     const vm = toPrintCenterViewModel({ ...raw, printLimit: resolvedPrintLimit });
     root.innerHTML = renderPrintCenter(vm);
     wirePrintCenter(vm);

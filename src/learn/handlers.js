@@ -18,7 +18,7 @@ const LEARN_PRINT_USAGE_PREFIX = "__agapay_learn_print_usage:";
 export { handleLearnAttendanceSave, handleLearnGrades, handleLearnGradesSave };
 
 function requestedCalendarType(url) {
-  return url.searchParams.get("calendar") || "julian";
+  return url.searchParams.get("calendar") || "";
 }
 
 function repositoryCalendarType(repository, fallback = "julian") {
@@ -26,6 +26,10 @@ function repositoryCalendarType(repository, fallback = "julian") {
     || repository?.seed?.setupSnapshot?.household?.liturgicalCalendarType
     || repository?.seed?.household?.liturgicalCalendarType
     || fallback;
+}
+
+function calendarTypeForRequest(url, repository) {
+  return requestedCalendarType(url) || repositoryCalendarType(repository);
 }
 
 function todayIso(env = {}) {
@@ -154,7 +158,7 @@ export async function handleLearnDashboard(request, env) {
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   const { repository } = auth;
-  const calendarType = requestedCalendarType(url);
+  const calendarType = calendarTypeForRequest(url, repository);
   const civilDate = url.searchParams.get("date") || todayIso(env);
   const dashboard = repository.getDashboard({
     calendarType,
@@ -182,7 +186,7 @@ export async function handleLearnPlanner(request, env) {
   if (auth.response) return auth.response;
   const { repository } = auth;
   const planner = repository.getPlanner({
-    calendarType: requestedCalendarType(url),
+    calendarType: calendarTypeForRequest(url, repository),
     view: url.searchParams.get("view") || "week",
     month: url.searchParams.get("month") || "",
     civilDate
@@ -207,7 +211,7 @@ export async function handleLearnPrintCenter(request, env) {
   if (auth.response) return auth.response;
   const { repository } = auth;
   const printCenter = repository.getPrintCenter({
-    calendarType: requestedCalendarType(url),
+    calendarType: calendarTypeForRequest(url, repository),
     month: url.searchParams.get("month") || ""
   });
 
@@ -236,7 +240,7 @@ export async function handleLearnCompletionSave(request, env) {
   const saved = await saveLearnCompletion(env, request, payload);
   if (!saved.ok) return json({ ok: false, error: saved.error }, { status: saved.status || 500 });
   const repository = await createLearnRepositoryForRequest(request, env);
-  const calendarType = requestedCalendarType(new URL(request.url));
+  const calendarType = calendarTypeForRequest(new URL(request.url), repository);
   const civilDate = /^\d{4}-\d{2}-\d{2}$/.test(String(payload.civilDate || "")) ? String(payload.civilDate) : todayIso(env);
   const dashboard = repository.getDashboard({ calendarType, civilDate });
   return json(await applyReadingsProvider({
@@ -278,7 +282,7 @@ export async function handleLearnPrintPdf(request, env, templateId = "") {
         generatedAt: new Date().toISOString()
       })
     : buildLearnPrintDocument(repository.getPrintCenter({
-        calendarType: requestedCalendarType(url),
+        calendarType: calendarTypeForRequest(url, repository),
         month: body.month || url.searchParams.get("month") || ""
       }), {
         templateId: resolvedTemplateId,
@@ -309,11 +313,11 @@ export async function handleLearnFormation(request, env) {
   if (blocked) return blocked;
 
   const url = new URL(request.url);
-  const calendarType = requestedCalendarType(url);
   const civilDate = url.searchParams.get("date") || todayIso(env);
   const auth = await requireLearnRepository(request, env);
   if (auth.response) return auth.response;
   const { repository } = auth;
+  const calendarType = calendarTypeForRequest(url, repository);
   const formation = repository.getFormation({
     calendarType,
     civilDate
@@ -540,7 +544,7 @@ export async function handleLearnGraceModeSave(request, env) {
 
   const repository = new SeedLearnRepository(saved.onboarding);
   const url = new URL(request.url);
-  const calendarType = requestedCalendarType(url);
+  const calendarType = calendarTypeForRequest(url, repository);
   const civilDate = url.searchParams.get("date") || todayIso(env);
   const dashboard = repository.getDashboard({ calendarType, civilDate });
 
@@ -571,7 +575,7 @@ export async function handleLearnFamilyPlanningSave(request, env) {
   const url = new URL(request.url);
   const repository = new SeedLearnRepository(saved.onboarding);
   return json({ ok: true, savedAt: saved.setupSnapshot.savedAt, planner: repository.getPlanner({
-    calendarType: requestedCalendarType(url) || saved.setupSnapshot.preferences?.calendarType || "julian",
+    calendarType: calendarTypeForRequest(url, repository),
     view: url.searchParams.get("view") || "week",
     month: url.searchParams.get("month") || "",
     civilDate: url.searchParams.get("date") || todayIso(env)
@@ -657,7 +661,7 @@ export async function handleLearnPlannerBlockSave(request, env) {
   const url = new URL(request.url);
   const repository = new SeedLearnRepository(saved.onboarding);
   const planner = repository.getPlanner({
-    calendarType: requestedCalendarType(url),
+    calendarType: calendarTypeForRequest(url, repository),
     view: url.searchParams.get("view") || "week",
     month: url.searchParams.get("month") || ""
   });
