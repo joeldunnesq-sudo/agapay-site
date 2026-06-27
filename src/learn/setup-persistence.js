@@ -527,8 +527,10 @@ function normalizeSetupPayload(payload = {}, identity) {
     formLabel: text(subject.formLabel, labelsValue(subject.formLabels || "")[0] || ""),
     formLabels: labelsValue(subject.formLabels || subject.formLabel),
     gradeLabel: text(subject.gradeLabel, ""),
-    resource: text(Array.isArray(subject.resources) && subject.resources.length ? subject.resources[0] : subject.resource, ""),
-    resources: Array.isArray(subject.resources) && subject.resources.length ? subject.resources.filter(Boolean) : (subject.resource ? [subject.resource] : []),
+    resource: text(Array.isArray(subject.resources) && subject.resources.length ? (subject.resources[0]?.title || subject.resources[0]) : subject.resource, ""),
+    resources: Array.isArray(subject.resources) && subject.resources.length
+      ? subject.resources.map((r) => typeof r === "string" ? { title: r, scheduledWeeks: [] } : { title: text(r.title || r.resource || "", ""), scheduledWeeks: Array.isArray(r.scheduledWeeks) ? r.scheduledWeeks : [] }).filter((r) => r.title)
+      : (subject.resource ? [{ title: subject.resource, scheduledWeeks: [] }] : []),
     resourceType: resourceTypeValue(subject.resourceType || subject.sourceType, subject.resource ? "curriculum" : "none"),
     cadenceLabel: text(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "Weekly"),
     minutes: int(subject.minutes, 20),
