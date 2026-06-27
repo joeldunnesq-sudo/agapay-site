@@ -1,129 +1,118 @@
-const ACCENTS = ["#14294a", "#6e2f2a", "#4a5a31", "#b5942f", "#34507a"];
-const RESOURCE_TYPE_STYLES = {
-  website: { color: "#14294a", icon: "↗" },
-  reference: { color: "#34507a", icon: "⌕" },
-  reading: { color: "#6e2f2a", icon: "☰" },
-  book: { color: "#4a5a31", icon: "▤" },
-  printable: { color: "#b5942f", icon: "▦" },
-  audio: { color: "#6e2f2a", icon: "♪" },
-  video: { color: "#14294a", icon: "▷" },
-  "mixed media": { color: "#4a5a31", icon: "✥" },
-  default: { color: "#b5942f", icon: "✥" }
+import { d1, d1First, d1Run, normalizeEmail, safeParseJsonRow } from "../lib/core.js";
+import { requireDonor } from "../handlers/parish.js";
+import { loadLearnAcademicSnapshot } from "./academic-records.js";
+import { LEARN_FREE_CHILD_LIMIT, learnRequestHasFamilyAccessAsync } from "./billing.js";
+import { getLearnSeedSnapshot } from "./demo-data.js";
+
+const LEARN_SETUP_KV_PREFIX = "__agapay_learn_setup:";
+const devSetupSnapshots = new Map();
+
+const HOMESCHOOL_METHODS = ["Charlotte Mason", "Orthodox Classical", "Traditional", "Eclectic", "Unsure"];
+
+const HISTORY_CYCLES = {
+  "ambleside-inspired": {
+    title: "Charlotte Mason History & Enrichment Cycle",
+    summary: "A six-year chronological enrichment spine inspired by AmblesideOnline, adapted for Orthodox households with saints, church history, geography, timeline, art, poetry, music, and living-book context.",
+    years: {
+      year_1: {
+        number: 1,
+        title: "Year 1: Early medieval and national beginnings",
+        topics: ["Early medieval stories", "Lives of saints and missionaries", "Maps, legends, folk songs, and picture study"]
+      },
+      year_2: {
+        number: 2,
+        title: "Year 2: Renaissance, exploration, and reformations",
+        topics: ["Renaissance and exploration", "Church history touchpoints", "Art, geography, and narration"]
+      },
+      year_3: {
+        number: 3,
+        title: "Year 3: Early modern and colonial worlds",
+        topics: ["Early modern nations", "Colonial and missionary encounters", "Timeline and map work"]
+      },
+      year_4: {
+        number: 4,
+        title: "Year 4: Revolutions and the long nineteenth century",
+        topics: ["Revolutions and reform", "Nineteenth-century lives and literature", "Composer, artist, and poetry pairings"]
+      },
+      year_5: {
+        number: 5,
+        title: "Year 5: Modern nations and the twentieth century",
+        topics: ["Modern world history", "Orthodox witness in modernity", "Civic geography and reports"]
+      },
+      year_6: {
+        number: 6,
+        title: "Year 6: Ancient Greece/Rome plus modern bridge",
+        topics: ["Ancient Greek and Roman background", "Early Christian context", "Timeline synthesis and narration"]
+      }
+    }
+  },
+  "orthodox-classical": {
+    title: "Orthodox Classical History & Enrichment Cycle",
+    summary: "A chronological enrichment spine centered on Scripture, patristic history, Byzantium, Orthodox missions, and modern Church witness.",
+    years: {
+      year_1: { number: 1, title: "Year 1: Ancient, biblical, and patristic foundations", topics: ["Scripture geography", "Ancient civilizations", "Apostolic and patristic witness"] },
+      year_2: { number: 2, title: "Year 2: Byzantium and medieval Christendom", topics: ["Byzantium", "Councils and saints", "Iconography, chant, and sacred art"] },
+      year_3: { number: 3, title: "Year 3: Missions, nations, and early modern worlds", topics: ["Slavic and global missions", "Early modern empires", "Geography and source narration"] },
+      year_4: { number: 4, title: "Year 4: Modern world and Orthodox witness", topics: ["Modern history", "New martyrs and confessors", "Civic life and reports"] },
+      year_5: { number: 5, title: "Year 5: Integrated review and research", topics: ["Timeline review", "Family research projects", "Oral narration and portfolios"] },
+      year_6: { number: 6, title: "Year 6: Capstone synthesis", topics: ["Ancient-to-modern synthesis", "Church history capstone", "Beautiful written reports"] }
+    }
+  },
+  custom: {
+    title: "Custom Enrichment Cycle",
+    summary: "A flexible enrichment spine for eclectic households who want AGAPAY to organize history, geography, arts, saints, and living books around their chosen focus.",
+    years: {
+      year_1: { number: 1, title: "Custom Year 1", topics: ["Household-selected history", "Living books", "Narration and timeline work"] },
+      year_2: { number: 2, title: "Custom Year 2", topics: ["Household-selected history", "Geography", "Arts and poetry"] },
+      year_3: { number: 3, title: "Custom Year 3", topics: ["Household-selected history", "Church-life connections", "Reports"] },
+      year_4: { number: 4, title: "Custom Year 4", topics: ["Household-selected history", "Timeline review", "Portfolio work"] },
+      year_5: { number: 5, title: "Custom Year 5", topics: ["Household-selected history", "Independent reading", "Beautiful reports"] },
+      year_6: { number: 6, title: "Custom Year 6", topics: ["Household-selected history", "Synthesis", "Capstone narration"] }
+    }
+  }
 };
 
-function resourceTypeStyle(value = "") {
-  const normalized = String(value || "").trim().toLowerCase();
-  return RESOURCE_TYPE_STYLES[normalized] || RESOURCE_TYPE_STYLES.default;
+function nowIso() {
+  return new Date().toISOString();
 }
 
-function safeArray(value) {
-  return Array.isArray(value) ? value : [];
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
 }
 
-function saintKey(value = "") {
-  return String(value || "")
+function slug(value, fallback = "item") {
+  const normalized = String(value || "")
+    .trim()
     .toLowerCase()
-    .replace(/\([^)]*\b[1-2]?[0-9]{2,3}\b[^)]*\)/g, "")
-    .replace(/\b(st|saint|ven|venerable|holy|apostle|evangelist|martyr|great|our holy|righteous|blessed|elder|prophet|hieromartyr|new martyr)\.?\b/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return normalized || fallback;
 }
 
-function saintScore(a = "", b = "") {
-  const aTokens = saintKey(a).split(/\s+/).filter((token) => token.length > 2);
-  const bTokens = saintKey(b).split(/\s+/).filter((token) => token.length > 2);
-  if (!aTokens.length || !bTokens.length) return 0;
-  const bSet = new Set(bTokens);
-  let score = 0;
-  aTokens.forEach((token) => {
-    if (bSet.has(token)) score += 3;
-    else if ([...bSet].some((other) => other.includes(token) || token.includes(other))) score += 1;
-  });
-  return score / Math.max(aTokens.length, bTokens.length);
+function stableId(prefix, value, index = 0) {
+  return `${prefix}_${slug(value, `${prefix}-${index + 1}`)}`;
 }
 
-function saintPrecedence(value = "") {
-  const text = String(value || "").toLowerCase();
-  if (/\b(lord|theotokos|mother of god|cross|resurrection|nativity|theophany|pascha|pentecost|transfiguration|ascension|annunciation|dormition)\b/.test(text)) return 100;
-  if (/\b(apostle|evangelist|forerunner|baptist)\b/.test(text)) return 90;
-  if (/\b(prophet|hierarch|bishop|equal[- ]to[- ]the[- ]apostles)\b/.test(text)) return 80;
-  if (/\b(great martyr|new martyr|hieromartyr|martyr|confessor)\b/.test(text)) return 70;
-  if (/\b(righteous|ancestor|forefather|foremother)\b/.test(text)) return 60;
-  if (/\b(venerable|abbot|abbess|monk|nun|elder|wonderworker)\b/.test(text)) return 50;
-  return 40;
+function setupKvKey(identity) {
+  return `${LEARN_SETUP_KV_PREFIX}${identity.householdId}`;
 }
 
-function orderSaintNames(names = []) {
-  return [...names].sort((a, b) => saintPrecedence(b) - saintPrecedence(a));
-}
-
-function saintLikeTitle(value = "") {
-  const text = String(value || "").trim();
-  if (!text || /today in the church|daily orthodox rhythm|set calendar/i.test(text)) return "";
-  if (saintPrecedence(text) > 40) return text;
-  return /\b(st\.?|saint|holy|apostle|venerable|martyr|righteous|prophet|hierarch|elder)\b/i.test(text) ? text : "";
-}
-
-function orderSaintStories(stories = [], names = []) {
-  const remaining = [...stories];
-  const ordered = [];
-  orderSaintNames(names).forEach((name) => {
-    let bestIndex = -1;
-    let bestScore = 0;
-    remaining.forEach((story, index) => {
-      const score = Math.max(saintScore(name, story.name), saintScore(name, story.title));
-      if (score > bestScore) {
-        bestScore = score;
-        bestIndex = index;
-      }
-    });
-    if (bestIndex >= 0 && bestScore >= 0.45) {
-      ordered.push(remaining[bestIndex]);
-      remaining.splice(bestIndex, 1);
+function parseStoredSetup(value) {
+  if (!value) return null;
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
     }
-  });
-  return [...ordered, ...remaining];
-}
-
-function annoMundiLabel(civilDate = "") {
-  const match = String(civilDate || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return "";
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  if (!year || !month || !day) return "";
-  return `Anno Mundi ${year + (month >= 9 ? 5509 : 5508)}`;
+  }
+  return safeParseJsonRow(value) || value;
 }
 
 function text(value, fallback = "") {
-  return String(value || fallback);
-}
-
-function learnDashboardHref(section = "dashboard") {
-  const isOdyssey = typeof document !== "undefined" && document.body?.dataset?.learnContext === "odyssey";
-  const regular = {
-    dashboard: "/myagapay/learn",
-    planner: "/myagapay/learn/planner",
-    formation: "/myagapay/learn/formation",
-    books: "/myagapay/learn/books",
-    grades: "/myagapay/learn/grades",
-    community: "/myagapay/learn/community",
-    "co-op": "/myagapay/learn/co-op",
-    "print-center": "/myagapay/learn/print",
-    onboarding: "/myagapay/learn/setup"
-  };
-  const odyssey = {
-    dashboard: "/learn/odyssey/dashboard",
-    planner: "/learn/odyssey/dashboard/planner",
-    formation: "/learn/odyssey/dashboard/formation",
-    books: "/learn/odyssey/dashboard/books",
-    grades: "/learn/odyssey/dashboard/grades",
-    community: "/learn/odyssey/dashboard/community",
-    "co-op": "/learn/odyssey/dashboard/co-op",
-    "print-center": "/learn/odyssey/dashboard/print",
-    onboarding: "/learn/odyssey/dashboard/setup"
-  };
-  return (isOdyssey ? odyssey : regular)[section] || (isOdyssey ? odyssey.dashboard : regular.dashboard);
+  const normalized = String(value ?? "").trim();
+  return normalized || fallback;
 }
 
 function weeklyFrequencyValue(value, fallback = "1x") {
@@ -138,1523 +127,1421 @@ function weeklyFrequencyValue(value, fallback = "1x") {
   return fallback;
 }
 
-function percent(value) {
-  const number = Number(value || 0);
-  return Math.max(0, Math.min(100, Number.isFinite(number) ? number : 0));
+const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+function scheduledDaysValue(value, legacyFrequency = "") {
+  const direct = Array.isArray(value) ? value : String(value || "").split(",");
+  const selected = direct.map((day) => text(day, "").toLowerCase()).filter((day) => WEEKDAY_KEYS.includes(day));
+  if (selected.length) return [...new Set(selected)];
+  const frequency = weeklyFrequencyValue(legacyFrequency, "daily");
+  return frequency === "daily" ? ["mon", "tue", "wed", "thu", "fri"]
+    : frequency === "4x" ? ["mon", "tue", "wed", "thu"]
+    : frequency === "3x" ? ["mon", "wed", "fri"]
+    : frequency === "2x" ? ["tue", "thu"]
+    : frequency === "1x" || frequency === "weekly" ? ["wed"]
+    : [];
 }
 
-function childName(child = {}, index = 0) {
-  return text(child.firstName || child.name, `Child ${index + 1}`);
+function frequencyFromDays(days = []) {
+  const count = scheduledDaysValue(days, "as-needed").length;
+  return count >= 5 ? "daily" : count === 1 ? "weekly" : count ? `${count}x` : "as-needed";
 }
 
-function childInitial(child = {}, index = 0) {
-  return text(child.avatarMonogram || childName(child, index).charAt(0), "?").toUpperCase();
+function weeklyPlansValue(value) {
+  const direct = Array.isArray(value) ? value : String(value || "").split("|");
+  return direct.slice(0, DEFAULT_TERM_WEEK_COUNT).map((entry) => text(entry, ""));
 }
 
-function childFormByAge(age) {
-  const years = Number(age);
-  if (!Number.isFinite(years)) return "";
-  if (years <= 5) return "Little Ones";
-  if (years <= 8) return "Form I";
-  if (years <= 11) return "Form II";
-  if (years <= 14) return "Form III";
-  if (years <= 16) return "Form IV";
-  return "Form V";
+function labelsValue(value) {
+  const direct = Array.isArray(value) ? value : String(value || "").split(",");
+  return [...new Set(direct.map((entry) => text(entry, "")).filter(Boolean))];
 }
 
-function formLabelForChild(child = {}) {
-  return text(child.formLabel || child.gradeLabel || child.form || childByAgeLabel(child.ageYears), "Household Form");
+function setupResourceValue(resource, subject = {}) {
+  const raw = typeof resource === "string" ? { title: resource } : (resource || {});
+  const title = text(raw.title || raw.resource, "");
+  if (!title) return null;
+  const formLabels = labelsValue(raw.formLabels || raw.formLabel || subject.formLabels || subject.formLabel);
+  const childIds = Array.isArray(raw.childIds) && raw.childIds.length
+    ? raw.childIds.filter(Boolean)
+    : (Array.isArray(subject.childIds) ? subject.childIds.filter(Boolean) : []);
+  return {
+    title,
+    scheduledWeeks: scheduledWeeksValue(raw.scheduledWeeks || subject.scheduledWeeks),
+    weeklyPlans: weeklyPlansValue(raw.weeklyPlans || subject.weeklyPlans),
+    planningMode: formLabels.length ? "forms" : text(raw.planningMode || subject.planningMode, "forms"),
+    formLabel: text(raw.formLabel || formLabels[0] || subject.formLabel, ""),
+    formLabels,
+    gradeLabel: text(raw.gradeLabel || subject.gradeLabel, ""),
+    childIds
+  };
 }
 
-function childByAgeLabel(age) {
-  return childFormByAge(age) || "Household Form";
+const DEFAULT_TERM_WEEK_COUNT = 12;
+
+function scheduledWeeksValue(value, totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
+  const direct = Array.isArray(value) ? value : String(value || "").split(",");
+  const selected = direct
+    .map((week) => int(week, 0))
+    .filter((week) => week >= 1 && week <= totalWeeks);
+  return selected.length ? [...new Set(selected)].sort((a, b) => a - b) : Array.from({ length: totalWeeks }, (_, index) => index + 1);
 }
 
-function groupRowsByForm(rows = [], dayIndex = null) {
-  const groups = new Map();
-  safeArray(rows).forEach((row, index) => {
-    const formLabel = formLabelForChild(row.child);
-    if (!groups.has(formLabel)) {
-      groups.set(formLabel, {
-        formLabel,
-        childNames: [],
-        initials: [],
-        color: ACCENTS[groups.size % ACCENTS.length],
-        items: [],
-        totalMinutes: 0
-      });
-    }
-    const group = groups.get(formLabel);
-    const name = childName(row.child, index);
-    if (!group.childNames.includes(name)) group.childNames.push(name);
-    const initial = childInitial(row.child, index);
-    if (!group.initials.includes(initial)) group.initials.push(initial);
-    const minutes = dayIndex === null
-      ? safeArray(row.minutes).reduce((sum, value) => sum + Number(value || 0), 0)
-      : Number(safeArray(row.minutes)[dayIndex] || 0);
-    const status = dayIndex === null ? "" : text(safeArray(row.statuses)[dayIndex], "");
-    if (dayIndex === null || minutes > 0 || status === "rest") {
-      group.totalMinutes += minutes;
-      group.items.push({
-        title: text(row.title, "Lesson"),
-        sub: text(row.detail || row.subtitle, ""),
-        childName: name,
-        minutes,
-        status,
-        graceModeApplied: Boolean(row.graceModeApplied)
-      });
-    }
+function activeTermWeek(term = {}, reference = new Date(), totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
+  const startDate = String(term.startDate || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return 1;
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const current = new Date(Date.UTC(reference.getUTCFullYear(), reference.getUTCMonth(), reference.getUTCDate()));
+  const elapsedDays = Math.floor((current - start) / 86400000);
+  return Math.max(1, Math.min(totalWeeks, Math.floor(elapsedDays / 7) + 1));
+}
+
+function scheduledThisTermWeek(item = {}, weekNumber = 1) {
+  return scheduledWeeksValue(item.scheduledWeeks).includes(weekNumber);
+}
+
+function schedulingModeValue(value = "fixed") {
+  return ["fixed", "weekly-target", "term-target", "loop", "date-range"].includes(value) ? value : "fixed";
+}
+
+function itemActiveOnDateRange(item = {}, isoDate = "") {
+  if (!isoDate || item.schedulingMode !== "date-range") return true;
+  if (item.activeStartDate && isoDate < item.activeStartDate) return false;
+  if (item.activeEndDate && isoDate > item.activeEndDate) return false;
+  return true;
+}
+
+function planArraysForItem(item = {}, currentTermWeek = 1, weekDates = []) {
+  const active = scheduledThisTermWeek(item, currentTermWeek);
+  const mode = schedulingModeValue(item.schedulingMode);
+  const defaultDays = item.scheduledDays?.length ? item.scheduledDays : scheduledDaysValue(item.weeklyFrequency || "daily");
+  if (!active) return weeklyPlanArrays(defaultDays, item.minutes || item.minutesPlanned || 20, false);
+  let days = [...defaultDays];
+  if (mode === "weekly-target") {
+    const count = Math.max(1, Math.min(7, int(item.weeklyTarget, days.length || 1)));
+    const pool = days.length ? days : ["mon", "tue", "wed", "thu", "fri"];
+    days = pool.slice(0, count);
+  } else if (mode === "term-target") {
+    const activeWeeks = Math.max(1, scheduledWeeksValue(item.scheduledWeeks).length);
+    const sessionsThisWeek = Math.max(0, Math.ceil(int(item.termTarget, 0) / activeWeeks));
+    const pool = days.length ? days : ["mon", "tue", "wed", "thu", "fri"];
+    days = pool.slice(0, Math.min(pool.length, sessionsThisWeek));
+  } else if (mode === "loop") {
+    const pool = days.length ? days : ["mon", "tue", "wed", "thu", "fri"];
+    days = pool.length ? [pool[(Math.max(1, currentTermWeek) - 1) % pool.length]] : [];
+  }
+  const base = weeklyPlanArrays(days, item.minutes || item.minutesPlanned || 20, true);
+  if (mode === "date-range" && weekDates.length === 7) {
+    base.minutes = base.minutes.map((value, index) => itemActiveOnDateRange(item, weekDates[index]) ? value : 0);
+    base.statuses = base.statuses.map((value, index) => itemActiveOnDateRange(item, weekDates[index]) ? value : "empty");
+  }
+  return base;
+}
+
+function resourceTypeValue(value, fallback = "curriculum") {
+  const raw = String(value || "").trim().toLowerCase();
+  if (["book", "curriculum", "website", "hymn", "icon", "activity", "none"].includes(raw)) return raw;
+  return fallback;
+}
+
+function normalizeHomeschoolMethod(value) {
+  const candidate = text(value, "Charlotte Mason");
+  return HOMESCHOOL_METHODS.includes(candidate) ? candidate : "Charlotte Mason";
+}
+
+function defaultHistoryFrameworkForMethod(method) {
+  if (method === "Orthodox Classical") return "orthodox-classical";
+  if (method === "Eclectic") return "custom";
+  return "ambleside-inspired";
+}
+
+function normalizeHistoryCycle(value = {}, method = "Charlotte Mason") {
+  const framework = HISTORY_CYCLES[value.framework] ? value.framework : defaultHistoryFrameworkForMethod(method);
+  const frameworkConfig = HISTORY_CYCLES[framework] || HISTORY_CYCLES["ambleside-inspired"];
+  const cycleYear = frameworkConfig.years[value.cycleYear] ? value.cycleYear : "year_1";
+  const year = frameworkConfig.years[cycleYear];
+  const rotation = ["first", "second"].includes(value.rotation) ? value.rotation : "first";
+  const currentFocus = text(value.currentFocus, year.topics[0] || year.title);
+  return {
+    framework,
+    rotation,
+    cycleYear,
+    currentFocus,
+    sourceNote: text(value.sourceNote, framework === "ambleside-inspired" ? "AO-inspired chronology adapted for an Orthodox household." : "Household enrichment cycle."),
+    frameworkTitle: frameworkConfig.title,
+    frameworkSummary: frameworkConfig.summary,
+    yearNumber: year.number,
+    yearTitle: year.title,
+    enrichmentTopics: year.topics
+  };
+}
+
+function int(value, fallback = 0) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function list(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function rangeProgressPercent(start, current, end) {
+  const first = Math.max(1, int(start, 1));
+  const last = Math.max(first, int(end, first));
+  if (!last || last <= first) return 0;
+  const doneThrough = Math.max(first - 1, Math.min(last, int(current, first - 1)));
+  const completed = Math.max(0, doneThrough - first + 1);
+  const total = Math.max(1, last - first + 1);
+  return Math.round((completed / total) * 100);
+}
+
+function distributeRangeSegments({ label = "", start = 1, end = 0, color = "" } = {}, weeks = 12) {
+  const first = Math.max(1, int(start, 1));
+  const last = Math.max(first, int(end, first));
+  const total = Math.max(1, last - first + 1);
+  return Array.from({ length: weeks }, (_, index) => {
+    const segStart = first + Math.floor((index * total) / weeks);
+    const segEnd = first + Math.floor(((index + 1) * total) / weeks) - 1;
+    return {
+      title: `${label} ${segStart}${Math.max(segStart, segEnd) > segStart ? `-${Math.max(segStart, segEnd)}` : ""}`,
+      start: index + 1,
+      span: 1,
+      color
+    };
   });
-  return Array.from(groups.values()).filter((group) => group.items.length);
 }
 
-function donorAccountFromStorage() {
+function weeklyPlanArrays(schedule = "daily", minutes = 20, active = true) {
+  const amount = active ? Math.max(0, int(minutes, 20)) : 0;
+  const activeDays = scheduledDaysValue(schedule, Array.isArray(schedule) ? "as-needed" : schedule).map((day) => WEEKDAY_KEYS.indexOf(day));
+  const planMinutes = Array.from({ length: 7 }, (_, index) => activeDays.includes(index) ? amount : 0);
+  const statuses = Array.from({ length: 7 }, (_, index) => activeDays.includes(index) ? "planned" : "empty");
+  return { minutes: planMinutes, statuses };
+}
+
+function currentWeekWindow(reference = new Date()) {
+  const start = new Date(Date.UTC(reference.getUTCFullYear(), reference.getUTCMonth(), reference.getUTCDate()));
+  start.setUTCDate(start.getUTCDate() - start.getUTCDay());
+  const dates = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(start);
+    date.setUTCDate(start.getUTCDate() + index);
+    return date.toISOString().slice(0, 10);
+  });
+  const format = (iso) => new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T12:00:00Z`));
+  return { dates, label: `${format(dates[0])} - ${format(dates[6])}` };
+}
+
+function normalizeCompletion(value = {}) {
+  const normalizeBucket = (bucket, limit) => Object.fromEntries(
+    Object.entries(bucket && typeof bucket === "object" ? bucket : {})
+      .filter(([key, items]) => /^\d{4}-\d{2}-\d{2}$/.test(key) && items && typeof items === "object")
+      .sort(([a], [b]) => b.localeCompare(a))
+      .slice(0, limit)
+      .map(([key, items]) => [key, Object.fromEntries(
+        Object.entries(items)
+          .filter(([itemId]) => /^[a-zA-Z0-9:_-]{1,180}$/.test(itemId))
+          .slice(0, 250)
+          .map(([itemId, completed]) => [itemId, Boolean(completed)])
+      )])
+  );
+  return {
+    daily: normalizeBucket(value.daily, 45),
+    weekly: normalizeBucket(value.weekly, 18)
+  };
+}
+
+function childrenForAssignment(item = {}, children = []) {
+  if (Array.isArray(item.childIds) && item.childIds.length) return children.filter((child) => item.childIds.includes(child.id));
+  if (item.childId) return children.filter((child) => child.id === item.childId);
+  if (Array.isArray(item.formLabels) && item.formLabels.length) return children.filter((child) => item.formLabels.includes(child.formLabel) || item.formLabels.includes(child.gradeLabel));
+  if (item.formLabel) return children.filter((child) => child.formLabel === item.formLabel || child.gradeLabel === item.formLabel);
+  if (item.gradeLabel) return children.filter((child) => child.gradeLabel === item.gradeLabel);
+  return children;
+}
+
+function bookBelongsToHouseholdStream(book = {}) {
+  const audience = String(book.audienceLabel || "").toLowerCase();
+  return !book.formLabel && !book.childId && (
+    !audience ||
+    audience === "household" ||
+    audience === "morning basket" ||
+    audience === "read-aloud" ||
+    audience === "read aloud"
+  );
+}
+
+function resourceBookLike({ id = "", title = "", author = "", category = "", termId = "", formLabel = "", formLabels = [], gradeLabel = "", childId = "", childIds = [], audienceLabel = "", planningMode = "", weeklyFrequency = "1x", scheduledWeeks = [], weeklyPlans = [], minutes = "", color = "", sourceKind = "setup" } = {}) {
+  const resolvedTitle = text(title, "");
+  if (!resolvedTitle) return null;
+  return {
+    id,
+    title: resolvedTitle,
+    author,
+    category,
+    termId,
+    formLabel,
+    formLabels,
+    gradeLabel,
+    childId,
+    childIds,
+    audienceLabel,
+    planningMode,
+    weeklyFrequency,
+    scheduledWeeks,
+    weeklyPlans,
+    minutes,
+    color,
+    sourceKind,
+    startChapter: "",
+    currentChapter: "",
+    endChapter: "",
+    totalChapters: ""
+  };
+}
+
+export async function learnSetupIdentity(request, env) {
+  const donor = await requireDonor(request, env);
+  const email = normalizeEmail(donor?.email || "");
+  if (!email) return null;
+  return {
+    email,
+    donor,
+    householdId: `learn_household_${slug(email)}`
+  };
+}
+
+function normalizeSetupPayload(payload = {}, identity) {
+  const seed = getLearnSeedSnapshot();
+  const household = payload.household || {};
+  const schoolYear = payload.schoolYear || {};
+  const term = payload.term || {};
+  const preferences = payload.preferences || {};
+  const groupingMode = preferences.groupingMode === "grades" ? "grades" : "forms";
+  const primaryMethod = normalizeHomeschoolMethod(household.primaryMethod || seed.household.primaryMethod);
+  const parentNames = list(household.parentNames)
+    .map((name) => text(name, ""))
+    .filter(Boolean);
+  if (!parentNames.length && text(household.parentName, "")) parentNames.push(text(household.parentName, ""));
+  const historyCycle = payload.historyCycle ? normalizeHistoryCycle(payload.historyCycle, primaryMethod) : null;
+  const normalizedHousehold = {
+    id: identity.householdId,
+    slug: slug(household.name || identity.householdId, identity.householdId),
+    name: text(household.name, seed.household.name),
+    parentNames,
+    motherName: text(household.motherName, ""),
+    motherNameDay: text(household.motherNameDay, ""),
+    fatherName: text(household.fatherName, ""),
+    fatherNameDay: text(household.fatherNameDay, ""),
+    childrenCount: 0,
+    parishName: text(household.parishName, seed.household.parishName || ""),
+    parishPatronalFeastName: text(household.parishPatronalFeastName || household.patronalFeastName, ""),
+    parishPatronalFeastDate: text(household.parishPatronalFeastDate || household.patronalFeastDate, ""),
+    city: text(household.city, ""),
+    primaryMethod,
+    liturgicalCalendarType: text(preferences.calendarType || household.liturgicalCalendarType, seed.household.liturgicalCalendarType || "julian"),
+    paceMode: text(preferences.paceMode || household.paceMode, seed.household.paceMode || "steady"),
+    graceModeActive: Boolean(preferences.graceModeActive ?? seed.household.graceModeActive),
+    setupCompleted: true
+  };
+
+  const children = list(payload.children)
+    .map((child, index) => {
+      const firstName = text(child.firstName || child.name, "");
+      if (!firstName) return null;
+      return {
+        id: text(child.id, stableId("child", firstName, index)),
+        householdId: identity.householdId,
+        firstName,
+        ageYears: int(child.ageYears || child.age, 0),
+        nameDay: text(child.nameDay, ""),
+        gradeLabel: text(child.gradeLabel || child.grade, child.formLabel || ""),
+        formLabel: text(child.formLabel, ""),
+        color: text(child.color, ""),
+        avatarMonogram: text(child.avatarMonogram, firstName.charAt(0).toUpperCase()),
+        accentToken: text(child.accentToken, seed.children[index % seed.children.length]?.accentToken || "navy")
+      };
+    })
+    .filter(Boolean);
+  normalizedHousehold.childrenCount = children.length;
+
+  const schoolYearId = text(schoolYear.id, "school_year_current");
+  const normalizedTerms = (list(payload.terms).length ? list(payload.terms) : [term])
+    .map((entry, index) => ({
+      ...seed.term,
+      id: text(entry.id, `term_${index + 1}`),
+      schoolYearId,
+      label: text(entry.label, `Term ${index + 1}`),
+      startDate: text(entry.startDate, index === 0 ? seed.term.startDate : ""),
+      endDate: text(entry.endDate, index === 0 ? seed.term.endDate : ""),
+      weeksCount: Math.max(1, Math.min(24, int(entry.weeksCount, 12))),
+      description: text(entry.description, ""),
+      paceMode: text(preferences.paceMode || entry.paceMode, seed.term.paceMode || "steady")
+    }))
+    .filter((entry) => entry.label);
+  const requestedCurrentTermId = text(schoolYear.currentTermId || payload.currentTermId || term.id, "");
+  const currentTermFromList = normalizedTerms.find((entry) => entry.id === requestedCurrentTermId) || normalizedTerms[0];
+  const normalizedSchoolYear = {
+    ...seed.schoolYear,
+    id: schoolYearId,
+    householdId: identity.householdId,
+    label: text(schoolYear.label, seed.schoolYear.label),
+    startDate: text(schoolYear.startDate, seed.schoolYear.startDate),
+    endDate: text(schoolYear.endDate, seed.schoolYear.endDate),
+    status: "active",
+    currentTermId: currentTermFromList?.id || "term_1"
+  };
+
+  const normalizedTerm = {
+    ...(currentTermFromList || normalizedTerms[0] || seed.term),
+    id: currentTermFromList?.id || "term_1"
+  };
+
+  const streams = list(payload.streams).map((stream, index) => ({
+    id: text(stream.id, stableId("stream", stream.title, index)),
+    householdId: identity.householdId,
+    streamType: text(stream.streamType || stream.type, "custom"),
+    title: text(stream.title, "Family-Based Block"),
+    cadenceLabel: text(stream.cadenceLabel || stream.cadence, "Weekly"),
+    dailyMinutes: {
+      mon: int(stream.dailyMinutes?.mon ?? stream.monMinutes, 20),
+      tue: int(stream.dailyMinutes?.tue ?? stream.tueMinutes, 20),
+      wed: int(stream.dailyMinutes?.wed ?? stream.wedMinutes, 20),
+      thu: int(stream.dailyMinutes?.thu ?? stream.thuMinutes, 20),
+      fri: int(stream.dailyMinutes?.fri ?? stream.friMinutes, 20)
+    }
+  })).filter((stream) => stream.title);
+
+  const books = list(payload.books).map((book, index) => ({
+    id: text(book.id, stableId("book", book.title, index)),
+    householdId: identity.householdId,
+    title: text(book.title, ""),
+    author: text(book.author, ""),
+    category: text(book.category, "Living Books"),
+    planningMode: text(book.planningMode, book.formLabel ? "forms" : "family"),
+    scheduledWeeks: scheduledWeeksValue(book.scheduledWeeks),
+    weeklyFrequency: weeklyFrequencyValue(book.weeklyFrequency || book.cadenceLabel || book.cadence, "daily"),
+    minutes: int(book.minutes, 20),
+    formLabel: text(book.formLabel, ""),
+    audienceLabel: text(book.audienceLabel, "Household"),
+    startChapter: int(book.startChapter, 1),
+    currentChapter: int(book.currentChapter || book.completedThroughChapter || book.startChapter, int(book.startChapter, 1)),
+    endChapter: int(book.endChapter || book.totalChapters, 0),
+    totalChapters: int(book.endChapter || book.totalChapters, 0),
+    color: text(book.color, ""),
+    termId: text(book.termId || book.assignedTermId, normalizedTerm.id),
+    graceNote: text(book.graceNote, "Reading moved into the reserve basket.")
+  })).filter((book) => book.title);
+
+  const subjects = list(payload.subjects).map((subject, index) => {
+    const subjectDays = scheduledDaysValue(subject.scheduledDays, subject.weeklyFrequency || subject.cadenceLabel || subject.cadence || "daily");
+    return ({
+    id: text(subject.id, stableId("subject", subject.title, index)),
+    subjectType: text(subject.subjectType || subject.type, slug(subject.title, "subject")),
+    title: text(subject.title, "Subject"),
+    instructionMode: text(subject.instructionMode, "parent-led"),
+    schedulingMode: schedulingModeValue(subject.schedulingMode),
+    scheduledDays: subjectDays,
+    scheduledWeeks: scheduledWeeksValue(subject.scheduledWeeks),
+    weeklyFrequency: frequencyFromDays(subjectDays),
+    weeklyPlans: weeklyPlansValue(subject.weeklyPlans),
+    weeklyTarget: Math.max(0, int(subject.weeklyTarget, 0)),
+    termTarget: Math.max(0, int(subject.termTarget, 0)),
+    activeStartDate: text(subject.activeStartDate, ""),
+    activeEndDate: text(subject.activeEndDate, ""),
+    priorityLevel: ["essential", "important", "enrichment", "optional"].includes(subject.priorityLevel) ? subject.priorityLevel : "important",
+    missedLessonBehavior: text(subject.missedLessonBehavior, preferences.defaultMissedLessonBehavior || "next-occurrence"),
+    planningMode: labelsValue(subject.formLabels || subject.formLabel).length ? "forms" : text(subject.planningMode, "forms"),
+    formLabel: text(subject.formLabel, labelsValue(subject.formLabels || "")[0] || ""),
+    formLabels: labelsValue(subject.formLabels || subject.formLabel),
+    gradeLabel: text(subject.gradeLabel, ""),
+    resource: text(Array.isArray(subject.resources) && subject.resources.length ? (subject.resources[0]?.title || subject.resources[0]) : subject.resource, ""),
+    resources: Array.isArray(subject.resources) && subject.resources.length
+      ? subject.resources.map((resource) => setupResourceValue(resource, subject)).filter(Boolean)
+      : (subject.resource ? [setupResourceValue({ title: subject.resource }, subject)].filter(Boolean) : []),
+    resourceType: resourceTypeValue(subject.resourceType || subject.sourceType, subject.resource ? "curriculum" : "none"),
+    cadenceLabel: text(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "Weekly"),
+    minutes: int(subject.minutes, 20),
+    childId: text(subject.childId, ""),
+    childIds: Array.isArray(subject.childIds) ? subject.childIds.filter(Boolean) : [],
+    startNumber: int(subject.startNumber, 1),
+    currentNumber: int(subject.currentNumber || subject.completedThroughNumber || subject.startNumber, int(subject.startNumber, 1)),
+    endNumber: int(subject.endNumber, 0),
+    credits: Math.max(0, Number(subject.credits) || 0),
+    finalGradeOverride: text(subject.finalGradeOverride, ""),
+    color: text(subject.color, ""),
+    termId: text(subject.termId || subject.assignedTermId, normalizedTerm.id),
+    gracePriority: text(subject.gracePriority, "keep"),
+    graceNote: text(subject.graceNote, "Deferred gracefully to the reserve list.")
+  });
+  }).filter((subject) => subject.title);
+
+  const formationMaterials = list(payload.formationMaterials).map((material, index) => ({
+    id: text(material.id, stableId("formation", material.title, index)),
+    title: text(material.title, ""),
+    materialType: text(material.materialType || material.type, "Catechesis"),
+    source: text(material.source || material.author, ""),
+    planningMode: text(material.planningMode, "family"),
+    scheduledWeeks: scheduledWeeksValue(material.scheduledWeeks),
+    weeklyFrequency: weeklyFrequencyValue(material.weeklyFrequency || material.cadenceLabel || material.cadence, "1x"),
+    cadenceLabel: text(material.weeklyFrequency || material.cadenceLabel || material.cadence, "Weekly"),
+    minutes: int(material.minutes, 0),
+    color: text(material.color, ""),
+    termId: text(material.termId || material.assignedTermId, normalizedTerm.id)
+  })).filter((material) => material.title);
+
+  const rawFormation = payload.formation || {};
+  const formation = {
+    churchRhythms: list(rawFormation.churchRhythms).map((rhythm, index) => ({
+      id: text(rhythm.id, stableId("rhythm", rhythm.title, index)),
+      title: text(rhythm.title, ""),
+      note: text(rhythm.note, ""),
+      weeklyFrequency: weeklyFrequencyValue(rhythm.weeklyFrequency || rhythm.cadenceLabel || rhythm.cadence, "daily"),
+      cadenceLabel: text(rhythm.weeklyFrequency || rhythm.cadenceLabel || rhythm.cadence, "Daily"),
+      minutes: int(rhythm.minutes || rhythm.minutesPlanned, 0),
+      status: text(rhythm.status, "planned")
+    })).filter((rhythm) => rhythm.title),
+    catechesis: {
+      id: text(rawFormation.catechesis?.id, "catechesis_setup"),
+      householdId: identity.householdId,
+      cycleYearId: seed.cycleYear?.id || "cycle_current",
+      title: text(rawFormation.catechesis?.title, formationMaterials.find((material) => material.materialType === "Catechesis")?.title || "Catechesis"),
+      currentLesson: text(rawFormation.catechesis?.currentLesson, ""),
+      planningMode: text(rawFormation.catechesis?.planningMode, "family"),
+      weeklyFrequency: weeklyFrequencyValue(rawFormation.catechesis?.weeklyFrequency || rawFormation.catechesis?.cadenceLabel || rawFormation.catechesis?.cadence, "2x"),
+      minutes: int(rawFormation.catechesis?.minutes, 0),
+      lessonNumber: int(rawFormation.catechesis?.lessonNumber, 0),
+      totalLessons: int(rawFormation.catechesis?.totalLessons, 0),
+      doctrinalTopic: text(rawFormation.catechesis?.doctrinalTopic || rawFormation.catechesis?.topic, ""),
+      source: text(rawFormation.catechesis?.source, ""),
+      evaluationModel: text(preferences.evaluationModel, "narrative-only")
+    },
+    recitationTracks: list(rawFormation.recitationTracks).map((track, index) => ({
+      id: text(track.id, stableId("recitation", track.title, index)),
+      householdId: identity.householdId,
+      title: text(track.title, ""),
+      sourceKind: text(track.sourceKind || track.source, "memory"),
+      planningMode: labelsValue(track.formLabels || track.formLabel).length ? "forms" : text(track.planningMode, "family"),
+      formLabel: labelsValue(track.formLabels || track.formLabel)[0] || "",
+      formLabels: labelsValue(track.formLabels || track.formLabel),
+      gradeLabel: text(track.gradeLabel, ""),
+      scheduledWeeks: scheduledWeeksValue(track.scheduledWeeks),
+      weeklyFrequency: weeklyFrequencyValue(track.weeklyFrequency || track.cadenceLabel || track.cadence, "daily"),
+      minutes: int(track.minutes, 0)
+    })).filter((track) => track.title),
+    hymnStudies: list(rawFormation.hymnStudies).map((hymn, index) => ({
+      id: text(hymn.id, stableId("hymn", hymn.title, index)),
+      householdId: identity.householdId,
+      termId: normalizedTerm.id,
+      title: text(hymn.title, ""),
+      tone: text(hymn.tone, ""),
+      source: text(hymn.source, ""),
+      planningMode: text(hymn.planningMode, "family"),
+      weeklyFrequency: weeklyFrequencyValue(hymn.weeklyFrequency || hymn.cadenceLabel || hymn.cadence, "1x"),
+      minutes: int(hymn.minutes, 0),
+      status: text(hymn.status, "planned")
+    })).filter((hymn) => hymn.title),
+    enrichmentBlocks: list(rawFormation.enrichmentBlocks).map((block, index) => {
+      const blockDays = scheduledDaysValue(block.scheduledDays, block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x");
+      return ({
+      id: text(block.id, stableId("enrich", block.title, index)),
+      householdId: identity.householdId,
+      termId: text(block.termId || block.assignedTermId, normalizedTerm.id),
+      blockType: text(block.blockType || block.type, "enrichment"),
+      title: text(block.title, ""),
+      resource: text(block.resource || block.source, ""),
+      resourceType: resourceTypeValue(block.resourceType || block.sourceType, block.resource || block.source ? "curriculum" : "none"),
+      planningMode: labelsValue(block.formLabels || block.formLabel).length ? "forms" : text(block.planningMode, "family"),
+      instructionMode: text(block.instructionMode, "shared"),
+      schedulingMode: schedulingModeValue(block.schedulingMode),
+      scheduledDays: blockDays,
+      scheduledWeeks: scheduledWeeksValue(block.scheduledWeeks),
+      weeklyFrequency: frequencyFromDays(blockDays),
+      weeklyPlans: weeklyPlansValue(block.weeklyPlans),
+      weeklyTarget: Math.max(0, int(block.weeklyTarget, 0)),
+      termTarget: Math.max(0, int(block.termTarget, 0)),
+      activeStartDate: text(block.activeStartDate, ""),
+      activeEndDate: text(block.activeEndDate, ""),
+      priorityLevel: ["essential", "important", "enrichment", "optional"].includes(block.priorityLevel) ? block.priorityLevel : "enrichment",
+      missedLessonBehavior: text(block.missedLessonBehavior, preferences.defaultMissedLessonBehavior || "next-occurrence"),
+      formLabels: labelsValue(block.formLabels || block.formLabel),
+      formLabel: text(block.formLabel, labelsValue(block.formLabels || block.formLabel)[0] || ""),
+      gradeLabel: text(block.gradeLabel, ""),
+      childId: text(block.childId, ""),
+      childIds: Array.isArray(block.childIds) ? block.childIds.filter(Boolean) : [],
+      startNumber: text(block.startNumber, ""),
+      currentNumber: text(block.currentNumber || block.completedThroughNumber, ""),
+      endNumber: text(block.endNumber, ""),
+      minutesPlanned: int(block.minutesPlanned || block.minutes, 0),
+      credits: text(block.credits, ""),
+      finalGradeOverride: text(block.finalGradeOverride, ""),
+      cadenceLabel: text(block.weeklyFrequency || block.cadenceLabel || block.cadence, "Weekly"),
+      color: text(block.color, ""),
+      gracePriority: text(block.gracePriority, "keep"),
+      graceNote: text(block.graceNote, "Deferred gracefully to the reserve list.")
+    });
+    }).filter((block) => block.title),
+    feasts: list(rawFormation.feasts).map((feast, index) => ({
+      id: text(feast.id, stableId("feast", feast.title, index)),
+      civilDate: text(feast.civilDate || feast.date, ""),
+      title: text(feast.title, ""),
+      fastingRule: text(feast.fastingRule || feast.fasting, ""),
+      planningMode: text(feast.planningMode, "family"),
+      minutes: int(feast.minutes, 0),
+      note: text(feast.note, "")
+    })).filter((feast) => feast.title)
+  };
+
+  const coOp = {
+    enabled: false,
+    status: "coming-soon"
+  };
+  const rawFamilyPlanning = payload.familyPlanning || {};
+  const familyPlanning = {
+    fastingPreference: ["guidance", "strict", "off"].includes(rawFamilyPlanning.fastingPreference) ? rawFamilyPlanning.fastingPreference : "guidance",
+    weekStart: text(rawFamilyPlanning.weekStart, ""),
+    nameDays: [
+      normalizedHousehold.motherNameDay && normalizedHousehold.motherName ? { id: "name_day_mother", personName: normalizedHousehold.motherName, relationship: "mother", monthDay: normalizedHousehold.motherNameDay.slice(-5) } : null,
+      normalizedHousehold.fatherNameDay && normalizedHousehold.fatherName ? { id: "name_day_father", personName: normalizedHousehold.fatherName, relationship: "father", monthDay: normalizedHousehold.fatherNameDay.slice(-5) } : null,
+      ...children.map((child) => child.nameDay ? { id: `name_day_${child.id}`, personId: child.id, personName: child.firstName, relationship: "child", monthDay: child.nameDay.slice(-5) } : null)
+    ].filter(Boolean),
+    events: list(rawFamilyPlanning.events).slice(0, 250).map((event, index) => {
+      const recurrence = text(event.recurrence || event.repeat || "", "").toLowerCase();
+      return {
+        id: text(event.id, stableId("event", event.title, index)),
+        title: text(event.title, "Event"),
+        eventType: text(event.eventType, "appointment"),
+        date: text(event.date, ""),
+        startTime: text(event.startTime, ""),
+        recurrence: ["weekly", "biweekly", "monthly", "quarterly", "yearly"].includes(recurrence) ? recurrence : "none",
+        location: text(event.location, ""),
+        notes: text(event.notes, "")
+      };
+    }).filter((event) => event.date),
+    meals: list(rawFamilyPlanning.meals).slice(0, 120).map((meal, index) => ({ id: text(meal.id, stableId("meal", meal.date, index)), date: text(meal.date, ""), breakfast: text(meal.breakfast, ""), lunch: text(meal.lunch, ""), dinner: text(meal.dinner, "") })).filter((meal) => meal.date),
+    recipes: list(rawFamilyPlanning.recipes).slice(0, 250).map((recipe, index) => ({ id: text(recipe.id, stableId("recipe", recipe.title, index)), title: text(recipe.title, ""), fastingType: ["fast-friendly", "adaptable", "regular"].includes(recipe.fastingType) ? recipe.fastingType : "adaptable", category: text(recipe.category, "Dinner"), sourceUrl: text(recipe.sourceUrl, ""), ingredients: text(recipe.ingredients, ""), instructions: text(recipe.instructions, "") })).filter((recipe) => recipe.title),
+    groceryItems: list(rawFamilyPlanning.groceryItems).slice(0, 250).map((item, index) => ({ id: text(item.id, stableId("grocery", item.name, index)), name: text(item.name, ""), quantity: text(item.quantity, ""), category: text(item.category, "Other"), checked: Boolean(item.checked), pantry: Boolean(item.pantry || item.inPantry) })).filter((item) => item.name),
+    chores: list(rawFamilyPlanning.chores).slice(0, 250).map((chore, index) => {
+      const cadence = ["daily", "weekly", "monthly", "quarterly"].includes(text(chore.cadence || chore.frequency, "").toLowerCase()) ? text(chore.cadence || chore.frequency, "").toLowerCase() : chore.day ? "weekly" : "daily";
+      return {
+        id: text(chore.id, stableId("chore", chore.title || chore.assignee, index)),
+        title: text(chore.title, ""),
+        assignee: text(chore.assignee, "Everyone"),
+        cadence,
+        day: text(chore.day, ""),
+        dayOfMonth: int(chore.dayOfMonth, 0) ? String(Math.max(1, Math.min(31, int(chore.dayOfMonth, 0)))) : "",
+        quarterMonth: ["1", "2", "3"].includes(text(chore.quarterMonth, "")) ? text(chore.quarterMonth, "") : "1",
+        timeOfDay: text(chore.timeOfDay, "Anytime"),
+        notes: text(chore.notes, ""),
+        completed: Boolean(chore.completed)
+      };
+    }).filter((chore) => chore.title || chore.assignee)
+  };
+  const rawSetupTiles = payload.setupTiles && typeof payload.setupTiles === "object" ? payload.setupTiles : {};
+  const setupTiles = Object.fromEntries(
+    Object.entries(rawSetupTiles)
+      .filter(([, group]) => group && typeof group === "object")
+      .map(([groupKey, group]) => [
+        text(groupKey, ""),
+        Object.fromEntries(
+          Object.entries(group)
+            .filter(([, tile]) => tile && typeof tile === "object")
+            .map(([tileKey, tile]) => [
+              text(tileKey, ""),
+              {
+                title: text(tile.title, ""),
+                detail: text(tile.detail, ""),
+                minutes: text(tile.minutes, "")
+              }
+            ])
+            .filter(([tileKey, tile]) => tileKey && (tile.title || tile.detail || tile.minutes))
+        )
+      ])
+      .filter(([groupKey, group]) => groupKey && Object.keys(group).length)
+  );
+
+  return {
+    version: 1,
+    savedAt: nowIso(),
+    identity,
+    household: normalizedHousehold,
+    children,
+    schoolYear: normalizedSchoolYear,
+    term: normalizedTerm,
+    terms: normalizedTerms,
+    preferences: {
+      calendarType: normalizedHousehold.liturgicalCalendarType,
+      groupingMode,
+      defaultSchoolDays: scheduledDaysValue(preferences.defaultSchoolDays, "daily"),
+      defaultMissedLessonBehavior: text(preferences.defaultMissedLessonBehavior, "next-occurrence"),
+      defaultMaxDailyMinutes: Math.max(30, int(preferences.defaultMaxDailyMinutes, 240)),
+      paceMode: normalizedHousehold.paceMode,
+      evaluationModel: text(preferences.evaluationModel, "narrative-only"),
+      graceModeDefault: text(preferences.graceModeDefault, "light"),
+      graceModeActive: normalizedHousehold.graceModeActive,
+      printPack: text(preferences.printPack, "weekly-household")
+    },
+    streams,
+    subjects,
+    books,
+    setupTiles,
+    familyPlanning,
+    formation,
+    formationMaterials,
+    historyCycle,
+    completion: normalizeCompletion(payload.completion),
+    starterWeek: payload.starterWeek && typeof payload.starterWeek === "object" ? {
+      generatedAt: text(payload.starterWeek.generatedAt, ""),
+      enabled: Boolean(payload.starterWeek.enabled)
+    } : null,
+    coOp
+  };
+}
+
+export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSnapshot = null, { weekDate = "" } = {}) {
+  if (!setupSnapshot) return seed;
+  const next = clone(seed);
+  next.familyPlanning = clone(setupSnapshot.familyPlanning || { nameDays: [], events: [], meals: [], recipes: [], groceryItems: [], fastingPreference: "guidance" });
+  const currentTermId = setupSnapshot.term?.id || setupSnapshot.schoolYear?.currentTermId || setupSnapshot.terms?.[0]?.id || "";
+  const forCurrentTerm = (item = {}) => !item.termId || !currentTermId || item.termId === currentTermId;
+  const currentSubjects = list(setupSnapshot.subjects).filter(forCurrentTerm);
+  const literatureBooks = list(setupSnapshot.books).filter(forCurrentTerm);
+  const currentFormationMaterials = list(setupSnapshot.formationMaterials).filter(forCurrentTerm);
+  const formation = setupSnapshot.formation || {};
+  const isBookResource = (item = {}) => item.resource && item.resourceType === "book";
+  const enrichmentBooks = list(formation.enrichmentBlocks).filter(forCurrentTerm).filter(isBookResource).map((block, index) => resourceBookLike({
+    id: block.id || `enrichment_book_${index + 1}`,
+    title: block.resource,
+    category: block.title || block.blockType || block.type || "Enrichment",
+    termId: block.termId || currentTermId,
+    formLabel: block.formLabel || "",
+    audienceLabel: block.planningMode === "forms" ? "Form Enrichment" : "Household Enrichment",
+    planningMode: block.planningMode || "family",
+    weeklyFrequency: block.weeklyFrequency || block.cadenceLabel || "1x",
+    minutes: block.minutesPlanned || block.minutes || "",
+    color: block.color || "",
+    sourceKind: "enrichment"
+  })).filter(Boolean);
+  const subjectBooks = currentSubjects.flatMap((subject, subjectIndex) => {
+    if (subject.resourceType !== "book") return [];
+    const subjectResources = list(subject.resources).length
+      ? list(subject.resources)
+      : (subject.resource ? [{ title: subject.resource, scheduledWeeks: subject.scheduledWeeks }] : []);
+    return subjectResources.map((resource, resourceIndex) => {
+      const title = typeof resource === "string" ? resource : resource.title || resource.resource;
+      const assignment = typeof resource === "string" ? subject : { ...subject, ...resource };
+      return resourceBookLike({
+        id: `subject_resource_${subject.id || subjectIndex + 1}_${resourceIndex + 1}`,
+        title,
+        category: subject.title || subject.subjectType || "Form Subject",
+        termId: subject.termId || currentTermId,
+        formLabel: assignment.formLabel || "",
+        audienceLabel: list(assignment.childIds).length || assignment.childId ? "Child Resource" : "Form Resource",
+        planningMode: assignment.planningMode || "forms",
+        weeklyFrequency: subject.weeklyFrequency || "1x",
+        minutes: subject.minutes || "",
+        color: subject.color || "",
+        childIds: list(assignment.childIds),
+        gradeLabel: assignment.gradeLabel || "",
+        formLabels: list(assignment.formLabels),
+        scheduledWeeks: list(assignment.scheduledWeeks).length ? assignment.scheduledWeeks : subject.scheduledWeeks,
+        weeklyPlans: list(assignment.weeklyPlans).length ? assignment.weeklyPlans : subject.weeklyPlans,
+        sourceKind: "form-subject"
+      });
+    });
+  }).filter(Boolean);
+  const materialBooks = currentFormationMaterials.map((material, index) => resourceBookLike({
+    id: `formation_material_${material.id || index + 1}`,
+    title: material.source || material.title,
+    author: material.source && material.title ? material.title : "",
+    category: material.materialType || "Formation Material",
+    termId: material.termId || currentTermId,
+    formLabel: material.formLabel || "",
+    audienceLabel: material.planningMode === "forms" ? "Form Formation" : "Household Formation",
+    planningMode: material.planningMode || "family",
+    weeklyFrequency: material.weeklyFrequency || material.cadenceLabel || "1x",
+    minutes: material.minutes || "",
+    color: material.color || "",
+    sourceKind: "formation-material"
+  })).filter(Boolean);
+  const currentBooks = [...literatureBooks, ...enrichmentBooks, ...subjectBooks, ...materialBooks];
+  next.household = { ...next.household, ...setupSnapshot.household };
+  next.children = list(setupSnapshot.children);
+  next.schoolYear = { ...next.schoolYear, ...setupSnapshot.schoolYear };
+  next.term = { ...next.term, ...setupSnapshot.term };
+  if (setupSnapshot.historyCycle) {
+    next.cycleFramework = {
+      ...next.cycleFramework,
+      id: setupSnapshot.historyCycle.framework,
+      frameworkType: "enrichment",
+      title: setupSnapshot.historyCycle.frameworkTitle,
+      summary: setupSnapshot.historyCycle.frameworkSummary
+    };
+    next.cycleYear = {
+      ...next.cycleYear,
+      id: setupSnapshot.historyCycle.cycleYear,
+      cycleFrameworkId: setupSnapshot.historyCycle.framework,
+      yearNumber: setupSnapshot.historyCycle.yearNumber,
+      title: setupSnapshot.historyCycle.yearTitle
+    };
+    next.cycleTopics = list(setupSnapshot.historyCycle.enrichmentTopics).map((topic, index) => ({
+      id: `cycle_topic_${setupSnapshot.historyCycle.cycleYear}_${index + 1}`,
+      cycleYearId: setupSnapshot.historyCycle.cycleYear,
+      subjectType: index === 0 ? "history" : index === 1 ? "church-history" : "enrichment",
+      title: topic,
+      seasonLabel: setupSnapshot.historyCycle.rotation === "second" ? "Second rotation" : "First rotation"
+    }));
+  }
+  next.graceModeRule = {
+    ...next.graceModeRule,
+    mode: setupSnapshot.preferences?.graceModeActive ? setupSnapshot.preferences?.graceModeDefault || next.graceModeRule?.mode || "light" : "full"
+  };
+  next.householdStreams = list(setupSnapshot.streams);
+  next.books = currentBooks;
+  next.libraryBooks = currentBooks.map((book, index) => ({
+    ...book,
+    ages: "",
+    assignment: "Setup",
+    progressPercent: rangeProgressPercent(book.startChapter || 1, book.currentChapter || book.startChapter || 1, book.endChapter || book.totalChapters || 0),
+    orthodox: false,
+    sortOrder: index + 1
+  }));
+  const householdBooks = currentBooks.filter(bookBelongsToHouseholdStream);
+  const childBooks = currentBooks.filter((book) => !bookBelongsToHouseholdStream(book));
+  next.currentReadAlouds = (householdBooks.length ? householdBooks : currentBooks).slice(0, 3).map((book) => ({
+    ...book,
+    subtitle: book.category,
+    progressPercent: rangeProgressPercent(book.startChapter || 1, book.currentChapter || book.startChapter || 1, book.endChapter || book.totalChapters || 0),
+    assignedTerm: setupSnapshot.term?.label || next.term.label
+  }));
+  next.bookAssignments = currentBooks.flatMap((book) => {
+    const assignedChildren = childrenForAssignment(book, next.children);
+    const assignmentType = bookBelongsToHouseholdStream(book) ? "household-read-aloud" : book.formLabel ? "form-reading" : "independent-reading";
+    return (assignedChildren.length ? assignedChildren : [null]).map((child) => ({
+      id: `assignment_${book.id}_${child?.id || "household"}`,
+      bookId: book.id,
+      childId: child?.id || null,
+      householdId: setupSnapshot.identity?.householdId || next.household.id,
+      formLabel: book.formLabel,
+      assignmentType,
+      progressPercent: rangeProgressPercent(book.startChapter || 1, book.currentChapter || book.startChapter || 1, book.endChapter || book.totalChapters || 0)
+    }));
+  });
+  next.childTracks = currentSubjects.flatMap((subject, index) => {
+    const resourceAssignments = list(subject.resources).length
+      ? list(subject.resources).map((resource) => ({ ...subject, ...resource, title: subject.title }))
+      : [subject];
+    return resourceAssignments.flatMap((assignment, assignmentIndex) => {
+    const assignedChildren = childrenForAssignment(assignment, next.children);
+    return assignedChildren.map((child) => ({
+      id: `${subject.id}_${assignmentIndex + 1}_${child.id || index}`,
+      childId: child.id,
+      subjectType: subject.subjectType,
+      title: subject.title,
+      formLabel: assignment.formLabel || subject.formLabel
+    }));
+    });
+  }).concat(childBooks.flatMap((book, index) => {
+    const assignedChildren = childrenForAssignment(book, next.children);
+    return assignedChildren.map((child) => ({
+      id: `${book.id}_${child.id || index}`,
+      childId: child.id,
+      subjectType: "reading",
+      title: book.title,
+      formLabel: book.formLabel
+    }));
+  }));
+  next.curriculumPackage = {
+    ...next.curriculumPackage,
+    householdId: setupSnapshot.identity?.householdId || next.household.id,
+    title: `${setupSnapshot.household?.name || "Household"} Curriculum`
+  };
+  next.curriculumPackages = [next.curriculumPackage];
+  next.curriculumSubjects = currentSubjects.map((subject, index) => ({
+    id: subject.id,
+    curriculumPackageId: next.curriculumPackage.id,
+    subjectType: subject.subjectType,
+    title: subject.title,
+    sortOrder: index + 1
+  }));
+  if (list(formation.churchRhythms).length) {
+    next.dashboardDaily = Object.fromEntries(Object.entries(next.dashboardDaily || {}).map(([date, day]) => [
+      date,
+      { ...day, churchRhythms: list(formation.churchRhythms).map((rhythm) => ({ ...rhythm })) }
+    ]));
+  }
+  if (formation.catechesis?.title) next.catechesisCycles = [formation.catechesis];
+  else if (setupSnapshot) next.catechesisCycles = [];
+  if (list(formation.recitationTracks).length) next.recitationTracks = list(formation.recitationTracks);
+  else if (setupSnapshot) next.recitationTracks = [];
+  if (list(formation.hymnStudies).length) next.hymnStudies = list(formation.hymnStudies);
+  else if (setupSnapshot) next.hymnStudies = [];
+  if (list(formation.enrichmentBlocks).length) next.enrichmentBlocks = list(formation.enrichmentBlocks);
+  else if (setupSnapshot) next.enrichmentBlocks = [];
+  // Always clear seed fixture logs for real users — they start empty and accumulate from their own data.
+  next.narrationLogs = [];
+  next.natureJournalEntries = [];
+  const structuredFormationMaterials = [
+    ...(formation.catechesis?.title ? [{
+      id: formation.catechesis.id || "formation_catechesis",
+      title: formation.catechesis.title,
+      materialType: "Catechesis",
+      source: formation.catechesis.source || "",
+      cadenceLabel: "Weekly",
+      color: ""
+    }] : []),
+    ...list(formation.hymnStudies).map((hymn) => ({
+      id: hymn.id,
+      title: hymn.title,
+      materialType: "Hymn Study",
+      source: hymn.source,
+      cadenceLabel: "Weekly",
+      color: ""
+    })),
+    ...list(formation.enrichmentBlocks).map((block) => ({
+      id: block.id,
+      title: block.title,
+      materialType: block.blockType,
+      source: "",
+      cadenceLabel: block.cadenceLabel,
+      color: block.color
+    }))
+  ];
+  const formationMaterialsForPlanning = currentFormationMaterials.length
+    ? currentFormationMaterials
+    : structuredFormationMaterials;
+  next.curriculumResources = [
+    ...currentSubjects.flatMap((subject, subjectIndex) => {
+      const subjectResources = list(subject.resources).length
+        ? list(subject.resources)
+        : (subject.resource ? [{ title: subject.resource, scheduledWeeks: subject.scheduledWeeks }] : []);
+      return subjectResources.map((resource, resourceIndex) => {
+        const title = typeof resource === "string" ? resource : resource.title || resource.resource;
+        if (!title) return null;
+        return {
+          id: `resource_${subject.id || subjectIndex + 1}_${resourceIndex + 1}`,
+          curriculumPackageId: next.curriculumPackage.id,
+          curriculumSubjectId: subject.id,
+          title,
+          author: "",
+          resourceType: subject.resourceType || subject.subjectType,
+          sourceKind: "household",
+          sortOrder: subjectIndex * 10 + resourceIndex + 1
+        };
+      }).filter(Boolean);
+    }),
+    ...formationMaterialsForPlanning.map((material, index) => ({
+      id: material.id,
+      curriculumPackageId: next.curriculumPackage.id,
+      curriculumSubjectId: null,
+      title: material.title,
+      author: material.source,
+      resourceType: material.materialType,
+      sourceKind: "formation",
+      sortOrder: index + 100
+    }))
+  ];
+  const weekReference = weekDate && /^\d{4}-\d{2}-\d{2}$/.test(weekDate) ? new Date(`${weekDate}T12:00:00.000Z`) : new Date();
+  const currentTermWeek = activeTermWeek(setupSnapshot.term || next.term || {}, weekReference);
+  const plannerWeekWindow = currentWeekWindow(weekReference);
+  const currentWeekPlan = (item = {}) => text(list(item.weeklyPlans)[Math.max(0, currentTermWeek - 1)], "");
+  next.plannerWeek = {
+    termWeekNumber: currentTermWeek,
+    ...next.plannerWeek,
+    ...plannerWeekWindow,
+    seasonLabel: setupSnapshot.term?.label || next.plannerWeek.seasonLabel,
+    householdRows: [
+      ...list(setupSnapshot.streams).map((stream, index) => ({
+        id: `week_${stream.id}`,
+        streamId: stream.id,
+        title: stream.title,
+        detail: stream.cadenceLabel,
+        priority: index + 1,
+        minutes: [0, stream.dailyMinutes?.mon || 0, stream.dailyMinutes?.tue || 0, stream.dailyMinutes?.wed || 0, stream.dailyMinutes?.thu || 0, stream.dailyMinutes?.fri || 0, 0],
+        statuses: ["empty", "planned", "planned", "planned", "planned", "planned", "empty"]
+      })),
+      ...householdBooks.map((book, index) => ({
+        id: `week_household_book_${book.id}`,
+        streamId: book.id,
+        title: book.audienceLabel === "Morning Basket" ? book.title : `Read-Aloud: ${book.title}`,
+        detail: `${book.author || book.category}${book.endChapter ? ` • chapters ${book.startChapter || 1}-${book.endChapter}` : ""}${book.weeklyFrequency ? ` • ${book.weeklyFrequency}` : ""}`,
+        priority: 50 + index,
+        gracePriority: book.gracePriority || "reduce first",
+        graceNote: book.graceNote || "Reading moved into the reserve basket.",
+        ...weeklyPlanArrays(book.weeklyFrequency, book.minutes || 20, scheduledThisTermWeek(book, currentTermWeek))
+      })),
+      ...list(formation.enrichmentBlocks).filter(forCurrentTerm).map((block, index) => ({
+        id: `week_enrichment_${block.id}`,
+        sourceId: block.id,
+        kind: "enrichment",
+        title: block.title,
+        detail: `${block.resource || block.blockType || "Enrichment"}${currentWeekPlan(block) ? ` • ${currentWeekPlan(block)}` : ""}${block.weeklyFrequency ? ` • ${block.weeklyFrequency}` : ""}`,
+        groupLabel: block.planningMode === "forms" ? list(block.formLabels).length ? block.formLabels.join(", ") : block.formLabel || block.gradeLabel || "Form Enrichment" : "Everyone Together",
+        planningMode: block.planningMode || "family",
+        href: /literature|read-aloud|read aloud/i.test(`${block.blockType} ${block.title}`) ? "/myagapay/learn/books" : "/myagapay/learn/formation",
+        priority: block.priorityLevel === "essential" ? 10 : block.priorityLevel === "important" ? 40 : block.priorityLevel === "optional" ? 95 : 70,
+        priorityLevel: block.priorityLevel,
+        instructionMode: block.instructionMode,
+        missedLessonBehavior: block.missedLessonBehavior,
+        color: block.color,
+        gracePriority: block.gracePriority || "reduce first",
+        graceNote: block.graceNote || "Deferred gracefully to the reserve list.",
+        ...planArraysForItem(block, currentTermWeek, plannerWeekWindow.dates)
+      }))
+    ],
+    childRows: [
+      ...currentSubjects.flatMap((subject, index) => {
+        const resourceAssignments = list(subject.resources).length
+          ? list(subject.resources).map((resource, resourceIndex) => ({ ...subject, ...resource, resourceTitle: resource.title || resource.resource || subject.resource, resourceIndex }))
+          : [{ ...subject, resourceTitle: subject.resource, resourceIndex: 0 }];
+        return resourceAssignments.flatMap((assignment) => {
+          const assignedChildren = childrenForAssignment(assignment, next.children);
+          return assignedChildren.map((child) => ({
+          id: `week_${subject.id}_${assignment.resourceIndex + 1}_${child.id}`,
+          sourceId: subject.id,
+          resourceIndex: assignment.resourceIndex,
+          childId: child.id,
+          childIds: subject.childIds || [],
+          planningMode: subject.planningMode,
+          formLabels: subject.formLabels || [],
+          title: subject.title,
+          detail: `${assignment.resourceTitle || subject.cadenceLabel}${currentWeekPlan(assignment) ? ` • ${currentWeekPlan(assignment)}` : ""}${subject.endNumber ? ` (${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber})` : ""}${subject.weeklyFrequency ? ` • ${subject.weeklyFrequency}` : ""}`,
+          priority: subject.priorityLevel === "essential" ? index : subject.priorityLevel === "important" ? 30 + index : subject.priorityLevel === "optional" ? 100 + index : 70 + index,
+          priorityLevel: subject.priorityLevel,
+          instructionMode: subject.instructionMode,
+          missedLessonBehavior: subject.missedLessonBehavior,
+          color: subject.color,
+          gracePriority: subject.gracePriority || "keep",
+          graceNote: subject.graceNote || "Deferred gracefully to the reserve list.",
+          graceModeApplied: setupSnapshot.preferences?.graceModeActive && subject.gracePriority !== "keep",
+          ...planArraysForItem(assignment, currentTermWeek, plannerWeekWindow.dates)
+        }));
+        });
+      }),
+      ...childBooks.flatMap((book, index) => {
+        const assignedChildren = childrenForAssignment(book, next.children);
+        return assignedChildren.map((child) => ({
+          id: `week_${book.id}_${child.id}`,
+          childId: child.id,
+          title: book.title,
+          detail: `${book.author || book.category}${book.endChapter ? ` (chapters ${book.startChapter || 1}-${book.endChapter})` : ""}${book.weeklyFrequency ? ` • ${book.weeklyFrequency}` : ""}`,
+          priority: index + 100,
+          color: book.color,
+          gracePriority: book.gracePriority || "bump if needed",
+          graceNote: book.graceNote || "Reading moved into the reserve basket.",
+          graceModeApplied: setupSnapshot.preferences?.graceModeActive && (book.gracePriority || "bump if needed") !== "keep",
+          ...weeklyPlanArrays(book.weeklyFrequency, book.minutes || 20, scheduledThisTermWeek(book, currentTermWeek))
+        }));
+      })
+    ]
+  };
+  next.termSetup = {
+    ...next.termSetup,
+    termOptions: list(setupSnapshot.terms).length ? list(setupSnapshot.terms) : [{ ...next.term }],
+    activeTermId: currentTermId || next.term?.id || "",
+    setupCards: [
+      { id: "setup_children", title: "Children", value: String(next.children.length), detail: "Active homeschool children" },
+      { id: "setup_subjects", title: "Subjects", value: String(currentSubjects.length), detail: "Configured curriculum tracks" },
+      { id: "setup_books", title: "Books", value: String(currentBooks.length), detail: "Living books and read-alouds" },
+      { id: "setup_formation", title: "Formation", value: String(formationMaterialsForPlanning.length + list(formation.recitationTracks).length), detail: "Catechesis, hymns, and memory work" }
+    ],
+    childTrackSummary: next.children.map((child) => ({
+      childId: child.id,
+      tracks: next.childTracks
+        .filter((track) => track.childId === child.id)
+        .map((track) => `${track.subjectType === "reading" ? "Reading" : track.subjectType}: ${track.title}`)
+    })),
+    pacingRows: [
+      ...currentBooks.filter((book) => book.endChapter).map((book) => ({
+        id: `pace_${book.id}`,
+        label: book.title,
+        subtitle: `${book.author || book.category} • chapters ${book.startChapter || 1}-${book.endChapter}`,
+        color: book.color,
+        segments: distributeRangeSegments({ label: "Ch.", start: book.startChapter || 1, end: book.endChapter, color: book.color })
+      })),
+      ...currentSubjects.filter((subject) => subject.endNumber).map((subject) => ({
+        id: `pace_${subject.id}`,
+        label: subject.title,
+        subtitle: `${subject.resource || subject.subjectType} • ${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber}`,
+        color: subject.color,
+        segments: distributeRangeSegments({ label: subject.progressionType, start: subject.startNumber || 1, end: subject.endNumber, color: subject.color })
+      })),
+      ...formationMaterialsForPlanning.map((material) => ({
+        id: `pace_${material.id}`,
+        label: material.materialType,
+        subtitle: material.title,
+        color: material.color,
+        segments: [{ title: material.title, start: 1, span: 12, color: material.color }]
+      }))
+    ],
+    graceReserve: [
+      ...currentSubjects.filter((subject) => setupSnapshot.preferences?.graceModeActive && subject.gracePriority !== "keep").map((subject) => ({
+        title: subject.title,
+        note: subject.graceNote,
+        color: subject.color
+      })),
+      ...currentBooks.filter((book) => setupSnapshot.preferences?.graceModeActive).map((book) => ({
+        title: book.title,
+        note: book.graceNote,
+        color: book.color
+      }))
+    ]
+  };
+  next.setupSnapshot = setupSnapshot;
+  return next;
+}
+
+export async function loadLearnSetupSnapshotForIdentity(env, identity) {
+  if (!identity?.householdId) return null;
+  if (!d1(env)) return devSetupSnapshots.get(identity.householdId) || null;
   try {
-    const donor = JSON.parse(localStorage.getItem("agapayDonorProfile") || "{}");
-    const email = localStorage.getItem("agapayDonorEmail") || donor.email || "";
-    const name = text(donor.donorName || email.split("@")[0], "Faithful Member");
-    const words = name.trim().split(/\s+/).filter(Boolean);
-    const initials = words.length
-      ? words.slice(0, 2).map((word) => word.charAt(0)).join("").toUpperCase()
-      : "FM";
-    return {
-      name,
-      initials: initials || "FM"
-    };
+    const row = await d1First(env, "SELECT data FROM learn_households WHERE id = ?1", identity.householdId);
+    const snapshot = safeParseJsonRow(row)?.setupSnapshot || null;
+    if (snapshot) return snapshot;
   } catch {
-    return {
-      name: "Faithful Member",
-      initials: "FM"
+    // Fall back to KV while Learn D1 migrations are being rolled out.
+  }
+  if (env.AGAPAY_REGISTRATIONS) {
+    const stored = await env.AGAPAY_REGISTRATIONS.get(setupKvKey(identity));
+    return parseStoredSetup(stored)?.setupSnapshot || null;
+  }
+  return null;
+}
+
+export async function loadLearnSetupSnapshot(env, request) {
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return null;
+  return loadLearnSetupSnapshotForIdentity(env, identity);
+}
+
+export async function saveLearnCompletion(env, request, payload = {}) {
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return { ok: false, status: 401, error: "Unauthorized" };
+  const current = await loadLearnSetupSnapshotForIdentity(env, identity);
+  if (!current) return { ok: false, status: 400, error: "Complete Learn setup before tracking progress." };
+
+  const scope = payload.scope === "daily" ? "daily" : payload.scope === "weekly" ? "weekly" : "";
+  const itemId = text(payload.itemId, "");
+  const civilDate = /^\d{4}-\d{2}-\d{2}$/.test(String(payload.civilDate || "")) ? String(payload.civilDate) : nowIso().slice(0, 10);
+  if (!scope || !/^[a-zA-Z0-9:_-]{1,180}$/.test(itemId)) {
+    return { ok: false, status: 400, error: "Progress item was invalid." };
+  }
+
+  const date = new Date(`${civilDate}T12:00:00Z`);
+  if (scope === "weekly") date.setUTCDate(date.getUTCDate() - date.getUTCDay());
+  const periodKey = date.toISOString().slice(0, 10);
+  const completion = normalizeCompletion(current.completion);
+  completion[scope][periodKey] = {
+    ...(completion[scope][periodKey] || {}),
+    [itemId]: Boolean(payload.completed)
+  };
+  const setupSnapshot = {
+    ...current,
+    savedAt: nowIso(),
+    completion: normalizeCompletion(completion)
+  };
+  const householdData = JSON.stringify({ ownerEmail: identity.email, setupSnapshot });
+
+  if (!d1(env)) {
+    devSetupSnapshots.set(identity.householdId, setupSnapshot);
+  } else {
+    try {
+      await d1Run(env, "UPDATE learn_households SET data = ?1, updated_at = ?2 WHERE id = ?3", householdData, setupSnapshot.savedAt, identity.householdId);
+    } catch {
+      // D1 write failed — KV below is the fallback source of truth.
+    }
+  }
+  if (env.AGAPAY_REGISTRATIONS) await env.AGAPAY_REGISTRATIONS.put(setupKvKey(identity), householdData);
+  return { ok: true, setupSnapshot, scope, periodKey, itemId, completed: Boolean(payload.completed) };
+}
+
+export async function getLearnSeedForIdentity(env, identity, { termId = "", weekDate = "" } = {}) {
+  if (!identity) return null;
+  let setupSnapshot = await loadLearnSetupSnapshotForIdentity(env, identity);
+  const selectedTerm = setupSnapshot?.terms?.find((term) => term.id === termId);
+  if (selectedTerm) {
+    setupSnapshot = {
+      ...clone(setupSnapshot),
+      schoolYear: { ...setupSnapshot.schoolYear, currentTermId: selectedTerm.id },
+      term: { ...selectedTerm }
     };
+  }
+  const seed = applySetupSnapshotToSeed(getLearnSeedSnapshot(), setupSnapshot, { weekDate });
+  const academicSnapshot = await loadLearnAcademicSnapshot(env, identity.householdId);
+  seed.closedAcademicRecords = academicSnapshot.academicRecords;
+  seed.closedReportCards = academicSnapshot.reportCards;
+  return seed;
+}
+
+export async function getLearnSeedForRequest(env, request) {
+  return getLearnSeedForIdentity(env, await learnSetupIdentity(request, env));
+}
+
+async function bestEffort(statement) {
+  try {
+    await statement();
+  } catch {
+    // Local development databases can lag migrations; the setup snapshot remains the source of truth.
   }
 }
 
-function dateParts(isoDate) {
-  const date = new Date(`${isoDate}T12:00:00`);
-  if (Number.isNaN(date.getTime())) return { weekday: "", short: text(isoDate), dayNumber: "" };
-  return {
-    weekday: new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(date).toUpperCase(),
-    weekdayLong: new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(date),
-    short: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date),
-    dayNumber: new Intl.DateTimeFormat("en-US", { day: "numeric" }).format(date),
-    isSunday: date.getDay() === 0
-  };
-}
-
-function shellFromPayload(page, payload) {
-  const section = payload?.[page] || payload?.dashboard || payload?.planner || {};
-  const household = section.household || {};
-  const children = safeArray(section.children);
-  const name = text(household.name, "Your Household");
-  const method = text(household.primaryMethod, "Homeschool");
-  const account = donorAccountFromStorage();
-  const gcalSync = section.googleCalendarSync || payload?.dashboard?.googleCalendarSync || null;
-  return {
-    familyName: name,
-    familyInitial: name.replace(/^The\s+/i, "").trim().charAt(0).toUpperCase() || "F",
-    familyMeta: `${children.length || household.childrenCount || 0} ${children.length === 1 ? "Child" : "Children"} • ${method}`,
-    accountName: account.name,
-    accountInitials: account.initials,
-    timeLabel: text(household.topbarTimeLabel, new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date())),
-    gcalConfigured: gcalSync ? Boolean(gcalSync.configured !== false) : false,
-    gcalConnected: Boolean(gcalSync?.connected),
-    nav: [
-      { id: "dashboard", href: learnDashboardHref("dashboard"), label: "Dashboard", icon: "✥" },
-      { id: "planner", href: learnDashboardHref("planner"), label: "Planner", icon: "▣" },
-      { id: "formation", href: learnDashboardHref("formation"), label: "Formation", icon: "⌂" },
-      { id: "books", href: learnDashboardHref("books"), label: "Books", icon: "☰" },
-      { id: "grades", href: learnDashboardHref("grades"), label: "Grades & Attendance", icon: "A+" },
-      { id: "community", href: learnDashboardHref("community"), label: "Community", icon: "♡" },
-      { id: "co-op", href: learnDashboardHref("co-op"), label: "Co-op", icon: "◎", comingSoon: true },
-      { id: "print-center", href: learnDashboardHref("print-center"), label: "Print", icon: "▤" },
-      { id: "onboarding", href: learnDashboardHref("onboarding"), label: "Set Up", icon: "⚙" }
-    ]
-  };
-}
-
-function page(id, title, subtitle = "", ornament = true) {
-  return { id, title, subtitle, ornament };
-}
-
-function simpleList(items, mapper) {
-  return safeArray(items).map(mapper).filter(Boolean);
-}
-
-function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
-  // ── Household rows: already one-per-block, no grouping needed ──────────────
-  const householdItems = safeArray(rawHouseholdRows)
-    .filter((row) => safeArray(row.statuses).some((s) => s !== "empty") || safeArray(row.minutes).some((m) => Number(m) > 0))
-    .map((row, index) => ({
-      id: text(row.id, `household-${index}`),
-      kind: text(row.kind, "household"),
-      title: text(row.title, "Household block"),
-      sub: text(row.detail || row.subtitle, ""),
-      color: text(row.color, ACCENTS[index % ACCENTS.length]),
-      minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20),
-      statuses: safeArray(row.statuses),
-      weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, ""),
-      gracePriority: text(row.gracePriority, "keep"),
-      graceNote: text(row.graceNote, "")
-    }));
-
-  // ── Child rows: group to avoid duplicates based on planning mode ───────────
-  // Two levels of grouping:
-  //   Level 1 — planning mode (determines card count per subject):
-  //     family   → planningMode !== "forms" (or no formLabels/childIds) → one card
-  //     form     → formLabels set, no childIds                          → one card per form label
-  //     specific → childIds set                                         → one card, all children listed
-  //   Level 2 — resources: multiple resources on the same subject collapse into
-  //     one card; resource titles accumulate and are joined in the sub line.
-  //     minutes/statuses are merged via per-day OR so the card is active whenever
-  //     any of its resources is active.
-  const grouped = new Map(); // groupKey → merged card
-  safeArray(rawChildRows).forEach((row, index) => {
-    const planningMode = text(row.planningMode, "forms");
-    const formLabels   = safeArray(row.formLabels);
-    const childIds     = safeArray(row.childIds);
-    const sourceId     = text(row.sourceId || row.id, `child-src-${index}`);
-    const childName    = text(row.child?.firstName || row.child?.name, "");
-    const childFormLabel = text(row.child?.formLabel || row.child?.gradeLabel, "");
-    const resourceTitle = text(row.resourceTitle || row.detail || row.subtitle, "");
-    const color        = text(row.color || row.child?.color, ACCENTS[(index + rawHouseholdRows.length) % ACCENTS.length]);
-    const rowMinutes   = safeArray(row.minutes);
-    const statuses     = safeArray(row.statuses);
-    const weeklyFreq   = text(row.weeklyFrequency || row.cadenceLabel, "");
-    const gracePriority = text(row.gracePriority, "keep");
-    const graceNote    = text(row.graceNote, "");
-
-    const isFamily   = planningMode !== "forms" || (!formLabels.length && !childIds.length);
-    const isSpecific = childIds.length > 0;
-
-    // Skip rows where the subject is not active this week
-    const isActiveThisWeek = statuses.some((s) => s !== "empty") || rowMinutes.some((m) => Number(m) > 0);
-    if (!isActiveThisWeek) return;
-
-    // Group key: no resourceIndex — all resources for the same subject+scope collapse
-    let groupKey;
-    let kind;
-    if (isFamily) {
-      groupKey = `family:${sourceId}`;
-      kind = "family";
-    } else if (isSpecific) {
-      groupKey = `specific:${sourceId}`;
-      kind = "specific";
-    } else {
-      const formKey = childFormLabel || formLabels[0] || "form";
-      groupKey = `form:${sourceId}:${formKey}`;
-      kind = "form";
-    }
-
-    if (grouped.has(groupKey)) {
-      const existing = grouped.get(groupKey);
-      // Accumulate child names
-      if (childName && !existing._childNames.includes(childName)) {
-        existing._childNames.push(childName);
-      }
-      // Accumulate resource titles
-      if (resourceTitle && !existing._resourceTitles.includes(resourceTitle)) {
-        existing._resourceTitles.push(resourceTitle);
-      }
-      // Merge minutes and statuses per-day via OR
-      existing._minutesArr = existing._minutesArr.map((m, i) => Math.max(m, Number(rowMinutes[i] || 0)));
-      existing._statusesArr = existing._statusesArr.map((s, i) => s !== "empty" ? s : (statuses[i] || "empty"));
-    } else {
-      grouped.set(groupKey, {
-        id: groupKey,
-        kind,
-        title: text(row.title, "Lesson"),
-        _childNames: childName ? [childName] : [],
-        _formLabel: isFamily ? "" : (!isSpecific ? (childFormLabel || formLabels[0] || "") : ""),
-        _resourceTitles: resourceTitle ? [resourceTitle] : [],
-        _minutesArr: rowMinutes.map((m) => Number(m || 0)),
-        _statusesArr: [...statuses],
-        color,
-        weeklyFrequency: weeklyFreq,
-        gracePriority,
-        graceNote
-      });
-    }
-  });
-
-  const childItems = Array.from(grouped.values()).map((item) => {
-    const { _childNames, _formLabel, _resourceTitles, _minutesArr, _statusesArr, ...rest } = item;
-    const resourceLine = _resourceTitles.join(", ");
-    const prefixParts = [...(_childNames.length ? [_childNames.join(", ")] : (_formLabel ? [_formLabel] : []))];
-    const sub = [...prefixParts, resourceLine].filter(Boolean).join(" · ");
-    const minutes = Math.max(..._minutesArr.filter(Boolean), 0) || (_minutesArr.find((m) => m > 0) ?? 20);
-    return { ...rest, sub, minutes, statuses: _statusesArr };
-  });
-
-  // Household items already unique by id; child items unique by groupKey
-  return [...householdItems, ...childItems].filter((item) => item.id && item.title);
-}
-
-function plannerDaysFromWeek(week) {
-  return safeArray(week.liturgicalDays).map((day, index) => {
-    const parts = dateParts(day.civilDate || safeArray(week.dates)[index]);
-    const familyDay = safeArray(week.familyDays)[index] || {};
+export async function saveLearnSetup(env, request, payload) {
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) {
+    return { ok: false, status: 401, error: "Unauthorized" };
+  }
+  const setupSnapshot = normalizeSetupPayload(payload, identity);
+  if (setupSnapshot.children.length > LEARN_FREE_CHILD_LIMIT && !(await learnRequestHasFamilyAccessAsync(request, env, identity))) {
     return {
-      weekday: text(day.weekdayLabel || parts.weekday, ""),
-      weekdayLong: text(day.weekdayLong || parts.weekdayLong, ""),
-      date: text(day.civilDate || safeArray(week.dates)[index], ""),
-      shortDate: parts.short,
-      dayNumber: parts.dayNumber,
-      isSunday: Boolean(parts.isSunday),
-      isFastDay: Boolean(day.isFastDay),
-      feast: text(day.feastTitle, ""),
-      feastRank: text(day.feastRank, ""),
-      fasting: text(day.fastingRule, ""),
-      fastingType: text(day.fastingType || familyDay.fastingType, ""),
-      tone: text(day.tone || day.troparionTone, ""),
-      epistle: text(day.epistleRef, ""),
-      gospel: text(day.gospelRef, ""),
-      nameDays: safeArray(familyDay.nameDays),
-      events: safeArray(familyDay.events),
-      meal: familyDay.meal || null,
-      fastingPreference: text(familyDay.fastingPreference, "guidance")
+      ok: false,
+      status: 402,
+      error: `The free AGAPAY Learn plan supports up to ${LEARN_FREE_CHILD_LIMIT} children. Upgrade to the Family plan to save larger households.`
     };
+  }
+  const timestamp = setupSnapshot.savedAt;
+  if (!d1(env)) {
+    devSetupSnapshots.set(identity.householdId, setupSnapshot);
+    return {
+      ok: true,
+      setupSnapshot,
+      onboarding: applySetupSnapshotToSeed(getLearnSeedSnapshot(), setupSnapshot),
+      storage: "memory"
+    };
+  }
+  const householdData = JSON.stringify({
+    ownerEmail: identity.email,
+    setupSnapshot
+  });
+
+  try {
+    await d1Run(
+      env,
+      `INSERT INTO learn_households (id, slug, name, household_size, liturgical_calendar_type, pace_mode, grace_mode_active, data, created_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)
+       ON CONFLICT(id) DO UPDATE SET
+         name = excluded.name,
+         household_size = excluded.household_size,
+         liturgical_calendar_type = excluded.liturgical_calendar_type,
+         pace_mode = excluded.pace_mode,
+         grace_mode_active = excluded.grace_mode_active,
+         data = excluded.data,
+         updated_at = excluded.updated_at`,
+      identity.householdId,
+      slug(setupSnapshot.household.name, identity.householdId),
+      setupSnapshot.household.name,
+      setupSnapshot.children.length,
+      setupSnapshot.preferences.calendarType,
+      setupSnapshot.preferences.paceMode,
+      setupSnapshot.preferences.graceModeActive ? 1 : 0,
+      householdData,
+      timestamp
+    );
+  } catch (error) {
+    if (!env.AGAPAY_REGISTRATIONS) throw error;
+    await env.AGAPAY_REGISTRATIONS.put(setupKvKey(identity), householdData);
+    return {
+      ok: true,
+      setupSnapshot,
+      onboarding: applySetupSnapshotToSeed(getLearnSeedSnapshot(), setupSnapshot),
+      storage: "kv-fallback"
+    };
+  }
+  if (env.AGAPAY_REGISTRATIONS) {
+    await env.AGAPAY_REGISTRATIONS.put(setupKvKey(identity), householdData);
+  }
+
+  await bestEffort(async () => {
+    await d1Run(env, "DELETE FROM learn_child_tracks WHERE child_id IN (SELECT id FROM learn_children WHERE household_id = ?1)", identity.householdId);
+    await d1Run(env, "DELETE FROM learn_children WHERE household_id = ?1", identity.householdId);
+    for (const child of setupSnapshot.children) {
+      await d1Run(
+        env,
+        `INSERT INTO learn_children (id, household_id, first_name, age_years, grade_label, active, data, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6, ?7, ?7)`,
+        child.id,
+        identity.householdId,
+        child.firstName,
+        child.ageYears,
+        child.gradeLabel,
+        JSON.stringify(child),
+        timestamp
+      );
+    }
+  });
+
+  await bestEffort(async () => {
+    await d1Run(env, "DELETE FROM learn_household_streams WHERE household_id = ?1", identity.householdId);
+    for (const stream of setupSnapshot.streams) {
+      await d1Run(
+        env,
+        `INSERT INTO learn_household_streams (id, household_id, stream_type, title, cadence_label, data, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)`,
+        stream.id,
+        identity.householdId,
+        stream.streamType,
+        stream.title,
+        stream.cadenceLabel,
+        JSON.stringify(stream),
+        timestamp
+      );
+    }
+  });
+
+  await bestEffort(async () => {
+    await d1Run(env, "DELETE FROM learn_book_assignments WHERE book_id IN (SELECT id FROM learn_books WHERE household_id = ?1)", identity.householdId);
+    await d1Run(env, "DELETE FROM learn_books WHERE household_id = ?1", identity.householdId);
+    for (const book of setupSnapshot.books) {
+      await d1Run(
+        env,
+        `INSERT INTO learn_books (id, household_id, title, author, category, audience_label, data, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)`,
+        book.id,
+        identity.householdId,
+        book.title,
+        book.author,
+        book.category,
+        "Household",
+        JSON.stringify(book),
+        timestamp
+      );
+    }
+  });
+
+  await bestEffort(async () => {
+    await d1Run(env, "DELETE FROM learn_terms WHERE school_year_id IN (SELECT id FROM learn_school_years WHERE household_id = ?1)", identity.householdId);
+    await d1Run(env, "DELETE FROM learn_school_years WHERE household_id = ?1", identity.householdId);
+    await d1Run(
+      env,
+      `INSERT INTO learn_school_years (id, household_id, label, start_date, end_date, current_term_id, data, created_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)`,
+      setupSnapshot.schoolYear.id,
+      identity.householdId,
+      setupSnapshot.schoolYear.label,
+      setupSnapshot.schoolYear.startDate,
+      setupSnapshot.schoolYear.endDate,
+      setupSnapshot.schoolYear.currentTermId || setupSnapshot.term.id,
+      JSON.stringify(setupSnapshot.schoolYear),
+      timestamp
+    );
+    for (const term of list(setupSnapshot.terms).length ? list(setupSnapshot.terms) : [setupSnapshot.term]) {
+      await d1Run(
+        env,
+        `INSERT INTO learn_terms (id, school_year_id, label, start_date, end_date, pace_mode, data, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)`,
+        term.id,
+        setupSnapshot.schoolYear.id,
+        term.label,
+        term.startDate,
+        term.endDate,
+        term.paceMode,
+        JSON.stringify(term),
+        timestamp
+      );
+    }
+  });
+
+  return {
+    ok: true,
+    setupSnapshot,
+    onboarding: applySetupSnapshotToSeed(getLearnSeedSnapshot(), setupSnapshot)
+  };
+}
+
+export async function saveLearnFamilyPlanning(env, request, payload = {}) {
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return { ok: false, status: 401, error: "Unauthorized" };
+  const current = await loadLearnSetupSnapshotForIdentity(env, identity);
+  if (!current) return { ok: false, status: 409, error: "Complete Learn setup before saving the family planner." };
+  const childNameDays = new Map(list(payload.childNameDays).map((entry) => [text(entry.childId, ""), text(entry.nameDay, "")]));
+  return saveLearnSetup(env, request, {
+    ...current,
+    household: {
+      ...current.household,
+      motherName: text(payload.household?.motherName, current.household?.motherName || ""),
+      motherNameDay: text(payload.household?.motherNameDay, current.household?.motherNameDay || ""),
+      fatherName: text(payload.household?.fatherName, current.household?.fatherName || ""),
+      fatherNameDay: text(payload.household?.fatherNameDay, current.household?.fatherNameDay || ""),
+      parishPatronalFeastName: text(payload.household?.parishPatronalFeastName, current.household?.parishPatronalFeastName || ""),
+      parishPatronalFeastDate: text(payload.household?.parishPatronalFeastDate, current.household?.parishPatronalFeastDate || "")
+    },
+    children: list(current.children).map((child) => ({
+      ...child,
+      nameDay: childNameDays.has(child.id) ? childNameDays.get(child.id) : child.nameDay || ""
+    })),
+    familyPlanning: payload.familyPlanning || current.familyPlanning || {}
   });
 }
 
-export function toDashboardViewModel(rawPayload, context = {}) {
-  const dashboard = rawPayload?.dashboard || {};
-  const today = dashboard.today || {};
-  const liturgicalDay = today.liturgicalDay || {};
-  const summary = dashboard.weeklySummary || {};
-  const dashboardWeek = dashboard.week || {};
-  const dashboardWeekHouseholdRows = safeArray(dashboardWeek.householdRows);
-  const dashboardWeekChildRows = safeArray(dashboardWeek.childRows);
-  const shell = shellFromPayload("dashboard", rawPayload);
-  const saintNames = safeArray(liturgicalDay.saints)
-    .map((saint) => text(typeof saint === "string" ? saint : saint.name || saint.title, ""))
-    .filter(Boolean);
-  const titleSaintName = saintLikeTitle(liturgicalDay.feastTitle || liturgicalDay.summaryTitle || "");
-  const combinedSaintNames = [...(titleSaintName ? [titleSaintName] : []), ...saintNames]
-    .filter((name, index, names) => names.findIndex((candidate) => saintKey(candidate) === saintKey(name)) === index);
-  const orderedSaintNames = orderSaintNames(combinedSaintNames);
-  const saintStories = orderSaintStories(safeArray(liturgicalDay.saintStories).map((saint) => ({
-    name: text(saint.name || saint.title, ""),
-    title: text(saint.title || saint.name, ""),
-    storyText: text(saint.storyText || saint.story || saint.description, ""),
-    reposeCentury: text(saint.reposeCentury, ""),
-    feastRank: text(saint.feastRank, ""),
-    iconUrl: text(saint.iconUrl, "")
-  })).filter((saint) => saint.name || saint.storyText), orderedSaintNames);
-
-  return {
-    shell,
-    page: {
-      id: "dashboard",
-      title: "Today",
-      subtitle: `${text(today.dateLabel, context.todayLabel || "")}  •  ${text(today.weekdayLabel, "")}`,
-      ornament: false
-    },
-    todayInChurch: {
-      kicker: "TODAY IN THE CHURCH",
-      title: text(liturgicalDay.feastTitle, "Today in the Church"),
-      liturgicalDateLabel: text(liturgicalDay.oldStyleDateLabel || liturgicalDay.liturgicalDateLabel, "Set calendar in Setup"),
-      annoMundiLabel: text(liturgicalDay.annoMundiLabel || annoMundiLabel(today.civilDate), "").replace(/^AM\s+/i, "Anno Mundi "),
-      toneLabel: text(liturgicalDay.tone, "Tone unavailable"),
-      fastingRule: text(liturgicalDay.fastingRule, "Set fasting source in Setup"),
-      fastingNote: text(liturgicalDay.fastingNote || liturgicalDay.seasonLabel, ""),
-      epistleRef: text(liturgicalDay.epistleRef, "Add epistle reading"),
-      gospelRef: text(liturgicalDay.gospelRef, "Add gospel reading"),
-      troparionLabel: liturgicalDay.troparionTone ? `TROPARION · ${liturgicalDay.troparionTone}` : "TROPARION",
-      troparionText: text(liturgicalDay.troparionText, "No troparion text loaded yet."),
-      kontakionLabel: liturgicalDay.kontakionTone ? `KONTAKION · ${liturgicalDay.kontakionTone}` : "KONTAKION",
-      kontakionText: text(liturgicalDay.kontakionText, "No kontakion text loaded yet."),
-      iconUrl: text(liturgicalDay.iconUrl || liturgicalDay.ponomarIconUrl || liturgicalDay.feastIconUrl, ""),
-      civilDate: text(today.civilDate, ""),
-      calendarType: text(dashboard.calendarToggle?.selected || dashboard.preferences?.calendarType || liturgicalDay.calendarType, ""),
-      saintNames: orderedSaintNames,
-      saintStories
-    },
-    churchRhythms: safeArray(today.churchRhythms).map((item) => ({
-      id: text(item.id, ""),
-      label: text(item.title, "Rhythm"),
-      sub: text(item.note || item.subtitle, ""),
-      complete: item.status === "completed"
-    })),
-    householdStream: safeArray(today.householdStreamCards).map((item) => ({
-      id: text(item.id, ""),
-      title: text(item.title, "Household block"),
-      sub: text(item.subtitle, ""),
-      group: text(item.groupLabel, "Everyone Together"),
-      href: text(item.href, "/myagapay/learn/formation"),
-      time: item.minutesPlanned ? `${item.minutesPlanned}m` : "",
-      complete: item.status === "completed",
-      icon: item.icon || "☩"
-    })),
-    childColumns: safeArray(today.childColumns).map((column, index) => ({
-      tag: text(column.child?.formLabel || column.child?.gradeLabel, `CHILD ${index + 1}`).toUpperCase(),
-      name: childName(column.child, index),
-      age: text(column.child?.ageYears, ""),
-      initial: childInitial(column.child, index),
-      color: ACCENTS[index % ACCENTS.length],
-      tasks: safeArray(column.blocks).map((block) => ({
-        id: text(block.id, ""),
-        title: text(block.title, "Lesson"),
-        sub: text(block.subtitle, ""),
-        time: block.minutesPlanned ? `${block.minutesPlanned}m` : "",
-        complete: block.status === "completed"
-      }))
-    })),
-    week: {
-      label: text(dashboardWeek.label, "This Week"),
-      seasonLabel: text(dashboardWeek.seasonLabel, ""),
-      days: plannerDaysFromWeek(dashboardWeek),
-      weeklyAssignmentItems: weeklyAssignmentItemsFromRows(dashboardWeekHouseholdRows, dashboardWeekChildRows)
-    },
-    familyPlanning: {
-      fastingPreference: text(dashboard.familyPlanning?.fastingPreference, "guidance"),
-      recipes: safeArray(dashboard.familyPlanning?.recipes),
-      groceryItems: safeArray(dashboard.familyPlanning?.groceryItems),
-      events: safeArray(dashboard.familyPlanning?.events),
-      meals: safeArray(dashboard.familyPlanning?.meals),
-      chores: safeArray(dashboard.familyPlanning?.chores),
-      weekStart: text(dashboard.familyPlanning?.weekStart, "")
-    },
-    thisWeek: [
-      {
-        icon: "☩",
-        color: ACCENTS[0],
-        big: `${summary.lessonsCompleted || 0} / ${summary.lessonsPlanned || 0}`,
-        label: "Lessons Completed",
-        sub: `${summary.lessonsCompletionPercent || 0}%`
-      },
-      {
-        icon: "✒",
-        color: ACCENTS[1],
-        big: text(summary.narrationsLogged, "0"),
-        label: "Narrations Logged",
-        sub: "This Week"
-      },
-      {
-        icon: "⌂",
-        color: ACCENTS[2],
-        big: text(summary.feastDaysAhead, "0"),
-        label: "Feast Days Ahead",
-        sub: text(summary.nextFeastLabel, "Set calendar in Setup")
-      },
-      {
-        icon: "☰",
-        color: ACCENTS[3],
-        big: `${percent(summary.readAloudProgressPercent)}%`,
-        label: "Read-Aloud Progress",
-        sub: text(summary.readAloudTitle, "Add a read-aloud in Setup")
-      }
-    ],
-    integrations: {
-      graceMode: dashboard.activeIndicators?.graceMode || null,
-      calendarToggle: dashboard.calendarToggle || null,
-      thisDayInHistory: dashboard.thisDayInHistory || null,
-      googleCalendarSync: dashboard.googleCalendarSync || null
-    },
-    graceMode: {
-      active: Boolean(dashboard.preferences?.graceModeActive),
-      mode: text(dashboard.preferences?.graceModeDefault, "light")
-    },
-    termProgress: {
-      label: text(dashboard.termProgress?.label || dashboard.term?.label, "Current Term"),
-      currentWeek: Number(dashboard.termProgress?.currentWeek || 0),
-      totalWeeks: Number(dashboard.termProgress?.totalWeeks || 0),
-      percent: percent(dashboard.termProgress?.percent),
-      dateRange: text(dashboard.termProgress?.dateRange, "")
-    }
+export async function saveLearnGraceMode(env, request, payload = {}) {
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) {
+    return { ok: false, status: 401, error: "Unauthorized" };
+  }
+  const current = await loadLearnSetupSnapshotForIdentity(env, identity);
+  const nextPreferences = {
+    ...(current?.preferences || {}),
+    graceModeDefault: text(payload.mode || payload.graceModeDefault, current?.preferences?.graceModeDefault || "light"),
+    graceModeActive: Boolean(payload.active ?? payload.graceModeActive ?? true)
   };
-}
-
-export function toPlannerViewModel(rawPayload) {
-  const planner = rawPayload?.planner || {};
-  const week = planner.week || {};
-  const shell = shellFromPayload("planner", rawPayload);
-  const query = new URLSearchParams(window.location.search);
-  const activeView = query.get("view") || planner.activeView || localStorage.getItem("agapay.learn.plannerView") || "week";
-  const monthKey = query.get("month") || planner.month?.key || new Date().toISOString().slice(0, 7);
-  const termOptions = safeArray(planner.termSetup?.termOptions);
-  const requestedTermId = query.get("termId") || planner.term?.id || planner.termSetup?.activeTermId || "";
-  const requestedTermIndex = termOptions.findIndex((term) => term.id === requestedTermId);
-  const numericTermIndex = Math.max(0, Math.min(termOptions.length - 1, Number(query.get("term") || localStorage.getItem("agapay.learn.plannerTerm") || 1) - 1));
-  const activeTermIndex = requestedTermIndex >= 0 ? requestedTermIndex : numericTermIndex;
-  const activeTermId = termOptions[activeTermIndex]?.id || requestedTermId;
-  const activeTerm = activeTermIndex + 1;
-  const days = plannerDaysFromWeek(week);
-  const selectedDate = query.get("date") || days.find((day) => !day.isSunday)?.date || days[0]?.date || "";
-  const selectedDayIndex = Math.max(0, days.findIndex((day) => day.date === selectedDate));
-  const selectedDay = days[selectedDayIndex] || days[0] || {};
-  const childTrackSummary = safeArray(planner.termSetup?.childTrackSummary);
-  const childTrackById = new Map(childTrackSummary.map((track) => [track.childId, safeArray(track.tracks)]));
-  const rawHouseholdRows = safeArray(week.householdRows);
-  const rawChildRows = safeArray(week.childRows);
-  const currentWeekItems = weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows);
-
-  return {
-    shell,
-    graceMode: {
-      active: Boolean(planner.graceMode?.active ?? planner.preferences?.graceModeActive),
-      mode: text(planner.graceMode?.mode ?? planner.preferences?.graceModeDefault, "light")
-    },
-    page: {
-      id: "planner",
-      title: "Family Planner",
-      subtitle: activeView === "week" || activeView === "day" ? `${text(week.label, "This Week")}  •  ${text(week.seasonLabel, "")}` : activeView === "month" ? text(planner.month?.label, "Month Calendar") : "Plan lessons, meals, appointments, chores, and the household rhythm in one place.",
-      ornament: true
-    },
-    activeView,
-    plannerTabs: ["day", "week", "month", "term", "year"].map((view) => ({
-      id: view,
-      label: view.charAt(0).toUpperCase() + view.slice(1),
-      active: activeView === view,
-      href: `/myagapay/learn/planner?view=${view}${view === "month" ? `&month=${encodeURIComponent(monthKey)}` : ""}${view !== "year" ? `&term=${activeTerm}&termId=${encodeURIComponent(activeTermId)}` : ""}`
-    })),
-    termTabs: (termOptions.length ? termOptions : [1, 2, 3, 4].map((term) => ({ id: `term_${term}`, label: term === 4 ? "Term 4 / Summer" : `Term ${term}` }))).map((term, index) => ({
-      id: term.id || index + 1,
-      label: text(term.label, `Term ${index + 1}`),
-      active: index === activeTermIndex,
-      href: `/myagapay/learn/planner?view=${encodeURIComponent(activeView)}&term=${index + 1}&termId=${encodeURIComponent(term.id || "")}${activeView === "month" ? `&month=${encodeURIComponent(monthKey)}` : ""}`
-    })),
-    week: {
-      label: text(week.label, "This Week"),
-      seasonLabel: text(week.seasonLabel, ""),
-      termWeekNumber: Number(week.termWeekNumber || 0),
-      totalTermWeeks: Number(planner.term?.weeksCount || planner.schoolYear?.terms?.find?.((t) => t.id === (planner.term?.id || ""))?.weeksCount || 12),
-      weekStartDate: text(safeArray(week.dates)[0], ""),
-      weekEndDate: text(safeArray(week.dates)[6] || safeArray(week.dates)[safeArray(week.dates).length - 1], ""),
-      days,
-      householdRows: rawHouseholdRows.map((row, index) => ({
-        id: text(row.id, `household-${index}`),
-        title: text(row.title, "Household block"),
-        sub: text(row.subtitle || row.detail, ""),
-        minutes: safeArray(row.minutes),
-        statuses: safeArray(row.statuses),
-        color: text(row.color, ACCENTS[index % ACCENTS.length]),
-        graceModeApplied: Boolean(row.graceModeApplied)
-      })),
-      childRows: rawChildRows.map((row, index) => ({
-        childName: childName(row.child, index),
-        childId: text(row.childId || row.child?.id, ""),
-        initial: childInitial(row.child, index),
-        color: text(row.color || row.child?.color, ACCENTS[index % ACCENTS.length]),
-        blocks: safeArray(row.blocks || row.assignments).map((block) => ({
-          title: text(block.title, "Lesson"),
-          sub: text(block.subtitle, ""),
-          minutes: block.minutesPlanned || block.minutes || ""
-        })),
-        title: text(row.title, "Lesson"),
-        sub: text(row.detail || row.subtitle, ""),
-        minutes: safeArray(row.minutes),
-        statuses: safeArray(row.statuses),
-        graceModeApplied: Boolean(row.graceModeApplied)
-      })),
-      weeklyAssignmentItems: currentWeekItems,
-      formRows: groupRowsByForm(rawChildRows)
-    },
-    day: {
-      selected: selectedDay,
-      selectedIndex: selectedDayIndex,
-      householdBlocks: safeArray(week.householdRows).map((row) => ({
-        title: text(row.title, "Household block"),
-        sub: text(row.detail || row.subtitle, ""),
-        minutes: selectedDay?.isSunday ? 0 : Number(safeArray(row.minutes)[selectedDayIndex] || 0),
-        status: selectedDay?.isSunday ? "rest" : text(safeArray(row.statuses)[selectedDayIndex], ""),
-        graceModeApplied: Boolean(row.graceModeApplied)
-      })).filter((row) => row.minutes > 0 || row.status === "rest"),
-      childBlocks: rawChildRows.map((row, index) => ({
-        childName: childName(row.child, index),
-        initial: childInitial(row.child, index),
-        color: text(row.color || row.child?.color, ACCENTS[index % ACCENTS.length]),
-        title: text(row.title, "Lesson"),
-        sub: text(row.detail || row.subtitle, ""),
-        minutes: selectedDay?.isSunday ? 0 : Number(safeArray(row.minutes)[selectedDayIndex] || 0),
-        status: selectedDay?.isSunday ? "rest" : text(safeArray(row.statuses)[selectedDayIndex], ""),
-        graceModeApplied: Boolean(row.graceModeApplied)
-      })).filter((row) => row.minutes > 0 || row.status === "rest"),
-      formBlocks: selectedDay?.isSunday ? [] : groupRowsByForm(rawChildRows, selectedDayIndex)
-    },
-    month: {
-      key: monthKey,
-      label: text(planner.month?.label, "Month Calendar"),
-      printableTitle: text(planner.month?.printableTitle, "Household Month Calendar"),
-      weekdays: safeArray(planner.month?.weekdays).length ? safeArray(planner.month?.weekdays) : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-      fastDays: Number(planner.month?.fastDays || 0),
-      feastDays: Number(planner.month?.feastDays || 0),
-      days: safeArray(planner.month?.days).map((day) => ({
-        date: text(day.civilDate, ""),
-        dayNumber: text(day.dayNumber, ""),
-        weekday: text(day.weekdayLabel, ""),
-        inMonth: Boolean(day.inMonth),
-        isToday: Boolean(day.isToday),
-        isSunday: Boolean(day.isSunday),
-        isFastDay: Boolean(day.isFastDay),
-        feast: text(day.feastTitle, ""),
-        feastRank: text(day.feastRank, ""),
-        fasting: text(day.fastingRule, ""),
-        fastingType: text(day.fastingType, ""),
-        oldStyleDateLabel: text(day.oldStyleDateLabel, ""),
-        nameDays: safeArray(day.nameDays),
-        events: safeArray(day.events),
-        meal: day.meal || null,
-        fastingPreference: text(day.fastingPreference, "guidance"),
-        householdPlan: safeArray(day.householdPlan).map((item) => ({
-          title: text(item.title, ""),
-          minutes: Number(item.minutes || 0)
-        })),
-        formPlan: safeArray(day.formPlan).map((item) => ({
-          title: text(item.title, ""),
-          formLabel: text(item.formLabel, ""),
-          minutes: Number(item.minutes || 0)
-        }))
-      }))
-    },
-    familyPlanning: {
-      fastingPreference: text(planner.familyPlanning?.fastingPreference, "guidance"),
-      recipes: safeArray(planner.familyPlanning?.recipes || week.recipes),
-      groceryItems: safeArray(planner.familyPlanning?.groceryItems || week.groceryItems),
-      events: safeArray(planner.familyPlanning?.events),
-      meals: safeArray(planner.familyPlanning?.meals),
-      chores: safeArray(planner.familyPlanning?.chores),
-      weekStart: text(planner.familyPlanning?.weekStart, ""),
-      household: {
-        motherName: text(planner.household?.motherName, ""),
-        motherNameDay: text(planner.household?.motherNameDay, ""),
-        fatherName: text(planner.household?.fatherName, ""),
-        fatherNameDay: text(planner.household?.fatherNameDay, ""),
-        parishPatronalFeastName: text(planner.household?.parishPatronalFeastName, ""),
-        parishPatronalFeastDate: text(planner.household?.parishPatronalFeastDate, "")
-      },
-      children: safeArray(planner.children).map((child, index) => ({
-        id: text(child.id, ""),
-        name: childName(child, index),
-        nameDay: text(child.nameDay, ""),
-        color: text(child.color, ACCENTS[index % ACCENTS.length]),
-        initial: childInitial(child, index),
-        formLabel: text(child.formLabel || child.form || "", ""),
-        gradeLabel: text(child.gradeLabel || child.grade || "", "")
-      }))
-    },
-    term: {
-      activeTerm,
-      activeTermId,
-      label: text(planner.term?.label, `Term ${activeTerm}`),
-      dateRange: [text(planner.term?.startDate, ""), text(planner.term?.endDate, "")].filter(Boolean).join(" - "),
-      description: text(planner.term?.description, ""),
-      paceMode: text(planner.term?.paceMode, ""),
-      settings: planner.curriculum?.mappingSummary || [],
-      cycleTitle: text(planner.cycle?.year?.title, "Household Cycle"),
-      cycleSummary: text(planner.cycle?.framework?.summary, ""),
-      setupCards: simpleList(planner.termSetup?.setupCards, (card) => ({
-        title: text(card.title, "Setup"),
-        value: text(card.value, ""),
-        detail: text(card.detail, "")
-      })).map((card, index) => ({ ...card, color: ACCENTS[index % ACCENTS.length] })),
-      pacingRows: simpleList(planner.termSetup?.pacingRows, (row, rowIndex) => ({
-        label: text(row.label, "Pacing"),
-        subtitle: text(row.subtitle, ""),
-        color: text(row.color, ACCENTS[rowIndex % ACCENTS.length]),
-        segments: simpleList(row.segments, (segment, segmentIndex) => ({
-          title: text(segment.title, ""),
-          start: Number(segment.start || 1),
-          span: Number(segment.span || 1),
-          color: text(segment.color, ACCENTS[(rowIndex + segmentIndex) % ACCENTS.length])
-        }))
-      })),
-      graceReserve: simpleList(planner.termSetup?.graceReserve, (item, index) => ({
-        title: text(item.title, "Reserved work"),
-        note: text(item.note, ""),
-        color: text(item.color, ACCENTS[index % ACCENTS.length])
-      })),
-      summary: planner.termSetup?.termSummary || {},
-      householdSummary: safeArray(planner.termSetup?.householdSummary).map((item) => text(item)),
-      childTracks: safeArray(planner.children).map((child, index) => ({
-        name: childName(child, index),
-        age: text(child.ageYears, ""),
-        initial: childInitial(child, index),
-        color: text(child.color, ACCENTS[index % ACCENTS.length]),
-        tracks: safeArray(childTrackById.get(child.id)).map((item) => text(item))
-      })),
-      graceMode: planner.graceMode || null
-    },
-    year: {
-      schoolYear: text(planner.schoolYear?.label, "School Year"),
-      dateRange: [text(planner.schoolYear?.startDate, ""), text(planner.schoolYear?.endDate, "")].filter(Boolean).join(" - "),
-      cycleTitle: text(planner.cycle?.framework?.title, "Cycle Planning"),
-      cycleYear: text(planner.cycle?.year?.title, ""),
-      frameworks: simpleList(planner.cycle?.visibleFrameworks, (framework) => ({
-        type: text(framework.type, ""),
-        label: text(framework.label, "")
-      })),
-      topics: simpleList(planner.cycle?.topics, (topic) => ({
-        type: text(topic.subjectType, ""),
-        title: text(topic.title, ""),
-        season: text(topic.seasonLabel, "")
-      })),
-      terms: (termOptions.length ? termOptions : [{ label: "Term 1" }, { label: "Term 2" }, { label: "Term 3" }]).map((term, index) => ({
-        label: text(term.label, `Term ${index + 1}`),
-        active: index === activeTermIndex
-      })),
-      upcomingFeasts: simpleList(planner.upcomingFeasts, (feast) => ({
-        date: text(feast.civilDate, ""),
-        title: text(feast.title, ""),
-        fasting: text(feast.fastingRule, "")
-      })),
-      curriculumPackages: simpleList(planner.curriculum?.packages, (pkg) => ({
-        title: text(pkg.title, "Curriculum Package"),
-        vendor: text(pkg.vendor, ""),
-        summary: text(pkg.summary, "")
-      }))
-    }
-  };
-}
-
-export function toFormationViewModel(rawPayload) {
-  const formation = rawPayload?.formation || {};
-  const today = formation.today || {};
-  const liturgicalDay = today.liturgicalDay || {};
-  const catechesis = formation.catechesisCycle || {};
-  const enrichmentBlocks = simpleList(formation.enrichmentBlocks, (block) => ({
-    title: text(block.title, "Enrichment"),
-    type: text(block.blockType, ""),
-    minutes: block.minutesPlanned ? `${block.minutesPlanned}m` : "",
-    frequency: text(block.weeklyFrequency || block.cadenceLabel, "")
-  }));
-  const enrichmentByType = (pattern) => enrichmentBlocks.filter((block) => pattern.test(block.type));
-  const mappedMemory = enrichmentByType(/recitation|memory/i);
-  const mappedHymns = enrichmentByType(/hymn/i);
-  const mappedFeasts = enrichmentByType(/saints?|feasts?/i);
-  const coreEnrichment = enrichmentBlocks.filter((block) => !/(recitation|memory|hymn|saints?|feasts?)/i.test(block.type));
-  return {
-    shell: shellFromPayload("formation", rawPayload),
-    page: page("formation", "Formation", "Church-first learning for hearts and minds."),
-    today: {
-      title: text(liturgicalDay.feastTitle || today.title, "Today in the Church"),
-      date: text(today.dateLabel, ""),
-      fasting: text(liturgicalDay.fastingRule, ""),
-      readings: [text(liturgicalDay.epistleRef, ""), text(liturgicalDay.gospelRef, "")].filter(Boolean).join("; "),
-      readingTasks: [
-        { id: "epistle", label: "Epistle", ref: text(liturgicalDay.epistleRef, "") },
-        { id: "gospel", label: "Gospel", ref: text(liturgicalDay.gospelRef, "") }
-      ].filter((item) => item.ref),
-      saint: text(safeArray(liturgicalDay.saints)[0], ""),
-      troparion: text(liturgicalDay.troparionText, "")
-    },
-    rhythms: simpleList(formation.churchRhythms || today.churchRhythms, (item) => ({
-      title: text(item.title, "Rhythm"),
-      note: text(item.note, ""),
-      complete: item.status === "completed"
-    })),
-    catechesis: {
-      title: text(catechesis.title, "Catechesis"),
-      currentLesson: text(catechesis.currentLesson, "Add catechesis in Setup"),
-      progress: catechesis.lessonNumber && catechesis.totalLessons ? `Lesson ${catechesis.lessonNumber} of ${catechesis.totalLessons}` : "",
-      topic: text(catechesis.doctrinalTopic, "")
-    },
-    recitation: [
-      ...simpleList(formation.recitationTracks, (track) => ({
-      title: text(track.title, "Memory Work"),
-      status: text(track.status, ""),
-      progress: percent(track.progressPercent)
-      })),
-      ...mappedMemory.map((item) => ({
-        title: item.title,
-        status: item.frequency || item.type,
-        progress: 0
-      }))
-    ],
-    hymns: [
-      ...simpleList(formation.hymnStudies, (hymn) => ({
-      title: text(hymn.title, "Hymn"),
-      tone: text(hymn.tone, ""),
-      source: text(hymn.source, "")
-      })),
-      ...mappedHymns.map((item) => ({
-        title: item.title,
-        tone: item.frequency || item.type,
-        source: item.minutes
-      }))
-    ],
-    enrichment: coreEnrichment.map((block) => ({
-      title: block.title,
-      type: block.type,
-      minutes: block.minutes
-    })),
-    feasts: [
-      ...mappedFeasts.map((item) => ({
-        title: item.title,
-        date: item.frequency || "Household focus",
-        fasting: item.minutes
-      })),
-      ...simpleList(formation.upcomingFeasts, (feast) => ({
-      title: text(feast.title, "Feast"),
-      date: text(feast.civilDate, ""),
-      fasting: text(feast.fastingRule, "")
-      }))
-    ].slice(0, 2),
-    nature: simpleList(formation.natureJournalEntries, (entry) => ({
-      title: text(entry.title, "Nature Journal"),
-      location: text(entry.location, ""),
-      notes: text(entry.notes, "")
-    }))
-  };
-}
-
-export function toBooksViewModel(rawPayload) {
-  const books = rawPayload?.books || {};
-  return {
-    shell: shellFromPayload("books", rawPayload),
-    page: page("books", "Books", "Living books for the mind, the heart, and the soul."),
-    readAlouds: simpleList(books.currentReadAlouds, (book) => ({
-      title: text(book.title, "Untitled Book"),
-      author: text(book.author, ""),
-      assignment: text(book.assignmentLabel || book.assignedTerm || book.assignment || book.audienceLabel, ""),
-      progress: percent(book.progressPercent),
-      stream: text(book.streamLabel || book.audienceLabel, ""),
-      list: text(book.listLabel, "")
-    })),
-    library: simpleList(books.libraryBooks, (book) => ({
-      title: text(book.title, "Untitled Book"),
-      author: text(book.author, ""),
-      category: text(book.category, ""),
-      ages: text(book.ageRange || book.ages, ""),
-      orthodox: Boolean(book.orthodox),
-      assignment: text(book.assignmentLabel || book.assignment || book.audienceLabel || book.formLabel, ""),
-      progress: percent(book.progressPercent)
-    })),
-    suggestions: simpleList(books.orthodoxSuggestions, (item, index) => ({
-      title: text(item.title, "Suggestion"),
-      subtitle: text(item.subtitle, ""),
-      color: ACCENTS[index % ACCENTS.length]
-    })),
-    pacing: {
-      title: text(books.bookPacing?.title, "Select a book to pace"),
-      subtitle: text(books.bookPacing?.subtitle, ""),
-      chaptersPerWeek: text(books.bookPacing?.chaptersPerWeek, ""),
-      weeks: simpleList(books.bookPacing?.weeks, (week) => ({
-        week: text(week.week, ""),
-        chapters: text(week.chapters, ""),
-        pages: text(week.pages, "")
-      }))
-    },
-    copywork: simpleList(books.copyworkSources, (source) => ({
-      title: text(source.title, "Copywork Source"),
-      detail: text(source.detail, "")
-    }))
-  };
-}
-
-export function toReportsViewModel(rawPayload) {
-  const reports = rawPayload?.reports || {};
-  const summary = reports.weeklySummary || {};
-  const shell = shellFromPayload("reports", rawPayload);
-  return {
-    shell,
-    page: page("reports", "Reports & Progress", "Review progress, track growth, and generate records for your homeschool."),
-    stats: [
-      { label: "Lessons Completed", value: `${summary.lessonsCompleted || 0} / ${summary.lessonsPlanned || 0}`, sub: `${summary.lessonsCompletionPercent || 0}%`, color: ACCENTS[0] },
-      { label: "Narrations Logged", value: text(summary.narrationsLogged, "0"), sub: "This Week", color: ACCENTS[1] },
-      { label: "Read-Aloud Progress", value: `${percent(summary.readAloudProgressPercent)}%`, sub: text(summary.readAloudTitle, ""), color: ACCENTS[3] },
-      { label: "Feast Days Ahead", value: text(summary.feastDaysAhead, "0"), sub: text(summary.nextFeastLabel, ""), color: ACCENTS[2] }
-    ],
-    children: simpleList(reports.children, (child, index) => {
-      const card = safeArray(reports.reportCards).find((item) => item.childId === child.id) || {};
-      const records = safeArray(card.records);
-      const completed = records.reduce((total, record) => total + (Number(record.completed) || 0), 0);
-      const planned = records.reduce((total, record) => total + (Number(record.total) || 0), 0);
-      const completionPercent = planned ? Math.round((completed / planned) * 100) : percent(card.readAloudProgressPercent || summary.lessonsCompletionPercent);
-      return {
-        id: text(child.id, ""),
-        name: childName(child, index),
-        grade: text(child.gradeLabel, ""),
-        age: text(child.ageYears, ""),
-        initial: childInitial(child, index),
-        color: ACCENTS[index % ACCENTS.length],
-        status: text(card.status, "in progress"),
-        summary: text(card.summary, "No report notes yet."),
-        lessons: {
-          done: completed || Number(summary.lessonsCompleted || 0),
-          total: planned || Number(summary.lessonsPlanned || 0),
-          percent: completionPercent
-        },
-        readAloud: {
-          percent: percent(card.readAloudProgressPercent || summary.readAloudProgressPercent)
-        }
-      };
-    }),
-    subjectProgress: simpleList(reports.subjectProgress, (row, index) => ({
-      id: text(row.id, `progress-${index}`),
-      childId: text(row.childId, ""),
-      childName: text(row.childName, "Household"),
-      formLabel: text(row.formLabel, "Household"),
-      kind: text(row.kind, "subject"),
-      subjectTitle: text(row.subjectTitle, "Subject"),
-      subjectType: text(row.subjectType, ""),
-      source: text(row.source, ""),
-      progressionType: text(row.progressionType, "lessons"),
-      start: text(row.start, ""),
-      current: text(row.current, ""),
-      end: text(row.end, ""),
-      completed: Number(row.completed || 0),
-      total: Number(row.total || 0),
-      percent: percent(row.percent),
-      status: text(row.status, "planned"),
-      color: ACCENTS[index % ACCENTS.length]
-    })),
-    narrations: simpleList(reports.narrationLogs, (log) => ({
-      date: text(log.loggedAt, "").slice(0, 10),
-      child: childName(log.child, 0),
-      source: text(log.sourceTitle, ""),
-      type: text(log.narrationType, ""),
-      note: text(log.note, "")
-    })),
-    exports: simpleList(reports.reportExports, (item) => ({
-      title: text(item.exportType, "Export").replaceAll("-", " "),
-      format: text(item.format, "").toUpperCase(),
-      status: text(item.status, "")
-    })),
-    pdf: {
-      title: "Year-End Report",
-      familyName: shell.familyName,
-      schoolYear: text(reports.schoolYear?.label, ""),
-      summary: [
-        `Lessons completed: ${summary.lessonsCompleted || 0} / ${summary.lessonsPlanned || 0}`,
-        `Narrations logged: ${summary.narrationsLogged || 0}`,
-        `Read-aloud progress: ${percent(summary.readAloudProgressPercent)}%`,
-        `Feast days ahead: ${summary.feastDaysAhead || 0}`,
-        `Tracked subject rows: ${safeArray(reports.subjectProgress).length}`
-      ]
-    }
-  };
-}
-
-export function toGradesViewModel(rawPayload, context = {}) {
-  const grades = rawPayload?.grades || {};
-  const shell = shellFromPayload("grades", { grades });
-  const children = simpleList(grades.children, (child, index) => ({
-    id: text(child.id, ""),
-    name: text(child.name || child.firstName, `Child ${index + 1}`),
-    firstName: text(child.firstName || child.name, `Child ${index + 1}`),
-    gradeLabel: text(child.gradeLabel, ""),
-    gradeLevel: Number(child.gradeLevel || 9),
-    initial: childInitial(child, index),
-    color: ACCENTS[index % ACCENTS.length]
-  }));
-  const selectedChildId = text(context.childId || grades.selectedChildId, children[0]?.id || "");
-  const selectedChild = children.find((child) => child.id === selectedChildId) || children[0] || {};
-  const courses = simpleList(grades.courses, (course, index) => ({
-    id: text(course.id, ""),
-    childId: text(course.childId || course.child_id, ""),
-    courseTitle: text(course.courseTitle || course.course_title, "Course"),
-    subjectCategory: text(course.subjectCategory || course.subject_category, "General"),
-    gradeLevel: Number(course.gradeLevel ?? course.grade_level ?? selectedChild.gradeLevel ?? 9),
-    creditHours: Number(course.creditHours ?? course.credit_hours ?? 1),
-    color: ACCENTS[index % ACCENTS.length],
-    grades: [1, 2, 3].map((termIndex) => {
-      const grade = safeArray(course.grades).find((entry) => Number(entry.termIndex ?? entry.term_index) === termIndex) || {};
-      return {
-        id: text(grade.id, ""),
-        termIndex,
-        numericScore: grade.numericScore ?? grade.numeric_score ?? "",
-        letterGrade: text(grade.letterGrade || grade.letter_grade, ""),
-        attendanceDays: grade.attendanceDays ?? grade.attendance_days ?? "",
-        teacherNotes: text(grade.teacherNotes || grade.teacher_notes, "")
-      };
-    })
-  }));
-  const childCourses = courses.filter((course) => !selectedChildId || course.childId === selectedChildId);
-  const gpaPoints = { "A+": 4, A: 4, "A-": 3.7, "B+": 3.3, B: 3, "B-": 2.7, "C+": 2.3, C: 2, "C-": 1.7, "D+": 1.3, D: 1, "D-": .7, F: 0 };
-  const finalRows = childCourses.map((course) => ({
-    credits: Number(course.creditHours || 0),
-    grade: [...course.grades].reverse().find((grade) => grade.letterGrade)?.letterGrade || ""
-  }));
-  const earnedCredits = finalRows.reduce((sum, row) => row.grade ? sum + row.credits : sum, 0);
-  const gpaCredits = finalRows.reduce((sum, row) => Object.hasOwn(gpaPoints, row.grade) && row.credits > 0 ? sum + row.credits : sum, 0);
-  const weightedGpa = finalRows.reduce((sum, row) => Object.hasOwn(gpaPoints, row.grade) && row.credits > 0 ? sum + (gpaPoints[row.grade] * row.credits) : sum, 0);
-  const summary = grades.summary || {};
-  const attendanceEntries = simpleList(grades.attendance?.entries, (entry) => ({
-    id: text(entry.id, ""),
-    childId: text(entry.childId || entry.child_id, ""),
-    date: text(entry.date || entry.attendanceDate || entry.attendance_date, ""),
-    status: text(entry.status, "present"),
-    minutes: Number(entry.minutes || 0),
-    notes: text(entry.notes, "")
-  }));
-  const attendanceByChild = grades.attendance?.summary?.byChild || [];
-  const attendanceSummaryForChild = (childId) => attendanceByChild.find((row) => row.childId === childId) || {
-    childId,
-    present: attendanceEntries.filter((entry) => entry.childId === childId && entry.status === "present").length,
-    absent: attendanceEntries.filter((entry) => entry.childId === childId && entry.status === "absent").length,
-    excused: attendanceEntries.filter((entry) => entry.childId === childId && entry.status === "excused").length,
-    holiday: attendanceEntries.filter((entry) => entry.childId === childId && entry.status === "holiday").length,
-    instructionalDays: attendanceEntries.filter((entry) => entry.childId === childId && ["present", "excused"].includes(entry.status)).length
-  };
-  return {
-    shell,
-    page: page("grades", "Grades & Attendance", "Record term grades, credits, attendance days, and narrative notes for report cards and transcripts."),
+  const nextPayload = current ? {
     household: {
-      name: text(grades.household?.name || shell.familyName, "Your Household")
+      ...current.household,
+      graceModeActive: nextPreferences.graceModeActive
     },
-    academicYear: {
-      id: text(grades.academicYear?.id, ""),
-      name: text(grades.academicYear?.name, "")
-    },
-    children,
-    selectedChildId,
-    selectedChild,
-    courses,
-    childCourses,
-    summary: {
-      totalCredits: earnedCredits.toFixed(1),
-      cumulativeGpa: gpaCredits ? (weightedGpa / gpaCredits).toFixed(2) : "0.00",
-      missingGrades: childCourses.reduce((sum, course) => sum + course.grades.filter((grade) => !grade.letterGrade).length, 0),
-      courseCount: childCourses.length || Number(summary.courseCount || 0),
-      attendanceDays: attendanceSummaryForChild(selectedChildId).instructionalDays || 0
-    },
-    attendance: {
-      entries: attendanceEntries,
-      weekDates: safeArray(grades.attendance?.weekDates),
-      statuses: safeArray(grades.attendance?.statuses).length ? grades.attendance.statuses : ["present", "absent", "excused", "holiday"],
-      summary: {
-        totalPresent: Number(grades.attendance?.summary?.totalPresent || 0),
-        totalAbsent: Number(grades.attendance?.summary?.totalAbsent || 0),
-        totalExcused: Number(grades.attendance?.summary?.totalExcused || 0),
-        instructionalDays: Number(grades.attendance?.summary?.instructionalDays || 0),
-        byChild: children.map((child) => attendanceSummaryForChild(child.id))
-      }
-    },
-    subjectCategories: ["English", "Math", "Science", "History", "Theology/Formation", "World Language", "Fine Arts", "Elective"],
-    letterGrades: ["", "A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"]
-  };
-}
-
-export function toCommunityViewModel(rawPayload) {
-  const community = rawPayload?.community || {};
-  return {
-    shell: shellFromPayload("community", rawPayload),
-    page: page("community", "Community Resources", "Trusted tools and encouragement for Orthodox homeschool families."),
-    comingSoon: Boolean(community.comingSoon),
-    title: text(community.title, "Community is coming soon"),
-    subtitle: text(community.subtitle, "A curated resource exchange is planned after the core Learn workflow is settled."),
-    detail: text(community.detail, ""),
-    facebookGroupUrl: text(community.facebookGroupUrl, ""),
-    resources: simpleList(community.communityResources, (resource) => ({
-      id: text(resource.id, ""),
-      source: text(resource.source, "curated"),
-      title: text(resource.title, "Resource"),
-      category: text(resource.category, ""),
-      resourceType: text(resource.resourceType, "Resource"),
-      mediaType: text(resource.mediaType, "Mixed Media"),
-      ageRange: text(resource.ageRange, "Family"),
-      subtitle: text(resource.subtitle, ""),
-      desc: text(resource.description || resource.subtitle, ""),
-      url: text(resource.url, "#"),
-      sharedBy: text(resource.sharedBy, ""),
-      poster: text(resource.sharedBy, "AGAPAY Community"),
-      posterInitial: text(resource.sharedBy, "A").charAt(0).toUpperCase(),
-      tags: safeArray(resource.tags).length ? safeArray(resource.tags).map((tag) => text(tag)) : [text(resource.category, "Resource"), "Orthodox", "Homeschool"].filter(Boolean),
-      votes: Number(resource.votes || 0),
-      pinned: Boolean(resource.pinned || resource.vetted),
-      vetted: Boolean(resource.vetted),
-      flagCount: safeArray(resource.flags).length
-    })).map((resource, index) => {
-      const style = resourceTypeStyle(resource.resourceType);
-      return {
-        ...resource,
-        color: style.color,
-        icon: style.icon,
-        posterColor: ACCENTS[(index + 1) % ACCENTS.length]
-      };
-    }),
-    categories: ["All", ...new Set(simpleList(community.communityResources, (resource) => text(resource.category, "")).filter(Boolean))],
-    resourceTypes: ["All", ...new Set(simpleList(community.communityResources, (resource) => text(resource.resourceType, "")).filter(Boolean))],
-    mediaTypes: ["All", ...new Set(simpleList(community.communityResources, (resource) => text(resource.mediaType, "")).filter(Boolean))],
-    calendar: {
-      connected: Boolean(community.googleCalendarSync?.connected),
-      account: text(community.googleCalendarSync?.accountLabel, "No account connected"),
-      calendar: text(community.googleCalendarSync?.calendarLabel, ""),
-      scope: text(community.googleCalendarSync?.syncScopeLabel, ""),
-      next: text(community.googleCalendarSync?.nextSyncLabel, "")
-    },
-    history: {
-      label: text(community.thisDayInHistory?.label, "This Day in History"),
-      title: text(community.thisDayInHistory?.title, ""),
-      year: text(community.thisDayInHistory?.year, ""),
-      summary: text(community.thisDayInHistory?.summary, ""),
-      source: text(community.thisDayInHistory?.sourceLabel, "")
-    },
-    guidance: safeArray(community.sharingGuidance).map((item) => text(item))
-  };
-}
-
-export function toCoOpViewModel(rawPayload) {
-  const coOpPayload = rawPayload?.coOp || {};
-  return {
-    shell: shellFromPayload("co-op", { "co-op": coOpPayload }),
-    page: page("co-op", "Co-op", "Coming Soon"),
-    enabled: false,
-    hero: {
-      name: "Co-op tools are coming soon",
-      city: "",
-      affiliation: "Future Learn add-on",
-      cycle: "Deferred for launch",
-      memberFamilies: 0,
-      children: 0,
-      meeting: "Not available yet"
-    },
-    schedule: [],
-    announcements: [],
-    readAlouds: [],
-    resources: [],
-    members: []
-  };
-}
-
-export function toSetupViewModel(rawPayload, clientState = {}) {
-  const setup = rawPayload?.onboarding || {};
-  const setupCompleted = Boolean(setup.setupCompleted || setup.setupSnapshot);
-  const snapshot = setup.setupSnapshot || {};
-  const onboarding = setup.onboarding || {};
-  const preferences = setup.preferences || snapshot.preferences || onboarding.preferences || {};
-  const household = setupCompleted ? setup.household || snapshot.household || {} : {};
-  const schoolYear = setupCompleted ? setup.schoolYear || snapshot.schoolYear || {} : {};
-  const term = setupCompleted ? setup.term || snapshot.term || {} : {};
-  const termsSource = safeArray(snapshot.terms).length ? snapshot.terms : safeArray(setup.terms);
-  const starterTerms = [
-    term,
-    { id: "term_2", label: "Term 2", startDate: "", endDate: "", weeksCount: 12, paceMode: preferences.paceMode || term.paceMode || "steady" },
-    { id: "term_3", label: "Term 3", startDate: "", endDate: "", weeksCount: 12, paceMode: preferences.paceMode || term.paceMode || "steady" },
-    { id: "term_4", label: "Term 4 / Summer", startDate: "", endDate: "", weeksCount: 12, paceMode: preferences.paceMode || term.paceMode || "steady" }
-  ];
-  // Only seed four terms for a brand-new household. Once setup has been saved,
-  // preserve the exact saved term list so intentionally removed terms stay removed.
-  const baseSetupTerms = termsSource.length
-    ? [...termsSource]
-    : setupCompleted
-      ? [term].filter((entry) => entry && (entry.id || entry.label))
-      : starterTerms;
-  const setupTerms = baseSetupTerms.map((entry, index) => ({
-    id: text(entry.id, `term_${index + 1}`),
-    label: text(entry.label, `Term ${index + 1}`),
-    startDate: text(entry.startDate, ""),
-    endDate: text(entry.endDate, ""),
-    weeksCount: Math.max(1, Math.min(24, Number(entry.weeksCount || 12))),
-    paceMode: text(entry.paceMode, preferences.paceMode || term.paceMode || "steady")
-  }));
-  const currentTermId = text(schoolYear.currentTermId || term.id || setupTerms[0]?.id, "term_1");
-  const householdMethod = text(household.primaryMethod, "Charlotte Mason");
-  const childrenSource = setupCompleted ? (safeArray(setup.children).length ? setup.children : snapshot.children) : [];
-  const groupingMode = text(preferences.groupingMode, childrenSource.some((child) => text(child.formLabel, "")) || householdMethod === "Charlotte Mason" ? "forms" : "grades") === "grades" ? "grades" : "forms";
-  const streamsSource = setupCompleted ? (safeArray(setup.starterStreams).length ? setup.starterStreams : safeArray(setup.householdStreams).length ? setup.householdStreams : snapshot.streams) : [];
-  const subjectsSource = setupCompleted ? (safeArray(snapshot.subjects).length ? snapshot.subjects : setup.subjects) : [];
-  const booksSource = setupCompleted ? (safeArray(snapshot.books).length ? snapshot.books : setup.books) : [];
-  const formation = setupCompleted ? setup.formation || snapshot.formation || {} : {};
-  const setupTiles = snapshot.setupTiles || setup.setupTiles || {};
-  const familyPlanning = snapshot.familyPlanning || setup.familyPlanning || {};
-  const formationMaterialsSource = safeArray(snapshot.formationMaterials).length ? snapshot.formationMaterials : setup.formationMaterials;
-  const materialDefaults = simpleList(formationMaterialsSource, (material, index) => ({
-    id: text(material.id, ""),
-    title: text(material.title, "Formation Material"),
-    materialType: text(material.materialType || material.resourceType, "Catechesis"),
-    source: text(material.source || material.author, ""),
-    cadence: text(material.cadenceLabel || material.cadence, ""),
-    planningMode: text(material.planningMode, "family"),
-    scheduledWeeks: safeArray(material.scheduledWeeks),
-    weeklyFrequency: weeklyFrequencyValue(material.weeklyFrequency || material.cadenceLabel || material.cadence, "1x"),
-    minutes: text(material.minutes, ""),
-    termId: text(material.termId || material.assignedTermId, currentTermId),
-    color: text(material.color, ACCENTS[(index + 3) % ACCENTS.length])
-  }));
-  const defaultFormationMaterials = materialDefaults.length ? materialDefaults : [
-    { id: "formation_catechesis", title: "Catechesis", materialType: "Catechesis", source: "", cadence: "Weekly", color: ACCENTS[0] },
-    { id: "formation_art", title: "Art Study", materialType: "Art Study", source: "", cadence: "Weekly", color: ACCENTS[2] },
-    { id: "formation_poetry", title: "Poetry", materialType: "Poetry", source: "", cadence: "Weekly", color: ACCENTS[3] },
-    { id: "formation_music", title: "Music Study", materialType: "Music Study", source: "", cadence: "Weekly", color: ACCENTS[4] }
-  ];
-  const derivedEnrichment = defaultFormationMaterials
-    .filter((material) => material.materialType !== "Catechesis")
-    .map((material) => ({
-      id: material.id,
-    blockType: material.materialType,
-    title: material.title,
-    cadenceLabel: material.cadence,
-    planningMode: material.planningMode || "family",
-    scheduledWeeks: safeArray(material.scheduledWeeks),
-    weeklyFrequency: weeklyFrequencyValue(material.weeklyFrequency || material.cadence, "1x"),
-    minutesPlanned: "",
-    color: material.color
-    }));
-  const setupV2Steps = [
-    {
-      title: "Household",
-      status: household.name && schoolYear.label ? "complete" : "active",
-      summary: "Name, parish, method, school year, terms, and calendar."
-    },
-    {
-      title: "Children & Forms",
-      status: safeArray(childrenSource).length ? "complete" : "needed",
-      summary: "Assign each child to the Form used by Planner and Print."
-    },
-    {
-      title: "Church Rhythm",
-      status: safeArray(formation.churchRhythms).length ? "complete" : "needed",
-      summary: "Prayer, readings, saints, feasts, hymnody, and fasting rhythm."
-    },
-    {
-      title: "Enrichment",
-      status: safeArray(formation.recitationTracks).length || safeArray(formation.enrichmentBlocks).length || defaultFormationMaterials.length ? "complete" : "needed",
-      summary: "Memory work, hymnody, saints, feasts, icons, art, poetry, music, and nature."
-    },
-    {
-      title: "Form Subjects",
-      status: safeArray(subjectsSource).length ? "complete" : "needed",
-      summary: "Language arts, literature, languages, history, geography, math, science, and progress ranges."
-    }
-  ];
-  return {
-    setupCompleted,
-    shell: shellFromPayload("onboarding", rawPayload),
-    page: page("onboarding", "Set Up", "Configure the household, calendar, terms, enrichment, subjects, and co-op."),
-    progress: {
-      current: onboarding.household?.currentStep || 1,
-      total: onboarding.household?.totalSteps || safeArray(onboarding.steps).length || 1,
-      next: text(onboarding.household?.nextStep, "")
-    },
+    schoolYear: current.schoolYear,
+    term: current.term,
+    terms: current.terms,
+    preferences: nextPreferences,
+    children: current.children,
+    streams: current.streams,
+    subjects: current.subjects,
+    books: current.books,
+    formation: current.formation,
+    formationMaterials: current.formationMaterials,
+    coOp: current.coOp
+  } : {
     household: {
-      name: text(household.name, ""),
-      parentName: text(household.parentNames?.[0] || household.parentName, ""),
-      motherName: text(household.motherName, ""),
-      motherNameDay: text(household.motherNameDay, ""),
-      fatherName: text(household.fatherName, ""),
-      fatherNameDay: text(household.fatherNameDay, ""),
-      parish: text(household.parishName, ""),
-      method: householdMethod,
-      schoolYear: text(schoolYear.label, ""),
-      calendarType: text(household.liturgicalCalendarType, "julian"),
-      paceMode: text(household.paceMode, "steady")
+      id: identity.householdId,
+      name: "Your Household",
+      graceModeActive: nextPreferences.graceModeActive
     },
-    children: simpleList(childrenSource, (child, index) => ({
-      id: text(child.id, ""),
-      name: childName(child, index),
-      firstName: text(child.firstName, childName(child, index)),
-      grade: text(child.gradeLabel, ""),
-      age: text(child.ageYears, ""),
-      nameDay: text(child.nameDay, ""),
-      form: text(child.formLabel || child.gradeLabel, childFormByAge(child.ageYears)),
-      formLabel: text(child.formLabel || child.gradeLabel, childFormByAge(child.ageYears)),
-      initial: childInitial(child, index),
-      color: text(child.color, ACCENTS[index % ACCENTS.length])
-    })),
-    schoolYear: {
-      id: text(schoolYear.id, ""),
-      label: text(schoolYear.label, ""),
-      startDate: text(schoolYear.startDate, ""),
-      endDate: text(schoolYear.endDate, ""),
-      currentTermId
-    },
-    term: {
-      id: text(term.id, ""),
-      label: text(term.label, ""),
-      startDate: text(term.startDate, ""),
-      endDate: text(term.endDate, ""),
-      paceMode: text(term.paceMode, preferences.paceMode || "steady")
-    },
-    terms: setupTerms,
-    setupTiles,
-    steps: setupV2Steps,
-    preferences: {
-      calendarType: text(clientState.calendar || preferences.calendarType, "julian"),
-      groupingMode,
-      evaluationModel: text(preferences.evaluationModel, "narrative-only"),
-      graceModeDefault: text(preferences.graceModeDefault, "light"),
-      graceModeActive: Boolean(preferences.graceModeActive),
-      paceMode: text(preferences.paceMode || term.paceMode, "steady"),
-      printPack: text(preferences.printPack, "")
-    },
-    streams: simpleList(streamsSource, (stream) => ({
-      id: text(stream.id, ""),
-      title: text(stream.title, "Stream"),
-      streamType: text(stream.streamType, ""),
-      type: text(stream.streamType, ""),
-      cadence: text(stream.cadenceLabel, ""),
-      dailyMinutes: stream.dailyMinutes || {
-        mon: text(stream.monMinutes, "20"),
-        tue: text(stream.tueMinutes, "20"),
-        wed: text(stream.wedMinutes, "20"),
-        thu: text(stream.thuMinutes, "20"),
-        fri: text(stream.friMinutes, "20")
-      }
-    })),
-    subjects: simpleList(subjectsSource, (subject, index) => ({
-      id: text(subject.id, ""),
-      title: text(subject.title, "Subject"),
-      subjectType: text(subject.subjectType || subject.type, ""),
-      planningMode: text(subject.planningMode, subject.childId ? "forms" : "forms"),
-      scheduledDays: safeArray(subject.scheduledDays),
-      scheduledWeeks: safeArray(subject.scheduledWeeks),
-      weeklyPlans: safeArray(subject.weeklyPlans),
-      weeklyFrequency: weeklyFrequencyValue(subject.weeklyFrequency || subject.cadenceLabel || subject.cadence, "daily"),
-      formLabel: text(subject.formLabel, ""),
-      gradeLabel: text(subject.gradeLabel, ""),
-      resource: text(subject.resource || safeArray(subject.resources)[0]?.title || subject.title, ""),
-      resources: safeArray(subject.resources).length
-        ? safeArray(subject.resources).map((resource) => typeof resource === "string"
-          ? { title: text(resource, ""), scheduledWeeks: [] }
-          : {
-            title: text(resource.title || resource.resource, ""),
-            scheduledWeeks: safeArray(resource.scheduledWeeks),
-            weeklyPlans: safeArray(resource.weeklyPlans),
-            planningMode: text(resource.planningMode, subject.planningMode || "forms"),
-            formLabel: text(resource.formLabel, subject.formLabel || ""),
-            formLabels: safeArray(resource.formLabels).length ? safeArray(resource.formLabels) : safeArray(subject.formLabels),
-            gradeLabel: text(resource.gradeLabel, subject.gradeLabel || ""),
-            childIds: safeArray(resource.childIds).length ? safeArray(resource.childIds) : safeArray(subject.childIds)
-          }).filter((resource) => resource.title)
-        : (subject.resource ? [{
-          title: text(subject.resource, ""),
-          scheduledWeeks: safeArray(subject.scheduledWeeks),
-          weeklyPlans: safeArray(subject.weeklyPlans),
-          planningMode: text(subject.planningMode, "forms"),
-          formLabel: text(subject.formLabel, ""),
-          formLabels: safeArray(subject.formLabels),
-          gradeLabel: text(subject.gradeLabel, ""),
-          childIds: safeArray(subject.childIds)
-        }] : []),
-      resourceType: text(subject.resourceType || subject.sourceType, subject.resource ? "curriculum" : "none"),
-      cadence: text(subject.cadenceLabel || subject.cadence, ""),
-      minutes: text(subject.minutes, ""),
-      childId: text(subject.childId, ""),
-      progressionType: text(subject.progressionType, "lessons"),
-      startNumber: text(subject.startNumber, ""),
-      currentNumber: text(subject.currentNumber || subject.completedThroughNumber, ""),
-      endNumber: text(subject.endNumber, ""),
-      credits: text(subject.credits, ""),
-      finalGradeOverride: text(subject.finalGradeOverride, ""),
-      termId: text(subject.termId || subject.assignedTermId, currentTermId),
-      gracePriority: text(subject.gracePriority, "keep"),
-      graceNote: text(subject.graceNote, "Deferred gracefully to the reserve list."),
-      color: text(subject.color, ACCENTS[index % ACCENTS.length])
-    })),
-    books: simpleList(booksSource, (book, index) => ({
-      id: text(book.id, ""),
-      title: text(book.title, "Book"),
-      author: text(book.author, ""),
-      category: text(book.category, "Living Books"),
-      planningMode: text(book.planningMode, book.formLabel ? "forms" : "family"),
-      scheduledWeeks: safeArray(book.scheduledWeeks),
-      weeklyFrequency: weeklyFrequencyValue(book.weeklyFrequency || book.cadenceLabel || book.cadence, "daily"),
-      minutes: text(book.minutes, "20"),
-      formLabel: text(book.formLabel, ""),
-      audienceLabel: text(book.audienceLabel, "Household"),
-      startChapter: text(book.startChapter, ""),
-      currentChapter: text(book.currentChapter || book.completedThroughChapter, ""),
-      endChapter: text(book.endChapter || book.totalChapters, ""),
-      termId: text(book.termId || book.assignedTermId, currentTermId),
-      graceNote: text(book.graceNote, "Reading moved into the reserve basket."),
-      color: text(book.color, ACCENTS[(index + 2) % ACCENTS.length])
-    })),
-    formationMaterials: defaultFormationMaterials,
-    formationSetup: {
-      churchRhythms: simpleList(formation.churchRhythms, (rhythm, index) => ({
-        id: text(rhythm.id, ""),
-        title: text(rhythm.title, ["Morning Prayers", "Scripture Readings", "Saint of the Day", "Troparion Practice"][index] || "Church Rhythm"),
-        note: text(rhythm.note, ""),
-        cadenceLabel: text(rhythm.cadenceLabel || rhythm.cadence, "Daily"),
-        weeklyFrequency: weeklyFrequencyValue(rhythm.weeklyFrequency || rhythm.cadenceLabel || rhythm.cadence, "daily"),
-        minutes: text(rhythm.minutes || rhythm.minutesPlanned, "")
-      })).length ? simpleList(formation.churchRhythms, (rhythm, index) => ({
-        id: text(rhythm.id, ""),
-        title: text(rhythm.title, ["Morning Prayers", "Scripture Readings", "Saint of the Day", "Troparion Practice"][index] || "Church Rhythm"),
-        note: text(rhythm.note, ""),
-        cadenceLabel: text(rhythm.cadenceLabel || rhythm.cadence, "Daily"),
-        weeklyFrequency: weeklyFrequencyValue(rhythm.weeklyFrequency || rhythm.cadenceLabel || rhythm.cadence, "daily"),
-        minutes: text(rhythm.minutes || rhythm.minutesPlanned, "")
-      })) : [
-        { id: "rhythm_morning_prayers", title: "Morning Prayers", note: "Family prayer rule", cadenceLabel: "Daily", weeklyFrequency: "daily", minutes: "10" },
-        { id: "rhythm_scripture", title: "Scripture Readings", note: "Epistle and Gospel", cadenceLabel: "Daily", weeklyFrequency: "daily", minutes: "10" },
-        { id: "rhythm_saint", title: "Saint of the Day", note: "Read and discuss", cadenceLabel: "Daily", weeklyFrequency: "daily", minutes: "10" },
-        { id: "rhythm_troparion", title: "Troparion Practice", note: "Practice hymn of the day", cadenceLabel: "Daily", weeklyFrequency: "daily", minutes: "5" }
-      ],
-      catechesis: {
-        title: text(formation.catechesis?.title, defaultFormationMaterials.find((material) => material.materialType === "Catechesis")?.title || "Catechesis"),
-        currentLesson: text(formation.catechesis?.currentLesson, ""),
-        planningMode: text(formation.catechesis?.planningMode, "family"),
-        weeklyFrequency: weeklyFrequencyValue(formation.catechesis?.weeklyFrequency || formation.catechesis?.cadenceLabel || formation.catechesis?.cadence, "2x"),
-        minutes: text(formation.catechesis?.minutes, ""),
-        lessonNumber: text(formation.catechesis?.lessonNumber, ""),
-        totalLessons: text(formation.catechesis?.totalLessons, ""),
-        doctrinalTopic: text(formation.catechesis?.doctrinalTopic || formation.catechesis?.topic, ""),
-        source: text(formation.catechesis?.source, defaultFormationMaterials.find((material) => material.materialType === "Catechesis")?.source || "")
-      },
-      recitationTracks: simpleList(formation.recitationTracks, (track) => ({
-        id: text(track.id, ""),
-        title: text(track.title, "Memory Work"),
-        sourceKind: text(track.sourceKind || track.source, ""),
-        planningMode: text(track.planningMode, "family"),
-        formLabel: text(track.formLabel, ""),
-        formLabels: safeArray(track.formLabels),
-        gradeLabel: text(track.gradeLabel, ""),
-        scheduledWeeks: safeArray(track.scheduledWeeks),
-        weeklyFrequency: weeklyFrequencyValue(track.weeklyFrequency || track.cadenceLabel || track.cadence, "daily"),
-        minutes: text(track.minutes, "")
-      })),
-      hymnStudies: simpleList(formation.hymnStudies, (hymn) => ({
-        id: text(hymn.id, ""),
-        title: text(hymn.title, "Hymn"),
-        tone: text(hymn.tone, ""),
-        source: text(hymn.source, ""),
-        planningMode: text(hymn.planningMode, "family"),
-        weeklyFrequency: weeklyFrequencyValue(hymn.weeklyFrequency || hymn.cadenceLabel || hymn.cadence, "1x"),
-        minutes: text(hymn.minutes, ""),
-        status: text(hymn.status, "planned")
-      })),
-      enrichmentBlocks: simpleList(formation.enrichmentBlocks, (block) => ({
-        id: text(block.id, ""),
-        blockType: text(block.blockType || block.type, "Art Study"),
-        title: text(block.title, "Enrichment"),
-        resource: text(block.resource || block.source, ""),
-        resourceType: text(block.resourceType || block.sourceType, block.resource || block.source ? "curriculum" : "none"),
-        cadenceLabel: text(block.cadenceLabel || block.cadence, ""),
-        planningMode: text(block.planningMode, "family"),
-        scheduledDays: safeArray(block.scheduledDays),
-        scheduledWeeks: safeArray(block.scheduledWeeks),
-        weeklyPlans: safeArray(block.weeklyPlans),
-        weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
-        formLabel: text(block.formLabel, ""),
-        formLabels: safeArray(block.formLabels),
-        gradeLabel: text(block.gradeLabel, ""),
-        childId: text(block.childId, ""),
-        progressionType: text(block.progressionType, "lessons"),
-        startNumber: text(block.startNumber, ""),
-        currentNumber: text(block.currentNumber || block.completedThroughNumber, ""),
-        endNumber: text(block.endNumber, ""),
-        minutesPlanned: text(block.minutesPlanned || block.minutes, ""),
-        credits: text(block.credits, ""),
-        finalGradeOverride: text(block.finalGradeOverride, ""),
-        color: text(block.color, ACCENTS[2]),
-        termId: text(block.termId || block.assignedTermId, currentTermId),
-        gracePriority: text(block.gracePriority, "keep"),
-        graceNote: text(block.graceNote, "Deferred gracefully to the reserve list.")
-      })).length ? simpleList(formation.enrichmentBlocks, (block) => ({
-        id: text(block.id, ""),
-        blockType: text(block.blockType || block.type, "Art Study"),
-        title: text(block.title, "Enrichment"),
-        resource: text(block.resource || block.source, ""),
-        resourceType: text(block.resourceType || block.sourceType, block.resource || block.source ? "curriculum" : "none"),
-        cadenceLabel: text(block.cadenceLabel || block.cadence, ""),
-        planningMode: text(block.planningMode, "family"),
-        scheduledDays: safeArray(block.scheduledDays),
-        scheduledWeeks: safeArray(block.scheduledWeeks),
-        weeklyPlans: safeArray(block.weeklyPlans),
-        weeklyFrequency: weeklyFrequencyValue(block.weeklyFrequency || block.cadenceLabel || block.cadence, "1x"),
-        formLabel: text(block.formLabel, ""),
-        formLabels: safeArray(block.formLabels),
-        gradeLabel: text(block.gradeLabel, ""),
-        childId: text(block.childId, ""),
-        progressionType: text(block.progressionType, "lessons"),
-        startNumber: text(block.startNumber, ""),
-        currentNumber: text(block.currentNumber || block.completedThroughNumber, ""),
-        endNumber: text(block.endNumber, ""),
-        minutesPlanned: text(block.minutesPlanned || block.minutes, ""),
-        credits: text(block.credits, ""),
-        finalGradeOverride: text(block.finalGradeOverride, ""),
-        color: text(block.color, ACCENTS[2]),
-        termId: text(block.termId || block.assignedTermId, currentTermId),
-        gracePriority: text(block.gracePriority, "keep"),
-        graceNote: text(block.graceNote, "Deferred gracefully to the reserve list.")
-      })) : derivedEnrichment,
-      feasts: simpleList(formation.feasts, (feast) => ({
-        id: text(feast.id, ""),
-        civilDate: text(feast.civilDate || feast.date, ""),
-        title: text(feast.title, "Feast"),
-        fastingRule: text(feast.fastingRule || feast.fasting, ""),
-        planningMode: text(feast.planningMode, "family"),
-        minutes: text(feast.minutes, ""),
-        note: text(feast.note, "")
-      }))
-    },
-    coOp: {
-      enabled: Boolean(setup.coOp?.enabled),
-      mode: text(setup.coOp?.mode, "create"),
-      name: text(setup.coOp?.name, ""),
-      city: text(setup.coOp?.city, ""),
-      meetingDay: text(setup.coOp?.meetingDay, ""),
-      cycle: text(setup.coOp?.cycle, ""),
-      theme: text(setup.coOp?.theme, ""),
-      memberNotes: text(setup.coOp?.memberNotes, "")
-    },
-    familyPlanning: {
-      fastingPreference: text(familyPlanning.fastingPreference, "guidance"),
-      weekStart: text(familyPlanning.weekStart, ""),
-      nameDays: safeArray(familyPlanning.nameDays),
-      events: safeArray(familyPlanning.events),
-      meals: safeArray(familyPlanning.meals),
-      recipes: safeArray(familyPlanning.recipes),
-      groceryItems: safeArray(familyPlanning.groceryItems)
-    },
-    calendarOptions: safeArray(setup.calendarToggle?.options),
-    evaluationModels: safeArray(setup.evaluationModels)
+    preferences: nextPreferences
   };
+  return saveLearnSetup(env, request, nextPayload);
 }
 
-export function toPrintCenterViewModel(rawPayload) {
-  const printCenter = rawPayload?.printCenter || {};
-  const reports = toReportsViewModel({ reports: printCenter.reports || {} });
-  // printLimit comes from the billing API (advisory) — view model receives it via rawPayload.printLimit
-  // which mount() attaches after resolving billing status. Fall back to 3 if not present.
-  const printLimit = Math.max(1, Number(rawPayload?.printLimit || 3));
-  const PLANNER_PREMIUM_TYPES = new Set([
-    "term-plan", "liturgical-school-calendar",
-    "planner-lesson-week-form", "planner-lesson-month-form", "planner-lesson-term-form",
-    "planner-lesson-week-child", "planner-lesson-month-child", "planner-lesson-term-child",
-    "planner-chores-day", "planner-chores-week", "planner-chores-month", "planner-chores-week-child",
-    "planner-meals-week", "planner-meals-month",
-    "planner-recipes", "planner-grocery-week",
-  ]);
-  return {
-    shell: shellFromPayload("print-center", { "print-center": printCenter }),
-    page: page("print-center", "Print Center", "Prepare limited, useful print packs for the household and each child."),
-    term: {
-      label: text(printCenter.term?.label, ""),
-      paceMode: text(printCenter.term?.paceMode, ""),
-      week: text(printCenter.week?.label, ""),
-      monthKey: text(printCenter.month?.key, new Date().toISOString().slice(0, 7))
-    },
-    templates: simpleList(printCenter.templates, (template, index) => ({
-      id: text(template.id, ""),
-      title: text(template.title, "Print Template"),
-      audience: text(template.audience, ""),
-      type: text(template.templateType, ""),
-      description: text(template.description, ""),
-      childId: text(template.childId, ""),
-      child: template.child ? childName(template.child, index) : "",
-      color: ACCENTS[index % ACCENTS.length],
-      premium: template.audience === "child" || PLANNER_PREMIUM_TYPES.has(template.templateType || "")
-    })),
-    document: {
-      title: text(printCenter.printDocument?.title, "Print Preview"),
-      subtitle: text(printCenter.printDocument?.subtitle, ""),
-      sections: simpleList(printCenter.printDocument?.sections, (section) => ({
-        title: text(section.title, "Section"),
-        items: simpleList(section.items, (item) => ({
-          label: text(item.label, "Item"),
-          detail: text(item.detail, ""),
-          minutes: text(item.minutes, "")
-        }))
-      }))
-    },
-    job: {
-      templateId: text(printCenter.draftJob?.templateId, ""),
-      format: text(printCenter.draftJob?.format, "pdf").toUpperCase(),
-      range: text(printCenter.draftJob?.rangeLabel, ""),
-      status: text(printCenter.draftJob?.status, "")
-    },
-    outputs: {
-      household: safeArray(printCenter.sampleOutputs?.mom).map((item) => text(item)),
-      child: safeArray(printCenter.sampleOutputs?.child).map((item) => text(item)),
-      planner: safeArray(printCenter.sampleOutputs?.planner).map((item) => text(item))
-    },
-    reports,
-    billing: {
-      childCount: safeArray(printCenter.children).length,
-      printLimit
-    }
-  };
+// Save a single lesson block edit (note, reschedule, or completion) to the setup snapshot.
+// Accepts: { action: "note"|"reschedule"|"complete", blockId, note, fromDate, toDate, completed }
+export async function saveLearnPlannerBlock(env, request, payload = {}) {
+  const identity = await learnSetupIdentity(request, env);
+  if (!identity) return { ok: false, status: 401, error: "Unauthorized" };
+  const current = await loadLearnSetupSnapshotForIdentity(env, identity);
+  if (!current) return { ok: false, status: 409, error: "Complete Learn setup before editing lesson blocks." };
+
+  const action = text(payload.action, "");
+  const blockId = text(payload.blockId, "");
+  if (!action || !blockId) return { ok: false, status: 400, error: "action and blockId are required." };
+
+  const blockEdits = clone(current.blockEdits || {});
+
+  if (action === "note") {
+    blockEdits[blockId] = { ...(blockEdits[blockId] || {}), note: text(payload.note, ""), updatedAt: nowIso() };
+  } else if (action === "reschedule") {
+    const fromDate = text(payload.fromDate, "");
+    const toDate = text(payload.toDate, "");
+    if (!fromDate || !toDate) return { ok: false, status: 400, error: "fromDate and toDate are required for reschedule." };
+    blockEdits[blockId] = { ...(blockEdits[blockId] || {}), rescheduledFrom: fromDate, rescheduledTo: toDate, updatedAt: nowIso() };
+  } else if (action === "complete") {
+    const civilDate = /^\d{4}-\d{2}-\d{2}$/.test(String(payload.civilDate || "")) ? String(payload.civilDate) : nowIso().slice(0, 10);
+    const scope = payload.scope === "daily" ? "daily" : "weekly";
+    const date = new Date(`${civilDate}T12:00:00Z`);
+    if (scope === "weekly") date.setUTCDate(date.getUTCDate() - date.getUTCDay());
+    const periodKey = date.toISOString().slice(0, 10);
+    const completion = normalizeCompletion(current.completion);
+    completion[scope][periodKey] = { ...(completion[scope][periodKey] || {}), [blockId]: Boolean(payload.completed) };
+    return saveLearnSetup(env, request, { ...current, blockEdits, completion: normalizeCompletion(completion) });
+  } else {
+    return { ok: false, status: 400, error: `Unknown action "${action}". Valid: note, reschedule, complete.` };
+  }
+
+  return saveLearnSetup(env, request, { ...current, blockEdits });
 }
