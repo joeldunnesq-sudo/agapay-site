@@ -1,6 +1,6 @@
 import { d1, d1All, d1Run, json, unauthorized } from "../lib/core.js";
 import { calculateCumulativeGPA } from "./gpa.js";
-import { getLearnSeedForIdentity, learnSetupIdentity } from "./setup-persistence.js";
+import { getLearnSeedForIdentity, learnSetupIdentity, loadLearnSetupSnapshotForIdentity } from "./setup-persistence.js";
 
 function list(value) {
   return Array.isArray(value) ? value : [];
@@ -112,6 +112,10 @@ async function loadSetup(env, householdId) {
   return setupFromHouseholdRow(rows[0]);
 }
 
+async function loadSetupForIdentity(env, identity) {
+  return loadLearnSetupSnapshotForIdentity(env, identity);
+}
+
 async function loadChildren(env, householdId, setupSnapshot) {
   if (!d1(env)) return list(setupSnapshot?.children);
   const rows = await d1All(env, "SELECT id, first_name, age_years, grade_label, data FROM learn_children WHERE household_id = ?1 AND active = 1 ORDER BY first_name", householdId);
@@ -130,29 +134,34 @@ async function loadChildren(env, householdId, setupSnapshot) {
 
 async function loadCourses(env, householdId, academicYearName) {
   if (!d1(env)) return [];
-  const rows = await d1All(
-    env,
-    `SELECT
-       c.id AS course_id,
-       c.child_id,
-       c.course_title,
-       c.grade_level,
-       c.credit_hours,
-       c.subject_category,
-       g.id AS grade_id,
-       g.term_index,
-       g.numeric_score,
-       g.letter_grade,
-       g.teacher_notes,
-       g.attendance_days
-     FROM courses c
-     JOIN academic_years ay ON ay.id = c.academic_year_id
-     LEFT JOIN grades_and_progress g ON g.course_id = c.id
-     WHERE c.household_id = ?1 AND ay.name = ?2
-     ORDER BY c.child_id, c.grade_level, c.subject_category, c.course_title, g.term_index`,
-    householdId,
-    academicYearName
-  );
+  let rows = [];
+  try {
+    rows = await d1All(
+      env,
+      `SELECT
+         c.id AS course_id,
+         c.child_id,
+         c.course_title,
+         c.grade_level,
+         c.credit_hours,
+         c.subject_category,
+         g.id AS grade_id,
+         g.term_index,
+         g.numeric_score,
+         g.letter_grade,
+         g.teacher_notes,
+         g.attendance_days
+       FROM courses c
+       JOIN academic_years ay ON ay.id = c.academic_year_id
+       LEFT JOIN grades_and_progress g ON g.course_id = c.id
+       WHERE c.household_id = ?1 AND ay.name = ?2
+       ORDER BY c.child_id, c.grade_level, c.subject_category, c.course_title, g.term_index`,
+      householdId,
+      academicYearName
+    );
+  } catch {
+    return [];
+  }
   const byCourse = new Map();
   rows.forEach((row) => {
     if (!byCourse.has(row.course_id)) {
@@ -188,6 +197,55 @@ async function loadCourses(env, householdId, academicYearName) {
       attendanceDays: 0
     })
   }));
+}
+
+async function ensureLearnBaseRows(env, identity, setupSnapshot, children) {
+  if (!d1(env) || !identity?.householdId) return;
+  const timestamp = new Date().toISOString();
+  const household = setupSnapshot?.household || {};
+  await d1Run(
+    env,
+    `INSERT INTO learn_households (id, slug, name, household_size, liturgical_calendar_type, pace_mode, grace_mode_active, data, created_at, updated_at)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)
+     ON CONFLICT(id) DO UPDATE SET
+       name = excluded.name,
+       household_size = excluded.household_size,
+       liturgical_calendar_type = excluded.liturgical_calendar_type,
+       pace_mode = excluded.pace_mode,
+       grace_mode_active = excluded.grace_mode_active,
+       data = excluded.data,
+       updated_at = excluded.updated_at`,
+    identity.householdId,
+    stableSegment(household.name || identity.householdId, identity.householdId),
+    text(household.name, "Your Household"),
+    list(children).length,
+    text(setupSnapshot?.preferences?.calendarType || household.liturgicalCalendarType, "julian"),
+    text(setupSnapshot?.preferences?.paceMode || household.paceMode, "steady"),
+    setupSnapshot?.preferences?.graceModeActive ? 1 : 0,
+    JSON.stringify({ ownerEmail: identity.email, setupSnapshot }),
+    timestamp
+  );
+  for (const child of list(children)) {
+    await d1Run(
+      env,
+      `INSERT INTO learn_children (id, household_id, first_name, age_years, grade_label, active, data, created_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6, ?7, ?7)
+       ON CONFLICT(id) DO UPDATE SET
+         first_name = excluded.first_name,
+         age_years = excluded.age_years,
+         grade_label = excluded.grade_label,
+         active = 1,
+         data = excluded.data,
+         updated_at = excluded.updated_at`,
+      child.id,
+      identity.householdId,
+      text(child.firstName || child.name, "Student"),
+      integer(child.ageYears, 0),
+      text(child.gradeLabel || child.formLabel, ""),
+      JSON.stringify(child),
+      timestamp
+    );
+  }
 }
 
 function buildGradesPayload({ householdId, setupSnapshot, children, academicYearName, courses }) {
@@ -232,7 +290,7 @@ export async function handleLearnGrades(request, env) {
     });
   }
 
-  const setupSnapshot = await loadSetup(env, identity.householdId);
+  const setupSnapshot = await loadSetupForIdentity(env, identity);
   const children = await loadChildren(env, identity.householdId, setupSnapshot);
   const url = new URL(request.url);
   const academicYearName = text(url.searchParams.get("academicYear") || defaultAcademicYearName(setupSnapshot), defaultAcademicYearName(setupSnapshot));
@@ -258,7 +316,7 @@ export async function handleLearnGradesSave(request, env) {
   const payload = await request.json().catch(() => null);
   if (!payload || typeof payload !== "object") return json({ ok: false, error: "Grade payload was invalid." }, { status: 400 });
 
-  const setupSnapshot = await loadSetup(env, identity.householdId);
+  const setupSnapshot = await loadSetupForIdentity(env, identity);
   const children = await loadChildren(env, identity.householdId, setupSnapshot);
   const childIds = new Set(children.map((child) => child.id));
   const childId = text(payload.childId || children[0]?.id, "");
@@ -271,6 +329,8 @@ export async function handleLearnGradesSave(request, env) {
     .map((course) => normalizeCoursePayload(course, { householdId: identity.householdId, childId, academicYearName }))
     .filter((course) => course.courseTitle);
   const keepCourseIds = courses.map((course) => course.id);
+
+  await ensureLearnBaseRows(env, identity, setupSnapshot, children);
 
   await d1Run(
     env,
