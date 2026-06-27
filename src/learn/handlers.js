@@ -3,6 +3,7 @@ import { closeLearnTerm } from "./academic-records.js";
 import { assertLearnEnabled, enabledProductSlugs, LEARN_PRODUCT_SLUG, learnCoOpEnabled } from "./access.js";
 import { LEARN_FREE_PRINT_LIMIT, learnBillingCancel, learnBillingCheckout, learnBillingStatus, learnRequestHasFamilyAccessAsync } from "./billing.js";
 import { googleCalendarCallback, googleCalendarConnect, googleCalendarPreview, googleCalendarStatus, googleCalendarSync } from "./google-calendar.js";
+import { handleLearnGrades, handleLearnGradesSave } from "./grade-records.js";
 import { flagLearnCommunityResource, listLearnCommunityResources, submitLearnCommunityResource } from "./community-store.js";
 import { submitLearnFeedback } from "./feedback-store.js";
 import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-source.js";
@@ -12,6 +13,8 @@ import { createLearnRepositoryForRequest, SeedLearnRepository } from "./reposito
 import { learnSetupIdentity, saveLearnCompletion, saveLearnFamilyPlanning, saveLearnGraceMode, saveLearnPlannerBlock, saveLearnSetup } from "./setup-persistence.js";
 
 const LEARN_PRINT_USAGE_PREFIX = "__agapay_learn_print_usage:";
+
+export { handleLearnGrades, handleLearnGradesSave };
 
 function requestedCalendarType(url) {
   return url.searchParams.get("calendar") || "julian";
@@ -111,6 +114,7 @@ export function handleLearnMeta(env) {
       { href: "/myagapay/learn/planner", label: "Planner", implemented: true },
       { href: "/myagapay/learn/formation", label: "Formation", implemented: true },
       { href: "/myagapay/learn/books", label: "Books", implemented: true },
+      { href: "/myagapay/learn/grades", label: "Grades", implemented: true },
       { href: "/myagapay/learn/community", label: "Community", implemented: true },
       { href: "/myagapay/learn/co-op", label: "Co-op", implemented: learnCoOpEnabled(env), featureFlag: "learn-coop" },
       { href: "/myagapay/learn/print", label: "Print Center", implemented: true },

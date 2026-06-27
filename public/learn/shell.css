@@ -2822,6 +2822,245 @@ body {
   margin-top: 2px;
 }
 
+.learn-grades-page {
+  display: grid;
+  gap: 18px;
+}
+
+.learn-grades-page *,
+.learn-grades-page *::before,
+.learn-grades-page *::after {
+  box-sizing: border-box;
+}
+
+.learn-grades-page form,
+.learn-grade-editor,
+.learn-grade-course {
+  display: grid;
+  gap: 14px;
+}
+
+.learn-grades-toolbar {
+  display: grid;
+  grid-template-columns: minmax(190px, .8fr) minmax(190px, .7fr) auto;
+  gap: 12px;
+  align-items: end;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  padding: 14px;
+}
+
+.learn-grades-toolbar label,
+.learn-grade-course-meta label,
+.learn-grade-term label {
+  display: grid;
+  gap: 5px;
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.learn-grades-toolbar input,
+.learn-grades-toolbar select,
+.learn-grade-course input,
+.learn-grade-course select,
+.learn-grade-course textarea {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fffaf0;
+  color: var(--ink);
+  font: inherit;
+  letter-spacing: 0;
+  padding: 9px 10px;
+  text-transform: none;
+}
+
+.learn-grades-actions,
+.learn-grade-print-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  justify-content: flex-end;
+}
+
+.learn-grades-actions button,
+.learn-grade-print-actions button,
+.learn-grade-print-actions a {
+  min-height: 40px;
+  border: 1px solid var(--gold);
+  border-radius: 9px;
+  background: var(--navy);
+  color: #f3ead4;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 9px 13px;
+  text-decoration: none;
+}
+
+.learn-grades-actions button:first-child {
+  border-color: var(--line);
+  background: var(--paper2);
+  color: var(--ink);
+}
+
+.learn-grades-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.learn-grades-summary article,
+.learn-grade-course {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  padding: 15px;
+}
+
+.learn-grades-summary small {
+  display: block;
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.learn-grades-summary strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.learn-grades-summary span,
+.learn-grades-status {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.learn-grades-status[data-tone="success"] {
+  color: var(--olive);
+}
+
+.learn-grades-status[data-tone="error"] {
+  color: var(--burgundy);
+}
+
+.learn-grade-course > header {
+  display: grid;
+  grid-template-columns: 42px 1fr 38px;
+  gap: 12px;
+  align-items: start;
+}
+
+.learn-grade-course > header > span {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--course-color, var(--navy));
+  color: #f3ead4;
+  font-weight: 900;
+}
+
+.learn-grade-course > header input {
+  width: 100%;
+  color: var(--ink);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.learn-grade-course > header small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+}
+
+.learn-grade-course > header button {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--paper2);
+  color: var(--burgundy);
+  cursor: pointer;
+  font-size: 22px;
+}
+
+.learn-grade-course-meta {
+  display: grid;
+  grid-template-columns: 1fr 120px 140px;
+  gap: 10px;
+}
+
+.learn-grade-term-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.learn-grade-term {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper2);
+  padding: 12px;
+}
+
+.learn-grade-term legend {
+  padding: 0 6px;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.learn-grade-term .learn-grade-notes {
+  grid-column: 1 / -1;
+}
+
+.learn-grade-term textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.learn-grade-transcript-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.learn-grade-transcript-table th,
+.learn-grade-transcript-table td {
+  border-top: 1px solid var(--line);
+  padding: 10px;
+  text-align: left;
+}
+
+.learn-grade-transcript-table thead {
+  color: var(--gold);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.learn-grade-print-actions {
+  justify-content: flex-start;
+  margin-top: 12px;
+}
+
 .learn-planner-reserve-card {
   background: linear-gradient(135deg, #fffaf0 0%, #f8efdb 100%);
   border: 1px solid rgba(181, 148, 47, .34);
@@ -2890,6 +3129,21 @@ body {
 }
 
 @media (max-width: 860px) {
+  .learn-grades-toolbar,
+  .learn-grades-summary,
+  .learn-grade-course-meta,
+  .learn-grade-term-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .learn-grade-term {
+    grid-template-columns: 1fr;
+  }
+
+  .learn-grade-course > header {
+    grid-template-columns: 38px 1fr 38px;
+  }
+
   .learn-dashboard-family-grid {
     grid-template-columns: 1fr;
   }

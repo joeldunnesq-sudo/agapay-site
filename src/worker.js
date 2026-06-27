@@ -197,6 +197,8 @@ import {
   handleLearnFeedbackSubmit,
   handleLearnFormation,
   handleLearnFamilyPlanningSave,
+  handleLearnGrades,
+  handleLearnGradesSave,
   handleLearnGraceModeSave,
   handleLearnPlannerBlockSave,
   handleLearnBillingCancel,
@@ -456,6 +458,7 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
   ["/myagapay/learn/planner", "/learn/planner"],
   ["/myagapay/learn/formation", "/learn/formation"],
   ["/myagapay/learn/books", "/learn/books"],
+  ["/myagapay/learn/grades", "/learn/grades"],
   ["/myagapay/learn/community", "/learn/community"],
   ["/myagapay/learn/print", "/learn/print-center"],
   ["/myagapay/learn/print-center", "/learn/print-center"],
@@ -504,6 +507,7 @@ const DASHBOARD_LEGACY_REDIRECTS = new Map([
   ["/learn/planner", "/myagapay/learn/planner"],
   ["/learn/formation", "/myagapay/learn/formation"],
   ["/learn/books", "/myagapay/learn/books"],
+  ["/learn/grades", "/myagapay/learn/grades"],
   ["/learn/community", "/myagapay/learn/community"],
   ["/learn/reports", "/myagapay/learn/print"],
   ["/myagapay/learn/reports", "/myagapay/learn/print"],
@@ -1187,6 +1191,12 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/learn/books") {
       return handleLearnBooks(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/learn/grades") {
+      return handleLearnGrades(request, env);
+    }
+    if (request.method === "POST" && url.pathname === "/api/learn/grades") {
+      return handleLearnGradesSave(request, env);
     }
     if (request.method === "GET" && url.pathname === "/api/learn/community") {
       return handleLearnCommunity(request, env);

@@ -236,6 +236,7 @@ function shellFromPayload(page, payload) {
       { id: "planner", href: "/myagapay/learn/planner", label: "Planner", icon: "▣" },
       { id: "formation", href: "/myagapay/learn/formation", label: "Formation", icon: "⌂" },
       { id: "books", href: "/myagapay/learn/books", label: "Books", icon: "☰" },
+      { id: "grades", href: "/myagapay/learn/grades", label: "Grades", icon: "A" },
       { id: "community", href: "/myagapay/learn/community", label: "Community", icon: "♡" },
       { id: "co-op", href: "/myagapay/learn/co-op", label: "Co-op", icon: "◎", comingSoon: true },
       { id: "print-center", href: "/myagapay/learn/print", label: "Print", icon: "▤" },
@@ -905,6 +906,76 @@ export function toReportsViewModel(rawPayload) {
         `Tracked subject rows: ${safeArray(reports.subjectProgress).length}`
       ]
     }
+  };
+}
+
+export function toGradesViewModel(rawPayload, context = {}) {
+  const grades = rawPayload?.grades || {};
+  const shell = shellFromPayload("grades", { grades });
+  const children = simpleList(grades.children, (child, index) => ({
+    id: text(child.id, ""),
+    name: text(child.name || child.firstName, `Child ${index + 1}`),
+    firstName: text(child.firstName || child.name, `Child ${index + 1}`),
+    gradeLabel: text(child.gradeLabel, ""),
+    gradeLevel: Number(child.gradeLevel || 9),
+    initial: childInitial(child, index),
+    color: ACCENTS[index % ACCENTS.length]
+  }));
+  const selectedChildId = text(context.childId || grades.selectedChildId, children[0]?.id || "");
+  const selectedChild = children.find((child) => child.id === selectedChildId) || children[0] || {};
+  const courses = simpleList(grades.courses, (course, index) => ({
+    id: text(course.id, ""),
+    childId: text(course.childId || course.child_id, ""),
+    courseTitle: text(course.courseTitle || course.course_title, "Course"),
+    subjectCategory: text(course.subjectCategory || course.subject_category, "General"),
+    gradeLevel: Number(course.gradeLevel ?? course.grade_level ?? selectedChild.gradeLevel ?? 9),
+    creditHours: Number(course.creditHours ?? course.credit_hours ?? 1),
+    color: ACCENTS[index % ACCENTS.length],
+    grades: [1, 2, 3].map((termIndex) => {
+      const grade = safeArray(course.grades).find((entry) => Number(entry.termIndex ?? entry.term_index) === termIndex) || {};
+      return {
+        id: text(grade.id, ""),
+        termIndex,
+        numericScore: grade.numericScore ?? grade.numeric_score ?? "",
+        letterGrade: text(grade.letterGrade || grade.letter_grade, ""),
+        attendanceDays: grade.attendanceDays ?? grade.attendance_days ?? "",
+        teacherNotes: text(grade.teacherNotes || grade.teacher_notes, "")
+      };
+    })
+  }));
+  const childCourses = courses.filter((course) => !selectedChildId || course.childId === selectedChildId);
+  const gpaPoints = { "A+": 4, A: 4, "A-": 3.7, "B+": 3.3, B: 3, "B-": 2.7, "C+": 2.3, C: 2, "C-": 1.7, "D+": 1.3, D: 1, "D-": .7, F: 0 };
+  const finalRows = childCourses.map((course) => ({
+    credits: Number(course.creditHours || 0),
+    grade: [...course.grades].reverse().find((grade) => grade.letterGrade)?.letterGrade || ""
+  }));
+  const earnedCredits = finalRows.reduce((sum, row) => row.grade ? sum + row.credits : sum, 0);
+  const gpaCredits = finalRows.reduce((sum, row) => Object.hasOwn(gpaPoints, row.grade) && row.credits > 0 ? sum + row.credits : sum, 0);
+  const weightedGpa = finalRows.reduce((sum, row) => Object.hasOwn(gpaPoints, row.grade) && row.credits > 0 ? sum + (gpaPoints[row.grade] * row.credits) : sum, 0);
+  const summary = grades.summary || {};
+  return {
+    shell,
+    page: page("grades", "Grades", "Record term grades, attendance, credits, and narrative notes for report cards and transcripts."),
+    household: {
+      name: text(grades.household?.name || shell.familyName, "Your Household")
+    },
+    academicYear: {
+      id: text(grades.academicYear?.id, ""),
+      name: text(grades.academicYear?.name, "")
+    },
+    children,
+    selectedChildId,
+    selectedChild,
+    courses,
+    childCourses,
+    summary: {
+      totalCredits: earnedCredits.toFixed(1),
+      cumulativeGpa: gpaCredits ? (weightedGpa / gpaCredits).toFixed(2) : "0.00",
+      missingGrades: childCourses.reduce((sum, course) => sum + course.grades.filter((grade) => !grade.letterGrade).length, 0),
+      courseCount: childCourses.length || Number(summary.courseCount || 0)
+    },
+    subjectCategories: ["English", "Math", "Science", "History", "Theology/Formation", "World Language", "Fine Arts", "Elective"],
+    letterGrades: ["", "A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"]
   };
 }
 

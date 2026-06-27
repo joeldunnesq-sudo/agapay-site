@@ -4,6 +4,7 @@ import {
   toCommunityViewModel,
   toDashboardViewModel,
   toFormationViewModel,
+  toGradesViewModel,
   toPlannerViewModel,
   toPrintCenterViewModel,
   toSetupViewModel
@@ -84,6 +85,7 @@ function pageIntroIcon(id) {
     planner: '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M8 14h3M13 14h3M8 17h3"/>',
     formation: '<path d="M10 9h4M12 6v7"/><path d="M4 22V11l8-5 8 5v11"/><path d="M8 22v-4a4 4 0 0 1 8 0v4"/><path d="M12 2v3"/>',
     books: '<path d="M12 7v14"/><path d="M4 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 3 1.35A4 4 0 0 1 15 3h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-5a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+    grades: '<path d="M4 20 10 4h4l6 16"/><path d="M7 14h10"/><path d="M8 20h8"/>',
     reports: '<path d="M4 21V3h12l4 4v14z"/><path d="M16 3v5h5"/><path d="M8 16v-3M12 16V9M16 16v-5"/>',
     "print-center": '<path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/>',
     community: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.3a4 4 0 0 1 0 7.4"/>',
@@ -118,6 +120,12 @@ function pageIntroMeta(id) {
       description: "Track read-alouds, library choices, copywork sources, and Orthodox living-book suggestions for the whole household.",
       quote: "A word of advice is a seed. If the soil is good, it will bring forth fruit.",
       ref: "Elder Thaddeus of Vitovnica"
+    },
+    grades: {
+      kicker: "ACADEMIC RECORDS",
+      description: "Record term grades, attendance, credits, and narrative notes for report cards and high school transcripts.",
+      quote: "Let all things be done decently and in order.",
+      ref: "1 Corinthians 14:40"
     },
     reports: {
       kicker: "COMING SOON",
@@ -2615,6 +2623,110 @@ function renderReports(vm) {
       ${panel("Narration Log", `<div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;"><tbody>${vm.narrations.map((log) => `<tr style="border-top:1px solid var(--line);"><td style="padding:10px;">${html(log.date)}</td><td style="padding:10px;">${html(log.child)}</td><td style="padding:10px;">${html(log.source)}</td><td style="padding:10px;text-transform:capitalize;">${html(log.type)}</td><td style="padding:10px;color:var(--muted);">${html(log.note)}</td></tr>`).join("")}</tbody></table></div>`, { icon: "✒" })}
       ${panel("Compliance-Friendly Exports", `<div style="display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;">${exportButtons}</div>`, { icon: "▤" })}
     </section>`;
+  return shell(vm, body);
+}
+
+function gradeOption(value, selectedValue) {
+  return `<option value="${html(value)}" ${value === selectedValue ? "selected" : ""}>${html(value || "Select")}</option>`;
+}
+
+function renderGradeTermFields(course, grade) {
+  return `
+    <fieldset class="learn-grade-term" data-grade-term="${grade.termIndex}">
+      <legend>Term ${grade.termIndex}</legend>
+      <label>Score
+        <input name="numericScore" inputmode="decimal" value="${html(grade.numericScore)}" placeholder="96" />
+      </label>
+      <label>Grade
+        <select name="letterGrade">
+          ${["", "A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"].map((value) => gradeOption(value, grade.letterGrade)).join("")}
+        </select>
+      </label>
+      <label>Attendance
+        <input name="attendanceDays" inputmode="numeric" value="${html(grade.attendanceDays)}" placeholder="60" />
+      </label>
+      <label class="learn-grade-notes">Narrative notes
+        <textarea name="teacherNotes" rows="3" placeholder="Narrative evaluation for this course and term">${html(grade.teacherNotes)}</textarea>
+      </label>
+    </fieldset>
+  `;
+}
+
+function renderGradeCourseEditor(course, vm, index) {
+  return `
+    <article class="learn-grade-course" data-grade-course data-course-id="${html(course.id)}">
+      <header>
+        <span style="--course-color:${html(course.color)}">${html(String(index + 1))}</span>
+        <div>
+          <input name="courseTitle" value="${html(course.courseTitle)}" aria-label="Course title" />
+          <small>${html(course.subjectCategory)} · Grade ${html(course.gradeLevel)} · ${html(course.creditHours)} credit${Number(course.creditHours) === 1 ? "" : "s"}</small>
+        </div>
+        <button type="button" data-grade-remove-course aria-label="Remove course">×</button>
+      </header>
+      <div class="learn-grade-course-meta">
+        <label>Subject
+          <select name="subjectCategory">
+            ${vm.subjectCategories.map((category) => `<option value="${html(category)}" ${category === course.subjectCategory ? "selected" : ""}>${html(category)}</option>`).join("")}
+          </select>
+        </label>
+        <label>Grade level
+          <select name="gradeLevel">
+            ${[9, 10, 11, 12].map((gradeLevel) => `<option value="${gradeLevel}" ${Number(course.gradeLevel) === gradeLevel ? "selected" : ""}>${gradeLevel}</option>`).join("")}
+          </select>
+        </label>
+        <label>Credit hours
+          <input name="creditHours" inputmode="decimal" value="${html(course.creditHours)}" />
+        </label>
+      </div>
+      <div class="learn-grade-term-grid">
+        ${course.grades.map((grade) => renderGradeTermFields(course, grade)).join("")}
+      </div>
+    </article>
+  `;
+}
+
+function renderGrades(vm) {
+  const selectedCourses = vm.childCourses;
+  const childOptions = vm.children.map((child) => `<option value="${html(child.id)}" ${child.id === vm.selectedChildId ? "selected" : ""}>${html(child.name)}${child.gradeLabel ? ` · ${html(child.gradeLabel)}` : ""}</option>`).join("");
+  const transcriptRows = selectedCourses.length ? selectedCourses.map((course) => {
+    const finalGrade = [...course.grades].reverse().find((grade) => grade.letterGrade)?.letterGrade || "";
+    return `<tr><th scope="row">${html(course.courseTitle)}</th><td>${html(course.subjectCategory)}</td><td>Grade ${html(course.gradeLevel)}</td><td>${html(course.creditHours)}</td><td>${html(finalGrade || "Open")}</td></tr>`;
+  }).join("") : `<tr><td colspan="5">Add courses to begin transcript tracking.</td></tr>`;
+  const body = `
+    <section data-screen-label="Grades" class="learn-grades-page">
+      <form data-grades-form>
+        <div class="learn-grades-toolbar">
+          <label>Student
+            <select name="childId" data-grades-child>
+              ${childOptions}
+            </select>
+          </label>
+          <label>Academic year
+            <input name="academicYearName" value="${html(vm.academicYear.name)}" />
+          </label>
+          <div class="learn-grades-actions">
+            <button type="button" data-grade-add-course>Add Course</button>
+            <button type="submit" data-grade-save>Save Grades</button>
+          </div>
+        </div>
+
+        <div class="learn-grades-summary">
+          <article><small>Student</small><strong>${html(vm.selectedChild.name || "Student")}</strong><span>${html(vm.selectedChild.gradeLabel || "High school records")}</span></article>
+          <article><small>Courses</small><strong>${html(String(selectedCourses.length))}</strong><span>For selected student</span></article>
+          <article><small>Credits Earned</small><strong data-grade-summary-credits>${html(vm.summary.totalCredits)}</strong><span>Transcript total</span></article>
+          <article><small>Unweighted GPA</small><strong data-grade-summary-gpa>${html(vm.summary.cumulativeGpa)}</strong><span>4.0 scale</span></article>
+        </div>
+
+        <div data-grades-status class="learn-grades-status" aria-live="polite"></div>
+
+        <div class="learn-grade-editor" data-grade-course-list>
+          ${selectedCourses.length ? selectedCourses.map((course, index) => renderGradeCourseEditor(course, vm, index)).join("") : emptyState("No courses have been recorded for this student yet. Add a course to begin the transcript trail.")}
+        </div>
+      </form>
+
+      ${panel("Transcript Readiness", `<div style="overflow:auto;"><table class="learn-grade-transcript-table"><thead><tr><th>Course</th><th>Subject</th><th>Level</th><th>Credit</th><th>Final</th></tr></thead><tbody>${transcriptRows}</tbody></table></div><div class="learn-grade-print-actions"><a href="/myagapay/learn/print">Open Print Center</a><button type="button" data-report-export="Report Card">Print Report Card</button><button type="button" data-report-export="Transcript">Print Transcript</button></div>`, { icon: "▤" })}
+    </section>
+  `;
   return shell(vm, body);
 }
 
@@ -5800,6 +5912,132 @@ function wireReports(vm) {
   });
 }
 
+function gradeCourseFromElement(courseEl, childId) {
+  const field = (name) => courseEl.querySelector(`[name="${name}"]`);
+  return {
+    id: courseEl.dataset.courseId || "",
+    childId,
+    courseTitle: field("courseTitle")?.value?.trim() || "Untitled Course",
+    subjectCategory: field("subjectCategory")?.value || "General",
+    gradeLevel: Number(field("gradeLevel")?.value || 9),
+    creditHours: Number(field("creditHours")?.value || 0),
+    grades: [...courseEl.querySelectorAll("[data-grade-term]")].map((termEl) => ({
+      termIndex: Number(termEl.dataset.gradeTerm || 1),
+      numericScore: termEl.querySelector('[name="numericScore"]')?.value?.trim() || "",
+      letterGrade: termEl.querySelector('[name="letterGrade"]')?.value || "",
+      attendanceDays: termEl.querySelector('[name="attendanceDays"]')?.value?.trim() || "",
+      teacherNotes: termEl.querySelector('[name="teacherNotes"]')?.value?.trim() || ""
+    }))
+  };
+}
+
+function blankGradeCourse(vm) {
+  const index = root.querySelectorAll("[data-grade-course]").length;
+  const child = vm.selectedChild || vm.children[0] || {};
+  return {
+    id: "",
+    courseTitle: "New Course",
+    subjectCategory: "English",
+    gradeLevel: Number(child.gradeLevel || 9),
+    creditHours: 1,
+    color: ["#14294a", "#6e2f2a", "#4a5a31", "#b5942f", "#34507a"][index % 5],
+    grades: [1, 2, 3].map((termIndex) => ({
+      termIndex,
+      numericScore: "",
+      letterGrade: "",
+      attendanceDays: "",
+      teacherNotes: ""
+    }))
+  };
+}
+
+function wireGrades(vm) {
+  const form = root.querySelector("[data-grades-form]");
+  if (!form) return;
+  const status = root.querySelector("[data-grades-status]");
+  const setStatus = (message, tone = "muted") => {
+    if (!status) return;
+    status.textContent = message;
+    status.dataset.tone = tone;
+  };
+  form.querySelector("[data-grades-child]")?.addEventListener("change", (event) => {
+    const params = new URLSearchParams(window.location.search);
+    params.set("childId", event.currentTarget.value);
+    window.location.search = params.toString();
+  });
+  form.querySelector('[name="academicYearName"]')?.addEventListener("change", (event) => {
+    const params = new URLSearchParams(window.location.search);
+    params.set("academicYear", event.currentTarget.value.trim());
+    window.location.search = params.toString();
+  });
+  form.querySelector("[data-grade-add-course]")?.addEventListener("click", () => {
+    const listEl = root.querySelector("[data-grade-course-list]");
+    if (!listEl) return;
+    if (!listEl.querySelector("[data-grade-course]")) listEl.innerHTML = "";
+    listEl.insertAdjacentHTML("beforeend", renderGradeCourseEditor(blankGradeCourse(vm), vm, listEl.querySelectorAll("[data-grade-course]").length));
+  });
+  form.addEventListener("click", (event) => {
+    const remove = event.target.closest("[data-grade-remove-course]");
+    if (!remove) return;
+    remove.closest("[data-grade-course]")?.remove();
+    if (!root.querySelector("[data-grade-course]")) {
+      root.querySelector("[data-grade-course-list]").innerHTML = emptyState("No courses have been recorded for this student yet. Add a course to begin the transcript trail.");
+    }
+  });
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const save = form.querySelector("[data-grade-save]");
+    const childId = form.elements.childId?.value || vm.selectedChildId;
+    const payload = {
+      childId,
+      academicYearName: form.elements.academicYearName?.value?.trim() || vm.academicYear.name,
+      courses: [...root.querySelectorAll("[data-grade-course]")].map((courseEl) => gradeCourseFromElement(courseEl, childId))
+    };
+    if (save) {
+      save.disabled = true;
+      save.textContent = "Saving...";
+    }
+    setStatus("Saving grades...");
+    try {
+      await apiPost("/api/learn/grades", payload);
+      setStatus("Grades saved. Refreshing the gradebook...", "success");
+      window.setTimeout(() => window.location.reload(), 450);
+    } catch (error) {
+      setStatus(error.message || "Grades could not be saved.", "error");
+    } finally {
+      if (save) {
+        save.disabled = false;
+        save.textContent = "Save Grades";
+      }
+    }
+  });
+  root.querySelectorAll("[data-report-export]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const label = button.dataset.reportExport || "Report Card";
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = "Generating...";
+      try {
+        const templateId = label.toLowerCase().includes("transcript") ? "transcript" : "report-card";
+        const response = await fetch(`/api/learn/print/${templateId}`, {
+          method: "POST",
+          headers: learnRequestHeaders({ "content-type": "application/json" }),
+          body: JSON.stringify({ label })
+        });
+        const contentType = response.headers.get("content-type") || "";
+        if (!response.ok || !contentType.includes("application/pdf")) throw new Error("Unable to generate that PDF yet.");
+        const blob = await response.blob();
+        downloadBlob(`${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`, blob);
+      } catch (error) {
+        showLearnDialog("Print Could Not Be Generated", error.message || "Please refresh and try again.", []);
+      } finally {
+        button.disabled = false;
+        button.textContent = original;
+      }
+    });
+  });
+}
+
 function canUsePrint(vm, template) {
   if (isLearnFamilyPlan()) return true;
   if (template?.premium) {
@@ -5978,6 +6216,16 @@ async function mount() {
   if (pageKey === "books") {
     const raw = await apiGet("/api/learn/books");
     root.innerHTML = renderBooks(toBooksViewModel(raw));
+    return;
+  }
+  if (pageKey === "grades") {
+    const params = new URLSearchParams(window.location.search);
+    const academicYear = params.get("academicYear") || "";
+    const childId = params.get("childId") || "";
+    const raw = await apiGet(`/api/learn/grades${academicYear ? `?academicYear=${encodeURIComponent(academicYear)}` : ""}`);
+    const vm = toGradesViewModel(raw, { childId });
+    root.innerHTML = renderGrades(vm);
+    wireGrades(vm);
     return;
   }
   if (pageKey === "reports") {
