@@ -1096,7 +1096,12 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           const assignedChildren = childrenForAssignment(assignment, next.children);
           return assignedChildren.map((child) => ({
           id: `week_${subject.id}_${assignment.resourceIndex + 1}_${child.id}`,
+          sourceId: subject.id,
+          resourceIndex: assignment.resourceIndex,
           childId: child.id,
+          childIds: subject.childIds || [],
+          planningMode: subject.planningMode,
+          formLabels: subject.formLabels || [],
           title: subject.title,
           detail: `${assignment.resourceTitle || subject.cadenceLabel}${currentWeekPlan(assignment) ? ` • ${currentWeekPlan(assignment)}` : ""}${subject.endNumber ? ` (${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber})` : ""}${subject.weeklyFrequency ? ` • ${subject.weeklyFrequency}` : ""}`,
           priority: subject.priorityLevel === "essential" ? index : subject.priorityLevel === "important" ? 30 + index : subject.priorityLevel === "optional" ? 100 + index : 70 + index,
