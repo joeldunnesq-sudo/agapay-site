@@ -229,6 +229,11 @@ function pageIntro(vm) {
         <span aria-hidden="true">“</span>
         <p>${html(meta.quote)} <strong>${html(meta.ref)}</strong></p>
       </div>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(181,148,47,.2);">
+        <button type="button" data-grace-mode="full" style="border:1px solid ${currentMode === 'full' ? 'var(--navy)' : 'rgba(181,148,47,.3)'};border-radius:9px;background:${currentMode === 'full' ? 'rgba(6,21,34,.06)' : 'transparent'};color:${currentMode === 'full' ? 'var(--navy)' : 'var(--muted)'};padding:7px 14px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:${currentMode === 'full' ? '700' : '400'};">
+          ${currentMode === 'full' ? '✓ Full plan active — Grace Mode off' : 'Return to full plan — no Grace Mode'}
+        </button>
+      </div>
     </section>
   `;
 }
@@ -622,20 +627,14 @@ function renderGraceModePanel(vm) {
   const currentMode = vm.graceMode?.active ? vm.graceMode.mode || "light" : "full";
   const modes = [
     {
-      id: "full",
-      title: "Full Rhythm",
-      subtitle: "Keep the complete plan for an ordinary, steady week.",
-      detail: "Nothing is reduced. Best for settled weeks when the household has normal capacity."
-    },
-    {
       id: "light",
-      title: "Light Day",
+      title: "Light",
       subtitle: "Keep the essentials and soften the rest.",
       detail: "Protects prayer, readings, catechesis, and gentle family-based learning while reducing lower-priority lessons."
     },
     {
-      id: "minimum viable",
-      title: "Minimum Viable",
+      id: "minimum",
+      title: "Minimum",
       subtitle: "A faithful tiny plan for hard days.",
       detail: "Keeps the smallest meaningful rhythm: prayer, one shared learning touchpoint, and the next right thing."
     },
@@ -656,7 +655,7 @@ function renderGraceModePanel(vm) {
         </div>
         <span data-grace-mode-status style="color:var(--muted);font-size:13px;min-height:20px;"></span>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px;">
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:10px;">
         ${modes.map((mode) => {
           const active = mode.id === currentMode;
           return `<button type="button" data-grace-mode="${html(mode.id)}" aria-pressed="${active ? "true" : "false"}" style="text-align:left;border:1px solid ${active ? "var(--gold)" : "var(--line)"};border-radius:13px;background:${active ? "var(--navy)" : "rgba(255,255,255,.58)"};color:${active ? "#fffaf0" : "var(--ink)"};padding:13px;cursor:pointer;font-family:inherit;min-height:146px;box-shadow:${active ? "0 10px 24px rgba(6,21,34,.16)" : "none"};">
@@ -697,10 +696,9 @@ function renderTodayLearnContext(vm) {
   const progress = Number(term.percent || 0);
   const currentMode = vm.graceMode?.active ? vm.graceMode.mode || "light" : "full";
   const modes = [
-    { id: "full", title: "Full", detail: "Keep the complete plan for a steady week." },
     { id: "light", title: "Light", detail: "Keep essentials and soften lower-priority work." },
-    { id: "minimum viable", title: "Minimum", detail: "Prayer, one shared touchpoint, and the next right thing." },
-    { id: "feast only", title: "Feast", detail: "Let the Church year carry the day." }
+    { id: "minimum", title: "Minimum", detail: "Prayer, one shared touchpoint, and the next right thing." },
+    { id: "feast only", title: "Feast Only", detail: "Church rhythm and feast celebration — everything academic steps aside." }
   ];
   return `
     <div style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:12px;margin-top:18px;width:100%;">
@@ -715,14 +713,17 @@ function renderTodayLearnContext(vm) {
       <section style="border:1px solid rgba(181,148,47,.34);border-radius:14px;background:linear-gradient(135deg,#fffaf0 0%,#f7edd6 100%);padding:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
           <span><span style="display:block;color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:800;text-transform:uppercase;">Grace Mode</span><strong style="font-family:'Cormorant Garamond',serif;font-size:25px;">Today’s rhythm</strong></span>
-          <span data-grace-mode-status style="color:var(--muted);font-size:12px;min-height:18px;"></span>
+          <span data-grace-mode-status style="color:var(--muted);font-size:12px;min-height:18px;">${vm.graceMode?.active ? "" : "Full plan · no Grace Mode"}</span>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(2,minmax(110px,1fr));gap:8px;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
           ${modes.map((mode) => {
             const active = mode.id === currentMode;
             return `<button type="button" data-grace-mode="${html(mode.id)}" aria-pressed="${active ? "true" : "false"}" title="${html(mode.detail)}" style="border:1px solid ${active ? "var(--gold)" : "var(--line)"};border-radius:11px;background:${active ? "var(--navy)" : "rgba(255,255,255,.62)"};color:${active ? "#fffaf0" : "var(--ink)"};padding:10px;text-align:left;cursor:pointer;font-family:inherit;min-height:84px;"><strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:20px;line-height:1;">${html(mode.title)}</strong><small style="display:block;margin-top:5px;line-height:1.25;color:${active ? "rgba(255,250,240,.82)" : "var(--muted)"};">${html(mode.detail)}</small></button>`;
           }).join("")}
         </div>
+        <button type="button" data-grace-mode="full" style="margin-top:8px;width:100%;border:1px solid ${currentMode === 'full' ? 'var(--navy)' : 'var(--line)'};border-radius:9px;background:${currentMode === 'full' ? 'rgba(6,21,34,.06)' : 'transparent'};color:var(--muted);padding:7px 10px;text-align:center;cursor:pointer;font-family:inherit;font-size:13px;">
+          ${currentMode === 'full' ? '✓ Full plan — no Grace Mode active' : 'Return to full plan'}
+        </button>
       </section>
     </div>
   `;
@@ -3668,7 +3669,7 @@ function simpleSetupStepBody(draft) {
     return `<div class="learn-wizard-step-copy"><span>Your learners</span><h2>Add the children learning at home.</h2><p>First name plus either age or grade is enough.${draft.useForms ? " Learn will suggest a Form for each child as you enter them." : " Learn will use the grade or level you enter."}</p></div><div class="learn-wizard-plan-note"><strong>Free plan: up to 2 children</strong><span>Family plans include unlimited children, Forms, child sheets, and full household planning.</span></div><div class="learn-wizard-children">${draft.children.map((child, index) => { const suggested = child.formLabel || suggestedFormForChild(child); const formField = draft.useForms ? `<label class="learn-wizard-field"><span>Suggested Form</span><select name="formLabel">${formOptions.map((option) => `<option value="${html(option)}" ${option === suggested ? "selected" : ""}>${html(option)}</option>`).join("")}</select></label>` : ""; return `<div class="learn-wizard-child${draft.useForms ? " uses-forms" : ""}" data-wizard-child="${index}" data-client-id="${html(child.clientId)}"><span class="learn-wizard-child-number">${index + 1}</span>${simpleSetupField("First name", "firstName", child.firstName, { placeholder: "Maria" })}${simpleSetupField("Age", "ageYears", child.ageYears, { type: "number", min: 0, max: 21 })}${simpleSetupField("Grade or level", "gradeLabel", child.gradeLabel, { placeholder: "Grade 3 or Kindergarten" })}${formField}${draft.children.length > 1 ? `<button type="button" class="learn-wizard-icon-button" data-wizard-remove-child="${index}" aria-label="Remove ${html(child.firstName || `child ${index + 1}`)}">×</button>` : ""}</div>`; }).join("")}</div><button type="button" class="learn-wizard-add" data-wizard-add-child>${!isLearnFamilyPlan() && draft.children.length >= 2 ? "Upgrade to add another child" : "+ Add another child"}</button>`;
   }
   if (draft.step === 4) {
-    return `<div class="learn-wizard-step-copy"><span>A gentler way through real life</span><h2>Meet Grace Mode.</h2><p>Your plan should serve your family, not punish it. Grace Mode lets you lighten a difficult day without deleting work or pretending the plan never existed.</p></div><aside class="learn-wizard-grace-explainer"><div><small>Built for real family life</small><h3>Grace Mode lightens a day without erasing the plan.</h3><p>Use it for illness, a new baby, travel, feast days, difficult mornings, or any season when the full plan is too much. Deferred work stays in your plan and can return when the household is ready.</p></div><div class="learn-wizard-grace-levels"><span><strong>Full</strong><small>Runs the complete day as planned.</small></span><span><strong>Light</strong><small>Keeps essentials and softens lower-priority work.</small></span><span><strong>Minimum</strong><small>Keeps prayer, one shared touchpoint, and the next right thing.</small></span></div><p class="learn-wizard-grace-tip"><strong>How to use it:</strong> choose today’s mode at the top of the Learn Dashboard. In Advanced Setup, each subject can be marked “keep,” “reduce first,” or “defer if needed,” so you remain in control.</p></aside><div class="learn-wizard-gentle-note"><strong>No permanent choice is required.</strong><span>You can change Grace Mode from day to day as family life changes.</span></div>`;
+    return `<div class="learn-wizard-step-copy"><span>A gentler way through real life</span><h2>Meet Grace Mode.</h2><p>Your plan should serve your family, not punish it. Grace Mode lets you lighten a difficult day without deleting work or pretending the plan never existed.</p></div><aside class="learn-wizard-grace-explainer"><div><small>Built for real family life</small><h3>Grace Mode lightens a day without erasing the plan.</h3><p>Use it for illness, a new baby, travel, feast days, difficult mornings, or any season when the full plan is too much. Deferred work stays in your plan and can return when the household is ready.</p></div><div class="learn-wizard-grace-levels"><span><strong>Light</strong><small>Keeps essentials, softens lower-priority work. Most common.</small></span><span><strong>Minimum</strong><small>Keeps prayer, one shared touchpoint, and the next right thing.</small></span><span><strong>Feast Only</strong><small>Church rhythm and feast celebration — academics step aside.</small></span></div><p class="learn-wizard-grace-tip"><strong>How to use it:</strong> choose Light, Minimum, or Feast Only at the top of the Learn Dashboard. In Setup, each subject can be marked “keep,” “reduce first,” or “defer if needed,” so you remain in control. The full plan runs automatically when no Grace Mode is active.</p></aside><div class="learn-wizard-gentle-note"><strong>No permanent choice is required.</strong><span>You can change Grace Mode from day to day as family life changes.</span></div>`;
   }
   return `<div class="learn-wizard-step-copy"><span>Ready for Today</span><h2>Would you like a simple starter week?</h2><p>AGAPAY will save a real editable first term, Daily Church Rhythms, family read-aloud, nature walk, and starter subject plan organized by ${draft.useForms ? "Form" : "grade or level"}. Nothing is sample-only or locked.</p></div><label class="learn-wizard-starter"><input type="checkbox" name="wizard.starterWeek" ${draft.starterWeek ? "checked" : ""}><span><strong>Create a gentle starter week</strong><small>Creates Morning Prayers, Daily Readings, Saint of the Day, family read-aloud, nature walk, plus editable Language Arts, Mathematics, History, Geography, Literature, and Science subjects for every ${draft.useForms ? "Form" : "grade or level"}.</small></span></label><div class="learn-wizard-summary"><div><small>Household</small><strong>${html(draft.householdName || "Your household")}</strong></div><div><small>Children</small><strong>${draft.children.filter((child) => child.firstName).length}</strong></div><div><small>Planning</small><strong>${draft.useForms ? "Family + Forms" : "Family + grades"}</strong></div><div><small>Style</small><strong>${html(draft.method === "Orthodox Classical" ? "Classical" : draft.method)}</strong></div></div>`;
 }
