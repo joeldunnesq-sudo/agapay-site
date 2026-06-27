@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Activate AGAPAY Learn | Odyssey</title>
+  <meta name="theme-color" content="#061522" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/donor/style.css" />
+  <style>
+    .odyssey-activate-steps {
+      display: grid;
+      gap: .6rem;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      border-radius: 10px;
+      background: rgba(200,162,74,.07);
+      border: 1px solid rgba(200,162,74,.22);
+    }
+    .odyssey-activate-step {
+      display: flex;
+      align-items: baseline;
+      gap: .6rem;
+      font-size: .82rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .odyssey-activate-step-num {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: var(--deep, #061522);
+      font-size: .68rem;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+    }
+    .odyssey-activate-odyssey {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      margin-top: .35rem;
+      font-size: .75rem;
+      color: var(--muted);
+    }
+    .odyssey-activate-odyssey a { color: var(--gold); }
+    .odyssey-divider {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin: 1.25rem 0;
+      color: var(--muted);
+      font-size: .75rem;
+    }
+    .odyssey-divider::before, .odyssey-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+    .odyssey-login-link {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: .8rem;
+      color: var(--muted);
+    }
+    .odyssey-login-link a { color: var(--gold); }
+  </style>
+</head>
+<body class="donor-login-simple">
+  <main class="donor-auth-page">
+    <section class="donor-auth-shell">
+      <div class="notice" id="odysseyActivateStatus" style="display:none;"></div>
+
+      <div class="donor-auth-intro">
+        <a href="/learn/odyssey" class="auth-home-link" aria-label="AGAPAY Learn home">
+          <img src="/mark.png" alt="" />
+        </a>
+        <div>
+          <h1>Activate AGAPAY Learn.</h1>
+          <p>Paid through the Odyssey TEFA marketplace? Enter your purchase reference to activate your homeschool planner.</p>
+        </div>
+      </div>
+
+      <div class="odyssey-activate-steps">
+        <div class="odyssey-activate-step">
+          <span class="odyssey-activate-step-num">1</span>
+          <span>Purchase AGAPAY Learn through the <a href="https://www.withodyssey.com" target="_blank" rel="noopener">Odyssey marketplace</a> using your TEFA funds.</span>
+        </div>
+        <div class="odyssey-activate-step">
+          <span class="odyssey-activate-step-num">2</span>
+          <span>Find your Odyssey purchase reference number in your Odyssey account confirmation.</span>
+        </div>
+        <div class="odyssey-activate-step">
+          <span class="odyssey-activate-step-num">3</span>
+          <span>Enter it below along with your AGAPAY account credentials to activate.</span>
+        </div>
+      </div>
+
+      <div class="donor-auth-form-card">
+        <form id="odysseyActivateForm" autocomplete="on" novalidate>
+          <div class="donor-field">
+            <label for="odysseyActivateEmail">AGAPAY account email</label>
+            <input id="odysseyActivateEmail" name="email" type="email" autocomplete="email"
+              inputmode="email" placeholder="your@email.com" required />
+          </div>
+          <div class="donor-field">
+            <label for="odysseyActivatePassword">AGAPAY password</label>
+            <input id="odysseyActivatePassword" name="password" type="password"
+              autocomplete="current-password" placeholder="Your password" required />
+          </div>
+          <div class="donor-field">
+            <label for="odysseyActivateRef">
+              Odyssey purchase reference
+              <span style="font-weight:400;color:var(--muted);font-size:.78rem"> — from your Odyssey confirmation</span>
+            </label>
+            <input id="odysseyActivateRef" name="odysseyRef" type="text"
+              autocomplete="off" placeholder="e.g. TEFA-TX-2026-XXXXXX" required />
+          </div>
+          <div class="odyssey-activate-odyssey">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" style="width:13px;height:13px;flex-shrink:0">
+              <circle cx="8" cy="8" r="6"/><line x1="8" y1="7" x2="8" y2="11"/><circle cx="8" cy="5" r=".5" fill="currentColor"/>
+            </svg>
+            Find your reference in your <a href="https://www.withodyssey.com" target="_blank" rel="noopener">Odyssey account</a> under purchase history.
+          </div>
+          <button class="btn btn-gold btn-full" type="submit" id="odysseyActivateBtn" style="margin-top:1.25rem">
+            Activate AGAPAY Learn
+          </button>
+        </form>
+
+        <div class="odyssey-divider">Don't have an AGAPAY account?</div>
+        <a href="/myagapay/signup?next=/learn/odyssey/dashboard/activate" class="btn btn-ghost btn-full">
+          Create a free AGAPAY account
+        </a>
+
+        <p class="odyssey-login-link">Already activated? <a href="/learn/odyssey/dashboard/login">Sign in</a></p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const EMAIL_KEY = "agapayDonorEmail";
+      const TOKEN_KEY = "agapayDonorToken";
+
+      const form   = document.getElementById("odysseyActivateForm");
+      const status = document.getElementById("odysseyActivateStatus");
+      const btn    = document.getElementById("odysseyActivateBtn");
+
+      // Pre-fill email if already signed in
+      const existingEmail = localStorage.getItem(EMAIL_KEY);
+      if (existingEmail) document.getElementById("odysseyActivateEmail").value = existingEmail;
+
+      // Pre-fill from URL param
+      const refParam = new URLSearchParams(window.location.search).get("ref");
+      if (refParam) document.getElementById("odysseyActivateRef").value = refParam;
+
+      function showStatus(msg, type) {
+        status.textContent = msg;
+        status.className   = "notice " + (type === "error" ? "notice-error" : "notice-success");
+        status.style.display = "block";
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email      = document.getElementById("odysseyActivateEmail").value.trim().toLowerCase();
+        const password   = document.getElementById("odysseyActivatePassword").value;
+        const odysseyRef = document.getElementById("odysseyActivateRef").value.trim();
+
+        if (!email || !password || !odysseyRef) {
+          showStatus("All three fields are required.", "error");
+          return;
+        }
+
+        btn.disabled    = true;
+        btn.textContent = "Activating…";
+        status.style.display = "none";
+
+        try {
+          const res  = await fetch("/api/learn/odyssey/activate", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ email, password, odysseyRef })
+          });
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok || !data.ok) throw new Error(data.error || "Activation failed.");
+
+          // Store session
+          localStorage.setItem(EMAIL_KEY, email);
+          localStorage.setItem(TOKEN_KEY, data.token);
+          localStorage.setItem("agapay.learn.plan", "family");
+
+          showStatus(
+            data.alreadyActive
+              ? "Your subscription is already active. Redirecting to your planner…"
+              : "AGAPAY Learn activated! Redirecting to your planner…",
+            "success"
+          );
+
+          setTimeout(() => window.location.replace("/learn/odyssey/dashboard"), 1500);
+        } catch (err) {
+          showStatus(err.message || "Activation failed. Please check your details and try again.", "error");
+          btn.disabled    = false;
+          btn.textContent = "Activate AGAPAY Learn";
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
