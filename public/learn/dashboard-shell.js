@@ -1748,7 +1748,7 @@ function renderFamilyPlannerScope(vm, scope, displayView = "week", mealTool = "p
     : scope === "chores"
       ? renderChoresScope(model, displayView)
       : renderEventsScope(model, displayView);
-  return `<form data-family-planning-form id="family-planner" class="learn-family-planner-panel">${hidden}${content}${saveBar}${renderFamilyPlannerModals(model)}</form>`;
+  return `<form data-family-planning-form id="family-planner" class="learn-family-planner-panel">${hidden}<div data-family-planner-live>${content}</div>${saveBar}${renderFamilyPlannerModals(model)}</form>`;
 }
 
 const PROTOTYPE_RECIPE_TITLES = {
@@ -3327,7 +3327,7 @@ function childSetupRow(child = {}, groupingMode = "forms") {
 
 function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms", tileMinutes = "") {
   const minutes = subject.minutes || tileMinutes || "20";
-  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main">${setupInput("Subject / skill", "title", subject.title || "")}${setupResourceList(subject.resources?.length ? subject.resources : (subject.resource ? [{ title: subject.resource, scheduledWeeks: [] }] : []), children, groupingMode, subject)}${setupSelect("Schedule type", "weeklyFrequency", subject.weeklyFrequency === "1x" ? "weekly" : subject.weeklyFrequency || subject.cadenceLabel || "daily", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutes" value="${html(minutes)}" /><input type="hidden" name="subjectType" value="${html(subject.subjectType || subject.type || "custom")}" /><input type="hidden" name="instructionMode" value="${html(subject.instructionMode || "parent-led")}" /><input type="hidden" name="resourceType" value="${html(subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(subject.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(subject.priorityLevel || "important")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  return `<div data-setup-row="subjects" data-id="${html(subject.id || "")}" class="learn-setup-row learn-setup-row-subject"><div class="learn-setup-row-main"><div class="learn-setup-row-identity">${setupInput("Subject / skill", "title", subject.title || "")}${setupSelect("Schedule type", "weeklyFrequency", subject.weeklyFrequency === "1x" ? "weekly" : subject.weeklyFrequency || subject.cadenceLabel || "daily", simpleScheduleOptions)}${setupRemoveButton()}</div>${setupResourceList(subject.resources?.length ? subject.resources : (subject.resource ? [{ title: subject.resource, scheduledWeeks: [] }] : []), children, groupingMode, subject)}<input type="hidden" name="minutes" value="${html(minutes)}" /><input type="hidden" name="subjectType" value="${html(subject.subjectType || subject.type || "custom")}" /><input type="hidden" name="instructionMode" value="${html(subject.instructionMode || "parent-led")}" /><input type="hidden" name="resourceType" value="${html(subject.resourceType || subject.sourceType || (subject.resource ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(subject.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(subject.priorityLevel || "important")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", subject.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("If missed", "missedLessonBehavior", subject.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", subject.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", subject.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", subject.color || colorChoices[0])}${setupSelect("Grace Mode behavior", "gracePriority", subject.gracePriority || "keep", graceModeOptions)}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", subject.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function bookSetupRow(book = {}, terms = [], currentTermId = "") {
@@ -5757,6 +5757,29 @@ function wirePlanner(vm) {
   const submitFamilyPlanner = () => {
     familyForm?.requestSubmit();
   };
+  const refreshChoreCalendar = () => {
+    if (!familyForm) return;
+    const live = familyForm.querySelector("[data-family-planner-live]");
+    if (!live) return;
+    const params = new URLSearchParams(window.location.search);
+    const scope = params.get("scope") || vm.activeScope || "lessons";
+    if (scope !== "chores") return;
+    const displayView = params.get("view") || vm.activeView || "week";
+    const payload = familyPlanningPayloadFromForm(familyForm);
+    const nextVm = {
+      ...vm,
+      familyPlanning: {
+        ...(vm.familyPlanning || {}),
+        ...(payload.familyPlanning || {}),
+        household: {
+          ...(vm.familyPlanning?.household || {}),
+          ...(payload.household || {})
+        },
+        children: vm.familyPlanning?.children || []
+      }
+    };
+    live.innerHTML = renderChoresScope(familyPlannerModel(nextVm), displayView);
+  };
   const setModalValue = (name, value) => {
     const field = familyForm?.querySelector(`[name="${CSS.escape(name)}"]`);
     if (field) field.value = value || "";
@@ -5933,6 +5956,7 @@ function wirePlanner(vm) {
       }
       activeChore = null;
       closeFamilyModals();
+      refreshChoreCalendar();
       submitFamilyPlanner();
       return;
     }
@@ -5979,6 +6003,7 @@ function wirePlanner(vm) {
       }
       activeChore = null;
       closeFamilyModals();
+      refreshChoreCalendar();
       submitFamilyPlanner();
       return;
     }
