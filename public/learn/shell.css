@@ -3688,3 +3688,54 @@ body {
     grid-template-columns: repeat(7, minmax(160px, 1fr));
   }
 }
+
+/* ── Extracted inline-style utilities ──────────────────────────────────────
+   Promoted from repeated inline style= attributes in dashboard-shell.js.
+   Add further extractions here as render functions are touched.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.learn-eyebrow {
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: .18em;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.learn-list-row {
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.learn-card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 1px 3px rgba(20, 40, 70, .04);
+}
+
+.learn-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.learn-muted {
+  color: var(--muted);
+}
+
+.learn-muted-sm {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.learn-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+/* ── end extracted utilities ─────────────────────────────────────────────── */
