@@ -721,7 +721,7 @@ function normalizeSetupPayload(payload = {}, identity) {
     recipes: list(rawFamilyPlanning.recipes).slice(0, 250).map((recipe, index) => ({ id: text(recipe.id, stableId("recipe", recipe.title, index)), title: text(recipe.title, ""), fastingType: ["fast-friendly", "adaptable", "regular"].includes(recipe.fastingType) ? recipe.fastingType : "adaptable", category: text(recipe.category, "Dinner"), sourceUrl: text(recipe.sourceUrl, ""), ingredients: text(recipe.ingredients, ""), instructions: text(recipe.instructions, "") })).filter((recipe) => recipe.title),
     groceryItems: list(rawFamilyPlanning.groceryItems).slice(0, 250).map((item, index) => ({ id: text(item.id, stableId("grocery", item.name, index)), name: text(item.name, ""), quantity: text(item.quantity, ""), category: text(item.category, "Other"), checked: Boolean(item.checked), pantry: Boolean(item.pantry || item.inPantry) })).filter((item) => item.name),
     chores: list(rawFamilyPlanning.chores).slice(0, 250).map((chore, index) => {
-      const cadence = ["daily", "weekly", "monthly", "quarterly"].includes(text(chore.cadence || chore.frequency, "").toLowerCase()) ? text(chore.cadence || chore.frequency, "").toLowerCase() : chore.day ? "weekly" : "daily";
+      const cadence = ["daily", "weekly", "monthly", "quarterly", "yearly"].includes(text(chore.cadence || chore.frequency, "").toLowerCase()) ? text(chore.cadence || chore.frequency, "").toLowerCase() : chore.day ? "weekly" : "daily";
       return {
         id: text(chore.id, stableId("chore", chore.title || chore.assignee, index)),
         title: text(chore.title, ""),
@@ -730,6 +730,7 @@ function normalizeSetupPayload(payload = {}, identity) {
         day: text(chore.day, ""),
         dayOfMonth: int(chore.dayOfMonth, 0) ? String(Math.max(1, Math.min(31, int(chore.dayOfMonth, 0)))) : "",
         quarterMonth: ["1", "2", "3"].includes(text(chore.quarterMonth, "")) ? text(chore.quarterMonth, "") : "1",
+        assignedDate: /^\d{4}-\d{2}-\d{2}$/.test(text(chore.assignedDate || chore.startDate || chore.date, "")) ? text(chore.assignedDate || chore.startDate || chore.date, "") : "",
         timeOfDay: text(chore.timeOfDay, "Anytime"),
         notes: text(chore.notes, ""),
         completed: Boolean(chore.completed)

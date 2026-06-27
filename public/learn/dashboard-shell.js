@@ -770,19 +770,10 @@ function mealForDate(vm, date) {
 }
 
 function choresForDate(vm, date) {
-  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T12:00:00`) : new Date();
-  const label = plannerDayLabel(date).long;
-  const dayOfMonth = parsed.getDate();
-  const quarterSlot = ((parsed.getMonth() % 3) + 1).toString();
-  return (vm.familyPlanning?.chores || []).filter((chore) => {
-    const cadence = choreCadence(chore);
-    const day = String(chore.day || "").trim();
-    const choreDay = Number(chore.dayOfMonth || 0);
-    if (cadence === "daily") return true;
-    if (cadence === "monthly") return !choreDay || choreDay === dayOfMonth;
-    if (cadence === "quarterly") return (!chore.quarterMonth || String(chore.quarterMonth) === quarterSlot) && (!choreDay || choreDay === dayOfMonth);
-    return !day || day === "Any Day" || day === label;
-  });
+  return (vm.familyPlanning?.chores || []).filter((chore) => choreDueOnDay(chore, {
+    date,
+    long: plannerDayLabel(date).long
+  }));
 }
 
 function renderDesignedLessonList(assignments, emptyMessage) {
@@ -1351,7 +1342,7 @@ function plannerDayLabel(date = "") {
 
 function choreCadence(chore = {}) {
   const raw = String(chore.cadence || chore.frequency || "").toLowerCase();
-  if (["daily", "weekly", "monthly", "quarterly"].includes(raw)) return raw;
+  if (["daily", "weekly", "monthly", "quarterly", "yearly"].includes(raw)) return raw;
   return chore.day ? "weekly" : "daily";
 }
 
@@ -1448,13 +1439,14 @@ function choreSetupRow(chore = {}, index = 0, planning = {}) {
     <div class="learn-chore-editor-main">
       ${setupInput("Chore", "title", chore.title || "")}
       ${setupSelect("Assigned to", "assignee", chore.assignee || "Everyone", assignees)}
-      ${setupSelect("Type", "cadence", cadence, [{ value: "daily", label: "Daily" }, { value: "weekly", label: "Weekly" }, { value: "monthly", label: "Monthly" }, { value: "quarterly", label: "Quarterly" }])}
+      ${setupSelect("Type", "cadence", cadence, [{ value: "daily", label: "Daily" }, { value: "weekly", label: "Weekly" }, { value: "monthly", label: "Monthly" }, { value: "quarterly", label: "Quarterly" }, { value: "yearly", label: "Yearly" }])}
       ${setupRemoveButton()}
     </div>
     <div class="learn-chore-editor-schedule">
       ${setupSelect("Weekly day", "day", chore.day || "", ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])}
       ${setupSelect("Monthly day", "dayOfMonth", String(chore.dayOfMonth || ""), dayOfMonthOptions())}
       ${setupSelect("Quarter month", "quarterMonth", String(chore.quarterMonth || "1"), [{ value: "1", label: "1st month" }, { value: "2", label: "2nd month" }, { value: "3", label: "3rd month" }])}
+      ${setupInput("Starts on", "assignedDate", chore.assignedDate || "", { type: "date" })}
       ${choreTimeCheckboxes("timeOfDay", chore.timeOfDay || "")}
       ${setupInput("Notes", "notes", chore.notes || "")}
       <label class="learn-check-field"><input type="checkbox" name="completed" ${chore.completed ? "checked" : ""}> Done</label>
@@ -1529,7 +1521,7 @@ function renderFamilyPlannerScopeLegacy(vm, scope) {
       { name: household.fatherName || "Dad", color: "var(--navy)" },
       ...(planning.children || []).map((child) => ({ name: child.name || "Child", color: child.color || "var(--gold)" }))
     ];
-    content = `<div class="learn-family-section-note"><strong>Chore rhythm</strong><span>Create daily, weekly, monthly, and quarterly chores. Assign each one to Mom, Dad, Everyone, or a specific child.</span></div><div class="learn-family-chore-roster">${roster.map((person) => `<span><b style="background:${html(person.color)};">${html(String(person.name || "C").slice(0, 1))}</b>${html(person.name)}</span>`).join("")}</div><div data-setup-list="chores" class="learn-family-edit-list">${choreRows.map((chore, index) => choreSetupRow(chore, index, planning)).join("")}</div><button type="button" data-setup-add-row="chores" class="learn-add-button">Add Chore</button>`;
+    content = `<div class="learn-family-section-note"><strong>Chore rhythm</strong><span>Create daily, weekly, monthly, quarterly, and yearly chores. Assign each one to Mom, Dad, Everyone, or a specific child.</span></div><div class="learn-family-chore-roster">${roster.map((person) => `<span><b style="background:${html(person.color)};">${html(String(person.name || "C").slice(0, 1))}</b>${html(person.name)}</span>`).join("")}</div><div data-setup-list="chores" class="learn-family-edit-list">${choreRows.map((chore, index) => choreSetupRow(chore, index, planning)).join("")}</div><button type="button" data-setup-add-row="chores" class="learn-add-button">Add Chore</button>`;
   } else if (scope === "recipes") {
     content = `<div class="learn-family-section-note"><strong>Recipe library</strong><span>Mark each recipe by fasting fit so AGAPAY can suggest better meals for fast days later.</span></div><div data-setup-list="recipes" class="learn-family-edit-list">${(recipes.length ? recipes : [{}]).map(recipeSetupRow).join("")}</div><button type="button" data-setup-add-row="recipes" class="learn-add-button">Add Recipe</button>`;
   } else {
@@ -1721,7 +1713,7 @@ function renderFamilyMonthOverview(model, scope = "meals") {
   const cells = model.monthDays.length ? model.monthDays : model.weekDays;
   const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const monthlyChoresForDay = (day) => (model.chores || []).filter((chore) => {
-    if (choreCadence(chore) !== "monthly") return false;
+    if (!["monthly", "quarterly", "yearly"].includes(choreCadence(chore))) return false;
     return choreDueOnDay(chore, day);
   });
   const monthlyChoresByAssignee = (day) => {
@@ -1739,7 +1731,7 @@ function renderFamilyMonthOverview(model, scope = "meals") {
       ? `<a href="${plannerHref({ scope: "chores", view: "week", month: plannerMonthQuery(model), term: null, termId: null })}">Week view →</a>`
       : `<span></span>`;
   return `<section class="learn-family-month-card">
-    <header><div><small>${html(scope === "meals" ? "Meal calendar" : scope === "events" ? "Family calendar" : "Monthly chores")}</small><h3>${html(model.monthLabel)}</h3></div>${headerAction}</header>
+    <header><div><small>${html(scope === "meals" ? "Meal calendar" : scope === "events" ? "Family calendar" : "Scheduled chores")}</small><h3>${html(model.monthLabel)}</h3></div>${headerAction}</header>
     <div class="learn-family-month-weekdays">${weekdays.map((day) => `<span>${html(day)}</span>`).join("")}</div>
     <div class="learn-family-month-board is-full-month">${cells.map((day) => {
     const meal = day.meal || model.mealByDate.get(day.date) || {};
@@ -1750,13 +1742,13 @@ function renderFamilyMonthOverview(model, scope = "meals") {
     const scopeText = scope === "meals"
       ? meal.dinner || meal.lunch || meal.breakfast || ""
       : scope === "chores"
-        ? monthlyChores.length ? `${monthlyChores.reduce((sum, [, chores]) => sum + chores.length, 0)} monthly chore${monthlyChores.reduce((sum, [, chores]) => sum + chores.length, 0) === 1 ? "" : "s"}` : ""
+        ? monthlyChores.length ? `${monthlyChores.reduce((sum, [, chores]) => sum + chores.length, 0)} scheduled chore${monthlyChores.reduce((sum, [, chores]) => sum + chores.length, 0) === 1 ? "" : "s"}` : ""
         : events[0]?.title || "";
     const addButton = scope === "meals"
       ? `<button type="button" data-meal-open data-date="${html(day.date)}" data-slot="dinner">${html(scopeText ? "Edit dinner" : "+ Dinner")}</button>`
       : scope === "events"
         ? `<button type="button" data-event-open data-date="${html(day.date)}">${html(scopeText ? "Edit" : "+ Event")}</button>`
-        : `<button type="button" data-chore-open data-cadence="monthly" data-day-of-month="${html(day.dayNumber || "")}" data-assignee="Everyone">+ Monthly chore</button>`;
+        : `<button type="button" data-chore-open data-cadence="monthly" data-day-of-month="${html(day.dayNumber || "")}" data-assigned-date="${html(day.date || "")}" data-assignee="Everyone">+ Monthly chore</button>`;
     return `<article class="${day.inMonth === false ? "is-muted" : ""} ${day.isFastDay ? "is-fast" : ""} ${day.isSunday ? "is-feast" : ""}">
       <div><strong>${html(day.weekday || day.weekdayLong || "")}</strong><span>${html(day.dayNumber || day.shortDate || day.short)}</span></div>
       <small>${html([fastingLabel, feastLabel].filter(Boolean).join(" · ") || "Household day")}</small>
@@ -1772,6 +1764,14 @@ function renderFamilyMonthOverview(model, scope = "meals") {
   </section>`;
 }
 
+function monthDiffBetween(startParts, targetParts) {
+  return (targetParts.year - startParts.year) * 12 + (targetParts.month - startParts.month);
+}
+
+function choreAssignedParts(chore = {}) {
+  return isoDateParts(chore.assignedDate || chore.startDate || chore.date || "");
+}
+
 function choreDueOnDay(chore = {}, day = {}) {
   const date = day.date || "";
   const parsed = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T12:00:00`) : null;
@@ -1780,12 +1780,24 @@ function choreDueOnDay(chore = {}, day = {}) {
   if (cadence === "daily") return true;
   if (cadence === "weekly") return !chore.day || chore.day === weekday;
   if (!parsed) return false;
+  const assigned = choreAssignedParts(chore);
+  const target = isoDateParts(date);
+  if (assigned && target) {
+    const monthDiff = monthDiffBetween(assigned, target);
+    const dueDay = Number(chore.dayOfMonth || assigned.day);
+    if (monthDiff < 0 || (monthDiff === 0 && target.day < assigned.day)) return false;
+    if (target.day !== dueDay) return false;
+    if (cadence === "monthly") return true;
+    if (cadence === "quarterly") return monthDiff % 3 === 0;
+    if (cadence === "yearly") return monthDiff % 12 === 0;
+  }
   const choreDay = Number(chore.dayOfMonth || 0);
   if (cadence === "monthly") return !choreDay || choreDay === parsed.getDate();
   if (cadence === "quarterly") {
     const quarterSlot = String((parsed.getMonth() % 3) + 1);
     return (!chore.quarterMonth || String(chore.quarterMonth) === quarterSlot) && (!choreDay || choreDay === parsed.getDate());
   }
+  if (cadence === "yearly") return false;
   return false;
 }
 
@@ -1798,7 +1810,9 @@ function choreScheduleLabel(chore = {}) {
       ? (chore.day ? `Weekly · ${chore.day}` : "Weekly")
       : cadence === "monthly"
         ? (chore.dayOfMonth ? `Monthly · day ${chore.dayOfMonth}` : "Monthly")
-        : `Quarterly${chore.quarterMonth ? ` · month ${chore.quarterMonth}` : ""}${chore.dayOfMonth ? ` · day ${chore.dayOfMonth}` : ""}`;
+        : cadence === "quarterly"
+          ? `Quarterly${chore.assignedDate ? ` · from ${chore.assignedDate}` : chore.quarterMonth ? ` · month ${chore.quarterMonth}` : ""}${chore.dayOfMonth ? ` · day ${chore.dayOfMonth}` : ""}`
+          : `Yearly${chore.assignedDate ? ` · ${chore.assignedDate.slice(5)}` : ""}${chore.dayOfMonth ? ` · day ${chore.dayOfMonth}` : ""}`;
   return `${schedule} · ${time}`;
 }
 
@@ -1807,7 +1821,8 @@ function choreOpenAttributes(chore = null, personName = "", day = {}) {
   const attrs = [
     `data-chore-open`,
     `data-assignee="${html(personName)}"`,
-    `data-day="${html(dayLabel)}"`
+    `data-day="${html(dayLabel)}"`,
+    `data-assigned-date="${html(day.date || "")}"`
   ];
   if (chore) {
     attrs.push(
@@ -1819,6 +1834,7 @@ function choreOpenAttributes(chore = null, personName = "", day = {}) {
       `data-chore-day="${html(chore.day || dayLabel)}"`,
       `data-chore-day-of-month="${html(chore.dayOfMonth || "")}"`,
       `data-chore-quarter-month="${html(chore.quarterMonth || "1")}"`,
+      `data-chore-assigned-date="${html(chore.assignedDate || "")}"`,
       `data-chore-time-of-day="${html(chore.timeOfDay || "Anytime")}"`,
       `data-chore-notes="${html(chore.notes || "")}"`
     );
@@ -1853,7 +1869,7 @@ function renderFamilyPlannerModals(model) {
   return `<div class="learn-family-modal" data-family-modal="meal" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Meal Picker</small><h2>Choose a dish</h2><p data-meal-modal-context>Pick a recipe or type a dish name.</p><input data-meal-custom-input placeholder="Type a dish name..."><div class="learn-family-picker-list">${model.recipes.length ? model.recipes.map((recipe) => `<button type="button" data-meal-pick="${html(recipe.title)}"><strong>${html(recipe.title)}</strong><span>${html(recipe.fastingType || "Any day")} · ${html(recipe.category || "Recipe")}</span></button>`).join("") : `<span class="learn-family-empty-line">No recipes yet. You can still type a dish above.</span>`}</div><div class="learn-family-modal-actions"><button type="button" data-meal-clear>Clear meal</button><button type="button" data-meal-save>Save meal</button></div></div></div>
   <div class="learn-family-modal" data-family-modal="recipe" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Recipe</small><h2>Save a family recipe</h2><div class="learn-family-modal-grid">${setupInput("Recipe name", "modalRecipe.title")}${setupSelect("Fasting fit", "modalRecipe.fastingType", "", ["free", "fish", "oilwine", "strict"])}${setupInput("Category", "modalRecipe.category")}${setupInput("Source URL", "modalRecipe.sourceUrl")}<label>Ingredients<textarea name="modalRecipe.ingredients" rows="4"></textarea></label><label>Instructions<textarea name="modalRecipe.instructions" rows="4"></textarea></label></div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-recipe-save>Save recipe</button></div></div></div>
   <div class="learn-family-modal" data-family-modal="event" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Calendar</small><h2>Add to calendar</h2><div class="learn-family-modal-grid">${setupInput("Title", "modalEvent.title")}${setupSelect("Type", "modalEvent.eventType", "", ["Appointment", "Field Trip", "Extracurricular", "Name Day", "Family"])}${setupInput("Date", "modalEvent.date", "", { type: "date" })}${setupInput("Time", "modalEvent.startTime", "", { type: "time" })}${setupSelect("Repeats", "modalEvent.recurrence", "none", eventRecurrenceOptions)}${setupInput("Location", "modalEvent.location")}<label>Notes<textarea name="modalEvent.notes" rows="3"></textarea></label></div><div class="learn-family-modal-actions"><button type="button" data-family-modal-close>Cancel</button><button type="button" data-event-save>Save event</button></div></div></div>
-  <div class="learn-family-modal" data-family-modal="chore" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Chore Rhythm</small><h2 data-chore-modal-title>Add chore</h2><div class="learn-family-modal-grid">${setupInput("Chore", "modalChore.title")}${setupSelect("Assigned to", "modalChore.assignee", "Everyone", choreAssigneeOptions(model.planning))}${setupSelect("Type", "modalChore.cadence", "weekly", [{ value: "daily", label: "Daily" }, { value: "weekly", label: "Weekly" }, { value: "monthly", label: "Monthly" }, { value: "quarterly", label: "Quarterly" }])}${setupSelect("Weekly day", "modalChore.day", "", ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])}${setupSelect("Monthly day", "modalChore.dayOfMonth", "", dayOfMonthOptions())}${setupSelect("Quarter month", "modalChore.quarterMonth", "1", [{ value: "1", label: "1st month" }, { value: "2", label: "2nd month" }, { value: "3", label: "3rd month" }])}${choreTimeCheckboxes("modalChore.timeOfDay")}<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Notes<input name="modalChore.notes" type="text" value="" style="min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);" /></label></div><div class="learn-family-modal-actions"><button type="button" data-chore-delete hidden>Delete chore</button><button type="button" data-family-modal-close>Cancel</button><button type="button" data-chore-save-add>Add another</button><button type="button" data-chore-save>Save chore</button></div></div></div>`;
+  <div class="learn-family-modal" data-family-modal="chore" hidden><div class="learn-family-modal-card"><button type="button" class="learn-family-modal-close" data-family-modal-close aria-label="Close">×</button><small>Chore Rhythm</small><h2 data-chore-modal-title>Add chore</h2><div class="learn-family-modal-grid">${setupInput("Chore", "modalChore.title")}${setupSelect("Assigned to", "modalChore.assignee", "Everyone", choreAssigneeOptions(model.planning))}${setupSelect("Type", "modalChore.cadence", "weekly", [{ value: "daily", label: "Daily" }, { value: "weekly", label: "Weekly" }, { value: "monthly", label: "Monthly" }, { value: "quarterly", label: "Quarterly" }, { value: "yearly", label: "Yearly" }])}${setupSelect("Weekly day", "modalChore.day", "", ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])}${setupSelect("Monthly day", "modalChore.dayOfMonth", "", dayOfMonthOptions())}${setupSelect("Quarter month", "modalChore.quarterMonth", "1", [{ value: "1", label: "1st month" }, { value: "2", label: "2nd month" }, { value: "3", label: "3rd month" }])}${setupInput("Starts on", "modalChore.assignedDate", "", { type: "date" })}${choreTimeCheckboxes("modalChore.timeOfDay")}<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Notes<input name="modalChore.notes" type="text" value="" style="min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);" /></label></div><div class="learn-family-modal-actions"><button type="button" data-chore-delete hidden>Delete chore</button><button type="button" data-family-modal-close>Cancel</button><button type="button" data-chore-save-add>Add another</button><button type="button" data-chore-save>Save chore</button></div></div></div>`;
 }
 
 function dayKeyForChore(chore = {}, vm = {}) {
@@ -2300,6 +2316,7 @@ function prototypeStateToFamilyPlanningPayload(vm, state) {
       day: detail.day || dayLabelByKey[dayKey] || "",
       dayOfMonth: detail.dayOfMonth || "",
       quarterMonth: detail.quarterMonth || "",
+      assignedDate: detail.assignedDate || "",
       timeOfDay: detail.timeOfDay || "Anytime",
       notes: detail.notes || "",
       completed: Boolean(detail.completed)
@@ -5394,6 +5411,7 @@ function familyPlanningPayloadFromForm(form) {
           day: rowValue(row, "day"),
           dayOfMonth: rowValue(row, "dayOfMonth"),
           quarterMonth: rowValue(row, "quarterMonth"),
+          assignedDate: rowValue(row, "assignedDate"),
           timeOfDay: rowValue(row, "timeOfDay"),
           notes: rowValue(row, "notes"),
           completed: Boolean(row.querySelector('[name="completed"]')?.checked)
@@ -6216,6 +6234,7 @@ function wirePlanner(vm) {
         day: choreOpen.dataset.choreDay || choreOpen.dataset.day || "",
         dayOfMonth: choreOpen.dataset.choreDayOfMonth || "",
         quarterMonth: choreOpen.dataset.choreQuarterMonth || "1",
+        assignedDate: choreOpen.dataset.choreAssignedDate || choreOpen.dataset.assignedDate || "",
         timeOfDay: choreOpen.dataset.choreTimeOfDay || "Anytime",
         notes: choreOpen.dataset.choreNotes || ""
       } : null;
@@ -6225,6 +6244,7 @@ function wirePlanner(vm) {
       setModalValue("modalChore.day", activeChore?.day || choreOpen.dataset.day || "");
       setModalValue("modalChore.dayOfMonth", activeChore?.dayOfMonth || choreOpen.dataset.dayOfMonth || "");
       setModalValue("modalChore.quarterMonth", activeChore?.quarterMonth || "1");
+      setModalValue("modalChore.assignedDate", activeChore?.assignedDate || choreOpen.dataset.assignedDate || "");
       setModalValue("modalChore.timeOfDay", activeChore?.timeOfDay || "Anytime");
       setModalValue("modalChore.notes", activeChore?.notes || "");
       const deleteButton = familyForm.querySelector("[data-chore-delete]");
@@ -6259,6 +6279,7 @@ function wirePlanner(vm) {
         day: getModalValue("modalChore.day"),
         dayOfMonth: getModalValue("modalChore.dayOfMonth"),
         quarterMonth: getModalValue("modalChore.quarterMonth"),
+        assignedDate: getModalValue("modalChore.assignedDate"),
         timeOfDay: getModalValue("modalChore.timeOfDay"),
         notes: getModalValue("modalChore.notes")
       };
