@@ -1177,8 +1177,25 @@ body {
   border-radius: 12px;
   background: linear-gradient(180deg, rgba(255, 252, 245, 0.92), rgba(248, 241, 227, 0.86));
   padding: 12px;
-  margin-bottom: 8px;
   box-shadow: 0 1px 3px rgba(20,40,70,.04);
+}
+
+[data-resource-list] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+}
+
+[data-resource-list] [data-resource-row] {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+[data-resource-list] > [data-add-resource] {
+  align-self: end;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .learn-resource-card-plan {
@@ -2526,6 +2543,8 @@ body {
 
 @media (max-width: 560px) {
   .learn-child-row, .learn-event-row, .learn-recipe-row, .learn-grocery-row, .learn-family-adults { grid-template-columns: 1fr; }
+  [data-resource-list] { flex-direction: column; }
+  [data-resource-list] [data-resource-row] { flex: 1 1 auto; }
   .learn-chore-editor-main, .learn-chore-editor-schedule { grid-template-columns: 1fr; }
   .learn-family-intro { grid-template-columns: 1fr; padding: 18px; }
   .learn-family-intro-icon { width: 52px; height: 52px; }
