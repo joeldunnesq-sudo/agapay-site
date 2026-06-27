@@ -1129,9 +1129,9 @@ function renderWeeklyAssignmentBoard(vm) {
         </div>
         <div class="learn-week-nav" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <div style="display:flex;align-items:center;gap:6px;">
-            <button type="button" data-week-nav="-1" aria-label="Previous week" style="border:1px solid var(--line);background:var(--paper2);border-radius:9px;padding:8px 12px;font-family:inherit;cursor:pointer;">← Prev</button>
+            <button type="button" data-week-nav="-1" aria-label="Previous week" style="border:1px solid var(--line);background:var(--paper2);color:var(--ink);border-radius:9px;padding:8px 12px;font-family:inherit;cursor:pointer;">← Prev</button>
             <span style="font-size:13px;color:var(--muted);white-space:nowrap;padding:0 4px;">${html(weekLabel)}</span>
-            <button type="button" data-week-nav="1" aria-label="Next week" style="border:1px solid var(--line);background:var(--paper2);border-radius:9px;padding:8px 12px;font-family:inherit;cursor:pointer;">Next →</button>
+            <button type="button" data-week-nav="1" aria-label="Next week" style="border:1px solid var(--line);background:var(--paper2);color:var(--ink);border-radius:9px;padding:8px 12px;font-family:inherit;cursor:pointer;">Next →</button>
             <button type="button" data-week-nav="today" style="border:1px solid var(--goldsoft);background:var(--paper);border-radius:9px;padding:8px 12px;font-family:inherit;cursor:pointer;color:var(--gold);font-weight:600;">Today</button>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
