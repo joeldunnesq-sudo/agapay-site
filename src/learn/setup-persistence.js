@@ -1064,6 +1064,8 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
         title: book.audienceLabel === "Morning Basket" ? book.title : `Read-Aloud: ${book.title}`,
         detail: `${book.author || book.category}${book.endChapter ? ` • chapters ${book.startChapter || 1}-${book.endChapter}` : ""}${book.weeklyFrequency ? ` • ${book.weeklyFrequency}` : ""}`,
         priority: 50 + index,
+        gracePriority: book.gracePriority || "reduce first",
+        graceNote: book.graceNote || "Reading moved into the reserve basket.",
         ...weeklyPlanArrays(book.weeklyFrequency, book.minutes || 20, scheduledThisTermWeek(book, currentTermWeek))
       })),
       ...list(formation.enrichmentBlocks).filter(forCurrentTerm).map((block, index) => ({
@@ -1080,6 +1082,8 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
         instructionMode: block.instructionMode,
         missedLessonBehavior: block.missedLessonBehavior,
         color: block.color,
+        gracePriority: block.gracePriority || "reduce first",
+        graceNote: block.graceNote || "Deferred gracefully to the reserve list.",
         ...planArraysForItem(block, currentTermWeek, plannerWeekWindow.dates)
       }))
     ],
@@ -1100,6 +1104,8 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           instructionMode: subject.instructionMode,
           missedLessonBehavior: subject.missedLessonBehavior,
           color: subject.color,
+          gracePriority: subject.gracePriority || "keep",
+          graceNote: subject.graceNote || "Deferred gracefully to the reserve list.",
           graceModeApplied: setupSnapshot.preferences?.graceModeActive && subject.gracePriority !== "keep",
           ...planArraysForItem(assignment, currentTermWeek, plannerWeekWindow.dates)
         }));
@@ -1114,7 +1120,9 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           detail: `${book.author || book.category}${book.endChapter ? ` (chapters ${book.startChapter || 1}-${book.endChapter})` : ""}${book.weeklyFrequency ? ` • ${book.weeklyFrequency}` : ""}`,
           priority: index + 100,
           color: book.color,
-          graceModeApplied: setupSnapshot.preferences?.graceModeActive,
+          gracePriority: book.gracePriority || "bump if needed",
+          graceNote: book.graceNote || "Reading moved into the reserve basket.",
+          graceModeApplied: setupSnapshot.preferences?.graceModeActive && (book.gracePriority || "bump if needed") !== "keep",
           ...weeklyPlanArrays(book.weeklyFrequency, book.minutes || 20, scheduledThisTermWeek(book, currentTermWeek))
         }));
       })
