@@ -737,6 +737,7 @@ export function toPlannerViewModel(rawPayload) {
       activeTermId,
       label: text(planner.term?.label, `Term ${activeTerm}`),
       dateRange: [text(planner.term?.startDate, ""), text(planner.term?.endDate, "")].filter(Boolean).join(" - "),
+      description: text(planner.term?.description, ""),
       paceMode: text(planner.term?.paceMode, ""),
       settings: planner.curriculum?.mappingSummary || [],
       cycleTitle: text(planner.cycle?.year?.title, "Household Cycle"),
