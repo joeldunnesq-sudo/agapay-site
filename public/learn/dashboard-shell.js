@@ -650,7 +650,7 @@ function renderGraceModePanel(vm) {
     <section data-grace-mode-panel style="background:linear-gradient(135deg,#fffaf0 0%,#f7edd6 100%);border:1px solid rgba(181,148,47,.34);border-radius:16px;padding:18px 20px;box-shadow:0 1px 3px rgba(20,40,70,.05);">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
         <div>
-          <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:700;text-transform:uppercase;">Grace Mode</div>
+          <div class="learn-eyebrow">Grace Mode</div>
           <h2 style="font-family:'Cormorant Garamond',serif;font-size:30px;line-height:1.05;margin:4px 0 4px;color:var(--ink);">Choose today's household rhythm.</h2>
           <p style="margin:0;color:#4c5870;line-height:1.45;max-width:720px;">Adjust the day without abandoning the plan. AGAPAY keeps what matters most and gently moves the rest into reserve.</p>
         </div>
@@ -679,7 +679,7 @@ function renderTermProgressPanel(vm) {
   return `
     <section style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;grid-template-columns:minmax(220px,.8fr) 1fr;gap:18px;align-items:center;box-shadow:0 1px 3px rgba(20,40,70,.04);">
       <div>
-        <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:700;text-transform:uppercase;">Term at a Glance</div>
+        <div class="learn-eyebrow">Term at a Glance</div>
         <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1.05;margin:5px 0 4px;color:var(--ink);">${html(term.label || "Current Term")}</h2>
         <p style="margin:0;color:var(--muted);line-height:1.4;">${term.currentWeek && term.totalWeeks ? `Week ${html(term.currentWeek)} of ${html(term.totalWeeks)}` : "Set term dates in Setup"}${term.dateRange ? ` · ${html(term.dateRange)}` : ""}</p>
         ${term.description ? `<p style="margin:10px 0 0;font-size:14px;line-height:1.55;color:var(--ink);">${html(term.description)}</p>` : ""}
@@ -800,8 +800,8 @@ function renderDashboardDesignedLessons(vm) {
   const assignments = designedAssignmentsForDate(vm, date);
   const dayHref = `/myagapay/learn/planner?view=day&date=${encodeURIComponent(date)}`;
   return `
-    <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+    <div class="learn-card">
+      <div class="learn-section-head">
         <span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:16px;">▦</span><span style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">TODAY'S DESIGNED LESSONS</span></span>
         <a href="${html(dayHref)}" style="color:var(--gold);font-size:12px;font-weight:800;text-decoration:none;">Open day</a>
       </div>
@@ -961,7 +961,7 @@ function renderDashboard(vm) {
             <span style="width:34px;height:34px;border-radius:50%;background:${col.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none;">${html(col.initial)}</span>
             <div style="line-height:1.15;min-width:0;">
               <span style="display:block;font-size:10px;letter-spacing:.12em;color:var(--gold);font-weight:600;">${html(col.tag)}</span>
-              <span style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(col.name)} <span style="color:var(--muted);font-size:13px;">• Age ${html(col.age)}</span></span>
+              <span style="display:block;font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(col.name)} <span class="learn-muted-sm">• Age ${html(col.age)}</span></span>
             </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;">
@@ -1014,10 +1014,10 @@ function renderDashboard(vm) {
       </div>
 
       <!-- Daily Church Rhythms — proper grid -->
-      <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
+      <div class="learn-card">
+        <div class="learn-section-head">
           <span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:16px;">✥</span><span style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:600;">DAILY CHURCH RHYTHMS</span></span>
-          <small style="color:var(--muted);">Resets each day</small>
+          <small class="learn-muted">Resets each day</small>
         </div>
         ${rhythmsGrid}
       </div>
@@ -1026,10 +1026,10 @@ function renderDashboard(vm) {
       ${renderDashboardFamilyCards(vm)}
 
       <!-- Together This Week — full width -->
-      <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;">
-          <span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:17px;">⌂</span><span style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;">TOGETHER THIS WEEK</span></span>
-          <small style="color:var(--muted);">Resets Sunday</small>
+      <div class="learn-card">
+        <div class="learn-section-head">
+          <span style="display:flex;align-items:center;gap:9px;"><span style="color:var(--gold);font-size:17px;">⌂</span><span class="learn-eyebrow">TOGETHER THIS WEEK</span></span>
+          <small class="learn-muted">Resets Sunday</small>
         </div>
         <div style="display:flex;flex-direction:column;gap:13px;">${togetherThisWeek}</div>
       </div>
@@ -1042,7 +1042,7 @@ function renderDashboard(vm) {
             <div style="color:var(--gold);font-size:11px;letter-spacing:.16em;font-weight:800;text-transform:uppercase;">Forms & Children</div>
             <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1;margin:5px 0 0;color:var(--ink);">Individual work this week</h2>
           </div>
-          <small style="color:var(--muted);">${vm.childColumns.length} ${vm.childColumns.length === 1 ? "learner" : "learners"}</small>
+          <small class="learn-muted">${vm.childColumns.length} ${vm.childColumns.length === 1 ? "learner" : "learners"}</small>
         </div>
         ${weekStatsStrip}
         <div class="learn-child-week-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px;align-items:start;">
@@ -1259,7 +1259,7 @@ function renderTermAtAGlance(vm) {
     return `
       <section style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;display:grid;grid-template-columns:1fr minmax(180px,.55fr);gap:22px;align-items:start;">
         <div>
-          <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Term at a Glance</div>
+          <div class="learn-eyebrow">Term at a Glance</div>
           <strong style="font-family:'Cormorant Garamond',serif;font-size:22px;display:block;line-height:1.1;">${html(vm.term.label)}</strong>
           ${vm.term.dateRange ? `<div style="color:var(--muted);font-size:13px;margin:3px 0 10px;">${html(vm.term.dateRange)}</div>` : `<div style="margin-bottom:10px;"></div>`}
           <p style="margin:0;font-size:14px;line-height:1.6;color:var(--ink);">${html(vm.term.description)}</p>
@@ -1277,7 +1277,7 @@ function renderTermAtAGlance(vm) {
   return `
     <section style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 22px;display:grid;grid-template-columns:minmax(200px,.75fr) 1fr;gap:22px;align-items:center;">
       <div>
-        <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:700;text-transform:uppercase;">Term at a Glance</div>
+        <div class="learn-eyebrow">Term at a Glance</div>
         <h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;line-height:1.05;margin:5px 0 4px;color:var(--ink);">${html(vm.term.label || "Current Term")}</h2>
         <p style="margin:0;color:var(--muted);font-size:13px;line-height:1.4;">${weekNum && totalWeeks ? `Week ${weekNum} of ${totalWeeks}` : "Set term dates in Setup"}${vm.term.dateRange ? ` · ${html(vm.term.dateRange)}` : ""}</p>
       </div>
@@ -1296,8 +1296,8 @@ function renderPlannerWeek(vm) {
     ${renderWeeklyAssignmentBoard(vm)}
     <div style="display:flex;gap:14px;flex-wrap:wrap;">
       <div style="flex:1 1 620px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;">
-        <div style="color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:600;margin-bottom:12px;">FORM PLANS</div>
-        ${vm.week.formRows.length ? vm.week.formRows.map((form) => `<div style="display:grid;grid-template-columns:42px 150px 1fr;gap:12px;align-items:start;border-top:1px solid var(--line);padding:12px 0;"><span style="width:38px;height:38px;border-radius:50%;background:${form.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(form.initials.slice(0, 2).join(""))}</span><span><strong style="display:block;">${html(form.formLabel)}</strong><small style="color:var(--muted);">${html(form.childNames.join(", "))}</small></span><span style="color:var(--muted);display:grid;gap:5px;">${form.items.slice(0, 4).map((item) => `<span>${html(item.title)}${item.sub ? ` · ${html(item.sub)}` : ""}</span>`).join("")}${form.items.length > 4 ? `<small style="color:var(--gold);">+ ${form.items.length - 4} more lessons</small>` : ""}</span></div>`).join("") : emptyState("Add children and subjects in Setup to generate Form plans.")}
+        <div class="learn-eyebrow">FORM PLANS</div>
+        ${vm.week.formRows.length ? vm.week.formRows.map((form) => `<div style="display:grid;grid-template-columns:42px 150px 1fr;gap:12px;align-items:start;border-top:1px solid var(--line);padding:12px 0;"><span style="width:38px;height:38px;border-radius:50%;background:${form.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(form.initials.slice(0, 2).join(""))}</span><span><strong style="display:block;">${html(form.formLabel)}</strong><small class="learn-muted">${html(form.childNames.join(", "))}</small></span><span style="color:var(--muted);display:grid;gap:5px;">${form.items.slice(0, 4).map((item) => `<span>${html(item.title)}${item.sub ? ` · ${html(item.sub)}` : ""}</span>`).join("")}${form.items.length > 4 ? `<small style="color:var(--gold);">+ ${form.items.length - 4} more lessons</small>` : ""}</span></div>`).join("") : emptyState("Add children and subjects in Setup to generate Form plans.")}
       </div>
     </div>
   `;
@@ -1467,109 +1467,6 @@ function renderFamilyPlannerIntro(vm, scope) {
       </div>
     </section>
   `;
-}
-
-function renderFamilyPlannerScopeLegacy(vm, scope) {
-  const planning = vm.familyPlanning || {};
-  const dates = plannerDates(vm);
-  const mealByDate = new Map((planning.meals || []).map((meal) => [meal.date, meal]));
-  const recipes = planning.recipes || [];
-  const groceries = planning.groceryItems || [];
-  const chores = planning.chores || [];
-  const eventsByDate = expandFamilyEvents(planning.events || [], dates);
-  const titleMap = {
-    meals: ["Weekly Meals", "Plan one week at a time with fasting guidance beside the family calendar.", "♨"],
-    chores: ["Chores", "Keep practical life visible without crowding the school lesson plan.", "✓"],
-    calendar: ["Family Calendar", "Appointments, field trips, extracurriculars, and name days in one household view.", "◷"],
-    recipes: ["Recipes", "A fast-aware household recipe box connected to your weekly meal plan.", "☰"],
-    groceries: ["Grocery List", "A simple shopping list that can grow from meals and recipes.", "▤"]
-  };
-  const [title, intro, icon] = titleMap[scope] || titleMap.meals;
-  const saveBar = `<div class="learn-family-planner-save"><span data-family-planning-status>Changes save to this household's Learn planner.</span><button type="submit">Save ${html(title)}</button></div>`;
-  const hidden = `<input type="hidden" name="familyPlanning.weekStart" value="${html(dates[0])}"><input type="hidden" name="familyPlanning.fastingPreference" value="${html(planning.fastingPreference || "guidance")}"><input type="hidden" name="household.motherName" value="${html(planning.household?.motherName || "")}"><input type="hidden" name="household.motherNameDay" value="${html(planning.household?.motherNameDay || "")}"><input type="hidden" name="household.fatherName" value="${html(planning.household?.fatherName || "")}"><input type="hidden" name="household.fatherNameDay" value="${html(planning.household?.fatherNameDay || "")}"><input type="hidden" name="household.parishPatronalFeastName" value="${html(planning.household?.parishPatronalFeastName || "")}"><input type="hidden" name="household.parishPatronalFeastDate" value="${html(planning.household?.parishPatronalFeastDate || "")}">${(planning.children || []).map((child) => `<span data-family-child-id="${html(child.id)}" data-family-child-name="${html(child.name || "")}" hidden><input name="childNameDay" value="${html(child.nameDay || "")}"></span>`).join("")}`;
-  let content = "";
-  if (scope === "meals") {
-    content = `<div class="learn-family-section-note"><strong>Weekly menu</strong><span>Tap into the fields and save the week. Recipe picker and drag-and-drop meal assignment can layer on top of this without changing the data.</span></div><div class="learn-family-meal-grid">${dates.map((date) => {
-      const day = plannerDayLabel(date);
-      const meal = mealByDate.get(date) || {};
-      const calendarDay = (vm.month.days || []).find((item) => item.date === date) || (vm.week.days || []).find((item) => item.date === date) || {};
-      const fastingClass = calendarDay.isFastDay ? "is-fast" : calendarDay.isSunday ? "is-feast" : "";
-      return `<article class="learn-family-day-card ${fastingClass}" data-setup-row="meals" data-id="${html(meal.id || "")}"><div><span><small>${html(day.weekday)}</small><b>${html(day.short)}</b></span><strong>${html(calendarDay.fastingType || calendarDay.fasting || "No fast")}</strong></div><input type="hidden" name="date" value="${html(date)}"><label><span>Breakfast</span><input name="breakfast" value="${html(meal.breakfast || "")}" placeholder="Add breakfast"></label><label><span>Lunch</span><input name="lunch" value="${html(meal.lunch || "")}" placeholder="Add lunch"></label><label><span>Dinner</span><input name="dinner" value="${html(meal.dinner || "")}" placeholder="Add dinner"></label></article>`;
-    }).join("")}</div>`;
-  } else if (scope === "calendar") {
-    content = `<div class="learn-family-section-note"><strong>This week's calendar</strong><span>Appointments, field trips, extracurriculars, and name days stay visible with school work and meals.</span></div><div class="learn-family-events-list">${dates.map((date) => {
-      const day = plannerDayLabel(date);
-      const rows = eventsByDate.get(date) || [{}];
-      const calendarDay = (vm.week.days || []).find((item) => item.date === date) || {};
-      return `<section class="learn-family-date-section"><header><span><small>${html(day.weekday)}</small><strong>${html(day.short)}</strong><em>${html(calendarDay.feast || "Family day")}</em></span><button type="button" data-setup-add-row="familyEvents" data-setup-add-target="familyEvents-${html(date)}" data-setup-add-date="${html(date)}">+ Add</button></header><div id="familyEvents-${html(date)}" data-setup-list="familyEvents" style="display:grid;gap:8px;">${rows.map((event) => familyEventSetupRow({ ...event, date: event.date || date })).join("")}</div></section>`;
-    }).join("")}</div>`;
-  } else if (scope === "chores") {
-    const choreRows = chores.length ? chores : [{}];
-    const household = planning.household || {};
-    const roster = [
-      { name: household.motherName || "Mom", color: "var(--burgundy)" },
-      { name: household.fatherName || "Dad", color: "var(--navy)" },
-      ...(planning.children || []).map((child) => ({ name: child.name || "Child", color: child.color || "var(--gold)" }))
-    ];
-    content = `<div class="learn-family-section-note"><strong>Chore rhythm</strong><span>Create daily, weekly, monthly, and quarterly chores. Assign each one to Mom, Dad, Everyone, or a specific child.</span></div><div class="learn-family-chore-roster">${roster.map((person) => `<span><b style="background:${html(person.color)};">${html(String(person.name || "C").slice(0, 1))}</b>${html(person.name)}</span>`).join("")}</div><div data-setup-list="chores" class="learn-family-edit-list">${choreRows.map((chore, index) => choreSetupRow(chore, index, planning)).join("")}</div><button type="button" data-setup-add-row="chores" class="learn-add-button">Add Chore</button>`;
-  } else if (scope === "recipes") {
-    content = `<div class="learn-family-section-note"><strong>Recipe library</strong><span>Mark each recipe by fasting fit so AGAPAY can suggest better meals for fast days later.</span></div><div data-setup-list="recipes" class="learn-family-edit-list">${(recipes.length ? recipes : [{}]).map(recipeSetupRow).join("")}</div><button type="button" data-setup-add-row="recipes" class="learn-add-button">Add Recipe</button>`;
-  } else {
-    const byCategory = new Map();
-    groceries.forEach((item) => {
-      const category = item.category || "Other";
-      if (!byCategory.has(category)) byCategory.set(category, []);
-      byCategory.get(category).push(item);
-    });
-    const summary = groceries.length ? [...byCategory.entries()].map(([category, items]) => `<div class="learn-family-aisle"><strong>${html(category)}</strong><span>${items.map((item) => html(item.name)).join(", ")}</span></div>`).join("") : "";
-    content = `<div class="learn-family-section-note"><strong>Grocery list</strong><span>Group items by aisle. Checked items persist so the list can become a real weekly shopping tool.</span></div>${summary ? `<div class="learn-family-grocery-summary">${summary}</div>` : ""}<div data-setup-list="groceryItems" class="learn-family-edit-list">${(groceries.length ? groceries : [{}]).map(grocerySetupRow).join("")}</div><button type="button" data-setup-add-row="groceryItems" class="learn-add-button">Add Grocery Item</button>`;
-  }
-  return `<form data-family-planning-form id="family-planner" class="learn-family-planner-panel">${hidden}${content}${saveBar}</form>`;
-}
-
-function familyPlannerModel(vm) {
-  const planning = vm.familyPlanning || {};
-  const dates = plannerDates(vm);
-  const mealByDate = new Map((planning.meals || []).map((meal) => [meal.date, meal]));
-  const children = (planning.children || []).map((child, index) => ({
-    ...child,
-    name: child.name || child.firstName || `Child ${index + 1}`,
-    color: child.color || ACCENTS[index % ACCENTS.length],
-    initial: child.initial || String(child.name || child.firstName || "?").charAt(0).toUpperCase()
-  }));
-  const groceries = (planning.groceryItems || []).map((item) => ({
-    ...item,
-    pantry: Boolean(item.pantry || item.inPantry),
-    checked: Boolean(item.checked)
-  }));
-  const monthDays = (vm.month?.days || []).map((day) => ({
-    ...day,
-    date: day.date,
-    short: day.dayNumber ? `${day.weekday || ""} ${day.dayNumber}`.trim() : day.date,
-    long: day.weekday || "",
-    isFastDay: Boolean(day.isFastDay),
-    meal: day.meal || mealByDate.get(day.date) || null
-  }));
-  const calendarDates = [...new Set([...dates, ...monthDays.map((day) => day.date)].filter(Boolean))];
-  const eventsByDate = expandFamilyEvents(planning.events || [], calendarDates);
-  const weekDays = dates.map((date) => {
-    const label = plannerDayLabel(date);
-    const liturgical = (vm.week.days || []).find((day) => day.date === date) || {};
-    return { date, ...label, ...liturgical };
-  });
-  return {
-    planning,
-    dates,
-    monthLabel: vm.month?.label || "Month Calendar",
-    weekDays,
-    monthDays,
-    mealByDate,
-    eventsByDate,
-    recipes: planning.recipes || [],
-    groceries,
-    chores: planning.chores || [],
-    children
-  };
 }
 
 function renderFeastsPanel(model, mode = "week") {
@@ -2393,12 +2290,12 @@ function renderPlannerMonth(vm) {
             <div>
               <small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;font-size:10px;">Fast Days</small>
               <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--burgundy);line-height:1;">${html(month.fastDays)}</strong>
-              <span style="color:var(--muted);font-size:13px;">Marked in red.</span>
+              <span class="learn-muted-sm">Marked in red.</span>
             </div>
             <div>
               <small style="color:var(--gold);letter-spacing:.12em;text-transform:uppercase;font-size:10px;">Feast Markers</small>
               <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--ink);line-height:1;">${html(month.feastDays)}</strong>
-              <span style="color:var(--muted);font-size:13px;">Major liturgical rhythms.</span>
+              <span class="learn-muted-sm">Major liturgical rhythms.</span>
             </div>
           </div>
           <p style="margin:12px 0 0;font-size:13px;color:#33405a;line-height:1.45;border-top:1px solid var(--line);padding-top:12px;">Print a clean household copy — feast days, fasts, and the month at a glance.</p>`, { icon: "▣" })}
@@ -2428,7 +2325,7 @@ function renderPlannerTerm(vm) {
       </div>
     </div>
     <div style="display:grid;grid-template-columns:.9fr repeat(${Math.min(vm.term.childTracks.length, 4)}, minmax(150px,1fr));gap:12px;">
-      ${panel("Family-Based Learning", vm.term.householdSummary.map((item) => `<div style="padding:8px 0;border-top:1px solid var(--line);">${html(item)}</div>`).join("") || emptyState("Add household streams in Setup."), { icon: "⌂", style: "min-width:0;" })}
+      ${panel("Family-Based Learning", vm.term.householdSummary.map((item) => `<div class="learn-list-row">${html(item)}</div>`).join("") || emptyState("Add household streams in Setup."), { icon: "⌂", style: "min-width:0;" })}
       ${vm.term.childTracks.slice(0, 4).map((child) => panel(`${child.name} · Age ${child.age}`, `<div style="display:grid;gap:8px;">${child.tracks.map((track) => `<div style="border-top:1px solid var(--line);padding:8px 0;">${html(track)}</div>`).join("") || emptyState("No tracks configured.")}</div>`, { icon: child.initial, style: "min-width:0;" })).join("")}
     </div>
     ${vm.term.childTracks.length > 4 ? `<div style="color:var(--muted);font-size:13px;padding:6px 2px;">+ ${vm.term.childTracks.length - 4} more ${vm.term.childTracks.length - 4 === 1 ? "child" : "children"} — add Setup tracks to see their columns here.</div>` : ""}
@@ -2464,7 +2361,7 @@ function renderPlannerYear(vm) {
         <div>
           <div style="color:var(--gold);font-size:10px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;margin-bottom:8px;">${html(type)}</div>
           ${topics.map((topic) => `
-            <div style="padding:8px 0;border-top:1px solid var(--line);">
+            <div class="learn-list-row">
               <strong style="display:block;font-size:14px;color:var(--ink);">${html(topic.title)}</strong>
               ${topic.season ? `<small style="color:var(--muted);font-size:11px;">${html(topic.season)}</small>` : ""}
             </div>`).join("")}
@@ -2551,7 +2448,7 @@ function renderFormation(vm) {
   const todayPanel = panel("Today in the Church", `
     <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:10px;margin-bottom:6px;">
       <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1.05;margin:0;color:var(--ink);">${html(vm.today.title)}</h2>
-      <small style="color:var(--muted);font-size:13px;">${html(vm.today.date)}</small>
+      <small class="learn-muted-sm">${html(vm.today.date)}</small>
     </div>
     ${fastBadge}
     ${readingButtons}
@@ -2643,7 +2540,7 @@ function renderFormation(vm) {
   const naturePanel = panel("Nature Journal", natureContent, { icon: "✦" });
 
   const body = `
-    <section data-screen-label="Formation" style="display:flex;flex-direction:column;gap:18px;">
+    <section data-screen-label="Formation" class="learn-stack">
 
       <div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;">
         ${todayPanel}
@@ -2694,12 +2591,12 @@ function renderBooks(vm) {
             ${bookCover(book, "☰")}
             <span style="min-width:0;">
               <strong style="display:block;color:var(--ink);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(book.title)}</strong>
-              <small style="color:var(--muted);">${html(book.assignment || "")}</small>
+              <small class="learn-muted">${html(book.assignment || "")}</small>
             </span>
           </span>
           <span style="color:var(--ink);">${html(book.author)}</span>
-          <span style="color:var(--muted);">${html(book.category)}</span>
-          <span style="color:var(--muted);">${html(book.ages || "—")}</span>
+          <span class="learn-muted">${html(book.category)}</span>
+          <span class="learn-muted">${html(book.ages || "—")}</span>
           <span style="${book.orthodox ? "color:var(--gold);font-weight:700;" : "color:var(--muted);"}">${book.orthodox ? "Orthodox" : "—"}</span>
           <span>${bar(book.progress)}<small style="color:var(--gold);font-weight:700;">${html(book.progress)}%</small></span>
         </div>`).join("")
@@ -2713,10 +2610,10 @@ function renderBooks(vm) {
   // ── Book pacing ───────────────────────────────────────────────────────────────
   const pacingContent = vm.pacing.weeks.length
     ? `<strong style="font-family:'Cormorant Garamond',serif;font-size:20px;display:block;margin-bottom:4px;">${html(vm.pacing.title)}</strong>
-       <small style="color:var(--muted);">${html(vm.pacing.subtitle)}${vm.pacing.chaptersPerWeek ? ` · ${html(vm.pacing.chaptersPerWeek)} ch/wk` : ""}</small>
+       <small class="learn-muted">${html(vm.pacing.subtitle)}${vm.pacing.chaptersPerWeek ? ` · ${html(vm.pacing.chaptersPerWeek)} ch/wk` : ""}</small>
        ${vm.pacing.weeks.map((week, i) => `
          <div style="display:grid;grid-template-columns:52px 1fr 52px;gap:8px;border-top:1px solid var(--line);padding:8px 0;font-size:13px;align-items:center;">
-           <span style="color:var(--muted);">Wk ${html(week.week)}</span>
+           <span class="learn-muted">Wk ${html(week.week)}</span>
            <strong style="font-size:14px;">${html(week.chapters)}</strong>
            <span style="color:var(--muted);text-align:right;">${html(week.pages)}</span>
          </div>`).join("")}`
@@ -2744,7 +2641,7 @@ function renderBooks(vm) {
     : "";
 
   const body = `
-    <section data-screen-label="Books" style="display:flex;flex-direction:column;gap:18px;">
+    <section data-screen-label="Books" class="learn-stack">
 
       <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
 
@@ -2785,14 +2682,14 @@ function renderBooks(vm) {
 function renderReports(vm) {
   const exportButtons = vm.exports.map((item) => {
     const label = item.label || item.title || "Learn Report";
-    return `<button type="button" data-report-export="${html(label)}" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:12px;font-family:inherit;color:var(--ink);display:grid;gap:5px;text-align:left;cursor:pointer;"><strong>${html(label)}</strong><small style="color:var(--muted);">${html(item.format)}</small></button>`;
+    return `<button type="button" data-report-export="${html(label)}" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:12px;font-family:inherit;color:var(--ink);display:grid;gap:5px;text-align:left;cursor:pointer;"><strong>${html(label)}</strong><small class="learn-muted">${html(item.format)}</small></button>`;
   }).join("");
   const subjectRows = vm.subjectProgress.length ? vm.subjectProgress.map((row) => `<tr style="border-top:1px solid var(--line);"><td style="padding:10px;font-weight:700;">${html(row.subjectTitle)}</td><td style="padding:10px;">${html(row.childName)}</td><td style="padding:10px;">${html(row.formLabel)}</td><td style="padding:10px;">${html(row.source || row.subjectType)}</td><td style="padding:10px;">${html(row.completed)} / ${html(row.total)} ${html(row.progressionType)}</td><td style="padding:10px;min-width:130px;">${bar(row.percent, row.color)}<small>${html(row.percent)}%</small></td><td style="padding:10px;text-transform:capitalize;color:var(--gold);">${html(row.status)}</td></tr>`).join("") : `<tr><td colspan="7" style="padding:18px;color:var(--muted);">Add subject ranges and Done Through progress in Setup to generate state-reporting rows.</td></tr>`;
   const body = `
-    <section data-screen-label="Reports" style="display:flex;flex-direction:column;gap:18px;">
+    <section data-screen-label="Reports" class="learn-stack">
       <div style="display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:14px;">${vm.stats.map((stat) => `<div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;gap:13px;align-items:center;"><span style="width:44px;height:44px;border-radius:50%;background:${stat.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">✥</span><span><small style="display:block;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;">${html(stat.label)}</small><strong style="font-family:'Cormorant Garamond',serif;font-size:25px;">${html(stat.value)}</strong><small style="display:block;color:var(--muted);">${html(stat.sub)}</small></span></div>`).join("")}</div>
       <div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start;">
-        ${panel("Child Progress Overview", vm.children.map((child) => `<div style="display:grid;grid-template-columns:42px 1fr 150px;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);"><span style="width:38px;height:38px;border-radius:50%;background:${child.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(child.initial)}</span><div><strong>${html(child.name)}</strong><small style="display:block;color:var(--muted);">${html(child.grade)} · Age ${html(child.age)} · ${html(child.summary)}</small><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;"><span><small style="color:var(--muted);">Lessons ${html(child.lessons.done)} / ${html(child.lessons.total)}</small>${bar(child.lessons.percent, child.color)}</span><span><small style="color:var(--muted);">Read-aloud ${html(child.readAloud.percent)}%</small>${bar(child.readAloud.percent, child.color)}</span></div></div><span style="text-transform:capitalize;color:var(--gold);">${html(child.status)}</span></div>`).join(""), { icon: "✥" })}
+        ${panel("Child Progress Overview", vm.children.map((child) => `<div style="display:grid;grid-template-columns:42px 1fr 150px;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);"><span style="width:38px;height:38px;border-radius:50%;background:${child.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(child.initial)}</span><div><strong>${html(child.name)}</strong><small style="display:block;color:var(--muted);">${html(child.grade)} · Age ${html(child.age)} · ${html(child.summary)}</small><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;"><span><small class="learn-muted">Lessons ${html(child.lessons.done)} / ${html(child.lessons.total)}</small>${bar(child.lessons.percent, child.color)}</span><span><small class="learn-muted">Read-aloud ${html(child.readAloud.percent)}%</small>${bar(child.readAloud.percent, child.color)}</span></div></div><span style="text-transform:capitalize;color:var(--gold);">${html(child.status)}</span></div>`).join(""), { icon: "✥" })}
         ${panel("Year-End Report Preview", `<div style="border:1px solid var(--line);background:#fffaf0;border-radius:10px;min-height:260px;padding:26px;text-align:center;"><div style="color:var(--gold);font-size:32px;">✥</div><h2 style="font-family:'Cormorant Garamond',serif;margin:12px 0 4px;">${html(vm.pdf.title)}</h2><p>${html(vm.pdf.familyName)}</p><small style="display:block;color:var(--muted);">Generated from Learn setup progress, narrations, lessons, and attendance.</small><div style="text-align:left;margin-top:18px;color:#34405a;font-size:13px;">${vm.pdf.summary.map((line) => `<div style="border-top:1px solid var(--line);padding:8px 0;">${html(line)}</div>`).join("")}</div></div><button type="button" data-report-pdf style="margin-top:12px;width:100%;background:var(--navy);color:#fff;border:none;border-radius:10px;padding:11px;font-family:inherit;cursor:pointer;">Print Beautiful Report</button>`, { icon: "☰" })}
       </div>
       ${panel("State Reporting Subject Progress", `<div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;"><thead><tr style="color:var(--gold);font-size:11px;letter-spacing:.12em;text-transform:uppercase;"><th style="text-align:left;padding:8px;">Subject</th><th style="text-align:left;padding:8px;">Student</th><th style="text-align:left;padding:8px;">Form</th><th style="text-align:left;padding:8px;">Source</th><th style="text-align:left;padding:8px;">Progress</th><th style="text-align:left;padding:8px;">Complete</th><th style="text-align:left;padding:8px;">Status</th></tr></thead><tbody>${subjectRows}</tbody></table></div>`, { icon: "▤" })}
@@ -3055,64 +2952,13 @@ function renderGrades(vm) {
   return shell(vm, body);
 }
 
-function renderCommunityLegacy(vm) {
-  return shell(vm, `
-    <section data-screen-label="Community" style="display:grid;gap:18px;">
-      <div style="background:linear-gradient(135deg,#fffaf0 0%,#f5ead1 100%);border:1px solid rgba(181,148,47,.34);border-radius:18px;padding:28px;display:grid;grid-template-columns:1fr 220px;gap:24px;align-items:center;box-shadow:0 1px 3px rgba(20,40,70,.04);">
-        <div>
-          <div style="color:var(--gold);font-size:12px;letter-spacing:.18em;font-weight:700;text-transform:uppercase;">Coming Soon</div>
-          <h2 style="font-family:'Cormorant Garamond',serif;font-size:42px;line-height:1;margin:8px 0;color:var(--ink);">${html(vm.title || "Community is coming soon")}</h2>
-          <p style="font-size:17px;line-height:1.5;color:#33405a;max-width:760px;margin:0;">${html(vm.subtitle || "A curated Orthodox homeschool resource exchange is planned after the core Learn workflow is settled.")}</p>
-          ${vm.detail ? `<p style="color:var(--muted);line-height:1.45;margin:12px 0 0;max-width:720px;">${html(vm.detail)}</p>` : ""}
-        </div>
-        <div style="border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.6);min-height:190px;display:grid;place-items:center;color:var(--gold);font-size:58px;">✥</div>
-      </div>
-      ${panel("Launch Focus", `<div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:12px;"><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;"><strong>Planner first</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Keep the household planning flow reliable before adding social features.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;"><strong>Curated resources</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">Community sharing will launch with moderation and resource categories.</small></div><div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;"><strong>Family-safe</strong><small style="display:block;color:var(--muted);margin-top:5px;line-height:1.35;">The future feature will be built around trust, not an open feed.</small></div></div>`, { icon: "✥" })}
-    </section>
-  `);
-  const chip = (label, active = false, attr = "data-community-filter") => `<button type="button" ${attr}="${html(label)}" style="border:1px solid ${active ? "var(--gold)" : "var(--line)"};background:${active ? "var(--navy)" : "var(--paper)"};color:${active ? "#f3ead4" : "var(--ink)"};border-radius:9px;padding:8px 12px;font-family:inherit;cursor:pointer;">${html(label)}</button>`;
-  const body = `
-    <section data-screen-label="Community" style="display:flex;flex-direction:column;gap:18px;">
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-        <label style="display:flex;align-items:center;gap:9px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:11px 15px;flex:1;min-width:220px;max-width:420px;"><span style="color:var(--gold);font-size:17px;">⌕</span><input data-community-search placeholder="Search resources, tags, posters..." style="border:none;background:none;outline:none;font-family:inherit;font-size:15px;color:var(--ink);width:100%;" /></label>
-        <div style="display:flex;gap:4px;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:4px;">${vm.sortOptions.map((label, index) => chip(label, index === 0, "data-community-sort")).join("")}</div>
-        <div style="flex:1;"></div>
-        <button type="button" data-community-share style="display:flex;align-items:center;gap:9px;background:var(--navy);border:1px solid var(--gold);border-radius:11px;padding:12px 18px;cursor:pointer;font-family:inherit;font-size:15px;color:#f3ead4;font-weight:500;"><span style="color:var(--gold2);font-size:18px;">+</span> Share a Resource</button>
-      </div>
-      <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center;">${vm.categories.map((category, index) => chip(category, index === 0)).join("")}</div>
-      <div data-community-count style="display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13.5px;"><span style="color:var(--gold);">✥</span> Showing ${vm.resources.length} resources shared by Orthodox homeschool families</div>
-      <div data-community-grid style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;">
-        ${vm.resources.map((resource) => `<article data-community-card data-category="${html(resource.category)}" data-search="${html(`${resource.title} ${resource.category} ${resource.desc} ${resource.poster} ${resource.tags.join(" ")}`.toLowerCase())}" style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:11px;box-shadow:0 1px 3px rgba(20,40,70,.04);position:relative;">
-          <div style="height:122px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(135deg,${softColor(resource.color, "33")},var(--paper2));display:flex;align-items:center;justify-content:center;color:${html(resource.color)};font-size:42px;position:relative;">✥${resource.pinned ? `<span style="position:absolute;top:9px;left:9px;display:flex;align-items:center;gap:5px;background:var(--gold);color:#1b2c45;font-size:10.5px;font-weight:700;letter-spacing:.05em;padding:4px 9px;border-radius:6px;">✥ PINNED</span>` : ""}<span style="position:absolute;top:9px;right:9px;display:flex;align-items:center;gap:5px;background:rgba(243,234,212,.92);color:var(--ink);font-size:11px;font-weight:600;padding:4px 9px;border-radius:6px;">${html(resource.category)}</span></div>
-          <strong style="font-family:'Cormorant Garamond',serif;font-size:20px;line-height:1.15;">${html(resource.title)}</strong>
-          <p style="font-size:13px;color:#3a4256;line-height:1.4;flex:1;margin:0;">${html(resource.desc)}</p>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">${resource.tags.map((tag) => `<span style="font-size:11.5px;color:var(--gold);background:var(--paper2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;">#${html(tag)}</span>`).join("")}</div>
-          <div style="display:flex;align-items:center;gap:9px;padding-top:10px;border-top:1px solid var(--line);"><span style="width:28px;height:28px;flex:none;border-radius:50%;background:${html(resource.posterColor)};color:#f3ead4;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:600;border:1.5px solid var(--goldsoft);">${html(resource.posterInitial)}</span><span style="flex:1;min-width:0;font-size:12.5px;color:var(--muted);">${html(resource.poster)}</span><a href="${html(resource.url)}" target="_blank" rel="noreferrer" style="color:var(--gold);font-size:16px;text-decoration:none;">↗</a></div>
-          <div style="display:flex;align-items:center;gap:9px;"><button type="button" data-community-vote style="display:flex;align-items:center;gap:6px;background:var(--paper2);border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--ink);">↑ <span>${resource.votes}</span></button><button type="button" data-community-save style="display:flex;align-items:center;gap:6px;background:var(--paper2);border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--gold);">♡ Save</button><button type="button" data-community-add style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:none;border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--ink);white-space:nowrap;">+ Add to Library</button></div>
-        </article>`).join("")}
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-        ${panel(vm.history.label, `<strong style="font-family:'Cormorant Garamond',serif;font-size:22px;">${html(vm.history.title)}</strong><small style="display:block;color:var(--gold);margin:4px 0;">${html(vm.history.year)}</small><p style="line-height:1.45;color:#33405a;">${html(vm.history.summary)}</p><small style="color:var(--muted);">${html(vm.history.source)}</small>`, { icon: "☼" })}
-        ${panel("Sharing Guidance", vm.guidance.map((item) => `<div style="padding:9px 0;border-top:1px solid var(--line);">${html(item)}</div>`).join(""), { icon: "✥" })}
-      </div>
-      <div data-community-share-panel hidden style="position:fixed;inset:0;z-index:75;background:rgba(10,20,40,.55);align-items:center;justify-content:center;padding:24px;">
-        <div style="background:var(--cream);border:1px solid var(--gold);border-radius:16px;width:min(520px,100%);box-shadow:0 20px 60px rgba(10,20,40,.4);">
-          <div style="padding:20px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;"><div><h2 style="font-family:'Cormorant Garamond',serif;margin:0;font-size:26px;">Share a Resource</h2><small style="color:var(--muted);">Bless another homeschool family with what has helped yours.</small></div><button type="button" data-community-share-close style="border:none;background:none;color:var(--muted);font-size:22px;cursor:pointer;">x</button></div>
-          <div style="padding:22px 24px;display:grid;gap:12px;">${setupInput("Title", "community.title")}${setupInput("Link", "community.url")}${setupInput("Category", "community.category")}${setupInput("Tags", "community.tags")}<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">Description<textarea name="community.desc" rows="3" style="border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);"></textarea></label></div>
-          <div style="padding:16px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:11px;"><button type="button" data-community-share-close style="background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:11px 20px;cursor:pointer;font-family:inherit;color:var(--ink);">Cancel</button><button type="button" data-community-submit style="background:var(--navy);border:1px solid var(--gold);border-radius:9px;padding:11px 22px;cursor:pointer;font-family:inherit;color:#f3ead4;">Share with Community</button></div>
-        </div>
-      </div>
-    </section>`;
-  return shell(vm, body);
-}
-
 function renderCoOp(vm) {
   const body = `
-    <section data-screen-label="Co-op" style="display:flex;flex-direction:column;gap:18px;">
+    <section data-screen-label="Co-op" class="learn-stack">
       ${panel("Co-op Coming Soon", `<div style="display:grid;grid-template-columns:130px 1fr;gap:22px;align-items:center;"><div style="height:132px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,#f8f0dd,#efe0ba);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:54px;">◎</div><div><small style="color:var(--gold);letter-spacing:.16em;text-transform:uppercase;">Future Learn Add-On</small><h2 style="font-family:'Cormorant Garamond',serif;font-size:34px;margin:8px 0 6px;">Co-op tools are coming soon</h2><p style="margin:0;color:#34405a;line-height:1.5;max-width:760px;">For launch, AGAPAY Learn is focused on setup, Today, planning, Church rhythms, formation, books, Grace Mode, and printable household plans. Co-op creation, invitations, and shared schedules will come in a later release.</p></div></div>`, { icon: "◎" })}
       <div style="display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:16px;">
-        ${panel("Planned Later", `<div style="padding:8px 0;border-top:1px solid var(--line);">Create or join a co-op</div><div style="padding:8px 0;border-top:1px solid var(--line);">Invite AGAPAY member families</div><div style="padding:8px 0;border-top:1px solid var(--line);">Shared schedules and rotation</div>`, { icon: "▣" })}
-        ${panel("Launch Focus", `<div style="padding:8px 0;border-top:1px solid var(--line);">Simple and Advanced Setup</div><div style="padding:8px 0;border-top:1px solid var(--line);">Planner and Print Center</div><div style="padding:8px 0;border-top:1px solid var(--line);">Formation, books, and Grace Mode</div>`, { icon: "✥" })}
+        ${panel("Planned Later", `<div class="learn-list-row">Create or join a co-op</div><div class="learn-list-row">Invite AGAPAY member families</div><div class="learn-list-row">Shared schedules and rotation</div>`, { icon: "▣" })}
+        ${panel("Launch Focus", `<div class="learn-list-row">Simple and Advanced Setup</div><div class="learn-list-row">Planner and Print Center</div><div class="learn-list-row">Formation, books, and Grace Mode</div>`, { icon: "✥" })}
         ${panel("Status", `<strong style="font-family:'Cormorant Garamond',serif;font-size:26px;">Coming Soon</strong><small style="display:block;color:var(--muted);margin-top:6px;">This tab is intentionally parked for the first revenue-focused launch.</small>`, { icon: "♢" })}
       </div>
     </section>`;
@@ -3938,7 +3784,7 @@ function renderCommunity(vm) {
     : "";
 
   return shell(vm, `
-    <section data-screen-label="Community Resources" style="display:flex;flex-direction:column;gap:18px;">
+    <section data-screen-label="Community Resources" class="learn-stack">
 
       <!-- Hero -->
       <div style="background:linear-gradient(135deg,var(--navy),#0a1c30);border-radius:16px;padding:clamp(20px,4vw,32px);display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;box-shadow:0 2px 8px rgba(4,20,39,.18);">
@@ -3975,8 +3821,8 @@ function renderCommunity(vm) {
       </div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-        <span data-community-count style="color:var(--muted);font-size:13px;">Showing ${vm.resources.length} curated ${vm.resources.length === 1 ? "resource" : "resources"}</span>
-        <small style="color:var(--muted);">Links open in a new tab · <button type="button" data-community-suggest style="border:0;background:none;color:var(--gold);font:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:0;">Suggest a resource →</button></small>
+        <span data-community-count class="learn-muted-sm">Showing ${vm.resources.length} curated ${vm.resources.length === 1 ? "resource" : "resources"}</span>
+        <small class="learn-muted">Links open in a new tab · <button type="button" data-community-suggest style="border:0;background:none;color:var(--gold);font:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:0;">Suggest a resource →</button></small>
       </div>
 
       <!-- Main two-column layout: cards + sidebar -->
@@ -4007,7 +3853,7 @@ function renderCommunity(vm) {
           <div style="padding:19px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;">
             <div>
               <h2 style="font-family:'Cormorant Garamond',serif;font-size:28px;margin:0;">Suggest a Resource</h2>
-              <small style="color:var(--muted);">Submissions are reviewed before appearing in the library.</small>
+              <small class="learn-muted">Submissions are reviewed before appearing in the library.</small>
             </div>
             <button type="button" data-community-suggest-close aria-label="Close" style="border:0;background:transparent;font-size:24px;color:var(--muted);cursor:pointer;">×</button>
           </div>
@@ -4374,7 +4220,7 @@ function renderSetup(vm) {
   const childrenContent = `<p style="margin:0 0 12px;color:var(--muted);">${html(groupingCopy)}</p><div data-setup-list="children" style="display:grid;gap:10px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child, groupingMode)).join("")}</div><button type="button" data-setup-add-row="children" style="margin-top:12px;width:100%;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px;font-family:inherit;">Add Child</button>`;
   const termsContent = `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Term 4 / Summer is available for year-round homeschoolers. Assign subjects, books, and formation materials to the term where they belong.</p><div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div>`;
   const body = `
-    <form data-setup-form data-screen-label="Set Up" style="display:flex;flex-direction:column;gap:18px;">
+    <form data-setup-form data-screen-label="Set Up" class="learn-stack">
       <span id="learnSetupHousehold" class="learn-setup-anchor"></span>
       ${collapsibleSetupPanel("household", "Household", householdContent, { icon: "⌂", summary: "Profile, method, school year, calendar, and defaults", defaultCollapsed: collapseDefault })}
       <span id="learnSetupChildren" class="learn-setup-anchor"></span>
@@ -4383,7 +4229,7 @@ function renderSetup(vm) {
       ${experience.order.map((key) => adaptivePanels[key]).join("")}
       ${panel("Co-op", `<div style="border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;"><div><strong style="font-family:'Cormorant Garamond',serif;font-size:24px;">Coming Soon</strong><p style="margin:4px 0 0;color:var(--muted);line-height:1.4;">Co-op tools are deferred while Learn focuses on setup, Today, planning, formation, books, Grace Mode, and printable household plans.</p></div><span style="border:1px solid var(--gold);border-radius:999px;color:var(--gold);padding:7px 12px;white-space:nowrap;">Future add-on</span></div>`, { icon: "◎" })}
       <div class="learn-setup-savebar">
-        <span data-setup-status style="color:var(--muted);">Setup saves to the household profile and D1-backed Learn records.</span>
+        <span data-setup-status class="learn-muted">Setup saves to the household profile and D1-backed Learn records.</span>
         <button type="submit" style="border:none;background:var(--navy);color:#fff;border-radius:10px;padding:12px 20px;font-family:inherit;font-weight:700;">Save Setup</button>
       </div>
     </form>`;
@@ -4629,7 +4475,7 @@ function renderPrintCenter(vm) {
     </button>` : ""}`, { icon: "✒" });
 
   const body = `
-    <section data-screen-label="Print Center" style="display:flex;flex-direction:column;gap:18px;">
+    <section data-screen-label="Print Center" class="learn-stack">
       ${planBanner}
       <div style="display:grid;grid-template-columns:1fr 330px;gap:16px;align-items:start;">
         <div style="display:flex;flex-direction:column;gap:10px;">
