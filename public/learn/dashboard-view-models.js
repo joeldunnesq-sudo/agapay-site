@@ -281,8 +281,9 @@ function simpleList(items, mapper) {
 }
 
 function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
-  return [
-    ...safeArray(rawHouseholdRows).map((row, index) => ({
+  const householdItems = safeArray(rawHouseholdRows)
+    .filter((row) => safeArray(row.statuses).some((status) => status !== "empty") || safeArray(row.minutes).some((minutes) => Number(minutes) > 0))
+    .map((row, index) => ({
       id: text(row.id, `household-${index}`),
       kind: text(row.kind, "household"),
       title: text(row.title, "Household block"),
@@ -290,19 +291,80 @@ function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
       color: text(row.color, ACCENTS[index % ACCENTS.length]),
       minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20),
       statuses: safeArray(row.statuses),
-      weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, "")
-    })),
-    ...safeArray(rawChildRows).map((row, index) => ({
-      id: text(row.id, `child-${index}`),
-      kind: "form",
+      weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, ""),
+      gracePriority: text(row.gracePriority, ""),
+      graceNote: text(row.graceNote, "")
+    }));
+
+  const grouped = new Map();
+  safeArray(rawChildRows).forEach((row, index) => {
+    const planningMode = text(row.planningMode, "forms");
+    const formLabels = safeArray(row.formLabels);
+    const childIds = safeArray(row.childIds);
+    const sourceId = text(row.sourceId || row.id, `child-src-${index}`);
+    const childDisplayName = childName(row.child, index);
+    const childFormLabel = text(row.child?.formLabel || row.child?.gradeLabel, "");
+    const resourceTitle = text(row.resourceTitle || row.detail || row.subtitle, "");
+    const color = text(row.color || row.child?.color, ACCENTS[(index + safeArray(rawHouseholdRows).length) % ACCENTS.length]);
+    const rowMinutes = safeArray(row.minutes).map((minutes) => Number(minutes || 0));
+    const statuses = safeArray(row.statuses);
+    const weeklyFrequency = text(row.weeklyFrequency || row.cadenceLabel, "");
+    const isFamily = planningMode !== "forms" || (!formLabels.length && !childIds.length);
+    const isSpecific = childIds.length > 0;
+    const activeThisWeek = statuses.some((status) => status !== "empty") || rowMinutes.some((minutes) => minutes > 0);
+    if (!activeThisWeek) return;
+
+    const groupKey = isFamily
+      ? `family:${sourceId}`
+      : isSpecific
+        ? `specific:${sourceId}`
+        : `form:${sourceId}:${childFormLabel || formLabels[0] || "form"}`;
+    const kind = isFamily ? "family" : isSpecific ? "specific" : "form";
+
+    if (grouped.has(groupKey)) {
+      const existing = grouped.get(groupKey);
+      if (childDisplayName && !existing.childNames.includes(childDisplayName)) existing.childNames.push(childDisplayName);
+      if (resourceTitle && !existing.resourceTitles.includes(resourceTitle)) existing.resourceTitles.push(resourceTitle);
+      existing.minutes = existing.minutes.map((minutes, dayIndex) => Math.max(minutes, rowMinutes[dayIndex] || 0));
+      existing.statuses = existing.statuses.map((status, dayIndex) => status !== "empty" ? status : (statuses[dayIndex] || "empty"));
+      return;
+    }
+
+    grouped.set(groupKey, {
+      id: groupKey,
+      kind,
       title: text(row.title, "Lesson"),
-      sub: [text(row.child?.firstName || row.child?.name, ""), text(row.detail || row.subtitle, "")].filter(Boolean).join(" · "),
-      color: text(row.color || row.child?.color, ACCENTS[(index + safeArray(rawHouseholdRows).length) % ACCENTS.length]),
-      minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20),
-      statuses: safeArray(row.statuses),
-      weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, "")
-    }))
-  ].filter((item, index, all) => item.id && item.title && all.findIndex((candidate) => candidate.id === item.id) === index);
+      childNames: childDisplayName ? [childDisplayName] : [],
+      formLabel: isFamily ? "" : (!isSpecific ? (childFormLabel || formLabels[0] || "") : ""),
+      resourceTitles: resourceTitle ? [resourceTitle] : [],
+      minutes: rowMinutes,
+      statuses: [...statuses],
+      color,
+      weeklyFrequency,
+      gracePriority: text(row.gracePriority, ""),
+      graceNote: text(row.graceNote, "")
+    });
+  });
+
+  const childItems = Array.from(grouped.values()).map((item) => {
+    const resourceLine = item.resourceTitles.join(", ");
+    const prefixParts = item.childNames.length ? [item.childNames.join(", ")] : (item.formLabel ? [item.formLabel] : []);
+    const minutes = Math.max(...item.minutes.filter(Boolean), 0) || 20;
+    return {
+      id: item.id,
+      kind: item.kind,
+      title: item.title,
+      sub: [...prefixParts, resourceLine].filter(Boolean).join(" · "),
+      color: item.color,
+      minutes,
+      statuses: item.statuses,
+      weeklyFrequency: item.weeklyFrequency,
+      gracePriority: item.gracePriority,
+      graceNote: item.graceNote
+    };
+  });
+
+  return [...householdItems, ...childItems].filter((item) => item.id && item.title);
 }
 
 function plannerDaysFromWeek(week) {

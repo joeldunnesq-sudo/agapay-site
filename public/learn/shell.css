@@ -2935,6 +2935,14 @@ body {
   line-height: 1.25;
 }
 
+.learn-week-assignment-minutes {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: .06em;
+}
+
 .learn-week-assignment-card textarea {
   min-height: 54px;
   resize: vertical;

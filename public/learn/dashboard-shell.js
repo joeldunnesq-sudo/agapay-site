@@ -1184,7 +1184,10 @@ function renderPlannerReserveCard(vm) {
 
 function renderWeeklyAssignmentBoard(vm) {
   const items = vm.week.weeklyAssignmentItems || [];
-  const card = (item) => `<article class="learn-week-assignment-card" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" style="border-left-color:${html(item.color || "var(--gold)")};"><strong>${html(item.title)}</strong>${item.sub ? `<small>${html(item.sub)}</small>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
+  const card = (item) => {
+    const minutesLabel = Number(item.minutes) > 0 ? `${Number(item.minutes)} min` : "";
+    return `<article class="learn-week-assignment-card" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" style="border-left-color:${html(item.color || "var(--gold)")};"><strong>${html(item.title)}</strong>${item.sub ? `<small>${html(item.sub)}</small>` : ""}${minutesLabel ? `<span class="learn-week-assignment-minutes">${html(minutesLabel)}</span>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
+  };
   const weekNum = vm.week.termWeekNumber || 0;
   const totalWeeks = vm.week.totalTermWeeks || 0;
   const weekLabel = weekNum && totalWeeks ? `Week ${weekNum} of ${totalWeeks}` : vm.week.label || "This Week";
@@ -2712,7 +2715,7 @@ function renderBooks(vm) {
   // ── Library table — fixed overflow ────────────────────────────────────────────
   const libraryRows = vm.library.length
     ? vm.library.map((book, i) => `
-        <div style="display:grid;grid-template-columns:2fr 1.1fr 1fr .6fr .7fr 1fr;gap:10px;align-items:center;padding:10px 4px;border-top:1px solid var(--line);font-size:13px;background:${i % 2 ? "var(--paper2)" : "transparent"};">
+        <div style="display:grid;grid-template-columns:2fr 1.1fr 1fr .55fr .65fr 1.6fr;gap:10px;align-items:center;padding:10px 4px;border-top:1px solid var(--line);font-size:13px;background:${i % 2 ? "var(--paper2)" : "transparent"};">
           <span style="display:flex;align-items:center;gap:9px;min-width:0;">
             ${bookCover(book, "☰")}
             <span style="min-width:0;">
@@ -2729,7 +2732,7 @@ function renderBooks(vm) {
     : `<div style="padding:18px 4px;color:var(--muted);font-style:italic;">Add books in Setup to build the household library.</div>`;
 
   const libraryHeader = `
-    <div style="display:grid;grid-template-columns:2fr 1.1fr 1fr .6fr .7fr 1fr;gap:10px;padding:0 4px 10px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.1em;color:var(--muted);font-weight:700;text-transform:uppercase;">
+    <div style="display:grid;grid-template-columns:2fr 1.1fr 1fr .55fr .65fr 1.6fr;gap:10px;padding:0 4px 10px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.1em;color:var(--muted);font-weight:700;text-transform:uppercase;">
       <span>Title</span><span>Author</span><span>Category</span><span>Ages</span><span>Orthodox</span><span>Progress</span>
     </div>`;
 
@@ -2779,7 +2782,7 @@ function renderBooks(vm) {
 
           ${panel("Household Library",
             `<div style="overflow-x:auto;overflow-y:visible;">
-               <div style="min-width:680px;">${libraryHeader}${libraryRows}</div>
+               <div style="min-width:880px;">${libraryHeader}${libraryRows}</div>
              </div>`,
             { icon: "⌂" })}
 
@@ -3563,7 +3566,7 @@ function subjectSetupRow(subject = {}, children = [], terms = [], currentTermId 
 }
 
 function bookSetupRow(book = {}, terms = [], currentTermId = "") {
-  return `<div data-setup-row="books" data-id="${html(book.id || "")}" style="display:grid;grid-template-columns:1.1fr .9fr .7fr .75fr .55fr .55fr .55fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Title", "title", book.title || "")}${setupInput("Author", "author", book.author || "")}${setupInput("Category", "category", book.category || "")}${setupSelect("Planning Mode", "planningMode", book.planningMode || (book.formLabel ? "forms" : "family"), planningModeOptions)}${setupInput("Start Ch.", "startChapter", book.startChapter || "", { type: "number" })}${setupInput("Done Ch.", "currentChapter", book.currentChapter || book.startChapter || "", { type: "number" })}${setupInput("End Ch.", "endChapter", book.endChapter || book.totalChapters || "", { type: "number" })}${setupColorSelect("Planner Color", "color", book.color || colorChoices[2])}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;">${setupSelect("Term", "termId", book.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("Form", "formLabel", book.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupSelect("Frequency", "weeklyFrequency", book.weeklyFrequency || "daily", weeklyFrequencyOptions)}${setupTermWeekPicker(book.scheduledWeeks)}${setupSelect("Audience", "audienceLabel", book.audienceLabel || "Household", ["Household", "Morning Basket", "Independent", "Read-Aloud"])}${setupInput("Minutes", "minutes", book.minutes || "20", { type: "number" })}${setupInput("Grace Note", "graceNote", book.graceNote || "Reading moved into the reserve basket.")}</div></div>`;
+  return `<div data-setup-row="books" data-id="${html(book.id || "")}" style="display:grid;grid-template-columns:1.1fr .9fr .7fr .75fr .55fr .55fr .55fr .75fr auto;gap:10px;align-items:end;border:1px solid var(--line);border-radius:12px;background:var(--paper2);padding:12px;">${setupInput("Title", "title", book.title || "")}${setupInput("Author", "author", book.author || "")}${setupInput("Category", "category", book.category || "")}${setupSelect("Planning Mode", "planningMode", book.planningMode || (book.formLabel ? "forms" : "family"), planningModeOptions)}${setupInput("Start Ch.", "startChapter", book.startChapter || "", { type: "number" })}${setupInput("Done Ch.", "currentChapter", book.currentChapter ?? book.startChapter ?? "", { type: "number" })}${setupInput("End Ch.", "endChapter", book.endChapter || book.totalChapters || "", { type: "number" })}${setupColorSelect("Planner Color", "color", book.color || colorChoices[2])}${setupRemoveButton()}<div style="grid-column:1 / -1;display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;">${setupSelect("Term", "termId", book.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("Form", "formLabel", book.formLabel || "", [{ value: "", label: "All Forms" }, ...formOptions])}${setupSelect("Frequency", "weeklyFrequency", book.weeklyFrequency || "daily", weeklyFrequencyOptions)}${setupTermWeekPicker(book.scheduledWeeks)}${setupSelect("Audience", "audienceLabel", book.audienceLabel || "Household", ["Household", "Morning Basket", "Independent", "Read-Aloud"])}${setupInput("Minutes", "minutes", book.minutes || "20", { type: "number" })}${setupInput("Grace Note", "graceNote", book.graceNote || "Reading moved into the reserve basket.")}</div></div>`;
 }
 
 function formationSetupRow(material = {}, terms = [], currentTermId = "") {
@@ -4922,7 +4925,10 @@ function currentChapterFromProgress(book = {}, progress = 0) {
 
 async function loadLearnSetupSnapshotForPatch() {
   const raw = await apiGet("/api/learn/setup");
-  const setup = raw.onboarding?.setupSnapshot || raw.onboarding || {};
+  const setup = raw.onboarding?.setupSnapshot || null;
+  if (!setup || typeof setup !== "object") {
+    throw new Error("Complete Learn setup before saving progress from this page.");
+  }
   return JSON.parse(JSON.stringify(setup));
 }
 
