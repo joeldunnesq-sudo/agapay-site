@@ -364,6 +364,70 @@ function cardsSection(heading, items) {
   return { type: "cards", heading, items: filtered };
 }
 
+const TRANSCRIPT_GP = {
+  "A+": 4.0,
+  A: 4.0,
+  "A-": 3.7,
+  "B+": 3.3,
+  B: 3.0,
+  "B-": 2.7,
+  "C+": 2.3,
+  C: 2.0,
+  "C-": 1.7,
+  "D+": 1.3,
+  D: 1.0,
+  "D-": 0.7,
+  F: 0.0
+};
+
+function transcriptGradePoint(mark = "") {
+  const letter = text(mark).toUpperCase();
+  if (Object.prototype.hasOwnProperty.call(TRANSCRIPT_GP, letter)) return TRANSCRIPT_GP[letter];
+  const numeric = Number(String(mark).replace(/[^0-9.]/g, ""));
+  if (!Number.isFinite(numeric)) return null;
+  if (numeric >= 93) return 4.0;
+  if (numeric >= 90) return 3.7;
+  if (numeric >= 87) return 3.3;
+  if (numeric >= 83) return 3.0;
+  if (numeric >= 80) return 2.7;
+  if (numeric >= 77) return 2.3;
+  if (numeric >= 73) return 2.0;
+  if (numeric >= 70) return 1.7;
+  if (numeric >= 67) return 1.3;
+  if (numeric >= 60) return 1.0;
+  return 0.0;
+}
+
+function transcriptLetter(mark = "") {
+  const raw = text(mark);
+  if (/^[A-DF][+-]?$/.test(raw.toUpperCase())) return raw.toUpperCase();
+  const gp = transcriptGradePoint(raw);
+  if (gp === null) return "";
+  if (gp >= 4.0) return "A";
+  if (gp >= 3.7) return "A-";
+  if (gp >= 3.3) return "B+";
+  if (gp >= 3.0) return "B";
+  if (gp >= 2.7) return "B-";
+  if (gp >= 2.3) return "C+";
+  if (gp >= 2.0) return "C";
+  if (gp >= 1.7) return "C-";
+  if (gp >= 1.3) return "D+";
+  if (gp >= 1.0) return "D";
+  return "F";
+}
+
+function gradeLevelFromLabel(label = "") {
+  const match = text(label).match(/\b(9|10|11|12)\b/);
+  return match ? Number(match[1]) : 0;
+}
+
+function transcriptYearLabel(gradeLevel) {
+  if (Number(gradeLevel) === 9) return "Freshman (9th)";
+  if (Number(gradeLevel) === 10) return "Sophomore (10th)";
+  if (Number(gradeLevel) === 11) return "Junior (11th)";
+  return "Senior (12th)";
+}
+
 function liturgicalSection(heading, days) {
   const filtered = (days || []).filter((d) => d && (d.title || d.date));
   if (!filtered.length) return null;
@@ -1031,13 +1095,58 @@ export function buildLearnReportPrintDocument(reports, {
 
   if (normalized.includes("transcript")) {
     const transcripts = (reports.transcripts || []).filter((t) => !childId || t.childId === childId);
+    const transcript = transcripts[0] || {};
+    const student = selectedChild || transcript.child || {};
+    const studentName = text([student.firstName || student.name, student.middleName, student.lastName].filter(Boolean).join(" "), "Student");
+    const records = transcripts.flatMap((t) => (t.records || []).map((record) => ({
+      ...record,
+      gradeLevel: Number(record.gradeLevel || gradeLevelFromLabel(t.gradeSpan || student.gradeLabel || "")) || 9,
+      letter: transcriptLetter(record.mark || record.grade || ""),
+      gp: transcriptGradePoint(record.mark || record.grade || "")
+    }))).filter((record) => record.letter && record.gp !== null);
+    const byGrade = new Map([9, 10, 11, 12].map((level) => [level, records.filter((record) => Number(record.gradeLevel) === level)]));
+    const totalGp = records.reduce((sum, record) => sum + Number(record.gp || 0), 0);
+    const overallGpa = records.length ? (totalGp / records.length).toFixed(2) : "";
+    const credits = records.reduce((sum, record) => sum + (Number(record.credits || 0) || 1), 0);
+    const gradeTables = [9, 10, 11, 12].map((level) => {
+      const rows = byGrade.get(level) || [];
+      const levelGp = rows.reduce((sum, record) => sum + Number(record.gp || 0), 0);
+      const levelGpa = rows.length ? (levelGp / rows.length).toFixed(2) : "";
+      return tableSection(`${transcriptYearLabel(level)} Academic Record`, ["Course Title", "Letter Grade", "GP"],
+        [
+          ...rows.map((record) => [record.subject || record.subjectTitle || "Course", record.letter, Number(record.gp).toFixed(1)]),
+          ["Total GP", "", levelGp ? levelGp.toFixed(1) : ""],
+          [`${transcriptYearLabel(level).replace(/\s*\(.+\)/, "")} GPA`, "", levelGpa]
+        ],
+        { flex: [4, 1.2, 0.8] });
+    });
+    doc.title = "Home School Transcript";
+    doc.footerRole = "Academic Transcript";
+    doc.subtitle = text(`${studentName} · ${academicYearName || reports.schoolYear?.label || "High School Record"}`);
     doc.sections = [
-      tableSection("Transcripts", ["Student", "Grade Span", "Credits", "Status"],
-        transcripts.map((t) => [t.child?.firstName || t.childId || "", t.gradeSpan || "", t.credits || "", t.status || ""]),
-        { flex: [2, 2, 1, 1] }),
-      tableSection("Transcript Records", ["Subject", "Mark", "Model"],
-        transcripts.flatMap((t) => (t.records || []).map((r) => [r.termLabel ? `${r.termLabel}: ${r.subject}` : r.subject, r.mark, r.evaluationModel])),
-        { flex: [3, 1, 2] }),
+      cardsSection("Academic Summary", [
+        { label: "Overall Cumulative GPA", value: overallGpa || "Pending", detail: "Each course is counted on a 4.0 grade-point scale." },
+        { label: "Total Credits Earned", value: credits ? credits.toFixed(1) : "0.0", detail: "AGAPAY counts one credit for uncredited completed courses." },
+        { label: "Graduation Date", value: student.graduationDate || "To be entered", detail: "Parent may update before printing final record." }
+      ]),
+      tableSection("Student Information", ["Field", "Value"], [
+        ["Full Name", studentName],
+        ["Address", student.address || reports.household?.address || ""],
+        ["Date of Birth", student.dateOfBirth || student.birthDate || ""],
+        ["Home School Program Name", reports.household?.name || "AGAPAY Learn Household"],
+        ["Years Attended", student.yearsAttended || ""],
+        ["Country / State / ZIP", [student.country, student.state, student.zipCode].filter(Boolean).join(" ") || ""]
+      ], { flex: [1.6, 4] }),
+      tableSection("Letter Grade to Grade Point Reference", ["Letter", "GP", "Letter", "GP", "Letter", "GP"], [
+        ["A+", "4.0", "B", "3.0", "C-", "1.7"],
+        ["A", "4.0", "B-", "2.7", "D+", "1.3"],
+        ["A-", "3.7", "C+", "2.3", "D", "1.0"],
+        ["B+", "3.3", "C", "2.0", "F", "0.0"]
+      ], { flex: [1, 1, 1, 1, 1, 1] }),
+      ...gradeTables,
+      tableSection("Certification", ["Certified By", "Date"], [
+        ["Parent or Guardian Signature", ""]
+      ], { flex: [3, 1] })
     ].filter(Boolean);
     return doc;
   }
