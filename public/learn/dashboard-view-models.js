@@ -532,6 +532,16 @@ export function toDashboardViewModel(rawPayload, context = {}) {
       active: Boolean(dashboard.preferences?.graceModeActive),
       mode: text(dashboard.preferences?.graceModeDefault, "light")
     },
+    gradeReminder: dashboard.gradeReminder ? {
+      show: Boolean(dashboard.gradeReminder.show),
+      termId: text(dashboard.gradeReminder.termId, ""),
+      termLabel: text(dashboard.gradeReminder.termLabel, "Current Term"),
+      endDate: text(dashboard.gradeReminder.endDate, ""),
+      daysUntilEnd: Number(dashboard.gradeReminder.daysUntilEnd ?? 0),
+      missingCount: Number(dashboard.gradeReminder.missingCount || 0),
+      children: safeArray(dashboard.gradeReminder.children).map((name) => text(name, "")).filter(Boolean),
+      href: text(dashboard.gradeReminder.href, "/myagapay/learn/grades")
+    } : null,
     termProgress: {
       label: text(dashboard.termProgress?.label || dashboard.term?.label, "Current Term"),
       currentWeek: Number(dashboard.termProgress?.currentWeek || 0),
@@ -1117,8 +1127,8 @@ export function toGradesViewModel(rawPayload, context = {}) {
     summary: {
       totalCredits: earnedCredits.toFixed(1),
       cumulativeGpa: gpaCredits ? (weightedGpa / gpaCredits).toFixed(2) : "0.00",
-      missingGrades: childCourses.reduce((sum, course) => sum + course.grades.filter((grade) => !grade.letterGrade).length, 0),
-      courseCount: childCourses.length || Number(summary.courseCount || 0),
+      missingGrades: reportCardMissing.length,
+      courseCount: termCourses.length || Number(summary.courseCount || 0),
       attendanceDays: attendanceSummaryForChild(selectedChildId).instructionalDays || 0
     },
     attendance: {

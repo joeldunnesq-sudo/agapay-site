@@ -308,8 +308,51 @@ function int(value, fallback = 0) {
 
 function childrenForProgress(item = {}, children = []) {
   if (item.childId) return children.filter((child) => child.id === item.childId);
+  if (Array.isArray(item.childIds) && item.childIds.length) return children.filter((child) => item.childIds.includes(child.id));
+  if (Array.isArray(item.formLabels) && item.formLabels.length) return children.filter((child) => item.formLabels.includes(child.formLabel) || item.formLabels.includes(child.gradeLabel));
   if (item.formLabel) return children.filter((child) => child.formLabel === item.formLabel || child.gradeLabel === item.formLabel);
   return children;
+}
+
+function daysUntilIso(date = "", civilDate = "") {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date)) || !/^\d{4}-\d{2}-\d{2}$/.test(String(civilDate))) return null;
+  return Math.round((new Date(`${date}T12:00:00Z`) - new Date(`${civilDate}T12:00:00Z`)) / 86400000);
+}
+
+function gradeReminderForTerm(seed = {}, civilDate = new Date().toISOString().slice(0, 10)) {
+  const setup = seed.setupSnapshot || {};
+  if (!setup.children?.length) return null;
+  const currentTermId = setup.schoolYear?.currentTermId || setup.term?.id || seed.term?.id || "";
+  const term = (setup.terms || []).find((entry) => entry.id === currentTermId) || setup.term || seed.term || {};
+  const daysUntilEnd = daysUntilIso(term.endDate, civilDate);
+  if (daysUntilEnd === null || daysUntilEnd > 14) return null;
+  const assigned = (setup.subjects || [])
+    .filter((subject) => !subject.termId || !currentTermId || subject.termId === currentTermId)
+    .flatMap((subject) => childrenForProgress(subject, setup.children || seed.children || []).map((child) => ({
+      childId: child.id,
+      childName: child.firstName || child.name || "Student",
+      subject: subject.title || subject.subjectType || "Subject"
+    })));
+  if (!assigned.length) return null;
+  const graded = new Set((seed.closedAcademicRecords || seed.academicRecords || [])
+    .filter((record) => {
+      const recordTerm = String(record.termId || "");
+      const recordTermMatches = !currentTermId || recordTerm === currentTermId || recordTerm.replace(/\D+/g, "") === String((setup.terms || []).findIndex((entry) => entry.id === currentTermId) + 1);
+      return recordTermMatches && String(record.mark || record.grade || "").trim();
+    })
+    .map((record) => `${record.childId}::${String(record.subjectTitle || record.subject || "").toLowerCase()}`));
+  const missing = assigned.filter((item) => !graded.has(`${item.childId}::${String(item.subject).toLowerCase()}`));
+  if (!missing.length) return null;
+  return {
+    show: true,
+    termId: currentTermId,
+    termLabel: term.label || "Current Term",
+    endDate: term.endDate || "",
+    daysUntilEnd,
+    missingCount: missing.length,
+    children: Array.from(new Set(missing.map((item) => item.childName))).slice(0, 4),
+    href: "/myagapay/learn/grades"
+  };
 }
 
 function rangeProgress({ start = 1, current = 0, end = 0 } = {}) {
@@ -1129,6 +1172,7 @@ export class SeedLearnRepository {
         childColumns: hasSetup ? buildChildColumns(this.seed, daily, civilDate) : []
       },
       termProgress: hasSetup ? progressFromTerm(this.seed.term, civilDate) : progressFromTerm({}, civilDate),
+      gradeReminder: hasSetup ? gradeReminderForTerm(this.seed, civilDate) : null,
       weeklySummary: hasSetup ? computeWeeklySummary(this.seed, resolvedCalendar, civilDate) : {
         lessonsCompleted: 0,
         lessonsPlanned: 0,

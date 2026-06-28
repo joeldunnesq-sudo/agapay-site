@@ -214,14 +214,15 @@ function mergeSetupAndSavedCourses(setupCourses = [], savedCourses = []) {
 function normalizeCoursePayload(course = {}, { householdId, childId, academicYearName }) {
   const title = text(course.courseTitle || course.course_title, "Untitled Course").slice(0, 160);
   const resolvedCourseId = text(course.id, courseId(householdId, childId, academicYearName, title));
+  const incomingGrades = list(course.grades).length ? list(course.grades) : [{ termIndex: currentTermIndex({}) }];
   return {
     id: resolvedCourseId,
     courseTitle: title,
     subjectCategory: text(course.subjectCategory || course.subject_category, "General").slice(0, 80),
     gradeLevel: Math.max(9, Math.min(12, integer(course.gradeLevel ?? course.grade_level, 9))),
     creditHours: Math.max(0, number(course.creditHours ?? course.credit_hours, 1)),
-    grades: [1, 2, 3].map((termIndex) => {
-      const grade = list(course.grades).find((entry) => integer(entry.termIndex ?? entry.term_index, 0) === termIndex) || {};
+    grades: incomingGrades.map((grade) => {
+      const termIndex = Math.max(1, integer(grade.termIndex ?? grade.term_index, 1));
       const numeric = grade.numericScore ?? grade.numeric_score;
       return {
         id: text(grade.id, gradeId(resolvedCourseId, termIndex)),
@@ -582,7 +583,6 @@ export async function handleLearnGradesSave(request, env) {
   const courses = list(payload.courses)
     .map((course) => normalizeCoursePayload(course, { householdId: identity.householdId, childId, academicYearName }))
     .filter((course) => course.courseTitle);
-  const keepCourseIds = courses.map((course) => course.id);
 
   await ensureLearnBaseRows(env, identity, setupSnapshot, children);
 
@@ -639,27 +639,6 @@ export async function handleLearnGradesSave(request, env) {
         timestamp
       );
     }
-  }
-
-  const placeholders = keepCourseIds.map((_, index) => `?${index + 4}`).join(", ");
-  if (keepCourseIds.length) {
-    await d1Run(
-      env,
-      `DELETE FROM courses
-       WHERE household_id = ?1 AND child_id = ?2 AND academic_year_id = ?3 AND id NOT IN (${placeholders})`,
-      identity.householdId,
-      childId,
-      resolvedAcademicYearId,
-      ...keepCourseIds
-    );
-  } else {
-    await d1Run(
-      env,
-      "DELETE FROM courses WHERE household_id = ?1 AND child_id = ?2 AND academic_year_id = ?3",
-      identity.householdId,
-      childId,
-      resolvedAcademicYearId
-    );
   }
 
   const savedCourses = await loadCourses(env, identity.householdId, academicYearName);

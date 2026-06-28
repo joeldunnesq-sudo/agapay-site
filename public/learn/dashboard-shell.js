@@ -849,6 +849,33 @@ function renderDashboardFamilyCards(vm) {
   `;
 }
 
+function renderGradeReminder(vm) {
+  const reminder = vm.gradeReminder;
+  if (!reminder?.show || !reminder.missingCount) return "";
+  const storageKey = `agapay.learn.gradeReminder.${reminder.termId || reminder.termLabel}.${reminder.missingCount}`;
+  const due = reminder.daysUntilEnd < 0
+    ? `${Math.abs(reminder.daysUntilEnd)} day${Math.abs(reminder.daysUntilEnd) === 1 ? "" : "s"} overdue`
+    : reminder.daysUntilEnd === 0
+      ? "due today"
+      : `due in ${reminder.daysUntilEnd} day${reminder.daysUntilEnd === 1 ? "" : "s"}`;
+  const children = reminder.children.length ? ` for ${reminder.children.join(", ")}` : "";
+  return `
+    <section data-grade-reminder data-grade-reminder-key="${html(storageKey)}" style="border:1px solid rgba(110,47,42,.28);background:linear-gradient(135deg,#fff6ed,#fbf2dd);border-radius:14px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;box-shadow:0 1px 3px rgba(20,40,70,.04);">
+      <div style="display:flex;gap:12px;align-items:flex-start;min-width:0;">
+        <span style="width:38px;height:38px;border-radius:50%;background:var(--burgundy);color:#fffaf0;display:grid;place-items:center;flex:none;font-weight:800;">A+</span>
+        <span style="min-width:0;">
+          <small style="display:block;color:var(--gold);font-size:11px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;">End-of-term records</small>
+          <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--ink);line-height:1.05;">${html(reminder.termLabel)} grades are ${html(due)}</strong>
+          <span style="display:block;color:var(--muted);font-size:13px;margin-top:4px;line-height:1.35;">${html(reminder.missingCount)} current-term grade${reminder.missingCount === 1 ? "" : "s"} still need to be entered${html(children)}.</span>
+        </span>
+      </div>
+      <div style="display:flex;gap:9px;align-items:center;flex:none;">
+        <a href="${html(reminder.href)}" style="background:var(--navy);border:1px solid var(--gold);border-radius:10px;color:#fffaf0;text-decoration:none;padding:10px 14px;font-weight:800;font-size:13px;">Enter Grades</a>
+        <button type="button" data-grade-reminder-dismiss style="border:1px solid var(--line);background:var(--paper);border-radius:9px;color:var(--muted);font-family:inherit;padding:9px 11px;cursor:pointer;">Dismiss</button>
+      </div>
+    </section>`;
+}
+
 function renderDashboard(vm) {
   const today = vm.todayInChurch;
   const todayArtworkUrl = today.iconUrl || "/images/learn/today-in-the-church.jpg";
@@ -985,6 +1012,7 @@ function renderDashboard(vm) {
 
   const body = `
     <section data-screen-label="Dashboard" style="display:flex;flex-direction:column;gap:22px;">
+      ${renderGradeReminder(vm)}
 
       <!-- Today in the Church -->
       <div data-church-card style="background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 3px rgba(20,40,70,.04);overflow:hidden;">
@@ -2979,10 +3007,10 @@ function renderAttendanceTracker(vm) {
     </section>`;
 }
 
-function renderGradeTermFields(course, grade) {
+function renderGradeTermFields(course, grade, termLabel = "") {
   return `
     <fieldset class="learn-grade-term" data-grade-term="${grade.termIndex}">
-      <legend>Term ${grade.termIndex}</legend>
+      <legend>${html(termLabel || `Term ${grade.termIndex}`)}</legend>
       <label>Score
         <input name="numericScore" inputmode="decimal" value="${html(grade.numericScore)}" placeholder="96" />
       </label>
@@ -2990,9 +3018,6 @@ function renderGradeTermFields(course, grade) {
         <select name="letterGrade">
           ${["", "A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"].map((value) => gradeOption(value, grade.letterGrade)).join("")}
         </select>
-      </label>
-      <label>Attendance
-        <input name="attendanceDays" inputmode="numeric" value="${html(grade.attendanceDays)}" placeholder="60" />
       </label>
       <label class="learn-grade-notes">Narrative notes
         <textarea name="teacherNotes" rows="3" placeholder="Narrative evaluation for this course and term">${html(grade.teacherNotes)}</textarea>
@@ -3002,6 +3027,13 @@ function renderGradeTermFields(course, grade) {
 }
 
 function renderGradeCourseEditor(course, vm, index) {
+  const currentGrade = course.grades.find((grade) => Number(grade.termIndex) === Number(vm.currentTermIndex)) || {
+    termIndex: vm.currentTermIndex,
+    numericScore: "",
+    letterGrade: "",
+    attendanceDays: vm.summary?.attendanceDays || "",
+    teacherNotes: ""
+  };
   return `
     <article class="learn-grade-course" data-grade-course data-course-id="${html(course.id)}">
       <header>
@@ -3028,20 +3060,20 @@ function renderGradeCourseEditor(course, vm, index) {
         </label>
       </div>
       <div class="learn-grade-term-grid">
-        ${course.grades.map((grade) => renderGradeTermFields(course, grade)).join("")}
+        ${renderGradeTermFields(course, currentGrade, vm.readiness?.reportCardTermLabel || `Term ${vm.currentTermIndex}`)}
       </div>
     </article>
   `;
 }
 
 function renderGrades(vm) {
-  const selectedCourses = vm.childCourses;
+  const selectedCourses = vm.termCourses;
   const readiness = vm.readiness || {};
   const childOptions = vm.children.map((child) => `<option value="${html(child.id)}" ${child.id === vm.selectedChildId ? "selected" : ""}>${html(child.name)}${child.gradeLabel ? ` · ${html(child.gradeLabel)}` : ""}</option>`).join("");
   const transcriptRows = selectedCourses.length ? selectedCourses.map((course) => {
-    const finalGrade = [...course.grades].reverse().find((grade) => grade.letterGrade)?.letterGrade || "";
-    return `<tr><th scope="row">${html(course.courseTitle)}</th><td>${html(course.subjectCategory)}</td><td>Grade ${html(course.gradeLevel)}</td><td>${html(course.creditHours)}</td><td>${html(finalGrade || "Open")}</td></tr>`;
-  }).join("") : `<tr><td colspan="5">Add courses to begin transcript tracking.</td></tr>`;
+    const currentGrade = course.grades.find((grade) => Number(grade.termIndex) === Number(vm.currentTermIndex)) || {};
+    return `<tr><th scope="row">${html(course.courseTitle)}</th><td>${html(course.subjectCategory)}</td><td>${html(readiness.reportCardTermLabel || `Term ${vm.currentTermIndex}`)}</td><td>${html(course.creditHours)}</td><td>${html(currentGrade.letterGrade || "Open")}</td></tr>`;
+  }).join("") : `<tr><td colspan="5">No current-term setup subjects are assigned to this student.</td></tr>`;
   const body = `
     <section data-screen-label="Grades" class="learn-grades-page">
       <form data-grades-form>
@@ -3062,10 +3094,10 @@ function renderGrades(vm) {
 
         <div class="learn-grades-summary">
           <article><small>Student</small><strong>${html(vm.selectedChild.name || "Student")}</strong><span>${html(vm.selectedChild.gradeLabel || "High school records")}</span></article>
-          <article><small>Courses</small><strong>${html(String(selectedCourses.length))}</strong><span>For selected student</span></article>
+          <article><small>Current Term</small><strong>${html(String(selectedCourses.length))}</strong><span>${html(readiness.reportCardTermLabel || `Term ${vm.currentTermIndex}`)} subjects</span></article>
           <article><small>Credits Earned</small><strong data-grade-summary-credits>${html(vm.summary.totalCredits)}</strong><span>Transcript total</span></article>
           <article><small>Unweighted GPA</small><strong data-grade-summary-gpa>${html(vm.summary.cumulativeGpa)}</strong><span>4.0 scale</span></article>
-          <article><small>Attendance</small><strong>${html(String(vm.summary.attendanceDays || 0))}</strong><span>Instructional days</span></article>
+          <article><small>Attendance</small><strong data-grade-attendance-total>${html(String(vm.summary.attendanceDays || 0))}</strong><span>Instructional days</span></article>
         </div>
 
         ${renderAttendanceTracker(vm)}
@@ -3073,7 +3105,7 @@ function renderGrades(vm) {
         <div data-grades-status class="learn-grades-status" aria-live="polite"></div>
 
         <div class="learn-grade-editor" data-grade-course-list>
-          ${selectedCourses.length ? selectedCourses.map((course, index) => renderGradeCourseEditor(course, vm, index)).join("") : emptyState("No setup subjects are assigned to this student yet. Add subjects in Setup or add a course manually.")}
+          ${selectedCourses.length ? selectedCourses.map((course, index) => renderGradeCourseEditor(course, vm, index)).join("") : emptyState("No current-term setup subjects are assigned to this student. Check the child's Form/grade and the subject's Term in Setup.")}
         </div>
       </form>
 
@@ -5245,6 +5277,23 @@ function wireChurchCardToggle() {
 
 function wireDashboard() {
   wireChurchCardToggle();
+  const reminder = root.querySelector("[data-grade-reminder]");
+  if (reminder) {
+    const key = reminder.dataset.gradeReminderKey || "";
+    if (key && localStorage.getItem(key) === "dismissed") reminder.remove();
+    else if (key && localStorage.getItem(`${key}.popup`) !== "shown") {
+      localStorage.setItem(`${key}.popup`, "shown");
+      const title = reminder.querySelector("strong")?.textContent || "Term grades are due";
+      const detail = reminder.querySelector("span span")?.textContent || "Some current-term grades still need to be entered.";
+      window.setTimeout(() => showLearnDialog("Grades Reminder", `${title}. ${detail}`, [
+        { label: "Next step", value: "Open Grades & Attendance from the reminder card." }
+      ]), 250);
+    }
+    reminder.querySelector("[data-grade-reminder-dismiss]")?.addEventListener("click", () => {
+      if (key) localStorage.setItem(key, "dismissed");
+      reminder.remove();
+    });
+  }
   root.querySelectorAll("[data-saint-of-day]").forEach((button) => {
     button.addEventListener("click", () => openSaintOfDay(button));
   });
@@ -6989,7 +7038,13 @@ function wireReports(vm) {
   });
 }
 
-function gradeCourseFromElement(courseEl, childId) {
+function currentAttendanceDaysFromDom(childId = "") {
+  const cells = [...root.querySelectorAll(`[data-attendance-cell][data-child-id="${CSS.escape(childId)}"]`)];
+  if (!cells.length) return "";
+  return String(cells.filter((cell) => ["present", "excused"].includes(cell.dataset.status || "present")).length);
+}
+
+function gradeCourseFromElement(courseEl, childId, vm = {}) {
   const field = (name) => courseEl.querySelector(`[name="${name}"]`);
   return {
     id: courseEl.dataset.courseId || "",
@@ -7002,7 +7057,7 @@ function gradeCourseFromElement(courseEl, childId) {
       termIndex: Number(termEl.dataset.gradeTerm || 1),
       numericScore: termEl.querySelector('[name="numericScore"]')?.value?.trim() || "",
       letterGrade: termEl.querySelector('[name="letterGrade"]')?.value || "",
-      attendanceDays: termEl.querySelector('[name="attendanceDays"]')?.value?.trim() || "",
+      attendanceDays: currentAttendanceDaysFromDom(childId) || String(vm.summary?.attendanceDays || ""),
       teacherNotes: termEl.querySelector('[name="teacherNotes"]')?.value?.trim() || ""
     }))
   };
@@ -7051,6 +7106,15 @@ function setAttendanceCellStatus(cell, status) {
   cell.setAttribute("aria-label", `${cell.dataset.childId || "Student"} ${cell.dataset.date || ""}: ${attendanceStatusLabel(next)}${holidayName && next === "holiday" ? ` (${holidayName})` : ""}`);
 }
 
+function refreshAttendanceSummaryDom(childId = "") {
+  const count = currentAttendanceDaysFromDom(childId);
+  const total = root.querySelector("[data-grade-attendance-total]");
+  if (total && count) total.textContent = count;
+  const row = root.querySelector(`[data-attendance-child="${CSS.escape(childId)}"]`);
+  const small = row?.querySelector(".learn-attendance-student small");
+  if (small && count) small.textContent = `${count} instructional day${Number(count) === 1 ? "" : "s"}`;
+}
+
 function wireGrades(vm) {
   const form = root.querySelector("[data-grades-form]");
   if (!form) return;
@@ -7066,6 +7130,29 @@ function wireGrades(vm) {
     if (!attendanceStatus) return;
     attendanceStatus.textContent = message;
     attendanceStatus.dataset.tone = tone;
+  };
+  const saveAttendance = async ({ silent = false } = {}) => {
+    const save = attendanceForm?.querySelector("[data-attendance-save]");
+    if (save) {
+      save.disabled = true;
+      save.textContent = "Saving...";
+    }
+    if (!silent) setAttendanceStatus("Saving attendance...");
+    try {
+      await apiPost("/api/learn/attendance", {
+        academicYearName: form.elements.academicYearName?.value?.trim() || vm.academicYear.name,
+        entries: [...(attendanceForm?.querySelectorAll("[data-attendance-cell]") || [])].map(attendanceEntryFromCell)
+      });
+      setAttendanceStatus("Attendance saved.", "success");
+    } catch (error) {
+      setAttendanceStatus(error.message || "Attendance could not be saved.", "error");
+      throw error;
+    } finally {
+      if (save) {
+        save.disabled = false;
+        save.textContent = "Save Attendance";
+      }
+    }
   };
   attendanceForm?.addEventListener("click", (event) => {
     const toggle = event.target.closest("[data-attendance-toggle]");
@@ -7085,33 +7172,17 @@ function wireGrades(vm) {
     const statuses = ["present", "absent", "excused", "holiday"];
     const index = statuses.indexOf(cell.dataset.status || "present");
     setAttendanceCellStatus(cell, statuses[(index + 1) % statuses.length]);
+    refreshAttendanceSummaryDom(cell.dataset.childId || "");
     setAttendanceStatus("Attendance changed. Save when ready.");
   });
   attendanceForm?.querySelector("[data-attendance-present-week]")?.addEventListener("click", () => {
     attendanceForm.querySelectorAll("[data-attendance-cell]").forEach((cell) => setAttendanceCellStatus(cell, cell.dataset.defaultStatus === "holiday" ? "holiday" : "present"));
-    setAttendanceStatus("Week marked present with national holidays preserved. Save when ready.");
+    refreshAttendanceSummaryDom(form.elements.childId?.value || vm.selectedChildId);
+    setAttendanceStatus("Week marked present. Saving attendance...");
+    saveAttendance({ silent: true }).catch(() => {});
   });
   attendanceForm?.querySelector("[data-attendance-save]")?.addEventListener("click", async () => {
-    const save = attendanceForm.querySelector("[data-attendance-save]");
-    if (save) {
-      save.disabled = true;
-      save.textContent = "Saving...";
-    }
-    setAttendanceStatus("Saving attendance...");
-    try {
-      await apiPost("/api/learn/attendance", {
-        academicYearName: form.elements.academicYearName?.value?.trim() || vm.academicYear.name,
-        entries: [...attendanceForm.querySelectorAll("[data-attendance-cell]")].map(attendanceEntryFromCell)
-      });
-      setAttendanceStatus("Attendance saved.", "success");
-    } catch (error) {
-      setAttendanceStatus(error.message || "Attendance could not be saved.", "error");
-    } finally {
-      if (save) {
-        save.disabled = false;
-        save.textContent = "Save Attendance";
-      }
-    }
+    saveAttendance().catch(() => {});
   });
   form.querySelector("[data-grades-child]")?.addEventListener("change", (event) => {
     const params = new URLSearchParams(window.location.search);
@@ -7144,7 +7215,7 @@ function wireGrades(vm) {
     const payload = {
       childId,
       academicYearName: form.elements.academicYearName?.value?.trim() || vm.academicYear.name,
-      courses: [...root.querySelectorAll("[data-grade-course]")].map((courseEl) => gradeCourseFromElement(courseEl, childId))
+      courses: [...root.querySelectorAll("[data-grade-course]")].map((courseEl) => gradeCourseFromElement(courseEl, childId, vm))
     };
     if (save) {
       save.disabled = true;
