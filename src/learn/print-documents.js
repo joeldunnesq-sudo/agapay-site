@@ -4,6 +4,7 @@ import { PDFDocument, StandardFonts, rgb, LineCapStyle } from "pdf-lib";
 // with Cloudflare Browser Rendering and @cloudflare/puppeteer.
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const PRINT_DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const LETTER = [612, 792];
 const MARGIN = 46;
 const NAVY      = rgb(0.02, 0.08, 0.15);
@@ -99,6 +100,225 @@ function groupChildRowsByForm(childRows = []) {
   return Array.from(groups.values());
 }
 
+function uniqueValues(values = []) {
+  return Array.from(new Set(values.map((value) => text(value)).filter(Boolean)));
+}
+
+function labelsFromValue(value) {
+  if (Array.isArray(value)) return value.map((entry) => text(entry)).filter(Boolean);
+  return text(value).split(",").map((entry) => entry.trim()).filter(Boolean);
+}
+
+function itemAppliesToTerm(item = {}, termId = "") {
+  if (!termId) return true;
+  if (item.termId && item.termId !== termId) return false;
+  const weeks = Array.isArray(item.scheduledWeeks) ? item.scheduledWeeks : [];
+  return !weeks.length || item.termId === termId || !item.termId;
+}
+
+function childNamesForIds(children = [], ids = []) {
+  const wanted = new Set(ids.map((id) => text(id)).filter(Boolean));
+  return children
+    .filter((child) => wanted.has(child.id))
+    .map((child) => child.firstName || child.name)
+    .filter(Boolean);
+}
+
+function audienceForItem(item = {}, children = []) {
+  const childIds = Array.isArray(item.childIds) ? item.childIds : [];
+  const childNames = childIds.length ? childNamesForIds(children, childIds) : [];
+  if (item.childId) {
+    const child = children.find((candidate) => candidate.id === item.childId) || {};
+    return child.firstName || child.name || item.childId;
+  }
+  if (childNames.length) return childNames.join(", ");
+  const formLabels = labelsFromValue(item.formLabels || item.formLabel || item.gradeLabel);
+  if (formLabels.length) return formLabels.join(", ");
+  if (item.audienceLabel) return item.audienceLabel;
+  return item.planningMode === "family" || !item.planningMode ? "Household" : text(item.planningMode, "Household");
+}
+
+function formGroupForItem(item = {}, children = []) {
+  if (item.childId) {
+    const child = children.find((candidate) => candidate.id === item.childId) || {};
+    return childFormLabel(child);
+  }
+  const childIds = Array.isArray(item.childIds) ? item.childIds : [];
+  if (childIds.length) {
+    return uniqueValues(childIds.map((id) => childFormLabel(children.find((child) => child.id === id) || {}))).join(", ") || "Child-specific";
+  }
+  const labels = labelsFromValue(item.formLabels || item.formLabel || item.gradeLabel);
+  if (labels.length) return labels.join(", ");
+  if (item.planningMode === "family" || item.audienceLabel === "Household") return "Household";
+  return "Enrichment";
+}
+
+function minutesForItem(item = {}) {
+  const minutes = Number(item.minutes || item.minutesPlanned || 0);
+  return minutes > 0 ? `${minutes}m` : "";
+}
+
+function resourceSummary(item = {}) {
+  const resources = Array.isArray(item.resources)
+    ? item.resources.map((resource) => text(resource.title || resource.resourceTitle || resource.resource || resource)).filter(Boolean)
+    : [];
+  return uniqueValues([
+    ...resources,
+    item.resourceTitle,
+    item.resource,
+    item.source,
+    item.author,
+    item.category
+  ]).join("; ");
+}
+
+function scheduleSummary(item = {}) {
+  return uniqueValues([
+    item.weeklyFrequency,
+    item.cadenceLabel,
+    item.cadence,
+    labelsFromValue(item.scheduledDays).join(", "),
+    Array.isArray(item.scheduledWeeks) && item.scheduledWeeks.length ? `${item.scheduledWeeks.length} scheduled weeks` : ""
+  ]).join(" · ");
+}
+
+function progressSummary(item = {}) {
+  if (item.endNumber || item.currentNumber) {
+    return `${item.progressionType || "Lessons"} ${item.currentNumber || item.startNumber || 1}/${item.endNumber || item.termTarget || "?"}`;
+  }
+  if (item.endChapter || item.totalChapters || item.currentChapter) {
+    return `Ch. ${item.currentChapter || item.startChapter || 1}/${item.endChapter || item.totalChapters || "?"}`;
+  }
+  if (item.progressPercent) return `${item.progressPercent}%`;
+  return "";
+}
+
+function termCourseRows(printCenter = {}, termId = "") {
+  const setup = printCenter.setupSnapshot || {};
+  const children = printCenter.children || [];
+  const formation = setup.formation || {};
+  const rows = [];
+  const pushRow = (item, category, title, extra = {}) => {
+    if (!itemAppliesToTerm(item, termId)) return;
+    rows.push({
+      group: formGroupForItem(item, children),
+      category,
+      title: text(title || item.title || "Course"),
+      audience: audienceForItem(item, children),
+      schedule: scheduleSummary(item),
+      minutes: minutesForItem(item),
+      resource: resourceSummary(item),
+      progress: progressSummary(item),
+      note: text(item.graceNote || item.note || extra.note || "")
+    });
+  };
+
+  (setup.subjects || []).forEach((subject) => pushRow(subject, "Form Subject", subject.title));
+  (setup.books || []).forEach((book) => pushRow(book, "Book", book.title));
+  (setup.formationMaterials || []).forEach((material) => pushRow(material, material.materialType || "Formation", material.title));
+  (formation.enrichmentBlocks || []).forEach((block) => pushRow(block, block.blockType || "Enrichment", block.title));
+  if (formation.catechesis?.title) pushRow(formation.catechesis, "Catechesis", formation.catechesis.title);
+  (formation.recitationTracks || []).forEach((track) => pushRow(track, "Recitation", track.title));
+  (formation.hymnStudies || []).forEach((hymn) => pushRow(hymn, "Hymn Study", hymn.title));
+  (formation.churchRhythms || []).forEach((rhythm) => pushRow(rhythm, "Daily Rhythm", rhythm.title));
+
+  if (!rows.length) {
+    (printCenter.week?.householdRows || []).forEach((row) => rows.push({
+      group: "Household",
+      category: row.kind === "enrichment" ? "Enrichment" : "Family Rhythm",
+      title: text(row.title, "Household work"),
+      audience: "Household",
+      schedule: activeDayLabels(row),
+      minutes: minuteSummaryForRows([row]),
+      resource: text(row.detail || ""),
+      progress: "",
+      note: text(row.graceModeApplied ? row.graceModeBehavior : "")
+    }));
+    (printCenter.week?.childRows || []).forEach((row) => rows.push({
+      group: childFormLabel(row.child || {}),
+      category: "Form Subject",
+      title: text(row.title, "Subject"),
+      audience: row.child?.firstName || row.child?.name || row.childId || "",
+      schedule: activeDayLabels(row),
+      minutes: minuteSummaryForRows([row]),
+      resource: text(row.detail || row.subtitle || ""),
+      progress: "",
+      note: text(row.graceModeApplied ? row.graceModeBehavior : "")
+    }));
+  }
+
+  if (!rows.length && termId) return termCourseRows(printCenter, "");
+
+  return rows.sort((a, b) =>
+    a.group.localeCompare(b.group) || a.category.localeCompare(b.category) || a.title.localeCompare(b.title)
+  );
+}
+
+function activeDayLabels(row = {}) {
+  const statuses = Array.isArray(row.statuses) ? row.statuses : [];
+  const minutes = Array.isArray(row.minutes) ? row.minutes : [];
+  const labels = PRINT_DAY_LABELS.filter((label, index) =>
+    statuses[index] && statuses[index] !== "empty" || Number(minutes[index] || 0) > 0
+  );
+  return labels.length ? labels.join(", ") : text(row.weeklyFrequency || row.cadenceLabel || "Scheduled");
+}
+
+function minuteSummaryForRows(rows = []) {
+  const dailyMax = PRINT_DAY_LABELS.map((_, index) =>
+    Math.max(0, ...rows.map((row) => Number(Array.isArray(row.minutes) ? row.minutes[index] || 0 : 0)))
+  );
+  const weekly = dailyMax.reduce((sum, minutes) => sum + minutes, 0);
+  const positiveDaily = uniqueValues(dailyMax.filter((minutes) => minutes > 0).map((minutes) => `${minutes}m`));
+  if (weekly <= 0) {
+    const planned = Math.max(0, ...rows.map((row) => Number(row.minutesPlanned || row.minutes || 0)));
+    return planned ? `${planned}m planned` : "";
+  }
+  if (positiveDaily.length === 1) return `${positiveDaily[0]}/day · ${weekly}m/week`;
+  return `${weekly}m/week`;
+}
+
+function groupChildRowsByFormSubject(childRows = []) {
+  const groups = new Map();
+  childRows.forEach((row, index) => {
+    const form = childFormLabel(row.child);
+    const title = text(row.title, "Lesson");
+    const sourceId = text(row.sourceId || row.subjectId || "", "");
+    const key = `${form}::${sourceId || title.toLowerCase()}::${text(row.formLabel || "", "")}`;
+    if (!groups.has(key)) {
+      groups.set(key, {
+        form,
+        title,
+        children: new Set(),
+        details: [],
+        resourceTitles: [],
+        days: new Set(),
+        rows: [],
+        sort: Number(row.priority || index)
+      });
+    }
+    const group = groups.get(key);
+    if (row.child?.firstName || row.child?.name) group.children.add(row.child.firstName || row.child.name);
+    uniqueValues([row.resourceTitle, row.detail, row.subtitle]).forEach((detail) => {
+      if (detail && !group.details.includes(detail)) group.details.push(detail);
+    });
+    uniqueValues([row.resourceTitle]).forEach((resource) => {
+      if (resource && !group.resourceTitles.includes(resource)) group.resourceTitles.push(resource);
+    });
+    activeDayLabels(row).split(", ").filter(Boolean).forEach((day) => group.days.add(day));
+    group.rows.push(row);
+  });
+  return Array.from(groups.values())
+    .sort((a, b) => a.form.localeCompare(b.form) || a.sort - b.sort || a.title.localeCompare(b.title))
+    .map((group) => ({
+      form: group.form,
+      subject: group.title,
+      children: Array.from(group.children).join(", "),
+      schedule: Array.from(group.days).join(", "),
+      minutes: minuteSummaryForRows(group.rows),
+      assignments: uniqueValues([...group.resourceTitles, ...group.details]).slice(0, 6).join("; ")
+    }));
+}
+
 // ─── Template resolution ──────────────────────────────────────────────────────
 function findTemplate(printCenter, templateId) {
   const requested = templateId === "weekly-pack" ? "print_mom_weekly" : templateId;
@@ -176,14 +396,14 @@ function baseDocument(printCenter, template, generatedAt) {
 function buildHouseholdWeekly(printCenter, template, generatedAt) {
   const doc  = baseDocument(printCenter, template, generatedAt);
   const week = printCenter.week || {};
-  const formRows = groupChildRowsByForm(week.childRows || []);
+  const formRows = groupChildRowsByFormSubject(week.childRows || []);
   doc.sections = [
     tableSection("Family-Based Learning", ["Rhythm", "Notes", "Minutes"],
       (week.householdRows || []).map((row) => [row.title, row.detail, `${sumMinutes(row.minutes)}m`]),
       { flex: [2, 4, 1] }),
-    tableSection("Form Plans", ["Form", "Children", "Assignments"],
-      formRows.map((row) => [row.label, Array.from(row.children).join(", "), row.details.slice(0, 5).join("; ")]),
-      { flex: [1.5, 1.5, 4] }),
+    tableSection("Form Plans", ["Form", "Subject", "Children", "Schedule", "Minutes", "Assignments"],
+      formRows.map((row) => [row.form, row.subject, row.children, row.schedule, row.minutes, row.assignments]),
+      { flex: [1.1, 1.6, 1.5, 1.4, 1.5, 3.2] }),
     liturgicalSection("Liturgical Notes", (week.liturgicalDays || []).slice(0, 7)),
   ].filter(Boolean);
   return doc;
@@ -194,6 +414,7 @@ function cleanDesignedAssignment(item = {}) {
     title: text(item.title || "Subject"),
     sub: text(item.sub || ""),
     note: text(item.note || ""),
+    minutes: Number(item.minutes || 0),
     color: text(item.color || "")
   };
 }
@@ -229,20 +450,72 @@ function buildDesignedWeek(printCenter, designedWeek = {}, generatedAt) {
 function buildTermPlan(printCenter, template, generatedAt) {
   const doc   = baseDocument(printCenter, template, generatedAt);
   const setup = printCenter.termSetup || {};
-  const activeTerm = (setup.termOptions || []).find((t) => t.id === setup.activeTermId) || {};
+  const activeTerm = (setup.termOptions || []).find((t) => t.id === (template.termId || setup.activeTermId)) || (setup.termOptions || []).find((t) => t.id === setup.activeTermId) || printCenter.term || {};
+  const rows = termCourseRows(printCenter, activeTerm.id || setup.activeTermId || "");
+  const formGroups = uniqueValues(rows.map((row) => row.group));
+  doc.orientation = "landscape";
+  doc.title = text(`${activeTerm.label || printCenter.term?.label || "Term"} Course Map`);
+  doc.subtitle = text(`${printCenter.household?.name || "Household"} · ${[activeTerm.startDate, activeTerm.endDate].filter(Boolean).join(" to ") || "Current term"} · ${printCenter.calendarToggle?.label || "Orthodox Calendar"}`);
   doc.sections = [
-    cardsSection("Current Term", [
+    cardsSection("Term Summary", [
       { label: "Term",      value: activeTerm.label || printCenter.term?.label || "Current Term", detail: printCenter.term?.week || "" },
-      { label: "Calendar",  value: printCenter.calendarToggle?.label || "Orthodox Calendar", detail: printCenter.calendarToggle?.description || "" },
-      { label: "Grace Mode", value: "Available", detail: "Use lighter weeks without losing the term rhythm." },
+      { label: "Course Rows", value: String(rows.length), detail: "Forms, enrichment, books, and child-specific assignments." },
+      { label: "Groups", value: String(formGroups.length), detail: formGroups.join(", ") },
     ]),
     tableSection("Children and Forms", ["Child", "Form", "Age"],
       (printCenter.children || []).map((c) => [c.firstName || c.name, childFormLabel(c), c.ageYears ? `${c.ageYears}` : ""]),
       { flex: [2, 2, 1] }),
-    tableSection("Term Options", ["Term", "Status", "Notes"],
-      (setup.termOptions || []).map((t) => [t.label, t.id === setup.activeTermId ? "Current" : "Planned",
-        t.startDate && t.endDate ? `${t.startDate} to ${t.endDate}` : "Set in Setup"]),
-      { flex: [2, 1, 3] }),
+    tableSection("Term Course Map", ["Group", "Type", "Course / Source", "Audience", "Schedule", "Minutes", "Progress / Range"],
+      rows.map((row) => [row.group, row.category, [row.title, row.resource].filter(Boolean).join(": "), row.audience, row.schedule, row.minutes, row.progress]),
+      { flex: [1.25, 1.1, 2.6, 1.45, 1.45, 0.9, 1.25] }),
+    tableSection("Grace and Planning Notes", ["Group", "Course", "Note"],
+      rows.filter((row) => row.note).map((row) => [row.group, row.title, row.note]),
+      { flex: [1.4, 2.2, 4] }),
+    cardsSection("Setup Summary", (setup.setupCards || []).map((card) => ({
+      label: card.title,
+      value: card.value,
+      detail: card.detail
+    }))),
+    tableSection("Household Term Rhythm", ["Track", "Detail"],
+      (setup.householdSummary || []).map((item) => {
+        const [label, ...detail] = text(item).split(":");
+        return [label, detail.join(":").trim()];
+      }),
+      { flex: [2, 4] }),
+    tableSection("Child Track Summary", ["Child", "Tracks"],
+      (setup.childTrackSummary || []).map((summary) => {
+        const child = (printCenter.children || []).find((candidate) => candidate.id === summary.childId) || {};
+        return [child.firstName || child.name || summary.childId, (summary.tracks || []).join("; ")];
+      }),
+      { flex: [1.5, 5] }),
+    tableSection("Pacing Rows", ["Track", "Resource", "Term Pacing"],
+      (setup.pacingRows || []).map((row) => [row.label, row.subtitle, (row.segments || []).map((segment) => segment.title).join("; ")]),
+      { flex: [1.6, 2.4, 4] }),
+  ].filter(Boolean);
+  return doc;
+}
+
+function buildSchoolYearPlan(printCenter, template, generatedAt) {
+  const doc = baseDocument(printCenter, template, generatedAt);
+  const setup = printCenter.termSetup || {};
+  const terms = (setup.termOptions || []).length ? setup.termOptions : [printCenter.term || {}];
+  const allRows = terms.flatMap((term) => termCourseRows(printCenter, term.id).map((row) => ({ ...row, term: term.label || term.id || "Term" })));
+  doc.orientation = "landscape";
+  doc.title = text(`${printCenter.schoolYear?.label || "School Year"} Course Plan`);
+  doc.subtitle = text(`${printCenter.household?.name || "Household"} · ${[printCenter.schoolYear?.startDate, printCenter.schoolYear?.endDate].filter(Boolean).join(" to ") || "Full school year"}`);
+  doc.sections = [
+    cardsSection("School Year Summary", [
+      { label: "School Year", value: printCenter.schoolYear?.label || "School Year", detail: [printCenter.schoolYear?.startDate, printCenter.schoolYear?.endDate].filter(Boolean).join(" to ") },
+      { label: "Terms", value: String(terms.length), detail: terms.map((term) => term.label).filter(Boolean).join(", ") },
+      { label: "Course Rows", value: String(allRows.length), detail: "Every configured subject, book, enrichment item, and formation track." }
+    ]),
+    ...terms.map((term, index) => {
+      const rows = termCourseRows(printCenter, term.id);
+      const section = tableSection(`${term.label || `Term ${index + 1}`} Courses`, ["Group", "Type", "Course / Source", "Audience", "Schedule", "Minutes", "Progress / Range"],
+        rows.map((row) => [row.group, row.category, [row.title, row.resource].filter(Boolean).join(": "), row.audience, row.schedule, row.minutes, row.progress]),
+        { flex: [1.25, 1.1, 2.6, 1.45, 1.45, 0.9, 1.25] });
+      return section ? { ...section, pageBreakBefore: index > 0 } : null;
+    }).filter(Boolean)
   ].filter(Boolean);
   return doc;
 }
@@ -313,6 +586,42 @@ export function buildWeeklyHouseholdPrintDocument({ household, week, calendarTog
 // Helpers shared across planner builders
 
 const WEEKDAYS_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function weekdayLabelForDate(civilDate = "") {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(civilDate)) return "";
+  const date = new Date(`${civilDate}T12:00:00Z`);
+  return WEEKDAYS_LONG[date.getUTCDay()] || civilDate;
+}
+
+function isActualFastDay(day = {}) {
+  if (day.isFastDay === true) return true;
+  const rule = text(day.fastingRule || day.fastingType || "").toLowerCase();
+  if (!rule || rule === "no fast" || rule.includes("no fasting")) return false;
+  return /fast|abstain|lenten|strict|wine|oil|fish/i.test(rule);
+}
+
+function normalizedWeekDays(week = {}) {
+  const dates = Array.isArray(week.dates) ? week.dates : [];
+  const familyDays = Array.isArray(week.familyDays) ? week.familyDays : [];
+  const liturgicalDays = Array.isArray(week.liturgicalDays) ? week.liturgicalDays : [];
+  const dateKeys = dates.length
+    ? dates
+    : liturgicalDays.map((day) => day.civilDate || day.date).filter(Boolean);
+  return dateKeys.slice(0, 7).map((civilDate, index) => {
+    const familyDay = familyDays[index] || {};
+    const liturgicalDay = liturgicalDays.find((day) => (day.civilDate || day.date) === civilDate) || liturgicalDays[index] || {};
+    return {
+      ...liturgicalDay,
+      ...familyDay,
+      civilDate,
+      weekdayLabel: familyDay.weekdayLabel || liturgicalDay.weekdayLabel || weekdayLabelForDate(civilDate),
+      feastTitle: familyDay.feastTitle || liturgicalDay.feastTitle || liturgicalDay.title || "",
+      isFastDay: isActualFastDay(familyDay) || isActualFastDay(liturgicalDay),
+      fastingRule: familyDay.fastingRule || liturgicalDay.fastingRule || "",
+      fastingType: familyDay.fastingType || liturgicalDay.fastingType || ""
+    };
+  });
+}
 
 function choresByAssignee(chores = [], children = []) {
   const people = [
@@ -440,7 +749,7 @@ function buildChorePlanMonth(printCenter, template, generatedAt) {
 function buildMealPlanWeek(printCenter, template, generatedAt) {
   const doc    = baseDocument(printCenter, template, generatedAt);
   const meals  = printCenter.familyPlanning?.meals || [];
-  const days   = printCenter.week?.familyDays || printCenter.week?.dates?.map((d) => ({ civilDate: d })) || [];
+  const days   = normalizedWeekDays(printCenter.week || {});
   const mealByDate = new Map(meals.map((m) => [m.date, m]));
   const rows = days.map((day) => {
     const m = mealByDate.get(day.civilDate) || {};
@@ -576,25 +885,50 @@ function buildGroceryListWeek(printCenter, template, generatedAt) {
 // ─── Planner lesson builders ──────────────────────────────────────────────────
 function buildPlannerLessonWeekForm(printCenter, template, generatedAt) {
   const doc      = baseDocument(printCenter, template, generatedAt);
-  const formRows = groupChildRowsByForm(printCenter.week?.childRows || []);
+  const formRows = groupChildRowsByFormSubject(printCenter.week?.childRows || []);
   doc.sections = [
     cardsSection("Week", [
       { label: "Week",   value: printCenter.week?.label || "Current Week", detail: printCenter.term?.label || "" },
-      { label: "Forms",  value: String(formRows.length), detail: "Active forms this week" },
+      { label: "Form Subjects",  value: String(formRows.length), detail: "Active Form/subject rows this week" },
     ]),
     tableSection("Family-Based Learning", ["Rhythm", "Notes", "Min"],
       (printCenter.week?.householdRows || []).map((r) => [r.title, r.detail, `${sumMinutes(r.minutes)}m`]),
       { flex: [2.5, 4, 1] }),
-    tableSection("Form Plans", ["Form", "Children", "Assignments"],
-      formRows.map((r) => [r.label, Array.from(r.children).join(", "), r.details.slice(0, 5).join("; ")]),
-      { flex: [1.5, 2, 5] }),
+    tableSection("Form Plans", ["Form", "Subject", "Children", "Schedule", "Minutes", "Assignments"],
+      formRows.map((r) => [r.form, r.subject, r.children, r.schedule, r.minutes, r.assignments]),
+      { flex: [1.1, 1.6, 1.5, 1.4, 1.5, 3.2] }),
   ].filter(Boolean);
+  return doc;
+}
+
+function buildLiturgicalSchoolYear(printCenter, template, generatedAt) {
+  const doc = baseDocument(printCenter, template, generatedAt);
+  const months = (printCenter.schoolYearMonths || []).slice(0, 12);
+  doc.title = text(`${printCenter.schoolYear?.label || "School Year"} Liturgical Calendar`);
+  doc.subtitle = text(`${printCenter.household?.name || "Household"} · ${printCenter.calendarToggle?.label || "Orthodox Calendar"} · 12-month school year`);
+  doc.footerRole = "Liturgical School Year";
+  doc.sections = months.map((month, index) => ({
+      type: "calendar-grid",
+      heading: month.label || `Month ${index + 1}`,
+      kicker: "Liturgical Month",
+      pageBreakBefore: index > 0,
+      days: (month.days || []).filter((day) => day?.inMonth !== undefined),
+      summary: {
+        fastDays: month.fastDays || 0,
+        feastDays: month.feastDays || 0
+      }
+    })).filter(Boolean);
   return doc;
 }
 
 function buildPlannerLessonMonthForm(printCenter, template, generatedAt) {
   const doc = buildMonthCalendar(printCenter, template, generatedAt);
   doc.title = text(printCenter.month?.label ? `${printCenter.month.label} Lesson Plans` : "Monthly Lesson Plans by Form");
+  const weekDoc = buildPlannerLessonWeekForm(printCenter, template, generatedAt);
+  const formPlanSection = (weekDoc.sections || []).find((section) => section.heading === "Form Plans");
+  if (formPlanSection) {
+    doc.sections.push({ ...formPlanSection, heading: "Current Weekly Form Lesson Snapshot" });
+  }
   return doc;
 }
 
@@ -612,6 +946,11 @@ function buildPlannerLessonMonthChild(printCenter, template, generatedAt) {
   const name  = child?.firstName || "Child";
   doc.title   = text(`${name}'s Monthly Lessons`);
   doc.footerRole = doc.title;
+  const childWeekly = buildChildWeekly(printCenter, template, generatedAt);
+  const assignments = (childWeekly.sections || []).find((section) => section.heading === "Assignments");
+  if (assignments) {
+    doc.sections.push({ ...assignments, heading: "Current Weekly Lesson Snapshot" });
+  }
   return doc;
 }
 
@@ -630,7 +969,8 @@ export function buildLearnPrintDocument(printCenter, {
   // ── Core Learn templates ──────────────────────────────────────────────────
   if (type === "term-plan"                  || template.id === "print_mom_term")       return buildTermPlan(printCenter, template, generatedAt);
   if (type === "month-calendar"             || template.id === "print_mom_month")      return buildMonthCalendar(printCenter, template, generatedAt);
-  if (type === "liturgical-school-calendar" || template.id === "print_mom_liturgical") return buildMonthCalendar(printCenter, template, generatedAt);
+  if (type === "liturgical-school-calendar" || template.id === "print_mom_liturgical") return buildLiturgicalSchoolYear(printCenter, template, generatedAt);
+  if (type === "school-year-plan"            || template.id === "print_mom_school_year") return buildSchoolYearPlan(printCenter, template, generatedAt);
   if (type === "child-weekly-assignment")                                               return buildChildWeekly(printCenter, template, generatedAt);
   if (type === "child-term-plan")                                                       return buildChildTerm(printCenter, template, generatedAt);
 
@@ -664,19 +1004,21 @@ export function buildLearnPrintDocument(printCenter, {
 }
 
 export function buildLearnReportPrintDocument(reports, {
-  templateId = "year-end-report", label = "", generatedAt = new Date().toISOString()
+  templateId = "year-end-report", label = "", childId = "", termIndex = "", termLabel = "", academicYearName = "", generatedAt = new Date().toISOString()
 } = {}) {
   const normalized = text(templateId || label || "year-end-report").toLowerCase();
+  const selectedChild = (reports.children || []).find((child) => child.id === childId) || null;
+  const selectedTermLabel = text(termLabel, termIndex ? `Term ${termIndex}` : reports.term?.label || "");
   const title = normalized.includes("transcript")
-    ? "Academic Transcript"
+    ? `${selectedChild?.firstName || selectedChild?.name || ""}${selectedChild ? "'s " : ""}Academic Transcript`
     : normalized.includes("report-card") || normalized.includes("report card")
-      ? "Term Report Card"
+      ? `${selectedChild?.firstName || selectedChild?.name || ""}${selectedChild ? "'s " : ""}${selectedTermLabel || "Term"} Report Card`
       : normalized.includes("subject")
         ? "Subject Progress Report"
         : label || "Year-End Report";
   const doc = {
     title, footerRole: title,
-    subtitle:     text(`${reports.household?.name || "Household"} · ${reports.schoolYear?.label || reports.term?.label || "School Year"}`),
+    subtitle:     text(`${reports.household?.name || "Household"} · ${academicYearName || reports.schoolYear?.label || reports.term?.label || "School Year"}${selectedTermLabel ? " · " + selectedTermLabel : ""}`),
     household:    text(reports.household?.name || "Household"),
     generatedAt, templateId,
     footerNote:   `${reports.household?.name || "Household"} · Generated by AGAPAY Learn`,
@@ -688,24 +1030,31 @@ export function buildLearnReportPrintDocument(reports, {
   const narrationRows = (reports.narrationLogs || []).slice(0, 24).map((e) => [e.date, e.child?.firstName || e.childName || e.childId || "", e.source, e.narrationType || e.type || "", e.note]);
 
   if (normalized.includes("transcript")) {
+    const transcripts = (reports.transcripts || []).filter((t) => !childId || t.childId === childId);
     doc.sections = [
       tableSection("Transcripts", ["Student", "Grade Span", "Credits", "Status"],
-        (reports.transcripts || []).map((t) => [t.child?.firstName || t.childId || "", t.gradeSpan || "", t.credits || "", t.status || ""]),
+        transcripts.map((t) => [t.child?.firstName || t.childId || "", t.gradeSpan || "", t.credits || "", t.status || ""]),
         { flex: [2, 2, 1, 1] }),
       tableSection("Transcript Records", ["Subject", "Mark", "Model"],
-        (reports.transcripts || []).flatMap((t) => (t.records || []).map((r) => [r.subject, r.mark, r.evaluationModel])),
+        transcripts.flatMap((t) => (t.records || []).map((r) => [r.termLabel ? `${r.termLabel}: ${r.subject}` : r.subject, r.mark, r.evaluationModel])),
         { flex: [3, 1, 2] }),
     ].filter(Boolean);
     return doc;
   }
 
   if (normalized.includes("report-card") || normalized.includes("report card")) {
+    const reportCards = (reports.reportCards || []).filter((r) => {
+      if (childId && r.childId !== childId) return false;
+      if (termIndex && String(r.termId || "").replace(/\D+/g, "") && String(r.termId || "").replace(/\D+/g, "") !== String(termIndex)) return false;
+      if (termLabel && r.termLabel && r.termLabel !== termLabel) return false;
+      return true;
+    });
     doc.sections = [
       tableSection("Report Cards", ["Student", "Summary", "Status"],
-        (reports.reportCards || []).map((r) => [r.child?.firstName || r.childId || "", r.summary || "", r.status || ""]),
+        reportCards.map((r) => [r.child?.firstName || r.childId || "", r.summary || "", r.status || ""]),
         { flex: [1.5, 5, 1.5] }),
       tableSection("Evaluation Records", ["Subject", "Mark", "Narrative"],
-        (reports.reportCards || []).flatMap((r) => (r.records || []).map((rec) => [rec.subject, rec.mark, rec.narrativeSummary])),
+        reportCards.flatMap((r) => (r.records || []).map((rec) => [rec.subject, rec.mark || rec.grade, rec.narrativeSummary || rec.teacherNotes || ""])),
         { flex: [2, 1, 4] }),
     ].filter(Boolean);
     return doc;

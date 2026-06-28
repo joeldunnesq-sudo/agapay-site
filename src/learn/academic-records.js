@@ -98,6 +98,103 @@ function kvReportCardKey(householdId) {
   return `${LEARN_REPORT_CARDS_KV_PREFIX}${householdId}`;
 }
 
+function recordsAndReportsFromGradebook(householdId, rows = []) {
+  const records = [];
+  const courses = new Map();
+  for (const row of list(rows)) {
+    if (!courses.has(row.course_id)) {
+      courses.set(row.course_id, {
+        id: row.course_id,
+        childId: row.child_id,
+        academicYearId: row.academic_year_id,
+        academicYearName: row.academic_year_name,
+        courseTitle: row.course_title,
+        subjectCategory: row.subject_category,
+        gradeLevel: row.grade_level,
+        creditHours: number(row.credit_hours, 0),
+        grades: []
+      });
+    }
+    if (row.term_index && (row.letter_grade || row.numeric_score !== null && row.numeric_score !== undefined)) {
+      courses.get(row.course_id).grades.push(row);
+      const mark = text(row.letter_grade, row.numeric_score !== null && row.numeric_score !== undefined ? `${row.numeric_score}%` : "");
+      records.push({
+        id: `learn_gradebook_record_${stableSegment(row.course_id)}_term_${row.term_index}`,
+        householdId,
+        childId: row.child_id,
+        schoolYearId: row.academic_year_id,
+        academicYearName: row.academic_year_name,
+        termId: `term_${row.term_index}`,
+        termLabel: `Term ${row.term_index}`,
+        recordType: number(row.credit_hours, 0) > 0 ? "course-credit" : "milestone",
+        occurredOn: row.updated_at || row.created_at || new Date().toISOString().slice(0, 10),
+        subject: row.course_title,
+        subjectTitle: row.course_title,
+        subjectType: row.subject_category,
+        source: row.subject_category,
+        credits: number(row.credit_hours, 0),
+        evaluationModel: row.numeric_score !== null && row.numeric_score !== undefined ? "percent" : "letter-grade",
+        mark,
+        completionPercent: mark ? 100 : 0,
+        progressionType: "term-grade",
+        narrativeSummary: text(row.teacher_notes, ""),
+        teacherNotes: text(row.teacher_notes, ""),
+        attendanceDays: int(row.attendance_days, 0)
+      });
+    }
+  }
+
+  const byChildTerm = new Map();
+  for (const course of courses.values()) {
+    for (const termIndex of [1, 2, 3]) {
+      const key = `${course.childId}::${course.academicYearId}::${termIndex}`;
+      if (!byChildTerm.has(key)) {
+        byChildTerm.set(key, {
+          childId: course.childId,
+          schoolYearId: course.academicYearId,
+          termIndex,
+          courses: [],
+          records: []
+        });
+      }
+      const group = byChildTerm.get(key);
+      const grade = course.grades.find((entry) => Number(entry.term_index) === termIndex);
+      group.courses.push(course);
+      if (grade) {
+        const mark = text(grade.letter_grade, grade.numeric_score !== null && grade.numeric_score !== undefined ? `${grade.numeric_score}%` : "");
+        group.records.push({
+          subject: course.courseTitle,
+          description: course.subjectCategory,
+          mark,
+          grade: mark,
+          narrativeSummary: text(grade.teacher_notes, ""),
+          attendanceDays: int(grade.attendance_days, 0),
+          credits: number(course.creditHours, 0),
+          progressPercent: mark ? 100 : 0,
+          status: mark ? "complete" : "open"
+        });
+      }
+    }
+  }
+
+  const reportCards = [...byChildTerm.values()]
+    .filter((group) => group.courses.length && group.records.length === group.courses.length)
+    .map((group) => ({
+      id: `learn_report_gradebook_${stableSegment(householdId)}_${stableSegment(group.childId)}_term_${group.termIndex}`,
+      householdId,
+      childId: group.childId,
+      schoolYearId: group.schoolYearId,
+      termId: `term_${group.termIndex}`,
+      termLabel: `Term ${group.termIndex}`,
+      status: "ready",
+      generatedAt: new Date().toISOString(),
+      summary: `${group.records.length} assigned subject${group.records.length === 1 ? "" : "s"} graded for Term ${group.termIndex}.`,
+      records: group.records
+    }));
+
+  return { records, reportCards };
+}
+
 async function loadKvArray(env, key) {
   if (!env.AGAPAY_REGISTRATIONS) return [];
   return safeParse(await env.AGAPAY_REGISTRATIONS.get(key), []) || [];
@@ -116,27 +213,68 @@ export async function loadLearnAcademicSnapshot(env, householdId) {
         d1All(env, "SELECT id, child_id, record_type, occurred_on, data, created_at, updated_at FROM learn_academic_records WHERE household_id = ?1 ORDER BY occurred_on, id", householdId),
         d1All(env, "SELECT id, child_id, school_year_id, status, data, created_at, updated_at FROM learn_report_cards WHERE household_id = ?1 ORDER BY updated_at DESC, id", householdId)
       ]);
+      let gradebookRecords = [];
+      let gradebookReports = [];
+      try {
+        const gradeRows = await d1All(
+          env,
+          `SELECT
+             c.id AS course_id,
+             c.child_id,
+             c.academic_year_id,
+             c.course_title,
+             c.subject_category,
+             c.grade_level,
+             c.credit_hours,
+             c.created_at,
+             c.updated_at,
+             ay.name AS academic_year_name,
+             g.term_index,
+             g.numeric_score,
+             g.letter_grade,
+             g.teacher_notes,
+             g.attendance_days
+           FROM courses c
+           JOIN academic_years ay ON ay.id = c.academic_year_id
+           LEFT JOIN grades_and_progress g ON g.course_id = c.id
+           WHERE c.household_id = ?1
+           ORDER BY c.child_id, c.course_title, g.term_index`,
+          householdId
+        );
+        const derived = recordsAndReportsFromGradebook(householdId, gradeRows);
+        gradebookRecords = derived.records;
+        gradebookReports = derived.reportCards;
+      } catch {
+        gradebookRecords = [];
+        gradebookReports = [];
+      }
       return {
-        academicRecords: academicRows.map((row) => ({
-          ...(safeParse(row.data, {}) || {}),
-          id: row.id,
-          householdId,
-          childId: row.child_id,
-          recordType: row.record_type,
-          occurredOn: row.occurred_on,
-          createdAt: row.created_at,
-          updatedAt: row.updated_at
-        })),
-        reportCards: reportRows.map((row) => ({
-          ...(safeParse(row.data, {}) || {}),
-          id: row.id,
-          householdId,
-          childId: row.child_id,
-          schoolYearId: row.school_year_id,
-          status: row.status,
-          createdAt: row.created_at,
-          updatedAt: row.updated_at
-        }))
+        academicRecords: [
+          ...academicRows.map((row) => ({
+            ...(safeParse(row.data, {}) || {}),
+            id: row.id,
+            householdId,
+            childId: row.child_id,
+            recordType: row.record_type,
+            occurredOn: row.occurred_on,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at
+          })),
+          ...gradebookRecords
+        ],
+        reportCards: [
+          ...reportRows.map((row) => ({
+            ...(safeParse(row.data, {}) || {}),
+            id: row.id,
+            householdId,
+            childId: row.child_id,
+            schoolYearId: row.school_year_id,
+            status: row.status,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at
+          })),
+          ...gradebookReports
+        ]
       };
     } catch {
       // During local development or phased migration rollout, fall through to KV/dev storage.

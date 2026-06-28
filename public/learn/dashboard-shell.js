@@ -2926,12 +2926,13 @@ function renderAttendanceTracker(vm) {
   const dates = vm.attendance.weekDates.length ? vm.attendance.weekDates : [];
   const byKey = new Map(vm.attendance.entries.map((entry) => [`${entry.childId}::${entry.date}`, entry]));
   const childSummary = new Map(vm.attendance.summary.byChild.map((row) => [row.childId, row]));
+  const attendanceChildren = vm.selectedChild?.id ? vm.children.filter((child) => child.id === vm.selectedChild.id) : vm.children;
   const head = dates.map((date) => {
     const label = attendanceDateLabel(date);
     const holiday = nationalHolidayForDate(date);
     return `<span><strong>${html(label.day)}</strong><small>${html(label.short)}${holiday ? ` · ${html(holiday)}` : ""}</small></span>`;
   }).join("");
-  const rows = vm.children.map((child) => {
+  const rows = attendanceChildren.map((child) => {
     const summary = childSummary.get(child.id) || {};
     return `<div class="learn-attendance-row" data-attendance-child="${html(child.id)}">
       <div class="learn-attendance-student">
@@ -2952,12 +2953,12 @@ function renderAttendanceTracker(vm) {
     <section data-attendance-form class="learn-attendance-panel is-collapsed">
       <div class="learn-attendance-toolbar">
         <div>
-          <small>Household Attendance</small>
+          <small>${html(vm.selectedChild?.name || "Student")} Attendance</small>
           <h2>Weekly attendance log</h2>
-          <em data-attendance-status aria-live="polite">Attendance card minimized. Mark the week present or expand for details.</em>
+          <em data-attendance-status aria-live="polite">Attendance card minimized. Mark the selected student's week present or expand for details.</em>
         </div>
         <div class="learn-attendance-actions">
-          <button type="button" data-attendance-present-week>Mark All Present</button>
+          <button type="button" data-attendance-present-week>Mark Week Present</button>
           <button type="button" data-attendance-toggle aria-expanded="false">Expand</button>
           <button type="button" data-attendance-save>Save Attendance</button>
         </div>
@@ -3007,7 +3008,7 @@ function renderGradeCourseEditor(course, vm, index) {
         <span style="--course-color:${html(course.color)}">${html(String(index + 1))}</span>
         <div>
           <input name="courseTitle" value="${html(course.courseTitle)}" aria-label="Course title" />
-          <small>${html(course.subjectCategory)} · Grade ${html(course.gradeLevel)} · ${html(course.creditHours)} credit${Number(course.creditHours) === 1 ? "" : "s"}</small>
+          <small>${html(course.subjectCategory)} · Grade ${html(course.gradeLevel)} · ${html(course.creditHours)} credit${Number(course.creditHours) === 1 ? "" : "s"}${course.setupSeeded ? " · from Setup" : ""}</small>
         </div>
         <button type="button" data-grade-remove-course aria-label="Remove course">×</button>
       </header>
@@ -3035,6 +3036,7 @@ function renderGradeCourseEditor(course, vm, index) {
 
 function renderGrades(vm) {
   const selectedCourses = vm.childCourses;
+  const readiness = vm.readiness || {};
   const childOptions = vm.children.map((child) => `<option value="${html(child.id)}" ${child.id === vm.selectedChildId ? "selected" : ""}>${html(child.name)}${child.gradeLabel ? ` · ${html(child.gradeLabel)}` : ""}</option>`).join("");
   const transcriptRows = selectedCourses.length ? selectedCourses.map((course) => {
     const finalGrade = [...course.grades].reverse().find((grade) => grade.letterGrade)?.letterGrade || "";
@@ -3071,11 +3073,11 @@ function renderGrades(vm) {
         <div data-grades-status class="learn-grades-status" aria-live="polite"></div>
 
         <div class="learn-grade-editor" data-grade-course-list>
-          ${selectedCourses.length ? selectedCourses.map((course, index) => renderGradeCourseEditor(course, vm, index)).join("") : emptyState("No courses have been recorded for this student yet. Add a course to begin the transcript trail.")}
+          ${selectedCourses.length ? selectedCourses.map((course, index) => renderGradeCourseEditor(course, vm, index)).join("") : emptyState("No setup subjects are assigned to this student yet. Add subjects in Setup or add a course manually.")}
         </div>
       </form>
 
-      ${panel("Transcript Readiness", `<div style="overflow:auto;"><table class="learn-grade-transcript-table"><thead><tr><th>Course</th><th>Subject</th><th>Level</th><th>Credit</th><th>Final</th></tr></thead><tbody>${transcriptRows}</tbody></table></div><div class="learn-grade-print-actions"><a href="${learnSectionHref("print-center")}">Open Print Center</a><button type="button" data-report-export="Report Card">Print Report Card</button><button type="button" data-report-export="Transcript">Print Transcript</button></div>`, { icon: "▤" })}
+      ${panel("Transcript Readiness", `<div class="learn-grade-readiness"><article data-ready="${readiness.reportCardReady ? "true" : "false"}"><small>${html(readiness.reportCardTermLabel || "Current Term")}</small><strong>${readiness.reportCardReady ? "Report card ready" : "Report card waiting"}</strong><span>${readiness.reportCardReady ? "All assigned term subjects have grades." : `${html(String(readiness.reportCardMissing || 0))} assigned subject${Number(readiness.reportCardMissing || 0) === 1 ? "" : "s"} still need a term grade.`}</span></article><article data-ready="${readiness.transcriptReady ? "true" : "false"}"><small>School Year</small><strong>${readiness.transcriptReady ? "Transcript ready" : "Transcript waiting"}</strong><span>${readiness.transcriptReady ? "All assigned school-year subjects have grades." : `${html(String(readiness.transcriptMissing || 0))} course/term grade${Number(readiness.transcriptMissing || 0) === 1 ? "" : "s"} still missing.`}</span></article></div><div style="overflow:auto;"><table class="learn-grade-transcript-table"><thead><tr><th>Course</th><th>Subject</th><th>Level</th><th>Credit</th><th>Final</th></tr></thead><tbody>${transcriptRows}</tbody></table></div><div class="learn-grade-print-actions"><a href="${learnSectionHref("print-center")}">Open Print Center</a><button type="button" data-report-export="Report Card" data-report-ready="${readiness.reportCardReady ? "true" : "false"}" ${readiness.reportCardReady ? "" : "disabled"} title="${readiness.reportCardReady ? "Print the selected student's term report card" : "Enter grades for every assigned subject in the current term first"}">Print Report Card</button><button type="button" data-report-export="Transcript" data-report-ready="${readiness.transcriptReady ? "true" : "false"}" ${readiness.transcriptReady ? "" : "disabled"} title="${readiness.transcriptReady ? "Print the selected student's transcript" : "Complete the school-year grades first"}">Print Transcript</button></div>`, { icon: "▤" })}
     </section>
   `;
   return shell(vm, body);
@@ -4643,7 +4645,7 @@ function renderPrintCenter(vm) {
       id: "weekly",
       label: "This Week",
       icon: "▦",
-      desc: "Household and lesson plan prints for the current week.",
+      desc: "The free weekly household plan. Lesson-specific weekly grids unlock with the Family plan.",
       premium: false,
       ids: ["print_mom_weekly"]
     },
@@ -4651,7 +4653,7 @@ function renderPrintCenter(vm) {
       id: "month",
       label: "Month & Calendar",
       icon: "▣",
-      desc: "Monthly household plans with feast days and fast days clearly marked.",
+      desc: "Free monthly household calendar and events sheet with feast days and fast days clearly marked.",
       premium: false,
       ids: ["print_mom_month", "planner_events_month"]
     },
@@ -4659,9 +4661,9 @@ function renderPrintCenter(vm) {
       id: "lessons",
       label: "Lesson Plans",
       icon: "☰",
-      desc: "Structured lesson grids by Form, term, or month.",
+      desc: "Structured lesson grids, landscape term maps, full-year plans, and liturgical calendars.",
       premium: true,
-      ids: ["planner_lessons_week_form", "planner_lessons_month_form", "planner_lessons_term_form", "print_mom_term", "print_mom_liturgical"]
+      ids: ["planner_lessons_week_form", "planner_lessons_month_form", "planner_lessons_term_form", "print_mom_term", "print_mom_school_year", "print_mom_liturgical"]
     },
     {
       id: "kitchen",
@@ -4686,7 +4688,8 @@ function renderPrintCenter(vm) {
     if (group.id === "kitchen") members.push(...ungrouped.filter((t) => t.premium));
     else if (group.id === "weekly") members.push(...ungrouped.filter((t) => !t.premium));
     if (!members.length) return "";
-    const groupLocked = group.premium && freePlan;
+    const groupPremium = members.some((template) => template.premium);
+    const groupLocked = groupPremium && freePlan;
     return `
       <div style="background:var(--paper);border:1px solid ${groupLocked ? "rgba(181,148,47,.3)" : "var(--line)"};border-radius:12px;overflow:hidden;">
         <div style="display:flex;align-items:center;gap:10px;padding:13px 14px;background:${groupLocked ? "linear-gradient(90deg,#fffaed,var(--paper))" : "var(--paper2)"};border-bottom:1px solid var(--line);">
@@ -4695,7 +4698,7 @@ function renderPrintCenter(vm) {
             <strong style="font-size:15px;color:var(--ink);">${group.label}</strong>
             <small style="display:block;color:var(--muted);font-size:12px;">${group.desc}</small>
           </div>
-          ${groupLocked
+          ${groupPremium
             ? `<span style="flex:none;border:1px solid var(--gold);background:#fbf2dd;color:var(--gold);border-radius:999px;padding:3px 10px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">Family Plan</span>`
             : `<span style="flex:none;border:1px solid #c2d9c4;background:#edf6ef;color:#365f3b;border-radius:999px;padding:3px 10px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">Free</span>`}
         </div>
@@ -6158,6 +6161,7 @@ function wireWeeklyAssignmentBoard(vm) {
         title: card.querySelector("strong")?.textContent?.trim() || item.title || "Subject",
         sub: card.querySelector("small")?.textContent?.trim() || item.sub || "",
         note: card.querySelector("[data-week-assignment-note]")?.value?.trim() || "",
+        minutes: Number(item.minutes || 0),
         color: item.color || ""
       };
     };
@@ -6183,7 +6187,7 @@ function wireWeeklyAssignmentBoard(vm) {
     title: assignment.title || "Lesson",
     date: day.date,
     allDay: false,
-    durationMinutes: 30,
+    durationMinutes: Number(assignment.minutes || 0) || 30,
     description: [day.weekday, assignment.sub, assignment.note].filter(Boolean).join("\n"),
     startTime: `${String(9 + Math.min(index, 6)).padStart(2, "0")}:00`
   })));
@@ -7162,6 +7166,7 @@ function wireGrades(vm) {
   });
   root.querySelectorAll("[data-report-export]").forEach((button) => {
     button.addEventListener("click", async () => {
+      if (button.disabled || button.dataset.reportReady === "false") return;
       const label = button.dataset.reportExport || "Report Card";
       const original = button.textContent;
       button.disabled = true;
@@ -7171,7 +7176,13 @@ function wireGrades(vm) {
         const response = await fetch(`/api/learn/print/${templateId}`, {
           method: "POST",
           headers: learnRequestHeaders({ "content-type": "application/json" }),
-          body: JSON.stringify({ label })
+          body: JSON.stringify({
+            label,
+            childId: form.elements.childId?.value || vm.selectedChildId,
+            academicYearName: form.elements.academicYearName?.value?.trim() || vm.academicYear.name,
+            termIndex: vm.currentTermIndex,
+            termLabel: vm.readiness?.reportCardTermLabel || ""
+          })
         });
         const contentType = response.headers.get("content-type") || "";
         if (!response.ok || !contentType.includes("application/pdf")) throw new Error("Unable to generate that PDF yet.");

@@ -1022,6 +1022,14 @@ export function toGradesViewModel(rawPayload, context = {}) {
   }));
   const selectedChildId = text(context.childId || grades.selectedChildId, children[0]?.id || "");
   const selectedChild = children.find((child) => child.id === selectedChildId) || children[0] || {};
+  const terms = simpleList(grades.terms, (term, index) => ({
+    id: text(term.id, `term_${index + 1}`),
+    label: text(term.label, `Term ${index + 1}`),
+    index: Number(term.index || index + 1),
+    startDate: text(term.startDate, ""),
+    endDate: text(term.endDate, "")
+  }));
+  const currentTermIndex = Math.max(1, Number(grades.currentTermIndex || terms[0]?.index || 1));
   const courses = simpleList(grades.courses, (course, index) => ({
     id: text(course.id, ""),
     childId: text(course.childId || course.child_id, ""),
@@ -1029,6 +1037,8 @@ export function toGradesViewModel(rawPayload, context = {}) {
     subjectCategory: text(course.subjectCategory || course.subject_category, "General"),
     gradeLevel: Number(course.gradeLevel ?? course.grade_level ?? selectedChild.gradeLevel ?? 9),
     creditHours: Number(course.creditHours ?? course.credit_hours ?? 1),
+    termIds: safeArray(course.termIds),
+    setupSeeded: Boolean(course.setupSeeded),
     color: ACCENTS[index % ACCENTS.length],
     grades: [1, 2, 3].map((termIndex) => {
       const grade = safeArray(course.grades).find((entry) => Number(entry.termIndex ?? entry.term_index) === termIndex) || {};
@@ -1043,6 +1053,16 @@ export function toGradesViewModel(rawPayload, context = {}) {
     })
   }));
   const childCourses = courses.filter((course) => !selectedChildId || course.childId === selectedChildId);
+  const appliesToTerm = (course, termIndex) => {
+    const term = terms.find((entry) => Number(entry.index) === Number(termIndex));
+    return !course.termIds.length || !term?.id || course.termIds.includes(term.id);
+  };
+  const termCourses = childCourses.filter((course) => appliesToTerm(course, currentTermIndex));
+  const reportCardMissing = termCourses.filter((course) => !course.grades.find((grade) => Number(grade.termIndex) === currentTermIndex)?.letterGrade);
+  const transcriptMissing = childCourses.filter((course) => {
+    const neededTerms = terms.length ? terms.filter((term) => appliesToTerm(course, term.index)) : [{ index: 1 }, { index: 2 }, { index: 3 }];
+    return neededTerms.some((term) => !course.grades.find((grade) => Number(grade.termIndex) === Number(term.index))?.letterGrade);
+  });
   const gpaPoints = { "A+": 4, A: 4, "A-": 3.7, "B+": 3.3, B: 3, "B-": 2.7, "C+": 2.3, C: 2, "C-": 1.7, "D+": 1.3, D: 1, "D-": .7, F: 0 };
   const finalRows = childCourses.map((course) => ({
     credits: Number(course.creditHours || 0),
@@ -1082,8 +1102,18 @@ export function toGradesViewModel(rawPayload, context = {}) {
     children,
     selectedChildId,
     selectedChild,
+    terms,
+    currentTermIndex,
     courses,
     childCourses,
+    termCourses,
+    readiness: {
+      reportCardReady: Boolean(termCourses.length && !reportCardMissing.length),
+      transcriptReady: Boolean(childCourses.length && !transcriptMissing.length),
+      reportCardMissing: reportCardMissing.length,
+      transcriptMissing: transcriptMissing.length,
+      reportCardTermLabel: terms.find((term) => Number(term.index) === currentTermIndex)?.label || `Term ${currentTermIndex}`
+    },
     summary: {
       totalCredits: earnedCredits.toFixed(1),
       cumulativeGpa: gpaCredits ? (weightedGpa / gpaCredits).toFixed(2) : "0.00",
@@ -1583,13 +1613,10 @@ export function toPrintCenterViewModel(rawPayload) {
   // printLimit comes from the billing API (advisory) — view model receives it via rawPayload.printLimit
   // which mount() attaches after resolving billing status. Fall back to 3 if not present.
   const printLimit = Math.max(1, Number(rawPayload?.printLimit || 3));
-  const PLANNER_PREMIUM_TYPES = new Set([
-    "term-plan", "liturgical-school-calendar",
-    "planner-lesson-week-form", "planner-lesson-month-form", "planner-lesson-term-form",
-    "planner-lesson-week-child", "planner-lesson-month-child", "planner-lesson-term-child",
-    "planner-chores-day", "planner-chores-week", "planner-chores-month", "planner-chores-week-child",
-    "planner-meals-week", "planner-meals-month",
-    "planner-recipes", "planner-grocery-week",
+  const FREE_PRINT_TEMPLATE_IDS = new Set([
+    "print_mom_weekly",
+    "print_mom_month",
+    "planner_events_month"
   ]);
   return {
     shell: shellFromPayload("print-center", { "print-center": printCenter }),
@@ -1609,7 +1636,7 @@ export function toPrintCenterViewModel(rawPayload) {
       childId: text(template.childId, ""),
       child: template.child ? childName(template.child, index) : "",
       color: ACCENTS[index % ACCENTS.length],
-      premium: template.audience === "child" || PLANNER_PREMIUM_TYPES.has(template.templateType || "")
+      premium: !FREE_PRINT_TEMPLATE_IDS.has(template.id || "")
     })),
     document: {
       title: text(printCenter.printDocument?.title, "Print Preview"),

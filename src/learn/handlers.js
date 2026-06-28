@@ -14,6 +14,11 @@ import { createLearnRepositoryForRequest, SeedLearnRepository } from "./reposito
 import { learnSetupIdentity, saveLearnCompletion, saveLearnFamilyPlanning, saveLearnGraceMode, saveLearnPlannerBlock, saveLearnSetup } from "./setup-persistence.js";
 
 const LEARN_PRINT_USAGE_PREFIX = "__agapay_learn_print_usage:";
+const LEARN_FREE_PRINT_TEMPLATE_IDS = new Set([
+  "print_mom_weekly",
+  "print_mom_month",
+  "planner_events_month"
+]);
 
 export { handleLearnAttendanceSave, handleLearnGrades, handleLearnGradesSave };
 
@@ -101,6 +106,25 @@ async function enforceLearnPrintLimit(request, env, identity) {
   }
   const updated = await incrementLearnPrintUsage(env, identity);
   return { ok: true, family: false, count: updated.count, limit: LEARN_FREE_PRINT_LIMIT };
+}
+
+async function enforceLearnPrintTemplateAccess(request, env, identity, template = {}) {
+  if (await learnRequestHasFamilyAccessAsync(request, env, identity)) {
+    return { ok: true, family: true };
+  }
+  const templateId = String(template.id || "").trim();
+  if (LEARN_FREE_PRINT_TEMPLATE_IDS.has(templateId)) {
+    return { ok: true, family: false };
+  }
+  return {
+    ok: false,
+    response: json({
+      ok: false,
+      error: "That AGAPAY Learn printout requires the Family plan. Free accounts include the weekly household plan, monthly household calendar, and monthly events sheet.",
+      upgradeRequired: true,
+      freeTemplates: [...LEARN_FREE_PRINT_TEMPLATE_IDS]
+    }, { status: 403 })
+  };
 }
 
 export function handleLearnMeta(env) {
@@ -271,20 +295,30 @@ export async function handleLearnPrintPdf(request, env, templateId = "") {
     body = {};
   }
 
-  const limit = await enforceLearnPrintLimit(request, env, identity);
-  if (!limit.ok) return limit.response;
   const resolvedTemplateId = templateId || body.templateId || "print_mom_weekly";
   const reportTemplate = /report|transcript|subject-progress|year-end/i.test(resolvedTemplateId);
+  const printCenter = repository.getPrintCenter({
+    calendarType: calendarTypeForRequest(url, repository),
+    month: body.month || url.searchParams.get("month") || ""
+  });
+  const selectedTemplate = reportTemplate
+    ? { id: resolvedTemplateId, templateType: "report", audience: "household" }
+    : printCenter.templates.find((template) => template.id === resolvedTemplateId) || { id: resolvedTemplateId };
+  const access = await enforceLearnPrintTemplateAccess(request, env, identity, selectedTemplate);
+  if (!access.ok) return access.response;
+  const limit = await enforceLearnPrintLimit(request, env, identity);
+  if (!limit.ok) return limit.response;
   const document = reportTemplate
     ? buildLearnReportPrintDocument(repository.getReports(), {
         templateId: resolvedTemplateId,
         label: body.label || "",
+        childId: body.childId || "",
+        academicYearName: body.academicYearName || "",
+        termIndex: body.termIndex || "",
+        termLabel: body.termLabel || "",
         generatedAt: new Date().toISOString()
       })
-    : buildLearnPrintDocument(repository.getPrintCenter({
-        calendarType: calendarTypeForRequest(url, repository),
-        month: body.month || url.searchParams.get("month") || ""
-      }), {
+    : buildLearnPrintDocument(printCenter, {
         templateId: resolvedTemplateId,
         childId: body.childId || "",
         termId: body.termId || "",

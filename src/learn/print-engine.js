@@ -130,6 +130,11 @@ function renderSectionShell(section, body) {
 function renderTableSection(section) {
   const columns = normalizeColumns(section);
   const rows = asArray(section.rows);
+  const flex = asArray(section.flex);
+  const totalFlex = flex.reduce((sum, value) => sum + Math.max(0, Number(value) || 0), 0);
+  const colgroup = totalFlex > 0 && flex.length === columns.length
+    ? `<colgroup>${flex.map((value) => `<col style="width:${(Math.max(0, Number(value) || 0) / totalFlex * 100).toFixed(3)}%">`).join("")}</colgroup>`
+    : "";
   const bodyRows = rows.map((row) => `
     <tr>
       ${columns.map((column, index) => `<td>${escapeHtml(fieldValue(row, column, index))}</td>`).join("")}
@@ -138,6 +143,7 @@ function renderTableSection(section) {
   return renderSectionShell(section, `
     <div class="table-frame">
       <table>
+        ${colgroup}
         <thead>
           <tr>${columns.map((column) => `<th scope="col">${escapeHtml(column.label)}</th>`).join("")}</tr>
         </thead>
@@ -215,11 +221,12 @@ function renderDesignedWeekSection(section) {
     const assignments = lessonItems(day);
     const assignmentHtml = assignments.map((item) => {
       const time = joinText([item.time, item.timeLabel, item.startTime && item.endTime ? `${item.startTime}-${item.endTime}` : ""]);
+      const minutes = Number(item.minutes || 0) > 0 ? `${Number(item.minutes)} min` : "";
       const title = item.subject || item.title || item.label || "Lesson";
       const detail = item.assignment || item.detail || item.note || item.subtitle || item.sub || "";
       return `
         <article class="lesson-module">
-          ${time ? `<p class="lesson-time">${escapeHtml(time)}</p>` : ""}
+          ${time || minutes ? `<p class="lesson-time">${escapeHtml(joinText([time, minutes], " · "))}</p>` : ""}
           <h4>${escapeHtml(title)}</h4>
           ${detail ? `<p>${escapeHtml(detail)}</p>` : ""}
         </article>`;
@@ -252,12 +259,24 @@ function renderCardsSection(section) {
 
 function renderCalendarGridSection(section) {
   const days = asArray(section.days);
-  const cells = days.map((day) => `
-    <article class="calendar-cell${day.inMonth === false ? " is-muted" : ""}${day.isFastDay ? " is-fast" : ""}">
+  const summary = section.summary
+    ? `<div class="calendar-summary"><span>${escapeHtml(section.summary.fastDays || 0)} fast days</span><span>${escapeHtml(section.summary.feastDays || 0)} feast markers</span></div>`
+    : "";
+  const cells = days.map((day) => {
+    const markers = [
+      day.isFastDay ? (day.fastingType || day.fastingRule || "Fast") : "",
+      day.isPatronalFeast ? "Patronal Feast" : "",
+      ...asArray(day.nameDays).map((entry) => `Name day: ${entry.personName || entry.name || entry.title || entry.person || ""}`),
+      ...asArray(day.events).map((entry) => entry.title || entry.label || "")
+    ].filter((marker) => plainText(marker));
+    return `
+    <article class="calendar-cell${day.inMonth === false ? " is-muted" : ""}${day.isFastDay ? " is-fast" : ""}${day.isPatronalFeast ? " is-patronal" : ""}">
       <strong>${escapeHtml(day.dayNumber || String(day.date || day.civilDate || "").slice(-2))}</strong>
-      <span>${escapeHtml(day.feastTitle || day.feastMarker || day.fastingRule || "")}</span>
-    </article>`).join("");
-  return renderSectionShell(section, `<div class="calendar-grid">${cells}</div>`);
+      <span>${escapeHtml(day.feastTitle || day.feastMarker || "")}</span>
+      ${markers.length ? `<ul>${markers.slice(0, 4).map((marker) => `<li>${escapeHtml(marker)}</li>`).join("")}</ul>` : ""}
+    </article>`;
+  }).join("");
+  return renderSectionShell(section, `${summary}<div class="calendar-grid">${cells}</div>`);
 }
 
 function renderSection(section) {
@@ -272,7 +291,8 @@ function renderSection(section) {
   return renderListSection({ ...section, type: "list", items: section.items || section.rows || [] });
 }
 
-function renderStyles() {
+function renderStyles(document = {}) {
+  const pageSize = document.orientation === "landscape" ? "Letter landscape" : "Letter";
   return `
     <style>
       :root {
@@ -460,7 +480,7 @@ function renderStyles() {
       .lesson-module p:not(.lesson-time), .open-day { margin: 0.025in 0 0; color: var(--muted); font-size: 8pt; }
       .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid var(--line); }
       .calendar-cell {
-        min-height: 0.74in;
+        min-height: 0.84in;
         padding: 0.055in;
         border-right: 1px solid var(--line);
         border-bottom: 1px solid var(--line);
@@ -468,8 +488,21 @@ function renderStyles() {
       }
       .calendar-cell.is-muted { background: #f1eee6; color: var(--muted); }
       .calendar-cell.is-fast { background: #fff1f1; }
+      .calendar-cell.is-patronal { background: #fff8df; box-shadow: inset 0 0 0 2px rgba(183,139,50,.45); }
       .calendar-cell strong { display: block; color: var(--navy); font-family: Georgia, "Times New Roman", serif; font-size: 13pt; }
       .calendar-cell span { display: block; margin-top: 0.03in; font-size: 7pt; color: var(--muted); }
+      .calendar-cell ul { margin: 0.035in 0 0; padding: 0; list-style: none; display: grid; gap: 0.015in; }
+      .calendar-cell li { color: var(--red); font-size: 6.35pt; line-height: 1.12; }
+      .calendar-summary {
+        display: flex;
+        gap: 0.08in;
+        justify-content: flex-end;
+        margin: -0.04in 0 0.08in;
+        color: var(--muted);
+        font-size: 7.5pt;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
       footer {
         margin-top: 0.28in;
         padding-top: 0.09in;
@@ -478,7 +511,7 @@ function renderStyles() {
         font-size: 7.5pt;
       }
       @media print {
-        @page { size: Letter; margin: 0.6in 0.5in; }
+        @page { size: ${pageSize}; margin: 0.6in 0.5in; }
         body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
         .print-page-header {
           position: fixed;
@@ -515,7 +548,7 @@ function buildPrintDocumentHtml(document = {}) {
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>${escapeHtml(title)}</title>
-      ${renderStyles()}
+      ${renderStyles(document)}
     </head>
     <body>
       <div class="print-page-header" aria-hidden="true">
@@ -553,6 +586,7 @@ export async function renderPrintDocumentPdf(document, env) {
     await page.emulateMediaType("print");
     const pdfBytes = await page.pdf({
       format: "Letter",
+      landscape: document.orientation === "landscape",
       printBackground: true,
       margin: {
         top: "0.6in",

@@ -500,6 +500,13 @@ function monthKeyFromIso(iso) {
   return /^\d{4}-\d{2}/.test(value) ? value.slice(0, 7) : new Date().toISOString().slice(0, 7);
 }
 
+function addMonthsToMonthKey(monthKey = "", offset = 0) {
+  const normalized = /^\d{4}-\d{2}$/.test(String(monthKey || "")) ? monthKey : monthKeyFromIso(new Date().toISOString());
+  const [year, month] = normalized.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1 + offset, 1));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
 function julianOldStyleLabel(civilDate) {
   const [year, month, day] = civilDate.split("-").map(Number);
   const oldStyle = jdnToGregorian(gregorianToJdn(year, month, day) - 13);
@@ -850,6 +857,14 @@ function buildFamilyPlanningPrintTemplates(seed) {
       title: "Term Lesson Plans by Form",
       audience: "household",
       description: "A term overview organized by Form, children, subjects, and planned rhythm."
+    },
+    {
+      id: "print_mom_school_year",
+      householdId,
+      templateType: "school-year-plan",
+      title: "School Year Plan",
+      audience: "household",
+      description: "A full-year printout listing every term's Form courses, enrichment, books, and child-specific assignments."
     },
     {
       id: "planner_meals_week",
@@ -1229,14 +1244,21 @@ export class SeedLearnRepository {
     const familyPlanning = familyPlanningWithDefaultRecipes(this.seed.familyPlanning || this.seed.setupSnapshot?.familyPlanning || {});
     const plannerTemplates = buildFamilyPlanningPrintTemplates(this.seed);
     const templates = [...householdTemplates, ...childTemplates, ...plannerTemplates];
+    const yearStartMonth = monthKeyFromIso(this.seed.schoolYear?.startDate || this.seed.term?.startDate || new Date().toISOString());
+    const schoolYearMonths = Array.from({ length: 12 }, (_, index) =>
+      buildPlannerMonth(this.seed, resolvedCalendar, addMonthsToMonthKey(yearStartMonth, index))
+    );
     return {
       household: this.seed.household,
       children: this.seed.children,
+      schoolYear: this.seed.schoolYear,
       calendarToggle: buildCalendarToggle(resolvedCalendar),
       term: this.seed.term,
       week: buildPlannerWeek(this.seed, resolvedCalendar),
       month: buildPlannerMonth(this.seed, resolvedCalendar, month),
+      schoolYearMonths,
       termSetup: this.seed.termSetup,
+      setupSnapshot: this.seed.setupSnapshot || null,
       familyPlanning,
       templates: templates.map((template) => ({
         ...template,
@@ -1254,9 +1276,10 @@ export class SeedLearnRepository {
       sampleOutputs: {
         mom: [
           "Weekly household plan",
-          "Term plan",
+          "Landscape term course map",
+          "Full school year course plan",
           "Month calendar",
-          "Liturgical school calendar"
+          "12-month liturgical school year calendar"
         ],
         child: [
           "Weekly assignment sheet",

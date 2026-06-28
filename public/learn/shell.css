@@ -3520,6 +3520,48 @@ body {
   font-size: 14px;
 }
 
+.learn-grade-readiness {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.learn-grade-readiness article {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper2);
+  padding: 12px;
+}
+
+.learn-grade-readiness article[data-ready="true"] {
+  border-color: #c2d9c4;
+  background: #edf6ef;
+}
+
+.learn-grade-readiness small {
+  display: block;
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.learn-grade-readiness strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink);
+}
+
+.learn-grade-readiness span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .learn-grade-transcript-table th,
 .learn-grade-transcript-table td {
   border-top: 1px solid var(--line);
@@ -3537,6 +3579,11 @@ body {
 .learn-grade-print-actions {
   justify-content: flex-start;
   margin-top: 12px;
+}
+
+.learn-grade-print-actions button:disabled {
+  opacity: .48;
+  cursor: not-allowed;
 }
 
 .learn-planner-reserve-card {
