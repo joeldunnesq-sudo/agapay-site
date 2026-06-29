@@ -739,14 +739,15 @@ function buildPlannerWeek(seed, calendarType) {
     };
   });
   const childLookup = childById(seed);
+  const hasMinutes = (row) => Array.isArray(row.minutes) && row.minutes.some((m) => Number(m || 0) > 0);
   return {
     ...week,
     liturgicalDays,
     familyDays: week.dates.map((civilDate) => familyPlanForDate(seed, civilDate, liturgicalDays.find((day) => day.civilDate === civilDate))),
     recipes: familyPlanning.recipes || [],
     groceryItems: familyPlanning.groceryItems || [],
-    householdRows: applyGraceModeToRows(week.householdRows, seed.graceModeRule),
-    childRows: applyGraceModeToRows(week.childRows, seed.graceModeRule).map((row) => ({
+    householdRows: applyGraceModeToRows(week.householdRows, seed.graceModeRule).filter(hasMinutes),
+    childRows: applyGraceModeToRows(week.childRows, seed.graceModeRule).filter(hasMinutes).map((row) => ({
       ...row,
       child: childLookup.get(row.childId)
     }))
