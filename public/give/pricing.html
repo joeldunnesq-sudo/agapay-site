@@ -10,7 +10,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/favicons/android-chrome-512x512.png" />
   <link rel="shortcut icon" href="/favicons/favicon.ico" />
-  <meta name="description" content="Transparent AGAPAY pricing for missions, parishes, monasteries, cathedrals, and dioceses, including card, wallet, and Instant Bank Payment giving with clear monthly tiers and predictable fees." />
+  <meta name="description" content="Transparent AGAPAY pricing for missions, parishes, monasteries, cathedrals, and dioceses, including card and wallet giving with clear monthly tiers and predictable fees." />
   <link rel="canonical" href="https://agapay.app/give/pricing" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="AGAPAY" />
@@ -364,8 +364,8 @@
         <div class="fee-main">
           <div class="fee-badge">%</div>
           <div>
-            <h2>Two ways to give. One clear fee model.</h2>
-            <p>Every donation uses AGAPAY's simple 5% + $0.30 total fee. Donors can give by card or wallet, or by Instant Bank Payment through Link.</p>
+            <h2>One clear fee model.</h2>
+            <p>Every donation uses AGAPAY's simple 5% + $0.30 total fee. Donors see a secure Stripe checkout with supported payment options, while parish reporting stays consistent.</p>
           </div>
         </div>
         <div class="fee-split">
@@ -374,12 +374,6 @@
             <strong>Familiar, fast checkout</strong>
             <span>Includes cards, Apple Pay, and Google Pay when available.</span>
             <small>Stripe processing estimate: 2.9% + $0.30. AGAPAY receives the remaining platform share inside the 5% + $0.30 total.</small>
-          </div>
-          <div class="fee-line">
-            <span class="fee-label">Instant Bank Payment</span>
-            <strong>Lower Stripe processing</strong>
-            <span>Powered by Link for donors who prefer verified bank payment.</span>
-            <small>Stripe processing estimate: 2.6% + $0.30. Settlement and parish payout timing can differ while the bank payment clears.</small>
           </div>
         </div>
         <div class="fee-note">
@@ -392,7 +386,7 @@
         <section class="calculator" aria-label="Fee calculator">
           <div class="calc-controls">
             <h2>See what your parish actually receives.</h2>
-            <p>Adjust monthly giving, the average gift size, payment method, and donor fee coverage to understand your true net deposit.</p>
+            <p>Adjust monthly giving, the average gift size, and donor fee coverage to understand your true net deposit.</p>
             <div class="slider-group">
               <div class="slider-head"><label for="volumeRange">Monthly gift volume</label><output id="volumeDisplay">$20,000</output></div>
               <input type="range" id="volumeRange" min="2000" max="50000" step="1000" value="20000" />
@@ -401,13 +395,6 @@
               <label for="averageGiftInput">Average gift size</label>
               <div class="input-row"><span>$</span><input id="averageGiftInput" type="number" min="5" max="5000" step="5" value="75" inputmode="decimal" /></div>
               <p class="calc-assumption" id="giftAssumption">Assuming about 267 gifts per month at a $75 average gift. The $0.30 component uses this estimated gift count.</p>
-            </div>
-            <div class="input-group">
-              <label>Payment method</label>
-              <div class="payment-method-grid" role="radiogroup" aria-label="Payment method for calculator">
-                <label class="payment-method-card"><input type="radio" name="calcPaymentMethod" value="card" checked /><span><strong>Card or wallet</strong><small>Fastest. Includes Apple Pay and Google Pay when available.</small></span></label>
-                <label class="payment-method-card"><input type="radio" name="calcPaymentMethod" value="instant_bank" /><span><strong>Instant Bank Payment</strong><small>Powered by Link; lower Stripe processing than cards, with settlement and payout timing considerations.</small></span></label>
-              </div>
             </div>
             <div class="slider-group">
               <div class="slider-head"><label for="coverageRange">Donor fee coverage</label><output id="coverageDisplay">75%</output></div>
@@ -444,7 +431,7 @@
         <div class="faq-grid">
           <article class="faq">
             <button type="button" aria-expanded="false">Is AGAPAY free for monasteries? <span>+</span></button>
-            <p>Monasteries, sketes, and convents pay no monthly platform fee. Card, wallet, and Instant Bank Payment donations use AGAPAY's standard 5% + $0.30 total donation fee unless a cathedral or diocese agreement says otherwise.</p>
+            <p>Monasteries, sketes, and convents pay no monthly platform fee. Donations use AGAPAY's standard 5% + $0.30 total donation fee unless a cathedral or diocese agreement says otherwise.</p>
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">Are there setup fees or contracts? <span>+</span></button>
@@ -452,7 +439,7 @@
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">How do card and bank fees work? <span>+</span></button>
-            <p>Card and wallet gifts use AGAPAY's standard 5% + $0.30 total donation fee, including estimated Stripe card processing of about 2.9% + $0.30 and the AGAPAY platform share. Instant Bank Payments through Link use the same total AGAPAY donation fee, with Stripe processing estimated at 2.6% + $0.30 and AGAPAY receiving the remainder. Instant Bank Payments are confirmed immediately, but settlement and payout timing can differ from card gifts.</p>
+            <p>AGAPAY presents one standard donation fee to the parish: 5% + $0.30. Stripe checkout may offer supported payment options based on the donor and Stripe settings, but the parish-facing AGAPAY fee model stays the same.</p>
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">How does AGAPAY verify canonical standing? <span>+</span></button>
@@ -460,7 +447,7 @@
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">Can donors cover fees? <span>+</span></button>
-            <p>Yes. Donors can choose to cover transaction fees at checkout, helping the parish receive the full intended gift. Instant Bank Payments can reduce the Stripe processing portion compared with cards, though payout timing may differ while the bank payment settles.</p>
+            <p>Yes. Donors can choose to cover transaction fees at checkout, helping the parish receive the full intended gift.</p>
           </article>
           <article class="faq">
             <button type="button" aria-expanded="false">Which jurisdictions does AGAPAY serve? <span>+</span></button>
@@ -555,21 +542,16 @@
     const volumeRange = document.getElementById("volumeRange");
     const coverageRange = document.getElementById("coverageRange");
     const averageGiftInput = document.getElementById("averageGiftInput");
-    const paymentMethodInputs = document.querySelectorAll('input[name="calcPaymentMethod"]');
     const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const wholeMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
     function formatCents(cents) { return money.format((Number(cents) || 0) / 100); }
-    function selectedPaymentMethod() {
-      return document.querySelector('input[name="calcPaymentMethod"]:checked')?.value === "instant_bank" ? "instant_bank" : "card";
-    }
     function updateCalculator() {
       const monthlyVolume = Number(volumeRange.value || 0);
       const monthlyCents = Math.round(monthlyVolume * 100);
       const coverageRate = Number(coverageRange.value || 0) / 100;
       const averageGift = Math.max(5, Number(averageGiftInput && averageGiftInput.value || 75));
       const transactions = Math.max(1, Math.round(monthlyVolume / averageGift));
-      const method = selectedPaymentMethod();
-      const stripeRate = method === "instant_bank" ? 0.026 : 0.029;
+      const stripeRate = 0.029;
       const totalFeeCents = Math.round(monthlyCents * 0.05) + (transactions * 30);
       const estimatedStripeCents = Math.round(monthlyCents * stripeRate) + (transactions * 30);
       const estimatedAgapayCents = Math.max(0, totalFeeCents - estimatedStripeCents);
@@ -579,25 +561,22 @@
       const yieldPercent = monthlyCents > 0 ? (netCents / monthlyCents) * 100 : 0;
       document.getElementById("volumeDisplay").textContent = wholeMoney.format(monthlyVolume);
       document.getElementById("coverageDisplay").textContent = `${Math.round(coverageRate * 100)}%`;
-      document.getElementById("giftAssumption").textContent = method === "instant_bank"
-        ? `Assuming about ${transactions.toLocaleString("en-US")} Instant Bank Payment gifts per month at a ${wholeMoney.format(averageGift)} average gift. Stripe processing is estimated at 2.6% + $0.30; settlement and payout timing can differ from card gifts.`
-        : `Assuming about ${transactions.toLocaleString("en-US")} card or wallet gifts per month at a ${wholeMoney.format(averageGift)} average gift. The $0.30 component uses this estimated gift count.`;
+      document.getElementById("giftAssumption").textContent = `Assuming about ${transactions.toLocaleString("en-US")} gifts per month at a ${wholeMoney.format(averageGift)} average gift. The $0.30 component uses this estimated gift count.`;
       document.getElementById("grossDisplay").textContent = formatCents(monthlyCents);
       document.getElementById("feeDisplay").textContent = `-${formatCents(totalFeeCents)}`;
       document.getElementById("coveredDisplay").textContent = `+${formatCents(donorCoveredCents)}`;
-      document.getElementById("stripeLabel").textContent = method === "instant_bank" ? "Stripe Instant Bank Payment portion of total fees" : "Stripe card portion of total fees";
+      document.getElementById("stripeLabel").textContent = "Estimated Stripe portion of total fees";
       document.getElementById("stripeDisplay").textContent = `-${formatCents(estimatedStripeCents)}`;
       document.getElementById("agapayDisplay").textContent = `-${formatCents(estimatedAgapayCents)}`;
       document.getElementById("parishFeesDisplay").textContent = `-${formatCents(parishFeeCents)}`;
       document.getElementById("netDisplay").textContent = formatCents(netCents);
       document.getElementById("reconcileDisplay").textContent = `${formatCents(monthlyCents)} - ${formatCents(parishFeeCents)} = ${formatCents(netCents)}`;
-      document.getElementById("timingDisplay").textContent = method === "instant_bank" ? "Usually 2 business days to settle" : "Fastest";
+      document.getElementById("timingDisplay").textContent = "Fastest";
       document.getElementById("yieldDisplay").textContent = `${yieldPercent.toFixed(2)}%`;
     }
     volumeRange && volumeRange.addEventListener("input", updateCalculator);
     coverageRange && coverageRange.addEventListener("input", updateCalculator);
     averageGiftInput && averageGiftInput.addEventListener("input", updateCalculator);
-    paymentMethodInputs.forEach((input) => input.addEventListener("change", updateCalculator));
     updateCalculator();
   </script>
 </body>

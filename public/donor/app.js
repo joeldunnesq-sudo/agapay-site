@@ -1841,8 +1841,7 @@ function linesFromField(id) {
 }
 
 function selectedDonorPaymentMethod(frequency = "once") {
-  const value = document.querySelector('input[name="paymentMethod"]:checked')?.value || "card";
-  return value === "ach" ? "ach" : "card";
+  return "card";
 }
 
 async function submitCommemoration(event) {
@@ -1925,10 +1924,6 @@ async function startDonorCheckout(event) {
     setDonorStatus("Preparing checkout...");
     const frequency = document.getElementById("frequency")?.value || "once";
     const paymentMethod = selectedDonorPaymentMethod(frequency);
-    if (frequency !== "once" && paymentMethod === "ach") {
-      setDonorStatus("Bank account gifts are available for one-time gifts. Choose card or wallet for recurring giving.", "error");
-      return;
-    }
     const data = await donorApi("/api/create-checkout-session", {
       method: "POST",
       body: JSON.stringify({
