@@ -5757,6 +5757,57 @@ function syncSetupTermSelects(form) {
 function wireSetupPage() {
   const form = root.querySelector("[data-setup-form]");
   if (!form) return;
+  const status = form.querySelector("[data-setup-status]");
+  const submit = form.querySelector("button[type='submit']");
+  let setupAutosaveTimer = 0;
+  let setupSaveInFlight = false;
+  let setupSaveQueued = false;
+  let lastSavedSetupHash = "";
+  const saveSetupNow = async ({ manual = false } = {}) => {
+    if (!form.isConnected) return;
+    const payload = setupPayloadFromForm(form);
+    const setupHash = JSON.stringify(payload);
+    if (!manual && setupHash === lastSavedSetupHash) return;
+    if (setupSaveInFlight) {
+      setupSaveQueued = true;
+      return;
+    }
+    window.clearTimeout(setupAutosaveTimer);
+    setupSaveInFlight = true;
+    if (manual && submit) submit.disabled = true;
+    if (status) {
+      status.style.color = "var(--muted)";
+      status.textContent = manual ? "Saving setup..." : "Autosaving setup...";
+    }
+    try {
+      const saved = await apiPost("/api/learn/setup", payload);
+      const calendar = payload.preferences.calendarType || "julian";
+      const savedAt = saved.savedAt ? ` at ${new Date(saved.savedAt).toLocaleTimeString()}` : "";
+      localStorage.setItem("agapay.learn.calendar", calendar);
+      lastSavedSetupHash = setupHash;
+      if (status) {
+        status.style.color = "var(--gold)";
+        status.textContent = `${manual ? "Setup saved" : "Autosaved"}${savedAt}.`;
+      }
+    } catch (error) {
+      if (status) {
+        status.textContent = error.message;
+        status.style.color = "var(--burgundy)";
+      }
+    } finally {
+      setupSaveInFlight = false;
+      if (manual && submit?.isConnected) submit.disabled = false;
+      if (setupSaveQueued) {
+        setupSaveQueued = false;
+        setupAutosaveTimer = window.setTimeout(() => saveSetupNow({ manual: false }), 350);
+      }
+    }
+  };
+  const scheduleSetupAutosave = (delay = 900) => {
+    if (!form.isConnected) return;
+    window.clearTimeout(setupAutosaveTimer);
+    setupAutosaveTimer = window.setTimeout(() => saveSetupNow({ manual: false }), delay);
+  };
   form.addEventListener("input", (event) => {
     const dayChoice = event.target.closest("[data-day-choice]");
     if (dayChoice) {
@@ -5832,6 +5883,9 @@ function wireSetupPage() {
     if (event.target.closest('[data-setup-row="terms"]')) syncSetupTermSelects(form);
     if (event.target.closest('[data-setup-row="children"]')) syncSetupChildLimit(form);
   });
+  form.addEventListener("input", () => scheduleSetupAutosave(900));
+  form.addEventListener("change", () => scheduleSetupAutosave(250));
+  form.addEventListener("focusout", () => scheduleSetupAutosave(150));
   form.addEventListener("click", (event) => {
     const setupPanelToggle = event.target.closest("[data-setup-panel-toggle]");
     if (setupPanelToggle) {
@@ -6032,28 +6086,15 @@ function wireSetupPage() {
       }
     }
   });
+  form.addEventListener("click", (event) => {
+    const autosaveTrigger = event.target.closest("[data-add-resource], [data-edit-resource], [data-resource-modal-close], [data-resource-modal-save], [data-remove-resource], [data-term-weeks-all], [data-term-weeks-odd], [data-term-weeks-even], [data-setup-remove-row], [data-setup-add-row]");
+    if (!autosaveTrigger || event.target.closest("[data-close-term]")) return;
+    scheduleSetupAutosave(250);
+  });
   syncSetupChildLimit(form);
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const status = form.querySelector("[data-setup-status]");
-    const submit = form.querySelector("button[type='submit']");
-    const payload = setupPayloadFromForm(form);
-    status.textContent = "Saving setup...";
-    status.style.color = "var(--muted)";
-    submit.disabled = true;
-    try {
-      const saved = await apiPost("/api/learn/setup", payload);
-      const calendar = payload.preferences.calendarType || "julian";
-      const savedAt = saved.savedAt ? ` at ${new Date(saved.savedAt).toLocaleTimeString()}` : "";
-      localStorage.setItem("agapay.learn.calendar", calendar);
-      status.style.color = "var(--gold)";
-      status.textContent = `Setup saved${savedAt}.`;
-    } catch (error) {
-      status.textContent = error.message;
-      status.style.color = "var(--burgundy)";
-    } finally {
-      if (submit?.isConnected) submit.disabled = false;
-    }
+    await saveSetupNow({ manual: true });
   });
 }
 
