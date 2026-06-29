@@ -758,6 +758,46 @@ function designedAssignmentsForDate(vm, date) {
   }).filter(Boolean);
 }
 
+function designedAssignmentsByDateForMonth(vm) {
+  const items = vm.week?.weeklyAssignmentItems || [];
+  const itemIds = items.map((item) => item.id).join(",");
+  const itemLookup = new Map(items.map((item) => [item.id, item]));
+  const assignmentsByDate = new Map();
+  if (!itemIds || typeof localStorage === "undefined") return assignmentsByDate;
+  const prefix = "agapay.learn.weekAssignments.";
+  const suffix = `.${itemIds}`;
+  try {
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index) || "";
+      if (!key.startsWith(prefix) || !key.endsWith(suffix)) continue;
+      let state = {};
+      try {
+        state = JSON.parse(localStorage.getItem(key) || "{}");
+      } catch {
+        state = {};
+      }
+      Object.entries(state).forEach(([stateKey, saved]) => {
+        const date = String(saved?.zone || "");
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+        const sourceId = saved?.sourceId || stateKey.split("__auto__")[0] || stateKey;
+        const item = itemLookup.get(sourceId) || itemLookup.get(stateKey);
+        if (!item) return;
+        const assignment = {
+          ...item,
+          note: saved?.note || "",
+          sub: saved?.note || item.sub || "",
+          color: item.color || "var(--gold)"
+        };
+        if (!assignmentsByDate.has(date)) assignmentsByDate.set(date, []);
+        assignmentsByDate.get(date).push(assignment);
+      });
+    }
+  } catch {
+    return assignmentsByDate;
+  }
+  return assignmentsByDate;
+}
+
 function timeLabel(value = "") {
   return value ? value : "All day";
 }
@@ -2415,8 +2455,27 @@ function adjacentMonthKey(monthKey, delta) {
   return date.toISOString().slice(0, 7);
 }
 
+function uniqueMonthLessons(items) {
+  const seen = new Set();
+  return items.filter((item) => {
+    const key = [item.id || "", item.title || "", item.sub || "", item.note || ""].join("|");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function renderMonthLessonChip(item) {
+  const color = item.color || "var(--gold)";
+  return `<span title="${html([item.title, item.sub].filter(Boolean).join(" - "))}" style="display:flex;align-items:center;gap:5px;min-width:0;border:1px solid rgba(181,148,47,.22);border-left:3px solid ${html(color)};border-radius:7px;background:${softColor(color, "16")};padding:3px 5px;color:#243047;font-size:10.5px;line-height:1.15;">
+    <span style="width:6px;height:6px;border-radius:999px;background:${html(color)};flex:0 0 auto;"></span>
+    <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${html(item.title)}</span>
+  </span>`;
+}
+
 function renderPlannerMonth(vm) {
   const month = vm.month || {};
+  const designedByDate = designedAssignmentsByDateForMonth(vm);
   const dayCells = (month.days || []).map((day) => {
     const muted = !day.inMonth;
     const fastBg = day.isFastDay ? "rgba(110,47,42,.12)" : day.isSunday ? "rgba(181,148,47,.14)" : "var(--paper2)";
@@ -2426,7 +2485,14 @@ function renderPlannerMonth(vm) {
       ...(day.events || []).map((entry) => ({ title: entry.title })),
       ...(day.meal?.dinner ? [{ title: `Dinner · ${day.meal.dinner}` }] : [])
     ];
-    const plans = [...familyItems, ...(day.householdPlan || []), ...(day.formPlan || [])].slice(0, 4);
+    const lessons = uniqueMonthLessons([
+      ...(designedByDate.get(day.date) || []),
+      ...(day.householdPlan || []),
+      ...(day.formPlan || [])
+    ].filter((item) => item?.title));
+    const visibleLessons = lessons.slice(0, 4);
+    const moreLessons = lessons.length - visibleLessons.length;
+    const visibleFamilyItems = familyItems.slice(0, Math.max(0, 4 - visibleLessons.length));
     return `<article style="min-height:110px;border:1px solid ${border};border-radius:10px;background:${muted ? "rgba(248,240,221,.46)" : fastBg};padding:8px;display:flex;flex-direction:column;gap:5px;box-shadow:${day.isToday ? "inset 0 0 0 1px rgba(181,148,47,.45)" : "none"};opacity:${muted ? ".55" : "1"};">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
         <span style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:${day.isFastDay ? "var(--burgundy)" : "var(--ink)"};">${html(day.dayNumber)}</span>
@@ -2434,7 +2500,11 @@ function renderPlannerMonth(vm) {
       </div>
       <strong style="font-size:11px;line-height:1.2;color:${day.isFastDay ? "var(--burgundy)" : "var(--ink)"};">${html(day.feast)}</strong>
       ${day.isFastDay ? `<span style="color:var(--burgundy);font-size:10px;font-weight:700;">${html(day.fastingType || day.fasting)}</span>` : ""}
-      <div style="display:grid;gap:3px;margin-top:auto;">${plans.length ? plans.map((plan) => `<span style="font-size:10.5px;color:#33405a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(plan.title)}</span>`).join("") : ""}</div>
+      <div style="display:grid;gap:3px;margin-top:auto;">
+        ${visibleLessons.length ? visibleLessons.map(renderMonthLessonChip).join("") : ""}
+        ${moreLessons > 0 ? `<span style="font-size:10px;color:var(--muted);font-weight:700;">+${html(moreLessons)} more</span>` : ""}
+        ${visibleFamilyItems.length ? visibleFamilyItems.map((plan) => `<span style="font-size:10px;color:#526078;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${html(plan.title)}</span>`).join("") : ""}
+      </div>
     </article>`;
   }).join("");
 
