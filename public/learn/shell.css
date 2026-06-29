@@ -3025,14 +3025,23 @@ body {
 }
 
 .learn-week-assignment-card {
-  display: grid;
-  gap: 6px;
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--gold);
-  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1.5px solid var(--line);
+  border-left: 3px solid var(--gold);
+  border-radius: 8px;
   background: var(--paper2);
-  padding: 10px;
+  padding: 5px 7px 5px 10px;
   cursor: grab;
+  user-select: none;
+  transition: box-shadow .12s, border-color .12s;
+  min-width: 0;
+}
+
+.learn-week-assignment-card:hover {
+  box-shadow: 0 2px 8px rgba(6,21,34,.10);
+  border-color: var(--gold);
 }
 
 .learn-week-assignment-card[hidden] {
@@ -3040,50 +3049,100 @@ body {
 }
 
 .learn-week-assignment-card.is-dragging {
-  opacity: .6;
+  opacity: .4;
+  cursor: grabbing;
+}
+
+.learn-week-assignment-card-body {
+  flex: 1;
+  min-width: 0;
 }
 
 .learn-week-assignment-card strong {
+  display: block;
   color: var(--ink);
-  font-size: 14px;
-  line-height: 1.2;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .learn-week-assignment-card small {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.25;
+  display: none;
+}
+
+.learn-week-assignment-chips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .learn-week-assignment-minutes {
   display: inline-block;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--navy);
+  background: rgba(196,156,80,.15);
+  border: 1px solid rgba(196,156,80,.35);
+  padding: 1px 5px;
+  border-radius: 10px;
+  white-space: nowrap;
+  line-height: 1.4;
+  letter-spacing: .02em;
+}
+
+.learn-grace-chip {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 10px;
+  white-space: nowrap;
+  line-height: 1.4;
+  border: 1px solid transparent;
+}
+
+.learn-grace-chip--keep   { background: rgba(16,160,90,.11); color: #0d7a45; border-color: rgba(16,160,90,.28); }
+.learn-grace-chip--reduce { background: rgba(181,148,47,.13); color: #7a5c00; border-color: rgba(181,148,47,.32); }
+.learn-grace-chip--defer  { background: rgba(143,62,72,.09); color: var(--burgundy, #8f3e48); border-color: rgba(143,62,72,.22); }
+.learn-grace-chip--skip   { background: rgba(140,140,140,.11); color: #555; border-color: rgba(140,140,140,.28); }
+.learn-grace-chip.is-applied { opacity: .55; }
+
+.learn-week-card-expand {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin-left: 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
   color: var(--muted);
-  letter-spacing: .06em;
+  transition: color .12s, background .12s;
+  padding: 0;
+}
+
+.learn-week-card-expand:hover {
+  color: var(--ink);
+  background: rgba(6,21,34,.07);
 }
 
 .learn-week-assignment-card textarea {
-  min-height: 54px;
-  resize: vertical;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fffdf8;
-  color: var(--ink);
-  font-family: inherit;
-  font-size: 13px;
-  line-height: 1.35;
-  padding: 8px;
+  display: none;
 }
 
 /* ── Grace Mode card anatomy ─────────────────────────────── */
 
 .learn-week-assignment-card-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 6px;
-  flex-wrap: wrap;
+  display: contents;
 }
 
 .learn-grace-badge {
@@ -3169,6 +3228,157 @@ body {
 .learn-week-assignment-hint {
   color: var(--muted);
   font-size: 13px;
+}
+
+/* ── Subject detail modal ────────────────────────────────── */
+
+.learn-card-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6,21,34,.55);
+  backdrop-filter: blur(2px);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.learn-card-modal {
+  background: var(--paper, #F7F2E8);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 82vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 80px rgba(6,21,34,.28);
+  display: flex;
+  flex-direction: column;
+}
+
+.learn-card-modal-header {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.learn-card-modal-accent {
+  width: 4px;
+  border-radius: 2px;
+  background: var(--modal-color, var(--gold));
+  align-self: stretch;
+  flex-shrink: 0;
+  min-height: 32px;
+}
+
+.learn-card-modal-title-block { flex: 1; min-width: 0; }
+
+.learn-card-modal-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1.2;
+}
+
+.learn-card-modal-subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.learn-card-modal-close {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: rgba(6,21,34,.07);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1;
+  transition: background .12s;
+}
+
+.learn-card-modal-close:hover { background: rgba(6,21,34,.14); }
+
+.learn-card-modal-body { padding: 16px 20px 4px; }
+
+.learn-modal-field { margin-bottom: 13px; }
+
+.learn-modal-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+
+.learn-modal-input,
+.learn-modal-textarea,
+.learn-modal-select {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .12s;
+}
+
+.learn-modal-input:focus,
+.learn-modal-textarea:focus,
+.learn-modal-select:focus { border-color: var(--gold); }
+
+.learn-modal-textarea { resize: vertical; min-height: 58px; }
+
+.learn-modal-row { display: flex; gap: 10px; }
+.learn-modal-row .learn-modal-field { flex: 1; }
+
+.learn-card-modal-footer {
+  padding: 4px 20px 18px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.learn-modal-btn-save {
+  padding: 8px 20px;
+  border-radius: 7px;
+  border: none;
+  background: var(--navy);
+  color: var(--gold);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .12s;
+}
+
+.learn-modal-btn-save:hover { opacity: .88; }
+
+.learn-modal-btn-cancel {
+  padding: 8px 16px;
+  border-radius: 7px;
+  border: 1.5px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
 }
 
 /* ── end Grace Mode planner bridge ──────────────────────── */
