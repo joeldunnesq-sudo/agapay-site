@@ -3292,7 +3292,15 @@ function activeSetupGroupLabels(children = [], groupingMode = "forms", resources
     return [resource.formLabel, resource.gradeLabel];
   }).map((value) => String(value || "").trim()).filter(Boolean);
   const fallback = groupingMode === "grades" ? [] : formOptions;
-  return [...new Set([...childLabels, ...resourceLabels, ...fallback])];
+  const labels = [...new Set([...childLabels, ...resourceLabels, ...fallback])];
+  if (groupingMode !== "forms") return labels;
+  const formOrder = ["Form V", "Form IV", "Form III", "Form II", "Form I", "Little Ones"];
+  return labels.sort((a, b) => {
+    const aIndex = formOrder.indexOf(a);
+    const bIndex = formOrder.indexOf(b);
+    if (aIndex !== -1 || bIndex !== -1) return (aIndex === -1 ? formOrder.length : aIndex) - (bIndex === -1 ? formOrder.length : bIndex);
+    return a.localeCompare(b);
+  });
 }
 
 function primaryResourceGroupLabel(resource = {}, groupingMode = "forms") {
@@ -3463,9 +3471,6 @@ function setupResourceRow(resource = {}, index = 0, children = [], groupingMode 
   const link = /^https?:\/\//i.test(resolved)
     ? `<a href="${html(resolved)}" target="_blank" rel="noopener noreferrer" class="learn-source-link">Open</a>`
     : "";
-  const removeBtn = index > 0
-    ? `<button type="button" data-remove-resource aria-label="Remove resource">×</button>`
-    : "";
   const summary = termWeekSummaryFromSelected(selectedTermWeeks(resource.scheduledWeeks || []));
   return `<div data-resource-row="${index}" class="learn-resource-card">
     <div class="learn-resource-card-summary">
@@ -3474,7 +3479,7 @@ function setupResourceRow(resource = {}, index = 0, children = [], groupingMode 
       <span data-resource-summary-detail>${html(summary)}</span>
       ${link}
     </div>
-    <div class="learn-resource-card-actions"><button type="button" data-edit-resource>Edit</button>${removeBtn}</div>
+    <div class="learn-resource-card-actions"><button type="button" data-edit-resource>Edit</button><button type="button" data-remove-resource aria-label="Remove resource">Remove</button></div>
     <div class="learn-resource-modal" data-resource-modal hidden>
       <div class="learn-resource-modal-card">
         <button type="button" class="learn-family-modal-close" data-resource-modal-close aria-label="Close">×</button>

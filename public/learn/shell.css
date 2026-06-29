@@ -1189,17 +1189,26 @@ body {
 }
 
 .learn-resource-list-by-form {
-  grid-template-columns: 1fr;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 4px;
+  scroll-snap-type: x proximity;
 }
 
 .learn-resource-form-lane {
+  flex: 0 0 286px;
   display: grid;
+  grid-template-rows: auto 1fr;
   gap: 10px;
   border: 1px solid rgba(201, 162, 91, 0.28);
   border-radius: 12px;
   background: rgba(255, 252, 245, 0.44);
   padding: 12px;
   min-width: 0;
+  scroll-snap-align: start;
 }
 
 .learn-resource-form-lane header {
@@ -1230,8 +1239,9 @@ body {
 
 .learn-resource-form-lane-body {
   display: grid;
+  align-content: start;
   gap: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: 1fr;
   min-width: 0;
 }
 
