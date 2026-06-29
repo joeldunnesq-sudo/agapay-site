@@ -1232,17 +1232,23 @@ function renderWeeklyAssignmentBoard(vm) {
       return a.localeCompare(b);
     });
   const card = (item) => {
-    const priority = item.gracePriority || "keep";
-    const badge = gracePriorityBadge(priority);
+    const priority     = item.gracePriority || "keep";
     const isDeferrable = priority === "bump if needed" || priority === "defer if needed";
-    const isReducible = priority === "reduce first";
-    const activeStyle = graceActive && isDeferrable
-      ? "opacity:.55;"
-      : graceActive && isReducible
-        ? "opacity:.8;"
-        : "";
-    const minutesLabel = item.minutes > 0 ? `${item.minutes} min` : "";
-    return `<article class="learn-week-assignment-card${graceActive && isDeferrable ? " is-grace-deferred" : graceActive && isReducible ? " is-grace-reduced" : ""}" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-week-assignment-kind="${html(item.kind || "")}" data-week-form-labels="${html((item.formLabels || []).join("|"))}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" data-grace-priority="${html(priority)}" style="border-left-color:${html(item.color || "var(--gold)")};${activeStyle}"><div class="learn-week-assignment-card-head"><strong>${html(item.title)}</strong>${badge}</div>${item.sub ? `<small>${html(item.sub)}</small>` : ""}${minutesLabel ? `<span class="learn-week-assignment-minutes">${html(minutesLabel)}</span>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
+    const isReducible  = priority === "reduce first";
+    const graceClass   = isDeferrable ? "defer" : isReducible ? "reduce" : priority === "skip" ? "skip" : "keep";
+    const graceLabel   = isDeferrable ? "Defer" : isReducible ? "Reduce" : priority === "skip" ? "Skip" : "Core";
+    const minsLabel    = item.minutes > 0 ? `${item.minutes}m` : "";
+    const appliedClass = (graceActive && (isDeferrable || isReducible)) ? " is-applied" : "";
+    const cardClass    = [
+      "learn-week-assignment-card",
+      graceActive && isDeferrable ? "is-grace-deferred" : "",
+      graceActive && isReducible  ? "is-grace-reduced"  : ""
+    ].filter(Boolean).join(" ");
+    // Chips row: minutes badge + grace chip
+    const chipsHtml = `<div class="learn-week-assignment-chips">${minsLabel ? `<span class="learn-week-assignment-minutes">${html(minsLabel)}</span>` : ""}<span class="learn-grace-chip learn-grace-chip--${graceClass}${appliedClass}">${graceLabel}</span></div>`;
+    // Expand button (opens modal via JS)
+    const expandBtn = `<button type="button" class="learn-week-card-expand" data-card-expand data-item-id="${html(item.id)}" aria-label="Edit ${html(item.title)}" title="Edit details"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4.5L6 8L10 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
+    return `<article class="${cardClass}" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-week-assignment-kind="${html(item.kind || "")}" data-week-form-labels="${html((item.formLabels || []).join("|"))}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" data-grace-priority="${html(priority)}" data-item-sub="${html(item.sub || "")}" data-item-color="${html(item.color || "")}" style="border-left-color:${html(item.color || "var(--gold)")}"><div class="learn-week-assignment-card-head"><div class="learn-week-assignment-card-body"><strong>${html(item.title)}</strong>${chipsHtml}</div>${expandBtn}</div><textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day" style="display:none">${html(item.sub || "")}</textarea></article>`;
   };
   const weekNum = vm.week.termWeekNumber || 0;
   const totalWeeks = vm.week.totalTermWeeks || 0;
@@ -6318,6 +6324,101 @@ function wireWeeklyAssignmentBoard(vm) {
   restore();
   // Wire drag + note events for pool originals (non-auto cards)
   board.querySelectorAll("[data-week-assignment-card]:not([data-auto-placed])").forEach(wireCard);
+
+  // ── Compact-card expand → modal ──────────────────────────────────────────
+  function openLearnCardModal(card) {
+    if (document.querySelector(".learn-card-modal-backdrop")) return;
+    const itemId    = card.dataset.itemId || "";
+    const title     = card.querySelector("strong")?.textContent?.trim() || "Subject";
+    const sub       = card.dataset.itemSub || card.querySelector("small")?.textContent?.trim() || "";
+    const color     = card.dataset.itemColor || card.style.borderLeftColor || "var(--gold)";
+    const note      = card.querySelector("[data-week-assignment-note]")?.value || "";
+    const gracePri  = card.dataset.gracePriority || "keep";
+
+    const bd = document.createElement("div");
+    bd.className = "learn-card-modal-backdrop";
+
+    bd.innerHTML = `
+      <div class="learn-card-modal" style="--modal-color:${sub ? sub.replace(/"/g, "'") : color}">
+        <div class="learn-card-modal-header">
+          <div class="learn-card-modal-accent" style="background:${color}"></div>
+          <div class="learn-card-modal-title-block">
+            <div class="learn-card-modal-title">${title.replace(/</g,"&lt;")}</div>
+            ${sub ? `<div class="learn-card-modal-subtitle">${sub.replace(/</g,"&lt;")}</div>` : ""}
+          </div>
+          <button type="button" class="learn-card-modal-close" aria-label="Close">&#x2715;</button>
+        </div>
+        <div class="learn-card-modal-body">
+          <div class="learn-modal-field">
+            <label class="learn-modal-label">This week's assignment</label>
+            <textarea class="learn-modal-textarea" name="note" placeholder="Chapters, pages, lessons, narration prompt…">${note.replace(/</g,"&lt;")}</textarea>
+          </div>
+          <div class="learn-modal-row">
+            <div class="learn-modal-field">
+              <label class="learn-modal-label">Start (page / chapter / lesson)</label>
+              <input class="learn-modal-input" type="text" name="startAt" placeholder="e.g. 42">
+            </div>
+            <div class="learn-modal-field">
+              <label class="learn-modal-label">Through</label>
+              <input class="learn-modal-input" type="text" name="endAt" placeholder="e.g. 55">
+            </div>
+          </div>
+          <div class="learn-modal-row">
+            <div class="learn-modal-field">
+              <label class="learn-modal-label">Grace mode</label>
+              <select class="learn-modal-select" name="gracePriority">
+                <option value="keep"${gracePri==="keep"?" selected":""}>Core — always keep</option>
+                <option value="reduce first"${gracePri==="reduce first"?" selected":""}>Reduce — cut minutes first</option>
+                <option value="bump if needed"${gracePri==="bump if needed"?" selected":""}>Defer — bump to reserve</option>
+                <option value="skip"${gracePri==="skip"?" selected":""}>Skip — feast days only</option>
+              </select>
+            </div>
+          </div>
+          <div class="learn-modal-field">
+            <label class="learn-modal-label">Teacher notes</label>
+            <textarea class="learn-modal-textarea" name="teacherNotes" placeholder="Observations, resources, adjustments…"></textarea>
+          </div>
+        </div>
+        <div class="learn-card-modal-footer">
+          <button type="button" class="learn-modal-btn-cancel">Cancel</button>
+          <button type="button" class="learn-modal-btn-save">Save</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(bd);
+
+    const closeModal = () => bd.remove();
+    bd.querySelector(".learn-card-modal-close").addEventListener("click", closeModal);
+    bd.querySelector(".learn-modal-btn-cancel").addEventListener("click", closeModal);
+    bd.addEventListener("click", (e) => { if (e.target === bd) closeModal(); });
+    document.addEventListener("keydown", function onKey(e) {
+      if (e.key === "Escape") { closeModal(); document.removeEventListener("keydown", onKey); }
+    });
+
+    bd.querySelector(".learn-modal-btn-save").addEventListener("click", () => {
+      const noteVal = bd.querySelector("[name='note']")?.value || "";
+      const graceVal = bd.querySelector("[name='gracePriority']")?.value || gracePri;
+      // Write note back to the hidden textarea on the card
+      const noteEl = card.querySelector("[data-week-assignment-note]");
+      if (noteEl) noteEl.value = noteVal;
+      // Update grace priority data attr so filter still works
+      card.dataset.gracePriority = graceVal;
+      // Trigger writeState so the designed-week payload stays in sync
+      writeState();
+      closeModal();
+    });
+  }
+
+  board.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-card-expand]");
+    if (!btn) return;
+    e.stopPropagation();
+    const card = btn.closest("[data-week-assignment-card]");
+    if (card) openLearnCardModal(card);
+  });
+  // ── end modal wiring ──────────────────────────────────────
+
   formButtons.forEach((button) => {
     button.addEventListener("click", () => {
       activeFormLabel = button.dataset.weekFormFilter || "";
