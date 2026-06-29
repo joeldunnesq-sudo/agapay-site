@@ -2909,6 +2909,35 @@ body {
   line-height: 1;
 }
 
+.learn-week-form-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 0 12px;
+}
+
+.learn-week-form-tabs button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper2);
+  color: var(--muted);
+  cursor: pointer;
+  flex: 0 0 auto;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  min-height: 36px;
+  padding: 8px 13px;
+}
+
+.learn-week-form-tabs button[aria-pressed="true"] {
+  border-color: var(--gold);
+  background: var(--navy);
+  color: #f3ead4;
+  box-shadow: 0 8px 18px rgba(6,21,34,.12);
+}
+
 .learn-week-assignment-layout {
   display: grid;
   grid-template-columns: minmax(220px, .72fr) minmax(0, 2.6fr);
@@ -3004,6 +3033,10 @@ body {
   background: var(--paper2);
   padding: 10px;
   cursor: grab;
+}
+
+.learn-week-assignment-card[hidden] {
+  display: none;
 }
 
 .learn-week-assignment-card.is-dragging {

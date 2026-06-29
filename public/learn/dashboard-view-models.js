@@ -293,7 +293,8 @@ function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
       statuses: safeArray(row.statuses),
       weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, ""),
       gracePriority: text(row.gracePriority, "keep"),
-      graceNote: text(row.graceNote, "")
+      graceNote: text(row.graceNote, ""),
+      formLabels: ["__family"]
     }));
 
   // ── Child rows: group to avoid duplicates based on planning mode ───────────
@@ -364,6 +365,7 @@ function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
         title: text(row.title, "Lesson"),
         _childNames: childName ? [childName] : [],
         _formLabel: isFamily ? "" : (!isSpecific ? (childFormLabel || formLabels[0] || "") : ""),
+        _formLabels: isFamily ? ["__family"] : [...new Set([...(formLabels.length ? formLabels : []), childFormLabel].filter(Boolean))],
         _resourceTitles: resourceTitle ? [resourceTitle] : [],
         _minutesArr: rowMinutes.map((m) => Number(m || 0)),
         _statusesArr: [...statuses],
@@ -376,12 +378,12 @@ function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
   });
 
   const childItems = Array.from(grouped.values()).map((item) => {
-    const { _childNames, _formLabel, _resourceTitles, _minutesArr, _statusesArr, ...rest } = item;
+    const { _childNames, _formLabel, _formLabels, _resourceTitles, _minutesArr, _statusesArr, ...rest } = item;
     const resourceLine = _resourceTitles.join(", ");
     const prefixParts = [...(_childNames.length ? [_childNames.join(", ")] : (_formLabel ? [_formLabel] : []))];
     const sub = [...prefixParts, resourceLine].filter(Boolean).join(" · ");
     const minutes = Math.max(..._minutesArr.filter(Boolean), 0) || (_minutesArr.find((m) => m > 0) ?? 20);
-    return { ...rest, sub, minutes, statuses: _statusesArr };
+    return { ...rest, sub, minutes, statuses: _statusesArr, formLabels: _formLabels };
   });
 
   // Household items already unique by id; child items unique by groupKey

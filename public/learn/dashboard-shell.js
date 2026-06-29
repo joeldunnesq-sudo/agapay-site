@@ -1221,6 +1221,16 @@ function renderWeeklyAssignmentBoard(vm) {
   const items = vm.week.weeklyAssignmentItems || [];
   const graceActive = vm.graceMode?.active;
   const graceMode = vm.graceMode?.mode || "light";
+  const formOrder = ["Little Ones", "Form I", "Form II", "Form III", "Form IV"];
+  const formLabels = [...new Set(items.flatMap((item) => item.formLabels || []).filter((label) => label && label !== "__family"))]
+    .sort((a, b) => {
+      const ai = formOrder.indexOf(a);
+      const bi = formOrder.indexOf(b);
+      if (ai >= 0 && bi >= 0) return ai - bi;
+      if (ai >= 0) return -1;
+      if (bi >= 0) return 1;
+      return a.localeCompare(b);
+    });
   const card = (item) => {
     const priority = item.gracePriority || "keep";
     const badge = gracePriorityBadge(priority);
@@ -1232,7 +1242,7 @@ function renderWeeklyAssignmentBoard(vm) {
         ? "opacity:.8;"
         : "";
     const minutesLabel = item.minutes > 0 ? `${item.minutes} min` : "";
-    return `<article class="learn-week-assignment-card${graceActive && isDeferrable ? " is-grace-deferred" : graceActive && isReducible ? " is-grace-reduced" : ""}" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" data-grace-priority="${html(priority)}" style="border-left-color:${html(item.color || "var(--gold)")};${activeStyle}"><div class="learn-week-assignment-card-head"><strong>${html(item.title)}</strong>${badge}</div>${item.sub ? `<small>${html(item.sub)}</small>` : ""}${minutesLabel ? `<span class="learn-week-assignment-minutes">${html(minutesLabel)}</span>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
+    return `<article class="learn-week-assignment-card${graceActive && isDeferrable ? " is-grace-deferred" : graceActive && isReducible ? " is-grace-reduced" : ""}" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-week-assignment-kind="${html(item.kind || "")}" data-week-form-labels="${html((item.formLabels || []).join("|"))}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" data-grace-priority="${html(priority)}" style="border-left-color:${html(item.color || "var(--gold)")};${activeStyle}"><div class="learn-week-assignment-card-head"><strong>${html(item.title)}</strong>${badge}</div>${item.sub ? `<small>${html(item.sub)}</small>` : ""}${minutesLabel ? `<span class="learn-week-assignment-minutes">${html(minutesLabel)}</span>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
   };
   const weekNum = vm.week.termWeekNumber || 0;
   const totalWeeks = vm.week.totalTermWeeks || 0;
@@ -1259,6 +1269,7 @@ function renderWeeklyAssignmentBoard(vm) {
           </div>
         </div>
       </div>
+      ${formLabels.length ? `<div class="learn-week-form-tabs" aria-label="Planner form selector">${formLabels.map((label, index) => `<button type="button" data-week-form-filter="${html(label)}" aria-pressed="${index === 0 ? "true" : "false"}">${html(label)}</button>`).join("")}</div>` : ""}
       <div class="learn-week-assignment-layout">
         <div class="learn-week-assignment-pool">
           <strong>Available subjects</strong>
@@ -6181,7 +6192,36 @@ function wireWeeklyAssignmentBoard(vm) {
   const board = root.querySelector("[data-week-assignment-board]");
   if (!board) return;
   const storageKey = weekAssignmentStorageKey(vm, board.dataset.weekKey || "week");
+  const formStorageKey = `${storageKey}.form`;
   const zones = [...board.querySelectorAll("[data-week-assignment-zone]")];
+  const formButtons = [...board.querySelectorAll("[data-week-form-filter]")];
+  const availableForms = formButtons.map((button) => button.dataset.weekFormFilter).filter(Boolean);
+  const cardFormLabels = (card) => (card.dataset.weekFormLabels || "").split("|").map((label) => label.trim()).filter(Boolean);
+  const cardVisibleForForm = (card, formLabel) => {
+    const labels = cardFormLabels(card);
+    if (!formLabel || !availableForms.length) return true;
+    return !labels.length || labels.includes("__family") || labels.includes(formLabel);
+  };
+  const activeFormFromStorage = () => {
+    try {
+      const saved = localStorage.getItem(formStorageKey) || "";
+      return availableForms.includes(saved) ? saved : (availableForms[0] || "");
+    } catch {
+      return availableForms[0] || "";
+    }
+  };
+  let activeFormLabel = activeFormFromStorage();
+  const applyFormFilter = (formLabel = activeFormLabel) => {
+    activeFormLabel = formLabel || "";
+    if (activeFormLabel) board.dataset.activeWeekForm = activeFormLabel;
+    else delete board.dataset.activeWeekForm;
+    formButtons.forEach((button) => {
+      button.setAttribute("aria-pressed", button.dataset.weekFormFilter === activeFormLabel ? "true" : "false");
+    });
+    board.querySelectorAll("[data-week-assignment-card]").forEach((card) => {
+      card.hidden = !cardVisibleForForm(card, activeFormLabel);
+    });
+  };
   const readState = () => {
     try {
       return JSON.parse(localStorage.getItem(storageKey) || "{}");
@@ -6211,6 +6251,10 @@ function wireWeeklyAssignmentBoard(vm) {
   };
   const wireCard = (card) => {
     card.addEventListener("dragstart", (event) => {
+      if (!cardVisibleForForm(card, activeFormLabel)) {
+        event.preventDefault();
+        return;
+      }
       event.dataTransfer?.setData("text/plain", card.dataset.itemId || "");
       card.classList.add("is-dragging");
     });
@@ -6274,6 +6318,16 @@ function wireWeeklyAssignmentBoard(vm) {
   restore();
   // Wire drag + note events for pool originals (non-auto cards)
   board.querySelectorAll("[data-week-assignment-card]:not([data-auto-placed])").forEach(wireCard);
+  formButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      activeFormLabel = button.dataset.weekFormFilter || "";
+      try {
+        localStorage.setItem(formStorageKey, activeFormLabel);
+      } catch {}
+      applyFormFilter(activeFormLabel);
+    });
+  });
+  applyFormFilter(activeFormLabel);
   const designedWeekPayload = () => {
     const itemLookup = new Map((vm.week?.weeklyAssignmentItems || []).map((item) => [item.id, item]));
     const assignmentForCard = (card) => {
@@ -6285,12 +6339,16 @@ function wireWeeklyAssignmentBoard(vm) {
         title: card.querySelector("strong")?.textContent?.trim() || item.title || "Subject",
         sub: card.querySelector("small")?.textContent?.trim() || item.sub || "",
         note: card.querySelector("[data-week-assignment-note]")?.value?.trim() || "",
-        color: item.color || ""
+        color: item.color || "",
+        kind: card.dataset.weekAssignmentKind || item.kind || "",
+        formLabels: cardFormLabels(card)
       };
     };
     return {
       label: vm.week?.label || "",
       termLabel: vm.term?.label || vm.week?.termLabel || "",
+      activeFormLabel,
+      forms: availableForms,
       days: (vm.week?.days || []).map((day) => {
         const zone = board.querySelector(`[data-week-assignment-zone="${CSS.escape(day.date)}"]`);
         return {
