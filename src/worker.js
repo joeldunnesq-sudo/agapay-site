@@ -52,6 +52,7 @@ import {
   listKvKeys,
   loadAdminSessionStore,
   loadDonor,
+  loadMyAgapayReleaseFlags,
   missingProductionStoreResponse,
   normalizeAdminActor,
   normalizeEmail,
@@ -151,6 +152,7 @@ import {
   handleAdminLearnCommunity,
   handleAdminLearnSummary,
   handleAdminReleaseStatus,
+  handleAdminMyAgapayReleaseFlags,
   handleAdminRebuildIndexes,
   handleAdminPassword,
   handleAdminRegistrationDetail,
@@ -1338,6 +1340,9 @@ export default {
     if (url.pathname === "/api/donor/commemorations") {
       return handleDonorCommemorations(request, env);
     }
+    if (request.method === "GET" && url.pathname === "/api/myagapay/release-flags") {
+      return json({ ok: true, flags: await loadMyAgapayReleaseFlags(env) });
+    }
     if (request.method === "GET" && url.pathname === "/api/admin/registrations") {
       return handleAdminRegistrations(request, env);
     }
@@ -1352,6 +1357,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/admin/release-status") {
       return handleAdminReleaseStatus(request, env);
+    }
+    if (url.pathname === "/api/admin/myagapay/release-flags") {
+      return handleAdminMyAgapayReleaseFlags(request, env);
     }
     if (url.pathname === "/api/admin/rebuild-indexes") {
       return handleAdminRebuildIndexes(request, env);
