@@ -1208,98 +1208,114 @@ function renderDesignedWeekFormsLandscape(document, state) {
     : [{ label: "Household", days: [] }];
   const W = LANDSCAPE[0];
   const H = LANDSCAPE[1];
-  const pageMargin = 28;
-  const gap = 6;
-  const gridTop = H - 112;
-  const gridBottom = 48;
-  const colW = (W - pageMargin * 2 - gap * 6) / 7;
-  const colH = gridTop - gridBottom;
+  const pageMargin = 30;
+  const tableTop = H - 130;
+  const tableBottom = 72;
+  const tableW = W - pageMargin * 2;
+  const subjectW = 142;
+  const dayW = (tableW - subjectW) / 7;
+  const headerH = 32;
+  const minRowH = 32;
+  const maxRowsPerPage = 12;
+  const rowKey = (item) => [item.id || "", item.title || "", item.sub || ""].join("::");
+  const rowsForForm = (form) => {
+    const rows = new Map();
+    (form.days || []).slice(0, 7).forEach((day, dayIndex) => {
+      (day.assignments || []).forEach((item) => {
+        const key = rowKey(item);
+        if (!rows.has(key)) {
+          rows.set(key, {
+            title: item.title || "Subject",
+            sub: item.sub || "",
+            cells: Array.from({ length: 7 }, () => [])
+          });
+        }
+        const note = item.note || item.sub || "Assigned";
+        rows.get(key).cells[dayIndex].push(note);
+      });
+    });
+    return Array.from(rows.values()).sort((a, b) => a.title.localeCompare(b.title));
+  };
+  const splitRows = (rows) => {
+    if (!rows.length) return [[]];
+    const chunks = [];
+    for (let i = 0; i < rows.length; i += maxRowsPerPage) chunks.push(rows.slice(i, i + maxRowsPerPage));
+    return chunks;
+  };
+  const formPages = forms.flatMap((form) => splitRows(rowsForForm(form)).map((rows, chunkIndex, chunks) => ({
+    ...form,
+    rows,
+    chunkIndex,
+    chunkCount: chunks.length
+  })));
 
-  forms.forEach((form, pageIndex) => {
+  formPages.forEach((form, pageIndex) => {
     const page = state.pdf.addPage(LANDSCAPE);
     state.pages.push(page);
     page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: PAPER });
-    page.drawRectangle({ x: 0, y: H - 76, width: W, height: 76, color: NAVY });
-    page.drawText("AGAPAY LEARN", { x: pageMargin, y: H - 30, size: 10, font: state.fonts.sansBold, color: GOLD });
-    page.drawText(text(document.title || "Designed Weekly Lesson Plan"), { x: pageMargin, y: H - 53, size: 19, font: state.fonts.serifBold, color: CREAM });
-    page.drawText(text(form.label || "Household"), { x: W - pageMargin - 160, y: H - 32, size: 16, font: state.fonts.serifBold, color: GOLD_SOFT });
-    const subtitle = wrapText(document.subtitle || "", state.fonts.sans, 8, W - pageMargin * 2 - 170).slice(0, 1);
-    if (subtitle[0]) page.drawText(subtitle[0], { x: pageMargin, y: H - 69, size: 8, font: state.fonts.sans, color: GOLD_SOFT });
-    page.drawLine({ start: { x: pageMargin, y: H - 88 }, end: { x: W - pageMargin, y: H - 88 }, thickness: 1, color: GOLD });
+    page.drawRectangle({ x: 0, y: H - 92, width: W, height: 92, color: NAVY });
+    page.drawText("AGAPAY LEARN", { x: pageMargin, y: H - 28, size: 9, font: state.fonts.sansBold, color: GOLD });
+    page.drawText("Weekly Assignment Grid", { x: pageMargin, y: H - 55, size: 20, font: state.fonts.serifBold, color: CREAM });
+    const subtitle = wrapText(document.subtitle || "", state.fonts.sans, 8.5, W - pageMargin * 2 - 190).slice(0, 1)[0] || "";
+    if (subtitle) page.drawText(subtitle, { x: pageMargin, y: H - 76, size: 8.5, font: state.fonts.sans, color: GOLD_SOFT });
+    page.drawText(text(form.label || "Household"), { x: W - pageMargin - 170, y: H - 38, size: 22, font: state.fonts.serifBold, color: GOLD_SOFT });
+    if (form.chunkCount > 1) {
+      page.drawText(`Sheet ${form.chunkIndex + 1} of ${form.chunkCount}`, { x: W - pageMargin - 170, y: H - 58, size: 8, font: state.fonts.sansBold, color: CREAM });
+    }
 
+    page.drawRectangle({ x: pageMargin, y: tableTop - headerH, width: subjectW, height: headerH, color: NAVY_SOFT });
+    page.drawText("Subject / Resource", { x: pageMargin + 9, y: tableTop - 20, size: 8.5, font: state.fonts.sansBold, color: CREAM });
     const days = (form.days || []).slice(0, 7);
     DAYS.forEach((fallbackDay, index) => {
       const day = days[index] || {};
-      const x = pageMargin + index * (colW + gap);
-      const y = gridTop;
-      const accent = day.isSunday ? BURGUNDY : GOLD;
-      page.drawRectangle({ x, y: gridBottom, width: colW, height: colH, borderColor: LINE, borderWidth: 0.55, color: CREAM });
-      page.drawRectangle({ x, y: gridTop - 30, width: colW, height: 30, color: accent });
-      page.drawText(text(day.weekday || fallbackDay), { x: x + 7, y: gridTop - 13, size: 8.6, font: state.fonts.sansBold, color: PAPER });
-      page.drawText(text(day.shortDate || day.date || ""), { x: x + 7, y: gridTop - 25, size: 6.6, font: state.fonts.sans, color: PAPER });
-      if (day.feast) {
-        const feastLine = wrapText(day.feast, state.fonts.sans, 6.2, colW - 14)[0] || "";
-        page.drawText(feastLine, { x: x + 7, y: gridTop - 42, size: 6.2, font: state.fonts.sans, color: day.isSunday ? BURGUNDY : MUTED });
-      }
-
-      let cursorY = gridTop - 56;
-      const assignments = day.assignments || [];
-      if (!assignments.length) {
-        const empty = day.isSunday ? "Church, rest, and family rhythm." : "Open lesson space.";
-        wrapText(empty, state.fonts.sans, 7, colW - 14).slice(0, 3).forEach((line, li) => {
-          page.drawText(line, { x: x + 7, y: cursorY - li * 9, size: 7, font: state.fonts.sans, color: MUTED });
-        });
-        return;
-      }
-      let hiddenCount = 0;
-      let overflowed = false;
-      assignments.forEach((item, itemIndex) => {
-        if (overflowed) return;
-        if (cursorY < gridBottom + 34) {
-          hiddenCount += assignments.length - itemIndex;
-          overflowed = true;
-          return;
-        }
-        const titleLines = wrapText(item.title, state.fonts.sansBold, 7.2, colW - 20).slice(0, 2);
-        const note = item.note || item.sub || "";
-        const noteLines = note ? wrapText(note, state.fonts.sans, 6.4, colW - 20).slice(0, 2) : [];
-        const blockH = Math.max(28, 15 + titleLines.length * 8 + noteLines.length * 7);
-        if (cursorY - blockH < gridBottom + 10) {
-          hiddenCount += assignments.length - itemIndex;
-          overflowed = true;
-          return;
-        }
-        page.drawRectangle({
-          x: x + 6,
-          y: cursorY - blockH,
-          width: colW - 12,
-          height: blockH,
-          borderColor: LINE,
-          borderWidth: 0.3,
-          color: itemIndex % 2 === 0 ? PAPER : rgb(1, 0.98, 0.92)
-        });
-        page.drawRectangle({ x: x + 6, y: cursorY - blockH, width: 3, height: blockH, color: accent });
-        titleLines.forEach((line, li) => {
-          page.drawText(line, { x: x + 13, y: cursorY - 11 - li * 8, size: 7.2, font: state.fonts.sansBold, color: INK });
-        });
-        noteLines.forEach((line, li) => {
-          page.drawText(line, { x: x + 13, y: cursorY - 11 - titleLines.length * 8 - li * 7, size: 6.4, font: state.fonts.sans, color: MUTED });
-        });
-        cursorY -= blockH + 5;
-      });
-      if (hiddenCount > 0) {
-        page.drawText(`+ ${hiddenCount} more`, { x: x + 7, y: gridBottom + 12, size: 7, font: state.fonts.sansBold, color: BURGUNDY });
-      }
+      const x = pageMargin + subjectW + index * dayW;
+      const color = day.isSunday ? BURGUNDY : GOLD;
+      page.drawRectangle({ x, y: tableTop - headerH, width: dayW, height: headerH, color });
+      page.drawText(text(day.weekday || fallbackDay), { x: x + 7, y: tableTop - 14, size: 8, font: state.fonts.sansBold, color: PAPER });
+      page.drawText(text(day.shortDate || day.date || ""), { x: x + 7, y: tableTop - 27, size: 6.2, font: state.fonts.sans, color: PAPER });
     });
 
+    const rows = form.rows || [];
+    const availableH = tableTop - headerH - tableBottom;
+    const rowH = rows.length ? Math.max(minRowH, Math.min(46, availableH / rows.length)) : availableH;
+    if (!rows.length) {
+      page.drawRectangle({ x: pageMargin, y: tableBottom, width: tableW, height: availableH, borderColor: LINE, borderWidth: 0.6, color: CREAM });
+      page.drawText("No lessons have been placed for this form yet.", { x: pageMargin + 14, y: tableTop - headerH - 28, size: 10, font: state.fonts.sansBold, color: MUTED });
+    }
+    rows.forEach((row, rowIndex) => {
+      const y = tableTop - headerH - (rowIndex + 1) * rowH;
+      const fill = rowIndex % 2 === 0 ? PAPER : rgb(1, 0.98, 0.92);
+      page.drawRectangle({ x: pageMargin, y, width: subjectW, height: rowH, borderColor: LINE, borderWidth: 0.45, color: fill });
+      wrapText(row.title, state.fonts.sansBold, 7.6, subjectW - 18).slice(0, 2).forEach((line, li) => {
+        page.drawText(line, { x: pageMargin + 9, y: y + rowH - 12 - li * 8, size: 7.6, font: state.fonts.sansBold, color: INK });
+      });
+      if (row.sub) {
+        const subLine = wrapText(row.sub, state.fonts.sans, 6.3, subjectW - 18).slice(0, 1)[0] || "";
+        if (subLine) page.drawText(subLine, { x: pageMargin + 9, y: y + 7, size: 6.3, font: state.fonts.sans, color: MUTED });
+      }
+      row.cells.forEach((entries, dayIndex) => {
+        const x = pageMargin + subjectW + dayIndex * dayW;
+        page.drawRectangle({ x, y, width: dayW, height: rowH, borderColor: LINE, borderWidth: 0.45, color: fill });
+        if (!entries.length) return;
+        page.drawRectangle({ x: x + 6, y: y + rowH - 14, width: 7, height: 7, borderColor: MUTED, borderWidth: 0.55, color: PAPER });
+        const lines = wrapText(entries.join("; "), state.fonts.sans, 6.5, dayW - 21).slice(0, Math.max(2, Math.floor((rowH - 11) / 7)));
+        lines.forEach((line, li) => {
+          page.drawText(line, { x: x + 17, y: y + rowH - 11 - li * 7, size: 6.5, font: state.fonts.sans, color: INK });
+        });
+      });
+    });
+
+    const notesY = 43;
+    page.drawText("Notes:", { x: pageMargin, y: notesY + 11, size: 8, font: state.fonts.sansBold, color: INK });
+    for (let i = 0; i < 3; i += 1) {
+      page.drawLine({ start: { x: pageMargin + 42, y: notesY + 13 - i * 12 }, end: { x: W - pageMargin, y: notesY + 13 - i * 12 }, thickness: 0.35, color: LINE });
+    }
     const unassigned = form.unassigned || [];
     if (unassigned.length) {
-      const line = wrapText(`Available but not placed: ${unassigned.map((item) => item.title).join(", ")}`, state.fonts.sans, 7, W - pageMargin * 2 - 160).slice(0, 1)[0] || "";
-      page.drawText(line, { x: pageMargin, y: 31, size: 7, font: state.fonts.sans, color: MUTED });
+      const line = wrapText(`Available but not placed: ${unassigned.map((item) => item.title).join(", ")}`, state.fonts.sans, 6.8, W - pageMargin * 2).slice(0, 1)[0] || "";
+      page.drawText(line, { x: pageMargin, y: 18, size: 6.8, font: state.fonts.sans, color: MUTED });
     }
-    page.drawLine({ start: { x: pageMargin, y: 24 }, end: { x: W - pageMargin, y: 24 }, thickness: 0.4, color: LINE });
-    page.drawText(text(document.footerNote || "Generated by AGAPAY Learn"), { x: pageMargin, y: 12, size: 7, font: state.fonts.sans, color: MUTED });
-    page.drawText(`Form page ${pageIndex + 1} of ${forms.length}`, { x: W - pageMargin - 86, y: 12, size: 7, font: state.fonts.sans, color: MUTED });
+    page.drawText(`Page ${pageIndex + 1} of ${formPages.length}`, { x: W - pageMargin - 58, y: 18, size: 6.8, font: state.fonts.sans, color: MUTED });
   });
   return state.pdf.save();
 }

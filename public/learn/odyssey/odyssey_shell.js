@@ -1252,7 +1252,7 @@ function renderWeeklyAssignmentBoard(vm) {
         ? "opacity:.8;"
         : "";
     const minutesLabel = item.minutes > 0 ? `${item.minutes} min` : "";
-    return `<article class="learn-week-assignment-card${graceActive && isDeferrable ? " is-grace-deferred" : graceActive && isReducible ? " is-grace-reduced" : ""}" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" data-grace-priority="${html(priority)}" style="border-left-color:${html(item.color || "var(--gold)")};${activeStyle}"><div class="learn-week-assignment-card-head"><strong>${html(item.title)}</strong>${badge}</div>${item.sub ? `<small>${html(item.sub)}</small>` : ""}${minutesLabel ? `<span class="learn-week-assignment-minutes">${html(minutesLabel)}</span>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
+    return `<article class="learn-week-assignment-card${graceActive && isDeferrable ? " is-grace-deferred" : graceActive && isReducible ? " is-grace-reduced" : ""}" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-week-assignment-kind="${html(item.kind || "")}" data-week-form-labels="${html((item.formLabels || []).join("|"))}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" data-grace-priority="${html(priority)}" style="border-left-color:${html(item.color || "var(--gold)")};${activeStyle}"><div class="learn-week-assignment-card-head"><strong>${html(item.title)}</strong>${badge}</div>${item.sub ? `<small>${html(item.sub)}</small>` : ""}${minutesLabel ? `<span class="learn-week-assignment-minutes">${html(minutesLabel)}</span>` : ""}<textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day">${html(item.sub || "")}</textarea></article>`;
   };
   const weekNum = vm.week.termWeekNumber || 0;
   const totalWeeks = vm.week.totalTermWeeks || 0;
@@ -5661,6 +5661,17 @@ function wireWeeklyAssignmentBoard(vm) {
   board.querySelectorAll("[data-week-assignment-card]:not([data-auto-placed])").forEach(wireCard);
   const designedWeekPayload = () => {
     const itemLookup = new Map((vm.week?.weeklyAssignmentItems || []).map((item) => [item.id, item]));
+    const formOrder = ["Little Ones", "Form I", "Form II", "Form III", "Form IV"];
+    const availableForms = [...new Set((vm.week?.weeklyAssignmentItems || []).flatMap((item) => item.formLabels || []).filter((label) => label && label !== "__family"))]
+      .sort((a, b) => {
+        const ai = formOrder.indexOf(a);
+        const bi = formOrder.indexOf(b);
+        if (ai >= 0 && bi >= 0) return ai - bi;
+        if (ai >= 0) return -1;
+        if (bi >= 0) return 1;
+        return a.localeCompare(b);
+      });
+    const cardFormLabels = (card) => (card.dataset.weekFormLabels || "").split("|").map((label) => label.trim()).filter(Boolean);
     const assignmentForCard = (card) => {
       // Resolve metadata from source item for auto-placed clones
       const sourceId = card.dataset.sourceItemId || card.dataset.itemId;
@@ -5670,12 +5681,15 @@ function wireWeeklyAssignmentBoard(vm) {
         title: card.querySelector("strong")?.textContent?.trim() || item.title || "Subject",
         sub: card.querySelector("small")?.textContent?.trim() || item.sub || "",
         note: card.querySelector("[data-week-assignment-note]")?.value?.trim() || "",
-        color: item.color || ""
+        color: item.color || "",
+        kind: card.dataset.weekAssignmentKind || item.kind || "",
+        formLabels: cardFormLabels(card).length ? cardFormLabels(card) : (item.formLabels || [])
       };
     };
     return {
       label: vm.week?.label || "",
       termLabel: vm.term?.label || vm.week?.termLabel || "",
+      forms: availableForms,
       days: (vm.week?.days || []).map((day) => {
         const zone = board.querySelector(`[data-week-assignment-zone="${CSS.escape(day.date)}"]`);
         return {
