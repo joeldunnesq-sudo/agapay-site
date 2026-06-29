@@ -113,215 +113,50 @@
   </script>
   <style>
   /* ── PWA Install section ─────────────────────────────────────────────────── */
-  .install {
-    background: linear-gradient(160deg, #0a1e2c 0%, #061522 100%);
-    padding: 80px 24px;
-  }
-  .install-inner {
-    max-width: 1080px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 60px;
-    align-items: center;
-  }
+  /* Install section — parchment card style matching how-it-works */
+  .install { position: relative; margin: 1.5rem; padding: clamp(2.5rem,5vw,4rem) clamp(1.5rem,4vw,3rem); border-radius: 16px; border: 1px solid rgba(200,162,74,.28); overflow: hidden; background: linear-gradient(180deg, var(--parchment, #fdf8ef) 0%, var(--parchment-2, #f5ede0) 100%); }
+  .install::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 60% at 90% 0%, rgba(200,162,74,.12) 0%, transparent 60%); pointer-events: none; }
+  .install > * { position: relative; z-index: 1; }
+  .install-inner { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: clamp(2rem,5vw,4rem); align-items: center; }
   @media (max-width: 780px) {
     .install-inner { grid-template-columns: 1fr; }
-    .install-phone-img { display: none; }
+    .install-phone-img { width: 200px; margin: 0 auto; }
   }
-  .install-eyebrow {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #b5942f;
-    font-size: 12px;
-    letter-spacing: .16em;
-    text-transform: uppercase;
-    font-weight: 700;
-    margin-bottom: 14px;
-  }
-  .install-eyebrow svg {
-    width: 18px;
-    height: 18px;
-    stroke: currentColor;
-    fill: none;
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    flex-shrink: 0;
-  }
-  .install-head h2 {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(32px, 5vw, 52px);
-    font-weight: 600;
-    color: #f3ead4;
-    line-height: 1.05;
-    margin: 0 0 16px;
-  }
-  .install-head p {
-    color: #8fa4b8;
-    font-size: 16px;
-    line-height: 1.6;
-    max-width: 520px;
-    margin: 0 0 28px;
-  }
+  .install-eyebrow { display: inline-flex; align-items: center; gap: .5rem; color: var(--gold-dark, #8a6a1a); text-transform: uppercase; letter-spacing: .16em; font-size: .7rem; font-weight: 800; margin-bottom: .85rem; }
+  .install-eyebrow svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .install-head h2 { font-family: 'Cormorant Garamond', serif; color: #0a1524; font-size: clamp(2rem,4vw,3rem); font-weight: 500; line-height: 1.06; margin: 0 0 .6rem; }
+  .install-head p { color: var(--stone, #4a5568); font-size: 1rem; line-height: 1.65; max-width: 480px; margin: 0 0 1.5rem; }
   /* OS toggle */
-  .os-toggle-wrap { margin-bottom: 28px; }
-  .os-toggle {
-    display: inline-flex;
-    background: rgba(255,255,255,.07);
-    border: 1px solid rgba(255,255,255,.12);
-    border-radius: 12px;
-    padding: 4px;
-    gap: 4px;
-  }
-  .os-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 9px 20px;
-    border: none;
-    border-radius: 9px;
-    background: transparent;
-    color: #8fa4b8;
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background .15s, color .15s;
-  }
-  .os-btn svg {
-    width: 18px;
-    height: 18px;
-    stroke: currentColor;
-    fill: none;
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    flex-shrink: 0;
-  }
-  .os-btn[aria-selected="true"] {
-    background: rgba(181,148,47,.18);
-    color: #d9b461;
-  }
-  .os-btn:hover:not([aria-selected="true"]) {
-    background: rgba(255,255,255,.06);
-    color: #c8d8e8;
-  }
+  .os-toggle-wrap { margin-bottom: 1.5rem; }
+  .os-toggle { display: inline-flex; background: rgba(6,21,34,.05); border: 1px solid rgba(6,21,34,.12); border-radius: 12px; padding: 4px; gap: 4px; }
+  .os-btn { display: flex; align-items: center; gap: 8px; padding: 9px 20px; border: none; border-radius: 9px; background: transparent; color: #4a5568; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background .15s, color .15s; }
+  .os-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .os-btn[aria-selected="true"] { background: rgba(181,148,47,.15); color: var(--gold-dark, #8a6a1a); }
+  .os-btn:hover:not([aria-selected="true"]) { background: rgba(6,21,34,.06); color: #0a1524; }
   /* Panels */
   .os-panel { display: none; }
   .os-panel.is-active { display: block; }
   /* Steps */
-  .install-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin-bottom: 28px;
-  }
-  .install-step {
-    display: flex;
-    gap: 14px;
-    align-items: flex-start;
-    color: #c8d8e8;
-    font-size: 15px;
-    line-height: 1.55;
-  }
-  .install-step strong { color: #f3ead4; }
-  .isn {
-    flex-shrink: 0;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: rgba(181,148,47,.2);
-    border: 1px solid rgba(181,148,47,.35);
-    color: #d9b461;
-    font-size: 13px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 1px;
-  }
+  .install-steps { display: grid; gap: .75rem; margin-bottom: 1.6rem; }
+  .install-step { display: flex; align-items: flex-start; gap: .85rem; padding: .95rem 1.1rem; border-radius: 12px; border: 1px solid rgba(200,162,74,.25); background: rgba(255,253,248,.72); }
+  .install-step p { color: #2a333b; font-size: .94rem; line-height: 1.5; margin: 0; }
+  .install-step strong { color: #0a1524; font-weight: 700; }
+  .isn { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; font-family: 'Cormorant Garamond', serif; font-size: .95rem; font-weight: 600; border: 1px solid rgba(200,162,74,.5); background: rgba(200,162,74,.1); color: var(--gold-dark, #8a6a1a); }
   /* Install CTA */
   .install-cta { margin-top: 4px; }
-  .btn-install {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    background: #b5942f;
-    color: #061522;
-    border: none;
-    border-radius: 12px;
-    padding: 14px 28px;
-    font-family: inherit;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background .15s, opacity .15s;
-  }
-  .btn-install:hover { background: #d9b461; }
+  .btn-install { min-height: 50px; min-width: 220px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: .6rem; padding: 0 1.7rem; font-size: .88rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; background: linear-gradient(135deg, #D6AF5B, #B98832); color: #071522; border: none; cursor: pointer; transition: transform .18s ease, opacity .18s ease; }
+  .btn-install:hover { transform: translateY(-2px); }
   .btn-install:disabled { opacity: .45; cursor: default; }
-  .btn-install svg {
-    width: 18px;
-    height: 18px;
-    stroke: currentColor;
-    fill: none;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    flex-shrink: 0;
-  }
-  .install-note {
-    margin: 12px 0 0;
-    font-size: 13px;
-    color: #5a7a90;
-    max-width: 400px;
-    line-height: 1.5;
-  }
+  .btn-install svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .install-note { margin: 12px 0 0; font-size: 13px; color: #5a7080; max-width: 400px; line-height: 1.5; }
   /* iOS callout */
-  .ios-callout {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: 12px;
-    padding: 14px 16px;
-    color: #8fa4b8;
-    font-size: 14px;
-    line-height: 1.5;
-    max-width: 440px;
-  }
-  .ios-callout svg {
-    width: 18px;
-    height: 18px;
-    stroke: currentColor;
-    fill: none;
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    flex-shrink: 0;
-    margin-top: 1px;
-  }
-  .ios-share {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    stroke: #d9b461;
-    fill: none;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    vertical-align: middle;
-    margin: 0 2px;
-  }
+  .ios-callout { display: flex; align-items: flex-start; gap: 10px; background: rgba(6,21,34,.05); border: 1px solid rgba(6,21,34,.1); border-radius: 12px; padding: 14px 16px; color: #4a5568; font-size: 14px; line-height: 1.5; max-width: 440px; }
+  .ios-callout svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; margin-top: 1px; }
+  .ios-share { display: inline-block; width: 16px; height: 16px; stroke: var(--gold-dark, #8a6a1a); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; margin: 0 2px; }
   /* Phone mockup */
-  .install-phone-img {
-    width: 260px;
-    height: auto;
-    border-radius: 28px;
-    box-shadow: 0 32px 80px rgba(0,0,0,.55);
-  }
+  .install-phone-img { width: clamp(200px, 28vw, 300px); height: auto; border-radius: 16px; display: block; box-shadow: 0 24px 60px rgba(6,21,34,.28); }
+  .btn-navy { background: #061522; color: #f3ead4; border-color: #061522; }
+  .btn-navy:hover { background: #0d2133; }
   /* ── end PWA Install ─────────────────────────────────────────────────────── */
   </style>
 </head>
@@ -339,7 +174,7 @@
               <a class="btn btn-gold" href="/onboarding">Join AGAPAY</a>
               <a class="btn btn-outline" href="/give/find-parish">Find a Parish</a>
               <a class="btn btn-outline" href="/give/why">Why AGAPAY Exists</a>
-              <a class="btn btn-gold" href="#install">Get the App</a>
+              <a class="btn btn-navy" href="#install">Get the App</a>
             </div>
             <div class="hero-note">Built for stewardship, commemorations, candles, offerings, and the daily work of sustaining Orthodox life.</div>
           </div>
