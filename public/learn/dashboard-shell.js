@@ -3280,6 +3280,29 @@ function setupGroupOptions(children = [], groupingMode = "forms") {
   return groupingMode === "grades" ? unique : [...new Set([...formOptions, ...unique])];
 }
 
+function activeSetupGroupLabels(children = [], groupingMode = "forms", resources = []) {
+  const childLabels = (groupingMode === "grades"
+    ? children.map((child) => child.gradeLabel || child.grade)
+    : children.map((child) => child.formLabel || child.form))
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+  const resourceLabels = resources.flatMap((resource) => {
+    if (Array.isArray(resource.formLabels) && resource.formLabels.length) return resource.formLabels;
+    return [resource.formLabel, resource.gradeLabel];
+  }).map((value) => String(value || "").trim()).filter(Boolean);
+  const fallback = groupingMode === "grades" ? [] : formOptions;
+  return [...new Set([...childLabels, ...resourceLabels, ...fallback])];
+}
+
+function primaryResourceGroupLabel(resource = {}, groupingMode = "forms") {
+  const labels = Array.isArray(resource.formLabels)
+    ? resource.formLabels.map((value) => String(value || "").trim()).filter(Boolean)
+    : String(resource.formLabels || resource.formLabel || "").split(",").map((value) => value.trim()).filter(Boolean);
+  if (labels.length) return labels[0];
+  if (groupingMode === "grades" && resource.gradeLabel) return String(resource.gradeLabel).trim();
+  return "";
+}
+
 const weeklyFrequencyOptions = [
   { value: "daily", label: "Daily" },
   { value: "4x", label: "4x / week" },
@@ -3336,8 +3359,15 @@ function scheduledTermWeeks(value, totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
   return selected.length ? [...new Set(selected)].sort((a, b) => a - b) : Array.from({ length: totalWeeks }, (_, index) => index + 1);
 }
 
-function termWeekSummary(weeks = [], totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
-  const selected = scheduledTermWeeks(weeks, totalWeeks);
+function selectedTermWeeks(value, totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
+  const direct = Array.isArray(value) ? value : String(value || "").split(",");
+  return [...new Set(direct
+    .map((week) => Number.parseInt(week, 10))
+    .filter((week) => Number.isInteger(week) && week >= 1 && week <= totalWeeks))]
+    .sort((a, b) => a - b);
+}
+
+function termWeekSummaryFromSelected(selected = [], totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
   if (selected.length === totalWeeks) return `All ${totalWeeks} weeks`;
   if (!selected.length) return "Choose weeks";
   const ranges = [];
@@ -3350,6 +3380,10 @@ function termWeekSummary(weeks = [], totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
   }
   ranges.push(start === previous ? `${start}` : `${start}-${previous}`);
   return `Weeks ${ranges.join(", ")}`;
+}
+
+function termWeekSummary(weeks = [], totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
+  return termWeekSummaryFromSelected(scheduledTermWeeks(weeks, totalWeeks), totalWeeks);
 }
 
 function setupTermWeekPicker(value, totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
@@ -3370,9 +3404,8 @@ function resourceFieldName(index, field) {
 }
 
 function setupResourceWeekPicker(index, scheduledWeeks = [], totalWeeks = DEFAULT_TERM_WEEK_COUNT) {
-  const selected = scheduledTermWeeks(scheduledWeeks, totalWeeks);
-  const allWeeks = selected.length === totalWeeks;
-  const summary = allWeeks ? "All weeks" : termWeekSummary(selected, totalWeeks);
+  const selected = selectedTermWeeks(scheduledWeeks, totalWeeks);
+  const summary = termWeekSummaryFromSelected(selected, totalWeeks);
   const name = resourceFieldName(index, "scheduledWeeks");
   return `<details class="learn-day-picker learn-term-week-picker learn-resource-week-picker" data-resource-week-picker="${index}"><summary><span>Active weeks</span><strong data-term-week-summary>${html(summary)}</strong></summary><div class="learn-day-picker-menu" style="grid-template-columns:repeat(4,minmax(54px,1fr));">${Array.from({ length: totalWeeks }, (_, i) => i + 1).map((week) => `<label><input type="checkbox" data-term-week-choice value="${week}" ${selected.includes(week) ? "checked" : ""}>W${week}</label>`).join("")}</div><div style="display:flex;gap:8px;padding:8px 10px 2px;"><button type="button" data-term-weeks-all class="learn-add-button" style="padding:6px 10px;">All</button><button type="button" data-term-weeks-odd class="learn-add-button" style="padding:6px 10px;">Odd</button><button type="button" data-term-weeks-even class="learn-add-button" style="padding:6px 10px;">Even</button></div><input type="hidden" data-resource-field="scheduledWeeks" name="${html(name)}" value="${html(selected.join(","))}"></details>`;
 }
@@ -3407,14 +3440,14 @@ function setupResourceChildPicker(index, children = [], selectedIds = []) {
 }
 
 function setupResourcePlanningCard(index, resource = {}, children = [], groupingMode = "forms") {
-  return `<details class="learn-weekly-plan-fields learn-resource-plan-fields"><summary><span>Weekly chapters / lessons / pages</span><strong>${html(termWeekSummary(resource.scheduledWeeks || []))}</strong></summary><div class="learn-resource-plan-controls">${setupResourceWeekPicker(index, resource.scheduledWeeks || [])}${setupResourcePlanningModePicker(index, resource, children, groupingMode)}${setupResourceChildPicker(index, children, resource.childIds || [])}</div>${setupResourceWeeklyPlanFields(index, resource.weeklyPlans || [])}</details>`;
+  return `<details class="learn-weekly-plan-fields learn-resource-plan-fields"><summary><span>Weekly chapters / lessons / pages</span><strong>${html(termWeekSummaryFromSelected(selectedTermWeeks(resource.scheduledWeeks || [])))}</strong></summary><div class="learn-resource-plan-controls">${setupResourceWeekPicker(index, resource.scheduledWeeks || [])}${setupResourcePlanningModePicker(index, resource, children, groupingMode)}${setupResourceChildPicker(index, children, resource.childIds || [])}</div>${setupResourceWeeklyPlanFields(index, resource.weeklyPlans || [])}</details>`;
 }
 
 function normalizeSetupResource(resource, subject = {}) {
   const raw = typeof resource === "string" ? { title: resource } : (resource || {});
   return {
     title: String(raw.title || raw.resource || ""),
-    scheduledWeeks: raw.scheduledWeeks || subject.scheduledWeeks || [],
+    scheduledWeeks: raw.scheduledWeeks || [],
     weeklyPlans: raw.weeklyPlans || subject.weeklyPlans || [],
     planningMode: raw.planningMode || subject.planningMode || "forms",
     formLabel: raw.formLabel || subject.formLabel || "",
@@ -3432,7 +3465,7 @@ function setupResourceRow(resource = {}, index = 0, children = [], groupingMode 
   const removeBtn = index > 0
     ? `<button type="button" data-remove-resource aria-label="Remove resource">×</button>`
     : "";
-  const summary = termWeekSummary(resource.scheduledWeeks || []);
+  const summary = termWeekSummaryFromSelected(selectedTermWeeks(resource.scheduledWeeks || []));
   return `<div data-resource-row="${index}" class="learn-resource-card">
     <div class="learn-resource-card-summary">
       <small>${html(index === 0 ? "Book / source / resource" : `Resource ${index + 1}`)}</small>
@@ -3454,10 +3487,35 @@ function setupResourceRow(resource = {}, index = 0, children = [], groupingMode 
   </div>`;
 }
 
+function setupResourceLane(label, rows = [], index = 0, groupingMode = "forms") {
+  const laneLabel = label || "Family-Based";
+  const resourceLabel = rows.length === 1 ? "resource" : "resources";
+  const addLabel = label ? `+ Add ${laneLabel} resource` : "+ Add family resource";
+  return `<section class="learn-resource-form-lane" data-resource-lane="${html(label || "__family")}">
+    <header><span>${html(laneLabel)}</span><strong>${rows.length} ${resourceLabel}</strong></header>
+    <div class="learn-resource-form-lane-body">${rows.join("")}<button type="button" data-add-resource data-resource-form-label="${html(label)}" data-resource-grouping-mode="${html(groupingMode)}">${html(addLabel)}</button></div>
+  </section>`;
+}
+
 function setupResourceList(resources = [], children = [], groupingMode = "forms", subject = {}) {
   // resources: array of {title, scheduledWeeks} objects, or plain strings (legacy)
-  const entries = Array.isArray(resources) && resources.length ? resources : [{ title: "", scheduledWeeks: [] }];
+  const entries = Array.isArray(resources) && resources.length
+    ? resources
+    : (groupingMode === "forms" ? [] : [{ title: "", scheduledWeeks: [] }]);
   const normalised = entries.map((entry) => normalizeSetupResource(entry, subject));
+  if (groupingMode === "forms") {
+    const groupLabels = activeSetupGroupLabels(children, groupingMode, normalised);
+    const lanes = new Map([["", []], ...groupLabels.map((label) => [label, []])]);
+    normalised.forEach((resource, index) => {
+      const label = primaryResourceGroupLabel(resource, groupingMode);
+      if (!lanes.has(label)) lanes.set(label, []);
+      lanes.get(label).push(setupResourceRow(resource, index, children, groupingMode));
+    });
+    const renderedLanes = [...lanes.entries()]
+      .map(([label, rows], index) => setupResourceLane(label, rows, index, groupingMode))
+      .join("");
+    return `<div data-resource-list class="learn-resource-list learn-resource-list-by-form">${renderedLanes}</div>`;
+  }
   const rows = normalised.map((resource, index) => setupResourceRow(resource, index, children, groupingMode)).join("");
   return `<div data-resource-list class="learn-resource-list">${rows}<button type="button" data-add-resource>+ Add resource</button></div>`;
 }
@@ -3572,10 +3630,11 @@ function churchRhythmSetupPanel(vm) {
 
 function setupTileValue(vm, group, panelId, fallback) {
   const tile = vm.setupTiles?.[group]?.[panelId] || {};
+  const allowSavedTitle = group !== "subjects" || isOdysseyLearnContext();
   return {
     ...fallback,
-    title: tile.title || fallback.title,
-    detail: tile.detail || fallback.detail,
+    title: allowSavedTitle ? tile.title || fallback.title : fallback.title,
+    detail: allowSavedTitle ? tile.detail || fallback.detail : fallback.detail,
     minutes: tile.minutes || fallback.minutes || "20"
   };
 }
@@ -4546,8 +4605,10 @@ function renderSetup(vm) {
     ? "Keep each child's familiar grade or level. Forms stay out of the way, and Planner and Print organize assignments by grade or individual child."
     : "Assign each child a Form and color. Forms let siblings at similar stages share work without duplicating the plan.";
   const collapseDefault = Boolean(vm.setupCompleted);
+  const rhythmSetupTitle = isOdysseyLearnContext() ? "Daily Rhythm" : "Church Rhythm";
+  const rhythmSetupSummary = isOdysseyLearnContext() ? "Daily prayers, readings, saints, feasts, and fasting notes" : "Daily prayers, readings, saints, feasts, and fasting rhythm";
   const adaptivePanels = {
-    church: `<span id="learnSetupChurchRhythm" class="learn-setup-anchor"></span>${collapsibleSetupPanel("churchRhythm", "Church Rhythm", churchRhythmSetupPanel(vm), { icon: "☩", summary: "Daily prayers, readings, saints, feasts, and fasting rhythm", defaultCollapsed: collapseDefault })}`,
+    church: `<span id="learnSetupChurchRhythm" class="learn-setup-anchor"></span>${collapsibleSetupPanel("churchRhythm", rhythmSetupTitle, churchRhythmSetupPanel(vm), { icon: "☩", summary: rhythmSetupSummary, defaultCollapsed: collapseDefault })}`,
     enrichment: `<span id="learnSetupFormation" class="learn-setup-anchor"></span>${panel("Enrichment", formationSetupPanel(vm), { icon: "✥", largeTitle: true })}`,
     subjects: `<span id="learnSetupSubjects" class="learn-setup-anchor"></span>${panel(experience.subjectTitle, formSubjectsSetupPanel(vm, currentTermId), { icon: "✎", largeTitle: true })}`
   };
@@ -4957,20 +5018,21 @@ function rowResources(row) {
   // Read resources.N.title / resources.N.scheduledWeeks from [data-resource-list]
   const resourceRows = [...row.querySelectorAll("[data-resource-list] [data-resource-row]")];
   if (resourceRows.length) {
-    return resourceRows.map((resourceRow, i) => {
-      const titleInput = resourceRow.querySelector(`[name="resources.${i}.title"]`) || resourceRow.querySelector("input[type='text']");
-      const weeksInput = resourceRow.querySelector(`[name="resources.${i}.scheduledWeeks"]`);
+    return resourceRows.map((resourceRow) => {
+      const index = Number(resourceRow.dataset.resourceRow || 0);
+      const titleInput = resourceRow.querySelector(`[name="resources.${index}.title"]`) || resourceRow.querySelector("input[type='text']");
+      const weeksInput = resourceRow.querySelector(`[name="resources.${index}.scheduledWeeks"]`);
       const title = titleInput?.value?.trim() || "";
-      const scheduledWeeks = scheduledTermWeeks(weeksInput?.value || "");
+      const scheduledWeeks = selectedTermWeeks(weeksInput?.value || "");
       return {
         title,
         scheduledWeeks,
-        weeklyPlans: rowResourceWeeklyPlans(resourceRow, i),
-        planningMode: rowResourceValue(resourceRow, i, "planningMode"),
-        formLabel: rowResourceValue(resourceRow, i, "formLabel"),
-        formLabels: rowResourceValue(resourceRow, i, "formLabels").split(",").map((value) => value.trim()).filter(Boolean),
-        gradeLabel: rowResourceValue(resourceRow, i, "gradeLabel"),
-        childIds: rowResourceValue(resourceRow, i, "childIds").split(",").map((value) => value.trim()).filter(Boolean)
+        weeklyPlans: rowResourceWeeklyPlans(resourceRow, index),
+        planningMode: rowResourceValue(resourceRow, index, "planningMode"),
+        formLabel: rowResourceValue(resourceRow, index, "formLabel"),
+        formLabels: rowResourceValue(resourceRow, index, "formLabels").split(",").map((value) => value.trim()).filter(Boolean),
+        gradeLabel: rowResourceValue(resourceRow, index, "gradeLabel"),
+        childIds: rowResourceValue(resourceRow, index, "childIds").split(",").map((value) => value.trim()).filter(Boolean)
       };
     }).filter((r) => r.title);
   }
@@ -4979,11 +5041,41 @@ function rowResources(row) {
   return legacy ? [{ title: legacy, scheduledWeeks: [] }] : [];
 }
 
+function resourceRowPrimaryGroupLabel(resourceRow, groupingMode = "forms") {
+  const index = Number(resourceRow?.dataset.resourceRow || 0);
+  return primaryResourceGroupLabel({
+    formLabel: rowResourceValue(resourceRow, index, "formLabel"),
+    formLabels: rowResourceValue(resourceRow, index, "formLabels").split(",").map((value) => value.trim()).filter(Boolean),
+    gradeLabel: rowResourceValue(resourceRow, index, "gradeLabel")
+  }, groupingMode);
+}
+
+function refreshResourceLaneCounts(list) {
+  if (!list) return;
+  list.querySelectorAll("[data-resource-lane]").forEach((lane) => {
+    const count = lane.querySelectorAll("[data-resource-row]").length;
+    const countEl = lane.querySelector("header strong");
+    if (countEl) countEl.textContent = `${count} ${count === 1 ? "resource" : "resources"}`;
+  });
+}
+
+function moveResourceRowToLane(resourceRow) {
+  const list = resourceRow?.closest("[data-resource-list]");
+  if (!list?.classList.contains("learn-resource-list-by-form")) return;
+  const groupingMode = list.querySelector("[data-resource-grouping-mode]")?.dataset.resourceGroupingMode || "forms";
+  const label = resourceRowPrimaryGroupLabel(resourceRow, groupingMode);
+  const laneKey = label || "__family";
+  const lane = [...list.querySelectorAll("[data-resource-lane]")].find((candidate) => candidate.dataset.resourceLane === laneKey);
+  const addButton = lane?.querySelector("[data-add-resource]");
+  if (addButton && resourceRow.parentElement !== addButton.parentElement) addButton.before(resourceRow);
+  refreshResourceLaneCounts(list);
+}
+
 function refreshResourceSummary(resourceRow) {
   if (!resourceRow) return;
   const index = Number(resourceRow.dataset.resourceRow || 0);
   const title = resourceRow.querySelector(`[name="${resourceFieldName(index, "title")}"]`)?.value?.trim() || "";
-  const weeks = scheduledTermWeeks(resourceRow.querySelector(`[name="${resourceFieldName(index, "scheduledWeeks")}"]`)?.value || "");
+  const weeks = selectedTermWeeks(resourceRow.querySelector(`[name="${resourceFieldName(index, "scheduledWeeks")}"]`)?.value || "");
   const groups = (resourceRow.querySelector(`[name="${resourceFieldName(index, "formLabels")}"]`)?.value || "")
     .split(",")
     .map((value) => value.trim())
@@ -4995,7 +5087,7 @@ function refreshResourceSummary(resourceRow) {
   const titleEl = resourceRow.querySelector("[data-resource-summary-title]");
   const detailEl = resourceRow.querySelector("[data-resource-summary-detail]");
   if (titleEl) titleEl.textContent = title || "Untitled resource";
-  if (detailEl) detailEl.textContent = [termWeekSummary(weeks), groups.length ? groups.join(", ") : "", children.length ? `${children.length} child-specific` : ""].filter(Boolean).join(" · ");
+  if (detailEl) detailEl.textContent = [termWeekSummaryFromSelected(weeks), groups.length ? groups.join(", ") : "", children.length ? `${children.length} child-specific` : ""].filter(Boolean).join(" · ");
 }
 
 function snapshotResourceModal(modal) {
@@ -5250,7 +5342,7 @@ function setupPayloadFromForm(form) {
         instructionMode: rowValue(row, "instructionMode"),
         schedulingMode: rowValue(row, "schedulingMode"),
         scheduledDays: scheduledDays(rowValue(row, "scheduledDays"), rowValue(row, "weeklyFrequency")),
-        scheduledWeeks: scheduledTermWeeks(rowValue(row, "scheduledWeeks") || primaryResource.scheduledWeeks || ""),
+        scheduledWeeks: selectedTermWeeks(rowValue(row, "scheduledWeeks") || (primaryResource.scheduledWeeks || []).join(",")),
         weeklyFrequency: rowValue(row, "weeklyFrequency"),
         weeklyPlans: rowWeeklyPlans(row).some(Boolean) ? rowWeeklyPlans(row) : primaryResource.weeklyPlans || [],
         weeklyTarget: rowValue(row, "weeklyTarget"),
@@ -5696,9 +5788,17 @@ function wireSetupPage() {
       const groupingMode = document.querySelector('[name="preferences.groupingMode"]')?.value || "forms";
       const children = setupChildRowsFromForm(addResource.closest("[data-setup-form]"));
       const firstResource = rowResources(subjectRow || document.createElement("div"))[0] || {};
-      const newRowHtml = setupResourceRow({ planningMode: firstResource.planningMode || "forms", formLabels: firstResource.formLabels || [], childIds: firstResource.childIds || [] }, index, children, groupingMode);
+      const laneScopedAdd = addResource.hasAttribute("data-resource-form-label");
+      const formLabel = addResource.dataset.resourceFormLabel || "";
+      const newRowHtml = setupResourceRow({
+        planningMode: laneScopedAdd ? (formLabel ? "forms" : "family") : firstResource.planningMode || "forms",
+        formLabel: laneScopedAdd ? formLabel : firstResource.formLabel || "",
+        formLabels: laneScopedAdd ? (formLabel ? [formLabel] : []) : firstResource.formLabels || [],
+        childIds: firstResource.childIds || []
+      }, index, children, groupingMode);
       addResource.insertAdjacentHTML("beforebegin", newRowHtml);
       const newRow = list.querySelector(`[data-resource-row="${index}"]`);
+      refreshResourceLaneCounts(list);
       const modal = newRow?.querySelector("[data-resource-modal]");
       if (modal) {
         snapshotResourceModal(modal);
@@ -5725,6 +5825,7 @@ function wireSetupPage() {
       if (!savingResource) restoreResourceModal(modal);
       const resourceRow = closeResourceModal.closest("[data-resource-row]");
       refreshResourceSummary(resourceRow);
+      if (savingResource) moveResourceRowToLane(resourceRow);
       if (modal) {
         modal.hidden = true;
         modal.style.display = "none";
@@ -5752,6 +5853,7 @@ function wireSetupPage() {
           });
           refreshResourceSummary(row);
         });
+        refreshResourceLaneCounts(list);
       }
       return;
     }
