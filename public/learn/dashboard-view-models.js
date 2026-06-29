@@ -281,9 +281,8 @@ function simpleList(items, mapper) {
 }
 
 function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
-  // ── Household rows: already one-per-block, no grouping needed ──────────────
   const householdItems = safeArray(rawHouseholdRows)
-    .filter((row) => safeArray(row.statuses).some((s) => s !== "empty") || safeArray(row.minutes).some((m) => Number(m) > 0))
+    .filter((row) => safeArray(row.statuses).some((status) => status !== "empty") || safeArray(row.minutes).some((minutes) => Number(minutes) > 0))
     .map((row, index) => ({
       id: text(row.id, `household-${index}`),
       kind: text(row.kind, "household"),
@@ -293,99 +292,78 @@ function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
       minutes: Number(safeArray(row.minutes).find((minutes) => Number(minutes) > 0) || row.minutesPlanned || 20),
       statuses: safeArray(row.statuses),
       weeklyFrequency: text(row.weeklyFrequency || row.cadenceLabel, ""),
-      gracePriority: text(row.gracePriority, "keep"),
+      gracePriority: text(row.gracePriority, ""),
       graceNote: text(row.graceNote, "")
     }));
 
-  // ── Child rows: group to avoid duplicates based on planning mode ───────────
-  // Two levels of grouping:
-  //   Level 1 — planning mode (determines card count per subject):
-  //     family   → planningMode !== "forms" (or no formLabels/childIds) → one card
-  //     form     → formLabels set, no childIds                          → one card per form label
-  //     specific → childIds set                                         → one card, all children listed
-  //   Level 2 — resources: multiple resources on the same subject collapse into
-  //     one card; resource titles accumulate and are joined in the sub line.
-  //     minutes/statuses are merged via per-day OR so the card is active whenever
-  //     any of its resources is active.
-  const grouped = new Map(); // groupKey → merged card
+  const grouped = new Map();
   safeArray(rawChildRows).forEach((row, index) => {
     const planningMode = text(row.planningMode, "forms");
-    const formLabels   = safeArray(row.formLabels);
-    const childIds     = safeArray(row.childIds);
-    const sourceId     = text(row.sourceId || row.id, `child-src-${index}`);
-    const childName    = text(row.child?.firstName || row.child?.name, "");
+    const formLabels = safeArray(row.formLabels);
+    const childIds = safeArray(row.childIds);
+    const sourceId = text(row.sourceId || row.id, `child-src-${index}`);
+    const childDisplayName = childName(row.child, index);
     const childFormLabel = text(row.child?.formLabel || row.child?.gradeLabel, "");
     const resourceTitle = text(row.resourceTitle || row.detail || row.subtitle, "");
-    const color        = text(row.color || row.child?.color, ACCENTS[(index + rawHouseholdRows.length) % ACCENTS.length]);
-    const rowMinutes   = safeArray(row.minutes);
-    const statuses     = safeArray(row.statuses);
-    const weeklyFreq   = text(row.weeklyFrequency || row.cadenceLabel, "");
-    const gracePriority = text(row.gracePriority, "keep");
-    const graceNote    = text(row.graceNote, "");
-
-    const isFamily   = planningMode !== "forms" || (!formLabels.length && !childIds.length);
+    const color = text(row.color || row.child?.color, ACCENTS[(index + safeArray(rawHouseholdRows).length) % ACCENTS.length]);
+    const rowMinutes = safeArray(row.minutes).map((minutes) => Number(minutes || 0));
+    const statuses = safeArray(row.statuses);
+    const weeklyFrequency = text(row.weeklyFrequency || row.cadenceLabel, "");
+    const isFamily = planningMode !== "forms" || (!formLabels.length && !childIds.length);
     const isSpecific = childIds.length > 0;
+    const activeThisWeek = statuses.some((status) => status !== "empty") || rowMinutes.some((minutes) => minutes > 0);
+    if (!activeThisWeek) return;
 
-    // Skip rows where the subject is not active this week
-    const isActiveThisWeek = statuses.some((s) => s !== "empty") || rowMinutes.some((m) => Number(m) > 0);
-    if (!isActiveThisWeek) return;
-
-    // Group key: no resourceIndex — all resources for the same subject+scope collapse
-    let groupKey;
-    let kind;
-    if (isFamily) {
-      groupKey = `family:${sourceId}`;
-      kind = "family";
-    } else if (isSpecific) {
-      groupKey = `specific:${sourceId}`;
-      kind = "specific";
-    } else {
-      const formKey = childFormLabel || formLabels[0] || "form";
-      groupKey = `form:${sourceId}:${formKey}`;
-      kind = "form";
-    }
+    const groupKey = isFamily
+      ? `family:${sourceId}`
+      : isSpecific
+        ? `specific:${sourceId}`
+        : `form:${sourceId}:${childFormLabel || formLabels[0] || "form"}`;
+    const kind = isFamily ? "family" : isSpecific ? "specific" : "form";
 
     if (grouped.has(groupKey)) {
       const existing = grouped.get(groupKey);
-      // Accumulate child names
-      if (childName && !existing._childNames.includes(childName)) {
-        existing._childNames.push(childName);
-      }
-      // Accumulate resource titles
-      if (resourceTitle && !existing._resourceTitles.includes(resourceTitle)) {
-        existing._resourceTitles.push(resourceTitle);
-      }
-      // Merge minutes and statuses per-day via OR
-      existing._minutesArr = existing._minutesArr.map((m, i) => Math.max(m, Number(rowMinutes[i] || 0)));
-      existing._statusesArr = existing._statusesArr.map((s, i) => s !== "empty" ? s : (statuses[i] || "empty"));
-    } else {
-      grouped.set(groupKey, {
-        id: groupKey,
-        kind,
-        title: text(row.title, "Lesson"),
-        _childNames: childName ? [childName] : [],
-        _formLabel: isFamily ? "" : (!isSpecific ? (childFormLabel || formLabels[0] || "") : ""),
-        _resourceTitles: resourceTitle ? [resourceTitle] : [],
-        _minutesArr: rowMinutes.map((m) => Number(m || 0)),
-        _statusesArr: [...statuses],
-        color,
-        weeklyFrequency: weeklyFreq,
-        gracePriority,
-        graceNote
-      });
+      if (childDisplayName && !existing.childNames.includes(childDisplayName)) existing.childNames.push(childDisplayName);
+      if (resourceTitle && !existing.resourceTitles.includes(resourceTitle)) existing.resourceTitles.push(resourceTitle);
+      existing.minutes = existing.minutes.map((minutes, dayIndex) => Math.max(minutes, rowMinutes[dayIndex] || 0));
+      existing.statuses = existing.statuses.map((status, dayIndex) => status !== "empty" ? status : (statuses[dayIndex] || "empty"));
+      return;
     }
+
+    grouped.set(groupKey, {
+      id: groupKey,
+      kind,
+      title: text(row.title, "Lesson"),
+      childNames: childDisplayName ? [childDisplayName] : [],
+      formLabel: isFamily ? "" : (!isSpecific ? (childFormLabel || formLabels[0] || "") : ""),
+      resourceTitles: resourceTitle ? [resourceTitle] : [],
+      minutes: rowMinutes,
+      statuses: [...statuses],
+      color,
+      weeklyFrequency,
+      gracePriority: text(row.gracePriority, ""),
+      graceNote: text(row.graceNote, "")
+    });
   });
 
   const childItems = Array.from(grouped.values()).map((item) => {
-    const { _childNames, _formLabel, _resourceTitles, _minutesArr, _statusesArr, ...rest } = item;
-    const resourceLine = _resourceTitles.join(", ");
-    const prefixParts = [...(_childNames.length ? [_childNames.join(", ")] : (_formLabel ? [_formLabel] : []))];
-    const sub = [...prefixParts, resourceLine].filter(Boolean).join(" · ");
-    const minutes = Math.max(..._minutesArr.filter(Boolean), 0) || (_minutesArr.find((m) => m > 0) ?? 20);
-    return { ...rest, sub, minutes, statuses: _statusesArr };
+    const resourceLine = item.resourceTitles.join(", ");
+    const prefixParts = item.childNames.length ? [item.childNames.join(", ")] : (item.formLabel ? [item.formLabel] : []);
+    const minutes = Math.max(...item.minutes.filter(Boolean), 0) || 20;
+    return {
+      id: item.id,
+      kind: item.kind,
+      title: item.title,
+      sub: [...prefixParts, resourceLine].filter(Boolean).join(" · "),
+      color: item.color,
+      minutes,
+      statuses: item.statuses,
+      weeklyFrequency: item.weeklyFrequency,
+      gracePriority: item.gracePriority,
+      graceNote: item.graceNote
+    };
   });
 
-  // Household items already unique by id; child items unique by groupKey
   return [...householdItems, ...childItems].filter((item) => item.id && item.title);
 }
 
@@ -554,9 +532,18 @@ export function toDashboardViewModel(rawPayload, context = {}) {
       active: Boolean(dashboard.preferences?.graceModeActive),
       mode: text(dashboard.preferences?.graceModeDefault, "light")
     },
+    gradeReminder: dashboard.gradeReminder ? {
+      show: Boolean(dashboard.gradeReminder.show),
+      termId: text(dashboard.gradeReminder.termId, ""),
+      termLabel: text(dashboard.gradeReminder.termLabel, "Current Term"),
+      endDate: text(dashboard.gradeReminder.endDate, ""),
+      daysUntilEnd: Number(dashboard.gradeReminder.daysUntilEnd ?? 0),
+      missingCount: Number(dashboard.gradeReminder.missingCount || 0),
+      children: safeArray(dashboard.gradeReminder.children).map((name) => text(name, "")).filter(Boolean),
+      href: text(dashboard.gradeReminder.href, "/myagapay/learn/grades")
+    } : null,
     termProgress: {
       label: text(dashboard.termProgress?.label || dashboard.term?.label, "Current Term"),
-      description: text(dashboard.termProgress?.description || dashboard.term?.description, ""),
       currentWeek: Number(dashboard.termProgress?.currentWeek || 0),
       totalWeeks: Number(dashboard.termProgress?.totalWeeks || 0),
       percent: percent(dashboard.termProgress?.percent),
@@ -591,10 +578,6 @@ export function toPlannerViewModel(rawPayload) {
 
   return {
     shell,
-    graceMode: {
-      active: Boolean(planner.graceMode?.active ?? planner.preferences?.graceModeActive),
-      mode: text(planner.graceMode?.mode ?? planner.preferences?.graceModeDefault, "light")
-    },
     page: {
       id: "planner",
       title: "Family Planner",
@@ -738,7 +721,6 @@ export function toPlannerViewModel(rawPayload) {
       activeTermId,
       label: text(planner.term?.label, `Term ${activeTerm}`),
       dateRange: [text(planner.term?.startDate, ""), text(planner.term?.endDate, "")].filter(Boolean).join(" - "),
-      description: text(planner.term?.description, ""),
       paceMode: text(planner.term?.paceMode, ""),
       settings: planner.curriculum?.mappingSummary || [],
       cycleTitle: text(planner.cycle?.year?.title, "Household Cycle"),
@@ -851,11 +833,13 @@ export function toFormationViewModel(rawPayload) {
     },
     recitation: [
       ...simpleList(formation.recitationTracks, (track) => ({
+      id: text(track.id, ""),
       title: text(track.title, "Memory Work"),
       status: text(track.status, ""),
       progress: percent(track.progressPercent)
       })),
       ...mappedMemory.map((item) => ({
+        id: "",
         title: item.title,
         status: item.frequency || item.type,
         progress: 0
@@ -904,21 +888,29 @@ export function toBooksViewModel(rawPayload) {
     shell: shellFromPayload("books", rawPayload),
     page: page("books", "Books", "Living books for the mind, the heart, and the soul."),
     readAlouds: simpleList(books.currentReadAlouds, (book) => ({
+      id: text(book.id || book.bookId, ""),
       title: text(book.title, "Untitled Book"),
       author: text(book.author, ""),
       assignment: text(book.assignmentLabel || book.assignedTerm || book.assignment || book.audienceLabel, ""),
       progress: percent(book.progressPercent),
+      startChapter: Number(book.startChapter || 1),
+      currentChapter: Number(book.currentChapter ?? book.completedThroughChapter ?? book.startChapter ?? 0),
+      endChapter: Number(book.endChapter || book.totalChapters || 0),
       stream: text(book.streamLabel || book.audienceLabel, ""),
       list: text(book.listLabel, "")
     })),
     library: simpleList(books.libraryBooks, (book) => ({
+      id: text(book.id || book.bookId, ""),
       title: text(book.title, "Untitled Book"),
       author: text(book.author, ""),
       category: text(book.category, ""),
       ages: text(book.ageRange || book.ages, ""),
       orthodox: Boolean(book.orthodox),
       assignment: text(book.assignmentLabel || book.assignment || book.audienceLabel || book.formLabel, ""),
-      progress: percent(book.progressPercent)
+      progress: percent(book.progressPercent),
+      startChapter: Number(book.startChapter || 1),
+      currentChapter: Number(book.currentChapter ?? book.completedThroughChapter ?? book.startChapter ?? 0),
+      endChapter: Number(book.endChapter || book.totalChapters || 0)
     })),
     suggestions: simpleList(books.orthodoxSuggestions, (item, index) => ({
       title: text(item.title, "Suggestion"),
@@ -1040,6 +1032,14 @@ export function toGradesViewModel(rawPayload, context = {}) {
   }));
   const selectedChildId = text(context.childId || grades.selectedChildId, children[0]?.id || "");
   const selectedChild = children.find((child) => child.id === selectedChildId) || children[0] || {};
+  const terms = simpleList(grades.terms, (term, index) => ({
+    id: text(term.id, `term_${index + 1}`),
+    label: text(term.label, `Term ${index + 1}`),
+    index: Number(term.index || index + 1),
+    startDate: text(term.startDate, ""),
+    endDate: text(term.endDate, "")
+  }));
+  const currentTermIndex = Math.max(1, Number(grades.currentTermIndex || terms[0]?.index || 1));
   const courses = simpleList(grades.courses, (course, index) => ({
     id: text(course.id, ""),
     childId: text(course.childId || course.child_id, ""),
@@ -1047,6 +1047,8 @@ export function toGradesViewModel(rawPayload, context = {}) {
     subjectCategory: text(course.subjectCategory || course.subject_category, "General"),
     gradeLevel: Number(course.gradeLevel ?? course.grade_level ?? selectedChild.gradeLevel ?? 9),
     creditHours: Number(course.creditHours ?? course.credit_hours ?? 1),
+    termIds: safeArray(course.termIds),
+    setupSeeded: Boolean(course.setupSeeded),
     color: ACCENTS[index % ACCENTS.length],
     grades: [1, 2, 3].map((termIndex) => {
       const grade = safeArray(course.grades).find((entry) => Number(entry.termIndex ?? entry.term_index) === termIndex) || {};
@@ -1061,6 +1063,16 @@ export function toGradesViewModel(rawPayload, context = {}) {
     })
   }));
   const childCourses = courses.filter((course) => !selectedChildId || course.childId === selectedChildId);
+  const appliesToTerm = (course, termIndex) => {
+    const term = terms.find((entry) => Number(entry.index) === Number(termIndex));
+    return !course.termIds.length || !term?.id || course.termIds.includes(term.id);
+  };
+  const termCourses = childCourses.filter((course) => appliesToTerm(course, currentTermIndex));
+  const reportCardMissing = termCourses.filter((course) => !course.grades.find((grade) => Number(grade.termIndex) === currentTermIndex)?.letterGrade);
+  const transcriptMissing = childCourses.filter((course) => {
+    const neededTerms = terms.length ? terms.filter((term) => appliesToTerm(course, term.index)) : [{ index: 1 }, { index: 2 }, { index: 3 }];
+    return neededTerms.some((term) => !course.grades.find((grade) => Number(grade.termIndex) === Number(term.index))?.letterGrade);
+  });
   const gpaPoints = { "A+": 4, A: 4, "A-": 3.7, "B+": 3.3, B: 3, "B-": 2.7, "C+": 2.3, C: 2, "C-": 1.7, "D+": 1.3, D: 1, "D-": .7, F: 0 };
   const finalRows = childCourses.map((course) => ({
     credits: Number(course.creditHours || 0),
@@ -1100,13 +1112,23 @@ export function toGradesViewModel(rawPayload, context = {}) {
     children,
     selectedChildId,
     selectedChild,
+    terms,
+    currentTermIndex,
     courses,
     childCourses,
+    termCourses,
+    readiness: {
+      reportCardReady: Boolean(termCourses.length && !reportCardMissing.length),
+      transcriptReady: Boolean(childCourses.length && !transcriptMissing.length),
+      reportCardMissing: reportCardMissing.length,
+      transcriptMissing: transcriptMissing.length,
+      reportCardTermLabel: terms.find((term) => Number(term.index) === currentTermIndex)?.label || `Term ${currentTermIndex}`
+    },
     summary: {
       totalCredits: earnedCredits.toFixed(1),
       cumulativeGpa: gpaCredits ? (weightedGpa / gpaCredits).toFixed(2) : "0.00",
-      missingGrades: childCourses.reduce((sum, course) => sum + course.grades.filter((grade) => !grade.letterGrade).length, 0),
-      courseCount: childCourses.length || Number(summary.courseCount || 0),
+      missingGrades: reportCardMissing.length,
+      courseCount: termCourses.length || Number(summary.courseCount || 0),
       attendanceDays: attendanceSummaryForChild(selectedChildId).instructionalDays || 0
     },
     attendance: {
@@ -1601,13 +1623,10 @@ export function toPrintCenterViewModel(rawPayload) {
   // printLimit comes from the billing API (advisory) — view model receives it via rawPayload.printLimit
   // which mount() attaches after resolving billing status. Fall back to 3 if not present.
   const printLimit = Math.max(1, Number(rawPayload?.printLimit || 3));
-  const PLANNER_PREMIUM_TYPES = new Set([
-    "term-plan", "liturgical-school-calendar",
-    "planner-lesson-week-form", "planner-lesson-month-form", "planner-lesson-term-form",
-    "planner-lesson-week-child", "planner-lesson-month-child", "planner-lesson-term-child",
-    "planner-chores-day", "planner-chores-week", "planner-chores-month", "planner-chores-week-child",
-    "planner-meals-week", "planner-meals-month",
-    "planner-recipes", "planner-grocery-week",
+  const FREE_PRINT_TEMPLATE_IDS = new Set([
+    "print_mom_weekly",
+    "print_mom_month",
+    "planner_events_month"
   ]);
   return {
     shell: shellFromPayload("print-center", { "print-center": printCenter }),
@@ -1627,7 +1646,7 @@ export function toPrintCenterViewModel(rawPayload) {
       childId: text(template.childId, ""),
       child: template.child ? childName(template.child, index) : "",
       color: ACCENTS[index % ACCENTS.length],
-      premium: template.audience === "child" || PLANNER_PREMIUM_TYPES.has(template.templateType || "")
+      premium: !FREE_PRINT_TEMPLATE_IDS.has(template.id || "")
     })),
     document: {
       title: text(printCenter.printDocument?.title, "Print Preview"),

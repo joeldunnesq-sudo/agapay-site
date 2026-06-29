@@ -3,7 +3,7 @@ import { buildReportCardExport, buildTranscriptExport } from "./academic-exports
 import { buildTranscriptsFromAcademicRecords } from "./academic-records.js";
 import { getLearnSeedSnapshot } from "./demo-data.js";
 import { normalizeCalendarType, SeedLiturgicalSource } from "./liturgical-source.js";
-import { buildPrintJobRequest, buildWeeklyHouseholdPrintDocument } from "./print-engine.js";
+import { buildPrintJobRequest, buildWeeklyHouseholdPrintDocument } from "./print-documents.js";
 import { getLearnSeedForIdentity, learnSetupIdentity } from "./setup-persistence.js";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -169,22 +169,16 @@ function progressFromTerm(term = {}, civilDate = "") {
   if ([start, end, current].some((date) => Number.isNaN(date.getTime())) || end <= start) {
     return {
       label: term.label || "Current Term",
-      description: term.description || "",
       currentWeek: 0,
       totalWeeks: 0,
       percent: 0,
       dateRange: [term.startDate, term.endDate].filter(Boolean).join(" - ")
     };
   }
-  // Prefer the saved weeksCount from Setup; fall back to date-span arithmetic only
-  // if weeksCount was never stored (e.g. very old records).
-  const totalWeeks = term.weeksCount
-    ? Math.max(1, Math.min(24, Number(term.weeksCount)))
-    : Math.max(1, Math.ceil((end - start + 1) / (7 * 24 * 60 * 60 * 1000)));
+  const totalWeeks = Math.max(1, Math.ceil((end - start + 1) / (7 * 24 * 60 * 60 * 1000)));
   const currentWeek = Math.max(1, Math.min(totalWeeks, Math.floor((current - start) / (7 * 24 * 60 * 60 * 1000)) + 1));
   return {
     label: term.label || "Current Term",
-    description: term.description || "",
     currentWeek,
     totalWeeks,
     percent: Math.round((currentWeek / totalWeeks) * 100),
@@ -314,8 +308,51 @@ function int(value, fallback = 0) {
 
 function childrenForProgress(item = {}, children = []) {
   if (item.childId) return children.filter((child) => child.id === item.childId);
+  if (Array.isArray(item.childIds) && item.childIds.length) return children.filter((child) => item.childIds.includes(child.id));
+  if (Array.isArray(item.formLabels) && item.formLabels.length) return children.filter((child) => item.formLabels.includes(child.formLabel) || item.formLabels.includes(child.gradeLabel));
   if (item.formLabel) return children.filter((child) => child.formLabel === item.formLabel || child.gradeLabel === item.formLabel);
   return children;
+}
+
+function daysUntilIso(date = "", civilDate = "") {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date)) || !/^\d{4}-\d{2}-\d{2}$/.test(String(civilDate))) return null;
+  return Math.round((new Date(`${date}T12:00:00Z`) - new Date(`${civilDate}T12:00:00Z`)) / 86400000);
+}
+
+function gradeReminderForTerm(seed = {}, civilDate = new Date().toISOString().slice(0, 10)) {
+  const setup = seed.setupSnapshot || {};
+  if (!setup.children?.length) return null;
+  const currentTermId = setup.schoolYear?.currentTermId || setup.term?.id || seed.term?.id || "";
+  const term = (setup.terms || []).find((entry) => entry.id === currentTermId) || setup.term || seed.term || {};
+  const daysUntilEnd = daysUntilIso(term.endDate, civilDate);
+  if (daysUntilEnd === null || daysUntilEnd > 14) return null;
+  const assigned = (setup.subjects || [])
+    .filter((subject) => !subject.termId || !currentTermId || subject.termId === currentTermId)
+    .flatMap((subject) => childrenForProgress(subject, setup.children || seed.children || []).map((child) => ({
+      childId: child.id,
+      childName: child.firstName || child.name || "Student",
+      subject: subject.title || subject.subjectType || "Subject"
+    })));
+  if (!assigned.length) return null;
+  const graded = new Set((seed.closedAcademicRecords || seed.academicRecords || [])
+    .filter((record) => {
+      const recordTerm = String(record.termId || "");
+      const recordTermMatches = !currentTermId || recordTerm === currentTermId || recordTerm.replace(/\D+/g, "") === String((setup.terms || []).findIndex((entry) => entry.id === currentTermId) + 1);
+      return recordTermMatches && String(record.mark || record.grade || "").trim();
+    })
+    .map((record) => `${record.childId}::${String(record.subjectTitle || record.subject || "").toLowerCase()}`));
+  const missing = assigned.filter((item) => !graded.has(`${item.childId}::${String(item.subject).toLowerCase()}`));
+  if (!missing.length) return null;
+  return {
+    show: true,
+    termId: currentTermId,
+    termLabel: term.label || "Current Term",
+    endDate: term.endDate || "",
+    daysUntilEnd,
+    missingCount: missing.length,
+    children: Array.from(new Set(missing.map((item) => item.childName))).slice(0, 4),
+    href: "/myagapay/learn/grades"
+  };
 }
 
 function rangeProgress({ start = 1, current = 0, end = 0 } = {}) {
@@ -506,6 +543,13 @@ function monthKeyFromIso(iso) {
   return /^\d{4}-\d{2}/.test(value) ? value.slice(0, 7) : new Date().toISOString().slice(0, 7);
 }
 
+function addMonthsToMonthKey(monthKey = "", offset = 0) {
+  const normalized = /^\d{4}-\d{2}$/.test(String(monthKey || "")) ? monthKey : monthKeyFromIso(new Date().toISOString());
+  const [year, month] = normalized.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1 + offset, 1));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
 function julianOldStyleLabel(civilDate) {
   const [year, month, day] = civilDate.split("-").map(Number);
   const oldStyle = jdnToGregorian(gregorianToJdn(year, month, day) - 13);
@@ -586,17 +630,123 @@ function buildAgapayLiturgicalDays({ calendarType = "julian", startDate, endDate
   });
 }
 
+function normalizeGraceMode(value = "") {
+  const raw = String(value || "").toLowerCase().replace(/[-_]+/g, " ").trim();
+  if (raw === "minimum" || raw === "minimum viable" || raw === "feast only") return "minimum viable";
+  if (raw === "medium" || raw === "light") return "light";
+  return "full";
+}
+
+const GRACE_PRIORITY_RANKS = {
+  core: 0,
+  "always keep": 0,
+  keep: 0,
+  high: 1,
+  important: 1,
+  medium: 2,
+  "reduce first": 2,
+  shorten: 2,
+  helpful: 2,
+  low: 3,
+  optional: 3,
+  "bump if needed": 3,
+  "defer if needed": 3,
+  "defer in minimum": 3,
+  "minimum only": 3
+};
+
+const GRACE_MODE_CAPS = {
+  light: { child: 4, household: 3, shortenKeptWork: false },
+  "minimum viable": { child: 2, household: 1, shortenKeptWork: true }
+};
+
+function gracePriorityRank(row = {}, graceModeRule = {}) {
+  const raw = String(row.gracePriority || row.priorityLevel || "").toLowerCase().replace(/[-_]+/g, " ").trim();
+  if (Object.prototype.hasOwnProperty.call(GRACE_PRIORITY_RANKS, raw)) return GRACE_PRIORITY_RANKS[raw];
+  return Number(row.priority || 0) < Number(graceModeRule.reducePriorityThreshold || 4) ? 0 : 2;
+}
+
+function gracePriorityLabel(row = {}, graceModeRule = {}) {
+  const rank = gracePriorityRank(row, graceModeRule);
+  if (rank <= 0) return "core";
+  if (rank === 1) return "high";
+  if (rank === 2) return "medium";
+  return "low";
+}
+
+function shortenMinutes(minutes, mode) {
+  const value = Number(minutes || 0);
+  if (!value) return value;
+  if (mode === "minimum viable") return Math.min(15, Math.max(10, Math.round(value * 0.4)));
+  return value > 15 ? Math.max(10, Math.round(value * 0.5)) : value;
+}
+
 function applyGraceModeToRows(rows, graceModeRule) {
-  if (!graceModeRule?.mode || graceModeRule.mode === "full") return rows.map((row) => ({ ...row, graceModeApplied: false }));
-  return rows.map((row) => {
-    if (row.priority < graceModeRule.reducePriorityThreshold) return { ...row, graceModeApplied: false };
-    return {
+  const mode = normalizeGraceMode(graceModeRule?.mode);
+  if (mode === "full") {
+    return rows.map((row) => ({
       ...row,
-      graceModeApplied: true,
-      statuses: row.statuses.map((status) => status === "planned" ? "reduced" : status),
-      minutes: row.minutes.map((minutes) => minutes > 15 ? Math.max(10, Math.round(minutes * 0.5)) : minutes)
-    };
-  });
+      graceModeApplied: false,
+      graceModePriority: gracePriorityLabel(row, graceModeRule),
+      graceModeBehavior: "full"
+    }));
+  }
+
+  const cap = GRACE_MODE_CAPS[mode] || GRACE_MODE_CAPS.light;
+  const nextRows = rows.map((row) => ({
+    ...row,
+    statuses: [...(row.statuses || [])],
+    minutes: [...(row.minutes || [])],
+    graceModeApplied: false,
+    graceModePriority: gracePriorityLabel(row, graceModeRule),
+    graceModeBehavior: "kept"
+  }));
+
+  for (let dayIndex = 0; dayIndex < DAYS.length; dayIndex += 1) {
+    const groups = new Map();
+    nextRows.forEach((row, rowIndex) => {
+      const status = row.statuses?.[dayIndex];
+      if (status !== "planned" && status !== "reduced") return;
+      const key = row.childId ? `child:${row.childId}` : "household";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push({
+        rowIndex,
+        rank: gracePriorityRank(row, graceModeRule),
+        priority: Number(row.priority || 999)
+      });
+    });
+
+    groups.forEach((items, key) => {
+      const dailyCap = key.startsWith("child:") ? cap.child : cap.household;
+      const kept = items
+        .sort((left, right) => left.rank - right.rank || left.priority - right.priority || left.rowIndex - right.rowIndex)
+        .slice(0, dailyCap)
+        .map((item) => item.rowIndex);
+      const keptSet = new Set(kept);
+
+      items.forEach((item) => {
+        const row = nextRows[item.rowIndex];
+        if (!keptSet.has(item.rowIndex)) {
+          row.statuses[dayIndex] = "deferred";
+          row.minutes[dayIndex] = 0;
+          row.graceModeApplied = true;
+          row.graceModeBehavior = "deferred-by-cap";
+          return;
+        }
+        if (cap.shortenKeptWork) {
+          const shortened = shortenMinutes(row.minutes[dayIndex], mode);
+          if (shortened !== row.minutes[dayIndex]) {
+            row.minutes[dayIndex] = shortened;
+            row.statuses[dayIndex] = row.statuses[dayIndex] === "planned" ? "reduced" : row.statuses[dayIndex];
+            row.graceModeApplied = true;
+            row.graceModeBehavior = row.graceModeBehavior === "deferred-by-cap" ? row.graceModeBehavior : "shortened-by-mode";
+          }
+        }
+      });
+    });
+  }
+
+  return nextRows;
 }
 
 function familyPlanForDate(seed, civilDate, liturgicalDay = {}) {
@@ -648,7 +798,7 @@ function buildPlannerWeek(seed, calendarType) {
 }
 
 function buildPlannerMonth(seed, calendarType, month = "") {
-  const monthKey = /^\d{4}-\d{2}$/.test(String(month || "")) ? month : monthKeyFromIso(seed.term?.startDate || new Date().toISOString());
+  const monthKey = /^\d{4}-\d{2}$/.test(String(month || "")) ? month : monthKeyFromIso(new Date().toISOString());
   const [year, monthNumber] = monthKey.split("-").map(Number);
   const first = new Date(Date.UTC(year, monthNumber - 1, 1));
   const last = new Date(Date.UTC(year, monthNumber, 0));
@@ -750,6 +900,14 @@ function buildFamilyPlanningPrintTemplates(seed) {
       title: "Term Lesson Plans by Form",
       audience: "household",
       description: "A term overview organized by Form, children, subjects, and planned rhythm."
+    },
+    {
+      id: "print_mom_school_year",
+      householdId,
+      templateType: "school-year-plan",
+      title: "School Year Plan",
+      audience: "household",
+      description: "A full-year printout listing every term's Form courses, enrichment, books, and child-specific assignments."
     },
     {
       id: "planner_meals_week",
@@ -867,9 +1025,9 @@ function buildCurriculum(seed) {
     resources: seed.curriculumResources,
     mappings: seed.curriculumMappings,
     mappingSummary: [
-      ...(seed.cycleYear?.title ? [`Planning cycle: ${seed.cycleYear.title}`] : []),
-      ...(seed.curriculumPackage?.title ? [`Curriculum: ${seed.curriculumPackage.title}`] : []),
-      ...(seed.books?.slice(0, 2).map((book) => `${book.audienceLabel || "Read-aloud"}: ${book.title}`) || [])
+      "AGAPAY defaults map Scripture, catechesis, hymnody, and enrichment into the active cycle.",
+      "Household custom resources map The Wingfeather Saga into the family read-aloud stream.",
+      "The Bronze Bow maps directly to Elias's independent reading track."
     ]
   };
 }
@@ -880,8 +1038,8 @@ function buildGraceMode(seed) {
     seasonAdjustment: seed.seasonAdjustment,
     rule: seed.graceModeRule,
     reasons: ["new baby", "illness", "travel", "caregiving", "feast season", "custom"],
-    modes: ["full", "light", "minimum viable", "feast only", "custom"],
-    preserved: ["Church Rhythms", "Morning Basket", "Catechesis"],
+    modes: ["full", "medium", "light"],
+    preserved: ["Core-ranked work", "High-ranked work until the daily cap", "Orthodox household rhythm"],
     changed: seed.graceModeRule.changedSummary
   };
 }
@@ -1014,6 +1172,7 @@ export class SeedLearnRepository {
         childColumns: hasSetup ? buildChildColumns(this.seed, daily, civilDate) : []
       },
       termProgress: hasSetup ? progressFromTerm(this.seed.term, civilDate) : progressFromTerm({}, civilDate),
+      gradeReminder: hasSetup ? gradeReminderForTerm(this.seed, civilDate) : null,
       weeklySummary: hasSetup ? computeWeeklySummary(this.seed, resolvedCalendar, civilDate) : {
         lessonsCompleted: 0,
         lessonsPlanned: 0,
@@ -1079,12 +1238,12 @@ export class SeedLearnRepository {
         framework: this.seed.cycleFramework,
         year: this.seed.cycleYear,
         topics: this.seed.cycleTopics,
-        visibleFrameworks: seed.cycleTopics?.length
-          ? [...new Set(seed.cycleTopics.map((t) => t.subjectType))].map((type) => ({
-              type,
-              label: seed.cycleTopics.find((t) => t.subjectType === type)?.title || type
-            }))
-          : []
+        visibleFrameworks: [
+          { type: "history", label: "Cycle 2: Medieval / Byzantine focus" },
+          { type: "catechesis", label: "Cycle 2: The Creed and sacramental life" },
+          { type: "enrichment", label: "Picture, poet, composer, and nature rotation" },
+          { type: "recitation", label: "Psalms, hymns, Scripture, and prayers" }
+        ]
       },
       curriculum: buildCurriculum(this.seed),
       graceMode: buildGraceMode(this.seed),
@@ -1129,14 +1288,21 @@ export class SeedLearnRepository {
     const familyPlanning = familyPlanningWithDefaultRecipes(this.seed.familyPlanning || this.seed.setupSnapshot?.familyPlanning || {});
     const plannerTemplates = buildFamilyPlanningPrintTemplates(this.seed);
     const templates = [...householdTemplates, ...childTemplates, ...plannerTemplates];
+    const yearStartMonth = monthKeyFromIso(this.seed.schoolYear?.startDate || this.seed.term?.startDate || new Date().toISOString());
+    const schoolYearMonths = Array.from({ length: 12 }, (_, index) =>
+      buildPlannerMonth(this.seed, resolvedCalendar, addMonthsToMonthKey(yearStartMonth, index))
+    );
     return {
       household: this.seed.household,
       children: this.seed.children,
+      schoolYear: this.seed.schoolYear,
       calendarToggle: buildCalendarToggle(resolvedCalendar),
       term: this.seed.term,
       week: buildPlannerWeek(this.seed, resolvedCalendar),
       month: buildPlannerMonth(this.seed, resolvedCalendar, month),
+      schoolYearMonths,
       termSetup: this.seed.termSetup,
+      setupSnapshot: this.seed.setupSnapshot || null,
       familyPlanning,
       templates: templates.map((template) => ({
         ...template,
@@ -1154,9 +1320,10 @@ export class SeedLearnRepository {
       sampleOutputs: {
         mom: [
           "Weekly household plan",
-          "Term plan",
+          "Landscape term course map",
+          "Full school year course plan",
           "Month calendar",
-          "Liturgical school calendar"
+          "12-month liturgical school year calendar"
         ],
         child: [
           "Weekly assignment sheet",

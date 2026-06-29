@@ -1,6 +1,7 @@
 name = "agapay-site"
 main = "src/worker.js"
 compatibility_date = "2026-05-25"
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
 AGAPAY_FROM_EMAIL = "AGAPAY <onboarding@agapay.app>"
@@ -21,6 +22,8 @@ binding = "ASSETS"
 run_worker_first = [
   "/**.html",
   "/learn",
+  "/learn/odyssey",
+  "/learn/odyssey/*",
   "/myagapay",
   "/myagapay/*",
   "/donor",
@@ -56,3 +59,6 @@ database_id = "24f514a6-6904-425b-a4c8-b3584b23c0be"
 [[r2_buckets]]
 binding = "CAMPAIGN_ASSETS"
 bucket_name = "agapay-campaign-assets"
+
+[browser]
+binding = "BROWSER"

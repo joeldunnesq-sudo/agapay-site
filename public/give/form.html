@@ -598,18 +598,13 @@ body {
       </div>
     </div>
 
-    <!-- PAYMENT METHOD -->
+    <!-- PAYMENT -->
     <div class="payment-section reveal reveal-delay-2">
-      <div class="section-label">Step 4 - Payment method</div>
+      <div class="section-label">Step 4 - Payment</div>
       <div class="payment-choice-grid">
-        <label class="payment-choice" for="paymentCard">
-          <input type="radio" id="paymentCard" name="paymentMethod" value="card" checked onchange="selectPaymentMethod(this.value)" />
-          <span><strong>Card or wallet</strong><small>Fastest option. Apple Pay and Google Pay appear when your device and Stripe settings support them.</small></span>
-        </label>
-        <label class="payment-choice" id="paymentAchChoice" for="paymentAch">
-          <input type="radio" id="paymentAch" name="paymentMethod" value="ach" onchange="selectPaymentMethod(this.value)" />
-          <span><strong>Bank account</strong><small>Lower processing cost for one-time gifts. Bank gifts may take several business days to settle.</small></span>
-        </label>
+        <div class="payment-choice">
+          <span><strong>Secure Stripe checkout</strong><small>Cards, wallets, and any Stripe-supported options appear on the checkout page when available.</small></span>
+        </div>
       </div>
     </div>
 
@@ -1065,22 +1060,12 @@ body {
     }
 
     function selectPaymentMethod(value) {
-      selectedPaymentMethod = value === 'ach' ? 'ach' : 'card';
+      selectedPaymentMethod = 'card';
       updateSummary();
     }
 
     function syncPaymentMethodAvailability() {
-      const recurring = selectedFreq !== 'once';
-      const achRadio = document.getElementById('paymentAch');
-      const cardRadio = document.getElementById('paymentCard');
-      const achChoice = document.getElementById('paymentAchChoice');
-      if (!achRadio || !cardRadio || !achChoice) return;
-      achRadio.disabled = recurring;
-      achChoice.classList.toggle('disabled', recurring);
-      if (recurring && achRadio.checked) {
-        cardRadio.checked = true;
-        selectedPaymentMethod = 'card';
-      }
+      selectedPaymentMethod = 'card';
     }
 
     // NAMES TABS
@@ -1125,14 +1110,12 @@ body {
       document.getElementById('summaryFee').textContent = feeCovered ? '+$' + fees.toFixed(2) : '-$' + fees.toFixed(2);
       document.getElementById('summaryTotal').textContent = '$' + donorTotal.toFixed(2);
       document.getElementById('summaryFeeRow').style.opacity = '1';
-      if (feeTitle) feeTitle.textContent = recurring ? 'Cover the processing fees' : selectedPaymentMethod === 'ach' ? 'Cover the lower bank-transfer fees' : 'Cover the platform fees';
+      if (feeTitle) feeTitle.textContent = recurring ? 'Cover the processing fees' : 'Cover the platform fees';
       if (feeCopy) {
         if (recurring) {
           feeCopy.textContent = feeCovered
             ? `When you cover the fees, ${currentParish.name} receives the full recurring gift. AGAPAY does not add a platform fee to renewals.`
             : `Recurring gifts only pass through Stripe processing costs. AGAPAY does not add a platform fee to renewals.`;
-        } else if (selectedPaymentMethod === 'ach') {
-          feeCopy.textContent = `Bank account gifts cost less than cards and may take several business days to settle.`;
         } else {
           feeCopy.textContent = `When you cover the fees, ${currentParish.name} receives your full gift â€” nothing deducted.`;
         }

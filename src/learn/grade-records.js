@@ -69,17 +69,160 @@ function gradeLevelForChild(child = {}) {
   return match ? Number(match[1]) : 9;
 }
 
+function setupTerms(setupSnapshot = {}) {
+  const terms = list(setupSnapshot.terms).length
+    ? list(setupSnapshot.terms)
+    : list(setupSnapshot.schoolYear?.terms);
+  if (terms.length) {
+    return terms.map((term, index) => ({
+      id: text(term.id, `term_${index + 1}`),
+      label: text(term.label || term.name, `Term ${index + 1}`),
+      index: index + 1,
+      startDate: text(term.startDate || term.start_date, ""),
+      endDate: text(term.endDate || term.end_date, "")
+    }));
+  }
+  return [1, 2, 3].map((index) => ({ id: `term_${index}`, label: `Term ${index}`, index, startDate: "", endDate: "" }));
+}
+
+function currentTermIndex(setupSnapshot = {}) {
+  const terms = setupTerms(setupSnapshot);
+  const currentId = text(setupSnapshot.schoolYear?.currentTermId || setupSnapshot.term?.id, "");
+  return terms.find((term) => term.id === currentId)?.index || 1;
+}
+
+function labelsFrom(value) {
+  if (Array.isArray(value)) return value.map((entry) => text(entry, "")).filter(Boolean);
+  return text(value, "").split(",").map((entry) => entry.trim()).filter(Boolean);
+}
+
+function childrenForSetupItem(item = {}, children = []) {
+  const childIds = new Set(labelsFrom(item.childIds || item.childId));
+  if (childIds.size) return children.filter((child) => childIds.has(child.id));
+  const formLabels = new Set(labelsFrom(item.formLabels || item.formLabel || item.gradeLabel));
+  if (formLabels.size) {
+    return children.filter((child) => formLabels.has(child.formLabel) || formLabels.has(child.gradeLabel));
+  }
+  const mode = text(item.planningMode, "").toLowerCase();
+  if (mode === "child" || mode === "individual") return [];
+  return children;
+}
+
+function termIdsForSetupItem(item = {}, terms = []) {
+  const explicit = labelsFrom(item.termIds || item.termId || item.assignedTermId);
+  if (explicit.length) return explicit;
+  return terms.map((term) => term.id);
+}
+
+function courseCategory(item = {}, fallback = "General") {
+  const raw = text(item.subjectType || item.blockType || item.category || item.type, fallback);
+  const normalized = raw.toLowerCase();
+  if (/english|language|reading|phonics|grammar|composition|literature/.test(normalized)) return "English";
+  if (/math/.test(normalized)) return "Math";
+  if (/science|nature/.test(normalized)) return "Science";
+  if (/history|geography|social/.test(normalized)) return "History";
+  if (/catechesis|theology|formation|recitation|memory|hymn|church/.test(normalized)) return "Theology/Formation";
+  if (/language|lote|latin|greek|spanish|french/.test(normalized)) return "World Language";
+  if (/art|music|fine/.test(normalized)) return "Fine Arts";
+  return raw;
+}
+
+function blankGradesForTerms(courseIdValue, termCount) {
+  return Array.from({ length: Math.max(1, termCount) }, (_, index) => {
+    const termIndex = index + 1;
+    return {
+      id: gradeId(courseIdValue, termIndex),
+      termIndex,
+      numericScore: null,
+      letterGrade: "",
+      teacherNotes: "",
+      attendanceDays: 0
+    };
+  });
+}
+
+function setupCourseTemplates(setupSnapshot = {}, children = [], academicYearName = "") {
+  const householdId = setupSnapshot.identity?.householdId || setupSnapshot.household?.id || "household";
+  const terms = setupTerms(setupSnapshot);
+  const termCount = terms.length || 3;
+  const setupItems = [
+    ...list(setupSnapshot.subjects).map((item) => ({ ...item, setupKind: "subject" })),
+    ...list(setupSnapshot.formation?.enrichmentBlocks).map((item) => ({ ...item, setupKind: "enrichment" })),
+    ...list(setupSnapshot.formationSetup?.enrichmentBlocks).map((item) => ({ ...item, setupKind: "enrichment" }))
+  ];
+  const seen = new Set();
+  return setupItems.flatMap((item, index) => {
+    const title = text(item.title || item.courseTitle || item.blockType, item.setupKind === "enrichment" ? "Enrichment" : "Subject");
+    const assignedChildren = childrenForSetupItem(item, children);
+    const termIds = termIdsForSetupItem(item, terms);
+    return assignedChildren.map((child) => {
+      const id = courseId(
+        householdId,
+        child.id,
+        academicYearName,
+        `${item.setupKind}-${item.id || index}-${title}`
+      );
+      if (seen.has(id)) return null;
+      seen.add(id);
+      const highSchool = gradeLevelForChild(child) >= 9;
+      return {
+        id,
+        childId: child.id,
+        courseTitle: title,
+        subjectCategory: courseCategory(item, item.setupKind === "enrichment" ? "Fine Arts" : "General"),
+        gradeLevel: gradeLevelForChild(child),
+        creditHours: Math.max(0, number(item.credits ?? item.creditHours, highSchool ? 1 : 0)),
+        sourceSetupId: text(item.id, ""),
+        sourceKind: item.setupKind,
+        termIds,
+        setupSeeded: true,
+        grades: blankGradesForTerms(id, termCount)
+      };
+    }).filter(Boolean);
+  });
+}
+
+function mergeSetupAndSavedCourses(setupCourses = [], savedCourses = []) {
+  const merged = new Map(setupCourses.map((course) => [course.id, { ...course, grades: list(course.grades).map((grade) => ({ ...grade })) }]));
+  for (const saved of list(savedCourses)) {
+    const existing = merged.get(saved.id);
+    if (!existing) {
+      merged.set(saved.id, { ...saved, setupSeeded: false, termIds: [], grades: list(saved.grades) });
+      continue;
+    }
+    const savedGrades = new Map(list(saved.grades).map((grade) => [integer(grade.termIndex ?? grade.term_index, 0), grade]));
+    merged.set(saved.id, {
+      ...existing,
+      ...saved,
+      setupSeeded: true,
+      sourceSetupId: existing.sourceSetupId,
+      sourceKind: existing.sourceKind,
+      termIds: existing.termIds,
+      grades: list(existing.grades).map((grade) => ({
+        ...grade,
+        ...(savedGrades.get(integer(grade.termIndex, 0)) || {})
+      }))
+    });
+  }
+  return [...merged.values()].sort((a, b) =>
+    String(a.childId).localeCompare(String(b.childId))
+    || String(a.subjectCategory).localeCompare(String(b.subjectCategory))
+    || String(a.courseTitle).localeCompare(String(b.courseTitle))
+  );
+}
+
 function normalizeCoursePayload(course = {}, { householdId, childId, academicYearName }) {
   const title = text(course.courseTitle || course.course_title, "Untitled Course").slice(0, 160);
   const resolvedCourseId = text(course.id, courseId(householdId, childId, academicYearName, title));
+  const incomingGrades = list(course.grades).length ? list(course.grades) : [{ termIndex: currentTermIndex({}) }];
   return {
     id: resolvedCourseId,
     courseTitle: title,
     subjectCategory: text(course.subjectCategory || course.subject_category, "General").slice(0, 80),
     gradeLevel: Math.max(9, Math.min(12, integer(course.gradeLevel ?? course.grade_level, 9))),
     creditHours: Math.max(0, number(course.creditHours ?? course.credit_hours, 1)),
-    grades: [1, 2, 3].map((termIndex) => {
-      const grade = list(course.grades).find((entry) => integer(entry.termIndex ?? entry.term_index, 0) === termIndex) || {};
+    grades: incomingGrades.map((grade) => {
+      const termIndex = Math.max(1, integer(grade.termIndex ?? grade.term_index, 1));
       const numeric = grade.numericScore ?? grade.numeric_score;
       return {
         id: text(grade.id, gradeId(resolvedCourseId, termIndex)),
@@ -349,6 +492,7 @@ async function ensureLearnBaseRows(env, identity, setupSnapshot, children) {
 
 function buildGradesPayload({ householdId, setupSnapshot, children, academicYearName, courses, attendanceEntries = [] }) {
   const selectedChildId = children[0]?.id || "";
+  const terms = setupTerms(setupSnapshot);
   return {
     household: {
       id: householdId,
@@ -358,6 +502,8 @@ function buildGradesPayload({ householdId, setupSnapshot, children, academicYear
       id: academicYearId(householdId, academicYearName),
       name: academicYearName
     },
+    terms,
+    currentTermIndex: currentTermIndex(setupSnapshot),
     children: children.map((child, index) => ({
       id: child.id,
       firstName: text(child.firstName || child.name, `Child ${index + 1}`),
@@ -390,7 +536,7 @@ export async function handleLearnGrades(request, env) {
         setupSnapshot: seed?.setupSnapshot || seed,
         children: list(seed?.children),
         academicYearName,
-        courses: [],
+        courses: setupCourseTemplates(seed?.setupSnapshot || seed, list(seed?.children), academicYearName),
         attendanceEntries: devAttendanceFor(identity.householdId, academicYearName)
       })
     });
@@ -400,7 +546,8 @@ export async function handleLearnGrades(request, env) {
   const children = await loadChildren(env, identity.householdId, setupSnapshot);
   const url = new URL(request.url);
   const academicYearName = text(url.searchParams.get("academicYear") || defaultAcademicYearName(setupSnapshot), defaultAcademicYearName(setupSnapshot));
-  const courses = await loadCourses(env, identity.householdId, academicYearName);
+  const savedCourses = await loadCourses(env, identity.householdId, academicYearName);
+  const courses = mergeSetupAndSavedCourses(setupCourseTemplates(setupSnapshot, children, academicYearName), savedCourses);
   const attendanceEntries = await loadAttendance(env, identity.householdId, academicYearName);
 
   return json({
@@ -436,7 +583,6 @@ export async function handleLearnGradesSave(request, env) {
   const courses = list(payload.courses)
     .map((course) => normalizeCoursePayload(course, { householdId: identity.householdId, childId, academicYearName }))
     .filter((course) => course.courseTitle);
-  const keepCourseIds = courses.map((course) => course.id);
 
   await ensureLearnBaseRows(env, identity, setupSnapshot, children);
 
@@ -495,28 +641,8 @@ export async function handleLearnGradesSave(request, env) {
     }
   }
 
-  const placeholders = keepCourseIds.map((_, index) => `?${index + 4}`).join(", ");
-  if (keepCourseIds.length) {
-    await d1Run(
-      env,
-      `DELETE FROM courses
-       WHERE household_id = ?1 AND child_id = ?2 AND academic_year_id = ?3 AND id NOT IN (${placeholders})`,
-      identity.householdId,
-      childId,
-      resolvedAcademicYearId,
-      ...keepCourseIds
-    );
-  } else {
-    await d1Run(
-      env,
-      "DELETE FROM courses WHERE household_id = ?1 AND child_id = ?2 AND academic_year_id = ?3",
-      identity.householdId,
-      childId,
-      resolvedAcademicYearId
-    );
-  }
-
   const savedCourses = await loadCourses(env, identity.householdId, academicYearName);
+  const mergedCourses = mergeSetupAndSavedCourses(setupCourseTemplates(setupSnapshot, children, academicYearName), savedCourses);
   return json({
     ok: true,
     savedAt: timestamp,
@@ -525,7 +651,7 @@ export async function handleLearnGradesSave(request, env) {
       setupSnapshot,
       children,
       academicYearName,
-      courses: savedCourses,
+      courses: mergedCourses,
       attendanceEntries: await loadAttendance(env, identity.householdId, academicYearName)
     })
   });
@@ -567,7 +693,7 @@ export async function handleLearnAttendanceSave(request, env) {
         setupSnapshot: setupForPayload,
         children: resolvedChildren,
         academicYearName,
-        courses: [],
+        courses: setupCourseTemplates(setupForPayload, resolvedChildren, academicYearName),
         attendanceEntries
       })
     });
@@ -607,7 +733,8 @@ export async function handleLearnAttendanceSave(request, env) {
     );
   }
 
-  const courses = await loadCourses(env, identity.householdId, academicYearName);
+  const savedCourses = await loadCourses(env, identity.householdId, academicYearName);
+  const courses = mergeSetupAndSavedCourses(setupCourseTemplates(setupForPayload, resolvedChildren, academicYearName), savedCourses);
   return json({
     ok: true,
     savedAt: timestamp,

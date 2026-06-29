@@ -52,6 +52,7 @@ import {
   listKvKeys,
   loadAdminSessionStore,
   loadDonor,
+  loadMyAgapayReleaseFlags,
   missingProductionStoreResponse,
   normalizeAdminActor,
   normalizeEmail,
@@ -151,6 +152,7 @@ import {
   handleAdminLearnCommunity,
   handleAdminLearnSummary,
   handleAdminReleaseStatus,
+  handleAdminMyAgapayReleaseFlags,
   handleAdminRebuildIndexes,
   handleAdminPassword,
   handleAdminRegistrationDetail,
@@ -468,32 +470,32 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
   ["/myagapay/learn/co-op", "/learn/co-op"],
   ["/learn/odyssey", "/learn/odyssey/index.html"],
   ["/learn/odyssey/", "/learn/odyssey/index.html"],
-  ["/learn/odyssey/dashboard", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/planner", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/planner/", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/formation", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/formation/", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/books", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/books/", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/grades", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/grades/", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/community", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/community/", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/co-op", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/co-op/", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/print", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/print/", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/print-center", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/print-center/", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/setup", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/setup/", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/onboarding", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/onboarding/", "/learn/odyssey/dashboard/index.html"],
-  ["/learn/odyssey/dashboard/login", "/learn/odyssey/dashboard/login.html"],
-  ["/learn/odyssey/dashboard/login/", "/learn/odyssey/dashboard/login.html"],
-  ["/learn/odyssey/dashboard/activate", "/learn/odyssey/dashboard/activate.html"],
-  ["/learn/odyssey/dashboard/activate/", "/learn/odyssey/dashboard/activate.html"]
+  ["/learn/odyssey/dashboard", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/planner", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/planner/", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/formation", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/formation/", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/books", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/books/", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/grades", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/grades/", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/community", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/community/", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/co-op", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/co-op/", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/print", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/print/", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/print-center", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/print-center/", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/setup", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/setup/", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/onboarding", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/onboarding/", "/learn/odyssey/odyssey_dashboard_index.html"],
+  ["/learn/odyssey/dashboard/login", "/learn/odyssey/odyssey_login.html"],
+  ["/learn/odyssey/dashboard/login/", "/learn/odyssey/odyssey_login.html"],
+  ["/learn/odyssey/dashboard/activate", "/learn/odyssey/odyssey_activate.html"],
+  ["/learn/odyssey/dashboard/activate/", "/learn/odyssey/odyssey_activate.html"]
 ]);
 
 const DASHBOARD_LEGACY_REDIRECTS = new Map([
@@ -1338,6 +1340,9 @@ export default {
     if (url.pathname === "/api/donor/commemorations") {
       return handleDonorCommemorations(request, env);
     }
+    if (request.method === "GET" && url.pathname === "/api/myagapay/release-flags") {
+      return json({ ok: true, flags: await loadMyAgapayReleaseFlags(env) });
+    }
     if (request.method === "GET" && url.pathname === "/api/admin/registrations") {
       return handleAdminRegistrations(request, env);
     }
@@ -1352,6 +1357,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/admin/release-status") {
       return handleAdminReleaseStatus(request, env);
+    }
+    if (url.pathname === "/api/admin/myagapay/release-flags") {
+      return handleAdminMyAgapayReleaseFlags(request, env);
     }
     if (url.pathname === "/api/admin/rebuild-indexes") {
       return handleAdminRebuildIndexes(request, env);
