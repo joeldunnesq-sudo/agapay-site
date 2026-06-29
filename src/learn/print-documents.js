@@ -618,20 +618,83 @@ function buildGroceryListWeek(printCenter, template, generatedAt) {
 
 // ─── Planner lesson builders ──────────────────────────────────────────────────
 function buildPlannerLessonWeekForm(printCenter, template, generatedAt) {
-  const doc      = baseDocument(printCenter, template, generatedAt);
-  const formRows = groupChildRowsByForm(printCenter.week?.childRows || []);
-  doc.sections = [
-    cardsSection("Week", [
-      { label: "Week",   value: printCenter.week?.label || "Current Week", detail: printCenter.term?.label || "" },
-      { label: "Forms",  value: String(formRows.length), detail: "Active forms this week" },
-    ]),
-    tableSection("Family-Based Learning", ["Rhythm", "Notes", "Min"],
-      (printCenter.week?.householdRows || []).map((r) => [r.title, r.detail, `${sumMinutes(r.minutes)}m`]),
-      { flex: [2.5, 4, 1] }),
-    tableSection("Form Plans", ["Form", "Children", "Assignments"],
-      formRows.map((r) => [r.label, Array.from(r.children).join(", "), r.details.slice(0, 5).join("; ")]),
-      { flex: [1.5, 2, 5] }),
-  ].filter(Boolean);
+  const doc  = baseDocument(printCenter, template, generatedAt);
+  const week = printCenter.week || {};
+
+  // Build the 7-slot day-header array from liturgical days, falling back to DAYS constants
+  const litDays = week.liturgicalDays || [];
+  const dates   = week.dates || [];
+  const dayHeaders = dates.map((date, i) => {
+    const lit       = litDays.find((d) => d.civilDate === date) || {};
+    const weekday   = lit.weekday || lit.weekdayLabel || DAYS[i] || "";
+    const shortDate = date ? date.slice(5).replace("-", "/") : "";
+    return { weekday, shortDate, date, isSunday: weekday === "Sun" || weekday === "Sunday" };
+  });
+
+  // ── Form groups from child rows ──────────────────────────────────────────
+  const formGroups = new Map();
+  (week.childRows || []).forEach((row) => {
+    // Prefer the subject's formLabels array; fall back to child's form label
+    const formLabel = (Array.isArray(row.formLabels) && row.formLabels.filter((l) => l && l !== "__family")[0])
+      || childFormLabel(row.child)
+      || "Form";
+    if (!formGroups.has(formLabel)) {
+      formGroups.set(formLabel, { label: formLabel, days: dayHeaders.map((d) => ({ ...d, assignments: [] })), unassigned: [] });
+    }
+    const group = formGroups.get(formLabel);
+    (row.minutes || []).forEach((mins, dayIndex) => {
+      if (Number(mins || 0) > 0) {
+        group.days[dayIndex].assignments.push({
+          id:    row.id || row.title,
+          title: row.title || "Subject",
+          sub:   row.detail || "",
+          note:  `${Number(mins)}m`,
+          formLabels: row.formLabels || []
+        });
+      }
+    });
+  });
+
+  // ── Family group from household rows ─────────────────────────────────────
+  if ((week.householdRows || []).length) {
+    const familyGroup = { label: "Family", days: dayHeaders.map((d) => ({ ...d, assignments: [] })), unassigned: [] };
+    (week.householdRows || []).forEach((row) => {
+      (row.minutes || []).forEach((mins, dayIndex) => {
+        if (Number(mins || 0) > 0) {
+          familyGroup.days[dayIndex].assignments.push({
+            id:    row.id || row.title,
+            title: row.title || "Household",
+            sub:   row.detail || "",
+            note:  `${Number(mins)}m`,
+            formLabels: []
+          });
+        }
+      });
+    });
+    // Insert Family first
+    const existing = Array.from(formGroups.entries());
+    formGroups.clear();
+    formGroups.set("Family", familyGroup);
+    existing.forEach(([k, v]) => formGroups.set(k, v));
+  }
+
+  // Sort form groups: Family first, then FORM_ORDER, then alpha
+  const sortedForms = Array.from(formGroups.values()).sort((a, b) => {
+    if (a.label === "Family") return -1;
+    if (b.label === "Family") return 1;
+    const ai = FORM_ORDER.indexOf(a.label);
+    const bi = FORM_ORDER.indexOf(b.label);
+    if (ai >= 0 && bi >= 0) return ai - bi;
+    if (ai >= 0) return -1;
+    if (bi >= 0) return 1;
+    return a.label.localeCompare(b.label);
+  });
+
+  doc.layout       = "designed-week-forms-landscape";
+  doc.designedForms = sortedForms;
+  doc.title        = text(`${week.label || "Current Week"} Lesson Plans`);
+  doc.subtitle     = text(`${printCenter.household?.name || "Household"} · ${printCenter.term?.label || "Current Term"}`);
+  doc.footerRole   = "Planner — Lessons by Form";
   return doc;
 }
 
@@ -1255,7 +1318,7 @@ function renderDesignedWeekFormsLandscape(document, state) {
     page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: PAPER });
     page.drawRectangle({ x: 0, y: H - 92, width: W, height: 92, color: NAVY });
     page.drawText("AGAPAY LEARN", { x: pageMargin, y: H - 28, size: 9, font: state.fonts.sansBold, color: GOLD });
-    page.drawText("Weekly Assignment Grid", { x: pageMargin, y: H - 55, size: 20, font: state.fonts.serifBold, color: CREAM });
+    page.drawText(text(form.label === "Family" ? "Family Learning" : `Lessons — ${form.label}`), { x: pageMargin, y: H - 55, size: 20, font: state.fonts.serifBold, color: CREAM });
     const subtitle = wrapText(document.subtitle || "", state.fonts.sans, 8.5, W - pageMargin * 2 - 190).slice(0, 1)[0] || "";
     if (subtitle) page.drawText(subtitle, { x: pageMargin, y: H - 76, size: 8.5, font: state.fonts.sans, color: GOLD_SOFT });
     page.drawText(text(form.label || "Household"), { x: W - pageMargin - 170, y: H - 38, size: 22, font: state.fonts.serifBold, color: GOLD_SOFT });
