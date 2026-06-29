@@ -215,6 +215,7 @@ function pageIntroMeta(id) {
 function pageIntro(vm) {
   const meta = pageIntroMeta(vm.page.id);
   const subtitle = vm.page.subtitle ? vm.page.subtitle : meta.description;
+  const currentMode = vm.graceMode?.active ? vm.graceMode.mode || "light" : "full";
   return `
     <section class="learn-page-intro learn-page-intro--dashboard" aria-labelledby="learn-page-heading">
       <div class="learn-page-intro-heading">
