@@ -1157,12 +1157,14 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
-.learn-setup-row-subject .learn-setup-row-main {
+.learn-setup-row-subject .learn-setup-row-main,
+.learn-setup-row-enrichment .learn-setup-row-main {
   grid-template-columns: 1fr;
   align-items: stretch;
 }
 
-.learn-setup-row-subject.is-resource-drop-target {
+.learn-setup-row-subject.is-resource-drop-target,
+.learn-setup-row-enrichment.is-resource-drop-target {
   border-color: rgba(181, 148, 47, 0.78);
   box-shadow: 0 0 0 3px rgba(181, 148, 47, 0.16);
 }

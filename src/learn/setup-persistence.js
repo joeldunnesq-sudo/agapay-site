@@ -659,15 +659,20 @@ function normalizeSetupPayload(payload = {}, identity) {
     })).filter((hymn) => hymn.title),
     enrichmentBlocks: list(rawFormation.enrichmentBlocks).map((block, index) => {
       const blockDays = scheduledDaysValue(block.scheduledDays, block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x");
+      const blockResources = list(block.resources).length
+        ? list(block.resources).map((resource) => setupResourceValue(resource, block)).filter(Boolean)
+        : [setupResourceValue({ title: block.resource || block.source, scheduledWeeks: block.scheduledWeeks, weeklyPlans: block.weeklyPlans }, block)].filter(Boolean);
+      const primaryResource = blockResources[0] || {};
       return ({
       id: text(block.id, stableId("enrich", block.title, index)),
       householdId: identity.householdId,
       termId: text(block.termId || block.assignedTermId, normalizedTerm.id),
       blockType: text(block.blockType || block.type, "enrichment"),
       title: text(block.title, ""),
-      resource: text(block.resource || block.source, ""),
-      resourceType: resourceTypeValue(block.resourceType || block.sourceType, block.resource || block.source ? "curriculum" : "none"),
-      planningMode: labelsValue(block.formLabels || block.formLabel).length ? "forms" : text(block.planningMode, "family"),
+      resource: text(primaryResource.title || block.resource || block.source, ""),
+      resources: blockResources,
+      resourceType: resourceTypeValue(block.resourceType || block.sourceType, block.resource || block.source || blockResources.length ? "curriculum" : "none"),
+      planningMode: labelsValue(block.formLabels || block.formLabel).length || blockResources.some((resource) => labelsValue(resource.formLabels || resource.formLabel).length) ? "forms" : text(block.planningMode, "family"),
       instructionMode: text(block.instructionMode, "shared"),
       schedulingMode: schedulingModeValue(block.schedulingMode),
       scheduledDays: blockDays,

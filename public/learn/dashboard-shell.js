@@ -3685,7 +3685,21 @@ function formationRecitationSetupRow(track = {}, children = [], groupingMode = "
 
 function formationEnrichmentSetupRow(block = {}, children = [], terms = [], currentTermId = "", groupingMode = "forms", tileMinutes = "") {
   const minutes = block.minutesPlanned || block.minutes || tileMinutes || "20";
-  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupSourceInput("Source", "title", block.title || block.resource || block.source || "")}${setupPlanningModePicker(block, children, groupingMode)}${setupSelect("Schedule type", "weeklyFrequency", block.weeklyFrequency === "1x" ? "weekly" : block.weeklyFrequency || block.cadenceLabel || block.cadence || "weekly", simpleScheduleOptions)}${setupRemoveButton()}<input type="hidden" name="minutesPlanned" value="${html(minutes)}" /><input type="hidden" name="instructionMode" value="${html(block.instructionMode || "shared")}" /><input type="hidden" name="resourceType" value="${html(block.resourceType || block.sourceType || (block.resource || block.source ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(block.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(block.priorityLevel || "enrichment")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupTermWeekPicker(block.scheduledWeeks)}${setupWeeklyPlanFields(block.weeklyPlans)}${setupMultiChildPicker(children, block.childIds || (block.childId ? [block.childId] : []))}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupGraceModeBehavior(block.gracePriority || "medium")}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
+  const resourceEntries = Array.isArray(block.resources) && block.resources.length
+    ? block.resources
+    : (block.resource || block.source || block.title
+      ? [{
+          title: block.resource || block.source || block.title,
+          scheduledWeeks: block.scheduledWeeks || [],
+          weeklyPlans: block.weeklyPlans || [],
+          planningMode: block.planningMode || "forms",
+          formLabel: block.formLabel || "",
+          formLabels: block.formLabels || [],
+          gradeLabel: block.gradeLabel || "",
+          childIds: block.childIds || (block.childId ? [block.childId] : [])
+        }]
+      : []);
+  return `<div data-setup-row="formationEnrichment" data-id="${html(block.id || "")}" class="learn-setup-row learn-setup-row-enrichment"><div class="learn-setup-row-main"><div class="learn-setup-row-identity">${setupSelect("Formation card", "blockType", block.blockType || block.type || "Art Study", ["Catechesis", "Recitation & Memory Work", "Saints & Feasts", "Icon Study", "Hymn Study", "Art Study", "Music Study", "Folk Songs", "Poetry", "Shakespeare", "Nature Study", "Composer", "Timeline"])}${setupSelect("Schedule type", "weeklyFrequency", block.weeklyFrequency === "1x" ? "weekly" : block.weeklyFrequency || block.cadenceLabel || block.cadence || "weekly", simpleScheduleOptions)}${setupRemoveButton()}</div>${setupResourceList(resourceEntries, children, groupingMode, block)}<input type="hidden" name="minutesPlanned" value="${html(minutes)}" /><input type="hidden" name="instructionMode" value="${html(block.instructionMode || "shared")}" /><input type="hidden" name="resourceType" value="${html(block.resourceType || block.sourceType || (resourceEntries.length ? "curriculum" : "none"))}" /><input type="hidden" name="schedulingMode" value="fixed" /><input type="hidden" name="progressionType" value="${html(block.progressionType || "lessons")}" /><input type="hidden" name="priorityLevel" value="${html(block.priorityLevel || "enrichment")}" /></div><div class="learn-setup-row-meta">${setupSelect("Term", "termId", block.termId || currentTermId, setupTermOptions(terms, { id: currentTermId, label: "Current Term" }))}${setupSelect("If missed", "missedLessonBehavior", block.missedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Credits", "credits", block.credits || "", { type: "number", step: "0.25" })}${setupInput("Final mark", "finalGradeOverride", block.finalGradeOverride || "")}${setupColorSelect("Planner Color", "color", block.color || colorChoices[2])}${setupGraceModeBehavior(block.gracePriority || "medium")}<span class="learn-setup-grace-note">${setupInput("Grace Mode note", "graceNote", block.graceNote || "Deferred gracefully to the reserve list.")}</span></div></div>`;
 }
 
 function churchRhythmSetupPanel(vm) {
@@ -5569,27 +5583,30 @@ function setupPayloadFromForm(form) {
         };
       }),
       enrichmentBlocks: collectRows(form, "formationEnrichment", (row) => {
-        const title = rowValue(row, "title");
+        const resources = rowResources(row);
+        const primaryResource = resources[0] || {};
+        const title = rowValue(row, "title") || primaryResource.title || rowValue(row, "blockType");
         if (!title) return null;
         return {
           id: row.dataset.id || "",
           blockType: rowValue(row, "blockType"),
           title,
-          resource: rowValue(row, "resource") || title,
+          resource: primaryResource.title || rowValue(row, "resource") || title,
+          resources,
           resourceType: rowValue(row, "resourceType"),
-          planningMode: rowValue(row, "planningMode"),
+          planningMode: rowValue(row, "planningMode") || primaryResource.planningMode || "forms",
           instructionMode: rowValue(row, "instructionMode"),
           schedulingMode: rowValue(row, "schedulingMode"),
           scheduledDays: scheduledDays(rowValue(row, "scheduledDays"), rowValue(row, "weeklyFrequency")),
-          scheduledWeeks: scheduledTermWeeks(rowValue(row, "scheduledWeeks")),
+          scheduledWeeks: selectedTermWeeks(rowValue(row, "scheduledWeeks") || (primaryResource.scheduledWeeks || []).join(",")),
           weeklyFrequency: rowValue(row, "weeklyFrequency"),
-          weeklyPlans: rowWeeklyPlans(row),
+          weeklyPlans: rowWeeklyPlans(row).some(Boolean) ? rowWeeklyPlans(row) : primaryResource.weeklyPlans || [],
           cadenceLabel: rowValue(row, "weeklyFrequency"),
-          formLabel: rowValue(row, "formLabel"),
-          formLabels: rowValue(row, "formLabels").split(",").map((value) => value.trim()).filter(Boolean),
-          gradeLabel: rowValue(row, "gradeLabel"),
+          formLabel: rowValue(row, "formLabel") || primaryResource.formLabel || "",
+          formLabels: (rowValue(row, "formLabels") || (primaryResource.formLabels || []).join(",")).split(",").map((value) => value.trim()).filter(Boolean),
+          gradeLabel: rowValue(row, "gradeLabel") || primaryResource.gradeLabel || "",
           childId: rowValue(row, "childId"),
-          childIds: rowValue(row, "childIds").split(",").map((v) => v.trim()).filter(Boolean),
+          childIds: (rowValue(row, "childIds") || (primaryResource.childIds || []).join(",")).split(",").map((v) => v.trim()).filter(Boolean),
           startNumber: rowValue(row, "startNumber"),
           currentNumber: rowValue(row, "currentNumber"),
           endNumber: rowValue(row, "endNumber"),
@@ -5850,7 +5867,7 @@ function wireSetupPage() {
   };
   let draggedResourceRow = null;
   const clearResourceDropTargets = () => {
-    form.querySelectorAll(".learn-setup-row-subject.is-resource-drop-target").forEach((row) => row.classList.remove("is-resource-drop-target"));
+    form.querySelectorAll(".learn-setup-row-subject.is-resource-drop-target, .learn-setup-row-enrichment.is-resource-drop-target").forEach((row) => row.classList.remove("is-resource-drop-target"));
   };
   form.addEventListener("input", (event) => {
     const dayChoice = event.target.closest("[data-day-choice]");
@@ -6128,7 +6145,7 @@ function wireSetupPage() {
   });
   form.addEventListener("dragover", (event) => {
     if (!draggedResourceRow) return;
-    const subjectRow = event.target.closest('[data-setup-row="subjects"]');
+    const subjectRow = event.target.closest('[data-setup-row="subjects"], [data-setup-row="formationEnrichment"]');
     if (!subjectRow || subjectRow.contains(draggedResourceRow)) return;
     event.preventDefault();
     if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
@@ -6136,13 +6153,13 @@ function wireSetupPage() {
     subjectRow.classList.add("is-resource-drop-target");
   });
   form.addEventListener("dragleave", (event) => {
-    const subjectRow = event.target.closest('[data-setup-row="subjects"]');
+    const subjectRow = event.target.closest('[data-setup-row="subjects"], [data-setup-row="formationEnrichment"]');
     if (!subjectRow || subjectRow.contains(event.relatedTarget)) return;
     subjectRow.classList.remove("is-resource-drop-target");
   });
   form.addEventListener("drop", (event) => {
     if (!draggedResourceRow) return;
-    const subjectRow = event.target.closest('[data-setup-row="subjects"]');
+    const subjectRow = event.target.closest('[data-setup-row="subjects"], [data-setup-row="formationEnrichment"]');
     clearResourceDropTargets();
     if (!subjectRow || subjectRow.contains(draggedResourceRow)) return;
     event.preventDefault();

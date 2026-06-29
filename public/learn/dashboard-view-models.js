@@ -1510,6 +1510,20 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         blockType: text(block.blockType || block.type, "Art Study"),
         title: text(block.title, "Enrichment"),
         resource: text(block.resource || block.source, ""),
+        resources: safeArray(block.resources).length
+          ? safeArray(block.resources).map((resource) => typeof resource === "string"
+            ? { title: resource, scheduledWeeks: [], weeklyPlans: [] }
+            : {
+                title: text(resource.title || resource.resource, ""),
+                scheduledWeeks: safeArray(resource.scheduledWeeks),
+                weeklyPlans: safeArray(resource.weeklyPlans),
+                planningMode: text(resource.planningMode, block.planningMode || "forms"),
+                formLabel: text(resource.formLabel, ""),
+                formLabels: safeArray(resource.formLabels),
+                gradeLabel: text(resource.gradeLabel, ""),
+                childIds: safeArray(resource.childIds)
+              }).filter((resource) => resource.title)
+          : [],
         resourceType: text(block.resourceType || block.sourceType, block.resource || block.source ? "curriculum" : "none"),
         cadenceLabel: text(block.cadenceLabel || block.cadence, ""),
         planningMode: text(block.planningMode, "family"),
@@ -1537,6 +1551,20 @@ export function toSetupViewModel(rawPayload, clientState = {}) {
         blockType: text(block.blockType || block.type, "Art Study"),
         title: text(block.title, "Enrichment"),
         resource: text(block.resource || block.source, ""),
+        resources: safeArray(block.resources).length
+          ? safeArray(block.resources).map((resource) => typeof resource === "string"
+            ? { title: resource, scheduledWeeks: [], weeklyPlans: [] }
+            : {
+                title: text(resource.title || resource.resource, ""),
+                scheduledWeeks: safeArray(resource.scheduledWeeks),
+                weeklyPlans: safeArray(resource.weeklyPlans),
+                planningMode: text(resource.planningMode, block.planningMode || "forms"),
+                formLabel: text(resource.formLabel, ""),
+                formLabels: safeArray(resource.formLabels),
+                gradeLabel: text(resource.gradeLabel, ""),
+                childIds: safeArray(resource.childIds)
+              }).filter((resource) => resource.title)
+          : [],
         resourceType: text(block.resourceType || block.sourceType, block.resource || block.source ? "curriculum" : "none"),
         cadenceLabel: text(block.cadenceLabel || block.cadence, ""),
         planningMode: text(block.planningMode, "family"),
