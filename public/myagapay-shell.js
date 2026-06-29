@@ -16,13 +16,22 @@
     account: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>'
   };
 
-  const products = [
-    { id: "home", href: "/myagapay", label: "My AGAPAY", icon: icons.home },
-    { id: "giving", href: "/myagapay/giving", label: "Give", icon: icons.give },
-    { id: "learn", href: "/myagapay/learn", label: "Learn", icon: icons.learn },
-    { id: "market", href: "/marketplace", label: "Market", icon: icons.market },
-    { id: "account", href: "/myagapay/account", label: "Account", icon: icons.account }
-  ];
+  let releaseFlags = {
+    marketplaceDirectoryLive: false
+  };
+
+  function products() {
+    const items = [
+      { id: "home", href: "/myagapay", label: "My AGAPAY", icon: icons.home },
+      { id: "giving", href: "/myagapay/giving", label: "Give", icon: icons.give },
+      { id: "learn", href: "/myagapay/learn", label: "Learn", icon: icons.learn }
+    ];
+    if (releaseFlags.marketplaceDirectoryLive) {
+      items.push({ id: "market", href: "/marketplace", label: "Market", icon: icons.market });
+    }
+    items.push({ id: "account", href: "/myagapay/account", label: "Account", icon: icons.account });
+    return items;
+  }
 
   function activeProduct(pathname = window.location.pathname) {
     if (pathname.startsWith("/myagapay/learn")) return "learn";
@@ -33,7 +42,8 @@
   }
 
   function productNav(active = activeProduct(), className = "my-agapay-tabbar") {
-    return `<nav class="${className}" data-myagapay-global-nav aria-label="My AGAPAY navigation">${products.map((item) => {
+    const navProducts = products();
+    return `<nav class="${className}" data-myagapay-global-nav aria-label="My AGAPAY navigation">${navProducts.map((item) => {
       const current = item.id === active;
       return `<a class="${current ? (className === "learn-product-tabbar" ? "is-active" : "active") : ""}" href="${item.href}"${current ? ' aria-current="page"' : ""}>${item.icon}<span>${item.label}</span></a>`;
     }).join("")}</nav>`;
@@ -47,6 +57,27 @@
       holder.innerHTML = productNav(active, className);
       nav.replaceWith(holder.firstElementChild);
     });
+  }
+
+  function applyMyAgapayReleaseFlags(flags = {}) {
+    releaseFlags = {
+      marketplaceDirectoryLive: flags.marketplaceDirectoryLive === true
+    };
+    document.documentElement.toggleAttribute("data-myagapay-marketplace-directory-live", releaseFlags.marketplaceDirectoryLive);
+    document.querySelectorAll("[data-myagapay-launch-gated]").forEach((el) => {
+      el.hidden = !releaseFlags.marketplaceDirectoryLive;
+    });
+    normalizeProductNavs();
+  }
+
+  async function refreshMyAgapayReleaseFlags() {
+    try {
+      const response = await fetch("/api/myagapay/release-flags", { headers: { Accept: "application/json" } });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok) applyMyAgapayReleaseFlags(result.flags || {});
+    } catch {
+      applyMyAgapayReleaseFlags(releaseFlags);
+    }
   }
 
   function session() {
@@ -90,6 +121,7 @@
 
   window.MyAgapayShell = {
     activeProduct,
+    applyMyAgapayReleaseFlags,
     authHeaders,
     clearSession,
     handleUnauthorized,
@@ -98,11 +130,13 @@
     normalizeProductNavs,
     productNav,
     redirectToLogin,
+    refreshMyAgapayReleaseFlags,
     session
   };
 
   document.addEventListener("DOMContentLoaded", () => {
     normalizeProductNavs();
+    refreshMyAgapayReleaseFlags();
     if (isProtectedPath()) {
       const current = session();
       if (!current.email || !current.token) redirectToLogin("sign-in-required");

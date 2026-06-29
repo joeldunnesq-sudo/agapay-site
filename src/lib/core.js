@@ -573,6 +573,36 @@ export async function d1SetSetting(env, key, value) {
   );
 }
 
+export const MY_AGAPAY_RELEASE_FLAGS_KEY = "myagapay:release-flags";
+
+export function normalizeMyAgapayReleaseFlags(value = {}) {
+  return {
+    marketplaceDirectoryLive: value?.marketplaceDirectoryLive === true
+  };
+}
+
+export async function loadMyAgapayReleaseFlags(env) {
+  let raw = "";
+  if (d1(env)) raw = await d1GetSetting(env, MY_AGAPAY_RELEASE_FLAGS_KEY);
+  if (!raw && env.AGAPAY_REGISTRATIONS) {
+    raw = await env.AGAPAY_REGISTRATIONS.get(MY_AGAPAY_RELEASE_FLAGS_KEY);
+  }
+
+  try {
+    return normalizeMyAgapayReleaseFlags(JSON.parse(raw || "{}"));
+  } catch {
+    return normalizeMyAgapayReleaseFlags();
+  }
+}
+
+export async function saveMyAgapayReleaseFlags(env, flags) {
+  const normalized = normalizeMyAgapayReleaseFlags(flags);
+  const raw = JSON.stringify(normalized);
+  if (d1(env)) await d1SetSetting(env, MY_AGAPAY_RELEASE_FLAGS_KEY, raw);
+  if (env.AGAPAY_REGISTRATIONS) await env.AGAPAY_REGISTRATIONS.put(MY_AGAPAY_RELEASE_FLAGS_KEY, raw);
+  return normalized;
+}
+
 export function parseStoredStripeEvent(raw) {
   if (!raw) return null;
   try {
