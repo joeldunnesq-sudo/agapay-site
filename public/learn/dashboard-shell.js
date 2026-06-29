@@ -3363,7 +3363,7 @@ function activeSetupGroupLabels(children = [], groupingMode = "forms", resources
   const fallback = groupingMode === "grades" ? [] : formOptions;
   const labels = [...new Set([...childLabels, ...resourceLabels, ...fallback])];
   if (groupingMode !== "forms") return labels;
-  const formOrder = ["Form IV", "Form III", "Form II", "Form I", "Little Ones"];
+  const formOrder = ["Little Ones", "Form I", "Form II", "Form III", "Form IV"];
   return labels.sort((a, b) => {
     const aIndex = formOrder.indexOf(a);
     const bIndex = formOrder.indexOf(b);
