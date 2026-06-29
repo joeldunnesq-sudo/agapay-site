@@ -3541,7 +3541,7 @@ function setupResourceRow(resource = {}, index = 0, children = [], groupingMode 
     ? `<a href="${html(resolved)}" target="_blank" rel="noopener noreferrer" class="learn-source-link">Open</a>`
     : "";
   const summary = termWeekSummaryFromSelected(selectedTermWeeks(resource.scheduledWeeks || []));
-  return `<div data-resource-row="${index}" class="learn-resource-card">
+  return `<div data-resource-row="${index}" class="learn-resource-card" draggable="true" title="Drag this resource to another subject tile">
     <div class="learn-resource-card-summary">
       <small>${html(index === 0 ? "Book / source / resource" : `Resource ${index + 1}`)}</small>
       <strong data-resource-summary-title>${html(resolved || "Untitled resource")}</strong>
@@ -5144,6 +5144,46 @@ function moveResourceRowToLane(resourceRow) {
   refreshResourceLaneCounts(list);
 }
 
+function reindexResourceList(list) {
+  if (!list) return;
+  list.querySelectorAll("[data-resource-row]").forEach((row, i) => {
+    row.dataset.resourceRow = i;
+    row.querySelectorAll("[data-resource-field]").forEach((field) => {
+      const key = field.dataset.resourceField || "";
+      if (key) field.name = resourceFieldName(i, key);
+    });
+    const weekPicker = row.querySelector("[data-resource-week-picker]");
+    if (weekPicker) weekPicker.dataset.resourceWeekPicker = i;
+    row.querySelectorAll(".learn-resource-card-summary small, .learn-resource-modal-card > small").forEach((label) => {
+      label.textContent = i === 0 ? "Book / source / resource" : `Resource ${i + 1}`;
+    });
+    refreshResourceSummary(row);
+  });
+  refreshResourceLaneCounts(list);
+}
+
+function moveResourceRowToSubject(resourceRow, subjectRow) {
+  const sourceList = resourceRow?.closest("[data-resource-list]");
+  const targetList = subjectRow?.querySelector("[data-resource-list]");
+  if (!resourceRow || !sourceList || !targetList || sourceList === targetList) return false;
+  if (targetList.classList.contains("learn-resource-list-by-form")) {
+    const groupingMode = targetList.querySelector("[data-resource-grouping-mode]")?.dataset.resourceGroupingMode || "forms";
+    const laneKey = resourceRowPrimaryGroupLabel(resourceRow, groupingMode) || "__family";
+    const lane = [...targetList.querySelectorAll("[data-resource-lane]")].find((candidate) => candidate.dataset.resourceLane === laneKey)
+      || targetList.querySelector("[data-resource-lane]");
+    const addButton = lane?.querySelector("[data-add-resource]");
+    if (addButton) addButton.before(resourceRow);
+    else lane?.querySelector(".learn-resource-form-lane-body")?.appendChild(resourceRow);
+  } else {
+    const addButton = targetList.querySelector("[data-add-resource]");
+    if (addButton) addButton.before(resourceRow);
+    else targetList.appendChild(resourceRow);
+  }
+  reindexResourceList(sourceList);
+  reindexResourceList(targetList);
+  return true;
+}
+
 function refreshResourceSummary(resourceRow) {
   if (!resourceRow) return;
   const index = Number(resourceRow.dataset.resourceRow || 0);
@@ -5808,6 +5848,10 @@ function wireSetupPage() {
     window.clearTimeout(setupAutosaveTimer);
     setupAutosaveTimer = window.setTimeout(() => saveSetupNow({ manual: false }), delay);
   };
+  let draggedResourceRow = null;
+  const clearResourceDropTargets = () => {
+    form.querySelectorAll(".learn-setup-row-subject.is-resource-drop-target").forEach((row) => row.classList.remove("is-resource-drop-target"));
+  };
   form.addEventListener("input", (event) => {
     const dayChoice = event.target.closest("[data-day-choice]");
     if (dayChoice) {
@@ -5964,24 +6008,7 @@ function wireSetupPage() {
       const list = removeResource.closest("[data-resource-list]");
       const removedRow = removeResource.closest("[data-resource-row]");
       removedRow?.remove();
-      // Re-index remaining rows
-      if (list) {
-        list.querySelectorAll("[data-resource-row]").forEach((row, i) => {
-          row.dataset.resourceRow = i;
-          row.querySelectorAll("[data-resource-field]").forEach((field) => {
-            const key = field.dataset.resourceField || "";
-            if (key) field.name = resourceFieldName(i, key);
-          });
-          const weekPicker = row.querySelector("[data-resource-week-picker]");
-          if (weekPicker) weekPicker.dataset.resourceWeekPicker = i;
-          // Update label text for rows after the first
-          row.querySelectorAll(".learn-resource-card-summary small, .learn-resource-modal-card > small").forEach((label) => {
-            label.textContent = i === 0 ? "Book / source / resource" : `Resource ${i + 1}`;
-          });
-          refreshResourceSummary(row);
-        });
-        refreshResourceLaneCounts(list);
-      }
+      reindexResourceList(list);
       return;
     }
     const weekPreset = event.target.closest("[data-term-weeks-all], [data-term-weeks-odd], [data-term-weeks-even]");
@@ -6090,6 +6117,41 @@ function wireSetupPage() {
     const autosaveTrigger = event.target.closest("[data-add-resource], [data-edit-resource], [data-resource-modal-close], [data-resource-modal-save], [data-remove-resource], [data-term-weeks-all], [data-term-weeks-odd], [data-term-weeks-even], [data-setup-remove-row], [data-setup-add-row]");
     if (!autosaveTrigger || event.target.closest("[data-close-term]")) return;
     scheduleSetupAutosave(250);
+  });
+  form.addEventListener("dragstart", (event) => {
+    const resourceRow = event.target.closest("[data-resource-row]");
+    if (!resourceRow || event.target.closest("button, a, input, select, textarea, summary, details")) return;
+    draggedResourceRow = resourceRow;
+    resourceRow.classList.add("is-dragging");
+    event.dataTransfer?.setData("text/plain", resourceRow.dataset.resourceRow || "");
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+  });
+  form.addEventListener("dragover", (event) => {
+    if (!draggedResourceRow) return;
+    const subjectRow = event.target.closest('[data-setup-row="subjects"]');
+    if (!subjectRow || subjectRow.contains(draggedResourceRow)) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+    clearResourceDropTargets();
+    subjectRow.classList.add("is-resource-drop-target");
+  });
+  form.addEventListener("dragleave", (event) => {
+    const subjectRow = event.target.closest('[data-setup-row="subjects"]');
+    if (!subjectRow || subjectRow.contains(event.relatedTarget)) return;
+    subjectRow.classList.remove("is-resource-drop-target");
+  });
+  form.addEventListener("drop", (event) => {
+    if (!draggedResourceRow) return;
+    const subjectRow = event.target.closest('[data-setup-row="subjects"]');
+    clearResourceDropTargets();
+    if (!subjectRow || subjectRow.contains(draggedResourceRow)) return;
+    event.preventDefault();
+    if (moveResourceRowToSubject(draggedResourceRow, subjectRow)) scheduleSetupAutosave(150);
+  });
+  form.addEventListener("dragend", () => {
+    draggedResourceRow?.classList.remove("is-dragging");
+    draggedResourceRow = null;
+    clearResourceDropTargets();
   });
   syncSetupChildLimit(form);
   form.addEventListener("submit", async (event) => {

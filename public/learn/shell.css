@@ -1162,6 +1162,11 @@ body {
   align-items: stretch;
 }
 
+.learn-setup-row-subject.is-resource-drop-target {
+  border-color: rgba(181, 148, 47, 0.78);
+  box-shadow: 0 0 0 3px rgba(181, 148, 47, 0.16);
+}
+
 .learn-setup-row-identity {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(150px, .55fr);
@@ -1283,6 +1288,15 @@ body {
   background: linear-gradient(180deg, rgba(255, 252, 245, 0.92), rgba(248, 241, 227, 0.86));
   padding: 12px;
   box-shadow: 0 1px 3px rgba(20,40,70,.04);
+}
+
+.learn-resource-card[draggable="true"] {
+  cursor: grab;
+}
+
+.learn-resource-card.is-dragging {
+  cursor: grabbing;
+  opacity: 0.58;
 }
 
 .learn-resource-card-summary { display: grid; gap: 4px; min-width: 0; }
