@@ -1185,10 +1185,10 @@ export class SeedLearnRepository {
         framework: this.seed.cycleFramework,
         year: this.seed.cycleYear,
         topics: this.seed.cycleTopics,
-        visibleFrameworks: seed.cycleTopics?.length
-          ? [...new Set(seed.cycleTopics.map((t) => t.subjectType))].map((type) => ({
+        visibleFrameworks: this.seed.cycleTopics?.length
+          ? [...new Set(this.seed.cycleTopics.map((t) => t.subjectType))].map((type) => ({
               type,
-              label: seed.cycleTopics.find((t) => t.subjectType === type)?.title || type
+              label: this.seed.cycleTopics.find((t) => t.subjectType === type)?.title || type
             }))
           : []
       },
