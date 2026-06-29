@@ -3080,8 +3080,7 @@ const formOptions = [
   "Form I",
   "Form II",
   "Form III",
-  "Form IV",
-  "Form V"
+  "Form IV"
 ];
 
 const homeschoolMethodOptions = [
@@ -3156,7 +3155,7 @@ function setupGroupOptions(children = [], groupingMode = "forms") {
   const values = groupingMode === "grades"
     ? children.map((child) => child.gradeLabel || child.grade)
     : children.map((child) => child.formLabel || child.form);
-  const unique = [...new Set(values.map((value) => String(value || "").trim()).filter(Boolean))];
+  const unique = [...new Set(values.map((value) => String(value || "").trim()).filter((value) => value && value !== "Form V"))];
   return groupingMode === "grades" ? unique : [...new Set([...formOptions, ...unique])];
 }
 
@@ -3656,8 +3655,7 @@ function suggestedFormForChild(child = {}) {
     if (age <= 8) return "Form I";
     if (age <= 11) return "Form II";
     if (age <= 14) return "Form III";
-    if (age <= 16) return "Form IV";
-    return "Form V";
+    return "Form IV";
   }
   const grade = String(child.gradeLabel || "").toLowerCase();
   const number = Number.parseInt(grade.match(/\d+/)?.[0] || "", 10);
@@ -3666,8 +3664,7 @@ function suggestedFormForChild(child = {}) {
     if (number <= 3) return "Form I";
     if (number <= 6) return "Form II";
     if (number <= 9) return "Form III";
-    if (number <= 11) return "Form IV";
-    return "Form V";
+    return "Form IV";
   }
   return "Form I";
 }
