@@ -37,7 +37,7 @@
 
   <link rel="stylesheet" href="/styles/index.css" />
   <link rel="stylesheet" href="/styles/numbers.css" />
-<link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="manifest" href="/manifest.webmanifest" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
@@ -113,7 +113,7 @@
   </script>
 </head>
 <body>
-<main>
+  <main>
     <section class="hero">
       <div class="hero-inner">
         <div class="hero-main">
@@ -126,6 +126,7 @@
               <a class="btn btn-gold" href="/onboarding">Join AGAPAY</a>
               <a class="btn btn-outline" href="/give/find-parish">Find a Parish</a>
               <a class="btn btn-outline" href="/give/why">Why AGAPAY Exists</a>
+              <a class="btn btn-gold" href="#install">Get the App</a>
             </div>
             <div class="hero-note">Built for stewardship, commemorations, candles, offerings, and the daily work of sustaining Orthodox life.</div>
           </div>
@@ -147,7 +148,7 @@
             <span><strong>Dedicated Support</strong><br />People who understand the mission.</span>
           </div>
           <div class="hero-trust-item" data-focus-title="Orthodox by design" data-focus-copy="Built around offerings, candles, commemorations, stewardship, and the communities that sustain Orthodox life.">
-           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"> <path d="M12 2v20"/> <path d="M9 6h6"/> <path d="M5 10h14"/> <path d="M9 15L15 19"/> </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"> <path d="M12 2v20"/> <path d="M9 6h6"/> <path d="M5 10h14"/> <path d="M9 15L15 19"/> </svg>
             <span><strong>Built by Orthodox Christians</strong><br />For Orthodox Christians.</span>
           </div>
         </div>
@@ -258,7 +259,7 @@
             </svg>
           </div>
           <div class="ecosystem-side">
-            <div class="ecosystem-item is-active" tabindex="0" data-solution="parishes" data-title="Parishes & Missions" data-copy="One place for stewardship, candles, designated funds, and campaigns, with records that stay clear for parish leaders.">
+            <div class="ecosystem-item is-active" tabindex="0" data-solution="parishes" data-title="Parishes &amp; Missions" data-copy="One place for stewardship, candles, designated funds, and campaigns, with records that stay clear for parish leaders.">
               <div class="icon-ring"><svg viewBox="0 0 24 24"><path d="M4 21h16"/><path d="M6 21V10l6-5 6 5v11"/><path d="M9 21v-6h6v6"/><path d="M12 4V2"/><path d="M10 3h4"/></svg></div>
               <div><h3>Parishes &amp; Missions</h3><p>Receive stewardship, candle offerings, designated funds, and campaigns through one unified platform.</p></div>
             </div>
@@ -452,7 +453,88 @@
         </div>
       </div>
     </section>
+
+    <section class="install reveal" id="install">
+      <div class="install-inner">
+        <div>
+          <div class="install-head">
+            <div class="install-eyebrow">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>
+              Add AGAPAY to your phone
+            </div>
+            <h2>Your giving, a tap away.</h2>
+            <p>Add our web-based app to your home screen for quick access to your giving, intentions, and commemorations. It opens straight from your browser &mdash; no app store, no download.</p>
+          </div>
+    
+          <div class="os-toggle-wrap">
+            <div class="os-toggle" role="tablist" aria-label="Choose your device">
+              <button class="os-btn" id="osAndroidBtn" role="tab" aria-selected="false" aria-controls="panelAndroid">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path class="logo-line" d="M7.2 8.5h9.6c.8 0 1.4.6 1.4 1.4v5.8c0 .8-.6 1.4-1.4 1.4H7.2c-.8 0-1.4-.6-1.4-1.4V9.9c0-.8.6-1.4 1.4-1.4Z"/><path class="logo-line" d="M8.3 8 6.9 5.7M15.7 8l1.4-2.3M9 17.1v2.7M15 17.1v2.7M4.1 10.2v5.3M19.9 10.2v5.3"/><circle cx="9.6" cy="11.4" r=".55"/><circle cx="14.4" cy="11.4" r=".55"/></svg>
+                Android
+              </button>
+              <button class="os-btn" id="osAppleBtn" role="tab" aria-selected="false" aria-controls="panelApple">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.08ZM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25Z"/></svg>
+                iPhone &amp; iPad
+              </button>
+            </div>
+          </div>
+    
+          <div class="os-panel" id="panelAndroid" role="tabpanel" aria-labelledby="osAndroidBtn">
+            <div class="install-steps">
+              <div class="install-step">
+                <span class="isn">1</span>
+                <p>Tap <strong>Install AGAPAY</strong> below. Your browser will ask to add our web-based app to your home screen.</p>
+              </div>
+              <div class="install-step">
+                <span class="isn">2</span>
+                <p>Confirm <strong>Install</strong>, and the AGAPAY icon appears with your other apps.</p>
+              </div>
+              <div class="install-step">
+                <span class="isn">3</span>
+                <p>Open it anytime to give, light a candle, or submit names for commemoration.</p>
+              </div>
+            </div>
+            <div class="install-cta">
+              <button class="btn-install" id="androidInstallBtn">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Install AGAPAY
+              </button>
+              <p class="install-note">If your browser doesn&rsquo;t prompt automatically, it will open AGAPAY so you can choose &ldquo;Add to Home screen&rdquo; from the browser menu.</p>
+            </div>
+          </div>
+    
+          <div class="os-panel" id="panelApple" role="tabpanel" aria-labelledby="osAppleBtn">
+            <div class="install-steps">
+              <div class="install-step">
+                <span class="isn">1</span>
+                <p>Open AGAPAY in <strong>Safari</strong> (iPhone and iPad can add our web-based app from Safari).</p>
+              </div>
+              <div class="install-step">
+                <span class="isn">2</span>
+                <p>Tap the <strong>Share</strong> button
+                  <svg class="ios-share" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4 4 4"/><path d="M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>
+                  at the bottom of the screen.</p>
+              </div>
+              <div class="install-step">
+                <span class="isn">3</span>
+                <p>Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>. The AGAPAY icon appears with your other apps.</p>
+              </div>
+            </div>
+            <div class="install-cta">
+              <span class="ios-callout">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+                On iPhone &amp; iPad, use Safari&rsquo;s Share menu &mdash; Apple doesn&rsquo;t allow a one-tap install button.
+              </span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <img src="/images/app-phone-mockup.png" alt="AGAPAY donor dashboard on a phone" class="install-phone-img" loading="lazy" width="320" height="693" />
+        </div>
+      </div>
+    </section>
   </main>
+
   <script>
     const heroVideo = document.querySelector(".hero-video");
     if (heroVideo) {
@@ -756,6 +838,3 @@
   </script>
 </body>
 </html>
-
-
-
