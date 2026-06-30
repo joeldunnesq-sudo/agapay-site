@@ -1284,10 +1284,10 @@ function renderWeeklyAssignmentBoard(vm) {
         <label class="learn-family-view-toggle" title="Choose how family-wide subjects appear alongside Form subjects">
           <span class="learn-family-view-toggle-label">Show family subjects</span>
           <span class="learn-family-view-switch">
-            <input type="checkbox" data-family-view-toggle checked>
+            <input type="checkbox" data-family-view-toggle>
             <span class="learn-family-view-track"><span class="learn-family-view-thumb"></span></span>
           </span>
-          <span class="learn-family-view-toggle-state" data-family-view-state>with each Form</span>
+          <span class="learn-family-view-toggle-state" data-family-view-state>in its own lane</span>
         </label>
       </div>` : ""}
       <div class="learn-week-assignment-layout">
@@ -6327,9 +6327,14 @@ function wireWeeklyAssignmentBoard(vm) {
   // "separated" pulls them into their own dedicated lane shown above the Form pool at all times.
   const familyViewFromStorage = () => {
     try {
-      return localStorage.getItem(familyViewStorageKey) === "separated" ? "separated" : "mixed";
+      // Default is now "separated": Form pools show only that Form's subjects,
+      // and family-wide subjects live in the Family tab / dedicated lane. A
+      // household can still flip back to "mixed" via the toggle if they'd
+      // rather see family subjects repeated inside every Form's pool.
+      const saved = localStorage.getItem(familyViewStorageKey);
+      return saved === "mixed" ? "mixed" : "separated";
     } catch {
-      return "mixed";
+      return "separated";
     }
   };
   let familyViewMode = familyViewFromStorage();
