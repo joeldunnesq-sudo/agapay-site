@@ -5172,7 +5172,8 @@ function moveResourceRowToLane(resourceRow) {
   const lane = [...list.querySelectorAll("[data-resource-lane]")].find((candidate) => candidate.dataset.resourceLane === laneKey);
   const addButton = lane?.querySelector("[data-add-resource]");
   if (addButton && resourceRow.parentElement !== addButton.parentElement) addButton.before(resourceRow);
-  refreshResourceLaneCounts(list);
+  // Reindex after move so all name attributes reflect actual DOM order
+  reindexResourceList(list);
 }
 
 function reindexResourceList(list) {
@@ -6004,7 +6005,10 @@ function wireSetupPage() {
       addResource.insertAdjacentHTML("beforebegin", newRowHtml);
       const newRow = list.querySelector(`[data-resource-row="${index}"]`);
       refreshResourceLaneCounts(list);
-      const modal = newRow?.querySelector("[data-resource-modal]");
+      // Reindex so the new row's field names are consistent with DOM order
+      reindexResourceList(list);
+      const newRowAfterReindex = list.querySelector(`[data-resource-row="${list.querySelectorAll("[data-resource-row]").length - 1}"]`);
+      const modal = (newRowAfterReindex || newRow)?.querySelector("[data-resource-modal]");
       if (modal) {
         snapshotResourceModal(modal);
         modal.hidden = false;
