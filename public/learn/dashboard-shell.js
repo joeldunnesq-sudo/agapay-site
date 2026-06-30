@@ -1277,7 +1277,10 @@ function renderWeeklyAssignmentBoard(vm) {
       </div>
       ${formLabels.length ? `
       <div class="learn-week-controls-row">
-        <div class="learn-week-form-tabs" aria-label="Planner form selector">${formLabels.map((label, index) => `<button type="button" data-week-form-filter="${html(label)}" aria-pressed="${index === 0 ? "true" : "false"}">${html(label)}</button>`).join("")}</div>
+        <div class="learn-week-form-tabs" aria-label="Planner form selector">
+          <button type="button" class="learn-week-form-tab-family" data-week-form-filter="__family" aria-pressed="false" title="Show only Family — Everyone subjects so you can place them across the week">◈ Family</button>
+          ${formLabels.map((label) => `<button type="button" data-week-form-filter="${html(label)}" aria-pressed="false">${html(label)}</button>`).join("")}
+        </div>
         <label class="learn-family-view-toggle" title="Choose how family-wide subjects appear alongside Form subjects">
           <span class="learn-family-view-toggle-label">Show family subjects</span>
           <span class="learn-family-view-switch">
@@ -6333,6 +6336,11 @@ function wireWeeklyAssignmentBoard(vm) {
   const cardVisibleForForm = (card, formLabel) => {
     const labels = cardFormLabels(card);
     if (!formLabel || !availableForms.length) return true;
+    // The "Family" tab filters the pool down to only family/household cards,
+    // exactly like a Form tab filters down to that Form's cards — independent
+    // of the mixed/separated toggle, which only governs default visibility
+    // when no specific tab (Form or Family) has been chosen to isolate.
+    if (formLabel === "__family") return isFamilyCard(card);
     if (isFamilyCard(card)) {
       // Mixed mode: family cards show under every Form tab. Separated mode: they live
       // in the dedicated lane instead, so hide them from the per-Form pool entirely.
@@ -6342,7 +6350,10 @@ function wireWeeklyAssignmentBoard(vm) {
   };
   const applyFamilyViewMode = () => {
     if (!familyLane) return;
-    const separated = familyViewMode === "separated" && availableForms.length > 0;
+    // Don't show the dedicated family lane while the Family tab itself is the
+    // active filter — the pool is already showing exactly those cards, so a
+    // second copy in the lane would be redundant.
+    const separated = familyViewMode === "separated" && availableForms.length > 0 && activeFormLabel !== "__family";
     familyLane.hidden = !separated;
     if (familyToggle) familyToggle.checked = familyViewMode === "mixed";
     if (familyToggleState) familyToggleState.textContent = familyViewMode === "mixed" ? "with each Form" : "in its own lane";
@@ -6377,9 +6388,11 @@ function wireWeeklyAssignmentBoard(vm) {
     });
     const poolHeading = board.querySelector("[data-pool-heading]");
     if (poolHeading) {
-      poolHeading.textContent = activeFormLabel && availableForms.length
-        ? `${activeFormLabel} subjects`
-        : "Available subjects";
+      poolHeading.textContent = activeFormLabel === "__family"
+        ? "Family — Everyone subjects"
+        : activeFormLabel && availableForms.length
+          ? `${activeFormLabel} subjects`
+          : "Available subjects";
     }
     board.querySelectorAll("[data-week-assignment-card]").forEach((card) => {
       const visible = cardVisibleForForm(card, activeFormLabel);
