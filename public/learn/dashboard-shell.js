@@ -6722,9 +6722,14 @@ function wireWeeklyAssignmentBoard(vm) {
     const titleEl = apptModal.querySelector("[data-week-appt-modal-title]");
     if (titleEl) titleEl.textContent = entry?.id ? "Edit appointment" : "Add appointment";
     apptModal.hidden = false;
+    apptModal.style.display = "flex";
+    apptModal.querySelector("input, textarea, button")?.focus();
   };
   const closeApptModal = () => {
-    if (apptModal) apptModal.hidden = true;
+    if (apptModal) {
+      apptModal.hidden = true;
+      apptModal.style.display = "none";
+    }
     activeApptEntry = null;
   };
 
