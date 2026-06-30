@@ -314,7 +314,13 @@ function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
     const childIds     = safeArray(row.childIds);
     const sourceId     = text(row.sourceId || row.id, `child-src-${index}`);
     const childName    = text(row.child?.firstName || row.child?.name, "");
-    const childFormLabel = row.child ? formLabelForChild(row.child) : text(row.formLabels?.[0], "");
+    // Prefer the explicit formLabels from the row (set by the resource assignment),
+    // fall back to the child's profile label, then age-derived label.
+    const childFormLabel = text(
+      safeArray(row.formLabels).filter((l) => l && l !== "__family")[0]
+        || (row.child ? formLabelForChild(row.child) : ""),
+      ""
+    );
     const resourceTitle = text(row.resourceTitle || row.detail || row.subtitle, "");
     const color        = text(row.color || row.child?.color, ACCENTS[(index + rawHouseholdRows.length) % ACCENTS.length]);
     const rowMinutes   = safeArray(row.minutes);
