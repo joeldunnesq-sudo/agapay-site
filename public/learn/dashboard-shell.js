@@ -6213,7 +6213,15 @@ function wireSetupPage() {
       const row = removeButton.closest("[data-setup-row]");
       const list = row?.parentElement;
       const removedType = row?.dataset.setupRow;
-      if (row && list && list.querySelectorAll("[data-setup-row]").length > 1) {
+      // Only "children" must keep at least one row — every other list type
+      // (subjects, books, formation rows, etc.) already renders a blank
+      // placeholder row when empty, so it's safe to delete down to zero.
+      // The old length > 1 guard applied to every row type, which silently
+      // blocked deletion on per-group subject panels that usually contain
+      // only a single seeded subject (e.g. from the Setup Wizard).
+      const matchingSiblingCount = row ? [...list.querySelectorAll("[data-setup-row]")].filter((sibling) => sibling.dataset.setupRow === removedType).length : 0;
+      const mustKeepOne = removedType === "children";
+      if (row && list && (!mustKeepOne || matchingSiblingCount > 1)) {
         row.remove();
         if (removedType === "terms") syncSetupTermSelects(form);
         if (removedType === "children") syncSetupChildLimit(form);
@@ -7339,7 +7347,11 @@ function wirePlanner(vm) {
     const remove = event.target.closest("[data-setup-remove-row]");
     if (remove) {
       const row = remove.closest("[data-setup-row]");
-      if (row && row.parentElement.querySelectorAll("[data-setup-row]").length > 1) row.remove();
+      // No row type rendered by this form requires keeping a minimum of one —
+      // recipes, groceries, chores, and family events all render a blank
+      // placeholder row when their list is empty. The old length > 1 guard
+      // blocked deletion whenever only one row remained.
+      if (row) row.remove();
       return;
     }
     const add = event.target.closest("[data-setup-add-row]");
