@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS stewardship_reports (
   report_type       TEXT    NOT NULL DEFAULT 'custom',  -- rector | council | treasurer | ministry | custom
   title             TEXT    NOT NULL,
   body              TEXT,
+  created_by        TEXT,  -- signature line shown under the report in the printed packet
   sort_order        INTEGER NOT NULL DEFAULT 0,
   created_at        TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at        TEXT    NOT NULL DEFAULT (datetime('now'))
@@ -101,6 +102,7 @@ CREATE TABLE IF NOT EXISTS stewardship_nominees (
   full_name         TEXT    NOT NULL,
   position          TEXT,
   bio               TEXT,
+  nominated_by      TEXT,  -- shown as "Nominated by ___" under the nominee in the printed packet
   sort_order        INTEGER NOT NULL DEFAULT 0,
   created_at        TEXT    NOT NULL DEFAULT (datetime('now'))
 );
