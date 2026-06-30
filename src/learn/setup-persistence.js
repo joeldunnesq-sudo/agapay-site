@@ -659,9 +659,16 @@ function normalizeSetupPayload(payload = {}, identity) {
     })).filter((hymn) => hymn.title),
     enrichmentBlocks: list(rawFormation.enrichmentBlocks).map((block, index) => {
       const blockDays = scheduledDaysValue(block.scheduledDays, block.weeklyFrequency || block.cadenceLabel || block.cadence || "1x");
-      const blockResources = list(block.resources).length
+      // When resources[] is explicitly present (even empty), trust it as-is — the
+      // user may have deliberately deleted every resource. Only fall back to
+      // reconstructing a single resource from legacy block.resource/source when
+      // resources was never sent at all (older snapshots, pre-resource-list saves).
+      const hasResourcesField = Array.isArray(block.resources);
+      const blockResources = hasResourcesField
         ? list(block.resources).map((resource) => setupResourceValue(resource, block)).filter(Boolean)
-        : [setupResourceValue({ title: block.resource || block.source, scheduledWeeks: block.scheduledWeeks, weeklyPlans: block.weeklyPlans }, block)].filter(Boolean);
+        : (block.resource || block.source
+            ? [setupResourceValue({ title: block.resource || block.source, scheduledWeeks: block.scheduledWeeks, weeklyPlans: block.weeklyPlans }, block)].filter(Boolean)
+            : []);
       const primaryResource = blockResources[0] || {};
       return ({
       id: text(block.id, stableId("enrich", block.title, index)),
