@@ -5078,7 +5078,17 @@ async function syncLearnGoogleCalendar(extraEvents = [], statusEl = null) {
   }
   try {
     const calendar = storedLearnCalendar("");
-    const result = await apiPost(learnApiUrl("/api/learn/google-calendar/sync", { calendar, returnTo: window.location.pathname + window.location.search }), { extraEvents });
+    const pageParams = new URLSearchParams(window.location.search);
+    // Pass the same date/term context the planner page is actually showing,
+    // so the sync builds its event window around that week — not "today's"
+    // week by default, which silently drops appointments/lessons outside it.
+    const syncParams = {
+      calendar,
+      returnTo: window.location.pathname + window.location.search,
+      date: pageParams.get("date") || "",
+      termId: pageParams.get("termId") || ""
+    };
+    const result = await apiPost(learnApiUrl("/api/learn/google-calendar/sync", syncParams), { extraEvents });
     if (statusEl) {
       const count = Number(result?.syncedCount || 0);
       statusEl.textContent = count
