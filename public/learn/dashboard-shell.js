@@ -1239,13 +1239,17 @@ function renderWeeklyAssignmentBoard(vm) {
     const graceLabel   = isDeferrable ? "Defer" : isReducible ? "Reduce" : priority === "skip" ? "Skip" : "Core";
     const minsLabel    = item.minutes > 0 ? `${item.minutes}m` : "";
     const appliedClass = (graceActive && (isDeferrable || isReducible)) ? " is-applied" : "";
+    const itemFormLabels = item.formLabels || [];
+    const isFamilyItem = !itemFormLabels.length || itemFormLabels.includes("__family") || itemFormLabels.includes("Household Form");
     const cardClass    = [
       "learn-week-assignment-card",
+      isFamilyItem ? "is-family-card" : "",
       graceActive && isDeferrable ? "is-grace-deferred" : "",
       graceActive && isReducible  ? "is-grace-reduced"  : ""
     ].filter(Boolean).join(" ");
-    // Chips row: minutes badge + grace chip
-    const chipsHtml = `<div class="learn-week-assignment-chips">${minsLabel ? `<span class="learn-week-assignment-minutes">${html(minsLabel)}</span>` : ""}<span class="learn-grace-chip learn-grace-chip--${graceClass}${appliedClass}">${graceLabel}</span></div>`;
+    // Chips row: family tag (if applicable) + minutes badge + grace chip
+    const familyChip = isFamilyItem ? `<span class="learn-family-card-chip" title="Family — Everyone subject">◈ Family</span>` : "";
+    const chipsHtml = `<div class="learn-week-assignment-chips">${familyChip}${minsLabel ? `<span class="learn-week-assignment-minutes">${html(minsLabel)}</span>` : ""}<span class="learn-grace-chip learn-grace-chip--${graceClass}${appliedClass}">${graceLabel}</span></div>`;
     // Expand button (opens modal via JS)
     const expandBtn = `<button type="button" class="learn-week-card-expand" data-card-expand data-item-id="${html(item.id)}" aria-label="Edit ${html(item.title)}" title="Edit details"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4.5L6 8L10 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
     return `<article class="${cardClass}" draggable="true" data-week-assignment-card data-item-id="${html(item.id)}" data-week-assignment-kind="${html(item.kind || "")}" data-week-form-labels="${html((item.formLabels || []).join("|"))}" data-statuses="${html((item.statuses || []).join(","))}" data-weekly-frequency="${html(item.weeklyFrequency || "")}" data-grace-priority="${html(priority)}" data-item-sub="${html(item.sub || "")}" data-item-color="${html(item.color || "")}" style="border-left-color:${html(item.color || "var(--gold)")}"><div class="learn-week-assignment-card-head"><div class="learn-week-assignment-card-body"><strong>${html(item.title)}</strong>${chipsHtml}</div>${expandBtn}</div><textarea data-week-assignment-note placeholder="Specify chapters, pages, lessons, or notes for this day" style="display:none">${html(item.sub || "")}</textarea></article>`;
