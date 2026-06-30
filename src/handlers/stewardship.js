@@ -695,7 +695,7 @@ function annualMeetingFormHtml(registration, meeting, agendaItems, reports, fina
             </label>
             <label class="form-field form-field--full">
               <span>Location</span>
-              <input class="form-input" type="text" name="location" value="${escAttr(meeting?.location || "")}" placeholder="e.g. Parish Hall" />
+              <input class="form-input" type="text" name="location" value="${escAttr(meeting?.location || (isNew && parishName ? `${parishName} Parish Hall` : ""))}" placeholder="e.g. Parish Hall" />
             </label>
           </div>
         </section>
@@ -715,7 +715,7 @@ function annualMeetingFormHtml(registration, meeting, agendaItems, reports, fina
             </label>
             <label class="form-field form-field--full">
               <span>Address</span>
-              <input class="form-input" type="text" name="address" value="${escAttr(meeting?.address || registration.address || "")}" />
+              <input class="form-input" type="text" name="address" value="${escAttr(meeting?.address || registrationAddressLine(registration) || "")}" />
             </label>
           </div>
         </section>
@@ -820,7 +820,7 @@ function packetPreviewHtml(registration, meeting, agendaItems, reports, financia
   const base         = absoluteWebsiteUrl(env);
   const parishName   = meeting.parish_name_override || registration.parishName || registration.name || "Parish";
   const jurisdiction = meeting.jurisdiction || registration.jurisdiction || "";
-  const address      = meeting.address || [registration.addressLine1, registration.city, registration.state].filter(Boolean).join(", ") || "";
+  const address      = meeting.address || registrationAddressLine(registration) || "";
   const location     = meeting.location || "";
   const fiscalYear   = meeting.fiscal_year || new Date().getFullYear();
   const meetingDate  = meeting.meeting_date
@@ -1426,6 +1426,19 @@ function dashboardNav(registration, activeSection, base) {
 }
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
+
+// Builds a single-line mailing address from the parish's Settings tab fields
+// (addressLine1, addressLine2, city, state, postalCode) — the registration
+// record has no single flat "address" field, so every place that wants a
+// printable parish address should go through this rather than reading
+// registration.address directly (which is always undefined).
+function registrationAddressLine(registration = {}) {
+  return [
+    registration.addressLine1,
+    registration.addressLine2,
+    [registration.city, registration.state, registration.postalCode].filter(Boolean).join(" ")
+  ].filter(Boolean).join(", ");
+}
 
 function escHtml(s) {
   return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
