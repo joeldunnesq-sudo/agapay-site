@@ -314,7 +314,7 @@ function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
     const childIds     = safeArray(row.childIds);
     const sourceId     = text(row.sourceId || row.id, `child-src-${index}`);
     const childName    = text(row.child?.firstName || row.child?.name, "");
-    const childFormLabel = text(row.child?.formLabel || row.child?.gradeLabel, "");
+    const childFormLabel = row.child ? formLabelForChild(row.child) : text(row.formLabels?.[0], "");
     const resourceTitle = text(row.resourceTitle || row.detail || row.subtitle, "");
     const color        = text(row.color || row.child?.color, ACCENTS[(index + rawHouseholdRows.length) % ACCENTS.length]);
     const rowMinutes   = safeArray(row.minutes);
@@ -383,7 +383,14 @@ function weeklyAssignmentItemsFromRows(rawHouseholdRows, rawChildRows) {
     const prefixParts = [...(_childNames.length ? [_childNames.join(", ")] : (_formLabel ? [_formLabel] : []))];
     const sub = [...prefixParts, resourceLine].filter(Boolean).join(" · ");
     const minutes = Math.max(..._minutesArr.filter(Boolean), 0) || (_minutesArr.find((m) => m > 0) ?? 20);
-    return { ...rest, sub, minutes, statuses: _statusesArr, formLabels: _formLabels };
+    // If a form-mode item has no resolvable form labels, fall back to the
+    // derived _formLabel (used as the groupKey) so tabs still appear for it.
+    const resolvedFormLabels = _formLabels.length
+      ? _formLabels
+      : (rest.kind === "form" || rest.kind === "specific") && _formLabel
+        ? [_formLabel]
+        : _formLabels;
+    return { ...rest, sub, minutes, statuses: _statusesArr, formLabels: resolvedFormLabels };
   });
 
   // Household items already unique by id; child items unique by groupKey
