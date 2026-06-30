@@ -614,6 +614,7 @@ function annualMeetingFormHtml(registration, meeting, agendaItems, reports, fina
       </select>
       <input class="form-input" type="text" name="report_title[]" value="${escAttr(r.title)}" placeholder="Report title" required />
       <textarea class="form-textarea" name="report_body[]" rows="4" placeholder="Report content…">${escHtml(r.body || "")}</textarea>
+      <input class="form-input" type="text" name="report_signed_by[]" value="${escAttr(r.created_by || "")}" placeholder="Signed by (optional)" />
       <button type="button" class="btn btn-ghost btn-sm remove-row">✕</button>
     </div>`).join("");
 
@@ -633,6 +634,8 @@ function annualMeetingFormHtml(registration, meeting, agendaItems, reports, fina
       <input type="hidden" name="nominee_id[]" value="${escAttr(n.id || "")}" />
       <input class="form-input" type="text" name="nominee_name[]" value="${escAttr(n.full_name || "")}" placeholder="Full name" required />
       <input class="form-input" type="text" name="nominee_position[]" value="${escAttr(n.position || "")}" placeholder="Position (e.g. Warden)" />
+      <textarea class="form-textarea" name="nominee_bio[]" rows="2" placeholder="Short bio (optional)">${escHtml(n.bio || "")}</textarea>
+      <input class="form-input" type="text" name="nominee_nominated_by[]" value="${escAttr(n.nominated_by || "")}" placeholder="Nominated by (optional)" />
       <button type="button" class="btn btn-ghost btn-sm remove-row">✕</button>
     </div>`).join("");
 
@@ -790,9 +793,9 @@ function annualMeetingFormHtml(registration, meeting, agendaItems, reports, fina
     // Dynamic add-row buttons
     const TEMPLATES = {
       agenda: () => \`<div class="agenda-row"><input type="hidden" name="agenda_id[]" value="" /><input class="form-input" type="text" name="agenda_title[]" placeholder="Agenda item" required /><input class="form-input" type="number" name="agenda_duration[]" placeholder="Min" style="width:80px" /><button type="button" class="btn btn-ghost btn-sm remove-row">✕</button></div>\`,
-      report: () => \`<div class="report-row"><input type="hidden" name="report_id[]" value="" /><select name="report_type[]" class="form-select"><option>priest</option><option>warden</option><option>treasurer</option><option>stewardship</option><option>ministry</option><option>custom</option></select><input class="form-input" type="text" name="report_title[]" placeholder="Report title" required /><textarea class="form-textarea" name="report_body[]" rows="4" placeholder="Report content…"></textarea><button type="button" class="btn btn-ghost btn-sm remove-row">✕</button></div>\`,
+      report: () => \`<div class="report-row"><input type="hidden" name="report_id[]" value="" /><select name="report_type[]" class="form-select"><option>priest</option><option>warden</option><option>treasurer</option><option>stewardship</option><option>ministry</option><option>custom</option></select><input class="form-input" type="text" name="report_title[]" placeholder="Report title" required /><textarea class="form-textarea" name="report_body[]" rows="4" placeholder="Report content…"></textarea><input class="form-input" type="text" name="report_signed_by[]" placeholder="Signed by (optional)" /><button type="button" class="btn btn-ghost btn-sm remove-row">✕</button></div>\`,
       fund: () => \`<div class="fund-row"><input type="hidden" name="fund_id[]" value="" /><input class="form-input" type="text" name="fund_name[]" placeholder="Fund name" required /><input class="form-input" type="number" name="fund_begin[]" placeholder="Beginning" step="0.01" /><input class="form-input" type="number" name="fund_received[]" placeholder="Received" step="0.01" /><input class="form-input" type="number" name="fund_disbursed[]" placeholder="Disbursed" step="0.01" /><input class="form-input" type="number" name="fund_ending[]" placeholder="Ending" step="0.01" /><button type="button" class="btn btn-ghost btn-sm remove-row">✕</button></div>\`,
-      nominee: () => \`<div class="nominee-row"><input type="hidden" name="nominee_id[]" value="" /><input class="form-input" type="text" name="nominee_name[]" placeholder="Full name" required /><input class="form-input" type="text" name="nominee_position[]" placeholder="Position" /><button type="button" class="btn btn-ghost btn-sm remove-row">✕</button></div>\`,
+      nominee: () => \`<div class="nominee-row"><input type="hidden" name="nominee_id[]" value="" /><input class="form-input" type="text" name="nominee_name[]" placeholder="Full name" required /><input class="form-input" type="text" name="nominee_position[]" placeholder="Position" /><textarea class="form-textarea" name="nominee_bio[]" rows="2" placeholder="Short bio (optional)"></textarea><input class="form-input" type="text" name="nominee_nominated_by[]" placeholder="Nominated by (optional)" /><button type="button" class="btn btn-ghost btn-sm remove-row">✕</button></div>\`,
       resolution: () => \`<div class="resolution-row"><input type="hidden" name="resolution_id[]" value="" /><input class="form-input" type="text" name="resolution_title[]" placeholder="Resolution title" required /><textarea class="form-textarea" name="resolution_resolved[]" rows="2" placeholder="RESOLVED THAT…"></textarea><button type="button" class="btn btn-ghost btn-sm remove-row">✕</button></div>\`,
     };
     document.addEventListener('click', e => {
@@ -1532,6 +1535,7 @@ function apiFormFromMeetingPayload(payload = {}) {
     report_type: reports.map((item) => item.reportType || item.report_type || "stewardship"),
     report_title: reports.map((item) => item.title || ""),
     report_body: reports.map((item) => item.body || ""),
+    report_signed_by: reports.map((item) => item.createdBy || item.created_by || item.signedBy || item.signed_by || ""),
     fin_income: financialSummary.totalIncome ?? financialSummary.total_income ?? "",
     fin_expense: financialSummary.totalExpense ?? financialSummary.total_expense ?? "",
     fin_notes: financialSummary.notes || "",
@@ -1544,6 +1548,8 @@ function apiFormFromMeetingPayload(payload = {}) {
     nominee_id: nominees.map((item) => item.id || ""),
     nominee_name: nominees.map((item) => item.fullName || item.full_name || ""),
     nominee_position: nominees.map((item) => item.position || ""),
+    nominee_bio: nominees.map((item) => item.bio || ""),
+    nominee_nominated_by: nominees.map((item) => item.nominatedBy || item.nominated_by || ""),
     resolution_id: resolutions.map((item) => item.id || ""),
     resolution_title: resolutions.map((item) => item.title || ""),
     resolution_resolved: resolutions.map((item) => item.resolvedText || item.resolved_text || item.body || "")
@@ -1581,7 +1587,8 @@ function publicMeetingDetails(meeting, agendaItems, reports, financialSummary, r
       id: item.id,
       reportType: item.report_type || "stewardship",
       title: item.title || "",
-      body: item.body || ""
+      body: item.body || "",
+      createdBy: item.created_by || ""
     })),
     financialSummary: financialSummary ? {
       totalIncomeCents: financialSummary.total_income_cents || 0,
@@ -1607,7 +1614,8 @@ function publicMeetingDetails(meeting, agendaItems, reports, financialSummary, r
       id: item.id,
       fullName: item.full_name || "",
       position: item.position || "",
-      bio: item.bio || ""
+      bio: item.bio || "",
+      nominatedBy: item.nominated_by || ""
     })),
     resolutions: (resolutions || []).map((item) => ({
       id: item.id,
@@ -2921,12 +2929,13 @@ async function saveMeetingSubRecords(env, meetingId, form) {
   const rTypes = [].concat(form.report_type || []);
   const rTitles = [].concat(form.report_title || []);
   const rBodies = [].concat(form.report_body || []);
+  const rSignedBy = [].concat(form.report_signed_by || []);
   for (let i = 0; i < rTitles.length; i++) {
     if (!rTitles[i]?.trim()) continue;
     await d1Run(env, `
-      INSERT INTO stewardship_reports (id, annual_meeting_id, report_type, title, body, sort_order, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `, [await newId(), meetingId, rTypes[i] || "custom", rTitles[i].trim(), rBodies[i] || "", i, now, now]);
+      INSERT INTO stewardship_reports (id, annual_meeting_id, report_type, title, body, created_by, sort_order, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [await newId(), meetingId, rTypes[i] || "custom", rTitles[i].trim(), rBodies[i] || "", rSignedBy[i]?.trim() || null, i, now, now]);
   }
 
   // Financial summary
@@ -2961,12 +2970,14 @@ async function saveMeetingSubRecords(env, meetingId, form) {
   // Nominees
   const nNames = [].concat(form.nominee_name || []);
   const nPositions = [].concat(form.nominee_position || []);
+  const nBios = [].concat(form.nominee_bio || []);
+  const nNominatedBy = [].concat(form.nominee_nominated_by || []);
   for (let i = 0; i < nNames.length; i++) {
     if (!nNames[i]?.trim()) continue;
     await d1Run(env, `
-      INSERT INTO stewardship_nominees (id, annual_meeting_id, full_name, position, sort_order, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [await newId(), meetingId, nNames[i].trim(), nPositions[i] || null, i, now]);
+      INSERT INTO stewardship_nominees (id, annual_meeting_id, full_name, position, bio, nominated_by, sort_order, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, [await newId(), meetingId, nNames[i].trim(), nPositions[i] || null, nBios[i]?.trim() || null, nNominatedBy[i]?.trim() || null, i, now]);
   }
 
   // Resolutions
