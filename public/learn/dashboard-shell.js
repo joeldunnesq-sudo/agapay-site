@@ -6206,7 +6206,9 @@ function wireWeeklyAssignmentBoard(vm) {
   const cardVisibleForForm = (card, formLabel) => {
     const labels = cardFormLabels(card);
     if (!formLabel || !availableForms.length) return true;
-    return !labels.length || labels.includes("__family") || labels.includes(formLabel);
+    // Always show family/household items regardless of active form tab
+    if (!labels.length || labels.includes("__family") || labels.includes("Household Form")) return true;
+    return labels.includes(formLabel);
   };
   const activeFormFromStorage = () => {
     try {
