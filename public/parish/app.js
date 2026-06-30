@@ -1203,6 +1203,7 @@
         </select>
         <input type="text" data-field="title" value="${escapeAttr(item.title)}" placeholder="Report title" />
         <textarea data-field="body" rows="3" placeholder="Report notes">${escapeHtml(item.body)}</textarea>
+        <input type="text" data-field="createdBy" value="${escapeAttr(item.createdBy)}" placeholder="Signed by (optional)" />
         <button class="btn btn-ghost btn-sm" type="button" onclick="removeStewardshipRow(this)">Remove</button>
       </div>`;
       if (type === 'fund') return `<div class="stewardship-repeat-row" data-row-type="fund">
@@ -1216,6 +1217,8 @@
       if (type === 'nominee') return `<div class="stewardship-repeat-row" data-row-type="nominee">
         <input type="text" data-field="fullName" value="${escapeAttr(item.fullName)}" placeholder="Nominee name" />
         <input type="text" data-field="position" value="${escapeAttr(item.position)}" placeholder="Position" />
+        <textarea data-field="bio" rows="2" placeholder="Short bio (optional)">${escapeHtml(item.bio)}</textarea>
+        <input type="text" data-field="nominatedBy" value="${escapeAttr(item.nominatedBy)}" placeholder="Nominated by (optional)" />
         <button class="btn btn-ghost btn-sm" type="button" onclick="removeStewardshipRow(this)">Remove</button>
       </div>`;
       return `<div class="stewardship-repeat-row" data-row-type="resolution">
