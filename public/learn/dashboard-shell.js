@@ -1278,7 +1278,7 @@ function renderWeeklyAssignmentBoard(vm) {
       ${formLabels.length ? `<div class="learn-week-form-tabs" aria-label="Planner form selector">${formLabels.map((label, index) => `<button type="button" data-week-form-filter="${html(label)}" aria-pressed="${index === 0 ? "true" : "false"}">${html(label)}</button>`).join("")}</div>` : ""}
       <div class="learn-week-assignment-layout">
         <div class="learn-week-assignment-pool">
-          <strong>Available subjects</strong>
+          <strong data-pool-heading>Available subjects</strong>
           <div class="learn-week-assignment-dropzone" data-week-assignment-zone="pool">${items.length ? items.map(card).join("") : emptyState("No setup subjects are active this week.")}</div>
         </div>
         <div class="learn-week-assignment-days">
@@ -6224,8 +6224,24 @@ function wireWeeklyAssignmentBoard(vm) {
     formButtons.forEach((button) => {
       button.setAttribute("aria-pressed", button.dataset.weekFormFilter === activeFormLabel ? "true" : "false");
     });
+    const poolHeading = board.querySelector("[data-pool-heading]");
+    if (poolHeading) {
+      poolHeading.textContent = activeFormLabel && availableForms.length
+        ? `${activeFormLabel} subjects`
+        : "Available subjects";
+    }
     board.querySelectorAll("[data-week-assignment-card]").forEach((card) => {
-      card.hidden = !cardVisibleForForm(card, activeFormLabel);
+      const visible = cardVisibleForForm(card, activeFormLabel);
+      // Auto-originals: use style.display (they're never rendered via hidden attr)
+      if (card.dataset.autoOriginal) {
+        card.style.display = "none"; // always hidden — clones are in day zones
+      } else if (card.dataset.autoPlaced) {
+        // Clones in day zones: show/hide based on form filter
+        card.hidden = !visible;
+      } else {
+        card.hidden = !visible;
+        card.style.display = "";
+      }
     });
   };
   const readState = () => {
@@ -6286,12 +6302,13 @@ function wireWeeklyAssignmentBoard(vm) {
         return;
       }
       // Determine auto-placement eligibility from statuses
+      // Disable auto-placement when form tabs exist — each form manages its own pool
       const statuses = (card.dataset.statuses || "").split(",");
       const activeDayIndexes = statuses
         .map((s, i) => s === "planned" ? i : -1)
         .filter((i) => i >= 0);
-      const isAutoEligible = activeDayIndexes.length >= 2;
-      if (!isAutoEligible) return; // single-day or unscheduled — leave in pool for drag
+      const isAutoEligible = activeDayIndexes.length >= 2 && availableForms.length === 0;
+      if (!isAutoEligible) return; // form tabs present, or single-day — leave in pool for drag
       // Auto-place: hide the pool original, clone into each active day zone
       card.style.display = "none";
       card.dataset.autoOriginal = "true";
