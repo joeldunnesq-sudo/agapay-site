@@ -3001,6 +3001,28 @@ body {
   box-shadow: 0 8px 18px rgba(6,21,34,.12);
 }
 
+.learn-week-form-tab-family {
+  border-color: rgba(181,148,47,.4) !important;
+  margin-right: 4px;
+  position: relative;
+}
+
+.learn-week-form-tab-family::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  background: var(--line);
+}
+
+.learn-week-form-tab-family[aria-pressed="true"] {
+  background: var(--gold) !important;
+  color: var(--navy) !important;
+  border-color: var(--gold) !important;
+}
+
 /* ── Family / Form view toggle ───────────────────────────── */
 
 .learn-family-view-toggle {
