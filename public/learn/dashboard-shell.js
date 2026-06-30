@@ -1754,7 +1754,18 @@ function renderMealsPlan(model, displayView, vm) {
   if (displayView === "month") {
     return `<div style="display:flex;flex-direction:column;gap:14px;">${renderFeastsPanel(model, "month")}${renderFamilyMonthOverview(model, "meals")}${renderFastingLegend()}</div>`;
   }
-  return `<div class="learn-family-week-layout"><section class="learn-family-week-board"><div class="learn-family-week-scroll"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => `<strong class="${day.isFastDay ? "is-fast" : day.isSunday ? "is-feast" : ""}">${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small><em>${html(day.isFastDay ? day.fastingType || day.fasting || "Fast" : day.feast || "")}</em></strong>`).join("")}</div>${["breakfast", "lunch", "dinner"].map((slot) => `<div class="learn-family-week-row"><strong>${html(mealSlotLabel(slot))}</strong>${model.weekDays.map((day) => `<div>${renderMealCard(day, model.mealByDate.get(day.date) || {}, slot)}</div>`).join("")}</div>`).join("")}</div></section><div style="display:grid;gap:14px;">${renderFeastsPanel(model, "week")}${renderFastingLegend()}</div></div>`;
+  const todayIso = new Date().toISOString().slice(0, 10);
+  return `<div class="learn-family-week-layout"><section class="learn-family-week-board"><div class="learn-family-week-scroll"><div class="learn-family-week-head"><span></span>${model.weekDays.map((day) => {
+    const isToday = day.date === todayIso;
+    const hasFeast = Boolean(day.feast || day.feastTitle) || day.isSunday;
+    // Priority matches the legend's visual hierarchy: fast day overrides feast/Sunday styling,
+    // feast or Sunday overrides today, today overrides ordinary.
+    const stateClass = day.isFastDay ? "is-fast" : hasFeast ? "is-feast" : isToday ? "is-today" : "is-ordinary";
+    const labelText = day.isFastDay
+      ? (day.fastingType || day.fasting || "Fast")
+      : (day.feast || day.feastTitle || (day.isSunday ? "Sunday" : ""));
+    return `<strong class="${stateClass}">${html(day.weekday || day.weekdayLong)}<small>${html(day.shortDate || day.short)}</small>${labelText ? `<em>${html(labelText)}</em>` : ""}</strong>`;
+  }).join("")}</div>${["breakfast", "lunch", "dinner"].map((slot) => `<div class="learn-family-week-row"><strong>${html(mealSlotLabel(slot))}</strong>${model.weekDays.map((day) => `<div>${renderMealCard(day, model.mealByDate.get(day.date) || {}, slot)}</div>`).join("")}</div>`).join("")}</div></section><div style="display:grid;gap:14px;">${renderFeastsPanel(model, "week")}${renderFastingLegend()}</div></div>`;
 }
 
 function renderRecipesTool(model) {
