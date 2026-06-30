@@ -3104,9 +3104,9 @@ body {
 /* ── Dedicated family lane (separated mode) ─────────────────────── */
 
 .learn-week-family-lane {
-  margin-bottom: 14px;
-  padding-bottom: 12px;
-  border-bottom: 2px dashed var(--line);
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 2px dashed var(--line);
 }
 
 .learn-week-family-lane > strong {
