@@ -1047,9 +1047,10 @@
 
 .sw-tool-card-header-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.4rem;
+  justify-content: flex-start;
+  gap: 0.5rem 0.4rem;
   padding: 0.65rem 1.1rem 0;
   min-width: 0;
 }
@@ -1077,7 +1078,6 @@
   align-items: center;
   gap: 0.35rem;
   flex-shrink: 0;
-  margin-right: -0.1rem;
 }
 
 .sw-tool-card-desc {
