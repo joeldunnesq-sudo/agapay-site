@@ -430,16 +430,18 @@
 }
 .sw-metrics-actions { display: flex; align-items: center; gap: .4rem; }
 .sw-year-select {
-  height: 28px;
-  padding: 0 .35rem;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 .4rem;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 5px;
   background: white;
   color: var(--deep);
-  font: inherit;
-  font-size: .75rem;
+  font: 600 .74rem var(--sans);
   cursor: pointer;
-  max-width: 72px;
+  max-width: 80px;
+  box-sizing: border-box;
 }
 .sw-refresh-btn {
   display: grid;
@@ -675,6 +677,7 @@
 .sw-action-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   height: 30px;
   padding: 0 .6rem;
   border: 1px solid var(--line);
@@ -685,6 +688,8 @@
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
+  box-sizing: border-box;
+  flex-shrink: 0;
   transition: border-color .12s;
 }
 .sw-action-btn:hover { border-color: var(--gold); color: var(--gold); }
