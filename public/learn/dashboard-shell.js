@@ -1303,8 +1303,36 @@ function renderWeeklyAssignmentBoard(vm) {
             const fastingLabel = day.isFastDay ? (day.fastingType || day.fasting || "Fast day") : "";
             const showFeastRibbon = Boolean(feastLabel || fastingLabel);
             const feastRibbon = showFeastRibbon ? `<div class="learn-week-day-feast${day.isFastDay ? " is-fast" : ""}">${feastLabel ? `<span class="learn-week-day-feast-title">${html(feastLabel)}</span>` : ""}${fastingLabel ? `<span class="learn-week-day-feast-fast">${html(fastingLabel)}</span>` : ""}</div>` : "";
-            return `<div class="learn-week-assignment-day${day.isSunday ? " is-sunday" : ""}"><strong>${html(day.weekday || day.weekdayLong)}<span>${html(day.shortDate || day.date)}</span></strong>${feastRibbon}${appointments.length ? `<div class="learn-week-assignment-events">${appointments.slice(0, 3).map((event) => `<span>${html(event.startTime || "")}${event.startTime ? " · " : ""}${html(event.title || "Appointment")}</span>`).join("")}${appointments.length > 3 ? `<small>+ ${appointments.length - 3} more</small>` : ""}</div>` : ""}<div class="learn-week-assignment-dropzone" data-week-assignment-zone="${html(day.date)}"></div></div>`;
+            const appointmentCard = (appt) => `<div class="learn-week-appt-card" draggable="true" data-week-appt-drag data-appt-id="${html(appt.id || "")}" data-appt-date="${html(appt.date || day.date)}" data-appt-title="${html(appt.title || "")}" data-appt-time="${html(appt.startTime || "")}" data-appt-type="${html(appt.eventType || "")}" data-appt-location="${html(appt.location || "")}" data-appt-notes="${html(appt.notes || "")}" data-appt-recurrence="${html(appt.recurrence || "none")}">
+              <span class="learn-week-appt-handle" aria-hidden="true" title="Drag to another day">⠿</span>
+              <button type="button" class="learn-week-appt-open" data-week-appt-open data-appt-id="${html(appt.id || "")}" data-appt-date="${html(appt.date || day.date)}" data-appt-title="${html(appt.title || "")}" data-appt-time="${html(appt.startTime || "")}" data-appt-type="${html(appt.eventType || "")}" data-appt-location="${html(appt.location || "")}" data-appt-notes="${html(appt.notes || "")}" data-appt-recurrence="${html(appt.recurrence || "none")}">
+                ${appt.startTime ? `<span class="learn-week-appt-time">${html(appt.startTime)}</span>` : ""}<span class="learn-week-appt-title">${html(appt.title || "Appointment")}</span>
+              </button>
+            </div>`;
+            const addApptButton = `<button type="button" class="learn-week-appt-add" data-week-appt-add data-appt-date="${html(day.date)}" title="Add appointment">+ Appointment</button>`;
+            return `<div class="learn-week-assignment-day${day.isSunday ? " is-sunday" : ""}"><strong>${html(day.weekday || day.weekdayLong)}<span>${html(day.shortDate || day.date)}</span></strong>${feastRibbon}<div class="learn-week-appt-list" data-week-appt-dropzone="${html(day.date)}">${appointments.map(appointmentCard).join("")}${addApptButton}</div><div class="learn-week-assignment-dropzone" data-week-assignment-zone="${html(day.date)}"></div></div>`;
           }).join("")}
+        </div>
+      </div>
+      <div class="learn-week-appt-modal-backdrop" data-week-appt-modal hidden>
+        <div class="learn-week-appt-modal-card">
+          <button type="button" class="learn-family-modal-close" data-week-appt-modal-close aria-label="Close">×</button>
+          <small>Calendar</small>
+          <h2 data-week-appt-modal-title>Edit appointment</h2>
+          <div class="learn-family-modal-grid">
+            ${setupInput("Title", "weekApptModal.title")}
+            ${setupSelect("Type", "weekApptModal.eventType", "", ["Appointment", "Field Trip", "Extracurricular", "Name Day", "Family"])}
+            ${setupInput("Date", "weekApptModal.date", "", { type: "date" })}
+            ${setupInput("Time", "weekApptModal.startTime", "", { type: "time" })}
+            ${setupSelect("Repeats", "weekApptModal.recurrence", "none", eventRecurrenceOptions)}
+            ${setupInput("Location", "weekApptModal.location")}
+            <label>Notes<textarea name="weekApptModal.notes" rows="3"></textarea></label>
+          </div>
+          <div class="learn-family-modal-actions">
+            <button type="button" data-week-appt-delete>Delete event</button>
+            <button type="button" data-week-appt-modal-close>Cancel</button>
+            <button type="button" data-week-appt-save>Save event</button>
+          </div>
         </div>
       </div>
     </section>
@@ -6667,6 +6695,185 @@ function wireWeeklyAssignmentBoard(vm) {
       button.disabled = false;
       button.textContent = originalText;
     }
+  });
+
+  // ── Appointment cards on the Lessons week board ──────────────────────────
+  // This board has no surrounding <form> (the family planner form only mounts
+  // for the Meals/Chores/Events scopes), so appointments here save directly
+  // through the family-planning API rather than via form submission.
+  const apptModal = board.querySelector("[data-week-appt-modal]");
+  let activeApptEntry = null; // the appointment currently open in the modal, or null when adding new
+  const apptField = (name) => apptModal?.querySelector(`[name="${CSS.escape(name)}"]`) || null;
+  const setApptField = (name, value) => { const el = apptField(name); if (el) el.value = value || ""; };
+  const getApptField = (name) => apptField(name)?.value?.trim() || "";
+
+  const openApptModal = (entry) => {
+    if (!apptModal) return;
+    activeApptEntry = entry?.id ? entry : null;
+    setApptField("weekApptModal.title", entry?.title || "");
+    setApptField("weekApptModal.eventType", entry?.eventType || "Family");
+    setApptField("weekApptModal.date", entry?.date || "");
+    setApptField("weekApptModal.startTime", entry?.startTime || "");
+    setApptField("weekApptModal.recurrence", entry?.recurrence || "none");
+    setApptField("weekApptModal.location", entry?.location || "");
+    setApptField("weekApptModal.notes", entry?.notes || "");
+    const deleteBtn = apptModal.querySelector("[data-week-appt-delete]");
+    if (deleteBtn) deleteBtn.hidden = !entry?.id;
+    const titleEl = apptModal.querySelector("[data-week-appt-modal-title]");
+    if (titleEl) titleEl.textContent = entry?.id ? "Edit appointment" : "Add appointment";
+    apptModal.hidden = false;
+  };
+  const closeApptModal = () => {
+    if (apptModal) apptModal.hidden = true;
+    activeApptEntry = null;
+  };
+
+  // Persist appointments by sending the full familyPlanning payload back —
+  // the save endpoint replaces familyPlanning wholesale, so every other
+  // field (meals, recipes, groceries, chores) must be carried through as-is.
+  const saveWeekAppointments = async (events) => {
+    const fp = vm.familyPlanning || {};
+    const payload = {
+      household: {
+        motherName: fp.household?.motherName || "",
+        motherNameDay: fp.household?.motherNameDay || "",
+        fatherName: fp.household?.fatherName || "",
+        fatherNameDay: fp.household?.fatherNameDay || "",
+        parishPatronalFeastName: fp.household?.parishPatronalFeastName || "",
+        parishPatronalFeastDate: fp.household?.parishPatronalFeastDate || ""
+      },
+      childNameDays: (fp.children || []).map((child) => ({ childId: child.id || "", nameDay: child.nameDay || "" })),
+      familyPlanning: {
+        fastingPreference: fp.fastingPreference || "guidance",
+        weekStart: fp.weekStart || "",
+        events,
+        meals: fp.meals || [],
+        recipes: fp.recipes || [],
+        groceryItems: fp.groceryItems || [],
+        chores: fp.chores || []
+      }
+    };
+    const params = new URLSearchParams(window.location.search);
+    const saveQuery = new URLSearchParams({
+      calendar: params.get("calendar") || storedLearnCalendar(""),
+      view: params.get("view") || vm.activeView || "week",
+      date: params.get("date") || vm.day?.selected?.date || new Date().toISOString().slice(0, 10)
+    });
+    const saved = await apiPost(`/api/learn/family-planning?${saveQuery.toString()}`, payload);
+    await syncLearnGoogleCalendar([], null);
+    return saved;
+  };
+
+  const currentWeekAppointments = () => [...board.querySelectorAll("[data-week-appt-drag]")].map((card) => ({
+    id: card.dataset.apptId || "",
+    title: card.dataset.apptTitle || "",
+    eventType: card.dataset.apptType || "",
+    date: card.dataset.apptDate || "",
+    startTime: card.dataset.apptTime || "",
+    recurrence: card.dataset.apptRecurrence || "none",
+    location: card.dataset.apptLocation || "",
+    notes: card.dataset.apptNotes || ""
+  })).filter((entry) => entry.title && entry.date);
+
+  board.querySelectorAll("[data-week-appt-open]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      openApptModal({
+        id: btn.dataset.apptId || "",
+        title: btn.dataset.apptTitle || "",
+        eventType: btn.dataset.apptType || "",
+        date: btn.dataset.apptDate || "",
+        startTime: btn.dataset.apptTime || "",
+        recurrence: btn.dataset.apptRecurrence || "none",
+        location: btn.dataset.apptLocation || "",
+        notes: btn.dataset.apptNotes || ""
+      });
+    });
+  });
+  board.querySelectorAll("[data-week-appt-add]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      openApptModal({ id: "", date: btn.dataset.apptDate || "", eventType: "Family", recurrence: "none" });
+    });
+  });
+  apptModal?.querySelectorAll("[data-week-appt-modal-close]").forEach((btn) => btn.addEventListener("click", closeApptModal));
+  apptModal?.addEventListener("click", (event) => { if (event.target === apptModal) closeApptModal(); });
+
+  apptModal?.querySelector("[data-week-appt-save]")?.addEventListener("click", async () => {
+    const entry = {
+      id: activeApptEntry?.id || "",
+      title: getApptField("weekApptModal.title"),
+      eventType: getApptField("weekApptModal.eventType"),
+      date: getApptField("weekApptModal.date"),
+      startTime: getApptField("weekApptModal.startTime"),
+      recurrence: getApptField("weekApptModal.recurrence") || "none",
+      location: getApptField("weekApptModal.location"),
+      notes: getApptField("weekApptModal.notes")
+    };
+    if (!entry.title || !entry.date) { closeApptModal(); return; }
+    const events = currentWeekAppointments().filter((existing) => !(activeApptEntry?.id && existing.id === activeApptEntry.id));
+    events.push(entry);
+    closeApptModal();
+    try {
+      await saveWeekAppointments(events);
+      mount();
+    } catch (error) {
+      showLearnDialog("Could Not Save Appointment", error.message || "Please try again.", []);
+    }
+  });
+
+  apptModal?.querySelector("[data-week-appt-delete]")?.addEventListener("click", async () => {
+    if (!activeApptEntry?.id) { closeApptModal(); return; }
+    const events = currentWeekAppointments().filter((existing) => existing.id !== activeApptEntry.id);
+    closeApptModal();
+    try {
+      await saveWeekAppointments(events);
+      mount();
+    } catch (error) {
+      showLearnDialog("Could Not Delete Appointment", error.message || "Please try again.", []);
+    }
+  });
+
+  // Drag-and-drop between days
+  let draggedApptCard = null;
+  board.querySelectorAll("[data-week-appt-drag]").forEach((card) => {
+    card.addEventListener("dragstart", (event) => {
+      draggedApptCard = card;
+      card.classList.add("is-dragging");
+      event.dataTransfer?.setData("text/plain", card.dataset.apptId || card.dataset.apptTitle || "");
+      if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+    });
+    card.addEventListener("dragend", () => {
+      card.classList.remove("is-dragging");
+      draggedApptCard = null;
+      board.querySelectorAll("[data-week-appt-dropzone]").forEach((zone) => zone.classList.remove("is-over"));
+    });
+  });
+  board.querySelectorAll("[data-week-appt-dropzone]").forEach((zone) => {
+    zone.addEventListener("dragover", (event) => {
+      if (!draggedApptCard) return;
+      event.preventDefault();
+      zone.classList.add("is-over");
+    });
+    zone.addEventListener("dragleave", () => zone.classList.remove("is-over"));
+    zone.addEventListener("drop", async (event) => {
+      if (!draggedApptCard) return;
+      event.preventDefault();
+      zone.classList.remove("is-over");
+      const targetDate = zone.dataset.weekApptDropzone || "";
+      const sourceCard = draggedApptCard;
+      draggedApptCard = null;
+      if (!targetDate || targetDate === sourceCard.dataset.apptDate) return;
+      // Move the card in the DOM immediately so the change is visible right away,
+      // ahead of the save confirming it.
+      sourceCard.dataset.apptDate = targetDate;
+      sourceCard.querySelector("[data-week-appt-open]")?.setAttribute("data-appt-date", targetDate);
+      zone.appendChild(sourceCard);
+      try {
+        await saveWeekAppointments(currentWeekAppointments());
+        mount();
+      } catch (error) {
+        showLearnDialog("Could Not Move Appointment", error.message || "Please try again.", []);
+      }
+    });
   });
 }
 
