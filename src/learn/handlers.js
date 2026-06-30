@@ -606,7 +606,14 @@ export async function handleLearnGoogleCalendarSync(request, env) {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  const auth = await requireLearnRepository(request, env);
+  const url = new URL(request.url);
+  // The sync must build its repository around the same week the client is
+  // viewing/editing, not always "today's" week — otherwise appointments and
+  // lessons outside the literal current calendar week silently vanish from
+  // the sync payload because previewEvents filters strictly to weekDates.
+  const weekDate = url.searchParams.get("date") || url.searchParams.get("weekDate") || "";
+  const termId = url.searchParams.get("termId") || "";
+  const auth = await requireLearnRepository(request, env, { termId, weekDate });
   if (auth.response) return auth.response;
   return googleCalendarSync(auth.repository, request, env);
 }
