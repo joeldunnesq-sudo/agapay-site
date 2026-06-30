@@ -3394,6 +3394,33 @@ body {
   cursor: grabbing;
 }
 
+/* ── Family — Everyone cards: distinct from Form-specific cards ─────────── */
+
+.learn-week-assignment-card.is-family-card {
+  border-left-color: var(--gold) !important;
+  background: linear-gradient(135deg, rgba(181,148,47,.09), var(--paper2) 55%);
+}
+
+.learn-week-assignment-card.is-family-card:hover {
+  border-color: var(--gold);
+  box-shadow: 0 2px 10px rgba(181,148,47,.18);
+}
+
+.learn-family-card-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  color: var(--navy);
+  background: var(--gold);
+  padding: 1px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
 .learn-week-assignment-card-body {
   flex: 1;
   min-width: 0;
