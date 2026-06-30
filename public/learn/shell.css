@@ -2909,12 +2909,22 @@ body {
   line-height: 1;
 }
 
+.learn-week-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 0 0 12px;
+}
+
 .learn-week-form-tabs {
   display: flex;
   align-items: center;
   gap: 8px;
   overflow-x: auto;
-  padding: 0 0 12px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .learn-week-form-tabs button {
@@ -2936,6 +2946,106 @@ body {
   background: var(--navy);
   color: #f3ead4;
   box-shadow: 0 8px 18px rgba(6,21,34,.12);
+}
+
+/* ── Family / Form view toggle ───────────────────────────── */
+
+.learn-family-view-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.learn-family-view-toggle-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: .01em;
+}
+
+.learn-family-view-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.learn-family-view-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+
+.learn-family-view-track {
+  display: block;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--line);
+  border: 1px solid rgba(6,21,34,.12);
+  transition: background .16s ease;
+  position: relative;
+}
+
+.learn-family-view-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(6,21,34,.28);
+  transition: left .16s ease;
+}
+
+.learn-family-view-switch input:checked + .learn-family-view-track {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+.learn-family-view-switch input:checked + .learn-family-view-track .learn-family-view-thumb {
+  left: 21px;
+}
+
+.learn-family-view-switch input:focus-visible + .learn-family-view-track {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+}
+
+.learn-family-view-toggle-state {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ── Dedicated family lane (separated mode) ─────────────────────── */
+
+.learn-week-family-lane {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 2px dashed var(--line);
+}
+
+.learn-week-family-lane > strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.learn-week-family-lane-zone {
+  min-height: 56px;
 }
 
 .learn-week-assignment-layout {
