@@ -3212,6 +3212,113 @@ body {
   padding: 5px 7px;
 }
 
+/* ── Interactive appointment cards on the Lessons week board ─────────────── */
+
+.learn-week-appt-list {
+  display: grid;
+  gap: 5px;
+  margin: 0 0 8px;
+}
+
+.learn-week-appt-card {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border-radius: 8px;
+  transition: opacity .12s;
+}
+
+.learn-week-appt-card.is-dragging { opacity: .42; }
+
+.learn-week-appt-handle {
+  flex: 0 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(181,148,47,.28);
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  background: #fffaf0;
+  color: #b5942f;
+  font-size: 10px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.learn-week-appt-card.is-dragging .learn-week-appt-handle { cursor: grabbing; }
+
+.learn-week-appt-open {
+  flex: 1;
+  min-width: 0;
+  display: block;
+  text-align: left;
+  border: 1px solid rgba(181,148,47,.28);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  background: #fffaf0;
+  color: #6f5a22;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  padding: 5px 7px;
+  cursor: pointer;
+}
+
+.learn-week-appt-open:hover { background: #fff3da; }
+
+.learn-week-appt-time { color: #b5942f; margin-right: 4px; }
+.learn-week-appt-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.learn-week-appt-add {
+  display: block;
+  width: 100%;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 5px 7px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color .12s, color .12s;
+}
+
+.learn-week-appt-add:hover { border-color: var(--gold); color: var(--gold); }
+
+.learn-week-appt-list[data-week-appt-dropzone].is-over {
+  background: rgba(181,148,47,.10);
+  outline: 1.5px dashed var(--gold);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.learn-week-appt-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(6,21,34,.58);
+}
+
+.learn-week-appt-modal-card {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  border: 1px solid var(--goldsoft);
+  border-radius: 18px;
+  background: var(--cream);
+  box-shadow: 0 24px 70px rgba(6,21,34,.34);
+  padding: 24px;
+}
+
 .learn-week-assignment-dropzone {
   min-height: 160px;
   display: grid;
