@@ -5072,12 +5072,18 @@ async function apiPost(path, body) {
 }
 
 async function syncLearnGoogleCalendar(extraEvents = [], statusEl = null) {
-  if (!learnGoogleCalendarStatus.configured || !learnGoogleCalendarStatus.connected) return null;
+  if (!learnGoogleCalendarStatus.configured || !learnGoogleCalendarStatus.connected) {
+    if (statusEl) statusEl.textContent = `${statusEl.textContent} Google Calendar is not connected — connect it in Setup to sync.`;
+    return null;
+  }
   try {
     const calendar = storedLearnCalendar("");
     const result = await apiPost(learnApiUrl("/api/learn/google-calendar/sync", { calendar, returnTo: window.location.pathname + window.location.search }), { extraEvents });
-    if (statusEl && result?.syncedCount) {
-      statusEl.textContent = `${statusEl.textContent} Google Calendar synced ${result.syncedCount} item${result.syncedCount === 1 ? "" : "s"}.`;
+    if (statusEl) {
+      const count = Number(result?.syncedCount || 0);
+      statusEl.textContent = count
+        ? `${statusEl.textContent} Google Calendar synced ${count} item${count === 1 ? "" : "s"}.`
+        : `${statusEl.textContent} Google Calendar is connected, but nothing matched this week to sync.`;
     }
     return result;
   } catch (error) {
