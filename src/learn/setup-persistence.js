@@ -1126,7 +1126,7 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           childId: child.id,
           childIds: subject.childIds || [],
           planningMode: subject.planningMode,
-          formLabels: subject.formLabels || [],
+          formLabels: (assignment.formLabels?.length ? assignment.formLabels : subject.formLabels) || [],
           title: subject.title,
           detail: `${assignment.resourceTitle || subject.cadenceLabel}${currentWeekPlan(assignment) ? ` • ${currentWeekPlan(assignment)}` : ""}${subject.endNumber ? ` (${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber})` : ""}${subject.weeklyFrequency ? ` • ${subject.weeklyFrequency}` : ""}`,
           priority: subject.priorityLevel === "essential" ? index : subject.priorityLevel === "important" ? 30 + index : subject.priorityLevel === "optional" ? 100 + index : 70 + index,
