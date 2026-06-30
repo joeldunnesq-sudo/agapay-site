@@ -1162,7 +1162,8 @@
 
   function newStewardshipMeeting() {
     if (!currentParish) { setStatus('Load a parish first.','error'); return; }
-    setStatus('AGAPAY Stewardship is coming soon. Packet creation is not enabled yet.','error');
+    stewardshipState.selectedMeeting = emptyStewardshipMeeting();
+    renderStewardshipEditor();
   }
 
   async function editStewardshipMeeting(meetingId) {
