@@ -1275,9 +1275,24 @@ function renderWeeklyAssignmentBoard(vm) {
           </div>
         </div>
       </div>
-      ${formLabels.length ? `<div class="learn-week-form-tabs" aria-label="Planner form selector">${formLabels.map((label, index) => `<button type="button" data-week-form-filter="${html(label)}" aria-pressed="${index === 0 ? "true" : "false"}">${html(label)}</button>`).join("")}</div>` : ""}
+      ${formLabels.length ? `
+      <div class="learn-week-controls-row">
+        <div class="learn-week-form-tabs" aria-label="Planner form selector">${formLabels.map((label, index) => `<button type="button" data-week-form-filter="${html(label)}" aria-pressed="${index === 0 ? "true" : "false"}">${html(label)}</button>`).join("")}</div>
+        <label class="learn-family-view-toggle" title="Choose how family-wide subjects appear alongside Form subjects">
+          <span class="learn-family-view-toggle-label">Show family subjects</span>
+          <span class="learn-family-view-switch">
+            <input type="checkbox" data-family-view-toggle checked>
+            <span class="learn-family-view-track"><span class="learn-family-view-thumb"></span></span>
+          </span>
+          <span class="learn-family-view-toggle-state" data-family-view-state>with each Form</span>
+        </label>
+      </div>` : ""}
       <div class="learn-week-assignment-layout">
         <div class="learn-week-assignment-pool">
+          <div class="learn-week-family-lane" data-family-lane hidden>
+            <strong>Family — Everyone</strong>
+            <div class="learn-week-assignment-dropzone learn-week-family-lane-zone" data-week-assignment-zone="pool-family"></div>
+          </div>
           <strong data-pool-heading>Available subjects</strong>
           <div class="learn-week-assignment-dropzone" data-week-assignment-zone="pool">${items.length ? items.map(card).join("") : emptyState("No setup subjects are active this week.")}</div>
         </div>
@@ -4775,9 +4790,9 @@ function renderPrintCenter(vm) {
       id: "weekly",
       label: "This Week",
       icon: "▦",
-      desc: "Household and lesson plan prints for the current week.",
+      desc: "Household plan and the landscape lesson grid by Form for the current week.",
       premium: false,
-      ids: ["print_mom_weekly"]
+      ids: ["print_mom_weekly", "planner_lessons_week_form"]
     },
     {
       id: "month",
@@ -4793,7 +4808,7 @@ function renderPrintCenter(vm) {
       icon: "☰",
       desc: "Structured lesson grids by Form, term, or month.",
       premium: true,
-      ids: ["planner_lessons_week_form", "planner_lessons_month_form", "planner_lessons_term_form", "print_mom_term", "print_mom_liturgical"]
+      ids: ["planner_lessons_month_form", "planner_lessons_term_form", "print_mom_term", "print_mom_liturgical"]
     },
     {
       id: "kitchen",
@@ -6203,16 +6218,57 @@ function wireWeeklyAssignmentBoard(vm) {
   if (!board) return;
   const storageKey = weekAssignmentStorageKey(vm, board.dataset.weekKey || "week");
   const formStorageKey = `${storageKey}.form`;
+  const familyViewStorageKey = "agapay.learn.weekPlanner.familyView"; // household-wide preference, not per-week
   const zones = [...board.querySelectorAll("[data-week-assignment-zone]")];
   const formButtons = [...board.querySelectorAll("[data-week-form-filter]")];
   const availableForms = formButtons.map((button) => button.dataset.weekFormFilter).filter(Boolean);
+  const familyLane = board.querySelector("[data-family-lane]");
+  const familyLaneZone = board.querySelector('[data-week-assignment-zone="pool-family"]');
+  const familyToggle = board.querySelector("[data-family-view-toggle]");
+  const familyToggleState = board.querySelector("[data-family-view-state]");
   const cardFormLabels = (card) => (card.dataset.weekFormLabels || "").split("|").map((label) => label.trim()).filter(Boolean);
+  const isFamilyCard = (card) => {
+    const labels = cardFormLabels(card);
+    return !labels.length || labels.includes("__family") || labels.includes("Household Form");
+  };
+  // familyViewMode: "mixed" (default) shows family subjects inside every Form tab's pool.
+  // "separated" pulls them into their own dedicated lane shown above the Form pool at all times.
+  const familyViewFromStorage = () => {
+    try {
+      return localStorage.getItem(familyViewStorageKey) === "separated" ? "separated" : "mixed";
+    } catch {
+      return "mixed";
+    }
+  };
+  let familyViewMode = familyViewFromStorage();
   const cardVisibleForForm = (card, formLabel) => {
     const labels = cardFormLabels(card);
     if (!formLabel || !availableForms.length) return true;
-    // Always show family/household items regardless of active form tab
-    if (!labels.length || labels.includes("__family") || labels.includes("Household Form")) return true;
+    if (isFamilyCard(card)) {
+      // Mixed mode: family cards show under every Form tab. Separated mode: they live
+      // in the dedicated lane instead, so hide them from the per-Form pool entirely.
+      return familyViewMode === "mixed";
+    }
     return labels.includes(formLabel);
+  };
+  const applyFamilyViewMode = () => {
+    if (!familyLane) return;
+    const separated = familyViewMode === "separated" && availableForms.length > 0;
+    familyLane.hidden = !separated;
+    if (familyToggle) familyToggle.checked = familyViewMode === "mixed";
+    if (familyToggleState) familyToggleState.textContent = familyViewMode === "mixed" ? "with each Form" : "in its own lane";
+    // Move family-only cards (that aren't placed in a day) between the family lane and the main pool
+    if (familyLaneZone) {
+      const mainPool = board.querySelector('[data-week-assignment-zone="pool"]');
+      board.querySelectorAll("[data-week-assignment-card]:not([data-auto-original])").forEach((card) => {
+        if (!isFamilyCard(card)) return;
+        const inDayZone = card.closest("[data-week-assignment-zone]")?.dataset.weekAssignmentZone;
+        const isPlacedInDay = inDayZone && inDayZone !== "pool" && inDayZone !== "pool-family";
+        if (isPlacedInDay) return; // leave manually-placed cards where they are
+        const targetZone = separated ? familyLaneZone : mainPool;
+        if (targetZone && card.parentElement !== targetZone) targetZone.appendChild(card);
+      });
+    }
   };
   const activeFormFromStorage = () => {
     try {
@@ -6249,6 +6305,7 @@ function wireWeeklyAssignmentBoard(vm) {
         card.style.display = "";
       }
     });
+    applyFamilyViewMode();
   };
   const readState = () => {
     try {
@@ -6295,7 +6352,8 @@ function wireWeeklyAssignmentBoard(vm) {
   const restore = () => {
     const state = readState();
     // Day zones in DOM order (Sun=index 0, Mon=1 … Sat=6 matching statuses array)
-    const dayZones = [...board.querySelectorAll("[data-week-assignment-zone]:not([data-week-assignment-zone='pool'])")];
+    // Exclude both pool zones — pool (form-filtered) and pool-family (the family lane)
+    const dayZones = [...board.querySelectorAll("[data-week-assignment-zone]:not([data-week-assignment-zone='pool']):not([data-week-assignment-zone='pool-family'])")];
     board.querySelectorAll("[data-week-assignment-card]").forEach((card) => {
       const id = card.dataset.itemId;
       const saved = state[id];
@@ -6450,6 +6508,13 @@ function wireWeeklyAssignmentBoard(vm) {
       } catch {}
       applyFormFilter(activeFormLabel);
     });
+  });
+  familyToggle?.addEventListener("change", () => {
+    familyViewMode = familyToggle.checked ? "mixed" : "separated";
+    try {
+      localStorage.setItem(familyViewStorageKey, familyViewMode);
+    } catch {}
+    applyFormFilter(activeFormLabel);
   });
   applyFormFilter(activeFormLabel);
   const designedWeekPayload = () => {
