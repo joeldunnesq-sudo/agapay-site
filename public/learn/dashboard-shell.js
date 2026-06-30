@@ -5700,7 +5700,12 @@ function setupPayloadFromForm(form) {
           id: row.dataset.id || "",
           blockType: rowValue(row, "blockType"),
           title,
-          resource: primaryResource.title || rowValue(row, "resource") || title,
+          // Only send a top-level "resource" name when a real resource exists.
+          // Falling back to the block title/type here used to manufacture a
+          // phantom resource on save whenever the resource list was emptied —
+          // the server would reconstruct one from this field, making deletes
+          // appear to silently "undo" on refresh.
+          resource: primaryResource.title || "",
           resources,
           resourceType: rowValue(row, "resourceType"),
           planningMode: rowValue(row, "planningMode") || primaryResource.planningMode || "forms",
