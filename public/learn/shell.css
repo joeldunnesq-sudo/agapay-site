@@ -2589,6 +2589,8 @@ body {
 .learn-family-week-head strong { padding: 11px; border-left: 1px solid var(--line); text-align: center; color: var(--ink); }
 .learn-family-week-head strong.is-fast { background: rgba(110,47,42,.08); color: var(--burgundy); }
 .learn-family-week-head strong.is-feast { background: rgba(181,148,47,.13); color: var(--gold); }
+.learn-family-week-head strong.is-today { background: var(--paper2); box-shadow: inset 0 0 0 1.5px var(--gold); color: var(--ink); }
+.learn-family-week-head strong.is-ordinary { background: transparent; color: var(--ink); }
 .learn-family-week-head small { display: block; color: var(--muted); font-weight: 500; letter-spacing: 0; text-transform: none; }
 .learn-family-week-head strong em { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; font-style: normal; font-weight: 800; line-height: 1.15; letter-spacing: 0; text-transform: none; }
 .learn-family-week-row { border-bottom: 1px solid var(--line); }
