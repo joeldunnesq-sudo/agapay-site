@@ -1299,7 +1299,11 @@ function renderWeeklyAssignmentBoard(vm) {
         <div class="learn-week-assignment-days">
           ${vm.week.days.map((day) => {
             const appointments = day.events || [];
-            return `<div class="learn-week-assignment-day"><strong>${html(day.weekday || day.weekdayLong)}<span>${html(day.shortDate || day.date)}</span></strong>${appointments.length ? `<div class="learn-week-assignment-events">${appointments.slice(0, 3).map((event) => `<span>${html(event.startTime || "")}${event.startTime ? " · " : ""}${html(event.title || "Appointment")}</span>`).join("")}${appointments.length > 3 ? `<small>+ ${appointments.length - 3} more</small>` : ""}</div>` : ""}<div class="learn-week-assignment-dropzone" data-week-assignment-zone="${html(day.date)}"></div></div>`;
+            const feastLabel = day.feast || day.feastTitle || "";
+            const fastingLabel = day.isFastDay ? (day.fastingType || day.fasting || "Fast day") : "";
+            const showFeastRibbon = Boolean(feastLabel || fastingLabel);
+            const feastRibbon = showFeastRibbon ? `<div class="learn-week-day-feast${day.isFastDay ? " is-fast" : ""}">${feastLabel ? `<span class="learn-week-day-feast-title">${html(feastLabel)}</span>` : ""}${fastingLabel ? `<span class="learn-week-day-feast-fast">${html(fastingLabel)}</span>` : ""}</div>` : "";
+            return `<div class="learn-week-assignment-day${day.isSunday ? " is-sunday" : ""}"><strong>${html(day.weekday || day.weekdayLong)}<span>${html(day.shortDate || day.date)}</span></strong>${feastRibbon}${appointments.length ? `<div class="learn-week-assignment-events">${appointments.slice(0, 3).map((event) => `<span>${html(event.startTime || "")}${event.startTime ? " · " : ""}${html(event.title || "Appointment")}</span>`).join("")}${appointments.length > 3 ? `<small>+ ${appointments.length - 3} more</small>` : ""}</div>` : ""}<div class="learn-week-assignment-dropzone" data-week-assignment-zone="${html(day.date)}"></div></div>`;
           }).join("")}
         </div>
       </div>
