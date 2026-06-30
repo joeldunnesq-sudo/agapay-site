@@ -825,7 +825,6 @@ export function toFormationViewModel(rawPayload) {
   const formation = rawPayload?.formation || {};
   const today = formation.today || {};
   const liturgicalDay = today.liturgicalDay || {};
-  const catechesis = formation.catechesisCycle || {};
   const enrichmentBlocks = simpleList(formation.enrichmentBlocks, (block) => ({
     title: text(block.title, "Enrichment"),
     type: text(block.blockType, ""),
@@ -836,7 +835,14 @@ export function toFormationViewModel(rawPayload) {
   const mappedMemory = enrichmentByType(/recitation|memory/i);
   const mappedHymns = enrichmentByType(/hymn/i);
   const mappedFeasts = enrichmentByType(/saints?|feasts?/i);
-  const coreEnrichment = enrichmentBlocks.filter((block) => !/(recitation|memory|hymn|saints?|feasts?)/i.test(block.type));
+  const coreEnrichment = enrichmentBlocks.filter((block) => !/(catechesis|recitation|memory|hymn|saints?|feasts?)/i.test(block.type));
+  // The Catechesis card on the Formation tab is sourced from the Catechesis
+  // tile in Setup — which lives in the Enrichment list (blockType: "Catechesis")
+  // rather than a separate dedicated form. Read the raw block directly so the
+  // card always reflects what was actually entered in Setup.
+  const rawCatechesisBlock = safeArray(formation.enrichmentBlocks).find((block) => /catechesis/i.test(text(block.blockType, ""))) || {};
+  const catechesisResource = safeArray(rawCatechesisBlock.resources)[0] || {};
+  const catechesisCurrentPlan = safeArray(catechesisResource.weeklyPlans || rawCatechesisBlock.weeklyPlans).filter(Boolean).slice(-1)[0] || "";
   return {
     shell: shellFromPayload("formation", rawPayload),
     page: page("formation", "Formation", "Church-first learning for hearts and minds."),
@@ -858,10 +864,10 @@ export function toFormationViewModel(rawPayload) {
       complete: item.status === "completed"
     })),
     catechesis: {
-      title: text(catechesis.title, "Catechesis"),
-      currentLesson: text(catechesis.currentLesson, "Add catechesis in Setup"),
-      progress: catechesis.lessonNumber && catechesis.totalLessons ? `Lesson ${catechesis.lessonNumber} of ${catechesis.totalLessons}` : "",
-      topic: text(catechesis.doctrinalTopic, "")
+      title: text(rawCatechesisBlock.title || catechesisResource.title, "Catechesis"),
+      currentLesson: text(catechesisCurrentPlan || catechesisResource.title, "Add a Catechesis resource in Setup"),
+      progress: text(rawCatechesisBlock.cadenceLabel || rawCatechesisBlock.weeklyFrequency, ""),
+      topic: text(rawCatechesisBlock.formLabel, "")
     },
     recitation: [
       ...simpleList(formation.recitationTracks, (track) => ({
