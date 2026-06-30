@@ -1118,15 +1118,35 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
           ? list(subject.resources).map((resource, resourceIndex) => ({ ...subject, ...resource, resourceTitle: resource.title || resource.resource || subject.resource, resourceIndex }))
           : [{ ...subject, resourceTitle: subject.resource, resourceIndex: 0 }];
         return resourceAssignments.flatMap((assignment) => {
-          const assignedChildren = childrenForAssignment(assignment, next.children);
-          return assignedChildren.map((child) => ({
-          id: `week_${subject.id}_${assignment.resourceIndex + 1}_${child.id}`,
+          const assignmentFormLabels = (assignment.formLabels?.length ? assignment.formLabels : subject.formLabels) || [];
+          const hasChildIds = Array.isArray(assignment.childIds) && assignment.childIds.length;
+          // For form-based planning: produce one row per form label regardless of
+          // whether a child with that exact label exists. The planner pool shows
+          // subjects to schedule; it doesn't require a matched child record.
+          // For child-specific planning: filter to the named children only.
+          let rowSlots;
+          if (hasChildIds) {
+            // Specific children — must match
+            const matchedChildren = childrenForAssignment(assignment, next.children);
+            rowSlots = matchedChildren.map((child) => ({ child, formLabelOverride: null }));
+          } else if (assignmentFormLabels.length) {
+            // Form-based — one slot per form label; try to find a matching child but don't require one
+            rowSlots = assignmentFormLabels.map((label) => {
+              const matchedChild = next.children.find((c) => c.formLabel === label || c.gradeLabel === label) || null;
+              return { child: matchedChild, formLabelOverride: label };
+            });
+          } else {
+            // No labels — treat as family/household (produce one row, no child)
+            rowSlots = [{ child: null, formLabelOverride: null }];
+          }
+          return rowSlots.map(({ child, formLabelOverride }) => ({
+          id: `week_${subject.id}_${assignment.resourceIndex + 1}_${formLabelOverride || child?.id || "household"}`,
           sourceId: subject.id,
           resourceIndex: assignment.resourceIndex,
-          childId: child.id,
+          childId: child?.id || null,
           childIds: subject.childIds || [],
-          planningMode: subject.planningMode,
-          formLabels: (assignment.formLabels?.length ? assignment.formLabels : subject.formLabels) || [],
+          planningMode: assignmentFormLabels.length ? "forms" : (subject.planningMode || "forms"),
+          formLabels: formLabelOverride ? [formLabelOverride] : assignmentFormLabels,
           title: subject.title,
           detail: `${assignment.resourceTitle || subject.cadenceLabel}${currentWeekPlan(assignment) ? ` • ${currentWeekPlan(assignment)}` : ""}${subject.endNumber ? ` (${subject.progressionType} ${subject.startNumber || 1}-${subject.endNumber})` : ""}${subject.weeklyFrequency ? ` • ${subject.weeklyFrequency}` : ""}`,
           priority: subject.priorityLevel === "essential" ? index : subject.priorityLevel === "important" ? 30 + index : subject.priorityLevel === "optional" ? 100 + index : 70 + index,
