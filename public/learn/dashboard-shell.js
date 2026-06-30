@@ -5752,7 +5752,7 @@ function familyPlanningPayloadFromForm(form) {
       events: collectRows(form, "familyEvents", (row) => {
         const title = rowValue(row, "title");
         if (!title || !rowValue(row, "date")) return null;
-        return { id: row.dataset.id || "", title, eventType: rowValue(row, "eventType"), date: rowValue(row, "date"), startTime: rowValue(row, "startTime"), location: rowValue(row, "location"), notes: rowValue(row, "notes") };
+        return { id: row.dataset.id || "", title, eventType: rowValue(row, "eventType"), date: rowValue(row, "date"), startTime: rowValue(row, "startTime"), recurrence: rowValue(row, "recurrence") || "none", location: rowValue(row, "location"), notes: rowValue(row, "notes") };
       }),
       meals: collectRows(form, "meals", (row) => ({ id: row.dataset.id || "", date: rowValue(row, "date"), breakfast: rowValue(row, "breakfast"), lunch: rowValue(row, "lunch"), dinner: rowValue(row, "dinner") })).filter((meal) => meal.date),
       recipes: collectRows(form, "recipes", (row) => {
