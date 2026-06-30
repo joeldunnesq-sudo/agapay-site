@@ -231,7 +231,7 @@ function pageIntro(vm) {
         <p>${html(meta.quote)} <strong>${html(meta.ref)}</strong></p>
       </div>
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(181,148,47,.2);">
-        <button type="button" data-grace-mode="full" style="border:1px solid ${currentMode === 'full' ? 'var(--navy)' : 'rgba(181,148,47,.3)'};border-radius:9px;background:${currentMode === 'full' ? 'rgba(6,21,34,.06)' : 'transparent'};color:${currentMode === 'full' ? 'var(--navy)' : 'var(--muted)'};padding:7px 14px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:${currentMode === 'full' ? '700' : '400'};">
+        <button type="button" data-grace-mode="full" style="border:1px solid ${currentMode === 'full' ? 'var(--gold)' : 'rgba(181,148,47,.3)'};border-radius:9px;background:${currentMode === 'full' ? 'rgba(6,21,34,.06)' : 'transparent'};color:${currentMode === 'full' ? 'var(--gold)' : 'var(--muted)'};padding:7px 14px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:${currentMode === 'full' ? '700' : '400'};">
           ${currentMode === 'full' ? '✓ Full plan active — Grace Mode off' : 'Return to full plan — no Grace Mode'}
         </button>
       </div>
