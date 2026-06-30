@@ -1138,6 +1138,17 @@
     }
   }
 
+  // Builds a single-line mailing address from the parish's Settings tab
+  // fields, mirroring registrationAddressLine() server-side.
+  function parishAddressLine(parish) {
+    if (!parish) return '';
+    return [
+      parish.addressLine1,
+      parish.addressLine2,
+      [parish.city, parish.state, parish.postalCode].filter(Boolean).join(' ')
+    ].filter(Boolean).join(', ');
+  }
+
   function emptyStewardshipMeeting() {
     const year = new Date().getFullYear();
     return {
@@ -1146,10 +1157,12 @@
       fiscalYear: year,
       meetingDate: '',
       meetingTime: '',
-      location: '',
+      // Most parishes meet in their own hall; easy to edit if this one doesn't.
+      location: currentParish?.parishName ? `${currentParish.parishName} Parish Hall` : '',
       parishNameOverride: currentParish?.parishName || '',
-      jurisdiction: '',
-      address: '',
+      // Seeded from the parish's Settings tab — editable per meeting from there.
+      jurisdiction: currentParish?.jurisdiction || '',
+      address: parishAddressLine(currentParish),
       status: 'draft',
       agendaItems: [{ title:'Opening prayer', durationMinutes:5 }, { title:'Reports', durationMinutes:30 }, { title:'Financial review', durationMinutes:20 }],
       reports: [{ reportType:'priest', title:'Rector Report', body:'' }, { reportType:'treasurer', title:'Treasurer Report', body:'' }],
