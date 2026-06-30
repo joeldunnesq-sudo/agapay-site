@@ -1292,12 +1292,12 @@ function renderWeeklyAssignmentBoard(vm) {
       </div>` : ""}
       <div class="learn-week-assignment-layout">
         <div class="learn-week-assignment-pool">
+          <strong data-pool-heading>Available subjects</strong>
+          <div class="learn-week-assignment-dropzone" data-week-assignment-zone="pool">${items.length ? items.map(card).join("") : emptyState("No setup subjects are active this week.")}</div>
           <div class="learn-week-family-lane" data-family-lane hidden>
             <strong>Family — Everyone</strong>
             <div class="learn-week-assignment-dropzone learn-week-family-lane-zone" data-week-assignment-zone="pool-family"></div>
           </div>
-          <strong data-pool-heading>Available subjects</strong>
-          <div class="learn-week-assignment-dropzone" data-week-assignment-zone="pool">${items.length ? items.map(card).join("") : emptyState("No setup subjects are active this week.")}</div>
         </div>
         <div class="learn-week-assignment-days">
           ${vm.week.days.map((day) => {
