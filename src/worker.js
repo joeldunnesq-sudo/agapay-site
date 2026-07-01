@@ -679,6 +679,77 @@ async function sendWeeklyCommemorationEmails(env, scheduledTime) {
   return results;
 }
 
+// Sends a one-time heads-up email roughly 30 days before a parish's
+// "Founding 20" free-year Stewardship Suite comp grant expires, so nobody
+// is surprised when access lapses. Marks the grant with reminderSentAt so
+// this never fires twice for the same grant, even though this function
+// runs every week.
+async function sendStewardshipCompExpiryReminders(env) {
+  const registrations = await loadAllRegistrations(env, { status: "verified" });
+  const appUrl = env.AGAPAY_APP_URL || "https://agapay.app";
+  const now = Date.now();
+  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+  const results = [];
+  for (const registration of registrations) {
+    const comp = registration.stewardshipComp;
+    if (!comp?.active || !comp?.expiresAt) continue;
+    if (comp.reminderSentAt) continue; // already reminded for this grant
+
+    const expiresAt = new Date(comp.expiresAt).getTime();
+    if (!Number.isFinite(expiresAt)) continue;
+    const msUntilExpiry = expiresAt - now;
+    // Fire once the grant is within 30 days of expiring (and hasn't already
+    // expired outright — an already-lapsed grant gets no reminder, since a
+    // "heads up, this expired a while ago" email isn't useful).
+    if (msUntilExpiry > THIRTY_DAYS_MS || msUntilExpiry < 0) continue;
+
+    const to = [...new Set(
+      [registration.priestEmail, registration.treasurerEmail, registration.email, registration.contactEmail]
+        .filter(Boolean)
+        .map((addr) => String(addr).trim().toLowerCase())
+    )];
+    if (!to.length) continue;
+
+    const expiresLabel = new Date(comp.expiresAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    const daysLeft = Math.max(1, Math.round(msUntilExpiry / (24 * 60 * 60 * 1000)));
+
+    const email = await sendEmail(env, {
+      from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
+      to,
+      reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
+      subject: `Your free year of AGAPAY Stewardship Suite ends ${expiresLabel}`,
+      html: agapayEmailHtml(appUrl, "Stewardship Suite — Free Year Ending Soon", `
+        <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
+        <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">
+          As one of our founding 20 parishes, <strong>${htmlEscape(registration.parishName || "your parish")}</strong>
+          received a free year of AGAPAY Stewardship Suite. That year ends on
+          <strong>${expiresLabel}</strong> — about ${daysLeft} days from now.
+        </p>
+        <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">
+          No action is needed if you'd simply like to let it lapse. If you'd like to continue with
+          Stewardship Suite afterward, you can add it as a paid add-on to your parish's AGAPAY account
+          at any time from your dashboard.
+        </p>
+        <p style="margin:0;font-size:13px;line-height:1.7;color:#6F6A60;">
+          Thank you for being one of the first parishes to use Stewardship Suite — your feedback has
+          shaped it directly. Reach out any time with questions.
+        </p>
+      `),
+      text: `Your free year of AGAPAY Stewardship Suite ends ${expiresLabel}\n\nAs one of our founding 20 parishes, ${registration.parishName || "your parish"} received a free year of AGAPAY Stewardship Suite, ending ${expiresLabel} (about ${daysLeft} days from now).\n\nNo action is needed if you'd like to let it lapse. If you'd like to continue afterward, you can add Stewardship Suite as a paid add-on any time from your dashboard.\n\nThank you for being one of the first parishes to use it.`
+    });
+
+    if (email.status !== "not_configured") {
+      registration.stewardshipComp = { ...comp, reminderSentAt: new Date().toISOString() };
+      await saveRegistrationRecord(env, registration.reference, registration);
+    }
+
+    results.push({ parishId: registration.parishId, status: email.status });
+  }
+
+  return results;
+}
+
 // Stamp CORS headers onto an existing Response object (for handlers that
 // return their own Response rather than calling json() directly).
 async function handleLearnOdysseyActivate(request, env) {
@@ -1078,6 +1149,7 @@ export default {
   async scheduled(event, env, ctx) {
     if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
     ctx.waitUntil(sendWeeklyCommemorationEmails(env, event.scheduledTime));
+    ctx.waitUntil(sendStewardshipCompExpiryReminders(env));
   },
 
   async fetch(request, env) {
