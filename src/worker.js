@@ -187,6 +187,8 @@ import {
   handleStewardshipGivingMetricsPage,
   handleStewardshipFinancials,
   handleStewardshipNudge,
+  handleAdminGrantStewardshipComp,
+  handleAdminStewardshipCompStatus,
 } from "./handlers/stewardship.js";
 
 import {
@@ -1401,6 +1403,12 @@ export default {
     }
     if (url.pathname === "/api/admin/myagapay/release-flags") {
       return handleAdminMyAgapayReleaseFlags(request, env);
+    }
+    if (url.pathname === "/api/admin/stewardship/comp" && request.method === "POST") {
+      return handleAdminGrantStewardshipComp(request, env);
+    }
+    if (url.pathname === "/api/admin/stewardship/comp-status" && request.method === "GET") {
+      return handleAdminStewardshipCompStatus(request, env);
     }
     if (url.pathname === "/api/admin/seed-demo" && request.method === "POST") {
       if (!(await requireAdmin(request, env))) return unauthorized();
