@@ -29,6 +29,8 @@ import {
 
 import { verifyStripeWebhook } from "./stripe.js";
 
+import { requireAdmin } from "./admin.js";
+
 import { getBearerToken } from "../lib/core.js";
 
 // Auth for stewardship SSR pages.
@@ -74,17 +76,37 @@ const STEWARDSHIP_COMING_SOON = false;
 // Active subscription states that unlock the module
 const ACTIVE_STATES = new Set(["active", "trialing"]);
 
+// Cap on the "founding 20" free-year Stewardship Suite promo.
+const STEWARDSHIP_COMP_PROMO_CODE = "founding-20";
+const STEWARDSHIP_COMP_PROMO_LIMIT = 20;
+const STEWARDSHIP_COMP_PROMO_KV_KEY = "stewardship_comp_promo:founding-20:count";
+
 // ─── Subscription helpers ─────────────────────────────────────────────────────
 
+// A comp grant is active if it was actually granted and hasn't passed its
+// expiresAt. This is entirely separate from the Stripe subscription fields —
+// a comped parish has no Stripe customer/subscription at all, and a comp
+// expiring doesn't touch any billing state, it just falls through to
+// whatever stewardshipStatus already says (normally "no_subscription").
+export function hasActiveStewardshipComp(registration) {
+  const comp = registration?.stewardshipComp;
+  if (!comp?.active) return false;
+  if (!comp.expiresAt) return true;
+  return new Date(comp.expiresAt).getTime() > Date.now();
+}
+
 export function stewardshipStatus(registration) {
+  if (hasActiveStewardshipComp(registration)) return "comped";
   return registration?.stewardshipStatus || "no_subscription";
 }
 
 export function hasStewardshipAccess(registration) {
+  if (hasActiveStewardshipComp(registration)) return true;
   return ACTIVE_STATES.has(stewardshipStatus(registration));
 }
 
 function stewardshipPublicStatus(registration) {
+  const comp = registration?.stewardshipComp || null;
   return {
     status: stewardshipStatus(registration),
     active: hasStewardshipAccess(registration),
@@ -92,7 +114,12 @@ function stewardshipPublicStatus(registration) {
     currentPeriodEnd: registration?.stewardshipPeriodEnd || null,
     trialEnd: registration?.stewardshipTrialEnd || null,
     customerConfigured: Boolean(registration?.stewardshipStripeCustomerId),
-    subscriptionConfigured: Boolean(registration?.stewardshipStripeSubscriptionId)
+    subscriptionConfigured: Boolean(registration?.stewardshipStripeSubscriptionId),
+    comp: comp && hasActiveStewardshipComp(registration) ? {
+      code: comp.code || null,
+      grantedAt: comp.grantedAt || null,
+      expiresAt: comp.expiresAt || null
+    } : null
   };
 }
 
@@ -1670,6 +1697,92 @@ function publicMeetingDetails(meeting, agendaItems, reports, financialSummary, r
 
 function isMissingStewardshipSchema(error) {
   return /stewardship_annual_meetings|no such table|not found/i.test(String(error?.message || error || ""));
+}
+
+// ─── "Founding 20" free-year Stewardship Suite promo ───────────────────────────
+// Admin-granted only — not self-service — to keep the count exact and to avoid
+// building abuse/fraud protection for what is a small, relationship-driven
+// promo. Grant state lives entirely on the registration record
+// (registration.stewardshipComp), completely separate from the Stripe
+// subscription fields, so a comped parish has no billing objects at all.
+
+// POST /api/admin/stewardship/comp
+// Body: { parishId: string }
+// Grants one year of free Stewardship Suite access, capped at
+// STEWARDSHIP_COMP_PROMO_LIMIT total grants across all parishes.
+export async function handleAdminGrantStewardshipComp(request, env) {
+  if (!(await requireAdmin(request, env))) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+
+  const body = await parseJsonBody(request);
+  const parishId = String(body?.parishId || "").trim();
+  if (!parishId) return json({ error: "parishId is required." }, { status: 400 });
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish not found." }, { status: 404 });
+  const { registration } = found;
+
+  if (hasActiveStewardshipComp(registration)) {
+    return json({
+      error: "This parish already has an active Stewardship Suite comp grant.",
+      comp: registration.stewardshipComp
+    }, { status: 409 });
+  }
+
+  // Check-then-increment against the cap. This isn't perfectly atomic under
+  // true concurrent requests, but grants are a rare, admin-only, manual
+  // action — the realistic risk of two simultaneous grants racing past the
+  // cap is effectively zero for this use case.
+  const currentCountRaw = await env.AGAPAY_REGISTRATIONS.get(STEWARDSHIP_COMP_PROMO_KV_KEY);
+  const currentCount = parseInt(currentCountRaw || "0", 10) || 0;
+  if (currentCount >= STEWARDSHIP_COMP_PROMO_LIMIT) {
+    return json({
+      error: `The founding ${STEWARDSHIP_COMP_PROMO_LIMIT} free-year promo has already been fully claimed.`,
+      claimed: currentCount,
+      limit: STEWARDSHIP_COMP_PROMO_LIMIT
+    }, { status: 409 });
+  }
+
+  const now = new Date();
+  const expires = new Date(now);
+  expires.setFullYear(expires.getFullYear() + 1);
+
+  registration.stewardshipComp = {
+    active: true,
+    code: STEWARDSHIP_COMP_PROMO_CODE,
+    grantedAt: now.toISOString(),
+    expiresAt: expires.toISOString(),
+    grantedBy: "admin"
+  };
+  await saveRegistrationRecord(env, registration);
+
+  const newCount = currentCount + 1;
+  await env.AGAPAY_REGISTRATIONS.put(STEWARDSHIP_COMP_PROMO_KV_KEY, String(newCount));
+
+  return json({
+    ok: true,
+    parishId,
+    comp: registration.stewardshipComp,
+    claimed: newCount,
+    remaining: Math.max(0, STEWARDSHIP_COMP_PROMO_LIMIT - newCount)
+  });
+}
+
+// GET /api/admin/stewardship/comp-status
+// Returns how many of the 20 founding free-year grants have been claimed,
+// for the admin dashboard.
+export async function handleAdminStewardshipCompStatus(request, env) {
+  if (!(await requireAdmin(request, env))) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const currentCountRaw = await env.AGAPAY_REGISTRATIONS.get(STEWARDSHIP_COMP_PROMO_KV_KEY);
+  const claimed = parseInt(currentCountRaw || "0", 10) || 0;
+  return json({
+    code: STEWARDSHIP_COMP_PROMO_CODE,
+    limit: STEWARDSHIP_COMP_PROMO_LIMIT,
+    claimed,
+    remaining: Math.max(0, STEWARDSHIP_COMP_PROMO_LIMIT - claimed)
+  });
 }
 
 // ─── Route handlers ───────────────────────────────────────────────────────────
