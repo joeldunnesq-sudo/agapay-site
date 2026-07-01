@@ -2498,7 +2498,7 @@ export async function handleStewardshipFinancials(request, env, parishId) {
          JOIN stewardship_annual_meetings am ON am.id = fs.annual_meeting_id
          WHERE fs.annual_meeting_id IN (${placeholders})
          ORDER BY am.meeting_date ASC`,
-        meetingIds
+        ...meetingIds
       ),
       d1All(env,
         `SELECT rf.*, am.title AS meeting_title, am.fiscal_year
@@ -2506,7 +2506,7 @@ export async function handleStewardshipFinancials(request, env, parishId) {
          JOIN stewardship_annual_meetings am ON am.id = rf.annual_meeting_id
          WHERE rf.annual_meeting_id IN (${placeholders})
          ORDER BY rf.sort_order ASC`,
-        meetingIds
+        ...meetingIds
       )
     ]);
 
