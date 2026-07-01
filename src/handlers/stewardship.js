@@ -1759,61 +1759,81 @@ export async function handleParishStewardshipBillingPortal(request, env, parishI
 }
 
 export async function handleParishStewardshipMeetings(request, env, parishId) {
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
-  const ctx = await requireParishApiContext(request, env, parishId);
-  if (!ctx.ok) return ctx.response;
-  const { registration } = ctx;
-  if (STEWARDSHIP_COMING_SOON) return stewardshipComingSoonJson();
-  if (!hasStewardshipAccess(registration)) {
-    return json({ error: "Stewardship subscription required.", stewardship: stewardshipPublicStatus(registration) }, { status: 402 });
-  }
-
-  if (request.method === "GET") {
-    let meetings = [];
-    try {
-      meetings = await d1All(env, `
-        SELECT *
-        FROM stewardship_annual_meetings
-        WHERE parish_id = ?
-        ORDER BY fiscal_year DESC, created_at DESC
-        LIMIT 50
-      `, registration.parishId);
-    } catch (error) {
-      if (!isMissingStewardshipSchema(error)) throw error;
-      return json({ ok: false, error: "Stewardship database tables are not installed yet.", setupRequired: true }, { status: 503 });
+  try {
+    if (!hasProductionStore(env)) return missingProductionStoreResponse();
+    const ctx = await requireParishApiContext(request, env, parishId);
+    if (!ctx.ok) return ctx.response;
+    const { registration } = ctx;
+    if (STEWARDSHIP_COMING_SOON) return stewardshipComingSoonJson();
+    if (!hasStewardshipAccess(registration)) {
+      return json({ error: "Stewardship subscription required.", stewardship: stewardshipPublicStatus(registration) }, { status: 402 });
     }
-    return json({ ok: true, meetings: (meetings || []).map(publicMeeting) });
+
+    if (request.method === "GET") {
+      let meetings = [];
+      try {
+        meetings = await d1All(env, `
+          SELECT *
+          FROM stewardship_annual_meetings
+          WHERE parish_id = ?
+          ORDER BY fiscal_year DESC, created_at DESC
+          LIMIT 50
+        `, registration.parishId);
+      } catch (error) {
+        if (!isMissingStewardshipSchema(error)) throw error;
+        return json({ ok: false, error: "Stewardship database tables are not installed yet.", setupRequired: true }, { status: 503 });
+      }
+      return json({ ok: true, meetings: (meetings || []).map(publicMeeting) });
+    }
+
+    if (request.method !== "POST") {
+      return json({ error: `Method not allowed: ${request.method} is not supported on /stewardship/meetings (use GET or POST)` }, { status: 405 });
+    }
+    const body = await parseJsonBody(request);
+    if (!body) return json({ error: "Invalid JSON body" }, { status: 400 });
+    const form = apiFormFromMeetingPayload(body);
+    const meetingId = await newId();
+    const now = new Date().toISOString();
+
+    await d1Run(env, `
+      INSERT INTO stewardship_annual_meetings
+        (id, parish_id, title, fiscal_year, meeting_date, meeting_time, location,
+         parish_name_override, jurisdiction, address, status, created_by, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, 
+      meetingId, registration.parishId,
+      form.title || "Annual Meeting",
+      parseInt(form.fiscal_year) || new Date().getFullYear(),
+      form.meeting_date || null,
+      form.meeting_time || null,
+      form.location || null,
+      form.parish_name_override || null,
+      form.jurisdiction || null,
+      form.address || null,
+      form.action === "ready" ? "ready" : "draft",
+      null,
+      now, now,
+    );
+
+    await saveMeetingSubRecords(env, meetingId, form);
+
+    // Build the response directly instead of delegating to
+    // handleParishStewardshipMeetingDetail — that function only accepts
+    // GET/PATCH, but this request's method is still POST, which made a
+    // successful creation look like a failed "Method not allowed" save.
+    const created = await d1First(env,
+      "SELECT * FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
+      meetingId, registration.parishId
+    );
+    const [agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions] =
+      await loadMeetingSubRecords(env, meetingId);
+    return json({
+      ok: true,
+      meeting: publicMeetingDetails(created, agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions)
+    });
+  } catch (err) {
+    return json({ error: "Stewardship meetings request failed: " + (err?.message || String(err)) }, { status: 500 });
   }
-
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
-  const body = await parseJsonBody(request);
-  if (!body) return json({ error: "Invalid JSON body" }, { status: 400 });
-  const form = apiFormFromMeetingPayload(body);
-  const meetingId = await newId();
-  const now = new Date().toISOString();
-
-  await d1Run(env, `
-    INSERT INTO stewardship_annual_meetings
-      (id, parish_id, title, fiscal_year, meeting_date, meeting_time, location,
-       parish_name_override, jurisdiction, address, status, created_by, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `, 
-    meetingId, registration.parishId,
-    form.title || "Annual Meeting",
-    parseInt(form.fiscal_year) || new Date().getFullYear(),
-    form.meeting_date || null,
-    form.meeting_time || null,
-    form.location || null,
-    form.parish_name_override || null,
-    form.jurisdiction || null,
-    form.address || null,
-    form.action === "ready" ? "ready" : "draft",
-    null,
-    now, now,
-  );
-
-  await saveMeetingSubRecords(env, meetingId, form);
-  return handleParishStewardshipMeetingDetail(request, env, parishId, meetingId);
 }
 
 export async function handleParishStewardshipMeetingDetail(request, env, parishId, meetingId) {
