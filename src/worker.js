@@ -1570,8 +1570,8 @@ export default {
       return json({
         ok: true,
         parishId: DEMO_PARISH_ID,
-        dashboardUrl: \`/parish/dashboard?parishId=\${DEMO_PARISH_ID}\`,
-        giveUrl: \`/give/\${DEMO_PARISH_ID}\`,
+       dashboardUrl: `/parish/dashboard?parishId=${DEMO_PARISH_ID}`,
+        giveUrl: `/give/${DEMO_PARISH_ID}`,
         message: "St. Fiacre Orthodox Church (Demo) seeded. Use password 'demo2025' for the parish dashboard."
       });
     }
