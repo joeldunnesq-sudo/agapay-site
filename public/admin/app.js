@@ -1042,6 +1042,33 @@ let selectedReference = '';
       }
     }
 
+    async function seedDemoParish(btn) {
+      const status = document.getElementById('seedDemoStatus');
+      btn.disabled = true;
+      btn.textContent = 'Seeding…';
+      if (status) status.textContent = '';
+      try {
+        const res = await fetch('/api/admin/seed-demo', {
+          method: 'POST',
+          headers: authHeaders()
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || 'Seed failed');
+        btn.textContent = '✓ Seeded';
+        if (status) {
+          status.textContent = `St. Fiacre (Demo) KV record written. Dashboard: /parish/dashboard · Give: /give/st-fiacre · Password: demo2025`;
+          status.style.color = 'var(--green, #2a7a4b)';
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = '🌱 Seed St. Fiacre (Demo)';
+        if (status) {
+          status.textContent = err.message;
+          status.style.color = 'var(--red, #8b2020)';
+        }
+      }
+    }
+
     async function loadPlatformSummary(btn) {
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
       if (!registrationsCache.length) {
