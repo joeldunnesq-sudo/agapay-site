@@ -3091,9 +3091,14 @@ export async function handleParishSubscriptionPortal(request, env, parishId) {
   return json({ ok: true, portalUrl: session.body.url });
 }
 
-// Feature flag: Sacraments & Services is not yet fully ready for parishes or
-// donors to use. Flip to false to re-enable — no other code changes needed.
-const SACRAMENTS_COMING_SOON = true;
+// Feature flag: Sacraments & Services is not yet fully ready for general
+// availability. It's live only for the parishes listed here (currently just
+// the St. Fiacre demo parish, for internal testing) — every other parish
+// sees "Coming soon." To launch broadly, replace this with `() => true`.
+const SACRAMENTS_ALLOWED_PARISH_IDS = new Set(["st-fiacre"]);
+function sacramentsComingSoonFor(parishId) {
+  return !SACRAMENTS_ALLOWED_PARISH_IDS.has(String(parishId || "").trim());
+}
 
 const SACRAMENT_STATUSES = new Set(["requested", "acknowledged", "scheduled", "completed", "declined", "cancelled"]);
 
@@ -3142,7 +3147,7 @@ function parishSacramentRequestRow(row = {}) {
 // becomes available on both ends automatically the moment a parish
 // subscribes (or is comped), with no separate enablement step.
 export async function handleParishSacraments(request, env, parishId) {
-  if (SACRAMENTS_COMING_SOON) {
+  if (sacramentsComingSoonFor(parishId)) {
     return json({ error: "Sacraments & Services is coming soon.", comingSoon: true }, { status: 503 });
   }
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
@@ -3182,7 +3187,7 @@ export async function handleParishSacraments(request, env, parishId) {
 // PATCH /api/parish/dashboard/:parishId/sacraments/:requestId
 // Body: { status?, confirmedDate?, confirmedTime?, clergyAssigned?, parishNotes?, declineReason? }
 export async function handleParishSacramentUpdate(request, env, parishId, requestId) {
-  if (SACRAMENTS_COMING_SOON) {
+  if (sacramentsComingSoonFor(parishId)) {
     return json({ error: "Sacraments & Services is coming soon.", comingSoon: true }, { status: 503 });
   }
   if (request.method !== "PATCH") return json({ error: "Method not allowed" }, { status: 405 });
