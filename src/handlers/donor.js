@@ -901,6 +901,10 @@ export async function handleDonorSubscriptionPortal(request, env) {
   });
 }
 
+// Feature flag: Sacraments & Services is not yet fully ready for parishes or
+// donors to use. Flip to false to re-enable — no other code changes needed.
+const SACRAMENTS_COMING_SOON = true;
+
 const SACRAMENT_TYPES = new Set([
   "house_blessing", "baptism", "chrismation", "wedding", "funeral",
   "memorial_service", "confession", "home_visit", "other"
@@ -950,6 +954,9 @@ function sacramentTypeLabel(type) {
 //   so the frontend knows whether to show the "Request a sacrament" form at all.
 // POST /api/donor/sacraments        — submit a new request
 export async function handleDonorSacraments(request, env) {
+  if (SACRAMENTS_COMING_SOON) {
+    return json({ error: "Sacraments & Services is coming soon.", comingSoon: true }, { status: 503 });
+  }
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
@@ -1073,6 +1080,9 @@ export async function handleDonorSacraments(request, env) {
 
 // POST /api/donor/sacraments/:id/cancel — donor withdraws their own pending request
 export async function handleDonorSacramentCancel(request, env, requestId) {
+  if (SACRAMENTS_COMING_SOON) {
+    return json({ error: "Sacraments & Services is coming soon.", comingSoon: true }, { status: 503 });
+  }
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
