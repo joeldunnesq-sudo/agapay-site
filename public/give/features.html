@@ -417,6 +417,50 @@
     @media (max-width: 760px) { .setup-flow { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 480px) { .setup-flow { grid-template-columns: 1fr; } }
 
+    /* ── Stewardship Suite section ─────────────────────────────────────── */
+    .stewardship-suite { background: linear-gradient(180deg, var(--paper), #FBF7EE); }
+    .sw-marketing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4rem; margin-top: 1rem; }
+    @media (max-width: 900px) { .sw-marketing-grid { grid-template-columns: 1fr; } }
+
+    .sw-founding-band {
+      margin-top: 2.6rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 2rem;
+      padding: 2.4rem 2.6rem;
+      border-radius: 20px;
+      background: linear-gradient(120deg, #071724, #0C2739 60%, #0C2739);
+      border: 1px solid rgba(200,162,74,0.32);
+      box-shadow: 0 24px 60px rgba(6,21,34,0.22);
+      position: relative;
+      overflow: hidden;
+    }
+    .sw-founding-band::after {
+      content: ""; position: absolute; inset: 0;
+      background: radial-gradient(circle at 82% 20%, rgba(200,162,74,0.16), transparent 55%);
+      pointer-events: none;
+    }
+    .sw-founding-cross { position: relative; z-index: 1; width: 46px; height: 58px; flex-shrink: 0; }
+    .sw-founding-cross svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35)); }
+    .sw-founding-copy { position: relative; z-index: 1; }
+    .sw-founding-eyebrow {
+      font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: #FFE7B6; font-weight: 800; margin-bottom: 0.6rem; opacity: 0.92;
+    }
+    .sw-founding-copy h3 {
+      font-family: var(--serif); font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+      font-weight: 600; color: var(--cream); line-height: 1.15; margin-bottom: 0.6rem;
+    }
+    .sw-founding-copy p { color: rgba(246,241,232,0.78); font-size: 0.92rem; line-height: 1.65; max-width: 480px; margin: 0; }
+    .sw-founding-cta { position: relative; z-index: 1; flex-shrink: 0; white-space: nowrap; }
+    @media (max-width: 900px) {
+      .sw-founding-band { grid-template-columns: 1fr; text-align: center; padding: 2.2rem 1.6rem; }
+      .sw-founding-cross { margin: 0 auto; }
+      .sw-founding-copy p { margin: 0 auto; }
+      .sw-founding-cta { justify-self: center; }
+    }
+
     .howitworks--navy { position: relative; background: linear-gradient(90deg, #071724, #0C2739); border-bottom: 1px solid rgba(200, 162, 74, 0.28); overflow: hidden; }
     .howitworks--navy::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 18%, rgba(200, 162, 74, 0.12), transparent 52%); pointer-events: none; }
     .howitworks--navy .section-inner { position: relative; z-index: 1; }
@@ -879,6 +923,110 @@
               <div class="fee-note">Standard transaction fees of 5% + $0.30 still apply, as they do for every community. The monthly platform subscription is what AGAPAY waives for monasteries &mdash; permanently, by conviction.</div>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEWARDSHIP SUITE -->
+    <section class="section stewardship-suite" aria-labelledby="stewardship-title">
+      <div class="section-inner">
+        <div class="section-head">
+          <div class="trust-eyebrow">Introducing Stewardship Suite</div>
+          <h2 id="stewardship-title" class="reveal">The annual meeting, without the all-nighter.</h2>
+          <div class="section-cross">&#10013;</div>
+          <p class="reveal reveal-delay-1">Every parish treasurer knows the week before the annual meeting &mdash; pulling numbers from three spreadsheets, chasing down last year's minutes, formatting a packet nobody enjoys reading. Stewardship Suite turns that week into an afternoon.</p>
+        </div>
+
+        <div class="sw-marketing-grid">
+
+          <article class="mode-card reveal">
+            <div class="mode-card-header">
+              <div class="mode-icon">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/></svg>
+              </div>
+              <div class="mode-icon-label">
+                <h3>Annual Meeting Packets</h3>
+              </div>
+            </div>
+            <div class="mode-body">
+              <div class="mode-tag">Beautiful. Automatic. Done in minutes.</div>
+              <ul class="mode-list">
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Agenda, financial summary, and restricted fund report &mdash; assembled from your real giving data</li>
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Council nominee bios and resolutions, formatted for print</li>
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>A genuinely handsome cover page &mdash; not a spreadsheet printout</li>
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Share a live link or hand out a clean PDF at the meeting</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="mode-card reveal reveal-delay-1">
+            <div class="mode-card-header">
+              <div class="mode-icon">
+                <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+              </div>
+              <div class="mode-icon-label">
+                <h3>Financial Snapshots</h3>
+              </div>
+            </div>
+            <div class="mode-body">
+              <div class="mode-tag">Every fund, every year, at a glance.</div>
+              <ul class="mode-list">
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Income, expenses, and net surplus by fiscal year</li>
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Restricted fund balances tracked year over year &mdash; building reserves, iconography, memorial funds</li>
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>No more reconstructing history from old bank statements</li>
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>One place your treasurer, your priest, and your council can all trust</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="mode-card reveal reveal-delay-2">
+            <div class="mode-card-header">
+              <div class="mode-icon">
+                <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <div class="mode-icon-label">
+                <h3>Recurring Giving Health</h3>
+              </div>
+            </div>
+            <div class="mode-body">
+              <div class="mode-tag">See the pulse of your stewardship.</div>
+              <ul class="mode-list">
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Track which recurring pledges are active, lapsed, or at risk</li>
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Understand giving trends before they become budget surprises</li>
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Give your stewardship committee real numbers, not guesses</li>
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Built on the giving data AGAPAY is already collecting for you</li>
+              </ul>
+            </div>
+          </article>
+
+        </div>
+
+        <div class="sw-founding-band reveal">
+          <div class="sw-founding-cross" aria-hidden="true">
+            <svg viewBox="0 0 240 300" role="img" aria-label="Gold Orthodox budded cross">
+              <defs>
+                <linearGradient id="swFoundingCrossGold" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#f7e7b4"/>
+                  <stop offset="0.48" stop-color="#b78b32"/>
+                  <stop offset="1" stop-color="#6e4c14"/>
+                </linearGradient>
+              </defs>
+              <path
+                d="m 120,6.5 c -10.67737,0 -19.33309,8.65572 -19.33309,19.33309 0,3.59159 0.96899,6.96328 2.67524,9.84489 -10.67736,0 -19.33308,8.65572 -19.33308,19.3331 0,9.1766 6.4058,16.8551 14.98136,18.8337 l 0,14.4106 -25.46831,0 C 71.54356,79.67988 63.86503,73.27408 54.68841,73.27408 c -10.67736,0 -19.33308,8.6557 -19.33308,19.3331 -2.88161,-1.7063 -6.2533,-2.6753 -9.84489,-2.6753 -10.67737,0 -19.33309,8.6557 -19.33309,19.3331 0,10.6774 8.65572,19.3331 19.33309,19.3331 3.59159,0 6.96328,-0.969 9.84489,-2.6753 0,10.6774 8.65572,19.3331 19.33308,19.3331 9.17662,0 16.85515,-6.4058 18.83371,-14.9813 l 25.46831,0 0,95.8807 c -8.57556,1.9785 -14.98136,9.657 -14.98136,18.8337 0,10.6773 8.65572,19.333 19.33308,19.333 -1.70625,2.8817 -2.67524,6.2533 -2.67524,9.8449 0,10.6774 8.65572,19.3331 19.33309,19.3331 10.67736,0 19.33308,-8.6557 19.33308,-19.3331 0,-3.5916 -0.96898,-6.9632 -2.67524,-9.8449 10.67737,0 19.33308,-8.6557 19.33308,-19.333 0,-9.1767 -6.4058,-16.8552 -14.98135,-18.8337 l 0,-95.8807 25.4683,0 c 1.97857,8.5755 9.65709,14.9813 18.83371,14.9813 10.67737,0 19.33309,-8.6557 19.33309,-19.3331 2.8816,1.7063 6.25329,2.6753 9.84489,2.6753 10.67736,0 19.33308,-8.6557 19.33308,-19.3331 0,-10.6774 -8.65572,-19.3331 -19.33308,-19.3331 -3.5916,0 -6.96329,0.969 -9.84489,2.6753 0,-10.6774 -8.65572,-19.3331 -19.33309,-19.3331 -9.17662,0 -16.85514,6.4058 -18.83371,14.9813 l -25.4683,0 0,-14.4106 c 8.57555,-1.9786 14.98135,-9.6571 14.98135,-18.8337 0,-10.67738 -8.65571,-19.3331 -19.33308,-19.3331 1.70626,-2.88161 2.67524,-6.2533 2.67524,-9.84489 C 139.33308,15.15572 130.67736,6.5 120,6.5 z"
+                fill="none" stroke="url(#swFoundingCrossGold)" stroke-width="7" stroke-linejoin="round"
+              />
+              <path d="M120 54v190M104 79h32M75 109h90M103 203l36 16" fill="none" stroke="url(#swFoundingCrossGold)" stroke-width="7" stroke-linecap="square" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="sw-founding-copy">
+            <div class="sw-founding-eyebrow">Limited &mdash; Founding 20 Parishes</div>
+            <h3>The first 20 parishes get a full year, free.</h3>
+            <p>We're offering Stewardship Suite at no cost for twelve months to the first 20 parishes who join &mdash; no card required, no strings. After that, it's a simple monthly add-on. Once the 20 spots are filled, this offer closes.</p>
+          </div>
+          <a class="btn-primary sw-founding-cta" href="/register">
+            <svg viewBox="0 0 24 24"><path d="M5 20h14"/><path d="M7 20V9l5-5 5 5v11"/><path d="M10 20v-6h4v6"/></svg>
+            Claim Your Free Year
+          </a>
         </div>
       </div>
     </section>
