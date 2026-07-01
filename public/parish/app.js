@@ -1188,7 +1188,8 @@
       if (pane) pane.innerHTML = '<p class="muted">Loading packet...</p>';
       const res = await fetch(stewardshipApi('/meetings/' + encodeURIComponent(meetingId)), { headers: authHeaders() });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Unable to load packet.');
+      if (!res.ok) throw new Error((data.error || 'Unable to load packet.') + ' (HTTP ' + res.status + ')');
+      if (!data.meeting) throw new Error('Server returned no meeting data.');
       stewardshipState.selectedMeeting = data.meeting;
       renderStewardshipEditor();
     } catch (err) {
