@@ -82,6 +82,11 @@
           <span class="nav-label">Stewardship Suite</span>
           <span class="nav-upgrade-badge">Upgrade</span>
         </div>
+        <div class="sidebar-nav-item sidebar-nav-item--suite" onclick="switchTab('sacraments')" id="nav-sacraments">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/></svg>
+          <span class="nav-label">Sacraments &amp; Services</span>
+          <span class="nav-upgrade-badge" id="sacramentsNavBadge">Upgrade</span>
+        </div>
         <div class="sidebar-nav-item" onclick="switchTab('settings')" id="nav-settings">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Settings
@@ -788,6 +793,31 @@
           </div>
           <div class="section-body" id="stewardshipFinancialsEditorPane"></div>
         </section>
+
+      </div>
+
+      <!-- ── SACRAMENTS & SERVICES TAB ────────────────────── -->
+      <div class="tab-panel" id="tab-sacraments">
+
+        <div class="sw-suite-hero">
+          <div class="sw-suite-hero-copy">
+            <span class="sw-suite-eyebrow">AGAPAY Add-on</span>
+            <h1 class="sw-suite-heading">Sacraments &amp; Services</h1>
+            <p class="sw-suite-subhead">House blessings, baptisms, weddings, and more — requested by parishioners directly from My AGAPAY, and managed here.</p>
+          </div>
+          <div class="sw-suite-hero-status" id="sacramentsHeroStatus">
+            <span class="sw-suite-status-label" id="sacramentsStatusLabel">Loading…</span>
+            <div class="sw-suite-hero-actions">
+              <button class="sw-suite-refresh-btn" type="button" onclick="loadSacramentsPanel(true)" title="Refresh">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="sacramentsPane">
+          <p class="sw-tool-loading">Loading…</p>
+        </div>
 
       </div>
 
