@@ -154,6 +154,65 @@
     .custom-amount-input::placeholder { color: var(--stone); }
     .custom-amount-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(200,162,74,0.1); }
 
+    /* CANDLES */
+    .candle-section { margin-bottom: 2rem; }
+    .candle-section.hidden { display: none; }
+    .candle-intro { font-size: 13px; color: var(--stone); line-height: 1.6; margin: 0 0 0.85rem; }
+    .candle-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 0.9rem; }
+    .candle-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      background: white;
+      border: 0.5px solid rgba(166,159,145,0.4);
+      border-radius: var(--rlg);
+      padding: 0.6rem;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      user-select: none;
+    }
+    .candle-card:hover { border-color: var(--gold); }
+    .candle-card.has-qty { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); background: rgba(200,162,74,0.04); }
+    .candle-card-mid { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; padding: 0.2rem 0.35rem; }
+    .candle-price { font-family: var(--serif); font-size: 22px; font-weight: 600; color: var(--deep); line-height: 1.1; }
+    .candle-label { font-size: 11.5px; color: var(--stone); }
+    .candle-qty-input {
+      width: 44px;
+      margin-top: 4px;
+      padding: 3px 2px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--sans);
+      color: var(--ink);
+      background: var(--cream);
+      border: 0.5px solid rgba(166,159,145,0.4);
+      border-radius: 7px;
+      outline: none;
+      -moz-appearance: textfield;
+    }
+    .candle-qty-input::-webkit-outer-spin-button,
+    .candle-qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .candle-qty-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(200,162,74,0.1); }
+    .candle-step {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--cream);
+      border: 0.5px solid rgba(166,159,145,0.4);
+      font-size: 18px;
+      line-height: 1;
+      color: var(--deep);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .candle-step:hover { background: var(--gold); border-color: var(--gold); color: var(--deep); }
+    .candle-total { text-align: center; font-size: 14px; color: var(--stone); padding-top: 0.4rem; }
+    .candle-total strong { color: var(--deep); font-family: var(--serif); font-size: 17px; font-weight: 600; }
+
     /* NAMES */
     .names-section { margin-bottom: 2rem; }
     .names-section.hidden { display: none; }
@@ -367,7 +426,7 @@ body {
           <span class="gift-type-name">Weekly Stewardship</span>
         </button>
 
-        <button class="gift-type-card" data-type="candle" data-needs-names="true" data-needs-frequency="false" data-needs-feast="false" data-needs-funds="false" onclick="selectGiftType(this)">
+        <button class="gift-type-card" data-type="candle" data-needs-names="true" data-needs-frequency="false" data-needs-feast="false" data-needs-funds="false" data-needs-candles="true" onclick="selectGiftType(this)">
           <div class="gift-type-icon">
             <svg width="24" height="24" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/>
@@ -554,7 +613,7 @@ body {
     </div>
 
     <!-- AMOUNT -->
-    <div class="amount-section reveal reveal-delay-1">
+    <div class="amount-section reveal reveal-delay-1" id="genericAmountSection">
       <div class="section-label" id="amountStepLabel">Step 2 — Choose an amount</div>
       <div class="preset-amounts" role="group" aria-label="Preset amounts">
         <button class="preset-btn" data-amount="25" onclick="selectAmount(this)">$25</button>
@@ -566,6 +625,33 @@ body {
         <span class="custom-amount-symbol">$</span>
         <input type="number" class="custom-amount-input" id="customAmount" placeholder="Other amount" min="1" step="1" aria-label="Custom amount" />
       </div>
+    </div>
+
+    <!-- CANDLES -->
+    <div class="candle-section hidden reveal reveal-delay-1" id="candleSection">
+      <div class="section-label">Step 2 — Choose your candles</div>
+      <p class="candle-intro">Tap a card to add — or type the number directly.</p>
+      <div class="candle-grid" role="group" aria-label="Candle sizes">
+        <div class="candle-card" data-candle="small" data-price="1" onclick="candleCardTap(event, this)">
+          <button type="button" class="candle-step" aria-label="Remove a small candle" onclick="candleStep(event, this, -1)">−</button>
+          <div class="candle-card-mid">
+            <span class="candle-price">$1</span>
+            <span class="candle-label">Small candle</span>
+            <input type="number" class="candle-qty-input" id="candleQtySmall" min="0" step="1" value="0" aria-label="Small candle quantity" onclick="event.stopPropagation()" oninput="candleQtyInput(this)" />
+          </div>
+          <button type="button" class="candle-step" aria-label="Add a small candle" onclick="candleStep(event, this, 1)">+</button>
+        </div>
+        <div class="candle-card" data-candle="large" data-price="5" onclick="candleCardTap(event, this)">
+          <button type="button" class="candle-step" aria-label="Remove a large candle" onclick="candleStep(event, this, -1)">−</button>
+          <div class="candle-card-mid">
+            <span class="candle-price">$5</span>
+            <span class="candle-label">Large candle</span>
+            <input type="number" class="candle-qty-input" id="candleQtyLarge" min="0" step="1" value="0" aria-label="Large candle quantity" onclick="event.stopPropagation()" oninput="candleQtyInput(this)" />
+          </div>
+          <button type="button" class="candle-step" aria-label="Add a large candle" onclick="candleStep(event, this, 1)">+</button>
+        </div>
+      </div>
+      <div class="candle-total">Total: <strong id="candleTotalDisplay">$0.00</strong></div>
     </div>
 
     <!-- NAMES / INTENTION -->
@@ -823,6 +909,7 @@ body {
       const needsFeast = card.dataset.needsFeast === 'true';
       const needsFunds = card.dataset.needsFunds === 'true';
       const needsAlms = card.dataset.needsAlms === 'true';
+      const needsCandles = card.dataset.needsCandles === 'true';
       const needsMemorial = selectedType === 'feast' || selectedType === 'funds';
 
       document.getElementById('namesSection').classList.toggle('hidden', !needsNames);
@@ -831,6 +918,14 @@ body {
       document.getElementById('fundsSection').classList.toggle('hidden', !needsFunds);
       document.getElementById('almsSection').classList.toggle('hidden', !needsAlms);
       document.getElementById('inMemoriamSection').classList.toggle('hidden', !needsMemorial);
+
+      // Candles use their own fixed-price stepper UI instead of the generic
+      // preset/custom amount section — a $25 preset makes no sense for a $1 candle.
+      document.getElementById('candleSection').classList.toggle('hidden', !needsCandles);
+      document.getElementById('genericAmountSection').style.display = needsCandles ? 'none' : '';
+      if (needsCandles) {
+        recalcCandleTotal();
+      }
 
       // Step numbering
       const hasExtra = needsFreq || needsNames || needsFeast || needsFunds || needsAlms || needsMemorial;
@@ -1048,6 +1143,54 @@ body {
       selectedAmount = parseFloat(this.value) || 0;
       updateSummary();
     });
+
+    // CANDLES
+    // Each candle card holds its own quantity input; selectedAmount is
+    // recomputed as the sum of (price × quantity) across both sizes,
+    // then fed through the same updateSummary()/checkout flow every
+    // other gift type already uses.
+    function candleQty(card) {
+      const input = card.querySelector('.candle-qty-input');
+      return Math.max(0, parseInt(input.value, 10) || 0);
+    }
+
+    function setCandleQty(card, qty) {
+      const input = card.querySelector('.candle-qty-input');
+      const clamped = Math.max(0, Math.round(qty) || 0);
+      input.value = clamped;
+      card.classList.toggle('has-qty', clamped > 0);
+      recalcCandleTotal();
+    }
+
+    function candleStep(event, btn, delta) {
+      event.stopPropagation();
+      const card = btn.closest('.candle-card');
+      setCandleQty(card, candleQty(card) + delta);
+    }
+
+    function candleCardTap(event, card) {
+      // Tapping the card body (not a step button or the input itself) adds one.
+      if (event.target.closest('.candle-step') || event.target.closest('.candle-qty-input')) return;
+      setCandleQty(card, candleQty(card) + 1);
+    }
+
+    function candleQtyInput(input) {
+      const card = input.closest('.candle-card');
+      setCandleQty(card, parseInt(input.value, 10) || 0);
+    }
+
+    function recalcCandleTotal() {
+      let totalCents = 0;
+      document.querySelectorAll('.candle-card').forEach(card => {
+        const price = parseFloat(card.dataset.price) || 0;
+        totalCents += Math.round(price * 100) * candleQty(card);
+      });
+      const total = totalCents / 100;
+      selectedAmount = total;
+      const display = document.getElementById('candleTotalDisplay');
+      if (display) display.textContent = '$' + total.toFixed(2);
+      updateSummary();
+    }
 
     // FREQUENCY
     function selectFreq(btn) {
@@ -1272,7 +1415,10 @@ body {
       const lastName = document.getElementById('lastName').value.trim();
       const email = document.getElementById('email').value.trim();
       if (!firstName || !email) { alert('Please enter your name and email address to continue.'); return; }
-      if (selectedAmount <= 0) { alert('Please choose or enter a gift amount.'); return; }
+      if (selectedAmount <= 0) {
+        alert(selectedType === 'candle' ? 'Please choose at least one candle.' : 'Please choose or enter a gift amount.');
+        return;
+      }
       if (selectedType === 'funds' && !selectedFund) { alert('Please select a fund.'); return; }
 
       const submitBtn = document.getElementById('submitGiftBtn');
