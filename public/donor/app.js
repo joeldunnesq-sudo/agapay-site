@@ -2191,3 +2191,233 @@ async function dismissNudge(id) {
     setTimeout(showNextNudge, 300);
   }
 }
+
+// ── SACRAMENTS & SERVICES ────────────────────────────────
+// Part of AGAPAY Stewardship Suite — automatically available to donors
+// whose home parish has active Stewardship Suite access. See
+// handleDonorSacraments in src/handlers/donor.js for the server-side gate.
+
+const SACRAMENT_TYPE_LABELS = {
+  house_blessing: "House Blessing",
+  baptism: "Baptism",
+  chrismation: "Chrismation",
+  wedding: "Wedding",
+  funeral: "Funeral",
+  memorial_service: "Memorial Service",
+  confession: "Confession",
+  home_visit: "Home Visit",
+  other: "Other Request"
+};
+
+const SACRAMENT_STATUS_LABELS = {
+  requested: "Requested",
+  acknowledged: "Received by Parish",
+  scheduled: "Scheduled",
+  completed: "Completed",
+  declined: "Declined",
+  cancelled: "Cancelled"
+};
+
+const SACRAMENT_STATUS_TONE = {
+  requested: "pending",
+  acknowledged: "pending",
+  scheduled: "success",
+  completed: "success",
+  declined: "wine",
+  cancelled: "muted"
+};
+
+function sacramentTypeLabel(type, otherLabel) {
+  if (type === "other" && otherLabel) return otherLabel;
+  return SACRAMENT_TYPE_LABELS[type] || type;
+}
+
+function sacramentLocationHint(sacramentType) {
+  return sacramentType === "house_blessing" || sacramentType === "home_visit";
+}
+
+function toggleSacramentAddressField() {
+  const typeEl = document.getElementById("sacramentType");
+  const locationRow = document.getElementById("sacramentLocationRow");
+  const addressGroup = document.getElementById("sacramentAddressGroup");
+  const otherGroup = document.getElementById("sacramentOtherLabelGroup");
+  const type = typeEl?.value || "";
+  const needsAddress = sacramentLocationHint(type);
+  if (locationRow) locationRow.style.display = type ? "" : "none";
+  if (addressGroup) addressGroup.style.display = needsAddress ? "" : (document.getElementById("sacramentLocationType")?.value === "home" ? "" : "none");
+  if (otherGroup) otherGroup.style.display = type === "other" ? "" : "none";
+}
+
+function toggleSacramentAddressFieldByLocation() {
+  const addressGroup = document.getElementById("sacramentAddressGroup");
+  const locationType = document.getElementById("sacramentLocationType")?.value || "church";
+  const sacramentType = document.getElementById("sacramentType")?.value || "";
+  if (addressGroup) {
+    addressGroup.style.display = (locationType === "home" || sacramentLocationHint(sacramentType)) ? "" : "none";
+  }
+}
+
+async function loadDonorSacramentsPage() {
+  const session = donorSession();
+  const list = document.getElementById("sacramentList");
+  const formCard = document.getElementById("sacramentFormCard");
+  const unavailableNotice = document.getElementById("sacramentUnavailableNotice");
+  primeCommemorationParishDisplay();
+
+  if (!session.email || !session.token) {
+    if (list) list.innerHTML = '<div class="notice">Sign in to view your requests.</div>';
+    return;
+  }
+
+  const donor = donorProfile();
+  const parishId = donor?.defaultParishId || "";
+  renderCommemorationParish(donorDefaultParish());
+  const parishInput = document.getElementById("sacramentParishId");
+  if (parishInput) parishInput.value = parishId;
+
+  if (!parishId) {
+    if (formCard) formCard.style.display = "none";
+    if (unavailableNotice) {
+      unavailableNotice.style.display = "block";
+      unavailableNotice.textContent = "Choose your parish in Settings before requesting a sacrament or service.";
+    }
+    if (list) list.innerHTML = "";
+    return;
+  }
+
+  const cached = readDonorCache("sacraments");
+  if (cached) renderSacramentsPayload(cached);
+
+  try {
+    const data = await donorApi("/api/donor/sacraments", {
+      headers: donorAuthHeaders({ "X-AGAPAY-Parish-Id": parishId })
+    });
+    writeDonorCache("sacraments", data);
+    renderSacramentsPayload(data);
+  } catch (err) {
+    if (isDonorUnauthorized(err)) {
+      clearDonorSession();
+      if (list) list.innerHTML = '<div class="notice">Session expired. Please sign in again.</div>';
+      return;
+    }
+    if (!cached) {
+      if (list) list.innerHTML = `<div class="notice">${escapeHtml(err.message)}</div>`;
+    }
+  }
+}
+
+function renderSacramentsPayload(payload = {}) {
+  const formCard = document.getElementById("sacramentFormCard");
+  const unavailableNotice = document.getElementById("sacramentUnavailableNotice");
+  const list = document.getElementById("sacramentList");
+
+  const available = payload.available !== false; // default to showing the form while first loading
+  if (formCard) formCard.style.display = available ? "" : "none";
+  if (unavailableNotice) {
+    unavailableNotice.style.display = available ? "none" : "block";
+    unavailableNotice.textContent = "Your parish has not enabled Sacraments & Services yet. This feature is part of AGAPAY Stewardship Suite.";
+  }
+
+  const requests = Array.isArray(payload.requests) ? payload.requests : [];
+  if (list) {
+    list.innerHTML = requests.length
+      ? requests.map(sacramentRequestRow).join("")
+      : '<div class="notice">No requests submitted yet.</div>';
+  }
+  return payload;
+}
+
+function sacramentRequestRow(row) {
+  const typeLabel = sacramentTypeLabel(row.sacramentType, row.otherTypeLabel);
+  const statusLabel = SACRAMENT_STATUS_LABELS[row.status] || row.status;
+  const tone = SACRAMENT_STATUS_TONE[row.status] || "pending";
+  const canCancel = ["requested", "acknowledged", "scheduled"].includes(row.status);
+
+  const scheduledLine = row.status === "scheduled" && (row.confirmedDate || row.confirmedTime)
+    ? `<div class="sac-row-meta"><strong>Scheduled:</strong> ${escapeHtml([row.confirmedDate, row.confirmedTime].filter(Boolean).join(" at "))}${row.clergyAssigned ? ` · ${escapeHtml(row.clergyAssigned)}` : ""}</div>`
+    : "";
+  const declinedLine = row.status === "declined" && row.declineReason
+    ? `<div class="sac-row-meta">${escapeHtml(row.declineReason)}</div>`
+    : "";
+  const requestedLine = row.requestedDate || row.requestedTimeWindow
+    ? `<div class="sac-row-meta">Preferred: ${escapeHtml([row.requestedDate, row.requestedTimeWindow].filter(Boolean).join(" · "))}</div>`
+    : "";
+
+  return `<div class="sac-row">
+    <div class="sac-row-top">
+      <span class="sac-row-type">${escapeHtml(typeLabel)}</span>
+      <span class="status-pill ${tone}">${escapeHtml(statusLabel)}</span>
+    </div>
+    ${requestedLine}
+    ${scheduledLine}
+    ${declinedLine}
+    ${canCancel ? `<button type="button" class="btn btn-ghost btn-sm" onclick="cancelSacramentRequest('${row.id}', this)">Cancel request</button>` : ""}
+  </div>`;
+}
+
+async function submitSacramentRequest(event) {
+  event.preventDefault();
+  const parishId = document.getElementById("sacramentParishId")?.value || donorProfile()?.defaultParishId || "";
+  const sacramentType = document.getElementById("sacramentType")?.value || "";
+  if (!parishId) {
+    setDonorStatus("Choose your parish in Settings before submitting a request.", "error");
+    return;
+  }
+  if (!sacramentType) {
+    setDonorStatus("Choose what you're requesting.", "error");
+    return;
+  }
+  const otherTypeLabel = document.getElementById("sacramentOtherLabel")?.value || "";
+  if (sacramentType === "other" && !otherTypeLabel.trim()) {
+    setDonorStatus("Describe what you're requesting.", "error");
+    return;
+  }
+  const locationType = document.getElementById("sacramentLocationType")?.value || "church";
+  const locationAddress = document.getElementById("sacramentAddress")?.value || "";
+  if ((locationType === "home" || sacramentLocationHint(sacramentType)) && !locationAddress.trim()) {
+    setDonorStatus("An address is required for a house blessing or home visit.", "error");
+    return;
+  }
+
+  const body = {
+    parishId,
+    sacramentType,
+    otherTypeLabel,
+    locationType,
+    locationAddress,
+    requestedDate: document.getElementById("sacramentDate")?.value || "",
+    requestedTimeWindow: document.getElementById("sacramentTimeWindow")?.value || "",
+    participantNames: document.getElementById("sacramentParticipants")?.value || "",
+    phone: document.getElementById("sacramentPhone")?.value || donorProfile()?.contactPhone || "",
+    notes: document.getElementById("sacramentNotes")?.value || ""
+  };
+
+  const submitBtn = event.target.querySelector('button[type="submit"]');
+  try {
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Sending..."; }
+    setDonorStatus("Sending your request...");
+    await donorApi("/api/donor/sacraments", { method: "POST", body: JSON.stringify(body) });
+    setDonorStatus("Request sent. Your parish will follow up to confirm.", "success");
+    event.target.reset();
+    toggleSacramentAddressField();
+    await loadDonorSacramentsPage();
+  } catch (err) {
+    setDonorStatus(err.message, "error");
+  } finally {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Send request"; }
+  }
+}
+
+async function cancelSacramentRequest(id, btn) {
+  if (!id) return;
+  if (!confirm("Cancel this request? This can't be undone.")) return;
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = "Cancelling..."; }
+    await donorApi(`/api/donor/sacraments/${encodeURIComponent(id)}/cancel`, { method: "POST" });
+    setDonorStatus("Request cancelled.", "success");
+    await loadDonorSacramentsPage();
+  } catch (err) {
+    setDonorStatus(err.message, "error");
+    if (btn) { btn.disabled = false; btn.textContent = "Cancel request"; }
+  }
+}
