@@ -2564,7 +2564,7 @@ export async function handleStewardshipFinancials(request, env, parishId) {
 
       const existing = await d1First(env,
         "SELECT id FROM stewardship_financial_summaries WHERE annual_meeting_id = ?",
-        [meetingId]
+        meetingId
       );
       const income  = Math.round(Number(body.totalIncomeCents  || 0));
       const expense = Math.round(Number(body.totalExpenseCents || 0));
@@ -2593,7 +2593,7 @@ export async function handleStewardshipFinancials(request, env, parishId) {
         // Delete and re-insert for simplicity (same pattern as packet editor)
         await d1Run(env,
           "DELETE FROM stewardship_restricted_fund_snapshots WHERE annual_meeting_id = ?",
-          [meetingId]
+          meetingId
         );
         for (let i = 0; i < body.restrictedFunds.length; i++) {
           const rf = body.restrictedFunds[i];
@@ -2603,12 +2603,12 @@ export async function handleStewardshipFinancials(request, env, parishId) {
                (id, annual_meeting_id, fund_name, beginning_balance_cents, total_received_cents,
                 total_disbursed_cents, ending_balance_cents, notes, sort_order, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [await newId(), meetingId, rf.fundName.trim(),
+            await newId(), meetingId, rf.fundName.trim(),
              Math.round(Number(rf.beginningBalanceCents || 0)),
              Math.round(Number(rf.totalReceivedCents    || 0)),
              Math.round(Number(rf.totalDisbursedCents   || 0)),
              Math.round(Number(rf.endingBalanceCents    || 0)),
-             rf.notes || null, i, now]
+             rf.notes || null, i, now
           );
         }
       }
@@ -2624,9 +2624,9 @@ export async function handleStewardshipFinancials(request, env, parishId) {
       `INSERT INTO stewardship_annual_meetings
          (id, parish_id, title, fiscal_year, status, created_at, updated_at)
        VALUES (?, ?, ?, ?, 'draft', ?, ?)`,
-      [newMeetingId, parishId,
+      newMeetingId, parishId,
        body.title || (fiscalYear + " Financial Snapshot"),
-       fiscalYear, now, now]
+       fiscalYear, now, now
     );
 
     const income  = Math.round(Number(body.totalIncomeCents  || 0));
@@ -2648,12 +2648,12 @@ export async function handleStewardshipFinancials(request, env, parishId) {
              (id, annual_meeting_id, fund_name, beginning_balance_cents, total_received_cents,
               total_disbursed_cents, ending_balance_cents, notes, sort_order, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [await newId(), newMeetingId, rf.fundName.trim(),
+          await newId(), newMeetingId, rf.fundName.trim(),
            Math.round(Number(rf.beginningBalanceCents || 0)),
            Math.round(Number(rf.totalReceivedCents    || 0)),
            Math.round(Number(rf.totalDisbursedCents   || 0)),
            Math.round(Number(rf.endingBalanceCents    || 0)),
-           rf.notes || null, i, now]
+           rf.notes || null, i, now
         );
       }
     }
@@ -2945,7 +2945,7 @@ async function saveMeetingSubRecords(env, meetingId, form) {
     await d1Run(env, `
       INSERT INTO stewardship_agenda_items (id, annual_meeting_id, title, duration_minutes, sort_order, created_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `, [await newId(), meetingId, agendaTitles[i].trim(), parseInt(agendaDurations[i]) || null, i, now]);
+    `, await newId(), meetingId, agendaTitles[i].trim(), parseInt(agendaDurations[i]) || null, i, now);
   }
 
   // Reports
@@ -2958,7 +2958,7 @@ async function saveMeetingSubRecords(env, meetingId, form) {
     await d1Run(env, `
       INSERT INTO stewardship_reports (id, annual_meeting_id, report_type, title, body, created_by, sort_order, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [await newId(), meetingId, rTypes[i] || "custom", rTitles[i].trim(), rBodies[i] || "", rSignedBy[i]?.trim() || null, i, now, now]);
+    `, await newId(), meetingId, rTypes[i] || "custom", rTitles[i].trim(), rBodies[i] || "", rSignedBy[i]?.trim() || null, i, now, now);
   }
 
   // Financial summary
@@ -2985,9 +2985,9 @@ async function saveMeetingSubRecords(env, meetingId, form) {
         (id, annual_meeting_id, fund_name, beginning_balance_cents, total_received_cents,
          total_disbursed_cents, ending_balance_cents, sort_order, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [await newId(), meetingId, fNames[i].trim(),
+    `, await newId(), meetingId, fNames[i].trim(),
        displayToCents(fBegin[i]), displayToCents(fReceived[i]),
-       displayToCents(fDisbursed[i]), displayToCents(fEnding[i]), i, now]);
+       displayToCents(fDisbursed[i]), displayToCents(fEnding[i]), i, now);
   }
 
   // Nominees
@@ -3000,7 +3000,7 @@ async function saveMeetingSubRecords(env, meetingId, form) {
     await d1Run(env, `
       INSERT INTO stewardship_nominees (id, annual_meeting_id, full_name, position, bio, nominated_by, sort_order, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `, [await newId(), meetingId, nNames[i].trim(), nPositions[i] || null, nBios[i]?.trim() || null, nNominatedBy[i]?.trim() || null, i, now]);
+    `, await newId(), meetingId, nNames[i].trim(), nPositions[i] || null, nBios[i]?.trim() || null, nNominatedBy[i]?.trim() || null, i, now);
   }
 
   // Resolutions
@@ -3011,6 +3011,6 @@ async function saveMeetingSubRecords(env, meetingId, form) {
     await d1Run(env, `
       INSERT INTO stewardship_resolutions (id, annual_meeting_id, title, resolved_text, sort_order, created_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `, [await newId(), meetingId, resTitles[i].trim(), resResolved[i] || null, i, now]);
+    `, await newId(), meetingId, resTitles[i].trim(), resResolved[i] || null, i, now);
   }
 }
