@@ -255,17 +255,6 @@
     .section-title-icon.community-mark svg { width: 22px; height: 22px; stroke-width: 1.45; }
     .section-body { padding: 1.25rem; }
     .section-note { color: var(--stone); font-size: 12px; line-height: 1.55; margin: 0.4rem 0 0.85rem; }
-    .platform-access-card .section-body { padding-top: 1rem; }
-    .platform-access-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin-top: 0.8rem; }
-    .platform-access-item { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 0.85rem; }
-    .platform-access-item h3 { margin: 0.45rem 0 0; color: var(--deep); font-family: var(--serif); font-size: 1.2rem; line-height: 1.2; }
-    .platform-access-item p { margin: 0.35rem 0 0; color: var(--stone); font-size: 12px; line-height: 1.5; }
-    .platform-access-item.live { background: linear-gradient(150deg, #061522, #0B2130); border-color: rgba(184,144,47,0.45); }
-    .platform-access-item.live h3 { color: var(--cream); }
-    .platform-access-item.live p { color: rgba(246,241,232,0.76); }
-    .platform-access-item.soon { border-style: dashed; }
-    .platform-access-kicker { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 8px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(184,144,47,0.14); color: #7a5c17; }
-    .platform-access-item.live .platform-access-kicker { background: rgba(184,144,47,0.25); color: var(--gold); }
     .section-divider { display: flex; align-items: center; gap: 10px; margin: 1.25rem 0 1rem; }
     .section-divider span { color: var(--gold); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
     .section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
@@ -886,7 +875,7 @@
     @media (max-width: 860px) {
       .app { grid-template-columns: 1fr; }
       .sidebar { position: static; height: auto; }
-      .form-grid, .toggle-row, .insights-layout, .insight-stats, .setup-wizard-body, .commemoration-list, .feast-grid, .history-summary, .history-filters, .platform-access-grid { grid-template-columns: 1fr; }
+      .form-grid, .toggle-row, .insights-layout, .insight-stats, .setup-wizard-body, .commemoration-list, .feast-grid, .history-summary, .history-filters { grid-template-columns: 1fr; }
       .qr-layout, .qr-copy-row, .qr-feature-layout { grid-template-columns: 1fr; }
       .qr-feature-actions { min-width: 0; }
     }
