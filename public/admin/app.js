@@ -1100,6 +1100,23 @@ let selectedReference = '';
       }
     }
 
+    // Shared core used by both the Developer Tools card and the per-parish
+    // "Grant free year" shortcut in the registration detail view. Returns
+    // the parsed response so each caller can render its own status message.
+    async function submitStewardshipCompGrant(parishId) {
+      const res = await fetch('/api/admin/stewardship/comp', {
+        method: 'POST',
+        headers: {
+          ...authHeaders(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ parishId })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Grant failed');
+      return data;
+    }
+
     async function grantStewardshipComp(btn) {
       const status = document.getElementById('stewardshipCompStatus');
       const parishInput = document.getElementById('stewardshipCompParishId');
@@ -1116,16 +1133,7 @@ let selectedReference = '';
       btn.textContent = 'Granting...';
       if (status) status.textContent = '';
       try {
-        const res = await fetch('/api/admin/stewardship/comp', {
-          method: 'POST',
-          headers: {
-            ...authHeaders(),
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ parishId })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data.ok) throw new Error(data.error || 'Grant failed');
+        const data = await submitStewardshipCompGrant(parishId);
         btn.textContent = 'Granted';
         if (status) {
           const expires = data.comp?.expiresAt ? new Date(data.comp.expiresAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
@@ -1142,6 +1150,31 @@ let selectedReference = '';
       } finally {
         btn.disabled = false;
         btn.textContent = 'Grant free year';
+      }
+    }
+
+    async function grantStewardshipCompFromDetail(parishId, btn) {
+      const status = document.getElementById('detailCompGrantStatus');
+      if (!parishId) return;
+      btn.disabled = true;
+      btn.textContent = 'Granting...';
+      if (status) status.textContent = '';
+      try {
+        const data = await submitStewardshipCompGrant(parishId);
+        btn.textContent = 'Granted';
+        if (status) {
+          const expires = data.comp?.expiresAt ? new Date(data.comp.expiresAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+          status.textContent = `Granted${expires ? ' — expires ' + expires : ''}. ${data.claimed} of 20 claimed.`;
+          status.style.color = 'var(--green, #2a7a4b)';
+        }
+        await loadStewardshipCompStatus();
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Grant free year to ' + parishId;
+        if (status) {
+          status.textContent = err.message;
+          status.style.color = 'var(--red, #8b2020)';
+        }
       }
     }
 
@@ -1600,7 +1633,7 @@ let selectedReference = '';
                 </label>
 
                 <div class="queue-primary">
-                  <div class="queue-name">${escapeHtml(item.parishName || item.reference)}</div>
+                  <div class="queue-name">${escapeHtml(item.parishName || item.reference)}${item.promo === 'founding-20' ? '<span class="queue-promo-badge" title="Signed up via the Founding 20 free-year offer">Founding 20</span>' : ''}</div>
                   <div class="queue-meta-line">
                     <span>${escapeHtml(community)}</span>
                     <span>${escapeHtml(jurisdiction)}</span>
@@ -1798,6 +1831,15 @@ let selectedReference = '';
             <div class="step-chip ${subscriptionDone ? 'done' : stripeDone ? 'current' : ''}"><strong>4. Subscription</strong><span>${subscriptionDone ? 'AGAPAY billing is set.' : 'Set platform subscription tier/status.'}</span></div>
           </div>
         </div>
+        ${reg.promo === 'founding-20' ? `
+        <div class="admin-section founding-promo-callout">
+          <div class="admin-section-title">Founding 20 &mdash; Free Year Offer</div>
+          <p class="founding-promo-copy">This parish registered through the Founding 20 free-year Stewardship Suite offer. Grant the free year below, or from Developer Tools.</p>
+          <div class="btn-row">
+            <button class="secondary btn-sm" id="detailCompGrantBtn" onclick="grantStewardshipCompFromDetail('${publicParishId}', this)">Grant free year to ${publicParishId}</button>
+          </div>
+          <span id="detailCompGrantStatus" class="founding-promo-status"></span>
+        </div>` : ''}
         <div class="admin-section">
           <div class="admin-section-title">Parish Giving Snapshot</div>
           <div class="giving-summary-panel" id="registrationGivingSummary">
