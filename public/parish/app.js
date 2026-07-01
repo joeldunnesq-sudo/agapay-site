@@ -129,6 +129,7 @@
     if (tab === 'givers' && allGifts.length) renderGiversPanel();
     if (tab === 'qr') renderBulletinPreview();
     if (tab === 'stewardship') loadStewardshipPanel();
+    if (tab === 'sacraments') loadSacramentsTab();
     if (tab === 'reconcile' && currentParish) loadReconciliation();
     document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
     if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -887,9 +888,15 @@
       mobileBadge.textContent = isActive ? 'Active' : 'Upgrade';
       mobileBadge.classList.toggle('mobile-upgrade-badge--active', isActive);
     }
-    // Sacraments & Services is a Stewardship Suite feature — same gate, same badge state.
+    // Sacraments & Services is a Stewardship Suite feature, currently in
+    // limited rollout — only swap in the real Active/Upgrade badge for
+    // allowlisted parishes; everyone else keeps the plain "Coming soon" badge.
+    const sacIsRolledOut = Boolean(currentParish?.parishId && SACRAMENTS_ROLLOUT_PARISH_IDS.has(currentParish.parishId));
+    const sacSoonBadge = document.getElementById('sacramentsNavSoonBadge');
     const sacBadge = document.getElementById('sacramentsNavBadge');
+    if (sacSoonBadge) sacSoonBadge.hidden = sacIsRolledOut;
     if (sacBadge) {
+      sacBadge.hidden = !sacIsRolledOut;
       sacBadge.textContent = isActive ? 'Active' : 'Upgrade';
       sacBadge.classList.toggle('nav-upgrade-badge--active', isActive);
     }
@@ -921,6 +928,22 @@
 
   function sacramentTypeLabel(row) {
     return row.sacramentType === 'other' && row.otherTypeLabel ? row.otherTypeLabel : (SACRAMENT_TYPE_LABELS[row.sacramentType] || row.sacramentType);
+  }
+
+  // Limited rollout: Sacraments & Services only shows real, live content for
+  // allowlisted parishes (currently just st-fiacre, for internal testing).
+  // Every other parish sees the coming-soon banner instead. Mirrors the
+  // server-side allowlist in handlers/parish.js and handlers/donor.js — to
+  // launch broadly, update both here and there.
+  const SACRAMENTS_ROLLOUT_PARISH_IDS = new Set(['st-fiacre']);
+
+  function loadSacramentsTab() {
+    const banner = document.getElementById('sacramentsComingSoonBanner');
+    const live = document.getElementById('sacramentsLiveContent');
+    const isRolledOut = Boolean(currentParish?.parishId && SACRAMENTS_ROLLOUT_PARISH_IDS.has(currentParish.parishId));
+    if (banner) banner.hidden = isRolledOut;
+    if (live) live.hidden = !isRolledOut;
+    if (isRolledOut) loadSacramentsPanel();
   }
 
   async function loadSacramentsPanel(force = false) {
