@@ -907,30 +907,66 @@
       const sw       = stewardshipState.stewardship || {};
       const isActive = sw.active || ['active', 'trialing'].includes(sw.status);
       updateStewardshipBadges(isActive);
+      maybeShowStewardshipCompExpiryNotice(sw);
     } catch { /* silent — badge stays gold */ }
   }
 
+  // Shows a one-time-per-day pop-up when a Founding 20 free-year
+  // Stewardship Suite comp grant is within 30 days of expiring. Dismissal
+  // is remembered in localStorage per parish + grant expiry date, so it
+  // won't nag more than once a day, and stops entirely once the grant
+  // itself changes (renewed, converted to paid, or expired).
+  function maybeShowStewardshipCompExpiryNotice(sw) {
+    const comp = sw?.comp;
+    if (sw?.status !== 'comped' || !comp?.expiresAt) return;
 
+    const expiresAt = new Date(comp.expiresAt).getTime();
+    if (!Number.isFinite(expiresAt)) return;
+    const msUntilExpiry = expiresAt - Date.now();
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+    if (msUntilExpiry > THIRTY_DAYS_MS || msUntilExpiry < 0) return;
 
-  async function prefetchStewardshipBadge() {
-    if (!currentParish) return;
-    try {
-      const res  = await fetch(stewardshipApi(), { headers: authHeaders() });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) return;
-      stewardshipState = {
-        loaded:          true,
-        stewardship:     data.stewardship    || { status: 'coming_soon', active: false },
-        meetings:        data.meetings        || [],
-        subscribePlans:  data.subscribePlans  || [],
-        setupRequired:   !!data.setupRequired,
-        comingSoon:      !!data.comingSoon,
-        selectedMeeting: null
-      };
-      const sw       = stewardshipState.stewardship || {};
-      const isActive = sw.active || ['active', 'trialing'].includes(sw.status);
-      updateStewardshipBadges(isActive);
-    } catch { /* silent */ }
+    const dismissKey = 'agapay.stewardshipCompNotice.' + (currentParish?.parishId || '') + '.' + comp.expiresAt;
+    const today = new Date().toISOString().slice(0, 10);
+    if (localStorage.getItem(dismissKey) === today) return;
+
+    localStorage.setItem(dismissKey, today);
+    showStewardshipCompExpiryModal(comp);
+  }
+
+  function showStewardshipCompExpiryModal(comp) {
+    document.getElementById('stewardshipCompNoticeOverlay')?.remove();
+
+    const expiresLabel = new Date(comp.expiresAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const daysLeft = Math.max(1, Math.round((new Date(comp.expiresAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
+
+    const overlay = document.createElement('div');
+    overlay.id = 'stewardshipCompNoticeOverlay';
+    overlay.className = 'sw-comp-notice-overlay';
+    overlay.innerHTML =
+      '<div class="sw-comp-notice-card" role="dialog" aria-modal="true" aria-labelledby="swCompNoticeTitle">' +
+        '<button class="sw-comp-notice-close" type="button" aria-label="Close" onclick="dismissStewardshipCompNotice()">\u00d7</button>' +
+        '<div class="sw-comp-notice-icon">' +
+          '<svg viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5.25 3.4 9.74 8 11 4.6-1.26 8-5.75 8-11V6l-8-4z" fill="currentColor"/></svg>' +
+        '</div>' +
+        '<span class="sw-comp-notice-eyebrow">Founding Parish</span>' +
+        '<h2 id="swCompNoticeTitle">Your free year is ending soon</h2>' +
+        '<p>Your complimentary year of <strong>Stewardship Suite</strong> ends on <strong>' + escapeHtml(expiresLabel) + '</strong> \u2014 about ' + daysLeft + ' days from now.</p>' +
+        '<p class="sw-comp-notice-sub">No action is needed if you would like to let it lapse. If your parish council would like to continue, you can add it as a paid feature at any time.</p>' +
+        '<div class="sw-comp-notice-actions">' +
+          '<button class="sw-comp-notice-btn-primary" type="button" onclick="dismissStewardshipCompNotice(); switchTab(\'stewardship\')">View Stewardship Suite</button>' +
+          '<button class="sw-comp-notice-btn-secondary" type="button" onclick="dismissStewardshipCompNotice()">Remind me later</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('sw-comp-notice-overlay--visible'));
+  }
+
+  function dismissStewardshipCompNotice() {
+    const overlay = document.getElementById('stewardshipCompNoticeOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('sw-comp-notice-overlay--visible');
+    setTimeout(() => overlay.remove(), 200);
   }
 
   function renderStewardshipPanel() {
