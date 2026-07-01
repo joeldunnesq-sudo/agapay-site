@@ -880,14 +880,14 @@ async function handleStewardshipGivingSummary(request, env, parishId) {
     env.AGAPAY_DB.prepare(`
       SELECT
         COUNT(DISTINCT donor_email) AS active_donors,
-        SUM(json_extract(data, '$.giftAmountCents')) AS total_actual_cents
+        SUM(COALESCE(json_extract(data, '$.giftAmountCents'), json_extract(data, '$.amountCents'), 0)) AS total_actual_cents
       FROM donor_offerings
       WHERE parish_id = ? AND payment_status IN ('paid', 'succeeded')
         AND created_at BETWEEN ? AND ?
     `).bind(parishId, yearStart, yearEnd).first(),
 
     env.AGAPAY_DB.prepare(`
-      SELECT SUM(json_extract(data, '$.giftAmountCents')) AS total_prior_cents
+      SELECT SUM(COALESCE(json_extract(data, '$.giftAmountCents'), json_extract(data, '$.amountCents'), 0)) AS total_prior_cents
       FROM donor_offerings
       WHERE parish_id = ? AND payment_status IN ('paid', 'succeeded')
         AND created_at BETWEEN ? AND ?
@@ -932,10 +932,10 @@ async function handleStewardshipGivingFunds(request, env, parishId) {
       gf.name                                                             AS fund_name,
       gf.code                                                             AS fund_code,
       COUNT(o.id)                                                         AS transaction_count,
-      COALESCE(SUM(json_extract(o.data, '$.giftAmountCents')), 0)        AS total_cents
+      COALESCE(SUM(COALESCE(json_extract(o.data, '$.giftAmountCents'), json_extract(o.data, '$.amountCents'), 0)), 0) AS total_cents
     FROM giving_funds gf
     LEFT JOIN donor_offerings o
-           ON json_extract(o.data, '$.giftType') = gf.code
+           ON COALESCE(json_extract(o.data, '$.giftType'), json_extract(o.data, '$.fund')) = gf.code
           AND o.parish_id = ?
           AND o.payment_status = 'paid'
           AND o.created_at BETWEEN ? AND ?
@@ -974,7 +974,7 @@ async function handleStewardshipGivingDistribution(request, env, parishId) {
   const rows = await env.AGAPAY_DB.prepare(`
     SELECT
       donor_email,
-      SUM(json_extract(data, '$.giftAmountCents')) AS donor_total_cents
+      SUM(COALESCE(json_extract(data, '$.giftAmountCents'), json_extract(data, '$.amountCents'), 0)) AS donor_total_cents
     FROM donor_offerings
     WHERE parish_id = ? AND payment_status = 'paid'
       AND created_at BETWEEN ? AND ?
@@ -1529,7 +1529,7 @@ export default {
             d.email,
             DEMO_PARISH_ID,
             `pi_${demoIdPrefix}_${d.id}`,
-            "complete",
+            "completed",
             "paid",
             d.date,
             d.date,
@@ -1537,9 +1537,14 @@ export default {
               donorName:   d.name,
               donorEmail:  d.email,
               amountCents: d.amount,
+              giftAmountCents: d.amount,
+              parishNetCents: d.amount,
               fund:        d.fund,
+              giftType:    d.fund,
               parishId:    DEMO_PARISH_ID,
               currency:    "usd",
+              status:      "completed",
+              paymentStatus: "paid",
               isRecurring: d.id.endsWith("3") || d.id.endsWith("6"),
               createdAt:   d.date
             })

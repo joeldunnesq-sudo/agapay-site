@@ -1302,6 +1302,7 @@ export function paidOfferingStatus(offering = {}) {
   const status = String(offering.status || "").toLowerCase();
   const paymentStatus = String(offering.paymentStatus || "").toLowerCase();
   return status === "paid"
+    || status === "complete"
     || status === "completed"
     || paymentStatus === "paid"
     || paymentStatus === "succeeded";
@@ -1817,7 +1818,14 @@ export async function verifiedRegistrationParishes(env, options = {}) {
 
 export async function findRegistrationByParishId(env, parishId) {
   if (d1(env)) {
-    const row = await d1First(env, "SELECT reference, data FROM registrations WHERE parish_id = ?1 LIMIT 1", parishId);
+    const row = await d1First(
+      env,
+      `SELECT reference, data FROM registrations
+       WHERE parish_id = ?1
+       ORDER BY COALESCE(json_extract(data, '$.updatedAt'), updated_at, received_at) DESC, updated_at DESC, reference DESC
+       LIMIT 1`,
+      parishId
+    );
     const registration = parseJsonRow(row);
     if (registration) return { key: row.reference, registration };
   }
@@ -2001,16 +2009,31 @@ export async function loadParishPaidOfferings(env, parishId, limit = 500) {
   if (d1(env)) {
     const rows = await d1All(
       env,
-      `SELECT data
+      `SELECT id, data, status, payment_status, created_at, updated_at
        FROM donor_offerings
        WHERE parish_id = ?1
-         AND (payment_status IN ('paid', 'succeeded') OR status IN ('paid', 'completed'))
+          AND (payment_status IN ('paid', 'succeeded') OR status IN ('paid', 'complete', 'completed'))
        ORDER BY created_at DESC
        LIMIT ?2`,
       parishId,
       limit
     );
-    return rows.map(parseJsonRow).filter(Boolean).filter(paidOffering).map(publicParishGiftFromOffering);
+    return rows
+      .map((row) => {
+        const offering = parseJsonRow(row);
+        if (!offering) return null;
+        return {
+          ...offering,
+          id: offering.id || row.id || "",
+          status: offering.status || row.status || "",
+          paymentStatus: offering.paymentStatus || row.payment_status || "",
+          createdAt: offering.createdAt || row.created_at || "",
+          updatedAt: offering.updatedAt || row.updated_at || ""
+        };
+      })
+      .filter(Boolean)
+      .filter(paidOffering)
+      .map(publicParishGiftFromOffering);
   }
 
   if (!env.AGAPAY_REGISTRATIONS) return [];
@@ -2065,7 +2088,7 @@ export async function loadParishRecurringOfferings(env, parishId, limit = 1000) 
   if (d1(env)) {
     const rows = await d1All(
       env,
-      `SELECT data
+      `SELECT id, data, status, payment_status, stripe_subscription_id, created_at, updated_at
        FROM donor_offerings
        WHERE parish_id = ?1
          AND (
@@ -2077,7 +2100,19 @@ export async function loadParishRecurringOfferings(env, parishId, limit = 1000) 
       parishId,
       limit
     );
-    return rows.map(parseJsonRow).filter(Boolean);
+    return rows.map((row) => {
+      const offering = parseJsonRow(row);
+      if (!offering) return null;
+      return {
+        ...offering,
+        id: offering.id || row.id || "",
+        status: offering.status || row.status || "",
+        paymentStatus: offering.paymentStatus || row.payment_status || "",
+        stripeSubscriptionId: offering.stripeSubscriptionId || row.stripe_subscription_id || "",
+        createdAt: offering.createdAt || row.created_at || "",
+        updatedAt: offering.updatedAt || row.updated_at || ""
+      };
+    }).filter(Boolean);
   }
 
   if (!env.AGAPAY_REGISTRATIONS) return [];
@@ -3876,6 +3911,72 @@ export function summarizeCharges(charges) {
   };
 }
 
+export function summarizeStoredParishGifts(gifts = []) {
+  const now = new Date();
+  const currentYear = now.getUTCFullYear();
+  const giftYears = gifts
+    .map((gift) => new Date(gift.createdAt || gift.date || 0).getUTCFullYear())
+    .filter((yearValue) => Number.isFinite(yearValue));
+  const year = giftYears.includes(currentYear)
+    ? currentYear
+    : giftYears.length
+      ? Math.max(...giftYears)
+      : currentYear;
+  const monthly = Array.from({ length: 12 }, (_, index) => ({
+    month: index + 1,
+    label: monthLabel(index),
+    amountCents: 0,
+    giftCount: 0
+  }));
+  const givers = new Set();
+  let ytdCents = 0;
+  let grossGiftCents = 0;
+  let donorCoveredFeeCents = 0;
+  let feesAbsorbedCents = 0;
+  let coverFeesCount = 0;
+  let giftCount = 0;
+  let lastGiftAt = "";
+
+  for (const gift of gifts) {
+    const created = new Date(gift.createdAt || gift.date || 0);
+    if (created.getUTCFullYear() !== year) continue;
+    const netCents = numericCents(gift.parishNetCents ?? gift.amountCents);
+    const grossCents = numericCents(gift.giftAmountCents ?? gift.amountCents);
+    if (!netCents && !grossCents) continue;
+
+    const monthIndex = created.getUTCMonth();
+    monthly[monthIndex].amountCents += netCents;
+    monthly[monthIndex].giftCount += 1;
+    ytdCents += netCents;
+    grossGiftCents += grossCents;
+    feesAbsorbedCents += numericCents(gift.totalFeeCents);
+    if (gift.coverFees) {
+      coverFeesCount += 1;
+      donorCoveredFeeCents += numericCents(gift.donorCoveredFeeCents);
+    }
+    giftCount += 1;
+    const giverKey = gift.donorEmail || gift.donorName || gift.id;
+    if (giverKey) givers.add(String(giverKey).toLowerCase());
+    const iso = created.toISOString();
+    if (!lastGiftAt || iso > lastGiftAt) lastGiftAt = iso;
+  }
+
+  return {
+    year,
+    currency: "usd",
+    ytdCents,
+    grossGiftCents,
+    donorCoveredFeeCents,
+    feesAbsorbedCents,
+    feeCoveragePercent: giftCount ? Math.round((coverFeesCount / giftCount) * 100) : 0,
+    giftCount,
+    giverCount: givers.size,
+    averageGiftCents: giftCount ? Math.round(ytdCents / giftCount) : 0,
+    lastGiftAt,
+    monthly
+  };
+}
+
 export async function handleParishGivingSummary(request, env, parishId) {
   if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
   const limited = await rateLimit(request, env, "parish-dashboard", { limit: 80, windowSeconds: 300 });
@@ -3895,18 +3996,32 @@ export async function handleParishGivingSummary(request, env, parishId) {
     generatedAt: new Date().toISOString()
   };
 
-  if (!found.registration.stripeAccountId) {
+  const storedGifts = await loadParishPaidOfferings(env, parishId, 2000);
+  if (!found.registration.stripeAccountId || String(found.registration.stripeAccountId).startsWith("acct_demo_")) {
     return json({
       summary: {
-        ...emptySummary,
-        dataSource: "not_connected",
-        note: "Stripe is not connected yet."
+        ...(storedGifts.length ? summarizeStoredParishGifts(storedGifts) : emptySummary),
+        dataSource: storedGifts.length ? "stored" : "not_connected",
+        generatedAt: new Date().toISOString(),
+        note: storedGifts.length
+          ? "Showing seeded AGAPAY gift records for this demo parish."
+          : "Stripe is not connected yet."
       }
     });
   }
 
   const result = await listYtdStripeCharges(env, found.registration.stripeAccountId);
   if (!result.ok) {
+    if (storedGifts.length) {
+      return json({
+        summary: {
+          ...summarizeStoredParishGifts(storedGifts),
+          dataSource: "stored",
+          generatedAt: new Date().toISOString(),
+          note: "Showing stored AGAPAY gift records because Stripe summary is unavailable."
+        }
+      });
+    }
     return json(
       { error: "Stripe giving summary failed", detail: result.body.error?.message || "Unknown Stripe error" },
       { status: 502 }
