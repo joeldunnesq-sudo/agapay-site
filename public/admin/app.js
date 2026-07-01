@@ -1044,28 +1044,44 @@ let selectedReference = '';
 
     async function seedDemoParish(btn) {
       const status = document.getElementById('seedDemoStatus');
+      const parishInput = document.getElementById('seedDemoParishId');
+      const parishId = (parishInput?.value || '').trim();
+      if (!parishId) {
+        if (status) {
+          status.textContent = 'Enter the parish dashboard ID first.';
+          status.style.color = 'var(--red, #8b2020)';
+        }
+        parishInput?.focus();
+        return;
+      }
       btn.disabled = true;
-      btn.textContent = 'Seeding…';
+      btn.textContent = 'Seeding...';
       if (status) status.textContent = '';
       try {
         const res = await fetch('/api/admin/seed-demo', {
           method: 'POST',
-          headers: authHeaders()
+          headers: {
+            ...authHeaders(),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ parishId })
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.ok) throw new Error(data.error || 'Seed failed');
-        btn.textContent = '✓ Seeded';
+        btn.textContent = 'Seeded';
         if (status) {
-          status.textContent = `St. Fiacre (Demo) KV record written. Dashboard: /parish/dashboard · Give: /give/st-fiacre · Password: demo2025`;
+          status.textContent = `${data.message || 'Demo data seeded.'} Dashboard: ${data.dashboardUrl || '/parish/dashboard'} · Give: ${data.giveUrl || `/give/${parishId}`}`;
           status.style.color = 'var(--green, #2a7a4b)';
         }
       } catch (err) {
         btn.disabled = false;
-        btn.textContent = '🌱 Seed St. Fiacre (Demo)';
+        btn.textContent = 'Seed demo data';
         if (status) {
           status.textContent = err.message;
           status.style.color = 'var(--red, #8b2020)';
         }
+      } finally {
+        btn.disabled = false;
       }
     }
 
@@ -2284,7 +2300,8 @@ let selectedReference = '';
         learn: 'AGAPAY Learn',
         marketplace: 'AGAPAY Marketplace',
         directory: 'AGAPAY Directory',
-        settings: 'Settings'
+        settings: 'Settings',
+        developer: 'Developer Tools'
       };
       const titleEl = document.getElementById('topbarTitle');
       if (titleEl) titleEl.textContent = titles[tab] || 'Admin Console';

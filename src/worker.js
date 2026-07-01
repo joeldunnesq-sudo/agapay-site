@@ -90,6 +90,7 @@ import {
 import {
   verifyParishDashboardBearer,
   findRegistrationByParishId,
+  saveRegistrationRecord,
   handleParishStripeRefresh,
   handleDashboardInvite,
   handleParishStripeOnboarding,
@@ -1405,12 +1406,27 @@ export default {
       if (!(await requireAdmin(request, env))) return unauthorized();
       if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
-      // ── Demo parish registration ──────────────────────────────────────────
-      const DEMO_PARISH_ID  = "st-fiacre";
-      const DEMO_REFERENCE  = "demo-st-fiacre-2025";
-      const now = new Date().toISOString();
+      const body = await request.json().catch(() => ({}));
+      const requestedParishId = String(body.parishId || url.searchParams.get("parishId") || url.searchParams.get("parish") || "st-fiacre").trim();
+      if (!requestedParishId) return json({ error: "Choose a parish dashboard to seed." }, { status: 422 });
 
-      const demoRegistration = {
+      const foundRegistration = await findRegistrationByParishId(env, requestedParishId);
+      if (!foundRegistration && requestedParishId !== "st-fiacre") {
+        return json({ error: `No parish dashboard was found for "${requestedParishId}".` }, { status: 404 });
+      }
+
+      const DEMO_PARISH_ID  = foundRegistration?.registration?.parishId || requestedParishId;
+      const DEMO_REFERENCE  = foundRegistration?.key || "demo-st-fiacre-2025";
+      const now = new Date().toISOString();
+      const demoFunds = [
+        { name: "General Stewardship",  code: "stewardship", isDefault: true,  sortOrder: 0 },
+        { name: "Candles / Vigil Lights", code: "candle",   isDefault: false, sortOrder: 1 },
+        { name: "Building Fund",        code: "building",   isDefault: false, sortOrder: 2 },
+        { name: "Poor Box / Alms",      code: "alms",       isDefault: false, sortOrder: 3 },
+        { name: "Iconography Fund",     code: "iconography",isDefault: false, sortOrder: 4 },
+        { name: "Memorial / Panakhida", code: "memorial",   isDefault: false, sortOrder: 5 },
+      ];
+      const defaultDemoRegistration = {
         reference:              DEMO_REFERENCE,
         status:                 "verified",
         parishId:               DEMO_PARISH_ID,
@@ -1429,57 +1445,42 @@ export default {
         country:                "US",
         website:                "https://stfiacre.org",
         phone:                  "(806) 555-0184",
-        // Stripe: demo account appears fully connected and active
         stripeAccountId:        "acct_demo_st_fiacre",
         stripeAccountStatus:    "charges_enabled",
         givingStatus:           "active",
         subscriptionTier:       "parish",
         subscriptionStatus:     "active",
-        dashboardPassword:      "demo2025",
         dashboardInviteEmailStatus: "sent",
         adminNotificationEmailStatus: "sent",
         receivedAt:             "2024-09-22T09:00:00.000Z",
         updatedAt:              now,
-        givingFunds: [
-          { name: "General Stewardship",  code: "stewardship", isDefault: true,  sortOrder: 0 },
-          { name: "Candles / Vigil Lights", code: "candle",   isDefault: false, sortOrder: 1 },
-          { name: "Building Fund",        code: "building",   isDefault: false, sortOrder: 2 },
-          { name: "Poor Box / Alms",      code: "alms",       isDefault: false, sortOrder: 3 },
-          { name: "Iconography Fund",     code: "iconography",isDefault: false, sortOrder: 4 },
-          { name: "Memorial / Panakhida", code: "memorial",   isDefault: false, sortOrder: 5 },
-        ]
+        givingFunds:            demoFunds
       };
 
-      // Save to KV
-      const kvKey = `parish:${DEMO_PARISH_ID}`;
-      await env.AGAPAY_REGISTRATIONS.put(kvKey, JSON.stringify(demoRegistration));
-      await env.AGAPAY_REGISTRATIONS.put(`parish_id_index:${DEMO_PARISH_ID}`, kvKey);
+      const baseRegistration = foundRegistration?.registration || await applyParishDashboardPassword(
+        defaultDemoRegistration,
+        "demo2025",
+        { temporary: false }
+      );
+      const demoRegistration = {
+        ...baseRegistration,
+        reference: baseRegistration.reference || DEMO_REFERENCE,
+        parishId: DEMO_PARISH_ID,
+        status: baseRegistration.status === "rejected" || baseRegistration.status === "cancelled" ? "verified" : (baseRegistration.status || "verified"),
+        givingStatus: "active",
+        stripeAccountStatus: baseRegistration.stripeAccountStatus || "charges_enabled",
+        subscriptionTier: baseRegistration.subscriptionTier || "parish",
+        subscriptionStatus: baseRegistration.subscriptionStatus || "active",
+        givingFunds: demoFunds,
+        updatedAt: now,
+        parishUpdatedAt: now
+      };
 
-      // Save to D1 registrations table
-      try {
-        await env.AGAPAY_DB.prepare(`
-          INSERT INTO registrations (reference, parish_id, status, parish_name, community_type,
-            stripe_account_id, received_at, updated_at, data)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(reference) DO UPDATE SET
-            parish_id = excluded.parish_id,
-            status = excluded.status,
-            parish_name = excluded.parish_name,
-            stripe_account_id = excluded.stripe_account_id,
-            updated_at = excluded.updated_at,
-            data = excluded.data
-        `).bind(
-          DEMO_REFERENCE,
-          DEMO_PARISH_ID,
-          "verified",
-          "Holy Trinity Orthodox Church",
-          "parish",
-          "acct_demo_holy_trinity",
-          "2024-09-15T10:22:00.000Z",
-          now,
-          JSON.stringify(demoRegistration)
-        ).run();
-      } catch (e) { /* D1 may not be available in all envs */ }
+      await saveRegistrationRecord(env, DEMO_REFERENCE, demoRegistration, foundRegistration?.registration || null);
+      if (env.AGAPAY_REGISTRATIONS) {
+        await env.AGAPAY_REGISTRATIONS.put(DEMO_REFERENCE, JSON.stringify(demoRegistration));
+        await env.AGAPAY_REGISTRATIONS.put(parishIdIndexKey(DEMO_PARISH_ID), DEMO_REFERENCE);
+      }
 
       // Seed giving funds in D1
       try {
@@ -1493,6 +1494,7 @@ export default {
       } catch (e) {}
 
       // Seed realistic donation history in D1
+      const demoIdPrefix = `demo_${DEMO_PARISH_ID.replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "") || "parish"}`;
       const donations = [
         { id: "demo_don_001", email: "maria.petrov@email.com",     name: "Maria Petrov",      amount: 20000, fund: "stewardship", date: "2024-10-06T11:15:00.000Z" },
         { id: "demo_don_002", email: "nikolai.volkov@email.com",   name: "Nikolai Volkov",    amount: 5000,  fund: "candle",      date: "2024-10-06T09:42:00.000Z" },
@@ -1523,10 +1525,10 @@ export default {
               (id, donor_email, parish_id, payment_intent_id, status, payment_status, created_at, updated_at, data)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
-            d.id,
+            `${demoIdPrefix}_${d.id}`,
             d.email,
             DEMO_PARISH_ID,
-            `pi_demo_${d.id}`,
+            `pi_${demoIdPrefix}_${d.id}`,
             "complete",
             "paid",
             d.date,
@@ -1560,7 +1562,7 @@ export default {
           env.AGAPAY_DB.prepare(`
             INSERT OR IGNORE INTO commemorations (id, parish_id, donor_email, created_at, data)
             VALUES (?, ?, ?, ?, ?)
-          `).bind(c.id, DEMO_PARISH_ID, c.email, c.date, JSON.stringify({
+          `).bind(`${demoIdPrefix}_${c.id}`, DEMO_PARISH_ID, c.email, c.date, JSON.stringify({
             living: c.living, departed: c.departed, createdAt: c.date
           }))
         );
@@ -1570,9 +1572,12 @@ export default {
       return json({
         ok: true,
         parishId: DEMO_PARISH_ID,
-       dashboardUrl: `/parish/dashboard?parishId=${DEMO_PARISH_ID}`,
+        dashboardUrl: `/parish/dashboard?parish=${DEMO_PARISH_ID}`,
         giveUrl: `/give/${DEMO_PARISH_ID}`,
-        message: "St. Fiacre Orthodox Church (Demo) seeded. Use password 'demo2025' for the parish dashboard."
+        createdRegistration: !foundRegistration,
+        message: foundRegistration
+          ? `Demo data seeded into ${demoRegistration.parishName || DEMO_PARISH_ID}.`
+          : "St. Fiacre Orthodox Church (Demo) seeded. Use password 'demo2025' for the parish dashboard."
       });
     }
     if (url.pathname === "/api/admin/rebuild-indexes") {
