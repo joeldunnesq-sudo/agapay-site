@@ -817,6 +817,10 @@ function annualMeetingFormHtml(registration, meeting, agendaItems, reports, fina
 // ─── Preview / PDF ────────────────────────────────────────────────────────────
 
 function packetPreviewHtml(registration, meeting, agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions, isPdf, env) {
+  // A meeting saved before its Financial Summary section was filled in has no
+  // row in stewardship_financial_summaries at all — d1First then returns null
+  // rather than an empty object, which crashed every property access below.
+  financialSummary = financialSummary || {};
   const base         = absoluteWebsiteUrl(env);
   const parishName   = meeting.parish_name_override || registration.parishName || registration.name || "Parish";
   const jurisdiction = meeting.jurisdiction || registration.jurisdiction || "";
