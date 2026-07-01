@@ -122,13 +122,14 @@
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Suite', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Suite', sacraments:'Sacraments & Services', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
     if (tab === 'givers' && allGifts.length) renderGiversPanel();
     if (tab === 'qr') renderBulletinPreview();
     if (tab === 'stewardship') loadStewardshipPanel();
+    if (tab === 'sacraments') loadSacramentsPanel();
     if (tab === 'reconcile' && currentParish) loadReconciliation();
     document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
     if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -451,7 +452,7 @@
     if (!pane || !currentParish) return;
 
     const sw = stewardshipState.stewardship || {};
-    const isActive = sw.active || ['active', 'trialing'].includes(sw.status);
+    const isActive = sw.active || ['active', 'trialing', 'comped'].includes(sw.status);
     if (!isActive) { pane.innerHTML = '<p class="muted">Subscribe to Stewardship Suite to access financial snapshots.</p>'; return; }
 
     if (year) financialsState.year = year;
@@ -887,6 +888,182 @@
       mobileBadge.textContent = isActive ? 'Active' : 'Upgrade';
       mobileBadge.classList.toggle('mobile-upgrade-badge--active', isActive);
     }
+    // Sacraments & Services is a Stewardship Suite feature — same gate, same badge state.
+    const sacBadge = document.getElementById('sacramentsNavBadge');
+    if (sacBadge) {
+      sacBadge.textContent = isActive ? 'Active' : 'Upgrade';
+      sacBadge.classList.toggle('nav-upgrade-badge--active', isActive);
+    }
+  }
+
+  // ── SACRAMENTS & SERVICES ──────────────────────────────────
+  // A Stewardship Suite feature — gated server-side by the exact same
+  // hasStewardshipAccess() check as the rest of the Suite. This panel
+  // reuses stewardshipState (already fetched by loadStewardshipPanel) to
+  // decide whether to show the upsell or the actual request list, so
+  // switching to this tab never needs a second status round-trip.
+  let sacramentsState = { loaded: false, requests: [] };
+
+  function sacramentsApi(path = '') {
+    if (!currentParish?.parishId) throw new Error('Load a parish first.');
+    return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/sacraments' + path;
+  }
+
+  const SACRAMENT_TYPE_LABELS = {
+    house_blessing: 'House Blessing', baptism: 'Baptism', chrismation: 'Chrismation',
+    wedding: 'Wedding', funeral: 'Funeral', memorial_service: 'Memorial Service',
+    confession: 'Confession', home_visit: 'Home Visit', other: 'Other Request'
+  };
+  const SACRAMENT_STATUS_OPTIONS = ['requested', 'acknowledged', 'scheduled', 'completed', 'declined', 'cancelled'];
+  const SACRAMENT_STATUS_LABELS = {
+    requested: 'Requested', acknowledged: 'Received', scheduled: 'Scheduled',
+    completed: 'Completed', declined: 'Declined', cancelled: 'Cancelled'
+  };
+
+  function sacramentTypeLabel(row) {
+    return row.sacramentType === 'other' && row.otherTypeLabel ? row.otherTypeLabel : (SACRAMENT_TYPE_LABELS[row.sacramentType] || row.sacramentType);
+  }
+
+  async function loadSacramentsPanel(force = false) {
+    const statusLabel = document.getElementById('sacramentsStatusLabel');
+    const pane = document.getElementById('sacramentsPane');
+    if (!pane) return;
+    if (!currentParish) {
+      if (statusLabel) statusLabel.textContent = 'Not loaded';
+      return;
+    }
+
+    // Reuse the Stewardship Suite status already fetched for the Stewardship
+    // tab — no need to hit the network twice for the same gate.
+    const sw = stewardshipState.stewardship || {};
+    const swActive = sw.active || ['active', 'trialing', 'comped'].includes(sw.status);
+    if (!swActive) {
+      if (statusLabel) statusLabel.textContent = 'Add-on · $39/mo';
+      pane.innerHTML = renderSacramentsUpsell();
+      return;
+    }
+    if (statusLabel) statusLabel.textContent = 'Active';
+
+    if (sacramentsState.loaded && !force) {
+      renderSacramentsPanel();
+      return;
+    }
+
+    pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
+    try {
+      const res = await fetch(sacramentsApi(), { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to load requests.');
+      sacramentsState = { loaded: true, requests: data.requests || [] };
+      renderSacramentsPanel();
+    } catch (err) {
+      pane.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  function renderSacramentsUpsell() {
+    return `
+      <div class="sw-suite-tool-grid" style="grid-template-columns:1fr;">
+        <div class="sw-suite-tool-card" style="text-align:center;padding:2.2rem 1.5rem;">
+          <strong class="sw-tool-card-title">Sacraments &amp; Services is part of Stewardship Suite</strong>
+          <p class="sw-tool-card-desc" style="max-width:480px;margin:0.6rem auto 1.2rem;">
+            Let parishioners request house blessings, baptisms, weddings, and more directly from My AGAPAY —
+            routed straight to your parish dashboard.
+          </p>
+          <button class="btn btn-gold" type="button" onclick="switchTab('stewardship')">View Stewardship Suite</button>
+        </div>
+      </div>`;
+  }
+
+  function renderSacramentsPanel() {
+    const pane = document.getElementById('sacramentsPane');
+    if (!pane) return;
+    const requests = sacramentsState.requests || [];
+    if (!requests.length) {
+      pane.innerHTML = '<div class="sw-suite-tool-card" style="text-align:center;padding:2rem;"><p class="sw-tool-card-desc">No requests yet. When a parishioner requests a house blessing, baptism, or other service from My AGAPAY, it will appear here.</p></div>';
+      return;
+    }
+
+    const active = requests.filter(r => ['requested', 'acknowledged', 'scheduled'].includes(r.status));
+    const closed = requests.filter(r => ['completed', 'declined', 'cancelled'].includes(r.status));
+
+    pane.innerHTML = `
+      ${active.length ? `<div class="sac-parish-section"><h3>Active</h3>${active.map(sacramentParishRow).join('')}</div>` : ''}
+      ${closed.length ? `<div class="sac-parish-section"><h3>History</h3>${closed.map(sacramentParishRow).join('')}</div>` : ''}
+    `;
+  }
+
+  function sacramentParishRow(row) {
+    const typeLabel = sacramentTypeLabel(row);
+    const statusOptions = SACRAMENT_STATUS_OPTIONS.map(s => `<option value="${s}" ${s === row.status ? 'selected' : ''}>${SACRAMENT_STATUS_LABELS[s]}</option>`).join('');
+    return `
+      <div class="sac-parish-row" id="sacrow-${row.id}">
+        <div class="sac-parish-row-top">
+          <div>
+            <strong>${escapeHtml(typeLabel)}</strong>
+            <span class="sac-parish-row-donor">${escapeHtml(row.donorEmail)}${row.phone ? ' · ' + escapeHtml(row.phone) : ''}</span>
+          </div>
+          <select class="sw-year-select" style="max-width:150px;" id="sacstatus-${row.id}" onchange="onSacramentStatusChange('${row.id}')">${statusOptions}</select>
+        </div>
+        ${row.participantNames ? `<div class="sac-parish-row-meta"><strong>For:</strong> ${escapeHtml(row.participantNames)}</div>` : ''}
+        ${row.requestedDate || row.requestedTimeWindow ? `<div class="sac-parish-row-meta"><strong>Requested:</strong> ${escapeHtml([row.requestedDate, row.requestedTimeWindow].filter(Boolean).join(' · '))}</div>` : ''}
+        ${row.locationAddress ? `<div class="sac-parish-row-meta"><strong>Location:</strong> ${escapeHtml(row.locationAddress)}</div>` : ''}
+        ${row.notes ? `<div class="sac-parish-row-meta"><strong>Notes:</strong> ${escapeHtml(row.notes)}</div>` : ''}
+
+        <div class="sac-parish-row-fields" id="sacfields-${row.id}" style="${row.status === 'scheduled' ? '' : 'display:none;'}">
+          <div class="form-grid">
+            <div><label>Confirmed date</label><input type="date" id="sacdate-${row.id}" value="${escapeAttr(row.confirmedDate || '')}" /></div>
+            <div><label>Confirmed time</label><input type="text" id="sactime-${row.id}" value="${escapeAttr(row.confirmedTime || '')}" placeholder="10:00 AM" /></div>
+            <div><label>Clergy assigned</label><input type="text" id="sacclergy-${row.id}" value="${escapeAttr(row.clergyAssigned || '')}" /></div>
+          </div>
+        </div>
+        <div class="sac-parish-row-fields" id="sacdecline-${row.id}" style="${row.status === 'declined' ? '' : 'display:none;'}">
+          <label>Reason (shown to the parishioner)</label>
+          <input type="text" id="sacreason-${row.id}" value="${escapeAttr(row.declineReason || '')}" />
+        </div>
+        <div class="sac-parish-row-fields">
+          <label>Internal notes (not shared with the parishioner)</label>
+          <textarea id="sacnotes-${row.id}" rows="2">${escapeHtml(row.parishNotes || '')}</textarea>
+        </div>
+        <div class="btn-row" style="margin-top:0.5rem;">
+          <button class="btn btn-gold btn-sm" type="button" onclick="saveSacramentRequest('${row.id}')">Save</button>
+        </div>
+      </div>`;
+  }
+
+  function onSacramentStatusChange(id) {
+    const select = document.getElementById('sacstatus-' + id);
+    const status = select?.value || '';
+    const scheduledFields = document.getElementById('sacfields-' + id);
+    const declineFields = document.getElementById('sacdecline-' + id);
+    if (scheduledFields) scheduledFields.style.display = status === 'scheduled' ? '' : 'none';
+    if (declineFields) declineFields.style.display = status === 'declined' ? '' : 'none';
+  }
+
+  async function saveSacramentRequest(id) {
+    const status = document.getElementById('sacstatus-' + id)?.value;
+    const body = {
+      status,
+      confirmedDate: document.getElementById('sacdate-' + id)?.value || '',
+      confirmedTime: document.getElementById('sactime-' + id)?.value || '',
+      clergyAssigned: document.getElementById('sacclergy-' + id)?.value || '',
+      declineReason: document.getElementById('sacreason-' + id)?.value || '',
+      parishNotes: document.getElementById('sacnotes-' + id)?.value || ''
+    };
+    try {
+      const res = await fetch(sacramentsApi('/' + encodeURIComponent(id)), {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Unable to save.');
+      setStatus('Request updated.', 'success');
+      sacramentsState.loaded = false;
+      await loadSacramentsPanel(true);
+    } catch (err) {
+      setStatus(err.message, 'error');
+    }
   }
 
   async function prefetchStewardshipBadge() {
@@ -905,7 +1082,7 @@
         selectedMeeting: null
       };
       const sw       = stewardshipState.stewardship || {};
-      const isActive = sw.active || ['active', 'trialing'].includes(sw.status);
+      const isActive = sw.active || ['active', 'trialing', 'comped'].includes(sw.status);
       updateStewardshipBadges(isActive);
       maybeShowStewardshipCompExpiryNotice(sw);
     } catch { /* silent — badge stays gold */ }
@@ -976,7 +1153,7 @@
     if (!planPane || !meetingsPane) return;
 
     const sw = stewardshipState.stewardship || {};
-    const isActive   = sw.active || ['active', 'trialing'].includes(sw.status);
+    const isActive   = sw.active || ['active', 'trialing', 'comped'].includes(sw.status);
     const isTrialing = sw.status === 'trialing';
     const isComped   = sw.status === 'comped' && sw.comp;
 
