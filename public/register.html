@@ -94,6 +94,24 @@
     .hero h1 em { color: var(--gold); font-style: italic; }
     .hero-sub { font-size: 14px; color: var(--stone); line-height: 1.75; max-width: 440px; margin: 0 auto; }
 
+    .promo-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      max-width: 640px;
+      margin: -0.5rem auto 1.6rem;
+      padding: 0.8rem 1.1rem;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(200,162,74,0.16), rgba(200,162,74,0.06));
+      border: 1px solid rgba(200,162,74,0.4);
+      color: #6e4c14;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .promo-banner-icon { width: 22px; height: 22px; flex-shrink: 0; color: var(--gold); }
+    .promo-banner strong { color: var(--ink); }
+    @media (max-width: 700px) { .promo-banner { margin-left: 1rem; margin-right: 1rem; } }
+
     /* MAIN */
     .main { max-width: 640px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
 
@@ -299,6 +317,11 @@
       <p class="hero-sub">Register a canonical Orthodox mission, parish, or cathedral. We personally review each community before activation. Built for the faithful, not the platform.</p>
     </div>
   </header>
+
+  <div id="promoBanner" class="promo-banner" style="display:none;">
+    <svg viewBox="0 0 24 24" class="promo-banner-icon"><path d="M12 2 4 6v6c0 5.25 3.4 9.74 8 11 4.6-1.26 8-5.75 8-11V6l-8-4z" fill="currentColor"/></svg>
+    <span><strong>Founding 20 offer applied.</strong> Your parish will receive a free year of Stewardship Suite once your registration is approved.</span>
+  </div>
 
   <main class="main">
 
@@ -573,6 +596,15 @@
   </main>
   <script src="/security.js"></script>
   <script>
+    // Show the Founding 20 confirmation banner when arriving via that offer's link
+    (function showPromoBanner() {
+      const promo = new URLSearchParams(window.location.search).get('promo');
+      if (promo === 'founding-20') {
+        const banner = document.getElementById('promoBanner');
+        if (banner) banner.style.display = 'flex';
+      }
+    })();
+
     // ─── STATE ───────────────────────────────────────────────
     let currentStep = 1;
     let communityType = 'Parish';
@@ -856,8 +888,10 @@
       document.querySelectorAll('.step-panel').forEach(p => p.style.display = 'none');
       document.getElementById('sendingState').classList.add('visible');
 
+      const promoParam = new URLSearchParams(window.location.search).get('promo');
       const payload = {
         communityType,
+        ...(promoParam ? { promo: promoParam } : {}),
         parishName,
         jurisdiction: document.getElementById('jurisdiction').value,
         addressLine1: document.getElementById('addressLine1').value,
