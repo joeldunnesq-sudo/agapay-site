@@ -12,10 +12,13 @@ import {
   d1Run,
   finishStripeEvent,
   generateSecret,
+  hasActiveStewardshipComp,
   hasProductionStore,
+  hasStewardshipAccess,
   json,
   missingProductionStoreResponse,
   rateLimit,
+  stewardshipStatus,
   unauthorized,
 } from "../lib/core.js";
 
@@ -79,36 +82,18 @@ export const STEWARDSHIP_PRODUCT_KEY = "stewardship";
 const STEWARDSHIP_COMING_SOON = false;
 
 // Active subscription states that unlock the module
-const ACTIVE_STATES = new Set(["active", "trialing"]);
-
 // Cap on the "founding 20" free-year Stewardship Suite promo.
 const STEWARDSHIP_COMP_PROMO_CODE = "founding-20";
 const STEWARDSHIP_COMP_PROMO_LIMIT = 20;
 const STEWARDSHIP_COMP_PROMO_KV_KEY = "stewardship_comp_promo:founding-20:count";
 
 // ─── Subscription helpers ─────────────────────────────────────────────────────
-
-// A comp grant is active if it was actually granted and hasn't passed its
-// expiresAt. This is entirely separate from the Stripe subscription fields —
-// a comped parish has no Stripe customer/subscription at all, and a comp
-// expiring doesn't touch any billing state, it just falls through to
-// whatever stewardshipStatus already says (normally "no_subscription").
-export function hasActiveStewardshipComp(registration) {
-  const comp = registration?.stewardshipComp;
-  if (!comp?.active) return false;
-  if (!comp.expiresAt) return true;
-  return new Date(comp.expiresAt).getTime() > Date.now();
-}
-
-export function stewardshipStatus(registration) {
-  if (hasActiveStewardshipComp(registration)) return "comped";
-  return registration?.stewardshipStatus || "no_subscription";
-}
-
-export function hasStewardshipAccess(registration) {
-  if (hasActiveStewardshipComp(registration)) return true;
-  return ACTIVE_STATES.has(stewardshipStatus(registration));
-}
+// hasActiveStewardshipComp, stewardshipStatus, and hasStewardshipAccess now
+// live in lib/core.js — re-exported here so every existing caller inside
+// this file that imports them from "./stewardship.js" keeps working, while
+// parish.js and donor.js can import the same functions directly from
+// core.js without creating a circular dependency on this file.
+export { hasActiveStewardshipComp, stewardshipStatus, hasStewardshipAccess };
 
 function stewardshipPublicStatus(registration) {
   const comp = registration?.stewardshipComp || null;
@@ -320,7 +305,7 @@ function stewardshipHomeHtml(registration, meetings, env) {
     active: "Active", trialing: "Trial", past_due: "Past Due",
     canceled: "Canceled", unpaid: "Unpaid", incomplete: "Incomplete",
   }[status] || status;
-  const statusColor = ACTIVE_STATES.has(status) ? "var(--green, #4ade80)" : "var(--red, #f87171)";
+  const statusColor = hasStewardshipAccess(registration) ? "var(--green, #4ade80)" : "var(--red, #f87171)";
 
   const meetingRows = meetings.map(m => `
     <tr>
@@ -601,7 +586,7 @@ function billingHtml(registration, subscription, env) {
           ${registration.stewardshipCancelAtPeriodEnd ? `<tr><th></th><td style="color:var(--red,#f87171)">Cancels at end of period</td></tr>` : ""}
         </table>
 
-        ${ACTIVE_STATES.has(status) ? `
+        ${hasStewardshipAccess(registration) ? `
         <div style="margin-top:1.5rem">
           <form method="POST" action="/parish/stewardship/billing-portal">
             <button type="submit" class="btn btn-secondary">Manage Billing in Stripe →</button>
