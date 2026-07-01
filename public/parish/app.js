@@ -2270,17 +2270,25 @@
 
   async function copyGivingLink() { const url=dedicatedGivingUrl(); if(!url){setStatus('Load a parish first.','error');return;} await navigator.clipboard.writeText(url); setStatus('Giving page link copied.','success'); }
 
+  // A previously-rendered currentQrSvg can exist without the logo baked in —
+  // e.g. the very first render happened before markDataUri() resolved, or a
+  // transient fetch failure produced a logo-less badge that then got cached
+  // as "the" QR code. Checking truthiness alone isn't enough; re-render
+  // whenever the logo image isn't actually present in the markup.
+  function qrHasLogo() { return currentQrSvg.includes('<image '); }
+
   async function downloadQrSvg() {
-    if (!currentQrSvg) await renderQrCode(); if (!currentQrSvg){setStatus('QR code not ready yet.','error');return;}
+    if (!currentQrSvg || !qrHasLogo()) await renderQrCode(); if (!currentQrSvg){setStatus('QR code not ready yet.','error');return;}
     const svg=currentQrSvg.includes('xmlns=')?currentQrSvg:currentQrSvg.replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ');
-    downloadBlob(qrFilename('svg'),new Blob([svg],{type:'image/svg+xml;charset=utf-8'})); setStatus('QR code SVG downloaded.','success');
+    downloadBlob(qrFilename('svg'),new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
+    setStatus(qrHasLogo() ? 'QR code SVG downloaded.' : 'QR code SVG downloaded — logo could not be loaded, try again.', qrHasLogo() ? 'success' : 'error');
   }
 
   async function downloadQrPng() {
-    if (!currentQrSvg) await renderQrCode(); if (!currentQrSvg){setStatus('QR code not ready yet.','error');return;}
+    if (!currentQrSvg || !qrHasLogo()) await renderQrCode(); if (!currentQrSvg){setStatus('QR code not ready yet.','error');return;}
     const svg=currentQrSvg.includes('xmlns=')?currentQrSvg:currentQrSvg.replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ');
     const img=new Image(); const svgUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
-    img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=1200;const ctx=canvas.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,1200,1200);ctx.drawImage(img,0,0,1200,1200);URL.revokeObjectURL(svgUrl);canvas.toBlob(blob=>{if(!blob){setStatus('Unable to create PNG.','error');return;}downloadBlob(qrFilename('png'),blob);setStatus('QR code PNG downloaded.','success');},'image/png');};
+    img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=1200;const ctx=canvas.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,1200,1200);ctx.drawImage(img,0,0,1200,1200);URL.revokeObjectURL(svgUrl);canvas.toBlob(blob=>{if(!blob){setStatus('Unable to create PNG.','error');return;}downloadBlob(qrFilename('png'),blob);setStatus(qrHasLogo() ? 'QR code PNG downloaded.' : 'QR code PNG downloaded — logo could not be loaded, try again.', qrHasLogo() ? 'success' : 'error');},'image/png');};
     img.onerror=()=>{URL.revokeObjectURL(svgUrl);setStatus('Unable to render QR code PNG.','error');};
     img.src=svgUrl;
   }
@@ -2313,7 +2321,7 @@
 
   async function downloadBulletinSvg() {
     if (!currentParish){setStatus('Load a parish first.','error');return;}
-    if (!currentQrSvg) await renderQrCode();
+    if (!currentQrSvg || !qrHasLogo()) await renderQrCode();
     const svg  = buildBulletinSvg();
     const name = `${currentParish.parishId || 'parish'}-bulletin-insert.svg`;
     downloadBlob(name, new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
@@ -2322,7 +2330,7 @@
 
   async function downloadBulletinPng() {
     if (!currentParish){setStatus('Load a parish first.','error');return;}
-    if (!currentQrSvg) await renderQrCode();
+    if (!currentQrSvg || !qrHasLogo()) await renderQrCode();
     const svg    = buildBulletinSvg();
     const img    = new Image();
     const svgUrl = URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
