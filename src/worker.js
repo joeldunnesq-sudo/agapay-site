@@ -1406,8 +1406,8 @@ export default {
       if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
       // ── Demo parish registration ──────────────────────────────────────────
-      const DEMO_PARISH_ID  = "st-fiacre-demo";
-      const DEMO_REFERENCE  = "demo-st-fiacre-2024";
+      const DEMO_PARISH_ID  = "st-fiacre";
+      const DEMO_REFERENCE  = "demo-st-fiacre-2025";
       const now = new Date().toISOString();
 
       const demoRegistration = {
