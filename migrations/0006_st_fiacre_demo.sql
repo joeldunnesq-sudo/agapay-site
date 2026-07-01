@@ -1,6 +1,6 @@
 -- Migration: 0006_st_fiacre_demo
 -- Demo parish: St. Fiacre Orthodox Church (Demo)
--- parish_id: 'st-fiacre-demo'
+-- parish_id: 'st-fiacre'
 -- A believable ROCOR mission in South Texas, newly using AGAPAY Give.
 -- Sized realistically: ~45 families, active but small, growing.
 -- Run AFTER 0005_stewardship_annual_meetings.sql.
@@ -10,12 +10,12 @@
 INSERT OR IGNORE INTO giving_funds
   (parish_id, name, code, is_default, sort_order)
 VALUES
-  ('st-fiacre-demo', 'General Stewardship',     'stewardship',  1, 0),
-  ('st-fiacre-demo', 'Candles / Vigil Lights',  'candle',       0, 1),
-  ('st-fiacre-demo', 'Building Fund',            'building',     0, 2),
-  ('st-fiacre-demo', 'Poor Box / Alms',          'alms',         0, 3),
-  ('st-fiacre-demo', 'Iconography Fund',         'iconography',  0, 4),
-  ('st-fiacre-demo', 'Memorial / Panakhida',     'memorial',     0, 5);
+  ('st-fiacre', 'General Stewardship',     'stewardship',  1, 0),
+  ('st-fiacre', 'Candles / Vigil Lights',  'candle',       0, 1),
+  ('st-fiacre', 'Building Fund',            'building',     0, 2),
+  ('st-fiacre', 'Poor Box / Alms',          'alms',         0, 3),
+  ('st-fiacre', 'Iconography Fund',         'iconography',  0, 4),
+  ('st-fiacre', 'Memorial / Panakhida',     'memorial',     0, 5);
 
 -- ── Donor offerings (giving history) ────────────────────────────────────────
 -- Covers Oct 2024 – Jan 2025 (approx 16 weeks).
@@ -27,113 +27,113 @@ INSERT OR IGNORE INTO donor_offerings
 VALUES
 
 -- October 2024
-('fiacre-don-001','james.mcallister@email.com','st-fiacre-demo','pi_fiacre_001','complete','paid','2024-10-06T10:15:00Z','2024-10-06T10:15:00Z',
- '{"donorName":"James McAllister","donorEmail":"james.mcallister@email.com","amountCents":20000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-001','james.mcallister@email.com','st-fiacre','pi_fiacre_001','complete','paid','2024-10-06T10:15:00Z','2024-10-06T10:15:00Z',
+ '{"donorName":"James McAllister","donorEmail":"james.mcallister@email.com","amountCents":20000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-002','mary.oconnell@email.com','st-fiacre-demo','pi_fiacre_002','complete','paid','2024-10-06T11:00:00Z','2024-10-06T11:00:00Z',
- '{"donorName":"Mary O''Connell","donorEmail":"mary.oconnell@email.com","amountCents":5000,"fund":"candle","parishId":"st-fiacre-demo","currency":"usd","isRecurring":false}'),
+('fiacre-don-002','mary.oconnell@email.com','st-fiacre','pi_fiacre_002','complete','paid','2024-10-06T11:00:00Z','2024-10-06T11:00:00Z',
+ '{"donorName":"Mary O''Connell","donorEmail":"mary.oconnell@email.com","amountCents":5000,"fund":"candle","parishId":"st-fiacre","currency":"usd","isRecurring":false}'),
 
-('fiacre-don-003','brendan.murphy@email.com','st-fiacre-demo','pi_fiacre_003','complete','paid','2024-10-13T09:30:00Z','2024-10-13T09:30:00Z',
- '{"donorName":"Brendan Murphy","donorEmail":"brendan.murphy@email.com","amountCents":30000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-003','brendan.murphy@email.com','st-fiacre','pi_fiacre_003','complete','paid','2024-10-13T09:30:00Z','2024-10-13T09:30:00Z',
+ '{"donorName":"Brendan Murphy","donorEmail":"brendan.murphy@email.com","amountCents":30000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-004','colleen.ryan@email.com','st-fiacre-demo','pi_fiacre_004','complete','paid','2024-10-13T10:45:00Z','2024-10-13T10:45:00Z',
- '{"donorName":"Colleen Ryan","donorEmail":"colleen.ryan@email.com","amountCents":10000,"fund":"building","parishId":"st-fiacre-demo","currency":"usd","isRecurring":false}'),
+('fiacre-don-004','colleen.ryan@email.com','st-fiacre','pi_fiacre_004','complete','paid','2024-10-13T10:45:00Z','2024-10-13T10:45:00Z',
+ '{"donorName":"Colleen Ryan","donorEmail":"colleen.ryan@email.com","amountCents":10000,"fund":"building","parishId":"st-fiacre","currency":"usd","isRecurring":false}'),
 
-('fiacre-don-005','patrick.fitzgerald@email.com','st-fiacre-demo','pi_fiacre_005','complete','paid','2024-10-20T11:00:00Z','2024-10-20T11:00:00Z',
- '{"donorName":"Patrick Fitzgerald","donorEmail":"patrick.fitzgerald@email.com","amountCents":15000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-005','patrick.fitzgerald@email.com','st-fiacre','pi_fiacre_005','complete','paid','2024-10-20T11:00:00Z','2024-10-20T11:00:00Z',
+ '{"donorName":"Patrick Fitzgerald","donorEmail":"patrick.fitzgerald@email.com","amountCents":15000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-006','siobhan.kelly@email.com','st-fiacre-demo','pi_fiacre_006','complete','paid','2024-10-20T09:00:00Z','2024-10-20T09:00:00Z',
- '{"donorName":"Siobhan Kelly","donorEmail":"siobhan.kelly@email.com","amountCents":5000,"fund":"candle","parishId":"st-fiacre-demo","currency":"usd","isRecurring":false}'),
+('fiacre-don-006','siobhan.kelly@email.com','st-fiacre','pi_fiacre_006','complete','paid','2024-10-20T09:00:00Z','2024-10-20T09:00:00Z',
+ '{"donorName":"Siobhan Kelly","donorEmail":"siobhan.kelly@email.com","amountCents":5000,"fund":"candle","parishId":"st-fiacre","currency":"usd","isRecurring":false}'),
 
-('fiacre-don-007','thomas.burke@email.com','st-fiacre-demo','pi_fiacre_007','complete','paid','2024-10-27T10:00:00Z','2024-10-27T10:00:00Z',
- '{"donorName":"Thomas Burke","donorEmail":"thomas.burke@email.com","amountCents":25000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-007','thomas.burke@email.com','st-fiacre','pi_fiacre_007','complete','paid','2024-10-27T10:00:00Z','2024-10-27T10:00:00Z',
+ '{"donorName":"Thomas Burke","donorEmail":"thomas.burke@email.com","amountCents":25000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-008','nora.gallagher@email.com','st-fiacre-demo','pi_fiacre_008','complete','paid','2024-10-27T11:30:00Z','2024-10-27T11:30:00Z',
- '{"donorName":"Nora Gallagher","donorEmail":"nora.gallagher@email.com","amountCents":7500,"fund":"alms","parishId":"st-fiacre-demo","currency":"usd","isRecurring":false}'),
+('fiacre-don-008','nora.gallagher@email.com','st-fiacre','pi_fiacre_008','complete','paid','2024-10-27T11:30:00Z','2024-10-27T11:30:00Z',
+ '{"donorName":"Nora Gallagher","donorEmail":"nora.gallagher@email.com","amountCents":7500,"fund":"alms","parishId":"st-fiacre","currency":"usd","isRecurring":false}'),
 
 -- November 2024
-('fiacre-don-009','sean.doherty@email.com','st-fiacre-demo','pi_fiacre_009','complete','paid','2024-11-03T09:45:00Z','2024-11-03T09:45:00Z',
- '{"donorName":"Sean Doherty","donorEmail":"sean.doherty@email.com","amountCents":20000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-009','sean.doherty@email.com','st-fiacre','pi_fiacre_009','complete','paid','2024-11-03T09:45:00Z','2024-11-03T09:45:00Z',
+ '{"donorName":"Sean Doherty","donorEmail":"sean.doherty@email.com","amountCents":20000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-010','aine.mcdermott@email.com','st-fiacre-demo','pi_fiacre_010','complete','paid','2024-11-03T10:30:00Z','2024-11-03T10:30:00Z',
- '{"donorName":"Aine McDermott","donorEmail":"aine.mcdermott@email.com","amountCents":50000,"fund":"iconography","parishId":"st-fiacre-demo","currency":"usd","isRecurring":false}'),
+('fiacre-don-010','aine.mcdermott@email.com','st-fiacre','pi_fiacre_010','complete','paid','2024-11-03T10:30:00Z','2024-11-03T10:30:00Z',
+ '{"donorName":"Aine McDermott","donorEmail":"aine.mcdermott@email.com","amountCents":50000,"fund":"iconography","parishId":"st-fiacre","currency":"usd","isRecurring":false}'),
 
-('fiacre-don-011','liam.boyle@email.com','st-fiacre-demo','pi_fiacre_011','complete','paid','2024-11-10T09:00:00Z','2024-11-10T09:00:00Z',
- '{"donorName":"Liam Boyle","donorEmail":"liam.boyle@email.com","amountCents":15000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-011','liam.boyle@email.com','st-fiacre','pi_fiacre_011','complete','paid','2024-11-10T09:00:00Z','2024-11-10T09:00:00Z',
+ '{"donorName":"Liam Boyle","donorEmail":"liam.boyle@email.com","amountCents":15000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-012','maeve.quinn@email.com','st-fiacre-demo','pi_fiacre_012','complete','paid','2024-11-10T11:00:00Z','2024-11-10T11:00:00Z',
- '{"donorName":"Maeve Quinn","donorEmail":"maeve.quinn@email.com","amountCents":5000,"fund":"candle","parishId":"st-fiacre-demo","currency":"usd","isRecurring":false}'),
+('fiacre-don-012','maeve.quinn@email.com','st-fiacre','pi_fiacre_012','complete','paid','2024-11-10T11:00:00Z','2024-11-10T11:00:00Z',
+ '{"donorName":"Maeve Quinn","donorEmail":"maeve.quinn@email.com","amountCents":5000,"fund":"candle","parishId":"st-fiacre","currency":"usd","isRecurring":false}'),
 
-('fiacre-don-013','declan.brennan@email.com','st-fiacre-demo','pi_fiacre_013','complete','paid','2024-11-17T10:00:00Z','2024-11-17T10:00:00Z',
- '{"donorName":"Declan Brennan","donorEmail":"declan.brennan@email.com","amountCents":20000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-013','declan.brennan@email.com','st-fiacre','pi_fiacre_013','complete','paid','2024-11-17T10:00:00Z','2024-11-17T10:00:00Z',
+ '{"donorName":"Declan Brennan","donorEmail":"declan.brennan@email.com","amountCents":20000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-014','fiona.walsh@email.com','st-fiacre-demo','pi_fiacre_014','complete','paid','2024-11-17T09:15:00Z','2024-11-17T09:15:00Z',
- '{"donorName":"Fiona Walsh","donorEmail":"fiona.walsh@email.com","amountCents":10000,"fund":"building","parishId":"st-fiacre-demo","currency":"usd","isRecurring":false}'),
+('fiacre-don-014','fiona.walsh@email.com','st-fiacre','pi_fiacre_014','complete','paid','2024-11-17T09:15:00Z','2024-11-17T09:15:00Z',
+ '{"donorName":"Fiona Walsh","donorEmail":"fiona.walsh@email.com","amountCents":10000,"fund":"building","parishId":"st-fiacre","currency":"usd","isRecurring":false}'),
 
-('fiacre-don-015','cormac.hayes@email.com','st-fiacre-demo','pi_fiacre_015','complete','paid','2024-11-24T10:30:00Z','2024-11-24T10:30:00Z',
- '{"donorName":"Cormac Hayes","donorEmail":"cormac.hayes@email.com","amountCents":30000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-015','cormac.hayes@email.com','st-fiacre','pi_fiacre_015','complete','paid','2024-11-24T10:30:00Z','2024-11-24T10:30:00Z',
+ '{"donorName":"Cormac Hayes","donorEmail":"cormac.hayes@email.com","amountCents":30000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-016','roisin.lynch@email.com','st-fiacre-demo','pi_fiacre_016','complete','paid','2024-11-24T11:00:00Z','2024-11-24T11:00:00Z',
- '{"donorName":"Roisin Lynch","donorEmail":"roisin.lynch@email.com","amountCents":10000,"fund":"memorial","parishId":"st-fiacre-demo","currency":"usd","isRecurring":false}'),
+('fiacre-don-016','roisin.lynch@email.com','st-fiacre','pi_fiacre_016','complete','paid','2024-11-24T11:00:00Z','2024-11-24T11:00:00Z',
+ '{"donorName":"Roisin Lynch","donorEmail":"roisin.lynch@email.com","amountCents":10000,"fund":"memorial","parishId":"st-fiacre","currency":"usd","isRecurring":false}'),
 
 -- December 2024 (Nativity season – giving spikes)
-('fiacre-don-017','james.mcallister@email.com','st-fiacre-demo','pi_fiacre_017','complete','paid','2024-12-01T09:00:00Z','2024-12-01T09:00:00Z',
- '{"donorName":"James McAllister","donorEmail":"james.mcallister@email.com","amountCents":20000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-017','james.mcallister@email.com','st-fiacre','pi_fiacre_017','complete','paid','2024-12-01T09:00:00Z','2024-12-01T09:00:00Z',
+ '{"donorName":"James McAllister","donorEmail":"james.mcallister@email.com","amountCents":20000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-018','brendan.murphy@email.com','st-fiacre-demo','pi_fiacre_018','complete','paid','2024-12-01T10:00:00Z','2024-12-01T10:00:00Z',
- '{"donorName":"Brendan Murphy","donorEmail":"brendan.murphy@email.com","amountCents":30000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-018','brendan.murphy@email.com','st-fiacre','pi_fiacre_018','complete','paid','2024-12-01T10:00:00Z','2024-12-01T10:00:00Z',
+ '{"donorName":"Brendan Murphy","donorEmail":"brendan.murphy@email.com","amountCents":30000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-019','anonymous.donor@email.com','st-fiacre-demo','pi_fiacre_019','complete','paid','2024-12-08T11:00:00Z','2024-12-08T11:00:00Z',
- '{"donorName":"Anonymous","donorEmail":"anonymous.donor@email.com","amountCents":100000,"fund":"building","parishId":"st-fiacre-demo","currency":"usd","isRecurring":false}'),
+('fiacre-don-019','anonymous.donor@email.com','st-fiacre','pi_fiacre_019','complete','paid','2024-12-08T11:00:00Z','2024-12-08T11:00:00Z',
+ '{"donorName":"Anonymous","donorEmail":"anonymous.donor@email.com","amountCents":100000,"fund":"building","parishId":"st-fiacre","currency":"usd","isRecurring":false}'),
 
-('fiacre-don-020','thomas.burke@email.com','st-fiacre-demo','pi_fiacre_020','complete','paid','2024-12-08T09:30:00Z','2024-12-08T09:30:00Z',
- '{"donorName":"Thomas Burke","donorEmail":"thomas.burke@email.com","amountCents":25000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-020','thomas.burke@email.com','st-fiacre','pi_fiacre_020','complete','paid','2024-12-08T09:30:00Z','2024-12-08T09:30:00Z',
+ '{"donorName":"Thomas Burke","donorEmail":"thomas.burke@email.com","amountCents":25000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-021','patrick.fitzgerald@email.com','st-fiacre-demo','pi_fiacre_021','complete','paid','2024-12-15T10:00:00Z','2024-12-15T10:00:00Z',
- '{"donorName":"Patrick Fitzgerald","donorEmail":"patrick.fitzgerald@email.com","amountCents":15000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-021','patrick.fitzgerald@email.com','st-fiacre','pi_fiacre_021','complete','paid','2024-12-15T10:00:00Z','2024-12-15T10:00:00Z',
+ '{"donorName":"Patrick Fitzgerald","donorEmail":"patrick.fitzgerald@email.com","amountCents":15000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-022','colleen.ryan@email.com','st-fiacre-demo','pi_fiacre_022','complete','paid','2024-12-15T11:00:00Z','2024-12-15T11:00:00Z',
- '{"donorName":"Colleen Ryan","donorEmail":"colleen.ryan@email.com","amountCents":25000,"fund":"iconography","parishId":"st-fiacre-demo","currency":"usd","isRecurring":false}'),
+('fiacre-don-022','colleen.ryan@email.com','st-fiacre','pi_fiacre_022','complete','paid','2024-12-15T11:00:00Z','2024-12-15T11:00:00Z',
+ '{"donorName":"Colleen Ryan","donorEmail":"colleen.ryan@email.com","amountCents":25000,"fund":"iconography","parishId":"st-fiacre","currency":"usd","isRecurring":false}'),
 
-('fiacre-don-023','sean.doherty@email.com','st-fiacre-demo','pi_fiacre_023','complete','paid','2024-12-22T09:00:00Z','2024-12-22T09:00:00Z',
- '{"donorName":"Sean Doherty","donorEmail":"sean.doherty@email.com","amountCents":20000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-023','sean.doherty@email.com','st-fiacre','pi_fiacre_023','complete','paid','2024-12-22T09:00:00Z','2024-12-22T09:00:00Z',
+ '{"donorName":"Sean Doherty","donorEmail":"sean.doherty@email.com","amountCents":20000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-024','liam.boyle@email.com','st-fiacre-demo','pi_fiacre_024','complete','paid','2024-12-22T10:30:00Z','2024-12-22T10:30:00Z',
- '{"donorName":"Liam Boyle","donorEmail":"liam.boyle@email.com","amountCents":15000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-024','liam.boyle@email.com','st-fiacre','pi_fiacre_024','complete','paid','2024-12-22T10:30:00Z','2024-12-22T10:30:00Z',
+ '{"donorName":"Liam Boyle","donorEmail":"liam.boyle@email.com","amountCents":15000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-025','mary.oconnell@email.com','st-fiacre-demo','pi_fiacre_025','complete','paid','2024-12-29T09:45:00Z','2024-12-29T09:45:00Z',
- '{"donorName":"Mary O''Connell","donorEmail":"mary.oconnell@email.com","amountCents":5000,"fund":"candle","parishId":"st-fiacre-demo","currency":"usd","isRecurring":false}'),
+('fiacre-don-025','mary.oconnell@email.com','st-fiacre','pi_fiacre_025','complete','paid','2024-12-29T09:45:00Z','2024-12-29T09:45:00Z',
+ '{"donorName":"Mary O''Connell","donorEmail":"mary.oconnell@email.com","amountCents":5000,"fund":"candle","parishId":"st-fiacre","currency":"usd","isRecurring":false}'),
 
 -- January 2025
-('fiacre-don-026','declan.brennan@email.com','st-fiacre-demo','pi_fiacre_026','complete','paid','2025-01-05T10:00:00Z','2025-01-05T10:00:00Z',
- '{"donorName":"Declan Brennan","donorEmail":"declan.brennan@email.com","amountCents":20000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-026','declan.brennan@email.com','st-fiacre','pi_fiacre_026','complete','paid','2025-01-05T10:00:00Z','2025-01-05T10:00:00Z',
+ '{"donorName":"Declan Brennan","donorEmail":"declan.brennan@email.com","amountCents":20000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-027','aine.mcdermott@email.com','st-fiacre-demo','pi_fiacre_027','complete','paid','2025-01-05T11:15:00Z','2025-01-05T11:15:00Z',
- '{"donorName":"Aine McDermott","donorEmail":"aine.mcdermott@email.com","amountCents":10000,"fund":"alms","parishId":"st-fiacre-demo","currency":"usd","isRecurring":false}'),
+('fiacre-don-027','aine.mcdermott@email.com','st-fiacre','pi_fiacre_027','complete','paid','2025-01-05T11:15:00Z','2025-01-05T11:15:00Z',
+ '{"donorName":"Aine McDermott","donorEmail":"aine.mcdermott@email.com","amountCents":10000,"fund":"alms","parishId":"st-fiacre","currency":"usd","isRecurring":false}'),
 
-('fiacre-don-028','cormac.hayes@email.com','st-fiacre-demo','pi_fiacre_028','complete','paid','2025-01-12T09:30:00Z','2025-01-12T09:30:00Z',
- '{"donorName":"Cormac Hayes","donorEmail":"cormac.hayes@email.com","amountCents":30000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}'),
+('fiacre-don-028','cormac.hayes@email.com','st-fiacre','pi_fiacre_028','complete','paid','2025-01-12T09:30:00Z','2025-01-12T09:30:00Z',
+ '{"donorName":"Cormac Hayes","donorEmail":"cormac.hayes@email.com","amountCents":30000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}'),
 
-('fiacre-don-029','nora.gallagher@email.com','st-fiacre-demo','pi_fiacre_029','complete','paid','2025-01-12T10:00:00Z','2025-01-12T10:00:00Z',
- '{"donorName":"Nora Gallagher","donorEmail":"nora.gallagher@email.com","amountCents":5000,"fund":"candle","parishId":"st-fiacre-demo","currency":"usd","isRecurring":false}'),
+('fiacre-don-029','nora.gallagher@email.com','st-fiacre','pi_fiacre_029','complete','paid','2025-01-12T10:00:00Z','2025-01-12T10:00:00Z',
+ '{"donorName":"Nora Gallagher","donorEmail":"nora.gallagher@email.com","amountCents":5000,"fund":"candle","parishId":"st-fiacre","currency":"usd","isRecurring":false}'),
 
-('fiacre-don-030','james.mcallister@email.com','st-fiacre-demo','pi_fiacre_030','complete','paid','2025-01-19T09:00:00Z','2025-01-19T09:00:00Z',
- '{"donorName":"James McAllister","donorEmail":"james.mcallister@email.com","amountCents":20000,"fund":"stewardship","parishId":"st-fiacre-demo","currency":"usd","isRecurring":true}');
+('fiacre-don-030','james.mcallister@email.com','st-fiacre','pi_fiacre_030','complete','paid','2025-01-19T09:00:00Z','2025-01-19T09:00:00Z',
+ '{"donorName":"James McAllister","donorEmail":"james.mcallister@email.com","amountCents":20000,"fund":"stewardship","parishId":"st-fiacre","currency":"usd","isRecurring":true}');
 
 -- ── Commemorations ────────────────────────────────────────────────────────────
 
 INSERT OR IGNORE INTO commemorations
   (id, parish_id, donor_email, created_at, data)
 VALUES
-  ('fiacre-comm-001', 'st-fiacre-demo', 'james.mcallister@email.com', '2025-01-12T10:00:00Z',
+  ('fiacre-comm-001', 'st-fiacre', 'james.mcallister@email.com', '2025-01-12T10:00:00Z',
    '{"living":["James","Catherine","Patrick","Brigid"],"departed":["Sean","Mary Margaret"],"createdAt":"2025-01-12T10:00:00Z"}'),
-  ('fiacre-comm-002', 'st-fiacre-demo', 'brendan.murphy@email.com', '2025-01-12T10:30:00Z',
+  ('fiacre-comm-002', 'st-fiacre', 'brendan.murphy@email.com', '2025-01-12T10:30:00Z',
    '{"living":["Brendan","Siobhan","Conor","Aoife"],"departed":["Michael","Agnes"],"createdAt":"2025-01-12T10:30:00Z"}'),
-  ('fiacre-comm-003', 'st-fiacre-demo', 'mary.oconnell@email.com', '2025-01-12T09:45:00Z',
+  ('fiacre-comm-003', 'st-fiacre', 'mary.oconnell@email.com', '2025-01-12T09:45:00Z',
    '{"living":["Mary","Kevin","Fiona"],"departed":["Francis","Bridget","Padraig"],"createdAt":"2025-01-12T09:45:00Z"}'),
-  ('fiacre-comm-004', 'st-fiacre-demo', 'thomas.burke@email.com', '2025-01-12T11:00:00Z',
+  ('fiacre-comm-004', 'st-fiacre', 'thomas.burke@email.com', '2025-01-12T11:00:00Z',
    '{"living":["Thomas","Roisin","Liam","Ciara","Niamh"],"departed":["William"],"createdAt":"2025-01-12T11:00:00Z"}'),
-  ('fiacre-comm-005', 'st-fiacre-demo', 'patrick.fitzgerald@email.com', '2025-01-12T09:15:00Z',
+  ('fiacre-comm-005', 'st-fiacre', 'patrick.fitzgerald@email.com', '2025-01-12T09:15:00Z',
    '{"living":["Patrick","Eileen"],"departed":["Daniel","Margaret","Joseph"],"createdAt":"2025-01-12T09:15:00Z"}');
 
 -- ── Stewardship Suite: parish settings ───────────────────────────────────────
@@ -141,7 +141,7 @@ VALUES
 INSERT OR IGNORE INTO parish_stewardship_settings
   (parish_id, has_stewardship_suite, updated_at)
 VALUES
-  ('st-fiacre-demo', 1, datetime('now'));
+  ('st-fiacre', 1, datetime('now'));
 
 -- ── Stewardship Suite: giving fund snapshots ─────────────────────────────────
 -- Matches the giving_funds seeded above with running balances
@@ -149,14 +149,14 @@ VALUES
 INSERT OR IGNORE INTO household_pledges
   (id, parish_id, donor_email, amount_cents, frequency, status, year, created_at, updated_at, data)
 VALUES
-  ('fiacre-pledge-001','st-fiacre-demo','james.mcallister@email.com', 240000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"James McAllister","notes":""}'),
-  ('fiacre-pledge-002','st-fiacre-demo','brendan.murphy@email.com',   360000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Brendan Murphy","notes":""}'),
-  ('fiacre-pledge-003','st-fiacre-demo','thomas.burke@email.com',     300000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Thomas Burke","notes":""}'),
-  ('fiacre-pledge-004','st-fiacre-demo','patrick.fitzgerald@email.com',180000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Patrick Fitzgerald","notes":""}'),
-  ('fiacre-pledge-005','st-fiacre-demo','sean.doherty@email.com',     240000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Sean Doherty","notes":""}'),
-  ('fiacre-pledge-006','st-fiacre-demo','liam.boyle@email.com',       180000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Liam Boyle","notes":""}'),
-  ('fiacre-pledge-007','st-fiacre-demo','declan.brennan@email.com',   240000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Declan Brennan","notes":""}'),
-  ('fiacre-pledge-008','st-fiacre-demo','cormac.hayes@email.com',     360000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Cormac Hayes","notes":""}');
+  ('fiacre-pledge-001','st-fiacre','james.mcallister@email.com', 240000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"James McAllister","notes":""}'),
+  ('fiacre-pledge-002','st-fiacre','brendan.murphy@email.com',   360000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Brendan Murphy","notes":""}'),
+  ('fiacre-pledge-003','st-fiacre','thomas.burke@email.com',     300000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Thomas Burke","notes":""}'),
+  ('fiacre-pledge-004','st-fiacre','patrick.fitzgerald@email.com',180000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Patrick Fitzgerald","notes":""}'),
+  ('fiacre-pledge-005','st-fiacre','sean.doherty@email.com',     240000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Sean Doherty","notes":""}'),
+  ('fiacre-pledge-006','st-fiacre','liam.boyle@email.com',       180000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Liam Boyle","notes":""}'),
+  ('fiacre-pledge-007','st-fiacre','declan.brennan@email.com',   240000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Declan Brennan","notes":""}'),
+  ('fiacre-pledge-008','st-fiacre','cormac.hayes@email.com',     360000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Cormac Hayes","notes":""}');
 
 -- ── Annual Meeting Packet ─────────────────────────────────────────────────────
 
@@ -165,7 +165,7 @@ INSERT OR IGNORE INTO stewardship_annual_meetings
    parish_name_override, jurisdiction, address, status, created_by, created_at, updated_at)
 VALUES (
   'fiacre-meeting-2025',
-  'st-fiacre-demo',
+  'st-fiacre',
   'St. Fiacre Orthodox Church — 2025 Annual Parish Meeting',
   2025,
   '2025-02-02',
