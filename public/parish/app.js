@@ -2224,7 +2224,29 @@
   function copyPayload() { if (!currentParish){setStatus('Load a parish first.','error');return;} navigator.clipboard.writeText(JSON.stringify(payload(),null,2)); setStatus('Current settings copied.','success'); }
 
   // ── QR CODE ───────────────────────────────────────────────
-  function renderQrCode() {
+  // The AGAPAY mark embedded in the QR code needs to be a self-contained
+  // data URI, not a /mark.png path reference. Live in the DOM, a path
+  // reference resolves fine — but downloadQrPng() rasterizes the SVG via
+  // an off-document Image()/canvas, and browsers refuse to load external
+  // resources (or silently taint the canvas) for a detached, blob-sourced
+  // SVG. Converting the logo to a data URI once and reusing it removes the
+  // external reference entirely, so the logo survives the PNG export too.
+  let markDataUriPromise = null;
+  function markDataUri() {
+    if (markDataUriPromise) return markDataUriPromise;
+    markDataUriPromise = fetch('/mark.png')
+      .then(res => res.blob())
+      .then(blob => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      }))
+      .catch(() => { markDataUriPromise = null; return ''; }); // allow retry on failure
+    return markDataUriPromise;
+  }
+
+  async function renderQrCode() {
     const targets = ['qrCode','qrCodeHero','qrCodeHeroPreview','bulletinQrCode'].map(id=>document.getElementById(id)).filter(Boolean);
     const inputs  = ['givingUrlInput','givingUrlHeroInput','qrGivingUrlInput'].map(id=>document.getElementById(id)).filter(Boolean);
     const url     = dedicatedGivingUrl();
@@ -2232,29 +2254,30 @@
     if (!url || typeof qrcode === 'undefined') { targets.forEach(t => { t.innerHTML = '<span style="font-size:11px;color:var(--stone);text-align:center;line-height:1.5;">Load dashboard<br>to generate QR</span>'; }); currentQrSvg = ''; return; }
     const qr = qrcode(0,'H'); qr.addData(url); qr.make();
     const rawSvg = qr.createSvgTag(5,3).replace(/<svg /,'<svg role="img" aria-label="AGAPAY giving QR code" ').replace(/fill="#000000"/g,'fill="#061522"');
-    currentQrSvg = brandQrSvg(rawSvg);
+    const logoHref = await markDataUri();
+    currentQrSvg = brandQrSvg(rawSvg, logoHref);
     targets.forEach(t => { t.innerHTML = currentQrSvg; });
   }
 
-  function brandQrSvg(svg) {
+  function brandQrSvg(svg, logoHref) {
     const badge = `
       <g class="agapay-qr-badge" aria-hidden="true">
         <circle cx="50%" cy="50%" r="10.5%" fill="#FFFDF9" stroke="#C8A24A" stroke-width="1.4"/>
-        <image href="/mark.png" x="41.5%" y="41.5%" width="17%" height="17%" preserveAspectRatio="xMidYMid meet"/>
+        ${logoHref ? `<image href="${logoHref}" x="41.5%" y="41.5%" width="17%" height="17%" preserveAspectRatio="xMidYMid meet"/>` : ''}
       </g>`;
     return svg.replace('</svg>', `${badge}</svg>`);
   }
 
   async function copyGivingLink() { const url=dedicatedGivingUrl(); if(!url){setStatus('Load a parish first.','error');return;} await navigator.clipboard.writeText(url); setStatus('Giving page link copied.','success'); }
 
-  function downloadQrSvg() {
-    if (!currentQrSvg) renderQrCode(); if (!currentQrSvg){setStatus('QR code not ready yet.','error');return;}
+  async function downloadQrSvg() {
+    if (!currentQrSvg) await renderQrCode(); if (!currentQrSvg){setStatus('QR code not ready yet.','error');return;}
     const svg=currentQrSvg.includes('xmlns=')?currentQrSvg:currentQrSvg.replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ');
     downloadBlob(qrFilename('svg'),new Blob([svg],{type:'image/svg+xml;charset=utf-8'})); setStatus('QR code SVG downloaded.','success');
   }
 
-  function downloadQrPng() {
-    if (!currentQrSvg) renderQrCode(); if (!currentQrSvg){setStatus('QR code not ready yet.','error');return;}
+  async function downloadQrPng() {
+    if (!currentQrSvg) await renderQrCode(); if (!currentQrSvg){setStatus('QR code not ready yet.','error');return;}
     const svg=currentQrSvg.includes('xmlns=')?currentQrSvg:currentQrSvg.replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" ');
     const img=new Image(); const svgUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
     img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=1200;const ctx=canvas.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,1200,1200);ctx.drawImage(img,0,0,1200,1200);URL.revokeObjectURL(svgUrl);canvas.toBlob(blob=>{if(!blob){setStatus('Unable to create PNG.','error');return;}downloadBlob(qrFilename('png'),blob);setStatus('QR code PNG downloaded.','success');},'image/png');};
@@ -2288,18 +2311,18 @@
     </svg>`;
   }
 
-  function downloadBulletinSvg() {
+  async function downloadBulletinSvg() {
     if (!currentParish){setStatus('Load a parish first.','error');return;}
-    if (!currentQrSvg) renderQrCode();
+    if (!currentQrSvg) await renderQrCode();
     const svg  = buildBulletinSvg();
     const name = `${currentParish.parishId || 'parish'}-bulletin-insert.svg`;
     downloadBlob(name, new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
     setStatus('Bulletin insert SVG downloaded.','success');
   }
 
-  function downloadBulletinPng() {
+  async function downloadBulletinPng() {
     if (!currentParish){setStatus('Load a parish first.','error');return;}
-    if (!currentQrSvg) renderQrCode();
+    if (!currentQrSvg) await renderQrCode();
     const svg    = buildBulletinSvg();
     const img    = new Image();
     const svgUrl = URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
