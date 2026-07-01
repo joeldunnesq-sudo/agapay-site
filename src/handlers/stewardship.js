@@ -1817,43 +1817,37 @@ export async function handleParishStewardshipMeetings(request, env, parishId) {
 }
 
 export async function handleParishStewardshipMeetingDetail(request, env, parishId, meetingId) {
-  if (!hasProductionStore(env)) return missingProductionStoreResponse();
-  const ctx = await requireParishApiContext(request, env, parishId);
-  if (!ctx.ok) return ctx.response;
-  const { registration } = ctx;
-  if (STEWARDSHIP_COMING_SOON) return stewardshipComingSoonJson();
-  if (!hasStewardshipAccess(registration)) {
-    return json({ error: "Stewardship subscription required.", stewardship: stewardshipPublicStatus(registration) }, { status: 402 });
-  }
+  try {
+    if (!hasProductionStore(env)) return missingProductionStoreResponse();
+    const ctx = await requireParishApiContext(request, env, parishId);
+    if (!ctx.ok) return ctx.response;
+    const { registration } = ctx;
+    if (STEWARDSHIP_COMING_SOON) return stewardshipComingSoonJson();
+    if (!hasStewardshipAccess(registration)) {
+      return json({ error: "Stewardship subscription required.", stewardship: stewardshipPublicStatus(registration) }, { status: 402 });
+    }
 
-  const meeting = await d1First(env,
-    "SELECT * FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
-    [meetingId, registration.parishId]
-  );
-  if (!meeting) return json({ error: "Meeting not found" }, { status: 404 });
+    const meeting = await d1First(env,
+      "SELECT * FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
+      [meetingId, registration.parishId]
+    );
+    if (!meeting) return json({ error: "Meeting not found" }, { status: 404 });
 
-  if (request.method === "GET") {
-    try {
+    if (request.method === "GET") {
       const [agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions] =
         await loadMeetingSubRecords(env, meetingId);
       return json({
         ok: true,
         meeting: publicMeetingDetails(meeting, agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions)
       });
-    } catch (err) {
-      // Surface the real failure instead of letting it become an opaque
-      // Cloudflare 1101 with no body the client can read.
-      return json({ error: "Failed to load meeting: " + (err?.message || String(err)) }, { status: 500 });
     }
-  }
 
-  if (request.method !== "PATCH") return json({ error: "Method not allowed" }, { status: 405 });
-  const body = await parseJsonBody(request);
-  if (!body) return json({ error: "Invalid JSON body" }, { status: 400 });
-  const form = apiFormFromMeetingPayload(body);
-  const now = new Date().toISOString();
+    if (request.method !== "PATCH") return json({ error: "Method not allowed" }, { status: 405 });
+    const body = await parseJsonBody(request);
+    if (!body) return json({ error: "Invalid JSON body" }, { status: 400 });
+    const form = apiFormFromMeetingPayload(body);
+    const now = new Date().toISOString();
 
-  try {
     await d1Run(env, `
       UPDATE stewardship_annual_meetings SET
         title = ?, fiscal_year = ?, meeting_date = ?, meeting_time = ?, location = ?,
@@ -1887,7 +1881,9 @@ export async function handleParishStewardshipMeetingDetail(request, env, parishI
       meeting: publicMeetingDetails(updated, agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions)
     });
   } catch (err) {
-    return json({ error: "Failed to save meeting: " + (err?.message || String(err)) }, { status: 500 });
+    // Surface the real failure instead of letting it become an opaque
+    // Cloudflare 1101/500 with no body the client can read.
+    return json({ error: "Stewardship meeting request failed: " + (err?.message || String(err)), stack: err?.stack || null }, { status: 500 });
   }
 }
 
