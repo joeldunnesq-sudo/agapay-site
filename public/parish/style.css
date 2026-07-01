@@ -36,6 +36,73 @@
     textarea { resize: vertical; min-height: 120px; line-height: 1.55; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; }
     .toast-container { position: fixed; bottom: 2rem; right: 2rem; display: flex; flex-direction: column; gap: 0.75rem; z-index: 9999; pointer-events: none; }
     .toast { background: white; border-left: 4px solid var(--gold); border-radius: 8px; padding: 1rem 1.25rem; box-shadow: 0 10px 30px rgba(6,21,34,0.12); transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease; color: var(--ink); font-size: 13px; font-weight: 500; line-height: 1.5; max-width: 350px; pointer-events: auto; }
+
+    /* ── Stewardship Suite comp-expiry notice ─────────────────────────── */
+    .sw-comp-notice-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.25rem;
+      background: rgba(6,21,34,0.5);
+      backdrop-filter: blur(3px);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+    .sw-comp-notice-overlay--visible { opacity: 1; pointer-events: auto; }
+    .sw-comp-notice-card {
+      position: relative;
+      width: min(440px, 100%);
+      background: var(--paper);
+      border-radius: 18px;
+      border: 1px solid rgba(200,162,74,0.35);
+      box-shadow: var(--shadow);
+      padding: 2.1rem 2rem 1.85rem;
+      text-align: center;
+      transform: translateY(10px) scale(0.98);
+      transition: transform 0.22s cubic-bezier(0.16,1,0.3,1);
+    }
+    .sw-comp-notice-overlay--visible .sw-comp-notice-card { transform: translateY(0) scale(1); }
+    .sw-comp-notice-close {
+      position: absolute; top: 0.7rem; right: 0.7rem;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: transparent; color: var(--stone);
+      font-size: 20px; line-height: 1; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background 0.15s, color 0.15s;
+    }
+    .sw-comp-notice-close:hover { background: rgba(111,106,96,0.1); color: var(--ink); }
+    .sw-comp-notice-icon {
+      width: 52px; height: 52px; margin: 0 auto 0.9rem;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, rgba(200,162,74,0.28), rgba(200,162,74,0.1));
+      color: var(--gold);
+    }
+    .sw-comp-notice-icon svg { width: 26px; height: 26px; }
+    .sw-comp-notice-eyebrow {
+      display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--gold); margin-bottom: 0.4rem;
+    }
+    .sw-comp-notice-card h2 {
+      font-family: var(--serif); font-size: 1.5rem; font-weight: 600;
+      color: var(--ink); margin: 0 0 0.7rem;
+    }
+    .sw-comp-notice-card p {
+      margin: 0 0 0.65rem; font-size: 14.5px; line-height: 1.6; color: var(--ink);
+    }
+    .sw-comp-notice-card p.sw-comp-notice-sub { color: var(--stone); font-size: 13.5px; }
+    .sw-comp-notice-actions {
+      display: flex; flex-direction: column; gap: 0.6rem;
+      margin-top: 1.3rem;
+    }
+    .sw-comp-notice-btn-primary {
+      background: var(--gold); color: var(--deep);
+      border-radius: 10px; padding: 0.85rem 1rem; font-weight: 700; font-size: 14px;
+    }
+    .sw-comp-notice-btn-secondary {
+      background: transparent; color: var(--stone);
+      border: 1px solid var(--line); border-radius: 10px;
+      padding: 0.8rem 1rem; font-weight: 600; font-size: 13.5px;
+    }
+    .sw-comp-notice-btn-secondary:hover { border-color: var(--line-strong); color: var(--ink); }
     .toast.show { transform: translateX(0); }
     .toast.success { border-left-color: var(--forest); background: rgba(11,33,48,0.04); }
     .toast.error { border-left-color: #8a2929; background: rgba(150,40,40,0.04); color: #8a2929; }
