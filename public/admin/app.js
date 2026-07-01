@@ -1085,6 +1085,66 @@ let selectedReference = '';
       }
     }
 
+    async function loadStewardshipCompStatus() {
+      const counter = document.getElementById('stewardshipCompCounter');
+      if (!counter) return;
+      try {
+        const res = await fetch('/api/admin/stewardship/comp-status', { headers: authHeaders() });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Unable to load comp status');
+        counter.textContent = `${data.claimed} of ${data.limit} claimed — ${data.remaining} remaining`;
+        counter.style.color = data.remaining > 0 ? 'var(--green, #2a7a4b)' : 'var(--red, #8b2020)';
+      } catch (err) {
+        counter.textContent = 'Unable to load claimed count: ' + err.message;
+        counter.style.color = 'var(--red, #8b2020)';
+      }
+    }
+
+    async function grantStewardshipComp(btn) {
+      const status = document.getElementById('stewardshipCompStatus');
+      const parishInput = document.getElementById('stewardshipCompParishId');
+      const parishId = (parishInput?.value || '').trim();
+      if (!parishId) {
+        if (status) {
+          status.textContent = 'Enter the parish dashboard ID first.';
+          status.style.color = 'var(--red, #8b2020)';
+        }
+        parishInput?.focus();
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = 'Granting...';
+      if (status) status.textContent = '';
+      try {
+        const res = await fetch('/api/admin/stewardship/comp', {
+          method: 'POST',
+          headers: {
+            ...authHeaders(),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ parishId })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || 'Grant failed');
+        btn.textContent = 'Granted';
+        if (status) {
+          const expires = data.comp?.expiresAt ? new Date(data.comp.expiresAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+          status.textContent = `Free year granted to ${parishId}${expires ? ' — expires ' + expires : ''}. ${data.claimed} of 20 claimed.`;
+          status.style.color = 'var(--green, #2a7a4b)';
+        }
+        await loadStewardshipCompStatus();
+        if (parishInput) parishInput.value = '';
+      } catch (err) {
+        if (status) {
+          status.textContent = err.message;
+          status.style.color = 'var(--red, #8b2020)';
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Grant free year';
+      }
+    }
+
     async function loadPlatformSummary(btn) {
       if (btn) { btn.classList.add('loading'); btn.disabled = true; }
       if (!registrationsCache.length) {
@@ -1178,6 +1238,7 @@ let selectedReference = '';
         loadPlatformSummary();
         loadRecentActivity();
         loadLearnAdmin();
+        loadStewardshipCompStatus();
         lastDataLoadedAt = new Date();
         refreshDataAsOf();
         if (!silent) setStatus(`Loaded ${registrationsCache.length} registration(s).`, 'success');
