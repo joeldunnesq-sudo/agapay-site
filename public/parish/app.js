@@ -942,11 +942,12 @@
     const sw = stewardshipState.stewardship || {};
     const isActive   = sw.active || ['active', 'trialing'].includes(sw.status);
     const isTrialing = sw.status === 'trialing';
+    const isComped   = sw.status === 'comped' && sw.comp;
 
     // Hero status label
     if (statusEl) {
       statusEl.textContent = isActive
-        ? (isTrialing ? 'Trial active' : 'Active')
+        ? (isComped ? 'Free — Founding Parish' : (isTrialing ? 'Trial active' : 'Active'))
         : 'Add-on · $39/mo';
       statusEl.className = 'sw-suite-status-label ' + (isActive ? 'sw-suite-status--active' : 'sw-suite-status--upsell');
     }
@@ -963,14 +964,19 @@
   // Active state: populate the plan row (billing management) + meetings tool card
   function renderStewardshipActiveState(planPane, meetingsPane, sw, isTrialing) {
     // ── Plan row — billing status + manage button ──────────────────────────
+    const isComped = sw.status === 'comped' && sw.comp;
+    const expiresLabel = isComped && sw.comp.expiresAt
+      ? new Date(sw.comp.expiresAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      : '';
     planPane.innerHTML =
       '<div class="sw-plan-row-inner">' +
         '<div class="sw-plan-row-copy">' +
-          '<span class="sw-plan-badge">' + (isTrialing ? 'Trial' : 'Active') + '</span>' +
+          '<span class="sw-plan-badge">' + (isComped ? 'Free Year' : (isTrialing ? 'Trial' : 'Active')) + '</span>' +
           '<span class="sw-plan-name">Stewardship Suite</span>' +
           '<span class="sw-plan-parish">' + escapeHtml(currentParish?.parishName || '') + '</span>' +
+          (isComped ? '<span class="sw-plan-parish" style="opacity:.75;">Founding parish — free through ' + escapeHtml(expiresLabel) + '</span>' : '') +
         '</div>' +
-        '<button class="sw-manage-btn" type="button" onclick="openStewardshipBilling(this)">Manage billing</button>' +
+        (isComped ? '' : '<button class="sw-manage-btn" type="button" onclick="openStewardshipBilling(this)">Manage billing</button>') +
       '</div>';
 
     // ── Meetings tool card ─────────────────────────────────────────────────
