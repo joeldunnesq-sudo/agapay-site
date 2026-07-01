@@ -31,6 +31,7 @@ import {
   getAdminToken,
   getBearerToken,
   hasProductionStore,
+  hasStewardshipAccess,
   hashSessionToken,
   isSystemKvKey,
   issueAdminSession,
@@ -3088,6 +3089,183 @@ export async function handleParishSubscriptionPortal(request, env, parishId) {
   }
 
   return json({ ok: true, portalUrl: session.body.url });
+}
+
+const SACRAMENT_STATUSES = new Set(["requested", "acknowledged", "scheduled", "completed", "declined", "cancelled"]);
+
+function sacramentTypeLabel(type) {
+  return {
+    house_blessing: "House Blessing",
+    baptism: "Baptism",
+    chrismation: "Chrismation",
+    wedding: "Wedding",
+    funeral: "Funeral",
+    memorial_service: "Memorial Service",
+    confession: "Confession",
+    home_visit: "Home Visit",
+    other: "Other Request"
+  }[type] || type;
+}
+
+function parishSacramentRequestRow(row = {}) {
+  return {
+    id: row.id,
+    donorEmail: row.donor_email,
+    sacramentType: row.sacrament_type,
+    otherTypeLabel: row.other_type_label || "",
+    status: row.status,
+    requestedDate: row.requested_date || "",
+    requestedTimeWindow: row.requested_time_window || "",
+    participantNames: row.participant_names || "",
+    locationType: row.location_type || "",
+    locationAddress: row.location_address || "",
+    notes: row.notes || "",
+    phone: row.phone || "",
+    confirmedDate: row.confirmed_date || "",
+    confirmedTime: row.confirmed_time || "",
+    clergyAssigned: row.clergy_assigned || "",
+    parishNotes: row.parish_notes || "",
+    declineReason: row.decline_reason || "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+// GET /api/parish/dashboard/:parishId/sacraments
+// Sacraments & Services is a Stewardship Suite feature: viewing/managing
+// requests requires the parish to have active Stewardship Suite access.
+// This mirrors the donor-side gate in handleDonorSacraments — the feature
+// becomes available on both ends automatically the moment a parish
+// subscribes (or is comped), with no separate enablement step.
+export async function handleParishSacraments(request, env, parishId) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-dashboard", { limit: 80, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const token = getBearerToken(request);
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
+    return unauthorized();
+  }
+
+  if (!hasStewardshipAccess(found.registration)) {
+    return json({
+      error: "Sacraments & Services requires Stewardship Suite.",
+      stewardshipRequired: true
+    }, { status: 402 });
+  }
+
+  let rows = [];
+  try {
+    rows = await d1All(env,
+      "SELECT * FROM sacrament_requests WHERE parish_id = ? ORDER BY created_at DESC LIMIT 200",
+      parishId
+    );
+  } catch (error) {
+    if (!/sacrament_requests|no such table/i.test(String(error?.message || error || ""))) throw error;
+    return json({ ok: false, error: "Sacrament requests are not installed yet.", setupRequired: true }, { status: 503 });
+  }
+
+  return json({ ok: true, requests: (rows || []).map(parishSacramentRequestRow) });
+}
+
+// PATCH /api/parish/dashboard/:parishId/sacraments/:requestId
+// Body: { status?, confirmedDate?, confirmedTime?, clergyAssigned?, parishNotes?, declineReason? }
+export async function handleParishSacramentUpdate(request, env, parishId, requestId) {
+  if (request.method !== "PATCH") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "parish-dashboard-write", { limit: 40, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const token = getBearerToken(request);
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
+    return unauthorized();
+  }
+
+  if (!hasStewardshipAccess(found.registration)) {
+    return json({
+      error: "Sacraments & Services requires Stewardship Suite.",
+      stewardshipRequired: true
+    }, { status: 402 });
+  }
+
+  const existing = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ? AND parish_id = ?", requestId, parishId);
+  if (!existing) return json({ error: "Request not found." }, { status: 404 });
+
+  let body = {};
+  try { body = await request.json(); } catch { body = {}; }
+
+  const nextStatus = SACRAMENT_STATUSES.has(body.status) ? body.status : existing.status;
+  const confirmedDate = body.confirmedDate !== undefined ? String(body.confirmedDate || "").trim().slice(0, 10) : existing.confirmed_date;
+  const confirmedTime = body.confirmedTime !== undefined ? String(body.confirmedTime || "").trim().slice(0, 40) : existing.confirmed_time;
+  const clergyAssigned = body.clergyAssigned !== undefined ? String(body.clergyAssigned || "").trim().slice(0, 200) : existing.clergy_assigned;
+  const parishNotes = body.parishNotes !== undefined ? String(body.parishNotes || "").trim().slice(0, 2000) : existing.parish_notes;
+  const declineReason = body.declineReason !== undefined ? String(body.declineReason || "").trim().slice(0, 500) : existing.decline_reason;
+
+  const now = new Date().toISOString();
+  await d1Run(env, `
+    UPDATE sacrament_requests SET
+      status = ?, confirmed_date = ?, confirmed_time = ?, clergy_assigned = ?,
+      parish_notes = ?, decline_reason = ?, updated_at = ?
+    WHERE id = ? AND parish_id = ?
+  `,
+    nextStatus, confirmedDate || null, confirmedTime || null, clergyAssigned || null,
+    parishNotes || null, declineReason || null, now, requestId, parishId
+  );
+
+  const updated = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ?", requestId);
+
+  // Notify the donor of a meaningful status change — best-effort, never blocks the save.
+  if (nextStatus !== existing.status) {
+    try {
+      await notifyDonorOfSacramentStatusChange(env, found.registration, updated);
+    } catch { /* notification failure never blocks the update */ }
+  }
+
+  return json({ ok: true, request: parishSacramentRequestRow(updated) });
+}
+
+async function notifyDonorOfSacramentStatusChange(env, registration, row) {
+  const typeLabel = row.other_type_label || sacramentTypeLabel(row.sacrament_type);
+  const statusCopy = {
+    acknowledged: `${htmlEscape(registration.parishName || "Your parish")} has received your request for ${htmlEscape(typeLabel)} and will be in touch to schedule.`,
+    scheduled: `Your ${htmlEscape(typeLabel)} has been scheduled${row.confirmed_date ? ` for ${htmlEscape(row.confirmed_date)}` : ""}${row.confirmed_time ? ` at ${htmlEscape(row.confirmed_time)}` : ""}.`,
+    completed: `Your ${htmlEscape(typeLabel)} request has been marked complete.`,
+    declined: `${htmlEscape(registration.parishName || "The parish")} was unable to fulfill your request for ${htmlEscape(typeLabel)}${row.decline_reason ? `: ${htmlEscape(row.decline_reason)}` : "."}`,
+  }[row.status];
+  if (!statusCopy) return;
+
+  const appUrl = env.AGAPAY_APP_URL || "https://agapay.app";
+
+  // Mirror this into donor_notifications so it also surfaces in the My AGAPAY dashboard,
+  // not just email — matches the existing pledge-nudge notification pattern.
+  try {
+    await d1Run(env, `
+      INSERT INTO donor_notifications (id, donor_email, parish_id, type, fiscal_year, message, sent_at)
+      VALUES (?, ?, ?, 'sacrament_status', ?, ?, ?)
+    `,
+      generateSecret("notif"), row.donor_email, row.parish_id,
+      new Date().getFullYear(), statusCopy, new Date().toISOString()
+    );
+  } catch { /* non-fatal if the table isn't present */ }
+
+  await sendEmail(env, {
+    from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
+    to: [row.donor_email],
+    reply_to: registration.priestEmail || registration.email || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
+    subject: `Update on your ${typeLabel} request`,
+    html: agapayEmailHtml(appUrl, "Sacrament Request Update", `
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">${statusCopy}</p>
+      <p style="margin:0;font-size:13px;color:#6F6A60;">View this request any time from your My AGAPAY dashboard.</p>
+    `),
+    text: statusCopy.replace(/<[^>]+>/g, "")
+  });
 }
 
 export async function handleParishCommemorations(request, env, parishId) {
