@@ -1401,6 +1401,180 @@ export default {
     if (url.pathname === "/api/admin/myagapay/release-flags") {
       return handleAdminMyAgapayReleaseFlags(request, env);
     }
+    if (url.pathname === "/api/admin/seed-demo" && request.method === "POST") {
+      if (!(await requireAdmin(request, env))) return unauthorized();
+      if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+      // ── Demo parish registration ──────────────────────────────────────────
+      const DEMO_PARISH_ID  = "st-fiacre-demo";
+      const DEMO_REFERENCE  = "demo-st-fiacre-2024";
+      const now = new Date().toISOString();
+
+      const demoRegistration = {
+        reference:              DEMO_REFERENCE,
+        status:                 "verified",
+        parishId:               DEMO_PARISH_ID,
+        parishName:             "St. Fiacre Orthodox Church (Demo)",
+        communityType:          "mission",
+        jurisdiction:           "Diocese of Chicago and Mid-America, Russian Orthodox Church Outside Russia",
+        liturgicalCalendar:     "julian",
+        priestName:             "Hieromonk Seraphim (Callahan)",
+        priestEmail:            "fr.seraphim@stfiacre.org",
+        treasurerName:          "Colleen Ryan",
+        treasurerEmail:         "treasurer@stfiacre.org",
+        addressLine1:           "4821 Frankford Ave",
+        city:                   "Lubbock",
+        state:                  "TX",
+        postalCode:             "79424",
+        country:                "US",
+        website:                "https://stfiacre.org",
+        phone:                  "(806) 555-0184",
+        // Stripe: demo account appears fully connected and active
+        stripeAccountId:        "acct_demo_st_fiacre",
+        stripeAccountStatus:    "charges_enabled",
+        givingStatus:           "active",
+        subscriptionTier:       "parish",
+        subscriptionStatus:     "active",
+        dashboardPassword:      "demo2025",
+        dashboardInviteEmailStatus: "sent",
+        adminNotificationEmailStatus: "sent",
+        receivedAt:             "2024-09-22T09:00:00.000Z",
+        updatedAt:              now,
+        givingFunds: [
+          { name: "General Stewardship",  code: "stewardship", isDefault: true,  sortOrder: 0 },
+          { name: "Candles / Vigil Lights", code: "candle",   isDefault: false, sortOrder: 1 },
+          { name: "Building Fund",        code: "building",   isDefault: false, sortOrder: 2 },
+          { name: "Poor Box / Alms",      code: "alms",       isDefault: false, sortOrder: 3 },
+          { name: "Iconography Fund",     code: "iconography",isDefault: false, sortOrder: 4 },
+          { name: "Memorial / Panakhida", code: "memorial",   isDefault: false, sortOrder: 5 },
+        ]
+      };
+
+      // Save to KV
+      const kvKey = `parish:${DEMO_PARISH_ID}`;
+      await env.AGAPAY_REGISTRATIONS.put(kvKey, JSON.stringify(demoRegistration));
+      await env.AGAPAY_REGISTRATIONS.put(`parish_id_index:${DEMO_PARISH_ID}`, kvKey);
+
+      // Save to D1 registrations table
+      try {
+        await env.AGAPAY_DB.prepare(`
+          INSERT INTO registrations (reference, parish_id, status, parish_name, community_type,
+            stripe_account_id, received_at, updated_at, data)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(reference) DO UPDATE SET
+            parish_id = excluded.parish_id,
+            status = excluded.status,
+            parish_name = excluded.parish_name,
+            stripe_account_id = excluded.stripe_account_id,
+            updated_at = excluded.updated_at,
+            data = excluded.data
+        `).bind(
+          DEMO_REFERENCE,
+          DEMO_PARISH_ID,
+          "verified",
+          "Holy Trinity Orthodox Church",
+          "parish",
+          "acct_demo_holy_trinity",
+          "2024-09-15T10:22:00.000Z",
+          now,
+          JSON.stringify(demoRegistration)
+        ).run();
+      } catch (e) { /* D1 may not be available in all envs */ }
+
+      // Seed giving funds in D1
+      try {
+        const fundStmts = demoRegistration.givingFunds.map(f =>
+          env.AGAPAY_DB.prepare(`
+            INSERT OR IGNORE INTO giving_funds (parish_id, name, code, is_default, sort_order)
+            VALUES (?, ?, ?, ?, ?)
+          `).bind(DEMO_PARISH_ID, f.name, f.code, f.isDefault ? 1 : 0, f.sortOrder)
+        );
+        await env.AGAPAY_DB.batch(fundStmts);
+      } catch (e) {}
+
+      // Seed realistic donation history in D1
+      const donations = [
+        { id: "demo_don_001", email: "maria.petrov@email.com",     name: "Maria Petrov",      amount: 20000, fund: "stewardship", date: "2024-10-06T11:15:00.000Z" },
+        { id: "demo_don_002", email: "nikolai.volkov@email.com",   name: "Nikolai Volkov",    amount: 5000,  fund: "candle",      date: "2024-10-06T09:42:00.000Z" },
+        { id: "demo_don_003", email: "anna.kozlov@email.com",      name: "Anna Kozlov",       amount: 50000, fund: "stewardship", date: "2024-10-13T12:00:00.000Z" },
+        { id: "demo_don_004", email: "dmitri.morozov@email.com",   name: "Dmitri Morozov",    amount: 15000, fund: "building",    date: "2024-10-13T10:30:00.000Z" },
+        { id: "demo_don_005", email: "elena.sokolov@email.com",    name: "Elena Sokolov",     amount: 10000, fund: "stewardship", date: "2024-10-20T11:00:00.000Z" },
+        { id: "demo_don_006", email: "peter.novak@email.com",      name: "Peter Novak",       amount: 25000, fund: "stewardship", date: "2024-10-20T09:15:00.000Z" },
+        { id: "demo_don_007", email: "sophia.lebedev@email.com",   name: "Sophia Lebedev",    amount: 7500,  fund: "alms",        date: "2024-10-27T13:00:00.000Z" },
+        { id: "demo_don_008", email: "michael.orlov@email.com",    name: "Michael Orlov",     amount: 30000, fund: "stewardship", date: "2024-11-03T10:00:00.000Z" },
+        { id: "demo_don_009", email: "natalia.popov@email.com",    name: "Natalia Popov",     amount: 10000, fund: "iconography", date: "2024-11-03T11:30:00.000Z" },
+        { id: "demo_don_010", email: "ivan.fedorov@email.com",     name: "Ivan Fedorov",      amount: 20000, fund: "stewardship", date: "2024-11-10T09:00:00.000Z" },
+        { id: "demo_don_011", email: "olga.karpov@email.com",      name: "Olga Karpov",       amount: 5000,  fund: "candle",      date: "2024-11-10T10:45:00.000Z" },
+        { id: "demo_don_012", email: "sergei.belov@email.com",     name: "Sergei Belov",      amount: 100000,fund: "building",    date: "2024-11-17T12:00:00.000Z" },
+        { id: "demo_don_013", email: "marina.titov@email.com",     name: "Marina Titov",      amount: 15000, fund: "stewardship", date: "2024-11-24T09:30:00.000Z" },
+        { id: "demo_don_014", email: "alexei.gusev@email.com",     name: "Alexei Gusev",      amount: 20000, fund: "stewardship", date: "2024-12-01T10:00:00.000Z" },
+        { id: "demo_don_015", email: "vera.nikitin@email.com",     name: "Vera Nikitin",      amount: 10000, fund: "memorial",    date: "2024-12-08T11:00:00.000Z" },
+        { id: "demo_don_016", email: "boris.fomin@email.com",      name: "Boris Fomin",       amount: 25000, fund: "stewardship", date: "2024-12-15T09:45:00.000Z" },
+        { id: "demo_don_017", email: "lyudmila.zaytsev@email.com", name: "Lyudmila Zaytsev",  amount: 5000,  fund: "candle",      date: "2024-12-22T10:30:00.000Z" },
+        { id: "demo_don_018", email: "andrei.morozov@email.com",   name: "Andrei Morozov",    amount: 50000, fund: "stewardship", date: "2024-12-29T12:00:00.000Z" },
+        { id: "demo_don_019", email: "tatiana.volkov@email.com",   name: "Tatiana Volkov",    amount: 20000, fund: "stewardship", date: "2025-01-05T10:00:00.000Z" },
+        { id: "demo_don_020", email: "konstantin.smirnov@email.com",name: "Konstantin Smirnov",amount: 30000, fund: "building",   date: "2025-01-12T09:00:00.000Z" },
+      ];
+
+      try {
+        const donationStmts = donations.map(d =>
+          env.AGAPAY_DB.prepare(`
+            INSERT OR IGNORE INTO donor_offerings
+              (id, donor_email, parish_id, payment_intent_id, status, payment_status, created_at, updated_at, data)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            d.id,
+            d.email,
+            DEMO_PARISH_ID,
+            `pi_demo_${d.id}`,
+            "complete",
+            "paid",
+            d.date,
+            d.date,
+            JSON.stringify({
+              donorName:   d.name,
+              donorEmail:  d.email,
+              amountCents: d.amount,
+              fund:        d.fund,
+              parishId:    DEMO_PARISH_ID,
+              currency:    "usd",
+              isRecurring: d.id.endsWith("3") || d.id.endsWith("6"),
+              createdAt:   d.date
+            })
+          )
+        );
+        await env.AGAPAY_DB.batch(donationStmts);
+      } catch (e) {}
+
+      // Seed a few commemorations
+      const comms = [
+        { id: "demo_comm_001", email: "maria.petrov@email.com",   date: "2025-01-12T10:00:00.000Z",
+          living: ["Maria", "Alexei", "Natasha"], departed: ["Alexander", "Vera"] },
+        { id: "demo_comm_002", email: "nikolai.volkov@email.com", date: "2025-01-12T09:30:00.000Z",
+          living: ["Nikolai", "Elena"], departed: ["Mikhail"] },
+        { id: "demo_comm_003", email: "anna.kozlov@email.com",    date: "2025-01-12T11:00:00.000Z",
+          living: ["Anna", "John", "Sophia"], departed: ["Olga", "Dmitri"] },
+      ];
+      try {
+        const commStmts = comms.map(c =>
+          env.AGAPAY_DB.prepare(`
+            INSERT OR IGNORE INTO commemorations (id, parish_id, donor_email, created_at, data)
+            VALUES (?, ?, ?, ?, ?)
+          `).bind(c.id, DEMO_PARISH_ID, c.email, c.date, JSON.stringify({
+            living: c.living, departed: c.departed, createdAt: c.date
+          }))
+        );
+        await env.AGAPAY_DB.batch(commStmts);
+      } catch (e) {}
+
+      return json({
+        ok: true,
+        parishId: DEMO_PARISH_ID,
+        dashboardUrl: \`/parish/dashboard?parishId=\${DEMO_PARISH_ID}\`,
+        giveUrl: \`/give/\${DEMO_PARISH_ID}\`,
+        message: "St. Fiacre Orthodox Church (Demo) seeded. Use password 'demo2025' for the parish dashboard."
+      });
+    }
     if (url.pathname === "/api/admin/rebuild-indexes") {
       return handleAdminRebuildIndexes(request, env);
     }
