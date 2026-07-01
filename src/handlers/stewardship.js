@@ -1829,7 +1829,7 @@ export async function handleParishStewardshipMeetingDetail(request, env, parishI
 
     const meeting = await d1First(env,
       "SELECT * FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
-      [meetingId, registration.parishId]
+      meetingId, registration.parishId
     );
     if (!meeting) return json({ error: "Meeting not found" }, { status: 404 });
 
@@ -1872,7 +1872,7 @@ export async function handleParishStewardshipMeetingDetail(request, env, parishI
 
     const updated = await d1First(env,
       "SELECT * FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
-      [meetingId, registration.parishId]
+      meetingId, registration.parishId
     );
     const [agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions] =
       await loadMeetingSubRecords(env, meetingId);
@@ -1883,7 +1883,7 @@ export async function handleParishStewardshipMeetingDetail(request, env, parishI
   } catch (err) {
     // Surface the real failure instead of letting it become an opaque
     // Cloudflare 1101/500 with no body the client can read.
-    return json({ error: "Stewardship meeting request failed: " + (err?.message || String(err)), stack: err?.stack || null }, { status: 500 });
+    return json({ error: "Stewardship meeting request failed: " + (err?.message || String(err)) }, { status: 500 });
   }
 }
 
@@ -2114,7 +2114,7 @@ export async function handleStewardshipMeetingEdit(request, env, meetingId) {
 
   const meeting = await d1First(env,
     "SELECT * FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
-    [meetingId, registration.parishId]
+    meetingId, registration.parishId
   );
   if (!meeting) return json({ error: "Not found" }, { status: 404 });
 
@@ -2177,7 +2177,7 @@ export async function handleStewardshipMeetingPreview(request, env, meetingId) {
 
   const meeting = await d1First(env,
     "SELECT * FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
-    [meetingId, registration.parishId]
+    meetingId, registration.parishId
   );
   if (!meeting) return json({ error: "Not found" }, { status: 404 });
 
@@ -2210,7 +2210,7 @@ export async function handleStewardshipMeetingPdf(request, env, meetingId) {
 
   const meeting = await d1First(env,
     "SELECT * FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
-    [meetingId, registration.parishId]
+    meetingId, registration.parishId
   );
   if (!meeting) return json({ error: "Not found" }, { status: 404 });
 
@@ -2226,7 +2226,7 @@ export async function handleStewardshipMeetingPdf(request, env, meetingId) {
   // Update status to generated
   await d1Run(env,
     "UPDATE stewardship_annual_meetings SET status = 'generated', updated_at = ? WHERE id = ?",
-    [new Date().toISOString(), meetingId]
+    new Date().toISOString(), meetingId
   );
 
   const html = packetPreviewHtml(registration, meeting, agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions, true, env);
@@ -2481,7 +2481,7 @@ export async function handleStewardshipFinancials(request, env, parishId) {
     const meetings = await d1All(env,
       `SELECT id, title, fiscal_year, meeting_date, status FROM stewardship_annual_meetings
        WHERE parish_id = ? AND fiscal_year = ? ORDER BY created_at ASC`,
-      [parishId, year]
+      parishId, year
     );
 
     if (!meetings.length) {
@@ -2558,7 +2558,7 @@ export async function handleStewardshipFinancials(request, env, parishId) {
     if (meetingId) {
       const meeting = await d1First(env,
         "SELECT id FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
-        [meetingId, parishId]
+        meetingId, parishId
       );
       if (!meeting) return json({ error: "Meeting not found for this parish" }, { status: 404 });
 
@@ -2577,14 +2577,14 @@ export async function handleStewardshipFinancials(request, env, parishId) {
            SET total_income_cents = ?, total_expense_cents = ?, net_cents = ?, notes = ?,
                snapshot_taken_at = ?, updated_at = ?
            WHERE id = ?`,
-          [income, expense, net, body.notes || null, now, now, existing.id]
+          income, expense, net, body.notes || null, now, now, existing.id
         );
       } else {
         await d1Run(env,
           `INSERT INTO stewardship_financial_summaries
              (id, annual_meeting_id, total_income_cents, total_expense_cents, net_cents, notes, snapshot_taken_at, created_at, updated_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [await newId(), meetingId, income, expense, net, body.notes || null, now, now, now]
+          await newId(), meetingId, income, expense, net, body.notes || null, now, now, now
         );
       }
 
@@ -2636,7 +2636,7 @@ export async function handleStewardshipFinancials(request, env, parishId) {
       `INSERT INTO stewardship_financial_summaries
          (id, annual_meeting_id, total_income_cents, total_expense_cents, net_cents, notes, snapshot_taken_at, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [await newId(), newMeetingId, income, expense, net, body.notes || null, now, now, now]
+      await newId(), newMeetingId, income, expense, net, body.notes || null, now, now, now
     );
 
     if (Array.isArray(body.restrictedFunds)) {
