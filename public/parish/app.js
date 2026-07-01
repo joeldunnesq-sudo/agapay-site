@@ -1350,7 +1350,7 @@
         body: JSON.stringify(body)
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Unable to save packet.');
+      if (!res.ok) throw new Error((data.error || 'Unable to save packet.') + ' [' + method + ' ' + path + ', HTTP ' + res.status + ']');
       stewardshipState.selectedMeeting = data.meeting;
       stewardshipState.loaded = false;
       setStatus('Stewardship packet saved.','success');
