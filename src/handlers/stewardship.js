@@ -1833,12 +1833,18 @@ export async function handleParishStewardshipMeetingDetail(request, env, parishI
   if (!meeting) return json({ error: "Meeting not found" }, { status: 404 });
 
   if (request.method === "GET") {
-    const [agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions] =
-      await loadMeetingSubRecords(env, meetingId);
-    return json({
-      ok: true,
-      meeting: publicMeetingDetails(meeting, agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions)
-    });
+    try {
+      const [agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions] =
+        await loadMeetingSubRecords(env, meetingId);
+      return json({
+        ok: true,
+        meeting: publicMeetingDetails(meeting, agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions)
+      });
+    } catch (err) {
+      // Surface the real failure instead of letting it become an opaque
+      // Cloudflare 1101 with no body the client can read.
+      return json({ error: "Failed to load meeting: " + (err?.message || String(err)) }, { status: 500 });
+    }
   }
 
   if (request.method !== "PATCH") return json({ error: "Method not allowed" }, { status: 405 });
@@ -1847,38 +1853,42 @@ export async function handleParishStewardshipMeetingDetail(request, env, parishI
   const form = apiFormFromMeetingPayload(body);
   const now = new Date().toISOString();
 
-  await d1Run(env, `
-    UPDATE stewardship_annual_meetings SET
-      title = ?, fiscal_year = ?, meeting_date = ?, meeting_time = ?, location = ?,
-      parish_name_override = ?, jurisdiction = ?, address = ?,
-      status = ?, updated_at = ?
-    WHERE id = ? AND parish_id = ?
-  `, 
-    form.title || meeting.title,
-    parseInt(form.fiscal_year) || meeting.fiscal_year,
-    form.meeting_date || null,
-    form.meeting_time || null,
-    form.location || null,
-    form.parish_name_override || null,
-    form.jurisdiction || null,
-    form.address || null,
-    form.action === "ready" ? "ready" : "draft",
-    now,
-    meetingId, registration.parishId,
-  );
-  await deleteMeetingSubRecords(env, meetingId);
-  await saveMeetingSubRecords(env, meetingId, form);
+  try {
+    await d1Run(env, `
+      UPDATE stewardship_annual_meetings SET
+        title = ?, fiscal_year = ?, meeting_date = ?, meeting_time = ?, location = ?,
+        parish_name_override = ?, jurisdiction = ?, address = ?,
+        status = ?, updated_at = ?
+      WHERE id = ? AND parish_id = ?
+    `, 
+      form.title || meeting.title,
+      parseInt(form.fiscal_year) || meeting.fiscal_year,
+      form.meeting_date || null,
+      form.meeting_time || null,
+      form.location || null,
+      form.parish_name_override || null,
+      form.jurisdiction || null,
+      form.address || null,
+      form.action === "ready" ? "ready" : "draft",
+      now,
+      meetingId, registration.parishId,
+    );
+    await deleteMeetingSubRecords(env, meetingId);
+    await saveMeetingSubRecords(env, meetingId, form);
 
-  const updated = await d1First(env,
-    "SELECT * FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
-    [meetingId, registration.parishId]
-  );
-  const [agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions] =
-    await loadMeetingSubRecords(env, meetingId);
-  return json({
-    ok: true,
-    meeting: publicMeetingDetails(updated, agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions)
-  });
+    const updated = await d1First(env,
+      "SELECT * FROM stewardship_annual_meetings WHERE id = ? AND parish_id = ?",
+      [meetingId, registration.parishId]
+    );
+    const [agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions] =
+      await loadMeetingSubRecords(env, meetingId);
+    return json({
+      ok: true,
+      meeting: publicMeetingDetails(updated, agendaItems, reports, financialSummary, restrictedFunds, nominees, resolutions)
+    });
+  } catch (err) {
+    return json({ error: "Failed to save meeting: " + (err?.message || String(err)) }, { status: 500 });
+  }
 }
 
 // GET /parish/stewardship
