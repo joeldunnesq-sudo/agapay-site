@@ -54,7 +54,7 @@ async function requireParishContext(request, env) {
       { status: 401, headers: { "Content-Type": "text/html;charset=utf-8" } }
     )};
   }
-  return { ok: true, registration: found.registration };
+  return { ok: true, registration: found.registration, key: found.key };
 }
 
 async function requireParishApiContext(request, env, parishId) {
@@ -65,7 +65,12 @@ async function requireParishApiContext(request, env, parishId) {
   if (!(await verifyParishDashboardBearer(found.registration, token))) {
     return { ok: false, response: unauthorized() };
   }
-  return { ok: true, registration: found.registration };
+  // Callers that need to persist changes back to this registration must use
+  // this key as the reference for saveRegistrationRecord(env, key, registration)
+  // — passing the registration object itself where a string key is expected
+  // silently corrupts the save (registration becomes the "reference" arg,
+  // and the real registration argument is left undefined).
+  return { ok: true, registration: found.registration, key: found.key };
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -1755,7 +1760,7 @@ export async function handleAdminGrantStewardshipComp(request, env) {
     expiresAt: expires.toISOString(),
     grantedBy: "admin"
   };
-  await saveRegistrationRecord(env, registration);
+  await saveRegistrationRecord(env, found.key, registration);
 
   const newCount = currentCount + 1;
   await env.AGAPAY_REGISTRATIONS.put(STEWARDSHIP_COMP_PROMO_KV_KEY, String(newCount));
@@ -1824,7 +1829,7 @@ export async function handleParishStewardshipSubscribe(request, env, parishId) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const ctx = await requireParishApiContext(request, env, parishId);
   if (!ctx.ok) return ctx.response;
-  const { registration } = ctx;
+  const { registration, key: registrationKey } = ctx;
   if (STEWARDSHIP_COMING_SOON) return stewardshipComingSoonJson();
 
   const limited = await rateLimit(request, env, "stewardship-subscribe", { limit: 5, windowSeconds: 60 });
@@ -1851,7 +1856,7 @@ export async function handleParishStewardshipSubscribe(request, env, parishId) {
     if (customer.error) return json({ error: customer.error?.message || "Could not create billing customer." }, { status: 500 });
     customerId = customer.id;
     registration.stewardshipStripeCustomerId = customerId;
-    await saveRegistrationRecord(env, registration);
+    await saveRegistrationRecord(env, registrationKey, registration);
   }
 
   const session = await stripePlatformPost(env, "/checkout/sessions", {
@@ -2081,7 +2086,7 @@ export async function handleStewardshipSubscribe(request, env) {
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
   const ctx = await requireParishContext(request, env);
   if (!ctx.ok) return ctx.response;
-  const { registration } = ctx;
+  const { registration, key: registrationKey } = ctx;
   if (STEWARDSHIP_COMING_SOON) {
     return new Response(stewardshipComingSoonHtml(registration, env), {
       status: 409,
@@ -2117,7 +2122,7 @@ export async function handleStewardshipSubscribe(request, env) {
     if (customer.error) return json({ error: "Could not create billing customer." }, { status: 500 });
     customerId = customer.id;
     registration.stewardshipStripeCustomerId = customerId;
-    await saveRegistrationRecord(env, registration);
+    await saveRegistrationRecord(env, registrationKey, registration);
   }
 
   // Create Stripe Checkout Session
