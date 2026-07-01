@@ -12,6 +12,7 @@ import {
   generateSecret,
   hashSessionToken,
   hasProductionStore,
+  hasStewardshipAccess,
   isSystemKvKey,
   json,
   listKvKeys,
@@ -898,6 +899,195 @@ export async function handleDonorSubscriptionPortal(request, env) {
     parishId: selectedOffering.parishId,
     parishName: selectedOffering.parishName || found?.registration?.parishName || ""
   });
+}
+
+const SACRAMENT_TYPES = new Set([
+  "house_blessing", "baptism", "chrismation", "wedding", "funeral",
+  "memorial_service", "confession", "home_visit", "other"
+]);
+const SACRAMENT_ACTIVE_STATUSES = new Set(["requested", "acknowledged", "scheduled"]);
+
+function publicSacramentRequest(row = {}) {
+  return {
+    id: row.id,
+    parishId: row.parish_id,
+    sacramentType: row.sacrament_type,
+    otherTypeLabel: row.other_type_label || "",
+    status: row.status,
+    requestedDate: row.requested_date || "",
+    requestedTimeWindow: row.requested_time_window || "",
+    participantNames: row.participant_names || "",
+    locationType: row.location_type || "",
+    locationAddress: row.location_address || "",
+    notes: row.notes || "",
+    phone: row.phone || "",
+    confirmedDate: row.confirmed_date || "",
+    confirmedTime: row.confirmed_time || "",
+    clergyAssigned: row.clergy_assigned || "",
+    declineReason: row.status === "declined" ? (row.decline_reason || "") : "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+    // parish_notes is intentionally omitted — internal to the parish only.
+  };
+}
+
+function sacramentTypeLabel(type) {
+  return {
+    house_blessing: "House Blessing",
+    baptism: "Baptism",
+    chrismation: "Chrismation",
+    wedding: "Wedding",
+    funeral: "Funeral",
+    memorial_service: "Memorial Service",
+    confession: "Confession",
+    home_visit: "Home Visit",
+    other: "Other Request"
+  }[type] || type;
+}
+
+// GET  /api/donor/sacraments        — list the signed-in donor's own requests
+//   ?parishId= also returns { available } for that parish's Stewardship Suite status,
+//   so the frontend knows whether to show the "Request a sacrament" form at all.
+// POST /api/donor/sacraments        — submit a new request
+export async function handleDonorSacraments(request, env) {
+  const donor = await requireDonor(request, env);
+  if (!donor) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  if (request.method === "GET") {
+    const rows = await d1All(env,
+      "SELECT * FROM sacrament_requests WHERE donor_email = ? ORDER BY created_at DESC LIMIT 100",
+      normalizeEmail(donor.email)
+    ).catch(() => []);
+
+    // Sacraments & Services is a Stewardship Suite feature — only tell the
+    // donor it's available if their home parish currently has active access.
+    // This is purely informational for the GET (so the UI can show/hide the
+    // "new request" form); it never blocks viewing requests already on file.
+    let available = false;
+    const parishId = String(request.headers.get("X-AGAPAY-Parish-Id") || donor.defaultParishId || "").trim();
+    if (parishId) {
+      const found = await findRegistrationByParishId(env, parishId);
+      available = Boolean(found && hasStewardshipAccess(found.registration));
+    }
+
+    return json({ requests: (rows || []).map(publicSacramentRequest), available, parishId });
+  }
+
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+
+  const limited = await rateLimit(request, env, "donor-sacrament-request", { limit: 10, windowSeconds: 3600 });
+  if (limited) return limited;
+
+  let body = {};
+  try { body = await request.json(); } catch { body = {}; }
+
+  const parishId = String(body.parishId || donor.defaultParishId || "").trim();
+  if (!parishId) {
+    return json({ error: "Choose a parish before submitting a request.", detail: "Set a home parish in Settings, or include parishId." }, { status: 400 });
+  }
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish not found." }, { status: 404 });
+
+  // Gate: Sacraments & Services requires the parish to have active
+  // Stewardship Suite access (paid subscription, trial, or a comp grant).
+  // This is what makes the feature "automatically available" the moment a
+  // parish subscribes, with no separate per-donor enablement step needed.
+  if (!hasStewardshipAccess(found.registration)) {
+    return json({
+      error: "This parish has not enabled Sacraments & Services.",
+      detail: "This feature is part of AGAPAY Stewardship Suite. Your parish will need to subscribe before you can submit requests here."
+    }, { status: 402 });
+  }
+
+  const sacramentType = String(body.sacramentType || "").trim();
+  if (!SACRAMENT_TYPES.has(sacramentType)) {
+    return json({ error: "Choose a valid sacrament or service type." }, { status: 400 });
+  }
+  const otherTypeLabel = sacramentType === "other" ? String(body.otherTypeLabel || "").trim().slice(0, 120) : "";
+  if (sacramentType === "other" && !otherTypeLabel) {
+    return json({ error: "Describe what you're requesting." }, { status: 400 });
+  }
+
+  const locationType = ["church", "home", "other"].includes(body.locationType) ? body.locationType : "church";
+  const locationAddress = String(body.locationAddress || "").trim().slice(0, 400);
+  if ((sacramentType === "house_blessing" || sacramentType === "home_visit" || locationType === "home") && !locationAddress) {
+    return json({ error: "An address is required for a house blessing or home visit." }, { status: 400 });
+  }
+
+  const requestedDate = String(body.requestedDate || "").trim().slice(0, 10);
+  const requestedTimeWindow = String(body.requestedTimeWindow || "").trim().slice(0, 200);
+  const participantNames = String(body.participantNames || "").trim().slice(0, 1000);
+  const notes = String(body.notes || "").trim().slice(0, 2000);
+  const phone = String(body.phone || "").trim().slice(0, 40);
+
+  const id = generateSecret("sac");
+  const now = new Date().toISOString();
+
+  await d1Run(env, `
+    INSERT INTO sacrament_requests
+      (id, parish_id, donor_email, sacrament_type, other_type_label, status,
+       requested_date, requested_time_window, participant_names,
+       location_type, location_address, notes, phone, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, 'requested', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `,
+    id, parishId, normalizeEmail(donor.email), sacramentType, otherTypeLabel || null,
+    requestedDate || null, requestedTimeWindow || null, participantNames || null,
+    locationType, locationAddress || null, notes || null, phone || null, now, now
+  );
+
+  // Best-effort notification to the parish — never blocks the request itself.
+  try {
+    const registration = found.registration;
+    const to = [registration.priestEmail, registration.treasurerEmail, registration.email, registration.contactEmail]
+      .filter(Boolean);
+    if (to.length) {
+      const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+      const typeLabel = otherTypeLabel || sacramentTypeLabel(sacramentType);
+      await sendEmail(env, {
+        from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
+        to: [...new Set(to.map((a) => String(a).trim().toLowerCase()))],
+        reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
+        subject: `New request: ${typeLabel}`,
+        html: agapayEmailHtml(appUrl, "New Sacrament Request", `
+          <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#171715;">A parishioner has requested <strong>${htmlEscape(typeLabel)}</strong> through AGAPAY.</p>
+          <table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.6;">
+            <tr><td style="padding:6px 10px 6px 0;color:#595959;width:140px;vertical-align:top;"><strong>Requested by</strong></td><td style="padding:6px 0;">${htmlEscape(donor.donorName || donor.email)}</td></tr>
+            <tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Contact</strong></td><td style="padding:6px 0;"><a href="mailto:${htmlEscape(donor.email)}" style="color:#0A365B;">${htmlEscape(donor.email)}</a>${phone ? " · " + htmlEscape(phone) : ""}</td></tr>
+            ${participantNames ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>For</strong></td><td style="padding:6px 0;">${htmlEscape(participantNames)}</td></tr>` : ""}
+            ${requestedDate ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Preferred date</strong></td><td style="padding:6px 0;">${htmlEscape(requestedDate)}</td></tr>` : ""}
+            ${requestedTimeWindow ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Preferred time</strong></td><td style="padding:6px 0;">${htmlEscape(requestedTimeWindow)}</td></tr>` : ""}
+            ${locationAddress ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Location</strong></td><td style="padding:6px 0;">${htmlEscape(locationAddress)}</td></tr>` : ""}
+            ${notes ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Notes</strong></td><td style="padding:6px 0;white-space:pre-wrap;">${htmlEscape(notes)}</td></tr>` : ""}
+          </table>
+          <p style="margin:18px 0 0;font-size:13px;color:#6F6A60;">Review and respond to this request from your parish dashboard, under Sacraments &amp; Services.</p>
+        `),
+        text: `New sacrament request: ${typeLabel}\nFrom: ${donor.donorName || donor.email} <${donor.email}>${phone ? " / " + phone : ""}\n${participantNames ? "For: " + participantNames + "\n" : ""}${requestedDate ? "Preferred date: " + requestedDate + "\n" : ""}${notes ? "\nNotes:\n" + notes : ""}`
+      });
+    }
+  } catch { /* notification failure never blocks the request */ }
+
+  const row = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ?", id);
+  return json({ ok: true, request: publicSacramentRequest(row) });
+}
+
+// POST /api/donor/sacraments/:id/cancel — donor withdraws their own pending request
+export async function handleDonorSacramentCancel(request, env, requestId) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const donor = await requireDonor(request, env);
+  if (!donor) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const row = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ? AND donor_email = ?", requestId, normalizeEmail(donor.email));
+  if (!row) return json({ error: "Request not found." }, { status: 404 });
+  if (!SACRAMENT_ACTIVE_STATUSES.has(row.status)) {
+    return json({ error: "This request can no longer be cancelled." }, { status: 409 });
+  }
+
+  const now = new Date().toISOString();
+  await d1Run(env, "UPDATE sacrament_requests SET status = 'cancelled', updated_at = ? WHERE id = ?", now, requestId);
+  const updated = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ?", requestId);
+  return json({ ok: true, request: publicSacramentRequest(updated) });
 }
 
 export async function handleDonorCommemorations(request, env) {
