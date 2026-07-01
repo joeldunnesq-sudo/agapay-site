@@ -901,9 +901,14 @@ export async function handleDonorSubscriptionPortal(request, env) {
   });
 }
 
-// Feature flag: Sacraments & Services is not yet fully ready for parishes or
-// donors to use. Flip to false to re-enable — no other code changes needed.
-const SACRAMENTS_COMING_SOON = true;
+// Feature flag: Sacraments & Services is not yet fully ready for general
+// availability. It's live only for the parishes listed here (currently just
+// the St. Fiacre demo parish, for internal testing) — every other parish
+// sees "Coming soon." To launch broadly, replace this with `() => true`.
+const SACRAMENTS_ALLOWED_PARISH_IDS = new Set(["st-fiacre"]);
+function sacramentsComingSoonFor(parishId) {
+  return !SACRAMENTS_ALLOWED_PARISH_IDS.has(String(parishId || "").trim());
+}
 
 const SACRAMENT_TYPES = new Set([
   "house_blessing", "baptism", "chrismation", "wedding", "funeral",
@@ -954,9 +959,6 @@ function sacramentTypeLabel(type) {
 //   so the frontend knows whether to show the "Request a sacrament" form at all.
 // POST /api/donor/sacraments        — submit a new request
 export async function handleDonorSacraments(request, env) {
-  if (SACRAMENTS_COMING_SOON) {
-    return json({ error: "Sacraments & Services is coming soon.", comingSoon: true }, { status: 503 });
-  }
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
@@ -967,13 +969,15 @@ export async function handleDonorSacraments(request, env) {
       normalizeEmail(donor.email)
     ).catch(() => []);
 
-    // Sacraments & Services is a Stewardship Suite feature — only tell the
-    // donor it's available if their home parish currently has active access.
-    // This is purely informational for the GET (so the UI can show/hide the
-    // "new request" form); it never blocks viewing requests already on file.
+    // Sacraments & Services is a Stewardship Suite feature, currently in
+    // limited rollout — only tell the donor it's available if their home
+    // parish both has active Stewardship Suite access AND is on the rollout
+    // allowlist. This is purely informational for the GET (so the UI can
+    // show/hide the "new request" form); it never blocks viewing requests
+    // already on file, even from a parish no longer on the allowlist.
     let available = false;
     const parishId = String(request.headers.get("X-AGAPAY-Parish-Id") || donor.defaultParishId || "").trim();
-    if (parishId) {
+    if (parishId && !sacramentsComingSoonFor(parishId)) {
       const found = await findRegistrationByParishId(env, parishId);
       available = Boolean(found && hasStewardshipAccess(found.registration));
     }
@@ -992,6 +996,9 @@ export async function handleDonorSacraments(request, env) {
   const parishId = String(body.parishId || donor.defaultParishId || "").trim();
   if (!parishId) {
     return json({ error: "Choose a parish before submitting a request.", detail: "Set a home parish in Settings, or include parishId." }, { status: 400 });
+  }
+  if (sacramentsComingSoonFor(parishId)) {
+    return json({ error: "Sacraments & Services is coming soon.", comingSoon: true }, { status: 503 });
   }
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish not found." }, { status: 404 });
@@ -1080,9 +1087,10 @@ export async function handleDonorSacraments(request, env) {
 
 // POST /api/donor/sacraments/:id/cancel — donor withdraws their own pending request
 export async function handleDonorSacramentCancel(request, env, requestId) {
-  if (SACRAMENTS_COMING_SOON) {
-    return json({ error: "Sacraments & Services is coming soon.", comingSoon: true }, { status: 503 });
-  }
+  // No rollout-allowlist check needed here: a request can only exist in the
+  // table if it was created via handleDonorSacraments' POST gate, which
+  // already restricts creation to allowlisted parishes. Cancelling an
+  // existing request is safe regardless of the parish's current rollout status.
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
