@@ -1097,3 +1097,31 @@ export async function resolveParishDashboardSession(registration, token) {
   }
   return null;
 }
+
+// ─── Stewardship Suite access ───────────────────────────────────────────────
+// Moved here (rather than living only in handlers/stewardship.js) so that
+// parish.js and donor.js — which gate the Sacraments & Services feature on
+// an active Stewardship Suite subscription — can check access without
+// creating a circular import (stewardship.js already imports from parish.js).
+
+const STEWARDSHIP_ACTIVE_STATES = new Set(["active", "trialing"]);
+
+// A comp grant is active if it was actually granted and hasn't passed its
+// expiresAt. Entirely separate from the Stripe subscription fields — a
+// comped parish has no Stripe customer/subscription at all.
+export function hasActiveStewardshipComp(registration) {
+  const comp = registration?.stewardshipComp;
+  if (!comp?.active) return false;
+  if (!comp.expiresAt) return true;
+  return new Date(comp.expiresAt).getTime() > Date.now();
+}
+
+export function stewardshipStatus(registration) {
+  if (hasActiveStewardshipComp(registration)) return "comped";
+  return registration?.stewardshipStatus || "no_subscription";
+}
+
+export function hasStewardshipAccess(registration) {
+  if (hasActiveStewardshipComp(registration)) return true;
+  return STEWARDSHIP_ACTIVE_STATES.has(stewardshipStatus(registration));
+}
