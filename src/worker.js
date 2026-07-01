@@ -1179,6 +1179,46 @@ export default {
     if (url.pathname === "/api/parish-interest") {
       return handleParishInterest(request, env);
     }
+    if (url.pathname === "/api/contact" && request.method === "POST") {
+      try {
+        const body = await request.json().catch(() => ({}));
+        const name         = String(body.name         || "").trim().slice(0, 120);
+        const email        = String(body.email        || "").trim().slice(0, 200);
+        const organization = String(body.organization || "").trim().slice(0, 200);
+        const topic        = String(body.topic        || "General Question").trim().slice(0, 100);
+        const message      = String(body.message      || "").trim().slice(0, 4000);
+        if (!name || !email || !message || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          return json({ error: "Name, email, and message are required." }, { status: 400 });
+        }
+        const to   = env.AGAPAY_SUPPORT_EMAIL || env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app";
+        const from = env.AGAPAY_FROM_EMAIL    || "AGAPAY <onboarding@agapay.app>";
+        const emailResult = await sendEmail(env, {
+          from,
+          to,
+          reply_to: email,
+          subject: `AGAPAY Contact: ${topic}`,
+          html: agapayEmailHtml(
+            "https://agapay.app",
+            `Contact: ${topic}`,
+            `<p style="margin:0 0 10px;font-size:14px;color:#595959;">New message from the AGAPAY contact form.</p>
+            <table style="width:100%;border-collapse:collapse;font-size:14px;line-height:1.6;">
+              <tr><td style="padding:6px 10px 6px 0;color:#595959;width:130px;vertical-align:top;"><strong>From</strong></td><td style="padding:6px 0;">${htmlEscape(name)}</td></tr>
+              <tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Email</strong></td><td style="padding:6px 0;"><a href="mailto:${htmlEscape(email)}" style="color:#0A365B;">${htmlEscape(email)}</a></td></tr>
+              ${organization ? `<tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Organization</strong></td><td style="padding:6px 0;">${htmlEscape(organization)}</td></tr>` : ""}
+              <tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Topic</strong></td><td style="padding:6px 0;">${htmlEscape(topic)}</td></tr>
+              <tr><td style="padding:6px 10px 6px 0;color:#595959;vertical-align:top;"><strong>Message</strong></td><td style="padding:6px 0;white-space:pre-wrap;">${htmlEscape(message)}</td></tr>
+            </table>`
+          ),
+          text: `AGAPAY Contact Form\n\nFrom: ${name} <${email}>\nOrganization: ${organization || "N/A"}\nTopic: ${topic}\n\nMessage:\n${message}`
+        });
+        if (emailResult.status === "not_configured") {
+          return json({ ok: false, error: "Email is not configured on this server." }, { status: 503 });
+        }
+        return json({ ok: true });
+      } catch (err) {
+        return json({ error: "Something went wrong. Please try again." }, { status: 500 });
+      }
+    }
     if (request.method === "GET" && url.pathname === "/api/security/config") {
       return handleSecurityConfig(env);
     }
