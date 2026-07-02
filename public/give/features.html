@@ -419,7 +419,7 @@
 
     /* ── Stewardship Suite section ─────────────────────────────────────── */
     .stewardship-suite { background: linear-gradient(180deg, var(--paper), #FBF7EE); }
-    .sw-marketing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4rem; margin-top: 1rem; }
+    .sw-marketing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 1.4rem; margin-top: 1rem; }
     @media (max-width: 900px) { .sw-marketing-grid { grid-template-columns: 1fr; } }
 
     .sw-founding-band {
@@ -460,6 +460,38 @@
       .sw-founding-copy p { margin: 0 auto; }
       .sw-founding-cta { justify-self: center; }
     }
+
+    .commerce-teaser {
+      margin-top: 2.6rem;
+      padding: 2.2rem 2.4rem;
+      border-radius: 18px;
+      background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-2) 100%);
+      border: 1px solid var(--line);
+    }
+    .commerce-teaser-eyebrow {
+      font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--gold-dark); font-weight: 800; margin-bottom: 0.6rem;
+    }
+    .commerce-teaser h3 {
+      font-family: var(--serif); font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+      font-weight: 500; color: var(--night); line-height: 1.2; margin-bottom: 0.55rem; max-width: 720px;
+    }
+    .commerce-teaser > p { color: var(--stone); font-size: 0.92rem; line-height: 1.65; max-width: 640px; margin-bottom: 1.5rem; }
+    .commerce-teaser-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.8rem; }
+    .commerce-teaser-card {
+      background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
+      padding: 1.1rem 1.1rem 1.2rem;
+    }
+    .commerce-teaser-card--soon { opacity: 0.82; }
+    .commerce-teaser-badge {
+      display: inline-block; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; padding: 0.2rem 0.55rem; border-radius: 999px; margin-bottom: 0.55rem;
+      background: rgba(46,107,63,0.12); color: #2E6B3F;
+    }
+    .commerce-teaser-badge--soon { background: rgba(166,159,145,0.18); color: var(--stone); }
+    .commerce-teaser-card h4 { font-family: var(--serif); font-size: 1.15rem; font-weight: 500; color: var(--night); margin-bottom: 0.25rem; }
+    .commerce-teaser-card p { font-size: 0.82rem; color: var(--stone); line-height: 1.55; }
+    @media (max-width: 640px) { .commerce-teaser { padding: 1.8rem 1.4rem; } }
 
     .howitworks--navy { position: relative; background: linear-gradient(90deg, #071724, #0C2739); border-bottom: 1px solid rgba(200, 162, 74, 0.28); overflow: hidden; }
     .howitworks--navy::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 18%, rgba(200, 162, 74, 0.12), transparent 52%); pointer-events: none; }
@@ -999,6 +1031,64 @@
             </div>
           </article>
 
+          <article class="mode-card reveal reveal-delay-3">
+            <div class="mode-card-header">
+              <div class="mode-icon">
+                <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              </div>
+              <div class="mode-icon-label">
+                <h3>Bookstore</h3>
+              </div>
+            </div>
+            <div class="mode-body">
+              <div class="mode-tag">No one has to staff the table.</div>
+              <ul class="mode-list">
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Parishioners pay for books, prayer ropes, icons, and candles right from My AGAPAY</li>
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Sales tax calculated automatically — no cash box, no guessing</li>
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Scan a book's barcode to fill in the title and author instantly</li>
+                <li><span class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Funds settle straight to your parish, same as every AGAPAY gift</li>
+              </ul>
+            </div>
+          </article>
+
+        </div>
+
+        <div class="commerce-teaser reveal">
+          <div class="commerce-teaser-eyebrow">What's next for Stewardship Suite</div>
+          <h3>Bookstore is the first piece of a bigger picture: Parish Commerce.</h3>
+          <p>The same foundation that powers Bookstore is built to grow into a full parish commerce toolkit — one place for everything your community already sells or organizes.</p>
+          <div class="commerce-teaser-grid">
+            <div class="commerce-teaser-card">
+              <div class="commerce-teaser-badge">Live now</div>
+              <h4>Bookstore</h4>
+              <p>Books, prayer ropes, icons, candles, and more.</p>
+            </div>
+            <div class="commerce-teaser-card commerce-teaser-card--soon">
+              <div class="commerce-teaser-badge commerce-teaser-badge--soon">Coming soon</div>
+              <h4>Scan &amp; Go</h4>
+              <p>Skip the checkout line — scan, pay, and go.</p>
+            </div>
+            <div class="commerce-teaser-card commerce-teaser-card--soon">
+              <div class="commerce-teaser-badge commerce-teaser-badge--soon">Coming soon</div>
+              <h4>Event Tickets</h4>
+              <p>Parish festivals, retreats, and ticketed events.</p>
+            </div>
+            <div class="commerce-teaser-card commerce-teaser-card--soon">
+              <div class="commerce-teaser-badge commerce-teaser-badge--soon">Coming soon</div>
+              <h4>Fundraiser Meals</h4>
+              <p>Fish fries, pancake breakfasts, and fundraiser dinners — paid ahead, not your regular coffee hour.</p>
+            </div>
+            <div class="commerce-teaser-card commerce-teaser-card--soon">
+              <div class="commerce-teaser-badge commerce-teaser-badge--soon">Coming soon</div>
+              <h4>Camp &amp; Registration</h4>
+              <p>Youth camp, retreats, and program sign-ups with payment built in.</p>
+            </div>
+            <div class="commerce-teaser-card commerce-teaser-card--soon">
+              <div class="commerce-teaser-badge commerce-teaser-badge--soon">Your idea here</div>
+              <h4>What does your parish need?</h4>
+              <p>Help us build what actually serves your community — <a href="mailto:hello@agapay.app" style="color:var(--gold-dark);text-decoration:underline;">tell us what's missing</a>.</p>
+            </div>
+          </div>
         </div>
 
         <div class="sw-founding-band reveal">
@@ -1242,6 +1332,3 @@
   </script>
 </body>
 </html>
-
-
-
