@@ -1114,7 +1114,6 @@ export function applySetupSnapshotToSeed(seed = getLearnSeedSnapshot(), setupSna
         instructionMode: block.instructionMode,
         missedLessonBehavior: block.missedLessonBehavior,
         color: block.color,
-        gracePriority: block.gracePriority || "reduce first",
         graceNote: block.graceNote || "Deferred gracefully to the reserve list.",
         ...planArraysForItem(block, currentTermWeek, plannerWeekWindow.dates)
       }))
