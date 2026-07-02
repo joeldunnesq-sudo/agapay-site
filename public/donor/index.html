@@ -11,7 +11,7 @@
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css?v=20260620a" />
   <script src="/liturgical-calendar.js"></script>
-  <script src="/myagapay-shell.js?v=20260702c" defer></script>
+  <script src="/myagapay-shell.js?v=20260702d" defer></script>
   <script src="/donor/app.js?v=20260701e" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -331,7 +331,7 @@
 
           <section class="desktop-panel">
             <div class="desktop-panel-head">
-              <h2>Calendar</h2>
+              <h2>Next Feast Offering</h2>
               <a href="/myagapay/giving/calendar">View all</a>
             </div>
             <article class="next-feast-card">
@@ -342,6 +342,20 @@
               </div>
               <a id="desktopNextFeastLink" href="/myagapay/giving/give?giftType=feast">Offer</a>
             </article>
+          </section>
+
+          <section class="desktop-panel">
+            <div class="desktop-panel-head">
+              <h2>Active Funds</h2>
+              <a href="/myagapay/giving/give?giftType=fund">Give to fund</a>
+            </div>
+            <div class="active-funds-stack" id="desktopActiveFunds">
+              <article class="active-funds-card active-funds-empty">
+                <span class="campaign-pill">Funds</span>
+                <h3>No Active Funds</h3>
+                <p>Sign in and select a church to see its active giving funds.</p>
+              </article>
+            </div>
           </section>
 
           <section class="desktop-panel">
@@ -455,7 +469,7 @@
 
         <section class="mobile-section">
           <div class="mobile-section-head">
-            <h2>Calendar</h2>
+            <h2>Next Feast Offering</h2>
             <a href="/myagapay/giving/calendar">View all</a>
           </div>
           <article class="next-feast-card" id="nextFeastCard">
@@ -466,6 +480,20 @@
             </div>
             <a id="nextFeastLink" href="/myagapay/giving/give?giftType=feast">Offer</a>
           </article>
+        </section>
+
+        <section class="mobile-section">
+          <div class="mobile-section-head">
+            <h2>Active Funds</h2>
+            <a href="/myagapay/giving/give?giftType=fund">Give to fund</a>
+          </div>
+          <div class="active-funds-stack" id="activeFunds">
+            <article class="active-funds-card active-funds-empty">
+              <span class="campaign-pill">Funds</span>
+              <h3>No Active Funds</h3>
+              <p>Sign in and select a church to see its active giving funds.</p>
+            </article>
+          </div>
         </section>
 
         <section class="mobile-section mobile-live-section">

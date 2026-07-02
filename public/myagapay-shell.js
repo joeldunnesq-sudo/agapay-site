@@ -26,9 +26,9 @@
   function products() {
     const items = [
       { id: "giving", href: "/myagapay", label: "Give", icon: icons.give },
-      { id: "history", href: "/myagapay/giving/history", label: "History", icon: icons.history },
       { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", icon: icons.bookstore },
       { id: "calendar", href: "/myagapay/giving/calendar", label: "Calendar", icon: icons.calendar },
+      { id: "history", href: "/myagapay/giving/history", label: "History", icon: icons.history },
       { id: "learn", href: "/myagapay/learn", label: "Learn", icon: icons.learn }
     ];
     return items;
@@ -91,6 +91,34 @@
       body.has-myagapay-ios-back .myagapay-ios-back {
         display: inline-flex;
       }
+      .myagapay-settings-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        min-height: 34px;
+        border: 1px solid rgba(201, 162, 91, 0.34);
+        border-radius: 999px;
+        padding: 0 0.8rem;
+        background: rgba(255, 252, 246, 0.12);
+        color: currentColor;
+        font: 800 0.78rem/1 "DM Sans", system-ui, sans-serif;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .myagapay-settings-chip svg {
+        width: 0.95rem;
+        height: 0.95rem;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .donor-mobile-page .topbar .myagapay-settings-chip {
+        color: #061522;
+        background: rgba(255, 255, 255, 0.72);
+      }
       @media (min-width: 761px) {
         body.has-myagapay-ios-back .myagapay-ios-back { display: none; }
       }
@@ -123,6 +151,26 @@
       document.body.appendChild(button);
     }
     document.body.classList.toggle("has-myagapay-ios-back", shouldShowIosBackButton());
+  }
+
+  function ensureCanonicalHeader() {
+    if (!document.body.classList.contains("donor-mobile-page")) return;
+    if (document.querySelector(".donor-home-account-menu") || document.querySelector(".learn-account-utility")) return;
+    const topbar = document.querySelector(".content .topbar, main .topbar");
+    if (!topbar) return;
+    let actions = topbar.querySelector(".topbar-actions");
+    if (!actions) {
+      actions = document.createElement("div");
+      actions.className = "topbar-actions";
+      topbar.appendChild(actions);
+    }
+    if (actions.querySelector(".myagapay-settings-chip")) return;
+    const link = document.createElement("a");
+    link.className = "myagapay-settings-chip";
+    link.href = "/myagapay/account";
+    link.setAttribute("aria-label", "Open My AGAPAY account settings");
+    link.innerHTML = `${icons.account}<span>Account</span>`;
+    actions.appendChild(link);
   }
 
   function productNav(active = activeProduct(), className = "my-agapay-tabbar") {
@@ -221,6 +269,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     normalizeProductNavs();
     ensureIosBackButton();
+    ensureCanonicalHeader();
     refreshMyAgapayReleaseFlags();
     if (isProtectedPath()) {
       const current = session();

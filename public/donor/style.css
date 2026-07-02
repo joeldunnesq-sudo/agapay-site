@@ -1923,14 +1923,15 @@ body.donor-home {
   line-height: 1;
 }
 
-.campaign-stack {
+.campaign-stack,
+.active-funds-stack {
   display: grid;
   gap: 0.8rem;
 }
 
-.campaign-card {
+.campaign-card,
+.active-funds-card {
   position: relative;
-  display: block;
   border: 1px solid rgba(111, 106, 96, 0.18);
   border-top: 4px solid transparent;
   border-radius: 12px;
@@ -1942,7 +1943,23 @@ body.donor-home {
   overflow: hidden;
 }
 
-.campaign-card::before {
+.campaign-card {
+  display: block;
+}
+
+.active-funds-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+}
+
+.active-funds-empty {
+  display: block;
+}
+
+.campaign-card::before,
+.active-funds-card::before {
   content: "";
   position: absolute;
   inset: 0 0 auto;
@@ -1950,12 +1967,14 @@ body.donor-home {
   background: linear-gradient(90deg, var(--gold), rgba(184, 144, 47, 0.78), rgba(11, 33, 48, 0.78), var(--forest));
 }
 
-.campaign-card > * {
+.campaign-card > *,
+.active-funds-card > * {
   position: relative;
   z-index: 1;
 }
 
-.campaign-card h3 {
+.campaign-card h3,
+.active-funds-card h3 {
   margin-top: 0.7rem;
   color: #050505;
   font-family: var(--sans);
@@ -2018,7 +2037,8 @@ body.donor-home {
   background: var(--gold);
 }
 
-.campaign-card p {
+.campaign-card p,
+.active-funds-card p {
   margin-top: 0.6rem;
   color: #171715;
   font-size: 15px;
@@ -2041,6 +2061,27 @@ body.donor-home {
 .campaign-description {
   color: var(--stone) !important;
   font-size: 13px !important;
+}
+
+.active-funds-card p {
+  color: var(--stone);
+  font-size: 13px;
+}
+
+.active-funds-card a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border: 1px solid rgba(184, 144, 47, 0.56);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--deep);
+  padding: 0 0.95rem;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
 .next-feast-card {

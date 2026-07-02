@@ -100,10 +100,12 @@ assert.ok(myAgapayShell.includes('id: "history"') && myAgapayShell.includes('lab
 assert.ok(myAgapayShell.includes('id: "bookstore"') && myAgapayShell.includes('label: "Bookstore"'), "shared My AGAPAY shell should keep Bookstore in the product nav");
 assert.ok(myAgapayShell.includes('id: "calendar"') && myAgapayShell.includes('label: "Calendar"'), "shared My AGAPAY shell should include Calendar in the bottom product nav");
 assert.ok(myAgapayShell.includes('id: "learn"') && myAgapayShell.includes('label: "Learn"'), "shared My AGAPAY shell should define the canonical Learn product tab");
+assert.ok(myAgapayShell.indexOf('id: "calendar"') < myAgapayShell.indexOf('id: "history"') && myAgapayShell.indexOf('id: "history"') < myAgapayShell.indexOf('id: "learn"'), "shared My AGAPAY shell should place History between Calendar and Learn");
 assert.ok(!myAgapayShell.includes('id: "home"'), "shared My AGAPAY shell should treat Give as the default product instead of a separate global home tab");
 assert.ok(myAgapayShell.includes('pathname === "/myagapay"') && myAgapayShell.includes('return "giving"'), "shared My AGAPAY shell should make /myagapay resolve to the Give product");
 assert.ok(myAgapayShell.includes('data-myagapay-global-nav') && myAgapayShell.includes("normalizeProductNavs"), "shared shell should normalize mobile product navigation across dashboards");
 assert.ok(myAgapayShell.includes("ensureIosBackButton") && myAgapayShell.includes("myagapay-ios-back"), "shared shell should provide an in-app Back button for iPhone My AGAPAY screens");
+assert.ok(myAgapayShell.includes("ensureCanonicalHeader") && myAgapayShell.includes("myagapay-settings-chip"), "shared shell should add canonical account/settings access to My AGAPAY product headers");
 assert.ok(myAgapayShell.includes("handleUnauthorized") && myAgapayShell.includes("redirectToLogin"), "shared shell should enforce one expired-session response across My AGAPAY products");
 assert.ok(donorApp.includes('nav.setAttribute("hx-boost", "false")'), "donor shell should not htmx-boost dashboard navigation");
 assert.ok(donorApp.includes("function updateDonorAuthState()"), "donor shell should update guest/authenticated controls from localStorage session");
@@ -114,6 +116,8 @@ assert.ok(donorHome.includes("donor-phone"), "donor home should use the mobile-f
 assert.ok(donorHome.includes('const isGivingView = !["#products", "#my-agapay-products"].includes(window.location.hash)'), "My AGAPAY root should open the Give dashboard by default");
 assert.ok(donorHome.includes("metricMonth"), "donor home should show month-to-date giving");
 assert.ok(donorHome.includes("/myagapay/account"), "donor home avatar should link to My AGAPAY settings");
+assert.ok(donorHome.includes("Active Funds") && donorHome.includes("desktopActiveFunds") && donorHome.includes("activeFunds"), "Give dashboard should show active parish funds on desktop and mobile");
+assert.ok(donorHome.includes("Next Feast Offering"), "Give dashboard should use a giving-oriented feast card heading");
 const donorSettings = await readFile("public/donor/settings.html", "utf8");
 assert.ok(donorSettings.includes("saveDonorSettings(event)"), "donor settings should save through the donor API");
 const donorSecurity = await readFile("public/security.js", "utf8");

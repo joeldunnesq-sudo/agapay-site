@@ -648,6 +648,45 @@ function renderActiveCampaigns(parish) {
   targets.forEach((target) => { target.innerHTML = html; });
 }
 
+function fundLabel(fund) {
+  return fund?.name || fund?.label || fund?.id || "Designated fund";
+}
+
+function renderActiveFunds(parish) {
+  const targets = [document.getElementById("activeFunds"), document.getElementById("desktopActiveFunds")].filter(Boolean);
+  if (!targets.length) return;
+  const funds = (Array.isArray(parish?.funds) ? parish.funds : [])
+    .filter((fund) => fund && fund.active !== false && String(fund.status || "active").toLowerCase() !== "archived")
+    .slice(0, 4);
+  if (!funds.length) {
+    const empty = `
+      <article class="active-funds-card active-funds-empty">
+        <span class="campaign-pill">Funds</span>
+        <h3>No Active Funds</h3>
+        <p>${parish?.name ? "This church has not listed designated funds yet." : "Sign in and select a church to see its active giving funds."}</p>
+      </article>
+    `;
+    targets.forEach((target) => { target.innerHTML = empty; });
+    return;
+  }
+  const html = funds.map((fund) => {
+    const label = fundLabel(fund);
+    const description = fund.description || fund.note || "Give directly to this parish fund.";
+    const link = donorGiftUrl("fund", parish, { fund: fund.id || fund.name || label });
+    return `
+      <article class="active-funds-card">
+        <div>
+          <span class="campaign-pill">Fund</span>
+          <h3>${escapeHtml(label)}</h3>
+          <p>${escapeHtml(description)}</p>
+        </div>
+        <a href="${escapeHtml(link)}">Donate</a>
+      </article>
+    `;
+  }).join("");
+  targets.forEach((target) => { target.innerHTML = html; });
+}
+
 function renderNextFeast(parish) {
   const targets = [
     {
@@ -1383,6 +1422,7 @@ function renderDonorDashboardPayload(data) {
   updateQuickGiveLinks(parish);
   renderActiveCampaigns(parish);
   renderNextFeast(parish);
+  renderActiveFunds(parish);
 
   const recent = document.getElementById("recentOfferings");
   if (recent) recent.innerHTML = offeringRows(recentOfferings);
