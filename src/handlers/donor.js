@@ -954,6 +954,58 @@ function sacramentTypeLabel(type) {
   }[type] || type;
 }
 
+// Structured detail for baptism/chrismation and wedding requests. Lives in
+// satellite tables keyed on sacrament_requests.id — see
+// migration_sacrament_details.sql. Every other sacrament type has no detail
+// row, which is fine; attachSacramentDetails() just returns null for them.
+
+function publicBaptismDetails(row) {
+  if (!row) return null;
+  return {
+    candidateName: row.candidate_name,
+    candidateDob: row.candidate_dob || "",
+    candidateIsAdult: !!row.candidate_is_adult,
+    parentNames: row.parent_names || "",
+    patronSaint: row.patron_saint || "",
+    godparent1Name: row.godparent_1_name || "",
+    godparent1HomeParish: row.godparent_1_home_parish || "",
+    godparent1OrthodoxAttested: !!row.godparent_1_orthodox_attested,
+    godparent2Name: row.godparent_2_name || "",
+    godparent2HomeParish: row.godparent_2_home_parish || "",
+    godparent2OrthodoxAttested: !!row.godparent_2_orthodox_attested,
+  };
+}
+
+function publicWeddingDetails(row) {
+  if (!row) return null;
+  return {
+    partyAName: row.party_a_name,
+    partyAOrthodox: !!row.party_a_orthodox,
+    partyAPriorMarriage: !!row.party_a_prior_marriage,
+    partyBName: row.party_b_name,
+    partyBOrthodox: !!row.party_b_orthodox,
+    partyBPriorMarriage: !!row.party_b_prior_marriage,
+    koumbaroName: row.koumbaro_name || "",
+    koumbaroHomeParish: row.koumbaro_home_parish || "",
+    marriageLicenseStatus: row.marriage_license_status || "not_started",
+    premaritalCounselComplete: !!row.premarital_counsel_complete,
+  };
+}
+
+async function attachSacramentDetails(env, row) {
+  const base = publicSacramentRequest(row);
+  if (!row) return base;
+  if (row.sacrament_type === "baptism" || row.sacrament_type === "chrismation") {
+    const detail = await d1First(env, "SELECT * FROM sacrament_baptism_details WHERE request_id = ?", row.id).catch(() => null);
+    return { ...base, baptismDetails: publicBaptismDetails(detail) };
+  }
+  if (row.sacrament_type === "wedding") {
+    const detail = await d1First(env, "SELECT * FROM sacrament_wedding_details WHERE request_id = ?", row.id).catch(() => null);
+    return { ...base, weddingDetails: publicWeddingDetails(detail) };
+  }
+  return base;
+}
+
 // GET  /api/donor/sacraments        — list the signed-in donor's own requests
 //   ?parishId= also returns { available } for that parish's Stewardship Suite status,
 //   so the frontend knows whether to show the "Request a sacrament" form at all.
@@ -982,7 +1034,10 @@ export async function handleDonorSacraments(request, env) {
       available = Boolean(found && hasStewardshipAccess(found.registration));
     }
 
-    return json({ requests: (rows || []).map(publicSacramentRequest), available, parishId });
+    const requestsWithDetails = await Promise.all(
+      (rows || []).map((row) => attachSacramentDetails(env, row))
+    );
+    return json({ requests: requestsWithDetails, available, parishId });
   }
 
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
@@ -1031,9 +1086,30 @@ export async function handleDonorSacraments(request, env) {
 
   const requestedDate = String(body.requestedDate || "").trim().slice(0, 10);
   const requestedTimeWindow = String(body.requestedTimeWindow || "").trim().slice(0, 200);
-  const participantNames = String(body.participantNames || "").trim().slice(0, 1000);
   const notes = String(body.notes || "").trim().slice(0, 2000);
   const phone = String(body.phone || "").trim().slice(0, 40);
+
+  const baptismDetails = (sacramentType === "baptism" || sacramentType === "chrismation")
+    ? (body.baptismDetails || {}) : null;
+  const weddingDetails = sacramentType === "wedding" ? (body.weddingDetails || {}) : null;
+
+  if (baptismDetails && !String(baptismDetails.candidateName || "").trim()) {
+    return json({ error: "Candidate name is required." }, { status: 400 });
+  }
+  if (weddingDetails && (!String(weddingDetails.partyAName || "").trim() || !String(weddingDetails.partyBName || "").trim())) {
+    return json({ error: "Both parties' names are required." }, { status: 400 });
+  }
+
+  // Fall back to a derived label so existing dashboard views that only know
+  // about participant_names (not yet updated to read the detail tables)
+  // still show something sensible.
+  let participantNames = String(body.participantNames || "").trim().slice(0, 1000);
+  if (!participantNames && baptismDetails) {
+    participantNames = String(baptismDetails.candidateName || "").trim().slice(0, 1000);
+  }
+  if (!participantNames && weddingDetails) {
+    participantNames = `${weddingDetails.partyAName || ""} & ${weddingDetails.partyBName || ""}`.trim().slice(0, 1000);
+  }
 
   const id = generateSecret("sac");
   const now = new Date().toISOString();
@@ -1049,6 +1125,54 @@ export async function handleDonorSacraments(request, env) {
     requestedDate || null, requestedTimeWindow || null, participantNames || null,
     locationType, locationAddress || null, notes || null, phone || null, now, now
   );
+
+  if (baptismDetails) {
+    await d1Run(env, `
+      INSERT INTO sacrament_baptism_details
+        (request_id, candidate_name, candidate_dob, candidate_is_adult,
+         parent_names, patron_saint,
+         godparent_1_name, godparent_1_home_parish, godparent_1_orthodox_attested,
+         godparent_2_name, godparent_2_home_parish, godparent_2_orthodox_attested)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+      id,
+      String(baptismDetails.candidateName || "").trim().slice(0, 200),
+      String(baptismDetails.candidateDob || "").trim().slice(0, 10) || null,
+      baptismDetails.candidateIsAdult ? 1 : 0,
+      String(baptismDetails.parentNames || "").trim().slice(0, 400) || null,
+      String(baptismDetails.patronSaint || "").trim().slice(0, 200) || null,
+      String(baptismDetails.godparent1Name || "").trim().slice(0, 200) || null,
+      String(baptismDetails.godparent1HomeParish || "").trim().slice(0, 200) || null,
+      baptismDetails.godparent1OrthodoxAttested ? 1 : 0,
+      String(baptismDetails.godparent2Name || "").trim().slice(0, 200) || null,
+      String(baptismDetails.godparent2HomeParish || "").trim().slice(0, 200) || null,
+      baptismDetails.godparent2OrthodoxAttested ? 1 : 0
+    );
+  }
+
+  if (weddingDetails) {
+    await d1Run(env, `
+      INSERT INTO sacrament_wedding_details
+        (request_id, party_a_name, party_a_orthodox, party_a_prior_marriage,
+         party_b_name, party_b_orthodox, party_b_prior_marriage,
+         koumbaro_name, koumbaro_home_parish,
+         marriage_license_status, premarital_counsel_complete)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+      id,
+      String(weddingDetails.partyAName || "").trim().slice(0, 200),
+      weddingDetails.partyAOrthodox ? 1 : 0,
+      weddingDetails.partyAPriorMarriage ? 1 : 0,
+      String(weddingDetails.partyBName || "").trim().slice(0, 200),
+      weddingDetails.partyBOrthodox ? 1 : 0,
+      weddingDetails.partyBPriorMarriage ? 1 : 0,
+      String(weddingDetails.koumbaroName || "").trim().slice(0, 200) || null,
+      String(weddingDetails.koumbaroHomeParish || "").trim().slice(0, 200) || null,
+      ["not_started", "applied", "obtained"].includes(weddingDetails.marriageLicenseStatus)
+        ? weddingDetails.marriageLicenseStatus : "not_started",
+      weddingDetails.premaritalCounselComplete ? 1 : 0
+    );
+  }
 
   // Best-effort notification to the parish — never blocks the request itself.
   try {
@@ -1082,7 +1206,7 @@ export async function handleDonorSacraments(request, env) {
   } catch { /* notification failure never blocks the request */ }
 
   const row = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ?", id);
-  return json({ ok: true, request: publicSacramentRequest(row) });
+  return json({ ok: true, request: await attachSacramentDetails(env, row) });
 }
 
 // POST /api/donor/sacraments/:id/cancel — donor withdraws their own pending request
@@ -1105,7 +1229,7 @@ export async function handleDonorSacramentCancel(request, env, requestId) {
   const now = new Date().toISOString();
   await d1Run(env, "UPDATE sacrament_requests SET status = 'cancelled', updated_at = ? WHERE id = ?", now, requestId);
   const updated = await d1First(env, "SELECT * FROM sacrament_requests WHERE id = ?", requestId);
-  return json({ ok: true, request: publicSacramentRequest(updated) });
+  return json({ ok: true, request: await attachSacramentDetails(env, updated) });
 }
 
 export async function handleDonorCommemorations(request, env) {
