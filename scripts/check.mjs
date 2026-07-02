@@ -94,6 +94,9 @@ assert.ok(worker.includes('url.pathname === "/api/parish-interest"'), "worker sh
 const donorApp = await readFile("public/donor/app.js", "utf8");
 const myAgapayShell = await readFile("public/myagapay-shell.js", "utf8");
 assert.ok(myAgapayShell.includes('id: "giving"') && myAgapayShell.includes('label: "Give"'), "shared My AGAPAY shell should define the canonical Give product tab");
+assert.ok(myAgapayShell.includes('id: "history"') && myAgapayShell.includes('label: "History"'), "shared My AGAPAY shell should include History in the bottom product nav");
+assert.ok(myAgapayShell.includes('id: "bookstore"') && myAgapayShell.includes('label: "Bookstore"'), "shared My AGAPAY shell should keep Bookstore in the product nav");
+assert.ok(myAgapayShell.includes('id: "calendar"') && myAgapayShell.includes('label: "Calendar"'), "shared My AGAPAY shell should include Calendar in the bottom product nav");
 assert.ok(myAgapayShell.includes('id: "learn"') && myAgapayShell.includes('label: "Learn"'), "shared My AGAPAY shell should define the canonical Learn product tab");
 assert.ok(!myAgapayShell.includes('id: "home"'), "shared My AGAPAY shell should treat Give as the default product instead of a separate global home tab");
 assert.ok(myAgapayShell.includes('pathname === "/myagapay"') && myAgapayShell.includes('return "giving"'), "shared My AGAPAY shell should make /myagapay resolve to the Give product");
