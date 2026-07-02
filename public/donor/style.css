@@ -2034,33 +2034,35 @@ body.donor-home {
 .quick-give-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.55rem;
+  gap: 0.42rem;
 }
 
 .quick-give-tile {
-  min-height: 82px;
+  min-height: 76px;
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 0.42rem;
+  gap: 0.32rem;
   border: 1px solid rgba(111, 106, 96, 0.22);
   border-radius: 10px;
+  padding: 0.48rem 0.18rem;
   background: rgba(255, 255, 255, 0.82);
   color: #050505;
   text-align: center;
   text-decoration: none;
+  box-sizing: border-box;
   box-shadow: 0 4px 10px rgba(6, 21, 34, 0.04);
 }
 
 .quick-give-icon {
   display: grid;
   place-items: center;
-  min-height: 31px;
+  min-height: 27px;
 }
 
 .quick-give-tile svg {
-  width: 28px;
-  height: 28px;
+  width: 25px;
+  height: 25px;
   color: var(--deep);
   fill: none;
   stroke: currentColor;
@@ -2075,11 +2077,13 @@ body.donor-home {
 }
 
 .quick-give-tile > span:not(.quick-give-icon) {
+  width: 100%;
   color: #050505;
   font-family: var(--sans);
-  font-size: 12px;
+  font-size: 10.5px;
   font-weight: 800;
-  line-height: 1.08;
+  line-height: 1.05;
+  overflow-wrap: normal;
 }
 
 .campaign-stack,
@@ -3258,22 +3262,24 @@ body.donor-mobile-page {
   .desktop-quick-grid {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 0.85rem;
+    gap: 0.7rem;
     padding: 1.15rem;
   }
 
   .desktop-quick-card {
-    min-height: 128px;
+    min-height: 118px;
     display: grid;
     align-content: center;
     justify-items: center;
-    gap: 0.45rem;
+    gap: 0.38rem;
+    padding: 0.85rem 0.55rem;
     border: 1px solid rgba(111, 106, 96, 0.18);
     border-radius: var(--r);
     background: var(--paper);
     color: var(--deep);
     text-align: center;
     text-decoration: none;
+    box-sizing: border-box;
     transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
   }
 
@@ -3286,12 +3292,12 @@ body.donor-mobile-page {
   .desktop-quick-icon {
     display: grid;
     place-items: center;
-    min-height: 38px;
+    min-height: 34px;
   }
 
   .desktop-quick-icon svg {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     color: var(--deep);
     fill: none;
     stroke: currentColor;
@@ -3307,15 +3313,16 @@ body.donor-mobile-page {
 
   .desktop-quick-card strong {
     font-family: var(--serif);
-    font-size: 21px;
+    max-width: 100%;
+    font-size: 17px;
     line-height: 1;
   }
 
   .desktop-quick-card span:last-child {
-    max-width: 150px;
+    max-width: 118px;
     color: var(--stone);
-    font-size: 12px;
-    line-height: 1.4;
+    font-size: 10.5px;
+    line-height: 1.28;
   }
 
   .platform-products-panel {
@@ -3434,11 +3441,11 @@ body.donor-mobile-page {
   }
 
   .quick-give-grid {
-    gap: 0.5rem;
+    gap: 0.36rem;
   }
 
   .quick-give-tile {
-    min-height: 78px;
+    min-height: 72px;
   }
 }
 
@@ -3856,16 +3863,16 @@ body.donor-mobile-page {
   }
 
   .desktop-quick-grid {
-    gap: 0.75rem;
+    gap: 0.65rem;
     padding: 1rem;
   }
 
   .desktop-quick-card {
-    min-height: 126px;
+    min-height: 112px;
   }
 
   .desktop-quick-card strong {
-    font-size: 19px;
+    font-size: 16px;
   }
 }
 
