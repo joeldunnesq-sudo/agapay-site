@@ -182,7 +182,7 @@ function shortDate(value) {
 
 function calendarLabel(value) {
   return window.AGAPAYLiturgicalCalendar?.calendarLabel(value)
-    || (String(value || "julian").toLowerCase().includes("gregorian") ? "Revised Julian / Gregorian" : "Julian / Old Calendar");
+    || (String(value || "julian").toLowerCase().includes("gregorian") ? "Revised-Julian" : "Julian");
 }
 
 function nextFeastForCalendar(calendar) {
@@ -771,7 +771,7 @@ function renderDonorCalendarFeasts(parish) {
   setText("nextFeastDate", calendarShortDateIso(next?.date));
   setText("nextFeastName", next?.name || "No feast found.");
   setText("paschaDate", calendarShortDateIso(pascha?.iso));
-  setText("calendarShortName", calendar === "gregorian" ? "New" : "Old");
+  setText("calendarShortName", calendar === "gregorian" ? "Revised-Julian" : "Julian");
   setText("calendarFullName", label);
 
   grid.innerHTML = highlighted.map((feast) => `

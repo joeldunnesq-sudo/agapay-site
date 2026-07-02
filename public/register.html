@@ -462,8 +462,8 @@
           <label for="liturgicalCalendar">Liturgical calendar <span class="required">*</span></label>
           <div class="select-wrap">
             <select id="liturgicalCalendar">
-              <option value="julian">Julian / Old Calendar</option>
-              <option value="gregorian">Revised Julian / Gregorian</option>
+              <option value="julian">Julian</option>
+              <option value="gregorian">Revised-Julian</option>
             </select>
           </div>
           <span class="form-hint">Used later for feast-day campaign timing in the parish dashboard.</span>
@@ -848,7 +848,7 @@
         ['Address',        address],
         ...(config.requiresJurisdiction || document.getElementById('jurisdiction').value ? [['Jurisdiction', document.getElementById('jurisdiction').value || '-']] : []),
         ...(document.getElementById('website').value ? [['Website', document.getElementById('website').value]] : []),
-        ...(config.showsCalendar ? [['Liturgical calendar', document.getElementById('liturgicalCalendar').selectedOptions[0]?.textContent || 'Julian / Old Calendar']] : []),
+        ...(config.showsCalendar ? [['Liturgical calendar', document.getElementById('liturgicalCalendar').selectedOptions[0]?.textContent || 'Julian']] : []),
         ...(document.getElementById('organizationDescription').value.trim() ? [['Description', document.getElementById('organizationDescription').value.trim()]] : []),
       ];
       const notes = document.getElementById('notes').value.trim();

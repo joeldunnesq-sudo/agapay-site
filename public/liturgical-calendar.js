@@ -130,7 +130,7 @@
         calendar: key,
         date: isoFromGregorianDate(civil),
         displayDate: displayDate(civil),
-        sourceDate: key === "julian" ? `Julian ${MONTH_NAMES[feast.month - 1]} ${feast.day}, ${civil.sourceYear}` : `Gregorian ${MONTH_NAMES[feast.month - 1]} ${feast.day}, ${year}`
+        sourceDate: key === "julian" ? `Julian ${MONTH_NAMES[feast.month - 1]} ${feast.day}, ${civil.sourceYear}` : `Revised-Julian ${MONTH_NAMES[feast.month - 1]} ${feast.day}, ${year}`
       };
     }).sort((a, b) => a.date.localeCompare(b.date));
   }
@@ -169,7 +169,7 @@
   }
 
   function calendarLabel(calendar) {
-    return calendarKey(calendar) === "gregorian" ? "Revised Julian / Gregorian" : "Julian / Old Calendar";
+    return calendarKey(calendar) === "gregorian" ? "Revised-Julian" : "Julian";
   }
 
   window.AGAPAYLiturgicalCalendar = {

@@ -284,7 +284,7 @@ function buildCalendarToggle(resolvedCalendar) {
     active: resolvedCalendar,
     options: [
       { value: "julian", label: "Julian" },
-      { value: "revised-julian", label: "Revised Julian" }
+      { value: "revised-julian", label: "Revised-Julian" }
     ],
     description: calendarLabel(resolvedCalendar === "revised-julian" ? "gregorian" : "julian")
   };

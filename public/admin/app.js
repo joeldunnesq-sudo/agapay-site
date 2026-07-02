@@ -1944,8 +1944,8 @@ let selectedReference = '';
               <div>
                 <label for="liturgicalCalendar">Liturgical calendar</label>
                 <select id="liturgicalCalendar">
-                  <option value="julian" ${(reg.liturgicalCalendar || 'julian') === 'julian' ? 'selected' : ''}>Julian / Old Calendar</option>
-                  <option value="gregorian" ${reg.liturgicalCalendar === 'gregorian' ? 'selected' : ''}>Revised Julian / Gregorian</option>
+                  <option value="julian" ${(reg.liturgicalCalendar || 'julian') === 'julian' ? 'selected' : ''}>Julian</option>
+                  <option value="gregorian" ${reg.liturgicalCalendar === 'gregorian' ? 'selected' : ''}>Revised-Julian</option>
                 </select>
               </div>
               <div>

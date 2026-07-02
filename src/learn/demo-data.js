@@ -953,7 +953,7 @@ const onboarding = {
   steps: [
     { id: "setup_household", title: "Household", status: "complete", summary: "Family profile, parish, and method selected." },
     { id: "setup_children", title: "Children", status: "complete", summary: "Five children added with age and grade bands." },
-    { id: "setup_calendar", title: "Church Calendar", status: "complete", summary: "Julian calendar selected with Revised Julian preview available." },
+    { id: "setup_calendar", title: "Church Calendar", status: "complete", summary: "Julian calendar selected with Revised-Julian preview available." },
     { id: "setup_books", title: "Books & Streams", status: "active", summary: "Choose read-alouds, morning basket, and family streams." },
     { id: "setup_records", title: "Records", status: "upcoming", summary: "Set evaluation models and report export defaults." },
     { id: "setup_coop", title: "Co-op", status: "upcoming", summary: "Optionally connect a feature-flagged community." }
