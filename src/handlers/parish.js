@@ -2392,7 +2392,11 @@ export async function enrichParishGivingOptions(env, parish) {
     const totals = campaignRaisedTotals(campaign, gifts);
     const supporters = campaignPublicSupporters(campaign, gifts);
     const photos = Array.isArray(campaign.photos) ? campaign.photos : [];
-    const optionKeys = normalizedOptionKeys(campaign);
+    const optionKeys = [
+      ...normalizedOptionKeys(campaign),
+      campaign.slug,
+      campaign.code
+    ].filter(Boolean).map((value) => String(value).trim().toLowerCase());
     const isStFiacreRoofDemo = parish.id === "st-fiacre"
       && optionKeys.some((key) => ["alms", "roof-campaign", "roof-restoration", "roof campaign", "church roof restoration"].includes(key));
     const coverPhotoUrl = campaign.coverPhotoUrl
