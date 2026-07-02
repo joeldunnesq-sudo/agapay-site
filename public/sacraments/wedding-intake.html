@@ -305,8 +305,9 @@
     document.getElementById(id).addEventListener('change', updateReviewNotice);
   });
 
-  // Same auth pattern as the baptism form — meant to run inside the
-  // authenticated My AGAPAY shell.
+  // Matches the real My AGAPAY shell auth pattern (see public/myagapay-shell.js:
+  // authHeaders()) — session lives in localStorage under agapayDonorToken /
+  // agapayDonorEmail, sent as a Bearer token plus X-AGAPAY-Donor-Email.
   document.getElementById('weddingForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -329,13 +330,16 @@
       }
     };
 
+    const token = window.localStorage.getItem('agapayDonorToken') || '';
+    const email = window.localStorage.getItem('agapayDonorEmail') || '';
+    const headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (email) headers['X-AGAPAY-Donor-Email'] = email;
+
     try {
       const res = await fetch('/api/donor/sacraments', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${window.localStorage.getItem('agapay_donor_token') || ''}`,
-        },
+        headers,
         body: JSON.stringify(payload)
       });
       const data = await res.json();
