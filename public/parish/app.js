@@ -926,11 +926,13 @@
     const live = document.getElementById('bookstoreLiveContent');
     const navBadge = document.getElementById('bookstoreNavBadge');
     const mobileBadge = document.getElementById('mobileBookstoreBadge');
+    const status = document.getElementById('bookstoreStatusLabel');
     if (!currentParish) return;
 
-    // Reuse the Stewardship Suite status already fetched for that tab.
+    // Reuse the Stewardship Suite status already fetched for that tab, with
+    // the dashboard payload as a fallback when the parish opens Bookstore first.
     const sw = stewardshipState.stewardship || {};
-    const swActive = sw.active || ['active', 'trialing', 'comped'].includes(sw.status);
+    const swActive = Boolean(currentParish.stewardshipActive || sw.active || ['active', 'trialing', 'comped'].includes(sw.status));
     if (navBadge) navBadge.hidden = swActive;
     if (mobileBadge) mobileBadge.hidden = swActive;
     if (!swActive) {
@@ -940,6 +942,10 @@
     }
     if (upsell) upsell.hidden = true;
     if (live) live.hidden = false;
+    if (status) {
+      status.textContent = currentParish.bookstoreEnabled ? 'Live in My AGAPAY' : 'Hidden until enabled';
+      status.className = 'sw-suite-status-label ' + (currentParish.bookstoreEnabled ? 'sw-suite-status--active' : 'sw-suite-status--upsell');
+    }
 
     if (bookstoreCatalogState.loaded && !force) {
       renderBookstoreCurrentItems(bookstoreCatalogState.products);
@@ -975,24 +981,34 @@
     const pane = document.getElementById('bookstoreCurrentItems');
     if (!pane) return;
     if (!products.length) {
-      pane.innerHTML = '<p style="color:var(--stone,#6F6A60);font-size:13.5px;margin:0;">Nothing added yet — use the starter catalog below to get going.</p>';
+      pane.innerHTML = '<p class="bookstore-empty">Nothing added yet. Use the starter catalog below or add a custom item.</p>';
       return;
     }
     pane.innerHTML = `
-      <table class="sw-simple-table" style="width:100%;border-collapse:collapse;">
+      <table class="bookstore-table">
         <thead><tr>
-          <th style="text-align:left;padding:6px 8px;font-size:12px;color:var(--stone,#6F6A60);">Item</th>
-          <th style="text-align:left;padding:6px 8px;font-size:12px;color:var(--stone,#6F6A60);">Category</th>
-          <th style="text-align:right;padding:6px 8px;font-size:12px;color:var(--stone,#6F6A60);">Price</th>
-          <th style="text-align:right;padding:6px 8px;font-size:12px;color:var(--stone,#6F6A60);">In stock</th>
+          <th>Item</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>In stock</th>
+          <th>Status</th>
+          <th></th>
         </tr></thead>
         <tbody>
           ${products.map(p => `
-            <tr style="border-top:1px solid rgba(166,159,145,0.2);">
-              <td style="padding:6px 8px;">${escapeHtml(p.name)}</td>
-              <td style="padding:6px 8px;">${escapeHtml(BOOKSTORE_CATEGORY_LABELS[p.category] || p.category)}</td>
-              <td style="padding:6px 8px;text-align:right;">${money(p.priceCents)}</td>
-              <td style="padding:6px 8px;text-align:right;">${Number(p.stockQuantity || 0)}</td>
+            <tr>
+              <td>
+                <strong>${escapeHtml(p.name)}</strong>
+                ${p.sku ? `<span>${escapeHtml(p.sku)}</span>` : ''}
+              </td>
+              <td>${escapeHtml(BOOKSTORE_CATEGORY_LABELS[p.category] || p.category)}</td>
+              <td><input class="bookstore-mini-input" type="number" min="0.01" step="0.01" value="${(Number(p.priceCents || 0) / 100).toFixed(2)}" data-bookstore-price="${escapeAttr(p.id)}" /></td>
+              <td><input class="bookstore-mini-input" type="number" min="0" step="1" value="${Number(p.stockQuantity || 0)}" data-bookstore-stock="${escapeAttr(p.id)}" /></td>
+              <td><span class="bookstore-status-pill">${escapeHtml(p.status || 'active')}</span></td>
+              <td class="bookstore-row-actions">
+                <button class="sw-action-btn" type="button" onclick="saveBookstoreItem('${escapeAttr(p.id)}', this)">Save</button>
+                <button class="sw-action-btn danger" type="button" onclick="archiveBookstoreItem('${escapeAttr(p.id)}', this)">Archive</button>
+              </td>
             </tr>
           `).join('')}
         </tbody>
@@ -1006,16 +1022,16 @@
     if (!catalog.length) { pane.innerHTML = '<p style="margin:0;">No starter items available.</p>'; return; }
 
     pane.innerHTML = catalog.map(group => `
-      <div style="margin-bottom:1.1rem;">
-        <h4 style="margin:0 0 0.5rem;font-size:14px;color:var(--ink,#171715);">${escapeHtml(group.label)}</h4>
-        <div style="display:flex;flex-direction:column;gap:6px;">
+      <div class="bookstore-starter-group">
+        <h4>${escapeHtml(group.label)}</h4>
+        <div class="bookstore-starter-list">
           ${group.items.map(item => `
-            <label style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:8px;background:${item.alreadyAdded ? 'rgba(46,107,63,0.06)' : 'transparent'};">
-              <input type="checkbox" data-starter-key="${escapeAttr(item.key)}" ${item.alreadyAdded ? 'disabled checked' : ''} style="flex-shrink:0;" />
-              <span style="flex:1;font-size:13.5px;">${escapeHtml(item.name)}${item.alreadyAdded ? ' <em style="color:var(--stone,#6F6A60);font-style:normal;">— already added</em>' : ''}</span>
+            <label class="bookstore-starter-row ${item.alreadyAdded ? 'is-added' : ''}">
+              <input type="checkbox" data-starter-key="${escapeAttr(item.key)}" ${item.alreadyAdded ? 'disabled checked' : ''} />
+              <span>${escapeHtml(item.name)}${item.alreadyAdded ? ' <em>already added</em>' : ''}</span>
               ${item.alreadyAdded ? '' : `
-                <input type="number" min="0.01" step="0.01" value="${(item.suggestedPriceCents / 100).toFixed(2)}" data-starter-price="${escapeAttr(item.key)}" style="width:76px;padding:4px 6px;border:1px solid rgba(166,159,145,0.4);border-radius:6px;font-size:13px;" title="Price" />
-                <input type="number" min="0" step="1" value="0" data-starter-stock="${escapeAttr(item.key)}" style="width:60px;padding:4px 6px;border:1px solid rgba(166,159,145,0.4);border-radius:6px;font-size:13px;" title="Starting stock count" />
+                <input type="number" min="0.01" step="0.01" value="${(item.suggestedPriceCents / 100).toFixed(2)}" data-starter-price="${escapeAttr(item.key)}" title="Price" />
+                <input type="number" min="0" step="1" value="0" data-starter-stock="${escapeAttr(item.key)}" title="Starting stock count" />
               `}
             </label>
           `).join('')}
@@ -1052,6 +1068,85 @@
       setStatus(err.message, 'error');
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = 'Add selected items to my bookstore'; }
+    }
+  }
+
+  async function submitBookstoreManualItem(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const btn = form.querySelector('button[type="submit"]');
+    const body = {
+      name: document.getElementById('bookstoreItemName')?.value || '',
+      description: document.getElementById('bookstoreItemDescription')?.value || '',
+      category: document.getElementById('bookstoreItemCategory')?.value || 'other',
+      priceCents: Math.round(Number(document.getElementById('bookstoreItemPrice')?.value || 0) * 100),
+      stockQuantity: Number(document.getElementById('bookstoreItemStock')?.value || 0),
+      sku: document.getElementById('bookstoreItemSku')?.value || '',
+      imageUrl: document.getElementById('bookstoreItemImage')?.value || ''
+    };
+    if (!body.name.trim() || body.priceCents < 1) {
+      setStatus('Item name and price are required.', 'error');
+      return;
+    }
+    if (btn) { btn.disabled = true; btn.textContent = 'Adding...'; }
+    try {
+      const res = await fetch(bookstoreApi('/products'), {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to add item.');
+      form.reset();
+      document.getElementById('bookstoreItemStock').value = '0';
+      setStatus('Bookstore item added.', 'success');
+      await loadBookstoreCatalogTab(true);
+    } catch (err) {
+      setStatus(err.message, 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Add item'; }
+    }
+  }
+
+  async function saveBookstoreItem(productId, btn) {
+    const priceInput = document.querySelector(`[data-bookstore-price="${CSS.escape(productId)}"]`);
+    const stockInput = document.querySelector(`[data-bookstore-stock="${CSS.escape(productId)}"]`);
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+    try {
+      const res = await fetch(bookstoreApi('/products/' + encodeURIComponent(productId)), {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceCents: Math.round(Number(priceInput?.value || 0) * 100),
+          stockQuantity: Number(stockInput?.value || 0)
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to save item.');
+      setStatus('Bookstore item saved.', 'success');
+      await loadBookstoreCatalogTab(true);
+    } catch (err) {
+      setStatus(err.message, 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+    }
+  }
+
+  async function archiveBookstoreItem(productId, btn) {
+    if (!confirm('Archive this bookstore item? Parishioners will no longer see it.')) return;
+    if (btn) { btn.disabled = true; btn.textContent = 'Archiving...'; }
+    try {
+      const res = await fetch(bookstoreApi('/products/' + encodeURIComponent(productId)), {
+        method: 'DELETE',
+        headers: authHeaders()
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to archive item.');
+      setStatus('Bookstore item archived.', 'success');
+      await loadBookstoreCatalogTab(true);
+    } catch (err) {
+      setStatus(err.message, 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Archive'; }
     }
   }
 

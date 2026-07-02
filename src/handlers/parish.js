@@ -86,6 +86,80 @@ function d1(env) {
 
 export const MAX_DONATION_CENTS = 5_000_000;
 
+const BOOKSTORE_CATEGORIES = new Set(["book", "prayer_rope", "icon", "candle", "jewelry", "incense", "cd_dvd", "other"]);
+
+const BOOKSTORE_STARTER_CATALOG = [
+  {
+    label: "Books",
+    items: [
+      { key: "orthodox-study-bible", name: "Orthodox Study Bible", category: "book", suggestedPriceCents: 4995 },
+      { key: "prayer-book", name: "Jordanville Prayer Book", category: "book", suggestedPriceCents: 2495 },
+      { key: "way-of-a-pilgrim", name: "The Way of a Pilgrim", category: "book", suggestedPriceCents: 1595 }
+    ]
+  },
+  {
+    label: "Devotional Items",
+    items: [
+      { key: "wool-prayer-rope-33", name: "33-knot wool prayer rope", category: "prayer_rope", suggestedPriceCents: 1800 },
+      { key: "small-icon-christ", name: "Small icon of Christ", category: "icon", suggestedPriceCents: 2200 },
+      { key: "beeswax-candle-bundle", name: "Beeswax candle bundle", category: "candle", suggestedPriceCents: 1200 }
+    ]
+  },
+  {
+    label: "Church Goods",
+    items: [
+      { key: "cross-necklace", name: "Baptismal cross necklace", category: "jewelry", suggestedPriceCents: 3000 },
+      { key: "frankincense-sampler", name: "Frankincense sampler", category: "incense", suggestedPriceCents: 1400 },
+      { key: "chant-cd", name: "Parish chant recording", category: "cd_dvd", suggestedPriceCents: 1500 }
+    ]
+  }
+];
+
+function centsFromBody(value, fallback = 0) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.max(0, Math.round(number));
+}
+
+function normalizeBookstoreProduct(row) {
+  return {
+    id: row.id,
+    variantId: row.variant_id || "",
+    name: row.name || "",
+    description: row.description || "",
+    category: row.item_category || "other",
+    sku: row.sku || row.default_sku || "",
+    priceCents: Number(row.unit_price_cents || 0),
+    costBasisCents: Number(row.cost_basis_cents || 0),
+    stockQuantity: Number(row.stock_quantity || 0),
+    reorderThreshold: Number(row.reorder_threshold || 0),
+    status: row.status || "active",
+    imageUrl: row.image_url || "",
+    updatedAt: row.updated_at || ""
+  };
+}
+
+function normalizeBookstoreBody(body = {}) {
+  const category = BOOKSTORE_CATEGORIES.has(String(body.category || body.itemCategory || "").trim())
+    ? String(body.category || body.itemCategory).trim()
+    : "other";
+  const name = String(body.name || "").trim().slice(0, 160);
+  const description = String(body.description || "").trim().slice(0, 1200);
+  const sku = String(body.sku || "").trim().slice(0, 80);
+  const imageUrl = String(body.imageUrl || body.image_url || "").trim().slice(0, 800);
+  return {
+    name,
+    description,
+    category,
+    sku,
+    imageUrl,
+    priceCents: centsFromBody(body.priceCents, 0),
+    stockQuantity: centsFromBody(body.stockQuantity, 0),
+    costBasisCents: centsFromBody(body.costBasisCents, 0),
+    reorderThreshold: centsFromBody(body.reorderThreshold, 0)
+  };
+}
+
 async function sendDonationReceiptIfNeeded(env, offering = {}) {
   const donorModule = await import("./donor.js");
   return donorModule.sendDonationReceiptIfNeeded(env, offering);
@@ -4322,6 +4396,161 @@ export async function handleParishRecurringHealth(request, env, parishId) {
   });
 }
 
+export async function handleParishBookstore(request, env, parishId, subpath = "") {
+  const limited = await rateLimit(request, env, "parish-bookstore", { limit: 80, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  if (!d1(env)) return missingProductionStoreResponse();
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const token = getBearerToken(request);
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
+    return unauthorized();
+  }
+  if (!hasStewardshipAccess(found.registration)) {
+    return json({ error: "Bookstore Payments requires AGAPAY Stewardship Suite." }, { status: 403 });
+  }
+
+  const segments = String(subpath || "").replace(/^\/+/, "").split("/").filter(Boolean);
+  const now = new Date().toISOString();
+
+  if (request.method === "GET" && segments[0] === "starter-catalog") {
+    const existing = await d1All(env,
+      `SELECT default_sku FROM commerce_products
+       WHERE parish_id = ? AND commerce_module = 'bookstore' AND default_sku IS NOT NULL AND default_sku <> ''`,
+      parishId
+    );
+    const existingSkus = new Set(existing.map(row => String(row.default_sku || "")));
+    return json({
+      catalog: BOOKSTORE_STARTER_CATALOG.map(group => ({
+        label: group.label,
+        items: group.items.map(item => ({
+          ...item,
+          alreadyAdded: existingSkus.has(item.key)
+        }))
+      }))
+    });
+  }
+
+  if (request.method === "POST" && segments[0] === "starter-catalog" && segments[1] === "add") {
+    let body = {};
+    try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, { status: 400 }); }
+    const requested = Array.isArray(body.items) ? body.items : [];
+    const flattened = BOOKSTORE_STARTER_CATALOG.flatMap(group => group.items);
+    const starterByKey = new Map(flattened.map(item => [item.key, item]));
+    const added = [];
+
+    for (const entry of requested.slice(0, 25)) {
+      const key = String(entry.key || "").trim();
+      const starter = starterByKey.get(key);
+      if (!starter) continue;
+      const priceCents = centsFromBody(entry.priceCents, starter.suggestedPriceCents);
+      const stockQuantity = centsFromBody(entry.stockQuantity, 0);
+      const productId = generateSecret("commerce_product");
+      const variantId = generateSecret("commerce_variant");
+      await d1Run(env,
+        `INSERT OR IGNORE INTO commerce_products
+          (id, parish_id, commerce_module, name, description, item_category, default_sku, status, created_at, updated_at)
+         VALUES (?, ?, 'bookstore', ?, ?, ?, ?, 'active', ?, ?)`,
+        productId, parishId, starter.name, "", starter.category, starter.key, now, now
+      );
+      const product = await d1First(env,
+        `SELECT id FROM commerce_products WHERE parish_id = ? AND default_sku = ?`,
+        parishId, starter.key
+      );
+      const resolvedProductId = product?.id || productId;
+      await d1Run(env,
+        `INSERT OR IGNORE INTO commerce_product_variants
+          (id, product_id, parish_id, commerce_module, sku, variant_name, unit_price_cents, stock_quantity, status, created_at, updated_at)
+         VALUES (?, ?, ?, 'bookstore', ?, '', ?, ?, 'active', ?, ?)`,
+        variantId, resolvedProductId, parishId, starter.key, priceCents, stockQuantity, now, now
+      );
+      added.push({ key, name: starter.name });
+    }
+
+    return json({ ok: true, added });
+  }
+
+  if (segments[0] === "products" && request.method === "GET" && segments.length === 1) {
+    const rows = await d1All(env,
+      `SELECT p.*, v.id AS variant_id, v.sku, v.unit_price_cents, v.cost_basis_cents,
+              v.stock_quantity, v.reorder_threshold
+       FROM commerce_products p
+       LEFT JOIN commerce_product_variants v
+         ON v.product_id = p.id AND v.status = 'active'
+       WHERE p.parish_id = ? AND p.commerce_module = 'bookstore' AND p.status <> 'archived'
+       ORDER BY p.name COLLATE NOCASE ASC`,
+      parishId
+    );
+    return json({ products: rows.map(normalizeBookstoreProduct) });
+  }
+
+  if (segments[0] === "products" && request.method === "POST" && segments.length === 1) {
+    let body = {};
+    try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, { status: 400 }); }
+    const item = normalizeBookstoreBody(body);
+    if (!item.name) return json({ error: "Item name is required." }, { status: 422 });
+    if (item.priceCents < 1) return json({ error: "Price must be greater than zero." }, { status: 422 });
+    const productId = generateSecret("commerce_product");
+    const variantId = generateSecret("commerce_variant");
+    await d1Run(env,
+      `INSERT INTO commerce_products
+        (id, parish_id, commerce_module, name, description, item_category, default_sku, status, image_url, created_at, updated_at)
+       VALUES (?, ?, 'bookstore', ?, ?, ?, ?, 'active', ?, ?, ?)`,
+      productId, parishId, item.name, item.description, item.category, item.sku || null, item.imageUrl, now, now
+    );
+    await d1Run(env,
+      `INSERT INTO commerce_product_variants
+        (id, product_id, parish_id, commerce_module, sku, variant_name, unit_price_cents,
+         cost_basis_cents, stock_quantity, reorder_threshold, status, created_at, updated_at)
+       VALUES (?, ?, ?, 'bookstore', ?, '', ?, ?, ?, ?, 'active', ?, ?)`,
+      variantId, productId, parishId, item.sku || null, item.priceCents, item.costBasisCents,
+      item.stockQuantity, item.reorderThreshold, now, now
+    );
+    return json({ ok: true, product: { id: productId } });
+  }
+
+  if (segments[0] === "products" && segments[1]) {
+    const productId = decodeURIComponent(segments[1]);
+    const product = await d1First(env,
+      `SELECT p.id, v.id AS variant_id
+       FROM commerce_products p
+       LEFT JOIN commerce_product_variants v ON v.product_id = p.id AND v.status = 'active'
+       WHERE p.id = ? AND p.parish_id = ? AND p.commerce_module = 'bookstore'`,
+      productId, parishId
+    );
+    if (!product) return json({ error: "Bookstore item not found." }, { status: 404 });
+
+    if (request.method === "PATCH") {
+      let body = {};
+      try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, { status: 400 }); }
+      const priceCents = centsFromBody(body.priceCents, 0);
+      const stockQuantity = centsFromBody(body.stockQuantity, 0);
+      if (priceCents < 1) return json({ error: "Price must be greater than zero." }, { status: 422 });
+      await d1Run(env, "UPDATE commerce_products SET updated_at = ? WHERE id = ?", now, productId);
+      if (product.variant_id) {
+        await d1Run(env,
+          `UPDATE commerce_product_variants
+           SET unit_price_cents = ?, stock_quantity = ?, updated_at = ?
+           WHERE id = ? AND parish_id = ?`,
+          priceCents, stockQuantity, now, product.variant_id, parishId
+        );
+      }
+      return json({ ok: true });
+    }
+
+    if (request.method === "DELETE") {
+      await d1Run(env, "UPDATE commerce_products SET status = 'archived', updated_at = ? WHERE id = ? AND parish_id = ?", now, productId, parishId);
+      await d1Run(env, "UPDATE commerce_product_variants SET status = 'archived', updated_at = ? WHERE product_id = ? AND parish_id = ?", now, productId, parishId);
+      return json({ ok: true });
+    }
+  }
+
+  return json({ error: "Method not allowed" }, { status: 405 });
+}
+
 export function parishDashboardPayload(parishId, registration) {
   return {
     parishId,
@@ -4358,6 +4587,8 @@ export function parishDashboardPayload(parishId, registration) {
     recurringGivingEnabled: registration.recurringGivingEnabled ?? true,
     candlesEnabled: registration.candlesEnabled ?? true,
     commemorationsEnabled: registration.commemorationsEnabled ?? true,
+    bookstoreEnabled: registration.bookstoreEnabled ?? false,
+    stewardshipActive: hasStewardshipAccess(registration),
     funds: Array.isArray(registration.funds) ? registration.funds : [],
     campaigns: Array.isArray(registration.campaigns) ? registration.campaigns : [],
     feastCampaigns: Array.isArray(registration.feastCampaigns) ? registration.feastCampaigns : []
@@ -4421,6 +4652,7 @@ export async function handleParishDashboard(request, env, parishId) {
       recurringGivingEnabled: Boolean(body.recurringGivingEnabled ?? current.recurringGivingEnabled ?? true),
       candlesEnabled: Boolean(body.candlesEnabled ?? current.candlesEnabled ?? true),
       commemorationsEnabled: Boolean(body.commemorationsEnabled ?? current.commemorationsEnabled ?? true),
+      bookstoreEnabled: Boolean(body.bookstoreEnabled ?? current.bookstoreEnabled ?? false),
       funds: Array.isArray(body.funds) ? body.funds : current.funds,
       campaigns: Array.isArray(body.campaigns) ? body.campaigns : current.campaigns,
       feastCampaigns: Array.isArray(body.feastCampaigns) ? body.feastCampaigns : current.feastCampaigns,

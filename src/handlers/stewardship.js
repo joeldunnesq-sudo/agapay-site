@@ -2418,73 +2418,74 @@ export async function handleStewardshipGivingMetricsPage(request, env) {
   <link rel="stylesheet" href="${base}/parish/style.css" />
   <link rel="stylesheet" href="${base}/styles/stewardship.css" />
 </head>
-<body class="dashboard-body">
-  <div class="dashboard-shell">
+<body class="dashboard-body sw-report-page">
+  <div class="dashboard-shell sw-report-shell">
     ${dashboardNav(registration, "stewardship", base)}
-    <main class="dashboard-main">
-      <div class="page-header">
+    <main class="dashboard-main sw-report-main">
+      <div class="sw-report-header">
         <div>
-          <h1>Giving Metrics</h1>
-          <p style="color:var(--text-muted);margin:0"><a href="/parish/stewardship">← Back to Stewardship</a></p>
+          <span class="sw-report-eyebrow">Stewardship Suite</span>
+          <h1>Full Metrics Report</h1>
+          <p>Review pledge progress, fund activity, donor distribution, and retention for ${escHtml(parishName)}.</p>
         </div>
-        <div style="display:flex;gap:.75rem;align-items:center">
-          <select id="year-select" class="form-select" onchange="loadAll()">
+        <div class="sw-report-actions">
+          <a class="sw-report-back" href="/parish/stewardship">Back to Stewardship</a>
+          <select id="year-select" class="sw-year-select" onchange="loadAll()">
             ${yearOptions}
           </select>
-          <button onclick="downloadReport()" class="btn btn-primary" id="pdf-btn">Download Report PDF</button>
+          <button onclick="downloadReport()" class="btn btn-gold" id="pdf-btn">Download PDF</button>
         </div>
       </div>
 
       <!-- KPIs -->
-      <div id="kpi-grid" class="giving-kpi-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem"></div>
+      <div id="kpi-grid" class="giving-kpi-grid"></div>
 
       <!-- Pledge progress -->
-      <section class="module-card" style="margin-bottom:1.5rem">
-        <h2 style="font-size:1rem;margin-bottom:.75rem">Pledge vs. Actual &amp; Run Rate</h2>
+      <section class="module-card sw-report-card">
+        <h2>Pledge vs. Actual &amp; Run Rate</h2>
         <div id="progress-bars"></div>
       </section>
 
       <!-- Fund breakdown -->
-      <section class="module-card" style="margin-bottom:1.5rem">
-        <h2 style="font-size:1rem;margin-bottom:.75rem">Giving by Fund</h2>
-        <div id="funds-table" style="overflow-x:auto"></div>
+      <section class="module-card sw-report-card">
+        <h2>Giving by Fund</h2>
+        <div id="funds-table" class="sw-report-table-wrap"></div>
       </section>
 
       <!-- Two-col: distribution + retention -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
-        <section class="module-card">
-          <h2 style="font-size:1rem;margin-bottom:.75rem">Giving Distribution</h2>
-          <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:.75rem">Anonymized — no individual identities disclosed.</p>
+      <div class="sw-report-two-col">
+        <section class="module-card sw-report-card">
+          <h2>Giving Distribution</h2>
+          <p class="sw-report-muted">Anonymized. No individual identities disclosed.</p>
           <div id="tier-chart"></div>
         </section>
-        <section class="module-card">
-          <h2 style="font-size:1rem;margin-bottom:.75rem">Donor Retention</h2>
-          <div id="retention-cards" style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem"></div>
+        <section class="module-card sw-report-card">
+          <h2>Donor Retention</h2>
+          <div id="retention-cards" class="sw-report-retention"></div>
         </section>
       </div>
     </main>
   </div>
 
   <style>
-    .giving-kpi-card { background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem; }
-    .giving-kpi-label { font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:.3rem; }
-    .giving-kpi-value { font-family:var(--font-serif,Georgia,serif);font-size:1.65rem;font-weight:600;color:var(--gold,#C49C50);line-height:1; }
-    .giving-kpi-sub { font-size:.72rem;color:var(--text-muted);margin-top:.25rem; }
-    .progress-track { background:rgba(255,255,255,.08);border-radius:6px;height:10px;overflow:hidden;margin:.3rem 0 .2rem; }
+    .giving-kpi-card { background:#fff;border:1px solid var(--line,#e5dfd3);border-radius:10px;padding:.9rem 1rem;box-shadow:0 8px 22px rgba(6,21,34,.06); }
+    .giving-kpi-label { font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted,#8b8578);margin-bottom:.3rem; }
+    .giving-kpi-value { font-family:var(--serif,Georgia,serif);font-size:1.65rem;font-weight:600;color:var(--deep,#061522);line-height:1; }
+    .giving-kpi-sub { font-size:.72rem;color:var(--stone,#6f6a60);margin-top:.25rem; }
+    .progress-track { background:rgba(6,21,34,.08);border-radius:6px;height:10px;overflow:hidden;margin:.3rem 0 .2rem; }
     .progress-fill { height:100%;background:linear-gradient(90deg,var(--gold,#C49C50) 0%,#DABB70 100%);border-radius:6px;transition:width .5s ease; }
     .progress-fill.dim { opacity:.35;border-right:2px dashed var(--gold,#C49C50); }
     .giving-fund-table { width:100%;border-collapse:collapse;font-size:.85rem; }
-    .giving-fund-table th { font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:left;padding:.4rem .5rem;border-bottom:1px solid var(--border); }
-    .giving-fund-table td { padding:.55rem .5rem;border-bottom:1px solid rgba(255,255,255,.04); }
+    .giving-fund-table th { font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted,#8b8578);text-align:left;padding:.4rem .5rem;border-bottom:1px solid var(--line,#e5dfd3); }
+    .giving-fund-table td { padding:.55rem .5rem;border-bottom:1px solid rgba(111,106,96,.12); }
     .tier-row { display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem; }
-    .tier-label { width:120px;flex-shrink:0;font-size:.78rem;color:var(--text-muted); }
-    .tier-bar-wrap { flex:1;background:rgba(255,255,255,.06);border-radius:5px;height:18px;overflow:hidden; }
+    .tier-label { width:120px;flex-shrink:0;font-size:.78rem;color:var(--stone,#6f6a60); }
+    .tier-bar-wrap { flex:1;background:rgba(6,21,34,.07);border-radius:5px;height:18px;overflow:hidden; }
     .tier-bar-fill { height:100%;background:var(--gold,#C49C50);border-radius:5px; }
     .tier-count { width:80px;font-size:.78rem;text-align:right; }
-    .ret-card { background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;text-align:center; }
+    .ret-card { background:#fff;border:1px solid var(--line,#e5dfd3);border-radius:10px;padding:.9rem 1rem;text-align:center; }
     .ret-num { font-family:var(--font-serif,Georgia,serif);font-size:1.8rem;font-weight:600;color:var(--gold,#C49C50); }
-    .ret-lbl { font-size:.72rem;color:var(--text-muted);margin-top:.2rem; }
-    @media(max-width:640px) { div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns:1fr!important; } }
+    .ret-lbl { font-size:.72rem;color:var(--stone,#6f6a60);margin-top:.2rem; }
   </style>
 
   <script>
@@ -2544,17 +2545,17 @@ export async function handleStewardshipGivingMetricsPage(request, env) {
         var pct = s.total_pledged_cents > 0 ? Math.min(100, Math.round((s.total_actual_cents / s.total_pledged_cents) * 100)) : 0;
         var rrPct = s.total_pledged_cents > 0 ? Math.min(100, Math.round((s.run_rate_cents / s.total_pledged_cents) * 100)) : 0;
         document.getElementById("progress-bars").innerHTML =
-          "<div style='font-size:.8rem;color:var(--text-muted);margin-bottom:.2rem'>Collected — " + fmt(s.total_actual_cents) + " (" + pct + "% of goal)</div>" +
+          "<div style='font-size:.8rem;color:var(--stone,#6f6a60);margin-bottom:.2rem'>Collected — " + fmt(s.total_actual_cents) + " (" + pct + "% of goal)</div>" +
           "<div class='progress-track'><div class='progress-fill' style='width:" + pct + "%'></div></div>" +
-          "<div style='font-size:.78rem;color:var(--text-muted);margin:1rem 0 .2rem'>Run Rate Projection — " + fmt(s.run_rate_cents) + " <span style='opacity:.5;font-size:.72rem'>(day " + s.day_of_year + " of " + s.days_in_year + ")</span></div>" +
+          "<div style='font-size:.78rem;color:var(--stone,#6f6a60);margin:1rem 0 .2rem'>Run Rate Projection — " + fmt(s.run_rate_cents) + " <span style='opacity:.5;font-size:.72rem'>(day " + s.day_of_year + " of " + s.days_in_year + ")</span></div>" +
           "<div class='progress-track'><div class='progress-fill dim' style='width:" + rrPct + "%'></div></div>" +
-          "<div style='font-size:.72rem;color:var(--text-muted);margin-top:.2rem'>Pledge goal: " + fmt(s.total_pledged_cents) + "</div>";
+          "<div style='font-size:.72rem;color:var(--stone,#6f6a60);margin-top:.2rem'>Pledge goal: " + fmt(s.total_pledged_cents) + "</div>";
       }
 
       function renderFunds(f) {
         if (!f || f.error) return;
         var rows = (f.funds || []).map(function(fd) {
-          return "<tr><td>" + escH(fd.fund_name) + "</td><td style='text-align:center;color:var(--text-muted)'>" + fd.transaction_count + "</td><td style='text-align:right;color:var(--gold,#C49C50)'>" + fmt(fd.total_cents) + "</td><td style='text-align:right;color:var(--text-muted)'>" + fd.pct_of_total + "%</td><td style='width:80px'><div style='background:rgba(255,255,255,.07);border-radius:3px;height:5px'><div style='width:" + fd.pct_of_total + "%;height:100%;background:var(--gold,#C49C50);border-radius:3px'></div></div></td></tr>";
+          return "<tr><td>" + escH(fd.fund_name) + "</td><td style='text-align:center;color:var(--stone,#6f6a60)'>" + fd.transaction_count + "</td><td style='text-align:right;color:var(--gold,#C49C50)'>" + fmt(fd.total_cents) + "</td><td style='text-align:right;color:var(--stone,#6f6a60)'>" + fd.pct_of_total + "%</td><td style='width:80px'><div style='background:rgba(6,21,34,.07);border-radius:3px;height:5px'><div style='width:" + fd.pct_of_total + "%;height:100%;background:var(--gold,#C49C50);border-radius:3px'></div></div></td></tr>";
         }).join("");
         document.getElementById("funds-table").innerHTML =
           "<table class='giving-fund-table'><thead><tr><th>Fund</th><th style='text-align:center'>Transactions</th><th style='text-align:right'>Total</th><th style='text-align:right'>%</th><th></th></tr></thead><tbody>" + rows + "</tbody></table>";

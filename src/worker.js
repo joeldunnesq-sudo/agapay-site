@@ -106,6 +106,7 @@ import {
   handleParishGivingSummary,
   handleParishGivingHistory,
   handleParishRecurringHealth,
+  handleParishBookstore,
   handleParishDashboard,
   handleParishSession,
   handleParishes,
@@ -1789,6 +1790,12 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/recurring-health")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/recurring-health", ""));
       return handleParishRecurringHealth(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/bookstore")) {
+      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/bookstore");
+      const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
+      const subpath = parts.slice(1).join("/bookstore") || "";
+      return handleParishBookstore(request, env, parishId, subpath);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/payout-diagnostics")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/payout-diagnostics", ""));
