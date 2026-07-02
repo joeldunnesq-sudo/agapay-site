@@ -166,6 +166,46 @@
     }
   }
 
+  function supporterInitials(name) {
+    const text = String(name || "").trim();
+    if (!text || text.toLowerCase() === "anonymous") return "A";
+    return text.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
+  }
+
+  function renderSupporters(campaign) {
+    const supporters = Array.isArray(campaign.supporters) ? campaign.supporters : [];
+    if (!supporters.length) return;
+    const section = el("supportersSection");
+    const list = el("supportersList");
+    try {
+      section.hidden = false;
+      list.innerHTML = "";
+      const sorted = [...supporters].sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
+      el("supportersCount").textContent = sorted.length + " " + (sorted.length === 1 ? "gift" : "gifts");
+      sorted.forEach((supporter) => {
+        const name = supporter.name || supporter.displayName || "AGAPAY donor";
+        const amount = usd(supporter.amountCents || supporter.amount || 0);
+        const date = formatDate(supporter.createdAt || supporter.date);
+        const comment = String(supporter.comment || "").trim();
+        const article = document.createElement("article");
+        article.className = "supporter-item";
+        article.innerHTML =
+          '<span class="supporter-avatar">' + escHtml(supporterInitials(name)) + '</span>' +
+          '<div class="supporter-copy">' +
+            '<div class="supporter-heading">' +
+              '<strong>' + escHtml(name) + '</strong>' +
+              '<span class="supporter-amount">' + escHtml(amount) + '</span>' +
+            '</div>' +
+            '<div class="supporter-date">' + escHtml(date) + '</div>' +
+            (comment ? '<p class="supporter-comment">' + escHtml(comment) + '</p>' : '') +
+          '</div>';
+        list.appendChild(article);
+      });
+    } catch (err) {
+      displaySectionError("campaign givers", section, err);
+    }
+  }
+
   function selectedCampaignKey(campaign) {
     return campaign.id || campaign.slug || campaign.feastId || campaign.name || "campaign";
   }
@@ -180,6 +220,8 @@
     const firstName = String(el("campaignFirstName")?.value || "").trim();
     const lastName = String(el("campaignLastName")?.value || "").trim();
     const email = String(el("campaignEmail")?.value || "").trim();
+    const publicComment = String(el("campaignComment")?.value || "").trim().slice(0, 280);
+    const publicAnonymous = Boolean(el("campaignAnonymous")?.checked);
     if (!amount || amount <= 0) {
       status.textContent = "Enter a gift amount to continue.";
       status.className = "campaign-checkout-status error";
@@ -213,6 +255,8 @@
           firstName,
           lastName,
           email,
+          publicAnonymous,
+          publicComment,
           source: "campaign_page",
           returnPath: window.location.pathname + window.location.search,
           ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
@@ -343,6 +387,7 @@
       el("campaignDescription").textContent = campaign.description || "";
 
       if (campaign.photos && campaign.photos.length) renderGallery(campaign.photos);
+      renderSupporters(campaign);
       renderUpdates(campaign.updates);
       renderThermometer(campaign);
 

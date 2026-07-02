@@ -85,6 +85,14 @@
 
             <section class="campaign-gallery" id="photoGallery" aria-label="Campaign photos"></section>
 
+            <section class="campaign-supporters" id="supportersSection" hidden>
+              <div class="campaign-section-title">
+                <div><p class="campaign-section-kicker">Givers</p><h2>Recent gifts</h2></div>
+                <span id="supportersCount"></span>
+              </div>
+              <div class="supporter-list" id="supportersList"></div>
+            </section>
+
             <section class="campaign-updates" id="updatesSection" hidden>
               <div class="campaign-section-title">
                 <div><p class="campaign-section-kicker">From the parish</p><h2>Updates</h2></div>
@@ -140,6 +148,14 @@
                   <label class="campaign-field"><span>Last name</span><input id="campaignLastName" autocomplete="family-name" /></label>
                 </div>
                 <label class="campaign-field"><span>Email</span><input id="campaignEmail" type="email" autocomplete="email" required /></label>
+                <label class="campaign-field">
+                  <span>Public comment (optional)</span>
+                  <textarea id="campaignComment" rows="3" maxlength="280" placeholder="Leave a short note of encouragement for the campaign."></textarea>
+                </label>
+                <label class="campaign-checkbox">
+                  <input id="campaignAnonymous" type="checkbox" />
+                  <span>Show my gift anonymously on this page. The parish still receives my real name for receipts and tax records.</span>
+                </label>
                 <div data-agapay-turnstile></div>
                 <button class="campaign-submit" type="submit" id="giveBtn">Continue to secure checkout</button>
                 <p class="campaign-security"><span aria-hidden="true">◇</span> Secure giving via Stripe</p>

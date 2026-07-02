@@ -17,7 +17,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; background: var(--campaign-cream); color: var(--campaign-ink); font-family: var(--campaign-sans); -webkit-font-smoothing: antialiased; }
-button, input { font: inherit; }
+button, input, textarea { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 img { display: block; max-width: 100%; }
 [hidden] { display: none !important; }
@@ -75,6 +75,16 @@ img { display: block; max-width: 100%; }
 .campaign-gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 680px; margin-top: 24px; }
 .campaign-gallery:empty { display: none; }
 .campaign-gallery img { width: 100%; aspect-ratio: 4 / 3; border-radius: 8px; object-fit: cover; cursor: zoom-in; }
+.campaign-supporters { max-width: 680px; margin-top: 42px; }
+.supporter-list { display: grid; gap: 10px; }
+.supporter-item { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 12px; border: 1px solid #e2d6c1; border-radius: 8px; padding: 14px; background: rgba(255, 253, 248, 0.72); }
+.supporter-avatar { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; background: var(--campaign-navy); color: var(--campaign-gold); font-weight: 800; }
+.supporter-copy { min-width: 0; }
+.supporter-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.supporter-heading strong { min-width: 0; overflow: hidden; color: var(--campaign-ink); font-size: 0.92rem; text-overflow: ellipsis; white-space: nowrap; }
+.supporter-amount { flex: 0 0 auto; color: var(--campaign-gold-dark); font-size: 0.9rem; font-weight: 800; }
+.supporter-date { margin-top: 2px; color: var(--campaign-muted); font-size: 0.7rem; font-weight: 700; }
+.supporter-comment { margin: 9px 0 0; color: var(--campaign-text); font-size: 0.86rem; line-height: 1.55; }
 .campaign-updates { max-width: 680px; margin-top: 42px; }
 .campaign-section-title { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .campaign-section-title span { color: var(--campaign-gold-dark); font-size: 0.72rem; font-weight: 800; }
@@ -105,12 +115,16 @@ img { display: block; max-width: 100%; }
 .quick-amount.active { border-color: var(--campaign-gold); background: var(--campaign-gold-soft); color: var(--campaign-gold-dark); }
 .campaign-field { display: grid; gap: 5px; }
 .campaign-field > span:first-child { color: #94785a; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
-.campaign-field input { min-width: 0; width: 100%; min-height: 45px; border: 1px solid #e1d6c4; border-radius: 7px; padding: 0 12px; background: #fff; color: var(--campaign-ink); }
-.campaign-field input:focus { outline: 2px solid rgba(177, 138, 62, 0.22); border-color: var(--campaign-gold); }
+.campaign-field input, .campaign-field textarea { min-width: 0; width: 100%; border: 1px solid #e1d6c4; border-radius: 7px; background: #fff; color: var(--campaign-ink); }
+.campaign-field input { min-height: 45px; padding: 0 12px; }
+.campaign-field textarea { min-height: 82px; resize: vertical; padding: 10px 12px; line-height: 1.45; }
+.campaign-field input:focus, .campaign-field textarea:focus { outline: 2px solid rgba(177, 138, 62, 0.22); border-color: var(--campaign-gold); }
 .campaign-money-input { position: relative; display: block; }
 .campaign-money-input i { position: absolute; top: 50%; left: 13px; transform: translateY(-50%); color: var(--campaign-ink); font-size: 1.1rem; font-style: normal; font-weight: 800; }
 .campaign-money-input input { padding-left: 30px; font-size: 1.05rem; font-weight: 800; }
 .campaign-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.campaign-checkbox { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 9px; align-items: start; color: var(--campaign-muted); font-size: 0.72rem; line-height: 1.45; }
+.campaign-checkbox input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--campaign-gold); }
 .campaign-submit { min-height: 52px; border: 0; border-radius: 8px; background: var(--campaign-gold); color: var(--campaign-navy); cursor: pointer; font-weight: 800; box-shadow: 0 6px 16px rgba(140, 105, 40, 0.22); }
 .campaign-submit:hover { background: var(--campaign-gold-dark); color: #fff; }
 .campaign-submit:disabled { opacity: 0.6; cursor: wait; }
@@ -205,6 +219,7 @@ img { display: block; max-width: 100%; }
   .campaign-donate-card { padding: 18px; }
   .campaign-field-row, .campaign-gallery, .campaign-share-panel { grid-template-columns: 1fr; }
   .campaign-share-grid { grid-template-columns: 1fr 1fr; }
+  .supporter-heading { display: grid; gap: 3px; }
   .campaign-footer { flex-direction: column; gap: 5px; padding: 22px 12px; }
 }
 

@@ -1650,18 +1650,27 @@ export default {
         { id: "demo_don_018", email: "andrei.morozov@email.com",   name: "Andrei Morozov",    amount: 50000, fund: "stewardship", date: "2024-12-29T12:00:00.000Z" },
         { id: "demo_don_019", email: "tatiana.volkov@email.com",   name: "Tatiana Volkov",    amount: 20000, fund: "stewardship", date: "2025-01-05T10:00:00.000Z" },
         { id: "demo_don_020", email: "konstantin.smirnov@email.com",name: "Konstantin Smirnov",amount: 30000, fund: "building",   date: "2025-01-12T09:00:00.000Z" },
-        { id: "demo_don_021", email: "maria.petrov@email.com",     name: "Maria Petrov",      amount: 250000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", date: "2025-01-19T11:15:00.000Z" },
-        { id: "demo_don_022", email: "peter.novak@email.com",      name: "Peter Novak",       amount: 200000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", date: "2025-01-26T09:45:00.000Z" },
-        { id: "demo_don_023", email: "anna.kozlov@email.com",      name: "Anna Kozlov",       amount: 185000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", date: "2025-02-02T10:30:00.000Z" },
-        { id: "demo_don_024", email: "nikolai.volkov@email.com",   name: "Nikolai Volkov",    amount: 100000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", date: "2025-02-09T13:00:00.000Z" },
+        { id: "demo_don_021", email: "maria.petrov@email.com",     name: "Maria Petrov",      amount: 250000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", publicComment: "In thanksgiving for the mission and all who worship here.", date: "2025-01-19T11:15:00.000Z" },
+        { id: "demo_don_022", email: "peter.novak@email.com",      name: "Peter Novak",       amount: 200000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", publicAnonymous: true, publicComment: "Praying this roof protects the church for many years.", date: "2025-01-26T09:45:00.000Z" },
+        { id: "demo_don_023", email: "anna.kozlov@email.com",      name: "Anna Kozlov",       amount: 185000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", publicComment: "For our children and the future of the parish.", date: "2025-02-02T10:30:00.000Z" },
+        { id: "demo_don_024", email: "nikolai.volkov@email.com",   name: "Nikolai Volkov",    amount: 100000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", publicComment: "Glory to God for this parish and the work ahead.", date: "2025-02-09T13:00:00.000Z" },
       ];
 
       try {
         const donationStmts = donations.map(d =>
           env.AGAPAY_DB.prepare(`
-            INSERT OR IGNORE INTO donor_offerings
+            INSERT INTO donor_offerings
               (id, donor_email, parish_id, payment_intent_id, status, payment_status, created_at, updated_at, data)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+              donor_email = excluded.donor_email,
+              parish_id = excluded.parish_id,
+              payment_intent_id = excluded.payment_intent_id,
+              status = excluded.status,
+              payment_status = excluded.payment_status,
+              created_at = excluded.created_at,
+              updated_at = excluded.updated_at,
+              data = excluded.data
           `).bind(
             `${demoIdPrefix}_${d.id}`,
             d.email,
@@ -1682,6 +1691,9 @@ export default {
               campaign:    d.campaign || "",
               campaignId:  d.campaignId || "",
               campaignDescription: d.campaign ? "Demo gift for the roof restoration campaign." : "",
+              publicAnonymous: Boolean(d.publicAnonymous),
+              publicDisplayName: d.publicAnonymous ? "Anonymous" : d.name,
+              publicComment: d.publicComment || "",
               parishId:    DEMO_PARISH_ID,
               currency:    "usd",
               status:      "completed",

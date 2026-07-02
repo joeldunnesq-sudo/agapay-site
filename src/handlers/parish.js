@@ -1171,6 +1171,11 @@ export async function storeDonorOffering(env, offering) {
     title: offering.title || "AGAPAY offering",
     fund: offering.fund || "",
     campaign: offering.campaign || "",
+    campaignId: offering.campaignId || "",
+    campaignDescription: offering.campaignDescription || "",
+    publicAnonymous: Boolean(offering.publicAnonymous),
+    publicDisplayName: offering.publicDisplayName || "",
+    publicComment: publicComment(offering.publicComment),
     feastDescription: offering.feastDescription || "",
     inMemoriam: offering.inMemoriam || "",
     frequency: offering.frequency || "once",
@@ -2292,18 +2297,26 @@ export function normalizedOptionKeys(option = {}) {
     .map((value) => String(value).trim().toLowerCase());
 }
 
+function campaignGiftKeys(gift = {}) {
+  return normalizedOptionKeys({
+    id: gift.campaignId,
+    name: gift.campaign,
+    campaignName: gift.description || gift.campaignDescription,
+    title: gift.giftType === "campaign" ? gift.fund : ""
+  });
+}
+
+function giftMatchesCampaignKeys(gift, keys) {
+  const giftType = String(gift.giftType || "").toLowerCase();
+  return ["campaign", "alms"].includes(giftType) && campaignGiftKeys(gift).some((key) => keys.has(key));
+}
+
 export function campaignRaisedTotals(campaign, gifts) {
   const keys = new Set(normalizedOptionKeys(campaign));
   let raisedCents = 0;
   let giftCount = 0;
   gifts.forEach((gift) => {
-    const giftKeys = normalizedOptionKeys({
-      id: gift.campaignId,
-      name: gift.campaign,
-      campaignName: gift.description,
-      title: gift.giftType === "campaign" ? gift.fund : ""
-    });
-    if (["campaign", "alms"].includes(String(gift.giftType || "").toLowerCase()) && giftKeys.some((key) => keys.has(key))) {
+    if (giftMatchesCampaignKeys(gift, keys)) {
       raisedCents += Number(gift.amountCents || 0);
       giftCount += 1;
     }
@@ -2311,11 +2324,73 @@ export function campaignRaisedTotals(campaign, gifts) {
   return { raisedCents, giftCount };
 }
 
+function publicBoolean(value) {
+  return value === true || String(value || "").toLowerCase() === "true" || String(value || "") === "1";
+}
+
+function publicComment(value) {
+  return String(value || "").trim().replace(/\s+/g, " ").slice(0, 280);
+}
+
+function campaignPublicSupporters(campaign, gifts) {
+  const keys = new Set(normalizedOptionKeys(campaign));
+  return gifts
+    .filter((gift) => giftMatchesCampaignKeys(gift, keys))
+    .map((gift) => {
+      const anonymous = publicBoolean(gift.publicAnonymous);
+      const name = anonymous ? "Anonymous" : (gift.publicDisplayName || gift.donorName || "AGAPAY donor");
+      return {
+        name,
+        amountCents: Number(gift.amountCents || gift.giftAmountCents || 0),
+        comment: publicComment(gift.publicComment),
+        anonymous,
+        createdAt: gift.createdAt || gift.completedAt || ""
+      };
+    })
+    .filter((gift) => gift.amountCents > 0)
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
+    .slice(0, 24);
+}
+
+function stFiacreRoofDemoSupporters() {
+  return [
+    {
+      name: "Nikolai Volkov",
+      amountCents: 100000,
+      comment: "Glory to God for this parish and the work ahead.",
+      anonymous: false,
+      createdAt: "2025-02-09T13:00:00.000Z"
+    },
+    {
+      name: "Anna Kozlov",
+      amountCents: 185000,
+      comment: "For our children and the future of the parish.",
+      anonymous: false,
+      createdAt: "2025-02-02T10:30:00.000Z"
+    },
+    {
+      name: "Anonymous",
+      amountCents: 200000,
+      comment: "Praying this roof protects the church for many years.",
+      anonymous: true,
+      createdAt: "2025-01-26T09:45:00.000Z"
+    },
+    {
+      name: "Maria Petrov",
+      amountCents: 250000,
+      comment: "In thanksgiving for the mission and all who worship here.",
+      anonymous: false,
+      createdAt: "2025-01-19T11:15:00.000Z"
+    }
+  ];
+}
+
 export async function enrichParishGivingOptions(env, parish) {
   if (!parish?.id) return parish;
   const gifts = await loadParishPaidOfferings(env, parish.id, 1000);
   const enrichCampaign = (campaign) => {
     const totals = campaignRaisedTotals(campaign, gifts);
+    const supporters = campaignPublicSupporters(campaign, gifts);
     const photos = Array.isArray(campaign.photos) ? campaign.photos : [];
     const optionKeys = normalizedOptionKeys(campaign);
     const isStFiacreRoofDemo = parish.id === "st-fiacre"
@@ -2336,7 +2411,8 @@ export async function enrichParishGivingOptions(env, parish) {
       goalCents: isStFiacreRoofDemo ? 1000000 : Number(campaign.goalCents || campaign.targetCents || campaign.goalAmountCents || 0),
       coverPhotoUrl,
       raisedCents: totals.raisedCents || Number(campaign.raisedCents || campaign.amountCents || campaign.currentCents || seededRaisedCents),
-      giftCount: totals.giftCount || Number(campaign.giftCount || campaign.donorCount || 0)
+      giftCount: totals.giftCount || Number(campaign.giftCount || campaign.donorCount || (isStFiacreRoofDemo ? 4 : 0)),
+      supporters: supporters.length ? supporters : (isStFiacreRoofDemo ? stFiacreRoofDemoSupporters() : [])
     };
   };
   return {
@@ -2744,6 +2820,9 @@ export async function handleCheckout(request, env) {
   }
 
   const checkoutMetadata = {
+    public_anonymous: publicBoolean(body.publicAnonymous) ? "true" : "false",
+    public_display_name: publicBoolean(body.publicAnonymous) ? "Anonymous" : normalizedDonorName,
+    public_comment: publicComment(body.publicComment),
     parish_id: parish.id,
     parish_name: parish.name || "",
     stripe_customer_id: customer.body.id || "",
@@ -2848,6 +2927,11 @@ export async function handleCheckout(request, env) {
     fund: checkoutFund,
     fundId: checkoutFundId,
     campaign: body.campaign || "",
+    campaignId: body.campaign || "",
+    campaignDescription: body.campaignDescription || "",
+    publicAnonymous: publicBoolean(body.publicAnonymous),
+    publicDisplayName: publicBoolean(body.publicAnonymous) ? "Anonymous" : normalizedDonorName,
+    publicComment: publicComment(body.publicComment),
     feastDescription: body.feastDescription || "",
     inMemoriam: body.inMemoriam || "",
     frequency: body.frequency || "once",
