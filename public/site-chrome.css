@@ -444,7 +444,6 @@ body.drawer-open .mobile-drawer[data-shell="canonical"] {
   grid-template-columns: minmax(220px, 1.25fr) repeat(6, minmax(105px, 0.72fr));
   gap: 1.4rem;
   padding-bottom: 1.8rem;
-  border-bottom: 1px solid rgba(200, 162, 74, 0.18);
 }
 
 .site-footer[data-shell="canonical"] .footer-brand {
@@ -512,6 +511,7 @@ body.drawer-open .mobile-drawer[data-shell="canonical"] {
 }
 
 .site-footer[data-shell="canonical"] .footer-bottom {
+  border-top: 1px solid rgba(200, 162, 74, 0.18);
   padding-top: 0.9rem;
   display: flex;
   flex-wrap: wrap;
