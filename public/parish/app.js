@@ -889,15 +889,38 @@
       mobileBadge.textContent = isActive ? 'Active' : 'Upgrade';
       mobileBadge.classList.toggle('mobile-upgrade-badge--active', isActive);
     }
-    // Sacraments & Services is a Stewardship Suite feature, currently in
-    // limited rollout — only swap in the real Active/Upgrade badge for
-    // allowlisted parishes; everyone else keeps the plain "Coming soon" badge.
+    const bookstoreNav = document.getElementById('nav-bookstore');
+    const bookstoreBadge = document.getElementById('bookstoreNavBadge');
+    const mobileBookstoreBadge = document.getElementById('mobileBookstoreBadge');
+    if (bookstoreNav) {
+      bookstoreNav.classList.toggle('sidebar-nav-item--gated', !isActive);
+      bookstoreNav.title = isActive ? '' : 'Requires Stewardship Suite';
+    }
+    if (bookstoreBadge) {
+      bookstoreBadge.hidden = isActive;
+      bookstoreBadge.textContent = 'Upgrade';
+      bookstoreBadge.classList.remove('nav-upgrade-badge--active');
+    }
+    if (mobileBookstoreBadge) {
+      mobileBookstoreBadge.hidden = isActive;
+      mobileBookstoreBadge.textContent = 'Upgrade';
+      mobileBookstoreBadge.classList.remove('mobile-upgrade-badge--active');
+    }
+
+    // Sacraments & Services is a Stewardship Suite feature and also has a
+    // rollout flag. Without Stewardship access, show it as gated; with access,
+    // show Coming soon unless the parish is on the live rollout list.
     const sacIsRolledOut = Boolean(currentParish?.parishId && SACRAMENTS_ROLLOUT_PARISH_IDS.has(currentParish.parishId));
+    const sacNav = document.getElementById('nav-sacraments');
     const sacSoonBadge = document.getElementById('sacramentsNavSoonBadge');
     const sacBadge = document.getElementById('sacramentsNavBadge');
-    if (sacSoonBadge) sacSoonBadge.hidden = sacIsRolledOut;
+    if (sacNav) {
+      sacNav.classList.toggle('sidebar-nav-item--gated', !isActive);
+      sacNav.title = isActive ? '' : 'Requires Stewardship Suite';
+    }
+    if (sacSoonBadge) sacSoonBadge.hidden = !isActive || sacIsRolledOut;
     if (sacBadge) {
-      sacBadge.hidden = !sacIsRolledOut;
+      sacBadge.hidden = isActive && !sacIsRolledOut;
       sacBadge.textContent = isActive ? 'Active' : 'Upgrade';
       sacBadge.classList.toggle('nav-upgrade-badge--active', isActive);
     }
@@ -969,8 +992,6 @@
   async function loadBookstoreCatalogTab(force = false) {
     const upsell = document.getElementById('bookstoreUpsellBanner');
     const live = document.getElementById('bookstoreLiveContent');
-    const navBadge = document.getElementById('bookstoreNavBadge');
-    const mobileBadge = document.getElementById('mobileBookstoreBadge');
     const status = document.getElementById('bookstoreStatusLabel');
     if (!currentParish) return;
 
@@ -978,8 +999,7 @@
     // the dashboard payload as a fallback when the parish opens Bookstore first.
     const sw = stewardshipState.stewardship || {};
     const swActive = Boolean(currentParish.stewardshipActive || sw.active || ['active', 'trialing', 'comped'].includes(sw.status));
-    if (navBadge) navBadge.hidden = swActive;
-    if (mobileBadge) mobileBadge.hidden = swActive;
+    updateStewardshipBadges(swActive);
     if (!swActive) {
       if (upsell) upsell.hidden = false;
       if (live) live.hidden = true;
