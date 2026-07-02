@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Request a Wedding — AGAPAY</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --ink: #1B2A4A;
+    --ink-soft: #435073;
+    --gold: #A9812E;
+    --gold-soft: #C9A85C;
+    --oxblood: #7A2E2E;
+    --paper: #F5F3EE;
+    --paper-raised: #FFFFFF;
+    --line: #DCD7C9;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 640px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  header.page { text-align: center; margin-bottom: 36px; }
+  header.page .eyebrow {
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--gold); font-weight: 600; margin-bottom: 10px;
+  }
+  header.page h1 {
+    font-family: 'Cormorant Garamond', serif; font-weight: 600;
+    font-size: 38px; margin: 0 0 8px; color: var(--ink);
+  }
+  header.page p {
+    color: var(--ink-soft); font-size: 15px; line-height: 1.5;
+    margin: 0 auto; max-width: 46ch;
+  }
+
+  .beam { display: flex; align-items: center; gap: 12px; margin: 28px 0 20px; }
+  .beam::before, .beam::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, transparent, var(--gold-soft)); }
+  .beam::after { background: linear-gradient(to left, transparent, var(--gold-soft)); }
+  .beam-mark { font-family: 'Cormorant Garamond', serif; font-style: italic; color: var(--gold); font-size: 15px; }
+
+  section.step {
+    background: var(--paper-raised); border: 1px solid var(--line);
+    border-radius: 3px; padding: 24px 22px; margin-bottom: 18px;
+  }
+  section.step .step-label { display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px; }
+  section.step .step-num { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: var(--gold); font-weight: 600; }
+  section.step h2 { font-family: 'Cormorant Garamond', serif; font-size: 21px; font-weight: 600; margin: 0; color: var(--ink); }
+
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 13px; font-weight: 500; color: var(--ink-soft); margin-bottom: 6px; }
+
+  input[type="text"], input[type="date"], input[type="tel"], textarea, select {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 2px;
+    font-family: 'Inter', sans-serif; font-size: 15px; color: var(--ink); background: var(--paper);
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--gold); background: #fff; }
+  textarea { resize: vertical; min-height: 70px; }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 480px) { .row-2 { grid-template-columns: 1fr; } }
+
+  .checkbox-row {
+    display: flex; align-items: flex-start; gap: 10px; padding: 12px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 2px;
+  }
+  .checkbox-row input { margin-top: 3px; }
+  .checkbox-row .ctext { font-size: 13.5px; line-height: 1.4; color: var(--ink-soft); }
+  .checkbox-row .ctext strong { color: var(--ink); font-weight: 600; }
+
+  .party-block { }
+  .party-title {
+    font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--gold); font-weight: 600; margin-bottom: 12px;
+  }
+  .party-divider { border-top: 1px dashed var(--line); padding-top: 16px; margin-top: 16px; }
+
+  .checkbox-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  @media (max-width: 480px) { .checkbox-pair { grid-template-columns: 1fr; } }
+  .checkbox-pair .checkbox-row { padding: 10px 12px; }
+  .checkbox-pair .ctext { font-size: 13px; }
+
+  .notice {
+    display: none; align-items: flex-start; gap: 10px; background: #FBF3EC;
+    border: 1px solid #E4C9A8; border-left: 3px solid var(--oxblood);
+    padding: 12px 14px; border-radius: 2px; font-size: 13px; color: var(--oxblood);
+    line-height: 1.5; margin-top: 16px;
+  }
+  .notice.show { display: flex; }
+  .notice.strong { background: #F7E9E9; border-color: #D9B3B3; }
+
+  .review-notice {
+    display: none; align-items: flex-start; gap: 10px; background: #EEF1F8;
+    border: 1px solid #C7D0E8; border-left: 3px solid var(--ink);
+    padding: 12px 14px; border-radius: 2px; font-size: 13px; color: var(--ink-soft);
+    line-height: 1.5; margin-top: 16px;
+  }
+  .review-notice.show { display: flex; }
+
+  .submit-bar { margin-top: 24px; text-align: center; }
+  button.submit {
+    width: 100%; padding: 14px; background: var(--ink); color: #fff; border: none;
+    border-radius: 2px; font-family: 'Inter', sans-serif; font-size: 15px;
+    font-weight: 600; letter-spacing: 0.01em; cursor: pointer;
+  }
+  button.submit:hover { background: #263a63; }
+  .fineprint { text-align: center; font-size: 12.5px; color: var(--ink-soft); margin-top: 12px; line-height: 1.5; }
+
+  .confirm { display: none; text-align: center; padding: 40px 20px; }
+  .confirm.show { display: block; }
+  .confirm .mark { font-size: 40px; color: var(--gold); margin-bottom: 14px; font-family: 'Cormorant Garamond', serif; }
+  .confirm h2 { font-family: 'Cormorant Garamond', serif; font-size: 26px; margin: 0 0 10px; }
+  .confirm p { color: var(--ink-soft); font-size: 14.5px; line-height: 1.6; max-width: 40ch; margin: 0 auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <div class="eyebrow">St. Fiacre Orthodox Church</div>
+    <h1>Request a Wedding</h1>
+    <p>Fr. will review this request, may want to meet with you both before anything is scheduled, and will confirm a date.</p>
+  </header>
+
+  <form id="weddingForm">
+
+    <section class="step">
+      <div class="step-label"><span class="step-num">I.</span><h2>The Couple</h2></div>
+
+      <div class="party-block">
+        <div class="party-title">First Party</div>
+        <div class="field">
+          <label for="partyAName">Full name</label>
+          <input type="text" id="partyAName" required>
+        </div>
+        <div class="checkbox-pair">
+          <div class="checkbox-row">
+            <input type="checkbox" id="partyAOrthodox">
+            <label for="partyAOrthodox" class="ctext" style="margin:0;">Orthodox Christian</label>
+          </div>
+          <div class="checkbox-row">
+            <input type="checkbox" id="partyAPrior">
+            <label for="partyAPrior" class="ctext" style="margin:0;">Previously married</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="party-block party-divider">
+        <div class="party-title">Second Party</div>
+        <div class="field">
+          <label for="partyBName">Full name</label>
+          <input type="text" id="partyBName" required>
+        </div>
+        <div class="checkbox-pair">
+          <div class="checkbox-row">
+            <input type="checkbox" id="partyBOrthodox">
+            <label for="partyBOrthodox" class="ctext" style="margin:0;">Orthodox Christian</label>
+          </div>
+          <div class="checkbox-row">
+            <input type="checkbox" id="partyBPrior">
+            <label for="partyBPrior" class="ctext" style="margin:0;">Previously married</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="review-notice" id="reviewNotice">
+        <span>ⓘ</span>
+        <span id="reviewNoticeText"></span>
+      </div>
+    </section>
+
+    <div class="beam"><span class="beam-mark">✦</span></div>
+
+    <section class="step">
+      <div class="step-label"><span class="step-num">II.</span><h2>Sponsor & Paperwork</h2></div>
+
+      <div class="row-2">
+        <div class="field">
+          <label for="koumbaroName">Koumbaro / Sponsor name</label>
+          <input type="text" id="koumbaroName">
+        </div>
+        <div class="field">
+          <label for="koumbaroParish">Sponsor's home parish</label>
+          <input type="text" id="koumbaroParish">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="licenseStatus">Marriage license status</label>
+        <select id="licenseStatus">
+          <option value="not_started">Haven't started yet</option>
+          <option value="applied">Applied, waiting to receive</option>
+          <option value="obtained">In hand</option>
+        </select>
+      </div>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="counselComplete">
+        <label for="counselComplete" class="ctext" style="margin:0;">
+          <strong>We've completed</strong> pre-marital counsel with Fr. (or scheduled it)
+        </label>
+      </div>
+    </section>
+
+    <div class="beam"><span class="beam-mark">✦</span></div>
+
+    <section class="step">
+      <div class="step-label"><span class="step-num">III.</span><h2>Timing</h2></div>
+
+      <div class="field">
+        <label for="proposedDate">A date that would work for you both (Fr. will confirm)</label>
+        <input type="date" id="proposedDate">
+      </div>
+
+      <div class="notice strong" id="fastingNotice">
+        <span>⚠</span>
+        <span id="fastingNoticeText"></span>
+      </div>
+
+      <div class="field" style="margin-top:16px;">
+        <label for="requesterNotes">Anything else Fr. should know</label>
+        <textarea id="requesterNotes" placeholder="Optional"></textarea>
+      </div>
+    </section>
+
+    <div class="submit-bar">
+      <button type="submit" class="submit">Send Request</button>
+      <div class="fineprint">Fr. will review and follow up — this does not confirm a date.</div>
+    </div>
+  </form>
+
+  <div class="confirm" id="confirmView">
+    <div class="mark">✦</div>
+    <h2>Request Sent</h2>
+    <p>Fr. has received your request and will be in touch to talk through next steps. You'll see updates here in My AGAPAY.</p>
+  </div>
+
+</div>
+
+<script>
+  // Weddings are canonically restricted during fasting periods — stronger
+  // language than the baptism form, which only shows a soft heads-up.
+  const FASTING_WINDOWS_2026 = [
+    { start: '2026-02-16', end: '2026-04-04', name: 'Great Lent & Holy Week' },
+    { start: '2026-08-01', end: '2026-08-14', name: 'Dormition Fast' },
+    { start: '2026-11-15', end: '2026-12-24', name: 'Nativity Fast' },
+  ];
+
+  function checkFasting(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    for (const w of FASTING_WINDOWS_2026) {
+      if (d >= new Date(w.start) && d <= new Date(w.end)) return w.name;
+    }
+    return null;
+  }
+
+  document.getElementById('proposedDate').addEventListener('change', (e) => {
+    const hit = checkFasting(e.target.value);
+    const notice = document.getElementById('fastingNotice');
+    const text = document.getElementById('fastingNoticeText');
+    if (hit) {
+      text.textContent = `This date falls within ${hit}. Weddings aren't performed during fasting periods — please pick another date, or Fr. can help you find one nearby.`;
+      notice.classList.add('show');
+    } else {
+      notice.classList.remove('show');
+    }
+  });
+
+  // Mixed-faith or prior-marriage situations need pastoral review before
+  // scheduling (economia). This doesn't block submission — it just tells
+  // the family up front that Fr. will likely want to talk first.
+  function updateReviewNotice() {
+    const aOrthodox = document.getElementById('partyAOrthodox').checked;
+    const bOrthodox = document.getElementById('partyBOrthodox').checked;
+    const aPrior = document.getElementById('partyAPrior').checked;
+    const bPrior = document.getElementById('partyBPrior').checked;
+
+    const reasons = [];
+    if (!aOrthodox || !bOrthodox) reasons.push('one or both of you aren\'t currently Orthodox');
+    if (aPrior || bPrior) reasons.push('a previous marriage is involved');
+
+    const notice = document.getElementById('reviewNotice');
+    const text = document.getElementById('reviewNoticeText');
+    if (reasons.length) {
+      text.textContent = `Since ${reasons.join(' and ')}, Fr. will likely want to meet with you before confirming a date — that's normal, not a problem.`;
+      notice.classList.add('show');
+    } else {
+      notice.classList.remove('show');
+    }
+  }
+
+  ['partyAOrthodox', 'partyBOrthodox', 'partyAPrior', 'partyBPrior'].forEach(id => {
+    document.getElementById(id).addEventListener('change', updateReviewNotice);
+  });
+
+  document.getElementById('weddingForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      sacrament_type: 'wedding',
+      proposed_date: document.getElementById('proposedDate').value || null,
+      requester_notes: document.getElementById('requesterNotes').value || null,
+      details: {
+        party_a_name: document.getElementById('partyAName').value,
+        party_a_orthodox: document.getElementById('partyAOrthodox').checked,
+        party_a_prior_marriage: document.getElementById('partyAPrior').checked,
+        party_b_name: document.getElementById('partyBName').value,
+        party_b_orthodox: document.getElementById('partyBOrthodox').checked,
+        party_b_prior_marriage: document.getElementById('partyBPrior').checked,
+        koumbaro_name: document.getElementById('koumbaroName').value || null,
+        koumbaro_home_parish: document.getElementById('koumbaroParish').value || null,
+        marriage_license_status: document.getElementById('licenseStatus').value,
+        premarital_counsel_complete: document.getElementById('counselComplete').checked,
+      }
+    };
+
+    // TODO: replace with real fetch to POST /api/sacraments/request
+    console.log('Submitting sacrament request:', payload);
+
+    document.getElementById('weddingForm').style.display = 'none';
+    document.getElementById('confirmView').classList.add('show');
+  });
+</script>
+</body>
+</html>
