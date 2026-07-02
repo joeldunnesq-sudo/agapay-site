@@ -63,7 +63,7 @@
         <div class="donor-home-topbar-brand">
           <img src="/mark.png" alt="" aria-hidden="true" />
           <span>
-            <strong class="topbar-title" id="donorUtilityTitle">AGAPAY Give</strong>
+            <strong class="topbar-title" id="donorUtilityTitle">My AGAPAY</strong>
             <small id="donorUtilityTagline">One My AGAPAY account. Product dashboards when you need them.</small>
           </span>
         </div>
@@ -257,7 +257,7 @@
         <div class="desktop-hero">
           <a class="desktop-hero-mark" href="/" aria-label="AGAPAY home" hx-boost="false"><img src="/mark.png" alt="" /></a>
           <div class="desktop-hero-copy">
-            <div class="eyebrow">AGAPAY - Love how you give</div>
+            <div class="eyebrow">AGAPAY Give - Love how you give</div>
             <h1 id="desktopGreeting">Welcome, Faithful Member</h1>
             <p id="desktopParishName">Sign in to load your church, giving history, and saved offering preferences.</p>
           </div>
@@ -377,7 +377,7 @@
         <header class="mobile-hero-header">
           <a class="mobile-brand-mark" href="/" aria-label="AGAPAY home" hx-boost="false"><img src="/mark.png" alt="" /></a>
           <div class="mobile-identity">
-            <div class="mobile-kicker">AGAPAY - Love how you give</div>
+            <div class="mobile-kicker">AGAPAY Give - Love how you give</div>
             <h1 id="greeting">Welcome, Faithful Member</h1>
             <p id="donorParishName" data-auth-required hidden></p>
             <a class="change-parish-link" href="/myagapay/account" data-auth-required hidden>Change church</a>
@@ -540,7 +540,7 @@
       const utilityTitle = document.getElementById("donorUtilityTitle");
       const utilityTagline = document.getElementById("donorUtilityTagline");
       const quickAction = document.querySelector(".donor-home-quick-action");
-      if (utilityTitle) utilityTitle.textContent = isGivingView ? "AGAPAY Give" : "My AGAPAY Products";
+      if (utilityTitle) utilityTitle.textContent = isGivingView ? "My AGAPAY" : "My AGAPAY Products";
       if (utilityTagline) utilityTagline.textContent = isGivingView ? "One My AGAPAY account. Product dashboards when you need them." : "Choose Give or Learn from one account.";
       if (quickAction) quickAction.href = isGivingView ? "/myagapay/giving/give" : "/myagapay/giving";
     }
