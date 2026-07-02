@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AGAPAY Design | Orthodox Web Design</title>
+  <meta name="description" content="AGAPAY Design builds custom websites for Orthodox parishes, ministries, and small businesses with care, craft, and practical launch support." />
+  <link rel="canonical" href="https://agapay.app/design" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="AGAPAY" />
+  <meta property="og:title" content="AGAPAY Design | Orthodox Web Design" />
+  <meta property="og:description" content="Custom websites for Orthodox parishes, ministries, and small businesses." />
+  <meta property="og:url" content="https://agapay.app/design" />
+  <meta name="theme-color" content="#061522" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site-chrome.css" />
+  <script src="/site-chrome.js" defer></script>
+  <style>
+    :root {
+      --navy: #061522;
+      --navy-2: #0B2130;
+      --paper: #FFFDF8;
+      --cream: #F6F1E8;
+      --gold: #C9A25B;
+      --gold-2: #A97C25;
+      --forest: #2E6B3F;
+      --wine: #5C1E1E;
+      --ink: #171715;
+      --muted: #70695D;
+      --line: rgba(166, 159, 145, 0.32);
+      --serif: "Cormorant Garamond", Georgia, serif;
+      --sans: "DM Sans", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--cream);
+      color: var(--ink);
+      font-family: var(--sans);
+    }
+    main {
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255, 253, 248, 0.82), rgba(246, 241, 232, 0.95) 34rem),
+        var(--cream);
+    }
+    a { color: inherit; }
+    .design-section {
+      width: min(1160px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: clamp(3rem, 7vw, 5.6rem) 0;
+    }
+    .design-eyebrow {
+      margin: 0 0 0.8rem;
+      color: var(--gold-2);
+      font-size: 0.76rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .design-hero {
+      position: relative;
+      min-height: min(760px, calc(100vh - 76px));
+      display: grid;
+      align-items: center;
+      padding: clamp(3.6rem, 8vw, 6.8rem) 0 clamp(2.6rem, 6vw, 4.6rem);
+      background:
+        linear-gradient(135deg, rgba(6, 21, 34, 0.95), rgba(11, 33, 48, 0.88)),
+        var(--navy);
+      color: var(--cream);
+    }
+    .design-hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(246, 241, 232, 0.055) 0 1px, transparent 1px 96px),
+        repeating-linear-gradient(0deg, rgba(246, 241, 232, 0.035) 0 1px, transparent 1px 96px);
+      pointer-events: none;
+    }
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      width: min(1160px, calc(100% - 2rem));
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 0.94fr) minmax(310px, 0.72fr);
+      gap: clamp(2rem, 6vw, 5rem);
+      align-items: center;
+    }
+    .hero-copy h1 {
+      max-width: 740px;
+      margin: 0;
+      color: #fffdf8;
+      font-family: var(--serif);
+      font-size: clamp(3.5rem, 8.4vw, 7.2rem);
+      font-weight: 500;
+      letter-spacing: 0;
+      line-height: 0.86;
+    }
+    .hero-copy h2 {
+      margin: 0.45rem 0 1.25rem;
+      color: var(--gold);
+      font-family: var(--serif);
+      font-size: clamp(1.9rem, 4.3vw, 3.5rem);
+      font-style: italic;
+      font-weight: 500;
+      line-height: 1.02;
+    }
+    .hero-copy p {
+      max-width: 620px;
+      margin: 0;
+      color: rgba(246, 241, 232, 0.78);
+      font-size: 1.08rem;
+      line-height: 1.78;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      margin-top: 1.8rem;
+    }
+    .design-button {
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(201, 162, 91, 0.44);
+      border-radius: 8px;
+      padding: 0 1.28rem;
+      font-weight: 900;
+      text-decoration: none;
+    }
+    .design-button.primary {
+      border-color: transparent;
+      background: linear-gradient(135deg, #D6AF5B, #B98832);
+      color: #081727;
+    }
+    .design-button.secondary {
+      background: rgba(246, 241, 232, 0.08);
+      color: var(--cream);
+    }
+    .studio-board {
+      position: relative;
+      display: grid;
+      gap: 0.9rem;
+      border: 1px solid rgba(201, 162, 91, 0.3);
+      border-radius: 18px;
+      background: rgba(255, 253, 248, 0.08);
+      padding: 1rem;
+      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(18px);
+    }
+    .browser-preview {
+      overflow: hidden;
+      border: 1px solid rgba(246, 241, 232, 0.18);
+      border-radius: 14px;
+      background: #fffdf8;
+      color: var(--ink);
+    }
+    .browser-bar {
+      display: flex;
+      gap: 0.32rem;
+      align-items: center;
+      min-height: 34px;
+      border-bottom: 1px solid rgba(166, 159, 145, 0.24);
+      padding: 0 0.72rem;
+      background: #eee6d8;
+    }
+    .browser-dot {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 999px;
+      background: var(--gold);
+    }
+    .browser-preview-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 8rem;
+      gap: 1rem;
+      padding: 1rem;
+    }
+    .preview-line {
+      height: 0.55rem;
+      border-radius: 999px;
+      background: rgba(6, 21, 34, 0.12);
+    }
+    .preview-line.title {
+      width: 74%;
+      height: 1.25rem;
+      margin-bottom: 0.72rem;
+      background: var(--navy);
+    }
+    .preview-line.gold { width: 44%; background: var(--gold); }
+    .preview-line.muted { width: 86%; margin-top: 0.45rem; }
+    .preview-media {
+      min-height: 8rem;
+      border-radius: 12px;
+      background:
+        linear-gradient(135deg, rgba(201, 162, 91, 0.36), rgba(46, 107, 63, 0.16)),
+        url("/mark.png") center / 4.8rem no-repeat,
+        #f1eadf;
+    }
+    .studio-note {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 0.75rem;
+      align-items: center;
+      border: 1px solid rgba(201, 162, 91, 0.22);
+      border-radius: 14px;
+      background: rgba(255, 253, 248, 0.1);
+      padding: 0.88rem;
+      color: rgba(246, 241, 232, 0.78);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+    .studio-note img {
+      width: 2.55rem;
+      height: 2.55rem;
+      object-fit: contain;
+    }
+    .section-head {
+      max-width: 760px;
+      margin-bottom: 2rem;
+    }
+    .section-head h2 {
+      margin: 0;
+      color: var(--navy);
+      font-family: var(--serif);
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      font-weight: 500;
+      line-height: 0.98;
+    }
+    .section-head p {
+      margin: 0.8rem 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+    .work-feature {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.86fr);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--paper);
+      box-shadow: 0 18px 48px rgba(6, 21, 34, 0.08);
+    }
+    .work-shot {
+      min-height: 340px;
+      display: grid;
+      align-content: center;
+      gap: 1rem;
+      background:
+        repeating-linear-gradient(135deg, rgba(6, 21, 34, 0.045) 0 2px, transparent 2px 14px),
+        linear-gradient(180deg, #EFE8DA, #E4DBC9);
+      padding: clamp(1.2rem, 3vw, 2.4rem);
+    }
+    .work-window {
+      overflow: hidden;
+      border: 1px solid rgba(6, 21, 34, 0.18);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 22px 46px rgba(6, 21, 34, 0.16);
+    }
+    .work-window-top {
+      height: 34px;
+      background: #0c1720;
+    }
+    .work-window-body {
+      display: grid;
+      gap: 0.85rem;
+      padding: 1.1rem;
+    }
+    .work-window-body strong {
+      color: var(--navy);
+      font-family: var(--serif);
+      font-size: 1.75rem;
+      font-weight: 600;
+    }
+    .work-window-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+    }
+    .work-tile {
+      min-height: 4.8rem;
+      border-radius: 10px;
+      background: rgba(201, 162, 91, 0.18);
+    }
+    .work-copy {
+      display: grid;
+      align-content: center;
+      gap: 1rem;
+      padding: clamp(1.6rem, 4vw, 2.6rem);
+    }
+    .project-pill,
+    .service-chip {
+      display: inline-flex;
+      width: fit-content;
+      border-radius: 999px;
+      background: rgba(201, 162, 91, 0.14);
+      color: var(--gold-2);
+      padding: 0.32rem 0.72rem;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .work-copy h3 {
+      margin: 0;
+      color: var(--navy);
+      font-family: var(--serif);
+      font-size: clamp(1.9rem, 3vw, 2.7rem);
+      font-weight: 500;
+      line-height: 1;
+    }
+    .work-copy p,
+    .price-card p,
+    .process-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .service-chip {
+      background: var(--cream);
+      color: #4D4A44;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .process-grid,
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    .process-card,
+    .price-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--paper);
+      padding: clamp(1.15rem, 3vw, 1.8rem);
+    }
+    .process-num {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--gold);
+      font-family: var(--serif);
+      font-size: 2.35rem;
+      font-style: italic;
+      line-height: 1;
+    }
+    .process-card h3,
+    .price-card h3 {
+      margin: 0 0 0.55rem;
+      color: var(--navy);
+      font-size: 1.05rem;
+    }
+    .pricing-section {
+      background: rgba(255, 253, 248, 0.55);
+      border-block: 1px solid var(--line);
+    }
+    .price-card {
+      display: grid;
+      gap: 1rem;
+      align-content: start;
+    }
+    .price-card.featured {
+      border-color: rgba(201, 162, 91, 0.72);
+      box-shadow: 0 16px 42px rgba(6, 21, 34, 0.1);
+    }
+    .price {
+      color: var(--navy);
+      font-family: var(--serif);
+      font-size: 2.55rem;
+      font-weight: 500;
+      line-height: 1;
+    }
+    .price-card ul {
+      display: grid;
+      gap: 0.58rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: #4D4A44;
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+    .price-card li::before {
+      content: "+ ";
+      color: var(--gold-2);
+      font-weight: 900;
+    }
+    .cta-band {
+      background: linear-gradient(90deg, var(--navy), var(--navy-2));
+      color: var(--cream);
+      text-align: center;
+    }
+    .cta-band .design-section {
+      padding-block: clamp(3.2rem, 7vw, 5rem);
+    }
+    .cta-band h2 {
+      max-width: 720px;
+      margin: 0 auto 0.85rem;
+      color: #fffdf8;
+      font-family: var(--serif);
+      font-size: clamp(2.2rem, 5vw, 4rem);
+      font-weight: 500;
+      line-height: 1;
+    }
+    .cta-band p {
+      max-width: 560px;
+      margin: 0 auto 1.6rem;
+      color: rgba(246, 241, 232, 0.75);
+      line-height: 1.7;
+    }
+    @media (max-width: 880px) {
+      .hero-inner,
+      .work-feature,
+      .process-grid,
+      .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+      .design-hero {
+        min-height: auto;
+      }
+      .browser-preview-body {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 560px) {
+      .hero-actions,
+      .design-button {
+        width: 100%;
+      }
+      .work-shot {
+        min-height: 260px;
+      }
+      .work-window-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="design-hero" id="home">
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <p class="design-eyebrow">Web design for Orthodox parishes and businesses</p>
+          <h1>AGAPAY Design</h1>
+          <h2>Websites built with care, craft, and Tradition</h2>
+          <p>Custom websites for Orthodox churches, ministries, and small businesses, built one client at a time with a personal hand on every detail.</p>
+          <div class="hero-actions">
+            <a class="design-button primary" href="#work">See the Work</a>
+            <a class="design-button secondary" href="#pricing">View Pricing</a>
+          </div>
+        </div>
+        <div class="studio-board" aria-label="AGAPAY Design website preview">
+          <div class="browser-preview">
+            <div class="browser-bar"><span class="browser-dot"></span><span class="browser-dot"></span><span class="browser-dot"></span></div>
+            <div class="browser-preview-body">
+              <div>
+                <div class="preview-line title"></div>
+                <div class="preview-line gold"></div>
+                <div class="preview-line muted"></div>
+                <div class="preview-line muted"></div>
+              </div>
+              <div class="preview-media"></div>
+            </div>
+          </div>
+          <div class="studio-note">
+            <img src="/mark.png" alt="" aria-hidden="true" />
+            <span>Thoughtful copy, mobile-first structure, beautiful visual systems, and practical launch support.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="design-section" id="work">
+      <div class="section-head">
+        <p class="design-eyebrow">Selected work</p>
+        <h2>Recent project</h2>
+        <p>A practical, polished example of the kind of site AGAPAY Design can build from strategy through launch.</p>
+      </div>
+      <div class="work-feature">
+        <div class="work-shot" aria-label="Chariot Concepts website preview">
+          <div class="work-window">
+            <div class="work-window-top"></div>
+            <div class="work-window-body">
+              <strong>Chariot Concepts</strong>
+              <div class="preview-line gold"></div>
+              <div class="preview-line muted"></div>
+              <div class="work-window-grid">
+                <span class="work-tile"></span>
+                <span class="work-tile"></span>
+                <span class="work-tile"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="work-copy">
+          <span class="project-pill">Live client project</span>
+          <h3>Chariot Concepts</h3>
+          <p>A full e-commerce site for a retail tire-industry hardware brand: product catalog, checkout, wholesale and dealer inquiries, built end to end.</p>
+          <div class="chip-row">
+            <span class="service-chip">E-commerce</span>
+            <span class="service-chip">Checkout and payments</span>
+            <span class="service-chip">Wholesale inquiries</span>
+          </div>
+          <a class="design-button primary" href="https://candid-dusk-655cb7.netlify.app/" target="_blank" rel="noopener">View Live Site</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="design-section" id="process">
+      <div class="section-head">
+        <p class="design-eyebrow">How it works</p>
+        <h2>A simple, personal process</h2>
+      </div>
+      <div class="process-grid">
+        <article class="process-card">
+          <span class="process-num">01</span>
+          <h3>Conversation</h3>
+          <p>We talk through your parish or business, your goals, and what the site needs to do.</p>
+        </article>
+        <article class="process-card">
+          <span class="process-num">02</span>
+          <h3>Design and build</h3>
+          <p>I design and build the site myself, with drafts along the way for your feedback.</p>
+        </article>
+        <article class="process-card">
+          <span class="process-num">03</span>
+          <h3>Launch and support</h3>
+          <p>Your site goes live, and I stay on for updates and support after launch.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="pricing-section" id="pricing">
+      <div class="design-section">
+        <div class="section-head">
+          <p class="design-eyebrow">Pricing</p>
+          <h2>Straightforward packages</h2>
+          <p>Every project starts as a conversation. These are starting points, and every quote is tailored to your parish or business.</p>
+        </div>
+        <div class="pricing-grid">
+          <article class="price-card">
+            <span class="project-pill">Parish starter</span>
+            <h3>Simple online home</h3>
+            <p>A faithful web presence for a parish or ministry.</p>
+            <div class="price">$900</div>
+            <ul>
+              <li>Up to 5 pages</li>
+              <li>Service times, clergy, and directions</li>
+              <li>Mobile-friendly design</li>
+              <li>Basic contact form</li>
+            </ul>
+            <a class="design-button secondary" href="mailto:hello@agapay.app?subject=Parish%20Starter%20inquiry">Get a Quote</a>
+          </article>
+          <article class="price-card featured">
+            <span class="project-pill">Most common</span>
+            <h3>Full custom site</h3>
+            <p>A complete site for a parish, ministry, or small business.</p>
+            <div class="price">$2,400</div>
+            <ul>
+              <li>Up to 10 custom pages</li>
+              <li>Custom design direction</li>
+              <li>Events calendar or bulletin</li>
+              <li>Online giving or store integration</li>
+              <li>Basic SEO setup</li>
+            </ul>
+            <a class="design-button primary" href="mailto:hello@agapay.app?subject=Full%20Site%20inquiry">Get a Quote</a>
+          </article>
+          <article class="price-card">
+            <span class="project-pill">Custom</span>
+            <h3>Ongoing and advanced</h3>
+            <p>For e-commerce, membership, multi-site organizations, and custom integrations.</p>
+            <div class="price">Custom</div>
+            <ul>
+              <li>E-commerce and checkout</li>
+              <li>Ongoing support and updates</li>
+              <li>Multi-language sites</li>
+              <li>Custom integrations</li>
+            </ul>
+            <a class="design-button secondary" href="mailto:hello@agapay.app?subject=Custom%20project%20inquiry">Let's Talk</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <div class="design-section">
+        <h2>Ready to build your site?</h2>
+        <p>Tell me about your parish, ministry, or business, and I will follow up with next steps.</p>
+        <a class="design-button primary" href="mailto:hello@agapay.app?subject=New%20project%20inquiry">hello@agapay.app</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

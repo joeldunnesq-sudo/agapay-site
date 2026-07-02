@@ -6,6 +6,7 @@
     { href: "/vision", label: "Vision", key: "vision" },
     { href: "/give", label: "AGAPAY Give", key: "give" },
     { href: "/learn", label: "AGAPAY Learn", key: "learn" },
+    { href: "/design", label: "AGAPAY Design", key: "design" },
     { href: "/marketplace", label: "Marketplace", key: "marketplace" },
     { href: "/directory", label: "Directory", key: "directory" },
     { href: "/about", label: "About", key: "about" }
@@ -25,6 +26,7 @@
     if (path === "/about" || path.endsWith("/about.html") || path === "/contact" || path.endsWith("/contact.html")) return "about";
     if (path === "/give" || path.endsWith("/give/index.html") || path.startsWith("/give/")) return "give";
     if (path === "/learn" || path === "/learn/" || path.startsWith("/learn/")) return "learn";
+    if (path === "/design" || path.endsWith("/design.html")) return "design";
     if (path === "/marketplace" || path.endsWith("/marketplace.html")) return "marketplace";
     if (path === "/directory" || path.endsWith("/directory.html")) return "directory";
     return "";
@@ -130,6 +132,7 @@
               <h4>Platform</h4>
               <a href="/give">AGAPAY Give</a>
               <a href="/learn">AGAPAY Learn</a>
+              <a href="/design">AGAPAY Design</a>
               <a href="/marketplace">Marketplace</a>
               <a href="/directory">Directory</a>
               <a href="/onboarding">Get Started</a>

@@ -176,10 +176,14 @@ assert.ok((platformHome.match(/data-flip-word/g) || []).length >= 2, "platform h
 assert.ok(platformHome.includes('footer class="site-footer" data-shell="canonical"'), "platform homepage should use the canonical footer");
 const canonicalChrome = await readFile("public/site-chrome.js", "utf8");
 assert.ok(canonicalChrome.indexOf('{ href: "/vision"') < canonicalChrome.indexOf('{ href: "/give"'), "canonical navigation should lead with Vision");
+assert.ok(canonicalChrome.includes('{ href: "/design", label: "AGAPAY Design"') && canonicalChrome.includes('return "design"'), "canonical navigation should include AGAPAY Design with an active route");
+const designPage = await readFile("public/design.html", "utf8");
+assert.ok(designPage.includes("AGAPAY Design") && designPage.includes("site-chrome.js") && designPage.includes("Straightforward packages"), "AGAPAY Design should render as a canonical public product page");
 const visionPage = await readFile("public/vision.html", "utf8");
 assert.ok(visionPage.includes("repeat(6,minmax(0,1fr))") && visionPage.includes("grid-column:span 3"), "Vision phases should use a balanced two-plus-three desktop grid");
 const sitemap = await readFile("public/sitemap.xml", "utf8");
 assert.ok(sitemap.includes("https://agapay.app/give"), "sitemap should include the canonical Give overview URL");
+assert.ok(sitemap.includes("https://agapay.app/design"), "sitemap should include the canonical AGAPAY Design URL");
 for (const givingPage of ["features", "how-it-works", "pricing", "why"]) {
   const html = await readFile(`public/give/${givingPage}.html`, "utf8");
   assert.ok(html.includes(`https://agapay.app/give/${givingPage}`), `Give ${givingPage} page should use its nested canonical URL`);

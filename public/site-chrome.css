@@ -128,7 +128,7 @@ body:not(.agp-shell-ready):not([data-no-site-chrome="true"])::before {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 1.45rem;
+  gap: clamp(0.82rem, 1.45vw, 1.35rem);
   min-width: 0;
 }
 
@@ -141,7 +141,7 @@ body:not(.agp-shell-ready):not([data-no-site-chrome="true"])::before {
 .site-header[data-shell="canonical"] .nav-links a {
   position: relative;
   color: rgba(246, 241, 232, 0.84);
-  font-size: 0.95rem;
+  font-size: clamp(0.86rem, 0.9vw, 0.95rem);
   font-weight: 600;
   letter-spacing: 0.02em;
   padding: 0.4rem 0;
