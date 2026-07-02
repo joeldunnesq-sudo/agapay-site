@@ -122,7 +122,7 @@
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Suite', sacraments:'Sacraments & Services', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Suite', sacraments:'Sacraments & Services', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
@@ -130,6 +130,7 @@
     if (tab === 'qr') renderBulletinPreview();
     if (tab === 'stewardship') loadStewardshipPanel();
     if (tab === 'sacraments') loadSacramentsTab();
+    if (tab === 'bookstore') loadBookstoreCatalogTab();
     if (tab === 'reconcile' && currentParish) loadReconciliation();
     document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
     if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -902,6 +903,158 @@
     }
   }
 
+  // ── BOOKSTORE ───────────────────────────────────────────────
+  // Also a Stewardship Suite feature, gated the same way as Sacraments.
+  // Two pieces: what's already in the parish's catalog, and a starter
+  // list of common items they can check off instead of typing each one
+  // in by hand. Prices on the starter list are suggestions, not fixed —
+  // the parish edits them before anything gets added.
+  let bookstoreCatalogState = { loaded: false, products: [], starterCatalog: [] };
+
+  function bookstoreApi(path = '') {
+    if (!currentParish?.parishId) throw new Error('Load a parish first.');
+    return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/bookstore' + path;
+  }
+
+  const BOOKSTORE_CATEGORY_LABELS = {
+    book: 'Book', prayer_rope: 'Prayer Rope', icon: 'Icon', candle: 'Candle',
+    jewelry: 'Jewelry / Cross', incense: 'Incense', cd_dvd: 'CD / DVD', other: 'Other'
+  };
+
+  async function loadBookstoreCatalogTab(force = false) {
+    const upsell = document.getElementById('bookstoreUpsellBanner');
+    const live = document.getElementById('bookstoreLiveContent');
+    const navBadge = document.getElementById('bookstoreNavBadge');
+    const mobileBadge = document.getElementById('mobileBookstoreBadge');
+    if (!currentParish) return;
+
+    // Reuse the Stewardship Suite status already fetched for that tab.
+    const sw = stewardshipState.stewardship || {};
+    const swActive = sw.active || ['active', 'trialing', 'comped'].includes(sw.status);
+    if (navBadge) navBadge.hidden = swActive;
+    if (mobileBadge) mobileBadge.hidden = swActive;
+    if (!swActive) {
+      if (upsell) upsell.hidden = false;
+      if (live) live.hidden = true;
+      return;
+    }
+    if (upsell) upsell.hidden = true;
+    if (live) live.hidden = false;
+
+    if (bookstoreCatalogState.loaded && !force) {
+      renderBookstoreCurrentItems(bookstoreCatalogState.products);
+      renderBookstoreStarterCatalogUI(bookstoreCatalogState.starterCatalog);
+      return;
+    }
+
+    const itemsPane = document.getElementById('bookstoreCurrentItems');
+    const starterPane = document.getElementById('bookstoreStarterCatalog');
+    if (itemsPane) itemsPane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
+    if (starterPane) starterPane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
+
+    try {
+      const [productsRes, catalogRes] = await Promise.all([
+        fetch(bookstoreApi('/products'), { headers: authHeaders() }),
+        fetch(bookstoreApi('/starter-catalog'), { headers: authHeaders() })
+      ]);
+      const productsData = await productsRes.json().catch(() => ({}));
+      const catalogData = await catalogRes.json().catch(() => ({}));
+      if (!productsRes.ok) throw new Error(productsData.error || 'Unable to load your bookstore items.');
+      if (!catalogRes.ok) throw new Error(catalogData.error || 'Unable to load the starter catalog.');
+
+      bookstoreCatalogState = { loaded: true, products: productsData.products || [], starterCatalog: catalogData.catalog || [] };
+      renderBookstoreCurrentItems(bookstoreCatalogState.products);
+      renderBookstoreStarterCatalogUI(bookstoreCatalogState.starterCatalog);
+    } catch (err) {
+      if (itemsPane) itemsPane.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
+      if (starterPane) starterPane.innerHTML = '';
+    }
+  }
+
+  function renderBookstoreCurrentItems(products) {
+    const pane = document.getElementById('bookstoreCurrentItems');
+    if (!pane) return;
+    if (!products.length) {
+      pane.innerHTML = '<p style="color:var(--stone,#6F6A60);font-size:13.5px;margin:0;">Nothing added yet — use the starter catalog below to get going.</p>';
+      return;
+    }
+    pane.innerHTML = `
+      <table class="sw-simple-table" style="width:100%;border-collapse:collapse;">
+        <thead><tr>
+          <th style="text-align:left;padding:6px 8px;font-size:12px;color:var(--stone,#6F6A60);">Item</th>
+          <th style="text-align:left;padding:6px 8px;font-size:12px;color:var(--stone,#6F6A60);">Category</th>
+          <th style="text-align:right;padding:6px 8px;font-size:12px;color:var(--stone,#6F6A60);">Price</th>
+          <th style="text-align:right;padding:6px 8px;font-size:12px;color:var(--stone,#6F6A60);">In stock</th>
+        </tr></thead>
+        <tbody>
+          ${products.map(p => `
+            <tr style="border-top:1px solid rgba(166,159,145,0.2);">
+              <td style="padding:6px 8px;">${escapeHtml(p.name)}</td>
+              <td style="padding:6px 8px;">${escapeHtml(BOOKSTORE_CATEGORY_LABELS[p.category] || p.category)}</td>
+              <td style="padding:6px 8px;text-align:right;">${money(p.priceCents)}</td>
+              <td style="padding:6px 8px;text-align:right;">${Number(p.stockQuantity || 0)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function renderBookstoreStarterCatalogUI(catalog) {
+    const pane = document.getElementById('bookstoreStarterCatalog');
+    if (!pane) return;
+    if (!catalog.length) { pane.innerHTML = '<p style="margin:0;">No starter items available.</p>'; return; }
+
+    pane.innerHTML = catalog.map(group => `
+      <div style="margin-bottom:1.1rem;">
+        <h4 style="margin:0 0 0.5rem;font-size:14px;color:var(--ink,#171715);">${escapeHtml(group.label)}</h4>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          ${group.items.map(item => `
+            <label style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:8px;background:${item.alreadyAdded ? 'rgba(46,107,63,0.06)' : 'transparent'};">
+              <input type="checkbox" data-starter-key="${escapeAttr(item.key)}" ${item.alreadyAdded ? 'disabled checked' : ''} style="flex-shrink:0;" />
+              <span style="flex:1;font-size:13.5px;">${escapeHtml(item.name)}${item.alreadyAdded ? ' <em style="color:var(--stone,#6F6A60);font-style:normal;">— already added</em>' : ''}</span>
+              ${item.alreadyAdded ? '' : `
+                <input type="number" min="0.01" step="0.01" value="${(item.suggestedPriceCents / 100).toFixed(2)}" data-starter-price="${escapeAttr(item.key)}" style="width:76px;padding:4px 6px;border:1px solid rgba(166,159,145,0.4);border-radius:6px;font-size:13px;" title="Price" />
+                <input type="number" min="0" step="1" value="0" data-starter-stock="${escapeAttr(item.key)}" style="width:60px;padding:4px 6px;border:1px solid rgba(166,159,145,0.4);border-radius:6px;font-size:13px;" title="Starting stock count" />
+              `}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function submitBookstoreStarterCatalog(btn) {
+    const checked = Array.from(document.querySelectorAll('#bookstoreStarterCatalog input[type="checkbox"][data-starter-key]:checked:not(:disabled)'));
+    if (!checked.length) { setStatus('Check off at least one item to add.', 'error'); return; }
+
+    const items = checked.map(box => {
+      const key = box.getAttribute('data-starter-key');
+      const priceInput = document.querySelector(`[data-starter-price="${CSS.escape(key)}"]`);
+      const stockInput = document.querySelector(`[data-starter-stock="${CSS.escape(key)}"]`);
+      const priceCents = priceInput ? Math.round(Number(priceInput.value || 0) * 100) : undefined;
+      const stockQuantity = stockInput ? Number(stockInput.value || 0) : 0;
+      return { key, priceCents, stockQuantity };
+    });
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Adding…'; }
+    try {
+      const res = await fetch(bookstoreApi('/starter-catalog/add'), {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to add items.');
+      setStatus(`Added ${data.added.length} item${data.added.length === 1 ? '' : 's'} to your bookstore.`, 'success');
+      await loadBookstoreCatalogTab(true);
+    } catch (err) {
+      setStatus(err.message, 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Add selected items to my bookstore'; }
+    }
+  }
+
   // ── SACRAMENTS & SERVICES ──────────────────────────────────
   // A Stewardship Suite feature — gated server-side by the exact same
   // hasStewardshipAccess() check as the rest of the Suite. This panel
@@ -913,6 +1066,7 @@
   function sacramentsApi(path = '') {
     if (!currentParish?.parishId) throw new Error('Load a parish first.');
     return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/sacraments' + path;
+
   }
 
   const SACRAMENT_TYPE_LABELS = {
@@ -1910,7 +2064,11 @@
         <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(p.recurringGivingEnabled??true)?'checked':''} /> Recurring giving</label>
         <label class="check-card"><input id="candlesEnabled" type="checkbox" ${(p.candlesEnabled??true)?'checked':''} /> Candles</label>
         <label class="check-card"><input id="commemorationsEnabled" type="checkbox" ${(p.commemorationsEnabled??true)?'checked':''} /> Commemorations</label>
+        <label class="check-card" ${p.stewardshipActive?'':'title="Requires AGAPAY Stewardship Suite"'}>
+          <input id="bookstoreEnabled" type="checkbox" ${p.stewardshipActive?'':'disabled'} ${(p.bookstoreEnabled??false)?'checked':''} /> Bookstore Payments
+        </label>
       </div>
+      ${p.stewardshipActive ? '' : '<p class="section-note">Bookstore Payments is part of AGAPAY Stewardship Suite. <a href="' + escapeAttr(stewardshipGivingPageUrl()) + '">Add Stewardship Suite</a> to let donors pay for books, prayer ropes, and other items from My AGAPAY.</p>'}
       <div class="btn-row">
         <button class="btn btn-gold" onclick="saveDashboard(this)">Save changes</button>
         ${(p.setup||{}).billingActive?'<button class="btn btn-primary" onclick="startStripeOnboarding(this)">Start Stripe onboarding</button>':'<button class="btn btn-ghost" disabled title="Complete AGAPAY billing first">Stripe unlocks after billing</button>'}
@@ -2397,6 +2555,7 @@
       recurringGivingEnabled: document.getElementById('recurringGivingEnabled')?.checked,
       candlesEnabled:         document.getElementById('candlesEnabled')?.checked,
       commemorationsEnabled:  document.getElementById('commemorationsEnabled')?.checked,
+      bookstoreEnabled:       document.getElementById('bookstoreEnabled')?.checked,
       funds:                  editableFunds,
       campaigns:              editableCampaigns,
       feastCampaigns:         editableFeastCampaigns,

@@ -11,6 +11,7 @@
   const icons = {
     home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>',
     give: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg>',
+    bookstore: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
     learn: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg>',
     market: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12l-1 13H7z"/><path d="M9 8a3 3 0 0 1 6 0"/><path d="M9 13h6"/></svg>',
     account: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>'
@@ -24,6 +25,7 @@
     const items = [
       { id: "home", href: "/myagapay", label: "My AGAPAY", icon: icons.home },
       { id: "giving", href: "/myagapay/giving", label: "Give", icon: icons.give },
+      { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", icon: icons.bookstore },
       { id: "learn", href: "/myagapay/learn", label: "Learn", icon: icons.learn }
     ];
     if (releaseFlags.marketplaceDirectoryLive) {
@@ -35,7 +37,9 @@
 
   function activeProduct(pathname = window.location.pathname) {
     if (pathname.startsWith("/myagapay/learn")) return "learn";
+    if (pathname.startsWith("/myagapay/bookstore")) return "bookstore";
     if (pathname.startsWith("/myagapay/giving")) return "giving";
+    if (pathname.startsWith("/myagapay/sacraments")) return "giving";
     if (pathname.startsWith("/myagapay/account")) return "account";
     if (pathname.startsWith("/marketplace")) return "market";
     return "home";

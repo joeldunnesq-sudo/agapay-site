@@ -2421,3 +2421,382 @@ async function cancelSacramentRequest(id, btn) {
     if (btn) { btn.disabled = false; btn.textContent = "Cancel request"; }
   }
 }
+
+// ------------------------------------------------------------------
+// Parish Bookstore Payments — pay for books, prayer ropes, icons, candles, and
+// other devotional items directly from My AGAPAY, sales tax included.
+// See handleDonorBookstore in src/handlers/bookstore.js for the server side.
+// ------------------------------------------------------------------
+
+const BOOKSTORE_CATEGORY_LABELS = {
+  book: "Book",
+  prayer_rope: "Prayer Rope",
+  icon: "Icon",
+  candle: "Candle",
+  jewelry: "Jewelry / Cross",
+  incense: "Incense",
+  cd_dvd: "CD / DVD",
+  other: "Other Item"
+};
+
+const BOOKSTORE_STATUS_LABELS = {
+  checkout_created: "Awaiting payment",
+  completed: "Paid",
+  failed: "Payment failed",
+  expired: "Checkout expired",
+  refunded: "Refunded"
+};
+
+const BOOKSTORE_STATUS_TONE = {
+  checkout_created: "pending",
+  completed: "success",
+  failed: "wine",
+  expired: "muted",
+  refunded: "muted"
+};
+
+function formatCentsAsDollars(cents) {
+  return `$${(Number(cents || 0) / 100).toFixed(2)}`;
+}
+
+let bookstoreItemFieldsSchema = null;
+
+async function loadBookstoreItemFieldsSchema() {
+  if (bookstoreItemFieldsSchema) return bookstoreItemFieldsSchema;
+  try {
+    const res = await fetch("/api/donor/bookstore/item-fields");
+    const data = await res.json().catch(() => ({}));
+    bookstoreItemFieldsSchema = Array.isArray(data.categories) ? data.categories : [];
+  } catch {
+    bookstoreItemFieldsSchema = [];
+  }
+  const select = document.getElementById("bookstoreCategory");
+  if (select && bookstoreItemFieldsSchema.length) {
+    select.innerHTML = '<option value="">Choose...</option>' +
+      bookstoreItemFieldsSchema.map(c => `<option value="${escapeHtml(c.category)}">${escapeHtml(c.label)}</option>`).join("");
+  }
+  return bookstoreItemFieldsSchema;
+}
+
+function renderBookstoreItemFields() {
+  const container = document.getElementById("bookstoreItemFields");
+  const category = document.getElementById("bookstoreCategory")?.value || "";
+  if (!container) return;
+  if (!category || !bookstoreItemFieldsSchema) {
+    container.innerHTML = '<p style="color:#6F6A60;font-size:13.5px;margin:0;">Choose an item type above to continue.</p>';
+    return;
+  }
+  const entry = bookstoreItemFieldsSchema.find(c => c.category === category);
+  const fields = entry?.fields || [];
+  const scanButton = category === "book"
+    ? `<button type="button" class="btn btn-ghost btn-sm bookstore-scan-btn" onclick="openBookstoreScanner()">
+         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M11 5v14M17 5v14"/></svg>
+         Scan book barcode
+       </button>`
+    : "";
+  container.innerHTML = scanButton + fields.map(field => {
+    const inputId = `bookstoreField_${field.key}`;
+    if (field.type === "select") {
+      const options = field.options.map(opt => `<option value="${escapeHtml(opt)}">${escapeHtml(opt.charAt(0).toUpperCase() + opt.slice(1))}</option>`).join("");
+      return `<div style="margin-bottom:8px;"><label class="form-label" for="${inputId}">${escapeHtml(field.label)}</label>
+        <select class="form-input" id="${inputId}" data-field-key="${escapeHtml(field.key)}" ${field.required ? "required" : ""}>
+          <option value="">${field.required ? "Choose..." : "Not specified"}</option>${options}
+        </select></div>`;
+    }
+    return `<div style="margin-bottom:8px;"><label class="form-label" for="${inputId}">${escapeHtml(field.label)}</label>
+      <input class="form-input" id="${inputId}" data-field-key="${escapeHtml(field.key)}" type="text" maxlength="${field.maxLength || 150}" ${field.required ? "required" : ""} /></div>`;
+  }).join("");
+}
+
+// ------------------------------------------------------------------
+// Book barcode scanning — scoped to the Book category only, since ISBNs
+// are the one item type with a real, standardized barcode and a free
+// public lookup (Open Library). Uses the native BarcodeDetector API when
+// the browser supports it, falls back to the ZXing library otherwise.
+// Any failure — no camera, permission denied, library didn't load, no
+// match found — just closes the scanner and leaves manual Title/Author
+// entry exactly as it was; scanning is additive, never a dead end.
+// ------------------------------------------------------------------
+let bookstoreScannerStream = null;
+let bookstoreScannerRAF = null;
+let bookstoreZXingReader = null;
+
+async function openBookstoreScanner() {
+  const overlay = document.getElementById("bookstoreScannerOverlay");
+  const video = document.getElementById("bookstoreScannerVideo");
+  const status = document.getElementById("bookstoreScannerStatus");
+  if (!overlay || !video) return;
+  overlay.hidden = false;
+  if (status) status.textContent = "Point your camera at the barcode on the back of the book.";
+
+  try {
+    bookstoreScannerStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }
+    });
+  } catch {
+    if (status) status.textContent = "Couldn't access your camera. You can still enter the title and author below.";
+    setTimeout(closeBookstoreScanner, 1800);
+    return;
+  }
+  video.srcObject = bookstoreScannerStream;
+  await video.play().catch(() => {});
+
+  if ("BarcodeDetector" in window) {
+    try {
+      const supported = await window.BarcodeDetector.getSupportedFormats();
+      if (supported.includes("ean_13")) {
+        const detector = new window.BarcodeDetector({ formats: ["ean_13"] });
+        scanWithBarcodeDetector(detector, video);
+        return;
+      }
+    } catch { /* fall through to ZXing */ }
+  }
+  scanWithZXing(video, status);
+}
+
+function scanWithBarcodeDetector(detector, video) {
+  const tick = async () => {
+    if (!bookstoreScannerStream) return;
+    try {
+      const codes = await detector.detect(video);
+      if (codes.length) {
+        handleBarcodeDetected(codes[0].rawValue);
+        return;
+      }
+    } catch { /* keep trying */ }
+    bookstoreScannerRAF = requestAnimationFrame(tick);
+  };
+  bookstoreScannerRAF = requestAnimationFrame(tick);
+}
+
+function scanWithZXing(video, status) {
+  if (typeof ZXing === "undefined") {
+    if (status) status.textContent = "Barcode scanning isn't available on this device. Enter the title and author below.";
+    setTimeout(closeBookstoreScanner, 2200);
+    return;
+  }
+  try {
+    bookstoreZXingReader = new ZXing.BrowserMultiFormatReader();
+    bookstoreZXingReader.decodeFromVideoElement(video, (result, err) => {
+      if (result?.text) handleBarcodeDetected(result.text);
+    });
+  } catch {
+    if (status) status.textContent = "Barcode scanning isn't available on this device. Enter the title and author below.";
+    setTimeout(closeBookstoreScanner, 2200);
+  }
+}
+
+async function handleBarcodeDetected(rawValue) {
+  const isbn = String(rawValue || "").replace(/[^0-9Xx]/g, "");
+  if (isbn.length !== 10 && isbn.length !== 13) return; // not a book ISBN, keep scanning
+
+  const status = document.getElementById("bookstoreScannerStatus");
+  if (status) status.textContent = "Found it — looking up the title...";
+  closeBookstoreScanner();
+
+  try {
+    const res = await fetch(`/api/donor/bookstore/isbn-lookup?isbn=${encodeURIComponent(isbn)}`);
+    const data = await res.json().catch(() => ({}));
+    if (data.found) {
+      const titleInput = document.getElementById("bookstoreField_title");
+      const authorInput = document.getElementById("bookstoreField_author");
+      if (titleInput) titleInput.value = data.title || "";
+      if (authorInput) authorInput.value = data.author || "";
+      setDonorStatus("Title filled in from the barcode — double check it, then enter the price.", "success");
+    } else {
+      setDonorStatus("Couldn't find that book — enter the title and author below.", "info");
+    }
+  } catch {
+    setDonorStatus("Couldn't look up that book — enter the title and author below.", "info");
+  }
+}
+
+function closeBookstoreScanner() {
+  const overlay = document.getElementById("bookstoreScannerOverlay");
+  const video = document.getElementById("bookstoreScannerVideo");
+  if (overlay) overlay.hidden = true;
+  if (bookstoreScannerRAF) cancelAnimationFrame(bookstoreScannerRAF);
+  bookstoreScannerRAF = null;
+  if (bookstoreZXingReader) {
+    try { bookstoreZXingReader.reset(); } catch {}
+    bookstoreZXingReader = null;
+  }
+  if (bookstoreScannerStream) {
+    bookstoreScannerStream.getTracks().forEach(track => track.stop());
+    bookstoreScannerStream = null;
+  }
+  if (video) video.srcObject = null;
+}
+
+async function loadDonorBookstorePage() {
+  const session = donorSession();
+  const list = document.getElementById("bookstoreOrderList");
+  primeCommemorationParishDisplay();
+  loadBookstoreItemFieldsSchema();
+
+
+  if (!session.email || !session.token) {
+    if (list) list.innerHTML = '<div class="notice">Sign in to view your orders.</div>';
+    return;
+  }
+
+  const donor = donorProfile();
+  const parishId = donor?.defaultParishId || "";
+  const parishInput = document.getElementById("bookstoreParishId");
+  if (parishInput) parishInput.value = parishId;
+
+  if (!parishId) {
+    const formCard = document.getElementById("bookstoreFormCard");
+    if (formCard) formCard.style.display = "none";
+    if (list) list.innerHTML = '<div class="notice">Choose your parish in Settings before ordering from the bookstore.</div>';
+    return;
+  }
+
+  handleBookstoreCheckoutReturn();
+
+  const cached = readDonorCache("bookstore");
+  if (cached) renderBookstorePayload(cached);
+
+  try {
+    const data = await donorApi("/api/donor/bookstore", {
+      headers: donorAuthHeaders({ "X-AGAPAY-Parish-Id": parishId })
+    });
+    writeDonorCache("bookstore", data);
+    renderBookstorePayload(data);
+  } catch (err) {
+    if (isDonorUnauthorized(err)) {
+      clearDonorSession();
+      if (list) list.innerHTML = '<div class="notice">Session expired. Please sign in again.</div>';
+      return;
+    }
+    if (!cached) {
+      if (list) list.innerHTML = `<div class="notice">${escapeHtml(err.message)}</div>`;
+    }
+  }
+}
+
+function renderBookstorePayload(payload = {}) {
+  const list = document.getElementById("bookstoreOrderList");
+  const form = document.getElementById("bookstoreForm");
+  const unavailableNotice = document.getElementById("bookstoreUnavailableNotice");
+
+  const available = payload.available !== false; // default to showing the form while first loading
+  if (form) form.style.display = available ? "" : "none";
+  if (unavailableNotice) {
+    unavailableNotice.style.display = available ? "none" : "block";
+    unavailableNotice.innerHTML = available ? "" : `
+      <p style="margin:0 0 12px;">Your parish hasn't turned on Bookstore Payments yet.</p>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="requestBookstoreFeature(this)">Ask my parish to turn it on</button>
+    `;
+  }
+
+  const orders = Array.isArray(payload.orders) ? payload.orders : [];
+  if (list) {
+    list.innerHTML = orders.length
+      ? orders.map(bookstoreOrderRow).join("")
+      : '<div class="notice">No orders yet.</div>';
+  }
+  return payload;
+}
+
+async function requestBookstoreFeature(btn) {
+  const parishId = document.getElementById("bookstoreParishId")?.value || donorProfile()?.defaultParishId || "";
+  if (!parishId) return;
+  if (btn) { btn.disabled = true; btn.textContent = "Sending..."; }
+  try {
+    const data = await donorApi("/api/donor/bookstore/request-feature", {
+      method: "POST",
+      body: JSON.stringify({ parishId })
+    });
+    if (btn) btn.textContent = data.alreadySent ? "Already asked recently" : "Request sent!";
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = "Ask my parish to turn it on"; }
+    setDonorStatus(err.message, "error");
+  }
+}
+
+function bookstoreOrderRow(row) {
+  const statusLabel = BOOKSTORE_STATUS_LABELS[row.status] || row.status;
+  const tone = BOOKSTORE_STATUS_TONE[row.status] || "muted";
+  const categoryLabel = row.itemCategoryLabel || BOOKSTORE_CATEGORY_LABELS[row.itemCategory] || "Item";
+  return `<div class="sac-row">
+    <div class="sac-row-top">
+      <span class="sac-row-type">${escapeHtml(row.itemDescription)}</span>
+      <span class="status-pill ${tone}">${escapeHtml(statusLabel)}</span>
+    </div>
+    <div class="sac-row-meta">${escapeHtml(categoryLabel)} × ${row.quantity} · ${formatCentsAsDollars(row.totalChargedCents || row.subtotalCents)}${row.pickupNote ? ` · ${escapeHtml(row.pickupNote)}` : ""}</div>
+  </div>`;
+}
+
+async function submitBookstoreOrder(event) {
+  event.preventDefault();
+  const session = donorSession();
+  if (!session.email || !session.token) {
+    setDonorStatus("Sign in from the donor home page before checking out.", "error");
+    return;
+  }
+
+  const parishId = document.getElementById("bookstoreParishId")?.value || donorProfile()?.defaultParishId || "";
+  if (!parishId) {
+    setDonorStatus("Choose your parish in Settings first.", "error");
+    return;
+  }
+
+  const itemCategory = document.getElementById("bookstoreCategory")?.value || "";
+  if (!itemCategory) {
+    setDonorStatus("Choose an item type.", "error");
+    return;
+  }
+  const specifics = {};
+  let missingRequired = false;
+  document.querySelectorAll('#bookstoreItemFields [data-field-key]').forEach(el => {
+    const key = el.getAttribute("data-field-key");
+    const value = (el.value || "").trim();
+    if (el.hasAttribute("required") && !value) missingRequired = true;
+    if (value) specifics[key] = value;
+  });
+  if (missingRequired) {
+    setDonorStatus("Fill in the required fields for this item type.", "error");
+    return;
+  }
+  const quantity = Number(document.getElementById("bookstoreQuantity")?.value) || 1;
+  const unitPrice = document.getElementById("bookstorePrice")?.value;
+  if (!unitPrice || Number(unitPrice) <= 0) {
+    setDonorStatus("Enter a valid price.", "error");
+    return;
+  }
+  const pickupNote = document.getElementById("bookstorePickupNote")?.value || "";
+  const coverFees = document.getElementById("bookstoreCoverFees")?.checked !== false;
+
+  try {
+    setDonorStatus("Preparing checkout...");
+    const data = await donorApi("/api/donor/bookstore", {
+      method: "POST",
+      body: JSON.stringify({
+        parishId,
+        itemCategory,
+        specifics,
+        quantity,
+        unitPrice,
+        pickupNote,
+        coverFees,
+        email: session.email
+      })
+    });
+    if (data.url) window.location.href = data.url;
+    else setDonorStatus(data.message || "Checkout is not available yet.", "error");
+  } catch (err) {
+    setDonorStatus(err.message, "error");
+  }
+}
+
+function handleBookstoreCheckoutReturn() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("order_success") === "1") {
+    setDonorStatus("Payment received — thank you! Your parish will let you know when your item is ready.", "success");
+    window.history.replaceState({}, "", "/myagapay/bookstore");
+  } else if (params.get("order_canceled") === "1") {
+    setDonorStatus("Checkout canceled. Your order was not charged.", "info");
+    window.history.replaceState({}, "", "/myagapay/bookstore");
+  }
+}

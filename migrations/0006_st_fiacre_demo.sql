@@ -147,16 +147,16 @@ VALUES
 -- Matches the giving_funds seeded above with running balances
 
 INSERT OR IGNORE INTO household_pledges
-  (id, parish_id, donor_email, amount_cents, frequency, status, year, created_at, updated_at, data)
+  (donor_email, parish_id, fiscal_year, target_amount_cents, created_at, updated_at)
 VALUES
-  ('fiacre-pledge-001','st-fiacre','james.mcallister@email.com', 240000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"James McAllister","notes":""}'),
-  ('fiacre-pledge-002','st-fiacre','brendan.murphy@email.com',   360000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Brendan Murphy","notes":""}'),
-  ('fiacre-pledge-003','st-fiacre','thomas.burke@email.com',     300000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Thomas Burke","notes":""}'),
-  ('fiacre-pledge-004','st-fiacre','patrick.fitzgerald@email.com',180000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Patrick Fitzgerald","notes":""}'),
-  ('fiacre-pledge-005','st-fiacre','sean.doherty@email.com',     240000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Sean Doherty","notes":""}'),
-  ('fiacre-pledge-006','st-fiacre','liam.boyle@email.com',       180000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Liam Boyle","notes":""}'),
-  ('fiacre-pledge-007','st-fiacre','declan.brennan@email.com',   240000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Declan Brennan","notes":""}'),
-  ('fiacre-pledge-008','st-fiacre','cormac.hayes@email.com',     360000,'monthly','active',2025,'2025-01-01T00:00:00Z','2025-01-01T00:00:00Z','{"donorName":"Cormac Hayes","notes":""}');
+  ('james.mcallister@email.com', 'st-fiacre', 2025, 240000, '2025-01-01T00:00:00Z', '2025-01-01T00:00:00Z'),
+  ('brendan.murphy@email.com', 'st-fiacre', 2025, 360000, '2025-01-01T00:00:00Z', '2025-01-01T00:00:00Z'),
+  ('thomas.burke@email.com', 'st-fiacre', 2025, 300000, '2025-01-01T00:00:00Z', '2025-01-01T00:00:00Z'),
+  ('patrick.fitzgerald@email.com', 'st-fiacre', 2025, 180000, '2025-01-01T00:00:00Z', '2025-01-01T00:00:00Z'),
+  ('sean.doherty@email.com', 'st-fiacre', 2025, 240000, '2025-01-01T00:00:00Z', '2025-01-01T00:00:00Z'),
+  ('liam.boyle@email.com', 'st-fiacre', 2025, 180000, '2025-01-01T00:00:00Z', '2025-01-01T00:00:00Z'),
+  ('declan.brennan@email.com', 'st-fiacre', 2025, 240000, '2025-01-01T00:00:00Z', '2025-01-01T00:00:00Z'),
+  ('cormac.hayes@email.com', 'st-fiacre', 2025, 360000, '2025-01-01T00:00:00Z', '2025-01-01T00:00:00Z');
 
 -- ── Annual Meeting Packet ─────────────────────────────────────────────────────
 
