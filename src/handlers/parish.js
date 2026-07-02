@@ -3116,6 +3116,53 @@ function sacramentTypeLabel(type) {
   }[type] || type;
 }
 
+function publicBaptismDetails(row) {
+  if (!row) return null;
+  return {
+    candidateName: row.candidate_name,
+    candidateDob: row.candidate_dob || "",
+    candidateIsAdult: !!row.candidate_is_adult,
+    parentNames: row.parent_names || "",
+    patronSaint: row.patron_saint || "",
+    godparent1Name: row.godparent_1_name || "",
+    godparent1HomeParish: row.godparent_1_home_parish || "",
+    godparent1OrthodoxAttested: !!row.godparent_1_orthodox_attested,
+    godparent2Name: row.godparent_2_name || "",
+    godparent2HomeParish: row.godparent_2_home_parish || "",
+    godparent2OrthodoxAttested: !!row.godparent_2_orthodox_attested,
+  };
+}
+
+function publicWeddingDetails(row) {
+  if (!row) return null;
+  return {
+    partyAName: row.party_a_name,
+    partyAOrthodox: !!row.party_a_orthodox,
+    partyAPriorMarriage: !!row.party_a_prior_marriage,
+    partyBName: row.party_b_name,
+    partyBOrthodox: !!row.party_b_orthodox,
+    partyBPriorMarriage: !!row.party_b_prior_marriage,
+    koumbaroName: row.koumbaro_name || "",
+    koumbaroHomeParish: row.koumbaro_home_parish || "",
+    marriageLicenseStatus: row.marriage_license_status || "not_started",
+    premaritalCounselComplete: !!row.premarital_counsel_complete,
+  };
+}
+
+async function attachSacramentDetailsForParish(env, row) {
+  const base = parishSacramentRequestRow(row);
+  if (!row) return base;
+  if (row.sacrament_type === "baptism" || row.sacrament_type === "chrismation") {
+    const detail = await d1First(env, "SELECT * FROM sacrament_baptism_details WHERE request_id = ?", row.id).catch(() => null);
+    return { ...base, baptismDetails: publicBaptismDetails(detail) };
+  }
+  if (row.sacrament_type === "wedding") {
+    const detail = await d1First(env, "SELECT * FROM sacrament_wedding_details WHERE request_id = ?", row.id).catch(() => null);
+    return { ...base, weddingDetails: publicWeddingDetails(detail) };
+  }
+  return base;
+}
+
 function parishSacramentRequestRow(row = {}) {
   return {
     id: row.id,
@@ -3181,7 +3228,10 @@ export async function handleParishSacraments(request, env, parishId) {
     return json({ ok: false, error: "Sacrament requests are not installed yet.", setupRequired: true }, { status: 503 });
   }
 
-  return json({ ok: true, requests: (rows || []).map(parishSacramentRequestRow) });
+  const requestsWithDetails = await Promise.all(
+    (rows || []).map((row) => attachSacramentDetailsForParish(env, row))
+  );
+  return json({ ok: true, requests: requestsWithDetails });
 }
 
 // PATCH /api/parish/dashboard/:parishId/sacraments/:requestId
@@ -3243,7 +3293,7 @@ export async function handleParishSacramentUpdate(request, env, parishId, reques
     } catch { /* notification failure never blocks the update */ }
   }
 
-  return json({ ok: true, request: parishSacramentRequestRow(updated) });
+  return json({ ok: true, request: await attachSacramentDetailsForParish(env, updated) });
 }
 
 async function notifyDonorOfSacramentStatusChange(env, registration, row) {
