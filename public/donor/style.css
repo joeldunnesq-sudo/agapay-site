@@ -2401,31 +2401,12 @@ body.donor-home {
 }
 
 .feast-kicker {
+  display: block;
+  margin-top: 0.55rem;
   color: var(--deep);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.feast-kicker-row {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
-}
-
-.feast-pill {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  background: var(--gold-soft);
-  color: #8a6515;
-  padding: 3px 8px;
-  font-size: 10px;
-  font-weight: 850;
-  letter-spacing: 0.06em;
-  line-height: 1;
   text-transform: uppercase;
 }
 
