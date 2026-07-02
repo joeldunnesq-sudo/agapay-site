@@ -2328,8 +2328,8 @@ export async function enrichParishGivingOptions(env, parish) {
       name: campaign.name || campaign.campaignName || "Parish Campaign",
       goalCents: Number(campaign.goalCents || campaign.targetCents || campaign.goalAmountCents || 0),
       coverPhotoUrl,
-      raisedCents: totals.raisedCents,
-      giftCount: totals.giftCount
+      raisedCents: totals.raisedCents || Number(campaign.raisedCents || campaign.amountCents || campaign.currentCents || 0),
+      giftCount: totals.giftCount || Number(campaign.giftCount || campaign.donorCount || 0)
     };
   };
   return {

@@ -566,6 +566,17 @@ function campaignRaisedCents(campaign) {
   return Number(campaign?.raisedCents || campaign?.amountCents || campaign?.currentCents || 0);
 }
 
+function campaignImageUrl(campaign) {
+  const photos = Array.isArray(campaign?.photos) ? campaign.photos : [];
+  const firstPhoto = photos.find(Boolean);
+  return campaign?.coverPhotoUrl
+    || campaign?.coverUrl
+    || campaign?.imageUrl
+    || campaign?.photoUrl
+    || (typeof firstPhoto === "string" ? firstPhoto : firstPhoto?.url)
+    || "";
+}
+
 function selectedCampaign() {
   const selected = document.getElementById("campaign")?.value || "";
   if (!selected) return null;
@@ -636,17 +647,22 @@ function renderActiveCampaigns(parish) {
   const goalCents = Number(campaign.goalCents || campaign.targetCents || campaign.goalAmountCents || 0);
   const raisedCents = Number(campaign.raisedCents || campaign.amountCents || campaign.currentCents || 0);
   const percent = goalCents > 0 ? Math.min(100, Math.round((raisedCents / goalCents) * 100)) : 0;
-  const label = campaign.category || campaign.type || (campaign.feastId ? "Liturgical" : "Campaign");
   const link = donorGiftUrl("campaign", parish, { campaign: campaign.id || campaign.feastId || campaign.name });
+  const imageUrl = campaignImageUrl(campaign);
+  const description = campaign.description || "Support this parish-approved campaign.";
   const html = `
-    <a class="campaign-card ${campaign.feastId ? "campaign-gold" : "campaign-navy"}" href="${escapeHtml(link)}">
-      <div class="campaign-meta">
-        <span class="campaign-pill">${escapeHtml(label)}</span>
-        <span>${parish?.name ? escapeHtml(parish.name) : "AGAPAY"}</span>
+    <a class="campaign-card campaign-media-card" href="${escapeHtml(link)}">
+      <div class="campaign-media-thumb">
+        ${imageUrl
+          ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" />`
+          : `<span>${escapeHtml((campaign.name || "Campaign").slice(0, 1))}</span>`}
       </div>
-      <h3>${escapeHtml(campaign.name || "Parish Campaign")}</h3>
-      ${campaign.description ? `<p class="campaign-description">${escapeHtml(campaign.description)}</p>` : ""}
-      ${goalCents > 0 ? `<div class="campaign-track"><span style="width:${percent}%"></span></div><p><strong>${money(raisedCents)}</strong> of ${money(goalCents)} <span>${percent}%</span></p>` : ""}
+      <div class="campaign-media-body">
+        <h3>${escapeHtml(campaign.name || "Parish Campaign")}</h3>
+        ${goalCents > 0 ? `<div class="campaign-track"><span style="width:${percent}%"></span></div>` : ""}
+        ${goalCents > 0 ? `<div class="campaign-progress-row"><strong>${money(raisedCents)} raised</strong><span>${percent}% of ${money(goalCents)}</span></div>` : ""}
+        <p class="campaign-description">${escapeHtml(description)}</p>
+      </div>
     </a>
   `;
   targets.forEach((target) => { target.innerHTML = html; });

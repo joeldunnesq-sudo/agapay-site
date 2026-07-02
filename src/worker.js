@@ -1539,6 +1539,23 @@ export default {
         { name: "Iconography Fund",     code: "iconography",isDefault: false, sortOrder: 4 },
         { name: "Memorial / Panakhida", code: "memorial",   isDefault: false, sortOrder: 5 },
       ];
+      const demoCampaigns = [
+        {
+          id: "roof-restoration",
+          slug: "roof-restoration",
+          name: "Church Roof Restoration",
+          description: "Help us restore and protect our church for generations to come.",
+          category: "Building",
+          status: "active",
+          active: true,
+          goalCents: 1000000,
+          raisedCents: 735000,
+          coverPhotoUrl: "/images/marketplace/dome-cross.jpg",
+          photos: ["/images/marketplace/dome-cross.jpg"],
+          createdAt: "2025-01-01T10:00:00.000Z",
+          updatedAt: now
+        }
+      ];
       const defaultDemoRegistration = {
         reference:              DEMO_REFERENCE,
         status:                 "verified",
@@ -1567,7 +1584,9 @@ export default {
         adminNotificationEmailStatus: "sent",
         receivedAt:             "2024-09-22T09:00:00.000Z",
         updatedAt:              now,
-        givingFunds:            demoFunds
+        givingFunds:            demoFunds,
+        campaigns:              demoCampaigns,
+        feastCampaigns:         []
       };
 
       const baseRegistration = foundRegistration?.registration || await applyParishDashboardPassword(
@@ -1585,6 +1604,8 @@ export default {
         subscriptionTier: baseRegistration.subscriptionTier || "parish",
         subscriptionStatus: baseRegistration.subscriptionStatus || "active",
         givingFunds: demoFunds,
+        campaigns: demoCampaigns,
+        feastCampaigns: [],
         updatedAt: now,
         parishUpdatedAt: now
       };
@@ -1629,6 +1650,10 @@ export default {
         { id: "demo_don_018", email: "andrei.morozov@email.com",   name: "Andrei Morozov",    amount: 50000, fund: "stewardship", date: "2024-12-29T12:00:00.000Z" },
         { id: "demo_don_019", email: "tatiana.volkov@email.com",   name: "Tatiana Volkov",    amount: 20000, fund: "stewardship", date: "2025-01-05T10:00:00.000Z" },
         { id: "demo_don_020", email: "konstantin.smirnov@email.com",name: "Konstantin Smirnov",amount: 30000, fund: "building",   date: "2025-01-12T09:00:00.000Z" },
+        { id: "demo_don_021", email: "maria.petrov@email.com",     name: "Maria Petrov",      amount: 250000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", date: "2025-01-19T11:15:00.000Z" },
+        { id: "demo_don_022", email: "peter.novak@email.com",      name: "Peter Novak",       amount: 200000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", date: "2025-01-26T09:45:00.000Z" },
+        { id: "demo_don_023", email: "anna.kozlov@email.com",      name: "Anna Kozlov",       amount: 185000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", date: "2025-02-02T10:30:00.000Z" },
+        { id: "demo_don_024", email: "nikolai.volkov@email.com",   name: "Nikolai Volkov",    amount: 100000, fund: "Church Roof Restoration", giftType: "campaign", campaign: "Church Roof Restoration", campaignId: "roof-restoration", date: "2025-02-09T13:00:00.000Z" },
       ];
 
       try {
@@ -1653,7 +1678,10 @@ export default {
               giftAmountCents: d.amount,
               parishNetCents: d.amount,
               fund:        d.fund,
-              giftType:    d.fund,
+              giftType:    d.giftType || d.fund,
+              campaign:    d.campaign || "",
+              campaignId:  d.campaignId || "",
+              campaignDescription: d.campaign ? "Demo gift for the roof restoration campaign." : "",
               parishId:    DEMO_PARISH_ID,
               currency:    "usd",
               status:      "completed",
