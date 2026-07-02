@@ -55,6 +55,17 @@
       margin: 0 auto;
       padding: clamp(3rem, 7vw, 5.6rem) 0;
     }
+    .work-section {
+      background:
+        linear-gradient(180deg, #fffdf8 0%, #faf5eb 100%);
+      border-bottom: 1px solid rgba(166, 159, 145, 0.28);
+    }
+    .process-section {
+      background:
+        linear-gradient(180deg, #f0e8d9 0%, #e8decb 100%);
+      border-top: 1px solid rgba(166, 159, 145, 0.24);
+      border-bottom: 1px solid rgba(166, 159, 145, 0.28);
+    }
     .design-eyebrow {
       margin: 0 0 0.8rem;
       color: var(--gold-2);
@@ -361,6 +372,11 @@
       background: var(--paper);
       padding: clamp(1.15rem, 3vw, 1.8rem);
     }
+    .process-section .process-card {
+      background:
+        linear-gradient(180deg, rgba(255, 253, 248, 0.92), rgba(246, 241, 232, 0.72));
+      box-shadow: 0 16px 38px rgba(6, 21, 34, 0.07);
+    }
     .process-num {
       display: block;
       margin-bottom: 0.5rem;
@@ -504,54 +520,58 @@
       </div>
     </section>
 
-    <section class="design-section" id="work">
-      <div class="section-head">
-        <p class="design-eyebrow">Selected work</p>
-        <h2>Recent project</h2>
-        <p>A practical, polished example of the kind of site AGAPAY Design can build from strategy through launch.</p>
-      </div>
-      <div class="work-feature">
-        <div class="work-shot" aria-label="Chariot Concepts website preview">
-          <div class="work-video-frame">
-            <video src="/videos/design/chariot-concepts.webm" autoplay muted loop playsinline preload="metadata" aria-label="Chariot Concepts website walkthrough"></video>
-            <span class="work-video-label">Live site preview</span>
-          </div>
+    <section class="work-section" id="work">
+      <div class="design-section">
+        <div class="section-head">
+          <p class="design-eyebrow">Selected work</p>
+          <h2>Recent project</h2>
+          <p>A practical, polished example of the kind of site AGAPAY Design can build from strategy through launch.</p>
         </div>
-        <div class="work-copy">
-          <span class="project-pill">Live client project</span>
-          <h3>Chariot Concepts</h3>
-          <p>A full e-commerce site for a retail tire-industry hardware brand: product catalog, checkout, wholesale and dealer inquiries, built end to end.</p>
-          <div class="chip-row">
-            <span class="service-chip">E-commerce</span>
-            <span class="service-chip">Checkout and payments</span>
-            <span class="service-chip">Wholesale inquiries</span>
+        <div class="work-feature">
+          <div class="work-shot" aria-label="Chariot Concepts website preview">
+            <div class="work-video-frame">
+              <video src="/videos/design/chariot-concepts.webm" autoplay muted loop playsinline preload="metadata" aria-label="Chariot Concepts website walkthrough"></video>
+              <span class="work-video-label">Live site preview</span>
+            </div>
           </div>
-          <a class="design-button primary" href="https://candid-dusk-655cb7.netlify.app/" target="_blank" rel="noopener">View Live Site</a>
+          <div class="work-copy">
+            <span class="project-pill">Live client project</span>
+            <h3>Chariot Concepts</h3>
+            <p>A full e-commerce site for a retail tire-industry hardware brand: product catalog, checkout, wholesale and dealer inquiries, built end to end.</p>
+            <div class="chip-row">
+              <span class="service-chip">E-commerce</span>
+              <span class="service-chip">Checkout and payments</span>
+              <span class="service-chip">Wholesale inquiries</span>
+            </div>
+            <a class="design-button primary" href="https://candid-dusk-655cb7.netlify.app/" target="_blank" rel="noopener">View Live Site</a>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="design-section" id="process">
-      <div class="section-head">
-        <p class="design-eyebrow">How it works</p>
-        <h2>A simple, personal process</h2>
-      </div>
-      <div class="process-grid">
-        <article class="process-card">
-          <span class="process-num">01</span>
-          <h3>Conversation</h3>
-          <p>We talk through your parish or business, your goals, and what the site needs to do.</p>
-        </article>
-        <article class="process-card">
-          <span class="process-num">02</span>
-          <h3>Design and build</h3>
-          <p>I design and build the site myself, with drafts along the way for your feedback.</p>
-        </article>
-        <article class="process-card">
-          <span class="process-num">03</span>
-          <h3>Launch and support</h3>
-          <p>Your site goes live, and I stay on for updates and support after launch.</p>
-        </article>
+    <section class="process-section" id="process">
+      <div class="design-section">
+        <div class="section-head">
+          <p class="design-eyebrow">How it works</p>
+          <h2>A simple, personal process</h2>
+        </div>
+        <div class="process-grid">
+          <article class="process-card">
+            <span class="process-num">01</span>
+            <h3>Conversation</h3>
+            <p>We talk through your parish or business, your goals, and what the site needs to do.</p>
+          </article>
+          <article class="process-card">
+            <span class="process-num">02</span>
+            <h3>Design and build</h3>
+            <p>I design and build the site myself, with drafts along the way for your feedback.</p>
+          </article>
+          <article class="process-card">
+            <span class="process-num">03</span>
+            <h3>Launch and support</h3>
+            <p>Your site goes live, and I stay on for updates and support after launch.</p>
+          </article>
+        </div>
       </div>
     </section>
 
