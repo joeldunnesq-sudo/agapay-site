@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/parish/style.css" />
+  <link rel="stylesheet" href="/parish/redesign.css?v=20260702c" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -137,95 +138,142 @@
       <div class="tab-panel active" id="tab-giving">
         <div id="setupWizardPane"></div>
 
-        <div class="qr-feature-card">
-          <div class="qr-feature-layout">
-            <div class="qr-feature-code" id="qrCodeHero" aria-label="Giving page QR code">
-              <span style="font-size:11px;color:var(--stone);text-align:center;line-height:1.5;">Load dashboard<br>to generate QR</span>
-            </div>
+        <!-- HERO -->
+        <section class="pdx-hero" id="pdxHero">
+          <div class="pdx-hero-top">
             <div>
-              <div class="qr-feature-kicker">Parish giving link</div>
-              <h2 class="qr-feature-title">Share your AGAPAY giving page</h2>
-              <p class="qr-feature-copy">Use this QR code and direct link in bulletins, emails, narthex signs, table cards, and parish announcements.</p>
+              <div class="pdx-hero-eyebrow">Giving This Year</div>
+              <h2 class="pdx-hero-title" id="pdxHeroTitle">Year to date</h2>
+              <div class="pdx-hero-meta" id="pdxHeroRange">Load dashboard to view giving figures.</div>
             </div>
-            <div class="qr-feature-actions">
-              <div class="qr-copy-row">
-                <input id="givingUrlHeroInput" value="" placeholder="Load dashboard to generate" readonly style="background:var(--paper);" />
-                <button class="btn btn-ghost" onclick="copyGivingLink()">Copy</button>
-              </div>
-              <div class="btn-row">
-                <button class="btn btn-gold" onclick="switchTab('qr')">Open QR tools</button>
-                <button class="btn btn-ghost" onclick="downloadQrPng()">Download PNG</button>
+            <div class="pdx-hero-qr">
+              <div class="pdx-hero-qr-code" id="qrCodeHero" aria-label="Giving page QR code"></div>
+              <div class="pdx-hero-qr-body">
+                <span class="pdx-hero-qr-label">Giving link</span>
+                <input class="pdx-hero-qr-link" id="givingUrlHeroInput" value="" placeholder="Loading..." readonly style="background:transparent;border:0;padding:0;color:var(--cream);width:100%;" />
+                <span class="pdx-hero-qr-hint"><a href="#" onclick="copyGivingLink(); return false;">Copy</a> · <a href="#" onclick="downloadQrPng(); return false;">PNG</a> · <a href="#" onclick="switchTab('qr'); return false;">Tools</a></span>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="overview-status-card" id="overviewStatusCard">
-          <div>
-            <span class="overview-status-label">Giving page status</span>
-            <strong id="overviewGivingStatus">Active</strong>
-            <p id="overviewGivingStatusNote">Your giving page status appears here after the dashboard loads.</p>
-          </div>
-          <div class="overview-status-grid">
-            <div><span>Stripe</span><strong id="overviewStripeStatus">-</strong></div>
-            <div><span>Funds</span><strong id="overviewFundsCount">0</strong></div>
-            <div><span>Campaigns</span><strong id="overviewCampaignsCount">0</strong></div>
-          </div>
-        </div>
-
-        <div class="insights-card">
-          <div class="insights-header">
-            <span class="insights-title">Giving This Year</span>
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-ghost-dark btn-sm" onclick="switchTab('history')">View history</button>
-              <button class="btn btn-ghost-dark btn-sm" onclick="loadGivingSummary(this)">Refresh</button>
+          <div class="pdx-hero-figure">
+            <div class="pdx-hero-total-block">
+              <div class="pdx-hero-total-label">Total received</div>
+              <div class="pdx-hero-total" id="pdxHeroTotal">$0</div>
+              <div class="pdx-hero-total-sub" id="pdxHeroSub">
+                <span style="opacity:0.7;">Load dashboard to view giving summary.</span>
+              </div>
+            </div>
+            <div class="pdx-hero-spark">
+              <svg id="pdxHeroSpark" viewBox="0 0 600 130" preserveAspectRatio="none"></svg>
             </div>
           </div>
-          <div class="insights-body" id="givingSummaryPane">
-            <div class="insights-empty-dark">Load your dashboard to view year-to-date giving activity, donor counts, and monthly trends.</div>
-          </div>
-        </div>
+        </section>
 
-        <div class="section-card recurring-health-card">
-          <div class="section-header">
-            <div class="section-title">
-              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.6-6.1"/><path d="M21 12a9 9 0 0 1-15.6 6.1"/><polyline points="18 2 18 6 22 6"/><polyline points="6 22 6 18 2 18"/></svg></div>
-              Recurring Giving Health
+        <!-- KPI BAND -->
+        <section class="pdx-kpi-band" id="pdxKpiBand">
+          <div class="pdx-kpi-card">
+            <div class="pdx-kpi-label">Active donors</div>
+            <div class="pdx-kpi-value" id="pdxKpiDonors">—</div>
+            <div class="pdx-kpi-meta" id="pdxKpiDonorsMeta"><span style="opacity:0.7;">Awaiting data</span></div>
+            <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+          </div>
+          <div class="pdx-kpi-card">
+            <div class="pdx-kpi-label">Average gift</div>
+            <div class="pdx-kpi-value" id="pdxKpiAvgGift">—</div>
+            <div class="pdx-kpi-meta" id="pdxKpiAvgGiftMeta"><span style="opacity:0.7;">Awaiting data</span></div>
+            <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          </div>
+          <div class="pdx-kpi-card">
+            <div class="pdx-kpi-label">Recurring givers</div>
+            <div class="pdx-kpi-value" id="pdxKpiRecurring">—</div>
+            <div class="pdx-kpi-meta" id="pdxKpiRecurringMeta"><span style="opacity:0.7;">Awaiting data</span></div>
+            <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.6-6.1"/><path d="M21 12a9 9 0 0 1-15.6 6.1"/><polyline points="18 2 18 6 22 6"/><polyline points="6 22 6 18 2 18"/></svg></div>
+          </div>
+          <div class="pdx-kpi-card">
+            <div class="pdx-kpi-label">Total gifts YTD</div>
+            <div class="pdx-kpi-value" id="pdxKpiGiftCount">—</div>
+            <div class="pdx-kpi-meta" id="pdxKpiGiftCountMeta"><span style="opacity:0.7;">Awaiting data</span></div>
+            <div class="pdx-kpi-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+          </div>
+        </section>
+
+        <!-- Hidden container preserved so existing JS still finds it -->
+        <div id="givingSummaryPane" hidden></div>
+
+        <!-- BODY GRID: Recurring Health + Candle Giving -->
+        <section class="pdx-body-grid">
+          <div class="pdx-panel">
+            <div class="pdx-panel-header">
+              <div class="pdx-panel-title">
+                <div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.6-6.1"/><path d="M21 12a9 9 0 0 1-15.6 6.1"/><polyline points="18 2 18 6 22 6"/><polyline points="6 22 6 18 2 18"/></svg></div>
+                Recurring Giving Health
+              </div>
+              <button class="pdx-link-btn" onclick="loadRecurringHealth(this)">Refresh</button>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="loadRecurringHealth(this)">Refresh</button>
-          </div>
-          <div class="section-body" id="recurringHealthPane">
-            <p class="section-note">Load your dashboard to see active, failed, and lapsed recurring gifts.</p>
-          </div>
-        </div>
-
-        <div class="section-card candle-giving-card">
-          <div class="section-header">
-            <div class="section-title">
-              <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-4.5 5-10 5-10z"/><path d="M9 21h6"/></svg></div>
-              Candle Giving
+            <div id="recurringHealthPane">
+              <div class="pdx-recurring-empty">Load your dashboard to see active, failed, and lapsed recurring gifts.</div>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="loadGivingHistory(this)">Refresh</button>
           </div>
-          <div class="section-body" id="candleGivingPane">
-            <p class="section-note">Load giving history to see candle gifts, candle totals, and names attached to candle intentions.</p>
-          </div>
-        </div>
 
-        <div class="section-card" id="commemorationQueueCard">
-          <div class="section-header">
-            <div class="section-title">
-              <div class="section-title-icon community-mark" id="commemorationCommunityIcon"></div>
-              Weekly Commemoration Queue
+          <div class="pdx-panel">
+            <div class="pdx-panel-header">
+              <div class="pdx-panel-title">
+                <div class="pdx-panel-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-4.5 5-10 5-10z"/><path d="M9 21h6"/></svg></div>
+                Candle Giving
+              </div>
+              <button class="pdx-link-btn" onclick="loadGivingHistory(this)">Refresh</button>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="loadCommemorations(this)">Refresh</button>
+            <div id="candleGivingPane">
+              <div class="pdx-candle-empty">Load giving history to see candle gifts, monthly candle totals, and names attached to candle intentions.</div>
+            </div>
           </div>
-          <div class="section-body" id="commemorationQueuePane">
-            <p class="section-note">Load your dashboard to view names submitted through commemoration gifts this week.</p>
-          </div>
-        </div>
+        </section>
 
-        <div class="empty-state" id="overviewEmpty">
+        <!-- COMMEMORATION QUEUE -->
+        <section class="pdx-panel pdx-commemoration-panel" id="commemorationQueueCard">
+          <div class="pdx-panel-header">
+            <div class="pdx-panel-title">
+              <div class="pdx-panel-title-icon community-mark" id="commemorationCommunityIcon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+              This Week's Commemoration Queue
+            </div>
+            <button class="pdx-link-btn" onclick="loadCommemorations(this)">Refresh</button>
+          </div>
+          <div id="commemorationQueuePane">
+            <div class="pdx-commemoration-empty">Load your dashboard to view names submitted through commemoration gifts this week.</div>
+          </div>
+        </section>
+
+        <!-- STATUS STRIP -->
+        <section class="pdx-status-strip" id="overviewStatusCard">
+          <div class="pdx-status-tile">
+            <div class="pdx-status-icon"><svg viewBox="0 0 24 24"><path d="M20 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6"/><path d="M22 6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2l10 7 10-7z"/></svg></div>
+            <div class="pdx-status-body">
+              <span class="pdx-status-label">Stripe</span>
+              <span class="pdx-status-value" id="pdxStripeStatusWrap"><span id="overviewStripeStatus">—</span></span>
+            </div>
+          </div>
+          <div class="pdx-status-tile">
+            <div class="pdx-status-icon"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+            <div class="pdx-status-body">
+              <span class="pdx-status-label">Active funds</span>
+              <span class="pdx-status-value"><span id="overviewFundsCount">0</span></span>
+            </div>
+          </div>
+          <div class="pdx-status-tile">
+            <div class="pdx-status-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <div class="pdx-status-body">
+              <span class="pdx-status-label">Live campaigns</span>
+              <span class="pdx-status-value"><span id="overviewCampaignsCount">0</span></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Preserved for existing status-note JS bindings; visually hidden -->
+        <div id="overviewGivingStatus" hidden></div>
+        <div id="overviewGivingStatusNote" hidden></div>
+
+        <div class="empty-state" id="overviewEmpty" hidden>
           <div class="empty-state-icon">
             <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           </div>
@@ -471,7 +519,7 @@
             <div class="empty-state">
               <div class="empty-state-icon"><svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/></svg></div>
               <h3>Not loaded</h3>
-              <p>Load your dashboard to manage designated funds and campaigns.</p>
+              <p>Load your dashboard to manage designated funds and alms campaigns.</p>
             </div>
           </div>
         </div>
@@ -1032,7 +1080,7 @@
                 </tr>
                 <tr>
                   <td><span class="text-give-keyword">STNICKALMS</span></td>
-                  <td><span class="text-give-fund">Campaign</span></td>
+                  <td><span class="text-give-fund">Alms Campaign</span></td>
                   <td><span class="text-give-status"><i></i>Active soon</span></td>
                   <td>Routes to an active campaign</td>
                 </tr>
