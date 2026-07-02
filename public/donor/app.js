@@ -2424,7 +2424,8 @@ async function cancelSacramentRequest(id, btn) {
 
 // ------------------------------------------------------------------
 // Parish Bookstore Payments — pay for books, prayer ropes, icons, candles, and
-// other devotional items directly from My AGAPAY, sales tax included.
+// other devotional items directly from My AGAPAY. Stripe shows sales tax
+// during checkout when it applies for the parish's state and tax settings.
 // See handleDonorBookstore in src/handlers/bookstore.js for the server side.
 // ------------------------------------------------------------------
 

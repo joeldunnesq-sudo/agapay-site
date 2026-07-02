@@ -921,6 +921,51 @@
     jewelry: 'Jewelry / Cross', incense: 'Incense', cd_dvd: 'CD / DVD', other: 'Other'
   };
 
+  function bookstoreCategoryOptions(selected = 'other') {
+    return Object.entries(BOOKSTORE_CATEGORY_LABELS).map(([value, label]) =>
+      `<option value="${escapeAttr(value)}" ${value === selected ? 'selected' : ''}>${escapeHtml(label)}</option>`
+    ).join('');
+  }
+
+  const BOOKSTORE_NO_STATEWIDE_SALES_TAX_STATES = new Set(['DE', 'MT', 'NH', 'OR']);
+
+  function normalizeStateCode(value) {
+    const raw = String(value || '').trim().toUpperCase();
+    const names = {
+      ALABAMA: 'AL', ALASKA: 'AK', ARIZONA: 'AZ', ARKANSAS: 'AR', CALIFORNIA: 'CA',
+      COLORADO: 'CO', CONNECTICUT: 'CT', DELAWARE: 'DE', FLORIDA: 'FL', GEORGIA: 'GA',
+      HAWAII: 'HI', IDAHO: 'ID', ILLINOIS: 'IL', INDIANA: 'IN', IOWA: 'IA',
+      KANSAS: 'KS', KENTUCKY: 'KY', LOUISIANA: 'LA', MAINE: 'ME', MARYLAND: 'MD',
+      MASSACHUSETTS: 'MA', MICHIGAN: 'MI', MINNESOTA: 'MN', MISSISSIPPI: 'MS', MISSOURI: 'MO',
+      MONTANA: 'MT', NEBRASKA: 'NE', NEVADA: 'NV', 'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ',
+      'NEW MEXICO': 'NM', 'NEW YORK': 'NY', 'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND',
+      OHIO: 'OH', OKLAHOMA: 'OK', OREGON: 'OR', PENNSYLVANIA: 'PA', 'RHODE ISLAND': 'RI',
+      'SOUTH CAROLINA': 'SC', 'SOUTH DAKOTA': 'SD', TENNESSEE: 'TN', TEXAS: 'TX',
+      UTAH: 'UT', VERMONT: 'VT', VIRGINIA: 'VA', WASHINGTON: 'WA', 'WEST VIRGINIA': 'WV',
+      WISCONSIN: 'WI', WYOMING: 'WY', 'DISTRICT OF COLUMBIA': 'DC'
+    };
+    if (/^[A-Z]{2}$/.test(raw)) return raw;
+    return names[raw] || raw.slice(0, 2);
+  }
+
+  function renderBookstoreTaxReminder() {
+    const box = document.getElementById('bookstoreTaxReminder');
+    if (!box || !currentParish) return;
+    const stateCode = normalizeStateCode(currentParish.state);
+    const stateLabel = currentParish.state || 'your state';
+    box.hidden = false;
+    box.classList.remove('error');
+    if (BOOKSTORE_NO_STATEWIDE_SALES_TAX_STATES.has(stateCode)) {
+      box.innerHTML = `<strong>Sales tax:</strong> ${escapeHtml(stateLabel)} does not have a general statewide sales tax, so you do not need to worry about Stripe Tax setup for ordinary bookstore checkout. If your parish sells unusual taxable items, confirm locally.`;
+      return;
+    }
+    if (stateCode === 'AK') {
+      box.innerHTML = `<strong>Sales tax:</strong> Alaska has no statewide sales tax, but some local jurisdictions do collect sales tax. Check your local rules and turn on Stripe Tax if your parish needs to collect it.`;
+      return;
+    }
+    box.innerHTML = `<strong>Sales tax reminder:</strong> ${escapeHtml(stateLabel)} may require sales tax on bookstore items. Set up Stripe Tax in your connected Stripe account before taking live bookstore payments so Stripe can show any required tax on the payment page.`;
+  }
+
   async function loadBookstoreCatalogTab(force = false) {
     const upsell = document.getElementById('bookstoreUpsellBanner');
     const live = document.getElementById('bookstoreLiveContent');
@@ -946,6 +991,7 @@
       status.textContent = currentParish.bookstoreEnabled ? 'Live in My AGAPAY' : 'Hidden until enabled';
       status.className = 'sw-suite-status-label ' + (currentParish.bookstoreEnabled ? 'sw-suite-status--active' : 'sw-suite-status--upsell');
     }
+    renderBookstoreTaxReminder();
 
     if (bookstoreCatalogState.loaded && !force) {
       renderBookstoreCurrentItems(bookstoreCatalogState.products);
@@ -998,10 +1044,14 @@
           ${products.map(p => `
             <tr>
               <td>
-                <strong>${escapeHtml(p.name)}</strong>
-                ${p.sku ? `<span>${escapeHtml(p.sku)}</span>` : ''}
+                <div class="bookstore-item-editor">
+                  <input class="bookstore-text-input" value="${escapeAttr(p.name || '')}" data-bookstore-name="${escapeAttr(p.id)}" aria-label="Item name" />
+                  <textarea class="bookstore-text-input" rows="2" data-bookstore-description="${escapeAttr(p.id)}" aria-label="Description">${escapeHtml(p.description || '')}</textarea>
+                  <input class="bookstore-text-input" value="${escapeAttr(p.sku || '')}" data-bookstore-sku="${escapeAttr(p.id)}" placeholder="SKU / barcode" aria-label="SKU or barcode" />
+                  <input class="bookstore-text-input" value="${escapeAttr(p.imageUrl || '')}" data-bookstore-image="${escapeAttr(p.id)}" placeholder="Image URL" aria-label="Image URL" />
+                </div>
               </td>
-              <td>${escapeHtml(BOOKSTORE_CATEGORY_LABELS[p.category] || p.category)}</td>
+              <td><select class="bookstore-select-input" data-bookstore-category="${escapeAttr(p.id)}">${bookstoreCategoryOptions(p.category || 'other')}</select></td>
               <td><input class="bookstore-mini-input" type="number" min="0.01" step="0.01" value="${(Number(p.priceCents || 0) / 100).toFixed(2)}" data-bookstore-price="${escapeAttr(p.id)}" /></td>
               <td><input class="bookstore-mini-input" type="number" min="0" step="1" value="${Number(p.stockQuantity || 0)}" data-bookstore-stock="${escapeAttr(p.id)}" /></td>
               <td><span class="bookstore-status-pill">${escapeHtml(p.status || 'active')}</span></td>
@@ -1030,6 +1080,11 @@
               <input type="checkbox" data-starter-key="${escapeAttr(item.key)}" ${item.alreadyAdded ? 'disabled checked' : ''} />
               <span>${escapeHtml(item.name)}${item.alreadyAdded ? ' <em>already added</em>' : ''}</span>
               ${item.alreadyAdded ? '' : `
+                <div class="bookstore-starter-fields">
+                  <input type="text" value="${escapeAttr(item.name)}" data-starter-name="${escapeAttr(item.key)}" title="Item name" />
+                  <select data-starter-category="${escapeAttr(item.key)}" title="Category">${bookstoreCategoryOptions(item.category || 'other')}</select>
+                  <input type="text" value="${escapeAttr(item.key)}" data-starter-sku="${escapeAttr(item.key)}" title="SKU / barcode" />
+                </div>
                 <input type="number" min="0.01" step="0.01" value="${(item.suggestedPriceCents / 100).toFixed(2)}" data-starter-price="${escapeAttr(item.key)}" title="Price" />
                 <input type="number" min="0" step="1" value="0" data-starter-stock="${escapeAttr(item.key)}" title="Starting stock count" />
               `}
@@ -1046,11 +1101,21 @@
 
     const items = checked.map(box => {
       const key = box.getAttribute('data-starter-key');
+      const nameInput = document.querySelector(`[data-starter-name="${CSS.escape(key)}"]`);
+      const categoryInput = document.querySelector(`[data-starter-category="${CSS.escape(key)}"]`);
+      const skuInput = document.querySelector(`[data-starter-sku="${CSS.escape(key)}"]`);
       const priceInput = document.querySelector(`[data-starter-price="${CSS.escape(key)}"]`);
       const stockInput = document.querySelector(`[data-starter-stock="${CSS.escape(key)}"]`);
       const priceCents = priceInput ? Math.round(Number(priceInput.value || 0) * 100) : undefined;
       const stockQuantity = stockInput ? Number(stockInput.value || 0) : 0;
-      return { key, priceCents, stockQuantity };
+      return {
+        key,
+        name: nameInput?.value || '',
+        category: categoryInput?.value || 'other',
+        sku: skuInput?.value || '',
+        priceCents,
+        stockQuantity
+      };
     });
 
     if (btn) { btn.disabled = true; btn.textContent = 'Adding…'; }
@@ -1109,14 +1174,28 @@
   }
 
   async function saveBookstoreItem(productId, btn) {
+    const nameInput = document.querySelector(`[data-bookstore-name="${CSS.escape(productId)}"]`);
+    const descriptionInput = document.querySelector(`[data-bookstore-description="${CSS.escape(productId)}"]`);
+    const categoryInput = document.querySelector(`[data-bookstore-category="${CSS.escape(productId)}"]`);
+    const skuInput = document.querySelector(`[data-bookstore-sku="${CSS.escape(productId)}"]`);
+    const imageInput = document.querySelector(`[data-bookstore-image="${CSS.escape(productId)}"]`);
     const priceInput = document.querySelector(`[data-bookstore-price="${CSS.escape(productId)}"]`);
     const stockInput = document.querySelector(`[data-bookstore-stock="${CSS.escape(productId)}"]`);
+    if (!String(nameInput?.value || '').trim()) {
+      setStatus('Item name is required.', 'error');
+      return;
+    }
     if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
     try {
       const res = await fetch(bookstoreApi('/products/' + encodeURIComponent(productId)), {
         method: 'PATCH',
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          name: nameInput?.value || '',
+          description: descriptionInput?.value || '',
+          category: categoryInput?.value || 'other',
+          sku: skuInput?.value || '',
+          imageUrl: imageInput?.value || '',
           priceCents: Math.round(Number(priceInput?.value || 0) * 100),
           stockQuantity: Number(stockInput?.value || 0)
         })

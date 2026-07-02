@@ -4446,28 +4446,39 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
       const key = String(entry.key || "").trim();
       const starter = starterByKey.get(key);
       if (!starter) continue;
+      const item = normalizeBookstoreBody({
+        ...entry,
+        name: entry.name || starter.name,
+        category: entry.category || starter.category,
+        priceCents: entry.priceCents ?? starter.suggestedPriceCents,
+        stockQuantity: entry.stockQuantity ?? 0,
+        sku: entry.sku || starter.key
+      });
+      if (!item.name || item.priceCents < 1) continue;
       const priceCents = centsFromBody(entry.priceCents, starter.suggestedPriceCents);
       const stockQuantity = centsFromBody(entry.stockQuantity, 0);
+      const defaultSku = starter.key;
+      const variantSku = item.sku || starter.key;
       const productId = generateSecret("commerce_product");
       const variantId = generateSecret("commerce_variant");
       await d1Run(env,
         `INSERT OR IGNORE INTO commerce_products
-          (id, parish_id, commerce_module, name, description, item_category, default_sku, status, created_at, updated_at)
-         VALUES (?, ?, 'bookstore', ?, ?, ?, ?, 'active', ?, ?)`,
-        productId, parishId, starter.name, "", starter.category, starter.key, now, now
+          (id, parish_id, commerce_module, name, description, item_category, default_sku, status, image_url, created_at, updated_at)
+         VALUES (?, ?, 'bookstore', ?, ?, ?, ?, 'active', ?, ?, ?)`,
+        productId, parishId, item.name, item.description, item.category, defaultSku, item.imageUrl, now, now
       );
       const product = await d1First(env,
         `SELECT id FROM commerce_products WHERE parish_id = ? AND default_sku = ?`,
-        parishId, starter.key
+        parishId, defaultSku
       );
       const resolvedProductId = product?.id || productId;
       await d1Run(env,
         `INSERT OR IGNORE INTO commerce_product_variants
           (id, product_id, parish_id, commerce_module, sku, variant_name, unit_price_cents, stock_quantity, status, created_at, updated_at)
          VALUES (?, ?, ?, 'bookstore', ?, '', ?, ?, 'active', ?, ?)`,
-        variantId, resolvedProductId, parishId, starter.key, priceCents, stockQuantity, now, now
+        variantId, resolvedProductId, parishId, variantSku, priceCents, stockQuantity, now, now
       );
-      added.push({ key, name: starter.name });
+      added.push({ key, name: item.name });
     }
 
     return json({ ok: true, added });
@@ -4526,16 +4537,30 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
     if (request.method === "PATCH") {
       let body = {};
       try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, { status: 400 }); }
-      const priceCents = centsFromBody(body.priceCents, 0);
-      const stockQuantity = centsFromBody(body.stockQuantity, 0);
-      if (priceCents < 1) return json({ error: "Price must be greater than zero." }, { status: 422 });
-      await d1Run(env, "UPDATE commerce_products SET updated_at = ? WHERE id = ?", now, productId);
+      const item = normalizeBookstoreBody(body);
+      if (!item.name) return json({ error: "Item name is required." }, { status: 422 });
+      if (item.priceCents < 1) return json({ error: "Price must be greater than zero." }, { status: 422 });
+      await d1Run(env,
+        `UPDATE commerce_products
+         SET name = ?, description = ?, item_category = ?, default_sku = ?, image_url = ?, updated_at = ?
+         WHERE id = ? AND parish_id = ?`,
+        item.name, item.description, item.category, item.sku || null, item.imageUrl, now, productId, parishId
+      );
       if (product.variant_id) {
         await d1Run(env,
           `UPDATE commerce_product_variants
-           SET unit_price_cents = ?, stock_quantity = ?, updated_at = ?
+           SET sku = ?, unit_price_cents = ?, stock_quantity = ?, cost_basis_cents = ?, reorder_threshold = ?, updated_at = ?
            WHERE id = ? AND parish_id = ?`,
-          priceCents, stockQuantity, now, product.variant_id, parishId
+          item.sku || null, item.priceCents, item.stockQuantity, item.costBasisCents, item.reorderThreshold, now, product.variant_id, parishId
+        );
+      } else {
+        await d1Run(env,
+          `INSERT INTO commerce_product_variants
+            (id, product_id, parish_id, commerce_module, sku, variant_name, unit_price_cents,
+             cost_basis_cents, stock_quantity, reorder_threshold, status, created_at, updated_at)
+           VALUES (?, ?, ?, 'bookstore', ?, '', ?, ?, ?, ?, 'active', ?, ?)`,
+          generateSecret("commerce_variant"), productId, parishId, item.sku || null, item.priceCents, item.costBasisCents,
+          item.stockQuantity, item.reorderThreshold, now, now
         );
       }
       return json({ ok: true });
