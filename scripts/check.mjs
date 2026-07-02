@@ -122,6 +122,9 @@ assert.ok(donorHome.includes("Active Funds") && donorHome.includes("desktopActiv
 assert.ok(donorHome.includes("Next Feast Offering"), "Give dashboard should use a giving-oriented feast card heading");
 const donorSettings = await readFile("public/donor/settings.html", "utf8");
 assert.ok(donorSettings.includes("saveDonorSettings(event)"), "donor settings should save through the donor API");
+const donorHistory = await readFile("public/donor/offerings.html", "utf8");
+assert.ok(donorHistory.includes("Activity Timeline") && donorHistory.includes("historyProductFilters") && donorHistory.includes("agapayHistoryTimeline"), "My AGAPAY History should show a cross-product activity timeline");
+assert.ok(donorApp.includes("buildHistoryActivities") && donorApp.includes("setHistoryProductFilter"), "donor app should render and filter cross-product History activity");
 const donorSecurity = await readFile("public/security.js", "utf8");
 assert.ok(donorSecurity.includes("/api/security/config"), "security helper should load Turnstile config from the Worker");
 assert.ok(donorSecurity.includes("agapaySecurityPayload"), "security helper should expose Turnstile payloads to public forms");

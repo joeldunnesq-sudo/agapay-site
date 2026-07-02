@@ -1550,7 +1550,137 @@ function offeringRows(offerings) {
   `).join("");
 }
 
-function renderOfferingsPayload(payload = {}, fallbackDashboard = null, statusText = "Live data") {
+function activityDate(item = {}) {
+  return item.createdAt || item.updatedAt || item.completedAt || item.submittedAt || "";
+}
+
+function productActivityLabel(product) {
+  return {
+    give: "Give",
+    bookstore: "Bookstore",
+    services: "Services",
+    learn: "Learn"
+  }[product] || "AGAPAY";
+}
+
+function productFromOffering(item = {}) {
+  return item.giftType === "commemoration" || item.giftType === "sacrament" ? "services" : "give";
+}
+
+function buildHistoryActivities({ offerings = [], bookstore = {}, dashboard = null } = {}) {
+  const activities = [];
+  offerings.forEach((item) => {
+    const product = productFromOffering(item);
+    activities.push({
+      product,
+      title: item.fund || item.campaign || item.title || item.giftType || "Parish offering",
+      subtitle: item.parishName || item.parishId || "Parish",
+      meta: `${money(item.amountCents)} · ${item.frequency && item.frequency !== "once" ? item.frequency : "one-time"}${item.coverFees ? " · fees covered" : ""}`,
+      status: item.paymentStatus || item.status || "recorded",
+      amountCents: item.amountCents,
+      date: activityDate(item)
+    });
+  });
+
+  const orders = Array.isArray(bookstore?.orders) ? bookstore.orders : [];
+  orders.forEach((order) => {
+    const category = order.itemCategoryLabel || BOOKSTORE_CATEGORY_LABELS[order.itemCategory] || "Bookstore item";
+    activities.push({
+      product: "bookstore",
+      title: order.itemDescription || order.title || "Bookstore order",
+      subtitle: category,
+      meta: `${formatCentsAsDollars(order.totalChargedCents || order.subtotalCents || 0)}${order.quantity ? ` · quantity ${order.quantity}` : ""}`,
+      status: BOOKSTORE_STATUS_LABELS[order.status] || order.status || "ordered",
+      amountCents: Number(order.totalChargedCents || order.subtotalCents || 0),
+      date: activityDate(order)
+    });
+  });
+
+  const commemorations = Array.isArray(dashboard?.recentCommemorations) ? dashboard.recentCommemorations : [];
+  commemorations.forEach((entry) => {
+    activities.push({
+      product: "services",
+      title: entry.names || entry.title || "Commemoration submitted",
+      subtitle: entry.parishName || entry.parishId || "Commemorations",
+      meta: entry.kind || entry.type || "Prayer list",
+      status: entry.status || "recorded",
+      amountCents: 0,
+      date: activityDate(entry)
+    });
+  });
+
+  let learnPlan = {};
+  try {
+    learnPlan = JSON.parse(localStorage.getItem("agapay.learn.plan") || "{}");
+  } catch {
+    learnPlan = {};
+  }
+  if (learnPlan.termName || learnPlan.currentTerm || learnPlan.updatedAt) {
+    activities.push({
+      product: "learn",
+      title: learnPlan.termName || learnPlan.currentTerm || "Learn planner updated",
+      subtitle: "AGAPAY Learn",
+      meta: learnPlan.studentName || learnPlan.householdName || "Homeschool planning",
+      status: "saved",
+      amountCents: 0,
+      date: learnPlan.updatedAt || learnPlan.createdAt || new Date().toISOString()
+    });
+  }
+
+  return activities
+    .filter((item) => item.date || item.title)
+    .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+}
+
+function historyActivityRows(activities = []) {
+  if (!activities.length) {
+    return '<div class="notice">No AGAPAY activity has been recorded for this account yet.</div>';
+  }
+  return activities.map((item) => `
+    <article class="history-activity-row history-product-${escapeHtml(item.product)}">
+      <span class="history-activity-icon" aria-hidden="true">${productActivityLabel(item.product).slice(0, 1)}</span>
+      <div class="history-activity-main">
+        <div class="history-activity-head">
+          <span class="history-product-pill">${productActivityLabel(item.product)}</span>
+          <span>${shortDate(item.date)}</span>
+        </div>
+        <strong>${escapeHtml(item.title)}</strong>
+        <span>${escapeHtml(item.subtitle || "")}</span>
+        <small>${escapeHtml(item.meta || "")}</small>
+      </div>
+      <div class="history-activity-side">
+        ${item.amountCents ? `<strong>${money(item.amountCents)}</strong>` : ""}
+        <span class="status-pill">${escapeHtml(item.status || "recorded")}</span>
+      </div>
+    </article>
+  `).join("");
+}
+
+function renderProductFilterState() {
+  const filter = window.donorHistoryFilter || "all";
+  document.querySelectorAll("[data-history-filter]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.historyFilter === filter);
+  });
+}
+
+function renderAgapayHistoryTimeline() {
+  const list = document.getElementById("agapayHistoryTimeline");
+  if (!list) return;
+  const filter = window.donorHistoryFilter || "all";
+  const activities = window.donorHistoryActivities || [];
+  const filtered = filter === "all" ? activities : activities.filter((item) => item.product === filter);
+  list.innerHTML = historyActivityRows(filtered);
+  renderProductFilterState();
+}
+
+function renderHistorySummary(activities = [], summary = {}) {
+  const productCount = new Set(activities.map((item) => item.product)).size;
+  setText("historyProductsCount", String(productCount));
+  setText("historyLatestActivity", activities[0] ? productActivityLabel(activities[0].product) : "None");
+  setText("offeringsReceiptCount", `${summary.offeringCount || (window.donorOfferings || []).length || 0} receipts`);
+}
+
+function renderOfferingsPayload(payload = {}, fallbackDashboard = null, statusText = "Live data", productPayloads = {}) {
   let offerings = Array.isArray(payload.offerings) ? payload.offerings : [];
   let summary = payload.summary || fallbackDashboard?.summary || {};
   if (!offerings.length && Array.isArray(fallbackDashboard?.recentOfferings)) {
@@ -1570,10 +1700,16 @@ function renderOfferingsPayload(payload = {}, fallbackDashboard = null, statusTe
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
 
   window.donorOfferings = offerings;
+  window.donorHistoryActivities = buildHistoryActivities({
+    offerings,
+    bookstore: productPayloads.bookstore || readDonorCache("bookstore") || {},
+    dashboard: fallbackDashboard
+  });
   setText("offeringsYtd", money(summary.parishNetYtdCents ?? summary.ytdCents));
   setText("offeringsRecurring", String(summary.recurringCount || 0));
-  setText("offeringsReceiptCount", String(summary.offeringCount || offerings.length || 0));
   setText("offeringsStatus", offerings.length ? statusText : "No data yet");
+  renderHistorySummary(window.donorHistoryActivities, summary);
+  renderAgapayHistoryTimeline();
   renderRecurringManagement(offerings);
   renderDonorOfferings();
   return { offerings, summary };
@@ -1584,6 +1720,8 @@ async function loadDonorOfferingsPage() {
   if (!session.email || !session.token) {
     const list = document.getElementById("offeringList");
     if (list) list.innerHTML = '<div class="notice">Sign in to view your live offering history.</div>';
+    const timeline = document.getElementById("agapayHistoryTimeline");
+    if (timeline) timeline.innerHTML = '<div class="notice">Sign in to view your AGAPAY activity.</div>';
     setText("offeringsStatus", "Sign in");
     return;
   }
@@ -1595,9 +1733,13 @@ async function loadDonorOfferingsPage() {
   }
 
   try {
-    const [offeringsResult, dashboardResult] = await Promise.allSettled([
+    const profileParishId = donorProfile()?.defaultParishId || "";
+    const [offeringsResult, dashboardResult, bookstoreResult] = await Promise.allSettled([
       donorApi("/api/donor/offerings"),
-      donorApi("/api/donor/dashboard")
+      donorApi("/api/donor/dashboard"),
+      profileParishId
+        ? donorApi("/api/donor/bookstore", { headers: donorAuthHeaders({ "X-AGAPAY-Parish-Id": profileParishId }) })
+        : Promise.resolve(readDonorCache("bookstore") || {})
     ]);
 
     if (offeringsResult.status === "rejected" && isDonorUnauthorized(offeringsResult.reason)) {
@@ -1606,24 +1748,33 @@ async function loadDonorOfferingsPage() {
     if (dashboardResult.status === "rejected" && isDonorUnauthorized(dashboardResult.reason)) {
       throw dashboardResult.reason;
     }
+    if (bookstoreResult.status === "rejected" && isDonorUnauthorized(bookstoreResult.reason)) {
+      throw bookstoreResult.reason;
+    }
 
     const dashboardData = dashboardResult.status === "fulfilled" ? dashboardResult.value : cachedDashboard;
     const offeringsData = offeringsResult.status === "fulfilled" ? offeringsResult.value : cachedOfferings;
+    const bookstoreData = bookstoreResult.status === "fulfilled" ? bookstoreResult.value : readDonorCache("bookstore");
     if (!offeringsData && !dashboardData) throw offeringsResult.reason || dashboardResult.reason || new Error("Unable to load offerings");
     if (dashboardData?.donor) setDonorProfile(dashboardData.donor);
     if (dashboardResult.status === "fulfilled") writeDonorCache("dashboard", dashboardData);
-    const rendered = renderOfferingsPayload(offeringsData || {}, dashboardData, "Live data");
+    if (bookstoreResult.status === "fulfilled" && bookstoreData) writeDonorCache("bookstore", bookstoreData);
+    const rendered = renderOfferingsPayload(offeringsData || {}, dashboardData, "Live data", { bookstore: bookstoreData });
     writeDonorCache("offerings", rendered);
   } catch (err) {
     if (isDonorUnauthorized(err)) {
       clearDonorSession();
       const list = document.getElementById("offeringList");
       if (list) list.innerHTML = '<div class="notice">Session expired. Please sign in again.</div>';
+      const timeline = document.getElementById("agapayHistoryTimeline");
+      if (timeline) timeline.innerHTML = '<div class="notice">Session expired. Please sign in again.</div>';
       setText("offeringsStatus", "Sign in");
       return;
     }
     const list = document.getElementById("offeringList");
     if (list) list.innerHTML = `<div class="notice">${escapeHtml(err.message)} Sign in from the donor home page first.</div>`;
+    const timeline = document.getElementById("agapayHistoryTimeline");
+    if (timeline) timeline.innerHTML = `<div class="notice">${escapeHtml(err.message)} Sign in from the donor home page first.</div>`;
     setText("offeringsStatus", "Unavailable");
   }
 }
@@ -1730,6 +1881,11 @@ function filterOfferings(type) {
 
 function searchOfferings() {
   renderDonorOfferings();
+}
+
+function setHistoryProductFilter(product = "all") {
+  window.donorHistoryFilter = product;
+  renderAgapayHistoryTimeline();
 }
 
 function commemorationWeekStart(date = new Date()) {

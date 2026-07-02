@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Offerings | AGAPAY Donor Dashboard</title>
+  <title>History | My AGAPAY</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260702b" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260702c" />
   <script src="/myagapay-shell.js?v=20260702e" defer></script>
-  <script src="/donor/app.js?v=20260701e" defer></script>
+  <script src="/donor/app.js?v=20260702b" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -41,14 +41,29 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/giving/give"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg> Make another gift</a></div>
     </aside>
     <main class="content donor-mobile-content">
-      <div class="topbar"><div class="topbar-title">My Offerings</div><div class="topbar-actions"><button class="btn btn-gold btn-sm" type="button" onclick="openDonorRecurringPortal()">Manage recurring</button><button class="btn btn-ghost btn-sm" type="button" onclick="filterOfferings('all')">All</button><button class="btn btn-ghost btn-sm" type="button" onclick="filterOfferings('recurring')">Recurring</button><button class="btn btn-ghost btn-sm" type="button" onclick="filterOfferings('commemoration')">Commemorations</button></div></div>
+      <div class="topbar"><div class="topbar-title">History</div><div class="topbar-actions"><button class="btn btn-gold btn-sm" type="button" onclick="openDonorRecurringPortal()">Manage recurring</button><button class="btn btn-ghost btn-sm" type="button" onclick="setHistoryProductFilter('all')">All products</button><button class="btn btn-ghost btn-sm" type="button" onclick="setHistoryProductFilter('give')">Give</button><button class="btn btn-ghost btn-sm" type="button" onclick="setHistoryProductFilter('bookstore')">Bookstore</button></div></div>
       <div class="page">
         <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
-        <section class="hero"><div class="hero-grid"><div><div class="eyebrow">History and receipts</div><h1>Every gift in one clear place.</h1><p>Filter by purpose, view status, and prepare annual stewardship summaries for your household records.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
-        <section class="grid three section-gap">
-          <div class="metric-card"><div class="metric-label">Total this year</div><div class="metric-value" id="offeringsYtd">$0</div><div class="metric-note">Paid gifts from live KV history.</div></div>
-          <div class="metric-card"><div class="metric-label">Recurring gifts</div><div class="metric-value" id="offeringsRecurring">0</div><div class="metric-note">Recurring checkout records.</div></div>
-          <div class="metric-card"><div class="metric-label">Receipts</div><div class="metric-value" id="offeringsReceiptCount">0</div><div class="metric-note">Recorded offerings for this account.</div></div>
+        <section class="hero history-hero"><div class="hero-grid"><div><div class="eyebrow">My AGAPAY activity</div><h1>Everything you did across AGAPAY, in one place.</h1><p>See giving, bookstore orders, commemorations, services, and learning activity as your household uses more AGAPAY products.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
+        <section class="grid three section-gap history-summary-grid">
+          <div class="metric-card"><div class="metric-label">Giving this year</div><div class="metric-value" id="offeringsYtd">$0</div><div class="metric-note">Paid parish gifts and offerings.</div></div>
+          <div class="metric-card"><div class="metric-label">Products used</div><div class="metric-value" id="historyProductsCount">0</div><div class="metric-note">AGAPAY areas with recorded activity.</div></div>
+          <div class="metric-card"><div class="metric-label">Latest activity</div><div class="metric-value history-latest-value" id="historyLatestActivity">None</div><div class="metric-note">Most recent item in your timeline.</div></div>
+        </section>
+        <section class="card section-gap history-overview-card">
+          <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/><path d="M8 3v4"/><path d="M16 10v4"/><path d="M12 17v4"/></svg></span> Activity Timeline</div><span class="status-pill" id="offeringsStatus">Sign in</span></div>
+          <div class="card-body">
+            <div class="history-product-tabs" id="historyProductFilters" aria-label="Filter history by product">
+              <button class="active" type="button" data-history-filter="all" onclick="setHistoryProductFilter('all')">All</button>
+              <button type="button" data-history-filter="give" onclick="setHistoryProductFilter('give')">Give</button>
+              <button type="button" data-history-filter="bookstore" onclick="setHistoryProductFilter('bookstore')">Bookstore</button>
+              <button type="button" data-history-filter="services" onclick="setHistoryProductFilter('services')">Services</button>
+              <button type="button" data-history-filter="learn" onclick="setHistoryProductFilter('learn')">Learn</button>
+            </div>
+            <div class="agapay-history-timeline" id="agapayHistoryTimeline">
+              <div class="notice">Sign in to view your AGAPAY activity.</div>
+            </div>
+          </div>
         </section>
         <section class="card section-gap recurring-management-card">
           <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/><path d="M17 15l2 2 3-4"/></svg></span> Manage Recurring Giving</div><span class="status-pill" id="recurringManageStatus">Secure portal</span></div>
@@ -60,7 +75,7 @@
           </div>
         </section>
         <section class="card section-gap">
-          <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></span> Offering History</div><span class="status-pill" id="offeringsStatus">Sign in</span></div>
+          <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></span> Giving Receipts</div><span class="status-pill" id="offeringsReceiptCount">0 receipts</span></div>
           <div class="card-body">
             <div class="form-grid" style="margin-bottom: 1rem;">
               <div class="form-group"><label class="form-label" for="search">Search</label><input class="form-input" id="search" placeholder="Fund, parish, amount..." oninput="searchOfferings()" /></div>
@@ -84,4 +99,3 @@
   </script>
 </body>
 </html>
-
