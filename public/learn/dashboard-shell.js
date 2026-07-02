@@ -512,9 +512,9 @@ function sidebar(vm) {
   return `
     <aside class="learn-product-sidebar" data-learn-sidebar>
       <div class="learn-product-sidebar-scroll">
-        <a class="learn-product-back" href="${isOdysseyLearnContext() ? "/learn/odyssey" : "/myagapay"}" aria-label="${isOdysseyLearnContext() ? "Back to AGAPAY Learn Odyssey" : "Back to My AGAPAY"}">
+        <a class="learn-product-back" href="${isOdysseyLearnContext() ? "/learn/odyssey" : "/myagapay"}" aria-label="${isOdysseyLearnContext() ? "Back to AGAPAY Learn Odyssey" : "Back to AGAPAY Give"}">
           <span aria-hidden="true">←</span>
-          <strong>${isOdysseyLearnContext() ? "TEFA Portal" : "My AGAPAY"}</strong>
+          <strong>${isOdysseyLearnContext() ? "TEFA Portal" : "AGAPAY Give"}</strong>
         </a>
         <div class="learn-product-profile">
           <strong>${html(vm.shell.familyName || "Faithful Household")}</strong>
@@ -600,8 +600,8 @@ function topbar(vm) {
             <span class="learn-account-utility-caret">⌄</span>
           </button>
           <div class="learn-account-dropdown" role="menu" hidden>
-            <a href="/myagapay/account" role="menuitem">Global Dashboard Settings</a>
-            <a href="/myagapay" role="menuitem">Back to My AGAPAY</a>
+            <a href="/myagapay/account" role="menuitem">Account Settings</a>
+            <a href="/myagapay" role="menuitem">Back to Give</a>
             <button type="button" data-learn-logout role="menuitem">Log out</button>
           </div>
         </div>

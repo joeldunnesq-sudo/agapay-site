@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My AGAPAY Dashboard | AGAPAY</title>
+  <title>AGAPAY Give | My AGAPAY</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,7 +11,7 @@
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css?v=20260620a" />
   <script src="/liturgical-calendar.js"></script>
-  <script src="/myagapay-shell.js?v=20260701a" defer></script>
+  <script src="/myagapay-shell.js?v=20260702a" defer></script>
   <script src="/donor/app.js?v=20260701e" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -29,7 +29,7 @@
         <div class="brand unified-brand">
           <a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home" hx-boost="false"><img src="/mark.png" alt="AGAPAY" /></a>
           <span class="brand-name">AGAPAY</span>
-          <span class="dashboard-home-cue">Love + Give + Learn + Live</span>
+          <span class="dashboard-home-cue">Give + Learn under one account</span>
         </div>
         <div class="auth-panel" data-auth-guest>
           <div class="auth-grid">
@@ -42,8 +42,7 @@
           <div class="profile-meta" id="profileMeta">Sign in to load live giving history</div>
         </div>
         <nav class="nav unified-product-nav" hx-boost="false">
-          <a class="active" href="/myagapay"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg> My AGAPAY</a>
-          <a href="/myagapay/giving"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg> Giving</a>
+          <a class="active" href="/myagapay"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg> Give</a>
           <a href="/myagapay/learn"><svg viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22z"/><path d="M4 5.5V22"/><path d="M8 6h8"/><path d="M8 10h7"/></svg> Learn</a>
           <a href="/marketplace" data-myagapay-launch-gated hidden><svg viewBox="0 0 24 24"><path d="M6 8h12l-1 13H7z"/><path d="M9 8a3 3 0 0 1 6 0"/><path d="M9 13h6"/></svg> Marketplace</a>
           <a href="/directory" data-myagapay-launch-gated hidden><svg viewBox="0 0 24 24"><path d="M12 3l8 6v12H4V9z"/><path d="M9 21v-7h6v7"/><path d="M8 10h8"/><path d="M12 6v8"/></svg> Directory</a>
@@ -66,12 +65,12 @@
         <div class="donor-home-topbar-brand">
           <img src="/mark.png" alt="" aria-hidden="true" />
           <span>
-            <strong class="topbar-title" id="donorUtilityTitle">My AGAPAY</strong>
-            <small id="donorUtilityTagline">Love how you Give + Learn + Live</small>
+            <strong class="topbar-title" id="donorUtilityTitle">AGAPAY Give</strong>
+            <small id="donorUtilityTagline">One My AGAPAY account. Product dashboards when you need them.</small>
           </span>
         </div>
         <div class="topbar-actions">
-          <a class="btn btn-gold btn-sm donor-home-quick-action" href="/myagapay/giving">Quick Action</a>
+          <a class="btn btn-gold btn-sm donor-home-quick-action" href="/myagapay/giving/give">Make Offering</a>
           <div class="donor-home-account-menu" data-donor-account-menu data-auth-required hidden>
             <button class="donor-home-account-chip" type="button" data-donor-account-toggle aria-haspopup="true" aria-expanded="false">
               <span class="donor-home-mini-avatar">FM</span>
@@ -79,8 +78,8 @@
               <span class="donor-home-account-caret" aria-hidden="true">⌄</span>
             </button>
             <div class="donor-home-account-dropdown" role="menu" hidden>
-              <a href="/myagapay/account" role="menuitem">Global Dashboard Settings</a>
-              <a href="/myagapay" role="menuitem">Back to My AGAPAY</a>
+              <a href="/myagapay/account" role="menuitem">Account Settings</a>
+              <a href="/myagapay" role="menuitem">Back to Give</a>
               <button type="button" data-donor-logout role="menuitem">Log out</button>
             </div>
           </div>
@@ -556,8 +555,7 @@
 
   <script>
     function applyDonorProductView() {
-      const normalizedPath = window.location.pathname.replace(/\/+$/, "");
-      const isGivingView = window.location.hash === "#giving-dashboard" || normalizedPath === "/myagapay/giving";
+      const isGivingView = !["#products", "#my-agapay-products"].includes(window.location.hash);
       const home = document.querySelector(".my-agapay-home");
       const homeTabs = document.querySelector(".my-agapay-tabbar");
       const giving = document.querySelector(".donor-desktop-home");
@@ -570,8 +568,8 @@
       const utilityTitle = document.getElementById("donorUtilityTitle");
       const utilityTagline = document.getElementById("donorUtilityTagline");
       const quickAction = document.querySelector(".donor-home-quick-action");
-      if (utilityTitle) utilityTitle.textContent = isGivingView ? "AGAPAY Give" : "My AGAPAY";
-      if (utilityTagline) utilityTagline.textContent = isGivingView ? "Love how you give" : "Love how you Give + Learn + Live";
+      if (utilityTitle) utilityTitle.textContent = isGivingView ? "AGAPAY Give" : "My AGAPAY Products";
+      if (utilityTagline) utilityTagline.textContent = isGivingView ? "One My AGAPAY account. Product dashboards when you need them." : "Choose Give or Learn from one account.";
       if (quickAction) quickAction.href = isGivingView ? "/myagapay/giving/give" : "/myagapay/giving";
     }
 

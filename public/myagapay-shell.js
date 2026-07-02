@@ -23,9 +23,7 @@
 
   function products() {
     const items = [
-      { id: "home", href: "/myagapay", label: "My AGAPAY", icon: icons.home },
-      { id: "giving", href: "/myagapay/giving", label: "Give", icon: icons.give },
-      { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", icon: icons.bookstore },
+      { id: "giving", href: "/myagapay", label: "Give", icon: icons.give },
       { id: "learn", href: "/myagapay/learn", label: "Learn", icon: icons.learn }
     ];
     if (releaseFlags.marketplaceDirectoryLive) {
@@ -37,7 +35,8 @@
 
   function activeProduct(pathname = window.location.pathname) {
     if (pathname.startsWith("/myagapay/learn")) return "learn";
-    if (pathname.startsWith("/myagapay/bookstore")) return "bookstore";
+    if (pathname === "/myagapay" || pathname === "/myagapay/" || pathname === "/myagapay/dashboard") return "giving";
+    if (pathname.startsWith("/myagapay/bookstore")) return "giving";
     if (pathname.startsWith("/myagapay/giving")) return "giving";
     if (pathname.startsWith("/myagapay/sacraments")) return "giving";
     if (pathname.startsWith("/myagapay/account")) return "account";
