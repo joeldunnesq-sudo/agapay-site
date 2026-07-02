@@ -646,7 +646,7 @@ function renderActiveCampaigns(parish) {
 
   const goalCents = Number(campaign.goalCents || campaign.targetCents || campaign.goalAmountCents || 0);
   const raisedCents = Number(campaign.raisedCents || campaign.amountCents || campaign.currentCents || 0);
-  const percent = goalCents > 0 ? Math.min(100, Math.round((raisedCents / goalCents) * 100)) : 0;
+  const percent = goalCents > 0 ? Math.min(100, Math.floor((raisedCents / goalCents) * 100)) : 0;
   const link = donorGiftUrl("campaign", parish, { campaign: campaign.id || campaign.feastId || campaign.name });
   const imageUrl = campaignImageUrl(campaign);
   const description = campaign.description || "Support this parish-approved campaign.";
