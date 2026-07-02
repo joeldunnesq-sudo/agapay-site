@@ -76,6 +76,7 @@ const mimeTypes = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
   ".webp": "image/webp",
+  ".webm": "video/webm",
   ".svg": "image/svg+xml; charset=utf-8",
   ".ico": "image/x-icon",
   ".xml": "application/xml; charset=utf-8"

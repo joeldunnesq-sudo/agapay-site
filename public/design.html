@@ -256,41 +256,52 @@
       align-content: center;
       gap: 1rem;
       background:
-        repeating-linear-gradient(135deg, rgba(6, 21, 34, 0.045) 0 2px, transparent 2px 14px),
+        linear-gradient(135deg, rgba(6, 21, 34, 0.22), rgba(201, 162, 91, 0.12)),
         linear-gradient(180deg, #EFE8DA, #E4DBC9);
       padding: clamp(1.2rem, 3vw, 2.4rem);
     }
-    .work-window {
+    .work-video-frame {
+      position: relative;
       overflow: hidden;
-      border: 1px solid rgba(6, 21, 34, 0.18);
-      border-radius: 14px;
-      background: #fff;
-      box-shadow: 0 22px 46px rgba(6, 21, 34, 0.16);
+      border: 1px solid rgba(6, 21, 34, 0.22);
+      border-radius: 18px;
+      background: #061522;
+      box-shadow:
+        0 24px 54px rgba(6, 21, 34, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
-    .work-window-top {
-      height: 34px;
-      background: #0c1720;
+    .work-video-frame::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 18%),
+        linear-gradient(0deg, rgba(6, 21, 34, 0.2), transparent 34%);
     }
-    .work-window-body {
-      display: grid;
-      gap: 0.85rem;
-      padding: 1.1rem;
+    .work-video-frame video {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      background: #061522;
     }
-    .work-window-body strong {
-      color: var(--navy);
-      font-family: var(--serif);
-      font-size: 1.75rem;
-      font-weight: 600;
-    }
-    .work-window-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.6rem;
-    }
-    .work-tile {
-      min-height: 4.8rem;
-      border-radius: 10px;
-      background: rgba(201, 162, 91, 0.18);
+    .work-video-label {
+      position: absolute;
+      left: 1rem;
+      bottom: 1rem;
+      z-index: 2;
+      border: 1px solid rgba(201, 162, 91, 0.34);
+      border-radius: 999px;
+      background: rgba(6, 21, 34, 0.78);
+      color: #fffdf8;
+      padding: 0.38rem 0.72rem;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      backdrop-filter: blur(12px);
     }
     .work-copy {
       display: grid;
@@ -445,9 +456,6 @@
       .work-shot {
         min-height: 260px;
       }
-      .work-window-grid {
-        grid-template-columns: 1fr;
-      }
     }
   </style>
 </head>
@@ -494,18 +502,9 @@
       </div>
       <div class="work-feature">
         <div class="work-shot" aria-label="Chariot Concepts website preview">
-          <div class="work-window">
-            <div class="work-window-top"></div>
-            <div class="work-window-body">
-              <strong>Chariot Concepts</strong>
-              <div class="preview-line gold"></div>
-              <div class="preview-line muted"></div>
-              <div class="work-window-grid">
-                <span class="work-tile"></span>
-                <span class="work-tile"></span>
-                <span class="work-tile"></span>
-              </div>
-            </div>
+          <div class="work-video-frame">
+            <video src="/videos/design/chariot-concepts.webm" autoplay muted loop playsinline preload="metadata" aria-label="Chariot Concepts website walkthrough"></video>
+            <span class="work-video-label">Live site preview</span>
           </div>
         </div>
         <div class="work-copy">
