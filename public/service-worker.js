@@ -1,4 +1,4 @@
-const AGAPAY_CACHE = "agapay-static-v19";
+const AGAPAY_CACHE = "agapay-static-v20";
 
 const STATIC_ASSETS = [
   "/myagapay/login",
@@ -10,7 +10,7 @@ const STATIC_ASSETS = [
   "/manifest.webmanifest",
   "/mark.png",
   "/favicons/favicon-32x32.png",
-  "/images/app/apple-touch-icon.png",
+  "/images/app/apple-touch-icon-blue.png",
   "/images/app/icon-192.png",
   "/images/app/icon-512.png",
   "/images/app/icon-512-maskable.png",

@@ -93,6 +93,8 @@ assert.ok(worker.includes('url.pathname === "/api/parish-interest"'), "worker sh
 
 const donorApp = await readFile("public/donor/app.js", "utf8");
 const myAgapayShell = await readFile("public/myagapay-shell.js", "utf8");
+const manifest = await readFile("public/manifest.webmanifest", "utf8");
+assert.ok(manifest.includes("/images/app/apple-touch-icon-blue.png"), "PWA manifest should use the blue AGAPAY iOS home screen icon");
 assert.ok(myAgapayShell.includes('id: "giving"') && myAgapayShell.includes('label: "Give"'), "shared My AGAPAY shell should define the canonical Give product tab");
 assert.ok(myAgapayShell.includes('id: "history"') && myAgapayShell.includes('label: "History"'), "shared My AGAPAY shell should include History in the bottom product nav");
 assert.ok(myAgapayShell.includes('id: "bookstore"') && myAgapayShell.includes('label: "Bookstore"'), "shared My AGAPAY shell should keep Bookstore in the product nav");
@@ -101,6 +103,7 @@ assert.ok(myAgapayShell.includes('id: "learn"') && myAgapayShell.includes('label
 assert.ok(!myAgapayShell.includes('id: "home"'), "shared My AGAPAY shell should treat Give as the default product instead of a separate global home tab");
 assert.ok(myAgapayShell.includes('pathname === "/myagapay"') && myAgapayShell.includes('return "giving"'), "shared My AGAPAY shell should make /myagapay resolve to the Give product");
 assert.ok(myAgapayShell.includes('data-myagapay-global-nav') && myAgapayShell.includes("normalizeProductNavs"), "shared shell should normalize mobile product navigation across dashboards");
+assert.ok(myAgapayShell.includes("ensureIosBackButton") && myAgapayShell.includes("myagapay-ios-back"), "shared shell should provide an in-app Back button for iPhone My AGAPAY screens");
 assert.ok(myAgapayShell.includes("handleUnauthorized") && myAgapayShell.includes("redirectToLogin"), "shared shell should enforce one expired-session response across My AGAPAY products");
 assert.ok(donorApp.includes('nav.setAttribute("hx-boost", "false")'), "donor shell should not htmx-boost dashboard navigation");
 assert.ok(donorApp.includes("function updateDonorAuthState()"), "donor shell should update guest/authenticated controls from localStorage session");
