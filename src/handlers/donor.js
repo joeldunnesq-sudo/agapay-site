@@ -71,6 +71,7 @@ import {
   reconcilePendingDonorOfferings,
   requireDonor,
   donorName,
+  storeCommemorationEntry,
   storeDonorOffering,
   stripePaymentIntentFinancialUpdates,
   updateDonorOfferingByCheckout,
@@ -1746,10 +1747,67 @@ export async function handleDonorCommemorations(request, env) {
     return json({ entries });
   }
 
-  return json(
-    { error: "Commemoration submissions now require checkout", detail: "Use /api/create-checkout-session with giftType=commemoration so names are attached to a paid offering." },
-    { status: 405 }
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const limited = await rateLimit(request, env, "donor-commemoration-submit", { limit: 20, windowSeconds: 3600 });
+  if (limited) return limited;
+
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const parishId = String(body.parishId || donor.defaultParishId || "").trim();
+  const namesLiving = String(body.namesLiving || body.living || "").trim();
+  const namesDeparted = String(body.namesDeparted || body.departed || "").trim();
+  const note = String(body.note || body.inMemoriam || "").trim().slice(0, 2000);
+  if (!parishId) {
+    return json({ error: "Choose a parish before submitting commemorations.", detail: "Set a home parish in Settings, or include parishId." }, { status: 400 });
+  }
+  if (!namesLiving && !namesDeparted) {
+    return json({ error: "Add at least one living or departed name." }, { status: 400 });
+  }
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish not found." }, { status: 404 });
+
+  const donorName = String(donor.donorName || donor.householdName || donor.email || "").trim();
+  const entry = await storeCommemorationEntry(
+    env,
+    generateSecret("comm"),
+    {
+      parish_id: parishId,
+      parish_name: found.registration?.parishName || "",
+      donor_email: donor.email,
+      donor_name: donorName,
+      gift_type: "commemoration",
+      frequency: "none",
+      names_living: namesLiving,
+      names_departed: namesDeparted,
+      note
+    },
+    {
+      parishId,
+      parishName: found.registration?.parishName || "",
+      donorEmail: donor.email,
+      donorName,
+      giftType: "commemoration",
+      frequency: "none",
+      amountCents: 0,
+      namesLiving,
+      namesDeparted,
+      note,
+      createdAt: new Date().toISOString()
+    }
   );
+
+  if (!entry) return json({ error: "Unable to submit commemoration." }, { status: 500 });
+
+  const offerings = await reconcilePendingDonorOfferings(env, await loadDonorOfferings(env, donor.email, 100));
+  const entries = await loadReconciledDonorCommemorations(env, donor.email, offerings, 100);
+  return json({ ok: true, entry, entries });
 }
 
 export function adminRegistrationSummary(registration = {}, fallbackReference = "") {

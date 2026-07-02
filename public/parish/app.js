@@ -562,6 +562,18 @@ function campaignRaisedCents(campaign) {
   return Number(campaign?.raisedCents || campaign?.amountCents || campaign?.currentCents || 0);
 }
 
+function campaignPublicUrl(parish, campaign) {
+  const parishId = parish?.id || parish?.parishId || "";
+  const rawSlug = campaign?.slug || campaign?.id || campaign?.feastId || campaignLabel(campaign);
+  const campaignSlug = String(rawSlug || "campaign")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-campaign$/, "") || "campaign";
+  return parishId ? `/give/${encodeURIComponent(parishId)}/${encodeURIComponent(campaignSlug)}-campaign` : "";
+}
+
 function selectedCampaign() {
   const selected = document.getElementById("campaign")?.value || "";
   if (!selected) return null;
@@ -633,7 +645,7 @@ function renderActiveCampaigns(parish) {
   const raisedCents = Number(campaign.raisedCents || campaign.amountCents || campaign.currentCents || 0);
   const percent = goalCents > 0 ? Math.min(100, Math.round((raisedCents / goalCents) * 100)) : 0;
   const label = campaign.category || campaign.type || (campaign.feastId ? "Liturgical" : "Alms");
-  const link = donorGiftUrl("campaign", parish, { campaign: campaign.id || campaign.feastId || campaign.name });
+  const link = campaignPublicUrl(parish, campaign) || donorGiftUrl("campaign", parish, { campaign: campaign.id || campaign.feastId || campaign.name });
   const html = `
     <a class="campaign-card ${campaign.feastId ? "campaign-gold" : "campaign-navy"}" href="${escapeHtml(link)}">
       <div class="campaign-meta">
@@ -3203,5 +3215,141 @@ function handleBookstoreCheckoutReturn() {
   } else if (params.get("order_canceled") === "1") {
     setDonorStatus("Checkout canceled. Your order was not charged.", "info");
     window.history.replaceState({}, "", "/myagapay/bookstore");
+  }
+}
+
+let currentReconciliation = null;
+
+function reconciliationParishId() {
+  return document.getElementById("parishId")?.value || donorProfile()?.defaultParishId || "";
+}
+
+function reconciliationAuthHeaders() {
+  const token = document.getElementById("parishToken")?.value || "";
+  return {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`
+  };
+}
+
+function reconciliationMonth() {
+  const select = document.getElementById("reconcileMonth");
+  if (select?.value) return select.value;
+  return new Date().toISOString().slice(0, 7);
+}
+
+function renderReconciliationRows(rows, emptyLabel) {
+  if (!rows?.length) return `<div class="history-empty">${escapeHtml(emptyLabel)}</div>`;
+  return rows.map((row) => `
+    <div class="history-row">
+      <div><strong>${escapeHtml(row.label || row.id || row.category || row.allocationLabel || "Item")}</strong><span>${escapeHtml(row.status || row.allocationCategory || row.message || "")}</span></div>
+      <div><strong>${formatCentsAsDollars(row.netCents ?? row.amountCents ?? row.grossCents ?? 0)}</strong><span>${escapeHtml(String(row.transactionCount || row.type || ""))}</span></div>
+    </div>
+  `).join("");
+}
+
+function renderReconciliation(data) {
+  currentReconciliation = data;
+  const summary = data.summary || {};
+  setText("reconcileDeposited", formatCentsAsDollars(summary.depositedCents || 0));
+  setText("reconcilePayoutCount", `${summary.paidPayoutCount || 0} paid payouts`);
+  setText("reconcileGross", formatCentsAsDollars(summary.grossActivityCents || 0));
+  setText("reconcileRefunds", formatCentsAsDollars(summary.refundCents || 0));
+  setText("reconcileFees", formatCentsAsDollars(summary.totalFeeCents || 0));
+  setText("reconcileFeeBreakdown", `${formatCentsAsDollars(summary.stripeFeeCents || 0)} Stripe + ${formatCentsAsDollars(summary.agapayFeeCents || 0)} AGAPAY`);
+  setText("reconcileMatched", formatCentsAsDollars(summary.matchedNetCents || 0));
+  setText("reconcileMatchedPercent", `${summary.matchedPercent ?? 0}% gift records traced`);
+  setText("reconcileExceptions", String(summary.exceptionCount || 0));
+  setHtml("reconcileAllocationsPane", renderReconciliationRows(data.allocations, "No fund allocations found for this month."));
+  setHtml("reconcileGiftActivityPane", renderReconciliationRows(data.transactions, "No gift activity found for this month."));
+  setHtml("reconcilePayoutsPane", renderReconciliationRows(data.payouts, "No Stripe payouts found for this month."));
+  setHtml("reconcileExceptionsPane", renderReconciliationRows(data.exceptions, "No exceptions found."));
+  const closeRecord = data.closeRecord || {};
+  const statusLine = document.getElementById("reconcileStatusLine");
+  if (statusLine) {
+    const closed = closeRecord.status === "closed";
+    statusLine.innerHTML = `<span class="reconcile-state ${closed ? "closed" : "open"}">${closed ? "Closed month" : "Open month"}</span><span>${escapeHtml(data.period?.month || reconciliationMonth())}</span>`;
+  }
+  const bankInput = document.getElementById("reconcileBankAmount");
+  if (bankInput && closeRecord.bankStatementCents != null) bankInput.value = (Number(closeRecord.bankStatementCents) / 100).toFixed(2);
+  const notes = document.getElementById("reconcileNotes");
+  if (notes && closeRecord.notes != null) notes.value = closeRecord.notes || "";
+  updateReconciliationDifference();
+}
+
+async function loadReconciliation(button) {
+  const parishId = reconciliationParishId();
+  if (!parishId) {
+    setDonorStatus("Load a parish dashboard before running reconciliation.", "error");
+    return;
+  }
+  if (button) button.disabled = true;
+  try {
+    const res = await fetch(`/api/parish/dashboard/${encodeURIComponent(parishId)}/reconciliation?month=${encodeURIComponent(reconciliationMonth())}`, {
+      headers: reconciliationAuthHeaders()
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || data.detail || "Unable to load reconciliation.");
+    if (data.available === false) throw new Error(data.reason || "Reconciliation is not available yet.");
+    renderReconciliation(data);
+  } catch (err) {
+    setDonorStatus(err.message, "error");
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+function updateReconciliationDifference() {
+  const deposited = Number(currentReconciliation?.summary?.depositedCents || 0);
+  const bankCents = Math.round(Number(document.getElementById("reconcileBankAmount")?.value || 0) * 100);
+  setText("reconcileDifference", `Difference: ${formatCentsAsDollars(bankCents - deposited)}`);
+}
+
+function exportReconciliationCsv() {
+  if (!currentReconciliation) {
+    setDonorStatus("Run a reconciliation before exporting.", "error");
+    return;
+  }
+  const rows = [["Category", "Label", "Gross", "Fees", "Net", "Transactions"]];
+  (currentReconciliation.allocations || []).forEach((row) => rows.push([
+    row.category || "",
+    row.label || "",
+    row.grossCents || 0,
+    row.feeCents || 0,
+    row.netCents || 0,
+    row.transactionCount || 0
+  ]));
+  const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  link.download = `agapay-reconciliation-${currentReconciliation.period?.month || reconciliationMonth()}.csv`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+async function saveReconciliationClose(closed = true, button) {
+  const parishId = reconciliationParishId();
+  if (!parishId) {
+    setDonorStatus("Load a parish dashboard before closing reconciliation.", "error");
+    return;
+  }
+  if (button) button.disabled = true;
+  try {
+    const bankStatementCents = Math.round(Number(document.getElementById("reconcileBankAmount")?.value || 0) * 100);
+    const notes = document.getElementById("reconcileNotes")?.value || "";
+    const res = await fetch(`/api/parish/dashboard/${encodeURIComponent(parishId)}/reconciliation/close`, {
+      method: "POST",
+      headers: reconciliationAuthHeaders(),
+      body: JSON.stringify({ month: reconciliationMonth(), bankStatementCents, notes, closed })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || data.detail || "Unable to save reconciliation close.");
+    setDonorStatus(closed ? "Reconciliation month closed." : "Reconciliation month reopened.", "success");
+    await loadReconciliation();
+  } catch (err) {
+    setDonorStatus(err.message, "error");
+  } finally {
+    if (button) button.disabled = false;
   }
 }

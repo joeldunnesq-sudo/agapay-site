@@ -517,11 +517,15 @@ function updateQuickGiveLinks(parish) {
   const desktopParishIcon = document.getElementById("desktopParishIcon");
   const candleLink = document.getElementById("quickGiveCandle");
   const memorialLink = document.getElementById("quickGiveMemorial");
+  const feastLink = document.getElementById("quickGiveFeast");
   const campaignLink = document.getElementById("quickGiveCampaigns");
+  const fundLink = document.getElementById("quickGiveFund");
   const desktopParishLink = document.getElementById("desktopQuickParish");
   const desktopCandleLink = document.getElementById("desktopQuickCandle");
   const desktopMemorialLink = document.getElementById("desktopQuickMemorial");
+  const desktopFeastLink = document.getElementById("desktopQuickFeast");
   const desktopCampaignLink = document.getElementById("desktopQuickCampaigns");
+  const desktopFundLink = document.getElementById("desktopQuickFund");
   if (parishLink) parishLink.href = quickDonorGiftUrl("stewardship", parish);
   if (desktopParishLink) desktopParishLink.href = quickDonorGiftUrl("stewardship", parish);
   if (parishIcon) parishIcon.innerHTML = communityIconSvg(parish?.type);
@@ -530,8 +534,12 @@ function updateQuickGiveLinks(parish) {
   if (desktopCandleLink) desktopCandleLink.href = quickDonorGiftUrl("candles", parish);
   if (memorialLink) memorialLink.href = quickDonorGiftUrl("commemoration", parish);
   if (desktopMemorialLink) desktopMemorialLink.href = quickDonorGiftUrl("commemoration", parish);
+  if (feastLink) feastLink.href = quickDonorGiftUrl("feast", parish);
+  if (desktopFeastLink) desktopFeastLink.href = quickDonorGiftUrl("feast", parish);
   if (campaignLink) campaignLink.href = quickDonorGiftUrl("campaign", parish);
   if (desktopCampaignLink) desktopCampaignLink.href = quickDonorGiftUrl("campaign", parish);
+  if (fundLink) fundLink.href = quickDonorGiftUrl("fund", parish);
+  if (desktopFundLink) desktopFundLink.href = quickDonorGiftUrl("fund", parish);
 }
 
 function activeParishCampaigns(parish) {
@@ -880,6 +888,8 @@ function applyDonorGiveParams() {
     context.textContent = copy.context;
     context.hidden = false;
   }
+  const giftTypeField = document.getElementById("giftTypeField");
+  if (giftTypeField) giftTypeField.hidden = true;
   const changeLink = document.getElementById("changeGiftLink");
   if (changeLink) changeLink.hidden = false;
   const card = document.getElementById("giftDetailsCard");
@@ -1971,13 +1981,14 @@ function renderCommemorationsPayload(payload = {}, fallbackDashboard = null) {
   if (list) {
     list.innerHTML = entries.length
       ? commemorationRows(entries)
-      : '<div class="notice">No commemoration submissions have been recorded yet. Paid commemoration gifts will appear here after checkout completes.</div>';
+      : '<div class="notice">No commemoration submissions have been recorded yet.</div>';
   }
   return { entries };
 }
 
 async function loadDonorCommemorationsPage() {
   const session = donorSession();
+  toggleCommemorationGiftFields();
   primeCommemorationParishDisplay();
   const list = document.getElementById("commemorationList");
   if (!session.email || !session.token) {
@@ -2036,6 +2047,16 @@ function linesFromField(id) {
   return (document.getElementById(id)?.value || "").split(/\n+/).map((value) => value.trim()).filter(Boolean);
 }
 
+function toggleCommemorationGiftFields() {
+  const includeGift = document.getElementById("commemorationIncludeGift")?.checked === true;
+  ["commemorationAmountField", "commemorationCoverFeesField", "commemorationPaymentField"].forEach((id) => {
+    const field = document.getElementById(id);
+    if (field) field.hidden = !includeGift;
+  });
+  const submit = document.getElementById("commemorationSubmitButton");
+  if (submit) submit.textContent = includeGift ? "Continue to checkout" : "Submit commemoration";
+}
+
 function selectedDonorPaymentMethod(frequency = "once") {
   return "card";
 }
@@ -2055,11 +2076,36 @@ async function submitCommemoration(event) {
     return;
   }
   try {
-    setDonorStatus("Preparing commemoration checkout...");
     const session = donorSession();
     const donor = donorProfile();
+    if (!session.email || !session.token) {
+      setDonorStatus("Sign in from the donor home page before submitting commemorations.", "error");
+      return;
+    }
     const name = donor.donorName || donor.householdName || session.email.split("@")[0];
     const [firstName, ...rest] = name.split(/\s+/);
+    const includeGift = document.getElementById("commemorationIncludeGift")?.checked === true;
+    const note = document.getElementById("commemorationIntentionNote")?.value || "";
+    if (!includeGift) {
+      setDonorStatus("Submitting commemoration...");
+      const data = await donorApi("/api/donor/commemorations", {
+        method: "POST",
+        body: JSON.stringify({
+          parishId,
+          namesLiving: living.join("\n"),
+          namesDeparted: departed.join("\n"),
+          note
+        })
+      });
+      renderCommemorationsPayload(data);
+      document.getElementById("commemorationLivingNames").value = "";
+      document.getElementById("commemorationDepartedNames").value = "";
+      document.getElementById("commemorationIntentionNote").value = "";
+      setDonorStatus("Commemoration submitted. Thank you for sending these names.", "success");
+      return;
+    }
+
+    setDonorStatus("Preparing commemoration checkout...");
     const data = await donorApi("/api/create-checkout-session", {
       method: "POST",
       body: JSON.stringify({
@@ -2072,7 +2118,7 @@ async function submitCommemoration(event) {
         email: session.email,
         namesLiving: living.join("\n"),
         namesDeparted: departed.join("\n"),
-        inMemoriam: document.getElementById("commemorationIntentionNote")?.value || "",
+        inMemoriam: note,
         paymentMethod: selectedDonorPaymentMethod("once"),
         coverFees: document.getElementById("coverFees")?.checked !== false,
         ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})

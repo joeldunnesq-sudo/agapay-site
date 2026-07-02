@@ -1078,6 +1078,7 @@ export async function storeCommemorationEntry(env, sourceId, metadata = {}, fall
     amountCents: Number(fallback.amountCents || 0),
     living,
     departed,
+    note: fallback.note || metadata.in_memoriam || metadata.note || "",
     createdAt: fallback.createdAt || new Date().toISOString()
   };
 

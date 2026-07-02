@@ -2033,7 +2033,7 @@ body.donor-home {
 
 .quick-give-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
@@ -3257,7 +3257,7 @@ body.donor-mobile-page {
 
   .desktop-quick-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.85rem;
     padding: 1.15rem;
   }

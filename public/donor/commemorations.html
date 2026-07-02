@@ -45,7 +45,7 @@
       <div class="topbar"><div class="topbar-title">Commemorations</div><div class="topbar-actions"><a class="btn btn-ghost btn-sm" href="/myagapay/giving/calendar">View calendar</a></div></div>
       <div class="page">
         <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
-        <section class="hero"><div class="hero-grid"><div><div class="eyebrow">Living and departed</div><h1>Submit names for prayer.</h1><p>Names added here are attached to a real commemoration offering, then routed into the parish's weekly queue for the priest.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
+        <section class="hero"><div class="hero-grid"><div><div class="eyebrow">Living and departed</div><h1>Submit names for prayer.</h1><p>Names added here are routed into the parish's weekly queue for the priest. An offering is welcome, but never required.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
         <section class="layout-main">
           <div class="card">
             <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 28 28"><path d="M4 16c0-5 2-8 5-9 1.5-.5 3-.5 5-.5s3.5 0 5 .5c3 1 5 4 5 9"/><path d="M4 16c0 3 2 5 10 5s10-2 10-5"/><path d="M10 13c1-2 2-3 4-3s3 1 4 3"/><line x1="14" y1="7" x2="14" y2="10"/><line x1="12" y1="8" x2="16" y2="8"/></svg></span> New Commemoration</div></div>
@@ -53,20 +53,21 @@
               <form id="commemorationForm" onsubmit="submitCommemoration(event)">
                 <div class="form-grid">
                   <div class="form-group full"><label class="form-label">My Parish</label><div class="form-input" id="commemorationParishDisplay" aria-live="polite">Loading your parish...</div><input id="commemorationParishId" type="hidden" /><input id="giftType" type="hidden" value="commemoration" /></div>
-                  <div class="form-group"><label class="form-label" for="amount">Offering amount</label><input class="form-input" id="amount" type="number" min="1" step="1" value="5" inputmode="decimal" /></div>
-                  <div class="form-group"><label class="form-label" for="coverFees">Cover fees</label><label class="fee-toggle"><input id="coverFees" type="checkbox" checked /><span><strong>Yes, let my parish receive the full gift</strong><small>AGAPAY will add the estimated processing cost at checkout.</small></span></label></div>
                   <div class="form-group"><label class="form-label" for="commemorationLivingNames">Living names</label><textarea class="form-textarea" id="commemorationLivingNames" placeholder="One name per line"></textarea></div>
                   <div class="form-group"><label class="form-label" for="commemorationDepartedNames">Departed names</label><textarea class="form-textarea" id="commemorationDepartedNames" placeholder="One name per line"></textarea></div>
                   <div class="form-group full"><label class="form-label" for="commemorationIntentionNote">Note for parish</label><input class="form-input" id="commemorationIntentionNote" placeholder="Optional context for the priest or parish office" /></div>
-                  <div class="form-group full">
+                  <div class="form-group full"><label class="fee-toggle" for="commemorationIncludeGift"><input id="commemorationIncludeGift" type="checkbox" onchange="toggleCommemorationGiftFields()" /><span><strong>Add an offering with these names</strong><small>Your commemoration will be submitted either way. A gift helps support the parish's prayer and ministry.</small></span></label></div>
+                  <div class="form-group" id="commemorationAmountField" hidden><label class="form-label" for="amount">Offering amount</label><input class="form-input" id="amount" type="number" min="1" step="1" value="5" inputmode="decimal" /></div>
+                  <div class="form-group" id="commemorationCoverFeesField" hidden><label class="form-label" for="coverFees">Cover fees</label><label class="fee-toggle"><input id="coverFees" type="checkbox" checked /><span><strong>Yes, let my parish receive the full gift</strong><small>AGAPAY will add the estimated processing cost at checkout.</small></span></label></div>
+                  <div class="form-group full" id="commemorationPaymentField" hidden>
                     <label class="form-label">Payment</label>
                     <div class="payment-method-options">
                       <div class="payment-method-card"><span><strong>Secure Stripe checkout</strong><small>Cards, wallets, and any Stripe-supported options appear on the checkout page when available.</small></span></div>
                     </div>
                   </div>
                 </div>
-                <p class="form-help">This gift opens Stripe checkout and carries your names into the parish's weekly commemoration queue. Change your default parish anytime in <a href="/myagapay/account">Settings</a>.</p>
-                <div class="section-gap"><button class="btn btn-gold" type="submit">Continue to checkout</button></div>
+                <p class="form-help">Change your default parish anytime in <a href="/myagapay/account">Settings</a>.</p>
+                <div class="section-gap"><button class="btn btn-gold" type="submit" id="commemorationSubmitButton">Submit commemoration</button></div>
               </form>
             </div>
           </div>
