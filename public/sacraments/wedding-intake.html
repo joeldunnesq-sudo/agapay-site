@@ -305,32 +305,48 @@
     document.getElementById(id).addEventListener('change', updateReviewNotice);
   });
 
+  // Same auth pattern as the baptism form — meant to run inside the
+  // authenticated My AGAPAY shell.
   document.getElementById('weddingForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const payload = {
-      sacrament_type: 'wedding',
-      proposed_date: document.getElementById('proposedDate').value || null,
-      requester_notes: document.getElementById('requesterNotes').value || null,
-      details: {
-        party_a_name: document.getElementById('partyAName').value,
-        party_a_orthodox: document.getElementById('partyAOrthodox').checked,
-        party_a_prior_marriage: document.getElementById('partyAPrior').checked,
-        party_b_name: document.getElementById('partyBName').value,
-        party_b_orthodox: document.getElementById('partyBOrthodox').checked,
-        party_b_prior_marriage: document.getElementById('partyBPrior').checked,
-        koumbaro_name: document.getElementById('koumbaroName').value || null,
-        koumbaro_home_parish: document.getElementById('koumbaroParish').value || null,
-        marriage_license_status: document.getElementById('licenseStatus').value,
-        premarital_counsel_complete: document.getElementById('counselComplete').checked,
+      sacramentType: 'wedding',
+      requestedDate: document.getElementById('proposedDate').value || null,
+      notes: document.getElementById('requesterNotes').value || null,
+      locationType: 'church',
+      weddingDetails: {
+        partyAName: document.getElementById('partyAName').value,
+        partyAOrthodox: document.getElementById('partyAOrthodox').checked,
+        partyAPriorMarriage: document.getElementById('partyAPrior').checked,
+        partyBName: document.getElementById('partyBName').value,
+        partyBOrthodox: document.getElementById('partyBOrthodox').checked,
+        partyBPriorMarriage: document.getElementById('partyBPrior').checked,
+        koumbaroName: document.getElementById('koumbaroName').value || null,
+        koumbaroHomeParish: document.getElementById('koumbaroParish').value || null,
+        marriageLicenseStatus: document.getElementById('licenseStatus').value,
+        premaritalCounselComplete: document.getElementById('counselComplete').checked,
       }
     };
 
-    // TODO: replace with real fetch to POST /api/sacraments/request
-    console.log('Submitting sacrament request:', payload);
-
-    document.getElementById('weddingForm').style.display = 'none';
-    document.getElementById('confirmView').classList.add('show');
+    try {
+      const res = await fetch('/api/donor/sacraments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${window.localStorage.getItem('agapay_donor_token') || ''}`,
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Something went wrong sending your request.');
+      }
+      document.getElementById('weddingForm').style.display = 'none';
+      document.getElementById('confirmView').classList.add('show');
+    } catch (err) {
+      alert(err.message || 'Something went wrong. Please try again.');
+    }
   });
 </script>
 </body>
