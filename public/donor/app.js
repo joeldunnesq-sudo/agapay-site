@@ -2455,20 +2455,43 @@ const BOOKSTORE_STATUS_TONE = {
   refunded: "muted"
 };
 
+const BOOKSTORE_FALLBACK_FIELDS = [
+  { category: "book", label: "Book", fields: [
+    { key: "title", label: "Title", required: true, maxLength: 180 },
+    { key: "author", label: "Author", required: false, maxLength: 120 },
+    { key: "isbn", label: "ISBN / barcode", required: false, maxLength: 32 }
+  ] },
+  { category: "prayer_rope", label: "Prayer Rope", fields: [
+    { key: "description", label: "Description", required: true, maxLength: 180 },
+    { key: "color", label: "Color", required: false, maxLength: 80 }
+  ] },
+  { category: "icon", label: "Icon", fields: [
+    { key: "saint_or_feast", label: "Saint or feast", required: true, maxLength: 160 },
+    { key: "size", label: "Size", required: false, maxLength: 80 }
+  ] },
+  { category: "candle", label: "Candle", fields: [{ key: "description", label: "Description", required: true, maxLength: 160 }] },
+  { category: "jewelry", label: "Jewelry / Cross", fields: [{ key: "description", label: "Description", required: true, maxLength: 180 }] },
+  { category: "incense", label: "Incense", fields: [{ key: "description", label: "Description", required: true, maxLength: 160 }] },
+  { category: "cd_dvd", label: "CD / DVD", fields: [{ key: "title", label: "Title", required: true, maxLength: 180 }] },
+  { category: "other", label: "Other Item", fields: [{ key: "description", label: "Description", required: true, maxLength: 180 }] }
+];
+
 function formatCentsAsDollars(cents) {
   return `$${(Number(cents || 0) / 100).toFixed(2)}`;
 }
 
 let bookstoreItemFieldsSchema = null;
+let bookstoreProducts = [];
+let bookstoreCart = [];
 
 async function loadBookstoreItemFieldsSchema() {
   if (bookstoreItemFieldsSchema) return bookstoreItemFieldsSchema;
   try {
     const res = await fetch("/api/donor/bookstore/item-fields");
     const data = await res.json().catch(() => ({}));
-    bookstoreItemFieldsSchema = Array.isArray(data.categories) ? data.categories : [];
+    bookstoreItemFieldsSchema = Array.isArray(data.categories) && data.categories.length ? data.categories : BOOKSTORE_FALLBACK_FIELDS;
   } catch {
-    bookstoreItemFieldsSchema = [];
+    bookstoreItemFieldsSchema = BOOKSTORE_FALLBACK_FIELDS;
   }
   const select = document.getElementById("bookstoreCategory");
   if (select && bookstoreItemFieldsSchema.length) {
@@ -2506,6 +2529,139 @@ function renderBookstoreItemFields() {
     return `<div style="margin-bottom:8px;"><label class="form-label" for="${inputId}">${escapeHtml(field.label)}</label>
       <input class="form-input" id="${inputId}" data-field-key="${escapeHtml(field.key)}" type="text" maxlength="${field.maxLength || 150}" ${field.required ? "required" : ""} /></div>`;
   }).join("");
+}
+
+function bookstoreProductById(productId, variantId = "") {
+  return bookstoreProducts.find(product => product.id === productId && (!variantId || product.variantId === variantId))
+    || bookstoreProducts.find(product => product.variantId === variantId)
+    || null;
+}
+
+function renderBookstoreProducts(products = []) {
+  const container = document.getElementById("bookstoreProductCatalog");
+  if (!container) return;
+  if (!products.length) {
+    container.innerHTML = '<div class="notice">No parish products yet. Enter or scan an item below and it will be added to the parish catalog after checkout starts.</div>';
+    return;
+  }
+  container.innerHTML = products.map(product => `
+    <button type="button" class="bookstore-product-card" onclick="addBookstoreProductToCart('${escapeHtml(product.id)}','${escapeHtml(product.variantId || "")}')">
+      <strong>${escapeHtml(product.name)}</strong>
+      <small>${escapeHtml(product.description || product.categoryLabel || "Bookstore item")}</small>
+      <span class="bookstore-product-meta"><span>${escapeHtml(product.categoryLabel || "Item")}</span><span>${formatCentsAsDollars(product.priceCents)}</span></span>
+    </button>
+  `).join("");
+}
+
+function renderBookstoreCart() {
+  const list = document.getElementById("bookstoreCartList");
+  const total = document.getElementById("bookstoreCartTotal");
+  const subtotal = bookstoreCart.reduce((sum, item) => sum + (Number(item.unitPriceCents || 0) * Number(item.quantity || 1)), 0);
+  if (total) total.textContent = formatCentsAsDollars(subtotal);
+  if (!list) return;
+  if (!bookstoreCart.length) {
+    list.innerHTML = '<div class="notice">Your cart is empty.</div>';
+    return;
+  }
+  list.innerHTML = bookstoreCart.map((item, index) => `
+    <div class="bookstore-cart-row">
+      <div class="bookstore-cart-row-top">
+        <div><strong>${escapeHtml(item.name)}</strong><br><small>${escapeHtml(item.categoryLabel || "Bookstore item")} · ${formatCentsAsDollars(item.unitPriceCents)} each</small></div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="removeBookstoreCartItem(${index})">Remove</button>
+      </div>
+      <div class="bookstore-qty-controls" aria-label="Quantity for ${escapeHtml(item.name)}">
+        <button type="button" onclick="changeBookstoreCartQuantity(${index}, -1)">-</button>
+        <span>${Number(item.quantity || 1)}</span>
+        <button type="button" onclick="changeBookstoreCartQuantity(${index}, 1)">+</button>
+        <small>${formatCentsAsDollars(Number(item.unitPriceCents || 0) * Number(item.quantity || 1))}</small>
+      </div>
+    </div>
+  `).join("");
+}
+
+function addBookstoreProductToCart(productId, variantId = "") {
+  const product = bookstoreProductById(productId, variantId);
+  if (!product) return;
+  const existing = bookstoreCart.find(item => item.productId === product.id && item.variantId === product.variantId);
+  if (existing) existing.quantity = Math.min(50, Number(existing.quantity || 1) + 1);
+  else bookstoreCart.push({
+    type: "product",
+    productId: product.id,
+    variantId: product.variantId,
+    name: product.name,
+    categoryLabel: product.categoryLabel,
+    unitPriceCents: product.priceCents,
+    quantity: 1
+  });
+  renderBookstoreCart();
+  setDonorStatus(`${product.name} added to your cart.`, "success");
+}
+
+function changeBookstoreCartQuantity(index, delta) {
+  const item = bookstoreCart[index];
+  if (!item) return;
+  item.quantity = Math.max(1, Math.min(50, Number(item.quantity || 1) + delta));
+  renderBookstoreCart();
+}
+
+function removeBookstoreCartItem(index) {
+  bookstoreCart.splice(index, 1);
+  renderBookstoreCart();
+}
+
+function clearManualBookstoreEntry() {
+  const category = document.getElementById("bookstoreCategory");
+  const quantity = document.getElementById("bookstoreQuantity");
+  const price = document.getElementById("bookstorePrice");
+  if (category) category.value = "";
+  if (quantity) quantity.value = "1";
+  if (price) price.value = "";
+  const fields = document.getElementById("bookstoreItemFields");
+  if (fields) fields.innerHTML = '<p style="color:#6F6A60;font-size:13.5px;margin:0;">Choose an item type above to enter a custom item.</p>';
+}
+
+function addManualBookstoreItem() {
+  const itemCategory = document.getElementById("bookstoreCategory")?.value || "";
+  if (!itemCategory) {
+    setDonorStatus("Choose an item type before adding it to the cart.", "error");
+    return;
+  }
+  const entry = (bookstoreItemFieldsSchema || BOOKSTORE_FALLBACK_FIELDS).find(c => c.category === itemCategory);
+  const specifics = {};
+  let missingRequired = false;
+  document.querySelectorAll('#bookstoreItemFields [data-field-key]').forEach(el => {
+    const key = el.getAttribute("data-field-key");
+    const value = (el.value || "").trim();
+    if (el.hasAttribute("required") && !value) missingRequired = true;
+    if (value) specifics[key] = value;
+  });
+  if (missingRequired) {
+    setDonorStatus("Fill in the required fields before adding this item.", "error");
+    return;
+  }
+  const quantity = Number(document.getElementById("bookstoreQuantity")?.value) || 1;
+  const unitPrice = Number(document.getElementById("bookstorePrice")?.value || 0);
+  if (!unitPrice || unitPrice <= 0) {
+    setDonorStatus("Enter a valid price before adding this item.", "error");
+    return;
+  }
+  const name = itemCategory === "book"
+    ? [specifics.title, specifics.author ? `by ${specifics.author}` : ""].filter(Boolean).join(" ")
+    : (specifics.saint_or_feast || specifics.description || specifics.title || entry?.label || "Bookstore item");
+  bookstoreCart.push({
+    type: "manual",
+    name,
+    categoryLabel: entry?.label || BOOKSTORE_CATEGORY_LABELS[itemCategory] || "Item",
+    itemCategory,
+    specifics,
+    unitPrice,
+    unitPriceCents: Math.round(unitPrice * 100),
+    quantity: Math.max(1, Math.min(50, quantity)),
+    source: specifics.isbn ? "scan_and_go" : "manual_entry"
+  });
+  renderBookstoreCart();
+  clearManualBookstoreEntry();
+  setDonorStatus(`${name} added to your cart.`, "success");
 }
 
 // ------------------------------------------------------------------
@@ -2595,14 +2751,31 @@ async function handleBarcodeDetected(rawValue) {
   closeBookstoreScanner();
 
   try {
-    const res = await fetch(`/api/donor/bookstore/isbn-lookup?isbn=${encodeURIComponent(isbn)}`);
-    const data = await res.json().catch(() => ({}));
-    if (data.found) {
+    const parishId = document.getElementById("bookstoreParishId")?.value || donorProfile()?.defaultParishId || "";
+    const data = await donorApi(`/api/donor/bookstore/isbn-lookup?isbn=${encodeURIComponent(isbn)}`, {
+      headers: donorAuthHeaders({ "X-AGAPAY-Parish-Id": parishId })
+    });
+    if (data.found && data.product?.id) {
+      const product = data.product;
+      if (!bookstoreProductById(product.id, product.variantId)) {
+        bookstoreProducts.push(product);
+        renderBookstoreProducts(bookstoreProducts);
+      }
+      addBookstoreProductToCart(product.id, product.variantId || "");
+      setDonorStatus(`${product.name} found in the parish catalog and added to your cart.`, "success");
+    } else if (data.found) {
+      const category = document.getElementById("bookstoreCategory");
+      if (category) {
+        category.value = "book";
+        renderBookstoreItemFields();
+      }
       const titleInput = document.getElementById("bookstoreField_title");
       const authorInput = document.getElementById("bookstoreField_author");
+      const isbnInput = document.getElementById("bookstoreField_isbn");
       if (titleInput) titleInput.value = data.title || "";
       if (authorInput) authorInput.value = data.author || "";
-      setDonorStatus("Title filled in from the barcode — double check it, then enter the price.", "success");
+      if (isbnInput) isbnInput.value = data.isbn || isbn;
+      setDonorStatus("Title filled in from the barcode. Enter the price, then add it to your cart.", "success");
     } else {
       setDonorStatus("Couldn't find that book — enter the title and author below.", "info");
     }
@@ -2682,6 +2855,9 @@ function renderBookstorePayload(payload = {}) {
 
   const available = payload.available !== false; // default to showing the form while first loading
   if (form) form.style.display = available ? "" : "none";
+  bookstoreProducts = Array.isArray(payload.products) ? payload.products : [];
+  renderBookstoreProducts(bookstoreProducts);
+  renderBookstoreCart();
   if (unavailableNotice) {
     unavailableNotice.style.display = available ? "none" : "block";
     unavailableNotice.innerHTML = available ? "" : `
@@ -2742,31 +2918,25 @@ async function submitBookstoreOrder(event) {
     return;
   }
 
-  const itemCategory = document.getElementById("bookstoreCategory")?.value || "";
-  if (!itemCategory) {
-    setDonorStatus("Choose an item type.", "error");
-    return;
-  }
-  const specifics = {};
-  let missingRequired = false;
-  document.querySelectorAll('#bookstoreItemFields [data-field-key]').forEach(el => {
-    const key = el.getAttribute("data-field-key");
-    const value = (el.value || "").trim();
-    if (el.hasAttribute("required") && !value) missingRequired = true;
-    if (value) specifics[key] = value;
-  });
-  if (missingRequired) {
-    setDonorStatus("Fill in the required fields for this item type.", "error");
-    return;
-  }
-  const quantity = Number(document.getElementById("bookstoreQuantity")?.value) || 1;
-  const unitPrice = document.getElementById("bookstorePrice")?.value;
-  if (!unitPrice || Number(unitPrice) <= 0) {
-    setDonorStatus("Enter a valid price.", "error");
+  if (!bookstoreCart.length) {
+    setDonorStatus("Add at least one item to your cart before checkout.", "error");
     return;
   }
   const pickupNote = document.getElementById("bookstorePickupNote")?.value || "";
   const coverFees = document.getElementById("bookstoreCoverFees")?.checked !== false;
+  const items = bookstoreCart.map(item => item.type === "product"
+    ? {
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity
+      }
+    : {
+        itemCategory: item.itemCategory,
+        specifics: item.specifics,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        source: item.source || "manual_entry"
+      });
 
   try {
     setDonorStatus("Preparing checkout...");
@@ -2774,10 +2944,7 @@ async function submitBookstoreOrder(event) {
       method: "POST",
       body: JSON.stringify({
         parishId,
-        itemCategory,
-        specifics,
-        quantity,
-        unitPrice,
+        items,
         pickupNote,
         coverFees,
         email: session.email

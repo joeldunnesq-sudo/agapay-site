@@ -133,6 +133,10 @@ import {
   handleDonorDashboard,
   handleDonorOfferings,
   handleDonorSubscriptionPortal,
+  handleDonorBookstore,
+  handleDonorBookstoreItemFields,
+  handleDonorBookstoreIsbnLookup,
+  handleDonorBookstoreRequestFeature,
   handleDonorCommemorations,
   handleDonorSacraments,
   handleDonorSacramentCancel,
@@ -1461,6 +1465,18 @@ export default {
     }
     if (url.pathname === "/api/donor/subscription-portal") {
       return handleDonorSubscriptionPortal(request, env);
+    }
+    if (url.pathname === "/api/donor/bookstore/item-fields") {
+      return handleDonorBookstoreItemFields(request, env);
+    }
+    if (url.pathname === "/api/donor/bookstore/isbn-lookup") {
+      return handleDonorBookstoreIsbnLookup(request, env);
+    }
+    if (url.pathname === "/api/donor/bookstore/request-feature") {
+      return handleDonorBookstoreRequestFeature(request, env);
+    }
+    if (url.pathname === "/api/donor/bookstore") {
+      return handleDonorBookstore(request, env);
     }
     if (url.pathname === "/api/donor/commemorations") {
       return handleDonorCommemorations(request, env);

@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/donor/style.css" />
   <script src="/security.js"></script>
   <script src="/myagapay-shell.js?v=20260701a" defer></script>
-  <script src="/donor/app.js?v=20260701e" defer></script>
+  <script src="/donor/app.js?v=20260702a" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon.png" />
@@ -44,6 +44,27 @@
       display: inline-flex; align-items: center; gap: 6px;
       font-size: 13px; margin-bottom: 10px;
     }
+    .bookstore-shop-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr); gap: 16px; }
+    .bookstore-product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 12px 0 18px; }
+    .bookstore-product-card {
+      border: 1px solid rgba(166,159,145,0.34); background: #fff; border-radius: 8px;
+      padding: 12px; text-align: left; cursor: pointer; min-height: 112px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .bookstore-product-card:hover, .bookstore-product-card:focus { border-color: #B28A3C; box-shadow: 0 8px 18px rgba(6,21,34,0.08); outline: none; }
+    .bookstore-product-card strong { color: #171715; font-size: 14px; line-height: 1.25; }
+    .bookstore-product-card small { color: #6F6A60; line-height: 1.35; }
+    .bookstore-product-meta { margin-top: auto; display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: #3F4C38; font-weight: 700; }
+    .bookstore-cart-list { display: grid; gap: 8px; margin: 10px 0; }
+    .bookstore-cart-row { border: 1px solid rgba(166,159,145,0.28); border-radius: 8px; padding: 10px; display: grid; gap: 8px; }
+    .bookstore-cart-row-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+    .bookstore-cart-row strong { font-size: 14px; color: #171715; }
+    .bookstore-cart-row small { color: #6F6A60; }
+    .bookstore-qty-controls { display: inline-flex; align-items: center; gap: 6px; }
+    .bookstore-qty-controls button { width: 28px; height: 28px; border-radius: 999px; border: 1px solid rgba(166,159,145,0.5); background: #fff; cursor: pointer; }
+    .bookstore-cart-total { border-top: 1px solid rgba(166,159,145,0.28); margin-top: 10px; padding-top: 10px; display: flex; justify-content: space-between; font-weight: 800; }
+    .bookstore-manual-panel { border-top: 1px solid rgba(166,159,145,0.26); padding-top: 14px; margin-top: 6px; }
+    @media (max-width: 900px) { .bookstore-shop-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body class="donor-mobile-page donor-bookstore-page">
@@ -62,7 +83,7 @@
           <a href="/myagapay/giving/calendar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg> Calendar</a>
           <a href="/myagapay/account"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg> Account</a>
         </nav>
-        <div class="sidebar-card"><h3>How this works</h3><div class="mini-item"><strong>Pay right from your phone</strong><span>Enter the item and price, sales tax is added automatically, and you pay securely — no need to catch someone at the bookstore table.</span></div></div>
+        <div class="sidebar-card"><h3>How this works</h3><div class="mini-item"><strong>Pay right from your phone</strong><span>Select products, add manual or scanned books, and pay once for everything in your cart.</span></div></div>
       </div>
       <div class="sidebar-footer"><a class="sidebar-link" href="/myagapay/giving/give"><svg viewBox="0 0 24 24"><path d="M7 13V7.5a1.5 1.5 0 0 1 3 0V13"/><path d="M10 13V5.5a1.5 1.5 0 0 1 3 0V13"/><path d="M13 13V6.5a1.5 1.5 0 0 1 3 0V14"/><path d="M16 14V10a1.5 1.5 0 0 1 3 0v5c0 4-2.6 6-6.3 6H12a7 7 0 0 1-7-7v-1.5a1.5 1.5 0 0 1 2 0V13"/></svg> Add offering</a></div>
     </aside>
@@ -70,40 +91,53 @@
       <div class="topbar"><div class="topbar-title">Bookstore Payments</div></div>
       <div class="page">
         <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
-        <section class="hero"><div class="hero-grid"><div><div class="eyebrow">Pay for your items</div><h1>Books, prayer ropes, icons, and more.</h1><p>Enter what you're buying and the price — sales tax is calculated automatically, and your payment goes straight to your parish.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
+        <section class="hero"><div class="hero-grid"><div><div class="eyebrow">Pay for your items</div><h1>Books, prayer ropes, icons, and more.</h1><p>Select parish products, enter a custom item, or scan a book barcode. Then pay for the whole cart in one checkout.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
 
         <section class="layout-main">
           <div class="card" id="bookstoreFormCard">
-            <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 28 28"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span> Pay for an Item</div></div>
+            <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 28 28"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span> Bookstore Cart</div></div>
             <div class="card-body">
               <div class="notice" id="bookstoreUnavailableNotice" style="display:none;"></div>
               <form id="bookstoreForm" onsubmit="submitBookstoreOrder(event)">
-                <div class="form-grid">
-                  <div class="form-group full"><label class="form-label">My Parish</label><div class="form-input" id="commemorationParishDisplay" aria-live="polite">Loading your parish...</div><input id="bookstoreParishId" type="hidden" /></div>
+                <div class="form-group full"><label class="form-label">My Parish</label><div class="form-input" id="commemorationParishDisplay" aria-live="polite">Loading your parish...</div><input id="bookstoreParishId" type="hidden" /></div>
+                <div class="bookstore-shop-grid">
+                  <div>
+                    <label class="form-label">Parish products</label>
+                    <div id="bookstoreProductCatalog" class="bookstore-product-grid"><div class="notice">Loading products...</div></div>
 
-                  <div class="form-group">
-                    <label class="form-label" for="bookstoreCategory">Item type</label>
-                    <select class="form-input" id="bookstoreCategory" onchange="renderBookstoreItemFields()" required>
-                      <option value="">Choose...</option>
-                    </select>
+                    <div class="bookstore-manual-panel">
+                      <div class="form-grid">
+                        <div class="form-group">
+                          <label class="form-label" for="bookstoreCategory">Enter another item</label>
+                          <select class="form-input" id="bookstoreCategory" onchange="renderBookstoreItemFields()">
+                            <option value="">Choose...</option>
+                          </select>
+                        </div>
+                        <div class="form-group"><label class="form-label" for="bookstoreQuantity">Quantity</label><input class="form-input" id="bookstoreQuantity" type="number" min="1" max="50" value="1" /></div>
+
+                        <div class="form-group full" id="bookstoreItemFields">
+                          <p style="color:#6F6A60;font-size:13.5px;margin:0;">Choose an item type above to enter a custom item.</p>
+                        </div>
+
+                        <div class="form-group"><label class="form-label" for="bookstorePrice">Price per item</label><input class="form-input" id="bookstorePrice" type="number" min="0.01" step="0.01" placeholder="0.00" /></div>
+                        <div class="form-group"><label class="form-label">Sales tax</label><div class="form-input" style="color:#6F6A60;">Calculated at checkout</div></div>
+                      </div>
+                      <button class="btn btn-ghost btn-sm" type="button" onclick="addManualBookstoreItem()">Add item to cart</button>
+                    </div>
                   </div>
-                  <div class="form-group"><label class="form-label" for="bookstoreQuantity">Quantity</label><input class="form-input" id="bookstoreQuantity" type="number" min="1" max="50" value="1" required /></div>
 
-                  <div class="form-group full" id="bookstoreItemFields">
-                    <p style="color:#6F6A60;font-size:13.5px;margin:0;">Choose an item type above to continue.</p>
-                  </div>
-
-                  <div class="form-group"><label class="form-label" for="bookstorePrice">Price per item</label><input class="form-input" id="bookstorePrice" type="number" min="0.01" step="0.01" placeholder="0.00" required /></div>
-                  <div class="form-group"><label class="form-label">Sales tax</label><div class="form-input" style="color:#6F6A60;">Calculated at checkout</div></div>
-
-                  <div class="form-group full"><label class="form-label" for="bookstorePickupNote">Note for the parish (optional)</label><input class="form-input" id="bookstorePickupNote" placeholder="e.g. will pick up after Liturgy Sunday" /></div>
-
-                  <div class="form-group full">
-                    <label class="fee-toggle" for="bookstoreCoverFees"><input id="bookstoreCoverFees" type="checkbox" checked /><span><strong>Cover the processing fee</strong><small>Default yes, so your parish receives the full item price.</small></span></label>
+                  <div>
+                    <label class="form-label">Your cart</label>
+                    <div id="bookstoreCartList" class="bookstore-cart-list"><div class="notice">Your cart is empty.</div></div>
+                    <div class="bookstore-cart-total"><span>Total before tax</span><span id="bookstoreCartTotal">$0.00</span></div>
+                    <div class="section-gap"><label class="form-label" for="bookstorePickupNote">Note for the parish (optional)</label><input class="form-input" id="bookstorePickupNote" placeholder="e.g. will pick up after Liturgy Sunday" /></div>
+                    <div class="section-gap">
+                      <label class="fee-toggle" for="bookstoreCoverFees"><input id="bookstoreCoverFees" type="checkbox" checked /><span><strong>Cover the processing fee</strong><small>Default yes, so your parish receives the full item price.</small></span></label>
+                    </div>
+                    <p class="form-help">You'll be taken to a secure checkout to complete payment. Sales tax is calculated automatically based on your parish's tax settings.</p>
+                    <div class="section-gap"><button class="btn btn-gold" type="submit">Checkout all items</button></div>
                   </div>
                 </div>
-                <p class="form-help">You'll be taken to a secure checkout to complete payment. Sales tax is calculated automatically based on your parish's tax settings.</p>
-                <div class="section-gap"><button class="btn btn-gold" type="submit">Continue to payment</button></div>
               </form>
             </div>
           </div>
