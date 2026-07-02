@@ -3262,8 +3262,8 @@ function parishSacramentRequestRow(row = {}) {
 }
 
 // GET /api/parish/dashboard/:parishId/sacraments
-// Sacraments & Services is a Stewardship Suite feature: viewing/managing
-// requests requires the parish to have active Stewardship Suite access.
+// Sacraments & Services is an AGAPAY Stewardship Plus feature: viewing/managing
+// requests requires the parish to have active AGAPAY Stewardship Plus access.
 // This mirrors the donor-side gate in handleDonorSacraments — the feature
 // becomes available on both ends automatically the moment a parish
 // subscribes (or is comped), with no separate enablement step.
@@ -3286,7 +3286,7 @@ export async function handleParishSacraments(request, env, parishId) {
 
   if (!hasStewardshipAccess(found.registration)) {
     return json({
-      error: "Sacraments & Services requires Stewardship Suite.",
+      error: "Sacraments & Services requires AGAPAY Stewardship Plus.",
       stewardshipRequired: true
     }, { status: 402 });
   }
@@ -3329,7 +3329,7 @@ export async function handleParishSacramentUpdate(request, env, parishId, reques
 
   if (!hasStewardshipAccess(found.registration)) {
     return json({
-      error: "Sacraments & Services requires Stewardship Suite.",
+      error: "Sacraments & Services requires AGAPAY Stewardship Plus.",
       stewardshipRequired: true
     }, { status: 402 });
   }
@@ -4410,7 +4410,7 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
     return unauthorized();
   }
   if (!hasStewardshipAccess(found.registration)) {
-    return json({ error: "Bookstore Payments requires AGAPAY Stewardship Suite." }, { status: 403 });
+    return json({ error: "Bookstore Payments requires AGAPAY Stewardship Plus." }, { status: 403 });
   }
 
   const segments = String(subpath || "").replace(/^\/+/, "").split("/").filter(Boolean);

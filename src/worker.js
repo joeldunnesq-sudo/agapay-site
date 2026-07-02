@@ -694,7 +694,7 @@ async function sendWeeklyCommemorationEmails(env, scheduledTime) {
 }
 
 // Sends a one-time heads-up email roughly 30 days before a parish's
-// "Founding 20" free-year Stewardship Suite comp grant expires, so nobody
+// "Founding 20" free-year AGAPAY Stewardship Plus comp grant expires, so nobody
 // is surprised when access lapses. Marks the grant with reminderSentAt so
 // this never fires twice for the same grant, even though this function
 // runs every week.
@@ -732,25 +732,25 @@ async function sendStewardshipCompExpiryReminders(env) {
       from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
       to,
       reply_to: env.AGAPAY_REPLY_TO_EMAIL || "support@agapay.app",
-      subject: `Your free year of AGAPAY Stewardship Suite ends ${expiresLabel}`,
-      html: agapayEmailHtml(appUrl, "Stewardship Suite — Free Year Ending Soon", `
+      subject: `Your free year of AGAPAY Stewardship Plus ends ${expiresLabel}`,
+      html: agapayEmailHtml(appUrl, "AGAPAY Stewardship Plus — Free Year Ending Soon", `
         <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#171715;">Glory to Jesus Christ!</p>
         <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">
           As one of our founding 20 parishes, <strong>${htmlEscape(registration.parishName || "your parish")}</strong>
-          received a free year of AGAPAY Stewardship Suite. That year ends on
+          received a free year of AGAPAY Stewardship Plus. That year ends on
           <strong>${expiresLabel}</strong> — about ${daysLeft} days from now.
         </p>
         <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#171715;">
           No action is needed if you'd simply like to let it lapse. If you'd like to continue with
-          Stewardship Suite afterward, you can add it as a paid add-on to your parish's AGAPAY account
+          AGAPAY Stewardship Plus afterward, you can add it as a paid add-on to your parish's AGAPAY account
           at any time from your dashboard.
         </p>
         <p style="margin:0;font-size:13px;line-height:1.7;color:#6F6A60;">
-          Thank you for being one of the first parishes to use Stewardship Suite — your feedback has
+          Thank you for being one of the first parishes to use AGAPAY Stewardship Plus — your feedback has
           shaped it directly. Reach out any time with questions.
         </p>
       `),
-      text: `Your free year of AGAPAY Stewardship Suite ends ${expiresLabel}\n\nAs one of our founding 20 parishes, ${registration.parishName || "your parish"} received a free year of AGAPAY Stewardship Suite, ending ${expiresLabel} (about ${daysLeft} days from now).\n\nNo action is needed if you'd like to let it lapse. If you'd like to continue afterward, you can add Stewardship Suite as a paid add-on any time from your dashboard.\n\nThank you for being one of the first parishes to use it.`
+      text: `Your free year of AGAPAY Stewardship Plus ends ${expiresLabel}\n\nAs one of our founding 20 parishes, ${registration.parishName || "your parish"} received a free year of AGAPAY Stewardship Plus, ending ${expiresLabel} (about ${daysLeft} days from now).\n\nNo action is needed if you'd like to let it lapse. If you'd like to continue afterward, you can add AGAPAY Stewardship Plus as a paid add-on any time from your dashboard.\n\nThank you for being one of the first parishes to use it.`
     });
 
     if (email.status !== "not_configured") {
@@ -820,7 +820,7 @@ async function requireStewardshipFeature(env, parishId) {
     `SELECT has_stewardship_suite FROM parish_stewardship_settings WHERE parish_id = ?`
   ).bind(parishId).first();
   if (!row || !row.has_stewardship_suite) {
-    return json({ error: "Stewardship Suite not activated for this parish." }, { status: 403 });
+    return json({ error: "AGAPAY Stewardship Plus not activated for this parish." }, { status: 403 });
   }
   return null; // null = access granted
 }
@@ -881,7 +881,7 @@ async function handleAdminRecentActivity(request, env) {
     for (const a of (activations || [])) {
       events.push({
         type: 'stewardship_activated',
-        label: 'Stewardship Suite activated',
+        label: 'AGAPAY Stewardship Plus activated',
         detail: a.parish_id,
         sub: null,
         time: a.updated_at,
@@ -1879,7 +1879,7 @@ export default {
     }
 
     // ── Stewardship Giving API ────────────────────────────────────────────
-    // Real-time pledge tracking and metrics for the Parish Stewardship Suite.
+    // Real-time pledge tracking and metrics for AGAPAY Stewardship Plus.
     // All routes gated by has_stewardship_suite feature flag in D1.
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/summary")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/summary", ""));

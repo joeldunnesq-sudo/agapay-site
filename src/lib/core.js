@@ -1098,10 +1098,10 @@ export async function resolveParishDashboardSession(registration, token) {
   return null;
 }
 
-// ─── Stewardship Suite access ───────────────────────────────────────────────
+// ─── AGAPAY Stewardship Plus access ─────────────────────────────────────────
 // Moved here (rather than living only in handlers/stewardship.js) so that
 // parish.js and donor.js — which gate the Sacraments & Services feature on
-// an active Stewardship Suite subscription — can check access without
+// an active AGAPAY Stewardship Plus subscription — can check access without
 // creating a circular import (stewardship.js already imports from parish.js).
 
 const STEWARDSHIP_ACTIVE_STATES = new Set(["active", "trialing"]);

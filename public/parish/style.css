@@ -37,7 +37,7 @@
     .toast-container { position: fixed; bottom: 2rem; right: 2rem; display: flex; flex-direction: column; gap: 0.75rem; z-index: 9999; pointer-events: none; }
     .toast { background: white; border-left: 4px solid var(--gold); border-radius: 8px; padding: 1rem 1.25rem; box-shadow: 0 10px 30px rgba(6,21,34,0.12); transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease; color: var(--ink); font-size: 13px; font-weight: 500; line-height: 1.5; max-width: 350px; pointer-events: auto; }
 
-    /* ── Stewardship Suite comp-expiry notice ─────────────────────────── */
+    /* ── AGAPAY Stewardship Plus comp-expiry notice ───────────────────── */
     .sw-comp-notice-overlay {
       position: fixed; inset: 0; z-index: 300;
       display: flex; align-items: center; justify-content: center;
@@ -236,7 +236,7 @@
       color: rgba(184,144,47,0.68);
     }
     .sidebar-nav-item--gated .nav-label::after {
-      content: "Requires Suite";
+      content: "Requires Plus";
       display: block;
       margin-top: 0.1rem;
       color: rgba(166,159,145,0.74);
@@ -2289,7 +2289,7 @@
       margin-bottom: 1rem;
     }
     .bookstore-card .section-body {
-      overflow-x: auto;
+      overflow: visible;
     }
     .bookstore-form {
       display: grid;
@@ -2300,61 +2300,125 @@
     .bookstore-form button {
       grid-column: 1 / -1;
     }
-    .bookstore-table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 920px;
-      font-size: 13px;
+    .bookstore-current-list {
+      display: grid;
+      gap: 0.65rem;
     }
-    .bookstore-table th {
-      padding: 0.6rem 0.65rem;
-      border-bottom: 1px solid var(--line);
-      color: var(--muted);
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.1em;
-      text-align: left;
-      text-transform: uppercase;
-      white-space: nowrap;
+    .bookstore-current-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(110px, auto) auto;
+      gap: 0.85rem;
+      align-items: center;
+      border: 1px solid rgba(111,106,96,0.14);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.74);
+      padding: 0.75rem;
     }
-    .bookstore-table td {
-      padding: 0.7rem 0.65rem;
-      border-bottom: 1px solid rgba(111,106,96,0.12);
-      color: var(--stone);
-      vertical-align: middle;
+    .bookstore-current-main {
+      min-width: 0;
     }
-    .bookstore-table tbody tr:last-child td {
-      border-bottom: 0;
-    }
-    .bookstore-table strong {
+    .bookstore-current-main strong {
       display: block;
       color: var(--deep);
-      font-size: 13.5px;
+      font-size: 14px;
       line-height: 1.25;
     }
-    .bookstore-table td span {
+    .bookstore-current-main span,
+    .bookstore-current-main small,
+    .bookstore-current-metrics span {
       display: block;
-      margin-top: 0.16rem;
-      color: var(--muted);
-      font-size: 11px;
+      margin-top: 0.18rem;
+      color: var(--stone);
+      font-size: 11.5px;
+      line-height: 1.35;
     }
-    .bookstore-mini-input {
-      width: 82px;
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      background: white;
-      color: var(--deep);
-      padding: 0.35rem 0.45rem;
-      font: 600 12px var(--sans);
+    .bookstore-current-main small {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .bookstore-current-metrics {
       text-align: right;
     }
-    .bookstore-item-editor {
-      display: grid;
-      gap: 0.35rem;
-      min-width: 260px;
+    .bookstore-current-metrics b {
+      display: block;
+      color: var(--deep);
+      font-size: 14px;
     }
-    .bookstore-text-input,
-    .bookstore-select-input,
+    .bookstore-current-metrics .bookstore-status-pill {
+      margin-top: 0.35rem !important;
+      justify-content: center;
+    }
+    .bookstore-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 350;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      background: rgba(6,21,34,0.54);
+      backdrop-filter: blur(4px);
+    }
+    .bookstore-modal-open {
+      overflow: hidden;
+    }
+    .bookstore-modal {
+      width: min(720px, 100%);
+      max-height: min(760px, calc(100vh - 2.5rem));
+      overflow-y: auto;
+      border: 1px solid rgba(200,162,74,0.32);
+      border-radius: 16px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+      padding: 1.2rem;
+    }
+    .bookstore-modal-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+    .bookstore-modal-head h2 {
+      margin: 0.2rem 0 0;
+      color: var(--deep);
+      font-family: var(--serif);
+      font-size: 1.55rem;
+      font-weight: 600;
+    }
+    .bookstore-modal-close {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      padding: 0;
+      background: rgba(111,106,96,0.1);
+      color: var(--stone);
+      font-size: 22px;
+      line-height: 1;
+    }
+    .bookstore-modal-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+    .bookstore-modal-form .full,
+    .bookstore-modal-actions {
+      grid-column: 1 / -1;
+    }
+    .bookstore-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      padding-top: 0.35rem;
+    }
+    .bookstore-modal-form textarea {
+      min-height: 90px;
+      font-family: var(--sans);
+      font-size: 13px;
+      line-height: 1.45;
+    }
     .bookstore-starter-fields input,
     .bookstore-starter-fields select {
       width: 100%;
@@ -2364,12 +2428,6 @@
       color: var(--deep);
       padding: 0.4rem 0.5rem;
       font: 600 12px var(--sans);
-    }
-    textarea.bookstore-text-input {
-      min-height: 54px;
-      resize: vertical;
-      line-height: 1.35;
-      font-weight: 500;
     }
     .bookstore-row-actions {
       display: flex;
@@ -2460,6 +2518,18 @@
     @media (max-width: 640px) {
       .bookstore-form {
         grid-template-columns: 1fr;
+      }
+      .bookstore-current-row,
+      .bookstore-modal-form {
+        grid-template-columns: 1fr;
+      }
+      .bookstore-current-metrics {
+        text-align: left;
+      }
+      .bookstore-row-actions,
+      .bookstore-modal-actions {
+        justify-content: flex-start;
+        flex-wrap: wrap;
       }
       .bookstore-starter-row {
         grid-template-columns: auto minmax(0, 1fr);

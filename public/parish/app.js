@@ -122,7 +122,7 @@
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship Suite', sacraments:'Sacraments & Services', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'AGAPAY Stewardship Plus', sacraments:'Sacraments & Services', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
@@ -439,7 +439,7 @@
   function renderGivingMetricsUpgrade() {
     return (
       '<div class="sw-upgrade-nudge">' +
-        '<p>Pledge tracking and giving analytics require the Stewardship Suite add-on.</p>' +
+        '<p>Pledge tracking and giving analytics require AGAPAY Stewardship Plus.</p>' +
         '<a href="' + stewardshipGivingPageUrl() + '" class="sw-upgrade-btn">Activate Giving Metrics</a>' +
       '</div>'
     );
@@ -454,7 +454,7 @@
 
     const sw = stewardshipState.stewardship || {};
     const isActive = sw.active || ['active', 'trialing', 'comped'].includes(sw.status);
-    if (!isActive) { pane.innerHTML = '<p class="muted">Subscribe to Stewardship Suite to access financial snapshots.</p>'; return; }
+    if (!isActive) { pane.innerHTML = '<p class="muted">Subscribe to AGAPAY Stewardship Plus to access financial snapshots.</p>'; return; }
 
     if (year) financialsState.year = year;
 
@@ -894,7 +894,7 @@
     const mobileBookstoreBadge = document.getElementById('mobileBookstoreBadge');
     if (bookstoreNav) {
       bookstoreNav.classList.toggle('sidebar-nav-item--gated', !isActive);
-      bookstoreNav.title = isActive ? '' : 'Requires Stewardship Suite';
+      bookstoreNav.title = isActive ? '' : 'Requires AGAPAY Stewardship Plus';
     }
     if (bookstoreBadge) {
       bookstoreBadge.hidden = isActive;
@@ -907,7 +907,7 @@
       mobileBookstoreBadge.classList.remove('mobile-upgrade-badge--active');
     }
 
-    // Sacraments & Services is a Stewardship Suite feature and also has a
+    // Sacraments & Services is an AGAPAY Stewardship Plus feature and also has a
     // rollout flag. Without Stewardship access, show it as gated; with access,
     // show Coming soon unless the parish is on the live rollout list.
     const sacIsRolledOut = Boolean(currentParish?.parishId && SACRAMENTS_ROLLOUT_PARISH_IDS.has(currentParish.parishId));
@@ -916,7 +916,7 @@
     const sacBadge = document.getElementById('sacramentsNavBadge');
     if (sacNav) {
       sacNav.classList.toggle('sidebar-nav-item--gated', !isActive);
-      sacNav.title = isActive ? '' : 'Requires Stewardship Suite';
+      sacNav.title = isActive ? '' : 'Requires AGAPAY Stewardship Plus';
     }
     if (sacSoonBadge) sacSoonBadge.hidden = !isActive || sacIsRolledOut;
     if (sacBadge) {
@@ -927,12 +927,13 @@
   }
 
   // ── BOOKSTORE ───────────────────────────────────────────────
-  // Also a Stewardship Suite feature, gated the same way as Sacraments.
+  // Also an AGAPAY Stewardship Plus feature, gated the same way as Sacraments.
   // Two pieces: what's already in the parish's catalog, and a starter
   // list of common items they can check off instead of typing each one
   // in by hand. Prices on the starter list are suggestions, not fixed —
   // the parish edits them before anything gets added.
   let bookstoreCatalogState = { loaded: false, products: [], starterCatalog: [] };
+  let bookstoreEditingProductId = null;
 
   function bookstoreApi(path = '') {
     if (!currentParish?.parishId) throw new Error('Load a parish first.');
@@ -995,7 +996,7 @@
     const status = document.getElementById('bookstoreStatusLabel');
     if (!currentParish) return;
 
-    // Reuse the Stewardship Suite status already fetched for that tab, with
+    // Reuse the AGAPAY Stewardship Plus status already fetched for that tab, with
     // the dashboard payload as a fallback when the parish opens Bookstore first.
     const sw = stewardshipState.stewardship || {};
     const swActive = Boolean(currentParish.stewardshipActive || sw.active || ['active', 'trialing', 'comped'].includes(sw.status));
@@ -1051,39 +1052,87 @@
       return;
     }
     pane.innerHTML = `
-      <table class="bookstore-table">
-        <thead><tr>
-          <th>Item</th>
-          <th>Category</th>
-          <th>Price</th>
-          <th>In stock</th>
-          <th>Status</th>
-          <th></th>
-        </tr></thead>
-        <tbody>
-          ${products.map(p => `
-            <tr>
-              <td>
-                <div class="bookstore-item-editor">
-                  <input class="bookstore-text-input" value="${escapeAttr(p.name || '')}" data-bookstore-name="${escapeAttr(p.id)}" aria-label="Item name" />
-                  <textarea class="bookstore-text-input" rows="2" data-bookstore-description="${escapeAttr(p.id)}" aria-label="Description">${escapeHtml(p.description || '')}</textarea>
-                  <input class="bookstore-text-input" value="${escapeAttr(p.sku || '')}" data-bookstore-sku="${escapeAttr(p.id)}" placeholder="SKU / barcode" aria-label="SKU or barcode" />
-                  <input class="bookstore-text-input" value="${escapeAttr(p.imageUrl || '')}" data-bookstore-image="${escapeAttr(p.id)}" placeholder="Image URL" aria-label="Image URL" />
-                </div>
-              </td>
-              <td><select class="bookstore-select-input" data-bookstore-category="${escapeAttr(p.id)}">${bookstoreCategoryOptions(p.category || 'other')}</select></td>
-              <td><input class="bookstore-mini-input" type="number" min="0.01" step="0.01" value="${(Number(p.priceCents || 0) / 100).toFixed(2)}" data-bookstore-price="${escapeAttr(p.id)}" /></td>
-              <td><input class="bookstore-mini-input" type="number" min="0" step="1" value="${Number(p.stockQuantity || 0)}" data-bookstore-stock="${escapeAttr(p.id)}" /></td>
-              <td><span class="bookstore-status-pill">${escapeHtml(p.status || 'active')}</span></td>
-              <td class="bookstore-row-actions">
-                <button class="sw-action-btn" type="button" onclick="saveBookstoreItem('${escapeAttr(p.id)}', this)">Save</button>
-                <button class="sw-action-btn danger" type="button" onclick="archiveBookstoreItem('${escapeAttr(p.id)}', this)">Archive</button>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
+      <div class="bookstore-current-list">
+        ${products.map(p => `
+          <article class="bookstore-current-row">
+            <div class="bookstore-current-main">
+              <strong>${escapeHtml(p.name || 'Bookstore item')}</strong>
+              <span>${escapeHtml(BOOKSTORE_CATEGORY_LABELS[p.category] || p.category || 'Other')}${p.sku ? ` · ${escapeHtml(p.sku)}` : ''}</span>
+              ${p.description ? `<small>${escapeHtml(p.description)}</small>` : ''}
+            </div>
+            <div class="bookstore-current-metrics">
+              <b>${moneyFull(Number(p.priceCents || 0))}</b>
+              <span>${Number(p.stockQuantity || 0)} in stock</span>
+              <em class="bookstore-status-pill">${escapeHtml(p.status || 'active')}</em>
+            </div>
+            <div class="bookstore-row-actions">
+              <button class="sw-action-btn" type="button" onclick="openBookstoreItemModal('${escapeAttr(p.id)}')">Edit</button>
+              <button class="sw-action-btn danger" type="button" onclick="archiveBookstoreItem('${escapeAttr(p.id)}', this)">Archive</button>
+            </div>
+          </article>
+        `).join('')}
+      </div>
     `;
+  }
+
+  function buildBookstoreItemModal() {
+    const existing = document.getElementById('bookstoreItemModal');
+    if (existing) return existing;
+    const modal = document.createElement('div');
+    modal.id = 'bookstoreItemModal';
+    modal.className = 'bookstore-modal-backdrop';
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div class="bookstore-modal" role="dialog" aria-modal="true" aria-labelledby="bookstoreItemModalTitle">
+        <div class="bookstore-modal-head">
+          <div>
+            <span class="sw-suite-eyebrow">Bookstore catalog</span>
+            <h2 id="bookstoreItemModalTitle">Edit item</h2>
+          </div>
+          <button class="bookstore-modal-close" type="button" onclick="closeBookstoreItemModal()" aria-label="Close">×</button>
+        </div>
+        <form class="bookstore-modal-form" onsubmit="saveBookstoreItemFromModal(event)">
+          <label>Item name<input id="bookstoreModalName" required /></label>
+          <label>Category<select id="bookstoreModalCategory">${bookstoreCategoryOptions('other')}</select></label>
+          <label class="full">Description<textarea id="bookstoreModalDescription" rows="3"></textarea></label>
+          <label>Price<input id="bookstoreModalPrice" type="number" min="0.01" step="0.01" required /></label>
+          <label>In stock<input id="bookstoreModalStock" type="number" min="0" step="1" /></label>
+          <label>SKU / barcode<input id="bookstoreModalSku" /></label>
+          <label class="full">Image URL<input id="bookstoreModalImage" placeholder="https://..." /></label>
+          <div class="bookstore-modal-actions">
+            <button class="btn btn-ghost" type="button" onclick="closeBookstoreItemModal()">Cancel</button>
+            <button class="btn btn-gold" type="submit">Save item</button>
+          </div>
+        </form>
+      </div>
+    `;
+    modal.addEventListener('click', event => { if (event.target === modal) closeBookstoreItemModal(); });
+    document.body.appendChild(modal);
+    return modal;
+  }
+
+  function openBookstoreItemModal(productId) {
+    const product = bookstoreCatalogState.products.find(p => p.id === productId);
+    if (!product) { setStatus('Bookstore item not found.', 'error'); return; }
+    const modal = buildBookstoreItemModal();
+    bookstoreEditingProductId = productId;
+    document.getElementById('bookstoreModalName').value = product.name || '';
+    document.getElementById('bookstoreModalCategory').innerHTML = bookstoreCategoryOptions(product.category || 'other');
+    document.getElementById('bookstoreModalDescription').value = product.description || '';
+    document.getElementById('bookstoreModalPrice').value = (Number(product.priceCents || 0) / 100).toFixed(2);
+    document.getElementById('bookstoreModalStock').value = Number(product.stockQuantity || 0);
+    document.getElementById('bookstoreModalSku').value = product.sku || '';
+    document.getElementById('bookstoreModalImage').value = product.imageUrl || '';
+    modal.hidden = false;
+    document.body.classList.add('bookstore-modal-open');
+    setTimeout(() => document.getElementById('bookstoreModalName')?.focus(), 0);
+  }
+
+  function closeBookstoreItemModal() {
+    const modal = document.getElementById('bookstoreItemModal');
+    if (modal) modal.hidden = true;
+    document.body.classList.remove('bookstore-modal-open');
+    bookstoreEditingProductId = null;
   }
 
   function renderBookstoreStarterCatalogUI(catalog) {
@@ -1193,16 +1242,26 @@
     }
   }
 
-  async function saveBookstoreItem(productId, btn) {
-    const nameInput = document.querySelector(`[data-bookstore-name="${CSS.escape(productId)}"]`);
-    const descriptionInput = document.querySelector(`[data-bookstore-description="${CSS.escape(productId)}"]`);
-    const categoryInput = document.querySelector(`[data-bookstore-category="${CSS.escape(productId)}"]`);
-    const skuInput = document.querySelector(`[data-bookstore-sku="${CSS.escape(productId)}"]`);
-    const imageInput = document.querySelector(`[data-bookstore-image="${CSS.escape(productId)}"]`);
-    const priceInput = document.querySelector(`[data-bookstore-price="${CSS.escape(productId)}"]`);
-    const stockInput = document.querySelector(`[data-bookstore-stock="${CSS.escape(productId)}"]`);
-    if (!String(nameInput?.value || '').trim()) {
+  async function saveBookstoreItemFromModal(event) {
+    event.preventDefault();
+    const productId = bookstoreEditingProductId;
+    const btn = event.submitter;
+    const body = {
+      name: document.getElementById('bookstoreModalName')?.value || '',
+      description: document.getElementById('bookstoreModalDescription')?.value || '',
+      category: document.getElementById('bookstoreModalCategory')?.value || 'other',
+      sku: document.getElementById('bookstoreModalSku')?.value || '',
+      imageUrl: document.getElementById('bookstoreModalImage')?.value || '',
+      priceCents: Math.round(Number(document.getElementById('bookstoreModalPrice')?.value || 0) * 100),
+      stockQuantity: Number(document.getElementById('bookstoreModalStock')?.value || 0)
+    };
+    if (!productId) return;
+    if (!String(body.name || '').trim()) {
       setStatus('Item name is required.', 'error');
+      return;
+    }
+    if (body.priceCents < 1) {
+      setStatus('Price must be greater than zero.', 'error');
       return;
     }
     if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
@@ -1210,19 +1269,12 @@
       const res = await fetch(bookstoreApi('/products/' + encodeURIComponent(productId)), {
         method: 'PATCH',
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: nameInput?.value || '',
-          description: descriptionInput?.value || '',
-          category: categoryInput?.value || 'other',
-          sku: skuInput?.value || '',
-          imageUrl: imageInput?.value || '',
-          priceCents: Math.round(Number(priceInput?.value || 0) * 100),
-          stockQuantity: Number(stockInput?.value || 0)
-        })
+        body: JSON.stringify(body)
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Unable to save item.');
       setStatus('Bookstore item saved.', 'success');
+      closeBookstoreItemModal();
       await loadBookstoreCatalogTab(true);
     } catch (err) {
       setStatus(err.message, 'error');
@@ -1250,8 +1302,8 @@
   }
 
   // ── SACRAMENTS & SERVICES ──────────────────────────────────
-  // A Stewardship Suite feature — gated server-side by the exact same
-  // hasStewardshipAccess() check as the rest of the Suite. This panel
+  // An AGAPAY Stewardship Plus feature — gated server-side by the exact same
+  // hasStewardshipAccess() check as the rest of the add-on. This panel
   // reuses stewardshipState (already fetched by loadStewardshipPanel) to
   // decide whether to show the upsell or the actual request list, so
   // switching to this tab never needs a second status round-trip.
@@ -1303,7 +1355,7 @@
       return;
     }
 
-    // Reuse the Stewardship Suite status already fetched for the Stewardship
+    // Reuse the AGAPAY Stewardship Plus status already fetched for the Stewardship
     // tab — no need to hit the network twice for the same gate.
     const sw = stewardshipState.stewardship || {};
     const swActive = sw.active || ['active', 'trialing', 'comped'].includes(sw.status);
@@ -1335,12 +1387,12 @@
     return `
       <div class="sw-suite-tool-grid" style="grid-template-columns:1fr;">
         <div class="sw-suite-tool-card" style="text-align:center;padding:2.2rem 1.5rem;">
-          <strong class="sw-tool-card-title">Sacraments &amp; Services is part of Stewardship Suite</strong>
+          <strong class="sw-tool-card-title">Sacraments &amp; Services is part of AGAPAY Stewardship Plus</strong>
           <p class="sw-tool-card-desc" style="max-width:480px;margin:0.6rem auto 1.2rem;">
             Let parishioners request house blessings, baptisms, weddings, and more directly from My AGAPAY —
             routed straight to your parish dashboard.
           </p>
-          <button class="btn btn-gold" type="button" onclick="switchTab('stewardship')">View Stewardship Suite</button>
+          <button class="btn btn-gold" type="button" onclick="switchTab('stewardship')">View AGAPAY Stewardship Plus</button>
         </div>
       </div>`;
   }
@@ -1459,7 +1511,7 @@
   }
 
   // Shows a one-time-per-day pop-up when a Founding 20 free-year
-  // Stewardship Suite comp grant is within 30 days of expiring. Dismissal
+  // AGAPAY Stewardship Plus comp grant is within 30 days of expiring. Dismissal
   // is remembered in localStorage per parish + grant expiry date, so it
   // won't nag more than once a day, and stops entirely once the grant
   // itself changes (renewed, converted to paid, or expired).
@@ -1498,10 +1550,10 @@
         '</div>' +
         '<span class="sw-comp-notice-eyebrow">Founding Parish</span>' +
         '<h2 id="swCompNoticeTitle">Your free year is ending soon</h2>' +
-        '<p>Your complimentary year of <strong>Stewardship Suite</strong> ends on <strong>' + escapeHtml(expiresLabel) + '</strong> \u2014 about ' + daysLeft + ' days from now.</p>' +
+        '<p>Your complimentary year of <strong>AGAPAY Stewardship Plus</strong> ends on <strong>' + escapeHtml(expiresLabel) + '</strong> \u2014 about ' + daysLeft + ' days from now.</p>' +
         '<p class="sw-comp-notice-sub">No action is needed if you would like to let it lapse. If your parish council would like to continue, you can add it as a paid feature at any time.</p>' +
         '<div class="sw-comp-notice-actions">' +
-          '<button class="sw-comp-notice-btn-primary" type="button" onclick="dismissStewardshipCompNotice(); switchTab(\'stewardship\')">View Stewardship Suite</button>' +
+          '<button class="sw-comp-notice-btn-primary" type="button" onclick="dismissStewardshipCompNotice(); switchTab(\'stewardship\')">View AGAPAY Stewardship Plus</button>' +
           '<button class="sw-comp-notice-btn-secondary" type="button" onclick="dismissStewardshipCompNotice()">Remind me later</button>' +
         '</div>' +
       '</div>';
@@ -1555,7 +1607,7 @@
       '<div class="sw-plan-row-inner">' +
         '<div class="sw-plan-row-copy">' +
           '<span class="sw-plan-badge">' + (isComped ? 'Free Year' : (isTrialing ? 'Trial' : 'Active')) + '</span>' +
-          '<span class="sw-plan-name">Stewardship Suite</span>' +
+          '<span class="sw-plan-name">AGAPAY Stewardship Plus</span>' +
           '<span class="sw-plan-parish">' + escapeHtml(currentParish?.parishName || '') + '</span>' +
           (isComped ? '<span class="sw-plan-parish" style="opacity:.75;">Founding parish — free through ' + escapeHtml(expiresLabel) + '</span>' : '') +
         '</div>' +
@@ -2258,11 +2310,11 @@
         <label class="check-card"><input id="recurringGivingEnabled" type="checkbox" ${(p.recurringGivingEnabled??true)?'checked':''} /> Recurring giving</label>
         <label class="check-card"><input id="candlesEnabled" type="checkbox" ${(p.candlesEnabled??true)?'checked':''} /> Candles</label>
         <label class="check-card"><input id="commemorationsEnabled" type="checkbox" ${(p.commemorationsEnabled??true)?'checked':''} /> Commemorations</label>
-        <label class="check-card" ${p.stewardshipActive?'':'title="Requires AGAPAY Stewardship Suite"'}>
+        <label class="check-card" ${p.stewardshipActive?'':'title="Requires AGAPAY Stewardship Plus"'}>
           <input id="bookstoreEnabled" type="checkbox" ${p.stewardshipActive?'':'disabled'} ${(p.bookstoreEnabled??false)?'checked':''} /> Bookstore Payments
         </label>
       </div>
-      ${p.stewardshipActive ? '' : '<p class="section-note">Bookstore Payments is part of AGAPAY Stewardship Suite. <a href="' + escapeAttr(stewardshipGivingPageUrl()) + '">Add Stewardship Suite</a> to let donors pay for books, prayer ropes, and other items from My AGAPAY.</p>'}
+      ${p.stewardshipActive ? '' : '<p class="section-note">Bookstore Payments is part of AGAPAY Stewardship Plus. <a href="' + escapeAttr(stewardshipGivingPageUrl()) + '">Add AGAPAY Stewardship Plus</a> to let donors pay for books, prayer ropes, and other items from My AGAPAY.</p>'}
       <div class="btn-row">
         <button class="btn btn-gold" onclick="saveDashboard(this)">Save changes</button>
         ${(p.setup||{}).billingActive?'<button class="btn btn-primary" onclick="startStripeOnboarding(this)">Start Stripe onboarding</button>':'<button class="btn btn-ghost" disabled title="Complete AGAPAY billing first">Stripe unlocks after billing</button>'}

@@ -82,7 +82,7 @@ export const STEWARDSHIP_PRODUCT_KEY = "stewardship";
 const STEWARDSHIP_COMING_SOON = false;
 
 // Active subscription states that unlock the module
-// Cap on the "founding 20" free-year Stewardship Suite promo.
+// Cap on the "founding 20" free-year AGAPAY Stewardship Plus promo.
 const STEWARDSHIP_COMP_PROMO_CODE = "founding-20";
 const STEWARDSHIP_COMP_PROMO_LIMIT = 20;
 const STEWARDSHIP_COMP_PROMO_KV_KEY = "stewardship_comp_promo:founding-20:count";
@@ -355,7 +355,7 @@ function stewardshipHomeHtml(registration, meetings, env) {
         </table>
       </section>
 
-      <!-- ── Giving Metrics (Stewardship Suite) ── -->
+      <!-- ── Giving Metrics (AGAPAY Stewardship Plus) ── -->
       <section class="module-card" id="giving-metrics-card">
         <div class="module-card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
           <h2>📊 Pledge &amp; Giving Metrics</h2>
@@ -386,7 +386,7 @@ function stewardshipHomeHtml(registration, meetings, env) {
 
         <!-- Upgrade prompt (shown when feature not activated) -->
         <div id="giving-upgrade" style="display:none;text-align:center;padding:2rem 1rem;border:1px dashed var(--border);border-radius:12px;margin-top:.5rem">
-          <p style="color:var(--text-muted);margin:0 0 1rem;font-size:.9rem">Giving Metrics requires the Stewardship Suite add-on.</p>
+          <p style="color:var(--text-muted);margin:0 0 1rem;font-size:.9rem">Giving Metrics requires AGAPAY Stewardship Plus.</p>
           <a href="/parish/stewardship/giving/activate" class="btn btn-primary" style="font-size:.85rem">Add Giving Metrics — $9/mo</a>
         </div>
       </section>
@@ -1689,7 +1689,7 @@ function isMissingStewardshipSchema(error) {
   return /stewardship_annual_meetings|no such table|not found/i.test(String(error?.message || error || ""));
 }
 
-// ─── "Founding 20" free-year Stewardship Suite promo ───────────────────────────
+// ─── "Founding 20" free-year AGAPAY Stewardship Plus promo ─────────────────────
 // Admin-granted only — not self-service — to keep the count exact and to avoid
 // building abuse/fraud protection for what is a small, relationship-driven
 // promo. Grant state lives entirely on the registration record
@@ -1698,7 +1698,7 @@ function isMissingStewardshipSchema(error) {
 
 // POST /api/admin/stewardship/comp
 // Body: { parishId: string }
-// Grants one year of free Stewardship Suite access, capped at
+// Grants one year of free AGAPAY Stewardship Plus access, capped at
 // STEWARDSHIP_COMP_PROMO_LIMIT total grants across all parishes.
 export async function handleAdminGrantStewardshipComp(request, env) {
   if (!(await requireAdmin(request, env))) return unauthorized();
@@ -1715,7 +1715,7 @@ export async function handleAdminGrantStewardshipComp(request, env) {
 
   if (hasActiveStewardshipComp(registration)) {
     return json({
-      error: "This parish already has an active Stewardship Suite comp grant.",
+      error: "This parish already has an active AGAPAY Stewardship Plus comp grant.",
       comp: registration.stewardshipComp
     }, { status: 409 });
   }
@@ -2424,7 +2424,7 @@ export async function handleStewardshipGivingMetricsPage(request, env) {
     <main class="dashboard-main sw-report-main">
       <div class="sw-report-header">
         <div>
-          <span class="sw-report-eyebrow">Stewardship Suite</span>
+          <span class="sw-report-eyebrow">AGAPAY Stewardship Plus</span>
           <h1>Full Metrics Report</h1>
           <p>Review pledge progress, fund activity, donor distribution, and retention for ${escHtml(parishName)}.</p>
         </div>
@@ -2619,7 +2619,7 @@ export async function handleStewardshipFinancials(request, env, parishId) {
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish not found" }, { status: 404 });
   if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return unauthorized();
-  if (!hasStewardshipAccess(found.registration)) return json({ error: "Stewardship Suite not active." }, { status: 403 });
+  if (!hasStewardshipAccess(found.registration)) return json({ error: "AGAPAY Stewardship Plus not active." }, { status: 403 });
 
   const url = new URL(request.url);
   const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
@@ -2823,7 +2823,7 @@ export async function handleStewardshipNudge(request, env, parishId) {
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
   if (!hasStewardshipAccess(registration)) {
-    return json({ error: "Stewardship Suite not active." }, { status: 403 });
+    return json({ error: "AGAPAY Stewardship Plus not active." }, { status: 403 });
   }
   if (request.method !== "GET" && request.method !== "POST") {
     return json({ error: "Method not allowed" }, { status: 405 });
@@ -3010,7 +3010,7 @@ async function updateStewardshipStatus(env, parishId, data) {
     );
   }
 
-  // Bundled Stewardship Suite: sync D1 feature flag with subscription status
+  // Bundled AGAPAY Stewardship Plus: sync D1 feature flag with subscription status
   if (hasProductionStore(env)) {
     const isActive = ["active", "trialing"].includes(data.status);
     if (isActive) {
