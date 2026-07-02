@@ -445,7 +445,7 @@ body {
               <path d="M8 16h4M8 20h8"/>
             </svg>
           </div>
-          <span class="gift-type-name">Feast Day Offering</span>
+          <span class="gift-type-name">Festal Alms</span>
         </button>
 
         <button class="gift-type-card" data-type="funds" data-needs-names="false" data-needs-frequency="false" data-needs-feast="false" data-needs-funds="true" onclick="selectGiftType(this)">
@@ -471,7 +471,7 @@ body {
           <span class="gift-type-name">Commemoration</span>
         </button>
 
-        <button class="gift-type-card" data-type="alms" data-needs-names="false" data-needs-frequency="false" data-needs-feast="false" data-needs-funds="false" data-needs-alms="true" onclick="selectGiftType(this)">
+        <button class="gift-type-card" data-type="campaign" data-needs-names="false" data-needs-frequency="false" data-needs-feast="false" data-needs-funds="false" data-needs-campaign="true" onclick="selectGiftType(this)">
           <div class="gift-type-icon">
             <svg width="24" height="24" viewBox="0 0 28 28" fill="none" stroke="#C8A24A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 24s-9-5.2-9-12.5C5 7.5 7.5 5 10.7 5c1.8 0 3.1.9 3.3 1.2C14.2 5.9 15.5 5 17.3 5C20.5 5 23 7.5 23 11.5 23 18.8 14 24 14 24z"/>
@@ -479,7 +479,7 @@ body {
               <path d="M14 9v10"/>
             </svg>
           </div>
-          <span class="gift-type-name">Alms Campaign</span>
+          <span class="gift-type-name">Campaign</span>
         </button>
       </div>
     </div>
@@ -510,10 +510,10 @@ body {
       <p class="contextual-hint">Optional. Add a person, family, or intention connected to this offering.</p>
     </div>
 
-    <!-- ALMS CAMPAIGN -->
-    <div class="contextual-section hidden reveal reveal-delay-1" id="almsSection">
+    <!-- CAMPAIGN -->
+    <div class="contextual-section hidden reveal reveal-delay-1" id="campaignSection">
       <div class="section-label">Select a campaign</div>
-      <div class="fund-options" role="group" aria-label="Alms campaigns">
+      <div class="fund-options" role="group" aria-label="Campaigns">
         <label class="fund-option selected" onclick="selectCampaign(this)">
           <input type="radio" name="campaign" value="disaster-relief" checked />
           <div class="fund-radio"><div class="fund-radio-dot"></div></div>
@@ -527,7 +527,7 @@ body {
           <div class="fund-radio"><div class="fund-radio-dot"></div></div>
           <div class="fund-info">
             <div class="fund-name">Medical or Sickness Support</div>
-            <div class="fund-desc">Alms for a parishioner or family facing illness or medical expenses.</div>
+            <div class="fund-desc">Support for a parishioner or family facing illness or medical expenses.</div>
           </div>
         </label>
         <label class="fund-option" onclick="selectCampaign(this)">
@@ -539,10 +539,10 @@ body {
           </div>
         </label>
         <label class="fund-option" onclick="selectCampaign(this)">
-          <input type="radio" name="campaign" value="custom-alms" />
+          <input type="radio" name="campaign" value="custom-campaign" />
           <div class="fund-radio"><div class="fund-radio-dot"></div></div>
           <div class="fund-info">
-            <div class="fund-name">Other Alms Campaign</div>
+            <div class="fund-name">Other Campaign</div>
             <div class="fund-desc">A parish-approved campaign for a specific person or need.</div>
           </div>
         </label>
@@ -908,7 +908,7 @@ body {
       const needsFreq = card.dataset.needsFrequency === 'true';
       const needsFeast = card.dataset.needsFeast === 'true';
       const needsFunds = card.dataset.needsFunds === 'true';
-      const needsAlms = card.dataset.needsAlms === 'true';
+      const needsCampaign = card.dataset.needsCampaign === 'true';
       const needsCandles = card.dataset.needsCandles === 'true';
       const needsMemorial = selectedType === 'feast' || selectedType === 'funds';
 
@@ -916,7 +916,7 @@ body {
       document.getElementById('frequencySection').style.display = needsFreq ? 'block' : 'none';
       document.getElementById('feastSection').classList.toggle('hidden', !needsFeast);
       document.getElementById('fundsSection').classList.toggle('hidden', !needsFunds);
-      document.getElementById('almsSection').classList.toggle('hidden', !needsAlms);
+      document.getElementById('campaignSection').classList.toggle('hidden', !needsCampaign);
       document.getElementById('inMemoriamSection').classList.toggle('hidden', !needsMemorial);
 
       // Candles use their own fixed-price stepper UI instead of the generic
@@ -928,7 +928,7 @@ body {
       }
 
       // Step numbering
-      const hasExtra = needsFreq || needsNames || needsFeast || needsFunds || needsAlms || needsMemorial;
+      const hasExtra = needsFreq || needsNames || needsFeast || needsFunds || needsCampaign || needsMemorial;
       document.getElementById('amountStepLabel').textContent = hasExtra ? 'Step 2 — Choose an amount' : 'Step 2 — Choose an amount';
       document.getElementById('donorStepLabel').textContent = hasExtra ? 'Step 4 — Your information' : 'Step 3 — Your information';
 
@@ -944,7 +944,7 @@ body {
     }
 
     function selectCampaign(label) {
-      document.querySelectorAll('#almsSection .fund-option').forEach(f => f.classList.remove('selected'));
+      document.querySelectorAll('#campaignSection .fund-option').forEach(f => f.classList.remove('selected'));
       label.classList.add('selected');
       selectedCampaign = label.querySelector('.fund-name').textContent;
       updateSummary();
@@ -1020,11 +1020,11 @@ body {
     }
 
     function campaignLabel(campaign) {
-      return campaign?.name || campaign?.campaignName || 'Parish Alms Campaign';
+      return campaign?.name || campaign?.campaignName || 'Parish Campaign';
     }
 
     function renderCampaigns(campaigns) {
-      const campaignOptions = document.querySelector('#almsSection .fund-options');
+      const campaignOptions = document.querySelector('#campaignSection .fund-options');
       if (!campaignOptions) return;
       if (!campaigns || !campaigns.length) {
         selectedCampaign = '';
@@ -1034,7 +1034,7 @@ body {
             <div class="fund-radio"><div class="fund-radio-dot"></div></div>
             <div class="fund-info">
               <div class="fund-name">No active campaigns</div>
-              <div class="fund-desc">This parish does not have an active alms campaign right now.</div>
+              <div class="fund-desc">This parish does not have an active campaign right now.</div>
             </div>
           </label>
         `;
@@ -1045,7 +1045,7 @@ body {
       campaignOptions.innerHTML = campaigns.map((campaign, index) => {
         const label = campaignLabel(campaign);
         const value = campaign.id || campaign.feastId || campaign.slug || label;
-        const description = campaign.description || 'Parish-approved alms for this need.';
+        const description = campaign.description || 'Parish-approved campaign for this need.';
         return `
           <label class="fund-option ${index === 0 ? 'selected' : ''}" onclick="selectCampaign(this)">
             <input type="radio" name="campaign" value="${escapeHtml(value)}" ${index === 0 ? 'checked' : ''} />
@@ -1062,7 +1062,7 @@ body {
     function applyGiftQueryParams() {
       const params = new URLSearchParams(window.location.search);
       const requestedType = params.get('giftType') || params.get('type');
-      const typeAliases = { campaign: 'alms', candles: 'candle', commemoration: 'love' };
+      const typeAliases = { alms: 'feast', candles: 'candle', commemoration: 'love' };
       const giftType = typeAliases[requestedType] || requestedType;
       if (giftType) {
         const card = document.querySelector(`.gift-type-card[data-type="${CSS.escape(giftType)}"]`);
@@ -1071,7 +1071,7 @@ body {
 
       const requestedCampaign = params.get('campaign');
       if (requestedCampaign) {
-        const campaignRadio = Array.from(document.querySelectorAll('#almsSection input[name="campaign"]')).find((radio) => radio.value === requestedCampaign);
+        const campaignRadio = Array.from(document.querySelectorAll('#campaignSection input[name="campaign"]')).find((radio) => radio.value === requestedCampaign);
         const campaignLabelEl = campaignRadio?.closest('.fund-option');
         if (campaignLabelEl) {
           campaignRadio.checked = true;
@@ -1238,10 +1238,10 @@ body {
       const typeLabels = {
         stewardship: 'Weekly Stewardship',
         candle: 'Candles & Panikhida',
-        feast: 'Feast Day Offering',
+        feast: 'Festal Alms',
         funds: 'Designated Fund',
         love: 'Commemoration',
-        alms: 'Alms Campaign'
+        campaign: 'Campaign'
       };
       const freqLabels = {
         once: 'One-time', weekly: 'Weekly', biweekly: 'Bi-weekly', monthly: 'Monthly'
@@ -1277,7 +1277,7 @@ body {
         detailRow.style.display = detail ? 'flex' : 'none';
         document.getElementById('summaryDetailLabel').textContent = 'Intention';
         document.getElementById('summaryDetailValue').textContent = detail || '';
-      } else if (selectedType === 'alms') {
+      } else if (selectedType === 'campaign') {
         const campaignNote = document.getElementById('campaignDescription').value.trim();
         detailRow.style.display = 'flex';
         document.getElementById('summaryDetailLabel').textContent = 'Campaign';
@@ -1438,7 +1438,7 @@ body {
             fund: selectedType === 'funds' ? selectedFund : '',
             feastDescription: document.getElementById('feastDescription').value.trim(),
             inMemoriam: document.getElementById('inMemoriam').value.trim(),
-            campaign: selectedType === 'alms' ? selectedCampaign : '',
+            campaign: selectedType === 'campaign' ? selectedCampaign : '',
             campaignDescription: document.getElementById('campaignDescription').value.trim(),
             namesLiving: document.getElementById('namesLiving').value.trim(),
             namesDeparted: document.getElementById('namesDeparted').value.trim(),

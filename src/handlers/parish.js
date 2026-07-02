@@ -2325,7 +2325,7 @@ export async function enrichParishGivingOptions(env, parish) {
       || "";
     return {
       ...campaign,
-      name: campaign.name || campaign.campaignName || "Parish Alms Campaign",
+      name: campaign.name || campaign.campaignName || "Parish Campaign",
       goalCents: Number(campaign.goalCents || campaign.targetCents || campaign.goalAmountCents || 0),
       coverPhotoUrl,
       raisedCents: totals.raisedCents,
@@ -3571,7 +3571,10 @@ function reconciliationAllocation(offering = {}) {
   const giftType = String(offering.giftType || "offering").toLowerCase();
   const campaign = offering.campaign || offering.campaignId || "";
   const fund = offering.fund || offering.fundId || "";
-  if (campaign || ["campaign", "alms", "feast"].includes(giftType)) {
+  if (["alms", "feast"].includes(giftType)) {
+    return { key: "festal-alms", category: "Festal Alms", label: fund || "Festal Alms" };
+  }
+  if (campaign || giftType === "campaign") {
     return { key: `campaign:${campaign || fund || "campaign"}`, category: "Campaign", label: campaign || fund || "Parish Campaign" };
   }
   if (["candle", "candles"].includes(giftType)) return { key: "candles", category: "Candles", label: "Candle Offerings" };

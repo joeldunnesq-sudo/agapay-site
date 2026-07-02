@@ -397,7 +397,7 @@ function quickDonorGiftUrl(giftType, parish, extra = {}) {
 function normalizeDonorGiftType(value) {
   const normalized = String(value || "stewardship").toLowerCase();
   const aliases = {
-    alms: "campaign",
+    alms: "feast",
     candle: "candles",
     love: "commemoration",
     memorial: "commemoration",
@@ -438,17 +438,17 @@ const donorGiftTypeCopy = {
   },
   campaign: {
     eyebrow: "Quick Campaign Offering",
-    title: "Support an active alms campaign.",
-    detailsTitle: "Alms Campaign Offering",
-    intro: "Give directly toward parish-approved needs, relief efforts, sickness support, or other alms campaigns.",
-    context: "Your gift will be prepared as an alms campaign offering for the selected parish."
+    title: "Support an active campaign.",
+    detailsTitle: "Campaign Offering",
+    intro: "Give directly toward parish-approved needs, relief efforts, building work, or other focused campaigns.",
+    context: "Your gift will be prepared as a campaign offering for the selected parish."
   },
   feast: {
-    eyebrow: "Quick Feast Offering",
-    title: "Mark the feast with an offering.",
-    detailsTitle: "Feast Day Offering",
-    intro: "Make a feast day offering based on your parish calendar.",
-    context: "Your gift will be prepared as a feast day offering for the selected parish."
+    eyebrow: "Quick Festal Alms",
+    title: "Mark the feast with alms.",
+    detailsTitle: "Festal Alms Offering",
+    intro: "Make an alms offering tied to the Church calendar and your parish feast rhythm.",
+    context: "Your gift will be prepared as festal alms for the selected parish."
   }
 };
 
@@ -519,13 +519,11 @@ function updateQuickGiveLinks(parish) {
   const memorialLink = document.getElementById("quickGiveMemorial");
   const feastLink = document.getElementById("quickGiveFeast");
   const campaignLink = document.getElementById("quickGiveCampaigns");
-  const fundLink = document.getElementById("quickGiveFund");
   const desktopParishLink = document.getElementById("desktopQuickParish");
   const desktopCandleLink = document.getElementById("desktopQuickCandle");
   const desktopMemorialLink = document.getElementById("desktopQuickMemorial");
   const desktopFeastLink = document.getElementById("desktopQuickFeast");
   const desktopCampaignLink = document.getElementById("desktopQuickCampaigns");
-  const desktopFundLink = document.getElementById("desktopQuickFund");
   if (parishLink) parishLink.href = quickDonorGiftUrl("stewardship", parish);
   if (desktopParishLink) desktopParishLink.href = quickDonorGiftUrl("stewardship", parish);
   if (parishIcon) parishIcon.innerHTML = communityIconSvg(parish?.type);
@@ -538,8 +536,6 @@ function updateQuickGiveLinks(parish) {
   if (desktopFeastLink) desktopFeastLink.href = quickDonorGiftUrl("feast", parish);
   if (campaignLink) campaignLink.href = quickDonorGiftUrl("campaign", parish);
   if (desktopCampaignLink) desktopCampaignLink.href = quickDonorGiftUrl("campaign", parish);
-  if (fundLink) fundLink.href = quickDonorGiftUrl("fund", parish);
-  if (desktopFundLink) desktopFundLink.href = quickDonorGiftUrl("fund", parish);
 }
 
 function activeParishCampaigns(parish) {
@@ -559,7 +555,7 @@ function selectedPublicParish() {
 }
 
 function campaignLabel(campaign) {
-  return campaign?.name || campaign?.campaignName || "Parish Alms Campaign";
+  return campaign?.name || campaign?.campaignName || "Parish Campaign";
 }
 
 function campaignGoalCents(campaign) {
@@ -630,7 +626,7 @@ function renderActiveCampaigns(parish) {
       <article class="campaign-card campaign-empty">
         <span class="campaign-pill">Campaigns</span>
         <h3>No Active Campaigns</h3>
-        <p>${parish?.name ? "This church does not have an active alms campaign right now." : "Sign in and select a church to see parish-approved alms campaigns here."}</p>
+        <p>${parish?.name ? "This church does not have an active campaign right now." : "Sign in and select a church to see parish-approved campaigns here."}</p>
       </article>
     `;
     targets.forEach((target) => { target.innerHTML = empty; });
@@ -640,7 +636,7 @@ function renderActiveCampaigns(parish) {
   const goalCents = Number(campaign.goalCents || campaign.targetCents || campaign.goalAmountCents || 0);
   const raisedCents = Number(campaign.raisedCents || campaign.amountCents || campaign.currentCents || 0);
   const percent = goalCents > 0 ? Math.min(100, Math.round((raisedCents / goalCents) * 100)) : 0;
-  const label = campaign.category || campaign.type || (campaign.feastId ? "Liturgical" : "Alms");
+  const label = campaign.category || campaign.type || (campaign.feastId ? "Liturgical" : "Campaign");
   const link = donorGiftUrl("campaign", parish, { campaign: campaign.id || campaign.feastId || campaign.name });
   const html = `
     <a class="campaign-card ${campaign.feastId ? "campaign-gold" : "campaign-navy"}" href="${escapeHtml(link)}">
@@ -648,7 +644,7 @@ function renderActiveCampaigns(parish) {
         <span class="campaign-pill">${escapeHtml(label)}</span>
         <span>${parish?.name ? escapeHtml(parish.name) : "AGAPAY"}</span>
       </div>
-      <h3>${escapeHtml(campaign.name || "Parish Alms Campaign")}</h3>
+      <h3>${escapeHtml(campaign.name || "Parish Campaign")}</h3>
       ${campaign.description ? `<p class="campaign-description">${escapeHtml(campaign.description)}</p>` : ""}
       ${goalCents > 0 ? `<div class="campaign-track"><span style="width:${percent}%"></span></div><p><strong>${money(raisedCents)}</strong> of ${money(goalCents)} <span>${percent}%</span></p>` : ""}
     </a>
@@ -802,7 +798,7 @@ function renderDonorCalendarPrompts(parish) {
       title: campaignLabel(campaign),
       description: goalCents > 0
         ? `${money(raisedCents)} of ${money(goalCents)} raised (${percent}%).`
-        : (campaign.description || "Parish-approved alms campaign."),
+        : (campaign.description || "Parish-approved campaign."),
       href: donorGiftUrl("campaign", parish, { campaign: campaign.id || campaign.feastId || campaign.name })
     });
   });
