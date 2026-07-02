@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Request a Baptism — AGAPAY</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --ink: #1B2A4A;
+    --ink-soft: #435073;
+    --gold: #A9812E;
+    --gold-soft: #C9A85C;
+    --oxblood: #7A2E2E;
+    --paper: #F5F3EE;
+    --paper-raised: #FFFFFF;
+    --line: #DCD7C9;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+
+  header.page {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  header.page .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  header.page h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: 38px;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+
+  header.page p {
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.5;
+    margin: 0 auto;
+    max-width: 46ch;
+  }
+
+  .beam {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 20px;
+  }
+  .beam::before, .beam::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold-soft));
+  }
+  .beam::after { background: linear-gradient(to left, transparent, var(--gold-soft)); }
+  .beam-mark {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    color: var(--gold);
+    font-size: 15px;
+  }
+
+  section.step {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 24px 22px;
+    margin-bottom: 18px;
+  }
+
+  section.step .step-label {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  section.step .step-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  section.step h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 21px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--ink);
+  }
+
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+
+  input[type="text"], input[type="date"], textarea, select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--paper);
+  }
+
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--gold);
+    background: #fff;
+  }
+
+  textarea { resize: vertical; min-height: 70px; }
+
+  .row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 480px) {
+    .row-2 { grid-template-columns: 1fr; }
+  }
+
+  .checkbox-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+  }
+  .checkbox-row input { margin-top: 3px; }
+  .checkbox-row .ctext { font-size: 13.5px; line-height: 1.4; color: var(--ink-soft); }
+  .checkbox-row .ctext strong { color: var(--ink); font-weight: 600; }
+
+  .godparent-block {
+    border-top: 1px dashed var(--line);
+    padding-top: 16px;
+    margin-top: 16px;
+  }
+  .godparent-block:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+  .godparent-block .gp-title {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .adult-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .adult-toggle button {
+    flex: 1;
+    padding: 9px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    border-radius: 2px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .adult-toggle button.active {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: #fff;
+  }
+
+  .notice {
+    display: none;
+    align-items: flex-start;
+    gap: 10px;
+    background: #FBF3EC;
+    border: 1px solid #E4C9A8;
+    border-left: 3px solid var(--oxblood);
+    padding: 12px 14px;
+    border-radius: 2px;
+    font-size: 13px;
+    color: var(--oxblood);
+    line-height: 1.5;
+    margin-top: 16px;
+  }
+  .notice.show { display: flex; }
+
+  .submit-bar {
+    margin-top: 24px;
+    text-align: center;
+  }
+
+  button.submit {
+    width: 100%;
+    padding: 14px;
+    background: var(--ink);
+    color: #fff;
+    border: none;
+    border-radius: 2px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+  }
+  button.submit:hover { background: #263a63; }
+
+  .fineprint {
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 12px;
+    line-height: 1.5;
+  }
+
+  .confirm {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .confirm.show { display: block; }
+  .confirm .mark { font-size: 40px; color: var(--gold); margin-bottom: 14px; font-family: 'Cormorant Garamond', serif; }
+  .confirm h2 { font-family: 'Cormorant Garamond', serif; font-size: 26px; margin: 0 0 10px; }
+  .confirm p { color: var(--ink-soft); font-size: 14.5px; line-height: 1.6; max-width: 40ch; margin: 0 auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <div class="eyebrow">St. Fiacre Orthodox Church</div>
+    <h1>Request a Baptism or Chrismation</h1>
+    <p>Fr. will review this request and reach out to discuss a date. Nothing is scheduled until you hear back.</p>
+  </header>
+
+  <form id="baptismForm">
+
+    <section class="step">
+      <div class="step-label"><span class="step-num">I.</span><h2>The Candidate</h2></div>
+
+      <div class="field">
+        <label for="candidateName">Full name</label>
+        <input type="text" id="candidateName" required>
+      </div>
+
+      <div class="field">
+        <label>Is the candidate an adult or a child?</label>
+        <div class="adult-toggle">
+          <button type="button" data-val="0" class="active" id="toggleChild">Child</button>
+          <button type="button" data-val="1" id="toggleAdult">Adult</button>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label for="candidateDob">Date of birth</label>
+          <input type="date" id="candidateDob">
+        </div>
+        <div class="field">
+          <label for="patronSaint">Patron saint (if chosen)</label>
+          <input type="text" id="patronSaint" placeholder="Optional">
+        </div>
+      </div>
+
+      <div class="field" id="parentField">
+        <label for="parentNames">Parents' names</label>
+        <input type="text" id="parentNames">
+      </div>
+    </section>
+
+    <div class="beam"><span class="beam-mark">✦</span></div>
+
+    <section class="step">
+      <div class="step-label"><span class="step-num">II.</span><h2>Godparents</h2></div>
+
+      <div class="godparent-block">
+        <div class="gp-title">Godparent 1</div>
+        <div class="row-2">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" id="gp1Name" required>
+          </div>
+          <div class="field">
+            <label>Home parish</label>
+            <input type="text" id="gp1Parish">
+          </div>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="gp1Attest" required>
+          <label for="gp1Attest" class="ctext" style="margin:0;">
+            <strong>I attest</strong> this godparent is an Orthodox Christian in good standing, chrismated or baptized Orthodox.
+          </label>
+        </div>
+      </div>
+
+      <div class="godparent-block">
+        <div class="gp-title">Godparent 2 <span style="color:var(--ink-soft); font-weight:400; text-transform:none; letter-spacing:0;">(optional)</span></div>
+        <div class="row-2">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" id="gp2Name">
+          </div>
+          <div class="field">
+            <label>Home parish</label>
+            <input type="text" id="gp2Parish">
+          </div>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="gp2Attest">
+          <label for="gp2Attest" class="ctext" style="margin:0;">
+            <strong>I attest</strong> this godparent is an Orthodox Christian in good standing, chrismated or baptized Orthodox.
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <div class="beam"><span class="beam-mark">✦</span></div>
+
+    <section class="step">
+      <div class="step-label"><span class="step-num">III.</span><h2>Timing</h2></div>
+
+      <div class="field">
+        <label for="proposedDate">A date that would work for your family (Fr. will confirm)</label>
+        <input type="date" id="proposedDate">
+      </div>
+
+      <div class="notice" id="fastingNotice">
+        <span>⚠</span>
+        <span id="fastingNoticeText"></span>
+      </div>
+
+      <div class="field" style="margin-top:16px;">
+        <label for="requesterNotes">Anything else Fr. should know</label>
+        <textarea id="requesterNotes" placeholder="Optional"></textarea>
+      </div>
+    </section>
+
+    <div class="submit-bar">
+      <button type="submit" class="submit">Send Request</button>
+      <div class="fineprint">Fr. will review and follow up — this does not confirm a date.</div>
+    </div>
+  </form>
+
+  <div class="confirm" id="confirmView">
+    <div class="mark">✦</div>
+    <h2>Request Sent</h2>
+    <p>Fr. has received your request and will reach out to discuss a date and next steps. You'll see updates here in My AGAPAY.</p>
+  </div>
+
+</div>
+
+<script>
+  // Stub fasting calendar — mirrors sacrament-routes.js FASTING_WINDOWS_2026.
+  // Replace with a real call to the feast/fast engine when wiring this in.
+  const FASTING_WINDOWS_2026 = [
+    { start: '2026-02-16', end: '2026-04-04', name: 'Great Lent & Holy Week' },
+    { start: '2026-08-01', end: '2026-08-14', name: 'Dormition Fast' },
+    { start: '2026-11-15', end: '2026-12-24', name: 'Nativity Fast' },
+  ];
+
+  function checkFasting(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    for (const w of FASTING_WINDOWS_2026) {
+      if (d >= new Date(w.start) && d <= new Date(w.end)) return w.name;
+    }
+    return null;
+  }
+
+  // Note: this form is baptism/chrismation, where fasting windows are informational
+  // only (not canonically restrictive the way weddings are) — so we still flag it,
+  // just with softer language than the wedding form would use.
+  document.getElementById('proposedDate').addEventListener('change', (e) => {
+    const hit = checkFasting(e.target.value);
+    const notice = document.getElementById('fastingNotice');
+    const text = document.getElementById('fastingNoticeText');
+    if (hit) {
+      text.textContent = `Heads up — this date falls within ${hit}. Baptisms are still generally fine during fasting periods, but Fr. may want to talk through timing.`;
+      notice.classList.add('show');
+    } else {
+      notice.classList.remove('show');
+    }
+  });
+
+  const toggleChild = document.getElementById('toggleChild');
+  const toggleAdult = document.getElementById('toggleAdult');
+  const parentField = document.getElementById('parentField');
+  let isAdult = false;
+
+  toggleChild.addEventListener('click', () => {
+    isAdult = false;
+    toggleChild.classList.add('active');
+    toggleAdult.classList.remove('active');
+    parentField.style.display = '';
+  });
+  toggleAdult.addEventListener('click', () => {
+    isAdult = true;
+    toggleAdult.classList.add('active');
+    toggleChild.classList.remove('active');
+    parentField.style.display = 'none';
+  });
+
+  document.getElementById('baptismForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      sacrament_type: 'baptism',
+      proposed_date: document.getElementById('proposedDate').value || null,
+      requester_notes: document.getElementById('requesterNotes').value || null,
+      details: {
+        candidate_name: document.getElementById('candidateName').value,
+        candidate_is_adult: isAdult,
+        candidate_dob: document.getElementById('candidateDob').value || null,
+        patron_saint: document.getElementById('patronSaint').value || null,
+        parent_names: isAdult ? null : document.getElementById('parentNames').value,
+        godparent_1_name: document.getElementById('gp1Name').value,
+        godparent_1_home_parish: document.getElementById('gp1Parish').value,
+        godparent_1_orthodox_attested: document.getElementById('gp1Attest').checked,
+        godparent_2_name: document.getElementById('gp2Name').value || null,
+        godparent_2_home_parish: document.getElementById('gp2Parish').value || null,
+        godparent_2_orthodox_attested: document.getElementById('gp2Attest').checked,
+      }
+    };
+
+    // TODO: replace with real fetch to POST /api/sacraments/request
+    // const res = await fetch('/api/sacraments/request', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(payload)
+    // });
+
+    console.log('Submitting sacrament request:', payload);
+
+    document.getElementById('baptismForm').style.display = 'none';
+    document.getElementById('confirmView').classList.add('show');
+  });
+</script>
+</body>
+</html>
