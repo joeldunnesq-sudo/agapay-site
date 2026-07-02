@@ -2408,6 +2408,27 @@ body.donor-home {
   text-transform: uppercase;
 }
 
+.feast-kicker-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.feast-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--gold-soft);
+  color: #8a6515;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
 .next-feast-card a {
   display: inline-flex;
   align-items: center;
