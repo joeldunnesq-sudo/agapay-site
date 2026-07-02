@@ -1834,7 +1834,7 @@ let selectedReference = '';
         ${reg.promo === 'founding-20' ? `
         <div class="admin-section founding-promo-callout">
           <div class="admin-section-title">Founding 20 &mdash; Free Year Offer</div>
-          <p class="founding-promo-copy">This parish registered through the Founding 20 free-year AGAPAY Stewardship Plus offer. Grant the free year below, or from Developer Tools.</p>
+          <p class="founding-promo-copy">This parish registered through the Founding 20 free-year AGAPAY Parish + offer. Grant the free year below, or from Developer Tools.</p>
           <div class="btn-row">
             <button class="secondary btn-sm" id="detailCompGrantBtn" onclick="grantStewardshipCompFromDetail('${publicParishId}', this)">Grant free year to ${publicParishId}</button>
           </div>

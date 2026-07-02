@@ -169,7 +169,7 @@ const givingOverview = await readFile("public/give/index.html", "utf8");
 assert.ok(givingOverview.includes("Orthodox Giving App &amp; Tithing Software") || givingOverview.includes("Orthodox Giving App & Tithing Software"), "Giving overview should target Orthodox giving and tithing search intent");
 assert.ok(givingOverview.includes('"@type": "SoftwareApplication"') && givingOverview.includes('"@type": "FAQPage"'), "Giving overview should include software and FAQ structured data");
 assert.ok(givingOverview.includes("Orthodox giving and tithing tools ready for parish life"), "Giving overview should describe currently available tools");
-assert.ok(givingOverview.includes("Text-to-Give") && givingOverview.includes("AGAPAY Stewardship") && givingOverview.includes("Coming Soon"), "Giving overview should clearly identify coming-soon products");
+assert.ok(givingOverview.includes("Text-to-Give") && givingOverview.includes("AGAPAY Parish +") && givingOverview.includes("Coming Soon"), "Giving overview should clearly identify coming-soon products");
 const platformHome = await readFile("public/index.html", "utf8");
 assert.ok(platformHome.indexOf('href="/vision"') < platformHome.indexOf('href="/give"'), "platform homepage should lead its navigation with Vision");
 assert.ok((platformHome.match(/data-flip-word/g) || []).length >= 2, "platform homepage should animate its header and hero taglines");

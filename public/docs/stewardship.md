@@ -1,4 +1,4 @@
-# AGAPAY Stewardship Module
+# AGAPAY Parish + Module
 
 Subscription-gated parish administration module, nested inside the existing AGAPAY parish dashboard. The first feature is an **Orthodox Annual Meeting Packet Builder**.
 
@@ -109,7 +109,7 @@ In the Stripe Dashboard (or CLI):
 ```bash
 # Create the product
 stripe products create \
-  --name "AGAPAY Stewardship" \
+  --name "AGAPAY Parish +" \
   --metadata[product_key]=stewardship
 
 # Monthly price ($39/month)

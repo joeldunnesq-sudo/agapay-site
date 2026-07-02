@@ -2447,8 +2447,8 @@ async function dismissNudge(id) {
 }
 
 // ── SACRAMENTS & SERVICES ────────────────────────────────
-// Part of AGAPAY Stewardship Plus — automatically available to donors
-// whose home parish has active Stewardship Plus access. See
+// Part of AGAPAY Parish + — automatically available to donors
+// whose home parish has active Parish + access. See
 // handleDonorSacraments in src/handlers/donor.js for the server-side gate.
 
 const SACRAMENT_TYPE_LABELS = {
@@ -2569,7 +2569,7 @@ function renderSacramentsPayload(payload = {}) {
   if (formCard) formCard.style.display = available ? "" : "none";
   if (unavailableNotice) {
     unavailableNotice.style.display = available ? "none" : "block";
-    unavailableNotice.textContent = "Your parish has not enabled Sacraments & Services yet. This feature is part of AGAPAY Stewardship Plus.";
+    unavailableNotice.textContent = "Your parish has not enabled Sacraments & Services yet. This feature is part of AGAPAY Parish +.";
   }
 
   const requests = Array.isArray(payload.requests) ? payload.requests : [];

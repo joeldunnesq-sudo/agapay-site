@@ -1,5 +1,5 @@
 // src/handlers/stewardship.js
-// AGAPAY Stewardship module — subscription gate, annual meeting packet builder.
+// AGAPAY Parish + module — subscription gate, annual meeting packet builder.
 // All routes live under /parish/stewardship/*.
 // Parish auth is already verified by requireAdmin / requireParish helpers in parish.js
 // before these handlers are called.
@@ -82,7 +82,7 @@ export const STEWARDSHIP_PRODUCT_KEY = "stewardship";
 const STEWARDSHIP_COMING_SOON = false;
 
 // Active subscription states that unlock the module
-// Cap on the "founding 20" free-year AGAPAY Stewardship Plus promo.
+// Cap on the "founding 20" free-year AGAPAY Parish + promo.
 const STEWARDSHIP_COMP_PROMO_CODE = "founding-20";
 const STEWARDSHIP_COMP_PROMO_LIMIT = 20;
 const STEWARDSHIP_COMP_PROMO_KV_KEY = "stewardship_comp_promo:founding-20:count";
@@ -129,7 +129,7 @@ function stewardshipComingSoonPayload(registration = null) {
     setupRequired: false,
     meetings: [],
     subscribePlans: [],
-    message: "AGAPAY Stewardship is currently paused as a coming soon add-on."
+    message: "AGAPAY Parish + is currently paused as a coming soon add-on."
   };
 }
 
@@ -137,7 +137,7 @@ function stewardshipComingSoonJson(status = 409) {
   return json({
     ok: false,
     comingSoon: true,
-    error: "AGAPAY Stewardship is coming soon. Packet generation and billing are not enabled yet."
+    error: "AGAPAY Parish + is coming soon. Packet generation and billing are not enabled yet."
   }, { status });
 }
 
@@ -149,7 +149,7 @@ function stewardshipComingSoonHtml(registration, env) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AGAPAY Stewardship Coming Soon</title>
+  <title>AGAPAY Parish + Coming Soon</title>
   <link rel="stylesheet" href="${base}/site-chrome.css" />
   <link rel="stylesheet" href="${base}/parish/style.css" />
   <style>
@@ -168,14 +168,14 @@ function stewardshipComingSoonHtml(registration, env) {
   <main class="stewardship-soon-page">
     <section class="stewardship-soon-card">
       <div class="stewardship-soon-kicker">Coming soon add-on</div>
-      <h1>AGAPAY Stewardship</h1>
-      <p><strong>${escHtml(parishName)}</strong> will see Stewardship here when the module is ready for production use. We are keeping packet generation, billing, and records tools paused until the workflow is dependable enough for real parish administration.</p>
+      <h1>AGAPAY Parish +</h1>
+      <p><strong>${escHtml(parishName)}</strong> will see Parish + here when the module is ready for production use. We are keeping commerce, packet generation, billing, and records tools paused until the workflow is dependable enough for real parish administration.</p>
       <ul class="stewardship-soon-list">
         <li>Annual meeting packet builder with parish-provided agenda, reports, financial summaries, nominees, and resolutions.</li>
         <li>Print-ready packet generation for annual meetings and parish records.</li>
         <li>Restricted fund snapshots, parish council records, compliance dates, and document storage.</li>
       </ul>
-      <p>For now, Stewardship remains visible in the dashboard as a planned add-on without checkout or packet creation.</p>
+      <p>For now, Parish + remains visible in the dashboard as a planned add-on without checkout or packet creation.</p>
       <div class="stewardship-soon-actions">
         <a class="btn btn-gold" href="/parish/dashboard">Back to parish dashboard</a>
       </div>
@@ -216,7 +216,7 @@ function paywallHtml(registration, env) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AGAPAY Stewardship</title>
+  <title>AGAPAY Parish +</title>
   <link rel="stylesheet" href="${base}/site-chrome.css" />
   <link rel="stylesheet" href="${base}/parish/style.css" />
   <style>
@@ -248,8 +248,8 @@ function paywallHtml(registration, env) {
   <div class="paywall">
     <div class="paywall-hero">
       <p style="color:var(--gold);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.5rem">AGAPAY</p>
-      <h1>Stewardship</h1>
-      <p>Annual meeting packets, parish council records, restricted fund reporting, and faithful parish administration — built for Orthodox communities.</p>
+      <h1>AGAPAY Parish +</h1>
+      <p>Parish commerce, annual meeting packets, parish council records, restricted fund reporting, and faithful parish administration — built for Orthodox communities.</p>
     </div>
 
     <div class="paywall-feature">
@@ -283,7 +283,7 @@ function paywallHtml(registration, env) {
     <p class="plan-note">Your subscription applies to the <strong>${escHtml(parishName)}</strong> parish account. A 14-day free trial is included.</p>
 
     <div style="margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border)">
-      <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1rem">Coming soon in Stewardship:</p>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1rem">Coming soon in Parish +:</p>
       <ul class="coming-soon-list">
         <li>Document Vault</li>
         <li>Compliance Calendar</li>
@@ -324,7 +324,7 @@ function stewardshipHomeHtml(registration, meetings, env) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stewardship — AGAPAY</title>
+  <title>AGAPAY Parish +</title>
   <link rel="stylesheet" href="${base}/site-chrome.css" />
   <link rel="stylesheet" href="${base}/parish/style.css" />
   <link rel="stylesheet" href="${base}/styles/stewardship.css" />
@@ -335,7 +335,7 @@ function stewardshipHomeHtml(registration, meetings, env) {
     <main class="dashboard-main">
       <div class="page-header">
         <div>
-          <h1>Stewardship</h1>
+          <h1>AGAPAY Parish +</h1>
           <p style="color:var(--text-muted);margin:0">Subscription: <span style="color:${statusColor};font-weight:600">${statusLabel}</span> · <a href="/parish/stewardship/billing">Manage billing →</a></p>
         </div>
         <a href="/parish/stewardship/annual-meetings/new" class="btn btn-primary">+ New Annual Meeting Packet</a>
@@ -355,10 +355,10 @@ function stewardshipHomeHtml(registration, meetings, env) {
         </table>
       </section>
 
-      <!-- ── Giving Metrics (AGAPAY Stewardship Plus) ── -->
+      <!-- ── Parish Reports (AGAPAY Parish +) ── -->
       <section class="module-card" id="giving-metrics-card">
         <div class="module-card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
-          <h2>📊 Pledge &amp; Giving Metrics</h2>
+          <h2>📊 Parish Reports</h2>
           <div style="display:flex;align-items:center;gap:.75rem">
             <select id="giving-year-select" class="form-select" style="font-size:.85rem;padding:.3rem .6rem" onchange="loadGivingMetrics()">
               ${[0,1,2,3,4].map(n => {
@@ -386,8 +386,8 @@ function stewardshipHomeHtml(registration, meetings, env) {
 
         <!-- Upgrade prompt (shown when feature not activated) -->
         <div id="giving-upgrade" style="display:none;text-align:center;padding:2rem 1rem;border:1px dashed var(--border);border-radius:12px;margin-top:.5rem">
-          <p style="color:var(--text-muted);margin:0 0 1rem;font-size:.9rem">Giving Metrics requires AGAPAY Stewardship Plus.</p>
-          <a href="/parish/stewardship/giving/activate" class="btn btn-primary" style="font-size:.85rem">Add Giving Metrics — $9/mo</a>
+          <p style="color:var(--text-muted);margin:0 0 1rem;font-size:.9rem">Parish Reports require AGAPAY Parish +.</p>
+          <a href="/parish/stewardship/giving/activate" class="btn btn-primary" style="font-size:.85rem">Add AGAPAY Parish +</a>
         </div>
       </section>
 
@@ -562,7 +562,7 @@ function billingHtml(registration, subscription, env) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stewardship Billing — AGAPAY</title>
+  <title>AGAPAY Parish + Billing</title>
   <link rel="stylesheet" href="${base}/site-chrome.css" />
   <link rel="stylesheet" href="${base}/parish/style.css" />
   <link rel="stylesheet" href="${base}/styles/stewardship.css" />
@@ -573,14 +573,14 @@ function billingHtml(registration, subscription, env) {
     <main class="dashboard-main">
       <div class="page-header">
         <div>
-          <h1>Stewardship Billing</h1>
-          <p style="color:var(--text-muted);margin:0"><a href="/parish/stewardship">← Back to Stewardship</a></p>
+          <h1>AGAPAY Parish + Billing</h1>
+          <p style="color:var(--text-muted);margin:0"><a href="/parish/stewardship">← Back to Parish +</a></p>
         </div>
       </div>
 
       <div class="module-card" style="max-width:520px">
         <table class="info-table">
-          <tr><th>Plan</th><td>AGAPAY Stewardship</td></tr>
+          <tr><th>Plan</th><td>AGAPAY Parish +</td></tr>
           <tr><th>Status</th><td><strong>${escHtml(status)}</strong></td></tr>
           <tr><th>Renewal Date</th><td>${periodEnd}</td></tr>
           ${registration.stewardshipCancelAtPeriodEnd ? `<tr><th></th><td style="color:var(--red,#f87171)">Cancels at end of period</td></tr>` : ""}
@@ -593,7 +593,7 @@ function billingHtml(registration, subscription, env) {
           </form>
         </div>` : `
         <div style="margin-top:1.5rem">
-          <a href="/parish/stewardship" class="btn btn-primary">Subscribe to Stewardship →</a>
+          <a href="/parish/stewardship" class="btn btn-primary">Subscribe to AGAPAY Parish + →</a>
         </div>`}
       </div>
     </main>
@@ -1037,7 +1037,7 @@ function packetPreviewHtml(registration, meeting, agendaItems, reports, financia
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${escHtml(meeting.title || parishName + " Annual Meeting")} &mdash; AGAPAY Stewardship</title>
+  <title>${escHtml(meeting.title || parishName + " Annual Meeting")} &mdash; AGAPAY Parish +</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -1426,7 +1426,7 @@ function packetPreviewHtml(registration, meeting, agendaItems, reports, financia
         ${location  ? `<p>${escHtml(location)}</p>` : ""}
         ${address   ? `<p>${escHtml(address)}</p>`  : ""}
       </div>
-      <p class="pk-cover-agapay">Generated by AGAPAY Stewardship &middot; agapay.app</p>
+      <p class="pk-cover-agapay">Generated by AGAPAY Parish + &middot; agapay.app</p>
     </div>
 
     ${noticeSection}
@@ -1440,7 +1440,7 @@ function packetPreviewHtml(registration, meeting, agendaItems, reports, financia
     ${minutesSection}
 
     <div class="pk-footer">
-      Generated by AGAPAY Stewardship &middot; agapay.app &middot; ${new Date().toLocaleDateString("en-US", { year:"numeric", month:"long", day:"numeric" })}
+      Generated by AGAPAY Parish + &middot; agapay.app &middot; ${new Date().toLocaleDateString("en-US", { year:"numeric", month:"long", day:"numeric" })}
     </div>
   </div>
 
@@ -1689,7 +1689,7 @@ function isMissingStewardshipSchema(error) {
   return /stewardship_annual_meetings|no such table|not found/i.test(String(error?.message || error || ""));
 }
 
-// ─── "Founding 20" free-year AGAPAY Stewardship Plus promo ─────────────────────
+// ─── "Founding 20" free-year AGAPAY Parish + promo ───────────────────────────
 // Admin-granted only — not self-service — to keep the count exact and to avoid
 // building abuse/fraud protection for what is a small, relationship-driven
 // promo. Grant state lives entirely on the registration record
@@ -1698,7 +1698,7 @@ function isMissingStewardshipSchema(error) {
 
 // POST /api/admin/stewardship/comp
 // Body: { parishId: string }
-// Grants one year of free AGAPAY Stewardship Plus access, capped at
+// Grants one year of free AGAPAY Parish + access, capped at
 // STEWARDSHIP_COMP_PROMO_LIMIT total grants across all parishes.
 export async function handleAdminGrantStewardshipComp(request, env) {
   if (!(await requireAdmin(request, env))) return unauthorized();
@@ -1715,7 +1715,7 @@ export async function handleAdminGrantStewardshipComp(request, env) {
 
   if (hasActiveStewardshipComp(registration)) {
     return json({
-      error: "This parish already has an active AGAPAY Stewardship Plus comp grant.",
+      error: "This parish already has an active AGAPAY Parish + comp grant.",
       comp: registration.stewardshipComp
     }, { status: 409 });
   }
@@ -2413,7 +2413,7 @@ export async function handleStewardshipGivingMetricsPage(request, env) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Giving Metrics — AGAPAY Stewardship</title>
+  <title>Parish Reports — AGAPAY Parish +</title>
   <link rel="stylesheet" href="${base}/site-chrome.css" />
   <link rel="stylesheet" href="${base}/parish/style.css" />
   <link rel="stylesheet" href="${base}/styles/stewardship.css" />
@@ -2424,12 +2424,12 @@ export async function handleStewardshipGivingMetricsPage(request, env) {
     <main class="dashboard-main sw-report-main">
       <div class="sw-report-header">
         <div>
-          <span class="sw-report-eyebrow">AGAPAY Stewardship Plus</span>
-          <h1>Full Metrics Report</h1>
+          <span class="sw-report-eyebrow">AGAPAY Parish +</span>
+          <h1>Full Parish Report</h1>
           <p>Review pledge progress, fund activity, donor distribution, and retention for ${escHtml(parishName)}.</p>
         </div>
         <div class="sw-report-actions">
-          <a class="sw-report-back" href="/parish/stewardship">Back to Stewardship</a>
+          <a class="sw-report-back" href="/parish/stewardship">Back to Parish +</a>
           <select id="year-select" class="sw-year-select" onchange="loadAll()">
             ${yearOptions}
           </select>
@@ -2591,7 +2591,7 @@ export async function handleStewardshipGivingMetricsPage(request, env) {
         }).then(function(blob) {
           var url = URL.createObjectURL(blob);
           var a = document.createElement("a");
-          a.href = url; a.download = "AGAPAY-Stewardship-" + year + ".pdf"; a.click();
+          a.href = url; a.download = "AGAPAY-Parish-Plus-" + year + ".pdf"; a.click();
           URL.revokeObjectURL(url);
         }).catch(function() {
           alert("PDF generation failed. Please try again.");
@@ -2619,7 +2619,7 @@ export async function handleStewardshipFinancials(request, env, parishId) {
   const found = await findRegistrationByParishId(env, parishId);
   if (!found) return json({ error: "Parish not found" }, { status: 404 });
   if (!(await verifyParishDashboardBearer(found.registration, getBearerToken(request)))) return unauthorized();
-  if (!hasStewardshipAccess(found.registration)) return json({ error: "AGAPAY Stewardship Plus not active." }, { status: 403 });
+  if (!hasStewardshipAccess(found.registration)) return json({ error: "AGAPAY Parish + not active." }, { status: 403 });
 
   const url = new URL(request.url);
   const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
@@ -2823,7 +2823,7 @@ export async function handleStewardshipNudge(request, env, parishId) {
   if (!ctx.ok) return ctx.response;
   const { registration } = ctx;
   if (!hasStewardshipAccess(registration)) {
-    return json({ error: "AGAPAY Stewardship Plus not active." }, { status: 403 });
+    return json({ error: "AGAPAY Parish + not active." }, { status: 403 });
   }
   if (request.method !== "GET" && request.method !== "POST") {
     return json({ error: "Method not allowed" }, { status: 405 });
@@ -3010,7 +3010,7 @@ async function updateStewardshipStatus(env, parishId, data) {
     );
   }
 
-  // Bundled AGAPAY Stewardship Plus: sync D1 feature flag with subscription status
+  // Bundled AGAPAY Parish +: sync D1 feature flag with subscription status
   if (hasProductionStore(env)) {
     const isActive = ["active", "trialing"].includes(data.status);
     if (isActive) {

@@ -1300,7 +1300,7 @@ export async function handleDonorBookstore(request, env) {
     "automatic_tax[enabled]": "true",
     "payment_intent_data[on_behalf_of]": resolved.registration.stripeAccountId
   });
-  // Parish Commerce is included in AGAPAY Stewardship Plus. Do not add any AGAPAY platform/application fee to bookstore or future commerce checkouts; Stripe may still charge its own processing fee and show any applicable tax.
+  // Parish Commerce is included in AGAPAY Parish +. Do not add any AGAPAY platform/application fee to bookstore or future commerce checkouts; Stripe may still charge its own processing fee and show any applicable tax.
   items.forEach((item, index) => {
     form.set(`line_items[${index}][quantity]`, String(item.quantity));
     form.set(`line_items[${index}][price_data][currency]`, "usd");
@@ -1512,7 +1512,7 @@ async function attachSacramentDetails(env, row) {
 }
 
 // GET  /api/donor/sacraments        — list the signed-in donor's own requests
-//   ?parishId= also returns { available } for that parish's AGAPAY Stewardship Plus status,
+//   ?parishId= also returns { available } for that parish's AGAPAY Parish + status,
 //   so the frontend knows whether to show the "Request a sacrament" form at all.
 // POST /api/donor/sacraments        — submit a new request
 export async function handleDonorSacraments(request, env) {
@@ -1526,9 +1526,9 @@ export async function handleDonorSacraments(request, env) {
       normalizeEmail(donor.email)
     ).catch(() => []);
 
-    // Sacraments & Services is an AGAPAY Stewardship Plus feature, currently in
+    // Sacraments & Services is an AGAPAY Parish + feature, currently in
     // limited rollout — only tell the donor it's available if their home
-    // parish both has active AGAPAY Stewardship Plus access AND is on the rollout
+    // parish both has active AGAPAY Parish + access AND is on the rollout
     // allowlist. This is purely informational for the GET (so the UI can
     // show/hide the "new request" form); it never blocks viewing requests
     // already on file, even from a parish no longer on the allowlist.
@@ -1564,13 +1564,13 @@ export async function handleDonorSacraments(request, env) {
   if (!found) return json({ error: "Parish not found." }, { status: 404 });
 
   // Gate: Sacraments & Services requires the parish to have active
-  // AGAPAY Stewardship Plus access (paid subscription, trial, or a comp grant).
+  // AGAPAY Parish + access (paid subscription, trial, or a comp grant).
   // This is what makes the feature "automatically available" the moment a
   // parish subscribes, with no separate per-donor enablement step needed.
   if (!hasStewardshipAccess(found.registration)) {
     return json({
       error: "This parish has not enabled Sacraments & Services.",
-      detail: "This feature is part of AGAPAY Stewardship Plus. Your parish will need to subscribe before you can submit requests here."
+      detail: "This feature is part of AGAPAY Parish +. Your parish will need to subscribe before you can submit requests here."
     }, { status: 402 });
   }
 

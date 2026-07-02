@@ -144,7 +144,7 @@ function buildSubscriptionRevenueSummary(registrations = []) {
     totalMonthlyCents: 0,
     byProduct: {
       give: emptySubscriptionProduct("give", "AGAPAY Give"),
-      stewardship: emptySubscriptionProduct("stewardship", "AGAPAY Stewardship"),
+      stewardship: emptySubscriptionProduct("stewardship", "AGAPAY Parish +"),
       learn: emptySubscriptionProduct("learn", "AGAPAY Learn")
     },
     note: "Subscription revenue is estimated from active AGAPAY records and normalized to a monthly amount."
@@ -161,7 +161,7 @@ function buildSubscriptionRevenueSummary(registrations = []) {
     if (stewardshipStatus) {
       const plan = String(registration.stewardshipPlan || registration.stewardshipBillingInterval || "").toLowerCase();
       const monthlyCents = plan === "annual" ? Math.round(39900 / 12) : 3900;
-      addSubscriptionRevenueProduct(summary, "stewardship", "AGAPAY Stewardship", monthlyCents, stewardshipStatus);
+      addSubscriptionRevenueProduct(summary, "stewardship", "AGAPAY Parish +", monthlyCents, stewardshipStatus);
     }
 
     const learnStatus = normalizeProductSubscriptionStatus(registration.learnSubscriptionStatus || registration.learnStatus);
