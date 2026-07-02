@@ -1976,7 +1976,7 @@ let selectedReference = '';
               </div>
               <div>
                 <label for="campaignsJson">Campaigns JSON</label>
-                <textarea id="campaignsJson" spellcheck="false">${jsonForTextarea(reg.campaigns, [{ id: 'alms', name: 'Alms Campaign', description: 'Parish-approved alms for a specific need.' }])}</textarea>
+                <textarea id="campaignsJson" spellcheck="false">${jsonForTextarea(reg.campaigns, [{ id: 'campaign', name: 'Parish Campaign', description: 'Parish-approved campaign for a specific need.' }])}</textarea>
               </div>
             </div>
           </div>

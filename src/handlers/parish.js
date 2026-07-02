@@ -2701,6 +2701,10 @@ export async function handleCheckout(request, env) {
   const recurring = body.frequency && body.frequency !== "once";
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   const normalizedDonorEmail = normalizeEmail(body.email);
+  const normalizedGiftType = String(body.giftType || "").toLowerCase();
+  const isFestalAlms = ["alms", "feast"].includes(normalizedGiftType);
+  const checkoutFund = isFestalAlms ? "Benevolence Fund" : body.fund || "";
+  const checkoutFundId = isFestalAlms ? "benevolence" : body.fundId || "";
   const donor = await requireDonor(request, env);
   const donorDashboardReturn = Boolean(donor?.email && normalizeEmail(donor.email) === normalizedDonorEmail);
   const campaignPageCheckout = String(body.source || "").toLowerCase() === "campaign_page";
@@ -2741,7 +2745,8 @@ export async function handleCheckout(request, env) {
     donor_first_name: body.firstName || "",
     donor_last_name: body.lastName || "",
     gift_type: body.giftType,
-    fund: body.fund || "",
+    fund: checkoutFund,
+    fund_id: checkoutFundId,
     feast_description: body.feastDescription || "",
     in_memoriam: body.inMemoriam || "",
     campaign: body.campaign || "",
@@ -2833,7 +2838,8 @@ export async function handleCheckout(request, env) {
     parishName: parish.name,
     giftType: body.giftType,
     title: `${parish.name} - ${giftLabel}`,
-    fund: body.fund || "",
+    fund: checkoutFund,
+    fundId: checkoutFundId,
     campaign: body.campaign || "",
     feastDescription: body.feastDescription || "",
     inMemoriam: body.inMemoriam || "",
@@ -3572,7 +3578,7 @@ function reconciliationAllocation(offering = {}) {
   const campaign = offering.campaign || offering.campaignId || "";
   const fund = offering.fund || offering.fundId || "";
   if (["alms", "feast"].includes(giftType)) {
-    return { key: "festal-alms", category: "Festal Alms", label: fund || "Festal Alms" };
+    return { key: "fund:benevolence", category: "Benevolence Fund", label: "Festal Alms for the Poor/Needy" };
   }
   if (campaign || giftType === "campaign") {
     return { key: `campaign:${campaign || fund || "campaign"}`, category: "Campaign", label: campaign || fund || "Parish Campaign" };

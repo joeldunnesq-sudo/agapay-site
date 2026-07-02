@@ -397,7 +397,7 @@ function quickDonorGiftUrl(giftType, parish, extra = {}) {
 function normalizeDonorGiftType(value) {
   const normalized = String(value || "stewardship").toLowerCase();
   const aliases = {
-    alms: "campaign",
+    alms: "feast",
     candle: "candles",
     love: "commemoration",
     memorial: "commemoration",
@@ -438,17 +438,17 @@ const donorGiftTypeCopy = {
   },
   campaign: {
     eyebrow: "Quick Campaign Offering",
-    title: "Support an active alms campaign.",
-    detailsTitle: "Alms Campaign Offering",
-    intro: "Give directly toward parish-approved needs, relief efforts, sickness support, or other alms campaigns.",
-    context: "Your gift will be prepared as an alms campaign offering for the selected parish."
+    title: "Support an active campaign.",
+    detailsTitle: "Campaign Offering",
+    intro: "Give directly toward parish-approved needs, relief efforts, building work, or other focused campaigns.",
+    context: "Your gift will be prepared as a campaign offering for the selected parish."
   },
   feast: {
-    eyebrow: "Quick Feast Offering",
-    title: "Mark the feast with an offering.",
-    detailsTitle: "Feast Day Offering",
-    intro: "Make a feast day offering based on your parish calendar.",
-    context: "Your gift will be prepared as a feast day offering for the selected parish."
+    eyebrow: "Quick Festal Alms",
+    title: "Mark the feast with alms.",
+    detailsTitle: "Festal Alms Offering",
+    intro: "Make an alms offering tied to the Church calendar and routed to the parish Benevolence Fund.",
+    context: "Your gift will be routed to the parish Benevolence Fund for the poor and needy."
   }
 };
 
@@ -551,7 +551,7 @@ function selectedPublicParish() {
 }
 
 function campaignLabel(campaign) {
-  return campaign?.name || campaign?.campaignName || "Parish Alms Campaign";
+  return campaign?.name || campaign?.campaignName || "Parish Campaign";
 }
 
 function campaignGoalCents(campaign) {
@@ -634,7 +634,7 @@ function renderActiveCampaigns(parish) {
       <article class="campaign-card campaign-empty">
         <span class="campaign-pill">Campaigns</span>
         <h3>No Active Campaigns</h3>
-        <p>${parish?.name ? "This church does not have an active alms campaign right now." : "Sign in and select a church to see parish-approved alms campaigns here."}</p>
+        <p>${parish?.name ? "This church does not have an active campaign right now." : "Sign in and select a church to see parish-approved campaigns here."}</p>
       </article>
     `;
     targets.forEach((target) => { target.innerHTML = empty; });
@@ -652,7 +652,7 @@ function renderActiveCampaigns(parish) {
         <span class="campaign-pill">${escapeHtml(label)}</span>
         <span>${parish?.name ? escapeHtml(parish.name) : "AGAPAY"}</span>
       </div>
-      <h3>${escapeHtml(campaign.name || "Parish Alms Campaign")}</h3>
+      <h3>${escapeHtml(campaign.name || "Parish Campaign")}</h3>
       ${campaign.description ? `<p class="campaign-description">${escapeHtml(campaign.description)}</p>` : ""}
       ${goalCents > 0 ? `<div class="campaign-track"><span style="width:${percent}%"></span></div><p><strong>${money(raisedCents)}</strong> of ${money(goalCents)} <span>${percent}%</span></p>` : ""}
     </a>
@@ -806,7 +806,7 @@ function renderDonorCalendarPrompts(parish) {
       title: campaignLabel(campaign),
       description: goalCents > 0
         ? `${money(raisedCents)} of ${money(goalCents)} raised (${percent}%).`
-        : (campaign.description || "Parish-approved alms campaign."),
+        : (campaign.description || "Parish-approved campaign."),
       href: donorGiftUrl("campaign", parish, { campaign: campaign.id || campaign.feastId || campaign.name })
     });
   });
@@ -2142,8 +2142,8 @@ async function startDonorCheckout(event) {
         firstName: firstName || "AGAPAY",
         lastName: rest.join(" "),
         email: session.email,
-        fund: normalizedGiftType === "fund" ? (selectedFund?.name || document.getElementById("fund")?.value || "") : "",
-        fundId: normalizedGiftType === "fund" ? (selectedFund?.id || document.getElementById("fund")?.value || "") : "",
+        fund: normalizedGiftType === "feast" ? "Benevolence Fund" : normalizedGiftType === "fund" ? (selectedFund?.name || document.getElementById("fund")?.value || "") : "",
+        fundId: normalizedGiftType === "feast" ? "benevolence" : normalizedGiftType === "fund" ? (selectedFund?.id || document.getElementById("fund")?.value || "") : "",
         campaign: normalizedGiftType === "campaign" ? campaignLabel(campaign) : "",
         campaignId: normalizedGiftType === "campaign" ? (campaign?.id || campaign?.feastId || document.getElementById("campaign")?.value || "") : "",
         campaignDescription: normalizedGiftType === "campaign" ? campaign?.description || "" : "",

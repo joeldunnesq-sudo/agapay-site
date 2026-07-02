@@ -486,15 +486,15 @@ body {
 
     <!-- FEAST DAY DESCRIPTION -->
     <div class="contextual-section hidden reveal reveal-delay-1" id="feastSection">
-      <div class="section-label">Feast day intention</div>
+      <div class="section-label">Festal alms note</div>
       <input
         type="text"
         class="contextual-input"
         id="feastDescription"
-        placeholder="e.g. Flowers for the Theotokos, Fellowship meal, Candles for the altar…"
-        aria-label="Feast day description"
+        placeholder="Optional note or intention"
+        aria-label="Festal alms note"
       />
-      <p class="contextual-hint">Describe how you would like your offering used. Your priest will see this note.</p>
+      <p class="contextual-hint">Festal Alms are routed to the parish Benevolence Fund for the poor and needy.</p>
     </div>
 
     <!-- IN MEMORIAM -->
@@ -1435,7 +1435,8 @@ body {
             giftType: selectedType,
             amount: selectedAmount,
             frequency: selectedFreq,
-            fund: selectedType === 'funds' ? selectedFund : '',
+            fund: selectedType === 'feast' ? 'Benevolence Fund' : selectedType === 'funds' ? selectedFund : '',
+            fundId: selectedType === 'feast' ? 'benevolence' : '',
             feastDescription: document.getElementById('feastDescription').value.trim(),
             inMemoriam: document.getElementById('inMemoriam').value.trim(),
             campaign: selectedType === 'campaign' ? selectedCampaign : '',

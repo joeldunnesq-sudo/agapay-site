@@ -447,8 +447,8 @@ const donorGiftTypeCopy = {
     eyebrow: "Quick Festal Alms",
     title: "Mark the feast with alms.",
     detailsTitle: "Festal Alms Offering",
-    intro: "Make an alms offering tied to the Church calendar and your parish feast rhythm.",
-    context: "Your gift will be prepared as festal alms for the selected parish."
+    intro: "Make an alms offering tied to the Church calendar and routed to the parish Benevolence Fund.",
+    context: "Your gift will be routed to the parish Benevolence Fund for the poor and needy."
   }
 };
 
@@ -2172,8 +2172,8 @@ async function startDonorCheckout(event) {
         firstName: firstName || "AGAPAY",
         lastName: rest.join(" "),
         email: session.email,
-        fund: normalizedGiftType === "fund" ? (selectedFund?.name || document.getElementById("fund")?.value || "") : "",
-        fundId: normalizedGiftType === "fund" ? (selectedFund?.id || document.getElementById("fund")?.value || "") : "",
+        fund: normalizedGiftType === "feast" ? "Benevolence Fund" : normalizedGiftType === "fund" ? (selectedFund?.name || document.getElementById("fund")?.value || "") : "",
+        fundId: normalizedGiftType === "feast" ? "benevolence" : normalizedGiftType === "fund" ? (selectedFund?.id || document.getElementById("fund")?.value || "") : "",
         campaign: normalizedGiftType === "campaign" ? campaignLabel(campaign) : "",
         campaignId: normalizedGiftType === "campaign" ? (campaign?.id || campaign?.feastId || document.getElementById("campaign")?.value || "") : "",
         campaignDescription: normalizedGiftType === "campaign" ? campaign?.description || "" : "",
