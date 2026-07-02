@@ -21,6 +21,8 @@ directory = "./public"
 binding = "ASSETS"
 run_worker_first = [
   "/**.html",
+  "/design",
+  "/images/design/*",
   "/learn",
   "/myagapay",
   "/myagapay/*",
