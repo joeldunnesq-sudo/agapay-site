@@ -2317,18 +2317,25 @@ export async function enrichParishGivingOptions(env, parish) {
   const enrichCampaign = (campaign) => {
     const totals = campaignRaisedTotals(campaign, gifts);
     const photos = Array.isArray(campaign.photos) ? campaign.photos : [];
+    const optionKeys = normalizedOptionKeys(campaign);
+    const isStFiacreRoofDemo = parish.id === "st-fiacre"
+      && optionKeys.some((key) => ["alms", "roof-campaign", "roof-restoration", "roof campaign", "church roof restoration"].includes(key));
     const coverPhotoUrl = campaign.coverPhotoUrl
       || campaign.coverUrl
       || campaign.imageUrl
       || campaign.photoUrl
       || (typeof photos[0] === "string" ? photos[0] : photos[0]?.url)
+      || (isStFiacreRoofDemo ? "/images/marketplace/dome-cross.jpg" : "")
       || "";
+    const seededRaisedCents = isStFiacreRoofDemo ? 735000 : 0;
     return {
       ...campaign,
-      name: campaign.name || campaign.campaignName || "Parish Campaign",
-      goalCents: Number(campaign.goalCents || campaign.targetCents || campaign.goalAmountCents || 0),
+      name: isStFiacreRoofDemo ? "Church Roof Restoration" : campaign.name || campaign.campaignName || "Parish Campaign",
+      description: isStFiacreRoofDemo ? "Help us restore and protect our church for generations to come." : campaign.description,
+      category: isStFiacreRoofDemo ? "Building" : campaign.category,
+      goalCents: isStFiacreRoofDemo ? 1000000 : Number(campaign.goalCents || campaign.targetCents || campaign.goalAmountCents || 0),
       coverPhotoUrl,
-      raisedCents: totals.raisedCents || Number(campaign.raisedCents || campaign.amountCents || campaign.currentCents || 0),
+      raisedCents: totals.raisedCents || Number(campaign.raisedCents || campaign.amountCents || campaign.currentCents || seededRaisedCents),
       giftCount: totals.giftCount || Number(campaign.giftCount || campaign.donorCount || 0)
     };
   };
