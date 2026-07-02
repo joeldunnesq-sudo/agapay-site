@@ -434,39 +434,53 @@
     parentField.style.display = 'none';
   });
 
+  // This form is meant to be embedded inside the authenticated My AGAPAY
+  // shell, which already holds the donor's bearer token (same pattern used
+  // elsewhere in the SPA — see handleDonorSacraments in donor.js, which
+  // requires a valid donor session).
   document.getElementById('baptismForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const payload = {
-      sacrament_type: 'baptism',
-      proposed_date: document.getElementById('proposedDate').value || null,
-      requester_notes: document.getElementById('requesterNotes').value || null,
-      details: {
-        candidate_name: document.getElementById('candidateName').value,
-        candidate_is_adult: isAdult,
-        candidate_dob: document.getElementById('candidateDob').value || null,
-        patron_saint: document.getElementById('patronSaint').value || null,
-        parent_names: isAdult ? null : document.getElementById('parentNames').value,
-        godparent_1_name: document.getElementById('gp1Name').value,
-        godparent_1_home_parish: document.getElementById('gp1Parish').value,
-        godparent_1_orthodox_attested: document.getElementById('gp1Attest').checked,
-        godparent_2_name: document.getElementById('gp2Name').value || null,
-        godparent_2_home_parish: document.getElementById('gp2Parish').value || null,
-        godparent_2_orthodox_attested: document.getElementById('gp2Attest').checked,
+      sacramentType: 'baptism',
+      requestedDate: document.getElementById('proposedDate').value || null,
+      notes: document.getElementById('requesterNotes').value || null,
+      locationType: 'church',
+      baptismDetails: {
+        candidateName: document.getElementById('candidateName').value,
+        candidateIsAdult: isAdult,
+        candidateDob: document.getElementById('candidateDob').value || null,
+        patronSaint: document.getElementById('patronSaint').value || null,
+        parentNames: isAdult ? null : document.getElementById('parentNames').value,
+        godparent1Name: document.getElementById('gp1Name').value,
+        godparent1HomeParish: document.getElementById('gp1Parish').value,
+        godparent1OrthodoxAttested: document.getElementById('gp1Attest').checked,
+        godparent2Name: document.getElementById('gp2Name').value || null,
+        godparent2HomeParish: document.getElementById('gp2Parish').value || null,
+        godparent2OrthodoxAttested: document.getElementById('gp2Attest').checked,
       }
     };
 
-    // TODO: replace with real fetch to POST /api/sacraments/request
-    // const res = await fetch('/api/sacraments/request', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(payload)
-    // });
-
-    console.log('Submitting sacrament request:', payload);
-
-    document.getElementById('baptismForm').style.display = 'none';
-    document.getElementById('confirmView').classList.add('show');
+    try {
+      const res = await fetch('/api/donor/sacraments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // TODO: match the existing donor auth header pattern used
+          // elsewhere in My AGAPAY (Bearer token from localStorage).
+          'Authorization': `Bearer ${window.localStorage.getItem('agapay_donor_token') || ''}`,
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Something went wrong sending your request.');
+      }
+      document.getElementById('baptismForm').style.display = 'none';
+      document.getElementById('confirmView').classList.add('show');
+    } catch (err) {
+      alert(err.message || 'Something went wrong. Please try again.');
+    }
   });
 </script>
 </body>
