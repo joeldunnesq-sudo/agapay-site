@@ -7,8 +7,6 @@
     { href: "/give", label: "AGAPAY Give", key: "give" },
     { href: "/learn", label: "AGAPAY Learn", key: "learn" },
     { href: "/design", label: "AGAPAY Design", key: "design" },
-    { href: "/marketplace", label: "Marketplace", key: "marketplace" },
-    { href: "/directory", label: "Directory", key: "directory" },
     { href: "/about", label: "About", key: "about" }
   ];
 
