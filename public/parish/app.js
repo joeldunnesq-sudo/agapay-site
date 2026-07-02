@@ -2064,34 +2064,188 @@
     }).join('')}</div></div>`;
   }
 
+  let pdxGiversSort = 'amount';
+  function setGiversSort(mode, btn) {
+    pdxGiversSort = mode;
+    if (btn) {
+      btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    renderGiversDirectory();
+  }
+  function scrollToGiverDirectory() {
+    const el = document.getElementById('pdxGvDirectorySection');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function renderGiversPanel() {
-    const pane = document.getElementById('giversPane');
-    if (!pane) return;
     const groups = new Map();
     allGifts.forEach(gift => {
       const key = (gift.donorEmail || gift.donorName || 'anonymous').toLowerCase();
-      const existing = groups.get(key) || { name: gift.donorName || 'Anonymous giver', email: gift.donorEmail || '', giftCount: 0, totalCents: 0, recurring: false, lastGiftAt: '' };
+      const existing = groups.get(key) || { name: gift.donorName || 'Anonymous giver', email: gift.donorEmail || '', giftCount: 0, totalCents: 0, recurring: false, lastGiftAt: '', firstGiftAt: '' };
       existing.giftCount += 1;
       existing.totalCents += Number(gift.amountCents || 0);
       existing.recurring = existing.recurring || Boolean(gift.recurring);
       const date = gift.date || gift.createdAt || '';
-      if (date && (!existing.lastGiftAt || date > existing.lastGiftAt)) existing.lastGiftAt = date;
+      if (date) {
+        if (!existing.lastGiftAt || date > existing.lastGiftAt) existing.lastGiftAt = date;
+        if (!existing.firstGiftAt || date < existing.firstGiftAt) existing.firstGiftAt = date;
+      }
       groups.set(key, existing);
     });
     const givers = Array.from(groups.values()).sort((a, b) => b.totalCents - a.totalCents);
-    const total = givers.reduce((sum, giver) => sum + giver.totalCents, 0);
-    const recurring = givers.filter(giver => giver.recurring).length;
-    const last = givers.map(giver => giver.lastGiftAt).filter(Boolean).sort().pop();
-    const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
-    set('giverStatCount', givers.length);
-    set('giverStatTotal', money(total));
-    set('giverStatRecurring', recurring);
-    set('giverStatLast', shortDate(last));
-    if (!givers.length) {
-      pane.innerHTML = '<div class="history-empty">No paid gifts have been recorded yet.</div>';
+    window.pdxGiversAll = givers;
+
+    const total = givers.reduce((sum, g) => sum + g.totalCents, 0);
+    const recurring = givers.filter(g => g.recurring).length;
+    const last = givers.map(g => g.lastGiftAt).filter(Boolean).sort().pop();
+
+    // Median gift (across all gifts, not per-donor)
+    const amounts = allGifts.map(g => Number(g.amountCents || 0)).filter(a => a > 0).sort((a, b) => a - b);
+    const median = amounts.length ? amounts[Math.floor(amounts.length / 2)] : 0;
+
+    // "New this month" = donors whose first gift was in the current month
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const newThisMonth = givers.filter(g => g.firstGiftAt && g.firstGiftAt >= monthStart).length;
+
+    // KPIs — use the shared count-up helper if available
+    const setCount = (id, val, opts = {}) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (typeof pdxAnimateCount === 'function') pdxAnimateCount(el, val, opts);
+      else el.textContent = opts.money ? money(val) : String(val);
+    };
+    setCount('giverStatCount', givers.length);
+    setCount('giverStatTotal', total, { money: true });
+    setCount('pdxGvKpiMedian', median, { money: true });
+    setCount('giverStatRecurring', recurring);
+
+    const countMeta = document.getElementById('pdxGvKpiCountMeta');
+    if (countMeta) countMeta.innerHTML = newThisMonth > 0
+      ? `<span class="pdx-delta up">${newThisMonth}</span>new this month`
+      : `<span style="opacity:0.7;">Distinct households</span>`;
+    const totalMeta = document.getElementById('pdxGvKpiTotalMeta');
+    if (totalMeta) totalMeta.innerHTML = `<span style="opacity:0.7;">Across ${allGifts.length} gift${allGifts.length === 1 ? '' : 's'}</span>`;
+    const recurringMeta = document.getElementById('pdxGvKpiRecurringMeta');
+    if (recurringMeta) {
+      const pct = givers.length ? Math.round((recurring / givers.length) * 100) : 0;
+      recurringMeta.innerHTML = `<span style="opacity:0.7;">${pct}% of households</span>`;
+    }
+
+    // Legacy hidden binding for "last gift" (still referenced elsewhere in app.js)
+    const legacyLast = document.getElementById('giverStatLast');
+    if (legacyLast) legacyLast.textContent = shortDate(last);
+
+    // Hero: title with count, mini-donut ratio
+    const heroTitle = document.getElementById('pdxGvTitle');
+    if (heroTitle) heroTitle.innerHTML = givers.length
+      ? `<em>${givers.length}</em> household${givers.length === 1 ? ' has' : 's have'} given<br>to your parish this year.`
+      : `Load giving history to see your parish community.`;
+    const donutPct = document.getElementById('pdxGvRecurringPct');
+    const donutSub = document.getElementById('pdxGvRecurringSub');
+    const donut = document.getElementById('pdxGvDonut');
+    const ratio = givers.length ? recurring / givers.length : 0;
+    if (donutPct) donutPct.textContent = `${Math.round(ratio * 100)}%`;
+    if (donutSub) donutSub.textContent = `${recurring} of ${givers.length} household${givers.length === 1 ? '' : 's'}`;
+    if (donut) {
+      const C = 2 * Math.PI * 82; // ≈ 515
+      donut.setAttribute('stroke-dasharray', C);
+      donut.setAttribute('stroke-dashoffset', C);
+      requestAnimationFrame(() => setTimeout(() => {
+        donut.style.strokeDashoffset = String(C * (1 - ratio));
+      }, 300));
+    }
+
+    // Leaderboard: top 6
+    const lbEl = document.getElementById('pdxGvLeaderboard');
+    if (lbEl) {
+      const topSix = givers.slice(0, 6);
+      lbEl.innerHTML = topSix.length ? `<div class="pdx-gv-leaderboard">${topSix.map((g, i) => {
+        const avgCents = g.giftCount ? Math.round(g.totalCents / g.giftCount) : 0;
+        const top = i < 3 ? 'top' : '';
+        return `<div class="pdx-gv-lb-row ${top}">
+          <div class="pdx-gv-lb-rank">${i + 1}</div>
+          <div class="pdx-gv-lb-copy">
+            <div class="pdx-gv-lb-name">${escapeHtml(g.name)}</div>
+            <div class="pdx-gv-lb-meta">${g.giftCount} gift${g.giftCount === 1 ? '' : 's'}${g.recurring ? ' <span class="pdx-gv-lb-recur">Recurring</span>' : ''}</div>
+          </div>
+          <div class="pdx-gv-lb-amount">${escapeHtml(money(g.totalCents))}<small>${escapeHtml(money(avgCents))} avg</small></div>
+        </div>`;
+      }).join('')}</div>` : '<div class="pdx-recurring-empty">No paid gifts have been recorded yet.</div>';
+    }
+
+    // Nudge list: recurring donors whose last gift is > 30 days old
+    const nudgeEl = document.getElementById('pdxGvNudgeList');
+    if (nudgeEl) {
+      const dayMs = 86400000;
+      const nudgeCandidates = givers
+        .filter(g => g.recurring && g.lastGiftAt)
+        .map(g => ({ ...g, daysQuiet: Math.floor((now - new Date(g.lastGiftAt)) / dayMs) }))
+        .filter(g => g.daysQuiet >= 30)
+        .sort((a, b) => b.daysQuiet - a.daysQuiet)
+        .slice(0, 6);
+      if (nudgeCandidates.length === 0) {
+        nudgeEl.innerHTML = `<div class="pdx-gv-nudge-empty">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          <strong>All caught up</strong>
+          <span>No recurring givers have gone quiet.</span>
+        </div>`;
+      } else {
+        nudgeEl.innerHTML = `<div class="pdx-gv-nudge-list">${nudgeCandidates.map(g => {
+          const lapsed = g.daysQuiet >= 90;
+          const avgCents = g.giftCount ? Math.round(g.totalCents / g.giftCount) : 0;
+          return `<div class="pdx-gv-nudge ${lapsed ? 'lapsed' : ''}">
+            <div class="pdx-gv-nudge-copy">
+              <div class="pdx-gv-nudge-name">${escapeHtml(g.name)}</div>
+              <div class="pdx-gv-nudge-meta">Avg ${escapeHtml(money(avgCents))}/gift · Last gift ${escapeHtml(shortDate(g.lastGiftAt))}</div>
+            </div>
+            <div class="pdx-gv-nudge-status">
+              <div class="pdx-gv-nudge-days">${g.daysQuiet}</div>
+              <div class="pdx-gv-nudge-days-label">${lapsed ? 'days · lapsed' : 'days quiet'}</div>
+            </div>
+          </div>`;
+        }).join('')}</div>`;
+      }
+    }
+
+    renderGiversDirectory();
+  }
+
+  function renderGiversDirectory() {
+    const pane = document.getElementById('giversPane');
+    if (!pane) return;
+    const all = Array.isArray(window.pdxGiversAll) ? window.pdxGiversAll : [];
+    if (!all.length) {
+      pane.innerHTML = '<div class="pdx-gv-dir-empty">No paid gifts have been recorded yet.</div>';
       return;
     }
-    pane.innerHTML = `<div class="giver-list">${givers.map(giver => `<article class="giver-card"><div><strong>${escapeHtml(giver.name)}</strong><span>${escapeHtml(giver.email || 'No email shown')}</span></div><div><b>${moneyFull(giver.totalCents)}</b><span>${giver.giftCount} gift${giver.giftCount === 1 ? '' : 's'}${giver.recurring ? ' · recurring' : ''}</span><small>Last gift ${escapeHtml(shortDate(giver.lastGiftAt))}</small></div></article>`).join('')}</div>`;
+    const search = (document.getElementById('pdxGvSearch')?.value || '').trim().toLowerCase();
+    let filtered = search ? all.filter(g => (g.name || '').toLowerCase().includes(search) || (g.email || '').toLowerCase().includes(search)) : all.slice();
+    switch (pdxGiversSort) {
+      case 'recency': filtered.sort((a, b) => (b.lastGiftAt || '').localeCompare(a.lastGiftAt || '')); break;
+      case 'gifts':   filtered.sort((a, b) => b.giftCount - a.giftCount); break;
+      case 'name':    filtered.sort((a, b) => (a.name || '').localeCompare(b.name || '')); break;
+      case 'amount':
+      default:        filtered.sort((a, b) => b.totalCents - a.totalCents);
+    }
+    if (!filtered.length) {
+      pane.innerHTML = '<div class="pdx-gv-dir-empty">No givers match that search.</div>';
+      return;
+    }
+    pane.innerHTML = `<div class="pdx-gv-dir-grid">${filtered.map(g => `
+      <div class="pdx-gv-dir-card">
+        <div class="pdx-gv-dir-top">
+          <span class="pdx-gv-dir-name">${escapeHtml(g.name)}</span>
+          <span class="pdx-gv-dir-amount">${escapeHtml(money(g.totalCents))}</span>
+        </div>
+        <div class="pdx-gv-dir-email">${escapeHtml(g.email || 'No email shown')}</div>
+        <div class="pdx-gv-dir-meta">
+          <span>${g.giftCount} gift${g.giftCount === 1 ? '' : 's'}</span>
+          ${g.recurring ? '<span class="pdx-gv-dir-recur">Recurring</span>' : `<span>Last ${escapeHtml(shortDate(g.lastGiftAt))}</span>`}
+        </div>
+      </div>
+    `).join('')}</div>`;
   }
 
   function addGivingOption(kind) { const prefix=kind==='fund'?'fund':'campaign'; const nameEl=document.getElementById(`${prefix}Name`); const descEl=document.getElementById(`${prefix}Description`); const name=nameEl?.value.trim(); if(!name){setStatus(`Enter a ${kind} name.`,'error');return;} const item={id:slugifyLocal(name),name,description:descEl?.value.trim()||(kind==='fund'?'Designated support for this parish.':'Parish-approved alms for this need.')}; if(kind==='campaign'){const goalCents=parseDollarsToCents(document.getElementById('campaignGoal')?.value); if(goalCents>0) item.goalCents=goalCents;} if(kind==='fund') editableFunds.push(item); else editableCampaigns.push(item); nameEl.value=''; descEl.value=''; const goalEl=document.getElementById(`${prefix}Goal`); if(goalEl) goalEl.value=''; renderGivingOptionsEditor(); setStatus(`${kind==='fund'?'Fund':'Campaign'} added. Save when ready.`,'success'); }
@@ -2768,26 +2922,64 @@
     }
     const summary = data.summary || {};
     const close = data.closeRecord || null;
-    document.getElementById('reconcileDeposited').textContent = money(summary.depositedCents || 0);
-    document.getElementById('reconcilePayoutCount').textContent = `${summary.paidPayoutCount || 0} paid payout${summary.paidPayoutCount === 1 ? '' : 's'}`;
-    document.getElementById('reconcileGross').textContent = money(summary.grossActivityCents || 0);
-    document.getElementById('reconcileRefunds').textContent = money(summary.refundCents || 0);
-    document.getElementById('reconcileFees').textContent = money(summary.totalFeeCents || 0);
-    document.getElementById('reconcileFeeBreakdown').textContent = `Stripe ${money(summary.stripeFeeCents || 0)} · AGAPAY ${money(summary.agapayFeeCents || 0)}`;
-    document.getElementById('reconcileMatched').textContent = money(summary.matchedNetCents || 0);
-    document.getElementById('reconcileMatchedPercent').textContent = `${summary.matchedPercent ?? 0}% of payout activity traced`;
-    document.getElementById('reconcileExceptions').textContent = summary.exceptionCount || 0;
+    const deposited = Number(summary.depositedCents || 0);
+    const gross = Number(summary.grossActivityCents || 0);
+    const fees = Number(summary.totalFeeCents || 0);
+    const stripeFees = Number(summary.stripeFeeCents || 0);
+    const agapayFees = Number(summary.agapayFeeCents || 0);
+    const refunds = Number(summary.refundCents || 0);
+    const matchedNet = Number(summary.matchedNetCents || 0);
+    const matchedPct = Number(summary.matchedPercent ?? 0);
+    const exceptionCount = Number(summary.exceptionCount || 0);
+    const paidPayouts = Number(summary.paidPayoutCount || 0);
 
-    const status = document.getElementById('reconcileStatusLine');
-    if (status) {
-      const closed = close?.status === 'closed';
-      const detail = closed
-        ? `Closed ${fullDate(close.closedAt)} · Bank difference ${moneyFull(close.differenceCents || 0)}`
-        : `${summary.payoutCount || 0} payout${summary.payoutCount === 1 ? '' : 's'} arriving in ${reconciliationMonthLabel(data.period?.month)}`;
-      status.innerHTML = `<span class="reconcile-state ${closed ? 'closed' : 'open'}">${closed ? 'Month closed' : 'Open month'}</span><span>${escapeHtml(detail)}</span>`;
+    // Hero: month title, deposit total with count-up, sub, match block
+    const monthTitle = document.getElementById('pdxRcMonthTitle');
+    if (monthTitle) monthTitle.textContent = reconciliationMonthLabel(data.period?.month) || 'Selected month';
+
+    const depositedEl = document.getElementById('reconcileDeposited');
+    if (depositedEl) pdxAnimateCount(depositedEl, deposited, { money: true });
+
+    const payoutCountEl = document.getElementById('reconcilePayoutCount');
+    if (payoutCountEl) payoutCountEl.textContent = `Across ${paidPayouts} paid payout${paidPayouts === 1 ? '' : 's'}${gross ? ` · ${money(gross)} gross before fees` : ''}`;
+
+    const matchedPctEl = document.getElementById('reconcileMatchedPercent');
+    if (matchedPctEl) matchedPctEl.textContent = `${matchedPct}%`;
+    const matchSub = document.getElementById('pdxRcMatchSub');
+    if (matchSub) matchSub.textContent = `${money(matchedNet)} traced to gifts${fees ? ` · ${money(fees)} in fees` : ''}`;
+    const matchBar = document.getElementById('pdxRcMatchBarFill');
+    if (matchBar) {
+      matchBar.style.width = '0';
+      requestAnimationFrame(() => setTimeout(() => { matchBar.style.width = Math.max(0, Math.min(100, matchedPct)) + '%'; }, 200));
+    }
+    // Legacy hidden binding
+    const matchedLegacy = document.getElementById('reconcileMatched');
+    if (matchedLegacy) matchedLegacy.textContent = money(matchedNet);
+
+    // Status pill: closed > ready > open (ready = zero exceptions + not closed)
+    const statusPill = document.getElementById('pdxRcStatusPill');
+    if (statusPill) {
+      const isClosed = close?.status === 'closed';
+      const isReady = !isClosed && exceptionCount === 0 && deposited > 0;
+      statusPill.className = 'pdx-rc-status-pill ' + (isClosed ? 'closed' : isReady ? 'ready' : 'open');
+      statusPill.textContent = isClosed ? 'Month closed' : isReady ? 'Ready to close' : 'Open month';
     }
 
-    renderReconciliationAllocations(data.allocations || [], summary.depositedCents || 0);
+    // KPIs
+    const grossEl = document.getElementById('reconcileGross');
+    if (grossEl) pdxAnimateCount(grossEl, gross, { money: true });
+    const feesEl = document.getElementById('reconcileFees');
+    if (feesEl) pdxAnimateCount(feesEl, fees, { money: true });
+    const feeBreak = document.getElementById('reconcileFeeBreakdown');
+    if (feeBreak) feeBreak.textContent = `Stripe ${money(stripeFees)} · AGAPAY ${money(agapayFees)}`;
+    const refundsEl = document.getElementById('reconcileRefunds');
+    if (refundsEl) pdxAnimateCount(refundsEl, refunds, { money: true });
+    const excEl = document.getElementById('reconcileExceptions');
+    if (excEl) pdxAnimateCount(excEl, exceptionCount);
+    const excCard = document.getElementById('pdxRcExceptionsCard');
+    if (excCard) excCard.classList.toggle('attention', exceptionCount > 0);
+
+    renderReconciliationAllocations(data.allocations || [], deposited);
     renderReconciliationGiftActivity(data.giftActivity || {});
     renderReconciliationPayouts(data.payouts || [], data.transactions || []);
     renderReconciliationExceptions(data.exceptions || []);
@@ -2799,52 +2991,168 @@
     updateReconciliationDifference();
   }
 
+  // Persist allocation view choice across sessions
+  const PDX_RC_ALLOC_KEY = 'agapay_reconcile_alloc_view';
+  const PDX_RC_ALLOC_COLORS = ['#3B5A6F', '#C8A24A', '#7FA97A', '#B47A50', '#8A6BA1', '#5B7C99', '#A87256', '#4C8672'];
+  function getReconcileAllocView() { try { return localStorage.getItem(PDX_RC_ALLOC_KEY) || 'stacked'; } catch { return 'stacked'; } }
+  function setReconcileAllocView(mode, btn) {
+    try { localStorage.setItem(PDX_RC_ALLOC_KEY, mode); } catch {}
+    if (btn) {
+      btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    if (reconciliationData?.allocations) {
+      renderReconciliationAllocations(reconciliationData.allocations || [], reconciliationData.summary?.depositedCents || 0);
+    }
+  }
+
   function renderReconciliationAllocations(allocations, depositedCents) {
     const pane = document.getElementById('reconcileAllocationsPane');
     if (!pane) return;
+
+    // Sync the toggle chips to the persisted preference
+    const view = getReconcileAllocView();
+    const toggle = document.getElementById('pdxRcAllocToggle');
+    if (toggle) {
+      toggle.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.mode === view));
+    }
+
     if (!allocations.length) {
-      pane.innerHTML = '<div class="history-empty">No matched fund allocations were found in this month\'s paid payouts.</div>';
+      pane.innerHTML = '<div class="pdx-recurring-empty">No matched fund allocations were found in this month\'s paid payouts.</div>';
       return;
     }
-    pane.innerHTML = `<div class="reconcile-allocation-list">${allocations.map(item => {
-      const percent = depositedCents ? Math.max(0, Math.min(100, Math.round((Number(item.netCents || 0) / depositedCents) * 100))) : 0;
-      return `<div class="reconcile-allocation-row">
-        <div class="reconcile-allocation-copy"><span>${escapeHtml(item.category || 'Giving')}</span><strong>${escapeHtml(item.label || 'General Giving')}</strong><small>${item.transactionCount || 0} transaction${item.transactionCount === 1 ? '' : 's'} · ${money(item.feeCents || 0)} fees</small></div>
-        <div class="reconcile-allocation-amount"><strong>${money(item.netCents || 0)}</strong><span>${percent}%</span></div>
-        <div class="reconcile-allocation-bar"><i style="width:${percent}%"></i></div>
+
+    const items = allocations.map((item, i) => {
+      const net = Number(item.netCents || 0);
+      const pct = depositedCents ? Math.max(0, Math.min(100, Math.round((net / depositedCents) * 100))) : 0;
+      return {
+        color: PDX_RC_ALLOC_COLORS[i % PDX_RC_ALLOC_COLORS.length],
+        label: item.label || 'General Giving',
+        category: item.category || 'Giving',
+        transactionCount: Number(item.transactionCount || 0),
+        feeCents: Number(item.feeCents || 0),
+        netCents: net,
+        percent: pct
+      };
+    });
+    const maxPct = Math.max(...items.map(i => i.percent), 1);
+
+    const stackedHtml = `
+      <div class="pdx-rc-alloc-stacked">
+        ${items.filter(i => i.percent > 0).map(i => `
+          <div class="pdx-rc-alloc-seg" style="--w:${i.percent}%; background:${i.color};" title="${escapeHtml(i.label)}: ${escapeHtml(money(i.netCents))} (${i.percent}%)">
+            ${i.percent >= 6 ? escapeHtml(money(i.netCents)) : ''}
+          </div>
+        `).join('')}
+      </div>
+      <div class="pdx-rc-alloc-legend">
+        ${items.map(i => `
+          <div class="pdx-rc-alloc-legend-item">
+            <span><span class="pdx-rc-alloc-legend-swatch" style="background:${i.color};"></span><span class="pdx-rc-alloc-legend-name">${escapeHtml(i.label)}</span></span>
+            <span class="pdx-rc-alloc-legend-value">${escapeHtml(money(i.netCents))} <span class="pdx-rc-alloc-legend-pct">${i.percent}%</span></span>
+          </div>
+        `).join('')}
       </div>`;
-    }).join('')}</div>`;
+
+    const barsHtml = `
+      <div class="pdx-rc-alloc-bar-list">
+        ${items.map(i => {
+          const relative = Math.round((i.percent / maxPct) * 100);
+          return `
+          <div class="pdx-rc-alloc-bar-row">
+            <span class="pdx-rc-alloc-legend-swatch" style="background:${i.color};"></span>
+            <div class="pdx-rc-alloc-bar-body">
+              <div class="pdx-rc-alloc-bar-top">
+                <strong>${escapeHtml(i.label)}</strong>
+                <span>${escapeHtml(money(i.netCents))}</span>
+              </div>
+              <div class="pdx-rc-alloc-bar-track"><i data-w="${relative}%" style="background:${i.color};"></i></div>
+              <div class="pdx-rc-alloc-bar-meta">
+                <span>${i.transactionCount} transaction${i.transactionCount === 1 ? '' : 's'}${i.feeCents ? ` · ${escapeHtml(money(i.feeCents))} fees` : ''}</span>
+                <span>${i.percent}% of deposit</span>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+
+    pane.innerHTML = view === 'bars' ? barsHtml : stackedHtml;
+
+    // Animate the per-fund bar tracks
+    if (view === 'bars') {
+      requestAnimationFrame(() => setTimeout(() => {
+        pane.querySelectorAll('.pdx-rc-alloc-bar-track i').forEach((el, i) => {
+          setTimeout(() => { el.style.width = el.dataset.w; }, i * 60);
+        });
+      }, 100));
+    }
   }
 
   function renderReconciliationGiftActivity(activity) {
     const pane = document.getElementById('reconcileGiftActivityPane');
     if (!pane) return;
-    pane.innerHTML = `<div class="reconcile-activity-grid">
-      <div><span>Gifts made</span><strong>${activity.giftCount || 0}</strong></div>
-      <div><span>Gross gifts</span><strong>${money(activity.grossGiftCents || 0)}</strong></div>
-      <div><span>Parish net</span><strong>${money(activity.parishNetCents || 0)}</strong></div>
-      <div><span>Gift fees</span><strong>${money(activity.feeCents || 0)}</strong></div>
-    </div><p class="section-note">These gifts were made during the month. Stripe may deposit some of them in a later month.</p>`;
+    const items = [
+      { label: 'Gifts made', value: activity.giftCount || 0, isMoney: false },
+      { label: 'Gross gifts', value: activity.grossGiftCents || 0, isMoney: true },
+      { label: 'Parish net', value: activity.parishNetCents || 0, isMoney: true },
+      { label: 'Gift fees', value: activity.feeCents || 0, isMoney: true }
+    ];
+    pane.innerHTML = `
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:14px; margin-bottom:10px;">
+        ${items.map(it => `
+          <div style="padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:var(--paper);">
+            <div style="font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--stone); font-weight:600; margin-bottom:4px;">${it.label}</div>
+            <div style="font-family:var(--serif); font-size:22px; font-weight:600; color:var(--ink);">${escapeHtml(it.isMoney ? money(it.value) : String(it.value))}</div>
+          </div>
+        `).join('')}
+      </div>
+      <p style="font-size:12px; color:var(--stone); margin:0;">These gifts were made during the month. Stripe may deposit some of them in a later month.</p>`;
   }
 
   function renderReconciliationPayouts(payouts, transactions) {
     const pane = document.getElementById('reconcilePayoutsPane');
     if (!pane) return;
     if (!payouts.length) {
-      pane.innerHTML = '<div class="history-empty">No Stripe payouts arrived in this month.</div>';
+      pane.innerHTML = '<div class="pdx-recurring-empty">No Stripe payouts arrived in this month.</div>';
       return;
     }
-    pane.innerHTML = `<div class="reconcile-payout-list">${payouts.map(payout => {
+    const monthShort = { 0:'Jan', 1:'Feb', 2:'Mar', 3:'Apr', 4:'May', 5:'Jun', 6:'Jul', 7:'Aug', 8:'Sep', 9:'Oct', 10:'Nov', 11:'Dec' };
+    pane.innerHTML = `<div class="pdx-rc-payout-list">${payouts.map(payout => {
       const rows = transactions.filter(row => row.payoutId === payout.id);
-      return `<details class="reconcile-payout">
-        <summary>
-          <div><span>${reconciliationDate(payout.arrivalDate)}</span><strong>${escapeHtml(payout.id || 'Stripe payout')}</strong></div>
-          <div><strong>${money(payout.amountCents || 0)}</strong><span class="payout-status ${escapeHtml(payout.status || '')}">${escapeHtml(statusLabel(payout.status))}</span></div>
+      const arrival = payout.arrivalDate ? new Date(payout.arrivalDate) : null;
+      const day = arrival ? String(arrival.getDate()).padStart(2, '0') : '—';
+      const mon = arrival ? monthShort[arrival.getMonth()] : '';
+      const diff = Math.abs(Number(payout.differenceCents || 0));
+      const unmatched = rows.filter(r => !r.matched).length;
+      const chipClass = unmatched > 0 || diff > 100 ? 'attention' : diff > 0 ? 'partial' : 'matched';
+      const chipLabel = unmatched > 0 ? `${unmatched} to review` : diff > 0 ? 'Composition delta' : 'Fully matched';
+      const payoutIdShort = String(payout.id || 'Stripe payout').slice(0, 16) + (String(payout.id || '').length > 16 ? '...' : '');
+      return `<details class="pdx-rc-payout">
+        <summary class="pdx-rc-payout-summary">
+          <div class="pdx-rc-payout-date-badge"><b>${day}</b><span>${mon}</span></div>
+          <div class="pdx-rc-payout-copy">
+            <strong>${escapeHtml(payoutIdShort)}</strong>
+            <small>${payout.transactionCount || 0} Stripe transaction${payout.transactionCount === 1 ? '' : 's'}${payout.status && payout.status !== 'paid' ? ` · ${escapeHtml(statusLabel(payout.status))}` : ''}</small>
+          </div>
+          <div class="pdx-rc-payout-amount">${escapeHtml(money(payout.amountCents || 0))}</div>
+          <span class="pdx-rc-payout-status-chip ${chipClass}">${escapeHtml(chipLabel)}</span>
         </summary>
-        <div class="reconcile-payout-meta"><span>${payout.transactionCount || 0} Stripe transactions</span><span>${money(payout.matchedNetCents || 0)} matched</span><span>${money(payout.differenceCents || 0)} composition difference</span></div>
-        <div class="history-table-wrap"><table class="history-table reconcile-transaction-table"><thead><tr><th>Date</th><th>Post to</th><th>Donor</th><th>Gross</th><th>Fees</th><th>Net</th><th>Match</th></tr></thead><tbody>
-          ${rows.map(row => `<tr><td>${reconciliationDate(row.created)}</td><td>${escapeHtml(row.allocationLabel || row.reportingCategory || 'Stripe activity')}</td><td>${escapeHtml(row.donorName || '—')}</td><td>${moneyFull(row.grossCents || 0)}</td><td>${moneyFull(row.feeCents || 0)}</td><td><strong>${moneyFull(row.netCents || 0)}</strong></td><td><span class="reconcile-match ${row.matched ? 'yes' : 'no'}">${row.matched ? 'Matched' : 'Review'}</span></td></tr>`).join('') || '<tr><td colspan="7">No transaction detail returned.</td></tr>'}
-        </tbody></table></div>
+        <div class="pdx-rc-payout-body">
+          <div class="pdx-rc-payout-body-line"><span>Matched to gifts</span><b>${escapeHtml(money(payout.matchedNetCents || 0))}</b></div>
+          <div class="pdx-rc-payout-body-line"><span>Composition difference</span><b>${escapeHtml(money(payout.differenceCents || 0))}</b></div>
+          <div class="pdx-rc-payout-body-line"><span>Reference gifts</span><b>${payout.transactionCount || 0} listed · ${rows.filter(r => r.matched).length} matched</b></div>
+          ${rows.length ? `<table><thead><tr><th>Date</th><th>Post to</th><th>Donor</th><th>Gross</th><th>Fees</th><th>Net</th><th>Match</th></tr></thead><tbody>
+            ${rows.map(row => `<tr>
+              <td>${escapeHtml(reconciliationDate(row.created))}</td>
+              <td>${escapeHtml(row.allocationLabel || row.reportingCategory || 'Stripe activity')}</td>
+              <td>${escapeHtml(row.donorName || '—')}</td>
+              <td>${escapeHtml(moneyFull(row.grossCents || 0))}</td>
+              <td>${escapeHtml(moneyFull(row.feeCents || 0))}</td>
+              <td><b>${escapeHtml(moneyFull(row.netCents || 0))}</b></td>
+              <td><span class="${row.matched ? 'pdx-rc-match-chip-yes' : 'pdx-rc-match-chip-no'}">${row.matched ? 'Matched' : 'Review'}</span></td>
+            </tr>`).join('')}
+          </tbody></table>` : ''}
+        </div>
       </details>`;
     }).join('')}</div>`;
   }
@@ -2853,22 +3161,40 @@
     const pane = document.getElementById('reconcileExceptionsPane');
     if (!pane) return;
     if (!exceptions.length) {
-      pane.innerHTML = '<div class="reconcile-clear"><strong>Ready to close</strong><span>No payout exceptions need review.</span></div>';
+      pane.innerHTML = `<div class="pdx-rc-exceptions-empty">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        <strong>Ready to close</strong>
+        <span>No payout exceptions need review.</span>
+      </div>`;
       return;
     }
-    pane.innerHTML = `<div class="reconcile-exception-list">${exceptions.map(item => `<div class="reconcile-exception ${escapeHtml(item.severity || 'warning')}"><span>${escapeHtml(statusLabel(item.severity || 'warning'))}</span><div><strong>${escapeHtml(item.message || 'Review this item.')}</strong>${item.amountCents ? `<small>Amount: ${moneyFull(item.amountCents)}</small>` : ''}${item.payoutId ? `<small>Payout: ${escapeHtml(item.payoutId)}</small>` : ''}</div></div>`).join('')}</div>`;
+    pane.innerHTML = `<div class="pdx-rc-exception-list">${exceptions.map(item => {
+      const severity = (item.severity === 'error' || item.severity === 'critical') ? 'error' : 'warning';
+      return `<div class="pdx-rc-exception ${severity}">
+        <div class="pdx-rc-exception-icon">
+          ${severity === 'error'
+            ? '<svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5"/><path d="M12 17h.01"/></svg>'
+            : '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'}
+        </div>
+        <div class="pdx-rc-exception-copy">
+          <strong>${escapeHtml(item.message || 'Review this item.')}</strong>
+          ${item.payoutId ? `<small>Payout ${escapeHtml(item.payoutId)}</small>` : ''}
+        </div>
+        <div class="pdx-rc-exception-amount">${item.amountCents ? escapeHtml(moneyFull(item.amountCents)) : ''}</div>
+      </div>`;
+    }).join('')}</div>`;
   }
 
   function updateReconciliationDifference() {
     const el = document.getElementById('reconcileDifference');
     if (!el) return;
-    if (!reconciliationData?.available) { el.textContent = 'Difference: —'; return; }
+    if (!reconciliationData?.available) { el.innerHTML = '<span>Difference</span><b>—</b>'; return; }
     const entered = Math.round(Number(document.getElementById('reconcileBankAmount')?.value || 0) * 100);
     const expected = Number(reconciliationData.summary?.depositedCents || 0);
     const difference = entered - expected;
-    el.classList.toggle('balanced', difference === 0);
-    el.classList.toggle('unbalanced', difference !== 0);
-    el.textContent = difference === 0 ? 'Balanced to Stripe' : `Difference: ${moneyFull(difference)}`;
+    const balancedClass = difference === 0 ? 'zero' : 'mismatch';
+    const label = difference === 0 ? '$0.00 ✓' : moneyFull(difference);
+    el.innerHTML = `<span>Difference</span><b class="${balancedClass}">${escapeHtml(label)}</b>`;
   }
 
   async function saveReconciliationClose(closed, btn) {
