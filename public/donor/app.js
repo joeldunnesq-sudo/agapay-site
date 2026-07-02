@@ -2741,20 +2741,61 @@ function renderBookstoreProducts(products = []) {
     container.innerHTML = '<div class="notice">No parish products yet. Enter or scan an item below and it will be added to the parish catalog after checkout starts.</div>';
     return;
   }
-  container.innerHTML = products.map(product => `
-    <button type="button" class="bookstore-product-card" onclick="addBookstoreProductToCart('${escapeHtml(product.id)}','${escapeHtml(product.variantId || "")}')">
-      <strong>${escapeHtml(product.name)}</strong>
-      <small>${escapeHtml(product.description || product.categoryLabel || "Bookstore item")}</small>
-      <span class="bookstore-product-meta"><span>${escapeHtml(product.categoryLabel || "Item")}</span><span>${formatCentsAsDollars(product.priceCents)}</span></span>
-    </button>
-  `).join("");
+
+  const openLabels = new Set(Array.from(container.querySelectorAll("details.bookstore-category-group[open]")).map(el => el.dataset.category));
+
+  const groups = new Map();
+  products.forEach(product => {
+    const label = product.categoryLabel || "Other items";
+    if (!groups.has(label)) groups.set(label, []);
+    groups.get(label).push(product);
+  });
+
+  container.innerHTML = Array.from(groups.entries()).map(([label, items], idx) => {
+    const cartQtyInCategory = items.reduce((sum, product) => {
+      const cartItem = bookstoreCart.find(ci => ci.productId === product.id && ci.variantId === (product.variantId || ""));
+      return sum + (cartItem ? Number(cartItem.quantity || 1) : 0);
+    }, 0);
+    const isOpen = openLabels.has(label) || cartQtyInCategory > 0 || (openLabels.size === 0 && idx === 0);
+    const badge = cartQtyInCategory
+      ? `<span class="bookstore-category-count">${cartQtyInCategory} in cart</span>`
+      : `<span class="bookstore-category-tally">${items.length} item${items.length === 1 ? "" : "s"}</span>`;
+
+    const cardsHtml = items.map(product => {
+      const cartItem = bookstoreCart.find(ci => ci.productId === product.id && ci.variantId === (product.variantId || ""));
+      const qtyBadge = cartItem ? `<span class="bookstore-product-card-qty">${Number(cartItem.quantity || 1)}</span>` : "";
+      const initial = escapeHtml((product.categoryLabel || product.name || "?").trim().charAt(0).toUpperCase() || "?");
+      return `
+      <button type="button" class="bookstore-product-card" onclick="addBookstoreProductToCart('${escapeHtml(product.id)}','${escapeHtml(product.variantId || "")}')">
+        ${qtyBadge}
+        <span class="bookstore-product-badge" aria-hidden="true">${initial}</span>
+        <strong>${escapeHtml(product.name)}</strong>
+        <small>${escapeHtml(product.description || product.categoryLabel || "Bookstore item")}</small>
+        <span class="bookstore-product-meta"><span class="bookstore-category-pill">${escapeHtml(product.categoryLabel || "Item")}</span><span class="bookstore-price">${formatCentsAsDollars(product.priceCents)}</span></span>
+      </button>
+    `;
+    }).join("");
+
+    return `
+      <details class="bookstore-category-group" data-category="${escapeHtml(label)}"${isOpen ? " open" : ""}>
+        <summary class="bookstore-category-summary">
+          <span class="bookstore-category-name">${escapeHtml(label)}</span>
+          ${badge}
+        </summary>
+        <div class="bookstore-product-grid">${cardsHtml}</div>
+      </details>
+    `;
+  }).join("");
 }
 
 function renderBookstoreCart() {
   const list = document.getElementById("bookstoreCartList");
   const total = document.getElementById("bookstoreCartTotal");
+  const count = document.getElementById("bookstoreCartCount");
   const subtotal = bookstoreCart.reduce((sum, item) => sum + (Number(item.unitPriceCents || 0) * Number(item.quantity || 1)), 0);
   if (total) total.textContent = formatCentsAsDollars(subtotal);
+  if (count) count.textContent = String(bookstoreCart.reduce((sum, item) => sum + Number(item.quantity || 1), 0));
+  if (bookstoreProducts.length) renderBookstoreProducts(bookstoreProducts);
   if (!list) return;
   if (!bookstoreCart.length) {
     list.innerHTML = '<div class="notice">Your cart is empty.</div>';
