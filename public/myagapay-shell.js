@@ -25,11 +25,11 @@
 
   function products() {
     const items = [
-      { id: "giving", href: "/myagapay", label: "Give", icon: icons.give },
-      { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", icon: icons.bookstore },
-      { id: "calendar", href: "/myagapay/giving/calendar", label: "Calendar", icon: icons.calendar },
-      { id: "history", href: "/myagapay/giving/history", label: "History", icon: icons.history },
-      { id: "learn", href: "/myagapay/learn", label: "Learn", icon: icons.learn }
+      { id: "giving", href: "/myagapay", label: "Give", short: "Giving dashboard", icon: icons.give },
+      { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore },
+      { id: "calendar", href: "/myagapay/giving/calendar", label: "Calendar", short: "Feasts and parish life", icon: icons.calendar },
+      { id: "history", href: "/myagapay/giving/history", label: "History", short: "Offerings and receipts", icon: icons.history },
+      { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn }
     ];
     return items;
   }
@@ -175,16 +175,29 @@
 
   function productNav(active = activeProduct(), className = "my-agapay-tabbar") {
     const navProducts = products();
-    return `<nav class="${className}" data-myagapay-global-nav aria-label="My AGAPAY navigation">${navProducts.map((item) => {
+    const isLearnNav = className === "learn-product-tabbar";
+    const isDesktopSideNav = className.includes("unified-product-nav");
+    const navAttrs = isDesktopSideNav ? ' hx-boost="false"' : "";
+    const productLinks = navProducts.map((item) => {
       const current = item.id === active;
-      return `<a class="${current ? (className === "learn-product-tabbar" ? "is-active" : "active") : ""}" href="${item.href}"${current ? ' aria-current="page"' : ""}>${item.icon}<span>${item.label}</span></a>`;
-    }).join("")}</nav>`;
+      const activeClass = current ? (isLearnNav ? "is-active" : "active") : "";
+      const label = isDesktopSideNav ? `<span><strong>${item.label}</strong><small>${item.short}</small></span>` : `<span>${item.label}</span>`;
+      return `<a class="${activeClass}" href="${item.href}"${current ? ' aria-current="page"' : ""}>${item.icon}${label}</a>`;
+    }).join("");
+    const accountLink = isDesktopSideNav
+      ? `<span class="unified-nav-divider" aria-hidden="true"></span><a class="${active === "account" ? "active" : ""}" href="/myagapay/account"${active === "account" ? ' aria-current="page"' : ""}>${icons.account}<span><strong>Account</strong><small>Profile and settings</small></span></a>`
+      : "";
+    return `<nav class="${className}" data-myagapay-global-nav aria-label="My AGAPAY navigation"${navAttrs}>${productLinks}${accountLink}</nav>`;
   }
 
   function normalizeProductNavs(root = document) {
     const active = activeProduct();
-    root.querySelectorAll(".my-agapay-tabbar, .mobile-tabbar, .learn-product-tabbar").forEach((nav) => {
-      const className = nav.classList.contains("learn-product-tabbar") ? "learn-product-tabbar" : "my-agapay-tabbar";
+    root.querySelectorAll(".my-agapay-tabbar, .mobile-tabbar, .learn-product-tabbar, .unified-product-nav").forEach((nav) => {
+      const className = nav.classList.contains("learn-product-tabbar")
+        ? "learn-product-tabbar"
+        : nav.classList.contains("unified-product-nav")
+          ? "nav unified-product-nav"
+          : "my-agapay-tabbar";
       const holder = document.createElement("div");
       holder.innerHTML = productNav(active, className);
       nav.replaceWith(holder.firstElementChild);

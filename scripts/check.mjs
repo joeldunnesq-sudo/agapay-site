@@ -104,6 +104,7 @@ assert.ok(myAgapayShell.indexOf('id: "calendar"') < myAgapayShell.indexOf('id: "
 assert.ok(!myAgapayShell.includes('id: "home"'), "shared My AGAPAY shell should treat Give as the default product instead of a separate global home tab");
 assert.ok(myAgapayShell.includes('pathname === "/myagapay"') && myAgapayShell.includes('return "giving"'), "shared My AGAPAY shell should make /myagapay resolve to the Give product");
 assert.ok(myAgapayShell.includes('data-myagapay-global-nav') && myAgapayShell.includes("normalizeProductNavs"), "shared shell should normalize mobile product navigation across dashboards");
+assert.ok(myAgapayShell.includes(".unified-product-nav") && myAgapayShell.includes("Bookstore") && myAgapayShell.includes("Feasts and parish life"), "shared shell should normalize the desktop My AGAPAY sidebar from the same product tabs");
 assert.ok(myAgapayShell.includes("ensureIosBackButton") && myAgapayShell.includes("myagapay-ios-back"), "shared shell should provide an in-app Back button for iPhone My AGAPAY screens");
 assert.ok(myAgapayShell.includes("ensureCanonicalHeader") && myAgapayShell.includes("myagapay-settings-chip"), "shared shell should add canonical account/settings access to My AGAPAY product headers");
 assert.ok(myAgapayShell.includes("handleUnauthorized") && myAgapayShell.includes("redirectToLogin"), "shared shell should enforce one expired-session response across My AGAPAY products");
@@ -113,6 +114,7 @@ assert.ok(donorApp.includes('link.closest("[data-myagapay-global-nav]")'), "dono
 const donorHome = await readFile("public/donor/index.html", "utf8");
 assert.ok(donorHome.includes("data-auth-guest"), "donor home should mark guest-only controls so signed-in donors do not see login prompts");
 assert.ok(donorHome.includes("donor-phone"), "donor home should use the mobile-first app shell");
+assert.ok(donorHome.includes("unified-product-nav"), "donor home should expose a desktop My AGAPAY sidebar for shared shell normalization");
 assert.ok(donorHome.includes('const isGivingView = !["#products", "#my-agapay-products"].includes(window.location.hash)'), "My AGAPAY root should open the Give dashboard by default");
 assert.ok(donorHome.includes("metricMonth"), "donor home should show month-to-date giving");
 assert.ok(donorHome.includes("/myagapay/account"), "donor home avatar should link to My AGAPAY settings");
