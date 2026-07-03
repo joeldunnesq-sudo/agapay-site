@@ -511,6 +511,22 @@ function communityIconSvg(type) {
   return '<svg viewBox="0 0 38 38" aria-hidden="true"><line x1="19" y1="2" x2="19" y2="5"/><line x1="17" y1="3.5" x2="21" y2="3.5"/><path d="M19 5 C15 7 13 11 14 14 C15 16 17 17 19 17 C21 17 23 16 24 14 C25 11 23 7 19 5Z"/><line x1="10" y1="6" x2="10" y2="8"/><path d="M10 8 C8 9.5 7 12 7.5 14 C8 15.5 9 16 10 16 C11 16 12 15.5 12.5 14 C13 12 12 9.5 10 8Z"/><line x1="28" y1="6" x2="28" y2="8"/><path d="M28 8 C26 9.5 25 12 25.5 14 C26 15.5 27 16 28 16 C29 16 30 15.5 30.5 14 C31 12 30 9.5 28 8Z"/><rect x="4" y="17" width="30" height="14" rx="1"/><path d="M16 31 L16 25 Q19 22 22 25 L22 31"/></svg>';
 }
 
+// Sacraments is wired but not yet generally available. Its entry point is shown
+// only for demo/internal parishes (currently St. Fiacre) and stays hidden for
+// every real parish until the feature is fully launched.
+const DEMO_PARISH_IDS = ["st-fiacre"];
+
+function isDemoParishId(id) {
+  return DEMO_PARISH_IDS.includes(String(id || "").toLowerCase());
+}
+
+function syncSacramentsEntry(parish) {
+  const demo = isDemoParishId(parish?.id);
+  document.querySelectorAll("[data-sacraments-entry]").forEach((el) => {
+    el.hidden = !demo;
+  });
+}
+
 function updateQuickGiveLinks(parish) {
   const parishLink = document.getElementById("quickGiveParish");
   const parishIcon = document.getElementById("quickGiveParishIcon");
@@ -536,6 +552,7 @@ function updateQuickGiveLinks(parish) {
   if (desktopFeastLink) desktopFeastLink.href = quickDonorGiftUrl("feast", parish);
   if (campaignLink) campaignLink.href = quickDonorGiftUrl("campaign", parish);
   if (desktopCampaignLink) desktopCampaignLink.href = quickDonorGiftUrl("campaign", parish);
+  syncSacramentsEntry(parish);
 }
 
 function activeParishCampaigns(parish) {
