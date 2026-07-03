@@ -286,8 +286,15 @@
   const DESKTOP_BREAKPOINT = "(min-width: 901px)";
   let viewportQuery = null;
 
+  function isLikelyMobileBrowser() {
+    const ua = window.navigator.userAgent || "";
+    const mobileUa = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(ua);
+    const coarsePointer = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    return mobileUa || isAppleTouchDevice() || coarsePointer;
+  }
+
   function currentViewport() {
-    return viewportQuery && viewportQuery.matches ? "desktop" : "mobile";
+    return (viewportQuery && viewportQuery.matches) || !isLikelyMobileBrowser() ? "desktop" : "mobile";
   }
 
   function applyViewportFlag() {

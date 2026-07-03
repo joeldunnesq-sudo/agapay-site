@@ -3289,6 +3289,79 @@ body.donor-mobile-page {
   }
 }
 
+html[data-viewport="desktop"] body.donor-mobile-page {
+  background: var(--cream);
+}
+
+html[data-viewport="desktop"] .donor-mobile-page .app {
+  display: grid;
+  grid-template-columns: 292px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+html[data-viewport="desktop"] .donor-mobile-page .sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+}
+
+html[data-viewport="desktop"] .donor-mobile-page .topbar {
+  display: flex;
+}
+
+html[data-viewport="desktop"] .donor-mobile-content {
+  min-height: 100vh;
+  display: flex;
+  justify-items: stretch;
+  padding: 0;
+}
+
+html[data-viewport="desktop"] .donor-mobile-page .page {
+  flex: 1;
+  width: min(1180px, 100%);
+  min-height: auto;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 3rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-viewport="desktop"] .donor-mobile-page .hero-grid {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+html[data-viewport="desktop"] .donor-mobile-page .hero-mark {
+  display: grid;
+}
+
+html[data-viewport="desktop"] .donor-mobile-page .grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+html[data-viewport="desktop"] .donor-mobile-page .grid.three,
+html[data-viewport="desktop"] .donor-mobile-page .offering-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+html[data-viewport="desktop"] .donor-mobile-page .grid.four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+html[data-viewport="desktop"] .donor-mobile-page .layout-main {
+  grid-template-columns: minmax(0, 1fr) 350px;
+}
+
+html[data-viewport="desktop"] .donor-mobile-page .form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+html[data-viewport="desktop"] .donor-mobile-page .mobile-tabbar {
+  display: none;
+}
+
 @media (min-width: 901px) {
   .donor-home .donor-app-shell {
     display: grid;
@@ -3936,6 +4009,41 @@ body.donor-mobile-page {
   .platform-product-card.live p {
     color: rgba(246, 241, 232, 0.78);
   }
+}
+
+html[data-viewport="desktop"] .donor-home .donor-app-shell {
+  display: grid;
+  grid-template-columns: 292px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+html[data-viewport="desktop"] .donor-home-sidebar {
+  display: flex;
+}
+
+html[data-viewport="desktop"] .donor-home-topbar {
+  display: flex;
+}
+
+html[data-viewport="desktop"] .donor-phone {
+  display: none;
+}
+
+html[data-viewport="desktop"] .donor-phone-stage {
+  display: flex;
+  min-height: 100vh;
+  padding: 0;
+}
+
+html[data-viewport="desktop"] .my-agapay-tabbar {
+  display: none;
+}
+
+html[data-viewport="desktop"] .donor-desktop-home {
+  display: block;
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: 1.5rem 2rem 3rem;
 }
 
 @media (max-width: 720px) {

@@ -111,6 +111,7 @@ assert.ok(!myAgapayShell.includes('id: "home"'), "shared My AGAPAY shell should 
 assert.ok(myAgapayShell.includes('pathname === "/myagapay"') && myAgapayShell.includes('return "giving"'), "shared My AGAPAY shell should make /myagapay resolve to the Give product");
 assert.ok(myAgapayShell.includes('data-myagapay-global-nav') && myAgapayShell.includes("normalizeProductNavs"), "shared shell should normalize mobile product navigation across dashboards");
 assert.ok(myAgapayShell.includes(".unified-product-nav") && myAgapayShell.includes("Bookstore") && myAgapayShell.includes("Feast day and readings"), "shared shell should normalize the desktop My AGAPAY sidebar from the same product tabs");
+assert.ok(myAgapayShell.includes("isLikelyMobileBrowser") && myAgapayShell.includes("pointer: coarse"), "shared shell should use browser capability signals before choosing the mobile My AGAPAY viewport");
 assert.ok(myAgapayShell.includes("ensureIosBackButton") && myAgapayShell.includes("myagapay-ios-back"), "shared shell should provide an in-app Back button for iPhone My AGAPAY screens");
 assert.ok(myAgapayShell.includes("ensureCanonicalHeader") && myAgapayShell.includes("myagapay-settings-chip"), "shared shell should add canonical account/settings access to My AGAPAY product headers");
 assert.ok(myAgapayShell.includes("handleUnauthorized") && myAgapayShell.includes("redirectToLogin"), "shared shell should enforce one expired-session response across My AGAPAY products");
