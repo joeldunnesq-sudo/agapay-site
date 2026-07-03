@@ -55,7 +55,6 @@
                     <div class="cal-chip-row" id="todayChips"></div>
                     <div class="cal-hero-actions">
                       <a class="cal-btn cal-btn-gold" id="todayGiveLink" href="/myagapay/giving/give?giftType=feast">Make a festal offering</a>
-                      <button class="cal-btn cal-btn-ghost-light" type="button" id="saintLifeButton" onclick="openDonorSaintOfDay(this)" data-date="" data-calendar="">Open saint life</button>
                     </div>
                   </div>
                 </div>
@@ -100,7 +99,7 @@
           </div>
           <aside>
             <section class="cal-hero" style="margin-bottom:0;" aria-label="Saint of the Day">
-              <button class="cal-saint-strip" id="saintPreviewCard" type="button" onclick="openDonorSaintOfDay(document.getElementById('saintLifeButton'))" aria-label="Open saint of the day" style="border-top:0;">
+              <button class="cal-saint-strip" id="saintPreviewCard" type="button" onclick="openDonorSaintOfDay(this)" data-date="" data-calendar="" data-saint-title="" aria-label="Open saint of the day" style="border-top:0;">
                 <span class="cal-saint-icon" id="saintPreviewIcon">✥</span>
                 <span class="cal-saint-body">
                   <span class="cal-saint-kicker">Saint of the Day</span>

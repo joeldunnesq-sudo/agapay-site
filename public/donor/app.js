@@ -853,11 +853,18 @@ function liturgicalRankLabel(rank = "") {
   if (key.includes("bright-week")) return "Bright Week";
   if (key.includes("fast")) return "Fast";
   if (key.includes("season")) return "Season";
-  return "Church day";
+  return "Liturgical Day";
 }
 
 function isFastRule(rule = "") {
   return /fast/i.test(String(rule || "")) && !/no fast/i.test(String(rule || ""));
+}
+
+function toneOfWeekLabel(tone = "") {
+  const text = String(tone || "").trim();
+  if (!text) return "";
+  const number = text.match(/\b(\d+)\b/);
+  return number ? `Tone of the Week ${number[1]}` : text.replace(/^Tone\b/i, "Tone of the Week");
 }
 
 function saintDisplayTitle(day = {}) {
@@ -930,19 +937,18 @@ function renderDonorTodayInChurch(parish, payload) {
     chips.innerHTML = [
       liturgicalRankLabel(today.feastRank || feast?.rank),
       fastingRule,
-      today.tone || "",
+      toneOfWeekLabel(today.tone),
       saintNames.length ? `${saintNames.length} saint${saintNames.length === 1 ? "" : "s"}` : ""
     ].filter(Boolean).map((chip) => `<span class="${isFastRule(chip) ? "is-fast" : ""}">${escapeHtml(chip)}</span>`).join("");
   }
   const give = document.getElementById("todayGiveLink");
   if (give) give.href = giveHref;
-  const button = document.getElementById("saintLifeButton");
-  if (button) {
-    button.dataset.date = date;
-    button.dataset.calendar = calendar;
-    button.dataset.saintTitle = saintTitle;
-    button.disabled = false;
-    button.textContent = stories.length || saintNames.length ? "Open saint life" : "Check saint life";
+  const saintCard = document.getElementById("saintPreviewCard");
+  if (saintCard) {
+    saintCard.dataset.date = date;
+    saintCard.dataset.calendar = calendar;
+    saintCard.dataset.saintTitle = saintTitle;
+    saintCard.disabled = false;
   }
 }
 
@@ -995,9 +1001,10 @@ async function openDonorSaintOfDay(button) {
   const date = button?.dataset.date || donorCalendarState.date || todayIsoLocal();
   const calendar = button?.dataset.calendar || donorCalendarState.calendar || "julian";
   const previousText = button?.textContent || "";
+  const isPreviewCard = button?.id === "saintPreviewCard";
   if (button) {
     button.disabled = true;
-    button.textContent = "Loading...";
+    if (!isPreviewCard) button.textContent = "Loading...";
   }
   try {
     let day = donorCalendarState.liturgicalDay || {};
@@ -1022,7 +1029,7 @@ async function openDonorSaintOfDay(button) {
   } finally {
     if (button) {
       button.disabled = false;
-      button.textContent = previousText || "Open saint life";
+      if (!isPreviewCard) button.textContent = previousText || button.textContent || "Open saint";
     }
   }
 }

@@ -6084,6 +6084,17 @@ body.donor-home {
 .cal-prompt-arrow svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
 .cal-note-box { font-size: 12.5px; line-height: 1.6; color: var(--cal-stone); background: rgba(200,162,74,0.05); border: 1px solid rgba(200,162,74,0.16); border-radius: 12px; padding: 14px 16px; }
 
+@media (max-width: 719px) {
+  .cal-page .layout-main { display: flex; flex-direction: column; }
+  .cal-page .layout-main > div,
+  .cal-page .layout-main > aside { display: contents; }
+  .cal-page .cal-hero[aria-label="Today in the Church"] { order: 1; }
+  .cal-page .cal-hero[aria-label="Saint of the Day"] { order: 2; margin: 0 0 12px !important; }
+  .cal-page .cal-metrics { order: 3; }
+  .cal-page .cal-card { order: 4; }
+  .cal-page aside .cal-card { order: 5; }
+}
+
 @media (min-width: 720px) {
   .cal-two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
   .cal-two .cal-card { margin-bottom: 0; }

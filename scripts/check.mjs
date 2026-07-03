@@ -135,6 +135,12 @@ assert.ok(donorHistory.includes("Activity Timeline") && donorHistory.includes("h
 assert.ok(donorApp.includes("buildHistoryActivities") && donorApp.includes("setHistoryProductFilter"), "donor app should render and filter cross-product History activity");
 const donorCommemorations = await readFile("public/donor/commemorations.html", "utf8");
 assert.ok(donorCommemorations.includes("Submit commemorations for the living and departed at no cost") && donorCommemorations.includes("Candle offerings are paid gifts"), "Prayer hero should distinguish free commemorations from paid candle offerings");
+const donorCalendar = await readFile("public/donor/calendar.html", "utf8");
+const donorCalendarCss = await readFile("public/donor/style.css", "utf8");
+assert.ok(!donorCalendar.includes("saintLifeButton") && !donorCalendar.includes("Open saint life"), "Today hero should not duplicate the dedicated Saint of the Day card action");
+assert.ok(donorCalendar.includes('id="saintPreviewCard"') && donorCalendar.includes('onclick="openDonorSaintOfDay(this)"'), "Saint of the Day card should be the saint-life action");
+assert.ok(donorApp.includes("Tone of the Week") && !donorApp.includes('return "Church day"'), "Today hero chips should use clear liturgical and tone labels");
+assert.ok(donorCalendarCss.includes("@media (max-width: 719px)") && donorCalendarCss.includes('aria-label="Saint of the Day"'), "Today mobile layout should lift Saint of the Day above lower cards without changing desktop columns");
 const donorBookstore = await readFile("public/donor/bookstore.html", "utf8");
 assert.ok(donorBookstore.includes("bookstoreHeroTitle") && donorBookstore.includes("PAY FOR YOUR ITEMS AT YOUR PARISH BOOKSTORE"), "Bookstore hero should support parish-specific payment copy");
 assert.ok(donorApp.includes("PAY FOR YOUR ITEMS AT THE ${parishName} BOOKSTORE.") && donorApp.includes("AGAPAY Parish+") && donorApp.includes("Request this feature for my parish"), "Bookstore page should preserve Parish+ unavailable messaging and feature request flow");
