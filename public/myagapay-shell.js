@@ -28,9 +28,9 @@
   function products() {
     const items = [
       { id: "giving", href: "/myagapay", label: "Give", short: "Giving dashboard", icon: icons.give },
-      { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore },
+      { id: "commemorations", href: "/myagapay/giving/commemorations", label: "Prayer", short: "Names and candles", icon: icons.commemorations },
       { id: "today", href: "/myagapay/giving/calendar", label: "Today", short: "Feast day and readings", icon: icons.today },
-      { id: "commemorations", href: "/myagapay/giving/commemorations", label: "Prayers", short: "Names and candles", icon: icons.commemorations },
+      { id: "bookstore", href: "/myagapay/bookstore", label: "Bookstore", short: "Books and parish goods", icon: icons.bookstore },
       { id: "learn", href: "/myagapay/learn", label: "Learn", short: "Homeschool dashboard", icon: icons.learn }
     ];
     return items;

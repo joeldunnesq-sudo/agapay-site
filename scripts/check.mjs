@@ -96,15 +96,21 @@ const myAgapayShell = await readFile("public/myagapay-shell.js", "utf8");
 const manifest = await readFile("public/manifest.webmanifest", "utf8");
 assert.ok(manifest.includes("/images/app/apple-touch-icon-blue.png"), "PWA manifest should use the blue AGAPAY iOS home screen icon");
 assert.ok(myAgapayShell.includes('id: "giving"') && myAgapayShell.includes('label: "Give"'), "shared My AGAPAY shell should define the canonical Give product tab");
-assert.ok(myAgapayShell.includes('id: "history"') && myAgapayShell.includes('label: "History"'), "shared My AGAPAY shell should include History in the bottom product nav");
+assert.ok(myAgapayShell.includes('id: "commemorations"') && myAgapayShell.includes('label: "Prayer"'), "shared My AGAPAY shell should define the Prayer product tab");
+assert.ok(myAgapayShell.includes('id: "today"') && myAgapayShell.includes('label: "Today"'), "shared My AGAPAY shell should define the Today product tab");
 assert.ok(myAgapayShell.includes('id: "bookstore"') && myAgapayShell.includes('label: "Bookstore"'), "shared My AGAPAY shell should keep Bookstore in the product nav");
-assert.ok(myAgapayShell.includes('id: "calendar"') && myAgapayShell.includes('label: "Calendar"'), "shared My AGAPAY shell should include Calendar in the bottom product nav");
 assert.ok(myAgapayShell.includes('id: "learn"') && myAgapayShell.includes('label: "Learn"'), "shared My AGAPAY shell should define the canonical Learn product tab");
-assert.ok(myAgapayShell.indexOf('id: "calendar"') < myAgapayShell.indexOf('id: "history"') && myAgapayShell.indexOf('id: "history"') < myAgapayShell.indexOf('id: "learn"'), "shared My AGAPAY shell should place History between Calendar and Learn");
+assert.ok(
+  myAgapayShell.indexOf('id: "giving"') < myAgapayShell.indexOf('id: "commemorations"') &&
+  myAgapayShell.indexOf('id: "commemorations"') < myAgapayShell.indexOf('id: "today"') &&
+  myAgapayShell.indexOf('id: "today"') < myAgapayShell.indexOf('id: "bookstore"') &&
+  myAgapayShell.indexOf('id: "bookstore"') < myAgapayShell.indexOf('id: "learn"'),
+  "shared My AGAPAY shell should order product tabs as Give, Prayer, Today, Bookstore, Learn"
+);
 assert.ok(!myAgapayShell.includes('id: "home"'), "shared My AGAPAY shell should treat Give as the default product instead of a separate global home tab");
 assert.ok(myAgapayShell.includes('pathname === "/myagapay"') && myAgapayShell.includes('return "giving"'), "shared My AGAPAY shell should make /myagapay resolve to the Give product");
 assert.ok(myAgapayShell.includes('data-myagapay-global-nav') && myAgapayShell.includes("normalizeProductNavs"), "shared shell should normalize mobile product navigation across dashboards");
-assert.ok(myAgapayShell.includes(".unified-product-nav") && myAgapayShell.includes("Bookstore") && myAgapayShell.includes("Feasts and parish life"), "shared shell should normalize the desktop My AGAPAY sidebar from the same product tabs");
+assert.ok(myAgapayShell.includes(".unified-product-nav") && myAgapayShell.includes("Bookstore") && myAgapayShell.includes("Feast day and readings"), "shared shell should normalize the desktop My AGAPAY sidebar from the same product tabs");
 assert.ok(myAgapayShell.includes("ensureIosBackButton") && myAgapayShell.includes("myagapay-ios-back"), "shared shell should provide an in-app Back button for iPhone My AGAPAY screens");
 assert.ok(myAgapayShell.includes("ensureCanonicalHeader") && myAgapayShell.includes("myagapay-settings-chip"), "shared shell should add canonical account/settings access to My AGAPAY product headers");
 assert.ok(myAgapayShell.includes("handleUnauthorized") && myAgapayShell.includes("redirectToLogin"), "shared shell should enforce one expired-session response across My AGAPAY products");
