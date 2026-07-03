@@ -752,6 +752,220 @@ function calendarShortDateIso(value) {
   return shortDate(value);
 }
 
+const donorCalendarState = {
+  liturgicalDay: null,
+  calendar: "julian",
+  date: ""
+};
+
+function todayIsoLocal() {
+  const now = new Date();
+  const offsetMs = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - offsetMs).toISOString().slice(0, 10);
+}
+
+function longDateParts(value) {
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))
+    ? new Date(`${value}T12:00:00`)
+    : new Date();
+  return {
+    weekday: new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(date),
+    monthDay: new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric" }).format(date),
+    year: new Intl.DateTimeFormat("en-US", { year: "numeric" }).format(date)
+  };
+}
+
+function liturgicalRankLabel(rank = "") {
+  const key = String(rank || "").toLowerCase();
+  if (key.includes("great")) return "Great Feast";
+  if (key.includes("major")) return "Major Feast";
+  if (key.includes("holy-week")) return "Holy Week";
+  if (key.includes("bright-week")) return "Bright Week";
+  if (key.includes("fast")) return "Fast";
+  if (key.includes("season")) return "Season";
+  return "Church day";
+}
+
+function isFastRule(rule = "") {
+  return /fast/i.test(String(rule || "")) && !/no fast/i.test(String(rule || ""));
+}
+
+function saintDisplayTitle(day = {}) {
+  const stories = Array.isArray(day.saintStories) ? day.saintStories : [];
+  const names = Array.isArray(day.saints) ? day.saints : [];
+  return stories[0]?.name || stories[0]?.title || names[0] || "Lives of the Saints";
+}
+
+function saintStoryModalHtml(saints = [], unavailableMessage = "") {
+  if (unavailableMessage) return `<div class="donor-saint-empty">${escapeHtml(unavailableMessage)}</div>`;
+  if (!saints.length) return `<div class="donor-saint-empty">No saint life is listed for this day yet. Please try again later.</div>`;
+  return saints.map((saint) => {
+    const paragraphs = String(saint.storyText || "").split(/\n{2,}/).map((part) => part.trim()).filter(Boolean);
+    return `
+      <article class="donor-saint-story">
+        <div class="donor-saint-story-head">
+          ${saint.iconUrl ? `<img src="${escapeHtml(saint.iconUrl)}" alt="" />` : `<span>✥</span>`}
+          <div>
+            <h3>${escapeHtml(saint.name || saint.title || "Saint of the Day")}</h3>
+            ${saint.reposeCentury ? `<small>${escapeHtml(saint.reposeCentury)}</small>` : ""}
+            ${saint.feastRank ? `<small>${escapeHtml(saint.feastRank)}</small>` : ""}
+          </div>
+        </div>
+        ${paragraphs.length ? paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join("") : `<p>A life-story text is not listed for this commemoration.</p>`}
+      </article>
+    `;
+  }).join("");
+}
+
+function renderDonorTodayInChurch(parish, payload) {
+  const calendar = parish?.liturgicalCalendar || donorProfile()?.defaultParish?.liturgicalCalendar || donorProfile()?.liturgicalCalendar || "julian";
+  const date = payload?.date || todayIsoLocal();
+  const parts = longDateParts(date);
+  const today = payload?.today || {};
+  const feast = payload?.feast || null;
+  const feastTitle = today.feastTitle || feast?.name || (parts.weekday === "Sunday" ? "The Lord's Day" : "Today in the Church");
+  const fastingRule = today.fastingRule || (feast?.rank === "fast" ? "Fast" : "No Fast");
+  const saintTitle = saintDisplayTitle(today);
+  const stories = Array.isArray(today.saintStories) ? today.saintStories : [];
+  const saintNames = Array.isArray(today.saints) ? today.saints : [];
+  const firstStory = stories[0] || {};
+  const giveHref = donorGiftUrl("feast", parish, { feast: feastTitle });
+  donorCalendarState.liturgicalDay = today;
+  donorCalendarState.calendar = calendar;
+  donorCalendarState.date = date;
+
+  setText("todayWeekday", parts.weekday);
+  setText("todayMonthDay", parts.monthDay);
+  setText("todayYear", parts.year);
+  setText("todayCalendarLabel", `${calendarLabel(calendar)} calendar`);
+  setText("todayFeastTitle", feastTitle);
+  setText("todayFeastNote", today.sourceConnected === false
+    ? "Daily readings and saint lives are temporarily unavailable, but feast highlights still follow your Church calendar."
+    : [today.tone, today.epistleRef && `Epistle: ${today.epistleRef}`, today.gospelRef && `Gospel: ${today.gospelRef}`].filter(Boolean).join(" · ") || "Daily readings, saints, and fasting notes follow the Orthodox calendar.");
+  setText("saintPreviewName", saintTitle);
+  setText("saintPreviewNote", saintNames.length > 1
+    ? `${saintNames.length} commemorations listed for today.`
+    : firstStory.reposeCentury || "Open the life for today's commemoration.");
+
+  const saintIcon = document.getElementById("saintPreviewIcon");
+  if (saintIcon) {
+    if (firstStory.iconUrl) {
+      saintIcon.innerHTML = `<img src="${escapeHtml(firstStory.iconUrl)}" alt="" />`;
+    } else {
+      saintIcon.textContent = "✥";
+    }
+  }
+  const chips = document.getElementById("todayChips");
+  if (chips) {
+    chips.innerHTML = [
+      liturgicalRankLabel(today.feastRank || feast?.rank),
+      fastingRule,
+      today.tone || "",
+      saintNames.length ? `${saintNames.length} saint${saintNames.length === 1 ? "" : "s"}` : ""
+    ].filter(Boolean).map((chip) => `<span class="${isFastRule(chip) ? "is-fast" : ""}">${escapeHtml(chip)}</span>`).join("");
+  }
+  const give = document.getElementById("todayGiveLink");
+  if (give) give.href = giveHref;
+  const button = document.getElementById("saintLifeButton");
+  if (button) {
+    button.dataset.date = date;
+    button.dataset.calendar = calendar;
+    button.dataset.saintTitle = saintTitle;
+    button.disabled = false;
+    button.textContent = stories.length || saintNames.length ? "Open saint life" : "Check saint life";
+  }
+}
+
+async function loadDonorLiturgicalDay(parish) {
+  const calendar = parish?.liturgicalCalendar || donorProfile()?.defaultParish?.liturgicalCalendar || donorProfile()?.liturgicalCalendar || "julian";
+  const date = todayIsoLocal();
+  try {
+    const res = await fetch(`/api/donor/liturgical-day?date=${encodeURIComponent(date)}&calendar=${encodeURIComponent(calendar)}`, {
+      headers: { Accept: "application/json" }
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload.error || "Unable to load today's liturgical day.");
+    renderDonorTodayInChurch(parish, payload);
+  } catch (err) {
+    const api = window.AGAPAYLiturgicalCalendar;
+    const feast = api?.liturgicalFeastsForYear(new Date().getFullYear(), calendar).find((item) => item.date === date) || null;
+    renderDonorTodayInChurch(parish, {
+      ok: true,
+      date,
+      calendar,
+      feast,
+      today: {
+        civilDate: date,
+        calendarType: calendar,
+        feastTitle: feast?.name || "",
+        feastRank: feast?.rank || "",
+        fastingRule: feast?.rank === "fast" ? "Fast" : "No Fast",
+        saints: feast?.name ? [feast.name] : [],
+        saintStories: [],
+        sourceConnected: false
+      }
+    });
+  }
+}
+
+function showDonorSaintModal(title, subtitle, bodyHtml) {
+  setText("donorSaintModalTitle", title || "Saint of the Day");
+  setText("donorSaintModalSubtitle", subtitle || "Today's commemoration");
+  setHtml("donorSaintModalBody", bodyHtml || "");
+  const modal = document.getElementById("donorSaintModal");
+  if (modal) modal.hidden = false;
+}
+
+function closeDonorSaintModal() {
+  const modal = document.getElementById("donorSaintModal");
+  if (modal) modal.hidden = true;
+}
+
+async function openDonorSaintOfDay(button) {
+  const date = button?.dataset.date || donorCalendarState.date || todayIsoLocal();
+  const calendar = button?.dataset.calendar || donorCalendarState.calendar || "julian";
+  const previousText = button?.textContent || "";
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Loading...";
+  }
+  try {
+    let day = donorCalendarState.liturgicalDay || {};
+    if (!Array.isArray(day.saintStories) || !day.saintStories.length) {
+      const res = await fetch(`/api/donor/liturgical-day?date=${encodeURIComponent(date)}&calendar=${encodeURIComponent(calendar)}`, {
+        headers: { Accept: "application/json" }
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(payload.error || "Unable to load saint life.");
+      day = payload.today || {};
+      donorCalendarState.liturgicalDay = day;
+    }
+    const saints = Array.isArray(day.saintStories) ? day.saintStories : [];
+    const saintNames = Array.isArray(day.saints) ? day.saints : [];
+    showDonorSaintModal(
+      saintDisplayTitle(day),
+      `Saint of the Day · ${shortDate(date)}`,
+      saintStoryModalHtml(saints, day.sourceConnected === false ? "Lives of the Saints are unavailable right now. Please try again later." : (!saints.length && saintNames.length ? saintNames.join("; ") : ""))
+    );
+  } catch (error) {
+    showDonorSaintModal("Saint of the Day Unavailable", "Orthocal.info", saintStoryModalHtml([], error.message || "Lives of the Saints are unavailable right now."));
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = previousText || "Open saint life";
+    }
+  }
+}
+
+document.addEventListener("click", (event) => {
+  const modal = document.getElementById("donorSaintModal");
+  if (modal && !modal.hidden && event.target === modal) closeDonorSaintModal();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeDonorSaintModal();
+});
+
 function renderDonorCalendarFeasts(parish) {
   const api = window.AGAPAYLiturgicalCalendar;
   const grid = document.getElementById("calendarGrid");
@@ -852,6 +1066,7 @@ async function loadDonorCalendarPage() {
   if (!session.email || !session.token) {
     renderDonorCalendarFeasts(null);
     renderDonorCalendarPrompts(null);
+    loadDonorLiturgicalDay(null);
     return;
   }
   try {
@@ -859,11 +1074,13 @@ async function loadDonorCalendarPage() {
     setDonorProfile(data.donor);
     renderDonorCalendarFeasts(data.parish || null);
     renderDonorCalendarPrompts(data.parish || null);
+    loadDonorLiturgicalDay(data.parish || null);
   } catch (err) {
     if (isDonorUnauthorized(err)) {
       clearDonorSession();
       renderDonorCalendarFeasts(null);
       renderDonorCalendarPrompts(null);
+      loadDonorLiturgicalDay(null);
       return;
     }
     setDonorStatus(err.message, "error");

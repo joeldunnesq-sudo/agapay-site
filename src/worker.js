@@ -1,4 +1,5 @@
 import { calendarLabel, liturgicalFeastsForYear, nextLiturgicalFeast, orthodoxPascha } from "./liturgical-calendar.js";
+import { enrichLiturgicalDayWithOrthocal } from "./learn/readings-source.js";
 import {
   ADMIN_PASSWORD_KV_KEY,
   ADMIN_SESSION_MAX,
@@ -445,6 +446,38 @@ function handleLiturgicalCalendar(request) {
     pascha: orthodoxPascha(year),
     feasts: liturgicalFeastsForYear(year, calendar),
     nextFeast: nextLiturgicalFeast(calendar, fromDate)
+  });
+}
+
+async function handleDonorLiturgicalDay(request) {
+  const url = new URL(request.url);
+  const today = new Date().toISOString().slice(0, 10);
+  const civilDate = /^\d{4}-\d{2}-\d{2}$/.test(String(url.searchParams.get("date") || ""))
+    ? url.searchParams.get("date")
+    : today;
+  const rawCalendar = String(url.searchParams.get("calendar") || "julian").toLowerCase();
+  const calendar = rawCalendar.includes("gregorian") || rawCalendar.includes("revised") || rawCalendar.includes("new") ? "gregorian" : "julian";
+  const readingsCalendar = calendar === "gregorian" ? "revised-julian" : "julian";
+  const year = Number(civilDate.slice(0, 4)) || new Date().getFullYear();
+  const feasts = liturgicalFeastsForYear(year, calendar);
+  const feast = feasts.find((item) => item.date === civilDate) || null;
+  const enriched = await enrichLiturgicalDayWithOrthocal({
+    civilDate,
+    calendarType: readingsCalendar,
+    feastTitle: feast?.name || "",
+    feastRank: feast?.rank || "",
+    fastingRule: feast?.rank === "fast" ? "Fast" : "",
+    saints: feast?.name ? [feast.name] : [],
+    saintStories: []
+  }, { calendarType: readingsCalendar, civilDate });
+
+  return json({
+    ok: true,
+    date: civilDate,
+    calendar,
+    label: calendarLabel(calendar),
+    feast,
+    today: enriched
   });
 }
 
@@ -1313,6 +1346,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/liturgical-calendar") {
       const r = await handleLiturgicalCalendar(request); return addCorsHeaders(r, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/donor/liturgical-day") {
+      return handleDonorLiturgicalDay(request);
     }
     if (request.method === "GET" && url.pathname === "/api/learn/meta") {
       return handleLearnMeta(env);
