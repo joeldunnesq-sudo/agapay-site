@@ -3289,79 +3289,6 @@ body.donor-mobile-page {
   }
 }
 
-html[data-viewport="desktop"] body.donor-mobile-page {
-  background: var(--cream);
-}
-
-html[data-viewport="desktop"] .donor-mobile-page .app {
-  display: grid;
-  grid-template-columns: 292px minmax(0, 1fr);
-  min-height: 100vh;
-}
-
-html[data-viewport="desktop"] .donor-mobile-page .sidebar {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  display: flex;
-}
-
-html[data-viewport="desktop"] .donor-mobile-page .topbar {
-  display: flex;
-}
-
-html[data-viewport="desktop"] .donor-mobile-content {
-  min-height: 100vh;
-  display: flex;
-  justify-items: stretch;
-  padding: 0;
-}
-
-html[data-viewport="desktop"] .donor-mobile-page .page {
-  flex: 1;
-  width: min(1180px, 100%);
-  min-height: auto;
-  margin: 0 auto;
-  padding: 1.5rem 2rem 3rem;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-html[data-viewport="desktop"] .donor-mobile-page .hero-grid {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-html[data-viewport="desktop"] .donor-mobile-page .hero-mark {
-  display: grid;
-}
-
-html[data-viewport="desktop"] .donor-mobile-page .grid.two {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-html[data-viewport="desktop"] .donor-mobile-page .grid.three,
-html[data-viewport="desktop"] .donor-mobile-page .offering-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-html[data-viewport="desktop"] .donor-mobile-page .grid.four {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-html[data-viewport="desktop"] .donor-mobile-page .layout-main {
-  grid-template-columns: minmax(0, 1fr) 350px;
-}
-
-html[data-viewport="desktop"] .donor-mobile-page .form-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-html[data-viewport="desktop"] .donor-mobile-page .mobile-tabbar {
-  display: none;
-}
-
 @media (min-width: 901px) {
   .donor-home .donor-app-shell {
     display: grid;
@@ -4009,41 +3936,6 @@ html[data-viewport="desktop"] .donor-mobile-page .mobile-tabbar {
   .platform-product-card.live p {
     color: rgba(246, 241, 232, 0.78);
   }
-}
-
-html[data-viewport="desktop"] .donor-home .donor-app-shell {
-  display: grid;
-  grid-template-columns: 292px minmax(0, 1fr);
-  min-height: 100vh;
-}
-
-html[data-viewport="desktop"] .donor-home-sidebar {
-  display: flex;
-}
-
-html[data-viewport="desktop"] .donor-home-topbar {
-  display: flex;
-}
-
-html[data-viewport="desktop"] .donor-phone {
-  display: none;
-}
-
-html[data-viewport="desktop"] .donor-phone-stage {
-  display: flex;
-  min-height: 100vh;
-  padding: 0;
-}
-
-html[data-viewport="desktop"] .my-agapay-tabbar {
-  display: none;
-}
-
-html[data-viewport="desktop"] .donor-desktop-home {
-  display: block;
-  width: min(1180px, 100%);
-  margin: 0 auto;
-  padding: 1.5rem 2rem 3rem;
 }
 
 @media (max-width: 720px) {
@@ -6084,19 +5976,139 @@ body.donor-home {
 .cal-prompt-arrow svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
 .cal-note-box { font-size: 12.5px; line-height: 1.6; color: var(--cal-stone); background: rgba(200,162,74,0.05); border: 1px solid rgba(200,162,74,0.16); border-radius: 12px; padding: 14px 16px; }
 
-@media (max-width: 719px) {
-  .cal-page .layout-main { display: flex; flex-direction: column; }
-  .cal-page .layout-main > div,
-  .cal-page .layout-main > aside { display: contents; }
-  .cal-page .cal-hero[aria-label="Today in the Church"] { order: 1; }
-  .cal-page .cal-hero[aria-label="Saint of the Day"] { order: 2; margin: 0 0 12px !important; }
-  .cal-page .cal-metrics { order: 3; }
-  .cal-page .cal-card { order: 4; }
-  .cal-page aside .cal-card { order: 5; }
-}
-
 @media (min-width: 720px) {
   .cal-two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
   .cal-two .cal-card { margin-bottom: 0; }
   .cal-today-title { font-size: 30px; }
+}
+
+/* =========================================================================
+   DESKTOP HOME DENSITY PASS (2026-07-03)
+   The desktop home dashboard accumulated several generations of overrides
+   above (.desktop-hero, .desktop-metrics-grid, .desktop-dashboard-grid, etc.
+   each redefined 3+ times across separate @media blocks). The result was a
+   marketing-landing-page-scale hero (up to 66px heading), oversized metric
+   values (up to 52px for a number like "$215"), and a single-column 5-panel
+   dashboard that never actually used the extra width on desktop — it just
+   stretched the mobile stack wider.
+   This block is the single authoritative desktop-density layer. It does not
+   remove the legacy rules above (lower risk than surgically deleting a dozen
+   scattered blocks) — it wins the cascade by being last, using !important
+   only where a legacy rule also used !important. Do not add further
+   desktop-hero / desktop-metrics-grid / desktop-dashboard-grid overrides
+   elsewhere; extend this block instead.
+   ========================================================================= */
+@media (min-width: 901px) {
+  .donor-desktop-home {
+    width: min(1320px, 100%);
+  }
+
+  /* Hero: was clamping up to 66.4px on wide screens. A dashboard greeting
+     doesn't need landing-page scale. */
+  .desktop-hero {
+    padding: 1rem 1.3rem !important;
+    gap: 0.9rem;
+  }
+  .desktop-hero h1 {
+    font-size: 24px !important;
+    line-height: 1.2 !important;
+    max-width: none;
+  }
+  .desktop-hero p {
+    font-size: 13px !important;
+    margin-top: 0.3rem !important;
+    line-height: 1.5 !important;
+  }
+  .desktop-hero-mark {
+    width: 46px;
+    height: 46px;
+  }
+  .desktop-hero-mark img {
+    width: 40px;
+    height: 40px;
+  }
+  .desktop-avatar {
+    width: 42px;
+    height: 42px;
+    font-size: 14px;
+  }
+  .desktop-hero-actions .btn {
+    min-height: 38px !important;
+    padding-inline: 1rem !important;
+    font-size: 13px !important;
+  }
+
+  /* Total Giving metric strip: value text was clamping up to 52px. */
+  .desktop-metrics-grid {
+    gap: 0.7rem;
+    margin-top: 0.7rem;
+  }
+  .metric-card {
+    min-height: 88px;
+    padding: 0.8rem 0.9rem;
+  }
+  .desktop-metrics-grid .metric-value,
+  .desktop-metrics-grid .metric-card:nth-child(3) .metric-value,
+  .desktop-metrics-grid .metric-card:nth-child(4) .metric-value {
+    font-size: 22px !important;
+    margin-top: 0.3rem;
+  }
+  .desktop-metrics-grid .metric-note {
+    font-size: 11px;
+    margin-top: 0.3rem;
+  }
+
+  /* Quick Give tiles: trim min-height and icon scale slightly. */
+  .desktop-quick-grid {
+    padding: 0.9rem;
+    gap: 0.6rem;
+  }
+  .desktop-quick-card {
+    min-height: 90px;
+    padding: 0.65rem 0.5rem;
+  }
+  .desktop-quick-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+  .desktop-quick-card strong {
+    font-size: 14.5px;
+  }
+  .desktop-quick-card span:last-child {
+    font-size: 10px;
+  }
+
+  /* The 5-panel dashboard was a single column at every desktop width —
+     the core "stretched mobile" issue. Quick Give (first panel) spans the
+     full row since it already contains its own 5-tile grid; the remaining
+     four panels pair up two-per-row. */
+  .desktop-dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.85rem;
+    margin-top: 0.85rem;
+  }
+  .desktop-dashboard-grid > .desktop-panel:first-child {
+    grid-column: 1 / -1;
+  }
+  .desktop-panel-head {
+    padding: 0.75rem 1rem;
+  }
+  .desktop-panel-head h2 {
+    font-size: 16px;
+  }
+  .desktop-panel-head a {
+    font-size: 12px;
+  }
+  .desktop-panel > .list,
+  .desktop-panel > .campaign-stack,
+  .desktop-panel > .next-feast-card,
+  .desktop-panel > .active-funds-stack {
+    margin: 0.85rem;
+  }
+}
+
+@media (min-width: 1320px) {
+  .donor-desktop-home {
+    width: min(1420px, 100%);
+  }
 }
