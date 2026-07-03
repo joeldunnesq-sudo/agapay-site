@@ -113,7 +113,7 @@ assert.ok(myAgapayShell.includes('data-myagapay-global-nav') && myAgapayShell.in
 assert.ok(myAgapayShell.includes(".unified-product-nav") && myAgapayShell.includes("Bookstore") && myAgapayShell.includes("Feast day and readings"), "shared shell should normalize the desktop My AGAPAY sidebar from the same product tabs");
 assert.ok(myAgapayShell.includes("isLikelyMobileBrowser") && myAgapayShell.includes("pointer: coarse"), "shared shell should use browser capability signals before choosing the mobile My AGAPAY viewport");
 assert.ok(myAgapayShell.includes("ensureIosBackButton") && myAgapayShell.includes("myagapay-ios-back"), "shared shell should provide an in-app Back button for iPhone My AGAPAY screens");
-assert.ok(myAgapayShell.includes("ensureCanonicalHeader") && myAgapayShell.includes("myagapay-settings-chip"), "shared shell should add canonical account/settings access to My AGAPAY product headers");
+assert.ok(myAgapayShell.includes("ensureCanonicalHeader") && myAgapayShell.includes("content.prepend(topbar)") && myAgapayShell.includes("myagapay-settings-chip"), "shared shell should add canonical account/settings access and a fallback topbar to My AGAPAY product headers");
 assert.ok(myAgapayShell.includes("handleUnauthorized") && myAgapayShell.includes("redirectToLogin"), "shared shell should enforce one expired-session response across My AGAPAY products");
 assert.ok(donorApp.includes('nav.setAttribute("hx-boost", "false")'), "donor shell should not htmx-boost dashboard navigation");
 assert.ok(donorApp.includes("function updateDonorAuthState()"), "donor shell should update guest/authenticated controls from localStorage session");
@@ -122,6 +122,7 @@ const donorHome = await readFile("public/donor/index.html", "utf8");
 assert.ok(donorHome.includes("data-auth-guest"), "donor home should mark guest-only controls so signed-in donors do not see login prompts");
 assert.ok(donorHome.includes("donor-phone"), "donor home should use the mobile-first app shell");
 assert.ok(donorHome.includes("unified-product-nav"), "donor home should expose a desktop My AGAPAY sidebar for shared shell normalization");
+assert.ok(!donorHome.includes("Back to Give"), "donor account initials menu should not include a Back to Give action");
 assert.ok(donorHome.includes('const isGivingView = !["#products", "#my-agapay-products"].includes(window.location.hash)'), "My AGAPAY root should open the Give dashboard by default");
 assert.ok(donorHome.includes("metricMonth"), "donor home should show month-to-date giving");
 assert.ok(donorHome.includes("/myagapay/account"), "donor home avatar should link to My AGAPAY settings");
@@ -144,12 +145,16 @@ const donorSignup = await readFile("public/donor/signup.html", "utf8");
 assert.ok(donorSignup.includes("/security.js") && donorSignup.includes("data-agapay-turnstile"), "donor signup should render Turnstile when configured");
 const donorGive = await readFile("public/donor/give.html", "utf8");
 assert.ok(donorGive.includes("/security.js") && donorGive.includes("data-agapay-turnstile"), "donor checkout should render Turnstile when configured");
-const donorPages = ["calendar", "commemorations", "give", "index", "login", "offerings", "settings", "signup"];
+const donorPages = ["bookstore", "calendar", "commemorations", "give", "index", "login", "offerings", "settings", "signup"];
 for (const page of donorPages) {
   const html = await readFile(`public/donor/${page}.html`, "utf8");
   assert.ok(!html.includes('hx-boost="true"'), `donor ${page} page should use full navigation so page initializers run`);
   assert.ok(html.includes("/myagapay-shell.js"), `donor ${page} page should load the shared My AGAPAY shell`);
+  assert.ok(html.includes("topbar") || myAgapayShell.includes("content.prepend(topbar)"), `donor ${page} page should have a My AGAPAY topbar`);
 }
+
+const learnDashboardShell = await readFile("public/learn/dashboard-shell.js", "utf8");
+assert.ok(!learnDashboardShell.includes("Back to Give"), "Learn account initials menu should not include a Back to Give action");
 
 const giveHtml = await readFile("public/give/form.html", "utf8");
 assert.ok(giveHtml.includes("/api/create-checkout-session"), "giving page should post to checkout API");

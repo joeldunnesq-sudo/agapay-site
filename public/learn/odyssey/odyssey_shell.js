@@ -600,7 +600,6 @@ function topbar(vm) {
           </button>
           <div class="learn-account-dropdown" role="menu" hidden>
             <a href="/myagapay/account" role="menuitem">Account Settings</a>
-            <a href="/myagapay" role="menuitem">Back to Give</a>
             <button type="button" data-learn-logout role="menuitem">Log out</button>
           </div>
         </div>

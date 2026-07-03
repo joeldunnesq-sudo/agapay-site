@@ -159,8 +159,19 @@
   function ensureCanonicalHeader() {
     if (!document.body.classList.contains("donor-mobile-page")) return;
     if (document.querySelector(".donor-home-account-menu") || document.querySelector(".learn-account-utility")) return;
-    const topbar = document.querySelector(".content .topbar, main .topbar");
-    if (!topbar) return;
+    const content = document.querySelector(".content, main");
+    if (!content) return;
+    let topbar = content.querySelector(".topbar");
+    if (!topbar) {
+      topbar = document.createElement("div");
+      topbar.className = "topbar";
+      const title = document.createElement("div");
+      title.className = "topbar-title";
+      const active = products().find((item) => item.id === activeProduct());
+      title.textContent = active?.label || "My AGAPAY";
+      topbar.appendChild(title);
+      content.prepend(topbar);
+    }
     let actions = topbar.querySelector(".topbar-actions");
     if (!actions) {
       actions = document.createElement("div");
