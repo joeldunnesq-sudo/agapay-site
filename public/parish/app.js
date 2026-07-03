@@ -2388,6 +2388,10 @@
 
   // ── SETUP WIZARD ─────────────────────────────────────────
   function tierPriceLabel(tier) { if(!tier) return ''; if(tier.monthlyCents===null) return 'Custom'; if(Number(tier.monthlyCents)===0) return '$0/mo'; return `${money(tier.monthlyCents)}/mo`; }
+  function tierOptionsMarkup(selectedId) {
+    const tiers = currentParish?.subscriptionTiers || [];
+    return tiers.map(t => `<option value="${escapeHtml(t.id)}" ${t.id===selectedId?'selected':''}>${escapeHtml(t.label)} - ${escapeHtml(tierPriceLabel(t))}</option>`).join('');
+  }
   function setupCheckMarkup() { return '<span class="setup-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>'; }
   function billingStatusDone(status) { return ['active','free_forever'].includes(status); }
   async function refreshSubscriptionStatus(options) {
@@ -2433,8 +2437,7 @@
     const pane=document.getElementById('setupWizardPane'); if(!pane||!currentParish) return;
     const setup=currentParish.setup||{}; const stripeDone=Boolean(setup.stripeConnected); const billingDone=Boolean(setup.billingActive);
     if(stripeDone&&billingDone){pane.innerHTML='';return;}
-    const tiers=currentParish.subscriptionTiers||[];
-    const tierOptions=tiers.map(t=>`<option value="${escapeHtml(t.id)}" ${t.id===currentParish.subscriptionTier?'selected':''}>${escapeHtml(t.label)} - ${escapeHtml(tierPriceLabel(t))}</option>`).join('');
+    const tierOptions=tierOptionsMarkup(currentParish.subscriptionTier);
     pane.innerHTML=`<div class="setup-wizard-card"><div class="setup-wizard-body"><div><div class="setup-title">First-time setup</div><p class="setup-copy">Choose the parish's AGAPAY tier first, then connect Stripe so gifts can be received through the platform.</p><div class="setup-steps"><div class="setup-step done">${setupCheckMarkup()}<div><strong>1. Contact info verified</strong><span>Your registration has already supplied the parish contact details.</span></div></div><div class="setup-step ${billingDone?'done':''}">${setupCheckMarkup()}<div><strong>2. Select tier and billing</strong><span>${billingDone?'AGAPAY subscription billing is active.':'Choose the parish tier and complete billing checkout.'}</span></div></div><div class="setup-step ${stripeDone?'done':''}">${setupCheckMarkup()}<div><strong>3. Connect Stripe</strong><span>${stripeDone?'Stripe is connected for parish giving.':billingDone?'Create a Stripe onboarding link and complete the account setup.':'Stripe setup unlocks after billing is active.'}</span></div></div></div></div><div class="setup-action-panel">${billingDone?'':`<label for="setupSubscriptionTier">AGAPAY tier</label><select id="setupSubscriptionTier">${tierOptions}</select><button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startSubscriptionCheckout(this)">Start billing checkout</button><p class="setup-copy setup-action-copy">After billing is active, you will connect Stripe so the parish can receive donations.</p>`}${billingDone&&!stripeDone?'<button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startStripeOnboarding(this)">Connect Stripe</button>':''}<div class="setup-link-box" id="setupLinkBox"><a id="setupActionLink" href="#" target="_blank" rel="noopener">Open setup link</a><p id="setupLinkHelp"></p></div></div></div></div>`;
   }
 
@@ -2483,6 +2486,8 @@
     if (overviewEmpty) overviewEmpty.style.display = 'none';
     renderSetupWizard();
 
+    const billingActive = Boolean((p.setup||{}).billingActive);
+    const tierOptions = tierOptionsMarkup(p.subscriptionTier);
     document.getElementById('settingsPane').innerHTML = `
       <div class="form-grid">
         <div class="form-group full"><label class="form-label" for="parishName">Parish name</label><input id="parishName" value="${escapeHtml(p.parishName||'')}" placeholder="Parish name" /></div>
@@ -2516,10 +2521,18 @@
         <a class="btn btn-ghost" href="mailto:support@agapay.app?subject=${encodeURIComponent('Dashboard invite request for ' + (p.parishName || p.parishId || 'our parish'))}&body=${encodeURIComponent('Please add or update dashboard access for ' + (p.parishName || p.parishId || 'our parish') + '.\n\nRequested user:\nEmail:\nRole:\n\nRequested by:\n')}" target="_blank" rel="noopener">Request additional dashboard invite</a>
       </div>
       <div class="section-divider"><span>AGAPAY subscription</span></div>
-      <p class="section-note">Open Stripe's secure billing portal to change tiers, update payment details, or cancel the AGAPAY subscription.</p>
-      <div class="btn-row">
-        <button class="btn btn-ghost" onclick="openSubscriptionPortal(this)">Manage or cancel subscription</button>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Current tier</label><input value="${escapeHtml(p.subscriptionTierLabel || p.subscriptionTier || 'Not selected')}" disabled /></div>
+        <div class="form-group"><label class="form-label">Billing status</label><input value="${escapeHtml(statusLabel(p.subscriptionStatus || 'not_started'))}" disabled /></div>
+        <div class="form-group full"><label class="form-label" for="subscriptionTierUpgrade">Change AGAPAY tier</label><select id="subscriptionTierUpgrade">${tierOptions}</select></div>
       </div>
+      <p class="section-note">${billingActive ? "Use Stripe's secure billing portal to upgrade or change tiers, update payment details, or cancel the AGAPAY subscription." : 'Choose a tier and complete billing checkout. Parish tier unlocks Stewardship in this dashboard.'}</p>
+      <div class="btn-row">
+        ${billingActive
+          ? '<button class="btn btn-gold" onclick="openSubscriptionPortal(this)">Change tier in billing portal</button><button class="btn btn-ghost" onclick="openSubscriptionPortal(this)">Manage payment details</button>'
+          : '<button class="btn btn-gold" onclick="startSubscriptionCheckout(this, \'subscriptionTierUpgrade\')">Start tier checkout</button>'}
+      </div>
+      <div class="setup-link-box" id="subscriptionUpgradeLinkBox"><a id="subscriptionUpgradeLink" href="#" target="_blank" rel="noopener">Open billing checkout</a><p id="subscriptionUpgradeHelp"></p></div>
       <div class="section-divider"><span>Stripe account</span></div>
       <p class="section-note">Manage your parish Stripe account — update bank account details, payout schedule, business information, and view your full transaction history directly in Stripe.</p>
       <div class="btn-row">
@@ -3532,16 +3545,19 @@
   }
 
   // ── SUBSCRIPTION CHECKOUT ─────────────────────────────────
-  async function startSubscriptionCheckout(btn) {
+  async function startSubscriptionCheckout(btn, tierSelectId) {
     if (!currentParish) return;
     const win = window.open('','_blank'); if (win) win.opener = null;
     if (btn){btn.classList.add('loading');btn.disabled=true;}
     try {
-      const tier = document.getElementById('setupSubscriptionTier');
+      const tier = document.getElementById(tierSelectId || 'setupSubscriptionTier');
       const res  = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/subscription-checkout',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({subscriptionTier:tier?tier.value:currentParish.subscriptionTier})});
       const data = await res.json(); if (!res.ok) throw new Error(data.detail||data.error||'Unable to create checkout');
+      if (data.registration) currentParish = { ...currentParish, ...data.registration };
       if (!data.checkoutUrl){if(win)win.close();await loadDashboard();setStatus('Subscription updated. No checkout required.','success');return;}
-      const sb=document.getElementById('setupLinkBox');const sl=document.getElementById('setupActionLink');const sh=document.getElementById('setupLinkHelp');
+      const sb=tierSelectId ? (document.getElementById('subscriptionUpgradeLinkBox') || document.getElementById('setupLinkBox')) : (document.getElementById('setupLinkBox') || document.getElementById('subscriptionUpgradeLinkBox'));
+      const sl=tierSelectId ? (document.getElementById('subscriptionUpgradeLink') || document.getElementById('setupActionLink')) : (document.getElementById('setupActionLink') || document.getElementById('subscriptionUpgradeLink'));
+      const sh=tierSelectId ? (document.getElementById('subscriptionUpgradeHelp') || document.getElementById('setupLinkHelp')) : (document.getElementById('setupLinkHelp') || document.getElementById('subscriptionUpgradeHelp'));
       if(sb&&sl){sl.href=data.checkoutUrl;sl.textContent='Open billing checkout';sb.classList.add('visible');if(sh)sh.textContent=win?'Billing checkout opened in a new tab.':'Your browser blocked the new tab. Use this link.';}
       if(win) win.location.href=data.checkoutUrl;
       setStatus(win?'Subscription checkout opened in a new tab.':'Checkout created.','success');
