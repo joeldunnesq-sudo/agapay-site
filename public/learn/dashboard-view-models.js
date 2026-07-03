@@ -258,15 +258,15 @@ function shellFromPayload(page, payload) {
     gcalConfigured: gcalSync ? Boolean(gcalSync.configured !== false) : false,
     gcalConnected: Boolean(gcalSync?.connected),
     nav: [
-      { id: "dashboard", href: learnDashboardHref("dashboard"), label: "Dashboard", icon: "✥" },
-      { id: "planner", href: learnDashboardHref("planner"), label: "Planner", icon: "▣" },
-      { id: "formation", href: learnDashboardHref("formation"), label: "Formation", icon: "⌂" },
-      { id: "books", href: learnDashboardHref("books"), label: "Books", icon: "☰" },
-      { id: "grades", href: learnDashboardHref("grades"), label: "Grades & Attendance", icon: "A+" },
-      { id: "community", href: learnDashboardHref("community"), label: "Community", icon: "♡" },
-      { id: "co-op", href: learnDashboardHref("co-op"), label: "Co-op", icon: "◎", comingSoon: true },
-      { id: "print-center", href: learnDashboardHref("print-center"), label: "Print", icon: "▤" },
-      { id: "onboarding", href: learnDashboardHref("onboarding"), label: "Set Up", icon: "⚙" }
+      { id: "dashboard", href: learnDashboardHref("dashboard"), label: "Dashboard", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>' },
+      { id: "planner", href: learnDashboardHref("planner"), label: "Planner", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="4" width="15" height="17" rx="2"/><path d="M9 3.5h6a1 1 0 0 1 1 1V6H8V4.5a1 1 0 0 1 1-1z"/><path d="M8.5 12h7M8.5 16h5"/></svg>' },
+      { id: "formation", href: learnDashboardHref("formation"), label: "Formation", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-8.5"/><path d="M12 12.5c0-4-3-6.2-7-6.2 0 4 3 6.7 7 6.2z"/><path d="M12 12.5c0-4.6 3-7.7 8-7.7 0 4.6-3 8.2-8 7.7z"/></svg>' },
+      { id: "books", href: learnDashboardHref("books"), label: "Books", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.2c-2-1.4-4.6-2.2-7.2-2.2v13.8c2.6 0 5.2.8 7.2 2.2 2-1.4 4.6-2.2 7.2-2.2V4c-2.6 0-5.2.8-7.2 2.2z"/><path d="M12 6.2v13.8"/></svg>' },
+      { id: "grades", href: learnDashboardHref("grades"), label: "Grades & Attendance", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 2.5 8.3 12 13l9.5-4.7L12 3.5z"/><path d="M6.3 10.6v5.1c0 1.7 2.8 3.3 5.7 3.3s5.7-1.6 5.7-3.3v-5.1"/><path d="M21.5 8.3v6.2"/></svg>' },
+      { id: "community", href: learnDashboardHref("community"), label: "Community", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.7" cy="8.2" r="3.1"/><circle cx="16.3" cy="9.3" r="2.5"/><path d="M2.5 20.2c0-3.7 2.8-6.2 6.2-6.2s6.2 2.5 6.2 6.2"/><path d="M14.9 14.5c2.7.2 4.6 2.4 4.6 5.4"/></svg>' },
+      { id: "co-op", href: learnDashboardHref("co-op"), label: "Co-op", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.3"/><circle cx="5" cy="17.5" r="2.3"/><circle cx="19" cy="17.5" r="2.3"/><path d="M12 7.3 6.4 15.6M12 7.3l5.6 8.3M7.3 17.5h9.4"/></svg>', comingSoon: true },
+      { id: "print-center", href: learnDashboardHref("print-center"), label: "Print", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9V3.5h11V9"/><rect x="3.5" y="9" width="17" height="8" rx="1.6"/><path d="M6.5 13.5h11v7h-11z"/></svg>' },
+      { id: "onboarding", href: learnDashboardHref("onboarding"), label: "Set Up", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3.2v2.6M12 18.2v2.6M4.6 4.6l1.85 1.85M17.55 17.55l1.85 1.85M3.2 12h2.6M18.2 12h2.6M4.6 19.4l1.85-1.85M17.55 6.45l1.85-1.85"/></svg>' }
     ]
   };
 }

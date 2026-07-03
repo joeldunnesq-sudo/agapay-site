@@ -10,7 +10,7 @@
 (function () {
   "use strict";
 
-  var SHELL = "/learn/dashboard-shell.js?v=20260703b";
+  var SHELL = "/learn/dashboard-shell.js?v=20260703d";
   var PHONE = "(max-width: 820px)";
 
   function bootShell() {

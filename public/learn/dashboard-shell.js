@@ -8,7 +8,7 @@ import {
   toPlannerViewModel,
   toPrintCenterViewModel,
   toSetupViewModel
-} from "./dashboard-view-models.js";
+} from "./dashboard-view-models.js?v=20260703d";
 
 const odysseyPageMap = {
   planner: "planner",
@@ -495,13 +495,13 @@ function plannerSidebarSubnav(activePage) {
   if (activePage !== "planner") return "";
   const activeScope = plannerScopeFromQuery();
   const items = [
-    { id: "lessons", label: "Lessons", glyph: "▦", href: plannerHref({ scope: "lessons", tool: null }) },
-    { id: "meals", label: "Meals", glyph: "♨", href: plannerHref({ scope: "meals", tool: "plan", view: "week", term: null, termId: null }) },
-    { id: "chores", label: "Chores", glyph: "✓", href: plannerHref({ scope: "chores", tool: null, view: "week", term: null, termId: null }) },
-    { id: "events", label: "Events", glyph: "◷", href: plannerHref({ scope: "events", tool: null, view: "week", term: null, termId: null }) }
+    { id: "lessons", label: "Lessons", glyph: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4L15.5 5.5l3.5 3.5L8.5 19.5 4 20z"/><path d="M13 7.5l3.5 3.5"/></svg>', href: plannerHref({ scope: "lessons", tool: null }) },
+    { id: "meals", label: "Meals", glyph: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5a8 8 0 0 0 16 0"/><path d="M4 11.5h16"/><path d="M12 3.2v5"/></svg>', href: plannerHref({ scope: "meals", tool: "plan", view: "week", term: null, termId: null }) },
+    { id: "chores", label: "Chores", glyph: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6"/></svg>', href: plannerHref({ scope: "chores", tool: null, view: "week", term: null, termId: null }) },
+    { id: "events", label: "Events", glyph: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.3"/><path d="M12 7.2v5l3.3 2"/></svg>', href: plannerHref({ scope: "events", tool: null, view: "week", term: null, termId: null }) }
   ];
   return `<div class="learn-planner-subnav" aria-label="Family Planner sections">
-    ${items.map((item) => `<a href="${item.href}" class="${item.id === activeScope ? "is-active" : ""}" ${item.id === activeScope ? 'aria-current="page"' : ""}><span>${html(item.glyph)}</span>${html(item.label)}</a>`).join("")}
+    ${items.map((item) => `<a href="${item.href}" class="${item.id === activeScope ? "is-active" : ""}" ${item.id === activeScope ? 'aria-current="page"' : ""}><span>${item.glyph}</span>${html(item.label)}</a>`).join("")}
   </div>`;
 }
 
