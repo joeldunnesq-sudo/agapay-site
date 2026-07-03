@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <link rel="stylesheet" href="/donor/style.css?v=20260702f" />
+  <link rel="stylesheet" href="/donor/style.css?v=20260703a" />
   <script src="/liturgical-calendar.js"></script>
-  <script src="/myagapay-shell.js?v=20260702e" defer></script>
-  <script src="/donor/app.js?v=20260702f" defer></script>
+  <script src="/myagapay-shell.js?v=20260703a" defer></script>
+  <script src="/donor/app.js?v=20260703a" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -44,59 +44,99 @@
     </aside>
     <main class="content donor-mobile-content">
       <div class="topbar"><div class="topbar-title">Liturgical Calendar</div><div class="topbar-actions"><span class="status-pill" id="calendarModePill">Parish calendar</span><a class="btn btn-gold btn-sm" href="/myagapay/giving/give">Feast offering</a></div></div>
-      <div class="page">
-        <section class="hero calendar-hero"><div class="hero-grid"><div><div class="eyebrow">Today in the Church</div><h1>Pray, remember, and give with the Church year.</h1><p>Daily feasts, fasting notes, saint commemorations, and parish giving prompts follow your church calendar.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
-        <section class="calendar-today-grid section-gap" aria-label="Today in the Church">
-          <article class="calendar-today-card">
-            <div class="calendar-date-block">
-              <span id="todayWeekday">Today</span>
-              <strong id="todayMonthDay">--</strong>
-              <small id="todayYear">--</small>
-            </div>
-            <div class="calendar-today-main">
-              <span class="calendar-panel-kicker" id="todayCalendarLabel">Church calendar</span>
-              <h2 id="todayFeastTitle">Loading today in the Church...</h2>
-              <p id="todayFeastNote">AGAPAY is preparing today's feast and fasting context.</p>
-              <div class="calendar-chip-row" id="todayChips"></div>
-              <div class="calendar-action-row">
-                <a class="btn btn-gold btn-sm" id="todayGiveLink" href="/myagapay/giving/give?giftType=feast">Make a festal offering</a>
-                <button class="btn btn-ghost btn-sm" type="button" id="saintLifeButton" onclick="openDonorSaintOfDay(this)" data-date="" data-calendar="">Open saint life</button>
+      <div class="page cal-page">
+        <!-- TODAY HERO -->
+        <section class="cal-hero" aria-label="Today in the Church">
+          <div class="cal-hero-inner">
+            <div class="cal-hero-eyebrow">Today in the Church</div>
+            <div class="cal-today-row">
+              <div class="cal-date-badge">
+                <div class="cal-date-weekday" id="todayWeekday">Today</div>
+                <div class="cal-date-day" id="todayMonthDay">--</div>
+                <div class="cal-date-my" id="todayYear">--</div>
               </div>
-            </div>
-          </article>
-          <aside class="calendar-saint-card" id="saintPreviewCard">
-            <span class="calendar-panel-kicker">Saint of the Day</span>
-            <div class="calendar-saint-preview">
-              <span class="calendar-saint-icon" id="saintPreviewIcon">✥</span>
-              <div>
-                <h3 id="saintPreviewName">Lives of the Saints</h3>
-                <p id="saintPreviewNote">Open the life of today's saint once the calendar loads.</p>
-              </div>
-            </div>
-          </aside>
-        </section>
-        <section class="grid three section-gap">
-          <div class="metric-card"><div class="metric-label">Next feast</div><div class="metric-value" id="nextFeastDate">--</div><div class="metric-note" id="nextFeastName">Load your parish calendar.</div></div>
-          <div class="metric-card"><div class="metric-label">Pascha</div><div class="metric-value" id="paschaDate">--</div><div class="metric-note">Shared Orthodox paschalion.</div></div>
-          <div class="metric-card"><div class="metric-label">Calendar</div><div class="metric-value" id="calendarShortName">--</div><div class="metric-note" id="calendarFullName">Follows your parish preference.</div></div>
-        </section>
-        <section class="card section-gap">
-          <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 28 28"><rect x="3" y="5" width="22" height="20" rx="3"/><path d="M3 11h22"/><path d="M9 3v4M19 3v4"/><path d="M8 16h4M8 20h8"/></svg></span> Feast Highlights</div></div>
-          <div class="card-body">
-            <div class="calendar-grid" id="calendarGrid"></div>
-          </div>
-        </section>
-        <section class="grid two section-gap">
-          <div class="card">
-            <div class="card-header"><div class="card-title">Suggested Giving Prompts</div></div>
-            <div class="card-body">
-              <div class="list" id="suggestedGivingPrompts">
-                <div class="notice">Loading parish campaigns and funds...</div>
+              <div class="cal-today-main">
+                <div class="cal-today-kicker" id="todayCalendarLabel">Church calendar</div>
+                <h1 class="cal-today-title" id="todayFeastTitle">Loading today in the Church…</h1>
+                <p class="cal-today-note" id="todayFeastNote">AGAPAY is preparing today's feast and fasting context.</p>
+                <div class="cal-chip-row" id="todayChips"></div>
+                <div class="cal-hero-actions">
+                  <a class="cal-btn cal-btn-gold" id="todayGiveLink" href="/myagapay/giving/give?giftType=feast">Make a festal offering</a>
+                  <button class="cal-btn cal-btn-ghost-light" type="button" id="saintLifeButton" onclick="openDonorSaintOfDay(this)" data-date="" data-calendar="">Open saint life</button>
+                </div>
               </div>
             </div>
           </div>
-          <div class="card"><div class="card-header"><div class="card-title">Calendar Notes</div></div><div class="card-body"><div class="notice">Fixed feasts follow your parish's calendar setting. Pascha, Holy Week, Ascension, Pentecost, and other moveable feasts use the shared Orthodox paschalion.</div></div></div>
+          <button class="cal-saint-strip" id="saintPreviewCard" type="button" onclick="openDonorSaintOfDay(document.getElementById('saintLifeButton'))" aria-label="Open saint of the day">
+            <span class="cal-saint-icon" id="saintPreviewIcon">✥</span>
+            <span class="cal-saint-body">
+              <span class="cal-saint-kicker">Saint of the Day</span>
+              <span class="cal-saint-name" id="saintPreviewName">Lives of the Saints</span>
+              <span class="cal-saint-note" id="saintPreviewNote">Open the life of today's saint once the calendar loads.</span>
+            </span>
+            <span class="cal-saint-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+          </button>
         </section>
+
+        <!-- METRIC STRIP -->
+        <div class="cal-metrics">
+          <div class="cal-metric">
+            <div class="cal-metric-label">Next Feast</div>
+            <div class="cal-metric-value" id="nextFeastDate">--</div>
+            <div class="cal-metric-note" id="nextFeastName">Load your parish calendar.</div>
+          </div>
+          <div class="cal-metric">
+            <div class="cal-metric-label">Pascha</div>
+            <div class="cal-metric-value" id="paschaDate">--</div>
+            <div class="cal-metric-note">Shared paschalion</div>
+          </div>
+          <div class="cal-metric">
+            <div class="cal-metric-label">Calendar</div>
+            <div class="cal-metric-value" id="calendarShortName">--</div>
+            <div class="cal-metric-note" id="calendarFullName">Parish preference</div>
+          </div>
+        </div>
+
+        <!-- FEAST HIGHLIGHTS TIMELINE -->
+        <section class="cal-card">
+          <div class="cal-card-head">
+            <div class="cal-card-title">
+              <div class="cal-card-title-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+              Feast Highlights
+            </div>
+          </div>
+          <div class="cal-legend">
+            <span class="great">Great Feast</span>
+            <span class="major">Major</span>
+            <span class="fast">Fast</span>
+            <span class="bright">Bright Week</span>
+          </div>
+          <div class="cal-timeline" id="calendarGrid"></div>
+        </section>
+
+        <!-- PROMPTS + NOTES -->
+        <div class="cal-two">
+          <section class="cal-card">
+            <div class="cal-card-head">
+              <div class="cal-card-title">
+                <div class="cal-card-title-icon"><svg viewBox="0 0 24 24"><path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-4.5 5-10 5-10z"/><path d="M9 21h6"/></svg></div>
+                Giving Prompts
+              </div>
+            </div>
+            <div class="cal-prompt-list" id="suggestedGivingPrompts">
+              <div class="notice">Loading parish campaigns and funds…</div>
+            </div>
+          </section>
+          <section class="cal-card">
+            <div class="cal-card-head">
+              <div class="cal-card-title">
+                <div class="cal-card-title-icon"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg></div>
+                Calendar Notes
+              </div>
+            </div>
+            <div class="cal-note-box">Fixed feasts follow your parish's calendar setting. Pascha, Holy Week, Ascension, Pentecost, and other moveable feasts use the shared Orthodox paschalion — so those dates stay in step across every parish.</div>
+          </section>
+        </div>
       </div>
       <div class="donor-saint-modal" id="donorSaintModal" hidden>
         <div class="donor-saint-modal-card" role="dialog" aria-modal="true" aria-labelledby="donorSaintModalTitle">

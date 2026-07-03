@@ -771,7 +771,9 @@ function longDateParts(value) {
   return {
     weekday: new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(date),
     monthDay: new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric" }).format(date),
-    year: new Intl.DateTimeFormat("en-US", { year: "numeric" }).format(date)
+    year: new Intl.DateTimeFormat("en-US", { year: "numeric" }).format(date),
+    dayNum: new Intl.DateTimeFormat("en-US", { day: "numeric" }).format(date),
+    monthYear: new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(date)
   };
 }
 
@@ -834,9 +836,9 @@ function renderDonorTodayInChurch(parish, payload) {
   donorCalendarState.calendar = calendar;
   donorCalendarState.date = date;
 
-  setText("todayWeekday", parts.weekday);
-  setText("todayMonthDay", parts.monthDay);
-  setText("todayYear", parts.year);
+  setText("todayWeekday", parts.weekday.slice(0, 3));
+  setText("todayMonthDay", parts.dayNum);
+  setText("todayYear", parts.monthYear);
   setText("todayCalendarLabel", `${calendarLabel(calendar)} calendar`);
   setText("todayFeastTitle", feastTitle);
   setText("todayFeastNote", today.sourceConnected === false
@@ -988,14 +990,51 @@ function renderDonorCalendarFeasts(parish) {
   setText("calendarShortName", calendar === "gregorian" ? "Revised-Julian" : "Julian");
   setText("calendarFullName", label);
 
-  grid.innerHTML = highlighted.map((feast) => `
-    <div class="day">
-      <span class="day-number">${calendarShortDateIso(feast.date)}</span>
-      <div class="feast ${feast.rank === "great" || feast.rank === "holy-week" ? "major" : ""}">
-        ${escapeHtml(feast.name)}
-      </div>
-    </div>
-  `).join("");
+  if (!highlighted.length) {
+    grid.innerHTML = '<div class="cal-timeline-empty">Feast highlights will appear once your parish calendar loads.</div>';
+    return;
+  }
+
+  // Map rank → visual class + pill label
+  const rankMeta = (rank) => {
+    switch (rank) {
+      case "great":
+      case "holy-week":   return { cls: "great",  label: "Great Feast" };
+      case "bright-week": return { cls: "bright", label: "Bright Week" };
+      case "fast":        return { cls: "fast",   label: "Fast" };
+      default:             return { cls: "major",  label: "Major" };
+    }
+  };
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  // Group feasts by month (dates are YYYY-MM-DD strings, already chronological)
+  const byMonth = new Map();
+  highlighted.forEach((feast) => {
+    const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(String(feast.date || ""));
+    const monthIdx = m ? Number(m[1]) - 1 : 0;
+    const day = m ? String(Number(m[2])) : "";
+    if (!byMonth.has(monthIdx)) byMonth.set(monthIdx, []);
+    byMonth.get(monthIdx).push({ ...feast, _day: day, _mon: MONTHS_SHORT[monthIdx] });
+  });
+
+  const sections = Array.from(byMonth.keys()).sort((a, b) => a - b).map((monthIdx) => {
+    const rows = byMonth.get(monthIdx).map((feast) => {
+      const meta = rankMeta(feast.rank);
+      return `
+        <div class="cal-feast-row ${meta.cls}">
+          <div class="cal-feast-date">
+            <div class="cal-feast-date-day">${escapeHtml(feast._day)}</div>
+            <div class="cal-feast-date-mon">${escapeHtml(feast._mon)}</div>
+          </div>
+          <div class="cal-feast-name">${escapeHtml(feast.name)}</div>
+          <span class="cal-feast-rank ${meta.cls}">${escapeHtml(meta.label)}</span>
+        </div>`;
+    }).join("");
+    return `<div class="cal-month"><div class="cal-month-label">${MONTHS[monthIdx]}</div>${rows}</div>`;
+  }).join("");
+
+  grid.innerHTML = sections;
 }
 
 function renderDonorCalendarPrompts(parish) {
@@ -1051,13 +1090,14 @@ function renderDonorCalendarPrompts(parish) {
   }
 
   target.innerHTML = prompts.slice(0, 4).map((prompt) => `
-    <div class="list-item">
-      <div class="list-main">
-        <strong>${escapeHtml(prompt.title)}</strong>
-        <span>${escapeHtml(prompt.description)}</span>
-      </div>
-      <a class="btn btn-ghost btn-sm" href="${escapeHtml(prompt.href)}">Give</a>
-    </div>
+    <a class="cal-prompt" href="${escapeHtml(prompt.href)}">
+      <span class="cal-prompt-icon"><svg viewBox="0 0 24 24"><path d="M12 2s5 5.5 5 10a5 5 0 0 1-10 0c0-4.5 5-10 5-10z"/><path d="M9 21h6"/></svg></span>
+      <span class="cal-prompt-body">
+        <span class="cal-prompt-title">${escapeHtml(prompt.title)}</span>
+        <span class="cal-prompt-note">${escapeHtml(prompt.description)}</span>
+      </span>
+      <span class="cal-prompt-arrow"><svg viewBox="0 0 24 24" fill="none"><polyline points="9 18 15 12 9 6"/></svg></span>
+    </a>
   `).join("");
 }
 
