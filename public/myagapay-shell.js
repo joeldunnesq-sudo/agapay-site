@@ -279,14 +279,42 @@
     productNav,
     redirectToLogin,
     refreshMyAgapayReleaseFlags,
-    session
+    session,
+    viewport: currentViewport
   };
+
+  const DESKTOP_BREAKPOINT = "(min-width: 901px)";
+  let viewportQuery = null;
+
+  function currentViewport() {
+    return viewportQuery && viewportQuery.matches ? "desktop" : "mobile";
+  }
+
+  function applyViewportFlag() {
+    const next = currentViewport();
+    if (document.documentElement.dataset.viewport === next) return;
+    document.documentElement.dataset.viewport = next;
+    window.dispatchEvent(new CustomEvent("myagapay:viewport-change", { detail: { viewport: next } }));
+  }
+
+  function initViewportAwareness() {
+    if (!window.matchMedia) {
+      document.documentElement.dataset.viewport = "desktop";
+      return;
+    }
+    viewportQuery = window.matchMedia(DESKTOP_BREAKPOINT);
+    applyViewportFlag();
+    const listener = () => applyViewportFlag();
+    if (viewportQuery.addEventListener) viewportQuery.addEventListener("change", listener);
+    else if (viewportQuery.addListener) viewportQuery.addListener(listener);
+  }
 
   document.addEventListener("DOMContentLoaded", () => {
     normalizeProductNavs();
     ensureIosBackButton();
     ensureCanonicalHeader();
     refreshMyAgapayReleaseFlags();
+    initViewportAwareness();
     if (isProtectedPath()) {
       const current = session();
       if (!current.email || !current.token) redirectToLogin("sign-in-required");
