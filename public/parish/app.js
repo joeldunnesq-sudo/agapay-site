@@ -122,13 +122,14 @@
     if (nav)   nav.classList.add('active');
     if (mobileNav) mobileNav.classList.add('active');
     activeTab = tab;
-    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'AGAPAY Parish +', sacraments:'Sacraments & Services', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
+    const titles = { giving:'Giving Overview', reconcile:'Monthly Reconciliation', history:'Giving History', givers:'Givers', settings:'Settings', options:'Funds & Alms', campaigns:'Campaigns', text:'Text-to-Give', stewardship:'Stewardship', parishplus:'AGAPAY Parish +', sacraments:'Sacraments & Services', bookstore:'Bookstore', qr:'QR Code & Giving Link' };
     const isMobile = window.matchMedia('(max-width: 760px)').matches;
     document.getElementById('topbarTitle').textContent = (isMobile && currentParish) ? (currentParish.parishName || 'Parish Dashboard') : (titles[tab] || 'Parish Dashboard');
     if ((tab === 'history' || tab === 'givers' || tab === 'options') && currentParish && !allGifts.length) loadGivingHistory();
     if (tab === 'givers' && allGifts.length) renderGiversPanel();
     if (tab === 'qr') renderBulletinPreview();
     if (tab === 'stewardship') loadStewardshipPanel();
+    if (tab === 'parishplus') renderParishPlusPanel();
     if (tab === 'sacraments') loadSacramentsTab();
     if (tab === 'bookstore') loadBookstoreCatalogTab();
     if (tab === 'reconcile' && currentParish) loadReconciliation();
@@ -300,12 +301,34 @@
     return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/stewardship' + path;
   }
 
+  function isParishTier(parish = currentParish) {
+    return String(parish?.subscriptionTier || '').toLowerCase() === 'parish';
+  }
+
+  function isParishPlusActive() {
+    const sw = stewardshipState.stewardship || {};
+    return Boolean(currentParish?.stewardshipActive || sw.legacyAddOnActive || (!sw.includedInParishTier && ['active', 'trialing', 'comped'].includes(sw.status)));
+  }
+
+  function renderParishPlusPanel() {
+    const active = isParishPlusActive();
+    const status = document.getElementById('parishPlusStatusLabel');
+    if (status) {
+      status.textContent = active ? 'Active' : 'Add-on · $39/mo';
+      status.className = 'sw-suite-status-label ' + (active ? 'sw-suite-status--active' : 'sw-suite-status--upsell');
+    }
+  }
+
   async function loadStewardshipPanel(force = false) {
     const status = document.getElementById('stewardshipStatusLabel');
     const planPane = document.getElementById('stewardshipPlanPane');
     if (!planPane) return;
     if (!currentParish) {
       if (status) status.textContent = 'Not loaded';
+      return;
+    }
+    if (!isParishTier()) {
+      renderStewardshipUnavailableForTier();
       return;
     }
     if (stewardshipState.loaded && !force) {
@@ -439,8 +462,8 @@
   function renderGivingMetricsUpgrade() {
     return (
       '<div class="sw-upgrade-nudge">' +
-        '<p>Advanced operations reports require AGAPAY Parish +.</p>' +
-        '<a href="' + stewardshipGivingPageUrl() + '" class="sw-upgrade-btn">View AGAPAY Parish +</a>' +
+        '<p>Stewardship reports are included with the Parish tier.</p>' +
+        '<button type="button" class="sw-upgrade-btn" onclick="switchTab(\'settings\')">Review parish tier</button>' +
       '</div>'
     );
   }
@@ -452,9 +475,7 @@
     const pane = document.getElementById('stewardshipFinancialsPane');
     if (!pane || !currentParish) return;
 
-    const sw = stewardshipState.stewardship || {};
-    const isActive = sw.active || ['active', 'trialing', 'comped'].includes(sw.status);
-    if (!isActive) { pane.innerHTML = '<p class="muted">Subscribe to AGAPAY Parish + to access financial snapshots.</p>'; return; }
+    if (!isParishTier()) { pane.innerHTML = '<p class="muted">Financial snapshots are included with the Parish tier.</p>'; return; }
 
     if (year) financialsState.year = year;
 
@@ -879,7 +900,7 @@
   }
 
   function updateStewardshipBadges(isActive) {
-    const badge = document.querySelector('#nav-stewardship .nav-upgrade-badge');
+    const badge = document.getElementById('parishPlusNavBadge');
     if (badge) {
       badge.textContent = isActive ? 'Active' : 'Upgrade';
       badge.classList.toggle('nav-upgrade-badge--active', isActive);
@@ -889,6 +910,7 @@
       mobileBadge.textContent = isActive ? 'Active' : 'Upgrade';
       mobileBadge.classList.toggle('mobile-upgrade-badge--active', isActive);
     }
+    renderParishPlusPanel();
     const bookstoreNav = document.getElementById('nav-bookstore');
     const bookstoreBadge = document.getElementById('bookstoreNavBadge');
     const mobileBookstoreBadge = document.getElementById('mobileBookstoreBadge');
@@ -1392,7 +1414,7 @@
             Let parishioners request house blessings, baptisms, weddings, and more directly from My AGAPAY —
             routed straight to your parish dashboard.
           </p>
-          <button class="btn btn-gold" type="button" onclick="switchTab('stewardship')">View AGAPAY Parish +</button>
+          <button class="btn btn-gold" type="button" onclick="switchTab('parishplus')">View AGAPAY Parish +</button>
         </div>
       </div>`;
   }
@@ -1504,8 +1526,7 @@
         selectedMeeting: null
       };
       const sw       = stewardshipState.stewardship || {};
-      const isActive = sw.active || ['active', 'trialing', 'comped'].includes(sw.status);
-      updateStewardshipBadges(isActive);
+      updateStewardshipBadges(isParishPlusActive());
       maybeShowStewardshipCompExpiryNotice(sw);
     } catch { /* silent — badge stays gold */ }
   }
@@ -1553,7 +1574,7 @@
         '<p>Your complimentary year of <strong>AGAPAY Parish +</strong> ends on <strong>' + escapeHtml(expiresLabel) + '</strong> \u2014 about ' + daysLeft + ' days from now.</p>' +
         '<p class="sw-comp-notice-sub">No action is needed if you would like to let it lapse. If your parish council would like to continue, you can add it as a paid feature at any time.</p>' +
         '<div class="sw-comp-notice-actions">' +
-          '<button class="sw-comp-notice-btn-primary" type="button" onclick="dismissStewardshipCompNotice(); switchTab(\'stewardship\')">View AGAPAY Parish +</button>' +
+          '<button class="sw-comp-notice-btn-primary" type="button" onclick="dismissStewardshipCompNotice(); switchTab(\'parishplus\')">View AGAPAY Parish +</button>' +
           '<button class="sw-comp-notice-btn-secondary" type="button" onclick="dismissStewardshipCompNotice()">Remind me later</button>' +
         '</div>' +
       '</div>';
@@ -1566,6 +1587,34 @@
     if (!overlay) return;
     overlay.classList.remove('sw-comp-notice-overlay--visible');
     setTimeout(() => overlay.remove(), 200);
+  }
+
+  function renderStewardshipUnavailableForTier() {
+    const statusEl  = document.getElementById('stewardshipStatusLabel');
+    const planPane  = document.getElementById('stewardshipPlanPane');
+    const meetingsPane = document.getElementById('stewardshipMeetingsPane');
+    const metricPane = document.getElementById('givingMetricsPane');
+    const finPane = document.getElementById('stewardshipFinancialsPane');
+    if (statusEl) {
+      statusEl.textContent = 'Parish tier';
+      statusEl.className = 'sw-suite-status-label sw-suite-status--upsell';
+    }
+    if (planPane) {
+      planPane.innerHTML =
+        '<div class="sw-upsell-row-inner">' +
+          '<div class="sw-upsell-row-copy">' +
+            '<strong>Parish tier</strong>' +
+            '<p>Stewardship tools are included with the Parish tier. Upgrade the AGAPAY tier to use pledge reports, annual meeting packets, and financial snapshots.</p>' +
+          '</div>' +
+          '<div class="sw-upsell-row-actions">' +
+            '<button class="sw-subscribe-btn" type="button" onclick="switchTab(\'settings\')">Review tier settings</button>' +
+          '</div>' +
+        '</div>';
+    }
+    const locked = '<div class="sw-tool-locked"><div class="sw-tool-locked-items"><div><span>✓</span> Included with the Parish tier</div></div><div class="sw-tool-locked-badge">Parish tier required</div></div>';
+    if (meetingsPane) meetingsPane.innerHTML = locked;
+    if (metricPane) metricPane.innerHTML = locked;
+    if (finPane) finPane.innerHTML = locked;
   }
 
   function renderStewardshipPanel() {
@@ -1582,12 +1631,12 @@
     // Hero status label
     if (statusEl) {
       statusEl.textContent = isActive
-        ? (isComped ? 'Free — Founding Parish' : (isTrialing ? 'Trial active' : 'Active'))
-        : 'Add-on · $39/mo';
+        ? (sw.includedInParishTier ? 'Included in Parish tier' : (isComped ? 'Free — Founding Parish' : (isTrialing ? 'Trial active' : 'Active')))
+        : 'Parish tier';
       statusEl.className = 'sw-suite-status-label ' + (isActive ? 'sw-suite-status--active' : 'sw-suite-status--upsell');
     }
 
-    updateStewardshipBadges(isActive);
+    updateStewardshipBadges(isParishPlusActive());
 
     if (isActive) {
       renderStewardshipActiveState(planPane, meetingsPane, sw, isTrialing);
@@ -1606,12 +1655,12 @@
     planPane.innerHTML =
       '<div class="sw-plan-row-inner">' +
         '<div class="sw-plan-row-copy">' +
-          '<span class="sw-plan-badge">' + (isComped ? 'Free Year' : (isTrialing ? 'Trial' : 'Active')) + '</span>' +
-          '<span class="sw-plan-name">AGAPAY Parish +</span>' +
+          '<span class="sw-plan-badge">' + (sw.includedInParishTier ? 'Included' : (isComped ? 'Free Year' : (isTrialing ? 'Trial' : 'Active'))) + '</span>' +
+          '<span class="sw-plan-name">Stewardship</span>' +
           '<span class="sw-plan-parish">' + escapeHtml(currentParish?.parishName || '') + '</span>' +
           (isComped ? '<span class="sw-plan-parish" style="opacity:.75;">Founding parish — free through ' + escapeHtml(expiresLabel) + '</span>' : '') +
         '</div>' +
-        (isComped ? '' : '<button class="sw-manage-btn" type="button" onclick="openStewardshipBilling(this)">Manage billing</button>') +
+        (sw.includedInParishTier || isComped ? '' : '<button class="sw-manage-btn" type="button" onclick="openStewardshipBilling(this)">Manage billing</button>') +
       '</div>';
 
     // ── Meetings tool card ─────────────────────────────────────────────────
@@ -2389,9 +2438,19 @@
     pane.innerHTML=`<div class="setup-wizard-card"><div class="setup-wizard-body"><div><div class="setup-title">First-time setup</div><p class="setup-copy">Choose the parish's AGAPAY tier first, then connect Stripe so gifts can be received through the platform.</p><div class="setup-steps"><div class="setup-step done">${setupCheckMarkup()}<div><strong>1. Contact info verified</strong><span>Your registration has already supplied the parish contact details.</span></div></div><div class="setup-step ${billingDone?'done':''}">${setupCheckMarkup()}<div><strong>2. Select tier and billing</strong><span>${billingDone?'AGAPAY subscription billing is active.':'Choose the parish tier and complete billing checkout.'}</span></div></div><div class="setup-step ${stripeDone?'done':''}">${setupCheckMarkup()}<div><strong>3. Connect Stripe</strong><span>${stripeDone?'Stripe is connected for parish giving.':billingDone?'Create a Stripe onboarding link and complete the account setup.':'Stripe setup unlocks after billing is active.'}</span></div></div></div></div><div class="setup-action-panel">${billingDone?'':`<label for="setupSubscriptionTier">AGAPAY tier</label><select id="setupSubscriptionTier">${tierOptions}</select><button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startSubscriptionCheckout(this)">Start billing checkout</button><p class="setup-copy setup-action-copy">After billing is active, you will connect Stripe so the parish can receive donations.</p>`}${billingDone&&!stripeDone?'<button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="startStripeOnboarding(this)">Connect Stripe</button>':''}<div class="setup-link-box" id="setupLinkBox"><a id="setupActionLink" href="#" target="_blank" rel="noopener">Open setup link</a><p id="setupLinkHelp"></p></div></div></div></div>`;
   }
 
+  function updateTierScopedNavigation() {
+    const showStewardship = isParishTier();
+    document.getElementById('nav-stewardship')?.toggleAttribute('hidden', !showStewardship);
+    document.querySelectorAll('.mobile-tab-link[data-nav-tab="stewardship"]').forEach((el) => {
+      el.hidden = !showStewardship;
+    });
+    if (!showStewardship && activeTab === 'stewardship') switchTab('giving');
+  }
+
   // ── RENDER DASHBOARD ──────────────────────────────────────
   function renderDashboard() {
     const p = currentParish;
+    updateTierScopedNavigation();
     document.getElementById('sidebarProfile').classList.add('visible');
     document.getElementById('sidebarParishName').textContent = p.parishName || 'Parish';
     const parishMeta = [p.communityType, p.jurisdiction, [p.city,p.state].filter(Boolean).join(', ')].filter(Boolean).join(' / ');
@@ -2477,7 +2536,7 @@
           <input id="bookstoreEnabled" type="checkbox" ${p.stewardshipActive?'':'disabled'} ${(p.bookstoreEnabled??false)?'checked':''} /> Bookstore Payments
         </label>
       </div>
-      ${p.stewardshipActive ? '' : '<p class="section-note">Bookstore Payments is part of AGAPAY Parish +. <a href="' + escapeAttr(stewardshipGivingPageUrl()) + '">Add AGAPAY Parish +</a> to let donors pay for books, prayer ropes, and other items from My AGAPAY.</p>'}
+      ${p.stewardshipActive ? '' : '<p class="section-note">Bookstore Payments is part of AGAPAY Parish +. <button type="button" class="inline-link-button" onclick="switchTab(\'parishplus\')">View AGAPAY Parish +</button> to let donors pay for books, prayer ropes, and other items from My AGAPAY.</p>'}
       <div class="btn-row">
         <button class="btn btn-gold" onclick="saveDashboard(this)">Save changes</button>
         ${(p.setup||{}).billingActive?'<button class="btn btn-primary" onclick="startStripeOnboarding(this)">Start Stripe onboarding</button>':'<button class="btn btn-ghost" disabled title="Complete AGAPAY billing first">Stripe unlocks after billing</button>'}

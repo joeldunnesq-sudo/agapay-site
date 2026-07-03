@@ -38,6 +38,17 @@
     .toast { background: white; border-left: 4px solid var(--gold); border-radius: 8px; padding: 1rem 1.25rem; box-shadow: 0 10px 30px rgba(6,21,34,0.12); transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease; color: var(--ink); font-size: 13px; font-weight: 500; line-height: 1.5; max-width: 350px; pointer-events: auto; }
 
     /* ── AGAPAY Parish + comp-expiry notice ───────────────────────────── */
+    .inline-link-button {
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--gold, #C8A24A);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
     .sw-comp-notice-overlay {
       position: fixed; inset: 0; z-index: 300;
       display: flex; align-items: center; justify-content: center;
