@@ -132,6 +132,11 @@ assert.ok(donorSettings.includes("saveDonorSettings(event)"), "donor settings sh
 const donorHistory = await readFile("public/donor/offerings.html", "utf8");
 assert.ok(donorHistory.includes("Activity Timeline") && donorHistory.includes("historyProductFilters") && donorHistory.includes("agapayHistoryTimeline"), "My AGAPAY History should show a cross-product activity timeline");
 assert.ok(donorApp.includes("buildHistoryActivities") && donorApp.includes("setHistoryProductFilter"), "donor app should render and filter cross-product History activity");
+const donorCommemorations = await readFile("public/donor/commemorations.html", "utf8");
+assert.ok(donorCommemorations.includes("Submit commemorations for the living and departed at no cost") && donorCommemorations.includes("Candle offerings are paid gifts"), "Prayer hero should distinguish free commemorations from paid candle offerings");
+const donorBookstore = await readFile("public/donor/bookstore.html", "utf8");
+assert.ok(donorBookstore.includes("bookstoreHeroTitle") && donorBookstore.includes("PAY FOR YOUR ITEMS AT YOUR PARISH BOOKSTORE"), "Bookstore hero should support parish-specific payment copy");
+assert.ok(donorApp.includes("PAY FOR YOUR ITEMS AT THE ${parishName} BOOKSTORE.") && donorApp.includes("AGAPAY Parish+") && donorApp.includes("Request this feature for my parish"), "Bookstore page should preserve Parish+ unavailable messaging and feature request flow");
 const donorSecurity = await readFile("public/security.js", "utf8");
 assert.ok(donorSecurity.includes("/api/security/config"), "security helper should load Turnstile config from the Worker");
 assert.ok(donorSecurity.includes("agapaySecurityPayload"), "security helper should expose Turnstile payloads to public forms");
