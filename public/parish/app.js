@@ -313,10 +313,12 @@
   function renderParishPlusPanel() {
     const active = isParishPlusActive();
     const status = document.getElementById('parishPlusStatusLabel');
+    const meetingsPane = document.getElementById('parishPlusMeetingsPane');
     if (status) {
       status.textContent = active ? 'Active' : 'Add-on · $39/mo';
       status.className = 'sw-suite-status-label ' + (active ? 'sw-suite-status--active' : 'sw-suite-status--upsell');
     }
+    if (meetingsPane) renderParishPlusMeetingsPane(meetingsPane, active);
   }
 
   async function loadStewardshipPanel(force = false) {
@@ -360,6 +362,7 @@
       };
     }
     renderStewardshipPanel();
+    renderParishPlusPanel();
     // Load giving metrics and financial snapshots in parallel
     loadGivingMetricsPanel();
     loadFinancialSnapshotsPanel();
@@ -512,7 +515,7 @@
     if (!meetings.length) {
       return '<div class="sw-financials-empty">' +
         '<p>No financial data for ' + financialsState.year + ' yet.</p>' +
-        '<p class="muted" style="font-size:.82rem">Create a meeting packet or standalone snapshot to record income, expenses, and restricted fund balances.</p>' +
+        '<p class="muted" style="font-size:.82rem">Create a financial snapshot to record income, expenses, and restricted fund balances.</p>' +
         '<button class="sw-new-packet-btn" type="button" onclick="openFinancialsEditor(null)" style="margin-top:.5rem">+ New financial snapshot</button>' +
       '</div>';
     }
@@ -1592,7 +1595,6 @@
   function renderStewardshipUnavailableForTier() {
     const statusEl  = document.getElementById('stewardshipStatusLabel');
     const planPane  = document.getElementById('stewardshipPlanPane');
-    const meetingsPane = document.getElementById('stewardshipMeetingsPane');
     const metricPane = document.getElementById('givingMetricsPane');
     const finPane = document.getElementById('stewardshipFinancialsPane');
     if (statusEl) {
@@ -1604,7 +1606,7 @@
         '<div class="sw-upsell-row-inner">' +
           '<div class="sw-upsell-row-copy">' +
             '<strong>Parish tier</strong>' +
-            '<p>Stewardship tools are included with the Parish tier. Upgrade the AGAPAY tier to use pledge reports, annual meeting packets, and financial snapshots.</p>' +
+            '<p>Stewardship tools are included with the Parish tier. Upgrade the AGAPAY tier to use pledge reports, giving insights, and financial snapshots.</p>' +
           '</div>' +
           '<div class="sw-upsell-row-actions">' +
             '<button class="sw-subscribe-btn" type="button" onclick="switchTab(\'settings\')">Review tier settings</button>' +
@@ -1612,7 +1614,6 @@
         '</div>';
     }
     const locked = '<div class="sw-tool-locked"><div class="sw-tool-locked-items"><div><span>✓</span> Included with the Parish tier</div></div><div class="sw-tool-locked-badge">Parish tier required</div></div>';
-    if (meetingsPane) meetingsPane.innerHTML = locked;
     if (metricPane) metricPane.innerHTML = locked;
     if (finPane) finPane.innerHTML = locked;
   }
@@ -1620,8 +1621,7 @@
   function renderStewardshipPanel() {
     const statusEl  = document.getElementById('stewardshipStatusLabel');
     const planPane  = document.getElementById('stewardshipPlanPane');
-    const meetingsPane = document.getElementById('stewardshipMeetingsPane');
-    if (!planPane || !meetingsPane) return;
+    if (!planPane) return;
 
     const sw = stewardshipState.stewardship || {};
     const isActive   = sw.active || ['active', 'trialing', 'comped'].includes(sw.status);
@@ -1639,14 +1639,14 @@
     updateStewardshipBadges(isParishPlusActive());
 
     if (isActive) {
-      renderStewardshipActiveState(planPane, meetingsPane, sw, isTrialing);
+      renderStewardshipActiveState(planPane, sw, isTrialing);
     } else {
-      renderStewardshipUpsellState(planPane, meetingsPane);
+      renderStewardshipUpsellState(planPane);
     }
   }
 
-  // Active state: populate the plan row (billing management) + meetings tool card
-  function renderStewardshipActiveState(planPane, meetingsPane, sw, isTrialing) {
+  // Active state: populate the plan row (billing management) and Stewardship-only tools
+  function renderStewardshipActiveState(planPane, sw, isTrialing) {
     // ── Plan row — billing status + manage button ──────────────────────────
     const isComped = sw.status === 'comped' && sw.comp;
     const expiresLabel = isComped && sw.comp.expiresAt
@@ -1663,18 +1663,6 @@
         (sw.includedInParishTier || isComped ? '' : '<button class="sw-manage-btn" type="button" onclick="openStewardshipBilling(this)">Manage billing</button>') +
       '</div>';
 
-    // ── Meetings tool card ─────────────────────────────────────────────────
-    const meetings = stewardshipState.meetings || [];
-    const year = new Date().getFullYear();
-    meetingsPane.innerHTML =
-      '<div class="sw-tool-meetings-header">' +
-        '<button class="sw-new-packet-btn" type="button" onclick="newStewardshipMeeting()">' +
-          '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>' +
-          ' New packet' +
-        '</button>' +
-      '</div>' +
-      (meetings.length ? renderMeetingsList(meetings) : renderMeetingsEmpty(year));
-
     // Show the financials year select + new button
     const finActions = document.getElementById('financialsHeaderActions');
     if (finActions) finActions.hidden = false;
@@ -1687,7 +1675,36 @@
     }
   }
 
-  // Upsell state: lock all three tool cards, show subscribe CTA in plan row
+  function renderParishPlusMeetingsPane(meetingsPane, active) {
+    const meetings = stewardshipState.meetings || [];
+    const year = new Date().getFullYear();
+    if (active) {
+      meetingsPane.innerHTML =
+        '<div class="sw-tool-meetings-header">' +
+          '<button class="sw-new-packet-btn" type="button" onclick="newStewardshipMeeting()">' +
+            '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>' +
+            ' New packet' +
+          '</button>' +
+        '</div>' +
+        (meetings.length ? renderMeetingsList(meetings) : renderMeetingsEmpty(year));
+      return;
+    }
+
+    meetingsPane.innerHTML =
+      '<div class="sw-tool-locked">' +
+        '<div class="sw-tool-locked-items">' +
+          '<div><span>✓</span> Agenda, opening prayer, quorum call</div>' +
+          '<div><span>✓</span> Rector, treasurer &amp; ministry reports</div>' +
+          '<div><span>✓</span> Financial summary &amp; restricted funds</div>' +
+          '<div><span>✓</span> Nominees, elections, resolutions</div>' +
+          '<div><span>✓</span> Sign-in sheet &amp; minutes template</div>' +
+          '<div><span>✓</span> Print-ready PDF packet</div>' +
+        '</div>' +
+        '<div class="sw-tool-locked-badge">AGAPAY Parish +</div>' +
+      '</div>';
+  }
+
+  // Upsell state: lock Stewardship tool cards, show tier CTA in plan row
   function renderMeetingsList(meetings) {
     const statusLabels = { draft:'Draft', ready:'Ready', generated:'Generated', archived:'Archived' };
     const statusClasses = { draft:'sw-pill-draft', ready:'sw-pill-ready', generated:'sw-pill-generated', archived:'sw-pill-archived' };
@@ -1727,34 +1744,17 @@
     '</div>';
   }
 
-  function renderStewardshipUpsellState(planPane, meetingsPane) {
-    const year = new Date().getFullYear();
-
+  function renderStewardshipUpsellState(planPane) {
     // ── Plan row — subscribe CTA ───────────────────────────────────────────
     planPane.innerHTML =
       '<div class="sw-upsell-row-inner">' +
         '<div class="sw-upsell-row-copy">' +
-          '<strong>$39<span>/mo</span></strong>' +
-          '<p>Parish commerce, annual meeting packets, financial snapshots, and print-ready parish records — all in your dashboard.</p>' +
+          '<strong>Parish tier</strong>' +
+          '<p>Stewardship reports, pledge context, and financial snapshots are included with the Parish tier.</p>' +
         '</div>' +
         '<div class="sw-upsell-row-actions">' +
-          '<button class="sw-subscribe-btn" type="button" onclick="startStewardshipSubscription(\'monthly\', this)">Start 14-day free trial</button>' +
-          '<p class="sw-upsell-note">No commitment. Cancel anytime.</p>' +
+          '<button class="sw-subscribe-btn" type="button" onclick="switchTab(\'settings\')">Review tier settings</button>' +
         '</div>' +
-      '</div>';
-
-    // ── Meetings tool card — locked preview ────────────────────────────────
-    meetingsPane.innerHTML =
-      '<div class="sw-tool-locked">' +
-        '<div class="sw-tool-locked-items">' +
-          '<div><span>✓</span> Agenda, opening prayer, quorum call</div>' +
-          '<div><span>✓</span> Rector, treasurer &amp; ministry reports</div>' +
-          '<div><span>✓</span> Financial summary &amp; restricted funds</div>' +
-          '<div><span>✓</span> Nominees, elections, resolutions</div>' +
-          '<div><span>✓</span> Sign-in sheet &amp; minutes template</div>' +
-          '<div><span>✓</span> Print-ready PDF packet</div>' +
-        '</div>' +
-        '<div class="sw-tool-locked-badge">Subscribe to unlock</div>' +
       '</div>';
 
     // ── Giving metrics tool card — locked ─────────────────────────────────
@@ -1781,7 +1781,7 @@
             '<div><span>✓</span> Income &amp; expense by fiscal year</div>' +
             '<div><span>✓</span> Restricted fund ledger</div>' +
             '<div><span>✓</span> Net surplus / deficit tracking</div>' +
-            '<div><span>✓</span> Linked to meeting packets</div>' +
+            '<div><span>✓</span> Year-end stewardship records</div>' +
           '</div>' +
           '<div class="sw-tool-locked-badge">Subscribe to unlock</div>' +
         '</div>';
