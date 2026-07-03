@@ -645,6 +645,50 @@ function renderCampaignChoicePreview(campaign) {
   `;
 }
 
+function donorSlugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
+function campaignShareUrl(parish, campaign) {
+  const parishId = parish?.id;
+  if (!parishId || !campaign) return "";
+  const slug = campaign.slug || donorSlugify(campaign.name || campaign.campaignName || campaign.id || "");
+  if (!slug) return "";
+  const origin = String(window.location.origin || "").replace(/\/+$/, "");
+  return `${origin}/give/${encodeURIComponent(parishId)}/${slug}-campaign`;
+}
+
+async function shareCampaign(event, btn) {
+  if (event) { event.preventDefault(); event.stopPropagation(); }
+  const url = btn?.getAttribute("data-share-url") || "";
+  const title = btn?.getAttribute("data-share-title") || "Parish Campaign";
+  if (!url) return;
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text: `Support ${title} through AGAPAY`, url });
+      return;
+    } catch (err) {
+      if (err && err.name === "AbortError") return;
+    }
+  }
+  const label = btn.querySelector("span");
+  try {
+    await navigator.clipboard.writeText(url);
+    if (label) {
+      const prev = label.textContent;
+      label.textContent = "Link copied";
+      setTimeout(() => { label.textContent = prev; }, 1800);
+    }
+  } catch {
+    window.prompt("Copy this campaign link", url);
+  }
+}
+
 function renderActiveCampaigns(parish) {
   const targets = [document.getElementById("activeCampaigns"), document.getElementById("desktopActiveCampaigns")].filter(Boolean);
   if (!targets.length) return;
@@ -667,20 +711,27 @@ function renderActiveCampaigns(parish) {
   const link = donorGiftUrl("campaign", parish, { campaign: campaign.id || campaign.feastId || campaign.name });
   const imageUrl = campaignImageUrl(campaign);
   const description = campaign.description || "Support this parish-approved campaign.";
+  const shareUrl = campaignShareUrl(parish, campaign);
+  const shareBtn = shareUrl
+    ? `<button type="button" class="campaign-share-btn" onclick="shareCampaign(event, this)" data-share-url="${escapeHtml(shareUrl)}" data-share-title="${escapeHtml(campaign.name || "Parish Campaign")}" aria-label="Share this campaign" style="position:absolute;top:10px;right:10px;z-index:2;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:0;border-radius:999px;background:rgba(6,21,34,.82);color:#fff;font:600 12px/1 'DM Sans',system-ui,sans-serif;cursor:pointer;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);box-shadow:0 2px 8px rgba(6,21,34,.28);"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg><span>Share</span></button>`
+    : "";
   const html = `
-    <a class="campaign-card campaign-media-card" href="${escapeHtml(link)}">
-      <div class="campaign-media-thumb">
-        ${imageUrl
-          ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" />`
-          : `<span>${escapeHtml((campaign.name || "Campaign").slice(0, 1))}</span>`}
-      </div>
-      <div class="campaign-media-body">
-        <h3>${escapeHtml(campaign.name || "Parish Campaign")}</h3>
-        ${goalCents > 0 ? `<div class="campaign-track"><span style="width:${percent}%"></span></div>` : ""}
-        ${goalCents > 0 ? `<div class="campaign-progress-row"><strong>${money(raisedCents)} raised</strong><span>${percent}% of ${money(goalCents)}</span></div>` : ""}
-        <p class="campaign-description">${escapeHtml(description)}</p>
-      </div>
-    </a>
+    <div class="campaign-card-shell" style="position:relative;">
+      <a class="campaign-card campaign-media-card" href="${escapeHtml(link)}">
+        <div class="campaign-media-thumb">
+          ${imageUrl
+            ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" />`
+            : `<span>${escapeHtml((campaign.name || "Campaign").slice(0, 1))}</span>`}
+        </div>
+        <div class="campaign-media-body">
+          <h3>${escapeHtml(campaign.name || "Parish Campaign")}</h3>
+          ${goalCents > 0 ? `<div class="campaign-track"><span style="width:${percent}%"></span></div>` : ""}
+          ${goalCents > 0 ? `<div class="campaign-progress-row"><strong>${money(raisedCents)} raised</strong><span>${percent}% of ${money(goalCents)}</span></div>` : ""}
+          <p class="campaign-description">${escapeHtml(description)}</p>
+        </div>
+      </a>
+      ${shareBtn}
+    </div>
   `;
   targets.forEach((target) => { target.innerHTML = html; });
 }
@@ -2259,6 +2310,59 @@ function renderCommemorationParish(parish) {
   if (hidden) hidden.value = parish?.id || "";
 }
 
+function commemorationNameCount(list) {
+  return (Array.isArray(list) ? list : []).reduce((sum, entry) =>
+    sum + (Array.isArray(entry.living) ? entry.living.length : 0)
+        + (Array.isArray(entry.departed) ? entry.departed.length : 0), 0);
+}
+
+function renderCandleList(candleOfferings) {
+  const el = document.getElementById("candleList");
+  if (!el) return;
+  if (!candleOfferings.length) {
+    el.innerHTML = '<div class="notice">No candle offerings yet. Offer a candle above and its intentions join your parish prayer list.</div>';
+    return;
+  }
+  el.innerHTML = candleOfferings.slice(0, 8).map((offering) => {
+    const names = [
+      ...(Array.isArray(offering.living) ? offering.living : []),
+      ...(Array.isArray(offering.departed) ? offering.departed : [])
+    ];
+    const when = typeof shortDate === "function" ? shortDate(offering.createdAt || offering.date) : "";
+    const parish = offering.parishName || offering.parishId || "Parish";
+    const cents = offering.amountCents || offering.giftAmountCents;
+    const amount = cents && typeof money === "function" ? money(cents) : "";
+    return `<div class="commem-candle-row">
+      <span class="commem-candle-flame" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 3c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z" fill="#DABB70"/><path d="M12 16v5" stroke="#8a6a2a" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+      <span class="commem-candle-main"><strong>${names.length ? escapeHtml(names.join(", ")) : "Candle offering"}</strong><small>${escapeHtml(parish)}${when ? " &middot; " + escapeHtml(when) : ""}</small></span>
+      ${amount ? `<span class="commem-candle-amt">${amount}</span>` : ""}
+    </div>`;
+  }).join("");
+}
+
+function renderCommemorationInsights(entries, dashboard) {
+  if (!document.getElementById("commemMetricNames")) return;
+  const offerings = Array.isArray(dashboard?.offerings) ? dashboard.offerings : [];
+  const summary = dashboard?.summary || {};
+  const candleOfferings = offerings.filter((o) => /candle/i.test(String(o.giftType || o.type || "")));
+  const totalNames = Number.isFinite(summary.commemorationCount) && summary.commemorationCount > 0
+    ? summary.commemorationCount
+    : commemorationNameCount(entries);
+  const now = new Date();
+  const thisYear = now.getFullYear();
+  const inThisYear = (ts) => { const d = new Date(ts); return !isNaN(d) && d.getFullYear() === thisYear; };
+  const namesThisYear = commemorationNameCount(entries.filter((e) => inThisYear(e.createdAt || e.submittedAt || e.date)));
+  const allDates = [...offerings, ...entries]
+    .map((x) => new Date(x.createdAt || x.submittedAt || x.date))
+    .filter((d) => !isNaN(d));
+  const sinceYear = allDates.length ? Math.min(...allDates.map((d) => d.getFullYear())) : thisYear;
+  setText("commemMetricNames", String(totalNames));
+  setText("commemMetricCandles", String(candleOfferings.length));
+  setText("commemMetricYear", String(namesThisYear));
+  setText("commemMetricSince", String(sinceYear));
+  renderCandleList(candleOfferings);
+}
+
 function renderCommemorationsPayload(payload = {}, fallbackDashboard = null) {
   const entries = Array.isArray(payload.entries) && payload.entries.length
     ? payload.entries
@@ -2269,6 +2373,7 @@ function renderCommemorationsPayload(payload = {}, fallbackDashboard = null) {
       ? commemorationRows(entries)
       : '<div class="notice">No commemoration submissions have been recorded yet.</div>';
   }
+  renderCommemorationInsights(entries, fallbackDashboard);
   return { entries };
 }
 
