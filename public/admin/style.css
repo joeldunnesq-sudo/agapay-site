@@ -2037,6 +2037,9 @@
        MOBILE TABBAR
     ───────────────────────────────────────── */
     .mobile-tabbar { display: none; }
+    .admin-mobile-command,
+    .queue-mobile-summary,
+    .mobile-review-bar { display: none; }
     .mobile-tab-link {
       appearance: none;
       border: 0;
@@ -2092,6 +2095,35 @@
       .revenue-grid, .revenue-fee-stats, .learn-admin-grid,
       .product-overview-grid, .product-admin-grid, .admin-command-hero { grid-template-columns: 1fr; }
       .product-admin-hero { align-items: flex-start; flex-direction: column; }
+      .admin-mobile-command {
+        display: grid;
+        gap: 1rem;
+        border: 1px solid rgba(196,150,62,0.2);
+        border-radius: 16px;
+        background:
+          linear-gradient(145deg, rgba(5,15,26,0.98), rgba(14,34,54,0.96));
+        color: var(--cream);
+        padding: 1.05rem;
+        box-shadow: 0 16px 38px rgba(5,15,26,0.16);
+      }
+      .admin-mobile-command h1 {
+        margin: 0.15rem 0 0;
+        font-family: var(--serif);
+        font-size: 26px;
+        line-height: 1.02;
+        font-weight: 600;
+      }
+      .admin-mobile-command p {
+        margin: 0.55rem 0 0;
+        color: rgba(247,242,232,0.72);
+        font-size: 12.5px;
+        line-height: 1.55;
+      }
+      .admin-mobile-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.55rem;
+      }
       .learn-scholarship-row { align-items: stretch; flex-direction: column; }
       .learn-moderation-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .learn-moderation-row { grid-template-columns: 1fr; }
@@ -2270,14 +2302,98 @@
         padding: 0.7rem 0.85rem calc(6.8rem + env(safe-area-inset-bottom));
       }
       .tab-panel.active { display: grid; gap: 0.85rem; }
+      #tab-giving.active { display: grid; }
+      .product-admin-hero-giving { display: none; }
+      .queue-filter-bar {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.55rem;
+        border-radius: 14px;
+        background: rgba(253,250,245,0.94);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 8px 24px rgba(5,15,26,0.07);
+      }
+      .queue-filter-bar > div:first-child { grid-column: 1 / -1; }
       .queue-list { padding: 0.6rem; }
-      .queue-row { grid-template-columns: 1fr; gap: 0.7rem; padding: 0.8rem; }
+      .queue-row {
+        grid-template-columns: 1fr;
+        gap: 0.7rem;
+        padding: 0.85rem;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #fff, rgba(253,250,245,0.92));
+      }
       .queue-check { display: none; }
+      .queue-name { font-size: 15px; line-height: 1.18; }
+      .queue-reference,
+      .queue-contact,
+      .queue-status-grid { display: none; }
+      .queue-middle-panel { display: none; }
+      .queue-action-panel {
+        border-top: 1px solid rgba(110,104,96,0.12);
+        padding-top: 0.65rem;
+      }
+      .queue-mobile-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin-top: 0.55rem;
+      }
+      .queue-mobile-summary span {
+        border: 1px solid rgba(110,104,96,0.14);
+        border-radius: 999px;
+        background: rgba(247,242,232,0.76);
+        color: var(--stone);
+        font-size: 10.5px;
+        font-weight: 700;
+        line-height: 1.25;
+        padding: 0.28rem 0.55rem;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+      }
       .queue-status-grid { grid-template-columns: 1fr; }
-      .queue-contact { display: grid; gap: 0.22rem; }
+      .queue-contact { display: none; }
       .detail-empty { min-height: 220px; padding: 1rem; }
       .fields-grid, .form-grid, .toggle-row, .step-track { grid-template-columns: 1fr; }
       .section-body { padding: 0.9rem 1rem; }
+      #registrationDetail {
+        scroll-margin-top: 0.8rem;
+      }
+      #registrationDetail .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }
+      #registrationDetail .field {
+        padding: 0.68rem 0.75rem;
+      }
+      #registrationDetail .field-key { font-size: 9.5px; }
+      #registrationDetail .actions {
+        display: grid;
+        gap: 0.85rem;
+      }
+      #registrationDetail .button-row:last-child {
+        display: none;
+      }
+      .mobile-review-bar {
+        position: fixed;
+        left: 50%;
+        bottom: calc(74px + env(safe-area-inset-bottom));
+        z-index: 9100;
+        display: grid;
+        grid-template-columns: 0.72fr 1fr;
+        gap: 0.55rem;
+        width: min(calc(100% - 1.4rem), 500px);
+        transform: translateX(-50%);
+        border: 1px solid rgba(110,104,96,0.16);
+        border-radius: 16px;
+        background: rgba(253,250,245,0.96);
+        box-shadow: 0 -10px 34px rgba(5,15,26,0.13);
+        padding: 0.55rem;
+        backdrop-filter: blur(14px);
+      }
+      .mobile-review-bar button { min-height: 46px; }
       .mobile-tabbar {
         position: fixed;
         left: 50%;
@@ -2288,12 +2404,12 @@
         grid-auto-flow: column;
         grid-auto-columns: minmax(78px, 1fr);
         width: min(100%, 640px);
-        min-height: 74px;
+        min-height: 70px;
         transform: translateX(-50%);
         padding: 0;
         border: 0;
         border-top: 1px solid rgba(110,104,96,0.14);
-        border-radius: 22px 22px 0 0;
+        border-radius: 18px 18px 0 0;
         background: rgba(247,242,232,0.94);
         backdrop-filter: blur(12px);
         box-shadow: 0 -10px 30px rgba(5,15,26,0.10);
@@ -2305,7 +2421,7 @@
         place-items: center;
         align-content: center;
         gap: 0.18rem;
-        min-height: 74px;
+        min-height: 70px;
         padding: 0.3rem 0.1rem;
         border-radius: 0;
         color: rgba(5,15,26,0.52);
@@ -2347,6 +2463,7 @@
     @media (max-width: 430px) {
       .sidebar-metrics, .community-snapshot, .health-body { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .topbar > div:last-child { grid-template-columns: 1fr 1fr; }
+      .admin-mobile-actions { grid-template-columns: 1fr; }
       .mobile-tab-link { font-size: 10px; }
     }
 

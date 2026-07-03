@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AGAPAY Admin Console</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
+  <link rel="apple-touch-icon" href="/images/app/agapay-admin.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/favicons/android-chrome-192x192.png" />
@@ -15,11 +15,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/admin/style.css" />
   <link rel="stylesheet" href="/styles/numbers.css" />
-  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="manifest" href="/admin/manifest.webmanifest" />
   <meta name="theme-color" content="#061522" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
+  <meta name="apple-mobile-web-app-title" content="AGAPAY Admin" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 </head>
 <body>
@@ -118,6 +118,7 @@
               Auto-refresh
             </label>
           </div>
+          <button class="secondary btn-sm admin-install-btn hidden" id="adminInstallBtn" type="button">Install Admin</button>
           <button class="secondary btn-sm" onclick="loadRegistrations()">Refresh</button>
           <button class="secondary btn-sm hidden" id="backToQueueBtn" onclick="collapseRegistrationDetail()">← Giving</button>
           <button class="secondary btn-sm hidden" id="copySummaryBtn" onclick="copyRegistrationSummary()">Copy summary</button>
@@ -231,6 +232,17 @@
         </div>
 
         <div class="tab-panel" id="tab-giving">
+          <section class="admin-mobile-command">
+            <div>
+              <div class="admin-kicker">Admin PWA</div>
+              <h1>Verify parishes from your phone.</h1>
+              <p>Review new churches, open the next registration, save canonical decisions, and send dashboard access while you are away from your desk.</p>
+            </div>
+            <div class="admin-mobile-actions">
+              <button class="gold" onclick="loadRegistrations()">Refresh queue</button>
+              <button class="secondary admin-install-btn hidden" type="button">Install Admin</button>
+            </div>
+          </section>
           <section class="product-admin-hero product-admin-hero-giving">
             <div>
               <div class="admin-kicker">Product Operations</div>
@@ -666,5 +678,6 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script src="/admin/app.js"></script>
+  <script src="/admin/pwa.js"></script>
 </body>
 </html>

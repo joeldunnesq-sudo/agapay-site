@@ -1,0 +1,37 @@
+{
+  "id": "/admin",
+  "name": "AGAPAY Admin",
+  "short_name": "Admin",
+  "description": "Review and verify AGAPAY parish registrations from a mobile admin console.",
+  "start_url": "/admin?source=admin-pwa&tab=giving",
+  "scope": "/admin",
+  "display": "standalone",
+  "background_color": "#061522",
+  "theme_color": "#061522",
+  "icons": [
+    {
+      "src": "/images/app/agapay-admin.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/app/agapay-admin.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/app/agapay-admin.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/app/agapay-admin.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

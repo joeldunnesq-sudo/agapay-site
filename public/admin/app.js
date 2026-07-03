@@ -104,6 +104,7 @@ let selectedReference = '';
     function restoreAdminSession() {
       const onLoginPage = isLoginPage();
       const storedToken = sessionStorage.getItem(adminSessionKey) || '';
+      const requestedTab = new URLSearchParams(window.location.search).get('tab');
       const input = document.getElementById('adminToken');
       if (storedToken && input) input.value = storedToken;
       refreshDataAsOf();
@@ -123,6 +124,7 @@ let selectedReference = '';
         return;
       }
       if (!onLoginPage && storedToken) {
+        if (requestedTab && document.getElementById('tab-' + requestedTab)) switchTab(requestedTab);
         toggleAutoRefresh(autoRefreshEnabled);
         setTimeout(() => loadRegistrations(), 80);
       }
@@ -1619,6 +1621,7 @@ let selectedReference = '';
             const location = [item.city, item.state].filter(Boolean).join(', ') || 'Location pending';
             const community = item.communityType || 'Community';
             const jurisdiction = item.jurisdiction || 'Jurisdiction';
+            const firstContact = item.priestEmail || item.treasurerEmail || 'No email on file';
             const age = daysSince(item.receivedAt);
             const stalledAge = daysSince(workflowLastActivityAt(item));
             const ageLabel = age === 0 ? 'Today' : age === 1 ? '1d ago' : `${age}d ago`;
@@ -1669,6 +1672,10 @@ let selectedReference = '';
                     <span class="queue-age-badge ${escapeAttr(urgencyClass)}">${escapeHtml(ageLabel)}</span>
                   </div>
                   <div class="queue-next"><strong>${escapeHtml(action.title)}</strong><br>${escapeHtml(action.body)}</div>
+                  <div class="queue-mobile-summary">
+                    <span>${escapeHtml(readable(item.status || 'pending'))}</span>
+                    <span>${escapeHtml(firstContact)}</span>
+                  </div>
                   ${priority && priority.priority <= 2 ? `<div class="queue-urgent-flag">${escapeHtml(priority.label)}</div>` : ''}
                 </div>
               </div>
@@ -2074,11 +2081,15 @@ let selectedReference = '';
             <label for="reviewerNotes">Reviewer notes</label>
             <textarea id="reviewerNotes" placeholder="Write a note — saved entries stay in history with a timestamp and your name"></textarea>
           </div>
-          <div class="button-row">
-            <button class="gold" onclick="saveReview('${reference}', this)">Save review</button>
-            <button class="secondary" onclick="copyRegistrationSummary()">Copy summary</button>
-          </div>
+        <div class="button-row">
+          <button class="gold" onclick="saveReview('${reference}', this)">Save review</button>
+          <button class="secondary" onclick="copyRegistrationSummary()">Copy summary</button>
         </div>
+        <div class="mobile-review-bar">
+          <button class="secondary" onclick="copyRegistrationSummary()">Copy</button>
+          <button class="gold" onclick="saveReview('${reference}', this)">Save review</button>
+        </div>
+      </div>
       `;
     }
 

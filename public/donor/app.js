@@ -860,6 +860,13 @@ function isFastRule(rule = "") {
   return /fast/i.test(String(rule || "")) && !/no fast/i.test(String(rule || ""));
 }
 
+function toneOfWeekLabel(tone = "") {
+  const text = String(tone || "").trim();
+  if (!text) return "";
+  const number = text.match(/\b(\d+)\b/);
+  return number ? `Tone of the Week ${number[1]}` : text.replace(/^Tone\b/i, "Tone of the Week");
+}
+
 function saintDisplayTitle(day = {}) {
   const stories = Array.isArray(day.saintStories) ? day.saintStories : [];
   const names = Array.isArray(day.saints) ? day.saints : [];
@@ -930,19 +937,18 @@ function renderDonorTodayInChurch(parish, payload) {
     chips.innerHTML = [
       liturgicalRankLabel(today.feastRank || feast?.rank),
       fastingRule,
-      today.tone || "",
+      toneOfWeekLabel(today.tone),
       saintNames.length ? `${saintNames.length} saint${saintNames.length === 1 ? "" : "s"}` : ""
     ].filter(Boolean).map((chip) => `<span class="${isFastRule(chip) ? "is-fast" : ""}">${escapeHtml(chip)}</span>`).join("");
   }
   const give = document.getElementById("todayGiveLink");
   if (give) give.href = giveHref;
-  const button = document.getElementById("saintLifeButton");
-  if (button) {
-    button.dataset.date = date;
-    button.dataset.calendar = calendar;
-    button.dataset.saintTitle = saintTitle;
-    button.disabled = false;
-    button.textContent = stories.length || saintNames.length ? "Open saint life" : "Check saint life";
+  const saintCard = document.getElementById("saintPreviewCard");
+  if (saintCard) {
+    saintCard.dataset.date = date;
+    saintCard.dataset.calendar = calendar;
+    saintCard.dataset.saintTitle = saintTitle;
+    saintCard.disabled = false;
   }
 }
 
@@ -995,9 +1001,10 @@ async function openDonorSaintOfDay(button) {
   const date = button?.dataset.date || donorCalendarState.date || todayIsoLocal();
   const calendar = button?.dataset.calendar || donorCalendarState.calendar || "julian";
   const previousText = button?.textContent || "";
+  const isPreviewCard = button?.id === "saintPreviewCard";
   if (button) {
     button.disabled = true;
-    button.textContent = "Loading...";
+    if (!isPreviewCard) button.textContent = "Loading...";
   }
   try {
     let day = donorCalendarState.liturgicalDay || {};
@@ -1022,7 +1029,7 @@ async function openDonorSaintOfDay(button) {
   } finally {
     if (button) {
       button.disabled = false;
-      button.textContent = previousText || "Open saint life";
+      if (!isPreviewCard) button.textContent = previousText || button.textContent || "Open saint";
     }
   }
 }
@@ -3486,6 +3493,9 @@ async function loadDonorBookstorePage() {
 
   const donor = donorProfile();
   const parishId = donor?.defaultParishId || "";
+  const parishName = donor?.defaultParish?.name || donor?.defaultParishName || "YOUR PARISH";
+  setText("bookstoreHeroTitle", `PAY FOR YOUR ITEMS AT THE ${parishName} BOOKSTORE.`);
+  setText("bookstoreHeroDescription", "Shop at your parish bookstore, then use your phone to pay for the items you enter below.");
   const parishInput = document.getElementById("bookstoreParishId");
   if (parishInput) parishInput.value = parishId;
 
@@ -3532,8 +3542,9 @@ function renderBookstorePayload(payload = {}) {
   if (unavailableNotice) {
     unavailableNotice.style.display = available ? "none" : "block";
     unavailableNotice.innerHTML = available ? "" : `
-      <p style="margin:0 0 12px;">Your parish hasn't turned on Bookstore Payments yet.</p>
-      <button type="button" class="btn btn-ghost btn-sm" onclick="requestBookstoreFeature(this)">Ask my parish to turn it on</button>
+      <p style="margin:0 0 8px;">Your parish hasn't activated Bookstore Payments yet.</p>
+      <p style="margin:0 0 12px;">Bookstore Payments are part of the AGAPAY Parish+ premium add-on. You can request this feature and AGAPAY will let your parish know donors are interested.</p>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="requestBookstoreFeature(this)">Request this feature for my parish</button>
     `;
   }
 
@@ -3557,7 +3568,7 @@ async function requestBookstoreFeature(btn) {
     });
     if (btn) btn.textContent = data.alreadySent ? "Already asked recently" : "Request sent!";
   } catch (err) {
-    if (btn) { btn.disabled = false; btn.textContent = "Ask my parish to turn it on"; }
+    if (btn) { btn.disabled = false; btn.textContent = "Request this feature for my parish"; }
     setDonorStatus(err.message, "error");
   }
 }
