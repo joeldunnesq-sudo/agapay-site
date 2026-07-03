@@ -1605,6 +1605,14 @@ export function donorSummaryFromOfferings(offerings, commemorations = []) {
   const parishNetYtdCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).parishNetCents, 0);
   const feeSavingsCents = paid.reduce((sum, item) => sum + offeringFeeBreakdown(item).donorCoveredFeeCents, 0);
   const feeCoveredCount = paid.filter((item) => offeringFeeBreakdown(item).coverFees).length;
+  // "Stewardship" giving = tithes / general parish offerings only. Excludes designated
+  // funds, campaigns, candles, and commemorations — those are separate offering types
+  // and should not count toward a donor's annual pledge progress. Offerings without a
+  // giftType predate giftType tracking and are treated as stewardship, matching how
+  // they're normalized everywhere else in the app.
+  const isStewardshipOffering = (item) => String(item.giftType || "stewardship").toLowerCase() === "stewardship";
+  const stewardshipPaid = paid.filter(isStewardshipOffering);
+  const stewardshipYtdCents = stewardshipPaid.reduce((sum, item) => sum + offeringFeeBreakdown(item).giftAmountCents, 0);
   const monthCents = paid
     .filter((item) => {
       const created = new Date(item.createdAt || 0);
@@ -1617,12 +1625,20 @@ export function donorSummaryFromOfferings(offerings, commemorations = []) {
       return created.getUTCFullYear() === year && created.getUTCMonth() === month;
     })
     .reduce((sum, item) => sum + offeringFeeBreakdown(item).parishNetCents, 0);
+  const stewardshipMonthCents = stewardshipPaid
+    .filter((item) => {
+      const created = new Date(item.createdAt || 0);
+      return created.getUTCFullYear() === year && created.getUTCMonth() === month;
+    })
+    .reduce((sum, item) => sum + offeringFeeBreakdown(item).giftAmountCents, 0);
   return {
     year,
     ytdCents,
     monthCents,
     parishNetYtdCents,
     parishNetMonthCents,
+    stewardshipYtdCents,
+    stewardshipMonthCents,
     feeSavingsCents,
     feeCoveragePercent: paid.length ? Math.round((feeCoveredCount / paid.length) * 100) : 0,
     offeringCount: ytd.length,
