@@ -313,12 +313,110 @@
   function renderParishPlusPanel() {
     const active = isParishPlusActive();
     const status = document.getElementById('parishPlusStatusLabel');
-    const meetingsPane = document.getElementById('parishPlusMeetingsPane');
     if (status) {
-      status.textContent = active ? 'Active' : 'Add-on · $39/mo';
-      status.className = 'sw-suite-status-label ' + (active ? 'sw-suite-status--active' : 'sw-suite-status--upsell');
+      if (active) {
+        status.textContent = 'Active';
+        status.className = 'pdx-pp-status-pill active';
+        // Clear any upsell price/CTA siblings
+        const heroStatus = document.getElementById('parishPlusHeroStatus');
+        if (heroStatus) heroStatus.querySelectorAll('.pdx-pp-price, .pdx-pp-hero-cta').forEach(el => el.remove());
+      } else {
+        status.textContent = 'Add-on';
+        status.className = 'pdx-pp-status-pill upsell';
+        const heroStatus = document.getElementById('parishPlusHeroStatus');
+        if (heroStatus && !heroStatus.querySelector('.pdx-pp-hero-cta')) {
+          const price = document.createElement('span');
+          price.className = 'pdx-pp-price';
+          price.innerHTML = '<b>$39</b>/mo';
+          const cta = document.createElement('button');
+          cta.className = 'pdx-pp-hero-cta';
+          cta.type = 'button';
+          cta.textContent = 'Activate Parish +';
+          cta.onclick = () => switchTab('settings');
+          heroStatus.appendChild(price);
+          heroStatus.appendChild(cta);
+        }
+      }
     }
+
+    renderParishPlusCommerceTile(active);
+    renderParishPlusSacramentsTile(active);
+    const meetingsPane = document.getElementById('parishPlusMeetingsPane');
     if (meetingsPane) renderParishPlusMeetingsPane(meetingsPane, active);
+  }
+
+  // Commerce tile — live this-month sales (fetched lazily, cached on state)
+  let parishPlusCommerceState = { loaded: false, summary: null };
+  function renderParishPlusCommerceTile(active) {
+    const stateChip = document.getElementById('parishPlusCommerceState');
+    const statBox = document.getElementById('parishPlusCommerceStat');
+    const foot = document.getElementById('parishPlusCommerceFoot');
+    if (!statBox || !foot) return;
+
+    if (!active) {
+      if (stateChip) { stateChip.textContent = 'Parish +'; stateChip.className = 'pdx-pp-card-state locked'; }
+      statBox.innerHTML = '';
+      foot.innerHTML = '<button class="pdx-pp-btn pdx-pp-btn-ghost" type="button" onclick="switchTab(\'parishplus\')">Learn more</button>';
+      return;
+    }
+
+    if (stateChip) { stateChip.textContent = 'Included'; stateChip.className = 'pdx-pp-card-state ready'; }
+    foot.innerHTML = '<button class="pdx-pp-btn pdx-pp-btn-primary" type="button" onclick="switchTab(\'bookstore\')">Open Bookstore →</button>';
+
+    const s = parishPlusCommerceState.summary;
+    if (!parishPlusCommerceState.loaded) {
+      statBox.innerHTML = '<div class="pdx-pp-stat"><span class="pdx-pp-stat-unit">Loading sales…</span></div>';
+      loadParishPlusCommerceSummary();
+    } else if (s && s.monthOrderCount > 0) {
+      statBox.innerHTML = `<div class="pdx-pp-stat"><span class="pdx-pp-stat-num">${money(s.monthGrossCents)}</span><span class="pdx-pp-stat-unit">this month · ${s.monthOrderCount} order${s.monthOrderCount === 1 ? '' : 's'}</span></div>`;
+    } else {
+      statBox.innerHTML = '<div class="pdx-pp-stat"><span class="pdx-pp-stat-unit">No sales yet this month</span></div>';
+    }
+  }
+
+  async function loadParishPlusCommerceSummary() {
+    if (!currentParish) return;
+    try {
+      const res = await fetch('/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/bookstore/sales-summary', { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      parishPlusCommerceState = { loaded: true, summary: data.salesSummary || null };
+    } catch {
+      parishPlusCommerceState = { loaded: true, summary: null };
+    }
+    renderParishPlusCommerceTile(isParishPlusActive());
+  }
+
+  // Sacraments tile — pending request count (data already client-side)
+  function renderParishPlusSacramentsTile(active) {
+    const stateChip = document.getElementById('parishPlusSacramentsState');
+    const statBox = document.getElementById('parishPlusSacramentsStat');
+    const foot = document.getElementById('parishPlusSacramentsFoot');
+    if (!statBox || !foot) return;
+
+    if (!active) {
+      if (stateChip) { stateChip.textContent = 'Parish +'; stateChip.className = 'pdx-pp-card-state locked'; }
+      statBox.innerHTML = '';
+      foot.innerHTML = '<button class="pdx-pp-btn pdx-pp-btn-ghost" type="button" onclick="switchTab(\'parishplus\')">Learn more</button>';
+      return;
+    }
+
+    const requests = (typeof sacramentsState !== 'undefined' && sacramentsState.requests) ? sacramentsState.requests : [];
+    const pending = requests.filter(r => ['requested', 'acknowledged', 'scheduled'].includes(r.status));
+    const pendingCount = pending.length;
+
+    if (stateChip) {
+      if (pendingCount > 0) { stateChip.textContent = 'Action needed'; stateChip.className = 'pdx-pp-card-state attention'; }
+      else { stateChip.textContent = 'Included'; stateChip.className = 'pdx-pp-card-state ready'; }
+    }
+    if (!sacramentsState || !sacramentsState.loaded) {
+      statBox.innerHTML = '<div class="pdx-pp-stat"><span class="pdx-pp-stat-unit">Loading requests…</span></div>';
+      if (typeof loadSacramentsPanel === 'function') loadSacramentsPanel().then(() => renderParishPlusSacramentsTile(isParishPlusActive()));
+    } else if (pendingCount > 0) {
+      statBox.innerHTML = `<div class="pdx-pp-stat"><span class="pdx-pp-stat-num attention">${pendingCount}</span><span class="pdx-pp-stat-unit">pending request${pendingCount === 1 ? '' : 's'}</span></div>`;
+    } else {
+      statBox.innerHTML = '<div class="pdx-pp-stat"><span class="pdx-pp-stat-unit">No pending requests</span></div>';
+    }
+    foot.innerHTML = '<button class="pdx-pp-btn pdx-pp-btn-primary" type="button" onclick="switchTab(\'sacraments\')">Review Requests →</button>';
   }
 
   async function loadStewardshipPanel(force = false) {
@@ -1087,7 +1185,6 @@
             </div>
             <div class="bookstore-current-metrics">
               <b>${moneyFull(Number(p.priceCents || 0))}</b>
-              <span>${Number(p.stockQuantity || 0)} in stock</span>
               <em class="bookstore-status-pill">${escapeHtml(p.status || 'active')}</em>
             </div>
             <div class="bookstore-row-actions">
@@ -1121,7 +1218,7 @@
           <label>Category<select id="bookstoreModalCategory">${bookstoreCategoryOptions('other')}</select></label>
           <label class="full">Description<textarea id="bookstoreModalDescription" rows="3"></textarea></label>
           <label>Price<input id="bookstoreModalPrice" type="number" min="0.01" step="0.01" required /></label>
-          <label>In stock<input id="bookstoreModalStock" type="number" min="0" step="1" /></label>
+          <input id="bookstoreModalStock" type="hidden" value="0" />
           <label>SKU / barcode<input id="bookstoreModalSku" /></label>
           <label class="full">Image URL<input id="bookstoreModalImage" placeholder="https://..." /></label>
           <div class="bookstore-modal-actions">
@@ -1180,7 +1277,7 @@
                   <input type="text" value="${escapeAttr(item.key)}" data-starter-sku="${escapeAttr(item.key)}" title="SKU / barcode" />
                 </div>
                 <input type="number" min="0.01" step="0.01" value="${(item.suggestedPriceCents / 100).toFixed(2)}" data-starter-price="${escapeAttr(item.key)}" title="Price" />
-                <input type="number" min="0" step="1" value="0" data-starter-stock="${escapeAttr(item.key)}" title="Starting stock count" />
+                <input type="hidden" value="0" data-starter-stock="${escapeAttr(item.key)}" />
               `}
             </label>
           `).join('')}
@@ -1678,53 +1775,67 @@
   function renderParishPlusMeetingsPane(meetingsPane, active) {
     const meetings = stewardshipState.meetings || [];
     const year = new Date().getFullYear();
+    const stateChip = document.getElementById('parishPlusPacketsState');
+
     if (active) {
+      // State chip reflects the current-year packet's status, or a prompt to start
+      if (stateChip) {
+        const thisYear = meetings.find(m => Number(m.fiscalYear) === year);
+        if (thisYear) {
+          const st = (thisYear.status || 'draft').toLowerCase();
+          const label = { draft: 'Draft', ready: 'Ready', generated: 'Generated', archived: 'Archived' }[st] || st;
+          stateChip.textContent = `${year} · ${label}`;
+          stateChip.className = 'pdx-pp-card-state ' + (st === 'ready' || st === 'generated' ? 'ready' : 'soon');
+        } else {
+          stateChip.textContent = `Start ${year}`;
+          stateChip.className = 'pdx-pp-card-state attention';
+        }
+      }
       meetingsPane.innerHTML =
-        '<div class="sw-tool-meetings-header">' +
-          '<button class="sw-new-packet-btn" type="button" onclick="newStewardshipMeeting()">' +
+        (meetings.length ? renderMeetingsList(meetings) : renderMeetingsEmpty(year)) +
+        '<div class="pdx-pp-card-foot">' +
+          '<button class="pdx-pp-new-btn" type="button" onclick="newStewardshipMeeting()">' +
             '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>' +
             ' New packet' +
           '</button>' +
-        '</div>' +
-        (meetings.length ? renderMeetingsList(meetings) : renderMeetingsEmpty(year));
+        '</div>';
       return;
     }
 
+    if (stateChip) { stateChip.textContent = 'Parish +'; stateChip.className = 'pdx-pp-card-state locked'; }
     meetingsPane.innerHTML =
-      '<div class="sw-tool-locked">' +
-        '<div class="sw-tool-locked-items">' +
-          '<div><span>✓</span> Agenda, opening prayer, quorum call</div>' +
-          '<div><span>✓</span> Rector, treasurer &amp; ministry reports</div>' +
-          '<div><span>✓</span> Financial summary &amp; restricted funds</div>' +
-          '<div><span>✓</span> Nominees, elections, resolutions</div>' +
-          '<div><span>✓</span> Sign-in sheet &amp; minutes template</div>' +
-          '<div><span>✓</span> Print-ready PDF packet</div>' +
-        '</div>' +
-        '<div class="sw-tool-locked-badge">AGAPAY Parish +</div>' +
-      '</div>';
+      '<div class="pdx-pp-locked-items">' +
+        '<div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Agenda, opening prayer, quorum call</div>' +
+        '<div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Rector, treasurer &amp; ministry reports</div>' +
+        '<div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Financial summary &amp; restricted funds</div>' +
+        '<div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Nominees, elections, resolutions</div>' +
+        '<div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Sign-in sheet &amp; minutes template</div>' +
+        '<div class="pdx-pp-locked-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Print-ready PDF packet</div>' +
+      '</div>' +
+      '<div class="pdx-pp-card-foot"><button class="pdx-pp-hero-cta" type="button" style="width:auto;" onclick="switchTab(\'settings\')">Activate Parish + — $39/mo</button></div>';
   }
 
   // Upsell state: lock Stewardship tool cards, show tier CTA in plan row
   function renderMeetingsList(meetings) {
     const statusLabels = { draft:'Draft', ready:'Ready', generated:'Generated', archived:'Archived' };
-    const statusClasses = { draft:'sw-pill-draft', ready:'sw-pill-ready', generated:'sw-pill-generated', archived:'sw-pill-archived' };
-    return '<div class="sw-meetings-list">' +
+    const statusClasses = { draft:'pdx-pp-pill-draft', ready:'pdx-pp-pill-ready', generated:'pdx-pp-pill-generated', archived:'pdx-pp-pill-archived' };
+    return '<div class="pdx-pp-meetings">' +
       meetings.map(m => {
         const statusKey = (m.status || 'draft').toLowerCase();
         const label = statusLabels[statusKey] || statusKey;
-        const cls = statusClasses[statusKey] || 'sw-pill-draft';
+        const cls = statusClasses[statusKey] || 'pdx-pp-pill-draft';
         const dateStr = m.meetingDate ? new Date(m.meetingDate).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }) : '';
         const metaParts = [m.fiscalYear, dateStr, m.location ? escapeHtml(m.location) : ''].filter(Boolean).join(' · ');
-        return '<div class="sw-meeting-row">' +
-          '<div class="sw-meeting-info">' +
-            '<strong class="sw-meeting-title">' + escapeHtml(m.title || (m.fiscalYear + ' Annual Meeting')) + '</strong>' +
-            '<span class="sw-meeting-meta">' + metaParts + '</span>' +
+        return '<div class="pdx-pp-meeting-row">' +
+          '<div class="pdx-pp-meeting-info">' +
+            '<strong class="pdx-pp-meeting-title">' + escapeHtml(m.title || (m.fiscalYear + ' Annual Meeting')) + '</strong>' +
+            '<span class="pdx-pp-meeting-meta">' + metaParts + '</span>' +
           '</div>' +
-          '<div class="sw-meeting-actions">' +
-            '<span class="sw-pill ' + cls + '">' + label + '</span>' +
-            '<button class="sw-action-btn" type="button" onclick="editStewardshipMeeting(\'' + escapeAttr(m.id) + '\')">Edit</button>' +
-            '<a class="sw-action-btn" href="' + escapeAttr(stewardshipPreviewUrl(m.id)) + '" target="_blank" rel="noopener">Preview</a>' +
-            '<a class="sw-action-btn" href="' + escapeAttr(stewardshipPreviewUrl(m.id, 'pdf')) + '" target="_blank" rel="noopener">PDF</a>' +
+          '<div class="pdx-pp-meeting-actions">' +
+            '<span class="pdx-pp-pill ' + cls + '">' + label + '</span>' +
+            '<button class="pdx-pp-mini-btn" type="button" onclick="editStewardshipMeeting(\'' + escapeAttr(m.id) + '\')">Edit</button>' +
+            '<a class="pdx-pp-mini-btn" href="' + escapeAttr(stewardshipPreviewUrl(m.id)) + '" target="_blank" rel="noopener">Preview</a>' +
+            '<a class="pdx-pp-mini-btn" href="' + escapeAttr(stewardshipPreviewUrl(m.id, 'pdf')) + '" target="_blank" rel="noopener">PDF</a>' +
           '</div>' +
         '</div>';
       }).join('') +
