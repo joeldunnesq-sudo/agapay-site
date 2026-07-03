@@ -21,12 +21,13 @@
   <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <style>
-    .donor-commemorations-page .commem-metrics { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:0 0 1.25rem; }
+    .donor-commemorations-page .commem-metrics { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin:clamp(1.15rem,2.2vw,1.65rem) 0 1.45rem; }
     @media (min-width:720px) { .donor-commemorations-page .commem-metrics { grid-template-columns:repeat(4,1fr); } }
-    .donor-commemorations-page .commem-metric { background:linear-gradient(160deg,#0a1e30,#061522); border:1px solid rgba(196,156,80,.22); border-radius:16px; padding:16px 14px; display:flex; flex-direction:column; gap:5px; }
-    .donor-commemorations-page .commem-metric-num { font-family:'Cormorant Garamond',Georgia,serif; font-weight:600; font-size:2.1rem; line-height:1; color:#DABB70; }
+    .donor-commemorations-page .commem-metric { position:relative; overflow:hidden; background:linear-gradient(180deg,rgba(255,253,248,.96),rgba(246,241,232,.84)); border:1px solid rgba(184,144,47,.24); border-radius:18px; padding:18px 16px 16px; display:flex; flex-direction:column; gap:6px; box-shadow:0 14px 30px rgba(6,21,34,.06); }
+    .donor-commemorations-page .commem-metric::before { content:""; position:absolute; inset:0 0 auto; height:3px; background:linear-gradient(90deg,rgba(184,144,47,.2),rgba(218,187,112,.82),rgba(184,144,47,.2)); }
+    .donor-commemorations-page .commem-metric-num { font-family:'Cormorant Garamond',Georgia,serif; font-weight:600; font-size:2.1rem; line-height:1; color:#061522; }
     .donor-commemorations-page .commem-metric-since { font-size:1.7rem; }
-    .donor-commemorations-page .commem-metric-label { font-family:'DM Sans',system-ui,sans-serif; font-size:.7rem; letter-spacing:.09em; text-transform:uppercase; color:rgba(247,242,232,.72); }
+    .donor-commemorations-page .commem-metric-label { font-family:'DM Sans',system-ui,sans-serif; font-size:.7rem; letter-spacing:.09em; text-transform:uppercase; color:#746750; }
     .donor-commemorations-page .commem-candle-row { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid rgba(6,21,34,.08); }
     .donor-commemorations-page .commem-candle-row:last-child { border-bottom:0; }
     .donor-commemorations-page .commem-candle-flame { flex:0 0 auto; display:flex; }
