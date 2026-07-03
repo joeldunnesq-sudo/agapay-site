@@ -139,7 +139,7 @@ const donorCalendar = await readFile("public/donor/calendar.html", "utf8");
 const donorCalendarCss = await readFile("public/donor/style.css", "utf8");
 assert.ok(!donorCalendar.includes("saintLifeButton") && !donorCalendar.includes("Open saint life"), "Today hero should not duplicate the dedicated Saint of the Day card action");
 assert.ok(donorCalendar.includes('id="saintPreviewCard"') && donorCalendar.includes('onclick="openDonorSaintOfDay(this)"'), "Saint of the Day card should be the saint-life action");
-assert.ok(donorApp.includes("Tone of the Week") && !donorApp.includes('return "Church day"'), "Today hero chips should use clear liturgical and tone labels");
+assert.ok(donorApp.includes("Tone of the Week") && donorApp.includes('return "";') && !donorApp.includes('return "Church day"') && !donorApp.includes('return "Liturgical Day"'), "Today hero chips should omit generic liturgical fallback labels and use clear tone labels");
 assert.ok(donorCalendarCss.includes("@media (max-width: 719px)") && donorCalendarCss.includes('aria-label="Saint of the Day"'), "Today mobile layout should lift Saint of the Day above lower cards without changing desktop columns");
 const donorBookstore = await readFile("public/donor/bookstore.html", "utf8");
 assert.ok(donorBookstore.includes("bookstoreHeroTitle") && donorBookstore.includes("PAY FOR YOUR ITEMS AT YOUR PARISH BOOKSTORE"), "Bookstore hero should support parish-specific payment copy");

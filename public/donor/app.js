@@ -853,7 +853,7 @@ function liturgicalRankLabel(rank = "") {
   if (key.includes("bright-week")) return "Bright Week";
   if (key.includes("fast")) return "Fast";
   if (key.includes("season")) return "Season";
-  return "Church day";
+  return "";
 }
 
 function isFastRule(rule = "") {
