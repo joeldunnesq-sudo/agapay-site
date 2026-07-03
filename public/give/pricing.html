@@ -148,6 +148,24 @@
     .fee-note svg { width: 52px; height: 52px; stroke: #A5792B; fill: none; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; }
     .fee-note strong { display: block; color: var(--night); font-family: var(--serif); font-size: 1.12rem; line-height: 1.15; margin-bottom: 0.18rem; }
 
+    .parish-plus-addon { margin-top: 1.35rem; border: 1px solid rgba(200, 162, 74, 0.42); border-radius: 16px; overflow: hidden; background: #FFFDF8; box-shadow: 0 14px 34px rgba(6, 21, 34, 0.08); }
+    .parish-plus-head { display: grid; grid-template-columns: minmax(280px, 0.9fr) minmax(360px, 1.1fr); gap: 1.5rem; align-items: center; padding: clamp(1.4rem, 3vw, 2.2rem); color: var(--cream); background: linear-gradient(110deg, #061522, #0B2130); }
+    .parish-plus-kicker { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--gold); font-size: 0.72rem; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 0.6rem; }
+    .parish-plus-title { font-family: var(--serif); font-size: clamp(2.2rem, 4.5vw, 3.7rem); line-height: 0.95; font-weight: 600; margin-bottom: 0.6rem; }
+    .parish-plus-copy { color: rgba(246, 241, 232, 0.74); line-height: 1.65; max-width: 620px; }
+    .parish-plus-price { justify-self: end; width: min(100%, 360px); border: 1px solid rgba(200, 162, 74, 0.34); border-radius: 14px; padding: 1.1rem; background: rgba(255, 253, 248, 0.08); }
+    .parish-plus-price span { display: block; color: var(--gold); font-size: 0.72rem; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; }
+    .parish-plus-price strong { display: block; font-family: var(--serif); font-size: 2.8rem; line-height: 1; margin: 0.35rem 0; }
+    .parish-plus-price p { color: rgba(246, 241, 232, 0.68); line-height: 1.5; font-size: 0.9rem; }
+    .parish-plus-body { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: rgba(200, 162, 74, 0.22); }
+    .parish-plus-item { background: rgba(255, 253, 248, 0.96); padding: 1.15rem; display: grid; gap: 0.55rem; align-content: start; min-height: 190px; }
+    .parish-plus-item svg { width: 34px; height: 34px; stroke: #A5792B; fill: none; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+    .parish-plus-item strong { color: var(--night); font-family: var(--serif); font-size: 1.32rem; line-height: 1.08; }
+    .parish-plus-item p { color: #44505A; line-height: 1.58; font-size: 0.92rem; }
+    .parish-plus-note { display: grid; grid-template-columns: auto 1fr; gap: 0.85rem; align-items: center; padding: 1rem 1.15rem; background: rgba(246, 241, 232, 0.74); color: #34434B; line-height: 1.55; }
+    .parish-plus-note svg { width: 42px; height: 42px; stroke: #A5792B; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .parish-plus-note strong { color: var(--night); }
+
     .lower-grid { margin-top: 1.25rem; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr); gap: 1rem; }
     .calculator, .value-card { border: 1px solid rgba(166, 159, 145, 0.34); border-radius: 14px; background: rgba(255, 253, 248, 0.92); box-shadow: 0 10px 26px rgba(6, 21, 34, 0.06); overflow: hidden; }
     .calculator { display: grid; grid-template-columns: minmax(270px, 0.96fr) minmax(290px, 1.04fr); }
@@ -217,6 +235,8 @@
       .hero-art { min-height: 300px; order: 2; background-position: center; margin-top: 0.5rem; }
       .pricing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .fee-banner, .lower-grid, .closing-cta { grid-template-columns: 1fr; }
+      .parish-plus-head, .parish-plus-body { grid-template-columns: 1fr; }
+      .parish-plus-price { justify-self: stretch; }
       .fee-split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .fee-note { border-left: 0; border-top: 1px solid rgba(166, 159, 145, 0.24); padding: 1rem 0 0; }
       .footer-grid { grid-template-columns: 1fr 1fr; }
@@ -361,32 +381,6 @@
         </article>
       </div>
 
-      <aside class="fee-banner" aria-label="AGAPAY Parish + add-on">
-        <div class="fee-main">
-          <div class="fee-badge">+</div>
-          <div>
-            <h2>Optional add-on: AGAPAY Parish +</h2>
-            <p>Parish + adds operational tools that go beyond giving: parish commerce, bookstore payments, sacrament and service requests, and annual meeting packet creation.</p>
-          </div>
-        </div>
-        <div class="fee-split">
-          <div class="fee-line">
-            <span class="fee-label">$39 / month</span>
-            <strong>Parish Commerce</strong>
-            <span>Bookstore items, parish goods, event-style payments, order tracking, and inventory support.</span>
-          </div>
-          <div class="fee-line">
-            <span class="fee-label">Included</span>
-            <strong>Annual meeting packets</strong>
-            <span>Agenda, clergy reports, treasurer notes, nominees, resolutions, financial snapshots, preview, and print-ready packet output.</span>
-          </div>
-        </div>
-        <div class="fee-note">
-          <svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5 20V9l7-5 7 5v11"/><path d="M8 12h5"/><path d="M8 16h4"/><circle cx="17" cy="16" r="4"/><path d="M17 14v2l1.5 1"/></svg>
-          <p><strong>Stewardship is not an add-on.</strong> Parish stewardship and pledge tools belong in the Parish plan. Parish + is for commerce and parish operations.</p>
-        </div>
-      </aside>
-
       <aside class="fee-banner" aria-label="Transaction fee explanation">
         <div class="fee-main">
           <div class="fee-badge">%</div>
@@ -452,6 +446,42 @@
           <img src="/images/pricing/church-tier-parish.png" alt="Parish church sketch" />
         </aside>
       </div>
+
+      <section class="parish-plus-addon" aria-labelledby="parish-plus-title">
+        <div class="parish-plus-head">
+          <div>
+            <div class="parish-plus-kicker">Optional add-on</div>
+            <h2 class="parish-plus-title" id="parish-plus-title">AGAPAY Parish +</h2>
+            <p class="parish-plus-copy">Parish + is for commerce and operations that sit beside giving. It does not replace the Parish tier's stewardship tools, pledge reports, or annual giving statements.</p>
+          </div>
+          <div class="parish-plus-price">
+            <span>Add-on price</span>
+            <strong>$39/mo</strong>
+            <p>Add when your parish is ready to accept payments for parish goods and manage operational requests inside AGAPAY.</p>
+          </div>
+        </div>
+        <div class="parish-plus-body">
+          <article class="parish-plus-item">
+            <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 6h8"/><path d="M8 10h7"/></svg>
+            <strong>Parish commerce</strong>
+            <p>Bookstore items, parish goods, event-style payments, and order checkout through My AGAPAY.</p>
+          </article>
+          <article class="parish-plus-item">
+            <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-5"/></svg>
+            <strong>Sacraments &amp; Services</strong>
+            <p>Parishioners can request house blessings, baptisms, weddings, funerals, and other services from My AGAPAY.</p>
+          </article>
+          <article class="parish-plus-item">
+            <svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5 20V9l7-5 7 5v11"/><path d="M8 12h5"/><path d="M8 16h4"/><circle cx="17" cy="16" r="4"/><path d="M17 14v2l1.5 1"/></svg>
+            <strong>Operational workflows</strong>
+            <p>A home for parish workflows that are not donations or stewardship, with more modules added as they become ready.</p>
+          </article>
+        </div>
+        <div class="parish-plus-note">
+          <svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M6 19V9l6-5 6 5v10"/><path d="M9 19v-6h6v6"/></svg>
+          <p><strong>Stewardship is not an add-on.</strong> Pledges, stewardship reports, and giving records belong in the Parish tier. Parish + is for commerce and parish operations.</p>
+        </div>
+      </section>
 
       <section class="faq-section" aria-label="Frequently asked questions">
         <h2 class="faq-title">Frequently Asked Questions</h2>
