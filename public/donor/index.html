@@ -285,7 +285,6 @@
                 <span id="desktopPledgePct">0%</span>
                 <span id="desktopPledgeGoal">of $0 pledge</span>
               </div>
-              <p style="margin: 0.5rem 0 0; font-size: 11px; line-height: 1.4; color: rgba(246, 241, 232, 0.5);">Counts parish offerings (tithes) only — not designated funds, campaigns, candles, or commemorations.</p>
             </div>
             <!-- Empty/encourage state -->
             <div class="desktop-pledge-inner" id="desktopPledgeEmptyState" hidden>
@@ -404,7 +403,6 @@
               <span id="pledgePct">0%</span>
               <span id="pledgeGoal">of $0 pledge</span>
             </div>
-            <p style="margin: 0.5rem 0 0; font-size: 11px; line-height: 1.4; color: rgba(246, 241, 232, 0.5);">Counts parish offerings (tithes) only — not designated funds, campaigns, candles, or commemorations.</p>
           </div>
           <!-- Empty/encourage state -->
           <div id="pledgeEmptyState" hidden>
@@ -421,15 +419,17 @@
         </section>
 
         <section class="mobile-summary-card" aria-label="Total giving summary">
-          <div class="summary-title" style="font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(246, 241, 232, 0.65); margin-bottom: 0.6rem;">Total Giving</div>
-          <div class="summary-metric">
-            <span>This month</span>
-            <strong id="metricMonth">$0</strong>
-          </div>
-          <div class="summary-divider"></div>
-          <div class="summary-metric">
-            <span>This year</span>
-            <strong id="metricYtd">$0</strong>
+          <div class="summary-title">Total Giving</div>
+          <div class="summary-metrics-row">
+            <div class="summary-metric">
+              <span>This month</span>
+              <strong id="metricMonth">$0</strong>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-metric">
+              <span>This year</span>
+              <strong id="metricYtd">$0</strong>
+            </div>
           </div>
           <img class="summary-watermark" src="/mark.png" alt="" />
           <a class="summary-cta" href="/myagapay/giving/give">Make an Offering <span aria-hidden="true">-&gt;</span></a>

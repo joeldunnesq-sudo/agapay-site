@@ -2185,9 +2185,8 @@ body.donor-home {
 .mobile-summary-card {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: start;
-  gap: 1.3rem;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
   min-height: 182px;
   border-radius: 12px;
   background:
@@ -2197,6 +2196,26 @@ body.donor-home {
   padding: 1.6rem 1.7rem;
   overflow: hidden;
   box-shadow: 0 13px 28px rgba(6, 21, 34, 0.19);
+}
+
+.summary-title {
+  position: relative;
+  z-index: 1;
+  color: rgba(246, 241, 232, 0.65);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.summary-metrics-row {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: 1.3rem;
+  padding-bottom: 3.6rem;
 }
 
 .summary-metric {
@@ -3973,6 +3992,10 @@ body.donor-mobile-page {
   .mobile-summary-card {
     gap: 0.9rem;
     padding: 1.35rem 1.25rem;
+  }
+
+  .summary-metrics-row {
+    gap: 0.9rem;
   }
 
   .summary-cta {
