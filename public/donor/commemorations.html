@@ -11,7 +11,7 @@
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css?v=20260703d" />
   <script src="/myagapay-shell.js?v=20260703e" defer></script>
-  <script src="/donor/app.js?v=20260703c" defer></script>
+  <script src="/donor/app.js?v=20260703f" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -21,13 +21,12 @@
   <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <style>
-    .donor-commemorations-page .commem-metrics { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin:clamp(1.15rem,2.2vw,1.65rem) 0 1.45rem; }
+    .donor-commemorations-page .commem-metrics { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:0 0 1.25rem; }
     @media (min-width:720px) { .donor-commemorations-page .commem-metrics { grid-template-columns:repeat(4,1fr); } }
-    .donor-commemorations-page .commem-metric { position:relative; overflow:hidden; background:linear-gradient(180deg,rgba(255,253,248,.96),rgba(246,241,232,.84)); border:1px solid rgba(184,144,47,.24); border-radius:18px; padding:18px 16px 16px; display:flex; flex-direction:column; gap:6px; box-shadow:0 14px 30px rgba(6,21,34,.06); }
-    .donor-commemorations-page .commem-metric::before { content:""; position:absolute; inset:0 0 auto; height:3px; background:linear-gradient(90deg,rgba(184,144,47,.2),rgba(218,187,112,.82),rgba(184,144,47,.2)); }
-    .donor-commemorations-page .commem-metric-num { font-family:'Cormorant Garamond',Georgia,serif; font-weight:600; font-size:2.1rem; line-height:1; color:#061522; }
+    .donor-commemorations-page .commem-metric { background:linear-gradient(160deg,#0a1e30,#061522); border:1px solid rgba(196,156,80,.22); border-radius:16px; padding:16px 14px; display:flex; flex-direction:column; gap:5px; }
+    .donor-commemorations-page .commem-metric-num { font-family:'Cormorant Garamond',Georgia,serif; font-weight:600; font-size:2.1rem; line-height:1; color:#DABB70; }
     .donor-commemorations-page .commem-metric-since { font-size:1.7rem; }
-    .donor-commemorations-page .commem-metric-label { font-family:'DM Sans',system-ui,sans-serif; font-size:.7rem; letter-spacing:.09em; text-transform:uppercase; color:#746750; }
+    .donor-commemorations-page .commem-metric-label { font-family:'DM Sans',system-ui,sans-serif; font-size:.7rem; letter-spacing:.09em; text-transform:uppercase; color:rgba(247,242,232,.72); }
     .donor-commemorations-page .commem-candle-row { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid rgba(6,21,34,.08); }
     .donor-commemorations-page .commem-candle-row:last-child { border-bottom:0; }
     .donor-commemorations-page .commem-candle-flame { flex:0 0 auto; display:flex; }
@@ -52,7 +51,7 @@
       <div class="topbar"><div class="topbar-title">Prayers</div><div class="topbar-actions"><a class="btn btn-ghost btn-sm" href="/myagapay/giving/calendar">View calendar</a></div></div>
       <div class="page">
         <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
-        <section class="hero"><div class="hero-grid"><div><div class="eyebrow">Living and departed</div><h1>Names lifted in prayer.</h1><p>Submit commemorations for the living and departed at no cost. Candle offerings are paid gifts, and both candles and commemorations are routed into your parish's prayer queue.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
+        <section class="hero"><div class="hero-grid"><div><div class="eyebrow">Living and departed</div><h1>Names lifted in prayer.</h1><p>Submit names and offer candles for those you love. Everything here is routed into your parish's weekly prayer queue for the priest &mdash; an offering is welcome, but never required.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
         <section class="commem-metrics" aria-label="Your prayer summary">
           <div class="commem-metric"><span class="commem-metric-num" id="commemMetricNames">0</span><span class="commem-metric-label">Names in prayer</span></div>
           <div class="commem-metric"><span class="commem-metric-num" id="commemMetricCandles">0</span><span class="commem-metric-label">Candles offered</span></div>

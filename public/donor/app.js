@@ -853,18 +853,11 @@ function liturgicalRankLabel(rank = "") {
   if (key.includes("bright-week")) return "Bright Week";
   if (key.includes("fast")) return "Fast";
   if (key.includes("season")) return "Season";
-  return "Liturgical Day";
+  return "Church day";
 }
 
 function isFastRule(rule = "") {
   return /fast/i.test(String(rule || "")) && !/no fast/i.test(String(rule || ""));
-}
-
-function toneOfWeekLabel(tone = "") {
-  const text = String(tone || "").trim();
-  if (!text) return "";
-  const number = text.match(/\b(\d+)\b/);
-  return number ? `Tone of the Week ${number[1]}` : text.replace(/^Tone\b/i, "Tone of the Week");
 }
 
 function saintDisplayTitle(day = {}) {
@@ -937,18 +930,19 @@ function renderDonorTodayInChurch(parish, payload) {
     chips.innerHTML = [
       liturgicalRankLabel(today.feastRank || feast?.rank),
       fastingRule,
-      toneOfWeekLabel(today.tone),
+      today.tone || "",
       saintNames.length ? `${saintNames.length} saint${saintNames.length === 1 ? "" : "s"}` : ""
     ].filter(Boolean).map((chip) => `<span class="${isFastRule(chip) ? "is-fast" : ""}">${escapeHtml(chip)}</span>`).join("");
   }
   const give = document.getElementById("todayGiveLink");
   if (give) give.href = giveHref;
-  const saintCard = document.getElementById("saintPreviewCard");
-  if (saintCard) {
-    saintCard.dataset.date = date;
-    saintCard.dataset.calendar = calendar;
-    saintCard.dataset.saintTitle = saintTitle;
-    saintCard.disabled = false;
+  const button = document.getElementById("saintLifeButton");
+  if (button) {
+    button.dataset.date = date;
+    button.dataset.calendar = calendar;
+    button.dataset.saintTitle = saintTitle;
+    button.disabled = false;
+    button.textContent = stories.length || saintNames.length ? "Open saint life" : "Check saint life";
   }
 }
 
@@ -1001,10 +995,9 @@ async function openDonorSaintOfDay(button) {
   const date = button?.dataset.date || donorCalendarState.date || todayIsoLocal();
   const calendar = button?.dataset.calendar || donorCalendarState.calendar || "julian";
   const previousText = button?.textContent || "";
-  const isPreviewCard = button?.id === "saintPreviewCard";
   if (button) {
     button.disabled = true;
-    if (!isPreviewCard) button.textContent = "Loading...";
+    button.textContent = "Loading...";
   }
   try {
     let day = donorCalendarState.liturgicalDay || {};
@@ -1029,7 +1022,7 @@ async function openDonorSaintOfDay(button) {
   } finally {
     if (button) {
       button.disabled = false;
-      if (!isPreviewCard) button.textContent = previousText || button.textContent || "Open saint";
+      button.textContent = previousText || "Open saint life";
     }
   }
 }
@@ -1772,7 +1765,7 @@ function renderDonorDashboardPayload(data) {
   setText("desktopMetricCommemorations", String(summary.commemorationCount || 0));
   setText("desktopParishName", parish?.name || "Choose a church in Settings to personalize your dashboard.");
 
-  renderPledgeTracker(data.donor);
+  renderPledgeTracker(data.donor, summary);
   updateQuickGiveLinks(parish);
   renderActiveCampaigns(parish);
   renderNextFeast(parish);
@@ -2682,17 +2675,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // ── PLEDGE TRACKER ────────────────────────────────────────────────────────
-function renderPledgeTracker(donor) {
+function renderPledgeTracker(donor, summary) {
   if (!donor) return;
   const pledgeCents = Number(donor.pledgeAmountCents || 0);
   const pledgeYear  = String(new Date().getFullYear());
-  const ytdCents    = (() => {
-    // Read YTD from the already-rendered metric text
-    const el = document.getElementById("metricYtd");
-    if (!el) return 0;
-    const raw = el.textContent.replace(/[^0-9.]/g, "");
-    return Math.round(parseFloat(raw || "0") * 100);
-  })();
+  // Pledge progress counts parish offerings (tithe/stewardship) only — not designated
+  // funds, campaigns, candles, or commemorations. See donorSummaryFromOfferings.
+  const ytdCents    = Number(summary?.stewardshipYtdCents || 0);
 
   // Mobile tracker
   const mobileCard = document.getElementById("pledgeTrackerCard");
@@ -3534,15 +3523,8 @@ function renderBookstorePayload(payload = {}) {
   const list = document.getElementById("bookstoreOrderList");
   const form = document.getElementById("bookstoreForm");
   const unavailableNotice = document.getElementById("bookstoreUnavailableNotice");
-  const heroTitle = document.getElementById("bookstoreHeroTitle");
 
   const available = payload.available !== false; // default to showing the form while first loading
-  const parishName = payload.parish?.name || donorProfile()?.defaultParishName || "";
-  if (heroTitle) {
-    heroTitle.textContent = parishName
-      ? `PAY FOR YOUR ITEMS AT THE ${parishName} BOOKSTORE.`
-      : "PAY FOR YOUR ITEMS AT YOUR PARISH BOOKSTORE.";
-  }
   if (form) form.style.display = available ? "" : "none";
   bookstoreProducts = Array.isArray(payload.products) ? payload.products : [];
   renderBookstoreProducts(bookstoreProducts);
@@ -3550,9 +3532,8 @@ function renderBookstorePayload(payload = {}) {
   if (unavailableNotice) {
     unavailableNotice.style.display = available ? "none" : "block";
     unavailableNotice.innerHTML = available ? "" : `
-      <p style="margin:0 0 8px;">Your parish has not activated Bookstore Payments yet.</p>
-      <p style="margin:0 0 12px;color:#6F6A60;font-size:13px;line-height:1.5;">Bookstore Payments are part of AGAPAY Parish+, the premium commerce add-on for parish bookstores and other in-person sales.</p>
-      <button type="button" class="btn btn-ghost btn-sm" onclick="requestBookstoreFeature(this)">Request this feature for my parish</button>
+      <p style="margin:0 0 12px;">Your parish hasn't turned on Bookstore Payments yet.</p>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="requestBookstoreFeature(this)">Ask my parish to turn it on</button>
     `;
   }
 
@@ -3576,7 +3557,7 @@ async function requestBookstoreFeature(btn) {
     });
     if (btn) btn.textContent = data.alreadySent ? "Already asked recently" : "Request sent!";
   } catch (err) {
-    if (btn) { btn.disabled = false; btn.textContent = "Request this feature for my parish"; }
+    if (btn) { btn.disabled = false; btn.textContent = "Ask my parish to turn it on"; }
     setDonorStatus(err.message, "error");
   }
 }

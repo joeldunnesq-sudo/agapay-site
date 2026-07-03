@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="/donor/style.css?v=20260703d" />
   <script src="/liturgical-calendar.js"></script>
   <script src="/myagapay-shell.js?v=20260703e" defer></script>
-  <script src="/donor/app.js?v=20260703c" defer></script>
+  <script src="/donor/app.js?v=20260703f" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
@@ -78,6 +78,7 @@
             <div class="donor-home-account-dropdown" role="menu" hidden>
               <a href="/myagapay/giving/history" role="menuitem">History</a>
               <a href="/myagapay/account" role="menuitem">Account Settings</a>
+              <a href="/myagapay" role="menuitem">Back to Give</a>
               <button type="button" data-donor-logout role="menuitem">Log out</button>
             </div>
           </div>
@@ -285,6 +286,7 @@
                 <span id="desktopPledgePct">0%</span>
                 <span id="desktopPledgeGoal">of $0 pledge</span>
               </div>
+              <p style="margin: 0.5rem 0 0; font-size: 11px; line-height: 1.4; color: rgba(246, 241, 232, 0.5);">Counts parish offerings (tithes) only — not designated funds, campaigns, candles, or commemorations.</p>
             </div>
             <!-- Empty/encourage state -->
             <div class="desktop-pledge-inner" id="desktopPledgeEmptyState" hidden>
@@ -300,6 +302,7 @@
             </div>
           </div>
 
+          <div class="summary-title" style="font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(246, 241, 232, 0.65); margin: 0.4rem 0 0.75rem;">Total Giving</div>
           <div class="desktop-metrics-grid">
             <div class="metric-card"><div class="metric-label">This month</div><div class="metric-value" id="desktopMetricMonth">$0</div><div class="metric-note">Giving through AGAPAY this month.</div></div>
             <div class="metric-card"><div class="metric-label">This year</div><div class="metric-value" id="desktopMetricYtd">$0</div><div class="metric-note">Year-to-date offerings.</div></div>
@@ -402,6 +405,7 @@
               <span id="pledgePct">0%</span>
               <span id="pledgeGoal">of $0 pledge</span>
             </div>
+            <p style="margin: 0.5rem 0 0; font-size: 11px; line-height: 1.4; color: rgba(246, 241, 232, 0.5);">Counts parish offerings (tithes) only — not designated funds, campaigns, candles, or commemorations.</p>
           </div>
           <!-- Empty/encourage state -->
           <div id="pledgeEmptyState" hidden>
@@ -417,7 +421,8 @@
           </div>
         </section>
 
-        <section class="mobile-summary-card" aria-label="Stewardship summary">
+        <section class="mobile-summary-card" aria-label="Total giving summary">
+          <div class="summary-title" style="font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: rgba(246, 241, 232, 0.65); margin-bottom: 0.6rem;">Total Giving</div>
           <div class="summary-metric">
             <span>This month</span>
             <strong id="metricMonth">$0</strong>
