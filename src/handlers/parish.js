@@ -4589,6 +4589,45 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
     return json({ ok: true, added });
   }
 
+  if (segments[0] === "sales-summary" && request.method === "GET") {
+    // Paid orders only. payment_status becomes 'paid' once Stripe confirms;
+    // status/fulfillment are separate lifecycle fields we intentionally ignore here.
+    const startOfMonth = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString();
+    const monthRow = await d1First(env,
+      `SELECT COUNT(*) AS order_count,
+              COALESCE(SUM(total_charged_cents), 0) AS gross_cents,
+              COALESCE(SUM(parish_net_cents), 0) AS net_cents
+       FROM commerce_orders
+       WHERE parish_id = ? AND commerce_module = 'bookstore'
+         AND payment_status = 'paid' AND created_at >= ?`,
+      parishId, startOfMonth
+    );
+    const allTimeRow = await d1First(env,
+      `SELECT COUNT(*) AS order_count,
+              COALESCE(SUM(parish_net_cents), 0) AS net_cents
+       FROM commerce_orders
+       WHERE parish_id = ? AND commerce_module = 'bookstore'
+         AND payment_status = 'paid'`,
+      parishId
+    );
+    const lastOrderRow = await d1First(env,
+      `SELECT created_at FROM commerce_orders
+       WHERE parish_id = ? AND commerce_module = 'bookstore' AND payment_status = 'paid'
+       ORDER BY created_at DESC LIMIT 1`,
+      parishId
+    );
+    return json({
+      salesSummary: {
+        monthOrderCount: Number(monthRow?.order_count || 0),
+        monthGrossCents: Number(monthRow?.gross_cents || 0),
+        monthNetCents: Number(monthRow?.net_cents || 0),
+        allTimeOrderCount: Number(allTimeRow?.order_count || 0),
+        allTimeNetCents: Number(allTimeRow?.net_cents || 0),
+        lastOrderAt: lastOrderRow?.created_at || null
+      }
+    });
+  }
+
   if (segments[0] === "products" && request.method === "GET" && segments.length === 1) {
     const rows = await d1All(env,
       `SELECT p.*, v.id AS variant_id, v.sku, v.unit_price_cents, v.cost_basis_cents,
