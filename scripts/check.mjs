@@ -78,6 +78,10 @@ assert.ok(registerHtml.includes("organizationDescription"), "registration should
 assert.ok(registerHtml.includes("requiresJurisdiction"), "registration should branch required fields by organization type");
 assert.ok(registerHtml.includes("requiresWebsite"), "registration should require websites for businesses");
 
+const onboardingPage = await readFile("public/onboarding.html", "utf8");
+assert.ok(onboardingPage.includes("Register your Orthodox parish.") && onboardingPage.includes("Register Parish"), "onboarding page should present parish registration only for now");
+assert.ok(!onboardingPage.includes("organization") && !onboardingPage.includes("Organization") && !onboardingPage.includes("monastery, ministry, school, or Orthodox nonprofit"), "onboarding page should not list broader organizations yet");
+
 const directoryPage = await readFile("public/directory.html", "utf8");
 assert.ok(directoryPage.includes("AGAPAY Directory Intake"), "directory should render the intake experience");
 assert.ok(directoryPage.includes("Submit a listing"), "directory should invite organizations to submit listings");
