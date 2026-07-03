@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css?v=20260703d" />
-  <script src="/myagapay-shell.js?v=20260703c" defer></script>
+  <script src="/myagapay-shell.js?v=20260703e" defer></script>
   <script src="/donor/app.js?v=20260703c" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -83,19 +83,19 @@
               </form>
             </div>
           </div>
-          <aside class="card">
-            <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/></svg></span> Live Status</div></div>
-            <div class="card-body"><div class="list" id="commemorationList"></div></div>
-          </aside>
-        </section>
-        <section class="layout-main section-gap">
-          <div class="card">
-            <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 28 28"><path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/><path d="M14 17v7"/><path d="M11 24h6"/><circle class="icon-dot" cx="14" cy="10" r="1.5"/></svg></span> Candles</div><a class="btn btn-gold btn-sm" href="/myagapay/giving/give?quick=1&giftType=candles">Offer a candle</a></div>
-            <div class="card-body">
-              <p class="form-help">Light a candle with a prayer intention for the living or departed. Candle names join your parish prayer list alongside your commemorations.</p>
-              <div class="list section-gap" id="candleList"><div class="notice">Loading your candle offerings...</div></div>
+          <aside>
+            <div class="card">
+              <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/></svg></span> Live Status</div></div>
+              <div class="card-body"><div class="list" id="commemorationList"></div></div>
             </div>
-          </div>
+            <div class="card section-gap">
+              <div class="card-header"><div class="card-title"><span class="card-icon"><svg viewBox="0 0 28 28"><path d="M14 4c0 0-4 3-4 8s4 5 4 5 4 0 4-5-4-8-4-8z"/><path d="M14 17v7"/><path d="M11 24h6"/><circle class="icon-dot" cx="14" cy="10" r="1.5"/></svg></span> Candles</div><a class="btn btn-gold btn-sm" href="/myagapay/giving/give?quick=1&giftType=candles">Offer</a></div>
+              <div class="card-body">
+                <p class="form-help">Light a candle with a prayer intention. Names join your parish prayer list alongside your commemorations.</p>
+                <div class="list section-gap" id="candleList"><div class="notice">Loading your candle offerings...</div></div>
+              </div>
+            </div>
+          </aside>
         </section>
       </div>
       <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
