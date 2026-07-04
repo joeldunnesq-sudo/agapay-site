@@ -6148,3 +6148,48 @@ body.donor-home {
     width: min(1420px, 100%);
   }
 }
+
+/* Donor's own contribution, shown inside the Active Campaign card under the description */
+.campaign-you-gave {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(184, 144, 47, 0.22);
+}
+.campaign-you-gave .cyg-icon {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--gold);
+  background: var(--gold-soft);
+}
+.campaign-you-gave .cyg-icon svg { width: 16px; height: 16px; }
+.campaign-you-gave .cyg-body { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.campaign-you-gave .cyg-label {
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--stone);
+}
+.campaign-you-gave .cyg-amount {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 1.5rem;
+  color: #B8902F;
+  line-height: 1.05;
+  margin-top: 1px;
+}
+.campaign-you-gave .cyg-sub { font-size: 11px; color: var(--stone); margin-top: 2px; }
+.campaign-you-gave.no-given .cyg-label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #4c4740;
+}
