@@ -6,6 +6,7 @@
   "start_url": "/myagapay/login?source=pwa",
   "scope": "/myagapay/",
   "display": "standalone",
+  "display_override": ["standalone"],
   "background_color": "#061522",
   "theme_color": "#061522",
   "icons": [
