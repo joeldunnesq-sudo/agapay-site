@@ -11,11 +11,10 @@
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css?v=20260704c" />
   <script src="/security.js"></script>
-  <script src="/myagapay-shell.js?v=20260703e" defer></script>
   <script src="/donor/app.js?v=20260704c" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
+  <link class="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -23,17 +22,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
-      <div class="sidebar-scroll">
-        <div class="brand"><div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home" hx-boost="false"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div><span class="pill">My AGAPAY Account</span></div>
-        <nav class="nav unified-product-nav" hx-boost="false"></nav>
-        <div class="sidebar-card"><h3>Email Verification</h3><div class="mini-item"><strong>Trust first</strong><span>Every donor account must verify email before the dashboard opens.</span></div></div>
-      </div>
-      <div class="sidebar-footer"><a class="sidebar-link" href="/" hx-boost="false"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> AGAPAY home</a></div>
-    </aside>
+  <div class="app-standalone" style="max-width: 800px; margin: 0 auto; padding: 2rem 1rem;">
     <main class="content">
-      <div class="topbar"><div class="topbar-title">Create My AGAPAY Account</div><div class="topbar-actions"><a class="btn btn-ghost btn-sm" href="/myagapay/login">Already have an account?</a></div></div>
+      <div class="topbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div class="topbar-title" style="font-size: 1.5rem; font-weight: bold;">Create My AGAPAY Account</div>
+        <div class="topbar-actions"><a class="btn btn-ghost btn-sm" href="/myagapay/login">Already have an account?</a></div>
+      </div>
       <div class="page">
         <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
         <section class="hero"><div class="hero-grid"><div><div class="eyebrow">My AGAPAY onboarding</div><h1>Create one account for the AGAPAY platform.</h1><p>Create your AGAPAY account, verify your email, then use My AGAPAY to access Giving, Learn, and future Orthodox platform tools.</p></div><div class="hero-mark"><img src="/mark.png" alt="" /></div></div></section>
@@ -72,4 +66,3 @@
   <script>document.addEventListener("DOMContentLoaded", () => loadPublicParishes("parish"));</script>
 </body>
 </html>
-
