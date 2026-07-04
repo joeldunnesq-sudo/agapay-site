@@ -42,8 +42,10 @@ import {
 
 import {
   appendAdminAudit,
+  completeCommerceOrderFromStripe,
   donorName,
   ensureCommemorationEntryFromOffering,
+  refundCommerceOrderFromStripe,
   findRegistrationByStripeAccountId,
   findRegistrationByStripeSubscriptionId,
   loadDonorOfferingByCheckout,
@@ -264,6 +266,12 @@ export async function processStripeWebhookEvent(env, event) {
       return;
     }
 
+    if (object.metadata?.commerce_module === "bookstore"
+      || String(object.metadata?.order_id || "").startsWith("bookstore_")) {
+      await completeCommerceOrderFromStripe(env, object, "session");
+      return;
+    }
+
     const paymentStatus = object.payment_status || "paid";
     const status = paymentStatus === "paid" || object.mode === "subscription" ? "completed" : "pending";
     const existingOffering = object.id ? await loadDonorOfferingByCheckout(env, object.id) : null;
@@ -334,6 +342,11 @@ export async function processStripeWebhookEvent(env, event) {
   }
 
   if (event.type === "payment_intent.succeeded") {
+    if (object.metadata?.commerce_module === "bookstore"
+      || String(object.metadata?.order_id || "").startsWith("bookstore_")) {
+      await completeCommerceOrderFromStripe(env, object, "payment_intent");
+      return;
+    }
     const existingOffering = await loadDonorOfferingByPaymentIntent(env, object.id);
     const feeUpdates = await stripePaymentIntentFinancialUpdates(
       env,
@@ -383,6 +396,7 @@ export async function processStripeWebhookEvent(env, event) {
   }
 
   if (event.type === "charge.refunded") {
+    await refundCommerceOrderFromStripe(env, object);
     await updateDonorOfferingByPaymentIntent(env, object.payment_intent, {
       status: object.amount_refunded >= object.amount ? "refunded" : "partially_refunded",
       paymentStatus: object.amount_refunded >= object.amount ? "refunded" : "partially_refunded",

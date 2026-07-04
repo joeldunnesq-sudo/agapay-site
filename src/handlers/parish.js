@@ -4644,6 +4644,248 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
     });
   }
 
+  // Sales & customers tracking — who is buying from My AGAPAY, what they buy,
+  // and what the parish nets. First paint returns KPIs + trend + top customers
+  // + top products + the first page of the order ledger; passing ?cursor= returns
+  // only the next page of orders (keyset pagination).
+  if (segments[0] === "sales" && request.method === "GET") {
+    const params = new URL(request.url).searchParams;
+    const rangeParam = params.get("range") || "90d";
+    const cursorParam = params.get("cursor") || "";
+    const qRaw = (params.get("q") || "").trim().toLowerCase().slice(0, 80);
+    const pageLimit = Math.min(Math.max(Number(params.get("limit")) || 25, 1), 50);
+
+    const nowDate = new Date();
+    let rangeStart;
+    if (rangeParam === "ytd") {
+      rangeStart = new Date(Date.UTC(nowDate.getUTCFullYear(), 0, 1)).toISOString();
+    } else if (rangeParam === "all") {
+      rangeStart = "1970-01-01T00:00:00.000Z";
+    } else {
+      const days = { "30d": 30, "90d": 90, "12m": 365 }[rangeParam] || 90;
+      rangeStart = new Date(Date.now() - days * 86400000).toISOString();
+    }
+
+    // ── Order ledger page (paid + refunded, keyset paginated) ──────────────
+    const orderBinds = [parishId];
+    let whereSearch = "";
+    if (qRaw) {
+      whereSearch = " AND (lower(o.donor_name) LIKE ? OR lower(o.donor_email) LIKE ? OR lower(o.item_description) LIKE ?)";
+      const like = `%${qRaw}%`;
+      orderBinds.push(like, like, like);
+    }
+    let whereCursor = "";
+    if (cursorParam) {
+      let decoded = "";
+      try { decoded = atob(cursorParam); } catch { decoded = ""; }
+      const sep = decoded.indexOf("|");
+      const cAt = sep > -1 ? decoded.slice(0, sep) : "";
+      const cId = sep > -1 ? decoded.slice(sep + 1) : "";
+      if (cAt && cId) {
+        whereCursor = " AND (o.created_at < ? OR (o.created_at = ? AND o.id < ?))";
+        orderBinds.push(cAt, cAt, cId);
+      }
+    }
+    orderBinds.push(pageLimit + 1);
+
+    const orderRows = await d1All(env,
+      `SELECT o.id, o.order_number, o.donor_email, o.donor_name, o.item_description,
+              o.quantity, o.total_charged_cents, o.parish_net_cents, o.tax_cents,
+              o.payment_status, o.fulfillment_status, o.source, o.created_at, o.completed_at,
+              CASE WHEN d.email IS NOT NULL THEN 1 ELSE 0 END AS is_myagapay,
+              CASE WHEN d.default_parish_id = o.parish_id THEN 1 ELSE 0 END AS is_home_parish
+       FROM commerce_orders o
+       LEFT JOIN donors d ON d.email = o.donor_email
+       WHERE o.parish_id = ? AND o.commerce_module = 'bookstore'
+         AND o.payment_status IN ('paid','refunded','partially_refunded')${whereSearch}${whereCursor}
+       ORDER BY o.created_at DESC, o.id DESC
+       LIMIT ?`,
+      ...orderBinds
+    );
+
+    let nextCursor = null;
+    if (orderRows.length > pageLimit) {
+      const last = orderRows[pageLimit - 1];
+      nextCursor = btoa(`${last.created_at}|${last.id}`);
+      orderRows.length = pageLimit;
+    }
+
+    // Attach line items for the visible page (one grouped query).
+    const pageIds = orderRows.map(r => r.id);
+    const itemsByOrder = {};
+    if (pageIds.length) {
+      const placeholders = pageIds.map(() => "?").join(",");
+      const itemRows = await d1All(env,
+        `SELECT order_id, item_name, item_category, quantity, unit_price_cents, total_cents
+         FROM commerce_order_items
+         WHERE parish_id = ? AND order_id IN (${placeholders})
+         ORDER BY created_at ASC`,
+        parishId, ...pageIds
+      );
+      for (const it of itemRows) {
+        (itemsByOrder[it.order_id] ||= []).push({
+          name: it.item_name,
+          category: it.item_category,
+          quantity: Number(it.quantity || 0),
+          unitPriceCents: Number(it.unit_price_cents || 0),
+          totalCents: Number(it.total_cents || 0)
+        });
+      }
+    }
+
+    const orders = orderRows.map(r => ({
+      id: r.id,
+      orderNumber: r.order_number || null,
+      donorEmail: r.donor_email,
+      donorName: r.donor_name || r.donor_email,
+      summary: r.item_description || "Bookstore order",
+      quantity: Number(r.quantity || 0),
+      grossCents: Number(r.total_charged_cents || 0),
+      netCents: Number(r.parish_net_cents || 0),
+      taxCents: Number(r.tax_cents || 0),
+      paymentStatus: r.payment_status,
+      fulfillmentStatus: r.fulfillment_status,
+      source: r.source,
+      createdAt: r.created_at,
+      completedAt: r.completed_at || null,
+      isMyAgapay: Number(r.is_myagapay) === 1,
+      isHomeParish: Number(r.is_home_parish) === 1,
+      items: itemsByOrder[r.id] || []
+    }));
+
+    // "Load more" — orders only.
+    if (cursorParam) {
+      return json({ orders, nextCursor });
+    }
+
+    // ── First paint: KPIs, trend, top customers, top products, refunds ─────
+    const kpi = await d1First(env,
+      `SELECT COUNT(*) AS orders, COALESCE(SUM(total_charged_cents),0) AS gross,
+              COALESCE(SUM(parish_net_cents),0) AS net, COALESCE(SUM(tax_cents),0) AS tax,
+              COALESCE(SUM(quantity),0) AS units, COUNT(DISTINCT donor_email) AS customers
+       FROM commerce_orders
+       WHERE parish_id = ? AND commerce_module = 'bookstore' AND payment_status = 'paid' AND created_at >= ?`,
+      parishId, rangeStart
+    );
+    const allTimeRow = await d1First(env,
+      `SELECT COUNT(*) AS orders, COALESCE(SUM(parish_net_cents),0) AS net,
+              COUNT(DISTINCT donor_email) AS customers
+       FROM commerce_orders
+       WHERE parish_id = ? AND commerce_module = 'bookstore' AND payment_status = 'paid'`,
+      parishId
+    );
+    const repeatRow = await d1First(env,
+      `SELECT COUNT(*) AS repeat_customers FROM (
+         SELECT donor_email FROM commerce_orders
+         WHERE parish_id = ? AND commerce_module = 'bookstore' AND payment_status = 'paid' AND created_at >= ?
+         GROUP BY donor_email HAVING COUNT(*) >= 2
+       )`,
+      parishId, rangeStart
+    );
+    const refundRow = await d1First(env,
+      `SELECT COUNT(*) AS orders, COALESCE(SUM(total_charged_cents),0) AS gross
+       FROM commerce_orders
+       WHERE parish_id = ? AND commerce_module = 'bookstore'
+         AND payment_status IN ('refunded','partially_refunded') AND created_at >= ?`,
+      parishId, rangeStart
+    );
+
+    const trendStart = new Date(Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth() - 5, 1)).toISOString();
+    const trendRows = await d1All(env,
+      `SELECT substr(created_at,1,7) AS ym, COALESCE(SUM(total_charged_cents),0) AS gross, COUNT(*) AS orders
+       FROM commerce_orders
+       WHERE parish_id = ? AND commerce_module = 'bookstore' AND payment_status = 'paid' AND created_at >= ?
+       GROUP BY ym ORDER BY ym ASC`,
+      parishId, trendStart
+    );
+    const trendMap = new Map(trendRows.map(r => [r.ym, r]));
+    const trend = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth() - i, 1));
+      const ym = d.toISOString().slice(0, 7);
+      const row = trendMap.get(ym);
+      trend.push({
+        ym,
+        label: d.toLocaleString("en-US", { month: "short", timeZone: "UTC" }),
+        grossCents: Number(row?.gross || 0),
+        orders: Number(row?.orders || 0)
+      });
+    }
+
+    const customerRows = await d1All(env,
+      `SELECT o.donor_email, MAX(o.donor_name) AS donor_name, COUNT(*) AS orders,
+              COALESCE(SUM(o.total_charged_cents),0) AS gross, COALESCE(SUM(o.parish_net_cents),0) AS net,
+              MAX(o.created_at) AS last_order_at,
+              CASE WHEN MAX(d.email) IS NOT NULL THEN 1 ELSE 0 END AS is_myagapay,
+              CASE WHEN MAX(d.default_parish_id) = ? THEN 1 ELSE 0 END AS is_home_parish
+       FROM commerce_orders o
+       LEFT JOIN donors d ON d.email = o.donor_email
+       WHERE o.parish_id = ? AND o.commerce_module = 'bookstore' AND o.payment_status = 'paid' AND o.created_at >= ?
+       GROUP BY o.donor_email
+       ORDER BY gross DESC
+       LIMIT 8`,
+      parishId, parishId, rangeStart
+    );
+    const topCustomers = customerRows.map(r => ({
+      email: r.donor_email,
+      name: r.donor_name || r.donor_email,
+      orders: Number(r.orders || 0),
+      grossCents: Number(r.gross || 0),
+      netCents: Number(r.net || 0),
+      lastOrderAt: r.last_order_at,
+      isMyAgapay: Number(r.is_myagapay) === 1,
+      isHomeParish: Number(r.is_home_parish) === 1
+    }));
+
+    const productRows = await d1All(env,
+      `SELECT i.item_name, COALESCE(SUM(i.quantity),0) AS units,
+              COALESCE(SUM(i.total_cents),0) AS gross, COUNT(DISTINCT i.order_id) AS orders
+       FROM commerce_order_items i
+       JOIN commerce_orders o ON o.id = i.order_id
+       WHERE i.parish_id = ? AND i.commerce_module = 'bookstore' AND o.payment_status = 'paid' AND o.created_at >= ?
+       GROUP BY i.item_name
+       ORDER BY gross DESC
+       LIMIT 8`,
+      parishId, rangeStart
+    );
+    const topProducts = productRows.map(r => ({
+      name: r.item_name,
+      units: Number(r.units || 0),
+      grossCents: Number(r.gross || 0),
+      orders: Number(r.orders || 0)
+    }));
+
+    const orderCount = Number(kpi?.orders || 0);
+    const grossCents = Number(kpi?.gross || 0);
+    return json({
+      range: rangeParam,
+      kpis: {
+        orderCount,
+        grossCents,
+        netCents: Number(kpi?.net || 0),
+        taxCents: Number(kpi?.tax || 0),
+        unitsSold: Number(kpi?.units || 0),
+        uniqueCustomers: Number(kpi?.customers || 0),
+        repeatCustomers: Number(repeatRow?.repeat_customers || 0),
+        avgOrderCents: orderCount ? Math.round(grossCents / orderCount) : 0
+      },
+      allTime: {
+        orderCount: Number(allTimeRow?.orders || 0),
+        netCents: Number(allTimeRow?.net || 0),
+        uniqueCustomers: Number(allTimeRow?.customers || 0)
+      },
+      refunds: {
+        orderCount: Number(refundRow?.orders || 0),
+        grossCents: Number(refundRow?.gross || 0)
+      },
+      trend,
+      topCustomers,
+      topProducts,
+      orders,
+      nextCursor
+    });
+  }
+
   if (segments[0] === "products" && request.method === "GET" && segments.length === 1) {
     const rows = await d1All(env,
       `SELECT p.*, v.id AS variant_id, v.sku, v.unit_price_cents, v.cost_basis_cents,
@@ -4734,6 +4976,96 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
   }
 
   return json({ error: "Method not allowed" }, { status: 405 });
+}
+
+// Marks a bookstore commerce order paid once Stripe confirms, and reconciles
+// real Stripe fees / parish net from the balance transaction. Without this the
+// order sits at payment_status='pending' forever and never shows up in sales
+// reporting. Idempotent: a second call for an already-paid order is a no-op.
+// `object` is the Stripe checkout.session (kind='session') or payment_intent
+// (kind='payment_intent') from the webhook.
+export async function completeCommerceOrderFromStripe(env, object = {}, kind = "session") {
+  if (!d1(env)) return null;
+  const meta = object.metadata || {};
+  if (meta.commerce_module && meta.commerce_module !== "bookstore") return null;
+
+  const paymentIntentId = kind === "payment_intent"
+    ? (object.id || "")
+    : (checkoutPaymentIntentId(object) || stripeObjectId(object.payment_intent) || "");
+
+  let order = null;
+  if (kind === "session" && object.id) {
+    order = await d1First(env,
+      `SELECT * FROM commerce_orders WHERE checkout_session_id = ? AND commerce_module = 'bookstore'`,
+      object.id);
+  }
+  if (!order && meta.order_id) {
+    order = await d1First(env,
+      `SELECT * FROM commerce_orders WHERE id = ? AND commerce_module = 'bookstore'`,
+      meta.order_id);
+  }
+  if (!order && paymentIntentId) {
+    order = await d1First(env,
+      `SELECT * FROM commerce_orders WHERE stripe_payment_intent_id = ? AND commerce_module = 'bookstore'`,
+      paymentIntentId);
+  }
+  if (!order) return null;
+  if (order.payment_status === "paid") return order; // idempotent
+
+  const fees = paymentIntentId
+    ? await stripePaymentIntentFinancialUpdates(env, paymentIntentId, order.parish_id, {
+      chargeCents: numericCents(object.amount_total || object.amount_received || order.total_charged_cents),
+      coverFees: order.cover_fees === 1
+    })
+    : {};
+
+  const totalCents = numericCents(object.amount_total || object.amount_received)
+    || Number(fees.chargeCents || 0)
+    || Number(order.subtotal_cents || 0);
+  const taxCents = numericCents(object.total_details?.amount_tax) || Number(order.tax_cents || 0);
+  const stripeFeeCents = Number(fees.stripeFeeCents || 0);
+  const agapayFeeCents = Number(fees.agapayFeeCents || 0); // bookstore takes no AGAPAY fee
+  const netCents = Number(fees.parishNetCents || Math.max(0, totalCents - stripeFeeCents - agapayFeeCents));
+  const now = new Date().toISOString();
+  const completedAt = object.created ? new Date(object.created * 1000).toISOString() : now;
+
+  await d1Run(env,
+    `UPDATE commerce_orders
+     SET payment_status = 'paid', status = 'completed',
+         tax_cents = ?, total_charged_cents = ?, stripe_fee_cents = ?, agapay_fee_cents = ?,
+         parish_net_cents = ?, stripe_payment_intent_id = ?, stripe_charge_id = ?,
+         stripe_customer_id = COALESCE(NULLIF(?, ''), stripe_customer_id),
+         fulfillment_status = CASE WHEN fulfillment_status = 'pending' THEN 'ready' ELSE fulfillment_status END,
+         completed_at = ?, updated_at = ?
+     WHERE id = ?`,
+    taxCents, totalCents, stripeFeeCents, agapayFeeCents, netCents,
+    paymentIntentId || order.stripe_payment_intent_id || "",
+    fees.stripeChargeId || order.stripe_charge_id || "",
+    object.customer || order.stripe_customer_id || "",
+    completedAt, now, order.id
+  );
+
+  return { ...order, payment_status: "paid", status: "completed" };
+}
+
+// Reflects a Stripe refund back onto the bookstore order so sales reporting
+// stays honest. Safe to call for any charge — no-ops when the charge isn't a
+// bookstore order.
+export async function refundCommerceOrderFromStripe(env, charge = {}) {
+  if (!d1(env)) return null;
+  const pi = stripeObjectId(charge.payment_intent);
+  if (!pi) return null;
+  const order = await d1First(env,
+    `SELECT id, total_charged_cents FROM commerce_orders WHERE stripe_payment_intent_id = ? AND commerce_module = 'bookstore'`,
+    pi);
+  if (!order) return null;
+  const refunded = numericCents(charge.amount_refunded);
+  const full = refunded >= numericCents(charge.amount || order.total_charged_cents);
+  const state = full ? "refunded" : "partially_refunded";
+  await d1Run(env,
+    `UPDATE commerce_orders SET payment_status = ?, status = ?, updated_at = ? WHERE id = ?`,
+    state, state, new Date().toISOString(), order.id);
+  return order;
 }
 
 export function parishDashboardPayload(parishId, registration) {
