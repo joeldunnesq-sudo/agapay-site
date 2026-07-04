@@ -11,6 +11,12 @@
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css?v=20260704c" />
   <script src="/liturgical-calendar.js"></script>
+<link rel="manifest" href="/manifest.webmanifest?v=20260704e" />
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
+}
+</script>
   <script src="/myagapay-shell.js?v=20260703e" defer></script>
   <script src="/donor/app.js?v=20260704c" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
