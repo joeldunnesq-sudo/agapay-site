@@ -2186,14 +2186,14 @@ body.donor-home {
   position: relative;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.85rem;
-  min-height: 182px;
+  gap: 0.75rem;
+  min-height: 128px;
   border-radius: 12px;
   background:
     radial-gradient(circle at 82% 34%, rgba(184, 144, 47, 0.14), transparent 7.5rem),
     linear-gradient(145deg, #061522, #0B2130);
   color: white;
-  padding: 1.6rem 1.7rem;
+  padding: 1.45rem 1.7rem 1.55rem;
   overflow: hidden;
   box-shadow: 0 13px 28px rgba(6, 21, 34, 0.19);
 }
@@ -2215,7 +2215,6 @@ body.donor-home {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: start;
   gap: 1.3rem;
-  padding-bottom: 3.6rem;
 }
 
 .summary-metric {
@@ -2248,29 +2247,12 @@ body.donor-home {
 
 .summary-watermark {
   position: absolute;
-  right: 1.4rem;
-  top: 2.1rem;
-  width: 96px;
-  height: 96px;
+  right: 1.3rem;
+  top: 1.3rem;
+  width: 78px;
+  height: 78px;
   opacity: 0.08;
   object-fit: contain;
-}
-
-.summary-cta {
-  position: absolute;
-  left: 1.7rem;
-  bottom: 1.65rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  min-height: 40px;
-  border: 1px solid rgba(184, 144, 47, 0.82);
-  border-radius: 999px;
-  color: var(--gold);
-  padding: 0 1.15rem;
-  font-size: 14px;
-  font-weight: 800;
-  text-decoration: none;
 }
 
 .mobile-section {
@@ -3996,10 +3978,6 @@ body.donor-mobile-page {
 
   .summary-metrics-row {
     gap: 0.9rem;
-  }
-
-  .summary-cta {
-    left: 1.25rem;
   }
 
   .quick-give-grid {
