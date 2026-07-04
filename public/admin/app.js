@@ -1158,6 +1158,85 @@ let selectedReference = '';
       }
     }
 
+    function moneyPlain(cents) {
+      return (Number(cents || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    }
+
+    function weeklyTreasurerSummary(results = [], dryRun = true) {
+      if (!results.length) return 'No matching bookstore-enabled parish was found for that dashboard ID.';
+      return results.map((row) => {
+        if (row.status === 'skipped') {
+          const reason = row.reason === 'already_sent'
+            ? 'already sent for this week'
+            : row.reason === 'no_paid_orders'
+              ? 'no paid bookstore orders in this week window'
+              : row.reason || 'not eligible';
+          return `${row.parishName || row.parishId}: skipped (${reason}).`;
+        }
+        const destination = row.to ? ` to ${row.to}` : '';
+        const action = dryRun ? 'Ready to send' : row.status === 'sent' ? 'Sent' : `Result: ${row.status || 'unknown'}`;
+        return `${action}${destination} for ${row.parishName || row.parishId}: ${Number(row.orderCount || 0)} orders, ${moneyPlain(row.totalChargedCents)} gross, ${moneyPlain(row.taxCents)} tax, ${moneyPlain(row.parishNetCents)} parish net.`;
+      }).join(' ');
+    }
+
+    async function runWeeklyTreasurerEmail(dryRun, btn) {
+      const status = document.getElementById('weeklyTreasurerStatus');
+      const parishInput = document.getElementById('weeklyTreasurerParishId');
+      const parishId = (parishInput?.value || '').trim();
+      if (!parishId) {
+        if (status) {
+          status.textContent = 'Enter the parish dashboard ID first.';
+          status.style.color = 'var(--red, #8b2020)';
+        }
+        parishInput?.focus();
+        return;
+      }
+      if (!dryRun && !window.confirm(`Send this week's bookstore treasurer report for ${parishId} now?`)) return;
+
+      const previewBtn = document.getElementById('weeklyTreasurerPreviewBtn');
+      const sendBtn = document.getElementById('weeklyTreasurerSendBtn');
+      if (previewBtn) previewBtn.disabled = true;
+      if (sendBtn) sendBtn.disabled = true;
+      if (btn) {
+        btn.classList.add('loading');
+        btn.textContent = dryRun ? 'Previewing...' : 'Sending...';
+      }
+      if (status) {
+        status.textContent = dryRun ? "Checking this week's paid bookstore orders..." : 'Sending weekly treasurer report...';
+        status.style.color = 'var(--muted)';
+      }
+
+      try {
+        const response = await fetch('/api/admin/commerce/send-weekly-treasurer', {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ parishId, dryRun, force: !dryRun })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (handleAuthFailure(response, result)) return;
+        if (!response.ok || !result.ok) throw new Error(result.error || 'Unable to run weekly treasurer report');
+        const message = weeklyTreasurerSummary(result.results || [], result.dryRun);
+        if (status) {
+          status.textContent = message;
+          status.style.color = result.dryRun ? 'var(--deep)' : 'var(--green, #2a7a4b)';
+        }
+        setStatus(result.dryRun ? 'Weekly treasurer report preview loaded.' : 'Weekly treasurer report sent.', 'success');
+      } catch (err) {
+        if (status) {
+          status.textContent = err.message;
+          status.style.color = 'var(--red, #8b2020)';
+        }
+        setStatus(err.message, 'error');
+      } finally {
+        if (previewBtn) previewBtn.disabled = false;
+        if (sendBtn) sendBtn.disabled = false;
+        if (btn) {
+          btn.classList.remove('loading');
+          btn.textContent = dryRun ? 'Preview report' : 'Send report now';
+        }
+      }
+    }
+
     async function loadStewardshipCompStatus() {
       const counter = document.getElementById('stewardshipCompCounter');
       if (!counter) return;

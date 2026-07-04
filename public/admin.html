@@ -637,6 +637,28 @@
               <div id="weeklyCommemorationStatus" class="email-log-empty" style="font-size:0.82rem;line-height:1.55;">Enter a parish ID and preview before sending.</div>
             </div>
           </section>
+          <section class="section-card" id="treasurerEmailToolCard">
+            <div class="section-header">
+              <div class="section-title">
+                <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 19V5"/><path d="M4 19h16"/><rect x="7" y="11" width="3" height="5"/><rect x="12" y="8" width="3" height="8"/><rect x="17" y="6" width="3" height="10"/></svg></div>
+                Weekly Treasurer Email
+              </div>
+            </div>
+            <div class="section-body" style="display:grid;gap:0.85rem;">
+              <p class="muted" style="font-size:0.85rem;margin:0;">Preview or send the Saturday bookstore sales report to the parish treasurer.</p>
+              <div class="form-grid">
+                <div>
+                  <label for="weeklyTreasurerParishId">Parish dashboard ID</label>
+                  <input id="weeklyTreasurerParishId" placeholder="st-fiacre" />
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="secondary btn-sm" id="weeklyTreasurerPreviewBtn" onclick="runWeeklyTreasurerEmail(true, this)">Preview report</button>
+                <button class="gold btn-sm" id="weeklyTreasurerSendBtn" onclick="runWeeklyTreasurerEmail(false, this)">Send report now</button>
+              </div>
+              <div id="weeklyTreasurerStatus" class="email-log-empty" style="font-size:0.82rem;line-height:1.55;">Enter a parish ID and preview before sending.</div>
+            </div>
+          </section>
           <section class="section-card" id="stewardshipCompCard">
             <div class="section-header">
               <div class="section-title">
