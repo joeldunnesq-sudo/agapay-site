@@ -2615,6 +2615,15 @@ async function startDonorCheckout(event) {
     : normalizedGiftType === "commemoration"
       ? document.getElementById("commemorationIntentionNote")?.value || ""
       : "";
+  // Same "give anonymously" + "message of encouragement" opportunity the
+  // public campaign slug page offers, so a My AGAPAY gift surfaces on that
+  // page the same way a public-page gift would.
+  const publicAnonymous = normalizedGiftType === "campaign"
+    ? Boolean(document.getElementById("campaignAnonymous")?.checked)
+    : false;
+  const publicComment = normalizedGiftType === "campaign"
+    ? String(document.getElementById("campaignPublicComment")?.value || "").trim().slice(0, 280)
+    : "";
   try {
     setDonorStatus("Preparing checkout...");
     const frequency = document.getElementById("frequency")?.value || "once";
@@ -2637,6 +2646,8 @@ async function startDonorCheckout(event) {
         namesLiving: livingNames,
         namesDeparted: departedNames,
         inMemoriam: intentionNote,
+        publicAnonymous,
+        publicComment,
         paymentMethod,
         coverFees: document.getElementById("coverFees")?.checked !== false,
         ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
