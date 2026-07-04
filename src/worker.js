@@ -692,15 +692,43 @@ function formatCommemorationNames(entries, field) {
   return `<ul style=\"margin:0 0 0 18px;padding:0;color:#171715;line-height:1.7;\">${names.map((name) => `<li>${htmlEscape(name)}</li>`).join("")}</ul>`;
 }
 
-async function sendWeeklyCommemorationEmails(env, scheduledTime) {
+async function sendWeeklyCommemorationEmails(env, scheduledTime, options = {}) {
   const registrations = await loadAllRegistrations(env, { status: "verified" });
   const appUrl = env.AGAPAY_APP_URL || "https://agapay.app";
   const { start, end } = weekWindow(new Date(scheduledTime || Date.now()));
+  const parishFilter = String(options.parishId || "").trim();
+  const dryRun = Boolean(options.dryRun);
 
   const results = [];
   for (const registration of registrations) {
-    if (!registration.parishId || !registration.priestEmail) continue;
+    if (!registration.parishId) continue;
+    if (parishFilter && registration.parishId !== parishFilter) continue;
+    if (!registration.priestEmail) {
+      results.push({
+        parishId: registration.parishId,
+        parishName: registration.parishName || "",
+        status: "skipped",
+        reason: "missing_priest_email"
+      });
+      continue;
+    }
     const entries = await loadCommemorationEntries(env, registration.parishId, start, end);
+    const livingCount = entries.reduce((total, entry) => total + (Array.isArray(entry.living) ? entry.living.length : 0), 0);
+    const departedCount = entries.reduce((total, entry) => total + (Array.isArray(entry.departed) ? entry.departed.length : 0), 0);
+    if (dryRun) {
+      results.push({
+        parishId: registration.parishId,
+        parishName: registration.parishName || "",
+        to: registration.priestEmail,
+        status: "dry_run",
+        entryCount: entries.length,
+        livingCount,
+        departedCount,
+        windowStart: start.toISOString(),
+        windowEnd: end.toISOString()
+      });
+      continue;
+    }
     const email = await sendEmail(env, {
       from: env.AGAPAY_FROM_EMAIL || "AGAPAY <onboarding@agapay.app>",
       to: [registration.priestEmail],
@@ -721,10 +749,42 @@ async function sendWeeklyCommemorationEmails(env, scheduledTime) {
       `),
       text: `Weekly AGAPAY commemorations for ${registration.parishName || "your parish"}\n\nLiving:\n${entries.flatMap((entry) => entry.living || []).join("\n") || "No names submitted."}\n\nDeparted:\n${entries.flatMap((entry) => entry.departed || []).join("\n") || "No names submitted."}`
     });
-    results.push({ parishId: registration.parishId, status: email.status });
+    results.push({
+      parishId: registration.parishId,
+      parishName: registration.parishName || "",
+      to: registration.priestEmail,
+      status: email.status,
+      httpStatus: email.httpStatus || 0,
+      entryCount: entries.length,
+      livingCount,
+      departedCount,
+      windowStart: start.toISOString(),
+      windowEnd: end.toISOString()
+    });
   }
 
   return results;
+}
+
+async function handleAdminWeeklyCommemorationEmails(request, env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "admin-maintenance", { limit: 12, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!await requireAdmin(request, env)) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const body = await request.json().catch(() => ({}));
+  const scheduledTime = body.scheduledTime || new Date().toISOString();
+  const results = await sendWeeklyCommemorationEmails(env, scheduledTime, {
+    dryRun: body.dryRun !== false,
+    parishId: body.parishId || ""
+  });
+  return json({
+    ok: true,
+    dryRun: body.dryRun !== false,
+    scheduledTime,
+    results
+  });
 }
 
 // Sends a one-time heads-up email roughly 30 days before a parish's
@@ -1196,8 +1256,11 @@ export async function syncPledgeToHousehold(env, donorEmail, parishId, pledgeAmo
 export default {
   async scheduled(event, env, ctx) {
     if (env && !env.DB && env.AGAPAY_DB) env.DB = env.AGAPAY_DB;
-    ctx.waitUntil(sendWeeklyCommemorationEmails(env, event.scheduledTime));
-    ctx.waitUntil(sendStewardshipCompExpiryReminders(env));
+    ctx.waitUntil(sendWeeklyCommemorationEmails(env, event.scheduledTime)
+      .then((results) => console.log("weekly_commemoration_emails", JSON.stringify(results)))
+      .catch((error) => console.error("weekly_commemoration_emails_failed", error?.message || String(error))));
+    ctx.waitUntil(sendStewardshipCompExpiryReminders(env)
+      .catch((error) => console.error("stewardship_comp_reminders_failed", error?.message || String(error))));
   },
 
   async fetch(request, env) {
@@ -1542,6 +1605,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/admin/release-status") {
       return handleAdminReleaseStatus(request, env);
+    }
+    if (url.pathname === "/api/admin/commemorations/send-weekly") {
+      return handleAdminWeeklyCommemorationEmails(request, env);
     }
     if (url.pathname === "/api/admin/myagapay/release-flags") {
       return handleAdminMyAgapayReleaseFlags(request, env);

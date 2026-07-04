@@ -48,6 +48,8 @@ assert.ok(backendSources.includes("PARISH_ID_INDEX_PREFIX"), "worker should main
 assert.ok(backendSources.includes("handleAdminRebuildIndexes"), "worker should expose an admin-only index rebuild endpoint");
 assert.ok(backendSources.includes("handleAdminReleaseStatus"), "worker should expose an admin release status endpoint");
 assert.ok(worker.includes('url.pathname === "/api/admin/release-status"'), "worker should route the admin release status endpoint");
+assert.ok(worker.includes("handleAdminWeeklyCommemorationEmails") && worker.includes('url.pathname === "/api/admin/commemorations/send-weekly"'), "worker should expose an admin-only weekly commemoration email diagnostic endpoint");
+assert.ok(worker.includes("weekly_commemoration_emails") && worker.includes("dryRun: body.dryRun !== false"), "weekly commemoration emails should be observable and dry-run by default when triggered manually");
 assert.ok(worker.includes('["/parish/login", "/give/login"]'), "legacy parish login should redirect to the Give login URL");
 assert.ok(worker.includes('url.pathname === "/give/login"'), "worker should serve the Give login URL from the parish login shell");
 assert.ok(worker.includes('url.pathname.startsWith("/give/")') && worker.includes('url.pathname = "/give/form.html"'), "worker should serve parish giving pages at /give/:parish");
