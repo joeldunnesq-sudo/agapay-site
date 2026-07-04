@@ -109,6 +109,7 @@ import {
   handleParishRecurringHealth,
   handleParishBookstore,
   handleParishDashboard,
+  handleParishSettlementProfiles,
   handleParishSession,
   handleParishes,
   handleParishCampaignUpload,
@@ -1891,6 +1892,12 @@ export default {
       const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
       const subpath = parts.slice(1).join("/bookstore") || "";
       return handleParishBookstore(request, env, parishId, subpath);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/settlement-profiles")) {
+      const parts = url.pathname.replace("/api/parish/dashboard/", "").split("/settlement-profiles");
+      const parishId = decodeURIComponent(parts[0].replace(/\/+$/, ""));
+      const subpath = parts.slice(1).join("/settlement-profiles") || "";
+      return handleParishSettlementProfiles(request, env, parishId, subpath);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/payout-diagnostics")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/payout-diagnostics", ""));
