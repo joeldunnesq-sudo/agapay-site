@@ -711,6 +711,16 @@ function renderActiveCampaigns(parish) {
   const link = donorGiftUrl("campaign", parish, { campaign: campaign.id || campaign.feastId || campaign.name });
   const imageUrl = campaignImageUrl(campaign);
   const description = campaign.description || "Support this parish-approved campaign.";
+  // Show the donor their own contribution to this campaign (server attaches
+  // donorGivenCents only for an authenticated donor, so this stays hidden in
+  // the signed-out/public view). A $0 state gently invites a first gift.
+  const hasDonorContext = typeof campaign.donorGivenCents === "number";
+  const givenCents = Number(campaign.donorGivenCents || 0);
+  const giftCount = Number(campaign.donorGiftCount || 0);
+  const cygHeart = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+  const youGaveBlock = !hasDonorContext ? "" : (givenCents > 0
+    ? `<div class="campaign-you-gave has-given"><span class="cyg-icon">${cygHeart}</span><span class="cyg-body"><span class="cyg-label">Your giving to this campaign</span><span class="cyg-amount">${money(givenCents)}</span>${giftCount > 1 ? `<span class="cyg-sub">across ${giftCount} gifts</span>` : ""}</span></div>`
+    : `<div class="campaign-you-gave no-given"><span class="cyg-icon">${cygHeart}</span><span class="cyg-body"><span class="cyg-label">You haven't given to this campaign yet</span><span class="cyg-sub">Be part of it &mdash; every gift helps.</span></span></div>`);
   const shareUrl = campaignShareUrl(parish, campaign);
   const shareBtn = shareUrl
     ? `<button type="button" class="campaign-share-btn" onclick="shareCampaign(event, this)" data-share-url="${escapeHtml(shareUrl)}" data-share-title="${escapeHtml(campaign.name || "Parish Campaign")}" aria-label="Share this campaign" style="position:absolute;top:10px;right:10px;z-index:2;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:0;border-radius:999px;background:rgba(6,21,34,.82);color:#fff;font:600 12px/1 'DM Sans',system-ui,sans-serif;cursor:pointer;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);box-shadow:0 2px 8px rgba(6,21,34,.28);"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg><span>Share</span></button>`
@@ -728,6 +738,7 @@ function renderActiveCampaigns(parish) {
           ${goalCents > 0 ? `<div class="campaign-track"><span style="width:${percent}%"></span></div>` : ""}
           ${goalCents > 0 ? `<div class="campaign-progress-row"><strong>${money(raisedCents)} raised</strong><span>${percent}% of ${money(goalCents)}</span></div>` : ""}
           <p class="campaign-description">${escapeHtml(description)}</p>
+          ${youGaveBlock}
         </div>
       </a>
       ${shareBtn}
