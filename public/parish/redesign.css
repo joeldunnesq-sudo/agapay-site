@@ -755,3 +755,50 @@
   .bk-order-tags { display: none; }
   .bk-kpis { grid-template-columns: 1fr; }
 }
+
+/* ══ Settlement Profiles (Settings tab) ═══════════════════════════════════ */
+.sp-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.sp-row {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px 15px;
+  background: var(--paper);
+  box-shadow: var(--pdx-shadow-sm);
+}
+.sp-row.is-inactive { opacity: .6; }
+.sp-row-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.sp-name-input {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--deep);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: transparent;
+  min-width: 160px;
+  flex: 0 1 260px;
+}
+.sp-name-input:hover, .sp-name-input:focus { border-color: var(--line); background: #fff; }
+.sp-type-pill {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: #7a756b; background: rgba(111,106,96,0.12); padding: 3px 9px; border-radius: 999px;
+}
+.sp-badge { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.sp-badge--giving { background: var(--pdx-gold-soft); color: var(--gold); }
+.sp-badge--commerce { background: rgba(74,124,89,.14); color: var(--pdx-success); }
+.sp-badge--inactive { background: rgba(111,106,96,.14); color: #7a756b; }
+.sp-row-meta { font-size: 12.5px; color: #8a857b; margin-bottom: 10px; }
+.sp-row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.sp-subhead { font-family: var(--serif); font-size: 16px; font-weight: 600; color: var(--deep); margin: 18px 0 10px; }
+.sp-module-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 8px 0; border-bottom: 1px dashed rgba(111,106,96,.16);
+}
+.sp-module-row:last-child { border-bottom: 0; }
+.sp-module-row .form-select { max-width: 260px; }
+.sp-module-label { font-size: 13.5px; color: var(--ink); font-weight: 500; }
+.sp-new-form { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 6px; }
+.sp-new-fields { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.sp-new-fields .form-input { flex: 1 1 240px; }
+.sp-new-fields .form-select { flex: 0 1 180px; }

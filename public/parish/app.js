@@ -133,6 +133,7 @@
     if (tab === 'sacraments') loadSacramentsTab();
     if (tab === 'bookstore') loadBookstoreCatalogTab();
     if (tab === 'reconcile' && currentParish) loadReconciliation();
+    if (tab === 'settings' && currentParish) loadSettlementProfilesPanel();
     document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' });
     if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -1063,6 +1064,212 @@
     return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/bookstore' + path;
   }
 
+  function settlementProfilesApi(path = '') {
+    if (!currentParish?.parishId) throw new Error('Load a parish first.');
+    return '/api/parish/dashboard/' + encodeURIComponent(currentParish.parishId) + '/settlement-profiles' + path;
+  }
+
+  // ── Settlement Profiles (Settings tab) ──────────────────────────────────
+  let settlementProfilesState = { loaded: false, loading: false, profiles: [], profileTypes: [], stewardshipActive: false };
+
+  const SETTLEMENT_MODULE_LABELS = { giving: 'Giving (donations)', bookstore: 'Bookstore Payments' };
+  const SETTLEMENT_TYPE_LABELS = {
+    general_giving: 'General Giving',
+    liturgical: 'Liturgical',
+    bookstore: 'Bookstore',
+    festival: 'Festival',
+    school: 'School',
+    cemetery: 'Cemetery',
+    camp: 'Camp',
+    hall_rental: 'Hall Rental',
+    fundraisers: 'Fundraisers'
+  };
+
+  async function loadSettlementProfilesPanel(force = false) {
+    const body = document.getElementById('settlementProfilesBody');
+    if (!body || !currentParish) return;
+    if (settlementProfilesState.loaded && !force) { renderSettlementProfilesPanel(); return; }
+    if (settlementProfilesState.loading) return;
+    settlementProfilesState.loading = true;
+    if (!settlementProfilesState.loaded) body.innerHTML = '<p class="sw-tool-loading">Loading revenue streams&hellip;</p>';
+    try {
+      const res = await fetch(settlementProfilesApi(), { headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to load revenue streams.');
+      settlementProfilesState.profiles = data.profiles || [];
+      settlementProfilesState.profileTypes = data.profileTypes || [];
+      settlementProfilesState.stewardshipActive = Boolean(data.stewardshipActive);
+      settlementProfilesState.loaded = true;
+      renderSettlementProfilesPanel();
+    } catch (err) {
+      body.innerHTML = `<div class="notice error">${escapeHtml(err.message)}</div>`;
+    } finally {
+      settlementProfilesState.loading = false;
+    }
+  }
+
+  function renderSettlementProfilesPanel() {
+    const body = document.getElementById('settlementProfilesBody');
+    if (!body) return;
+    const profiles = settlementProfilesState.profiles;
+
+    const rows = profiles.map(p => {
+      const badges = [
+        p.isDefaultGiving ? '<span class="sp-badge sp-badge--giving">Default giving</span>' : '',
+        p.isDefaultCommerce ? '<span class="sp-badge sp-badge--commerce">Default commerce</span>' : '',
+        !p.isActive ? '<span class="sp-badge sp-badge--inactive">Inactive</span>' : ''
+      ].filter(Boolean).join('');
+      const moduleLabels = (p.modules || []).map(m => SETTLEMENT_MODULE_LABELS[m] || m).join(', ');
+      return `
+        <div class="sp-row${p.isActive ? '' : ' is-inactive'}" data-profile-id="${escapeAttr(p.id)}">
+          <div class="sp-row-main">
+            <input class="sp-name-input" type="text" value="${escapeAttr(p.name)}" maxlength="80"
+              onkeydown="if(event.key==='Enter'){event.target.blur();}"
+              onchange="renameSettlementProfile('${escapeAttr(p.id)}', this.value)" />
+            <span class="sp-type-pill">${escapeHtml(SETTLEMENT_TYPE_LABELS[p.profileType] || p.profileType)}</span>
+            ${badges}
+          </div>
+          <div class="sp-row-meta">${moduleLabels ? `Used by: ${escapeHtml(moduleLabels)}` : '<em>Not assigned to any module yet</em>'}</div>
+          <div class="sp-row-actions">
+            ${!p.isDefaultGiving ? `<button class="btn btn-ghost btn-sm" type="button" onclick="setDefaultGivingProfile('${escapeAttr(p.id)}')">Make default giving</button>` : ''}
+            ${!p.isDefaultCommerce ? `<button class="btn btn-ghost btn-sm" type="button" onclick="setDefaultCommerceProfile('${escapeAttr(p.id)}')">Make default commerce</button>` : ''}
+            <button class="btn btn-ghost btn-sm" type="button" onclick="toggleSettlementProfileActive('${escapeAttr(p.id)}', ${p.isActive ? 'false' : 'true'})">${p.isActive ? 'Deactivate' : 'Activate'}</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    const activeProfiles = profiles.filter(p => p.isActive);
+    const moduleAssignmentRows = Object.keys(SETTLEMENT_MODULE_LABELS)
+      .filter(key => key !== 'bookstore' || settlementProfilesState.stewardshipActive)
+      .map(key => {
+        const current = profiles.find(p => (p.modules || []).includes(key));
+        const options = activeProfiles.map(p =>
+          `<option value="${escapeAttr(p.id)}" ${current?.id === p.id ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('');
+        return `
+          <div class="sp-module-row">
+            <span class="sp-module-label">${escapeHtml(SETTLEMENT_MODULE_LABELS[key])}</span>
+            <select class="form-select" onchange="assignSettlementModule('${key}', this.value)">${options}</select>
+          </div>`;
+      }).join('');
+
+    body.innerHTML = `
+      <div class="sp-list">${rows || '<p class="bk-panel-empty">No revenue streams yet.</p>'}</div>
+
+      <div class="sp-modules">
+        <h4 class="sp-subhead">Module assignments</h4>
+        ${moduleAssignmentRows}
+      </div>
+
+      <form class="sp-new-form" onsubmit="createSettlementProfile(event)">
+        <h4 class="sp-subhead">Add a revenue stream</h4>
+        <div class="sp-new-fields">
+          <input class="form-input" id="spNewName" type="text" placeholder="Revenue stream name (e.g. Festival Fund)" maxlength="80" required />
+          <select class="form-select" id="spNewType">
+            ${(settlementProfilesState.profileTypes.length ? settlementProfilesState.profileTypes : ['general_giving']).map(t =>
+              `<option value="${escapeAttr(t)}">${escapeHtml(SETTLEMENT_TYPE_LABELS[t] || t)}</option>`).join('')}
+          </select>
+          <button class="btn btn-primary btn-sm" type="submit">Add revenue stream</button>
+        </div>
+      </form>`;
+  }
+
+  async function createSettlementProfile(event) {
+    event.preventDefault();
+    const name = document.getElementById('spNewName')?.value.trim();
+    const profileType = document.getElementById('spNewType')?.value;
+    if (!name) { setStatus('Enter a revenue stream name.', 'error'); return; }
+    try {
+      const res = await fetch(settlementProfilesApi(), {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, profileType })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to create revenue stream.');
+      setStatus(`"${name}" created.`, 'success');
+      await loadSettlementProfilesPanel(true);
+    } catch (err) {
+      setStatus(err.message, 'error');
+    }
+  }
+
+  async function renameSettlementProfile(profileId, name) {
+    const clean = String(name || '').trim();
+    if (!clean) { setStatus('Revenue stream name cannot be empty.', 'error'); await loadSettlementProfilesPanel(true); return; }
+    try {
+      const res = await fetch(settlementProfilesApi('/' + encodeURIComponent(profileId)), {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: clean })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to rename revenue stream.');
+      setStatus('Revenue stream renamed.', 'success');
+      await loadSettlementProfilesPanel(true);
+    } catch (err) {
+      setStatus(err.message, 'error');
+      await loadSettlementProfilesPanel(true);
+    }
+  }
+
+  async function toggleSettlementProfileActive(profileId, makeActive) {
+    try {
+      const res = await fetch(settlementProfilesApi('/' + encodeURIComponent(profileId)), {
+        method: 'PATCH',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: makeActive })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to update revenue stream.');
+      setStatus(makeActive ? 'Revenue stream activated.' : 'Revenue stream deactivated.', 'success');
+      await loadSettlementProfilesPanel(true);
+    } catch (err) {
+      setStatus(err.message, 'error');
+    }
+  }
+
+  async function setDefaultGivingProfile(profileId) {
+    try {
+      const res = await fetch(settlementProfilesApi('/' + encodeURIComponent(profileId) + '/default-giving'), { method: 'POST', headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to set default giving revenue stream.');
+      setStatus('Default giving revenue stream updated.', 'success');
+      await loadSettlementProfilesPanel(true);
+    } catch (err) {
+      setStatus(err.message, 'error');
+    }
+  }
+
+  async function setDefaultCommerceProfile(profileId) {
+    try {
+      const res = await fetch(settlementProfilesApi('/' + encodeURIComponent(profileId) + '/default-commerce'), { method: 'POST', headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to set default commerce revenue stream.');
+      setStatus('Default commerce revenue stream updated.', 'success');
+      await loadSettlementProfilesPanel(true);
+    } catch (err) {
+      setStatus(err.message, 'error');
+    }
+  }
+
+  async function assignSettlementModule(moduleKey, profileId) {
+    if (!profileId) return;
+    try {
+      const res = await fetch(settlementProfilesApi('/' + encodeURIComponent(profileId) + '/assign-module'), {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ moduleKey })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Unable to assign module.');
+      setStatus(`${SETTLEMENT_MODULE_LABELS[moduleKey] || moduleKey} reassigned.`, 'success');
+      await loadSettlementProfilesPanel(true);
+    } catch (err) {
+      setStatus(err.message, 'error');
+      await loadSettlementProfilesPanel(true);
+    }
+  }
+
   const BOOKSTORE_CATEGORY_LABELS = {
     book: 'Book', prayer_rope: 'Prayer Rope', icon: 'Icon', candle: 'Candle',
     jewelry: 'Jewelry / Cross', incense: 'Incense', cd_dvd: 'CD / DVD', other: 'Other'
@@ -1378,10 +1585,12 @@
                 <span>${escapeHtml(o.donorEmail)}</span>
                 ${o.orderNumber ? `<span>#${escapeHtml(o.orderNumber)}</span>` : ''}
                 <span>${escapeHtml((o.source || '').replace(/_/g, ' '))}</span>
+                ${o.settlementProfileName ? `<span>${escapeHtml(o.settlementProfileName)}</span>` : ''}
               </div>
               <ul class="bk-order-items">${items || '<li><span>Bookstore order</span><span>' + moneyFull(o.grossCents) + '</span></li>'}</ul>
               <div class="bk-order-detail-totals">
                 ${o.taxCents ? `<span>Tax <b>${moneyFull(o.taxCents)}</b></span>` : ''}
+                ${(o.stripeFeeCents || o.agapayFeeCents) ? `<span>Fees <b>${moneyFull((o.stripeFeeCents||0) + (o.agapayFeeCents||0))}</b></span>` : ''}
                 <span>Gross <b>${moneyFull(o.grossCents)}</b></span>
                 <span>Net to parish <b>${moneyFull(o.netCents)}</b></span>
               </div>
