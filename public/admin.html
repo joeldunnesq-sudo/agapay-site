@@ -615,6 +615,28 @@
               <span id="seedDemoStatus" style="font-size:0.82rem;color:var(--muted);"></span>
             </div>
           </section>
+          <section class="section-card" id="commemorationEmailToolCard">
+            <div class="section-header">
+              <div class="section-title">
+                <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="m4 7 8 6 8-6"/><path d="M8 16h8"/></svg></div>
+                Weekly Commemoration Email
+              </div>
+            </div>
+            <div class="section-body" style="display:grid;gap:0.85rem;">
+              <p class="muted" style="font-size:0.85rem;margin:0;">Preview or send the Saturday priest email for a parish's current seven-day commemoration window.</p>
+              <div class="form-grid">
+                <div>
+                  <label for="weeklyCommemorationParishId">Parish dashboard ID</label>
+                  <input id="weeklyCommemorationParishId" placeholder="st-fiacre" />
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="secondary btn-sm" id="weeklyCommemorationPreviewBtn" onclick="runWeeklyCommemorationEmail(true, this)">Preview email</button>
+                <button class="gold btn-sm" id="weeklyCommemorationSendBtn" onclick="runWeeklyCommemorationEmail(false, this)">Send email now</button>
+              </div>
+              <div id="weeklyCommemorationStatus" class="email-log-empty" style="font-size:0.82rem;line-height:1.55;">Enter a parish ID and preview before sending.</div>
+            </div>
+          </section>
           <section class="section-card" id="stewardshipCompCard">
             <div class="section-header">
               <div class="section-title">

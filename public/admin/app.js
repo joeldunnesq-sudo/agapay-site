@@ -1087,6 +1087,77 @@ let selectedReference = '';
       }
     }
 
+    function weeklyCommemorationSummary(results = [], dryRun = true) {
+      if (!results.length) return 'No matching parish was found for that dashboard ID.';
+      return results.map((row) => {
+        if (row.status === 'skipped') {
+          return `${row.parishName || row.parishId}: skipped (${row.reason || 'not eligible'}).`;
+        }
+        const counts = `${Number(row.entryCount || 0)} submissions, ${Number(row.livingCount || 0)} living names, ${Number(row.departedCount || 0)} departed names`;
+        const destination = row.to ? ` to ${row.to}` : '';
+        const action = dryRun ? 'Ready to send' : row.status === 'sent' ? 'Sent' : `Result: ${row.status || 'unknown'}`;
+        return `${action}${destination} for ${row.parishName || row.parishId}: ${counts}.`;
+      }).join(' ');
+    }
+
+    async function runWeeklyCommemorationEmail(dryRun, btn) {
+      const status = document.getElementById('weeklyCommemorationStatus');
+      const parishInput = document.getElementById('weeklyCommemorationParishId');
+      const parishId = (parishInput?.value || '').trim();
+      if (!parishId) {
+        if (status) {
+          status.textContent = 'Enter the parish dashboard ID first.';
+          status.style.color = 'var(--red, #8b2020)';
+        }
+        parishInput?.focus();
+        return;
+      }
+      if (!dryRun && !window.confirm(`Send this week's commemoration email for ${parishId} now?`)) return;
+
+      const previewBtn = document.getElementById('weeklyCommemorationPreviewBtn');
+      const sendBtn = document.getElementById('weeklyCommemorationSendBtn');
+      if (previewBtn) previewBtn.disabled = true;
+      if (sendBtn) sendBtn.disabled = true;
+      if (btn) {
+        btn.classList.add('loading');
+        btn.textContent = dryRun ? 'Previewing...' : 'Sending...';
+      }
+      if (status) {
+        status.textContent = dryRun ? "Checking this week's submissions..." : 'Sending weekly commemoration email...';
+        status.style.color = 'var(--muted)';
+      }
+
+      try {
+        const response = await fetch('/api/admin/commemorations/send-weekly', {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ parishId, dryRun })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (handleAuthFailure(response, result)) return;
+        if (!response.ok || !result.ok) throw new Error(result.error || 'Unable to run weekly commemoration email');
+        const message = weeklyCommemorationSummary(result.results || [], result.dryRun);
+        if (status) {
+          status.textContent = message;
+          status.style.color = result.dryRun ? 'var(--deep)' : 'var(--green, #2a7a4b)';
+        }
+        setStatus(result.dryRun ? 'Weekly commemoration email preview loaded.' : 'Weekly commemoration email sent.', 'success');
+      } catch (err) {
+        if (status) {
+          status.textContent = err.message;
+          status.style.color = 'var(--red, #8b2020)';
+        }
+        setStatus(err.message, 'error');
+      } finally {
+        if (previewBtn) previewBtn.disabled = false;
+        if (sendBtn) sendBtn.disabled = false;
+        if (btn) {
+          btn.classList.remove('loading');
+          btn.textContent = dryRun ? 'Preview email' : 'Send email now';
+        }
+      }
+    }
+
     async function loadStewardshipCompStatus() {
       const counter = document.getElementById('stewardshipCompCounter');
       if (!counter) return;
