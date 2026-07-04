@@ -80,6 +80,21 @@ import {
   parishSlug,
 } from "../lib/format.js";
 
+import {
+  SETTLEMENT_PROFILE_TYPES,
+  settlementProfileToJson,
+  resolveSettlementProfileId,
+  listSettlementProfiles,
+  createSettlementProfile,
+  renameSettlementProfile,
+  setProfileActive,
+  setDefaultGivingProfile,
+  setDefaultCommerceProfile,
+  assignModuleProfile,
+  ensureDefaultGivingProfile,
+  ensureDefaultCommerceProfile,
+} from "../lib/settlement-profiles.js";
+
 function d1(env) {
   return env.AGAPAY_DB || env.DB || null;
 }
@@ -1161,12 +1176,15 @@ export async function storeDonorOffering(env, offering) {
   const email = normalizeEmail(offering.donorEmail);
   const id = offering.id || crypto.randomUUID();
   const fees = offeringFeeBreakdown(offering);
+  const settlementProfileId = offering.settlementProfileId
+    || (offering.parishId ? await resolveSettlementProfileId(env, offering.parishId, "giving") : null);
   const record = {
     id,
     donorEmail: email,
     donorName: offering.donorName || "",
     parishId: offering.parishId || "",
     parishName: offering.parishName || "",
+    settlementProfileId: settlementProfileId || "",
     giftType: offering.giftType || "stewardship",
     title: offering.title || "AGAPAY offering",
     fund: offering.fund || "",
@@ -1216,9 +1234,9 @@ export async function storeDonorOffering(env, offering) {
       env,
       `INSERT INTO donor_offerings (
         id, donor_email, parish_id, checkout_session_id, payment_intent_id,
-        stripe_subscription_id, status, payment_status, created_at, updated_at, data
+        stripe_subscription_id, status, payment_status, settlement_profile_id, created_at, updated_at, data
        )
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
        ON CONFLICT(id) DO UPDATE SET
          donor_email = excluded.donor_email,
          parish_id = excluded.parish_id,
@@ -1227,6 +1245,7 @@ export async function storeDonorOffering(env, offering) {
          stripe_subscription_id = excluded.stripe_subscription_id,
          status = excluded.status,
          payment_status = excluded.payment_status,
+         settlement_profile_id = excluded.settlement_profile_id,
          created_at = excluded.created_at,
          updated_at = excluded.updated_at,
          data = excluded.data`,
@@ -1238,6 +1257,7 @@ export async function storeDonorOffering(env, offering) {
       record.stripeSubscriptionId,
       record.status,
       record.paymentStatus,
+      record.settlementProfileId,
       record.createdAt,
       record.updatedAt,
       JSON.stringify(record)
@@ -4691,11 +4711,14 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
     const orderRows = await d1All(env,
       `SELECT o.id, o.order_number, o.donor_email, o.donor_name, o.item_description,
               o.quantity, o.total_charged_cents, o.parish_net_cents, o.tax_cents,
+              o.agapay_fee_cents, o.stripe_fee_cents,
               o.payment_status, o.fulfillment_status, o.source, o.created_at, o.completed_at,
+              o.settlement_profile_id, sp.name AS settlement_profile_name,
               CASE WHEN d.email IS NOT NULL THEN 1 ELSE 0 END AS is_myagapay,
               CASE WHEN d.default_parish_id = o.parish_id THEN 1 ELSE 0 END AS is_home_parish
        FROM commerce_orders o
        LEFT JOIN donors d ON d.email = o.donor_email
+       LEFT JOIN settlement_profiles sp ON sp.id = o.settlement_profile_id
        WHERE o.parish_id = ? AND o.commerce_module = 'bookstore'
          AND o.payment_status IN ('paid','refunded','partially_refunded')${whereSearch}${whereCursor}
        ORDER BY o.created_at DESC, o.id DESC
@@ -4743,6 +4766,10 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
       grossCents: Number(r.total_charged_cents || 0),
       netCents: Number(r.parish_net_cents || 0),
       taxCents: Number(r.tax_cents || 0),
+      agapayFeeCents: Number(r.agapay_fee_cents || 0),
+      stripeFeeCents: Number(r.stripe_fee_cents || 0),
+      settlementProfileId: r.settlement_profile_id || null,
+      settlementProfileName: r.settlement_profile_name || null,
       paymentStatus: r.payment_status,
       fulfillmentStatus: r.fulfillment_status,
       source: r.source,
@@ -4976,6 +5003,98 @@ export async function handleParishBookstore(request, env, parishId, subpath = ""
   }
 
   return json({ error: "Method not allowed" }, { status: 405 });
+}
+
+// Settlement Profiles admin API — Settings tab, "payment-settings" scope.
+// Gated the same way as every other parish dashboard endpoint: a valid
+// parish dashboard bearer token. AGAPAY doesn't yet have per-user roles
+// within a single parish login (the whole dashboard is one shared parish
+// credential), so "only admins/treasurers with payment-settings permission"
+// is satisfied by the existing parish-dashboard auth boundary — this is
+// never reachable from the donor-facing My AGAPAY app, which has no bearer
+// token for parish dashboard auth at all.
+export async function handleParishSettlementProfiles(request, env, parishId, subpath = "") {
+  const limited = await rateLimit(request, env, "parish-settlement-profiles", { limit: 60, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  if (!d1(env)) return missingProductionStoreResponse();
+
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish dashboard record not found" }, { status: 404 });
+
+  const token = getBearerToken(request);
+  if (!(await verifyParishDashboardBearer(found.registration, token))) {
+    return unauthorized();
+  }
+
+  const segments = String(subpath || "").replace(/^\/+/, "").split("/").filter(Boolean);
+
+  // Every request self-heals the parish's giving default, and its commerce
+  // default if Parish + is active, so the list is never empty for a
+  // verified parish — mirrors the "ensure a default profile exists" spec
+  // without needing a separate onboarding hook to have run first.
+  await ensureDefaultGivingProfile(env, parishId);
+  if (hasStewardshipAccess(found.registration)) {
+    await ensureDefaultCommerceProfile(env, parishId);
+  }
+
+  if (request.method === "GET" && segments.length === 0) {
+    const profiles = await listSettlementProfiles(env, parishId);
+    return json({
+      profiles,
+      profileTypes: SETTLEMENT_PROFILE_TYPES,
+      stewardshipActive: hasStewardshipAccess(found.registration)
+    });
+  }
+
+  if (request.method === "POST" && segments.length === 0) {
+    let body = {};
+    try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, { status: 400 }); }
+    const result = await createSettlementProfile(env, parishId, { name: body.name, profileType: body.profileType });
+    if (result.error) return json({ error: result.error }, { status: 422 });
+    return json({ profile: settlementProfileToJson(result.profile) });
+  }
+
+  const profileId = segments[0];
+  if (!profileId) return json({ error: "Not found" }, { status: 404 });
+
+  if (request.method === "PATCH" && segments.length === 1) {
+    let body = {};
+    try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, { status: 400 }); }
+    if (typeof body.name === "string") {
+      const result = await renameSettlementProfile(env, parishId, profileId, body.name);
+      if (result.error) return json({ error: result.error }, { status: 422 });
+      return json({ profile: settlementProfileToJson(result.profile) });
+    }
+    if (typeof body.isActive === "boolean") {
+      const result = await setProfileActive(env, parishId, profileId, body.isActive);
+      if (result.error) return json({ error: result.error }, { status: 422 });
+      return json({ profile: settlementProfileToJson(result.profile) });
+    }
+    return json({ error: "Nothing to update" }, { status: 400 });
+  }
+
+  if (request.method === "POST" && segments[1] === "default-giving") {
+    const result = await setDefaultGivingProfile(env, parishId, profileId);
+    if (result.error) return json({ error: result.error }, { status: 422 });
+    return json({ profile: settlementProfileToJson(result.profile) });
+  }
+
+  if (request.method === "POST" && segments[1] === "default-commerce") {
+    const result = await setDefaultCommerceProfile(env, parishId, profileId);
+    if (result.error) return json({ error: result.error }, { status: 422 });
+    return json({ profile: settlementProfileToJson(result.profile) });
+  }
+
+  if (request.method === "POST" && segments[1] === "assign-module") {
+    let body = {};
+    try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, { status: 400 }); }
+    const result = await assignModuleProfile(env, parishId, body.moduleKey, profileId);
+    if (result.error) return json({ error: result.error }, { status: 422 });
+    return json(result);
+  }
+
+  return json({ error: "Not found" }, { status: 404 });
 }
 
 // Marks a bookstore commerce order paid once Stripe confirms, and reconciles

@@ -38,6 +38,10 @@ import {
 } from "../lib/subscriptions.js";
 
 import {
+  resolveSettlementProfileId,
+} from "../lib/settlement-profiles.js";
+
+import {
   agapayEmailHtml,
   sendEmail,
 } from "../lib/email.js";
@@ -1412,6 +1416,8 @@ export async function handleDonorBookstore(request, env) {
     return json({ error: "Stripe checkout session failed", detail: session.body.error?.message || "Unknown Stripe error" }, { status: 502 });
   }
 
+  const settlementProfileId = await resolveSettlementProfileId(env, resolved.parishId, "bookstore");
+
   await d1Run(env, `
     INSERT INTO commerce_orders
       (id, commerce_module, source, parish_id, donor_email, donor_name,
@@ -1420,9 +1426,9 @@ export async function handleDonorBookstore(request, env) {
        tax_cents, agapay_fee_cents, stripe_fee_cents, cover_fees, total_charged_cents,
        parish_net_cents, status, payment_status, checkout_session_local_id,
        checkout_session_id, checkout_url, stripe_customer_id, fulfillment_status,
-       pickup_note, created_at, updated_at)
+       pickup_note, settlement_profile_id, created_at, updated_at)
     VALUES (?, 'bookstore', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?, ?,
-            'checkout_created', 'pending', ?, ?, ?, ?, 'pending', ?, ?, ?)
+            'checkout_created', 'pending', ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
   `,
     orderId,
     items.some(item => item.source === "scan_and_go") ? "scan_and_go" : items.some(item => item.source === "catalog") ? "catalog" : "manual_entry",
@@ -1447,6 +1453,7 @@ export async function handleDonorBookstore(request, env) {
     session.body.url || "",
     customer.body.id || "",
     pickupNote,
+    settlementProfileId,
     now,
     now
   );
