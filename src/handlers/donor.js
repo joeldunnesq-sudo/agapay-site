@@ -66,10 +66,12 @@ import {
   loadReconciledDonorCommemorations,
   migrateDonorEmailReferences,
   offeringFeeBreakdown,
+  paidOfferingStatus,
   parishFromRegistration,
   publicDonorOffering,
   reconcilePendingDonorOfferings,
   requireDonor,
+  slugify,
   donorName,
   storeCommemorationEntry,
   storeDonorOffering,
@@ -727,6 +729,50 @@ export async function handleDonorVerifyPage(request, env) {
   );
 }
 
+// Sums how much THIS donor has personally given to each of the parish's active
+// campaigns, and annotates each campaign object with donorGivenCents /
+// donorGiftCount / donorLastGiftAt. Lets the My AGAPAY home card show the donor
+// their own contribution under the campaign description (and nudge those at $0).
+// Each paid offering carries a single campaign identifier (campaign/campaignId),
+// so membership-testing against a campaign's candidate keys can't double-count.
+function attachDonorCampaignGiving(parish, offerings) {
+  if (!parish) return parish;
+  const groups = [parish.campaigns, parish.feastCampaigns].filter(Array.isArray);
+  if (!groups.length) return parish;
+  const norm = (v) => String(v || "").trim().toLowerCase();
+
+  const paidCampaignGifts = offerings
+    .filter(paidOfferingStatus)
+    .map((o) => ({
+      key: norm(o.campaign || o.campaignId || o.campaignName || o.campaignSlug),
+      cents: offeringFeeBreakdown(o).giftAmountCents,
+      at: o.createdAt || ""
+    }))
+    .filter((g) => g.key);
+
+  for (const group of groups) {
+    for (const campaign of group) {
+      if (!campaign || typeof campaign !== "object") continue;
+      const keys = new Set(
+        [campaign.id, campaign.feastId, campaign.name, campaign.campaignName, campaign.slug,
+          slugify(campaign.name || campaign.campaignName || "")]
+          .map(norm).filter(Boolean)
+      );
+      let cents = 0, count = 0, last = "";
+      for (const g of paidCampaignGifts) {
+        if (!keys.has(g.key)) continue;
+        cents += g.cents;
+        count += 1;
+        if (g.at > last) last = g.at;
+      }
+      campaign.donorGivenCents = cents;
+      campaign.donorGiftCount = count;
+      campaign.donorLastGiftAt = last || null;
+    }
+  }
+  return parish;
+}
+
 export async function handleDonorDashboard(request, env) {
   const donor = await requireDonor(request, env);
   if (!donor) return unauthorized();
@@ -819,6 +865,7 @@ export async function handleDonorDashboard(request, env) {
     const found = await findRegistrationByParishId(env, donor.defaultParishId);
     if (found) parish = parishFromRegistration(found.registration);
     if (parish) parish = await enrichParishGivingOptions(env, parish);
+    if (parish) parish = attachDonorCampaignGiving(parish, offerings);
   }
 
   return json({
