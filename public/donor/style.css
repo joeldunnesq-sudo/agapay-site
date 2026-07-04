@@ -6193,3 +6193,60 @@ body.donor-home {
   font-weight: 600;
   color: #4c4740;
 }
+
+/* Bookstore order history — paid orders expand into a real line-item receipt */
+.bk-receipt {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin: 8px 0;
+  overflow: hidden;
+  background: var(--paper);
+  transition: border-color 0.15s;
+}
+.bk-receipt:hover { border-color: rgba(184, 144, 47, 0.4); }
+.bk-receipt-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.bk-receipt-summary { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bk-receipt-head-right { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+.bk-receipt-total { font-family: var(--serif); font-size: 15px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.bk-receipt-caret { width: 13px; height: 13px; color: var(--stone); transition: transform 0.2s; flex: 0 0 auto; }
+.bk-receipt.is-open .bk-receipt-caret { transform: rotate(180deg); }
+.bk-receipt-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.25s ease; }
+.bk-receipt.is-open .bk-receipt-body { grid-template-rows: 1fr; }
+.bk-receipt-body-inner { overflow: hidden; }
+.bk-receipt.is-open .bk-receipt-body-inner { border-top: 1px dashed var(--line); padding: 12px 14px 14px; }
+.bk-receipt-lines { list-style: none; margin: 0 0 10px; padding: 0; }
+.bk-receipt-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 0;
+  font-size: 13.5px;
+  color: var(--ink);
+  border-bottom: 1px dashed var(--line);
+}
+.bk-receipt-line:last-child { border-bottom: 0; }
+.bk-receipt-line-name em { color: var(--stone); font-style: normal; font-weight: 600; }
+.bk-receipt-totals {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 3px 10px;
+  font-size: 12.5px;
+  color: var(--stone);
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.bk-receipt-total-row { color: var(--ink); font-weight: 700; font-size: 13.5px; }
+.bk-receipt-note { margin: 10px 0 0; font-size: 12px; color: var(--stone); font-style: italic; }

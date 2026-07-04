@@ -3158,6 +3158,16 @@ const BOOKSTORE_STATUS_TONE = {
   refunded: "muted"
 };
 
+const BOOKSTORE_FULFILLMENT_LABELS = {
+  pending: "Awaiting pickup",
+  ready: "Ready for pickup",
+  picked_up: "Picked up",
+  shipped: "Shipped",
+  fulfilled: "Fulfilled",
+  cancelled: "Cancelled",
+  none: ""
+};
+
 const BOOKSTORE_FALLBACK_FIELDS = [
   { category: "book", label: "Book", fields: [
     { key: "title", label: "Title", required: true, maxLength: 180 },
@@ -3643,12 +3653,52 @@ function bookstoreOrderRow(row) {
   const statusLabel = BOOKSTORE_STATUS_LABELS[row.status] || row.status;
   const tone = BOOKSTORE_STATUS_TONE[row.status] || "muted";
   const categoryLabel = row.itemCategoryLabel || BOOKSTORE_CATEGORY_LABELS[row.itemCategory] || "Item";
-  return `<div class="sac-row">
-    <div class="sac-row-top">
-      <span class="sac-row-type">${escapeHtml(row.itemDescription)}</span>
-      <span class="status-pill ${tone}">${escapeHtml(statusLabel)}</span>
+  const isPaid = row.paymentStatus === "paid";
+  const items = Array.isArray(row.items) ? row.items : [];
+  const fulfillmentLabel = BOOKSTORE_FULFILLMENT_LABELS[row.fulfillmentStatus] || "";
+  const dateLabel = shortDate(row.createdAt);
+
+  // Paid orders expand into a real line-item receipt. Unpaid/failed/expired
+  // checkouts have no confirmed items worth itemizing, so they stay flat.
+  if (!isPaid || !items.length) {
+    return `<div class="sac-row">
+      <div class="sac-row-top">
+        <span class="sac-row-type">${escapeHtml(row.itemDescription)}</span>
+        <span class="status-pill ${tone}">${escapeHtml(statusLabel)}</span>
+      </div>
+      <div class="sac-row-meta">${escapeHtml(categoryLabel)} &times; ${row.quantity} &middot; ${formatCentsAsDollars(row.totalChargedCents || row.subtotalCents)}${row.pickupNote ? ` &middot; ${escapeHtml(row.pickupNote)}` : ""}</div>
+    </div>`;
+  }
+
+  const itemLines = items.map((item) => `
+    <li class="bk-receipt-line">
+      <span class="bk-receipt-line-name">${escapeHtml(item.name)}${item.quantity > 1 ? ` <em>&times;${item.quantity}</em>` : ""}</span>
+      <span class="bk-receipt-line-amt">${formatCentsAsDollars(item.totalCents)}</span>
+    </li>`).join("");
+
+  return `<div class="bk-receipt">
+    <button type="button" class="bk-receipt-head" onclick="this.closest('.bk-receipt').classList.toggle('is-open')" aria-expanded="false">
+      <div class="bk-receipt-summary">
+        <span class="sac-row-type">${escapeHtml(row.itemDescription)}</span>
+        <span class="sac-row-meta">${escapeHtml(categoryLabel)} &middot; ${dateLabel}${fulfillmentLabel ? ` &middot; ${escapeHtml(fulfillmentLabel)}` : ""}</span>
+      </div>
+      <div class="bk-receipt-head-right">
+        <span class="bk-receipt-total">${formatCentsAsDollars(row.totalChargedCents || row.subtotalCents)}</span>
+        <span class="status-pill ${tone}">${escapeHtml(statusLabel)}</span>
+        <svg class="bk-receipt-caret" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m3 5 3 3 3-3"/></svg>
+      </div>
+    </button>
+    <div class="bk-receipt-body">
+      <div class="bk-receipt-body-inner">
+        <ul class="bk-receipt-lines">${itemLines}</ul>
+        <div class="bk-receipt-totals">
+          <span>Subtotal</span><span>${formatCentsAsDollars(row.subtotalCents)}</span>
+          ${row.taxCents ? `<span>Tax</span><span>${formatCentsAsDollars(row.taxCents)}</span>` : ""}
+          <span class="bk-receipt-total-row">Total paid</span><span class="bk-receipt-total-row">${formatCentsAsDollars(row.totalChargedCents || row.subtotalCents)}</span>
+        </div>
+        ${row.pickupNote ? `<p class="bk-receipt-note">Note to parish: ${escapeHtml(row.pickupNote)}</p>` : ""}
+      </div>
     </div>
-    <div class="sac-row-meta">${escapeHtml(categoryLabel)} × ${row.quantity} · ${formatCentsAsDollars(row.totalChargedCents || row.subtotalCents)}${row.pickupNote ? ` · ${escapeHtml(row.pickupNote)}` : ""}</div>
   </div>`;
 }
 
