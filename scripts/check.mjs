@@ -96,6 +96,8 @@ assert.ok(worker.includes('url.pathname === "/api/parish-interest"'), "worker sh
 
 
 const donorApp = await readFile("public/donor/app.js", "utf8");
+const publicLiturgicalCalendar = await readFile("public/liturgical-calendar.js", "utf8");
+const srcLiturgicalCalendar = await readFile("src/liturgical-calendar.js", "utf8");
 const myAgapayShell = await readFile("public/myagapay-shell.js", "utf8");
 const manifest = await readFile("public/manifest.webmanifest", "utf8");
 const adminHtml = await readFile("public/admin.html", "utf8");
@@ -161,6 +163,16 @@ const donorCalendarCss = await readFile("public/donor/style.css", "utf8");
 assert.ok(!donorCalendar.includes("saintLifeButton") && !donorCalendar.includes("Open saint life"), "Today hero should not duplicate the dedicated Saint of the Day card action");
 assert.ok(donorCalendar.includes('id="saintPreviewCard"') && donorCalendar.includes('onclick="openDonorSaintOfDay(this)"'), "Saint of the Day card should be the saint-life action");
 assert.ok(donorApp.includes("Tone of the Week") && donorApp.includes('return "";') && !donorApp.includes('return "Church day"') && !donorApp.includes('return "Liturgical Day"'), "Today hero chips should omit generic liturgical fallback labels and use clear tone labels");
+assert.ok(!donorApp.includes("[today.tone, today.epistleRef"), "Today hero description should not duplicate the Tone of the Week beside the Epistle reading");
+assert.ok(donorApp.includes("calendarShortDateIso(pascha?.date)"), "Today Pascha metric should read the date returned by the calendar helper");
+for (const source of [publicLiturgicalCalendar, srcLiturgicalCalendar]) {
+  for (const feastId of ["great-lent-ends", "apostles-fast-ends", "dormition-fast-begins", "dormition-fast-ends", "nativity-fast-begins", "nativity-fast-ends"]) {
+    assert.ok(source.includes(`id: "${feastId}"`), `liturgical calendar should include ${feastId}`);
+  }
+  assert.ok(source.includes('id: "clean-monday", name: "Clean Monday / Great Lent Begins", offset: -48, rank: "fast"'), "Clean Monday should be highlighted as a fast boundary");
+}
+assert.ok(donorApp.includes("parishPatronalFeastForYear") && donorApp.includes('rank: "patronal"'), "Today Feast Highlights should include the donor parish Patronal feast");
+assert.ok(donorCalendar.includes('class="patronal"') && donorCalendarCss.includes(".cal-feast-rank.patronal"), "Today Feast Highlights should label Patronal feasts distinctly");
 assert.ok(donorCalendarCss.includes("@media (max-width: 719px)") && donorCalendarCss.includes('aria-label="Saint of the Day"'), "Today mobile layout should lift Saint of the Day above lower cards without changing desktop columns");
 const donorBookstore = await readFile("public/donor/bookstore.html", "utf8");
 assert.ok(donorBookstore.includes("bookstoreHeroTitle") && donorBookstore.includes("PAY FOR YOUR ITEMS AT YOUR PARISH BOOKSTORE"), "Bookstore hero should support parish-specific payment copy");

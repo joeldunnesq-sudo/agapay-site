@@ -820,6 +820,42 @@ function calendarShortDateIso(value) {
   return shortDate(value);
 }
 
+function annualIsoFromParishDate(value, year) {
+  const raw = String(value || "").trim();
+  const iso = /^\d{4}-(\d{2})-(\d{2})$/.exec(raw);
+  const short = /^(\d{1,2})[/-](\d{1,2})$/.exec(raw);
+  const month = iso ? Number(iso[1]) : short ? Number(short[1]) : 0;
+  const day = iso ? Number(iso[2]) : short ? Number(short[2]) : 0;
+  if (!month || !day) return "";
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return "";
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function parishPatronalFeastForYear(parish, year, calendar, feasts) {
+  if (!parish) return null;
+  const selected = String(parish.patronalFeast || parish.parishPatronalFeast || parish.patronalFeastId || "").trim();
+  const customName = String(parish.parishPatronalFeastName || parish.patronalFeastName || "").trim();
+  const parishName = parish.name || parish.parishName || "Your parish";
+  if (selected) {
+    const match = feasts.find((feast) => feast.id === selected || feast.name === selected);
+    if (match) return { ...match, rank: "patronal", name: customName || match.name };
+  }
+
+  const customDate = annualIsoFromParishDate(parish.parishPatronalFeastDate || parish.patronalFeastDate, year);
+  if (!customDate) return null;
+  const [civilYear, civilMonth, civilDay] = customDate.split("-").map(Number);
+  return {
+    id: "parish-patronal-feast",
+    name: customName || `${parishName} Patronal Feast`,
+    type: "parish",
+    rank: "patronal",
+    calendar,
+    date: customDate,
+    displayDate: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(civilYear, civilMonth - 1, civilDay))
+  };
+}
+
 const donorCalendarState = {
   liturgicalDay: null,
   calendar: "julian",
@@ -918,7 +954,7 @@ function renderDonorTodayInChurch(parish, payload) {
   setText("todayFeastTitle", feastTitle);
   setText("todayFeastNote", today.sourceConnected === false
     ? "Daily readings and saint lives are temporarily unavailable, but feast highlights still follow your Church calendar."
-    : [today.tone, today.epistleRef && `Epistle: ${today.epistleRef}`, today.gospelRef && `Gospel: ${today.gospelRef}`].filter(Boolean).join(" · ") || "Daily readings, saints, and fasting notes follow the Orthodox calendar.");
+    : [today.epistleRef && `Epistle: ${today.epistleRef}`, today.gospelRef && `Gospel: ${today.gospelRef}`].filter(Boolean).join(" · ") || "Daily readings, saints, and fasting notes follow the Orthodox calendar.");
   setText("saintPreviewName", saintTitle);
   setText("saintPreviewNote", saintNames.length > 1
     ? `${saintNames.length} commemorations listed for today.`
@@ -1052,16 +1088,23 @@ function renderDonorCalendarFeasts(parish) {
   const year = new Date().getFullYear();
   const label = api.calendarLabel(calendar);
   const feasts = api.liturgicalFeastsForYear(year, calendar);
+  const patronalFeast = parishPatronalFeastForYear(parish, year, calendar, feasts);
   const next = api.nextLiturgicalFeast(calendar, new Date());
   const pascha = api.orthodoxPascha(year);
-  const highlighted = feasts
-    .filter((feast) => ["great", "major", "holy-week", "bright-week", "fast"].includes(feast.rank))
-    .slice(0, 24);
+  const highlightMap = new Map(
+    feasts
+      .filter((feast) => ["great", "major", "holy-week", "bright-week", "fast"].includes(feast.rank))
+      .map((feast) => [feast.id || `${feast.date}-${feast.name}`, feast])
+  );
+  if (patronalFeast) highlightMap.set(patronalFeast.id || `${patronalFeast.date}-${patronalFeast.name}`, patronalFeast);
+  const highlighted = Array.from(highlightMap.values())
+    .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || String(a.name || "").localeCompare(String(b.name || "")))
+    .slice(0, 40);
 
   setText("calendarModePill", label);
   setText("nextFeastDate", calendarShortDateIso(next?.date));
   setText("nextFeastName", next?.name || "No feast found.");
-  setText("paschaDate", calendarShortDateIso(pascha?.iso));
+  setText("paschaDate", calendarShortDateIso(pascha?.date));
   setText("calendarShortName", calendar === "gregorian" ? "Revised-Julian" : "Julian");
   setText("calendarFullName", label);
 
@@ -1077,6 +1120,7 @@ function renderDonorCalendarFeasts(parish) {
       case "holy-week":   return { cls: "great",  label: "Great Feast" };
       case "bright-week": return { cls: "bright", label: "Bright Week" };
       case "fast":        return { cls: "fast",   label: "Fast" };
+      case "patronal":    return { cls: "patronal", label: "Patronal" };
       default:             return { cls: "major",  label: "Major" };
     }
   };

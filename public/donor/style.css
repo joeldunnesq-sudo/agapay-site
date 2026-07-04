@@ -5975,6 +5975,7 @@ body.donor-home {
 .cal-feast-row.great { border-left-color: var(--cal-great); background: linear-gradient(90deg, rgba(200,162,74,0.05), #fff 40%); }
 .cal-feast-row.fast { border-left-color: var(--cal-fast); }
 .cal-feast-row.bright { border-left-color: var(--cal-bright); }
+.cal-feast-row.patronal { border-left-color: var(--cal-gold); background: linear-gradient(90deg, rgba(200,162,74,0.08), #fff 42%); }
 .cal-feast-date { text-align: center; }
 .cal-feast-date-day { font-family: var(--cal-serif); font-size: 20px; font-weight: 600; line-height: 1; color: var(--cal-ink); }
 .cal-feast-date-mon { font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cal-stone); font-weight: 700; margin-top: 1px; }
@@ -5984,6 +5985,7 @@ body.donor-home {
 .cal-feast-rank.major { background: rgba(59,90,111,0.12); color: var(--cal-major); }
 .cal-feast-rank.fast { background: rgba(122,46,46,0.12); color: var(--cal-fast); }
 .cal-feast-rank.bright { background: rgba(74,124,89,0.12); color: var(--cal-bright); }
+.cal-feast-rank.patronal { background: rgba(200,162,74,0.18); color: #8a6220; }
 .cal-timeline-empty { padding: 20px 16px; text-align: center; font-size: 13px; color: var(--cal-stone); }
 
 /* ── GIVING PROMPTS ── */
