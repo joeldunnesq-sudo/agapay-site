@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/parish/style.css" />
-  <link rel="stylesheet" href="/parish/redesign.css?v=20260702c" />
+  <link rel="stylesheet" href="/parish/redesign.css?v=20260703a" />
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="stylesheet" href="/styles/stewardship.css" />
   <link rel="manifest" href="/manifest.webmanifest" />
@@ -1141,6 +1141,28 @@
 
           <div id="bookstoreTaxReminder" class="notice" style="margin-bottom:16px;" hidden></div>
 
+          <section class="bk-sales" id="bookstoreSalesPanel" aria-live="polite">
+            <div class="bk-sales-head">
+              <div class="bk-sales-head-copy">
+                <span class="bk-sales-eyebrow">My AGAPAY Purchases</span>
+                <h2 class="bk-sales-title">Bookstore Sales</h2>
+                <p class="bk-sales-sub">Every purchase your parishioners make from My AGAPAY — with buyer detail and what you net.</p>
+              </div>
+              <div class="bk-sales-controls">
+                <div class="bk-range" role="tablist" aria-label="Date range">
+                  <button type="button" class="bk-range-btn" data-range="30d" onclick="setBookstoreSalesRange('30d')">30d</button>
+                  <button type="button" class="bk-range-btn is-active" data-range="90d" onclick="setBookstoreSalesRange('90d')">90d</button>
+                  <button type="button" class="bk-range-btn" data-range="ytd" onclick="setBookstoreSalesRange('ytd')">YTD</button>
+                  <button type="button" class="bk-range-btn" data-range="all" onclick="setBookstoreSalesRange('all')">All</button>
+                </div>
+                <button class="sw-suite-refresh-btn" type="button" onclick="loadBookstoreSalesPanel(true)" title="Refresh sales">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
+                </button>
+              </div>
+            </div>
+            <div id="bookstoreSalesBody" class="bk-sales-body"><p class="sw-tool-loading">Loading sales…</p></div>
+          </section>
+
           <div class="bookstore-grid">
             <section class="section-card bookstore-card">
               <div class="section-header">
@@ -1372,6 +1394,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="/liturgical-calendar.js"></script>
-<script src="/parish/app.js"></script>
+<script src="/parish/app.js?v=20260703a"></script>
 </body>
 </html>
