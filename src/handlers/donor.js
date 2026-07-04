@@ -1036,11 +1036,32 @@ async function loadDonorBookstoreOrders(env, parishId, donorEmail) {
   if (!d1(env)) return [];
   const rows = await d1All(env, `
     SELECT id, order_number, status, payment_status, item_category, item_description, quantity,
-           subtotal_cents, total_charged_cents, pickup_note, created_at
+           subtotal_cents, tax_cents, total_charged_cents, fulfillment_status, pickup_note, created_at
     FROM commerce_orders
     WHERE parish_id = ? AND commerce_module = 'bookstore' AND donor_email = ?
     ORDER BY created_at DESC LIMIT 20
   `, parishId, donorEmail);
+
+  const orderIds = rows.map((row) => row.id);
+  const itemsByOrder = {};
+  if (orderIds.length) {
+    const placeholders = orderIds.map(() => "?").join(",");
+    const itemRows = await d1All(env, `
+      SELECT order_id, item_name, quantity, unit_price_cents, total_cents
+      FROM commerce_order_items
+      WHERE parish_id = ? AND order_id IN (${placeholders})
+      ORDER BY created_at ASC
+    `, parishId, ...orderIds);
+    for (const item of itemRows) {
+      (itemsByOrder[item.order_id] ||= []).push({
+        name: item.item_name,
+        quantity: Number(item.quantity || 1),
+        unitPriceCents: Number(item.unit_price_cents || 0),
+        totalCents: Number(item.total_cents || 0)
+      });
+    }
+  }
+
   return rows.map(row => ({
     id: row.id,
     orderNumber: row.order_number || "",
@@ -1051,9 +1072,22 @@ async function loadDonorBookstoreOrders(env, parishId, donorEmail) {
     itemDescription: row.item_description || "Bookstore order",
     quantity: Number(row.quantity || 1),
     subtotalCents: Number(row.subtotal_cents || 0),
+    taxCents: Number(row.tax_cents || 0),
     totalChargedCents: Number(row.total_charged_cents || row.subtotal_cents || 0),
+    fulfillmentStatus: row.fulfillment_status || "pending",
     pickupNote: row.pickup_note || "",
-    createdAt: row.created_at || ""
+    createdAt: row.created_at || "",
+    // Falls back to a single synthetic line so older/edge-case orders that
+    // predate itemized storage still expand into a one-line receipt instead
+    // of an empty list.
+    items: (itemsByOrder[row.id] && itemsByOrder[row.id].length)
+      ? itemsByOrder[row.id]
+      : [{
+          name: row.item_description || "Bookstore item",
+          quantity: Number(row.quantity || 1),
+          unitPriceCents: Number(row.quantity) > 0 ? Math.round(Number(row.subtotal_cents || 0) / Number(row.quantity)) : Number(row.subtotal_cents || 0),
+          totalCents: Number(row.subtotal_cents || 0)
+        }]
   }));
 }
 
