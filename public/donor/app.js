@@ -114,7 +114,10 @@ function redirectToMyAgapayLogin(reason = "expired") {
 function donorLoginReturnPath() {
   const params = new URLSearchParams(window.location.search);
   const next = params.get("next") || "/myagapay/";
-  return next.startsWith("/myagapay") || next.startsWith("/my-agapay") || next.startsWith("/donor")
+
+  // Keep My AGAPAY PWA navigation inside its installed scope.
+  // /donor/* is legacy/out-of-scope and can cause Android to open a browser header.
+  return next.startsWith("/myagapay/")
     ? next
     : "/myagapay/";
 }
