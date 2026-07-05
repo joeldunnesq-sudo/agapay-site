@@ -8,9 +8,8 @@
 // .all()/.run().
 //
 // Run directly: node scripts/settlement-profiles-tests.mjs
-// (Node >= 22 required for node:sqlite; the rest of the repo targets >=20,
-// so this script is intentionally not wired into `npm run check` yet — see
-// the implementation note for why.)
+// (Requires Node >= 22 for node:sqlite -- npm run check enforces this via
+// scripts/require-node-22.mjs before reaching this script.)
 
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
