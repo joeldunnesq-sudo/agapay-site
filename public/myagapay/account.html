@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Account | AGAPAY</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <link rel="stylesheet" href="/donor/style.css?v=20260704c" />
+  <script src="/pwa-register.js" defer></script>
+  <script src="/myagapay-shell.js?v=20260703e" defer></script>
+  <script src="/donor/app.js?v=20260704c" defer></script>
+  <link rel="stylesheet" href="/styles/numbers.css" />
+  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260704a" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
+  <meta name="theme-color" content="#061522" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+</head>
+<body class="donor-mobile-page donor-settings-page">
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-scroll">
+        <div class="brand">
+          <div class="brand-row"><a class="brand-mark dashboard-home-mark" href="/" aria-label="Go to AGAPAY home" hx-boost="false"><img src="/mark.png" alt="AGAPAY" /></a><span class="brand-name">AGAPAY</span><span class="dashboard-home-cue">Home</span></div>
+          <span class="pill">Account</span>
+        </div>
+        <div class="profile-panel">
+          <div class="profile-name" id="profileName">My AGAPAY Account</div>
+          <div class="profile-meta" id="profileMeta">Manage your AGAPAY profile</div>
+        </div>
+        <nav class="nav unified-product-nav" hx-boost="false"></nav>
+      </div>
+      <div class="sidebar-footer"><a class="sidebar-link" href="/" hx-boost="false"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> AGAPAY home</a></div>
+    </aside>
+    <main class="content donor-mobile-content">
+      <div class="topbar"><div class="topbar-title">Account</div><div class="topbar-actions"><a class="btn btn-ghost btn-sm" href="/myagapay">Dashboard</a></div></div>
+      <div class="page">
+        <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
+        <section class="hero settings-hero">
+          <div class="hero-grid">
+            <div>
+              <div class="eyebrow">Donor profile</div>
+              <h1>Account settings.</h1>
+              <p>Update your contact information, password, and the church connected to your AGAPAY giving.</p>
+            </div>
+            <div class="hero-mark"><img src="/mark.png" alt="" /></div>
+          </div>
+        </section>
+        <section class="card section-gap">
+          <div class="card-header">
+            <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></span> Account</div>
+            <span class="status-pill" id="settingsParishName">Choose a parish below</span>
+          </div>
+          <div class="card-body">
+            <form onsubmit="saveDonorSettings(event)">
+              <div class="form-grid">
+                <div class="form-group full"><label class="form-label" for="settingsName">Name</label><input class="form-input" id="settingsName" autocomplete="name" placeholder="Your name or household name" /></div>
+                <div class="form-group"><label class="form-label" for="settingsEmail">Email address</label><input class="form-input" id="settingsEmail" type="email" autocomplete="email" placeholder="you@example.com" /></div>
+                <div class="form-group"><label class="form-label" for="settingsPhone">Contact number</label><input class="form-input" id="settingsPhone" type="tel" autocomplete="tel" placeholder="(555) 555-5555" /></div>
+                <div class="form-group full">
+                  <label class="form-label" for="defaultParishId">My Parish</label>
+                  <input class="form-input parish-search" id="defaultParishSearch" placeholder="Search by parish, city, state, or jurisdiction" oninput="filterParishSelect('defaultParishSearch','defaultParishId')" />
+                  <select class="form-select" id="defaultParishId" data-placeholder="Choose the church I am giving to"><option value="">Choose the church I am giving to</option></select>
+                  <p class="form-help">Visiting family or attending another Orthodox church? Change this before giving so Quick Give points to the right parish.</p>
+                </div>
+                <div class="form-group full"><label class="form-label" for="settingsAddressLine1">Street Address</label><input class="form-input" id="settingsAddressLine1" autocomplete="address-line1" placeholder="123 Main St" /></div>
+                <div class="form-group"><label class="form-label" for="settingsAddressLine2">Apt / Unit <span class="form-label-optional">(optional)</span></label><input class="form-input" id="settingsAddressLine2" autocomplete="address-line2" placeholder="Apt 4B" /></div>
+                <div class="form-group"><label class="form-label" for="settingsCity">City</label><input class="form-input" id="settingsCity" autocomplete="address-level2" placeholder="City" /></div>
+                <div class="form-group"><label class="form-label" for="settingsState">State</label><input class="form-input" id="settingsState" autocomplete="address-level1" placeholder="NY" maxlength="2" /></div>
+                <div class="form-group"><label class="form-label" for="settingsPostalCode">ZIP Code</label><input class="form-input" id="settingsPostalCode" autocomplete="postal-code" placeholder="10001" /></div>
+                <div class="form-group"><label class="form-label" for="settingsCountry">Country</label><input class="form-input" id="settingsCountry" autocomplete="country" placeholder="US" maxlength="2" /></div>
+              </div>
+              <div class="section-divider"><span>Annual Pledge</span></div>
+              <div class="form-group" style="max-width:280px;">
+                <label class="form-label" for="pledgeAmount">Pledge amount</label>
+                <div style="position:relative;">
+                  <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--stone);font-size:0.9rem;pointer-events:none;">$</span>
+                  <input class="form-input" id="pledgeAmount" type="number" min="0" step="50" placeholder="e.g. 2400" style="padding-left:1.75rem;" />
+                </div>
+                <p class="form-help" style="margin-top:6px;">Your annual stewardship pledge in dollars. Only you can see this — it drives the progress bar on your dashboard home screen.</p>
+              </div>
+
+              <div class="section-divider"><span>Password</span></div>
+              <div class="form-grid">
+                <div class="form-group"><label class="form-label" for="currentPassword">Current password</label><input class="form-input" id="currentPassword" type="password" autocomplete="current-password" placeholder="Required for email or password changes" /></div>
+                <div class="form-group"><label class="form-label" for="newPassword">New password</label><input class="form-input" id="newPassword" type="password" autocomplete="new-password" placeholder="Leave blank to keep current password" /></div>
+              </div>
+              <p class="form-help">Changing your email address or password requires your current password. Name, phone number, and church can be updated directly.</p>
+              <div class="btn-row section-gap">
+                <button class="btn btn-gold" type="submit">Save settings</button>
+                <a class="btn btn-ghost" href="/myagapay">Back to dashboard</a>
+                <button class="btn btn-ghost" type="button" onclick="logoutDonor()">Log out</button>
+              </div>
+            </form>
+          </div>
+        </section>
+        <section class="card section-gap" id="learnSubscriptionCard">
+          <div class="card-header">
+            <div class="card-title"><span class="card-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5V5a2 2 0 0 1 2-2h5a4 4 0 0 1 3 1.35A4 4 0 0 1 17 3h1a2 2 0 0 1 2 2v14.5"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H11a3 3 0 0 1 3 3 3 3 0 0 1 3-3h.5A2.5 2.5 0 0 1 20 19.5"/></svg></span> AGAPAY Learn Subscription</div>
+            <span class="status-pill" id="learnBillingStatusPill">Checking...</span>
+          </div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Plan</label>
+                <div class="form-help" id="learnBillingPlan">Loading AGAPAY Learn billing...</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Renewal</label>
+                <div class="form-help" id="learnBillingRenewal">Checking subscription status.</div>
+              </div>
+            </div>
+            <p class="form-help" id="learnBillingHelp">Manage the Learn subscription tied to this My AGAPAY account.</p>
+            <div class="btn-row section-gap">
+              <a class="btn btn-ghost" href="/myagapay/learn">Open Learn</a>
+              <a class="btn btn-gold" id="learnBillingUpgradeLink" href="/learn/pricing">View Learn pricing</a>
+              <button class="btn btn-ghost" id="learnCancelSubscriptionButton" type="button" onclick="cancelLearnSubscription(this)" hidden>Cancel Learn subscription</button>
+            </div>
+          </div>
+        </section>
+      </div>
+      <nav class="mobile-tabbar" aria-label="Donor navigation"></nav>
+    </main>
+  </div>
+  <script>document.addEventListener("DOMContentLoaded", () => loadDonorSettingsPage());</script>
+</body>
+</html>
+

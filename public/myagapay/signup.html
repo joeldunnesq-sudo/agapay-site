@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create My AGAPAY Account | AGAPAY</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script src="/security.js"></script>
+  <script src="/pwa-register.js" defer></script>
+  <script src="/myagapay-shell.js?v=20260703e" defer></script>
+  <script src="/donor/app.js?v=20260704c" defer></script>
+  <link rel="stylesheet" href="/styles/numbers.css" />
+  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260704a" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
+  <meta name="theme-color" content="#061522" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --deep:   #061522;
+      --forest: #0B2130;
+      --gold:   #C8A24A;
+      --cream:   #F6F1E8;
+      --stone:   #6F6A60;
+      --ink:     #171715;
+      --white:   #FFFFFF;
+    
+      --serif:   'Cormorant Garamond', Georgia, serif;
+      --sans:    'DM Sans', system-ui, sans-serif;
+    
+      --r:       10px;
+      --rlg:     16px;
+    }
+
+    body { font-family: var(--sans); background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+
+    .candle-glow { position: fixed; width: 500px; height: 500px; background: radial-gradient(circle, rgba(200,162,74,0.05) 0%, rgba(53,94,59,0.02) 40%, transparent 70%); filter: blur(60px); pointer-events: none; z-index: -1; border-radius: 50%; }
+    .candle-glow.top-left { top: -150px; left: -150px; }
+    .candle-glow.bottom-right { bottom: -150px; right: -150px; }
+
+    /* NAV */
+    body > nav { position: sticky; top: 0; z-index: 100; background: rgba(243,239,230,0.93); backdrop-filter: blur(12px); border-bottom: 0.5px solid rgba(166,159,145,0.35); }
+    .nav-inner { max-width: 1024px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .nav-logo { display: flex; align-items: center; gap: 5px; }
+    .nav-mark { width: 52px; height: 52px; background: var(--deep); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+    .nav-name { font-family: var(--serif); font-size: 32px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
+    .nav-links a { font-size: 14px; color: var(--forest); transition: color 0.2s; }
+    .nav-links a:hover { color: var(--ink); }
+    .nav-cta { display: inline-block; background: var(--deep); color: var(--cream) !important; padding: 9px 18px; border-radius: var(--r); font-size: 13px; font-weight: 500; transition: background 0.2s; }
+    .nav-cta:hover { background: var(--forest) !important; }
+
+    /* HERO */
+    .hero { background: var(--deep); padding: 4rem 1.5rem 3.5rem; text-align: center; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 600px; height: 250px; background: radial-gradient(ellipse at top, rgba(200,162,74,0.11) 0%, transparent 65%); pointer-events: none; }
+    .hero-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 320px; height: 320px; object-fit: contain; opacity: 0.06; pointer-events: none; z-index: 0; }
+    .hero-inner { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; }
+    .hero-eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 1rem; font-weight: 500; }
+    .hero h1 { font-family: var(--serif); font-size: clamp(1.9rem, 4vw, 2.8rem); font-weight: 500; color: var(--cream); line-height: 1.2; margin-bottom: 0.75rem; }
+    .hero-sub { font-size: 14px; color: var(--stone); line-height: 1.75; max-width: 440px; margin: 0 auto; }
+
+    /* MAIN CONTENT FRAME */
+    .main { max-width: 640px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+
+    /* FORM CARD */
+    .form-card { background: white; border: 0.5px solid rgba(166,159,145,0.35); border-radius: var(--rlg); padding: 2.5rem; }
+    .form-card-title { font-family: var(--serif); font-size: 1.5rem; font-weight: 500; color: var(--deep); margin-bottom: 0.35rem; }
+    .form-card-sub { font-size: 13px; color: var(--stone); margin-bottom: 2rem; line-height: 1.6; }
+
+    /* FORM ELEMENTS */
+    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 1.25rem; }
+    .form-group.full { grid-column: span 2; }
+    .form-group label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--stone); font-weight: 500; }
+    .form-group label .required { color: var(--gold); margin-left: 2px; }
+    .form-group .form-label-optional { text-transform: none; letter-spacing: normal; font-size: 11px; color: var(--stone); opacity: 0.8; }
+    .form-group input,
+    .form-group select {
+      padding: 11px 13px;
+      background: var(--cream);
+      border: 0.5px solid rgba(166,159,145,0.4);
+      border-radius: var(--r);
+      font-size: 14px;
+      font-family: var(--sans);
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      width: 100%;
+    }
+    .form-group select { appearance: none; cursor: pointer; padding-right: 32px; }
+    .form-group input:focus,
+    .form-group select:focus { border-color: var(--gold); background: white; box-shadow: 0 0 0 3px rgba(200,162,74,0.1); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-help { font-size: 12px; color: var(--stone); margin-top: 4px; line-height: 1.5; }
+
+    /* SELECT ARROW WRAPPER */
+    .select-wrap { position: relative; width: 100%; }
+    .select-wrap::after { content: ''; position: absolute; right: 13px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--stone); pointer-events: none; }
+
+    /* SECTIONS & BUTTONS */
+    .section-gap { margin-top: 1.5rem; }
+    .btn-submit { padding: 15px 32px; background: var(--gold); color: var(--deep); border: none; border-radius: var(--r); font-size: 16px; font-family: var(--serif); font-style: italic; font-weight: 500; letter-spacing: 0.02em; cursor: pointer; transition: opacity 0.2s, transform 0.15s; box-shadow: 0 4px 20px rgba(200,162,74,0.3); width: 100%; text-align: center; }
+    .btn-submit:hover { opacity: 0.92; transform: translateY(-1px); }
+    
+    /* NOTICES */
+    .notice { padding: 12px; border-radius: var(--r); background: rgba(166,159,145,0.15); color: var(--ink); font-size: 13px; line-height: 1.5; }
+    .notice.success { background: rgba(53,94,59,0.05); border: 0.5px solid rgba(53,94,59,0.2); color: var(--forest); }
+    .notice a { color: var(--gold); font-weight: 500; }
+
+    @media (max-width: 768px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: span 1; }
+      .form-card { padding: 1.75rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="candle-glow top-left" aria-hidden="true"></div>
+  <div class="candle-glow bottom-right" aria-hidden="true"></div>
+
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="nav-logo" aria-label="AGAPAY Home">
+        <div class="nav-mark">
+          <img src="/mark.png" alt="AGAPAY" style="width:48px;height:48px;object-fit:contain;" />
+        </div>
+        <span class="nav-name">AGAPAY</span>
+      </a>
+      <div class="nav-links">
+        <a href="/myagapay/login" class="nav-cta">Log In</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <img src="/mark.png" alt="" aria-hidden="true" class="hero-watermark" />
+    <div class="hero-inner">
+      <div class="hero-eyebrow">My AGAPAY onboarding</div>
+      <h1>Create one account for the AGAPAY platform.</h1>
+      <p class="hero-sub">Create your AGAPAY account, verify your email, then use My AGAPAY to access Giving, Learn, and future Orthodox platform tools.</p>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="notice" id="donorStatus" style="display:none;margin-bottom:1.5rem;"></div>
+
+    <div class="form-card">
+      <div class="form-card-title">Sign Up</div>
+      <p class="form-card-sub">Please fill out your account details down below to begin onboarding.</p>
+
+      <form onsubmit="signupFromPage(event)">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label for="donorName">Name <span class="required">*</span></label>
+            <input class="form-input" id="donorName" autocomplete="name" placeholder="Your name or household name" required />
+          </div>
+          
+          <div class="form-group">
+            <label for="donorEmail">Email <span class="required">*</span></label>
+            <input class="form-input" id="donorEmail" type="email" autocomplete="email" placeholder="you@example.com" required />
+          </div>
+          
+          <div class="form-group">
+            <label for="donorPassword">Password <span class="required">*</span></label>
+            <input class="form-input" id="donorPassword" type="password" autocomplete="new-password" placeholder="At least 8 characters" required />
+          </div>
+          
+          <div class="form-group full">
+            <label for="parishSearch">My Parish <span class="required">*</span></label>
+            <input class="form-input parish-search" id="parishSearch" placeholder="Search by parish, city, state, or jurisdiction" oninput="filterParishSelect('parishSearch','parish')" style="margin-bottom: 8px;" />
+            <div class="select-wrap">
+              <select class="form-select" id="parish" data-placeholder="Choose my parish">
+                <option value="">Choose my parish</option>
+              </select>
+            </div>
+            <p class="form-help">Pick the church you usually give to. You can switch churches anytime from My AGAPAY account settings.</p>
+          </div>
+          
+          <div class="form-group full">
+            <label for="addressLine1">Street Address <span class="required">*</span></label>
+            <input class="form-input" id="addressLine1" autocomplete="address-line1" placeholder="123 Main St" required />
+          </div>
+          
+          <div class="form-group">
+            <label for="addressLine2">Apt / Unit <span class="form-label-optional">(optional)</span></label>
+            <input class="form-input" id="addressLine2" autocomplete="address-line2" placeholder="Apt 4B" />
+          </div>
+          
+          <div class="form-group">
+            <label for="city">City <span class="required">*</span></label>
+            <input class="form-input" id="city" autocomplete="address-level2" placeholder="City" required />
+          </div>
+          
+          <div class="form-group">
+            <label for="state">State <span class="required">*</span></label>
+            <input class="form-input" id="state" autocomplete="address-level1" placeholder="TX" maxlength="2" required />
+          </div>
+          
+          <div class="form-group">
+            <label for="postalCode">ZIP Code <span class="required">*</span></label>
+            <input class="form-input" id="postalCode" autocomplete="postal-code" placeholder="79401" required />
+          </div>
+          
+          <div class="form-group">
+            <label for="country">Country <span class="required">*</span></label>
+            <input class="form-input" id="country" autocomplete="country" placeholder="US" value="US" maxlength="2" required />
+          </div>
+        </div>
+
+        <p class="form-help section-gap">AGAPAY will email you a verification link. Your dashboard opens after your email is verified.</p>
+        
+        <div data-agapay-turnstile class="section-gap"></div>
+        
+        <div class="section-gap">
+          <button class="btn-submit" type="submit">Create account &rarr;</button>
+        </div>
+      </form>
+
+      <div class="notice success section-gap" id="signupNextStep" style="display:none;">Check your email for the AGAPAY verification link, then return to log in.</div>
+      <div class="notice section-gap" id="verificationLinkBox" style="display:none;"><a id="verificationLink" href="/myagapay/verify">Open test verification link</a></div>
+    </div>
+  </main>
+
+  <script>document.addEventListener("DOMContentLoaded", () => loadPublicParishes("parish"));</script>
+</body>
+</html>
