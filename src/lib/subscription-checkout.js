@@ -2,6 +2,8 @@ import { json } from "./core.js";
 import { slugify } from "./format.js";
 import { defaultSubscriptionTier, subscriptionTier } from "./subscriptions.js";
 import { stripeFormRequest } from "./stripe-connect.js";
+import { applySubscriptionTaxCode } from "./tax-codes.js";
+import { applyApprovedExemptionIfExists } from "./tax-exemption.js";
 
 export async function createSubscriptionCheckoutForRegistration({
   request,
@@ -51,6 +53,23 @@ export async function createSubscriptionCheckoutForRegistration({
       );
     }
     stripeCustomerId = customer.body.id;
+
+    // A parish may have already had its exemption claim approved before
+    // this Customer existed (see approveTaxExemption's "waiting for
+    // customer" path in src/lib/tax-exemption.js). Apply it now, before
+    // creating the first taxable Checkout Session -- never silently create
+    // a taxable subscription for an already-approved-exempt parish.
+    const exemptionApplied = await applyApprovedExemptionIfExists(env, {
+      registration: { ...registration, reference },
+      stripeCustomerId,
+      customerRole: "giving_parish_plus"
+    });
+    if (exemptionApplied.applied && !exemptionApplied.ok) {
+      return json(
+        { error: "Billing configuration issue -- your organization's approved tax exemption could not be applied yet. Please contact support@agapay.app before completing checkout." },
+        { status: 503 }
+      );
+    }
   }
 
   const returnSeparator = returnPath.includes("?") ? "&" : "?";
@@ -82,6 +101,16 @@ export async function createSubscriptionCheckoutForRegistration({
     checkoutForm.set("line_items[0][price_data][tax_behavior]", "exclusive");
     checkoutForm.set("line_items[0][price_data][product_data][name]", `AGAPAY ${tier.label} Subscription`);
     checkoutForm.set("line_items[0][price_data][product_data][description]", tier.description);
+    // These four tiers (mission/parish/diocese/monastery_free) are all the
+    // same underlying product -- the AGAPAY Giving/platform subscription --
+    // at different price points, so they all use the "giving" tax code key.
+    const taxCodeResult = applySubscriptionTaxCode(checkoutForm, "line_items[0][price_data][product_data]", "giving", env);
+    if (taxCodeResult.blocked) {
+      return json(
+        { error: "Billing configuration issue -- checkout is temporarily unavailable while a required tax setting is completed. Please contact support@agapay.app." },
+        { status: 503 }
+      );
+    }
   }
 
   const session = await stripeFormRequest(env, "/v1/checkout/sessions", checkoutForm);

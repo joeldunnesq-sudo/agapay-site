@@ -556,6 +556,19 @@ export async function d1Run(env, sql, ...params) {
   return d1(env).prepare(sql).bind(...params).run();
 }
 
+// Runs multiple statements as a single atomic D1 batch (Cloudflare's D1Database#batch),
+// so related local finalization writes (status flip, cache-column update, audit insert,
+// etc.) either all commit or none do. Statements are { sql, params: [...] } objects, in
+// the order they should execute. Stripe calls cannot participate in this — this is for
+// D1-only atomicity, always performed either entirely before or entirely after any
+// Stripe API call, never interleaved with one.
+export async function d1Batch(env, statements) {
+  if (!d1(env)) return null;
+  if (!Array.isArray(statements) || !statements.length) return null;
+  const prepared = statements.map(({ sql, params = [] }) => d1(env).prepare(sql).bind(...params));
+  return d1(env).batch(prepared);
+}
+
 export async function d1GetSetting(env, key) {
   const row = await d1First(env, "SELECT value FROM app_settings WHERE key = ?1", key);
   return row?.value || "";
