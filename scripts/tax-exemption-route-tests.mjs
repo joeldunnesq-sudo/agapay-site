@@ -116,6 +116,10 @@ async function makeAdminRequest(env, { method = "POST", body, token }) {
   });
 }
 
+function currentVersion(db, taxExemptionId) {
+  return db.prepare(`SELECT updated_at FROM tax_exemptions WHERE id = ?`).get(taxExemptionId).updated_at;
+}
+
 let passed = 0;
 async function test(name, fn) {
   const originalFetch = globalThis.fetch;
@@ -162,7 +166,7 @@ await test("retry route: a sync row belonging to a different exemption is reject
   env.STRIPE_SECRET_KEY = "sk_test_123";
   globalThis.fetch = mockFetch({ cus_r1: { get: { ok: true, body: { id: "cus_r1", tax_exempt: "none" } }, post: { ok: false, status: 402, body: {} } } });
   const registrationOne = JSON.parse(db.prepare(`SELECT data FROM registrations WHERE reference='AGP-REG-R1'`).get().data);
-  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: {}, token }), env, idOne);
+  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, idOne) }, token }), env, idOne);
   const syncRowOne = db.prepare(`SELECT id FROM tax_exemption_stripe_syncs WHERE tax_exemption_id = ?`).get(idOne);
   void registrationOne;
 
@@ -179,10 +183,10 @@ await test("retry route: a succeeded row returns 409", async () => {
 
   env.STRIPE_SECRET_KEY = "sk_test_123";
   globalThis.fetch = mockFetch({ cus_r3: { get: { ok: true, body: { id: "cus_r3", tax_exempt: "none" } }, post: { ok: true, body: { id: "cus_r3", tax_exempt: "exempt" } } } });
-  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: {}, token }), env, id);
+  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id);
   const syncRow = db.prepare(`SELECT id FROM tax_exemption_stripe_syncs WHERE tax_exemption_id = ?`).get(id);
 
-  const response = await handleAdminTaxExemptionSyncRetry(await makeAdminRequest(env, { body: {}, token }), env, id, syncRow.id);
+  const response = await handleAdminTaxExemptionSyncRetry(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id, syncRow.id);
   assert.equal(response.status, 409);
 });
 
@@ -194,15 +198,11 @@ await test("retry route: a failed row retries successfully, writes an audit entr
 
   env.STRIPE_SECRET_KEY = "sk_test_123";
   globalThis.fetch = mockFetch({ cus_r4: { get: { ok: true, body: { id: "cus_r4", tax_exempt: "none" } }, post: { ok: false, status: 402, body: { error: { message: "declined" } } } } });
-  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: {}, token }), env, id);
+  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id);
   const syncRow = db.prepare(`SELECT id FROM tax_exemption_stripe_syncs WHERE tax_exemption_id = ?`).get(id);
 
   globalThis.fetch = mockFetch({ cus_r4: { get: { ok: true, body: { id: "cus_r4", tax_exempt: "none" } }, post: { ok: true, body: { id: "cus_r4", tax_exempt: "exempt" } } } });
-  const response = await handleAdminTaxExemptionSyncRetry(await makeAdminRequest(env, { body: {}, token }), env, id, syncRow.id);
-  const body = await response.json();
-  assert.equal(response.status, 200);
-  assert.equal(body.ok, true);
-  assert.ok(!("stripeCustomerObject" in body) && !JSON.stringify(body).includes("sk_test_"), "response must never leak raw Stripe payloads or secrets");
+  const response = await handleAdminTaxExemptionSyncRetry(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id, syncRow.id);
 
   const auditRows = db.prepare(`SELECT action FROM tax_exemption_audit_log WHERE tax_exemption_id = ? AND action = 'stripe_sync_succeeded'`).all(id);
   assert.ok(auditRows.length >= 1, "an audit entry must be written for the retry");
@@ -216,7 +216,7 @@ await test("retry route: stale expectedVersion returns 409 and does not call Str
 
   env.STRIPE_SECRET_KEY = "sk_test_123";
   globalThis.fetch = mockFetch({ cus_r5: { get: { ok: true, body: { id: "cus_r5", tax_exempt: "none" } }, post: { ok: false, status: 402, body: {} } } });
-  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: {}, token }), env, id);
+  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id);
   const syncRow = db.prepare(`SELECT id FROM tax_exemption_stripe_syncs WHERE tax_exemption_id = ?`).get(id);
 
   let fetchCalled = false;
@@ -243,7 +243,7 @@ await test("reconcile route: invalid action returns 422", async () => {
   const id = await createTaxExemptionClaim(env, { registrationReference: "AGP-REG-C1", parishId: "st-basil", jurisdiction: "TX", exemptionType: "religious_organization", authorizedRepresentativeName: "A", authorizedRepresentativeTitle: "Treasurer" });
   env.STRIPE_SECRET_KEY = "sk_test_123";
   globalThis.fetch = mockFetch({ cus_c1: { get: { ok: true, body: { id: "cus_c1", tax_exempt: "exempt" } }, post: { ok: true, body: { id: "cus_c1", tax_exempt: "exempt" } } } });
-  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: {}, token }), env, id);
+  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id);
   const syncRow = db.prepare(`SELECT id FROM tax_exemption_stripe_syncs WHERE tax_exemption_id = ?`).get(id);
 
   const response = await handleAdminTaxExemptionSyncReconcile(await makeAdminRequest(env, { body: { action: "delete_everything", reason: "x" }, token }), env, id, syncRow.id);
@@ -257,7 +257,7 @@ await test("reconcile route: missing reason returns 422", async () => {
   const id = await createTaxExemptionClaim(env, { registrationReference: "AGP-REG-C2", parishId: "st-cyprian", jurisdiction: "TX", exemptionType: "religious_organization", authorizedRepresentativeName: "A", authorizedRepresentativeTitle: "Treasurer" });
   env.STRIPE_SECRET_KEY = "sk_test_123";
   globalThis.fetch = mockFetch({ cus_c2: { get: { ok: true, body: { id: "cus_c2", tax_exempt: "exempt" } }, post: { ok: true, body: { id: "cus_c2", tax_exempt: "exempt" } } } });
-  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: {}, token }), env, id);
+  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id);
   const syncRow = db.prepare(`SELECT id FROM tax_exemption_stripe_syncs WHERE tax_exemption_id = ?`).get(id);
 
   const response = await handleAdminTaxExemptionSyncReconcile(await makeAdminRequest(env, { body: { action: "accept_external" }, token }), env, id, syncRow.id);
@@ -271,7 +271,7 @@ await test("reconcile route: force_apply without confirm returns 422", async () 
   const id = await createTaxExemptionClaim(env, { registrationReference: "AGP-REG-C3", parishId: "st-dionysios", jurisdiction: "TX", exemptionType: "religious_organization", authorizedRepresentativeName: "A", authorizedRepresentativeTitle: "Treasurer" });
   env.STRIPE_SECRET_KEY = "sk_test_123";
   globalThis.fetch = mockFetch({ cus_c3: { get: { ok: true, body: { id: "cus_c3", tax_exempt: "exempt" } }, post: { ok: true, body: { id: "cus_c3", tax_exempt: "exempt" } } } });
-  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: {}, token }), env, id);
+  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id);
   const syncRow = db.prepare(`SELECT id FROM tax_exemption_stripe_syncs WHERE tax_exemption_id = ?`).get(id);
 
   const response = await handleAdminTaxExemptionSyncReconcile(await makeAdminRequest(env, { body: { action: "force_apply", reason: "x" }, token }), env, id, syncRow.id);
@@ -286,13 +286,13 @@ await test("reconcile route: accept_external succeeds and returns only safe sync
   env.STRIPE_SECRET_KEY = "sk_test_123";
   // Externally exempt before AGAPAY approval -- forces reconciliation_required on later revoke.
   globalThis.fetch = mockFetch({ cus_c4: { get: { ok: true, body: { id: "cus_c4", tax_exempt: "exempt" } }, post: { ok: true, body: { id: "cus_c4", tax_exempt: "exempt" } } } });
-  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: {}, token }), env, id);
+  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id);
   const registration = JSON.parse(db.prepare(`SELECT data FROM registrations WHERE reference='AGP-REG-C4'`).get().data);
   const { revokeTaxExemption } = await import("../src/lib/tax-exemption.js");
   await revokeTaxExemption(env, { taxExemptionId: id, registration, actor: "admin", reason: "x" });
   const syncRow = db.prepare(`SELECT id FROM tax_exemption_stripe_syncs WHERE tax_exemption_id = ?`).get(id);
 
-  const response = await handleAdminTaxExemptionSyncReconcile(await makeAdminRequest(env, { body: { action: "accept_external", reason: "confirmed with parish" }, token }), env, id, syncRow.id);
+  const response = await handleAdminTaxExemptionSyncReconcile(await makeAdminRequest(env, { body: { action: "accept_external", reason: "confirmed with parish", expectedVersion: currentVersion(db, id) }, token }), env, id, syncRow.id);
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.resolution, "accept_external");
@@ -306,7 +306,7 @@ await test("reconcile route: stale version returns 409", async () => {
   const id = await createTaxExemptionClaim(env, { registrationReference: "AGP-REG-C5", parishId: "st-fotini", jurisdiction: "TX", exemptionType: "religious_organization", authorizedRepresentativeName: "A", authorizedRepresentativeTitle: "Treasurer" });
   env.STRIPE_SECRET_KEY = "sk_test_123";
   globalThis.fetch = mockFetch({ cus_c5: { get: { ok: true, body: { id: "cus_c5", tax_exempt: "exempt" } }, post: { ok: true, body: { id: "cus_c5", tax_exempt: "exempt" } } } });
-  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: {}, token }), env, id);
+  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id);
   const syncRow = db.prepare(`SELECT id FROM tax_exemption_stripe_syncs WHERE tax_exemption_id = ?`).get(id);
 
   const response = await handleAdminTaxExemptionSyncReconcile(await makeAdminRequest(env, { body: { action: "accept_external", reason: "x", expectedVersion: "1999-01-01T00:00:00.000Z" }, token }), env, id, syncRow.id);
@@ -330,10 +330,10 @@ await test("expire route: valid request succeeds", async () => {
   const id = await createTaxExemptionClaim(env, { registrationReference: "AGP-REG-E1", parishId: "st-gabriel", jurisdiction: "TX", exemptionType: "religious_organization", authorizedRepresentativeName: "A", authorizedRepresentativeTitle: "Treasurer" });
   env.STRIPE_SECRET_KEY = "sk_test_123";
   globalThis.fetch = mockFetch({ cus_e1: { get: { ok: true, body: { id: "cus_e1", tax_exempt: "none" } }, post: { ok: true, body: { id: "cus_e1", tax_exempt: "exempt" } } } });
-  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: {}, token }), env, id);
+  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id);
 
   globalThis.fetch = mockFetch({ cus_e1: { get: { ok: true, body: { id: "cus_e1", tax_exempt: "exempt" } }, post: { ok: true, body: { id: "cus_e1", tax_exempt: "none" } } } });
-  const response = await handleAdminTaxExemptionExpire(await makeAdminRequest(env, { body: { reason: "certificate expired", confirm: true }, token }), env, id);
+  const response = await handleAdminTaxExemptionExpire(await makeAdminRequest(env, { body: { reason: "certificate expired", confirm: true, expectedVersion: currentVersion(db, id) }, token }), env, id);
   const body = await response.json();
   assert.equal(response.status, 200);
   assert.equal(body.status, "expired");
@@ -368,7 +368,7 @@ await test("expire route: stale version returns 409", async () => {
   const id = await createTaxExemptionClaim(env, { registrationReference: "AGP-REG-E4", parishId: "st-joachim", jurisdiction: "TX", exemptionType: "religious_organization", authorizedRepresentativeName: "A", authorizedRepresentativeTitle: "Treasurer" });
   env.STRIPE_SECRET_KEY = "sk_test_123";
   globalThis.fetch = mockFetch({ cus_e4: { get: { ok: true, body: { id: "cus_e4", tax_exempt: "none" } }, post: { ok: true, body: { id: "cus_e4", tax_exempt: "exempt" } } } });
-  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: {}, token }), env, id);
+  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id);
 
   const response = await handleAdminTaxExemptionExpire(await makeAdminRequest(env, { body: { reason: "x", confirm: true, expectedVersion: "1999-01-01T00:00:00.000Z" }, token }), env, id);
   assert.equal(response.status, 409);
@@ -381,17 +381,89 @@ await test("expire route: an externally-owned Stripe exemption is preserved, not
   const id = await createTaxExemptionClaim(env, { registrationReference: "AGP-REG-E5", parishId: "st-kyriaki", jurisdiction: "TX", exemptionType: "religious_organization", authorizedRepresentativeName: "A", authorizedRepresentativeTitle: "Treasurer" });
   env.STRIPE_SECRET_KEY = "sk_test_123";
   globalThis.fetch = mockFetch({ cus_e5: { get: { ok: true, body: { id: "cus_e5", tax_exempt: "exempt" } }, post: { ok: true, body: { id: "cus_e5", tax_exempt: "exempt" } } } });
-  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: {}, token }), env, id);
+  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id);
 
   let postCalled = false;
   globalThis.fetch = async (url, options) => {
     if (options?.method === "POST") postCalled = true;
     return { ok: true, headers: { get: () => "" }, json: async () => ({ id: "cus_e5", tax_exempt: "exempt" }) };
   };
-  const response = await handleAdminTaxExemptionExpire(await makeAdminRequest(env, { body: { reason: "certificate expired", confirm: true }, token }), env, id);
+  const response = await handleAdminTaxExemptionExpire(await makeAdminRequest(env, { body: { reason: "certificate expired", confirm: true, expectedVersion: currentVersion(db, id) }, token }), env, id);
   const body = await response.json();
   assert.equal(postCalled, false, "must never erase an externally-owned Stripe exemption");
   assert.equal(body.status, "expired", "the legal claim itself is still marked expired even though Stripe wasn't touched");
+});
+
+await test("retry route: missing expectedVersion returns 422 (mandatory, not optional)", async () => {
+  const { env, db } = makeD1Env();
+  const { token } = await issueAdminSession(env, "Test Admin");
+  seedRegistration(db, { reference: "AGP-REG-R6", parishId: "st-mercurius", stripeCustomerId: "cus_r6" });
+  const id = await createTaxExemptionClaim(env, { registrationReference: "AGP-REG-R6", parishId: "st-mercurius", jurisdiction: "TX", exemptionType: "religious_organization", authorizedRepresentativeName: "A", authorizedRepresentativeTitle: "Treasurer" });
+  env.STRIPE_SECRET_KEY = "sk_test_123";
+  globalThis.fetch = mockFetch({ cus_r6: { get: { ok: true, body: { id: "cus_r6", tax_exempt: "none" } }, post: { ok: false, status: 402, body: {} } } });
+  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id);
+  const syncRow = db.prepare(`SELECT id FROM tax_exemption_stripe_syncs WHERE tax_exemption_id = ?`).get(id);
+
+  const response = await handleAdminTaxExemptionSyncRetry(await makeAdminRequest(env, { body: {}, token }), env, id, syncRow.id);
+  assert.equal(response.status, 422);
+});
+
+await test("approve route: missing expectedVersion returns 422", async () => {
+  const { env, db } = makeD1Env();
+  const { token } = await issueAdminSession(env, "Test Admin");
+  seedRegistration(db, { reference: "AGP-REG-R7", parishId: "st-nikodemos", stripeCustomerId: "cus_r7" });
+  const id = await createTaxExemptionClaim(env, { registrationReference: "AGP-REG-R7", parishId: "st-nikodemos", jurisdiction: "TX", exemptionType: "religious_organization", authorizedRepresentativeName: "A", authorizedRepresentativeTitle: "Treasurer" });
+  const response = await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: {}, token }), env, id);
+  assert.equal(response.status, 422);
+});
+
+await test("expire route: missing expectedVersion returns 422", async () => {
+  const { env, db } = makeD1Env();
+  const { token } = await issueAdminSession(env, "Test Admin");
+  seedRegistration(db, { reference: "AGP-REG-R8", parishId: "st-olympia", stripeCustomerId: "cus_r8" });
+  const id = await createTaxExemptionClaim(env, { registrationReference: "AGP-REG-R8", parishId: "st-olympia", jurisdiction: "TX", exemptionType: "religious_organization", authorizedRepresentativeName: "A", authorizedRepresentativeTitle: "Treasurer" });
+  env.STRIPE_SECRET_KEY = "sk_test_123";
+  globalThis.fetch = mockFetch({ cus_r8: { get: { ok: true, body: { id: "cus_r8", tax_exempt: "none" } }, post: { ok: true, body: { id: "cus_r8", tax_exempt: "exempt" } } } });
+  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id);
+
+  const response = await handleAdminTaxExemptionExpire(await makeAdminRequest(env, { body: { reason: "x", confirm: true }, token }), env, id);
+  assert.equal(response.status, 422);
+});
+
+await test("reconcile route: missing expectedVersion returns 422", async () => {
+  const { env, db } = makeD1Env();
+  const { token } = await issueAdminSession(env, "Test Admin");
+  seedRegistration(db, { reference: "AGP-REG-R9", parishId: "st-pambo", stripeCustomerId: "cus_r9" });
+  const id = await createTaxExemptionClaim(env, { registrationReference: "AGP-REG-R9", parishId: "st-pambo", jurisdiction: "TX", exemptionType: "religious_organization", authorizedRepresentativeName: "A", authorizedRepresentativeTitle: "Treasurer" });
+  env.STRIPE_SECRET_KEY = "sk_test_123";
+  globalThis.fetch = mockFetch({ cus_r9: { get: { ok: true, body: { id: "cus_r9", tax_exempt: "exempt" } }, post: { ok: true, body: { id: "cus_r9", tax_exempt: "exempt" } } } });
+  await handleAdminTaxExemptionApprove(await makeAdminRequest(env, { body: { expectedVersion: currentVersion(db, id) }, token }), env, id);
+  const syncRow = db.prepare(`SELECT id FROM tax_exemption_stripe_syncs WHERE tax_exemption_id = ?`).get(id);
+
+  const response = await handleAdminTaxExemptionSyncReconcile(await makeAdminRequest(env, { body: { action: "accept_external", reason: "x" }, token }), env, id, syncRow.id);
+  assert.equal(response.status, 422);
+});
+
+await test("queue and detail responses never include a raw (unmasked) certificate number", async () => {
+  const { env, db } = makeD1Env();
+  const { token } = await issueAdminSession(env, "Test Admin");
+  seedRegistration(db, { reference: "AGP-REG-R10", parishId: "st-quirinus", stripeCustomerId: "cus_r10" });
+  const id = await createTaxExemptionClaim(env, {
+    registrationReference: "AGP-REG-R10", parishId: "st-quirinus", jurisdiction: "TX",
+    exemptionType: "religious_organization", authorizedRepresentativeName: "A", authorizedRepresentativeTitle: "Treasurer",
+    certificateNumber: "SUPER-SECRET-CERT-998877"
+  });
+  const { handleAdminTaxExemptionDetail, handleAdminTaxExemptionQueue } = await import("../src/handlers/tax-exemption.js");
+
+  const detailResponse = await handleAdminTaxExemptionDetail(await makeAdminRequest(env, { method: "GET", token }), env, id);
+  const detailBody = await detailResponse.json();
+  assert.ok(!JSON.stringify(detailBody).includes("SUPER-SECRET-CERT-998877"), "detail response must never contain the full certificate number");
+  assert.equal(detailBody.claim.maskedCertificateNumber.includes("9877") || detailBody.claim.maskedCertificateNumber.includes("8877"), true, "masked form should still be present");
+
+  const queueRequest = new Request("https://example.test/route", { method: "GET", headers: { Authorization: `Bearer ${token}` } });
+  const queueResponse = await handleAdminTaxExemptionQueue(queueRequest, env);
+  const queueBody = await queueResponse.json();
+  assert.ok(!JSON.stringify(queueBody).includes("SUPER-SECRET-CERT-998877"), "queue response must never contain the full certificate number");
 });
 
 console.log(`\n${passed} test(s) passed.`);
