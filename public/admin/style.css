@@ -2679,3 +2679,112 @@
     padding-top: 0;
   }
 }
+
+/* ─────────────────────────────────────────
+   TAX EXEMPTIONS ADMIN TAB
+───────────────────────────────────────── */
+.tex-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.tex-filter-bar select,
+.tex-filter-bar input {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(110,104,96,0.22);
+  background: var(--paper);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.tex-table-wrap {
+  overflow-x: auto;
+}
+.tex-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.tex-table th {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 2px solid rgba(110,104,96,0.18);
+  white-space: nowrap;
+  font-weight: 700;
+}
+.tex-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(110,104,96,0.1);
+  vertical-align: middle;
+}
+.tex-table tbody tr:hover {
+  background: rgba(196,150,62,0.05);
+}
+
+.tex-detail-grid {
+  display: grid;
+  gap: 20px;
+}
+.tex-detail-grid h3 {
+  font-family: var(--serif, serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+.tex-detail-grid section {
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(110,104,96,0.12);
+}
+.tex-detail-grid section:last-child {
+  border-bottom: none;
+}
+
+/* Status badges -- new exemption-specific keys, following the existing
+   .badge.<key> convention (see the STATUS BADGES block above). Text +
+   color both communicate meaning, never color alone. */
+.badge.tex-pending,
+.badge.tex-replacement_required { background: #fff9ec; color: #7a5814; border-color: rgba(196,150,62,0.28); }
+.badge.tex-approved             { background: #edf6ef; color: #2a5936; border-color: rgba(42,89,54,0.22); }
+.badge.tex-rejected,
+.badge.tex-revoked               { background: #fdf2f2; color: #8a2828; border-color: rgba(138,40,40,0.22); }
+.badge.tex-expired,
+.badge.tex-superseded            { background: var(--paper); color: var(--muted); }
+
+.badge.texsync-succeeded          { background: #edf6ef; color: #2a5936; border-color: rgba(42,89,54,0.22); }
+.badge.texsync-pending            { background: #fff9ec; color: #7a5814; border-color: rgba(196,150,62,0.28); }
+.badge.texsync-failed             { background: #fdf2f2; color: #8a2828; border-color: rgba(138,40,40,0.22); }
+.badge.texsync-partial            { background: #f4edf6; color: #5c3d65; border-color: rgba(92,61,101,0.2); }
+.badge.texsync-reconciliation_required { background: #fdf2f2; color: #8a2828; border-color: rgba(138,40,40,0.22); }
+.badge.texsync-waiting_for_customer,
+.badge.texsync-not_applicable     { background: var(--paper); color: var(--muted); }
+
+/* Responsive: below 760px, convert the table into stacked labeled cards
+   rather than a cramped horizontal scroll. Each <td data-label="..."> is
+   already annotated in the markup, so no JS is needed for this
+   transformation. */
+@media (max-width: 760px) {
+  .tex-table thead { display: none; }
+  .tex-table, .tex-table tbody, .tex-table tr, .tex-table td { display: block; width: 100%; }
+  .tex-table tr {
+    margin-bottom: 12px;
+    border: 1px solid rgba(110,104,96,0.18);
+    border-radius: 10px;
+    padding: 8px 4px;
+  }
+  .tex-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    text-align: right;
+    border-bottom: 1px solid rgba(110,104,96,0.08);
+  }
+  .tex-table td:last-child { border-bottom: none; }
+  .tex-table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    text-align: left;
+    color: var(--muted);
+  }
+}
