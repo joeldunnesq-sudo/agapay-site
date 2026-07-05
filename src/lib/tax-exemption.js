@@ -122,7 +122,12 @@ export function taxExemptionToJson(row) {
     parishId: row.parish_id,
     jurisdiction: row.jurisdiction,
     exemptionType: row.exemption_type,
-    certificateNumber: row.certificate_number,
+    // Full certificate_number is intentionally NEVER included here -- every
+    // ordinary queue/detail response gets only the masked form. There is no
+    // ordinary code path that should render an unmasked certificate number;
+    // a genuine full-reveal need would require its own narrowly-scoped,
+    // audit-logged endpoint, which does not exist in this codebase.
+    maskedCertificateNumber: maskCertificateNumber(row.certificate_number),
     effectiveDate: row.effective_date,
     expirationDate: row.expiration_date,
     status: row.status,
@@ -143,6 +148,7 @@ export function taxExemptionToJson(row) {
     revokedBy: row.revoked_by,
     revocationReason: row.revocation_reason,
     supersedesTaxExemptionId: row.supersedes_tax_exemption_id,
+    recordVersion: row.updated_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
