@@ -251,10 +251,15 @@ async function resolveStaticPath(urlPath) {
     pathname === "/my-agapay/dashboard" ||
     pathname === "/myagapay" ||
     pathname === "/myagapay/" ||
-    pathname === "/myagapay/dashboard"
-  ) pathname = "/donor/index.html";
-  if (pathname.startsWith("/my-agapay/") && !path.extname(pathname)) pathname = pathname.replace(/^\/my-agapay/, "/donor") + ".html";
-  if (pathname.startsWith("/myagapay/") && !path.extname(pathname)) pathname = pathname.replace(/^\/myagapay/, "/donor") + ".html";
+    pathname === "/myagapay/dashboard" ||
+    pathname === "/myagapay/giving" ||
+    pathname === "/myagapay/giving/"
+  ) pathname = "/myagapay/index.html";
+  if (pathname === "/myagapay/giving/offerings") pathname = "/myagapay/giving/history.html";
+  if (pathname === "/myagapay/giving/names") pathname = "/myagapay/giving/commemorations.html";
+  if (pathname === "/myagapay/settings") pathname = "/myagapay/account.html";
+  if (pathname.startsWith("/my-agapay/") && !path.extname(pathname)) pathname = pathname.replace(/^\/my-agapay/, "/myagapay") + ".html";
+  if (pathname.startsWith("/myagapay/") && !path.extname(pathname)) pathname = `${pathname}.html`;
   if (pathname === "/donor" || pathname === "/donor/") pathname = "/donor/index.html";
   if (pathname === "/donor/dashboard") pathname = "/donor/index.html";
   if (pathname === "/give" || pathname === "/give/") {
