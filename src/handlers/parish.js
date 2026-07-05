@@ -66,6 +66,10 @@ import {
 } from "../lib/core.js";
 
 import {
+  createTaxExemptionClaim,
+  issueClaimUploadToken
+} from "../lib/tax-exemption.js";
+import {
   createSubscriptionCheckoutForRegistration,
 } from "../lib/subscription-checkout.js";
 
@@ -2753,6 +2757,7 @@ export async function handleRegistrations(request, env) {
     subscriptionTierLabel: tier?.label || ""
   };
 
+  let taxExemptionResult = null;
   if (env.AGAPAY_REGISTRATIONS) {
     await saveRegistrationRecord(env, reference, registration);
     const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
@@ -2770,6 +2775,63 @@ export async function handleRegistrations(request, env) {
       confirmationEmailId: confirmation.id || "",
       confirmationEmailSentAt: confirmation.status === "sent" ? new Date().toISOString() : ""
     }, registration);
+
+    // Optional inline sales-tax exemption claim, submitted in the same
+    // registration request. This never blocks or rolls back the
+    // registration itself: any failure here is caught and surfaced in the
+    // response as taxExemption.error, with the registration already saved.
+    //
+    // Phase 3B correction: the certificate document is NOT sent as base64
+    // inside this JSON body. The claim is created here with no binary
+    // attached, and a short-lived, claim-scoped upload token is returned so
+    // the browser can upload the file separately via multipart/form-data to
+    // POST /api/tax-exemption/:taxExemptionId/upload. That route verifies
+    // the token (see verifyClaimUploadToken in src/lib/tax-exemption.js)
+    // rather than requiring a parish dashboard bearer token that doesn't
+    // exist yet immediately after registration.
+    const exemptionInput = body.taxExemption;
+    if (exemptionInput && (exemptionInput.claimsExemption === true || exemptionInput.claimsExemption === "yes")) {
+      try {
+        const jurisdiction = String(exemptionInput.jurisdiction || "").trim().toUpperCase();
+        const repName = String(exemptionInput.authorizedRepresentativeName || "").trim();
+        const repTitle = String(exemptionInput.authorizedRepresentativeTitle || "").trim();
+        if (!jurisdiction) throw new Error("Exemption jurisdiction is required.");
+        if (!repName || !repTitle) throw new Error("Authorized representative name and title are required.");
+        if (exemptionInput.certified !== true) throw new Error("You must certify the exemption claim.");
+        if (jurisdiction === "OTHER" && !String(exemptionInput.multistateExplanation || "").trim()) {
+          throw new Error("Please explain the jurisdiction or multistate use this exemption relates to.");
+        }
+
+        const taxExemptionId = await createTaxExemptionClaim(env, {
+          registrationReference: reference,
+          parishId,
+          jurisdiction,
+          exemptionType: String(exemptionInput.exemptionType || "").trim() || "religious_organization",
+          certificateNumber: exemptionInput.certificateNumber || "",
+          effectiveDate: exemptionInput.effectiveDate || "",
+          expirationDate: exemptionInput.expirationDate || "",
+          authorizedRepresentativeName: repName,
+          authorizedRepresentativeTitle: repTitle,
+          actorUserId: treasurerEmail || priestEmail || "",
+          internalReviewStatus: jurisdiction === "OTHER" ? "needs_manual_review" : null
+        });
+        if (d1(env)) {
+          await d1Run(env, `UPDATE registrations SET tax_exemption_status = 'pending', current_tax_exemption_id = ?1 WHERE reference = ?2`, taxExemptionId, reference);
+        }
+
+        const upload = await issueClaimUploadToken(env, taxExemptionId);
+        taxExemptionResult = {
+          ok: true,
+          taxExemptionId,
+          uploadRequired: true,
+          uploadToken: upload.token,
+          uploadTokenExpiresAt: upload.expiresAt,
+          uploadUrl: `/api/tax-exemption/${encodeURIComponent(taxExemptionId)}/upload`
+        };
+      } catch (exemptionError) {
+        taxExemptionResult = { ok: false, error: exemptionError.message || "Could not submit exemption claim." };
+      }
+    }
   }
 
   return json(
@@ -2777,7 +2839,8 @@ export async function handleRegistrations(request, env) {
       ok: true,
       reference,
       mode: hasProductionStore(env) ? "stored" : "demo",
-      message: "Registration received. AGAPAY will review the organization before activation."
+      message: "Registration received. AGAPAY will review the organization before activation.",
+      ...(taxExemptionResult ? { taxExemption: taxExemptionResult } : {})
     },
     { status: 201 }
   );

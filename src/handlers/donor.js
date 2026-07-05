@@ -1,3 +1,4 @@
+import { bookstoreReadinessSummary, bookstoreSellerDisclosure } from "../lib/commerce-readiness.js";
 import {
   applyDonorPassword,
   clampListLimit,
@@ -7,6 +8,7 @@ import {
   d1Run,
   decodeListCursor,
   deleteDonor,
+  getBearerToken,
   DONOR_SESSION_TTL_MS,
   encodeListCursor,
   generateSecret,
@@ -64,6 +66,7 @@ import {
   findCheckoutParish,
   findOrCreateDonorCustomer,
   findRegistrationByParishId,
+  verifyParishDashboardBearer,
   loadDonorOfferingByCheckout,
   loadDonorOfferingByPaymentIntent,
   loadDonorOfferings,
@@ -1310,6 +1313,17 @@ async function ensureBookstoreCatalogProductFromOrderItem(env, parishId, item, n
   };
 }
 
+export async function handleParishBookstoreReadiness(request, env, parishId) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+  const found = await findRegistrationByParishId(env, parishId);
+  if (!found) return json({ error: "Parish not found" }, { status: 404 });
+  const token = getBearerToken(request);
+  if (!(await verifyParishDashboardBearer(found.registration, token))) return unauthorized();
+
+  return json(bookstoreReadinessSummary(found.registration));
+}
+
 export async function handleDonorBookstore(request, env) {
   if (!["GET", "POST"].includes(request.method)) return json({ error: "Method not allowed" }, { status: 405 });
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
@@ -1325,6 +1339,7 @@ export async function handleDonorBookstore(request, env) {
     return json({
       available: Boolean(resolved.available),
       parish: { id: resolved.parishId, name: resolved.registration?.name || "" },
+      sellerDisclosure: resolved.registration ? bookstoreSellerDisclosure(resolved.registration.commerceSellerDisplayName || resolved.registration.name || resolved.registration.parishName) : "",
       products: resolved.available ? await loadDonorBookstoreProducts(env, resolved.parishId) : [],
       orders: await loadDonorBookstoreOrders(env, resolved.parishId, normalizeEmail(donor.email))
     });
@@ -1377,13 +1392,21 @@ export async function handleDonorBookstore(request, env) {
   }
 
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
+  const sellerDisplayName = resolved.registration.commerceSellerDisplayName || resolved.registration.name || resolved.registration.parishName || "";
+  const sellerDisclosure = bookstoreSellerDisclosure(sellerDisplayName);
   const form = new URLSearchParams({
     mode: "payment",
     success_url: `${appUrl}/myagapay/bookstore?order_success=1&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/myagapay/bookstore?order_canceled=1`,
     customer: customer.body.id,
     "automatic_tax[enabled]": "true",
-    "payment_intent_data[on_behalf_of]": resolved.registration.stripeAccountId
+    "payment_intent_data[on_behalf_of]": resolved.registration.stripeAccountId,
+    // Seller-identity disclosure surfaced on the Stripe-hosted Checkout
+    // page itself via the submit-type/custom text field -- reinforces the
+    // parish, not AGAPAY, as the seller at the one checkout surface every
+    // bookstore order already passes through. Storefront/cart/receipt
+    // placements are a documented follow-up (see Phase 3 report).
+    "custom_text[submit][message]": sellerDisclosure.slice(0, 499)
   });
   // Parish Commerce is included in AGAPAY Parish +. Do not add any AGAPAY platform/application fee to bookstore or future commerce checkouts; Stripe may still charge its own processing fee and show any applicable tax.
   items.forEach((item, index) => {

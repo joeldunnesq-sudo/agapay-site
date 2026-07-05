@@ -35,6 +35,7 @@ import { verifyStripeWebhook } from "./stripe.js";
 import { requireAdmin } from "./admin.js";
 
 import { getBearerToken } from "../lib/core.js";
+import { applyApprovedExemptionIfExists } from "../lib/tax-exemption.js";
 
 // Auth for stewardship SSR pages.
 // The parish SPA links here with ?parishId=XX&t=TOKEN (token from localStorage).
@@ -1849,6 +1850,25 @@ export async function handleParishStewardshipSubscribe(request, env, parishId) {
     customerId = customer.id;
     registration.stewardshipStripeCustomerId = customerId;
     await saveRegistrationRecord(env, registrationKey, registration);
+
+    // A parish may have had its exemption claim approved before this
+    // Stewardship Customer existed (see approveTaxExemption's "waiting
+    // for customer" path in src/lib/tax-exemption.js). Apply it now,
+    // before creating the first taxable Stewardship Checkout Session --
+    // never silently create a taxable subscription for an
+    // already-approved-exempt parish. Uses the exact same helper already
+    // proven for Giving/Parish+ in src/lib/subscription-checkout.js.
+    const exemptionApplied = await applyApprovedExemptionIfExists(env, {
+      registration: { ...registration, reference: registrationKey },
+      stripeCustomerId: customerId,
+      customerRole: "stewardship"
+    });
+    if (exemptionApplied.applied && !exemptionApplied.ok) {
+      return json(
+        { error: "Billing configuration issue -- your organization's approved tax exemption could not be applied yet. Please contact support@agapay.app before completing checkout." },
+        { status: 503 }
+      );
+    }
   }
 
   const session = await stripePlatformPost(env, "/checkout/sessions", {
@@ -2115,6 +2135,25 @@ export async function handleStewardshipSubscribe(request, env) {
     customerId = customer.id;
     registration.stewardshipStripeCustomerId = customerId;
     await saveRegistrationRecord(env, registrationKey, registration);
+
+    // A parish may have had its exemption claim approved before this
+    // Stewardship Customer existed (see approveTaxExemption's "waiting
+    // for customer" path in src/lib/tax-exemption.js). Apply it now,
+    // before creating the first taxable Stewardship Checkout Session --
+    // never silently create a taxable subscription for an
+    // already-approved-exempt parish. Uses the exact same helper already
+    // proven for Giving/Parish+ in src/lib/subscription-checkout.js.
+    const exemptionApplied = await applyApprovedExemptionIfExists(env, {
+      registration: { ...registration, reference: registrationKey },
+      stripeCustomerId: customerId,
+      customerRole: "stewardship"
+    });
+    if (exemptionApplied.applied && !exemptionApplied.ok) {
+      return json(
+        { error: "Billing configuration issue -- your organization's approved tax exemption could not be applied yet. Please contact support@agapay.app before completing checkout." },
+        { status: 503 }
+      );
+    }
   }
 
   // Create Stripe Checkout Session
