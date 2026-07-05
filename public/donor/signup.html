@@ -10,14 +10,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <script src="/security.js"></script>
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
-}
-</script>
+  <script src="/pwa-register.js" defer></script>
+  <script src="/myagapay-shell.js?v=20260703e" defer></script>
   <script src="/donor/app.js?v=20260704c" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
-  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260704a" />
   <link rel="apple-touch-icon" sizes="180x180" href="/images/app/apple-touch-icon-blue.png" />
   <meta name="theme-color" content="#061522" />
   <meta name="mobile-web-app-capable" content="yes" />

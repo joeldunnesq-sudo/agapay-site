@@ -67,12 +67,8 @@
     }
   }
 
-  function registerServiceWorker() {
-    if (!("serviceWorker" in navigator)) return;
-    const secureContext = window.location.protocol === "https:" || window.location.hostname === "localhost";
-    if (!secureContext) return;
-    navigator.serviceWorker.register("/service-worker.js").catch(() => {});
-  }
+  // Service worker registration is handled centrally by /pwa-register.js
+  // to avoid duplicate registrations across pages that include this file.
 
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
@@ -83,7 +79,6 @@
   window.addEventListener("appinstalled", dismissInstallCard);
 
   document.addEventListener("DOMContentLoaded", () => {
-    registerServiceWorker();
     redirectAuthenticatedPwaDonor();
 
     const installButton = document.getElementById("pwaInstallButton");
