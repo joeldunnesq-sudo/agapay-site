@@ -57,6 +57,10 @@
             <svg viewBox="0 0 24 24"><path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
             Directory
           </div>
+          <div class="sidebar-nav-item" onclick="switchTab('taxexemptions')" id="nav-taxexemptions">
+            <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.5 0 2.9.37 4.14 1.02"/></svg>
+            Tax Exemptions
+          </div>
           <div class="sidebar-nav-item" onclick="switchTab('settings')" id="nav-settings">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Settings
@@ -519,6 +523,88 @@
           </section>
         </div>
 
+        <div class="tab-panel" id="tab-taxexemptions">
+          <section class="admin-command-hero">
+            <div>
+              <div class="admin-kicker">Sales Tax Compliance</div>
+              <h1>AGAPAY Sales Tax Exemptions</h1>
+              <p>Review, approve, and manage parish subscription sales-tax exemption claims. This never affects donations, bookstore customers, or AGAPAY Learn households.</p>
+            </div>
+          </section>
+
+          <div class="section-card" id="taxExemptionWorkflowNotice" style="display:none;background:#fdf2f2;border-color:rgba(138,40,40,0.22);">
+            <div class="section-body" style="padding:12px 16px;color:#8a2828;font-weight:600;">The sales-tax exemption workflow is currently disabled. You can review historical claims, but approve/reject/replace/revoke actions are turned off.</div>
+          </div>
+          <div class="section-card" id="taxExemptionSyncDisabledNotice" style="display:none;background:#fff9ec;border-color:rgba(196,150,62,0.28);">
+            <div class="section-body" style="padding:12px 16px;color:#7a5814;font-weight:600;">Stripe synchronization is currently disabled. Approvals will be recorded on documentation alone and will NOT update any Stripe Customer until sync is re-enabled.</div>
+          </div>
+
+          <section class="revenue-grid" id="taxExemptionSummaryCards" aria-label="Sales tax exemption summary">
+            <article class="revenue-card"><div class="revenue-empty">Loading summary…</div></article>
+          </section>
+
+          <section class="section-card">
+            <div class="section-header">
+              <div class="section-title">
+                <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 9h16"/></svg></div>
+                Exemption Claims
+              </div>
+              <button class="secondary btn-sm" onclick="loadTaxExemptions()">Refresh</button>
+            </div>
+            <div class="section-body">
+              <div class="tex-filter-bar" role="search" aria-label="Filter exemption claims">
+                <select id="texFilterStatus" onchange="onTexFilterChange()" aria-label="Status filter">
+                  <option value="">All statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="replacement_required">Replacement required</option>
+                  <option value="expired">Expired</option>
+                  <option value="revoked">Revoked</option>
+                  <option value="superseded">Superseded</option>
+                  <option value="sync_pending">Sync pending</option>
+                  <option value="sync_failed">Sync failed</option>
+                  <option value="partial_sync">Partial sync</option>
+                  <option value="reconciliation_required">Reconciliation required</option>
+                  <option value="waiting_for_customer">Waiting for Customer</option>
+                  <option value="pending_without_document">Pending, no document</option>
+                  <option value="expiring_soon">Expiring soon</option>
+                </select>
+                <input id="texFilterState" type="text" maxlength="2" placeholder="State (e.g. TX)" aria-label="State filter" oninput="debouncedTexFilterChange()" />
+                <input id="texFilterJurisdiction" type="text" maxlength="10" placeholder="Jurisdiction" aria-label="Claimed jurisdiction filter" oninput="debouncedTexFilterChange()" />
+                <input id="texFilterSearch" type="text" placeholder="Search parish, reference, or parish ID" aria-label="Search" oninput="debouncedTexFilterChange()" style="min-width:220px;" />
+              </div>
+
+              <div id="texQueueStatus" class="revenue-empty">Loading exemption claims…</div>
+
+              <div class="tex-table-wrap" id="texTableWrap" style="display:none;">
+                <table class="tex-table" aria-label="Sales tax exemption claims">
+                  <thead>
+                    <tr>
+                      <th>Parish</th><th>Reference</th><th>State</th><th>Jurisdiction</th><th>Type</th>
+                      <th>Submitted</th><th>Expiration</th><th>Status</th><th>Stripe sync</th><th>Document</th><th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="texQueueBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section class="section-card" id="texDetailSection" style="display:none;">
+            <div class="section-header">
+              <div class="section-title">
+                <div class="section-title-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></div>
+                <span id="texDetailTitle">Exemption Detail</span>
+              </div>
+              <button class="secondary btn-sm" onclick="closeTexDetail()">✕ Close</button>
+            </div>
+            <div class="section-body" id="texDetailBody" aria-live="polite">
+              <div class="revenue-empty">Select a claim from the queue above.</div>
+            </div>
+          </section>
+        </div>
+
         <div class="tab-panel" id="tab-settings">
           <div class="section-card">
             <div class="section-header">
@@ -708,6 +794,10 @@
     <button class="mobile-tab-link" type="button" data-nav-tab="directory" onclick="switchTab('directory')">
       <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 25s8-5 8-13a8 8 0 1 0-16 0c0 8 8 13 8 13z"/><circle cx="14" cy="12" r="3"/></svg>
       <span>Directory</span>
+    </button>
+    <button class="mobile-tab-link" type="button" data-nav-tab="taxexemptions" onclick="switchTab('taxexemptions')">
+      <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="10"/><path d="M10 14l2.5 2.5L19 10"/></svg>
+      <span>Tax</span>
     </button>
     <button class="mobile-tab-link" type="button" data-nav-tab="settings" onclick="switchTab('settings')">
       <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="3"/><path d="M14 5v3"/><path d="M14 20v3"/><path d="M5 14h3"/><path d="M20 14h3"/><path d="m7.6 7.6 2.1 2.1"/><path d="m18.3 18.3 2.1 2.1"/><path d="m20.4 7.6-2.1 2.1"/><path d="m9.7 18.3-2.1 2.1"/></svg>

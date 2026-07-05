@@ -446,6 +446,87 @@
           <input type="text" id="postalCode" placeholder="79401" />
         </div>
 
+        <div class="form-group" style="border-top:1px solid rgba(196,150,62,0.25);padding-top:1.25rem;margin-top:0.5rem;">
+          <h3 style="font-family:var(--serif);font-size:1.15rem;font-weight:500;margin:0 0 0.5rem;">Sales Tax Exemption</h3>
+          <p class="form-hint" style="margin-bottom:0.75rem;">Some AGAPAY subscription fees may be subject to sales tax depending on your organization's location and applicable law. A location with no statewide general sales tax is not the same as a legally tax-exempt customer. An organization claiming an exemption must submit valid documentation unless AGAPAY determines that documentation is not applicable. Exemption is not automatic and applies only after review and approval by AGAPAY.</p>
+          <p class="form-hint" id="noStatewideTaxNotice" style="display:none;background:rgba(196,150,62,0.08);border-radius:8px;padding:0.6rem 0.8rem;"></p>
+
+          <label for="claimsExemption">Does this organization claim a legal exemption from sales tax?</label>
+          <div class="select-wrap">
+            <select id="claimsExemption">
+              <option value="no" selected>No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="exemptionFields" style="display:none;">
+          <div class="form-group">
+            <label for="exemptionJurisdiction">Exemption jurisdiction</label>
+            <div class="select-wrap">
+              <select id="exemptionJurisdiction">
+                <option value="">Select jurisdiction</option>
+                <option value="FEDERAL">Federal</option>
+                <option>AL</option><option>AK</option><option>AZ</option><option>AR</option>
+                <option>CA</option><option>CO</option><option>CT</option><option>DE</option>
+                <option>FL</option><option>GA</option><option>HI</option><option>ID</option>
+                <option>IL</option><option>IN</option><option>IA</option><option>KS</option>
+                <option>KY</option><option>LA</option><option>ME</option><option>MD</option>
+                <option>MA</option><option>MI</option><option>MN</option><option>MS</option>
+                <option>MO</option><option>MT</option><option>NE</option><option>NV</option>
+                <option>NH</option><option>NJ</option><option>NM</option><option>NY</option>
+                <option>NC</option><option>ND</option><option>OH</option><option>OK</option>
+                <option>OR</option><option>PA</option><option>RI</option><option>SC</option>
+                <option>SD</option><option>TN</option><option>TX</option><option>UT</option>
+                <option>VT</option><option>VA</option><option>WA</option><option>WV</option>
+                <option>WI</option><option>WY</option><option>DC</option>
+                <option value="OTHER">Other / multistate</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="exemptionType">Exemption type</label>
+            <input type="text" id="exemptionType" placeholder="e.g. Religious organization" />
+          </div>
+
+          <div class="form-group">
+            <label for="exemptionCertificateNumber">Certificate or exemption number</label>
+            <input type="text" id="exemptionCertificateNumber" placeholder="Optional" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="exemptionEffectiveDate">Effective date</label>
+              <input type="date" id="exemptionEffectiveDate" />
+            </div>
+            <div class="form-group">
+              <label for="exemptionExpirationDate">Expiration date</label>
+              <input type="date" id="exemptionExpirationDate" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="exemptionDocument" id="exemptionDocumentLabel">Upload exemption documentation</label>
+            <input type="file" id="exemptionDocument" accept=".pdf,.jpg,.jpeg,.png" />
+            <span class="form-hint">PDF, JPG, or PNG. This is submitted securely after your registration is received.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="exemptionRepName">Authorized representative name</label>
+            <input type="text" id="exemptionRepName" placeholder="Full name" />
+          </div>
+          <div class="form-group">
+            <label for="exemptionRepTitle">Authorized representative title</label>
+            <input type="text" id="exemptionRepTitle" placeholder="e.g. Treasurer" />
+          </div>
+
+          <div class="form-group" style="display:flex;gap:0.6rem;align-items:flex-start;">
+            <input type="checkbox" id="exemptionCertified" style="margin-top:0.3rem;" />
+            <label for="exemptionCertified" style="font-size:13px;font-weight:400;">I certify that the information submitted is accurate and that this organization is entitled to claim the stated sales-tax exemption. I understand that submitting this request does not automatically make the organization tax exempt.</label>
+          </div>
+        </div>
+
         <div class="form-group">
           <label for="website" id="websiteLabel">Website</label>
           <input type="url" id="website" placeholder="https://example.org" />
@@ -871,12 +952,118 @@
       if (reviewName) reviewName.textContent = document.getElementById('parishName').value;
     }
 
+    // ─── SALES TAX EXEMPTION UI ───────────────────────────────
+    const NO_STATEWIDE_GENERAL_SALES_TAX_STATES = new Set(['AK', 'DE', 'MT', 'NH', 'OR']);
+    function refreshExemptionUI() {
+      const claims = document.getElementById('claimsExemption').value === 'yes';
+      document.getElementById('exemptionFields').style.display = claims ? '' : 'none';
+
+      const state = document.getElementById('state').value;
+      const notice = document.getElementById('noStatewideTaxNotice');
+      if (NO_STATEWIDE_GENERAL_SALES_TAX_STATES.has(state)) {
+        const copy = {
+          AK: "Alaska does not impose a statewide general sales tax, but local sales taxes may apply. AGAPAY and Stripe require the full service address to determine applicable treatment.",
+          DE: "Delaware does not impose a general customer sales tax. Other seller-side taxes or licensing obligations may still exist and are not resolved through this exemption request.",
+          MT: "Montana does not impose a statewide general sales tax. This is not the same as your organization being a tax-exempt customer.",
+          NH: "New Hampshire does not impose a statewide general sales tax. This is not the same as your organization being a tax-exempt customer.",
+          OR: "Oregon does not impose a statewide general sales tax. This is not the same as your organization being a tax-exempt customer."
+        }[state];
+        notice.textContent = copy;
+        notice.style.display = '';
+      } else {
+        notice.style.display = 'none';
+      }
+    }
+    document.getElementById('claimsExemption').addEventListener('change', refreshExemptionUI);
+    document.getElementById('state').addEventListener('change', refreshExemptionUI);
+
+    function fileToBase64(file) {
+      // Retained for potential future inline use, but no longer used for
+      // the exemption certificate upload -- see uploadExemptionDocument().
+      // Certificates are uploaded separately via multipart/form-data after
+      // registration succeeds, never as base64 inside the registration
+      // JSON body.
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+        reader.onerror = () => reject(new Error('Could not read the selected file.'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function buildTaxExemptionPayload() {
+      const claims = document.getElementById('claimsExemption').value === 'yes';
+      if (!claims) return null;
+
+      const jurisdiction = document.getElementById('exemptionJurisdiction').value;
+      const repName = document.getElementById('exemptionRepName').value.trim();
+      const repTitle = document.getElementById('exemptionRepTitle').value.trim();
+      const certified = document.getElementById('exemptionCertified').checked;
+      if (!jurisdiction || !repName || !repTitle || !certified) {
+        throw new Error('Please complete the Sales Tax Exemption section, or select "No" if you are not claiming an exemption.');
+      }
+
+      return {
+        claimsExemption: true,
+        jurisdiction,
+        exemptionType: document.getElementById('exemptionType').value.trim(),
+        certificateNumber: document.getElementById('exemptionCertificateNumber').value.trim(),
+        effectiveDate: document.getElementById('exemptionEffectiveDate').value,
+        expirationDate: document.getElementById('exemptionExpirationDate').value,
+        authorizedRepresentativeName: repName,
+        authorizedRepresentativeTitle: repTitle,
+        certified: true
+      };
+    }
+
+    // Uploads the exemption document in a SEPARATE request from
+    // registration, using the short-lived claim-scoped upload token
+    // returned in the registration response. Shows real progress via
+    // XMLHttpRequest (fetch doesn't expose upload progress). Never rolls
+    // back the registration on failure -- the caller decides how to
+    // present a partial success.
+    function uploadExemptionDocument({ uploadUrl, uploadToken, file, onProgress }) {
+      return new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', uploadUrl);
+        xhr.setRequestHeader('Authorization', 'Bearer ' + uploadToken);
+        xhr.upload.onprogress = (evt) => {
+          if (onProgress && evt.lengthComputable) onProgress(Math.round((evt.loaded / evt.total) * 100));
+        };
+        xhr.onload = () => {
+          try {
+            const result = JSON.parse(xhr.responseText);
+            if (xhr.status >= 200 && xhr.status < 300) resolve({ ok: true, ...result });
+            else resolve({ ok: false, error: result.error || 'Upload failed.' });
+          } catch {
+            resolve({ ok: false, error: 'Upload failed.' });
+          }
+        };
+        xhr.onerror = () => resolve({ ok: false, error: 'Network error during upload.' });
+        const formData = new FormData();
+        formData.append('document', file);
+        xhr.send(formData);
+      });
+    }
+
     // ─── SUBMIT via AGAPAY API ────────────────────────────────
     async function handleSubmit() {
       if (!document.getElementById('agreeTerms').checked) {
         alert('Please confirm authorization and agree to the Terms of Service before submitting.');
         return;
       }
+
+      let taxExemption = null;
+      try {
+        taxExemption = buildTaxExemptionPayload();
+      } catch (err) {
+        alert(err.message);
+        return;
+      }
+      const exemptionFile = (() => {
+        const input = document.getElementById('exemptionDocument');
+        return input && input.files && input.files[0] ? input.files[0] : null;
+      })();
 
       const parishName     = document.getElementById('parishName').value;
       const priestEmail    = document.getElementById('priestEmail').value.trim();
@@ -911,6 +1098,7 @@
         treasurerEmail,
         notes,
         canonicalAgreement: true,
+        ...(taxExemption ? { taxExemption } : {}),
         ...(window.agapaySecurityPayload ? window.agapaySecurityPayload() : {})
       };
 
@@ -925,8 +1113,30 @@
 
         if (!response.ok) throw new Error(result.error || 'Submission failed');
 
+        // Registration succeeded. If an exemption was claimed and a
+        // document was selected, upload it now in a SEPARATE request using
+        // the short-lived claim-scoped token -- a failure here never
+        // undoes the registration that already succeeded above.
+        let exemptionNote = '';
+        if (result.taxExemption && result.taxExemption.ok && result.taxExemption.uploadRequired) {
+          if (exemptionFile) {
+            const uploadResult = await uploadExemptionDocument({
+              uploadUrl: result.taxExemption.uploadUrl,
+              uploadToken: result.taxExemption.uploadToken,
+              file: exemptionFile
+            });
+            exemptionNote = uploadResult.ok
+              ? ' Your sales tax exemption document was received and is pending AGAPAY review.'
+              : ' Your registration succeeded, but the exemption document upload did not complete (' + (uploadResult.error || 'please try again') + '). You can retry from your parish dashboard once it is available, or reply to your confirmation email.';
+          } else {
+            exemptionNote = ' Your sales tax exemption claim was submitted, but no document was attached yet. Please submit your documentation from your parish dashboard once it is available, or reply to your confirmation email.';
+          }
+        } else if (result.taxExemption && !result.taxExemption.ok) {
+          exemptionNote = ' Your registration succeeded, but the exemption claim itself could not be submitted (' + (result.taxExemption.error || 'please try again') + '). This does not affect your registration.';
+        }
+
         document.getElementById('sendingState').classList.remove('visible');
-        document.getElementById('successParishName').textContent = parishName + ' has been received.';
+        document.getElementById('successParishName').textContent = parishName + ' has been received.' + exemptionNote;
 
         document.getElementById('successRef').textContent = 'Reference: ' + result.reference;
         document.getElementById('successState').classList.add('visible');
