@@ -1,4 +1,4 @@
-const AGAPAY_CACHE = "agapay-static-v21";
+const AGAPAY_CACHE = "agapay-static-v22";
 
 const STATIC_ASSETS = [
   "/myagapay/login",
@@ -7,8 +7,11 @@ const STATIC_ASSETS = [
   "/donor/app.js",
   "/donor/pwa-install.js",
   "/styles/numbers.css",
-  "/manifest.webmanifest",
+  "/myagapay/manifest.webmanifest",
   "/mark.png",
+  "/pwa-register.js",
+  "/myagapay/login.html",
+  "/myagapay/index.html",
   "/favicons/favicon-32x32.png",
   "/images/app/apple-touch-icon-blue.png",
   "/images/app/icon-192.png",
