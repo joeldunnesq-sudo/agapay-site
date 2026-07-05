@@ -1,5 +1,7 @@
 import { d1, d1All, d1First, d1Run, json, listKvKeys, normalizeEmail, safeParseJsonRow } from "../lib/core.js";
 import { requireDonor } from "../handlers/parish.js";
+import { applySubscriptionTaxCode } from "../lib/tax-codes.js";
+import { stripeFormRequest } from "../lib/stripe-connect.js";
 
 export const LEARN_FREE_CHILD_LIMIT = 2;
 export const LEARN_FREE_PRINT_LIMIT = 3;
@@ -118,6 +120,131 @@ async function learnBillingIdentity(request, env = {}) {
 
 function learnBillingKey(email) {
   return `${LEARN_BILLING_KV_PREFIX}${slug(normalizeEmail(email), "unknown")}`;
+}
+
+// Household billing identity (learn_households.id, e.g.
+// "learn_household_<slug(email)>") is derived from email at household-
+// creation time only. Per the Phase 2/3 plan: this id is NOT recomputed
+// when a household's email later changes -- it's treated as immutable and
+// used only as Stripe metadata. A future migration to a random, permanent
+// household id (independent of email) is real technical debt but is out of
+// scope for this phase, since the current id is load-bearing across every
+// existing Learn foreign key and auth lookup.
+//
+// Returns { stripeCustomerId, blocked } for a stable, reusable platform-
+// account Stripe Customer for a Learn household -- creating one once and
+// persisting it on learn_households.stripe_customer_id, rather than
+// relying on bare `customer_email` (which lets Stripe silently create a
+// new, unlinked Customer on every checkout attempt). Never reuses a
+// parish's registration.stripeCustomerId/stewardshipStripeCustomerId, and
+// is never itself eligible for the parish subscription tax-exemption
+// workflow (src/lib/tax-exemption.js) -- Learn households are not parishes.
+//
+// Feature-flagged rollout via env.LEARN_PERSISTED_CUSTOMER_ENFORCED:
+//   - Unset/"false" (default): legacy customer_email fallback is still
+//     permitted if a stable Customer can't be created (no household row
+//     yet, or Stripe error) -- but every fallback logs a prominent
+//     structured warning; this mode never claims enforcement is complete.
+//   - "true": a stable Customer is required. If it can't be created,
+//     returns { blocked: true } and the caller (learnBillingCheckout) must
+//     refuse checkout with a user-safe billing error rather than falling
+//     back to customer_email.
+//
+// Race-safety: Customer creation uses a compare-and-set UPDATE
+// (`WHERE stripe_customer_id IS NULL`) so two simultaneous checkout
+// requests for the same household can't both "win" and leave two
+// plausible-looking Customers referenced from application state. The
+// loser's freshly-created Stripe Customer is a real duplicate on Stripe's
+// side (this function cannot un-create it) -- it is logged as a flagged
+// duplicate for manual reconciliation and never auto-merged or deleted.
+export async function ensureLearnHouseholdStripeCustomer(env, { householdId, email }) {
+  const enforced = String(env.LEARN_PERSISTED_CUSTOMER_ENFORCED || "").toLowerCase() === "true";
+  if (!householdId || !email) return { stripeCustomerId: "", blocked: enforced };
+  if (!d1(env)) return { stripeCustomerId: "", blocked: enforced };
+
+  const existing = await d1First(env, "SELECT stripe_customer_id FROM learn_households WHERE id = ?1", householdId);
+  if (existing?.stripe_customer_id) return { stripeCustomerId: existing.stripe_customer_id, blocked: false };
+
+  if (!existing) {
+    // No household row yet -- nothing to compare-and-set against.
+    console.warn("learn_stripe_customer_no_household_row", JSON.stringify({ householdId, enforced }));
+    return { stripeCustomerId: "", blocked: enforced };
+  }
+
+  if (!env.STRIPE_SECRET_KEY) return { stripeCustomerId: "", blocked: enforced };
+
+  const form = new URLSearchParams({
+    email,
+    "metadata[agapay_household_id]": householdId,
+    "metadata[agapay_product]": "learn"
+  });
+  const created = await stripeFormRequest(env, "/v1/customers", form);
+  if (!created.ok) {
+    console.error("learn_stripe_customer_create_failed", JSON.stringify({ householdId, error: created.body?.error?.message || "unknown" }));
+    return { stripeCustomerId: "", blocked: enforced };
+  }
+
+  const stripeCustomerId = created.body.id;
+  const now = new Date().toISOString();
+
+  // Compare-and-set: only persist if no other concurrent request already
+  // won this race. `meta.changes === 0` means we lost.
+  const result = await d1Run(
+    env,
+    `UPDATE learn_households SET stripe_customer_id = ?1, stripe_customer_created_at = ?2, last_stripe_sync_at = ?2 WHERE id = ?3 AND stripe_customer_id IS NULL`,
+    stripeCustomerId,
+    now,
+    householdId
+  );
+
+  if (!result || Number(result.meta?.changes || 0) === 0) {
+    // Lost the race -- another request already persisted a canonical
+    // Customer for this household in the meantime. Use THAT one; flag the
+    // Customer we just created (and are discarding) as a duplicate for
+    // manual reconciliation. Never merge or delete automatically.
+    const winner = await d1First(env, "SELECT stripe_customer_id FROM learn_households WHERE id = ?1", householdId);
+    console.error("learn_stripe_customer_duplicate_detected", JSON.stringify({
+      householdId,
+      canonicalStripeCustomerId: winner?.stripe_customer_id || "",
+      discardedStripeCustomerId: stripeCustomerId,
+      note: "This Customer was created on Stripe but lost a local compare-and-set race. It is NOT deleted or merged automatically -- flagged for manual reconciliation."
+    }));
+    return { stripeCustomerId: winner?.stripe_customer_id || "", blocked: !winner?.stripe_customer_id && enforced };
+  }
+
+  return { stripeCustomerId, blocked: false };
+}
+
+/**
+ * Trusted-metadata-first reconciliation/backfill for households that
+ * predate persisted Customer creation (i.e. were billed via bare
+ * customer_email before this phase). NOT run automatically -- an admin or
+ * ops script invokes this deliberately.
+ *
+ * Matching priority:
+ *   1. Stripe Customers with metadata.agapay_household_id === householdId
+ *      (trusted -- these were created by this codebase's own metadata).
+ *   2. Only if zero metadata matches: Stripe Customers whose email matches
+ *      the household's email, as secondary/lower-confidence evidence.
+ *
+ * Outcomes:
+ *   - Exactly one high-confidence (metadata) match -> backfilled automatically.
+ *   - Zero matches -> left unset; the household simply creates a fresh
+ *     Customer on its next checkout via ensureLearnHouseholdStripeCustomer.
+ *   - Multiple matches (metadata OR email) -> NOT backfilled; flagged for
+ *     manual review. No guessing.
+ */
+export function selectLearnStripeCustomerBackfillMatch({ householdId, email, candidates = [] }) {
+  const metadataMatches = candidates.filter((c) => c?.metadata?.agapay_household_id === householdId);
+  if (metadataMatches.length === 1) return { action: "backfill", stripeCustomerId: metadataMatches[0].id, confidence: "metadata" };
+  if (metadataMatches.length > 1) return { action: "manual_review", reason: "multiple metadata matches", candidates: metadataMatches.map((c) => c.id) };
+
+  const normalizedEmail = normalizeEmail(email);
+  const emailMatches = normalizedEmail ? candidates.filter((c) => normalizeEmail(c.email) === normalizedEmail) : [];
+  if (emailMatches.length === 1) return { action: "backfill", stripeCustomerId: emailMatches[0].id, confidence: "email" };
+  if (emailMatches.length > 1) return { action: "manual_review", reason: "multiple email matches", candidates: emailMatches.map((c) => c.id) };
+
+  return { action: "unset", reason: "no candidates found" };
 }
 
 export async function loadLearnBillingRecord(env = {}, email = "") {
@@ -339,9 +466,35 @@ export async function learnBillingCheckout(request, env = {}) {
     params.set("line_items[0][price_data][product_data][description]", planDetails.description);
     params.set("line_items[0][price_data][product_data][metadata][product]", "learn");
     params.set("line_items[0][price_data][product_data][metadata][plan]", plan);
+    const taxCodeResult = applySubscriptionTaxCode(params, "line_items[0][price_data][product_data]", "learn", env);
+    if (taxCodeResult.blocked) {
+      return json(
+        { ok: false, error: "Billing configuration issue -- checkout is temporarily unavailable while a required tax setting is completed. Please contact support@agapay.app." },
+        { status: 503 }
+      );
+    }
   }
   params.set("line_items[0][quantity]", "1");
-  if (identity.email) params.set("customer_email", identity.email);
+  const customerResult = identity.email
+    ? await ensureLearnHouseholdStripeCustomer(env, { householdId: identity.householdId, email: identity.email })
+    : { stripeCustomerId: "", blocked: false };
+  if (customerResult.blocked) {
+    return json({
+      ok: false,
+      error: "Billing configuration issue -- checkout is temporarily unavailable. Please try again shortly or contact support@agapay.app."
+    }, { status: 503 });
+  }
+  if (customerResult.stripeCustomerId) {
+    params.set("customer", customerResult.stripeCustomerId);
+    params.set("customer_update[address]", "auto");
+  } else if (identity.email) {
+    // Legacy fallback -- only reachable when
+    // env.LEARN_PERSISTED_CUSTOMER_ENFORCED is not "true". Every fallback
+    // here means ensureLearnHouseholdStripeCustomer already logged a
+    // structured warning; this is never silent.
+    console.warn("learn_checkout_using_legacy_customer_email_fallback", JSON.stringify({ householdId: identity.householdId }));
+    params.set("customer_email", identity.email);
+  }
   params.set("allow_promotion_codes", "true");
   params.set("automatic_tax[enabled]", "true");
   const checkoutSuccessPath = identity.email
