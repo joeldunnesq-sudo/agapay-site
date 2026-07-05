@@ -34,7 +34,6 @@ import {
   reconcileStripeSync,
   writeTaxExemptionAuditLog,
   verifyClaimUploadToken,
-  maskCertificateNumber,
   aggregateSyncState,
   computeAllowedActions,
   getTaxExemptionSummaryCounts,
@@ -439,7 +438,6 @@ export async function handleAdminTaxExemptionQueue(request, env) {
       parishName: registration?.parishName || "",
       parishId: registration?.parishId || "",
       state: registration?.state || "",
-      maskedCertificateNumber: maskCertificateNumber(row.certificate_number),
       hasDocument: Boolean(currentDoc),
       aggregateSyncState: sync,
       expiringSoon
@@ -479,11 +477,7 @@ export async function handleAdminTaxExemptionDetail(request, env, taxExemptionId
   const stateUpper = String(registration?.state || "").toUpperCase();
 
   return json({
-    claim: {
-      ...taxExemptionToJson(claim),
-      maskedCertificateNumber: maskCertificateNumber(claim.certificate_number),
-      recordVersion: claim.updated_at
-    },
+    claim: taxExemptionToJson(claim),
     registration: registration ? {
       reference: registration.reference,
       parishName: registration.parishName,
@@ -537,6 +531,18 @@ function staleRecordResponse(err) {
   }, { status: 409 });
 }
 
+// Every state-changing admin request must supply the version it last saw
+// (the exemption's `recordVersion`, or its own sync row's `updated_at`
+// where noted) -- optimistic concurrency is not optional here. Returns
+// either { expectedVersion } or { error: <Response> }.
+function requireExpectedVersion(body) {
+  const expectedVersion = String(body?.expectedVersion || "").trim();
+  if (!expectedVersion) {
+    return { error: json({ error: "expectedVersion is required for this action. Reload the claim detail and try again." }, { status: 422 }) };
+  }
+  return { expectedVersion };
+}
+
 async function loadClaimAndRegistration(env, taxExemptionId) {
   const claim = await getTaxExemptionById(env, taxExemptionId);
   if (!claim) return { error: json({ error: "Not found" }, { status: 404 }) };
@@ -560,7 +566,9 @@ export async function handleAdminTaxExemptionApprove(request, env, taxExemptionI
 
   let body = {};
   try { body = await request.json(); } catch { /* no body */ }
-  const expectedVersion = body.expectedVersion || "";
+  const versionCheck = requireExpectedVersion(body);
+  if (versionCheck.error) return versionCheck.error;
+  const expectedVersion = versionCheck.expectedVersion;
 
   try {
     const result = isTaxExemptionStripeSyncEnabled(env)
@@ -588,9 +596,11 @@ export async function handleAdminTaxExemptionReject(request, env, taxExemptionId
 
   let body = {};
   try { body = await request.json(); } catch { /* no body */ }
+  const versionCheck = requireExpectedVersion(body);
+  if (versionCheck.error) return versionCheck.error;
 
   try {
-    const result = await rejectTaxExemption(env, { taxExemptionId, registration, actor: adminContext.actor, reason: String(body.reason || "").trim(), expectedVersion: body.expectedVersion || "" });
+    const result = await rejectTaxExemption(env, { taxExemptionId, registration, actor: adminContext.actor, reason: String(body.reason || "").trim(), expectedVersion: versionCheck.expectedVersion });
     return json(result);
   } catch (err) {
     if (err instanceof StaleRecordError) return staleRecordResponse(err);
@@ -613,13 +623,15 @@ export async function handleAdminTaxExemptionRequestReplacement(request, env, ta
 
   let body = {};
   try { body = await request.json(); } catch { /* no body */ }
+  const versionCheck = requireExpectedVersion(body);
+  if (versionCheck.error) return versionCheck.error;
 
   try {
     const result = await requestReplacementDocumentation(env, {
       taxExemptionId, registration, actor: adminContext.actor,
       reason: String(body.reason || "").trim(),
       keepActiveDuringReplacement: body.keepActiveDuringReplacement === true,
-      expectedVersion: body.expectedVersion || ""
+      expectedVersion: versionCheck.expectedVersion
     });
     return json(result);
   } catch (err) {
@@ -643,9 +655,11 @@ export async function handleAdminTaxExemptionRevoke(request, env, taxExemptionId
 
   let body = {};
   try { body = await request.json(); } catch { /* no body */ }
+  const versionCheck = requireExpectedVersion(body);
+  if (versionCheck.error) return versionCheck.error;
 
   try {
-    const result = await revokeTaxExemption(env, { taxExemptionId, registration, actor: adminContext.actor, reason: String(body.reason || "").trim(), expectedVersion: body.expectedVersion || "" });
+    const result = await revokeTaxExemption(env, { taxExemptionId, registration, actor: adminContext.actor, reason: String(body.reason || "").trim(), expectedVersion: versionCheck.expectedVersion });
     return json(result, { status: result.ok ? 200 : 409 });
   } catch (err) {
     if (err instanceof StaleRecordError) return staleRecordResponse(err);
@@ -671,10 +685,12 @@ export async function handleAdminTaxExemptionExpire(request, env, taxExemptionId
   const reason = String(body.reason || "").trim();
   if (!reason) return json({ error: "A reason is required to manually expire an exemption." }, { status: 422 });
   if (body.confirm !== true) return json({ error: "Manual expiration requires explicit confirmation (confirm: true)." }, { status: 422 });
+  const versionCheck = requireExpectedVersion(body);
+  if (versionCheck.error) return versionCheck.error;
 
   try {
     const result = await expireTaxExemptionManually(env, {
-      taxExemptionId, registration, actor: adminContext.actor, reason, expectedVersion: body.expectedVersion || ""
+      taxExemptionId, registration, actor: adminContext.actor, reason, expectedVersion: versionCheck.expectedVersion
     });
     return json(result, { status: result.ok ? 200 : 409 });
   } catch (err) {
@@ -698,7 +714,9 @@ export async function handleAdminTaxExemptionRetrySync(request, env, taxExemptio
 
   let body = {};
   try { body = await request.json(); } catch { /* no body */ }
-  if (body.expectedVersion && claim.updated_at !== body.expectedVersion) {
+  const versionCheck = requireExpectedVersion(body);
+  if (versionCheck.error) return versionCheck.error;
+  if (claim.updated_at !== versionCheck.expectedVersion) {
     return staleRecordResponse(new StaleRecordError(
       "This exemption was updated by another administrator. The latest version has been loaded. Please review it before trying again.",
       { currentVersion: claim.updated_at, currentStatus: claim.status }
@@ -773,7 +791,9 @@ export async function handleAdminTaxExemptionSyncRetry(request, env, taxExemptio
 
   let body = {};
   try { body = await request.json(); } catch { /* no body */ }
-  if (body.expectedVersion && claim.updated_at !== body.expectedVersion) {
+  const versionCheck = requireExpectedVersion(body);
+  if (versionCheck.error) return versionCheck.error;
+  if (claim.updated_at !== versionCheck.expectedVersion) {
     return staleRecordResponse(new StaleRecordError(
       "This exemption was updated by another administrator. The latest version has been loaded. Please review it before trying again.",
       { currentVersion: claim.updated_at, currentStatus: claim.status }
@@ -836,7 +856,9 @@ export async function handleAdminTaxExemptionSyncReconcile(request, env, taxExem
   if (action === "force_apply" && body.confirm !== true) {
     return json({ error: "force_apply requires explicit confirmation (confirm: true)." }, { status: 422 });
   }
-  if (body.expectedVersion && claim.updated_at !== body.expectedVersion) {
+  const versionCheck = requireExpectedVersion(body);
+  if (versionCheck.error) return versionCheck.error;
+  if (claim.updated_at !== versionCheck.expectedVersion) {
     return staleRecordResponse(new StaleRecordError(
       "This exemption was updated by another administrator. The latest version has been loaded. Please review it before trying again.",
       { currentVersion: claim.updated_at, currentStatus: claim.status }
