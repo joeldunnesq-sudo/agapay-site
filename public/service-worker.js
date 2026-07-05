@@ -69,7 +69,7 @@ function isStaticShellAsset(pathname) {
     || pathname.startsWith("/favicons/")
     || pathname.startsWith("/images/app/")
     || pathname.startsWith("/styles/")
-    || pathname === "/manifest.webmanifest"
+    || pathname === "/myagapay/manifest.webmanifest"
     || pathname === "/mark.png";
 }
 
