@@ -29,9 +29,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
 
-  <!-- Cloudflare Turnstile Script Script -->
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
-
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -149,6 +146,9 @@
     .entry-option:hover { border-color: var(--gold); transform: translateY(-1px); background: white; }
     .entry-option strong { display: block; font-family: var(--serif); font-size: 1.15rem; color: var(--deep); line-height: 1.2; }
     .entry-option span { display: block; margin-top: 0.3rem; font-size: 12px; color: var(--stone); line-height: 1.5; }
+    .entry-option.donor { background: linear-gradient(145deg, #061522, #164F30); border-color: rgba(200,162,74,0.45); }
+    .entry-option.donor strong { color: var(--cream); }
+    .entry-option.donor span { color: rgba(246,241,232,0.74); }
 
     /* FORM ELEMENTS */
     .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 1.25rem; }
@@ -261,7 +261,7 @@
     }
   </style>
   <link rel="stylesheet" href="/styles/numbers.css" />
-  <link rel="manifest" href="/manifest.webmanifest" />
+<link rel="manifest" href="/manifest.webmanifest" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="My AGAPAY" />
@@ -282,7 +282,7 @@
         </div>
         <span class="nav-name">AGAPAY</span>
       </a>
-      <div class="nav-links">
+             <div class="nav-links">
         <a href="/give">Giving</a>
         <a href="/marketplace">Marketplace</a>
         <a href="/directory">Directory</a>
@@ -297,7 +297,7 @@
   </nav>
 
   <div class="mobile-nav-drawer" id="mobileDrawer" aria-hidden="true">
-    <div class="mobile-drawer-links">
+        <div class="mobile-drawer-links">
       <a href="/give" onclick="toggleMenu()">Giving</a>
       <a href="/marketplace" onclick="toggleMenu()">Marketplace</a>
       <a href="/directory" onclick="toggleMenu()">Directory</a>
@@ -562,9 +562,7 @@
             I confirm that <strong id="reviewParishName">this organization</strong> is authorized to register with AGAPAY, and that the information above is accurate. I have read and agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.
           </label>
         </div>
-
-        <!-- Cloudflare Turnstile CAPTCHA Integration -->
-        <div class="cf-turnstile" data-sitekey="YOUR_TURNSTILE_SITE_KEY" style="margin-top:1rem;"></div>
+        <div data-agapay-turnstile style="margin-top:1rem;"></div>
 
         <div class="form-nav" style="margin-top:1.5rem;">
           <button class="btn-back" onclick="goToStep(2)">← Back</button>
@@ -969,3 +967,7 @@
 
 </body>
 </html>
+
+
+
+
