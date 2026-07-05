@@ -139,6 +139,7 @@ import {
   handleDonorOfferings,
   handleDonorSubscriptionPortal,
   handleDonorBookstore,
+  handleParishBookstoreReadiness,
   handleDonorBookstoreItemFields,
   handleDonorBookstoreIsbnLookup,
   handleDonorBookstoreRequestFeature,
@@ -240,6 +241,27 @@ import {
   handleLearnTermClose,
 } from "./learn/handlers.js";
 import { activateLearnOdysseyAccount } from "./learn/billing.js";
+import {
+  handleTaxExemptionStateGuidance,
+  handleClaimScopedDocumentUpload,
+  handleParishTaxExemptionClaim,
+  handleParishTaxExemptionDocumentUpload,
+  handleParishTaxExemptionDocumentView,
+  handleAdminTaxExemptionQueue,
+  handleAdminTaxExemptionSummary,
+  handleAdminTaxExemptionDetail,
+  handleAdminTaxExemptionApprove,
+  handleAdminTaxExemptionReject,
+  handleAdminTaxExemptionRequestReplacement,
+  handleAdminTaxExemptionRevoke,
+  handleAdminTaxExemptionExpire,
+  handleAdminTaxExemptionRetrySync,
+  handleAdminTaxExemptionSyncRetry,
+  handleAdminTaxExemptionSyncReconcile,
+  handleAdminTaxExemptionDocumentView,
+  handleAdminTaxExemptionNote
+} from "./handlers/tax-exemption.js";
+import { processExpiredTaxExemptions } from "./lib/tax-exemption.js";
 
 import {
   agapayEmailHtml,
@@ -1553,6 +1575,9 @@ export default {
       .catch((error) => console.error("weekly_treasurer_commerce_emails_failed", error?.message || String(error))));
     ctx.waitUntil(sendStewardshipCompExpiryReminders(env)
       .catch((error) => console.error("stewardship_comp_reminders_failed", error?.message || String(error))));
+    ctx.waitUntil(processExpiredTaxExemptions(env)
+      .then((results) => console.log("tax_exemption_expiration_sweep", JSON.stringify(results)))
+      .catch((error) => console.error("tax_exemption_expiration_sweep_failed", error?.message || String(error))));
   },
 
   async fetch(request, env) {
@@ -1811,6 +1836,11 @@ export default {
       return handleLearnFeedbackSubmit(request, env);
     }
     if (request.method === "POST" && url.pathname === "/api/registrations") return handleRegistrations(request, env);
+    if (url.pathname === "/api/tax-exemption/state-guidance") return handleTaxExemptionStateGuidance(request, env);
+    if (url.pathname.startsWith("/api/tax-exemption/") && url.pathname.endsWith("/upload")) {
+      const taxExemptionId = decodeURIComponent(url.pathname.replace("/api/tax-exemption/", "").replace("/upload", ""));
+      return handleClaimScopedDocumentUpload(request, env, taxExemptionId);
+    }
     if (url.pathname === "/api/donor/signup") {
       return handleDonorSignup(request, env);
     }
@@ -2188,6 +2218,27 @@ export default {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", "").replace("/dashboard-invite", ""));
       return handleDashboardInvite(request, env, reference);
     }
+    if (url.pathname === "/api/admin/tax-exemptions/summary") return handleAdminTaxExemptionSummary(request, env);
+    if (url.pathname === "/api/admin/tax-exemptions") return handleAdminTaxExemptionQueue(request, env);
+    if (url.pathname.startsWith("/api/admin/tax-exemptions/")) {
+      const rest = url.pathname.replace("/api/admin/tax-exemptions/", "");
+      const parts = rest.split("/");
+      const [taxExemptionId, action, syncId, syncAction] = parts;
+      if (action === "syncs" && syncId && syncAction === "retry") return handleAdminTaxExemptionSyncRetry(request, env, taxExemptionId, syncId);
+      if (action === "syncs" && syncId && syncAction === "reconcile") return handleAdminTaxExemptionSyncReconcile(request, env, taxExemptionId, syncId);
+      if (action === "approve") return handleAdminTaxExemptionApprove(request, env, taxExemptionId);
+      if (action === "reject") return handleAdminTaxExemptionReject(request, env, taxExemptionId);
+      if (action === "request-replacement") return handleAdminTaxExemptionRequestReplacement(request, env, taxExemptionId);
+      if (action === "revoke") return handleAdminTaxExemptionRevoke(request, env, taxExemptionId);
+      if (action === "expire") return handleAdminTaxExemptionExpire(request, env, taxExemptionId);
+      if (action === "retry-sync") return handleAdminTaxExemptionRetrySync(request, env, taxExemptionId);
+      if (action === "document") return handleAdminTaxExemptionDocumentView(request, env, taxExemptionId, "inline");
+      if (action === "document-download") return handleAdminTaxExemptionDocumentView(request, env, taxExemptionId, "attachment");
+      if (action === "notes") return handleAdminTaxExemptionNote(request, env, taxExemptionId);
+      if (!action) return handleAdminTaxExemptionDetail(request, env, taxExemptionId);
+      return json({ error: "Not found" }, { status: 404 });
+    }
+
     if (url.pathname.startsWith("/api/admin/registrations/")) {
       const reference = decodeURIComponent(url.pathname.replace("/api/admin/registrations/", ""));
       return handleAdminRegistrationDetail(request, env, reference);
@@ -2355,6 +2406,22 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/financials")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/financials", ""));
       return handleStewardshipFinancials(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/bookstore-readiness")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/bookstore-readiness", ""));
+      return handleParishBookstoreReadiness(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/tax-exemption/document")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/tax-exemption/document", ""));
+      return handleParishTaxExemptionDocumentView(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/tax-exemption/upload")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/tax-exemption/upload", ""));
+      return handleParishTaxExemptionDocumentUpload(request, env, parishId);
+    }
+    if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/tax-exemption")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/tax-exemption", ""));
+      return handleParishTaxExemptionClaim(request, env, parishId);
     }
     if (url.pathname.startsWith("/api/parish/dashboard/")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", ""));
