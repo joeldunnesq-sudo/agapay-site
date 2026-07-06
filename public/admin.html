@@ -61,6 +61,10 @@
             <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.5 0 2.9.37 4.14 1.02"/></svg>
             Tax Exemptions
           </div>
+          <div class="sidebar-nav-item" onclick="switchTab('auditlog')" id="nav-auditlog">
+            <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
+            Audit Log
+          </div>
           <div class="sidebar-nav-item" onclick="switchTab('settings')" id="nav-settings">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Settings
@@ -619,6 +623,75 @@
             </div>
             <div class="section-body" id="texDetailBody" aria-live="polite">
               <div class="revenue-empty">Select a claim from the queue above.</div>
+            </div>
+          </section>
+        </div>
+
+        <div class="tab-panel" id="tab-auditlog">
+          <section class="admin-command-hero">
+            <div>
+              <div class="admin-kicker">Admin Operations</div>
+              <h1>Audit Log</h1>
+              <p>Durable, append-only record of privileged actions across the platform. See <code>docs/SOFT_LAUNCH_READINESS.md</code> Phase 6 for what's currently instrumented.</p>
+            </div>
+          </section>
+          <section class="section-card" id="auditLogFilterCard">
+            <div class="section-header">
+              <div class="section-title">
+                <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54z"/></svg></div>
+                Filters
+              </div>
+            </div>
+            <div class="section-body">
+              <div class="form-grid">
+                <div>
+                  <label for="auditLogAction">Action</label>
+                  <input id="auditLogAction" placeholder="e.g. registration.status_changed" />
+                </div>
+                <div>
+                  <label for="auditLogActor">Actor</label>
+                  <input id="auditLogActor" placeholder="Admin display name or parish ID" />
+                </div>
+                <div>
+                  <label for="auditLogTargetType">Target type</label>
+                  <input id="auditLogTargetType" placeholder="e.g. registration, settlement_profile" />
+                </div>
+                <div>
+                  <label for="auditLogTargetId">Target ID</label>
+                  <input id="auditLogTargetId" placeholder="e.g. a parish reference or profile ID" />
+                </div>
+                <div>
+                  <label for="auditLogOrganization">Organization</label>
+                  <input id="auditLogOrganization" placeholder="Parish ID" />
+                </div>
+                <div>
+                  <label for="auditLogSince">Since (UTC)</label>
+                  <input id="auditLogSince" type="datetime-local" />
+                </div>
+                <div>
+                  <label for="auditLogUntil">Until (UTC)</label>
+                  <input id="auditLogUntil" type="datetime-local" />
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="gold btn-sm" id="auditLogSearchBtn" onclick="loadAuditLog(true, this)">Search</button>
+                <button class="secondary btn-sm" onclick="resetAuditLogFilters()">Clear filters</button>
+              </div>
+            </div>
+          </section>
+          <section class="section-card" id="auditLogResultsCard">
+            <div class="section-header">
+              <div class="section-title">
+                <div class="section-title-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg></div>
+                Events
+              </div>
+              <span id="auditLogCount" class="muted" style="font-size:0.8rem;"></span>
+            </div>
+            <div class="section-body">
+              <div id="auditLogTableWrap"><div class="revenue-empty">Loading audit log…</div></div>
+              <div class="btn-row" style="margin-top:0.85rem;">
+                <button class="secondary btn-sm" id="auditLogMoreBtn" onclick="loadAuditLog(false, this)" style="display:none;">Load more</button>
+              </div>
             </div>
           </section>
         </div>
