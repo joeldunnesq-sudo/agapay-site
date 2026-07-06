@@ -3329,12 +3329,16 @@ let selectedReference = '';
     }
 
 
+    const adminSearchParams = new URLSearchParams(window.location.search);
+
+    const stripeReturnReference = adminSearchParams.get('stripe_return');
     if (stripeReturnReference) {
       setStatus(`Stripe onboarding returned for ${stripeReturnReference}. Log in, then refresh Stripe status.`);
     }
-    const subscriptionReturnReference = new URLSearchParams(window.location.search).get('subscription_return');
+    
+    const subscriptionReturnReference = adminSearchParams.get('subscription_return');
     if (subscriptionReturnReference) {
       setStatus(`Subscription checkout returned for ${subscriptionReturnReference}. Log in to review the registration. The Stripe webhook will mark it active after payment is confirmed.`);
     }
-
+    
     restoreAdminSession();
