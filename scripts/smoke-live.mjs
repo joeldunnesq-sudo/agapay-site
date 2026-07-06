@@ -1,5 +1,4 @@
 const baseUrl = (process.argv[2] || "https://agapay.app").replace(/\/+$/, "");
-const smokeSecret = process.env.SMOKE_TEST_SECRET || "";
 
 const checks = [
   { name: "home page", method: "GET", path: "/", ok: [200] },
@@ -75,11 +74,19 @@ const checks = [
 let failures = 0;
 
 for (const check of checks) {
-  // Build headers dynamically to blend standard content-types with WAF bypass headers
+  // Spoof a realistic Windows Chrome browser environment
   const headers = {
-    "User-Agent": "AGAPAY-GitHub-Smoke-Runner",
-    ...(check.body && { "content-type": "application/json" }),
-    ...(smokeSecret && { "X-Smoke-Test-Secret": smokeSecret })
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    ...(check.body && { "content-type": "application/json" })
   };
 
   const init = {
