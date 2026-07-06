@@ -144,6 +144,24 @@
             </div>
           </section>
 
+          <section class="health-card" id="deploymentHealthCard">
+            <div class="health-header">
+              <div>
+                <div class="health-title">Deployment &amp; Health</div>
+                <div class="health-subtitle">Live from <code>/api/health</code> and release flags. Refreshes when Overview loads.</div>
+              </div>
+              <div class="health-readiness" aria-label="deployment status">
+                <span class="badge not_configured" id="deploymentStatusBadge">—</span>
+              </div>
+            </div>
+            <div class="health-body" id="deploymentHealthPane">
+              <div class="health-item diagnostics-value"><strong id="diagVersion">—</strong><span>Version</span><p id="diagDeployedAt">Deployed: —</p></div>
+              <div class="health-item diagnostics-value"><strong id="diagEnvironment">—</strong><span>Environment</span><p id="diagUtcNow">UTC: —</p></div>
+              <div class="health-item" id="diagChecksItem"><div id="diagnosticsChecks" class="diagnostics-badge-row">—</div><span>Health checks</span><p>Worker / D1 / KV / Stripe / email / R2</p></div>
+              <div class="health-item" id="diagFlagsItem"><div id="diagnosticsFlags" class="diagnostics-badge-row">—</div><span>Release flags</span><p>Live feature-flag state from <code>wrangler.toml</code></p></div>
+            </div>
+          </section>
+
           <section class="health-card" id="onboardingHealthCard">
           <div class="health-header">
             <div>
