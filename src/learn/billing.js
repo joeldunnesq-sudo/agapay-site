@@ -456,6 +456,7 @@ export async function learnBillingCheckout(request, env = {}) {
   const planDetails = learnPlanDetails(plan, interval);
   const params = new URLSearchParams();
   params.set("mode", "subscription");
+  params.set("billing_address_collection", "required");
   if (priceId) {
     params.set("line_items[0][price]", priceId);
   } else {
