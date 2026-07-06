@@ -332,6 +332,50 @@ let selectedReference = '';
         .replace(/\b\w/g, (char) => char.toUpperCase());
     }
 
+    const TAX_READINESS_LABELS = {
+      tax_needs_review: 'Needs review',
+      tax_registration_pending: 'Registration pending',
+      tax_ready_for_checkout: 'Ready for checkout',
+      tax_not_required_yet: 'Not required yet',
+      tax_blocked: 'Blocked'
+    };
+    const TAX_READINESS_BADGE_CLASS = {
+      tax_needs_review: 'pending',
+      tax_registration_pending: 'pending',
+      tax_ready_for_checkout: 'active',
+      tax_not_required_yet: 'not_configured',
+      tax_blocked: 'rejected'
+    };
+
+    function taxReadinessBadge(status) {
+      const key = status || 'tax_needs_review';
+      const cls = TAX_READINESS_BADGE_CLASS[key] || 'not_configured';
+      const label = TAX_READINESS_LABELS[key] || readable(key);
+      return `<span class="badge ${escapeAttr(cls)}">${escapeHtml(label)}</span>`;
+    }
+
+    function renderTaxReadinessPanel(reg) {
+      const status = reg.taxReadinessStatus || 'tax_needs_review';
+      const addressParts = [reg.billingAddressLine1, reg.billingAddressLine2, [reg.billingCity, reg.billingState, reg.billingPostalCode].filter(Boolean).join(', '), reg.billingCountry].filter(Boolean);
+      const addressText = addressParts.length ? addressParts.join(' · ') : 'Not yet provided';
+      const blockedWarning = (reg.status === 'verified' && status !== 'tax_ready_for_checkout')
+        ? `<p class="requirements-panel-note"><strong>Paid subscription checkout is blocked</strong> until billing/tax review is complete.</p>`
+        : '';
+
+      return `
+        <div class="requirements-panel ${status === 'tax_ready_for_checkout' || reg.status !== 'verified' ? 'clear' : ''}">
+          <div class="requirements-panel-title" style="display:flex;align-items:center;gap:0.5rem;">
+            Tax / Billing Readiness ${taxReadinessBadge(status)}
+          </div>
+          <p class="requirements-panel-copy"><strong>Billing legal name:</strong> ${escapeHtml(reg.billingLegalName || 'Not yet provided')}</p>
+          <p class="requirements-panel-copy"><strong>Billing address:</strong> ${escapeHtml(addressText)}</p>
+          ${reg.taxReadinessNotes ? `<p class="requirements-panel-copy"><strong>Notes:</strong> ${escapeHtml(reg.taxReadinessNotes)}</p>` : ''}
+          <p class="requirements-panel-copy"><strong>Last reviewed:</strong> ${reg.taxReadinessReviewedAt ? escapeHtml(shortDate(reg.taxReadinessReviewedAt)) : 'Never'} ${reg.taxReadinessReviewedBy ? 'by ' + escapeHtml(reg.taxReadinessReviewedBy) : ''}</p>
+          ${blockedWarning}
+        </div>
+      `;
+    }
+
     function renderStripeRequirements(reg) {
       const requirements = Array.isArray(reg.stripeRequirementsDue) ? reg.stripeRequirementsDue.filter(Boolean) : [];
       const disabledReason = reg.stripeDisabledReason || '';
@@ -2097,6 +2141,7 @@ let selectedReference = '';
           ${field('Reviewer Notes', reg.reviewerNotes, 'full')}
         </div>
         ${renderStripeRequirements(reg)}
+        ${renderTaxReadinessPanel(reg)}
         ${reg.status === 'verified' && reg.parishId ? `
           <div class="field full">
             <div class="field-key">Public profile</div>
@@ -2136,6 +2181,59 @@ let selectedReference = '';
               <div class="full">
                 <label for="dioceseOrDeanery">Diocese / deanery</label>
                 <input id="dioceseOrDeanery" value="${escapeAttr(reg.dioceseOrDeanery)}" placeholder="Diocese, metropolis, deanery, or vicariate" />
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-section">
+            <div class="admin-section-title">Tax / Billing Readiness</div>
+            <p style="margin:0 0 0.85rem;color:var(--stone);font-size:12.5px;line-height:1.6;">
+              Separate from canonical verification above. A parish can be verified and still blocked from paid
+              subscription checkout until this is set to "Ready for checkout." See
+              <code>docs/SOFT_LAUNCH_READINESS.md</code> for the manual review rule.
+            </p>
+            <div class="form-grid">
+              <div>
+                <label for="taxReadinessStatus">Tax readiness status</label>
+                <select id="taxReadinessStatus">
+                  <option value="tax_needs_review" ${(reg.taxReadinessStatus || 'tax_needs_review') === 'tax_needs_review' ? 'selected' : ''}>Needs review</option>
+                  <option value="tax_registration_pending" ${reg.taxReadinessStatus === 'tax_registration_pending' ? 'selected' : ''}>Registration pending</option>
+                  <option value="tax_ready_for_checkout" ${reg.taxReadinessStatus === 'tax_ready_for_checkout' ? 'selected' : ''}>Ready for checkout</option>
+                  <option value="tax_not_required_yet" ${reg.taxReadinessStatus === 'tax_not_required_yet' ? 'selected' : ''}>Not required yet</option>
+                  <option value="tax_blocked" ${reg.taxReadinessStatus === 'tax_blocked' ? 'selected' : ''}>Blocked</option>
+                </select>
+              </div>
+              <div class="full">
+                <label for="taxReadinessNotes">Tax / billing review notes</label>
+                <textarea id="taxReadinessNotes" rows="2" placeholder="e.g. AGAPAY has an active sales tax registration in this state as of 2026.">${escapeHtml(reg.taxReadinessNotes)}</textarea>
+              </div>
+              <div>
+                <label for="billingLegalName">Billing legal name</label>
+                <input id="billingLegalName" value="${escapeAttr(reg.billingLegalName)}" placeholder="Legal/church name for billing" />
+              </div>
+              <div>
+                <label for="billingAddressLine1">Billing address line 1</label>
+                <input id="billingAddressLine1" value="${escapeAttr(reg.billingAddressLine1)}" placeholder="Street address" />
+              </div>
+              <div>
+                <label for="billingAddressLine2">Billing address line 2</label>
+                <input id="billingAddressLine2" value="${escapeAttr(reg.billingAddressLine2)}" placeholder="Suite, unit (optional)" />
+              </div>
+              <div>
+                <label for="billingCity">Billing city</label>
+                <input id="billingCity" value="${escapeAttr(reg.billingCity)}" />
+              </div>
+              <div>
+                <label for="billingState">Billing state / province</label>
+                <input id="billingState" value="${escapeAttr(reg.billingState)}" />
+              </div>
+              <div>
+                <label for="billingPostalCode">Billing postal code</label>
+                <input id="billingPostalCode" value="${escapeAttr(reg.billingPostalCode)}" />
+              </div>
+              <div>
+                <label for="billingCountry">Billing country</label>
+                <input id="billingCountry" value="${escapeAttr(reg.billingCountry || 'US')}" placeholder="US" />
               </div>
             </div>
           </div>
@@ -2368,7 +2466,16 @@ let selectedReference = '';
             campaigns,
             parishDashboardToken: document.getElementById('parishDashboardToken').value.trim(),
             sendDashboardInvite: shouldRunAutoVerifiedWorkflow ? false : options.sendDashboardInvite ?? document.getElementById('autoDashboardInvite').checked,
-            reviewerNotes: document.getElementById('reviewerNotes').value
+            reviewerNotes: document.getElementById('reviewerNotes').value,
+            taxReadinessStatus: document.getElementById('taxReadinessStatus').value,
+            taxReadinessNotes: document.getElementById('taxReadinessNotes').value,
+            billingLegalName: document.getElementById('billingLegalName').value,
+            billingAddressLine1: document.getElementById('billingAddressLine1').value,
+            billingAddressLine2: document.getElementById('billingAddressLine2').value,
+            billingCity: document.getElementById('billingCity').value,
+            billingState: document.getElementById('billingState').value,
+            billingPostalCode: document.getElementById('billingPostalCode').value,
+            billingCountry: document.getElementById('billingCountry').value
           })
         });
         const result = await response.json();
