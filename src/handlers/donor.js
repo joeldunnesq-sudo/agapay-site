@@ -1419,16 +1419,27 @@ export async function handleDonorBookstore(request, env) {
     "custom_text[submit][message]": sellerDisclosure.slice(0, 499)
   });
   // Parish Commerce is included in AGAPAY Parish +. Do not add any AGAPAY platform/application fee to bookstore or future commerce checkouts; Stripe may still charge its own processing fee and show any applicable tax.
+   const bookstoreFallbackTaxCode =
+    env.BOOKSTORE_STRIPE_TAX_CODE ||
+    env.PARISH_COMMERCE_DEFAULT_TAX_CODE ||
+    "";
+  
   items.forEach((item, index) => {
+    const lineTaxCode = item.taxCode || bookstoreFallbackTaxCode;
+  
     form.set(`line_items[${index}][quantity]`, String(item.quantity));
     form.set(`line_items[${index}][price_data][currency]`, "usd");
     form.set(`line_items[${index}][price_data][unit_amount]`, String(item.unitPriceCents));
     form.set(`line_items[${index}][price_data][tax_behavior]`, "exclusive");
     form.set(`line_items[${index}][price_data][product_data][name]`, item.itemName.slice(0, 180));
+  
     if (item.itemDescription && item.itemDescription !== item.itemName) {
       form.set(`line_items[${index}][price_data][product_data][description]`, item.itemDescription.slice(0, 280));
     }
-    if (item.taxCode) form.set(`line_items[${index}][price_data][product_data][tax_code]`, item.taxCode);
+  
+    if (lineTaxCode) {
+      form.set(`line_items[${index}][price_data][product_data][tax_code]`, lineTaxCode);
+    }
   });
   const metadata = {
     order_id: orderId,
