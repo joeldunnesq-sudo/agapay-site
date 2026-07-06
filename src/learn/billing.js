@@ -280,6 +280,10 @@ export async function saveLearnBillingRecord(env = {}, record = {}) {
   const identity = learnBillingIdentityFromEmail(record.email);
   if (!identity.email) return { ok: false, reason: "missing_email" };
   const now = new Date().toISOString();
+  // Billing address is often only present on the checkout-completion call
+  // (from Stripe's own customer_details.address); fall back to whatever
+  // was already stored so a later renewal-webhook save doesn't blank it.
+  const existing = await loadLearnBillingRecord(env, identity.email).catch(() => null);
   const saved = {
     product: "learn",
     email: identity.email,
@@ -296,6 +300,19 @@ export async function saveLearnBillingRecord(env = {}, record = {}) {
     currentPeriodEnd: record.currentPeriodEnd || "",
     cancelAtPeriodEnd: Boolean(record.cancelAtPeriodEnd || record.cancel_at_period_end),
     cancelledAt: record.cancelledAt || record.canceledAt || "",
+    // Billing address -- stored where practical (e.g. captured from Stripe's
+    // own customer_details.address on checkout completion, see
+    // persistLearnBillingFromStripe below). Not currently used to gate Learn
+    // checkout -- see src/lib/tax-readiness.js, which gates parish/AGAPAY Give
+    // subscriptions only. Non-destructive: only overwrites when a new value
+    // is actually provided.
+    billingLegalName: record.billingLegalName || existing?.billingLegalName || "",
+    billingAddressLine1: record.billingAddressLine1 || existing?.billingAddressLine1 || "",
+    billingAddressLine2: record.billingAddressLine2 || existing?.billingAddressLine2 || "",
+    billingCity: record.billingCity || existing?.billingCity || "",
+    billingState: record.billingState || existing?.billingState || "",
+    billingPostalCode: record.billingPostalCode || existing?.billingPostalCode || "",
+    billingCountry: record.billingCountry || existing?.billingCountry || "",
     updatedAt: now,
     createdAt: record.createdAt || now
   };
@@ -610,6 +627,11 @@ export async function persistLearnBillingFromStripe(env = {}, source = {}) {
     || ""
   );
   if (!email) return { ok: false, reason: "missing_email" };
+  // Stripe includes customer_details.address on checkout.session.completed
+  // events when billing_address_collection is "required" (it is, above).
+  // Not present on subscription-lifecycle webhooks -- that's fine,
+  // saveLearnBillingRecord falls back to whatever was already stored.
+  const address = source.customer_details?.address || null;
   return saveLearnBillingRecord(env, {
     email,
     householdId: metadata.household_id || "",
@@ -622,7 +644,14 @@ export async function persistLearnBillingFromStripe(env = {}, source = {}) {
     stripeCheckoutSessionId: source.checkoutSessionId || "",
     currentPeriodEnd: source.current_period_end ? new Date(source.current_period_end * 1000).toISOString() : "",
     cancelAtPeriodEnd: Boolean(source.cancel_at_period_end),
-    cancelledAt: source.canceled_at ? new Date(source.canceled_at * 1000).toISOString() : ""
+    cancelledAt: source.canceled_at ? new Date(source.canceled_at * 1000).toISOString() : "",
+    billingLegalName: source.customer_details?.name || "",
+    billingAddressLine1: address?.line1 || "",
+    billingAddressLine2: address?.line2 || "",
+    billingCity: address?.city || "",
+    billingState: address?.state || "",
+    billingPostalCode: address?.postal_code || "",
+    billingCountry: address?.country || ""
   });
 }
 
