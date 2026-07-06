@@ -58,27 +58,65 @@ failure unrelated to Phases 1–4**, present on `main` before this session's
 changes. Flagging it here so it isn't confused with anything below; it's
 a Learn-area issue, not a hardening regression.
 
+## ⚠ Verification note (2026-07-06, session 3)
+
+Confirmed session 2's Phase 3/4 files uploaded correctly (fresh clone,
+`npm run check` — before this session's fixes — passed everything except
+the already-known `check-learn.mjs` issue). While investigating that
+issue, found a **new regression**: `scripts/route-map-integrity.mjs` and
+the Odyssey-expanded `scripts/smoke-live.mjs` from Phase 1 — verified
+genuinely on `main` in session 2 — were **gone** by this session, and
+`package.json`'s `check` script no longer referenced
+`route-map-integrity.mjs` at all. `git log --all -- scripts/route-map-
+integrity.mjs` shows zero history for that path, which rules out a normal
+revert commit; most likely a later upload (possibly from Codex, given the
+`codex-soft-launch-readiness-hardening` branch) overwrote `package.json`
+and didn't carry the file forward. Rebuilt both from scratch against the
+*current* `worker.js` route tables rather than restoring old file content
+blind (the routes may have changed since). Also root-caused and fixed the
+`check-learn.mjs` failure: it was a stale assertion left over from an
+intentional July 3 refactor (Learn dashboard shell-loading moved into
+`mobile-gate.js`'s dynamic `import()`), not a live bug — Learn itself was
+never broken. `npm run check` is fully green again as of this session.
+
+Separately, fixed a live PWA bug: several in-app links (My AGAPAY "Give"
+tab, back-button fallback, Learn/Odyssey "My AGAPAY" links) pointed at the
+bare path `/myagapay` instead of `/myagapay/dashboard`. The installed PWA's
+manifest scope is `/myagapay/` (trailing slash) — `/myagapay` without the
+slash doesn't match that scope as a URL prefix, so navigating to it kicked
+the app out of standalone display into browser chrome (title bar + close
+button). Fixed at the source across 8 files; `/myagapay/dashboard` serves
+identical content per the Worker's own route table, so this is a
+zero-risk, same-content fix. Bumped the cache-busting `?v=` query strings
+on the 3 JS files that changed (`myagapay-shell.js`, `dashboard-shell.js`,
+`mobile-gate.js`) everywhere they're referenced, so browsers don't serve
+stale cached copies after upload.
+
 ## Phase 1 — Expand automated prelaunch/route testing
-**Status: DONE** (verified against a fresh clone of `main`, 2026-07-05)
+**Status: DONE (rebuilt 2026-07-06 after a regression — see verification note above)**
 
 - [x] Inventoried existing scripts: `scripts/prelaunch-checks.mjs`,
       `scripts/check.mjs`, `scripts/smoke-live.mjs`, `scripts/worker-hardening-tests.mjs`
 - [x] Confirmed the 3 static route tables in `src/worker.js`:
       `MYAGAPAY_ASSET_ROUTES` (path → served file), `DASHBOARD_LEGACY_REDIRECTS`,
       `LEGACY_GIVING_PAGE_REDIRECTS` (path → path, not files)
-- [x] Added `scripts/route-map-integrity.mjs` — parses `MYAGAPAY_ASSET_ROUTES`
-      plus the 6 hardcoded `url.pathname = "...html"` rewrites in
-      `cleanAssetRequest()`, and fails if any mapped file is missing under `public/`
-- [x] Expanded `scripts/smoke-live.mjs` with the full route list from the spec
-      (Odyssey dashboard/login/activate, `/api/security/config`, etc.), including
-      trailing-slash variants where the Worker supports both
-- [x] Wired `route-map-integrity.mjs` into `npm run check`
-- [x] Updated README with exact commands
-- [ ] Joel to run `npm run check` and `AGAPAY_BASE_URL=https://agapay.app npm run prelaunch`
-      against production once uploaded, confirm green
+- [x] Rebuilt `scripts/route-map-integrity.mjs` — parses `MYAGAPAY_ASSET_ROUTES`,
+      the hardcoded `url.pathname = "...html"` rewrites in `cleanAssetRequest()`,
+      and the `staticGivePages` Set, and fails if any mapped file is missing
+      under `public/`. Also explicitly checks the 5 Odyssey files named in
+      the original spec. 55 file-backed targets checked as of this session.
+- [x] Re-expanded `scripts/smoke-live.mjs` with the full route list from the
+      spec (Odyssey landing/dashboard/login/activate incl. trailing-slash
+      variants, `/api/health`, `/marketplace`, `/directory`, `/vision`,
+      `/register`, `/admin/login`, etc.)
+- [x] Wired `route-map-integrity.mjs` back into `npm run check`
+- [x] Updated README with exact commands for all four check types (local,
+      route-map integrity, prelaunch, production smoke)
+- [ ] Joel to run `npm run check` and `node scripts/smoke-live.mjs
+      https://agapay.app` against production once uploaded, confirm green
 
-Files touched: `scripts/route-map-integrity.mjs` (new), `scripts/smoke-live.mjs`,
-`package.json`, `README.md`
+Files touched (this session, staged for upload): `scripts/route-map-integrity.mjs`
+(new — same filename, rebuilt), `scripts/smoke-live.mjs`, `package.json`, `README.md`
 
 ## Phase 2 — Health, version, and deployment diagnostics
 **Status: IN PROGRESS** (core endpoint verified DONE on `main`; admin UI section still open)
@@ -220,3 +258,14 @@ easiest/lowest-risk first:
   runbook. Also found and flagged a pre-existing, unrelated
   `check-learn.mjs` failure blocking a fully green `npm run check`. Files
   from this session are staged for Joel to upload — none are on `main` yet.
+- 2026-07-06 (session 3) — Confirmed session 2's Phase 3/4 upload was
+  correct. Found Phase 1's `route-map-integrity.mjs`/expanded
+  `smoke-live.mjs` had regressed off `main` since session 2 (see
+  verification note above) — rebuilt both against the current `worker.js`.
+  Root-caused and fixed the `check-learn.mjs` failure (stale assertion,
+  not a live bug). `npm run check` is fully green for the first time this
+  initiative. Also fixed a live PWA bug (unrelated to the 13-phase spec,
+  reported directly by Joel): several in-app links used a bare `/myagapay`
+  path that fell outside the installed PWA's manifest scope
+  (`/myagapay/`), kicking the app out of standalone mode into browser
+  chrome. Fixed across 8 files, cache-busting versions bumped.
