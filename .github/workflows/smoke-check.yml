@@ -19,11 +19,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Match this to your preferred Node environment
-          cache: 'npm'
+          node-version: '24' # Updated to match GitHub's latest runner environment
 
       - name: Install dependencies
-        run: npm ci
+        # Falls back to standard install if package-lock.json isn't tracked in git
+        run: npm install
 
       - name: Run code validation
         run: npm run check
