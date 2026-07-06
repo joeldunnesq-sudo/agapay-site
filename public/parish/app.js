@@ -437,7 +437,7 @@
       // Always reload metrics/financials when switching to the tab
       const _sw = stewardshipState.stewardship || {};
       const _active = _sw.active || ['active','trialing'].includes(_sw.status);
-      if (_active) { loadGivingMetricsPanel(); loadFinancialSnapshotsPanel(); }
+      if (_active) { loadGivingMetricsPanel(); loadFinancialSnapshotsPanel(); loadDonorRetentionPanel(); loadGivingDistributionPanel(); }
       return;
     }
     if (status) status.textContent = 'Loading…';
@@ -462,9 +462,11 @@
     }
     renderStewardshipPanel();
     renderParishPlusPanel();
-    // Load giving metrics and financial snapshots in parallel
+    // Load giving metrics, financials, retention, and distribution in parallel
     loadGivingMetricsPanel();
     loadFinancialSnapshotsPanel();
+    loadDonorRetentionPanel();
+    loadGivingDistributionPanel();
   }
 
   // ── Giving Metrics Panel ─────────────────────────────────────────────────
@@ -499,6 +501,22 @@
     return '$' + ((cents || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   }
 
+  function swRing(pct, tone, valueLabel, subLabel) {
+    const clamped = Math.max(0, Math.min(100, pct));
+    const circumference = 2 * Math.PI * 26;
+    const dash = (clamped / 100) * circumference;
+    return (
+      '<div class="sw-ring-row">' +
+        '<svg class="sw-ring-svg" viewBox="0 0 60 60">' +
+          '<circle class="sw-ring-track" cx="30" cy="30" r="26"/>' +
+          '<circle class="sw-ring-fill tone-' + tone + '" cx="30" cy="30" r="26" ' +
+            'stroke-dasharray="' + dash.toFixed(1) + ' ' + circumference.toFixed(1) + '"/>' +
+        '</svg>' +
+        '<div class="sw-ring-copy"><strong>' + escapeHtml(valueLabel) + '</strong><span>' + escapeHtml(subLabel) + '</span></div>' +
+      '</div>'
+    );
+  }
+
   function renderGivingMetrics(s, f, year) {
     const pct   = s.total_pledged_cents > 0 ? Math.min(100, Math.round((s.total_actual_cents / s.total_pledged_cents) * 100)) : 0;
     const rrPct = s.total_pledged_cents > 0 ? Math.min(100, Math.round((s.run_rate_cents   / s.total_pledged_cents) * 100)) : 0;
@@ -517,7 +535,13 @@
       '</tr>'
     ).join('');
 
+    const ringTone = pct >= 90 ? 'green' : pct >= 60 ? 'gold' : 'red';
+    const ringHtml = s.total_pledged_cents > 0
+      ? swRing(pct, ringTone, pct + '%', 'of pledge goal')
+      : '';
+
     return (
+      ringHtml +
       '<div class="sw-kpi-grid">' +
         gmKpi('Collected',   fmtDollars(s.total_actual_cents),  yoyHtml || (s.active_donors + ' donors')) +
         gmKpi('Pledged',     fmtDollars(s.total_pledged_cents), s.pledging_donors + ' pledging households') +
@@ -568,6 +592,81 @@
         '<button type="button" class="sw-upgrade-btn" onclick="switchTab(\'settings\')">Review parish tier</button>' +
       '</div>'
     );
+  }
+
+  // ── Donor Retention Panel ────────────────────────────────────────────────
+  async function loadDonorRetentionPanel(year) {
+    const pane = document.getElementById('stewardshipRetentionPane');
+    if (!pane || !currentParish) return;
+    if (!pane.querySelector('.sw-retention-chips')) pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
+    try {
+      const y = year || givingMetricsState.year;
+      const res = await fetch(stewardshipApi('/giving/retention?year=' + y), { headers: authHeaders() });
+      const data = await res.json();
+      if (data.error && data.error.includes('not activated')) {
+        pane.innerHTML = renderGivingMetricsUpgrade();
+        return;
+      }
+      pane.innerHTML = renderDonorRetention(data);
+    } catch (e) {
+      pane.innerHTML = '<p class="muted">Retention data unavailable.</p>';
+    }
+  }
+
+  function renderDonorRetention(d) {
+    const rate = d.retention_rate_pct;
+    const tone = rate === null ? 'gold' : rate >= 75 ? 'green' : rate >= 50 ? 'gold' : 'red';
+    const ringHtml = rate !== null
+      ? swRing(rate, tone, rate + '%', 'retained from ' + d.prior_year)
+      : '<p class="sw-tool-card-desc" style="margin:0 0 .75rem;">Not enough prior-year giving to calculate retention yet.</p>';
+
+    return (
+      ringHtml +
+      '<div class="sw-retention-chips">' +
+        '<div class="sw-retention-chip tone-green"><strong>' + (d.retained || 0) + '</strong><span>Retained</span></div>' +
+        '<div class="sw-retention-chip tone-red"><strong>' + (d.lapsed || 0) + '</strong><span>Lapsed</span></div>' +
+        '<div class="sw-retention-chip tone-blue"><strong>' + (d.new_donors || 0) + '</strong><span>New</span></div>' +
+      '</div>'
+    );
+  }
+
+  // ── Giving Distribution Panel ────────────────────────────────────────────
+  async function loadGivingDistributionPanel(year) {
+    const pane = document.getElementById('stewardshipDistributionPane');
+    if (!pane || !currentParish) return;
+    if (!pane.querySelector('.sw-tier-list')) pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
+    try {
+      const y = year || givingMetricsState.year;
+      const res = await fetch(stewardshipApi('/giving/distribution?year=' + y), { headers: authHeaders() });
+      const data = await res.json();
+      if (data.error && data.error.includes('not activated')) {
+        pane.innerHTML = renderGivingMetricsUpgrade();
+        return;
+      }
+      pane.innerHTML = renderGivingDistribution(data);
+    } catch (e) {
+      pane.innerHTML = '<p class="muted">Distribution data unavailable.</p>';
+    }
+  }
+
+  function renderGivingDistribution(d) {
+    const tiers = d.tiers || [];
+    const maxCount = Math.max(1, ...tiers.map(t => t.count || 0));
+    if (!d.total_donors) {
+      return '<p class="muted" style="font-size:.85rem;">No giving recorded yet for this fiscal year.</p>';
+    }
+    const rows = tiers.map((t, i) => {
+      const pct = Math.round(((t.count || 0) / maxCount) * 100);
+      return (
+        '<div class="sw-tier-row">' +
+          '<span class="sw-tier-label">' + escapeHtml(t.label) + '</span>' +
+          '<span class="sw-tier-track"><span class="sw-tier-fill tier-' + (i + 1) + '" style="width:' + Math.max(pct, t.count ? 4 : 0) + '%"></span></span>' +
+          '<span class="sw-tier-count">' + (t.count || 0) + '</span>' +
+        '</div>'
+      );
+    }).join('');
+    return '<div class="sw-tier-list">' + rows + '</div>' +
+      '<p class="muted" style="font-size:.72rem;margin:.6rem 0 0;">' + d.total_donors + ' giving household' + (d.total_donors === 1 ? '' : 's') + ' total this fiscal year</p>';
   }
 
   // ── Financial Snapshots Panel ───────────────────────────────────────────
@@ -2174,6 +2273,8 @@
     const planPane  = document.getElementById('stewardshipPlanPane');
     const metricPane = document.getElementById('givingMetricsPane');
     const finPane = document.getElementById('stewardshipFinancialsPane');
+    const retentionPane = document.getElementById('stewardshipRetentionPane');
+    const distributionPane = document.getElementById('stewardshipDistributionPane');
     if (statusEl) {
       statusEl.textContent = 'Parish tier';
       statusEl.className = 'sw-suite-status-label sw-suite-status--upsell';
@@ -2193,6 +2294,8 @@
     const locked = '<div class="sw-tool-locked"><div class="sw-tool-locked-items"><div><span>✓</span> Included with the Parish tier</div></div><div class="sw-tool-locked-badge">Parish tier required</div></div>';
     if (metricPane) metricPane.innerHTML = locked;
     if (finPane) finPane.innerHTML = locked;
+    if (retentionPane) retentionPane.innerHTML = locked;
+    if (distributionPane) distributionPane.innerHTML = locked;
   }
 
   function renderStewardshipPanel() {
@@ -2356,7 +2459,7 @@
           '<div class="sw-tool-locked-items">' +
             '<div><span>✓</span> Pledge vs. actual fulfillment</div>' +
             '<div><span>✓</span> Fund breakdown &amp; share</div>' +
-            '<div><span>✓</span> Donor retention &amp; new givers</div>' +
+            '<div><span>✓</span> Run-rate projection</div>' +
             '<div><span>✓</span> Year-over-year comparison</div>' +
           '</div>' +
           '<div class="sw-tool-locked-badge">Subscribe to unlock</div>' +
@@ -2373,6 +2476,32 @@
             '<div><span>✓</span> Restricted fund ledger</div>' +
             '<div><span>✓</span> Net surplus / deficit tracking</div>' +
             '<div><span>✓</span> Year-end stewardship records</div>' +
+          '</div>' +
+          '<div class="sw-tool-locked-badge">Subscribe to unlock</div>' +
+        '</div>';
+    }
+
+    // ── Retention tool card — locked ────────────────────────────────────────
+    const retentionPane = document.getElementById('stewardshipRetentionPane');
+    if (retentionPane) {
+      retentionPane.innerHTML =
+        '<div class="sw-tool-locked">' +
+          '<div class="sw-tool-locked-items">' +
+            '<div><span>✓</span> Retained, lapsed, and new donor counts</div>' +
+            '<div><span>✓</span> Year-over-year retention rate</div>' +
+          '</div>' +
+          '<div class="sw-tool-locked-badge">Subscribe to unlock</div>' +
+        '</div>';
+    }
+
+    // ── Distribution tool card — locked ─────────────────────────────────────
+    const distributionPane = document.getElementById('stewardshipDistributionPane');
+    if (distributionPane) {
+      distributionPane.innerHTML =
+        '<div class="sw-tool-locked">' +
+          '<div class="sw-tool-locked-items">' +
+            '<div><span>✓</span> Anonymized giving-tier breakdown</div>' +
+            '<div><span>✓</span> No individual donor identities shown</div>' +
           '</div>' +
           '<div class="sw-tool-locked-badge">Subscribe to unlock</div>' +
         '</div>';
