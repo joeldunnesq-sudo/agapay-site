@@ -262,27 +262,81 @@ review as a cheap, no-behavior-risk item worth doing before soft launch.
 Files touched (staged for upload): `public/_headers` (new),
 `docs/SECURITY_HEADERS.md` (new), `src/lib/core.js`, `scripts/check.mjs`
 
-## Phases 5–13 — deferred past soft launch
+## Phase 6 — Audit log foundation
+**Status: DONE** (2026-07-06, session 5 — staged for upload)
 
-Not started. Each needs its own dedicated review pass because they touch
-auth, money, or PII directly. Recommended order after launch, roughly
-easiest/lowest-risk first:
+- [x] Migration `migrations/0014_audit_log.sql` — append-only `audit_log`
+      table (`id, actor_user_id, actor_type, actor_role, action, target_type,
+      target_id, organization_id, household_id, request_id, ip_hash, reason,
+      before_summary_json, after_summary_json, metadata_json, created_at`),
+      indexed on `created_at`, `action`, `target_type+target_id`,
+      `organization_id`, `actor_user_id`. Deliberately separate from (a)
+      `src/lib/logging.js`'s ephemeral console logs, and (b) the existing
+      per-registration `appendAdminAudit()` trail in `src/handlers/parish.js`
+      — this table is a cross-record index on top, not a replacement for
+      either.
+- [x] `src/lib/audit-log.js` — `recordAuditEvent()` (never throws; falls
+      back to `logEvent()` if the D1 write itself fails, so a logging
+      failure can never block the actual privileged action) and
+      `listAuditEvents()` (filtered, paginated, newest-first read path).
+      Defensively truncates `before`/`after`/`metadata` JSON so a mistake
+      passing a full record instead of a small summary can't balloon the
+      table or leak more than intended.
+- [x] Wired into 3 real existing privileged actions as concrete proof it
+      works end-to-end (not just scaffolding):
+      - `admin.index_rebuild` (`handleAdminRebuildIndexes`, `admin.js`)
+      - `registration.status_changed` (`handleAdminRegistrationDetail`
+        PATCH branch, `admin.js`) — the highest-signal existing action
+        (parish verify/reject)
+      - `settlement_profile.*` — renamed, active-changed,
+        default-giving-changed, default-commerce-changed, module-assigned
+        (`handleParishSettlementProfiles`, `parish.js`) — explicitly called
+        out in the original spec as needing audit coverage, since these
+        control where parish money is routed
+- [x] Admin audit-log viewer: new "Audit Log" tab in `public/admin.html` /
+      `public/admin/app.js`, filterable by action / actor / target type /
+      target ID / organization / date range, paginated ("Load more").
+      Backed by new `GET /api/admin/audit-log` (`handleAdminAuditLog`,
+      `admin.js`).
+- [x] Added `scripts/check.mjs` assertions: migration creates the table,
+      the service exports the right functions, no UPDATE/DELETE path
+      exists anywhere (append-only stays append-only), and all 3 wire-in
+      points are actually present in source — same regression-guard
+      pattern used for Phase 1 and the security headers.
 
-1. **Phase 6 — Audit log foundation** (D1 migration, append-only, needed
-   before Phase 5 support tools so those tools have something to log to)
-2. **Phase 5 — Admin support & account recovery tools** (depends on Phase 6)
-3. **Phase 12 — Stripe webhook inbox/replay** (strengthens what already
+**Not done, deliberately deferred**: full coverage of every action listed
+in the original spec (session revocation, verification resend, entitlement
+grants, refunds, transcript finalization, export/deletion, migration
+execution, release-flag changes) — most of those features don't exist yet
+(Phase 5/7/8/9/10). The 3 wire-ins above prove the foundation works;
+wiring each new privileged feature into `recordAuditEvent()` as it's built
+is now a small addition, not a new system.
+
+Files touched (staged for upload): `migrations/0014_audit_log.sql` (new),
+`src/lib/audit-log.js` (new), `src/handlers/admin.js`,
+`src/handlers/parish.js`, `src/worker.js`, `public/admin.html`,
+`public/admin/app.js`, `public/admin/style.css`, `scripts/check.mjs`
+
+## Phases 5–13 — remaining work after soft launch
+
+Recommended order, roughly easiest/lowest-risk first (Phase 6 above is
+done — support tools and everything after it now has somewhere to log to):
+
+1. **Phase 5 — Admin support & account recovery tools** (depends on
+   Phase 6, now done)
+2. **Phase 12 — Stripe webhook inbox/replay** (strengthens what already
    exists; webhook idempotency is already solid per the security audit,
    this formalizes storage + replay)
-4. **Phase 8 — Entitlements separate from billing** (needed before Phase 9
+3. **Phase 8 — Entitlements separate from billing** (needed before Phase 9
    makes sense; existing Learn/Odyssey access logic should migrate here)
-5. **Phase 7 — Account data export/deletion** (needs Phase 6 audit log first)
-6. **Phase 11 — Immutable financial event ledger**
-7. **Phase 13 — Background job foundation** (Cloudflare Queues vs D1-backed;
+4. **Phase 7 — Account data export/deletion** (needs Phase 6 audit log,
+   now done)
+5. **Phase 11 — Immutable financial event ledger**
+6. **Phase 13 — Background job foundation** (Cloudflare Queues vs D1-backed;
    needs its own spike to decide)
-8. **Phase 10 — Permission-based authorization** (touches every route;
+7. **Phase 10 — Permission-based authorization** (touches every route;
    should follow, not precede, Phase 9)
-9. **Phase 9 — Canonical identity/household/org architecture doc** (design
+8. **Phase 9 — Canonical identity/household/org architecture doc** (design
    doc first, no schema changes, since a full identity rewrite pre-launch
    was explicitly ruled out in the original spec too)
 
@@ -319,3 +373,24 @@ easiest/lowest-risk first:
   addition to `GET /api/admin/release-status` in `src/handlers/admin.js`
   since the endpoint had nothing for a "release flags" panel to show
   before). Phase 2 is now fully DONE. `npm run check` still fully green.
+- 2026-07-06 (session 5) — Built Phase 6 (audit log foundation): migration,
+  service layer, wired into 3 real existing privileged actions (index
+  rebuild, registration status changes, settlement profile changes), and
+  an admin viewer tab with filters. Phase 6 is now fully DONE, unblocking
+  Phase 5 (admin support tools) and Phase 7 (data export/deletion) to
+  proceed whenever picked up next. `npm run check` still fully green.
+- 2026-07-06 (session 5, continued) — Redesigned the parish dashboard's
+  Stewardship tab per direct request (outside the 13-phase spec): the tab
+  had emptied out visually after Annual Meeting Packets moved to Parish +.
+  Found two backend endpoints (`/stewardship/giving/distribution` and
+  `/stewardship/giving/retention` in `src/worker.js`) that were already
+  fully built and routed but never called from the frontend — added two
+  new cards (Donor Retention, Giving Distribution) using that existing
+  data instead of building anything new server-side. Also added a
+  color-coded fulfillment ring to the existing Stewardship Reports card.
+  Grid changed from 3-column (awkward with an odd card count) to a clean
+  2x2. Color conventions: green/red/gold semantic tones for
+  retained/lapsed/new donors, a 5-step gold-intensity scale for giving
+  tiers. Locked/upsell states for non-subscribers updated to match. Files:
+  `public/parish/dashboard.html`, `public/parish/app.js`,
+  `public/styles/stewardship.css`, `scripts/check.mjs`.
