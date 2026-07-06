@@ -1,4 +1,5 @@
 const baseUrl = (process.argv[2] || "https://agapay.app").replace(/\/+$/, "");
+const smokeSecret = process.env.SMOKE_TEST_SECRET || "";
 
 const checks = [
   { name: "home page", method: "GET", path: "/", ok: [200] },
@@ -74,17 +75,26 @@ const checks = [
 let failures = 0;
 
 for (const check of checks) {
+  // Build headers dynamically to blend standard content-types with WAF bypass headers
+  const headers = {
+    "User-Agent": "AGAPAY-GitHub-Smoke-Runner",
+    ...(check.body && { "content-type": "application/json" }),
+    ...(smokeSecret && { "X-Smoke-Test-Secret": smokeSecret })
+  };
+
   const init = {
     method: check.method,
-    headers: check.body ? { "content-type": "application/json" } : undefined,
+    headers: headers,
     body: check.body ? JSON.stringify(check.body) : undefined,
     redirect: check.redirect || "follow"
   };
+
   try {
     const response = await fetch(`${baseUrl}${check.path}`, init);
     const text = await response.text();
     const passed = check.ok.includes(response.status);
     const marker = passed ? "PASS" : "FAIL";
+    
     console.log(`${marker} ${response.status} ${check.name} ${check.path}`);
     if (!passed) {
       failures += 1;
