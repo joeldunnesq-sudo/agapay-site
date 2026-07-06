@@ -1354,6 +1354,63 @@ let selectedReference = '';
       }
     }
 
+    function diagnosticsBadge(label, ok, { unknown = false } = {}) {
+      const cls = unknown ? 'not_configured' : (ok ? 'active' : 'rejected');
+      return `<span class="badge ${cls}">${escapeHtml(label)}</span>`;
+    }
+
+    async function loadDeploymentDiagnostics() {
+      const badgeEl = document.getElementById('deploymentStatusBadge');
+      const versionEl = document.getElementById('diagVersion');
+      const deployedEl = document.getElementById('diagDeployedAt');
+      const envEl = document.getElementById('diagEnvironment');
+      const utcEl = document.getElementById('diagUtcNow');
+      const checksEl = document.getElementById('diagnosticsChecks');
+      const flagsEl = document.getElementById('diagnosticsFlags');
+      if (utcEl) utcEl.textContent = 'UTC: ' + new Date().toUTCString().replace(' GMT', ' UTC');
+
+      try {
+        const healthResponse = await fetch('/api/health', { headers: { Accept: 'application/json' } });
+        const health = await healthResponse.json();
+        if (badgeEl) {
+          badgeEl.className = 'badge ' + (health.ok ? 'active' : 'rejected');
+          badgeEl.textContent = health.ok ? 'Healthy' : 'Degraded';
+        }
+        if (versionEl) versionEl.textContent = health.version || 'unknown';
+        if (deployedEl) deployedEl.textContent = 'Deployed: ' + (health.deployedAt ? new Date(health.deployedAt).toUTCString().replace(' GMT', ' UTC') : 'unknown');
+        if (envEl) envEl.textContent = health.environment || 'unknown';
+        if (checksEl && health.checks) {
+          const checks = health.checks;
+          checksEl.innerHTML = [
+            diagnosticsBadge('Worker: ' + checks.worker, checks.worker === 'ok'),
+            diagnosticsBadge('D1: ' + checks.database, checks.database === 'ok'),
+            diagnosticsBadge('KV: ' + checks.kv, checks.kv === 'ok'),
+            diagnosticsBadge('Stripe', checks.stripeConfigured, { unknown: !checks.stripeConfigured }),
+            diagnosticsBadge('Email', checks.emailConfigured, { unknown: !checks.emailConfigured }),
+            diagnosticsBadge('R2', checks.r2Configured, { unknown: !checks.r2Configured })
+          ].join('');
+        }
+      } catch (err) {
+        if (badgeEl) { badgeEl.className = 'badge rejected'; badgeEl.textContent = 'Unreachable'; }
+        if (checksEl) checksEl.innerHTML = diagnosticsBadge('/api/health unreachable', false);
+      }
+
+      try {
+        const releaseResponse = await fetch('/api/admin/release-status', { headers: authHeaders() });
+        const releaseResult = await releaseResponse.json();
+        if (handleAuthFailure(releaseResponse, releaseResult)) return;
+        const flags = releaseResult?.releaseStatus?.featureFlags || {};
+        if (flagsEl) {
+          const entries = Object.entries(flags);
+          flagsEl.innerHTML = entries.length
+            ? entries.map(([name, value]) => diagnosticsBadge(name.replace(/_/g, ' ') + ': ' + (value ? 'ON' : 'off'), value)).join('')
+            : '<span class="badge not_configured">No flags reported</span>';
+        }
+      } catch (err) {
+        if (flagsEl) flagsEl.innerHTML = diagnosticsBadge('Release status unreachable', false);
+      }
+    }
+
     function emptyDetailMarkup() {
       return `
         <div class="detail-empty">
@@ -1424,6 +1481,7 @@ let selectedReference = '';
         loadRecentActivity();
         loadLearnAdmin();
         loadStewardshipCompStatus();
+        loadDeploymentDiagnostics();
         lastDataLoadedAt = new Date();
         refreshDataAsOf();
         if (!silent) setStatus(`Loaded ${registrationsCache.length} registration(s).`, 'success');
