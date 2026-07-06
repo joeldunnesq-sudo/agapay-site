@@ -11,7 +11,7 @@
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <link rel="stylesheet" href="/donor/style.css?v=20260704c" />
   <script src="/pwa-register.js" defer></script>
-  <script src="/myagapay-shell.js?v=20260703e" defer></script>
+  <script src="/myagapay-shell.js?v=20260706a" defer></script>
   <script src="/donor/app.js?v=20260704c" defer></script>
   <link rel="stylesheet" href="/styles/numbers.css" />
   <link rel="manifest" href="/myagapay/manifest.webmanifest?v=20260704a" />
@@ -39,7 +39,7 @@
       <div class="sidebar-footer"><a class="sidebar-link" href="/" hx-boost="false"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> AGAPAY home</a></div>
     </aside>
     <main class="content donor-mobile-content">
-      <div class="topbar"><div class="topbar-title">Account</div><div class="topbar-actions"><a class="btn btn-ghost btn-sm" href="/myagapay">Dashboard</a></div></div>
+      <div class="topbar"><div class="topbar-title">Account</div><div class="topbar-actions"><a class="btn btn-ghost btn-sm" href="/myagapay/dashboard">Dashboard</a></div></div>
       <div class="page">
         <div class="notice" id="donorStatus" style="display:none;margin-bottom:1rem;"></div>
         <section class="hero settings-hero">
@@ -94,7 +94,7 @@
               <p class="form-help">Changing your email address or password requires your current password. Name, phone number, and church can be updated directly.</p>
               <div class="btn-row section-gap">
                 <button class="btn btn-gold" type="submit">Save settings</button>
-                <a class="btn btn-ghost" href="/myagapay">Back to dashboard</a>
+                <a class="btn btn-ghost" href="/myagapay/dashboard">Back to dashboard</a>
                 <button class="btn btn-ghost" type="button" onclick="logoutDonor()">Log out</button>
               </div>
             </form>
