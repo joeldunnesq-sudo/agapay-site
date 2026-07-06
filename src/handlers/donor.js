@@ -1419,7 +1419,7 @@ export async function handleDonorBookstore(request, env) {
     "custom_text[submit][message]": sellerDisclosure.slice(0, 499)
   });
   // Parish Commerce is included in AGAPAY Parish +. Do not add any AGAPAY platform/application fee to bookstore or future commerce checkouts; Stripe may still charge its own processing fee and show any applicable tax.
-   const bookstoreFallbackTaxCode =
+  const bookstoreFallbackTaxCode =
     env.BOOKSTORE_STRIPE_TAX_CODE ||
     env.PARISH_COMMERCE_DEFAULT_TAX_CODE ||
     "";
