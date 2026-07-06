@@ -1,3 +1,5 @@
+import { chromium } from 'playwright';
+
 const baseUrl = (process.argv[2] || "https://agapay.app").replace(/\/+$/, "");
 
 const checks = [
@@ -37,7 +39,7 @@ const checks = [
   { name: "legacy donor redirect", method: "GET", path: "/donor", ok: [200, 301, 302, 308] },
   { name: "legacy Learn dashboard redirect", method: "GET", path: "/learn/dashboard", ok: [200, 301, 302, 308] },
   { name: "Give login shell", method: "GET", path: "/give/login", ok: [200] },
-  { name: "legacy Giving redirect", method: "GET", path: "/giving/features", ok: [301, 302, 308], redirect: "manual" },
+  { name: "legacy Giving redirect", method: "GET", path: "/giving/features", ok: [301, 302, 308] },
   { name: "legacy parish login redirect", method: "GET", path: "/parish/login", ok: [200, 301, 302, 308] },
   { name: "admin app shell", method: "GET", path: "/admin", ok: [200] },
   { name: "security config", method: "GET", path: "/api/security/config", ok: [200] },
@@ -73,50 +75,67 @@ const checks = [
 
 let failures = 0;
 
+console.log("Launching headless browser context...");
+const browser = await chromium.launch({ headless: true });
+const context = await browser.newContext({
+  userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+});
+const page = await context.newPage();
+
+// Prime the session on the base URL to let Cloudflare complete any initial challenge validation
+try {
+  await page.goto(baseUrl, { waitUntil: 'commit' });
+  await page.waitForTimeout(2000); 
+} catch (e) {
+  console.log("Initial connection note:", e.message);
+}
+
 for (const check of checks) {
-  // Spoof a realistic Windows Chrome browser environment
-  const headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-    "Sec-Fetch-Dest": "document",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-Site": "none",
-    "Sec-Fetch-User": "?1",
-    ...(check.body && { "content-type": "application/json" })
-  };
+  // Use Playwright's specialized API context layer for programmatic API/POST actions
+  if (check.method === "POST" || check.path.startsWith("/api/")) {
+    try {
+      const response = await context.request.fetch(`${baseUrl}${check.path}`, {
+        method: check.method,
+        data: check.body,
+        headers: { "content-type": "application/json" }
+      });
+      
+      const status = response.status();
+      const passed = check.ok.includes(status);
+      console.log(`${passed ? "PASS" : "FAIL"} ${status} ${check.name} ${check.path}`);
+      if (!passed) {
+        failures += 1;
+        console.log((await response.text()).slice(0, 200));
+      }
+    } catch (err) {
+      failures += 1;
+      console.log(`FAIL ERR ${check.name} ${check.path}`, err.message);
+    }
+    continue;
+  }
 
-  const init = {
-    method: check.method,
-    headers: headers,
-    body: check.body ? JSON.stringify(check.body) : undefined,
-    redirect: check.redirect || "follow"
-  };
-
+  // Use full browser automation for standard UI web app pages
   try {
-    const response = await fetch(`${baseUrl}${check.path}`, init);
-    const text = await response.text();
-    const passed = check.ok.includes(response.status);
-    const marker = passed ? "PASS" : "FAIL";
+    const response = await page.goto(`${baseUrl}${check.path}`, { waitUntil: 'commit' });
+    const status = response.status();
+    const passed = check.ok.includes(status);
     
-    console.log(`${marker} ${response.status} ${check.name} ${check.path}`);
+    console.log(`${passed ? "PASS" : "FAIL"} ${status} ${check.name} ${check.path}`);
     if (!passed) {
       failures += 1;
-      console.log(text.slice(0, 500));
+      console.log((await response.text()).slice(0, 200));
     }
   } catch (error) {
     failures += 1;
-    console.log(`FAIL ERR ${check.name} ${check.path}`);
-    console.log(error?.stack || error);
+    console.log(`FAIL ERR ${check.name} ${check.path}`, error.message);
   }
 }
 
+await browser.close();
+
 if (failures) {
-  console.error(`Smoke failed: ${failures} check(s) failed.`);
+  console.error(`\nSmoke failed: ${failures} check(s) failed.`);
   process.exit(1);
 }
 
-console.log("Smoke passed.");
+console.log("\nSmoke passed successfully.");
