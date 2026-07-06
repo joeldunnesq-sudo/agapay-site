@@ -4,6 +4,7 @@ import { defaultSubscriptionTier, subscriptionTier } from "./subscriptions.js";
 import { stripeFormRequest } from "./stripe-connect.js";
 import { applySubscriptionTaxCode } from "./tax-codes.js";
 import { applyApprovedExemptionIfExists } from "./tax-exemption.js";
+import { taxReadinessCheckoutGate } from "./tax-readiness.js";
 
 export async function createSubscriptionCheckoutForRegistration({
   request,
@@ -34,6 +35,13 @@ export async function createSubscriptionCheckoutForRegistration({
   if (tier.monthlyCents === null && !env[tier.stripePriceEnv]) {
     return json({ error: "This tier needs a Stripe Price ID or a custom billing setup before checkout can be created" }, { status: 422 });
   }
+
+  // Tax readiness gate -- canonical (ministry) verification and AGAPAY's
+  // own billing/tax jurisdiction readiness are separate. Free/non-billable
+  // tiers already returned above and never reach this check. See
+  // src/lib/tax-readiness.js for the full rationale.
+  const gate = taxReadinessCheckoutGate(registration);
+  if (!gate.ok) return json(gate.body, { status: gate.status });
 
   const appUrl = env.AGAPAY_APP_URL || new URL(request.url).origin;
   let stripeCustomerId = registration.stripeCustomerId || "";
