@@ -879,7 +879,22 @@ export async function handleAdminReleaseStatus(request, env) {
       registrationCount,
       verifiedCount,
       stripeReadyCount,
-      subscriptionReadyCount
+      subscriptionReadyCount,
+      // Actual feature-flag values, not just whether something is configured --
+      // see wrangler.toml [vars] for what each one gates. Admin-only (this
+      // whole endpoint requires requireAdmin above); these are toggles, not
+      // secrets, so safe to surface for diagnostics.
+      featureFlags: {
+        AGAPAY_ENABLE_KV_MIGRATION: env.AGAPAY_ENABLE_KV_MIGRATION === "true",
+        SUBSCRIPTION_TAX_CODES_ENABLED: env.SUBSCRIPTION_TAX_CODES_ENABLED === "true",
+        LEARN_PERSISTED_CUSTOMER_ENFORCED: env.LEARN_PERSISTED_CUSTOMER_ENFORCED === "true",
+        PARISH_COMMERCE_READINESS_ENABLED: env.PARISH_COMMERCE_READINESS_ENABLED === "true",
+        PARISH_COMMERCE_READINESS_ENFORCED_FOR_NEW: env.PARISH_COMMERCE_READINESS_ENFORCED_FOR_NEW === "true",
+        PARISH_COMMERCE_READINESS_ENFORCED_FOR_ALL: env.PARISH_COMMERCE_READINESS_ENFORCED_FOR_ALL === "true",
+        TAX_EXEMPTION_WORKFLOW_ENABLED: env.TAX_EXEMPTION_WORKFLOW_ENABLED === "true",
+        TAX_EXEMPTION_DOCUMENT_UPLOAD_ENABLED: env.TAX_EXEMPTION_DOCUMENT_UPLOAD_ENABLED === "true",
+        TAX_EXEMPTION_STRIPE_SYNC_ENABLED: env.TAX_EXEMPTION_STRIPE_SYNC_ENABLED === "true"
+      }
     }
   });
 }
