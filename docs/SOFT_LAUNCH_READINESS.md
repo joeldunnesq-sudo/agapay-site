@@ -342,6 +342,35 @@ done — support tools and everything after it now has somewhere to log to):
 
 ## Change log
 
+- 2026-07-06 (session 6) — Built a tax readiness gate (separate from
+  canonical/ministry verification) per direct spec: a canonically
+  verified parish can now be correctly blocked from paid subscription
+  checkout until AGAPAY has manually reviewed billing/tax jurisdiction
+  readiness. New `src/lib/tax-readiness.js` (pure, no D1 dependency);
+  gate wired into the single shared `createSubscriptionCheckoutForRegistration()`
+  in `src/lib/subscription-checkout.js`, which as a side effect also
+  closed a pre-existing gap where the admin-triggered checkout path had
+  no verified-status check at all (only the parish self-service path did).
+  Admin PATCH (`src/handlers/admin.js`) extended to manage tax readiness
+  status/notes/billing address, auto-setting reviewed-at/by and recording
+  a `registration.tax_readiness_changed` audit event (Phase 6). Admin UI
+  got a new "Tax / Billing Readiness" panel + edit form
+  (`public/admin/app.js`), reusing the existing `.badge`/`.requirements-panel`
+  patterns rather than new CSS. Learn billing (`src/learn/billing.js`)
+  already had `billing_address_collection: required` and
+  `automatic_tax[enabled]: true` -- nothing to add there; added storage
+  for a household billing address (captured from Stripe's own
+  `customer_details.address` on checkout completion where present, with
+  fallback-to-existing so a later renewal webhook without address data
+  doesn't blank it out). No D1 migration -- registrations are stored as a
+  single JSON blob already, so new fields are just additional properties;
+  see the file's own comment for why. New `scripts/tax-readiness-tests.mjs`
+  runs real functional tests against the actual gate and checkout
+  function (Stripe calls mocked via monkeypatched `fetch`, with explicit
+  assertions that fetch is never called on the blocked paths) — wired
+  into `npm run check`. Confirmed via `git diff --name-only` that no
+  bookstore/commerce file was touched. `npm run check` fully green.
+
 - 2026-07-05 — Initial tracker created. Phases 1–4 started.
 - 2026-07-05 (session 2) — Verified this tracker against a fresh clone of
   `main`. Confirmed Phases 1–2 files were genuinely present and correct.
