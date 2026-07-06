@@ -2623,6 +2623,7 @@ let selectedReference = '';
         marketplace: 'AGAPAY Marketplace',
         directory: 'AGAPAY Directory',
         taxexemptions: 'Sales Tax Exemptions',
+        auditlog: 'Audit Log',
         settings: 'Settings',
         developer: 'Developer Tools'
       };
@@ -2633,6 +2634,109 @@ let selectedReference = '';
       if (tab === 'learn') loadLearnAdmin();
       if (tab === 'settings') loadMyAgapayReleaseFlags();
       if (tab === 'taxexemptions') loadTaxExemptionSummary(), loadTaxExemptions();
+      if (tab === 'auditlog' && !auditLogLoadedOnce) loadAuditLog(true);
+    }
+
+    // ── AUDIT LOG (Phase 6) ──────────────────────────────────────────────
+    let auditLogLoadedOnce = false;
+    let auditLogCursor = '';
+
+    function resetAuditLogFilters() {
+      ['auditLogAction', 'auditLogActor', 'auditLogTargetType', 'auditLogTargetId', 'auditLogOrganization', 'auditLogSince', 'auditLogUntil'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      loadAuditLog(true);
+    }
+
+    function auditActionBadgeClass(action) {
+      if (!action) return 'not_configured';
+      if (action.includes('status_changed') || action.includes('active_changed')) return 'pending';
+      if (action.includes('rebuild') || action.includes('default') || action.includes('module_assigned') || action.includes('renamed')) return 'active';
+      return 'not_configured';
+    }
+
+    function renderAuditLogTable(events, append) {
+      const wrap = document.getElementById('auditLogTableWrap');
+      if (!wrap) return;
+      if (!append && events.length === 0) {
+        wrap.innerHTML = '<div class="revenue-empty">No audit events match these filters yet.</div>';
+        return;
+      }
+      const rows = events.map((event) => `
+        <tr>
+          <td style="white-space:nowrap;font-size:12px;color:var(--muted);">${escapeHtml(new Date(event.createdAt + 'Z').toUTCString().replace(' GMT', ' UTC'))}</td>
+          <td><span class="badge ${escapeAttr(auditActionBadgeClass(event.action))}">${escapeHtml(event.action || 'unknown')}</span></td>
+          <td style="font-size:12px;">${escapeHtml(event.actorUserId || '—')}<br><span class="muted" style="font-size:10px;">${escapeHtml(event.actorType || '')}</span></td>
+          <td style="font-size:12px;">${escapeHtml(event.targetType || '—')}${event.targetId ? '<br><span class="muted" style="font-size:10px;">' + escapeHtml(event.targetId) + '</span>' : ''}</td>
+          <td style="font-size:12px;">${escapeHtml(event.organizationId || '—')}</td>
+          <td style="font-size:11px;color:var(--stone);max-width:220px;">${event.before ? '<div><strong>before:</strong> ' + escapeHtml(JSON.stringify(event.before)) + '</div>' : ''}${event.after ? '<div><strong>after:</strong> ' + escapeHtml(JSON.stringify(event.after)) + '</div>' : ''}${event.reason ? '<div><strong>reason:</strong> ' + escapeHtml(event.reason) + '</div>' : ''}</td>
+        </tr>
+      `).join('');
+      const table = `
+        <div style="overflow-x:auto;">
+          <table class="admin-table" style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);">
+                <th style="padding:0.5rem 0.6rem;">When</th>
+                <th style="padding:0.5rem 0.6rem;">Action</th>
+                <th style="padding:0.5rem 0.6rem;">Actor</th>
+                <th style="padding:0.5rem 0.6rem;">Target</th>
+                <th style="padding:0.5rem 0.6rem;">Organization</th>
+                <th style="padding:0.5rem 0.6rem;">Detail</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+      if (append) {
+        wrap.insertAdjacentHTML('beforeend', table);
+      } else {
+        wrap.innerHTML = table;
+      }
+    }
+
+    async function loadAuditLog(reset, btn) {
+      auditLogLoadedOnce = true;
+      if (reset) auditLogCursor = '';
+      if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+
+      const params = new URLSearchParams();
+      const action = document.getElementById('auditLogAction')?.value.trim();
+      const actor = document.getElementById('auditLogActor')?.value.trim();
+      const targetType = document.getElementById('auditLogTargetType')?.value.trim();
+      const targetId = document.getElementById('auditLogTargetId')?.value.trim();
+      const organization = document.getElementById('auditLogOrganization')?.value.trim();
+      const since = document.getElementById('auditLogSince')?.value;
+      const until = document.getElementById('auditLogUntil')?.value;
+      if (action) params.set('action', action);
+      if (actor) params.set('actor', actor);
+      if (targetType) params.set('targetType', targetType);
+      if (targetId) params.set('targetId', targetId);
+      if (organization) params.set('organization', organization);
+      if (since) params.set('since', new Date(since).toISOString());
+      if (until) params.set('until', new Date(until).toISOString());
+      if (auditLogCursor) params.set('cursor', auditLogCursor);
+
+      try {
+        const response = await fetch('/api/admin/audit-log?' + params.toString(), { headers: authHeaders() });
+        const result = await response.json();
+        if (handleAuthFailure(response, result)) return;
+        if (!response.ok) throw new Error(result.error || 'Unable to load audit log');
+
+        renderAuditLogTable(result.events || [], !reset);
+        auditLogCursor = result.cursor || '';
+        const moreBtn = document.getElementById('auditLogMoreBtn');
+        if (moreBtn) moreBtn.style.display = result.hasMore ? '' : 'none';
+        const countEl = document.getElementById('auditLogCount');
+        if (countEl) countEl.textContent = (result.events || []).length + (reset ? '' : ' more') + ' event(s) shown';
+      } catch (err) {
+        const wrap = document.getElementById('auditLogTableWrap');
+        if (wrap && reset) wrap.innerHTML = '<div class="revenue-empty">' + escapeHtml(err.message) + '</div>';
+      } finally {
+        if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+      }
     }
 
     // ── BULK ACTIONS ──────────────────────────────────────────────────────
@@ -3329,16 +3433,12 @@ let selectedReference = '';
     }
 
 
-    const adminSearchParams = new URLSearchParams(window.location.search);
-
-    const stripeReturnReference = adminSearchParams.get('stripe_return');
     if (stripeReturnReference) {
       setStatus(`Stripe onboarding returned for ${stripeReturnReference}. Log in, then refresh Stripe status.`);
     }
-    
-    const subscriptionReturnReference = adminSearchParams.get('subscription_return');
+    const subscriptionReturnReference = new URLSearchParams(window.location.search).get('subscription_return');
     if (subscriptionReturnReference) {
       setStatus(`Subscription checkout returned for ${subscriptionReturnReference}. Log in to review the registration. The Stripe webhook will mark it active after payment is confirmed.`);
     }
-    
+
     restoreAdminSession();

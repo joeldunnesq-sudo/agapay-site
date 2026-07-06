@@ -1288,6 +1288,9 @@
       gap: 0.3rem;
     }
     .diagnostics-badge-row .badge { font-size: 9px; }
+    .admin-table tbody tr { border-top: 1px solid rgba(110,104,96,0.12); }
+    .admin-table tbody tr:hover { background: var(--paper); }
+    .admin-table td { padding: 0.55rem 0.6rem; vertical-align: top; }
 
     /* ─────────────────────────────────────────
        QUEUE CARDS
