@@ -10,7 +10,7 @@
 (function () {
   "use strict";
 
-  var SHELL = "/learn/dashboard-shell.js?v=20260703d";
+  var SHELL = "/learn/dashboard-shell.js?v=20260706a";
   var PHONE = "(max-width: 820px)";
 
   function bootShell() {
@@ -48,7 +48,7 @@
       "font-size:.8rem;font-weight:600;border:0;border-radius:8px;padding:.45rem .85rem;cursor:pointer;" +
       'background:#061522;color:#fff;">Copy link</button></div>' +
       '<div style="display:flex;flex-direction:column;gap:.75rem;align-items:center;">' +
-      '<a href="/myagapay" style="font-family:\'DM Sans\',system-ui,sans-serif;font-weight:600;' +
+      '<a href="/myagapay/dashboard" style="font-family:\'DM Sans\',system-ui,sans-serif;font-weight:600;' +
       'color:#061522;text-decoration:none;border:1px solid rgba(6,21,34,.2);border-radius:999px;' +
       'padding:.6rem 1.4rem;">Back to My AGAPAY</a>' +
       '<button id="learnGateContinue" type="button" style="font-family:\'DM Sans\',system-ui,sans-serif;' +
