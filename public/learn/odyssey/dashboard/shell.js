@@ -547,7 +547,7 @@ function globalProductNav(activeProduct = "learn") {
   }
   return `
     <nav class="learn-product-tabbar" aria-label="My AGAPAY navigation">
-      <a class="${activeProduct === "home" ? "is-active" : ""}" href="/myagapay">
+      <a class="${activeProduct === "home" ? "is-active" : ""}" href="/myagapay/dashboard">
         <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
         <span>My AGAPAY</span>
       </a>
@@ -578,7 +578,7 @@ function topbar(vm) {
       <button class="learn-menu-button" type="button" data-learn-menu-toggle aria-label="Open Learn navigation" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
-      <a class="learn-mobile-brand learn-utility-brand" href="/myagapay" aria-label="Open My AGAPAY">
+      <a class="learn-mobile-brand learn-utility-brand" href="/myagapay/dashboard" aria-label="Open My AGAPAY">
         <img src="/mark.png" alt="" />
         <span><strong>AGAPAY Learn</strong><small>Love how you learn</small></span>
       </a>
