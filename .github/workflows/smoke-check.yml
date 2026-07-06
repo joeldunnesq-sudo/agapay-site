@@ -1,55 +1,138 @@
-name: Production Quality & Local Smoke Check
+import { chromium } from 'playwright';
 
-on:
-  workflow_dispatch:
-    inputs:
-      target_url:
-        description: 'URL to run tests against (set to localhost for inner-loop testing)'
-        required: true
-        default: 'http://localhost:3000' # Matches standard Node/Vite/Next app ports
+const baseUrl = (process.argv[2] || "https://agapay.app").replace(/\/+$/, "");
 
-jobs:
-  run-checks:
-    runs-on: ubuntu-latest
+const checks = [
+  { name: "home page", method: "GET", path: "/", ok: [200] },
+  { name: "onboarding page", method: "GET", path: "/onboarding", ok: [200] },
+  { name: "registration page", method: "GET", path: "/register.html", ok: [200] },
+  { name: "learn overview page", method: "GET", path: "/learn", ok: [200] },
+  { name: "learn pricing page", method: "GET", path: "/learn/pricing", ok: [200] },
+  { name: "Give features page", method: "GET", path: "/give/features", ok: [200] },
+  { name: "Give how it works page", method: "GET", path: "/give/how-it-works", ok: [200] },
+  { name: "Give pricing page", method: "GET", path: "/give/pricing", ok: [200] },
+  { name: "Give why page", method: "GET", path: "/give/why", ok: [200] },
+  { name: "parish giving shell", method: "GET", path: "/give/smoke-test", ok: [200] },
+  { name: "find church giving page", method: "GET", path: "/give/find-parish", ok: [200] },
+  { name: "campaign share shell", method: "GET", path: "/give/smoke-test/smoke-test-campaign", ok: [200] },
+  { name: "My AGAPAY login shell", method: "GET", path: "/myagapay/login", ok: [200] },
+  { name: "My AGAPAY shell", method: "GET", path: "/myagapay", ok: [200] },
+  { name: "My AGAPAY giving shell", method: "GET", path: "/myagapay/giving", ok: [200] },
+  { name: "My AGAPAY give shell", method: "GET", path: "/myagapay/giving/give", ok: [200] },
+  { name: "My AGAPAY Learn shell", method: "GET", path: "/myagapay/learn", ok: [200] },
+  { name: "My AGAPAY Learn setup shell", method: "GET", path: "/myagapay/learn/setup", ok: [200] },
+  { name: "Learn dashboard", method: "GET", path: "/learn/dashboard", ok: [200, 301, 302, 308] },
+  { name: "Odyssey landing", method: "GET", path: "/learn/odyssey", ok: [200, 404] },
+  { name: "Odyssey landing (trailing slash)", method: "GET", path: "/learn/odyssey/", ok: [200, 404] },
+  { name: "Odyssey dashboard", method: "GET", path: "/learn/odyssey/dashboard", ok: [200, 404] },
+  { name: "Odyssey dashboard (trailing slash)", method: "GET", path: "/learn/odyssey/dashboard/", ok: [200, 404] },
+  { name: "Odyssey dashboard login", method: "GET", path: "/learn/odyssey/dashboard/login", ok: [200] },
+  { name: "Odyssey dashboard login (trailing slash)", method: "GET", path: "/learn/odyssey/dashboard/login/", ok: [200, 404] },
+  { name: "Odyssey dashboard activate", method: "GET", path: "/learn/odyssey/dashboard/activate", ok: [200] },
+  { name: "Odyssey dashboard activate (trailing slash)", method: "GET", path: "/learn/odyssey/dashboard/activate/", ok: [200, 404] },
+  { name: "marketplace page", method: "GET", path: "/marketplace", ok: [200] },
+  { name: "directory page", method: "GET", path: "/directory", ok: [200] },
+  { name: "vision page", method: "GET", path: "/vision", ok: [200] },
+  { name: "register page (bare path)", method: "GET", path: "/register", ok: [200] },
+  { name: "admin login page", method: "GET", path: "/admin/login", ok: [200] },
+  { name: "health endpoint", method: "GET", path: "/api/health", ok: [200, 404] },
+  { name: "legacy donor redirect", method: "GET", path: "/donor", ok: [200, 301, 302, 308] },
+  { name: "legacy Learn dashboard redirect", method: "GET", path: "/learn/dashboard", ok: [200, 301, 302, 308] },
+  { name: "Give login shell", method: "GET", path: "/give/login", ok: [200] },
+  { name: "legacy Giving redirect", method: "GET", path: "/giving/features", ok: [200, 301, 302, 308] },
+  { name: "legacy parish login redirect", method: "GET", path: "/parish/login", ok: [200, 301, 302, 308] },
+  { name: "admin app shell", method: "GET", path: "/admin", ok: [200] },
+  { name: "security config", method: "GET", path: "/api/security/config", ok: [200] },
+  { name: "public parishes", method: "GET", path: "/api/parishes?limit=5", ok: [200] },
+  { name: "public campaign missing", method: "GET", path: "/api/campaign?parish=smoke-test&slug=smoke-test", ok: [404] },
+  { name: "platform summary", method: "GET", path: "/api/platform/summary", ok: [200, 404] },
+  { name: "subscription tiers", method: "GET", path: "/api/subscription-tiers", ok: [200, 404] },
+  { name: "learn setup api unauth", method: "GET", path: "/api/learn/setup", ok: [200, 401] },
+  { name: "donor dashboard unauth", method: "GET", path: "/api/donor/dashboard", ok: [200, 401] },
+  { name: "admin registrations unauth", method: "GET", path: "/api/admin/registrations?limit=5", ok: [200, 401, 404] },
+  {
+    name: "donor login invalid",
+    method: "POST",
+    path: "/api/donor/login",
+    body: { email: "smoke-test@example.invalid", password: "not-the-password" },
+    ok: [400, 401, 403, 404, 429]
+  },
+  {
+    name: "admin login invalid",
+    method: "POST",
+    path: "/api/admin/session",
+    body: { password: "not-the-password" },
+    ok: [401, 403, 404, 429]
+  },
+  {
+    name: "parish login invalid",
+    method: "POST",
+    path: "/api/parish/dashboard/smoke-test/session",
+    body: { password: "not-the-password" },
+    ok: [401, 404, 429]
+  }
+];
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+let failures = 0;
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
+console.log("Launching headless browser context...");
+const browser = await chromium.launch({ headless: true });
+const context = await browser.newContext({
+  userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+});
+const page = await context.newPage();
 
-      - name: Install dependencies
-        run: |
-          npm install
-          npm install playwright
+try {
+  await page.goto(baseUrl, { waitUntil: 'commit' });
+  await page.waitForTimeout(2000); 
+} catch (e) {
+  console.log("Initial connection note:", e.message);
+}
 
-      - name: Install Playwright Chromium Dependencies
-        run: npx playwright install chromium --with-deps
+for (const check of checks) {
+  if (check.method === "POST" || check.path.startsWith("/api/")) {
+    try {
+      const response = await context.request.fetch(`${baseUrl}${check.path}`, {
+        method: check.method,
+        data: check.body,
+        headers: { "content-type": "application/json" }
+      });
+      
+      const status = response.status();
+      const passed = check.ok.includes(status);
+      console.log(`${passed ? "PASS" : "FAIL"} ${status} ${check.name} ${check.path}`);
+      if (!passed) {
+        failures += 1;
+        console.log((await response.text()).slice(0, 200));
+      }
+    } catch (err) {
+      failures += 1;
+      console.log(`FAIL ERR ${check.name} ${check.path}`, err.message);
+    }
+    continue;
+  }
 
-      - name: Run code validation
-        run: npm run check
-        continue-on-error: true
+  try {
+    const response = await page.goto(`${baseUrl}${check.path}`, { waitUntil: 'commit' });
+    const status = response.status();
+    const passed = check.ok.includes(status);
+    
+    console.log(`${passed ? "PASS" : "FAIL"} ${status} ${check.name} ${check.path}`);
+    if (!passed) {
+      failures += 1;
+      console.log((await response.text()).slice(0, 200));
+    }
+  } catch (error) {
+    failures += 1;
+    console.log(`FAIL ERR ${check.name} ${check.path}`, error.message);
+  }
+}
 
-      - name: Build Application
-        run: |
-          # If your repo uses a build step before serving production style pages
-          npm run build --if-present
+await browser.close();
 
-      - name: Start Local Server
-        run: |
-          # Swap 'npm run start' or 'npm run dev' to whatever matches your package.json server start script
-          npm run start & 
-        env:
-          PORT: 3000
+if (failures) {
+  console.error(`\nSmoke failed: ${failures} check(s) failed.`);
+  process.exit(1);
+}
 
-      - name: Wait for Local Server Availability
-        run: |
-          echo "Waiting for local application server to wake up..."
-          # Polls localhost until it returns a valid response layout
-          timeout 30 bash -c 'until curl -s http://localhost:3000 > /dev/null; do sleep 1; done'
-
-      - name: Run live smoke tests
-        run: node scripts/smoke-live.mjs ${{ github.event.inputs.target_url }}
+console.log("\nSmoke passed successfully.");
