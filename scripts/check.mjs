@@ -281,4 +281,26 @@ assert.ok(securityHeadersFile.includes("X-Content-Type-Options: nosniff"), "publ
 assert.ok(securityHeadersFile.includes("Content-Security-Policy-Report-Only:"), "public/_headers should ship CSP Report-Only, matching core.js");
 assert.ok(securityHeadersFile.includes("camera=(self)"), "Permissions-Policy should allow same-origin camera for the bookstore barcode scanner");
 
+// Phase 6: audit log foundation
+const auditLogLib = await readFile("src/lib/audit-log.js", "utf8");
+const auditLogMigration = await readFile("migrations/0014_audit_log.sql", "utf8");
+assert.ok(auditLogMigration.includes("CREATE TABLE IF NOT EXISTS audit_log"), "migration 0014 should create the audit_log table");
+assert.ok(auditLogLib.includes("export async function recordAuditEvent"), "audit-log.js should export recordAuditEvent");
+assert.ok(auditLogLib.includes("export async function listAuditEvents"), "audit-log.js should export listAuditEvents");
+assert.ok(!auditLogLib.includes("DELETE FROM audit_log") && !auditLogLib.includes("UPDATE audit_log"), "audit_log must stay append-only -- no UPDATE/DELETE path");
+assert.ok(backendSources.includes("recordAuditEvent(env, request, {") && backendSources.includes('action: "admin.index_rebuild"'), "index rebuild should record an audit event");
+assert.ok(backendSources.includes('action: "registration.status_changed"'), "registration status changes should record an audit event");
+assert.ok(backendSources.includes("handleAdminAuditLog"), "worker should expose an admin audit-log viewer endpoint");
+assert.ok(worker.includes('url.pathname === "/api/admin/audit-log"'), "worker should route GET /api/admin/audit-log");
+
+// Stewardship tab redesign -- new Retention/Distribution cards using
+// previously-built-but-unused backend endpoints
+const parishAppJs = await readFile("public/parish/app.js", "utf8");
+assert.ok(parishDashboardHtml.includes('id="stewardshipRetentionPane"'), "Stewardship tab should include a Donor Retention card");
+assert.ok(parishDashboardHtml.includes('id="stewardshipDistributionPane"'), "Stewardship tab should include a Giving Distribution card");
+assert.ok(parishAppJs.includes("function loadDonorRetentionPanel"), "app.js should define loadDonorRetentionPanel");
+assert.ok(parishAppJs.includes("function loadGivingDistributionPanel"), "app.js should define loadGivingDistributionPanel");
+assert.ok(parishAppJs.includes("stewardshipApi('/giving/retention") && parishAppJs.includes("stewardshipApi('/giving/distribution"), "Stewardship tab should call the existing retention/distribution endpoints, not new ones");
+assert.ok(worker.includes('endsWith("/stewardship/giving/retention")') && worker.includes('endsWith("/stewardship/giving/distribution")'), "worker should already route the retention/distribution endpoints the Stewardship tab now uses");
+
 console.log("AGAPAY platform checks passed.");
