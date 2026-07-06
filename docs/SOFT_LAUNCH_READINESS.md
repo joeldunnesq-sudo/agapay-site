@@ -119,7 +119,7 @@ Files touched (this session, staged for upload): `scripts/route-map-integrity.mj
 (new — same filename, rebuilt), `scripts/smoke-live.mjs`, `package.json`, `README.md`
 
 ## Phase 2 — Health, version, and deployment diagnostics
-**Status: IN PROGRESS** (core endpoint verified DONE on `main`; admin UI section still open)
+**Status: DONE** (admin diagnostics panel built 2026-07-06, session 4 — staged for upload)
 
 - [x] Added `GET /api/health` to `src/worker.js` — checks D1 (`SELECT 1`),
       KV (read-only `.get` on a sentinel key), reports Stripe/email/R2 config
@@ -129,13 +129,19 @@ Files touched (this session, staged for upload): `scripts/route-map-integrity.mj
       (set from `${{ github.sha }}` at deploy time via `wrangler.toml` var override)
 - [x] Added automated test in `scripts/check.mjs` asserting the handler exists
       and never echoes secret values
-- [ ] Admin-facing diagnostics section (deployed version, health, DB/Stripe/
-      email/R2 status, release flags, current UTC time) — **not yet added to
-      `public/admin/app.js`**; recommend as a small follow-up, low risk, but
-      wasn't in this batch. Flagging so it doesn't get lost.
+- [x] Added a "Deployment & Health" panel to the admin Overview tab
+      (`public/admin.html` + `public/admin/app.js`) — shows version,
+      environment, deployed-at, current UTC time, `/api/health` checks
+      (worker/D1/KV/Stripe/email/R2) as status badges, and release-flag
+      state. Reuses the existing `.badge.<key>` 4-color convention, no new
+      CSS colors introduced. Also extended `GET /api/admin/release-status`
+      (`src/handlers/admin.js`) to return actual feature-flag *values*
+      (`featureFlags` object) — it previously only reported config
+      *presence*, not the flags themselves, so there was nothing for a
+      "release flags" panel to show before this.
 - [x] Added `/api/health` (and the new `stripe.webhook.*` log events from
       Phase 3) to `docs/launch-incident-runbook.md`'s "Quick diagnostics"
-      section — this session
+      section
 
 Files touched (verified on `main`): `src/worker.js`, `wrangler.toml`,
 `.github/workflows/deploy.yml`, `scripts/check.mjs`.
@@ -221,6 +227,41 @@ Files touched (new, staged for upload): `docs/BACKUP_RESTORE_RUNBOOK.md`,
 
 ---
 
+## Security response headers (pre-launch easy win, outside the 13-phase spec)
+**Status: DONE** (2026-07-06, session 4 — staged for upload)
+
+Not part of the original 13-phase spec, but flagged during the platform
+review as a cheap, no-behavior-risk item worth doing before soft launch.
+
+- [x] Added `public/_headers` (new, Cloudflare-native) covering every
+      static-asset response, and a shared `SECURITY_HEADERS` constant in
+      `src/lib/core.js` applied via `json()`/`corsJson()` covering
+      Worker-generated API responses (561 of ~597 total response call
+      sites; see `docs/SECURITY_HEADERS.md` for the ~36 hand-rolled
+      `Response` sites not yet covered — low priority, flagged not fixed).
+- [x] Enforcing immediately: `X-Content-Type-Options`, `Referrer-Policy`,
+      `X-Frame-Options: SAMEORIGIN`, `Strict-Transport-Security`
+      (180 days, no `includeSubDomains`/`preload` yet), `Permissions-Policy`
+      (camera left available same-origin for the bookstore barcode
+      scanner — confirmed by checking actual usage, not assumed).
+- [x] `Content-Security-Policy-Report-Only` — deliberately **not**
+      enforcing yet. Built by actually grepping the codebase for every
+      external script/style/frame/connect target rather than guessing;
+      confirmed Stripe Checkout is server-side-redirect only (no
+      `js.stripe.com`/Elements in the browser at all), so the allowlist
+      only needs Cloudflare Turnstile, Google Fonts, jsdelivr, and unpkg.
+      Full rationale and the path to flipping it to enforcing is in
+      `docs/SECURITY_HEADERS.md` — **read that before ever changing
+      `Content-Security-Policy-Report-Only` to `Content-Security-Policy`.**
+- [x] Added assertions to `scripts/check.mjs` so this can't silently
+      regress the way Phase 1's route-map integrity check did — checks
+      both `core.js` and `public/_headers` exist and stay in sync, and
+      explicitly asserts CSP is still Report-Only (fails loudly if someone
+      flips it to enforcing without reading the doc first).
+
+Files touched (staged for upload): `public/_headers` (new),
+`docs/SECURITY_HEADERS.md` (new), `src/lib/core.js`, `scripts/check.mjs`
+
 ## Phases 5–13 — deferred past soft launch
 
 Not started. Each needs its own dedicated review pass because they touch
@@ -269,3 +310,12 @@ easiest/lowest-risk first:
   path that fell outside the installed PWA's manifest scope
   (`/myagapay/`), kicking the app out of standalone mode into browser
   chrome. Fixed across 8 files, cache-busting versions bumped.
+- 2026-07-06 (session 4) — Closed out the remaining "easy win" items from
+  the platform review: shipped security response headers (new
+  `public/_headers` + `SECURITY_HEADERS` in `core.js`, CSP in
+  Report-Only mode — see `docs/SECURITY_HEADERS.md`), and built the
+  admin diagnostics panel that Phase 2 had flagged but never shipped
+  (`public/admin.html` + `public/admin/app.js`, plus a `featureFlags`
+  addition to `GET /api/admin/release-status` in `src/handlers/admin.js`
+  since the endpoint had nothing for a "release flags" panel to show
+  before). Phase 2 is now fully DONE. `npm run check` still fully green.
