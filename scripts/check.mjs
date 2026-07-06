@@ -303,4 +303,28 @@ assert.ok(parishAppJs.includes("function loadGivingDistributionPanel"), "app.js 
 assert.ok(parishAppJs.includes("stewardshipApi('/giving/retention") && parishAppJs.includes("stewardshipApi('/giving/distribution"), "Stewardship tab should call the existing retention/distribution endpoints, not new ones");
 assert.ok(worker.includes('endsWith("/stewardship/giving/retention")') && worker.includes('endsWith("/stewardship/giving/distribution")'), "worker should already route the retention/distribution endpoints the Stewardship tab now uses");
 
+// Tax readiness gate -- parish canonical verification vs. AGAPAY billing/tax
+// readiness are separate (src/lib/tax-readiness.js). Functional coverage
+// (the actual gate logic, and the real createSubscriptionCheckoutForRegistration
+// end-to-end paths) lives in scripts/tax-readiness-tests.mjs -- these are
+// just the source-presence / wiring checks that belong alongside the rest
+// of this file's static assertions.
+const taxReadinessLib = await readFile("src/lib/tax-readiness.js", "utf8");
+const subscriptionCheckoutLib = await readFile("src/lib/subscription-checkout.js", "utf8");
+const learnBillingLib = await readFile("src/learn/billing.js", "utf8");
+assert.ok(taxReadinessLib.includes("export function taxReadinessCheckoutGate"), "tax-readiness.js should export the checkout gate");
+assert.ok(taxReadinessLib.includes("export function withTaxReadinessDefaults"), "tax-readiness.js should export a non-destructive defaults helper");
+assert.ok(subscriptionCheckoutLib.includes("taxReadinessCheckoutGate(registration)"), "subscription-checkout.js should call the tax readiness gate");
+assert.ok(
+  subscriptionCheckoutLib.indexOf("tier.monthlyCents === 0") < subscriptionCheckoutLib.indexOf("taxReadinessCheckoutGate(registration)"),
+  "the free-tier early return must come BEFORE the tax readiness gate, so free/non-billable tiers bypass it entirely"
+);
+assert.ok(adminHandler.includes("taxReadinessStatus: nextTaxReadinessStatus"), "admin registration PATCH should support updating tax readiness");
+assert.ok(adminHandler.includes('action: "registration.tax_readiness_changed"'), "tax readiness status changes should record an audit event");
+assert.ok(adminApp.includes("renderTaxReadinessPanel"), "admin app.js should render a tax readiness panel on the registration detail view");
+assert.ok(adminApp.includes("taxReadinessStatus") && adminApp.includes("billingAddressLine1"), "admin app.js should let admins edit tax readiness status and billing address");
+assert.ok(learnBillingLib.includes('params.set("billing_address_collection", "required")'), "Learn billing checkout should require billing address collection");
+assert.ok(learnBillingLib.includes('params.set("automatic_tax[enabled]", "true")'), "Learn billing checkout should keep Stripe automatic tax enabled");
+assert.ok(learnBillingLib.includes("billingAddressLine1: record.billingAddressLine1"), "Learn household billing record should support storing a billing address");
+
 console.log("AGAPAY platform checks passed.");
