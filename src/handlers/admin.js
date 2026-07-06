@@ -100,6 +100,8 @@ import {
   storeDonorOffering,
 } from "./parish.js";
 
+import { recordAuditEvent, listAuditEvents } from "../lib/audit-log.js";
+
 export { requireAdmin };
 
 // src/handlers/admin.js
@@ -903,7 +905,8 @@ export async function handleAdminRebuildIndexes(request, env) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const limited = await rateLimit(request, env, "admin-maintenance", { limit: 5, windowSeconds: 300 });
   if (limited) return limited;
-  if (!(await requireAdmin(request, env))) return unauthorized();
+  const adminContext = await requireAdminContext(request, env);
+  if (!adminContext) return unauthorized();
   if (!hasProductionStore(env)) return missingProductionStoreResponse();
 
   const registrations = await loadAllRegistrations(env);
@@ -914,7 +917,15 @@ export async function handleAdminRebuildIndexes(request, env) {
     indexed += 1;
   }
 
-  return json({ ok: true, indexed, rebuiltAt: new Date().toISOString() });
+  const rebuiltAt = new Date().toISOString();
+  await recordAuditEvent(env, request, {
+    action: "admin.index_rebuild",
+    actorUserId: adminContext.actor,
+    targetType: "registrations",
+    after: { indexed, rebuiltAt }
+  });
+
+  return json({ ok: true, indexed, rebuiltAt });
 }
 
 export async function handleAdminSession(request, env) {
@@ -1161,6 +1172,20 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
     }
 
     await saveRegistrationRecord(env, reference, updated, current);
+
+    if (nextStatus !== current.status) {
+      await recordAuditEvent(env, request, {
+        action: "registration.status_changed",
+        actorUserId: adminContext.actor,
+        targetType: "registration",
+        targetId: reference,
+        organizationId: parishId || reference,
+        reason: reviewerNote || null,
+        before: { status: current.status || "pending" },
+        after: { status: nextStatus }
+      });
+    }
+
     return json({ ok: true, registration: updated, dashboardInvite });
   }
 
@@ -1177,4 +1202,29 @@ export async function createSubscriptionCheckoutForRegistration(request, env, re
     returnPath,
     saveRegistrationRecord
   });
+}
+
+// Phase 6 -- admin audit-log viewer. Read-only; recordAuditEvent() (in
+// ../lib/audit-log.js) is the only write path into this table.
+export async function handleAdminAuditLog(request, env) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, { status: 405 });
+  const limited = await rateLimit(request, env, "admin-auth", { limit: 60, windowSeconds: 300 });
+  if (limited) return limited;
+  if (!(await requireAdmin(request, env))) return unauthorized();
+  if (!hasProductionStore(env)) return missingProductionStoreResponse();
+
+  const url = new URL(request.url);
+  const result = await listAuditEvents(env, {
+    limit: url.searchParams.get("limit"),
+    cursor: url.searchParams.get("cursor") || "",
+    action: url.searchParams.get("action") || "",
+    actorUserId: url.searchParams.get("actor") || "",
+    targetType: url.searchParams.get("targetType") || "",
+    targetId: url.searchParams.get("targetId") || "",
+    organizationId: url.searchParams.get("organization") || "",
+    since: url.searchParams.get("since") || "",
+    until: url.searchParams.get("until") || ""
+  });
+
+  return json(result);
 }

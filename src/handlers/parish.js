@@ -99,6 +99,8 @@ import {
   ensureDefaultCommerceProfile,
 } from "../lib/settlement-profiles.js";
 
+import { recordAuditEvent } from "../lib/audit-log.js";
+
 function d1(env) {
   return env.AGAPAY_DB || env.DB || null;
 }
@@ -5127,11 +5129,29 @@ export async function handleParishSettlementProfiles(request, env, parishId, sub
     if (typeof body.name === "string") {
       const result = await renameSettlementProfile(env, parishId, profileId, body.name);
       if (result.error) return json({ error: result.error }, { status: 422 });
+      await recordAuditEvent(env, request, {
+        action: "settlement_profile.renamed",
+        actorUserId: parishId,
+        actorType: "parish",
+        targetType: "settlement_profile",
+        targetId: profileId,
+        organizationId: parishId,
+        after: { name: body.name }
+      });
       return json({ profile: settlementProfileToJson(result.profile) });
     }
     if (typeof body.isActive === "boolean") {
       const result = await setProfileActive(env, parishId, profileId, body.isActive);
       if (result.error) return json({ error: result.error }, { status: 422 });
+      await recordAuditEvent(env, request, {
+        action: "settlement_profile.active_changed",
+        actorUserId: parishId,
+        actorType: "parish",
+        targetType: "settlement_profile",
+        targetId: profileId,
+        organizationId: parishId,
+        after: { isActive: body.isActive }
+      });
       return json({ profile: settlementProfileToJson(result.profile) });
     }
     return json({ error: "Nothing to update" }, { status: 400 });
@@ -5140,12 +5160,28 @@ export async function handleParishSettlementProfiles(request, env, parishId, sub
   if (request.method === "POST" && segments[1] === "default-giving") {
     const result = await setDefaultGivingProfile(env, parishId, profileId);
     if (result.error) return json({ error: result.error }, { status: 422 });
+    await recordAuditEvent(env, request, {
+      action: "settlement_profile.default_giving_changed",
+      actorUserId: parishId,
+      actorType: "parish",
+      targetType: "settlement_profile",
+      targetId: profileId,
+      organizationId: parishId
+    });
     return json({ profile: settlementProfileToJson(result.profile) });
   }
 
   if (request.method === "POST" && segments[1] === "default-commerce") {
     const result = await setDefaultCommerceProfile(env, parishId, profileId);
     if (result.error) return json({ error: result.error }, { status: 422 });
+    await recordAuditEvent(env, request, {
+      action: "settlement_profile.default_commerce_changed",
+      actorUserId: parishId,
+      actorType: "parish",
+      targetType: "settlement_profile",
+      targetId: profileId,
+      organizationId: parishId
+    });
     return json({ profile: settlementProfileToJson(result.profile) });
   }
 
@@ -5154,6 +5190,15 @@ export async function handleParishSettlementProfiles(request, env, parishId, sub
     try { body = await request.json(); } catch { return json({ error: "Invalid JSON body" }, { status: 400 }); }
     const result = await assignModuleProfile(env, parishId, body.moduleKey, profileId);
     if (result.error) return json({ error: result.error }, { status: 422 });
+    await recordAuditEvent(env, request, {
+      action: "settlement_profile.module_assigned",
+      actorUserId: parishId,
+      actorType: "parish",
+      targetType: "settlement_profile",
+      targetId: profileId,
+      organizationId: parishId,
+      after: { moduleKey: body.moduleKey }
+    });
     return json(result);
   }
 
