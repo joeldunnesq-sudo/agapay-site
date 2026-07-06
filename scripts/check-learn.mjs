@@ -79,6 +79,7 @@ assert(onboarding.onboarding.steps.some((step) => step.status === "active"), "On
 assert(onboarding.setupCompleted === false, "Unsaved Learn households should be identified as first-run setup.");
 
 const learnShell = readFileSync(new URL("../public/learn/dashboard-shell.js", import.meta.url), "utf8");
+const learnMobileGate = readFileSync(new URL("../public/learn/mobile-gate.js", import.meta.url), "utf8");
 const learnBilling = readFileSync(new URL("../src/learn/billing.js", import.meta.url), "utf8");
 const learnHandlers = readFileSync(new URL("../src/learn/handlers.js", import.meta.url), "utf8");
 const learnGoogleCalendar = readFileSync(new URL("../src/learn/google-calendar.js", import.meta.url), "utf8");
@@ -150,11 +151,12 @@ assert(learnHandlers.includes("AGAPAY_LEARN_FACEBOOK_GROUP_URL"), "Community sho
 assert(learnOverviewHtml.includes("Clearly on the roadmap") && learnOverviewHtml.includes("Reports & Transcripts"), "The Learn overview should clearly separate coming-soon features.");
 assert(!learnOverviewHtml.includes("Printables, reports, and transcripts"), "The Learn overview should not advertise Reports as currently available.");
 assert(learnPricingHtml.includes("Reports Coming Soon") && learnPricingHtml.includes("Reports</div><div>Coming Soon"), "Learn pricing should clearly label Reports as coming soon.");
-assert(learnDashboardHtml.includes("/learn/dashboard-shell.js"), "Learn dashboard should load the active dashboard shell.");
+assert(learnDashboardHtml.includes("/learn/mobile-gate.js"), "Learn dashboard should load the mobile gate, which owns dynamic-importing the dashboard shell (see public/learn/mobile-gate.js).");
+assert(learnMobileGate.includes("/learn/dashboard-shell.js"), "Learn mobile gate should dynamic-import the active dashboard shell.");
 assert(learnDashboardHtml.includes("/myagapay-shell.js"), "Learn dashboard should load the shared My AGAPAY shell.");
 assert(learnShell.includes("window.MyAgapayShell.productNav") && learnShell.includes("window.MyAgapayShell.redirectToLogin"), "Learn should share global product navigation and expired-session handling with My AGAPAY.");
 assert(learnShell.includes("learn-page-intro--dashboard") && learnShell.includes('"--cream:#f6f1e8"'), "Learn Today should use the navy branded intro card on the shared Giving dashboard canvas color.");
-assert(learnDashboardHtml.includes("/learn/dashboard-view-models.js"), "Learn dashboard should preload the active view model bundle.");
+assert(learnShell.includes("dashboard-view-models.js"), "Learn dashboard shell should import the active view model bundle.");
 assert(!learnDashboardHtml.includes("claude-shell"), "Learn dashboard should not reference legacy Claude shell filenames.");
 assert(learnBilling.includes("stephaie@dunncrew.com"), "Founder-family Learn access should include Stephanie's account.");
 
