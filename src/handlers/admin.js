@@ -101,6 +101,7 @@ import {
 } from "./parish.js";
 
 import { recordAuditEvent, listAuditEvents } from "../lib/audit-log.js";
+import { TAX_READINESS_STATUSES, withTaxReadinessDefaults } from "../lib/tax-readiness.js";
 
 export { requireAdmin };
 
@@ -1016,7 +1017,7 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
   if (request.method === "GET") {
     const registration = await loadRegistrationByReference(env, reference);
     if (!registration) return json({ error: "Registration not found" }, { status: 404 });
-    return json({ registration });
+    return json({ registration: withTaxReadinessDefaults(registration) });
   }
 
   if (request.method === "PATCH") {
@@ -1035,6 +1036,19 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
     const verificationSourceNext = body.verificationSource ?? current.verificationSource ?? "";
     const bishopOrAuthorityNext = body.bishopOrAuthority ?? current.bishopOrAuthority ?? "";
     const dioceseOrDeaneryNext = body.dioceseOrDeanery ?? current.dioceseOrDeanery ?? "";
+
+    // Tax readiness is a manual admin decision, separate from canonical
+    // verification -- see src/lib/tax-readiness.js. A blank/unknown value
+    // in the body is never treated as "clear the status"; it just means
+    // this PATCH didn't touch it.
+    const currentTaxReadinessStatus = TAX_READINESS_STATUSES.includes(current.taxReadinessStatus)
+      ? current.taxReadinessStatus
+      : "tax_needs_review";
+    const nextTaxReadinessStatus = TAX_READINESS_STATUSES.includes(body.taxReadinessStatus)
+      ? body.taxReadinessStatus
+      : currentTaxReadinessStatus;
+    const taxReadinessStatusChanged = nextTaxReadinessStatus !== currentTaxReadinessStatus;
+
     if (nextStatus === "verified") {
       const missing = [];
       if (!String(reviewedByNext || "").trim()) missing.push("reviewedBy");
@@ -1098,6 +1112,19 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
         ? new Date().toISOString()
         : current.parishDashboardTokenCreatedAt,
       reviewerNotes: body.reviewerNotes ?? current.reviewerNotes ?? "",
+      // Tax readiness / billing (see src/lib/tax-readiness.js) -- kept
+      // separate from canonical `status` above by design.
+      taxReadinessStatus: nextTaxReadinessStatus,
+      taxReadinessNotes: body.taxReadinessNotes ?? current.taxReadinessNotes ?? "",
+      taxReadinessReviewedAt: taxReadinessStatusChanged ? new Date().toISOString() : (current.taxReadinessReviewedAt || ""),
+      taxReadinessReviewedBy: taxReadinessStatusChanged ? adminContext.actor : (current.taxReadinessReviewedBy || ""),
+      billingLegalName: body.billingLegalName ?? current.billingLegalName ?? "",
+      billingAddressLine1: body.billingAddressLine1 ?? current.billingAddressLine1 ?? "",
+      billingAddressLine2: body.billingAddressLine2 ?? current.billingAddressLine2 ?? "",
+      billingCity: body.billingCity ?? current.billingCity ?? "",
+      billingState: body.billingState ?? current.billingState ?? "",
+      billingPostalCode: body.billingPostalCode ?? current.billingPostalCode ?? "",
+      billingCountry: body.billingCountry ?? current.billingCountry ?? "",
       statusTimeline: statusTimelineWithNext(current.status, nextStatus, current.statusTimeline),
       stripeStatusHistory: statusTimelineWithNext(
         current.stripeAccountStatus || "not_started",
@@ -1183,6 +1210,19 @@ export async function handleAdminRegistrationDetail(request, env, reference) {
         reason: reviewerNote || null,
         before: { status: current.status || "pending" },
         after: { status: nextStatus }
+      });
+    }
+
+    if (taxReadinessStatusChanged) {
+      await recordAuditEvent(env, request, {
+        action: "registration.tax_readiness_changed",
+        actorUserId: adminContext.actor,
+        targetType: "registration",
+        targetId: reference,
+        organizationId: parishId || reference,
+        reason: (body.taxReadinessNotes || "").trim() || null,
+        before: { taxReadinessStatus: currentTaxReadinessStatus },
+        after: { taxReadinessStatus: nextTaxReadinessStatus }
       });
     }
 
