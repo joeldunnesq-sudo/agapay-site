@@ -295,11 +295,43 @@ export function handleMarketplaceCatalog(request) {
   });
 }
 
+// Baseline security response headers, applied to every Worker-generated
+// response (API JSON) via json()/corsJson() below. Static assets get the
+// same set via public/_headers, which Cloudflare's asset layer applies
+// independently of the Worker -- see docs/SECURITY_HEADERS.md for how the
+// two mechanisms cover different response paths and why both are needed.
+//
+// CSP ships in Report-Only mode intentionally: this codebase has
+// extensive inline <script>/style="" usage by design (no build step), so
+// an enforcing CSP without nonces would break real pages. Report-Only
+// has zero behavior risk -- browsers only log violations to the console,
+// never block -- while still surfacing anything loading from an
+// unexpected origin (the actual threat CSP defends against here).
+export const SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "X-Frame-Options": "SAMEORIGIN",
+  "Strict-Transport-Security": "max-age=15552000",
+  "Permissions-Policy": "geolocation=(), microphone=(), camera=(self), payment=(self)",
+  "Content-Security-Policy-Report-Only":
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com data:; " +
+    "img-src 'self' data: https:; " +
+    "connect-src 'self' https://challenges.cloudflare.com; " +
+    "frame-src https://challenges.cloudflare.com; " +
+    "object-src 'none'; " +
+    "base-uri 'self'; " +
+    "form-action 'self'"
+};
+
 export function json(body, init = {}) {
   return Response.json(body, {
     ...init,
     headers: {
       "Cache-Control": "no-store",
+      ...SECURITY_HEADERS,
       ...(init.headers || {})
     }
   });
@@ -323,6 +355,7 @@ export function corsJson(body, env, init = {}) {
     ...init,
     headers: {
       "Cache-Control": "no-store",
+      ...SECURITY_HEADERS,
       ...corsHeaders(env),
       ...(init.headers || {})
     }
