@@ -1,4 +1,5 @@
 import { bookstoreReadinessSummary, bookstoreSellerDisclosure } from "../lib/commerce-readiness.js";
+import { logEvent } from "../lib/logging.js";
 import {
   applyDonorPassword,
   clampListLimit,
@@ -543,8 +544,17 @@ export async function handleDonorLogin(request, env) {
   if (accountLimited) return accountLimited;
 
   const donor = await loadDonor(env, email);
-  if (!donor) return unauthorized();
-  if (!(await verifyDonorPassword(donor, password))) return unauthorized();
+  if (!donor || !(await verifyDonorPassword(donor, password))) {
+    await logEvent(env, {
+      eventType: "donor.login.failed",
+      severity: "warn",
+      route: "/api/donor/login",
+      method: "POST",
+      retryable: false,
+      metadata: { emailHash: await sha256Hex(email) },
+    });
+    return unauthorized();
+  }
   if (!donor.emailVerifiedAt) {
     return json({ error: "Please verify your email before logging in.", code: "email_unverified" }, { status: 403 });
   }

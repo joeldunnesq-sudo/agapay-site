@@ -8,6 +8,8 @@ import {
   unauthorized,
 } from "../lib/core.js";
 
+import { logEvent } from "../lib/logging.js";
+
 import {
   subscriptionTier,
 } from "../lib/subscriptions.js";
@@ -193,33 +195,92 @@ export async function updateSubscriptionRecord(env, reference, updates) {
 }
 
 export async function handleStripeWebhook(request, env) {
+  const requestId = crypto.randomUUID();
+  const route = "/api/stripe/webhook";
+
   const secrets = stripeWebhookSecrets(env);
   if (!secrets.length) {
+    await logEvent(env, {
+      eventType: "stripe.webhook.misconfigured",
+      severity: "error",
+      requestId,
+      route,
+      method: "POST",
+      retryable: false,
+    });
     return json({ error: "STRIPE_WEBHOOK_SECRET is not configured" }, { status: 500 });
   }
 
   const payload = await request.text();
   const verified = await verifyStripeWebhookWithAnySecret(payload, request.headers.get("Stripe-Signature"), secrets);
-  if (!verified) return json({ error: "Invalid Stripe signature" }, { status: 400 });
+  if (!verified) {
+    await logEvent(env, {
+      eventType: "stripe.webhook.invalid_signature",
+      severity: "warn",
+      requestId,
+      route,
+      method: "POST",
+      retryable: false,
+    });
+    return json({ error: "Invalid Stripe signature" }, { status: 400 });
+  }
 
   let event;
   try {
     event = JSON.parse(payload);
   } catch {
+    await logEvent(env, {
+      eventType: "stripe.webhook.invalid_payload",
+      severity: "warn",
+      requestId,
+      route,
+      method: "POST",
+      retryable: false,
+    });
     return json({ error: "Invalid webhook payload" }, { status: 400 });
   }
 
   const claim = await claimStripeEvent(env, event);
   if (!claim.claimed) {
+    await logEvent(env, {
+      eventType: "stripe.webhook.duplicate",
+      severity: "info",
+      requestId,
+      route,
+      method: "POST",
+      stripeEventId: event.id,
+      metadata: { type: event.type, status: claim.status || "processed" },
+    });
     return json({ received: true, duplicate: true, status: claim.status || "processed" });
   }
 
   try {
     await processStripeWebhookEvent(env, event);
     await finishStripeEvent(env, event.id, "processed");
+    await logEvent(env, {
+      eventType: "stripe.webhook.processed",
+      severity: "info",
+      requestId,
+      route,
+      method: "POST",
+      stripeEventId: event.id,
+      metadata: { type: event.type },
+    });
     return json({ received: true });
   } catch (error) {
     await finishStripeEvent(env, event.id, "failed", error?.message || String(error));
+    await logEvent(env, {
+      eventType: "stripe.webhook.processing_failed",
+      severity: "error",
+      requestId,
+      route,
+      method: "POST",
+      stripeEventId: event.id,
+      errorName: error?.name,
+      error,
+      retryable: true,
+      metadata: { type: event.type },
+    });
     return json(
       { error: "Webhook processing failed", detail: error?.message || "Unknown webhook error" },
       { status: 500 }
