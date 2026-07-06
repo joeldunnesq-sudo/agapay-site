@@ -777,6 +777,92 @@
   border-radius: inherit;
 }
 
+/* ── Percentage ring (fulfillment / retention) ──────────────────── */
+.sw-ring-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+.sw-ring-svg { width: 60px; height: 60px; flex-shrink: 0; transform: rotate(-90deg); }
+.sw-ring-track { fill: none; stroke: rgba(6,21,34,.08); stroke-width: 5; }
+.sw-ring-fill {
+  fill: none;
+  stroke-width: 5;
+  stroke-linecap: round;
+  transition: stroke-dasharray .7s ease;
+}
+.sw-ring-fill.tone-green { stroke: #2e6b4a; }
+.sw-ring-fill.tone-gold  { stroke: var(--gold); }
+.sw-ring-fill.tone-red   { stroke: #8a2929; }
+.sw-ring-copy strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  color: var(--deep);
+  line-height: 1;
+}
+.sw-ring-copy span {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── Retention stat chips ────────────────────────────────────────── */
+.sw-retention-chips {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+.sw-retention-chip {
+  border-radius: 9px;
+  padding: 0.6rem 0.65rem;
+  text-align: center;
+  border: 1px solid transparent;
+}
+.sw-retention-chip strong { display: block; font-family: var(--serif); font-size: 1.25rem; line-height: 1; }
+.sw-retention-chip span { display: block; margin-top: 0.25rem; font-size: 0.63rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.sw-retention-chip.tone-green { background: rgba(46,107,74,0.09); border-color: rgba(46,107,74,0.22); }
+.sw-retention-chip.tone-green strong, .sw-retention-chip.tone-green span { color: #2e6b4a; }
+.sw-retention-chip.tone-red   { background: rgba(138,41,41,0.08); border-color: rgba(138,41,41,0.2); }
+.sw-retention-chip.tone-red strong, .sw-retention-chip.tone-red span { color: #8a2929; }
+.sw-retention-chip.tone-blue  { background: rgba(46,90,138,0.08); border-color: rgba(46,90,138,0.2); }
+.sw-retention-chip.tone-blue strong, .sw-retention-chip.tone-blue span { color: #2e5a8a; }
+
+/* ── Giving tier distribution bars ───────────────────────────────── */
+.sw-tier-list { display: grid; gap: 0.5rem; }
+.sw-tier-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 34px;
+  align-items: center;
+  gap: 0.6rem;
+}
+.sw-tier-label { font-size: 0.72rem; color: var(--stone); font-weight: 600; white-space: nowrap; }
+.sw-tier-track {
+  height: 16px;
+  border-radius: 6px;
+  background: rgba(6,21,34,.05);
+  overflow: hidden;
+  position: relative;
+}
+.sw-tier-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width .6s ease;
+  min-width: 3px;
+}
+.sw-tier-count { font-size: 0.78rem; font-weight: 700; color: var(--deep); text-align: right; }
+/* Deepening gold intensity scale as gift tier rises */
+.sw-tier-fill.tier-1 { background: #f2e2b8; }
+.sw-tier-fill.tier-2 { background: #e2bd75; }
+.sw-tier-fill.tier-3 { background: var(--gold); }
+.sw-tier-fill.tier-4 { background: #a8792a; }
+.sw-tier-fill.tier-5 { background: #7a5420; }
+
 /* ── Upgrade nudge (non-subscriber metrics state) ───────────────── */
 .sw-upgrade-nudge {
   display: grid;
@@ -1206,10 +1292,10 @@
 .sw-suite-refresh-btn svg { width: 13px; height: 13px; }
 .sw-suite-refresh-btn:hover { background: rgba(246,241,232,0.12); color: var(--cream); }
 
-/* ── Three-column tool grid ──────────────────────────────────── */
+/* ── Tool grid: 2-up, room for Reports / Financials / Retention / Distribution ── */
 .sw-suite-tool-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
   margin-bottom: 1rem;
 }
@@ -1454,10 +1540,6 @@
 .sw-suite-editor-card { margin-bottom: 1rem; }
 
 /* ── Responsive ──────────────────────────────────────────────── */
-@media (max-width: 1100px) {
-  .sw-suite-tool-grid { grid-template-columns: 1fr 1fr; }
-  .sw-tool-financials { grid-column: 1 / -1; }
-}
 @media (max-width: 720px) {
   .sw-suite-hero { grid-template-columns: 1fr; }
   .sw-suite-hero-status { align-items: flex-start; }
