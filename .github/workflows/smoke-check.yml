@@ -33,5 +33,50 @@ jobs:
         run: npm run check
         continue-on-error: true
 
+      - name: Get Runner Public IP
+        id: ip
+        run: |
+          RUNNER_IP=$(curl -s https://api.ipify.org)
+          echo "ip=$RUNNER_IP" >> $GITHUB_OUTPUT
+          echo "GitHub Runner Public IP is $RUNNER_IP"
+
+      - name: Authorize Runner IP in Cloudflare
+        id: cf_rule
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          RUNNER_IP: ${{ steps.ip.outputs.ip }}
+        run: |
+          # Create a temporary IP Access Rule allowing this specific runner's IP address
+          RESPONSE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/firewall/access_rules" \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data "{\"mode\":\"whitelist\",\"configuration\":{\"target\":\"ip\",\"value\":\"$RUNNER_IP\"},\"notes\":\"Temporary GitHub Actions Smoke Runner Auth\"}")
+          
+          RULE_ID=$(echo $RESPONSE | jq -r '.result.id')
+          echo "rule_id=$RULE_ID" >> $GITHUB_OUTPUT
+          echo "Successfully created Cloudflare access rule: $RULE_ID"
+
       - name: Run live smoke tests
-        run: node scripts/smoke-live.mjs ${{ github.event.inputs.target_url }}
+        env:
+          RULE_ID: ${{ steps.cf_rule.outputs.rule_id }}
+        run: |
+          # Give Cloudflare a few seconds to propagate the new IP access rule globally
+          sleep 5
+          node scripts/smoke-live.mjs ${{ github.event.inputs.target_url }}
+
+      - name: Clean up Cloudflare Rule
+        if: always() # Ensures the rule is deleted even if the tests fail
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          RULE_ID: ${{ steps.cf_rule.outputs.rule_id }}
+        run: |
+          if [ -n "$RULE_ID" ] && [ "$RULE_ID" != "null" ]; then
+            echo "Removing temporary Cloudflare access rule: $RULE_ID"
+            curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/firewall/access_rules/$RULE_ID" \
+              -H "Authorization: Bearer $CF_TOKEN" \
+              -H "Content-Type: application/json"
+          else
+            echo "No temporary access rule was created to clean up."
+          fi
