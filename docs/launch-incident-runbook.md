@@ -15,10 +15,19 @@
 
 ## Quick diagnostics
 
+- **Start here:** `GET /api/health` — returns `200` + `"ok": true` when
+  Worker, D1, and KV are all reachable, and reports config *presence*
+  (not live status) for Stripe/email/R2. A `503` narrows the incident to
+  whichever `checks.*` field isn't `"ok"` (see `src/lib/core.js`,
+  `handleHealth()`, and `docs/SOFT_LAUNCH_READINESS.md` Phase 2).
 - Public routes: `/`, `/giving`, `/marketplace`, `/directory`, `/vision`, `/register`
 - Auth routes: `/api/donor/login`, `/api/parish/login`, `/api/admin/registrations`
 - Payment routes: `/api/create-checkout-session`, `/api/stripe/webhook`
 - Security route: `/api/security/config`
+- If Cloudflare Worker logs show `stripe.webhook.processing_failed` or
+  `stripe.webhook.invalid_signature` events (see
+  `docs/MONITORING_CHECKLIST.md`), treat as SEV-1 until confirmed
+  otherwise — this is the payment path.
 
 ## Hotfix path
 
