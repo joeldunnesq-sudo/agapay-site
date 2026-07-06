@@ -168,6 +168,7 @@ import {
   handleAdminLearnCommunity,
   handleAdminLearnSummary,
   handleAdminReleaseStatus,
+  handleAdminAuditLog,
   handleAdminMyAgapayReleaseFlags,
   handleAdminRebuildIndexes,
   handleAdminPassword,
@@ -1927,6 +1928,9 @@ export default {
     }
     if (request.method === "GET" && url.pathname === "/api/admin/release-status") {
       return handleAdminReleaseStatus(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/admin/audit-log") {
+      return handleAdminAuditLog(request, env);
     }
     if (url.pathname === "/api/admin/commemorations/send-weekly") {
       return handleAdminWeeklyCommemorationEmails(request, env);
