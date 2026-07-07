@@ -97,16 +97,12 @@ function learnExperience() {
           "co-op": "Co-op"
         }
       : {},
-    // Reorders the shared nav array (built once from the view model) so TEFA
-    // families see lessons/planner/setup/attendance/grades/print/books first,
-    // with Orthodox formation kept available but secondary. Every id here
-    // must exist in vm.shell.nav (see shellFromPayload in
-    // dashboard-view-models.js) — any id left out is silently dropped by the
-    // .filter(Boolean) below, not just left unordered, which is what
-    // previously made "Set Up" disappear from the TEFA nav entirely.
-    navOrder: tefaActive
-      ? ["dashboard", "planner", "onboarding", "grades", "print-center", "books", "formation", "community", "co-op"]
-      : null
+    // TEFA/Odyssey families see the exact same nav order as classic AGAPAY
+    // Learn (dashboard, planner, formation, books, grades, community, co-op,
+    // print-center, onboarding) — only the labels differ, via navLabels
+    // above. No custom ordering here; vm.shell.nav's built-in order is used
+    // for both contexts so the two dashboards feel like the same product.
+    navOrder: null
   };
 }
 
@@ -1202,7 +1198,7 @@ function renderDashboard(vm) {
             <span data-church-section-toggle-label>${churchCollapsed ? "Show Church Rhythm" : "Minimize"}</span>
           </button>
         </div>
-        <div data-church-section-body ${churchCollapsed ? "hidden" : ""} style="display:flex;flex-direction:column;gap:22px;">
+        <div data-church-section-body ${churchCollapsed ? "hidden" : ""} style="display:${churchCollapsed ? "none" : "flex"};flex-direction:column;gap:22px;">
           ${churchSectionBody}
         </div>
       </div>
@@ -5603,6 +5599,11 @@ function wireDashboard() {
       if (!body) return;
       const nowCollapsed = !body.hidden;
       body.hidden = nowCollapsed;
+      // The body carries an inline `display:flex` (needed for its layout when
+      // open), which — being inline — outranks the `[hidden] { display:none }`
+      // UA rule. Setting `hidden` alone left the content visibly on-screen.
+      // Drive `display` explicitly so the toggle actually hides the section.
+      body.style.display = nowCollapsed ? "none" : "flex";
       button.setAttribute("aria-expanded", nowCollapsed ? "false" : "true");
       const label = button.querySelector("[data-church-section-toggle-label]");
       if (label) label.textContent = nowCollapsed ? "Show Church Rhythm" : "Minimize";
