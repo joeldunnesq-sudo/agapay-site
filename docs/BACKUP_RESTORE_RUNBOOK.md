@@ -95,15 +95,48 @@ all 10 checks — but with `spawnSync npx ENOENT` on every single one, not a
 data or schema problem. Root cause: `execFileSync("npx", ...)` doesn't go
 through a shell by default, and on Windows `npx` resolves to `npx.cmd` (a
 batch file) — Node can't launch that directly without `shell: true`, even
-though typing `npx` yourself in the same terminal works fine. Fixed in
-both call sites in the script (`shell: process.platform === "win32"`,
-harmless no-op on macOS/Linux where `npx` is a real executable). This
+though typing `npx` yourself in the same terminal works fine. This
 exact scenario is what the original caveat below warned about — an ENOENT
 on every check, not a plausible data failure, was the tell that it was the
-script and not the restore. **Still needs**: a re-run with the fix to
-confirm all 10 checks actually pass against real data — this fix has only
-been verified by code inspection (no cmd.exe-hostile characters in any of
-the SQL strings passed through), not by re-running it.
+script and not the restore.
+
+**First fix attempt (`shell: true`) was insufficient.** It got past ENOENT
+but introduced a second Windows-only bug: `cmd.exe` re-parses the whole
+joined command line, and the multi-word `--command "SELECT ... WHERE
+type='table'"` SQL string was getting split into separate arguments before
+wrangler ever saw it as one value — wrangler reported every SQL keyword as
+an "Unknown argument" instead of running the query. A second, unrelated
+bug surfaced in the same re-run: the migration-status check used `wrangler
+d1 migrations list <name>`, which requires the target to be a binding
+configured in `wrangler.toml` — it errors with "Couldn't find a D1 DB with
+the name or binding '<name>'" for any ad-hoc database name, which a
+scratch restore-test database always is.
+
+**Actual fix**: stopped going through `npx`/a shell entirely. The script
+now resolves wrangler's real JS entry point on disk (via
+`require.resolve("wrangler/package.json")`, since wrangler's own
+`exports` map doesn't expose `bin/wrangler.js` directly for
+`require.resolve`) and spawns it with `node.exe` directly —
+`execFileSync(process.execPath, [wranglerBin, ...args])`, no shell
+involved at all. Node's own argv-array spawning preserves each array
+element as exactly one argument on every platform, which is what actually
+solves the splitting problem (`shell: true` never could, no matter how
+carefully the SQL was quoted). The migration-status check no longer calls
+`wrangler d1 migrations list` at all — it queries D1's own
+`d1_migrations` tracking table directly (the same way every other check
+already worked) and compares applied migration names against the files in
+`migrations/` on disk, which works against any database by name with no
+`wrangler.toml` binding required. Falls back to the original `npx`
+approach only if wrangler can't be resolved as a local dependency at all.
+
+Verified directly (not just by inspection): invoking the fixed path
+against a nonexistent database name gets all the way through wrangler's
+own argument parsing to a missing-credentials error — proving the SQL
+string arrives intact — instead of the "Unknown arguments" parse failure
+seen before. **Still needs**: one more real re-run against
+`agapay-restore-test` to confirm all 10 checks pass against actual data,
+since the verification above used a fake database name (no real
+Cloudflare credentials available to fully exercise it end to end).
 
 **Original caveat**: this script was written against the current
 `migrations/*.sql` schema but had not yet been run against a real restore —

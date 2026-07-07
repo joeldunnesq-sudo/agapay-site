@@ -483,11 +483,22 @@ done — support tools and everything after it now has somewhere to log to):
   errors). `validate-restore.mjs` failed all 10 checks with `spawnSync
   npx ENOENT` — not a data problem, a real bug: `execFileSync("npx", ...)`
   needs `shell: true` to resolve `npx.cmd` on Windows, which the script
-  didn't have. Fixed both call sites (`shell: process.platform ===
-  "win32"`). **Not yet re-verified** — the fix has only been checked by
-  reading the code (confirmed none of the script's SQL strings contain
-  characters `cmd.exe` would mangle), not by re-running it against the
-  restored database. Next session should re-run `node
-  scripts/validate-restore.mjs agapay-restore-test` with the fix and
-  confirm all 10 checks genuinely pass before treating the runbook as
-  proven end to end.
+  didn't have. First fix attempt (`shell: true`) was only verified by
+  reading the code, not by running it — Joel re-ran it and it failed
+  differently: `cmd.exe` was re-splitting the multi-word `--command` SQL
+  string into separate arguments ("Unknown arguments: name, FROM,
+  sqlite_master..."), and a second, independent bug surfaced in the same
+  run — the migration-status check used `wrangler d1 migrations list`,
+  which requires a `wrangler.toml` binding that a scratch database never
+  has. Real fix: stopped using a shell/`.cmd` entirely — the script now
+  resolves wrangler's real JS entry point on disk and spawns it via
+  `node.exe` directly (`execFileSync(process.execPath, [wranglerBin,
+  ...])`), which preserves each argument exactly with no shell
+  involved; the migration check now queries D1's own `d1_migrations`
+  table directly instead of calling the wrangler.toml-bound subcommand.
+  This time verified by actually running it (against a nonexistent DB
+  name, no real credentials available in-session) and confirming it
+  reaches wrangler's own auth error rather than an argument-parsing
+  failure — proof the splitting bug is gone, not just inspection. **Still
+  needs**: one more real run against `agapay-restore-test` with actual
+  credentials to confirm all 10 checks genuinely pass against real data.
