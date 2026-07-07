@@ -133,12 +133,20 @@ Verified directly (not just by inspection): invoking the fixed path
 against a nonexistent database name gets all the way through wrangler's
 own argument parsing to a missing-credentials error — proving the SQL
 string arrives intact — instead of the "Unknown arguments" parse failure
-seen before. **Still needs**: one more real re-run against
-`agapay-restore-test` to confirm all 10 checks pass against actual data,
-since the verification above used a fake database name (no real
-Cloudflare credentials available to fully exercise it end to end).
+seen before.
 
-**Original caveat**: this script was written against the current
+**Resolved (2026-07-07)**: after fixing two more issues found along the
+way — a stale expected-table name (`household_pledges_new`, a transient
+mid-migration name, not the real final table `household_pledges`) and a
+uniqueness check that only excluded SQL `NULL` and not empty strings
+(pending registrations store an unset Stripe ID as `''`, which was
+grouping them into a false "duplicate") — **all 10 checks now pass clean**
+against a real restored copy of production. This script and this runbook
+have been exercised end to end for the first time. See the change log
+entry in `docs/SOFT_LAUNCH_READINESS.md` for the full account.
+
+**Original caveat** (kept for history — no longer current): this script was
+written against the current
 `migrations/*.sql` schema but had not yet been run against a real restore —
 there's no restore drill scheduled yet to test it end to end. Treat the
 first real run as the actual validation of the script itself, not just the
