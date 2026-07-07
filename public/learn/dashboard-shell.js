@@ -38,6 +38,46 @@ function isOdysseyLearnContext() {
   return document.body.dataset.learnContext === "odyssey";
 }
 
+// Single source of truth for how the shared Learn dashboard should present
+// itself differently for TEFA/Odyssey marketplace families vs. ordinary
+// AGAPAY Learn households. This is intentionally config-driven — it changes
+// labels, copy, nav order, and a small activation badge — rather than
+// forking the dashboard renderer itself.
+function learnExperience() {
+  const odyssey = isOdysseyLearnContext();
+  return {
+    odyssey,
+    brandName: odyssey ? "AGAPAY Learn" : "AGAPAY Learn",
+    brandTagline: odyssey ? "TEFA Homeschool Planner" : "Love how you learn",
+    backHref: odyssey ? "/learn/odyssey" : "/myagapay",
+    backLabel: odyssey ? "TEFA Portal" : "AGAPAY Give",
+    activationBadge: odyssey ? "Activated through Odyssey / TEFA" : null,
+    dashboardKicker: odyssey ? "TEFA HOMESCHOOL PLANNER" : "AGAPAY LEARN",
+    dashboardDescription: odyssey
+      ? "Your TEFA-funded Orthodox homeschool planner — today's lessons, planner, attendance, grades, and printable records in one place."
+      : null,
+    // Relabels existing shared nav items (same hrefs/ids) for the TEFA audience.
+    navLabels: odyssey
+      ? {
+          dashboard: "Today's Lessons",
+          planner: "Planner",
+          formation: "Church Rhythm (Optional)",
+          books: "Books & Curriculum",
+          grades: "Attendance, Grades & Reports",
+          "print-center": "Print Center",
+          community: "Community",
+          "co-op": "Co-op"
+        }
+      : {},
+    // Reorders the shared nav array (built once from the view model) so TEFA
+    // families see lessons/planner/attendance/grades/print/books first, with
+    // Orthodox formation kept available but secondary.
+    navOrder: odyssey
+      ? ["dashboard", "planner", "grades", "print-center", "books", "formation", "community", "co-op"]
+      : null
+  };
+}
+
 function learnSectionHref(section = "dashboard", query = "") {
   const regular = {
     dashboard: "/myagapay/learn",
@@ -214,14 +254,19 @@ function pageIntroMeta(id) {
 
 function pageIntro(vm) {
   const meta = pageIntroMeta(vm.page.id);
-  const subtitle = vm.page.subtitle ? vm.page.subtitle : meta.description;
+  const experience = learnExperience();
+  const kicker = experience.odyssey && vm.page.id === "dashboard" ? experience.dashboardKicker : meta.kicker;
+  const description = experience.odyssey && vm.page.id === "dashboard" && experience.dashboardDescription
+    ? experience.dashboardDescription
+    : meta.description;
+  const subtitle = vm.page.subtitle ? vm.page.subtitle : description;
   const currentMode = vm.graceMode?.active ? vm.graceMode.mode || "light" : "full";
   return `
     <section class="learn-page-intro learn-page-intro--dashboard" aria-labelledby="learn-page-heading">
       <div class="learn-page-intro-heading">
         <span class="learn-page-intro-icon">${pageIntroIcon(vm.page.id)}</span>
         <div>
-          <div class="learn-page-intro-kicker">${html(meta.kicker)}</div>
+          <div class="learn-page-intro-kicker">${html(kicker)}</div>
           <h1 id="learn-page-heading">${html(vm.page.title)}</h1>
         </div>
       </div>
@@ -507,25 +552,30 @@ function plannerSidebarSubnav(activePage) {
 
 function sidebar(vm) {
   const active = vm.page.id;
+  const experience = learnExperience();
   const gcalConfigured = learnGoogleCalendarStatus.loaded ? learnGoogleCalendarStatus.configured : vm.shell.gcalConfigured;
   const gcalConnected = learnGoogleCalendarStatus.loaded ? learnGoogleCalendarStatus.connected : vm.shell.gcalConnected;
+  const navItems = experience.navOrder
+    ? experience.navOrder.map((id) => vm.shell.nav.find((item) => item.id === id)).filter(Boolean)
+    : vm.shell.nav;
   return `
     <aside class="learn-product-sidebar" data-learn-sidebar>
       <div class="learn-product-sidebar-scroll">
-        <a class="learn-product-back" href="${isOdysseyLearnContext() ? "/learn/odyssey" : "/myagapay"}" aria-label="${isOdysseyLearnContext() ? "Back to AGAPAY Learn Odyssey" : "Back to AGAPAY Give"}">
+        <a class="learn-product-back" href="${experience.backHref}" aria-label="Back to ${html(experience.backLabel)}">
           <span aria-hidden="true">←</span>
-          <strong>${isOdysseyLearnContext() ? "TEFA Portal" : "AGAPAY Give"}</strong>
+          <strong>${html(experience.backLabel)}</strong>
         </a>
         <div class="learn-product-profile">
           <strong>${html(vm.shell.familyName || "Faithful Household")}</strong>
           <span>${html(vm.shell.familyMeta || "AGAPAY Learn")}</span>
+          ${experience.activationBadge ? `<small class="learn-odyssey-badge" style="display:inline-block;margin-top:6px;border:1px solid var(--gold);border-radius:999px;padding:2px 9px;font-size:10.5px;letter-spacing:.06em;color:var(--gold);">${html(experience.activationBadge)}</small>` : ""}
         </div>
         <div class="learn-product-label">AGAPAY Learn</div>
         <nav class="learn-product-nav" aria-label="AGAPAY Learn">
-        ${vm.shell.nav.map((item) => `
+        ${navItems.map((item) => `
           <a class="${item.id === active ? "is-active" : ""}" href="${item.href}" ${item.id === active ? 'aria-current="page"' : ""}>
             <span class="learn-product-nav-icon">${item.icon}</span>
-            <span>${html(item.label)}</span>
+            <span>${html(experience.navLabels[item.id] || item.label)}</span>
             ${item.comingSoon ? '<small class="learn-nav-soon">Soon</small>' : ""}
           </a>
           ${item.id === "planner" ? plannerSidebarSubnav(active) : ""}
@@ -545,6 +595,29 @@ function sidebar(vm) {
 function globalProductNav(activeProduct = "learn") {
   if (window.MyAgapayShell?.productNav) {
     return window.MyAgapayShell.productNav(activeProduct, "learn-product-tabbar");
+  }
+  if (isOdysseyLearnContext()) {
+    // TEFA/Odyssey families never had a My AGAPAY donor shell loaded on this
+    // page — the bottom nav must stay inside /learn/odyssey/dashboard/... and
+    // must not send them to Giving, Marketplace, or My AGAPAY account routes.
+    const active = resolveLearnPageKey();
+    const tab = (id, href, label, icon) => `
+      <a class="${active === id ? "is-active" : ""}" href="${html(href)}" ${active === id ? 'aria-current="page"' : ""}>
+        ${icon}
+        <span>${html(label)}</span>
+      </a>`;
+    return `
+      <nav class="learn-product-tabbar" aria-label="AGAPAY Learn Odyssey navigation">
+        ${tab("dashboard", learnSectionHref("dashboard"), "Today", '<svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>')}
+        ${tab("planner", learnSectionHref("planner"), "Planner", '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg>')}
+        ${tab("grades", learnSectionHref("grades"), "Grades", '<svg viewBox="0 0 24 24"><path d="M4 20 10 4h4l6 16"/><path d="M7 14h10"/></svg>')}
+        ${tab("print-center", learnSectionHref("print-center"), "Print", '<svg viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="1.6"/><path d="M6 14h12v8H6z"/></svg>')}
+        <a href="/learn/odyssey">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>
+          <span>Account</span>
+        </a>
+      </nav>
+    `;
   }
   return `
     <nav class="learn-product-tabbar" aria-label="My AGAPAY navigation">
@@ -573,15 +646,16 @@ function globalProductNav(activeProduct = "learn") {
 }
 
 function topbar(vm) {
+  const experience = learnExperience();
   const title = vm.page.ornament ? `<span style="color:#c9a227;font-size:22px;margin:0 14px;">❦</span>${html(vm.page.title)}<span style="color:#c9a227;font-size:22px;margin:0 14px;">❦</span>` : html(vm.page.title);
   return `
     <header class="learn-product-topbar">
       <button class="learn-menu-button" type="button" data-learn-menu-toggle aria-label="Open Learn navigation" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
-      <a class="learn-mobile-brand learn-utility-brand" href="/myagapay/dashboard" aria-label="Open My AGAPAY">
+      <a class="learn-mobile-brand learn-utility-brand" href="${experience.backHref}" aria-label="Open ${html(experience.backLabel)}">
         <img src="/mark.png" alt="" />
-        <span><strong>AGAPAY Learn</strong><small>Love how you learn</small></span>
+        <span><strong>${html(experience.brandName)}</strong><small>${html(experience.brandTagline)}</small></span>
       </a>
       <div class="learn-page-title-utility" style="flex:1;min-width:0;line-height:1.1;">
         <div style="font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;color:var(--ink);display:flex;align-items:center;">${title}</div>
@@ -589,7 +663,7 @@ function topbar(vm) {
       </div>
       <div class="learn-utility-actions" style="display:flex;align-items:center;gap:18px;flex:none;">
         <button class="learn-quick-action learn-feedback-action" type="button" data-learn-feedback-open>Suggest</button>
-        <a class="learn-quick-action" href="/myagapay/learn/setup?simple=1">Quick Setup</a>
+        <a class="learn-quick-action" href="${learnSectionHref("onboarding", "simple=1")}">Quick Setup</a>
         <div class="learn-account-menu" data-learn-account-menu>
           <button class="learn-account-utility" type="button" data-learn-account-toggle aria-haspopup="true" aria-expanded="false">
             <span class="learn-account-utility-avatar">${html(vm.shell.accountInitials || "FM")}</span>
@@ -600,7 +674,7 @@ function topbar(vm) {
             <span class="learn-account-utility-caret">⌄</span>
           </button>
           <div class="learn-account-dropdown" role="menu" hidden>
-            <a href="/myagapay/account" role="menuitem">Account Settings</a>
+            <a href="${experience.odyssey ? learnSectionHref("onboarding") : "/myagapay/account"}" role="menuitem">Account Settings</a>
             <button type="button" data-learn-logout role="menuitem">Log out</button>
           </div>
         </div>
@@ -5081,7 +5155,10 @@ function redirectExpiredLearnSession() {
   localStorage.removeItem("agapayDonorEmail");
   localStorage.removeItem("agapay.learn.plan");
 
-  const loginUrl = new URL("/myagapay/login", window.location.origin);
+  // Odyssey/TEFA sessions must never bounce to the general My AGAPAY login —
+  // keep expired-session recovery inside the Odyssey namespace.
+  const loginPath = isOdysseyLearnContext() ? "/learn/odyssey/dashboard/login" : "/myagapay/login";
+  const loginUrl = new URL(loginPath, window.location.origin);
   loginUrl.searchParams.set("next", `${window.location.pathname}${window.location.search || ""}`);
   loginUrl.searchParams.set("reason", "session-expired");
   window.location.replace(loginUrl.toString());
