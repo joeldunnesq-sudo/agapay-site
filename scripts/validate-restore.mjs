@@ -46,7 +46,13 @@ function query(sql) {
   const raw = execFileSync(
     "npx",
     ["wrangler", "d1", "execute", targetDb, "--remote", "--json", "--command", sql],
-    { encoding: "utf8", maxBuffer: 1024 * 1024 * 64 }
+    // execFileSync bypasses the shell by default. On Windows, `npx` resolves
+    // to `npx.cmd` (a batch file), which Node can't launch directly without
+    // going through cmd.exe — it fails with ENOENT even though `npx` works
+    // fine when you type it yourself. `shell: true` on Windows fixes this;
+    // it's unnecessary (and left off) on macOS/Linux where `npx` is a real
+    // executable.
+    { encoding: "utf8", maxBuffer: 1024 * 1024 * 64, shell: process.platform === "win32" }
   );
   const parsed = JSON.parse(raw);
   // wrangler d1 execute --json returns an array of { results, success, meta }
@@ -102,6 +108,7 @@ check("Migration status is current (no pending migrations)", () => {
   // since its output isn't the --json query format used above.
   const output = execFileSync("npx", ["wrangler", "d1", "migrations", "list", targetDb, "--remote"], {
     encoding: "utf8",
+    shell: process.platform === "win32"
   });
   if (/no migrations to apply/i.test(output) || /up to date/i.test(output)) return true;
   console.log(output);
