@@ -3,13 +3,13 @@ import { closeLearnTerm } from "./academic-records.js";
 import { assertLearnEnabled, enabledProductSlugs, LEARN_PRODUCT_SLUG, learnCoOpEnabled } from "./access.js";
 import { LEARN_FREE_PRINT_LIMIT, learnBillingCancel, learnBillingCheckout, learnBillingStatus, learnRequestHasFamilyAccessAsync } from "./billing.js";
 import { googleCalendarCallback, googleCalendarConnect, googleCalendarPreview, googleCalendarStatus, googleCalendarSync } from "./google-calendar.js";
-import { handleLearnAttendanceSave, handleLearnGrades, handleLearnGradesSave } from "./grade-records.js";
+import { handleLearnAttendanceSave, handleLearnGrades, handleLearnGradesSave, loadSetupForIdentity, loadChildren, loadCourses, loadAllCoursesForHousehold, loadAttendance, defaultAcademicYearName, attendanceSummary, devAttendanceFor } from "./grade-records.js";
 import { flagLearnCommunityResource, listLearnCommunityResources, submitLearnCommunityResource } from "./community-store.js";
 import { submitLearnFeedback } from "./feedback-store.js";
 import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-source.js";
 import { enrichLiturgicalDayWithOrthocal, fetchOrthocalDay, handleLearnReadingsStatus, orthocalSaintStories } from "./readings-source.js";
 import { renderPrintDocumentPdf } from "./print-engine.js";
-import { buildLearnPrintDocument, buildLearnReportPrintDocument, renderPrintDocumentPdf as renderLocalPrintDocumentPdf } from "./print-documents.js";
+import { buildAcademicReportCardPdf, buildAcademicTranscriptPdf, buildLearnPrintDocument, buildLearnReportPrintDocument, renderPrintDocumentPdf as renderLocalPrintDocumentPdf } from "./print-documents.js";
 import { createLearnRepositoryForRequest, SeedLearnRepository } from "./repository.js";
 import { learnSetupIdentity, saveLearnCompletion, saveLearnFamilyPlanning, saveLearnGraceMode, saveLearnPlannerBlock, saveLearnSetup } from "./setup-persistence.js";
 
@@ -252,6 +252,28 @@ export async function handleLearnCompletionSave(request, env) {
   }, { calendarType, civilDate, env }));
 }
 
+async function loadAcademicPrintData(env, identity) {
+  const setupSnapshot = await loadSetupForIdentity(env, identity);
+  const children = await loadChildren(env, identity.householdId, setupSnapshot);
+  const academicYearName = defaultAcademicYearName(setupSnapshot);
+  const d1Available = Boolean(env.AGAPAY_DB);
+  const courses = d1Available ? await loadCourses(env, identity.householdId, academicYearName) : [];
+  // Report cards are single-term; transcripts span every academic year on
+  // file, so they get their own household-wide course history.
+  const allYearsCourses = d1Available ? await loadAllCoursesForHousehold(env, identity.householdId) : [];
+  const attendanceEntries = d1Available
+    ? await loadAttendance(env, identity.householdId, academicYearName)
+    : devAttendanceFor(identity.householdId, academicYearName);
+  return {
+    household: { id: identity.householdId, name: setupSnapshot?.household?.name || "Your Household" },
+    academicYear: { name: academicYearName },
+    children,
+    courses,
+    allYearsCourses,
+    attendance: attendanceSummary(children, attendanceEntries)
+  };
+}
+
 export async function handleLearnPrintPdf(request, env, templateId = "") {
   const blocked = assertLearnEnabled(env);
   if (blocked) return blocked;
@@ -274,6 +296,39 @@ export async function handleLearnPrintPdf(request, env, templateId = "") {
   const limit = await enforceLearnPrintLimit(request, env, identity);
   if (!limit.ok) return limit.response;
   const resolvedTemplateId = templateId || body.templateId || "print_mom_weekly";
+
+  // Report Card and Transcript are fixed, data-driven forms sourced from the
+  // real Grades & Attendance gradebook (courses/terms/credits), not the
+  // free-form section-based report engine below — see print-documents.js.
+  // They always render via pdf-lib (no Cloudflare Browser Rendering
+  // dependency) since a report card shouldn't depend on that binding.
+  const academicFormTemplate = /^(report-card|transcript)$/i.test(resolvedTemplateId);
+  if (academicFormTemplate) {
+    const data = await loadAcademicPrintData(env, identity);
+    const child = data.children.find((c) => c.id === body.childId) || data.children[0];
+    if (!child) return json({ error: "Add a child in Setup before printing academic records." }, { status: 400 });
+    const gradeLevelForChildRow = (row) => {
+      const match = String(row.gradeLabel || "").match(/\b(9|10|11|12)\b/);
+      return match ? Number(match[1]) : 9;
+    };
+    const childForForm = { ...child, gradeLevel: gradeLevelForChildRow(child) };
+    const coursesWithGradeLevel = data.courses.map((course) => ({ ...course, gradeLevel: Number(course.gradeLevel) || 9 }));
+    const allYearsCoursesWithGradeLevel = data.allYearsCourses.map((course) => ({ ...course, gradeLevel: Number(course.gradeLevel) || 9 }));
+    const generatedAt = new Date().toISOString();
+    const pdfBuffer = /^transcript$/i.test(resolvedTemplateId)
+      ? await buildAcademicTranscriptPdf({ household: data.household, child: childForForm, courses: allYearsCoursesWithGradeLevel, attendance: data.attendance, generatedAt })
+      : await buildAcademicReportCardPdf({ household: data.household, child: childForForm, academicYear: data.academicYear, courses: coursesWithGradeLevel, attendance: data.attendance, generatedAt });
+    return new Response(pdfBuffer, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${resolvedTemplateId}-${(child.firstName || "student").toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf"`,
+        "Cache-Control": "no-store",
+        "x-agapay-learn-print-count": String(limit.count),
+        "x-agapay-learn-print-limit": String(limit.limit)
+      }
+    });
+  }
+
   const reportTemplate = /report|transcript|subject-progress|year-end/i.test(resolvedTemplateId);
   const document = reportTemplate
     ? buildLearnReportPrintDocument(repository.getReports(), {
