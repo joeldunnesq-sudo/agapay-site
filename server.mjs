@@ -25,6 +25,7 @@ import {
   handleLearnOnboardingSave,
   handleLearnPlanner,
   handleLearnPrintCenter,
+  handleLearnPrintPdf,
   handleLearnReadingsProviderStatus,
   handleLearnReports,
 } from "./src/learn/handlers.js";
@@ -54,6 +55,10 @@ const localPreviewKv = {
 };
 const learnEnv = {
   AGAPAY_REGISTRATIONS: localPreviewKv,
+  // No Cloudflare Browser Rendering binding exists locally, so route PDF
+  // generation through the pdf-lib fallback in print-documents.js instead
+  // of print-engine.js's puppeteer-based renderer (see handleLearnPrintPdf).
+  AGAPAY_TEST_MODE: "true",
   AGAPAY_ENABLED_PRODUCTS: process.env.AGAPAY_ENABLED_PRODUCTS || "give,learn,learn-coop",
   AGAPAY_PUBLIC_URL: process.env.AGAPAY_PUBLIC_URL,
   AGAPAY_STRIPE_PRICE_LEARN_FAMILY_MONTHLY: process.env.AGAPAY_STRIPE_PRICE_LEARN_FAMILY_MONTHLY,
@@ -152,6 +157,14 @@ async function handleApi(req, res) {
     await sendResponse(handleLearnPrintCenter(learnRequest(), learnEnv));
     return true;
   }
+  if (req.method === "POST" && pathname.startsWith("/api/learn/print/")) {
+    await sendResponse(handleLearnPrintPdf(learnRequest(), learnEnv, decodeURIComponent(pathname.slice("/api/learn/print/".length))));
+    return true;
+  }
+  if (req.method === "POST" && pathname === "/api/learn/print") {
+    await sendResponse(handleLearnPrintPdf(learnRequest(), learnEnv, ""));
+    return true;
+  }
   if (req.method === "GET" && pathname === "/api/learn/formation") {
     await sendResponse(handleLearnFormation(learnRequest(), learnEnv));
     return true;
@@ -240,6 +253,11 @@ async function resolveStaticPath(urlPath) {
   let pathname = decodeURIComponent(urlPath);
   if (pathname === "/") pathname = "/index.html";
   if (pathname === "/learn" || pathname === "/learn/") pathname = "/learn/index.html";
+  if (pathname === "/learn/odyssey/dashboard/login" || pathname === "/learn/odyssey/dashboard/login/") pathname = "/learn/odyssey/dashboard/login.html";
+  else if (pathname === "/learn/odyssey/dashboard/activate" || pathname === "/learn/odyssey/dashboard/activate/") pathname = "/learn/odyssey/dashboard/activate.html";
+  else if (pathname === "/learn/odyssey/faq" || pathname === "/learn/odyssey/faq/") pathname = "/learn/odyssey/faq.html";
+  else if (pathname === "/learn/odyssey" || pathname === "/learn/odyssey/") pathname = "/learn/odyssey/index.html";
+  else if (pathname.startsWith("/learn/odyssey/dashboard") && !path.extname(pathname)) pathname = "/learn/odyssey/dashboard/index.html";
   if (pathname.startsWith("/learn/") && !path.extname(pathname)) pathname = `${pathname}.html`;
   if (pathname === "/myagapay/learn" || pathname === "/myagapay/learn/") pathname = "/learn/dashboard.html";
   if (pathname === "/myagapay/learn/setup" || pathname === "/myagapay/learn/setup/") pathname = "/learn/onboarding.html";
