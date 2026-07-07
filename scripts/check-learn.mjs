@@ -169,4 +169,45 @@ const phase3Migration = readFileSync(new URL("../migrations/0005_agapay_learn_ph
   "learn_co_op_schedule_blocks"
 ].forEach((table) => assert(phase3Migration.includes(table), `Migration should define ${table}.`));
 
+// ── Odyssey / TEFA pre-launch checks ────────────────────────────────────────
+const odysseyIndexHtml = readFileSync(new URL("../public/learn/odyssey/index.html", import.meta.url), "utf8");
+const odysseyFaqHtml = readFileSync(new URL("../public/learn/odyssey/faq.html", import.meta.url), "utf8");
+const odysseyActivateHtml = readFileSync(new URL("../public/learn/odyssey/dashboard/activate.html", import.meta.url), "utf8");
+const odysseyLoginHtml = readFileSync(new URL("../public/learn/odyssey/dashboard/login.html", import.meta.url), "utf8");
+const workerSource = readFileSync(new URL("../src/worker.js", import.meta.url), "utf8");
+
+assert(odysseyFaqHtml.includes("AGAPAY Learn has been pre-approved for Odyssey"), "Odyssey FAQ should accurately state pre-approval status.");
+assert(odysseyFaqHtml.includes("Student Data & Privacy") || odysseyFaqHtml.includes("Student Data &amp; Privacy"), "Odyssey FAQ should include a Student Data & Privacy section.");
+assert(odysseyFaqHtml.includes("support@agapay.app"), "Odyssey FAQ should list a support contact.");
+assert(odysseyFaqHtml.includes("/learn/odyssey/dashboard/activate"), "Odyssey FAQ should link to the activation page.");
+assert(odysseyFaqHtml.includes("/learn/odyssey/dashboard/login"), "Odyssey FAQ should link to the sign-in page.");
+
+[
+  "/learn/dashboard-shell.js",
+  'data-learn-context="odyssey"',
+  'data-learn-page="dashboard"',
+  '<main id="learnRoot"'
+].forEach((needle) => assert(!odysseyFaqHtml.includes(needle), `Odyssey FAQ must stay public/static and must not include "${needle}".`));
+
+assert(odysseyIndexHtml.includes("/learn/odyssey/faq"), "Odyssey landing page should link to the FAQ.");
+assert(odysseyActivateHtml.includes("/learn/odyssey/faq"), "Odyssey activation page should link to the FAQ.");
+assert(odysseyLoginHtml.includes("/learn/odyssey/faq"), "Odyssey login page should link to the FAQ.");
+
+[
+  "live on Odyssey",
+  "available now in the Odyssey marketplace",
+  "purchase now through Odyssey",
+  "listed on Odyssey"
+].forEach((phrase) => assert(!odysseyIndexHtml.includes(phrase), `Odyssey landing page should not say "${phrase}" ahead of a deliberate live-marketplace flag.`));
+
+[
+  "odysseyVerificationStatus",
+  "odysseyActivatedAt",
+  "odysseyLastVerifiedAt",
+  "odysseyVerificationNote"
+].forEach((field) => assert(learnBilling.includes(field), `Odyssey activation backend should track ${field}.`));
+
+assert(workerSource.includes('["/learn/odyssey/faq", "/learn/odyssey/faq.html"]'), "Worker asset routes should serve the Odyssey FAQ page.");
+assert(workerSource.includes('["/learn/odyssey/faq/", "/learn/odyssey/faq.html"]'), "Worker asset routes should serve the Odyssey FAQ page with a trailing slash.");
+
 console.log("AGAPAY Learn checks passed.");
