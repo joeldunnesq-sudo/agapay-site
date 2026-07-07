@@ -672,7 +672,7 @@ export async function activateLearnOdysseyAccount(env = {}, email = "", odysseyR
     source: "odyssey",
     odysseyRef: String(odysseyRef || "").trim().slice(0, 100),
     interval: "year",
-    learnSubscriptionCents: 7900,
+    learnSubscriptionCents: 8900,
     stripeCustomerId: "",
     stripeSubscriptionId: "",
     stripeCheckoutSessionId: "",
