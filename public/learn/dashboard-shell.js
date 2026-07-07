@@ -4398,7 +4398,13 @@ function simpleSetupField(label, name, value = "", options = {}) {
 
 function simpleSetupStepBody(draft) {
   if (draft.step === 0) {
-    return `<div class="learn-wizard-step-copy"><span>Begin with the people, not the paperwork.</span><h2>Tell us about your household.</h2><p>This is enough to personalize Learn. You can add parish, terms, books, and detailed subjects later.</p></div><div class="learn-wizard-fields">${simpleSetupField("Household name", "wizard.householdName", draft.householdName, { placeholder: "The Dunn Family" })}${simpleSetupField("Your name", "wizard.parentName", draft.parentName, { placeholder: "Stephanie" })}<label class="learn-wizard-field"><span>Church calendar</span><select name="wizard.calendarType"><option value="julian" ${draft.calendarType === "julian" ? "selected" : ""}>Julian</option><option value="revised-julian" ${draft.calendarType === "revised-julian" ? "selected" : ""}>Revised-Julian</option></select></label></div>`;
+    // TEFA/Odyssey households see the Church calendar preference framed as
+    // optional, since not every family using this entry point is Orthodox.
+    const churchCalendarLabel = isOdysseyLearnContext() ? "Optional Church calendar preference" : "Church calendar";
+    const churchCalendarHelp = isOdysseyLearnContext()
+      ? `<small class="learn-wizard-field-help">Orthodox families may choose Julian or Revised-Julian. Other families can leave the default and adjust later.</small>`
+      : "";
+    return `<div class="learn-wizard-step-copy"><span>Begin with the people, not the paperwork.</span><h2>Tell us about your household.</h2><p>This is enough to personalize Learn. You can add parish, terms, books, and detailed subjects later.</p></div><div class="learn-wizard-fields">${simpleSetupField("Household name", "wizard.householdName", draft.householdName, { placeholder: "The Dunn Family" })}${simpleSetupField("Your name", "wizard.parentName", draft.parentName, { placeholder: "Stephanie" })}<label class="learn-wizard-field"><span>${html(churchCalendarLabel)}</span><select name="wizard.calendarType"><option value="julian" ${draft.calendarType === "julian" ? "selected" : ""}>Julian</option><option value="revised-julian" ${draft.calendarType === "revised-julian" ? "selected" : ""}>Revised-Julian</option></select>${churchCalendarHelp}</label></div>`;
   }
   if (draft.step === 1) {
     const methods = [
