@@ -163,9 +163,12 @@ check("registrations.reference and donors.email have no nulls", () => {
 });
 
 // 4. Stripe identifiers unique where expected ----------------------------
+// Pending/incomplete registrations (no subscription yet) store this as an
+// empty string, not SQL NULL — `IS NOT NULL` alone lets every blank value
+// through, so they all get grouped together as a false "duplicate."
 check("stripe_subscription_id unique among non-null registrations", () => {
   const rows = query(
-    "SELECT stripe_subscription_id, COUNT(*) AS n FROM registrations WHERE stripe_subscription_id IS NOT NULL GROUP BY stripe_subscription_id HAVING n > 1"
+    "SELECT stripe_subscription_id, COUNT(*) AS n FROM registrations WHERE stripe_subscription_id IS NOT NULL AND stripe_subscription_id != '' GROUP BY stripe_subscription_id HAVING n > 1"
   );
   if (rows.length) throw new Error(`${rows.length} duplicate stripe_subscription_id value(s)`);
   return true;
@@ -173,7 +176,7 @@ check("stripe_subscription_id unique among non-null registrations", () => {
 
 check("stripe_account_id unique among non-null registrations", () => {
   const rows = query(
-    "SELECT stripe_account_id, COUNT(*) AS n FROM registrations WHERE stripe_account_id IS NOT NULL GROUP BY stripe_account_id HAVING n > 1"
+    "SELECT stripe_account_id, COUNT(*) AS n FROM registrations WHERE stripe_account_id IS NOT NULL AND stripe_account_id != '' GROUP BY stripe_account_id HAVING n > 1"
   );
   if (rows.length) throw new Error(`${rows.length} duplicate stripe_account_id value(s)`);
   return true;
