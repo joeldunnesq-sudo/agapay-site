@@ -3416,6 +3416,48 @@ function renderGradeCourseEditor(course, vm, index) {
   `;
 }
 
+function renderTestScoreRow(entry = {}) {
+  const isSat = entry.testType === "SAT";
+  const id = entry.id || "";
+  const val = (v) => (v === null || v === undefined ? "" : v);
+  if (isSat) {
+    return `<article class="learn-grade-course" data-test-score data-test-type="SAT" data-score-id="${html(id)}">
+      <header><span style="--course-color:var(--gold);">SAT</span><div><input name="testDate" type="date" value="${html(entry.testDate || "")}" aria-label="Test date" /><small>SAT</small></div><button type="button" data-test-score-remove aria-label="Remove score">×</button></header>
+      <div class="learn-grade-course-meta">
+        <label>Total Score<input name="totalScore" inputmode="numeric" value="${html(val(entry.totalScore))}" placeholder="1200" /></label>
+        <label>Reading/Writing<input name="readingWritingScore" inputmode="numeric" value="${html(val(entry.readingWritingScore))}" placeholder="620" /></label>
+        <label>Math<input name="mathScore" inputmode="numeric" value="${html(val(entry.mathScore))}" placeholder="580" /></label>
+      </div>
+    </article>`;
+  }
+  return `<article class="learn-grade-course" data-test-score data-test-type="ACT" data-score-id="${html(id)}">
+    <header><span style="--course-color:var(--navy);">ACT</span><div><input name="testDate" type="date" value="${html(entry.testDate || "")}" aria-label="Test date" /><small>ACT</small></div><button type="button" data-test-score-remove aria-label="Remove score">×</button></header>
+    <div class="learn-grade-course-meta">
+      <label>Composite<input name="compositeScore" inputmode="numeric" value="${html(val(entry.compositeScore))}" placeholder="27" /></label>
+      <label>English<input name="englishScore" inputmode="numeric" value="${html(val(entry.englishScore))}" placeholder="26" /></label>
+      <label>Math<input name="mathScore" inputmode="numeric" value="${html(val(entry.mathScore))}" placeholder="27" /></label>
+      <label>Reading<input name="readingScore" inputmode="numeric" value="${html(val(entry.readingScore))}" placeholder="28" /></label>
+      <label>Science<input name="scienceScore" inputmode="numeric" value="${html(val(entry.scienceScore))}" placeholder="26" /></label>
+      <label>Writing (optional)<input name="writingScore" inputmode="numeric" value="${html(val(entry.writingScore))}" placeholder="8" /></label>
+    </div>
+  </article>`;
+}
+
+function renderTestScoresPanel(vm) {
+  const scores = vm.testScores || [];
+  const rows = scores.length ? scores.map((entry) => renderTestScoreRow(entry)).join("") : "";
+  return panel("Test Scores", `
+    <p class="learn-muted" style="margin:0 0 12px;font-size:13px;">Add ACT or SAT results as they come in — they print directly on this student's transcript.</p>
+    <div class="learn-grades-actions" style="margin-bottom:12px;">
+      <button type="button" data-test-score-add="ACT">Add ACT Score</button>
+      <button type="button" data-test-score-add="SAT">Add SAT Score</button>
+      <button type="button" data-test-scores-save>Save Test Scores</button>
+    </div>
+    <div data-test-scores-status class="learn-grades-status" aria-live="polite"></div>
+    <div class="learn-grade-editor" data-test-score-list>${rows || emptyState("No ACT or SAT scores recorded yet for this student.")}</div>
+  `, { icon: "✎" });
+}
+
 function renderGrades(vm) {
   const selectedCourses = vm.childCourses;
   const childOptions = vm.children.map((child) => `<option value="${html(child.id)}" ${child.id === vm.selectedChildId ? "selected" : ""}>${html(child.name)}${child.gradeLabel ? ` · ${html(child.gradeLabel)}` : ""}</option>`).join("");
@@ -3434,6 +3476,7 @@ function renderGrades(vm) {
           </label>
           <label>Academic year
             <input name="academicYearName" value="${html(vm.academicYear.name)}" />
+            <small class="learn-muted">Entering records for a past year (child started high school before AGAPAY)? Type that year's name here, e.g. "2022-2023 School Year", to switch and add courses for it.</small>
           </label>
           <div class="learn-grades-actions">
             <button type="button" data-grade-add-course>Add Course</button>
@@ -3459,6 +3502,7 @@ function renderGrades(vm) {
       </form>
 
       ${panel("Transcript Readiness", `<div style="overflow:auto;"><table class="learn-grade-transcript-table"><thead><tr><th>Course</th><th>Subject</th><th>Level</th><th>Credit</th><th>Final</th></tr></thead><tbody>${transcriptRows}</tbody></table></div><div class="learn-grade-print-actions"><a href="${learnSectionHref("print-center")}">Open Print Center</a><button type="button" data-report-export="Report Card" data-report-child-id="${html(vm.selectedChildId)}">Print Report Card</button><button type="button" data-report-export="Transcript" data-report-child-id="${html(vm.selectedChildId)}">Print Transcript</button></div>`, { icon: "▤" })}
+      ${renderTestScoresPanel(vm)}
     </section>
   `;
   return shell(vm, body);
@@ -3480,7 +3524,8 @@ function renderCoOp(vm) {
 function setupInput(label, name, value = "", options = {}) {
   const type = options.type || "text";
   const step = options.step ? ` step="${html(options.step)}"` : "";
-  return `<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">${html(label)}<input name="${html(name)}" type="${html(type)}"${step} value="${html(value)}" style="min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);" /></label>`;
+  const placeholder = options.placeholder ? ` placeholder="${html(options.placeholder)}"` : "";
+  return `<label style="display:grid;gap:5px;color:var(--gold);font-size:12px;letter-spacing:.12em;text-transform:uppercase;">${html(label)}<input name="${html(name)}" type="${html(type)}"${step}${placeholder} value="${html(value)}" style="min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--paper2);font-family:inherit;color:var(--ink);" /></label>`;
 }
 
 function setupSelect(label, name, value, options) {
@@ -4969,7 +5014,7 @@ function renderSetup(vm) {
     enrichment: `<span id="learnSetupFormation" class="learn-setup-anchor"></span>${panel("Enrichment", formationSetupPanel(vm), { icon: "✥", largeTitle: true })}`,
     subjects: `<span id="learnSetupSubjects" class="learn-setup-anchor"></span>${panel(experience.subjectTitle, formSubjectsSetupPanel(vm, currentTermId), { icon: "✎", largeTitle: true })}`
   };
-  const householdContent = `<div class="learn-setup-method-note"><small>Organized for ${html(vm.household.method || "your household")}</small><strong>${html(experience.note)}</strong></div><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parent name", "household.parentName", vm.household.parentName)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupInput("Parish patronal feast", "household.parishPatronalFeastName", vm.household.parishPatronalFeastName || "")}${setupInput("Patronal feast date", "household.parishPatronalFeastDate", vm.household.parishPatronalFeastDate || "", { type: "date" })}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Unsure", homeschoolMethodOptions)}${setupSelect("Planning groups", "preferences.groupingMode", groupingMode, [{ value: "forms", label: "Forms" }, { value: "grades", label: "Traditional grades / levels" }])}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}${`<details class="learn-day-picker"><summary><span>Default school days</span><strong data-day-summary>${html(setupWeekdays.filter((day) => (vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value)).map((day) => day.label).join(" · "))}</strong></summary><div class="learn-day-picker-menu">${setupWeekdays.map((day) => `<label><input type="checkbox" data-day-choice value="${day.value}" ${(vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value) ? "checked" : ""}>${day.label}</label>`).join("")}</div><input type="hidden" name="preferences.defaultSchoolDays" value="${html((vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).join(","))}"></details>`}${setupSelect("Default missed lesson", "preferences.defaultMissedLessonBehavior", vm.preferences.defaultMissedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Default max minutes / child", "preferences.defaultMaxDailyMinutes", vm.preferences.defaultMaxDailyMinutes || "240", { type: "number" })}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /></div><p style="margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.4;">The patronal feast repeats annually on the Family Planner calendar so it can be honored alongside name days, fasts, and major feasts.</p>`;
+  const householdContent = `<div class="learn-setup-method-note"><small>Organized for ${html(vm.household.method || "your household")}</small><strong>${html(experience.note)}</strong></div><div style="display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:12px;">${setupInput("Household name", "household.name", vm.household.name)}${setupInput("Parent name", "household.parentName", vm.household.parentName)}${setupInput("Parish", "household.parishName", vm.household.parish)}${setupInput("Parish patronal feast", "household.parishPatronalFeastName", vm.household.parishPatronalFeastName || "")}${setupInput("Patronal feast date", "household.parishPatronalFeastDate", vm.household.parishPatronalFeastDate || "", { type: "date" })}${setupSelect("Method", "household.primaryMethod", vm.household.method || "Unsure", homeschoolMethodOptions)}${setupInput("Homeschool name", "household.homeschoolName", vm.household.homeschoolName || "", { placeholder: "e.g. St. Xenia Homeschool" })}${setupInput("Patron Saint of your homeschool", "household.patronSaintName", vm.household.patronSaintName || "", { placeholder: "e.g. St. Xenia of St. Petersburg" })}${setupInput("Patron Saint feast date", "household.patronSaintFeastDate", vm.household.patronSaintFeastDate || "", { type: "date" })}${setupSelect("Planning groups", "preferences.groupingMode", groupingMode, [{ value: "forms", label: "Forms" }, { value: "grades", label: "Traditional grades / levels" }])}${setupInput("School year", "schoolYear.label", vm.schoolYear.label)}${setupInput("Year start", "schoolYear.startDate", vm.schoolYear.startDate, { type: "date" })}${setupInput("Year end", "schoolYear.endDate", vm.schoolYear.endDate, { type: "date" })}${setupSelect("Current term", "schoolYear.currentTermId", currentTermId, setupTermOptions(vm.terms, vm.term))}${setupSelect("Church calendar", "preferences.calendarType", vm.preferences.calendarType, vm.calendarOptions)}${setupSelect("Evaluation", "preferences.evaluationModel", vm.preferences.evaluationModel, vm.evaluationModels)}${`<details class="learn-day-picker"><summary><span>Default school days</span><strong data-day-summary>${html(setupWeekdays.filter((day) => (vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value)).map((day) => day.label).join(" · "))}</strong></summary><div class="learn-day-picker-menu">${setupWeekdays.map((day) => `<label><input type="checkbox" data-day-choice value="${day.value}" ${(vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).includes(day.value) ? "checked" : ""}>${day.label}</label>`).join("")}</div><input type="hidden" name="preferences.defaultSchoolDays" value="${html((vm.preferences.defaultSchoolDays || ["mon","tue","wed","thu","fri"]).join(","))}"></details>`}${setupSelect("Default missed lesson", "preferences.defaultMissedLessonBehavior", vm.preferences.defaultMissedLessonBehavior || "next-occurrence", missedLessonOptions)}${setupInput("Default max minutes / child", "preferences.defaultMaxDailyMinutes", vm.preferences.defaultMaxDailyMinutes || "240", { type: "number" })}<input name="preferences.graceModeActive" type="hidden" value="${vm.preferences.graceModeActive ? "true" : "false"}" /><input name="preferences.graceModeDefault" type="hidden" value="${html(vm.preferences.graceModeDefault || "light")}" /></div><p style="margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.4;">The patronal feast repeats annually on the Family Planner calendar so it can be honored alongside name days, fasts, and major feasts. If your homeschool has its own patron saint, that name day appears there too, and both names print on report cards and transcripts.</p>`;
   const childrenContent = `<p style="margin:0 0 12px;color:var(--muted);">${html(groupingCopy)}</p><div data-setup-list="children" style="display:grid;gap:10px;">${(vm.children.length ? vm.children : [{}]).map((child) => childSetupRow(child, groupingMode)).join("")}</div><button type="button" data-setup-add-row="children" style="margin-top:12px;width:100%;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px;font-family:inherit;">Add Child</button>`;
   const termsContent = `<p style="margin:0 0 12px;color:var(--muted);line-height:1.45;">Term 4 / Summer is available for year-round homeschoolers. Assign subjects, books, and formation materials to the term where they belong.</p><div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button type="button" data-setup-add-row="terms" style="border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add Term</button></div><div data-setup-list="terms" style="display:grid;gap:10px;">${(vm.terms?.length ? vm.terms : [vm.term]).map((term, index) => termSetupRow(term, index)).join("")}</div>`;
   const body = `
@@ -5724,6 +5769,9 @@ function setupPayloadFromForm(form) {
       parishName: get("household.parishName"),
       parishPatronalFeastName: get("household.parishPatronalFeastName"),
       parishPatronalFeastDate: get("household.parishPatronalFeastDate"),
+      homeschoolName: get("household.homeschoolName"),
+      patronSaintName: get("household.patronSaintName"),
+      patronSaintFeastDate: get("household.patronSaintFeastDate"),
       primaryMethod: get("household.primaryMethod")
     },
     schoolYear: {
@@ -8176,6 +8224,71 @@ function wireGrades(vm) {
   });
 }
 
+function testScoreFromElement(entryEl) {
+  const field = (name) => entryEl.querySelector(`[name="${name}"]`)?.value?.trim() || "";
+  const testType = entryEl.dataset.testType === "SAT" ? "SAT" : "ACT";
+  return {
+    id: entryEl.dataset.scoreId || "",
+    testType,
+    testDate: field("testDate"),
+    compositeScore: field("compositeScore"),
+    totalScore: field("totalScore"),
+    englishScore: field("englishScore"),
+    mathScore: field("mathScore"),
+    readingScore: field("readingScore"),
+    scienceScore: field("scienceScore"),
+    writingScore: field("writingScore"),
+    readingWritingScore: field("readingWritingScore")
+  };
+}
+
+function wireTestScores(vm) {
+  const list = root.querySelector("[data-test-score-list]");
+  const status = root.querySelector("[data-test-scores-status]");
+  if (!list) return;
+  const setStatus = (message, tone = "muted") => {
+    if (!status) return;
+    status.textContent = message;
+    status.dataset.tone = tone;
+  };
+  const clearEmptyState = () => {
+    if (!list.querySelector("[data-test-score]")) list.innerHTML = "";
+  };
+  root.querySelectorAll("[data-test-score-add]").forEach((button) => {
+    button.addEventListener("click", () => {
+      clearEmptyState();
+      list.insertAdjacentHTML("beforeend", renderTestScoreRow({ testType: button.dataset.testScoreAdd === "SAT" ? "SAT" : "ACT" }));
+      setStatus("New score added. Fill it in and save when ready.");
+    });
+  });
+  list.addEventListener("click", (event) => {
+    const remove = event.target.closest("[data-test-score-remove]");
+    if (!remove) return;
+    remove.closest("[data-test-score]")?.remove();
+    if (!list.querySelector("[data-test-score]")) {
+      list.innerHTML = emptyState("No ACT or SAT scores recorded yet for this student.");
+    }
+    setStatus("Score removed. Save to confirm.");
+  });
+  root.querySelector("[data-test-scores-save]")?.addEventListener("click", async (event) => {
+    const save = event.currentTarget;
+    const childId = vm.selectedChildId;
+    const scores = [...list.querySelectorAll("[data-test-score]")].map(testScoreFromElement);
+    save.disabled = true;
+    save.textContent = "Saving...";
+    setStatus("Saving test scores...");
+    try {
+      await apiPost("/api/learn/test-scores", { childId, scores });
+      setStatus("Test scores saved.", "success");
+    } catch (error) {
+      setStatus(error.message || "Test scores could not be saved.", "error");
+    } finally {
+      save.disabled = false;
+      save.textContent = "Save Test Scores";
+    }
+  });
+}
+
 function canUsePrint(vm, template) {
   if (isLearnFamilyPlan()) return true;
   if (template?.premium) {
@@ -8362,8 +8475,11 @@ async function mount() {
     const childId = params.get("childId") || "";
     const raw = await apiGet(`/api/learn/grades${academicYear ? `?academicYear=${encodeURIComponent(academicYear)}` : ""}`);
     const vm = toGradesViewModel(raw, { childId });
+    const testScoresRaw = await apiGet("/api/learn/test-scores").catch(() => null);
+    vm.testScores = (testScoresRaw?.testScores?.scores || []).filter((row) => row.childId === vm.selectedChildId);
     root.innerHTML = renderGrades(vm);
     wireGrades(vm);
+    wireTestScores(vm);
     return;
   }
   if (pageKey === "reports") {
