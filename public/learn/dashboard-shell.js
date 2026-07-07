@@ -43,25 +43,53 @@ function isOdysseyLearnContext() {
 // AGAPAY Learn households. This is intentionally config-driven — it changes
 // labels, copy, nav order, and a small activation badge — rather than
 // forking the dashboard renderer itself.
+const LEARN_VIEW_MODE_KEY = "agapay.learn.viewMode";
+
+function learnViewMode() {
+  if (!isOdysseyLearnContext()) return "classic";
+  try {
+    const stored = localStorage.getItem(LEARN_VIEW_MODE_KEY);
+    return stored === "classic" ? "classic" : "tefa";
+  } catch {
+    return "tefa";
+  }
+}
+
+function setLearnViewMode(mode) {
+  try {
+    localStorage.setItem(LEARN_VIEW_MODE_KEY, mode === "classic" ? "classic" : "tefa");
+  } catch {
+    // Best-effort — a failed write just means the toggle won't persist across reloads.
+  }
+}
+
 function learnExperience() {
   const odyssey = isOdysseyLearnContext();
+  const viewMode = learnViewMode();
+  // tefaActive drives PRESENTATION ONLY (labels, nav order, copy). It never
+  // changes which account, routes, or activation status the person has —
+  // those stay tied to `odyssey` regardless of the toggle below.
+  const tefaActive = odyssey && viewMode === "tefa";
   return {
     odyssey,
-    brandName: odyssey ? "AGAPAY Learn" : "AGAPAY Learn",
-    brandTagline: odyssey ? "TEFA Homeschool Planner" : "Love how you learn",
+    viewMode,
+    tefaActive,
+    brandName: "AGAPAY Learn",
+    brandTagline: tefaActive ? "TEFA Homeschool Planner" : "Love how you learn",
     backHref: odyssey ? "/learn/odyssey" : "/myagapay",
     backLabel: odyssey ? "TEFA Portal" : "AGAPAY Give",
     activationBadge: odyssey ? "Activated through Odyssey / TEFA" : null,
-    dashboardKicker: odyssey ? "TEFA HOMESCHOOL PLANNER" : "AGAPAY LEARN",
-    dashboardDescription: odyssey
+    dashboardKicker: tefaActive ? "TEFA HOMESCHOOL PLANNER" : "AGAPAY LEARN",
+    dashboardDescription: tefaActive
       ? "Your TEFA-funded Orthodox homeschool planner — today's lessons, planner, attendance, grades, and printable records in one place."
       : null,
     // Relabels existing shared nav items (same hrefs/ids) for the TEFA audience.
-    navLabels: odyssey
+    navLabels: tefaActive
       ? {
           dashboard: "Today's Lessons",
           planner: "Planner",
-          formation: "Church Rhythm (Optional)",
+          onboarding: "Setup & TEKS Subjects",
+          formation: "Formation (Church Rhythm)",
           books: "Books & Curriculum",
           grades: "Attendance, Grades & Reports",
           "print-center": "Print Center",
@@ -70,10 +98,14 @@ function learnExperience() {
         }
       : {},
     // Reorders the shared nav array (built once from the view model) so TEFA
-    // families see lessons/planner/attendance/grades/print/books first, with
-    // Orthodox formation kept available but secondary.
-    navOrder: odyssey
-      ? ["dashboard", "planner", "grades", "print-center", "books", "formation", "community", "co-op"]
+    // families see lessons/planner/setup/attendance/grades/print/books first,
+    // with Orthodox formation kept available but secondary. Every id here
+    // must exist in vm.shell.nav (see shellFromPayload in
+    // dashboard-view-models.js) — any id left out is silently dropped by the
+    // .filter(Boolean) below, not just left unordered, which is what
+    // previously made "Set Up" disappear from the TEFA nav entirely.
+    navOrder: tefaActive
+      ? ["dashboard", "planner", "onboarding", "grades", "print-center", "books", "formation", "community", "co-op"]
       : null
   };
 }
@@ -658,6 +690,7 @@ function topbar(vm) {
         <span><strong>${html(experience.brandName)}</strong><small>${html(experience.brandTagline)}</small></span>
       </a>
       <div class="learn-page-title-utility" style="flex:1;min-width:0;line-height:1.1;">
+        <div style="color:var(--gold);font-size:11px;letter-spacing:.14em;font-weight:700;text-transform:uppercase;">${html(experience.brandName)} · ${html(experience.brandTagline)}</div>
         <div style="font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;color:var(--ink);display:flex;align-items:center;">${title}</div>
         ${vm.page.subtitle ? `<div style="font-size:14.5px;color:var(--muted);margin-top:2px;">${html(vm.page.subtitle)}</div>` : ""}
       </div>
@@ -955,6 +988,26 @@ function renderDashboardFamilyCards(vm) {
   `;
 }
 
+function renderTefaViewToggleBanner(experience) {
+  const tefa = experience.viewMode === "tefa";
+  return `
+    <div data-tefa-view-toggle-row style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:${tefa ? "linear-gradient(135deg,#fffaf0 0%,#f7edd6 100%)" : "var(--paper)"};border:1px solid ${tefa ? "rgba(181,148,47,.34)" : "var(--line)"};border-radius:14px;padding:14px 18px;">
+      <div style="min-width:0;">
+        <div style="color:var(--gold);font-size:10.5px;letter-spacing:.14em;font-weight:800;text-transform:uppercase;">Dashboard view</div>
+        <strong style="display:block;font-family:'Cormorant Garamond',serif;font-size:21px;line-height:1.1;color:var(--ink);">${tefa ? "TEFA Edition" : "Classic AGAPAY Learn"}</strong>
+        <span style="display:block;font-size:12.5px;color:var(--muted);margin-top:2px;">${tefa ? "Today's lessons, planner, attendance, grades, and print tools lead the dashboard." : "The full Orthodox household dashboard, with Church Rhythm leading the day."}</span>
+      </div>
+      <button type="button" data-tefa-view-toggle role="switch" aria-checked="${tefa ? "true" : "false"}" aria-label="Switch to ${tefa ? "the classic AGAPAY Learn dashboard" : "TEFA Edition"}" style="display:flex;align-items:center;gap:9px;flex:none;border:1px solid var(--gold);background:var(--paper2);border-radius:999px;padding:7px 12px;cursor:pointer;font-family:inherit;">
+        <span style="font-size:12px;font-weight:700;color:${tefa ? "var(--muted)" : "var(--navy)"};">Classic</span>
+        <span aria-hidden="true" style="position:relative;width:40px;height:23px;border-radius:999px;background:${tefa ? "var(--gold)" : "var(--line)"};display:inline-flex;align-items:center;padding:2px;transition:background .15s;">
+          <span style="width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transform:translateX(${tefa ? "17px" : "0"});transition:transform .15s;"></span>
+        </span>
+        <span style="font-size:12px;font-weight:700;color:${tefa ? "var(--navy)" : "var(--muted)"};">TEFA</span>
+      </button>
+    </div>
+  `;
+}
+
 function renderDashboard(vm) {
   const today = vm.todayInChurch;
   const todayArtworkUrl = today.iconUrl || "/images/learn/today-in-the-church.jpg";
@@ -1089,9 +1142,16 @@ function renderDashboard(vm) {
          <a href="/myagapay/learn/setup" style="display:inline-flex;align-items:center;gap:8px;background:var(--navy);color:#fff;border:1px solid var(--gold);border-radius:10px;padding:10px 18px;text-decoration:none;font-weight:700;font-size:14px;">Go to Setup →</a>
        </div>`;
 
-  const body = `
-    <section data-screen-label="Dashboard" style="display:flex;flex-direction:column;gap:22px;">
+  const experience = learnExperience();
+  const churchCollapsed = experience.odyssey && (() => {
+    try {
+      return localStorage.getItem("agapay.learn.churchCardMinimized") === "true";
+    } catch {
+      return experience.tefaActive;
+    }
+  })();
 
+  const churchSectionBody = `
       <!-- Today in the Church -->
       <div style="background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;gap:24px;box-shadow:0 1px 3px rgba(20,40,70,.04);flex-wrap:wrap;">
         ${churchIconPanel}
@@ -1127,10 +1187,31 @@ function renderDashboard(vm) {
         </div>
         ${rhythmsGrid}
       </div>
+  `;
 
-      ${renderDashboardDesignedLessons(vm)}
-      ${renderDashboardFamilyCards(vm)}
+  // Odyssey/TEFA users get a real collapsible wrapper around Church content —
+  // minimized by default (see index.html's first-visit default), expandable,
+  // and the choice persists via localStorage. Non-Odyssey users always see
+  // it expanded, as before.
+  const churchSectionHtml = experience.odyssey
+    ? `
+      <div data-church-section style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <span class="learn-eyebrow" style="display:flex;align-items:center;gap:8px;"><span style="color:var(--gold);">✥</span>Church Rhythm${experience.tefaActive ? " (Optional)" : ""}</span>
+          <button type="button" data-church-section-toggle aria-expanded="${churchCollapsed ? "false" : "true"}" style="border:1px solid var(--line);background:var(--paper2);border-radius:9px;padding:6px 13px;font-family:inherit;font-size:12.5px;color:var(--ink);cursor:pointer;">
+            <span data-church-section-toggle-label>${churchCollapsed ? "Show Church Rhythm" : "Minimize"}</span>
+          </button>
+        </div>
+        <div data-church-section-body ${churchCollapsed ? "hidden" : ""} style="display:flex;flex-direction:column;gap:22px;">
+          ${churchSectionBody}
+        </div>
+      </div>
+    `
+    : `<div style="display:flex;flex-direction:column;gap:22px;">${churchSectionBody}</div>`;
 
+  const lessonsAndFamilyHtml = `${renderDashboardDesignedLessons(vm)}\n      ${renderDashboardFamilyCards(vm)}`;
+
+  const togetherAndWeekHtml = `
       <!-- Together This Week — full width -->
       <div class="learn-card">
         <div class="learn-section-head">
@@ -1155,7 +1236,19 @@ function renderDashboard(vm) {
           ${childColumnsGrid}
         </div>
       </section>
+  `;
 
+  // TEFA Edition: lessons/planner/attendance content leads, Church Rhythm
+  // trails (and stays collapsed by default). Classic AGAPAY Learn: Church
+  // Rhythm leads, as it always has.
+  const sectionOrder = experience.tefaActive
+    ? `${lessonsAndFamilyHtml}\n${togetherAndWeekHtml}\n${churchSectionHtml}`
+    : `${churchSectionHtml}\n${lessonsAndFamilyHtml}\n${togetherAndWeekHtml}`;
+
+  const body = `
+    <section data-screen-label="Dashboard" style="display:flex;flex-direction:column;gap:22px;">
+      ${experience.odyssey ? renderTefaViewToggleBanner(experience) : ""}
+      ${sectionOrder}
     </section>
   `;
   return shell(vm, body);
@@ -3891,7 +3984,7 @@ function churchRhythmSetupPanel(vm) {
 
 function setupTileValue(vm, group, panelId, fallback) {
   const tile = vm.setupTiles?.[group]?.[panelId] || {};
-  const allowSavedTitle = group !== "subjects" || isOdysseyLearnContext();
+  const allowSavedTitle = group !== "subjects" || learnExperience().tefaActive;
   return {
     ...fallback,
     title: allowSavedTitle ? tile.title || fallback.title : fallback.title,
@@ -3906,10 +3999,11 @@ function setupSectionCard({ group, panel: panelId, title, detail, count = 0, ico
   return `<button type="button" class="learn-setup-section-card" data-setup-section-toggle data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" aria-expanded="false" aria-controls="${html(controls)}"><small><span class="learn-setup-card-icon" aria-hidden="true">${html(icon)}</span><span>${html(countLabel)}</span></small><strong data-setup-section-card-title>${html(title)}</strong><span data-setup-section-card-detail>${html(detail)}</span><em>Open</em></button>`;
 }
 
-function setupSectionPanel({ group, panel: panelId, title, detail = "", minutes = "20", content }) {
+function setupSectionPanel({ group, panel: panelId, title, detail = "", minutes = "20", teksUrl = "", content }) {
   const id = `learnSetupPanel-${group}-${panelId}`;
   const hasTileMinutes = group === "subjects" || (group === "formation" && panelId !== "recitation");
-  return `<div id="${html(id)}" class="learn-setup-subsection" data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" hidden><div class="learn-setup-subsection-header"><div><strong data-setup-section-panel-title>${html(title)}</strong>${detail ? `<span data-setup-section-panel-detail>${html(detail)}</span>` : ""}</div><button type="button" class="learn-setup-subsection-close" data-setup-section-close data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}">Collapse</button></div><div class="learn-setup-tile-editor"><label>Tile title<input name="setupTiles.${html(group)}.${html(panelId)}.title" data-setup-section-title-input data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" value="${html(title)}" /></label><label>Tile description<textarea name="setupTiles.${html(group)}.${html(panelId)}.detail" data-setup-section-detail-input data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" rows="2">${html(detail)}</textarea></label>${hasTileMinutes ? `<label>Minutes<input type="number" name="setupTiles.${html(group)}.${html(panelId)}.minutes" data-setup-section-minutes-input value="${html(minutes || "20")}" /></label>` : ""}</div>${content}</div>`;
+  const teksLink = teksUrl ? `<a href="${html(teksUrl)}" target="_blank" rel="noopener noreferrer" class="learn-setup-teks-link" style="font-size:12px;color:var(--gold);text-decoration:none;white-space:nowrap;">TEA subject page ↗</a>` : "";
+  return `<div id="${html(id)}" class="learn-setup-subsection" data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" hidden><div class="learn-setup-subsection-header"><div><strong data-setup-section-panel-title>${html(title)}</strong>${detail ? `<span data-setup-section-panel-detail>${html(detail)}</span>` : ""}${teksLink}</div><button type="button" class="learn-setup-subsection-close" data-setup-section-close data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}">Collapse</button></div><div class="learn-setup-tile-editor"><label>Tile title<input name="setupTiles.${html(group)}.${html(panelId)}.title" data-setup-section-title-input data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" value="${html(title)}" /></label><label>Tile description<textarea name="setupTiles.${html(group)}.${html(panelId)}.detail" data-setup-section-detail-input data-setup-section-group="${html(group)}" data-setup-section-panel="${html(panelId)}" rows="2">${html(detail)}</textarea></label>${hasTileMinutes ? `<label>Minutes<input type="number" name="setupTiles.${html(group)}.${html(panelId)}.minutes" data-setup-section-minutes-input value="${html(minutes || "20")}" /></label>` : ""}</div>${content}</div>`;
 }
 
 function formationSetupPanel(vm) {
@@ -4029,11 +4123,12 @@ function formSubjectsSetupPanel(vm, currentTermId) {
   const teksFoundationGroups = [
     {
       panel: "teks-elar",
-      title: "English Language Arts and Reading (ELAR)",
+      title: "English Language Arts and Reading",
       detail: "Reading, writing, speaking, listening, composition, grammar, and literacy foundations.",
       icon: "✎",
-      types: ["language-arts", "tales", "literature"],
-      defaultType: "language-arts"
+      types: ["language-arts", "tales", "literature", "speech-communication", "speech", "communication"],
+      defaultType: "language-arts",
+      teksUrl: "https://tea.texas.gov/educators/subject-areas/english-language-arts-and-reading/english-language-arts-and-reading"
     },
     {
       panel: "teks-mathematics",
@@ -4041,7 +4136,8 @@ function formSubjectsSetupPanel(vm, currentTermId) {
       detail: "Number sense, operations, algebraic reasoning, geometry, measurement, data, and problem solving.",
       icon: "◎",
       types: ["math", "maths"],
-      defaultType: "math"
+      defaultType: "math",
+      teksUrl: "https://tea.texas.gov/educators/subject-areas/mathematics/mathematics"
     },
     {
       panel: "teks-science",
@@ -4049,7 +4145,8 @@ function formSubjectsSetupPanel(vm, currentTermId) {
       detail: "Scientific practices, lab work, earth and space, life science, physical science, and nature study.",
       icon: "✦",
       types: ["science", "sciences-nature", "nature-study"],
-      defaultType: "science"
+      defaultType: "science",
+      teksUrl: "https://tea.texas.gov/educators/subject-areas/science/science"
     },
     {
       panel: "teks-social-studies",
@@ -4057,17 +4154,28 @@ function formSubjectsSetupPanel(vm, currentTermId) {
       detail: "History, geography, civics, economics, cultures, citizenship, timelines, and primary sources.",
       icon: "⌁",
       types: ["social-studies", "history", "geography"],
-      defaultType: "social-studies"
+      defaultType: "social-studies",
+      teksUrl: "https://tea.texas.gov/educators/subject-areas/social-studies/social-studies"
     }
   ];
   const teksEnrichmentGroups = [
+    {
+      panel: "teks-cte",
+      title: "Career and Technical Education",
+      detail: "Career exploration, practical skills, applied projects, entrepreneurship, and technical pathways.",
+      icon: "⌘",
+      types: ["career-technical-education", "cte"],
+      defaultType: "career-technical-education",
+      teksUrl: "https://tea.texas.gov/student-readiness-and-high-school/career-and-technical-education"
+    },
     {
       panel: "teks-fine-arts",
       title: "Fine Arts",
       detail: "Visual art, music, composer study, artist study, performance, and creative expression.",
       icon: "♪",
       types: ["fine-arts", "art", "music"],
-      defaultType: "fine-arts"
+      defaultType: "fine-arts",
+      teksUrl: "https://tea.texas.gov/educators/subject-areas/fine-arts/fine-arts"
     },
     {
       panel: "teks-health-education",
@@ -4075,7 +4183,17 @@ function formSubjectsSetupPanel(vm, currentTermId) {
       detail: "Personal wellness, nutrition, safety, emotional health, family life, and healthy habits.",
       icon: "✚",
       types: ["health-education"],
-      defaultType: "health-education"
+      defaultType: "health-education",
+      teksUrl: "https://tea.texas.gov/educators/subject-areas/health-and-physical-education/health-education"
+    },
+    {
+      panel: "teks-lote",
+      title: "Languages other than English (LOTE)",
+      detail: "Modern languages, classical languages, vocabulary, grammar, conversation, and translation.",
+      icon: "Α",
+      types: ["languages-other-than-english", "classical-foreign-languages", "foreign-language", "classical-languages", "latin", "greek"],
+      defaultType: "languages-other-than-english",
+      teksUrl: "https://tea.texas.gov/educators/subject-areas/languages-other-english/languages-other-english"
     },
     {
       panel: "teks-physical-education",
@@ -4083,7 +4201,8 @@ function formSubjectsSetupPanel(vm, currentTermId) {
       detail: "Movement, fitness, coordination, outdoor activity, skill practice, and lifelong physical health.",
       icon: "◉",
       types: ["physical-education", "pe"],
-      defaultType: "physical-education"
+      defaultType: "physical-education",
+      teksUrl: "https://tea.texas.gov/educators/subject-areas/health-and-physical-education/physical-education"
     },
     {
       panel: "teks-technology-applications",
@@ -4091,34 +4210,11 @@ function formSubjectsSetupPanel(vm, currentTermId) {
       detail: "Digital citizenship, computer use, productivity tools, research, coding, and applied technology.",
       icon: "▣",
       types: ["technology-applications", "technology"],
-      defaultType: "technology-applications"
-    },
-    {
-      panel: "teks-lote",
-      title: "Languages Other Than English (LOTE)",
-      detail: "Modern languages, classical languages, vocabulary, grammar, conversation, and translation.",
-      icon: "Α",
-      types: ["languages-other-than-english", "classical-foreign-languages", "foreign-language", "classical-languages", "latin", "greek"],
-      defaultType: "languages-other-than-english"
-    },
-    {
-      panel: "teks-cte",
-      title: "Career and Technical Education (CTE)",
-      detail: "Career exploration, practical skills, applied projects, entrepreneurship, and technical pathways.",
-      icon: "⌘",
-      types: ["career-technical-education", "cte"],
-      defaultType: "career-technical-education"
-    },
-    {
-      panel: "teks-speech-communication",
-      title: "Speech/Communication",
-      detail: "Public speaking, discussion, presentation, listening, rhetoric, and interpersonal communication.",
-      icon: "✦",
-      types: ["speech-communication", "speech", "communication"],
-      defaultType: "speech-communication"
+      defaultType: "technology-applications",
+      teksUrl: "https://tea.texas.gov/curriculum-and-instruction/learning-support-and-programs/technology-resources/technology-standards-students-teachers-and-librarians"
     }
   ];
-  const groupSets = isOdysseyLearnContext()
+  const groupSets = learnExperience().tefaActive
     ? [
         {
           title: "Foundation Curriculum",
@@ -4151,7 +4247,7 @@ function formSubjectsSetupPanel(vm, currentTermId) {
       const listId = `learnSetupSubjects-${group.panel}`;
       const renderedRows = (rows.length ? rows : [{ subjectType: group.defaultType }]).map((subject) => subjectSetupRow(subject, vm.children, vm.terms, currentTermId, vm.preferences.groupingMode, group.minutes)).join("");
       const content = `<div id="${html(listId)}" data-setup-list="subjects" style="display:grid;gap:10px;">${renderedRows}</div><button type="button" data-setup-add-row="subjects" data-setup-add-target="${html(listId)}" data-setup-add-subject-type="${html(group.defaultType)}" style="margin-top:12px;border:1px solid var(--line);background:var(--paper2);border-radius:10px;padding:10px 16px;font-family:inherit;">Add ${html(group.title)} Subject</button>`;
-      return setupSectionPanel({ group: "subjects", panel: group.panel, title: group.title, detail: group.detail, minutes: group.minutes, content });
+      return setupSectionPanel({ group: "subjects", panel: group.panel, title: group.title, detail: group.detail, minutes: group.minutes, teksUrl: group.teksUrl || "", content });
     }).join("")}`;
 }
 
@@ -4864,8 +4960,8 @@ function renderSetup(vm) {
     ? "Keep each child's familiar grade or level. Forms stay out of the way, and Planner and Print organize assignments by grade or individual child."
     : "Assign each child a Form and color. Forms let siblings at similar stages share work without duplicating the plan.";
   const collapseDefault = Boolean(vm.setupCompleted);
-  const rhythmSetupTitle = isOdysseyLearnContext() ? "Daily Rhythm" : "Church Rhythm";
-  const rhythmSetupSummary = isOdysseyLearnContext() ? "Daily prayers, readings, saints, feasts, and fasting notes" : "Daily prayers, readings, saints, feasts, and fasting rhythm";
+  const rhythmSetupTitle = learnExperience().tefaActive ? "Daily Rhythm" : "Church Rhythm";
+  const rhythmSetupSummary = learnExperience().tefaActive ? "Daily prayers, readings, saints, feasts, and fasting notes" : "Daily prayers, readings, saints, feasts, and fasting rhythm";
   const adaptivePanels = {
     church: `<span id="learnSetupChurchRhythm" class="learn-setup-anchor"></span>${collapsibleSetupPanel("churchRhythm", rhythmSetupTitle, churchRhythmSetupPanel(vm), { icon: "☩", summary: rhythmSetupSummary, defaultCollapsed: collapseDefault })}`,
     enrichment: `<span id="learnSetupFormation" class="learn-setup-anchor"></span>${panel("Enrichment", formationSetupPanel(vm), { icon: "✥", largeTitle: true })}`,
@@ -5484,6 +5580,34 @@ async function openSaintOfDay(button) {
 }
 
 function wireDashboard() {
+  root.querySelectorAll("[data-tefa-view-toggle]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const next = learnExperience().viewMode === "tefa" ? "classic" : "tefa";
+      setLearnViewMode(next);
+      // Reload rather than patch in place: the toggle changes copy, nav
+      // labels/order, and section order across the whole shell, and a full
+      // reload is far less error-prone than re-deriving every affected node.
+      window.location.reload();
+    });
+  });
+
+  root.querySelectorAll("[data-church-section-toggle]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const body = button.closest("[data-church-section]")?.querySelector("[data-church-section-body]");
+      if (!body) return;
+      const nowCollapsed = !body.hidden;
+      body.hidden = nowCollapsed;
+      button.setAttribute("aria-expanded", nowCollapsed ? "false" : "true");
+      const label = button.querySelector("[data-church-section-toggle-label]");
+      if (label) label.textContent = nowCollapsed ? "Show Church Rhythm" : "Minimize";
+      try {
+        localStorage.setItem("agapay.learn.churchCardMinimized", nowCollapsed ? "true" : "false");
+      } catch {
+        // Best-effort — the toggle still works for this page view either way.
+      }
+    });
+  });
+
   root.querySelectorAll("[data-saint-of-day]").forEach((button) => {
     button.addEventListener("click", () => openSaintOfDay(button));
   });
