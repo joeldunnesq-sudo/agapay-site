@@ -1680,6 +1680,7 @@ export async function buildAcademicReportCardPdf({
   const fonts = await embedFonts(pdf);
   const markImage = await embedMarkLogo(pdf);
   const state = newFormState(pdf, fonts, markImage);
+  const schoolName = text(household?.homeschoolName) || text(household?.name);
   state.docTitle = "Report Card";
   state.docSubtitle = text(child?.firstName || child?.name);
 
@@ -1689,8 +1690,12 @@ export async function buildAcademicReportCardPdf({
     { label: "Student", value: text(child?.firstName || child?.name) },
     { label: "Grade", value: text(child?.gradeLabel) || (child?.gradeLevel ? `Grade ${child.gradeLevel}` : "") },
     { label: "School Year", value: text(academicYear?.name) },
-    { label: "Household", value: text(household?.name) }
+    { label: "School", value: schoolName }
   ]);
+  if (text(household?.patronSaintName)) {
+    state.page.drawText(`Patron Saint: ${text(household.patronSaintName)}`, { x: MARGIN, y: state.y + 6, size: 8, font: state.fonts.sans, color: MUTED });
+    state.y -= 6;
+  }
 
   const childCourses = courses.filter((course) => course.childId === child?.id);
   const coreCourses = childCourses.filter((course) => CORE_SUBJECT_CATEGORIES.has(course.subjectCategory));
@@ -1751,40 +1756,42 @@ export async function buildAcademicReportCardPdf({
 
 /**
  * Builds an "Official Transcript" PDF for one student, following a standard
- * homeschool transcript layout: School/Student info panels, four grade-level
- * course tables shown two-up (Freshman+Sophomore, then Junior+Senior),
- * a summary band, a compact grading-scale legend, blank fillable ACT/SAT
- * test-score tables, and a single Home Educator signature block.
+ * homeschool transcript layout: School/Student info panels (School Name and
+ * Patron Saint come from Setup; the rest are blank fillable lines), four
+ * grade-level course tables shown two-up (Freshman+Sophomore, then
+ * Junior+Senior), a summary band, a compact grading-scale legend, real
+ * ACT/SAT scores entered in Grades & Attendance (blank rows if none are on
+ * file yet), and a single Home Educator signature block.
  *
  * Course data spans every academic year on file for the household (see
  * loadAllCoursesForHousehold), not just the currently active one — a
  * transcript is a K-12 record, not a single-term snapshot like the report
- * card. Fields AGAPAY doesn't collect (D.O.B., addresses, phone/email,
- * standardized test scores) are rendered as blank fillable lines, same as
- * a printed paper form — nothing sensitive is auto-populated into them.
+ * card. Fields AGAPAY doesn't collect (D.O.B., addresses, phone/email) are
+ * rendered as blank fillable lines, same as a printed paper form — nothing
+ * sensitive is auto-populated into them.
  */
 export async function buildAcademicTranscriptPdf({
-  household, child, courses = [], attendance = null, generatedAt = new Date().toISOString()
+  household, child, courses = [], attendance = null, testScores = [], generatedAt = new Date().toISOString()
 } = {}) {
   const pdf = await PDFDocument.create();
   const fonts = await embedFonts(pdf);
   const markImage = await embedMarkLogo(pdf);
   const state = newFormState(pdf, fonts, markImage);
+  const schoolName = text(household?.homeschoolName) || text(household?.name);
   state.docTitle = "Official Transcript";
   state.docSubtitle = text(child?.firstName || child?.name);
-  const headerArgs = { title: "Homeschool Official Transcript", subtitle: text(household?.name) };
+  const headerArgs = { title: "Homeschool Official Transcript", subtitle: schoolName };
 
   addFormPage(state, headerArgs);
+
+  const schoolFields = [{ label: "School Name", value: schoolName }];
+  if (text(household?.patronSaintName)) schoolFields.push({ label: "Patron Saint", value: text(household.patronSaintName) });
+  schoolFields.push({ label: "Address", value: "" }, { label: "Email", value: "" }, { label: "Phone #", value: "" });
 
   drawFormTwoColumnBlock(state,
     {
       title: "School Information",
-      fields: [
-        { label: "School Name", value: text(household?.name) },
-        { label: "Address", value: "" },
-        { label: "Email", value: "" },
-        { label: "Phone #", value: "" }
-      ]
+      fields: schoolFields
     },
     {
       title: "Student Information",
@@ -1834,16 +1841,25 @@ export async function buildAcademicTranscriptPdf({
   drawFormScaleLine(state, "Grading System", GRADE_PERCENT_RANGES.map(([letter, range]) => `${letter} = ${range}`));
   drawFormScaleLine(state, "GPA Scale", GRADE_PERCENT_RANGES.map(([letter]) => `${letter} = ${(getGPAPoints(letter) ?? 0).toFixed(2)}`));
 
+  const scoreCell = (value) => (value === null || value === undefined || value === "" ? "" : String(value));
+  const actScores = testScores.filter((row) => row.testType === "ACT");
+  const satScores = testScores.filter((row) => row.testType === "SAT");
+
   drawFormSectionLabel(state, "Test Scores");
   drawFormGridTable(state, {
     columns: ["Date", "Test", "Composite", "English", "Math", "Reading", "Science", "Writing"],
     flex: [1, 0.7, 1, 1, 1, 1, 1, 1],
-    rows: [["", "ACT", "", "", "", "", "", ""]]
+    rows: (actScores.length ? actScores : [null]).map((row) => row ? [
+      row.testDate || "", "ACT", scoreCell(row.compositeScore), scoreCell(row.englishScore),
+      scoreCell(row.mathScore), scoreCell(row.readingScore), scoreCell(row.scienceScore), scoreCell(row.writingScore)
+    ] : ["", "ACT", "", "", "", "", "", ""])
   });
   drawFormGridTable(state, {
     columns: ["Date", "Test", "Total Score", "Reading/Writing", "Math"],
     flex: [1, 0.7, 1, 1, 1],
-    rows: [["", "SAT", "", "", ""]]
+    rows: (satScores.length ? satScores : [null]).map((row) => row ? [
+      row.testDate || "", "SAT", scoreCell(row.totalScore), scoreCell(row.readingWritingScore), scoreCell(row.mathScore)
+    ] : ["", "SAT", "", "", ""])
   });
 
   drawFormSectionLabel(state, "Signatures");

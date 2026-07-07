@@ -10,12 +10,15 @@ import { enrichLiturgicalDayWithPonomar, handleLearnHymnsStatus } from "./hymn-s
 import { enrichLiturgicalDayWithOrthocal, fetchOrthocalDay, handleLearnReadingsStatus, orthocalSaintStories } from "./readings-source.js";
 import { renderPrintDocumentPdf } from "./print-engine.js";
 import { buildAcademicReportCardPdf, buildAcademicTranscriptPdf, buildLearnPrintDocument, buildLearnReportPrintDocument, renderPrintDocumentPdf as renderLocalPrintDocumentPdf } from "./print-documents.js";
+import { loadTestScores } from "./test-scores.js";
 import { createLearnRepositoryForRequest, SeedLearnRepository } from "./repository.js";
 import { learnSetupIdentity, saveLearnCompletion, saveLearnFamilyPlanning, saveLearnGraceMode, saveLearnPlannerBlock, saveLearnSetup } from "./setup-persistence.js";
 
 const LEARN_PRINT_USAGE_PREFIX = "__agapay_learn_print_usage:";
 
-export { handleLearnAttendanceSave, handleLearnGrades, handleLearnGradesSave };
+import { handleLearnTestScores, handleLearnTestScoresSave } from "./test-scores.js";
+
+export { handleLearnAttendanceSave, handleLearnGrades, handleLearnGradesSave, handleLearnTestScores, handleLearnTestScoresSave };
 
 function requestedCalendarType(url) {
   return url.searchParams.get("calendar") || "";
@@ -265,7 +268,12 @@ async function loadAcademicPrintData(env, identity) {
     ? await loadAttendance(env, identity.householdId, academicYearName)
     : devAttendanceFor(identity.householdId, academicYearName);
   return {
-    household: { id: identity.householdId, name: setupSnapshot?.household?.name || "Your Household" },
+    household: {
+      id: identity.householdId,
+      name: setupSnapshot?.household?.name || "Your Household",
+      homeschoolName: setupSnapshot?.household?.homeschoolName || "",
+      patronSaintName: setupSnapshot?.household?.patronSaintName || ""
+    },
     academicYear: { name: academicYearName },
     children,
     courses,
@@ -315,8 +323,11 @@ export async function handleLearnPrintPdf(request, env, templateId = "") {
     const coursesWithGradeLevel = data.courses.map((course) => ({ ...course, gradeLevel: Number(course.gradeLevel) || 9 }));
     const allYearsCoursesWithGradeLevel = data.allYearsCourses.map((course) => ({ ...course, gradeLevel: Number(course.gradeLevel) || 9 }));
     const generatedAt = new Date().toISOString();
+    const testScores = /^transcript$/i.test(resolvedTemplateId)
+      ? (await loadTestScores(env, identity.householdId)).filter((row) => row.childId === child.id)
+      : [];
     const pdfBuffer = /^transcript$/i.test(resolvedTemplateId)
-      ? await buildAcademicTranscriptPdf({ household: data.household, child: childForForm, courses: allYearsCoursesWithGradeLevel, attendance: data.attendance, generatedAt })
+      ? await buildAcademicTranscriptPdf({ household: data.household, child: childForForm, courses: allYearsCoursesWithGradeLevel, attendance: data.attendance, testScores, generatedAt })
       : await buildAcademicReportCardPdf({ household: data.household, child: childForForm, academicYear: data.academicYear, courses: coursesWithGradeLevel, attendance: data.attendance, generatedAt });
     return new Response(pdfBuffer, {
       headers: {
