@@ -55,7 +55,7 @@ function attendanceId(childId, academicYearName, date) {
   return `attendance_${stableSegment(childId, "child")}_${stableSegment(academicYearName, "year")}_${stableSegment(date, "date")}`;
 }
 
-function defaultAcademicYearName(setupSnapshot = {}) {
+export function defaultAcademicYearName(setupSnapshot = {}) {
   return text(setupSnapshot.schoolYear?.label || setupSnapshot.schoolYear?.name, new Date().getFullYear().toString());
 }
 
@@ -63,7 +63,7 @@ function setupFromHouseholdRow(row) {
   return safeJson(row?.data, {})?.setupSnapshot || null;
 }
 
-function gradeLevelForChild(child = {}) {
+export function gradeLevelForChild(child = {}) {
   const label = text(child.gradeLabel || child.formLabel, "");
   const match = label.match(/\b(9|10|11|12)\b/);
   return match ? Number(match[1]) : 9;
@@ -139,7 +139,7 @@ function attendanceWeekDates(reference = new Date()) {
   });
 }
 
-function attendanceSummary(children = [], entries = []) {
+export function attendanceSummary(children = [], entries = []) {
   const byChild = new Map(children.map((child) => [child.id, { childId: child.id, present: 0, absent: 0, excused: 0, holiday: 0, instructionalDays: 0 }]));
   for (const entry of list(entries)) {
     if (!byChild.has(entry.childId)) continue;
@@ -161,7 +161,7 @@ function attendanceStoreKey(householdId, academicYearName) {
   return `${householdId}::${academicYearName}`;
 }
 
-function devAttendanceFor(householdId, academicYearName) {
+export function devAttendanceFor(householdId, academicYearName) {
   return list(devAttendanceEntries.get(attendanceStoreKey(householdId, academicYearName)));
 }
 
@@ -185,11 +185,11 @@ async function loadSetup(env, householdId) {
   return setupFromHouseholdRow(rows[0]);
 }
 
-async function loadSetupForIdentity(env, identity) {
+export async function loadSetupForIdentity(env, identity) {
   return loadLearnSetupSnapshotForIdentity(env, identity);
 }
 
-async function loadChildren(env, householdId, setupSnapshot) {
+export async function loadChildren(env, householdId, setupSnapshot) {
   if (!d1(env)) return list(setupSnapshot?.children);
   const rows = await d1All(env, "SELECT id, first_name, age_years, grade_label, data FROM learn_children WHERE household_id = ?1 AND active = 1 ORDER BY first_name", householdId);
   if (!rows.length) return list(setupSnapshot?.children);
@@ -205,7 +205,79 @@ async function loadChildren(env, householdId, setupSnapshot) {
   });
 }
 
-async function loadCourses(env, householdId, academicYearName) {
+// Transcripts span a student's whole K-12 career, not just the currently
+// selected academic year, so this pulls courses across every academic year
+// on file for the household (unlike loadCourses, which is year-scoped and
+// correct for a single-term report card).
+export async function loadAllCoursesForHousehold(env, householdId) {
+  if (!d1(env)) return [];
+  let rows = [];
+  try {
+    rows = await d1All(
+      env,
+      `SELECT
+         c.id AS course_id,
+         c.child_id,
+         c.course_title,
+         c.grade_level,
+         c.credit_hours,
+         c.subject_category,
+         g.id AS grade_id,
+         g.term_index,
+         g.numeric_score,
+         g.letter_grade,
+         g.teacher_notes,
+         g.attendance_days,
+         ay.name AS academic_year_name
+       FROM courses c
+       JOIN academic_years ay ON ay.id = c.academic_year_id
+       LEFT JOIN grades_and_progress g ON g.course_id = c.id
+       WHERE c.household_id = ?1
+       ORDER BY c.grade_level, ay.name, c.child_id, c.subject_category, c.course_title, g.term_index`,
+      householdId
+    );
+  } catch {
+    return [];
+  }
+  const byCourse = new Map();
+  rows.forEach((row) => {
+    if (!byCourse.has(row.course_id)) {
+      byCourse.set(row.course_id, {
+        id: row.course_id,
+        childId: row.child_id,
+        courseTitle: row.course_title,
+        gradeLevel: row.grade_level,
+        creditHours: row.credit_hours,
+        subjectCategory: row.subject_category,
+        academicYearName: row.academic_year_name,
+        grades: []
+      });
+    }
+    if (row.term_index) {
+      byCourse.get(row.course_id).grades.push({
+        id: row.grade_id,
+        termIndex: row.term_index,
+        numericScore: row.numeric_score,
+        letterGrade: row.letter_grade || "",
+        teacherNotes: row.teacher_notes || "",
+        attendanceDays: row.attendance_days || 0
+      });
+    }
+  });
+  return [...byCourse.values()].map((course) => ({
+    ...course,
+    grades: [1, 2, 3].map((termIndex) => course.grades.find((grade) => grade.termIndex === termIndex) || {
+      id: gradeId(course.id, termIndex),
+      termIndex,
+      numericScore: null,
+      letterGrade: "",
+      teacherNotes: "",
+      attendanceDays: 0
+    })
+  }));
+}
+
+export async function loadCourses(env, householdId, academicYearName) {
   if (!d1(env)) return [];
   let rows = [];
   try {
@@ -272,7 +344,7 @@ async function loadCourses(env, householdId, academicYearName) {
   }));
 }
 
-async function loadAttendance(env, householdId, academicYearName) {
+export async function loadAttendance(env, householdId, academicYearName) {
   if (!d1(env)) return [];
   try {
     const rows = await d1All(

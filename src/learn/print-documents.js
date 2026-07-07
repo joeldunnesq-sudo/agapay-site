@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, LineCapStyle } from "pdf-lib";
+import { getGPAPoints } from "./gpa.js";
 
 // AGAPAY Learn renders print-shop PDFs server-side in the Cloudflare Worker.
 // pdf-lib is pure JavaScript and Worker-compatible, so we avoid Puppeteer,
@@ -1396,6 +1397,462 @@ function drawSection(state, section) {
 }
 
 // ─── Main renderer ────────────────────────────────────────────────────────────
+// ─── Homeschool Report Card & Transcript ───────────────────────────────────────
+// Data-driven from the real Grades & Attendance gradebook (courses + term
+// grades + attendance), NOT the narrative "Reports" seed model above. Laid
+// out to follow a standard homeschool report-card / transcript format, with
+// AGAPAY Learn branding. Self-contained: builds and returns its own PDF
+// bytes rather than going through the generic section-based document/table
+// engine, since these are fixed forms rather than free-form reports.
+
+const CORE_SUBJECT_CATEGORIES = new Set(["English", "Math", "Science", "History"]);
+const GRADE_LEVEL_NAMES = { 9: "Freshman Year", 10: "Sophomore Year", 11: "Junior Year", 12: "Senior Year" };
+const GRADE_PERCENT_RANGES = [
+  ["A+", "97-100"], ["A", "93-96"], ["A-", "90-92"],
+  ["B+", "87-89"], ["B", "83-86"], ["B-", "80-82"],
+  ["C+", "77-79"], ["C", "73-76"], ["C-", "70-72"],
+  ["D+", "67-69"], ["D", "63-66"], ["D-", "60-62"],
+  ["F", "<60"]
+];
+
+function nextGradeLabel(gradeLevel) {
+  const level = Number(gradeLevel) || 9;
+  if (level >= 12) return "Graduate";
+  return `Grade ${level + 1}`;
+}
+
+function finalCourseGrade(course = {}) {
+  const graded = (course.grades || []).filter((grade) => grade.letterGrade);
+  return graded.length ? graded[graded.length - 1].letterGrade : "";
+}
+
+function courseGradePoints(course = {}) {
+  const points = getGPAPoints(finalCourseGrade(course));
+  return points === null ? null : points * (Number(course.creditHours) || 0);
+}
+
+async function embedMarkLogo(pdf) {
+  try {
+    const markBytes = await fetchBytes("https://agapay.app/mark.png");
+    return await pdf.embedPng(markBytes);
+  } catch {
+    return null;
+  }
+}
+
+function newFormState(pdf, fonts, markImage) {
+  return { pdf, fonts, markImage, page: null, pages: [], y: 0 };
+}
+
+function drawFormMasthead(state, { eyebrow = "Print Shop", title, subtitle }) {
+  const page = state.page;
+  const W = LETTER[0];
+  page.drawRectangle({ x: 0, y: LETTER[1] - 92, width: W, height: 92, color: NAVY });
+  if (state.markImage) {
+    const markSize = 38;
+    const markDims = state.markImage.scale(markSize / state.markImage.width);
+    page.drawImage(state.markImage, { x: MARGIN, y: LETTER[1] - 92 + (92 - markDims.height) / 2, width: markDims.width, height: markDims.height });
+  }
+  const textX = MARGIN + (state.markImage ? 50 : 0);
+  page.drawText("AGAPAY LEARN", { x: textX, y: LETTER[1] - 40, size: 12, font: state.fonts.sansBold, color: GOLD });
+  page.drawText(text(eyebrow), { x: textX, y: LETTER[1] - 54, size: 8, font: state.fonts.sans, color: CREAM });
+  const titleSize = 18;
+  const titleW = state.fonts.serifBold.widthOfTextAtSize(text(title), titleSize);
+  page.drawText(text(title), { x: W - MARGIN - titleW, y: LETTER[1] - 40, size: titleSize, font: state.fonts.serifBold, color: CREAM });
+  if (subtitle) {
+    const subW = state.fonts.sans.widthOfTextAtSize(text(subtitle), 9);
+    page.drawText(text(subtitle), { x: W - MARGIN - subW, y: LETTER[1] - 56, size: 9, font: state.fonts.sans, color: GOLD_SOFT });
+  }
+  page.drawLine({ start: { x: 0, y: LETTER[1] - 92 }, end: { x: W, y: LETTER[1] - 92 }, thickness: 2, color: GOLD });
+  state.y = LETTER[1] - 118;
+}
+
+function addFormPage(state, headerArgs) {
+  const page = state.pdf.addPage(LETTER);
+  page.drawRectangle({ x: 0, y: 0, width: LETTER[0], height: LETTER[1], color: PAPER });
+  state.page = page;
+  state.pages.push(page);
+  drawFormMasthead(state, headerArgs);
+  return page;
+}
+
+function fitFormPage(state, neededHeight, headerArgs) {
+  if (state.y - neededHeight > MARGIN + 54) return;
+  addFormPage(state, headerArgs || { title: state.docTitle, subtitle: state.docSubtitle });
+}
+
+function drawFormSectionLabel(state, label) {
+  fitFormPage(state, 26);
+  state.page.drawText(text(label).toUpperCase(), { x: MARGIN, y: state.y, size: 9.5, font: state.fonts.sansBold, color: GOLD });
+  state.y -= 8;
+  state.page.drawLine({ start: { x: MARGIN, y: state.y }, end: { x: LETTER[0] - MARGIN, y: state.y }, thickness: 0.8, color: GOLD });
+  state.y -= 16;
+}
+
+function drawFormInfoRow(state, pairs) {
+  fitFormPage(state, 32);
+  const colWidth = (LETTER[0] - MARGIN * 2) / pairs.length;
+  pairs.forEach((pair, i) => {
+    const x = MARGIN + i * colWidth;
+    state.page.drawText(text(pair.label).toUpperCase(), { x, y: state.y, size: 7.5, font: state.fonts.sansBold, color: MUTED });
+    state.page.drawText(text(pair.value || "—"), { x, y: state.y - 15, size: 11, font: state.fonts.serifBold, color: NAVY });
+  });
+  state.y -= 34;
+}
+
+function drawFormGridTable(state, { heading, columns, flex, rows, boldRowIndexes = [], emptyLabel = "None recorded yet." }) {
+  if (heading) drawFormSectionLabel(state, heading);
+  const widths = resolveColWidths(columns, flex);
+  const drawHeader = () => {
+    fitFormPage(state, 30, { title: state.docTitle, subtitle: state.docSubtitle });
+    let x = MARGIN;
+    state.page.drawRectangle({ x: MARGIN, y: state.y - 18, width: LETTER[0] - MARGIN * 2, height: 22, color: NAVY_SOFT });
+    columns.forEach((col, i) => {
+      state.page.drawText(text(col), { x: x + 6, y: state.y - 11, size: 7.5, font: state.fonts.sansBold, color: CREAM });
+      x += widths[i];
+    });
+    state.y -= 26;
+  };
+  drawHeader();
+  if (!rows.length) {
+    fitFormPage(state, 22);
+    state.page.drawRectangle({ x: MARGIN, y: state.y - 18, width: LETTER[0] - MARGIN * 2, height: 22, borderColor: LINE, borderWidth: 0.4, color: PAPER });
+    state.page.drawText(text(emptyLabel), { x: MARGIN + 6, y: state.y - 12, size: 8, font: state.fonts.sans, color: MUTED });
+    state.y -= 26;
+  }
+  rows.forEach((row, rowIdx) => {
+    const wrapped = row.map((cell, i) => wrapText(cell, state.fonts.sans, 8, widths[i] - 12).slice(0, 3));
+    const rowHeight = Math.max(20, Math.max(...wrapped.map((ls) => ls.length)) * 10 + 8);
+    if (state.y - rowHeight < MARGIN + 40) { addFormPage(state, { title: state.docTitle, subtitle: state.docSubtitle }); drawHeader(); }
+    const bold = boldRowIndexes.includes(rowIdx);
+    let x = MARGIN;
+    state.page.drawRectangle({ x: MARGIN, y: state.y - rowHeight + 4, width: LETTER[0] - MARGIN * 2, height: rowHeight,
+      borderColor: LINE, borderWidth: 0.4, color: bold ? GOLD_SOFT : (rowIdx % 2 === 0 ? rgb(1, 1, 0.98) : PAPER) });
+    wrapped.forEach((lines, i) => {
+      drawTextLines(state.page, lines, x + 6, state.y - 7, { font: bold ? state.fonts.sansBold : state.fonts.sans, size: 8, color: INK, leading: 10 });
+      x += widths[i];
+    });
+    state.y -= rowHeight;
+  });
+  state.y -= 10;
+}
+
+function drawFormParagraph(state, lines, { size = 9.5, gap = 14 } = {}) {
+  lines.forEach((line) => {
+    const wrapped = wrapText(line, state.fonts.sans, size, LETTER[0] - MARGIN * 2);
+    fitFormPage(state, wrapped.length * gap + 4);
+    state.y = drawTextLines(state.page, wrapped, MARGIN, state.y, { font: state.fonts.sans, size, color: INK, leading: gap }) - 6;
+  });
+}
+
+function drawFormSignatureLines(state, labels) {
+  fitFormPage(state, 60);
+  const gap = 24;
+  const colWidth = (LETTER[0] - MARGIN * 2 - gap * (labels.length - 1)) / labels.length;
+  labels.forEach((label, i) => {
+    const x = MARGIN + i * (colWidth + gap);
+    state.page.drawLine({ start: { x, y: state.y }, end: { x: x + colWidth, y: state.y }, thickness: 0.8, color: INK });
+    state.page.drawText(text(label), { x, y: state.y - 12, size: 8, font: state.fonts.sans, color: MUTED });
+  });
+  state.y -= 40;
+}
+
+function drawFormFooter(state, householdName, generatedAt) {
+  state.pages.forEach((page, i) => {
+    const note = `${text(householdName)} · Generated by AGAPAY Learn · ${text(generatedAt).slice(0, 10)}`;
+    page.drawText(note, { x: MARGIN, y: 24, size: 7, font: state.fonts.sans, color: MUTED });
+    const pageLabel = `Page ${i + 1} of ${state.pages.length}`;
+    const pw = state.fonts.sans.widthOfTextAtSize(pageLabel, 7);
+    page.drawText(pageLabel, { x: LETTER[0] - MARGIN - pw, y: 24, size: 7, font: state.fonts.sans, color: MUTED });
+  });
+}
+
+function drawFormTwoColumnBlock(state, left, right) {
+  fitFormPage(state, 30 + Math.max(left.fields.length, right.fields.length) * 18);
+  const colWidth = (LETTER[0] - MARGIN * 2 - 20) / 2;
+  const startY = state.y;
+  [{ x: MARGIN, spec: left }, { x: MARGIN + colWidth + 20, spec: right }].forEach(({ x, spec }) => {
+    let y = startY;
+    state.page.drawRectangle({ x, y: y - 14, width: colWidth, height: 16, color: NAVY_SOFT });
+    state.page.drawText(text(spec.title).toUpperCase(), { x: x + 6, y: y - 11, size: 8, font: state.fonts.sansBold, color: CREAM });
+    y -= 28;
+    spec.fields.forEach((field) => {
+      const labelText = `${text(field.label).toUpperCase()}:`;
+      state.page.drawText(labelText, { x, y, size: 7.5, font: state.fonts.sansBold, color: MUTED });
+      const labelW = state.fonts.sansBold.widthOfTextAtSize(labelText, 7.5);
+      if (field.value) {
+        state.page.drawText(text(field.value), { x: x + labelW + 6, y: y - 1, size: 9, font: state.fonts.sans, color: INK });
+      } else {
+        state.page.drawLine({ start: { x: x + labelW + 6, y: y - 3 }, end: { x: x + colWidth, y: y - 3 }, thickness: 0.6, color: LINE });
+      }
+      y -= 18;
+    });
+  });
+  state.y = startY - 28 - Math.max(left.fields.length, right.fields.length) * 18 - 8;
+}
+
+// Draws one grade-level course table (Course Title | Grade | Unit | GP) at a
+// given x/width, with a "Year: ____" fill-in field beside the heading and a
+// bold Totals/Averages row — used two-up (Freshman+Sophomore, then
+// Junior+Senior) to match a standard homeschool transcript layout.
+function drawCompactCourseTable(state, x, width, { heading, rows, totals }) {
+  const startY = state.y;
+  state.page.drawText(text(heading), { x, y: startY, size: 10, font: state.fonts.serifBold, color: NAVY });
+  const yearLabel = "Year:";
+  const yearFieldW = 60;
+  const yearLabelW = state.fonts.sans.widthOfTextAtSize(yearLabel, 7.5);
+  const yearX = x + width - yearFieldW - yearLabelW - 4;
+  state.page.drawText(yearLabel, { x: yearX, y: startY, size: 7.5, font: state.fonts.sans, color: MUTED });
+  state.page.drawLine({ start: { x: yearX + yearLabelW + 4, y: startY - 2 }, end: { x: x + width, y: startY - 2 }, thickness: 0.6, color: LINE });
+  let y = startY - 14;
+  state.page.drawLine({ start: { x, y }, end: { x: x + width, y }, thickness: 1, color: GOLD });
+  y -= 14;
+
+  const colWidths = [width * 0.56, width * 0.16, width * 0.12, width * 0.16];
+  const columns = ["Course Title", "Grade", "Unit", "GP"];
+  state.page.drawRectangle({ x, y: y - 14, width, height: 16, color: NAVY_SOFT });
+  let cx = x;
+  columns.forEach((col, i) => {
+    state.page.drawText(col, { x: cx + 4, y: y - 10, size: 7, font: state.fonts.sansBold, color: CREAM });
+    cx += colWidths[i];
+  });
+  y -= 18;
+
+  const drawRow = (cells, { bold = false, shade = null } = {}) => {
+    const rowH = 15;
+    state.page.drawRectangle({ x, y: y - rowH + 4, width, height: rowH, borderColor: LINE, borderWidth: 0.35, color: shade || PAPER });
+    let cxr = x;
+    cells.forEach((cell, i) => {
+      const lines = wrapText(text(cell), bold ? state.fonts.sansBold : state.fonts.sans, 7.5, colWidths[i] - 6).slice(0, 1);
+      drawTextLines(state.page, lines, cxr + 4, y - 6, { font: bold ? state.fonts.sansBold : state.fonts.sans, size: 7.5, color: bold ? NAVY : INK, leading: 9 });
+      cxr += colWidths[i];
+    });
+    y -= rowH;
+  };
+
+  if (!rows.length) {
+    drawRow(["No courses recorded for this year yet.", "", "", ""]);
+  } else {
+    rows.forEach((row, i) => drawRow(row, { shade: i % 2 === 0 ? rgb(1, 1, 0.98) : PAPER }));
+  }
+  drawRow(["", "Totals/Averages", totals.credit, totals.gp], { bold: true, shade: GOLD_SOFT });
+
+  return y;
+}
+
+function drawSideBySideCourseTables(state, leftSpec, rightSpec) {
+  fitFormPage(state, 210, { title: state.docTitle, subtitle: state.docSubtitle });
+  const colWidth = (LETTER[0] - MARGIN * 2 - 20) / 2;
+  const startY = state.y;
+  const leftEndY = drawCompactCourseTable(state, MARGIN, colWidth, leftSpec);
+  state.y = startY;
+  const rightEndY = drawCompactCourseTable(state, MARGIN + colWidth + 20, colWidth, rightSpec);
+  state.y = Math.min(leftEndY, rightEndY) - 18;
+}
+
+// Compact wrapped text lines (not a table) for the grading-scale legend —
+// matches the plain "A = 90-100  B = 80-89 ..." single-line convention used
+// on standard homeschool transcripts.
+function drawFormScaleLine(state, label, items) {
+  fitFormPage(state, 30);
+  state.page.drawText(text(label).toUpperCase(), { x: MARGIN, y: state.y, size: 8, font: state.fonts.sansBold, color: GOLD });
+  state.y -= 13;
+  const lines = wrapText(items.join("     "), state.fonts.sans, 8.5, LETTER[0] - MARGIN * 2);
+  lines.forEach((line) => {
+    fitFormPage(state, 13);
+    state.page.drawText(line, { x: MARGIN, y: state.y, size: 8.5, font: state.fonts.sans, color: INK });
+    state.y -= 13;
+  });
+  state.y -= 6;
+}
+
+/**
+ * Builds a single-page Homeschool Report Card PDF for one student, following
+ * a standard T1/T2/T3 core + elective course grid with an attendance summary
+ * and a parent certification line — populated from real Grades & Attendance
+ * course/term data (not the narrative subject-progress "Reports" model).
+ */
+export async function buildAcademicReportCardPdf({
+  household, child, academicYear, courses = [], attendance = null, generatedAt = new Date().toISOString()
+} = {}) {
+  const pdf = await PDFDocument.create();
+  const fonts = await embedFonts(pdf);
+  const markImage = await embedMarkLogo(pdf);
+  const state = newFormState(pdf, fonts, markImage);
+  state.docTitle = "Report Card";
+  state.docSubtitle = text(child?.firstName || child?.name);
+
+  addFormPage(state, { title: "Homeschool Report Card", subtitle: `${text(academicYear?.name)}` });
+
+  drawFormInfoRow(state, [
+    { label: "Student", value: text(child?.firstName || child?.name) },
+    { label: "Grade", value: text(child?.gradeLabel) || (child?.gradeLevel ? `Grade ${child.gradeLevel}` : "") },
+    { label: "School Year", value: text(academicYear?.name) },
+    { label: "Household", value: text(household?.name) }
+  ]);
+
+  const childCourses = courses.filter((course) => course.childId === child?.id);
+  const coreCourses = childCourses.filter((course) => CORE_SUBJECT_CATEGORIES.has(course.subjectCategory));
+  const electiveCourses = childCourses.filter((course) => !CORE_SUBJECT_CATEGORIES.has(course.subjectCategory));
+  const termCount = Math.max(1, ...childCourses.map((course) => (course.grades || []).length), 3);
+  const termColumns = Array.from({ length: Math.min(termCount, 3) }, (_, i) => `Term ${i + 1}`);
+
+  const courseRow = (course) => [
+    course.courseTitle,
+    ...termColumns.map((_, i) => course.grades?.find((g) => g.termIndex === i + 1)?.letterGrade || "—")
+  ];
+
+  drawFormGridTable(state, {
+    heading: "Core Courses",
+    columns: ["Course", ...termColumns],
+    flex: [2.2, ...termColumns.map(() => 0.7)],
+    rows: coreCourses.map(courseRow),
+    emptyLabel: "No core courses recorded yet for this student."
+  });
+
+  drawFormGridTable(state, {
+    heading: "Elective Courses",
+    columns: ["Course", ...termColumns],
+    flex: [2.2, ...termColumns.map(() => 0.7)],
+    rows: electiveCourses.map(courseRow),
+    emptyLabel: "No elective courses recorded yet for this student."
+  });
+
+  const childAttendance = attendance?.byChild?.find((row) => row.childId === child?.id);
+  drawFormGridTable(state, {
+    heading: "Attendance This Term",
+    columns: ["Present", "Absent", "Excused", "Instructional Days"],
+    flex: [1, 1, 1, 1],
+    rows: childAttendance
+      ? [[String(childAttendance.present || 0), String(childAttendance.absent || 0), String(childAttendance.excused || 0), String(childAttendance.instructionalDays || 0)]]
+      : [],
+    emptyLabel: "No attendance recorded yet this term."
+  });
+
+  drawFormSectionLabel(state, "Grading Scale");
+  drawFormGridTable(state, {
+    columns: GRADE_PERCENT_RANGES.map(([letter]) => letter),
+    flex: GRADE_PERCENT_RANGES.map(() => 1),
+    rows: [GRADE_PERCENT_RANGES.map(([, range]) => range)]
+  });
+
+  const studentName = text(child?.firstName || child?.name, "This student");
+  const gradeLabel = text(child?.gradeLabel) || (child?.gradeLevel ? `Grade ${child.gradeLevel}` : "the current grade");
+  drawFormParagraph(state, [
+    `I certify that ${studentName} has met the requirements to advance to ${nextGradeLabel(child?.gradeLevel)}, and that the information presented is accurate to the performance achieved for ${gradeLabel}.`
+  ]);
+  state.y -= 10;
+  drawFormSignatureLines(state, ["Parent / Teacher Signature", "Date"]);
+
+  drawFormFooter(state, household?.name, generatedAt);
+  return pdf.save();
+}
+
+/**
+ * Builds an "Official Transcript" PDF for one student, following a standard
+ * homeschool transcript layout: School/Student info panels, four grade-level
+ * course tables shown two-up (Freshman+Sophomore, then Junior+Senior),
+ * a summary band, a compact grading-scale legend, blank fillable ACT/SAT
+ * test-score tables, and a single Home Educator signature block.
+ *
+ * Course data spans every academic year on file for the household (see
+ * loadAllCoursesForHousehold), not just the currently active one — a
+ * transcript is a K-12 record, not a single-term snapshot like the report
+ * card. Fields AGAPAY doesn't collect (D.O.B., addresses, phone/email,
+ * standardized test scores) are rendered as blank fillable lines, same as
+ * a printed paper form — nothing sensitive is auto-populated into them.
+ */
+export async function buildAcademicTranscriptPdf({
+  household, child, courses = [], attendance = null, generatedAt = new Date().toISOString()
+} = {}) {
+  const pdf = await PDFDocument.create();
+  const fonts = await embedFonts(pdf);
+  const markImage = await embedMarkLogo(pdf);
+  const state = newFormState(pdf, fonts, markImage);
+  state.docTitle = "Official Transcript";
+  state.docSubtitle = text(child?.firstName || child?.name);
+  const headerArgs = { title: "Homeschool Official Transcript", subtitle: text(household?.name) };
+
+  addFormPage(state, headerArgs);
+
+  drawFormTwoColumnBlock(state,
+    {
+      title: "School Information",
+      fields: [
+        { label: "School Name", value: text(household?.name) },
+        { label: "Address", value: "" },
+        { label: "Email", value: "" },
+        { label: "Phone #", value: "" }
+      ]
+    },
+    {
+      title: "Student Information",
+      fields: [
+        { label: "Student Name", value: text(child?.firstName || child?.name) },
+        { label: "Address", value: "" },
+        { label: "D.O.B.", value: "" },
+        { label: "Email", value: "" },
+        { label: "Phone #", value: "" }
+      ]
+    }
+  );
+
+  const childCourses = courses.filter((course) => course.childId === child?.id);
+  let totalCredits = 0;
+  let totalPoints = 0;
+
+  const yearSpec = (gradeLevel) => {
+    const yearCourses = childCourses.filter((course) => Number(course.gradeLevel) === gradeLevel);
+    let yearCredits = 0;
+    let yearPoints = 0;
+    const rows = yearCourses.map((course) => {
+      const finalGrade = finalCourseGrade(course);
+      const credit = Number(course.creditHours) || 0;
+      const points = courseGradePoints(course);
+      if (points !== null) { yearCredits += credit; yearPoints += points; }
+      return [course.courseTitle, finalGrade || "In Progress", credit ? credit.toFixed(1) : "—", points === null ? "—" : points.toFixed(2)];
+    });
+    totalCredits += yearCredits;
+    totalPoints += yearPoints;
+    return { heading: GRADE_LEVEL_NAMES[gradeLevel].replace(" Year", ""), rows, totals: { credit: yearCredits.toFixed(1), gp: yearPoints.toFixed(2) } };
+  };
+
+  drawFormSectionLabel(state, "Academic History");
+  drawSideBySideCourseTables(state, yearSpec(9), yearSpec(10));
+  drawSideBySideCourseTables(state, yearSpec(11), yearSpec(12));
+
+  const finalGpa = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
+  drawFormSectionLabel(state, "Summary");
+  drawFormInfoRow(state, [
+    { label: "Graduation Date", value: "" },
+    { label: "Total Graduation Units", value: totalCredits.toFixed(1) },
+    { label: "Cumulative GPA", value: finalGpa }
+  ]);
+
+  drawFormSectionLabel(state, "Grading Scale");
+  drawFormScaleLine(state, "Grading System", GRADE_PERCENT_RANGES.map(([letter, range]) => `${letter} = ${range}`));
+  drawFormScaleLine(state, "GPA Scale", GRADE_PERCENT_RANGES.map(([letter]) => `${letter} = ${(getGPAPoints(letter) ?? 0).toFixed(2)}`));
+
+  drawFormSectionLabel(state, "Test Scores");
+  drawFormGridTable(state, {
+    columns: ["Date", "Test", "Composite", "English", "Math", "Reading", "Science", "Writing"],
+    flex: [1, 0.7, 1, 1, 1, 1, 1, 1],
+    rows: [["", "ACT", "", "", "", "", "", ""], ["", "ACT", "", "", "", "", "", ""]]
+  });
+  drawFormGridTable(state, {
+    columns: ["Date", "Test", "Total Score", "Reading/Writing", "Math"],
+    flex: [1, 0.7, 1, 1, 1],
+    rows: [["", "SAT", "", "", ""], ["", "SAT", "", "", ""]]
+  });
+
+  drawFormSectionLabel(state, "Signatures");
+  drawFormParagraph(state, ["Home Educator's Name / Signature:"], { size: 9 });
+  drawFormSignatureLines(state, ["Print", "Sign", "Date"]);
+
+  drawFormFooter(state, household?.name, generatedAt);
+  return pdf.save();
+}
+
 export async function renderPrintDocumentPdf(document) {
   const pdf   = await PDFDocument.create();
   const fonts = await embedFonts(pdf);
