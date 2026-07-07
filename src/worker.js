@@ -535,6 +535,8 @@ const MYAGAPAY_ASSET_ROUTES = new Map([
   ["/myagapay/learn/co-op", "/learn/co-op"],
   ["/learn/odyssey", "/learn/odyssey/index.html"],
   ["/learn/odyssey/", "/learn/odyssey/index.html"],
+  ["/learn/odyssey/faq", "/learn/odyssey/faq.html"],
+  ["/learn/odyssey/faq/", "/learn/odyssey/faq.html"],
   ["/learn/odyssey/dashboard", "/learn/odyssey/dashboard/index.html"],
   ["/learn/odyssey/dashboard/", "/learn/odyssey/dashboard/index.html"],
   ["/learn/odyssey/dashboard/planner", "/learn/odyssey/dashboard/index.html"],
