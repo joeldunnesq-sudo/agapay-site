@@ -55,7 +55,6 @@ run_worker_first = [
   "/learn/onboarding",
   "/learn/co-op",
   "/learn/odyssey",
-  "/learn/odyssey/",
   "/learn/odyssey/*",
   "/listen",
   "/listen/*"
