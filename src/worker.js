@@ -221,6 +221,8 @@ import {
   handleLearnAttendanceSave,
   handleLearnGrades,
   handleLearnGradesSave,
+  handleLearnTestScores,
+  handleLearnTestScoresSave,
   handleLearnGraceModeSave,
   handleLearnPlannerBlockSave,
   handleLearnBillingCancel,
@@ -1769,6 +1771,12 @@ export default {
     }
     if (request.method === "POST" && url.pathname === "/api/learn/grades") {
       return handleLearnGradesSave(request, env);
+    }
+    if (request.method === "GET" && url.pathname === "/api/learn/test-scores") {
+      return handleLearnTestScores(request, env);
+    }
+    if (request.method === "POST" && url.pathname === "/api/learn/test-scores") {
+      return handleLearnTestScoresSave(request, env);
     }
     if (request.method === "POST" && url.pathname === "/api/learn/attendance") {
       return handleLearnAttendanceSave(request, env);
