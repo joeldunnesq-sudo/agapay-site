@@ -88,8 +88,25 @@ This checks (see the script for the exact queries):
 - `commerce_orders.parish_id` and `settlement_profiles.parish_id` are never null
 - `tax_exemptions.registration_reference` resolves to a real `registrations` row
 
-**Caveat**: this script has been written against the current
-`migrations/*.sql` schema but has not yet been run against a real restore —
+**Update (2026-07-07, first real restore drill)**: run against a real
+production export for the first time. The restore itself worked cleanly
+(512 queries, 1805 rows written, no errors). `validate-restore.mjs` failed
+all 10 checks — but with `spawnSync npx ENOENT` on every single one, not a
+data or schema problem. Root cause: `execFileSync("npx", ...)` doesn't go
+through a shell by default, and on Windows `npx` resolves to `npx.cmd` (a
+batch file) — Node can't launch that directly without `shell: true`, even
+though typing `npx` yourself in the same terminal works fine. Fixed in
+both call sites in the script (`shell: process.platform === "win32"`,
+harmless no-op on macOS/Linux where `npx` is a real executable). This
+exact scenario is what the original caveat below warned about — an ENOENT
+on every check, not a plausible data failure, was the tell that it was the
+script and not the restore. **Still needs**: a re-run with the fix to
+confirm all 10 checks actually pass against real data — this fix has only
+been verified by code inspection (no cmd.exe-hostile characters in any of
+the SQL strings passed through), not by re-running it.
+
+**Original caveat**: this script was written against the current
+`migrations/*.sql` schema but had not yet been run against a real restore —
 there's no restore drill scheduled yet to test it end to end. Treat the
 first real run as the actual validation of the script itself, not just the
 data. If a query fails with a syntax or column-name error rather than a

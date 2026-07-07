@@ -423,3 +423,71 @@ done — support tools and everything after it now has somewhere to log to):
   tiers. Locked/upsell states for non-subscribers updated to match. Files:
   `public/parish/dashboard.html`, `public/parish/app.js`,
   `public/styles/stewardship.css`, `scripts/check.mjs`.
+- 2026-07-07 — AGAPAY Learn / TEKS-Odyssey pre-launch pass (outside the
+  13-phase spec, but pre-launch work worth tracking here). Fixed: TEFA
+  dashboard nav order now matches classic AGAPAY Learn exactly (was
+  reordered for TEFA framing, which Joel found confusing — reverted to
+  shared order, kept only label wording TEFA-specific); Church Rhythm
+  minimize button on the dashboard was non-functional — an inline
+  `style="display:flex"` on the collapsible body outranked the `[hidden]`
+  UA rule, so the button changed its own label/state but never actually
+  hid anything; fixed by driving `display` explicitly in both initial
+  render and the click handler. Found and fixed a real data gap: Report
+  Card/Transcript PDFs were rendering from a disconnected narrative
+  "Reports" model instead of the real Grades & Attendance gradebook a
+  parent fills in — rebuilt both as dedicated pdf-lib documents
+  (`buildAcademicReportCardPdf`/`buildAcademicTranscriptPdf` in
+  `src/learn/print-documents.js`) sourced from real course/term/credit
+  data, with the transcript pulling every academic year on file
+  (`loadAllCoursesForHousehold`, new) rather than just the active year,
+  since a transcript is a K-12 record. Iterated the transcript layout
+  twice against Joel-supplied reference templates (two-column
+  School/Student info, four grade-level tables shown two-up, compact
+  grading-scale legend, one page). Added: ACT/SAT score entry on the
+  Grades & Attendance page (new `learn_test_scores` table, migration
+  `0015`, `src/learn/test-scores.js`) that prints directly on the
+  transcript; homeschool name + patron saint fields in Setup that print
+  on both documents (`src/learn/setup-persistence.js`,
+  `dashboard-view-models.js`). While wiring the patron saint field, found
+  and fixed a **pre-existing** bug: the parish patronal feast fields saved
+  correctly but were never read back into the setup view model, so they
+  always rendered blank on reload — same root cause class as the new
+  fields would have hit if copied blind. Separately hardened the local
+  dev server (`server.mjs`) for this area, since it had no working path to
+  test any of it: missing `/learn/odyssey/dashboard/*` routing, the PDF-
+  generation POST endpoint wasn't wired at all, and PDF rendering had no
+  fallback for the missing Cloudflare Browser Rendering binding
+  (`AGAPAY_TEST_MODE` now set locally to route through the pdf-lib
+  renderer). Migration `0015` and all files applied by Joel; `npm run
+  check` fully green on a fresh clone as of this entry. **Not verified
+  end-to-end against production D1**: course/grade save and the
+  Report Card/Transcript print flow were tested locally against the
+  dev-server's non-D1 fallback path and via direct unit tests of the PDF
+  builders with synthetic data — never against a real D1-backed save in
+  production. Recommend one real click-through before calling Learn done:
+  Setup (add homeschool name + patron saint) → Grades & Attendance (add a
+  course with a grade, add an ACT or SAT score, Save) → Print Report Card
+  and Print Transcript → confirm the PDFs reflect what was actually
+  entered.
+- 2026-07-07 (continued) — Joel ran `node scripts/smoke-live.mjs` against
+  production via GitHub Actions: all green. Closes Phase 1's remaining
+  open item. Only open pre-launch item left on this tracker: the backup/
+  restore runbook and `scripts/validate-restore.mjs` have been written
+  and checked against the schema, but still never run against a real
+  restore — recommend doing one before relying on it in an actual
+  incident.
+- 2026-07-07 (continued) — Joel ran the actual restore drill: exported
+  production, restored into a scratch D1 database
+  (`agapay-restore-test`, created via the Cloudflare dashboard),
+  restore itself succeeded cleanly (512 queries, 1805 rows written, no
+  errors). `validate-restore.mjs` failed all 10 checks with `spawnSync
+  npx ENOENT` — not a data problem, a real bug: `execFileSync("npx", ...)`
+  needs `shell: true` to resolve `npx.cmd` on Windows, which the script
+  didn't have. Fixed both call sites (`shell: process.platform ===
+  "win32"`). **Not yet re-verified** — the fix has only been checked by
+  reading the code (confirmed none of the script's SQL strings contain
+  characters `cmd.exe` would mangle), not by re-running it against the
+  restored database. Next session should re-run `node
+  scripts/validate-restore.mjs agapay-restore-test` with the fix and
+  confirm all 10 checks genuinely pass before treating the runbook as
+  proven end to end.
