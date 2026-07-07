@@ -77,14 +77,24 @@ if (targetDb === PRODUCTION_DB_NAME || targetDb.includes(PRODUCTION_DB_ID)) {
 }
 
 function query(sql) {
-  const raw = execFileSync(
-    WRANGLER.file,
-    [...WRANGLER.prefixArgs, "d1", "execute", targetDb, "--remote", "--json", "--command", sql],
-    // shell is only true for the npx fallback (see resolveWranglerCommand)
-    // — the primary path spawns node.exe directly with no shell involved,
-    // which is what actually fixes the Windows argument-splitting issue.
-    { encoding: "utf8", maxBuffer: 1024 * 1024 * 64, shell: WRANGLER.shell }
-  );
+  let raw;
+  try {
+    raw = execFileSync(
+      WRANGLER.file,
+      [...WRANGLER.prefixArgs, "d1", "execute", targetDb, "--remote", "--json", "--command", sql],
+      // shell is only true for the npx fallback (see resolveWranglerCommand)
+      // — the primary path spawns node.exe directly with no shell involved,
+      // which is what actually fixes the Windows argument-splitting issue.
+      { encoding: "utf8", maxBuffer: 1024 * 1024 * 64, shell: WRANGLER.shell }
+    );
+  } catch (err) {
+    // execFileSync's default error message is just "Command failed: <cmd>",
+    // which hides the actual reason. wrangler's real error text is on
+    // stderr (sometimes stdout for --json mode) — surface it so failures
+    // are diagnosable without re-running by hand to see what it says.
+    const detail = (err.stderr || err.stdout || "").toString().trim();
+    throw new Error(detail ? `${sql}\n${detail}` : err.message);
+  }
   const parsed = JSON.parse(raw);
   // wrangler d1 execute --json returns an array of { results, success, meta }
   return parsed?.[0]?.results || [];
