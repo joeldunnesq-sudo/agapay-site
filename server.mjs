@@ -15,6 +15,8 @@ import {
   handleLearnAttendanceSave,
   handleLearnGrades,
   handleLearnGradesSave,
+  handleLearnTestScores,
+  handleLearnTestScoresSave,
   handleLearnGoogleCalendarCallback,
   handleLearnGoogleCalendarConnect,
   handleLearnGoogleCalendarPreview,
@@ -179,6 +181,14 @@ async function handleApi(req, res) {
   }
   if (req.method === "POST" && pathname === "/api/learn/grades") {
     await sendResponse(handleLearnGradesSave(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "GET" && pathname === "/api/learn/test-scores") {
+    await sendResponse(handleLearnTestScores(learnRequest(), learnEnv));
+    return true;
+  }
+  if (req.method === "POST" && pathname === "/api/learn/test-scores") {
+    await sendResponse(handleLearnTestScoresSave(learnRequest(), learnEnv));
     return true;
   }
   if (req.method === "POST" && pathname === "/api/learn/attendance") {
