@@ -502,3 +502,43 @@ done — support tools and everything after it now has somewhere to log to):
   failure — proof the splitting bug is gone, not just inspection. **Still
   needs**: one more real run against `agapay-restore-test` with actual
   credentials to confirm all 10 checks genuinely pass against real data.
+- 2026-07-07 (continued) — Restore drill closed out. Two more real findings
+  surfaced on the way to a clean run, both fixed:
+  - `EXPECTED_TABLES` listed `household_pledges_new`, a transient
+    mid-migration table name (migrations 0003/0004 create it, copy data,
+    then rename it to `household_pledges` as the final step) — the script
+    was checking for a name that's never supposed to exist in a healthy
+    database. Fixed to check for `household_pledges` instead.
+  - The stripe_subscription_id/stripe_account_id uniqueness checks only
+    excluded SQL `NULL`, not empty strings. Pending/incomplete
+    registrations store an unset value as `''`, not `NULL`, so multiple
+    pending registrations were getting grouped together as a false
+    "duplicate." Fixed both checks to exclude `''` too.
+  - Also confirmed (separately, real production finding, not a
+    restore-mechanism bug): migrations 0010-0015 had never been recorded
+    in D1's `d1_migrations` bookkeeping table, because they were applied
+    by pasting SQL into the Cloudflare dashboard console rather than via
+    `wrangler d1 migrations apply` — the only thing that writes that
+    bookkeeping row. The actual schema was confirmed present the whole
+    time (`settlement_profiles`, `tax_exemptions`, `learn_test_scores` all
+    existed and worked); this was purely a tracking gap, but a real one —
+    left as-is, it would have made a future `wrangler d1 migrations apply`
+    try to re-run 0010-0015 and fail on the non-idempotent `ALTER TABLE
+    ... ADD COLUMN` statements. Joel backfilled `d1_migrations` with the 6
+    missing rows directly against production.
+  - Along the way, also improved the script's own error reporting:
+    `query()` was swallowing wrangler's actual stderr behind a generic
+    "Command failed: <command>" message, which cost a full round-trip to
+    even see what was wrong on a transient failure. Now surfaces the real
+    error text.
+  Final run: **all 10 checks pass clean** against `agapay-restore-test`.
+  This is the first time this script — or this runbook — has been
+  exercised end to end against a real production export. Every failure
+  encountered along the way turned out to be in the validation tooling
+  itself (Windows shell/`.cmd` quoting, twice; a stale table name; a
+  missing empty-string filter; one transient network blip), never the
+  restore mechanism or the underlying data. The backup/restore runbook is
+  now genuinely proven, not just written. Scratch database
+  `agapay-restore-test` and the local `.sql` export should be cleaned up
+  per the runbook's step 5 (`npx wrangler d1 delete agapay-restore-test`,
+  then move or delete the local export file) once Joel is satisfied.
