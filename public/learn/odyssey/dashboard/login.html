@@ -71,30 +71,28 @@
         </div>
       </div>
 
-      <div class="donor-auth-form-card">
-        <form id="odysseyLoginForm" autocomplete="on" novalidate>
-          <div class="donor-field">
-            <label for="odysseyEmail">Email</label>
-            <input id="odysseyEmail" name="email" type="email" autocomplete="email"
-              inputmode="email" placeholder="your@email.com" required />
-          </div>
-          <div class="donor-field">
-            <label for="odysseyPassword">Password</label>
-            <input id="odysseyPassword" name="password" type="password"
-              autocomplete="current-password" placeholder="Your password" required />
-          </div>
-          <button class="btn btn-gold btn-full" type="submit" id="odysseyLoginBtn">Sign in</button>
-        </form>
+      <form class="donor-auth-card" id="odysseyLoginForm" autocomplete="on" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="odysseyEmail">Email</label>
+          <input class="form-input" id="odysseyEmail" name="email" type="email" autocomplete="email"
+            inputmode="email" placeholder="your@email.com" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="odysseyPassword">Password</label>
+          <input class="form-input" id="odysseyPassword" name="password" type="password"
+            autocomplete="current-password" placeholder="Your password" required />
+        </div>
+        <button class="btn btn-gold btn-block" type="submit" id="odysseyLoginBtn">Sign in</button>
+      </form>
 
-        <p class="odyssey-login-note">
-          New to AGAPAY? <a href="/myagapay/signup?next=/learn/odyssey/dashboard/activate">Create a free account</a>, then activate your TEFA subscription.
-        </p>
+      <p class="odyssey-login-note">
+        New to AGAPAY? <a href="/myagapay/signup?next=/learn/odyssey/dashboard/activate">Create a free account</a>, then activate your TEFA subscription.
+      </p>
 
-        <a class="odyssey-activate-link" href="/learn/odyssey/dashboard/activate">
-          <strong>Activate a new TEFA subscription</strong>
-          <span>Have your Odyssey purchase reference ready</span>
-        </a>
-      </div>
+      <a class="odyssey-activate-link" href="/learn/odyssey/dashboard/activate">
+        <strong>Activate a new TEFA subscription</strong>
+        <span>Have your Odyssey purchase reference ready</span>
+      </a>
     </section>
   </main>
 

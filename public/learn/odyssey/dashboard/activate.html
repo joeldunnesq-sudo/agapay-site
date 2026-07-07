@@ -102,44 +102,42 @@
         </div>
       </div>
 
-      <div class="donor-auth-form-card">
-        <form id="odysseyActivateForm" autocomplete="on" novalidate>
-          <div class="donor-field">
-            <label for="odysseyActivateEmail">AGAPAY account email</label>
-            <input id="odysseyActivateEmail" name="email" type="email" autocomplete="email"
-              inputmode="email" placeholder="your@email.com" required />
-          </div>
-          <div class="donor-field">
-            <label for="odysseyActivatePassword">AGAPAY password</label>
-            <input id="odysseyActivatePassword" name="password" type="password"
-              autocomplete="current-password" placeholder="Your password" required />
-          </div>
-          <div class="donor-field">
-            <label for="odysseyActivateRef">
-              Odyssey purchase reference
-              <span style="font-weight:400;color:var(--muted);font-size:.78rem"> — from your Odyssey confirmation</span>
-            </label>
-            <input id="odysseyActivateRef" name="odysseyRef" type="text"
-              autocomplete="off" placeholder="e.g. TEFA-TX-2026-XXXXXX" required />
-          </div>
-          <div class="odyssey-activate-odyssey">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" style="width:13px;height:13px;flex-shrink:0">
-              <circle cx="8" cy="8" r="6"/><line x1="8" y1="7" x2="8" y2="11"/><circle cx="8" cy="5" r=".5" fill="currentColor"/>
-            </svg>
-            Find your reference in your <a href="https://www.withodyssey.com" target="_blank" rel="noopener">Odyssey account</a> under purchase history.
-          </div>
-          <button class="btn btn-gold btn-full" type="submit" id="odysseyActivateBtn" style="margin-top:1.25rem">
-            Activate AGAPAY Learn
-          </button>
-        </form>
+      <form class="donor-auth-card" id="odysseyActivateForm" autocomplete="on" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="odysseyActivateEmail">AGAPAY account email</label>
+          <input class="form-input" id="odysseyActivateEmail" name="email" type="email" autocomplete="email"
+            inputmode="email" placeholder="your@email.com" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="odysseyActivatePassword">AGAPAY password</label>
+          <input class="form-input" id="odysseyActivatePassword" name="password" type="password"
+            autocomplete="current-password" placeholder="Your password" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="odysseyActivateRef">
+            Odyssey purchase reference
+            <span style="font-weight:400;color:var(--muted);font-size:.78rem"> — from your Odyssey confirmation</span>
+          </label>
+          <input class="form-input" id="odysseyActivateRef" name="odysseyRef" type="text"
+            autocomplete="off" placeholder="e.g. TEFA-TX-2026-XXXXXX" required />
+        </div>
+        <div class="odyssey-activate-odyssey">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" style="width:13px;height:13px;flex-shrink:0">
+            <circle cx="8" cy="8" r="6"/><line x1="8" y1="7" x2="8" y2="11"/><circle cx="8" cy="5" r=".5" fill="currentColor"/>
+          </svg>
+          Find your reference in your <a href="https://www.withodyssey.com" target="_blank" rel="noopener">Odyssey account</a> under purchase history.
+        </div>
+        <button class="btn btn-gold btn-block" type="submit" id="odysseyActivateBtn" style="margin-top:1.25rem">
+          Activate AGAPAY Learn
+        </button>
+      </form>
 
-        <div class="odyssey-divider">Don't have an AGAPAY account?</div>
-        <a href="/myagapay/signup?next=/learn/odyssey/dashboard/activate" class="btn btn-ghost btn-full">
-          Create a free AGAPAY account
-        </a>
+      <div class="odyssey-divider">Don't have an AGAPAY account?</div>
+      <a href="/myagapay/signup?next=/learn/odyssey/dashboard/activate" class="btn btn-ghost btn-block">
+        Create a free AGAPAY account
+      </a>
 
-        <p class="odyssey-login-link">Already activated? <a href="/learn/odyssey/dashboard/login">Sign in</a></p>
-      </div>
+      <p class="odyssey-login-link">Already activated? <a href="/learn/odyssey/dashboard/login">Sign in</a></p>
     </section>
   </main>
 
