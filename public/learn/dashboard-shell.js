@@ -3458,7 +3458,7 @@ function renderGrades(vm) {
         </div>
       </form>
 
-      ${panel("Transcript Readiness", `<div style="overflow:auto;"><table class="learn-grade-transcript-table"><thead><tr><th>Course</th><th>Subject</th><th>Level</th><th>Credit</th><th>Final</th></tr></thead><tbody>${transcriptRows}</tbody></table></div><div class="learn-grade-print-actions"><a href="${learnSectionHref("print-center")}">Open Print Center</a><button type="button" data-report-export="Report Card">Print Report Card</button><button type="button" data-report-export="Transcript">Print Transcript</button></div>`, { icon: "▤" })}
+      ${panel("Transcript Readiness", `<div style="overflow:auto;"><table class="learn-grade-transcript-table"><thead><tr><th>Course</th><th>Subject</th><th>Level</th><th>Credit</th><th>Final</th></tr></thead><tbody>${transcriptRows}</tbody></table></div><div class="learn-grade-print-actions"><a href="${learnSectionHref("print-center")}">Open Print Center</a><button type="button" data-report-export="Report Card" data-report-child-id="${html(vm.selectedChildId)}">Print Report Card</button><button type="button" data-report-export="Transcript" data-report-child-id="${html(vm.selectedChildId)}">Print Transcript</button></div>`, { icon: "▤" })}
     </section>
   `;
   return shell(vm, body);
@@ -7934,7 +7934,7 @@ function wireReports(vm) {
     if (lower.includes("subject")) return "subject-progress-report";
     return "year-end-report";
   };
-  const exportReport = async (label = vm.pdf.title, button = null) => {
+  const exportReport = async (label = vm.pdf.title, button = null, extra = {}) => {
     const title = label || "Year-End Report";
     const originalText = button?.textContent;
     if (button) {
@@ -7945,7 +7945,7 @@ function wireReports(vm) {
       const response = await fetch(`/api/learn/print/${encodeURIComponent(reportTemplateId(title))}`, {
         method: "POST",
         headers: learnRequestHeaders({ "content-type": "application/json" }),
-        body: JSON.stringify({ label: title })
+        body: JSON.stringify({ label: title, ...extra })
       });
       const contentType = response.headers.get("content-type") || "";
       if (!response.ok || !contentType.includes("application/pdf")) {
@@ -7967,7 +7967,10 @@ function wireReports(vm) {
   };
   root.querySelector("[data-report-pdf]")?.addEventListener("click", (event) => exportReport(vm.pdf.title, event.currentTarget));
   root.querySelectorAll("[data-report-export]").forEach((button) => {
-    button.addEventListener("click", () => exportReport(button.dataset.reportExport || "Learn Report", button));
+    button.addEventListener("click", () => {
+      const childId = button.dataset.reportChildId || "";
+      exportReport(button.dataset.reportExport || "Learn Report", button, childId ? { childId } : {});
+    });
   });
 }
 
