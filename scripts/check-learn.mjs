@@ -121,7 +121,7 @@ assert(!learnShell.includes('apiGet("/api/learn/reports")'), "The Learn shell sh
 assert(learnShell.includes("data-community-category") && learnShell.includes("data-community-resource-type") && learnShell.includes("data-community-media-type"), "Community Resources should filter by subject, resource type, and media type.");
 assert(learnShell.includes("data-community-suggest-form") && learnShell.includes("data-community-flag"), "Community Resources should support moderated submissions and member flags.");
 assert(learnShell.includes("Free plan: up to 2 children"), "Learn setup wizard should clearly disclose the free child limit.");
-assert(learnShell.includes('href="/myagapay/learn/setup?simple=1">Quick Setup'), "Learn utility bar should open the simple setup wizard.");
+assert(learnShell.includes('learnSectionHref("onboarding", "simple=1")') && learnShell.includes(">Quick Setup"), "Learn utility bar should open the simple setup wizard, resolved per-context (My AGAPAY vs. Odyssey/TEFA) via learnSectionHref.");
 assert(learnShell.includes('class="learn-setup-savebar"'), "Advanced Setup should use a dedicated reachable save bar.");
 assert(learnShell.includes("data-day-choice") && learnShell.includes('name="scheduledDays"'), "Enrichment and Form subjects should support exact weekday scheduling.");
 assert(learnShell.includes("Family Planner & Meals") && learnShell.includes("familyPlanning.fastingPreference"), "Planner should expose connected family calendar and fasting-aware meal planning.");
