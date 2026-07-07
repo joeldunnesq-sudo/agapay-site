@@ -117,7 +117,7 @@ const EXPECTED_TABLES = [
   "learn_households",
   "learn_children",
   "learn_transcripts",
-  "household_pledges_new",
+  "household_pledges",
   "sacrament_requests",
   "commerce_orders",
   "settlement_profiles",
