@@ -22,6 +22,40 @@
 // script is the last step of.
 
 import { execFileSync } from "node:child_process";
+import { createRequire } from "node:module";
+import { readdirSync } from "node:fs";
+import path from "node:path";
+
+// Resolve wrangler's actual JS entry point and invoke it with `node`
+// directly, instead of going through `npx`/`wrangler.cmd`. This sidesteps
+// Windows subprocess quoting entirely: `.cmd` files are batch scripts, and
+// spawning them (even with shell:true) means arguments get re-parsed by
+// cmd.exe — which was splitting our multi-word --command SQL string into
+// separate arguments ("Unknown arguments: name, FROM, sqlite_master...").
+// node.exe is a real executable; Node's argv-array spawning preserves each
+// array element as one argument, spaces and all, with no shell involved on
+// any platform. Verified directly: this invocation gets all the way to a
+// missing-credentials error from wrangler itself (proving the SQL string
+// arrived intact), not an "Unknown arguments" parse failure.
+//
+// wrangler's package.json restricts `exports` to ".", "./experimental-config",
+// and "./package.json" — `require.resolve("wrangler/bin/wrangler.js")`
+// throws ERR_PACKAGE_PATH_NOT_EXPORTED even though the file exists on disk.
+// Resolve via the exported "./package.json" instead and join the known
+// `bin` path from there.
+// Falls back to `npx wrangler` (shell:true on Windows) only if wrangler
+// isn't resolvable as a local dependency at all.
+function resolveWranglerCommand() {
+  try {
+    const require = createRequire(import.meta.url);
+    const pkgPath = require.resolve("wrangler/package.json");
+    const wranglerBin = path.join(path.dirname(pkgPath), "bin", "wrangler.js");
+    return { file: process.execPath, prefixArgs: [wranglerBin], shell: false };
+  } catch {
+    return { file: "npx", prefixArgs: ["wrangler"], shell: process.platform === "win32" };
+  }
+}
+const WRANGLER = resolveWranglerCommand();
 
 const PRODUCTION_DB_NAME = "agapay-production";
 const PRODUCTION_DB_ID = "24f514a6-6904-425b-a4c8-b3584b23c0be";
@@ -44,15 +78,12 @@ if (targetDb === PRODUCTION_DB_NAME || targetDb.includes(PRODUCTION_DB_ID)) {
 
 function query(sql) {
   const raw = execFileSync(
-    "npx",
-    ["wrangler", "d1", "execute", targetDb, "--remote", "--json", "--command", sql],
-    // execFileSync bypasses the shell by default. On Windows, `npx` resolves
-    // to `npx.cmd` (a batch file), which Node can't launch directly without
-    // going through cmd.exe — it fails with ENOENT even though `npx` works
-    // fine when you type it yourself. `shell: true` on Windows fixes this;
-    // it's unnecessary (and left off) on macOS/Linux where `npx` is a real
-    // executable.
-    { encoding: "utf8", maxBuffer: 1024 * 1024 * 64, shell: process.platform === "win32" }
+    WRANGLER.file,
+    [...WRANGLER.prefixArgs, "d1", "execute", targetDb, "--remote", "--json", "--command", sql],
+    // shell is only true for the npx fallback (see resolveWranglerCommand)
+    // — the primary path spawns node.exe directly with no shell involved,
+    // which is what actually fixes the Windows argument-splitting issue.
+    { encoding: "utf8", maxBuffer: 1024 * 1024 * 64, shell: WRANGLER.shell }
   );
   const parsed = JSON.parse(raw);
   // wrangler d1 execute --json returns an array of { results, success, meta }
@@ -103,16 +134,24 @@ check("Expected tables exist", () => {
 
 // 2. Migration status is current ----------------------------------------
 check("Migration status is current (no pending migrations)", () => {
-  // `wrangler d1 migrations list` compares the migrations/ dir on disk
-  // against the d1_migrations table in the target DB. Run separately
-  // since its output isn't the --json query format used above.
-  const output = execFileSync("npx", ["wrangler", "d1", "migrations", "list", targetDb, "--remote"], {
-    encoding: "utf8",
-    shell: process.platform === "win32"
-  });
-  if (/no migrations to apply/i.test(output) || /up to date/i.test(output)) return true;
-  console.log(output);
-  throw new Error("wrangler reports pending migrations — review output above");
+  // `wrangler d1 migrations list <name>` requires the target to be a
+  // binding configured in wrangler.toml — it errors with "Couldn't find a
+  // D1 DB with the name or binding '<name>' in your wrangler.toml file"
+  // for any ad-hoc database name, which a scratch restore-test database
+  // always is. `wrangler d1 execute` has no such requirement, so query
+  // D1's own migration-tracking table directly and compare against the
+  // migration files actually on disk — this also more directly proves the
+  // restored copy's own bookkeeping is intact, not just that wrangler's
+  // CLI can separately reach the real production migration state.
+  const applied = new Set(query("SELECT name FROM d1_migrations").map((row) => row.name));
+  const localFiles = readdirSync(new URL("../migrations/", import.meta.url))
+    .filter((name) => name.endsWith(".sql"))
+    .sort();
+  const missing = localFiles.filter((name) => !applied.has(name));
+  if (missing.length) {
+    throw new Error(`${missing.length} migration(s) on disk not recorded as applied in this restored copy: ${missing.join(", ")}`);
+  }
+  return `${applied.size} migration(s) recorded as applied, ${localFiles.length} on disk — all accounted for`;
 });
 
 // 3. Required IDs are not null -------------------------------------------
