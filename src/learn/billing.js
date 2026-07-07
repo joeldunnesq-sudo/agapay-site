@@ -295,6 +295,15 @@ export async function saveLearnBillingRecord(env = {}, record = {}) {
     stripeSubscriptionId: record.stripeSubscriptionId || "",
     stripeCheckoutSessionId: record.stripeCheckoutSessionId || "",
     source: record.source || "",
+    // Odyssey-specific fields. Self-entered by the parent and must be
+    // reconciled manually against Odyssey vendor/order records until
+    // Odyssey API/webhook integration exists. Non-destructive: only
+    // overwrites when a new value is actually provided.
+    odysseyRef: record.odysseyRef || existing?.odysseyRef || "",
+    odysseyVerificationStatus: record.odysseyVerificationStatus || existing?.odysseyVerificationStatus || "",
+    odysseyActivatedAt: record.odysseyActivatedAt || existing?.odysseyActivatedAt || "",
+    odysseyLastVerifiedAt: record.odysseyLastVerifiedAt || existing?.odysseyLastVerifiedAt || "",
+    odysseyVerificationNote: record.odysseyVerificationNote || existing?.odysseyVerificationNote || "",
     interval: normalizeCheckoutInterval(record.interval || record.billingInterval),
     learnBillingInterval: normalizeCheckoutInterval(record.interval || record.billingInterval),
     currentPeriodEnd: record.currentPeriodEnd || "",
@@ -658,19 +667,35 @@ export async function persistLearnBillingFromStripe(env = {}, source = {}) {
 // ── Odyssey activation ──────────────────────────────────────────────────────────
 // Called when a family enters their Odyssey purchase reference code.
 // Creates a family billing record with no Stripe IDs and source: 'odyssey'.
+//
+// Odyssey references are self-entered by the parent and must be reconciled
+// manually against Odyssey vendor/order records until Odyssey API/webhook
+// integration exists.
 export async function activateLearnOdysseyAccount(env = {}, email = "", odysseyRef = "") {
   if (!email) return { ok: false, error: "Email is required." };
+  const cleanRef = String(odysseyRef || "").trim().slice(0, 100);
   const existing = await loadLearnBillingRecord(env, email);
   if (existing && billingGrantsPaidAccess(existing) && existing.source !== "odyssey") {
     // Already has a paid subscription via another channel — don't overwrite
     return { ok: true, alreadyActive: true, plan: existing.plan };
   }
+  if (existing && existing.source === "odyssey" && existing.odysseyRef === cleanRef) {
+    // Same family, same reference re-submitted — leave verification state alone.
+    return { ok: true, alreadyActive: true, plan: existing.plan || LEARN_FAMILY_PLAN };
+  }
+  const priorVerification = existing && existing.source === "odyssey" ? existing : null;
   const record = {
     email,
     plan: LEARN_FAMILY_PLAN,
     status: "active",
     source: "odyssey",
-    odysseyRef: String(odysseyRef || "").trim().slice(0, 100),
+    odysseyRef: cleanRef,
+    // Self-entered by the parent; not yet confirmed against Odyssey's own
+    // records. Reset to "pending" any time the reference changes.
+    odysseyVerificationStatus: "pending",
+    odysseyActivatedAt: priorVerification?.odysseyActivatedAt || new Date().toISOString(),
+    odysseyLastVerifiedAt: "",
+    odysseyVerificationNote: "",
     interval: "year",
     learnSubscriptionCents: 8900,
     stripeCustomerId: "",
