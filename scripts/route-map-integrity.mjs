@@ -97,7 +97,13 @@ const odysseyFiles = [
   "/learn/odyssey/dashboard/index.html",
   "/learn/odyssey/dashboard/login.html",
   "/learn/odyssey/dashboard/activate.html",
-  "/learn/odyssey/dashboard/shell.js",
+  // The Odyssey dashboard shell logic is NOT a separate file — it is folded
+  // into the shared /learn/dashboard-shell.js (see isOdysseyLearnContext()
+  // and learnExperience() there). A per-namespace shell.js/odyssey-shell.js
+  // used to exist here as an unreferenced, drifted duplicate of the shared
+  // renderer and was removed; check the shared file instead so this test
+  // still fails loudly if the shared shell ever goes missing.
+  "/learn/dashboard-shell.js",
 ];
 for (const f of odysseyFiles) {
   checkFile("explicit Odyssey coverage", f);
