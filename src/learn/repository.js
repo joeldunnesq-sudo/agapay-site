@@ -771,7 +771,7 @@ function buildPlannerMonth(seed, calendarType, month = "") {
   const today = new Date().toISOString().slice(0, 10);
   const householdPlanByWeekday = new Map();
   const formPlanByWeekday = new Map();
-  const planIndexForWeekday = (weekday) => weekday === 0 ? 6 : weekday - 1;
+  const planIndexForWeekday = (weekday) => weekday;
 
   for (let weekday = 0; weekday < 7; weekday += 1) {
     const index = planIndexForWeekday(weekday);
