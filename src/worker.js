@@ -1369,7 +1369,7 @@ async function handleStewardshipGivingSummary(request, env, parishId) {
   const dayOfYear = Math.max(1, Math.ceil((today - new Date(`${year}-01-01`)) / 86400000));
   const daysInYear = (year % 4 === 0) ? 366 : 365;
 
-  const [pledgeRow, actualRow, priorRow] = await Promise.all([
+  const [pledgeRow, actualRow, priorRow, manualCurrentCents, manualPriorCents] = await Promise.all([
     env.AGAPAY_DB.prepare(`
       SELECT COUNT(*) AS pledging_donors, SUM(target_amount_cents) AS total_pledged_cents
       FROM household_pledges WHERE parish_id = ? AND fiscal_year = ?
@@ -1390,10 +1390,14 @@ async function handleStewardshipGivingSummary(request, env, parishId) {
       WHERE parish_id = ? AND payment_status IN ('paid', 'succeeded')
         AND created_at BETWEEN ? AND ?
     `).bind(parishId, `${year - 1}-01-01`, `${year - 1}-12-31`).first(),
+
+    manualIncomeTotalCents(env, parishId, yearStart, yearEnd),
+    manualIncomeTotalCents(env, parishId, `${year - 1}-01-01`, `${year - 1}-12-31`),
   ]);
 
   const totalPledged = pledgeRow?.total_pledged_cents || 0;
-  const totalActual  = actualRow?.total_actual_cents  || 0;
+  const totalActual  = (actualRow?.total_actual_cents || 0) + manualCurrentCents;
+  const totalPrior   = (priorRow?.total_prior_cents || 0) + manualPriorCents;
   const runRate      = Math.round((totalActual / dayOfYear) * daysInYear);
   const fulfillment  = totalPledged > 0 ? Math.round((totalActual / totalPledged) * 100) : null;
   const avgPerDonor  = (actualRow?.active_donors || 0) > 0
@@ -1405,7 +1409,8 @@ async function handleStewardshipGivingSummary(request, env, parishId) {
     active_donors:           actualRow?.active_donors        || 0,
     total_pledged_cents:     totalPledged,
     total_actual_cents:      totalActual,
-    prior_year_actual_cents: priorRow?.total_prior_cents     || 0,
+    manual_income_cents:     manualCurrentCents,
+    prior_year_actual_cents: totalPrior,
     run_rate_cents:          runRate,
     fulfillment_rate_pct:    fulfillment,
     avg_per_donor_cents:     avgPerDonor,
@@ -1771,6 +1776,133 @@ async function handleStewardshipGivingHealthScore(request, env, parishId) {
 // pace, restricted funds, recurring giving health, lapsed/new donors, and
 // a short list of rule-based follow-up suggestions derived directly from
 // the numbers (not invented copy).
+const MANUAL_INCOME_SOURCES = new Set(["cash_and_checks", "tithely", "paypal", "other"]);
+const MANUAL_INCOME_SOURCE_LABELS = {
+  cash_and_checks: "Cash & Checks",
+  tithely: "Tithe.ly",
+  paypal: "PayPal",
+  other: "Other",
+};
+
+function manualIncomeRowToJson(row) {
+  return {
+    id: row.id,
+    entryDate: row.entry_date,
+    source: row.source,
+    sourceLabel: row.source === "other" && row.source_label ? row.source_label : MANUAL_INCOME_SOURCE_LABELS[row.source] || row.source,
+    amountCents: row.amount_cents || 0,
+    fundCode: row.fund_code || "",
+    notes: row.notes || "",
+    enteredBy: row.entered_by || "",
+    createdAt: row.created_at,
+  };
+}
+
+// GET /api/parish/dashboard/:parishId/stewardship/income/manual?year=YYYY
+// List this year's manually-logged income (cash/check deposits, income
+// from other giving platforms), with totals by source. This is what lets
+// a treasurer see the offline/other-platform picture alongside what
+// AGAPAY Give collected online.
+async function handleStewardshipManualIncomeList(request, env, parishId) {
+  const auth = await verifyParishDashboard(request, env, parishId);
+  if (!auth) return unauthorized();
+  const gate = await requireStewardshipFeature(env, parishId);
+  if (gate) return gate;
+
+  const url  = new URL(request.url);
+  const year = parseInt(url.searchParams.get("year") || new Date().getFullYear(), 10);
+
+  const rows = await env.AGAPAY_DB.prepare(`
+    SELECT * FROM manual_income_entries
+    WHERE parish_id = ? AND entry_date BETWEEN ? AND ?
+    ORDER BY entry_date DESC, created_at DESC
+  `).bind(parishId, `${year}-01-01`, `${year}-12-31`).all();
+
+  const entries = (rows.results || []).map(manualIncomeRowToJson);
+  const totalCents = entries.reduce((s, e) => s + e.amountCents, 0);
+  const bySource = {};
+  for (const e of entries) {
+    bySource[e.source] = (bySource[e.source] || 0) + e.amountCents;
+  }
+
+  return json({
+    fiscal_year: year,
+    entries,
+    total_cents: totalCents,
+    by_source_cents: bySource,
+  });
+}
+
+// POST /api/parish/dashboard/:parishId/stewardship/income/manual
+// Add one manual income entry. Deliberately simple — a treasurer logging
+// this Sunday's cash-and-check count, or a month's Tithe.ly total, should
+// take seconds, not require itemizing individual donors.
+async function handleStewardshipManualIncomeCreate(request, env, parishId) {
+  const auth = await verifyParishDashboard(request, env, parishId);
+  if (!auth) return unauthorized();
+  const gate = await requireStewardshipFeature(env, parishId);
+  if (gate) return gate;
+
+  const body = await request.json().catch(() => null);
+  if (!body) return json({ error: "Invalid request body." }, { status: 400 });
+
+  const entryDate = String(body.entryDate || "").trim();
+  const source = String(body.source || "").trim();
+  const amountCents = Math.round(Number(body.amountCents));
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(entryDate)) {
+    return json({ error: "A valid entry date is required." }, { status: 400 });
+  }
+  if (!MANUAL_INCOME_SOURCES.has(source)) {
+    return json({ error: "Choose a valid income source." }, { status: 400 });
+  }
+  if (!Number.isFinite(amountCents) || amountCents <= 0) {
+    return json({ error: "Enter an amount greater than zero." }, { status: 400 });
+  }
+
+  const id = `manual_income_${parishId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const now = new Date().toISOString();
+  const sourceLabel = source === "other" ? String(body.sourceLabel || "").trim().slice(0, 60) : "";
+  const notes = String(body.notes || "").trim().slice(0, 500);
+  const fundCode = String(body.fundCode || "").trim().slice(0, 60);
+  const enteredBy = String(body.enteredByEmail || "").trim().slice(0, 200);
+
+  await env.AGAPAY_DB.prepare(`
+    INSERT INTO manual_income_entries
+      (id, parish_id, entry_date, source, source_label, amount_cents, fund_code, notes, entered_by, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, parishId, entryDate, source, sourceLabel || null, amountCents, fundCode || null, notes || null, enteredBy || null, now, now).run();
+
+  return json({ ok: true, entry: manualIncomeRowToJson({ id, entry_date: entryDate, source, source_label: sourceLabel, amount_cents: amountCents, fund_code: fundCode, notes, entered_by: enteredBy, created_at: now }) });
+}
+
+// DELETE /api/parish/dashboard/:parishId/stewardship/income/manual/:entryId
+async function handleStewardshipManualIncomeDelete(request, env, parishId, entryId) {
+  const auth = await verifyParishDashboard(request, env, parishId);
+  if (!auth) return unauthorized();
+  const gate = await requireStewardshipFeature(env, parishId);
+  if (gate) return gate;
+  if (!entryId) return json({ error: "Missing entry id." }, { status: 400 });
+
+  await env.AGAPAY_DB.prepare(
+    `DELETE FROM manual_income_entries WHERE id = ? AND parish_id = ?`
+  ).bind(entryId, parishId).run();
+
+  return json({ ok: true });
+}
+
+// Sums manual income for a parish within a date range — shared by the
+// summary/budget-pace figures and the monthly report, so both stay
+// consistent with what the treasurer has actually logged.
+async function manualIncomeTotalCents(env, parishId, startDate, endDate) {
+  const row = await env.AGAPAY_DB.prepare(`
+    SELECT COALESCE(SUM(amount_cents), 0) AS total_cents
+    FROM manual_income_entries
+    WHERE parish_id = ? AND entry_date BETWEEN ? AND ?
+  `).bind(parishId, startDate, endDate).first().catch(() => null);
+  return row?.total_cents || 0;
+}
+
 async function handleStewardshipMonthlyReport(request, env, parishId) {
   const url0 = new URL(request.url);
   const token = url0.searchParams.get("t") || getBearerToken(request);
@@ -1809,11 +1941,12 @@ async function handleStewardshipMonthlyReport(request, env, parishId) {
     headers: { Authorization: `Bearer ${token}` }
   });
 
-  const [summaryRes, recurringRes, retentionRes, healthRes, monthRow, fundsRows] = await Promise.all([
+  const [summaryRes, recurringRes, retentionRes, healthRes, fundsRes, monthRow, fundsRows, manualMonthCents] = await Promise.all([
     handleStewardshipGivingSummary(withYear("summary"), env, parishId).then(r => r.json()),
     handleStewardshipGivingRecurring(withYear("recurring"), env, parishId).then(r => r.json()),
     handleStewardshipGivingRetention(withYear("retention"), env, parishId).then(r => r.json()),
     handleStewardshipGivingHealthScore(withYear("health-score"), env, parishId).then(r => r.json()),
+    handleStewardshipGivingFunds(withYear("funds"), env, parishId).then(r => r.json()),
     env.AGAPAY_DB.prepare(`
       SELECT COALESCE(SUM(COALESCE(json_extract(data, '$.giftAmountCents'), json_extract(data, '$.amountCents'), 0)), 0) AS total_cents,
              COUNT(DISTINCT donor_email) AS donor_count
@@ -1827,9 +1960,11 @@ async function handleStewardshipMonthlyReport(request, env, parishId) {
       WHERE am.parish_id = ? AND am.fiscal_year = ?
       ORDER BY rf.sort_order ASC
     `).bind(parishId, year).all().catch(() => ({ results: [] })),
+    manualIncomeTotalCents(env, parishId, monthStart, monthEnd),
   ]);
 
   const fmt = (c) => "$" + ((c || 0) / 100).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const monthTotalCents = (monthRow?.total_cents || 0) + manualMonthCents;
 
   // Budget pace — same math as the Stewardship Reports card.
   const goalCents = summaryRes.total_pledged_cents || 0;
@@ -1915,7 +2050,7 @@ async function handleStewardshipMonthlyReport(request, env, parishId) {
 </head>
 <body>
   <div class="mr-toolbar" data-no-print>
-    <a href="javascript:history.back()" class="mr-toolbar-btn">&larr; Back</a>
+    <a href="/parish/dashboard" class="mr-toolbar-btn" onclick="window.close(); return true;">&larr; Back</a>
     <div style="display:flex;gap:.5rem;">
       <button class="mr-toolbar-btn" onclick="window.print()">Print</button>
       <button class="mr-toolbar-btn mr-primary" onclick="window.print()">Save as PDF</button>
@@ -1945,7 +2080,7 @@ async function handleStewardshipMonthlyReport(request, env, parishId) {
     <div class="mr-section">
       <h2>Giving This Month &mdash; ${htmlEscape(monthLabel)}</h2>
       <div class="mr-kpi-grid">
-        <div class="mr-kpi"><span>Collected</span><strong>${fmt(monthRow?.total_cents)}</strong></div>
+        <div class="mr-kpi"><span>Collected</span><strong>${fmt(monthTotalCents)}</strong></div>
         <div class="mr-kpi"><span>Donors</span><strong>${monthRow?.donor_count || 0}</strong></div>
       </div>
     </div>
@@ -1960,6 +2095,16 @@ async function handleStewardshipMonthlyReport(request, env, parishId) {
         <div class="mr-kpi"><span>Projected Year-End</span><strong>${fmt(summaryRes.run_rate_cents)}</strong></div>
         <div class="mr-kpi"><span>Pledge Fulfillment</span><strong>${summaryRes.fulfillment_rate_pct === null ? "—" : summaryRes.fulfillment_rate_pct + "%"}</strong></div>
       </div>
+    </div>
+
+    <div class="mr-section">
+      <h2>Giving by Fund</h2>
+      ${(fundsRes.funds || []).filter(f => f.total_cents > 0).length ? `
+        <table class="mr-table">
+          <thead><tr><th>Fund</th><th class="mr-right">Transactions</th><th class="mr-right">Total</th><th class="mr-right">Share</th></tr></thead>
+          <tbody>${(fundsRes.funds || []).filter(f => f.total_cents > 0).map(f => `<tr><td>${htmlEscape(f.fund_name)}</td><td class="mr-right">${f.transaction_count}</td><td class="mr-right">${fmt(f.total_cents)}</td><td class="mr-right">${f.pct_of_total}%</td></tr>`).join("")}</tbody>
+        </table>
+      ` : `<p style="color:var(--mr-muted);font-size:.88rem;">No fund-designated giving recorded for ${year} yet.</p>`}
     </div>
 
     <div class="mr-section">
@@ -2897,6 +3042,19 @@ export default {
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/report/monthly")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/report/monthly", ""));
       return handleStewardshipMonthlyReport(request, env, parishId);
+    }
+    if (request.method === "GET" && url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/income/manual")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/income/manual", ""));
+      return handleStewardshipManualIncomeList(request, env, parishId);
+    }
+    if (request.method === "POST" && url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/income/manual")) {
+      const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/income/manual", ""));
+      return handleStewardshipManualIncomeCreate(request, env, parishId);
+    }
+    if (request.method === "DELETE" && url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.includes("/stewardship/income/manual/")) {
+      const rest = url.pathname.replace("/api/parish/dashboard/", "");
+      const [parishIdRaw, , , , entryIdRaw] = rest.split("/"); // parishId / stewardship / income / manual / entryId
+      return handleStewardshipManualIncomeDelete(request, env, decodeURIComponent(parishIdRaw), decodeURIComponent(entryIdRaw || ""));
     }
     if (url.pathname.startsWith("/api/parish/dashboard/") && url.pathname.endsWith("/stewardship/giving/activate")) {
       const parishId = decodeURIComponent(url.pathname.replace("/api/parish/dashboard/", "").replace("/stewardship/giving/activate", ""));
