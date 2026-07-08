@@ -1342,10 +1342,29 @@ function renderPlanner(vm) {
   return shell(vm, body);
 }
 
+// Mirrors STATUS_META in src/learn/planner-overrides.js. Kept as a small,
+// separate copy here because this file is served to the browser directly
+// (no bundler), so it can't import server-side ES modules — see that file
+// for the source of truth on status language.
+const PLANNER_STATUS_META = {
+  planned:   { label: "Planned",    note: "On the schedule for this day." },
+  reduced:   { label: "Shortened",  note: "Kept, but trimmed to fit a lighter day." },
+  deferred:  { label: "Moved",      note: "Moved to another day this week — not behind, just later." },
+  reserve:   { label: "In Reserve", note: "Set aside for whenever there's a roomier day. No rush." },
+  completed: { label: "Done",       note: "Completed." },
+  rest:      { label: "Rest",       note: "A day for church, rest, and family rhythm." }
+};
+
+function plannerStatusMeta(status) {
+  const normalized = String(status || "planned").toLowerCase();
+  return PLANNER_STATUS_META[normalized] || { label: normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : "Planned", note: "" };
+}
+
 function statusPill(status) {
   const normalized = String(status || "").toLowerCase();
-  const color = normalized === "completed" ? "var(--navy)" : normalized === "deferred" ? "var(--burgundy)" : normalized === "reduced" ? "var(--gold)" : "var(--muted)";
-  return `<span style="border:1px solid ${color};color:${color};border-radius:999px;padding:2px 8px;font-size:11px;text-transform:capitalize;">${html(status || "planned")}</span>`;
+  const color = normalized === "completed" ? "var(--navy)" : normalized === "deferred" ? "var(--gold)" : normalized === "reserve" ? "var(--muted)" : normalized === "reduced" ? "var(--gold)" : "var(--muted)";
+  const meta = plannerStatusMeta(status);
+  return `<span title="${html(meta.note)}" style="border:1px solid ${color};color:${color};border-radius:999px;padding:2px 8px;font-size:11px;">${html(meta.label)}</span>`;
 }
 
 function renderPlannerReserveCard(vm) {
@@ -1569,8 +1588,22 @@ function renderPlannerWeek(vm) {
   `;
 }
 
+// "Move unfinished work" — a small inline control shown only on a day's
+// actually-unfinished (planned/reduced) blocks. Lets mom move a lesson to
+// the next open day this week, or set it aside In Reserve, without manual
+// rescheduling. See computeMoveUnfinishedWork() in
+// src/learn/planner-overrides.js for the shared logic behind this.
+function moveUnfinishedWorkControl(scope, rowId, weekday, status) {
+  if (!rowId || (status !== "planned" && status !== "reduced")) return "";
+  return `<div class="learn-move-unfinished" data-move-unfinished data-move-scope="${html(scope)}" data-move-row-id="${html(rowId)}" data-move-weekday="${weekday}" style="display:flex;gap:6px;justify-self:end;">
+    <button type="button" data-move-mode="next-open-day" title="Move this to the next open day this week" style="border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px;padding:4px 8px;font-size:11px;font-family:inherit;cursor:pointer;white-space:nowrap;">Move →</button>
+    <button type="button" data-move-mode="reserve" title="Set this aside for a roomier day — no rush" style="border:1px solid var(--line);background:var(--paper);color:var(--muted);border-radius:8px;padding:4px 8px;font-size:11px;font-family:inherit;cursor:pointer;white-space:nowrap;">Reserve</button>
+  </div>`;
+}
+
 function renderPlannerDay(vm) {
   const day = vm.day.selected || {};
+  const dayWeekday = Number.isInteger(vm.day.selectedIndex) ? vm.day.selectedIndex : 0;
   const dayLinks = vm.week.days.map((item) => `<a href="/myagapay/learn/planner?view=day&date=${encodeURIComponent(item.date)}&term=${encodeURIComponent(vm.term.activeTerm)}&termId=${encodeURIComponent(vm.term.activeTermId)}" style="text-decoration:none;color:var(--ink);border:1px solid ${item.date === day.date ? "var(--gold)" : "var(--line)"};background:${item.date === day.date ? "#fbf2dd" : "var(--paper)"};border-radius:10px;padding:10px;text-align:center;min-width:92px;"><strong style="display:block;color:${item.isSunday ? "var(--burgundy)" : "var(--gold)"};">${html(item.weekday)}</strong><small>${html(item.shortDate)}</small></a>`).join("");
   const designedAssignments = designedAssignmentsForDate(vm, day.date);
   const household = designedAssignments.length
@@ -1578,9 +1611,9 @@ function renderPlannerDay(vm) {
     : day.isSunday
       ? emptyState("Sunday is reserved for worship, rest, and family rhythm. No school blocks are scheduled.")
       : vm.day.householdBlocks.length
-        ? vm.day.householdBlocks.map((block) => `<div style="display:grid;grid-template-columns:1fr 70px 100px;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);"><span><strong>${html(block.title)}</strong><small style="display:block;color:var(--muted);">${html(block.sub)}</small></span><span>${html(block.minutes)}m</span>${statusPill(block.status)}</div>`).join("")
+        ? vm.day.householdBlocks.map((block) => `<div style="display:grid;grid-template-columns:1fr 70px 100px auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);"><span><strong>${html(block.title)}</strong><small style="display:block;color:var(--muted);">${html(block.sub)}</small></span><span>${html(block.minutes)}m</span>${statusPill(block.status)}${moveUnfinishedWorkControl("household", block.id, dayWeekday, block.status)}</div>`).join("")
         : emptyState("Drag subjects into this day from the Week view, or add setup subjects for this week.");
-  const forms = day.isSunday ? "" : vm.day.formBlocks.map((form) => `<div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:12px;display:grid;gap:10px;"><div style="display:flex;gap:10px;align-items:center;"><span style="width:34px;height:34px;border-radius:50%;background:${form.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(form.initials.slice(0, 2).join(""))}</span><span><strong>${html(form.formLabel)}</strong><small style="display:block;color:var(--muted);">${html(form.childNames.join(", "))}</small></span></div>${form.items.map((item) => `<div style="display:grid;grid-template-columns:1fr 60px 90px;gap:10px;align-items:center;border-top:1px solid var(--line);padding-top:8px;"><span><strong>${html(item.title)}</strong><small style="display:block;color:var(--muted);">${html(item.sub)}</small></span><span>${html(item.minutes)}m</span>${statusPill(item.status)}</div>`).join("")}</div>`).join("");
+  const forms = day.isSunday ? "" : vm.day.formBlocks.map((form) => `<div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:12px;display:grid;gap:10px;"><div style="display:flex;gap:10px;align-items:center;"><span style="width:34px;height:34px;border-radius:50%;background:${form.color};color:#f3ead4;display:flex;align-items:center;justify-content:center;">${html(form.initials.slice(0, 2).join(""))}</span><span><strong>${html(form.formLabel)}</strong><small style="display:block;color:var(--muted);">${html(form.childNames.join(", "))}</small></span></div>${form.items.map((item) => `<div style="display:grid;grid-template-columns:1fr 60px 90px auto;gap:10px;align-items:center;border-top:1px solid var(--line);padding-top:8px;"><span><strong>${html(item.title)}</strong><small style="display:block;color:var(--muted);">${html(item.sub)}</small></span><span>${html(item.minutes)}m</span>${statusPill(item.status)}${moveUnfinishedWorkControl("child", item.id, dayWeekday, item.status)}</div>`).join("")}</div>`).join("");
   const appointments = day.events || eventsForDate(vm, day.date);
   const appointmentPanel = appointments.length
     ? `<div style="display:grid;gap:9px;">${appointments.map((event) => `<div style="border:1px solid var(--line);border-radius:10px;background:var(--paper2);padding:10px 12px;"><strong>${html(event.title || "Appointment")}</strong><small style="display:block;color:var(--muted);">${html([timeLabel(event.startTime), event.location, event.notes].filter(Boolean).join(" · "))}</small></div>`).join("")}</div>`
@@ -7172,11 +7205,42 @@ function wireWeeklyAssignmentBoard(vm) {
   });
 }
 
+function wireMoveUnfinishedWork(vm) {
+  root.querySelectorAll("[data-move-unfinished] button[data-move-mode]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const wrap = button.closest("[data-move-unfinished]");
+      if (!wrap) return;
+      const scope = wrap.dataset.moveScope || "household";
+      const rowId = wrap.dataset.moveRowId || "";
+      const fromWeekday = Number(wrap.dataset.moveWeekday);
+      const mode = button.dataset.moveMode || "next-open-day";
+      if (!rowId || !Number.isInteger(fromWeekday)) return;
+      const buttons = wrap.querySelectorAll("button");
+      buttons.forEach((b) => { b.disabled = true; });
+      try {
+        const weekDate = vm.day?.selected?.date || "";
+        const response = await fetch(learnApiUrl("/api/learn/planner/move", { view: "day", date: weekDate }), {
+          method: "POST",
+          headers: learnRequestHeaders({ "content-type": "application/json" }),
+          body: JSON.stringify({ scope, rowId, fromWeekday, mode, weekDate })
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload.ok) throw new Error(payload.error || "That lesson could not be moved. Please try again.");
+        mount();
+      } catch (error) {
+        buttons.forEach((b) => { b.disabled = false; });
+        showLearnDialog("Couldn't Move That Lesson", error.message || "Please refresh and try again.", []);
+      }
+    });
+  });
+}
+
 function wirePlanner(vm) {
   if (vm.activeView) localStorage.setItem("agapay.learn.plannerView", vm.activeView);
   if (vm.month?.key) localStorage.setItem("agapay.learn.plannerMonth", vm.month.key);
   if (vm.term?.activeTerm) localStorage.setItem("agapay.learn.plannerTerm", String(vm.term.activeTerm));
   wireWeeklyAssignmentBoard(vm);
+  wireMoveUnfinishedWork(vm);
 
   // Week navigation — prev / next / today
   root.querySelectorAll("[data-week-nav]").forEach((button) => {

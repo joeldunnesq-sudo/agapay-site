@@ -195,6 +195,7 @@ function groupRowsByForm(rows = [], dayIndex = null) {
     if (dayIndex === null || minutes > 0 || status === "rest") {
       group.totalMinutes += minutes;
       group.items.push({
+        id: text(row.id, ""),
         title: text(row.title, "Lesson"),
         sub: text(row.detail || row.subtitle, ""),
         childName: name,
@@ -667,7 +668,8 @@ export function toPlannerViewModel(rawPayload) {
     day: {
       selected: selectedDay,
       selectedIndex: selectedDayIndex,
-      householdBlocks: safeArray(week.householdRows).map((row) => ({
+      householdBlocks: safeArray(week.householdRows).map((row, index) => ({
+        id: text(row.id, `household-${index}`),
         title: text(row.title, "Household block"),
         sub: text(row.detail || row.subtitle, ""),
         minutes: selectedDay?.isSunday ? 0 : Number(safeArray(row.minutes)[selectedDayIndex] || 0),
@@ -675,6 +677,7 @@ export function toPlannerViewModel(rawPayload) {
         graceModeApplied: Boolean(row.graceModeApplied)
       })).filter((row) => row.minutes > 0 || row.status === "rest"),
       childBlocks: rawChildRows.map((row, index) => ({
+        id: text(row.id, `child-${index}`),
         childName: childName(row.child, index),
         initial: childInitial(row.child, index),
         color: text(row.color || row.child?.color, ACCENTS[index % ACCENTS.length]),
@@ -773,11 +776,18 @@ export function toPlannerViewModel(rawPayload) {
           color: text(segment.color, ACCENTS[(rowIndex + segmentIndex) % ACCENTS.length])
         }))
       })),
-      graceReserve: simpleList(planner.termSetup?.graceReserve, (item, index) => ({
-        title: text(item.title, "Reserved work"),
-        note: text(item.note, ""),
-        color: text(item.color, ACCENTS[index % ACCENTS.length])
-      })),
+      graceReserve: [
+        ...simpleList(planner.termSetup?.graceReserve, (item, index) => ({
+          title: text(item.title, "Reserved work"),
+          note: text(item.note, ""),
+          color: text(item.color, ACCENTS[index % ACCENTS.length])
+        })),
+        ...simpleList(planner.week?.reserveList, (item, index) => ({
+          title: text(item.title, "Reserved work"),
+          note: "Set aside for whenever there's a roomier day. No rush.",
+          color: ACCENTS[(index + 3) % ACCENTS.length]
+        }))
+      ],
       summary: planner.termSetup?.termSummary || {},
       householdSummary: safeArray(planner.termSetup?.householdSummary).map((item) => text(item)),
       childTracks: safeArray(planner.children).map((child, index) => ({
