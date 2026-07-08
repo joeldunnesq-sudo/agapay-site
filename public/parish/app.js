@@ -437,7 +437,7 @@
       // Always reload metrics/financials when switching to the tab
       const _sw = stewardshipState.stewardship || {};
       const _active = _sw.active || ['active','trialing'].includes(_sw.status);
-      if (_active) { loadGivingMetricsPanel(); loadFinancialSnapshotsPanel(); loadStewardshipHealthScorePanel(); loadDonorConcentrationPanel(); loadRecurringGivingPanel(); }
+      if (_active) { loadGivingMetricsPanel(); loadFinancialSnapshotsPanel(); loadStewardshipHealthScorePanel(); loadDonorConcentrationPanel(); loadRecurringGivingPanel(); loadManualIncomePanel(); }
       return;
     }
     if (status) status.textContent = 'Loading…';
@@ -468,6 +468,7 @@
     loadStewardshipHealthScorePanel();
     loadDonorConcentrationPanel();
     loadRecurringGivingPanel();
+    loadManualIncomePanel();
   }
 
   // ── Giving Metrics Panel ─────────────────────────────────────────────────
@@ -648,10 +649,135 @@
     );
   }
 
-  // ── Stewardship Health Score Panel ──────────────────────────────────────
-  // Replaces the old standalone Donor Retention card — retention is now one
-  // of six signals rolled into a single composite score, matching how a
-  // parish council actually wants to read this: "are we on track," not a
+  // ── Other Income (manual entry) Panel ───────────────────────────────────
+  // Lets a treasurer log weekly cash & check totals, plus income received
+  // through other platforms (Tithe.ly, PayPal, etc.) that never touches
+  // AGAPAY Give directly. These entries fold into the same totals used by
+  // Budget Pace, Stewardship Health, and the Monthly Report — logged once,
+  // reflected everywhere, without re-entering it in multiple places.
+  const manualIncomeSourceLabels = { cash_and_checks: 'Cash & Checks', tithely: 'Tithe.ly', paypal: 'PayPal', other: 'Other' };
+
+  async function loadManualIncomePanel(year) {
+    const pane = document.getElementById('stewardshipManualIncomePane');
+    if (!pane || !currentParish) return;
+    if (!isParishTier()) { pane.innerHTML = renderGivingMetricsUpgrade(); return; }
+
+    const y = year || givingMetricsState.year;
+    if (!pane.querySelector('.sw-income-form')) pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
+    try {
+      const res = await fetch(stewardshipApi('/income/manual?year=' + y), { headers: authHeaders() });
+      const data = await res.json();
+      if (data.error && data.error.includes('not activated')) {
+        pane.innerHTML = renderGivingMetricsUpgrade();
+        return;
+      }
+      pane.innerHTML = renderManualIncome(data);
+    } catch (e) {
+      pane.innerHTML = '<p class="muted">Other income data unavailable.</p>';
+    }
+  }
+
+  function renderManualIncome(d) {
+    const fmt = (c) => '$' + ((c || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    const entries = d.entries || [];
+    const today = new Date().toISOString().slice(0, 10);
+
+    const rows = entries.length ? entries.map(e =>
+      '<tr class="sw-income-row">' +
+        '<td>' + escapeHtml(e.entryDate) + '</td>' +
+        '<td>' + escapeHtml(e.sourceLabel) + '</td>' +
+        '<td class="sw-td-right">' + fmt(e.amountCents) + '</td>' +
+        '<td class="sw-income-notes">' + escapeHtml(e.notes || '') + '</td>' +
+        '<td><button type="button" class="sw-income-delete-btn" onclick="deleteManualIncomeEntry(\'' + escapeAttr(e.id) + '\')" title="Delete entry">&times;</button></td>' +
+      '</tr>'
+    ).join('') : '<tr><td colspan="5" class="muted" style="text-align:center;padding:1rem;">No other income logged yet for this year.</td></tr>';
+
+    const bySourceHtml = Object.keys(d.by_source_cents || {}).length
+      ? '<div class="sw-income-by-source">' + Object.entries(d.by_source_cents).map(([src, cents]) =>
+          '<span><strong>' + fmt(cents) + '</strong> ' + escapeHtml(manualIncomeSourceLabels[src] || src) + '</span>'
+        ).join('') + '</div>'
+      : '';
+
+    return (
+      '<form class="sw-income-form" onsubmit="submitManualIncomeEntry(event)">' +
+        '<div class="sw-income-form-row">' +
+          '<label>Date<input type="date" name="entryDate" value="' + today + '" max="' + today + '" required /></label>' +
+          '<label>Source<select name="source" required onchange="this.closest(\'.sw-income-form-row\').querySelector(\'.sw-income-source-label-field\').hidden = (this.value !== \'other\')">' +
+            '<option value="cash_and_checks">Cash &amp; Checks</option>' +
+            '<option value="tithely">Tithe.ly</option>' +
+            '<option value="paypal">PayPal</option>' +
+            '<option value="other">Other</option>' +
+          '</select></label>' +
+          '<label class="sw-income-source-label-field" hidden>Label<input type="text" name="sourceLabel" placeholder="e.g. Venmo" maxlength="60" /></label>' +
+          '<label>Amount<input type="number" name="amountCents" inputmode="decimal" step="0.01" min="0.01" placeholder="0.00" required /></label>' +
+          '<label class="sw-income-notes-field">Notes (optional)<input type="text" name="notes" placeholder="e.g. Sunday collection" maxlength="200" /></label>' +
+          '<button type="submit" class="sw-action-btn sw-income-submit-btn">+ Log Income</button>' +
+        '</div>' +
+        '<div class="sw-income-form-status" aria-live="polite"></div>' +
+      '</form>' +
+      (bySourceHtml || '') +
+      '<div class="sw-fin-table-wrap" style="margin-top:.75rem;">' +
+        '<table class="sw-fin-table sw-income-table">' +
+          '<thead><tr><th>Date</th><th>Source</th><th class="sw-th-right">Amount</th><th>Notes</th><th></th></tr></thead>' +
+          '<tbody>' + rows + '</tbody>' +
+        '</table>' +
+      '</div>' +
+      '<p class="muted" style="font-size:.72rem;margin:.6rem 0 0;">Logged here, this rolls into Budget Pace, Stewardship Health, and the Monthly Stewardship Report automatically — no need to re-enter it anywhere else.</p>'
+    );
+  }
+
+  async function submitManualIncomeEntry(event) {
+    event.preventDefault();
+    const form = event.target;
+    const status = form.querySelector('.sw-income-form-status');
+    const submitBtn = form.querySelector('.sw-income-submit-btn');
+    const fd = new FormData(form);
+    const amountDollars = parseFloat(fd.get('amountCents'));
+    const payload = {
+      entryDate: fd.get('entryDate'),
+      source: fd.get('source'),
+      sourceLabel: fd.get('sourceLabel') || '',
+      amountCents: Math.round((amountDollars || 0) * 100),
+      notes: fd.get('notes') || '',
+    };
+    if (status) { status.textContent = 'Saving…'; status.className = 'sw-income-form-status'; }
+    if (submitBtn) submitBtn.disabled = true;
+    try {
+      const res = await fetch(stewardshipApi('/income/manual'), {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || 'Could not save entry.');
+      if (status) { status.textContent = 'Saved.'; status.className = 'sw-income-form-status sw-income-form-status--ok'; }
+      form.reset();
+      loadManualIncomePanel();
+      // Manual income affects Budget Pace and Stewardship Health too — refresh those.
+      loadGivingMetricsPanel();
+      loadStewardshipHealthScorePanel();
+    } catch (e) {
+      if (status) { status.textContent = e.message; status.className = 'sw-income-form-status sw-income-form-status--error'; }
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  }
+
+  async function deleteManualIncomeEntry(entryId) {
+    if (!confirm('Delete this income entry? This cannot be undone.')) return;
+    try {
+      await fetch(stewardshipApi('/income/manual/' + encodeURIComponent(entryId)), {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+      loadManualIncomePanel();
+      loadGivingMetricsPanel();
+      loadStewardshipHealthScorePanel();
+    } catch (e) {
+      alert('Could not delete entry: ' + e.message);
+    }
+  }
+
   // page of disconnected numbers.
   async function loadStewardshipHealthScorePanel(year) {
     const pane = document.getElementById('stewardshipHealthScorePane');
@@ -674,13 +800,35 @@
   function renderStewardshipHealthScore(d) {
     const score = d.score;
     const tone = score === null ? 'gold' : score >= 80 ? 'green' : score >= 60 ? 'gold' : 'red';
-    const componentLabels = { pledge_fulfillment: 'Pledge fulfillment', recurring_stability: 'Recurring donor stability', donor_retention: 'Donor retention', lapsed_donors: 'Lapsed donor count', year_end_projection: 'Year-end projection vs. goal', concentration_risk: 'Concentration risk' };
-    const chips = (d.components || []).map(c =>
-      '<div class="sw-health-chip">' +
-        '<span class="sw-health-chip-label">' + escapeHtml(c.label) + '</span>' +
-        '<span class="sw-health-chip-score tone-' + (c.score >= 75 ? 'green' : c.score >= 50 ? 'gold' : 'red') + '">' + c.score + '</span>' +
-      '</div>'
-    ).join('');
+
+    const componentTips = {
+      pledge_fulfillment: 'Pledges are behind where they should be by now — a personal reminder to households who pledged usually works better than a mass email.',
+      recurring_stability: 'Recurring gifts are failing or being canceled — reaching out to update payment info can recover this before it becomes a bigger gap.',
+      donor_retention: 'Fewer of last year\u2019s donors have given again this year — a short personal check-in tends to bring people back faster than a form letter.',
+      lapsed_donors: 'A number of last year\u2019s donors haven\u2019t given yet this year — a warm, specific "we missed you" note outperforms a generic reminder.',
+      year_end_projection: 'At the current pace, giving is on track to fall short of the annual goal — a mid-year appeal or campaign can close the gap before year-end.',
+      concentration_risk: 'A large share of annual giving comes from just a few households — growing the base of regular, smaller donors reduces how exposed the parish is if one household\u2019s giving changes.',
+    };
+    const statusExplainer = {
+      'On Track': 'Giving, retention, and recurring gifts are all healthy — no urgent follow-up needed this month.',
+      'Needs Attention': 'One or more of the signals below is starting to slip. Nothing urgent yet, but worth a look before it becomes a bigger gap.',
+      'At Risk': 'Multiple signals below are struggling at once. The tips under each low score are the fastest way to move this number.',
+      'Not enough data yet': 'This parish doesn\u2019t have enough giving history yet — the score fills in automatically as the year of data builds up.',
+    };
+
+    const chips = (d.components || []).map(c => {
+      const isLow = c.score < 75;
+      const tip = componentTips[c.key] || '';
+      return '<div class="sw-health-chip' + (isLow ? ' sw-health-chip--low' : '') + '">' +
+        '<div class="sw-health-chip-top">' +
+          '<span class="sw-health-chip-label">' + escapeHtml(c.label) + '</span>' +
+          '<span class="sw-health-chip-score tone-' + (c.score >= 75 ? 'green' : c.score >= 50 ? 'gold' : 'red') + '">' + c.score + '</span>' +
+        '</div>' +
+        (isLow && tip ? '<p class="sw-health-chip-tip">' + escapeHtml(tip) + '</p>' : '') +
+      '</div>';
+    }).join('');
+
+    const explainer = statusExplainer[d.status] || '';
 
     return (
       '<div class="sw-health-score-row">' +
@@ -691,11 +839,12 @@
         '<div class="sw-health-score-copy">' +
           '<div class="sw-health-score-headline">Stewardship Health: ' + (score === null ? '—' : score + '/100') + ' — ' + escapeHtml(d.status) + '</div>' +
           '<p class="sw-health-score-sub">' + (d.components && d.components.length
-            ? 'Calculated from ' + d.components.length + ' signal' + (d.components.length === 1 ? '' : 's') + ' below.'
-            : 'Not enough giving history yet to calculate a score — check back once this year has more data.') + '</p>' +
+            ? 'Calculated from ' + d.components.length + ' signal' + (d.components.length === 1 ? '' : 's') + ' below. ' + escapeHtml(explainer)
+            : escapeHtml(explainer)) + '</p>' +
         '</div>' +
       '</div>' +
-      (chips ? '<div class="sw-health-chips">' + chips + '</div>' : '')
+      (chips ? '<div class="sw-health-chips">' + chips + '</div>' : '') +
+      (chips ? '<p class="sw-health-score-footnote">Each score below is out of 100. Anything under 75 shows a specific suggestion for what would help most.</p>' : '')
     );
   }
 
@@ -1227,14 +1376,6 @@
     const m = document.getElementById('nudgeAdminModal');
     if (m) m.hidden = true;
     nudgePreviewData = null;
-  }
-
-  function stewardshipGivingPageUrl() {
-    const token = document.getElementById('parishToken')?.value.trim() || sessionStorage.getItem(parishSessionStorageKey) || '';
-    const url = new URL('/parish/stewardship/giving', window.location.origin);
-    url.searchParams.set('parishId', currentParish?.parishId || '');
-    url.searchParams.set('t', token);
-    return url.pathname + url.search;
   }
 
   function stewardshipMonthlyReportUrl() {
@@ -2426,6 +2567,7 @@
     const healthPane = document.getElementById('stewardshipHealthScorePane');
     const concentrationPane = document.getElementById('stewardshipConcentrationPane');
     const recurringPane = document.getElementById('stewardshipRecurringPane');
+    const manualIncomePane = document.getElementById('stewardshipManualIncomePane');
     if (statusEl) {
       statusEl.textContent = 'Parish tier';
       statusEl.className = 'sw-suite-status-label sw-suite-status--upsell';
@@ -2448,6 +2590,7 @@
     if (healthPane) healthPane.innerHTML = locked;
     if (concentrationPane) concentrationPane.innerHTML = locked;
     if (recurringPane) recurringPane.innerHTML = locked;
+    if (manualIncomePane) manualIncomePane.innerHTML = locked;
   }
 
   function renderStewardshipPanel() {
@@ -2498,13 +2641,6 @@
     // Show the financials year select + new button
     const finActions = document.getElementById('financialsHeaderActions');
     if (finActions) finActions.hidden = false;
-
-    // Wire the full metrics report link
-    const reportLink = document.getElementById('swGivingFullLink');
-    if (reportLink) {
-      reportLink.href = stewardshipGivingPageUrl();
-      reportLink.hidden = false;
-    }
   }
 
   function renderParishPlusMeetingsPane(meetingsPane, active) {
@@ -2667,6 +2803,19 @@
           '<div class="sw-tool-locked-items">' +
             '<div><span>✓</span> Recurring donors, MRR, and average gift</div>' +
             '<div><span>✓</span> Failed payments and canceled gifts</div>' +
+          '</div>' +
+          '<div class="sw-tool-locked-badge">Subscribe to unlock</div>' +
+        '</div>';
+    }
+
+    // ── Other Income tool card — locked ─────────────────────────────────────
+    const manualIncomePane = document.getElementById('stewardshipManualIncomePane');
+    if (manualIncomePane) {
+      manualIncomePane.innerHTML =
+        '<div class="sw-tool-locked">' +
+          '<div class="sw-tool-locked-items">' +
+            '<div><span>✓</span> Log weekly cash &amp; check totals</div>' +
+            '<div><span>✓</span> Add income from Tithe.ly, PayPal, and other platforms</div>' +
           '</div>' +
           '<div class="sw-tool-locked-badge">Subscribe to unlock</div>' +
         '</div>';
