@@ -71,6 +71,40 @@ assert(monthPdfBytes[0] === 0x25 && monthPdfBytes[1] === 0x50 && monthPdfBytes[2
 const printJob = buildPrintJobRequest({ templateId: "print_mom_weekly", rangeLabel: "May 4 - May 10" });
 assert(printJob.status === "ready" && printJob.format === "pdf", "Print job helper should default to ready PDFs.");
 
+// ── Weekly/Monthly planner weekday alignment ────────────────────────────────
+const weekPlanner = repository.getPlanner({ view: "week" });
+const alignmentMonthKey = weekPlanner.week.dates[1].slice(0, 7);
+const alignmentMonthPlanner = repository.getPlanner({ view: "month", month: alignmentMonthKey });
+const alignmentMonday = weekPlanner.week.dates[1];
+const alignmentTuesday = weekPlanner.week.dates[2];
+const alignmentFriday = weekPlanner.week.dates[5];
+const alignmentSunday = weekPlanner.week.dates[0];
+const alignmentSaturday = weekPlanner.week.dates[6];
+const alignmentRows = [...(weekPlanner.week.householdRows || []), ...(weekPlanner.week.childRows || [])];
+const mondayRow = alignmentRows.find((row) => Number(row.minutes?.[1] || 0) > 0);
+const tuesdayRow = alignmentRows.find((row) => Number(row.minutes?.[2] || 0) > 0);
+const fridayRow = alignmentRows.find((row) => Number(row.minutes?.[5] || 0) > 0);
+const alignmentMondayCell = alignmentMonthPlanner.month.days.find((day) => day.civilDate === alignmentMonday);
+const alignmentTuesdayCell = alignmentMonthPlanner.month.days.find((day) => day.civilDate === alignmentTuesday);
+const alignmentFridayCell = alignmentMonthPlanner.month.days.find((day) => day.civilDate === alignmentFriday);
+const alignmentSundayCell = alignmentMonthPlanner.month.days.find((day) => day.civilDate === alignmentSunday);
+const alignmentSaturdayCell = alignmentMonthPlanner.month.days.find((day) => day.civilDate === alignmentSaturday);
+const monthCellTitles = (cell) => [
+  ...(cell?.householdPlan || []).map((item) => item.title),
+  ...(cell?.formPlan || []).map((item) => item.title)
+];
+assert(mondayRow && monthCellTitles(alignmentMondayCell).includes(mondayRow.title), "Monthly planner should show Monday weekly work on Monday.");
+assert(tuesdayRow && monthCellTitles(alignmentTuesdayCell).includes(tuesdayRow.title), "Monthly planner should show Tuesday weekly work on Tuesday.");
+assert(fridayRow && monthCellTitles(alignmentFridayCell).includes(fridayRow.title), "Monthly planner should show Friday weekly work on Friday.");
+const fridayOnlyRow = alignmentRows.find((row) => Number(row.minutes?.[5] || 0) > 0 && Number(row.minutes?.[6] || 0) === 0);
+if (fridayOnlyRow) {
+  assert(!monthCellTitles(alignmentSaturdayCell).includes(fridayOnlyRow.title), "Monthly planner should not show Friday-only work on Saturday.");
+}
+const saturdayOnlyRow = alignmentRows.find((row) => Number(row.minutes?.[6] || 0) > 0 && Number(row.minutes?.[0] || 0) === 0);
+if (saturdayOnlyRow) {
+  assert(!monthCellTitles(alignmentSundayCell).includes(saturdayOnlyRow.title), "Monthly planner should not show Saturday-only work on Sunday.");
+}
+
 const coOp = repository.getCoOp({ enabled: true });
 assert(coOp.enabled === true && coOp.scheduleBlocks.length >= 5, "Co-op scaffold should be feature-flag ready with schedule blocks.");
 
