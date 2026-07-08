@@ -31,6 +31,12 @@
     <priority>0.85</priority>
   </url>
   <url>
+    <loc>https://agapay.app/learn/odyssey</loc>
+    <lastmod>2026-07-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
     <loc>https://agapay.app/give/features</loc>
     <lastmod>2026-06-21</lastmod>
     <changefreq>monthly</changefreq>
