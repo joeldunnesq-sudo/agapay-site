@@ -1024,7 +1024,7 @@ function packetPreviewHtml(registration, meeting, agendaItems, reports, financia
   // ── Toolbar (preview only) ────────────────────────────────────────────────
   const toolbar = isPdf ? "" : `
     <div class="pk-toolbar" data-no-print>
-      <a href="javascript:history.back()" class="pk-toolbar-btn pk-toolbar-back">
+      <a href="/parish/dashboard" class="pk-toolbar-btn pk-toolbar-back" onclick="window.close(); return true;">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="10 3 5 8 10 13"/></svg>
         Back to editor
       </a>
