@@ -963,41 +963,46 @@
           </div>
         </div>
 
-        <!-- Stewardship tool cards — always visible, content swaps with JS state -->
-        <div class="sw-suite-tool-grid">
-
-          <div class="sw-suite-tool-card sw-tool-giving">
-            <div class="sw-tool-card-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
-              </svg>
-            </div>
-            <strong class="sw-tool-card-title">Stewardship Reports</strong>
-            <p class="sw-tool-card-desc">Fund breakdown, giving trends, pledge context, and year-over-year snapshots.</p>
-            <div class="sw-tool-card-body" id="givingMetricsPane">
-              <p class="sw-tool-loading">Loading…</p>
-            </div>
-            <a class="sw-tool-card-link" id="swGivingFullLink" href="#" hidden>Full metrics report →</a>
+        <!-- Stewardship Reports — full-width featured card. Now includes
+             Budget Pace, which made it too dense for a 1/3-width grid cell. -->
+        <div class="sw-suite-tool-card sw-tool-giving sw-tool-financials-featured">
+          <div class="sw-tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+            </svg>
           </div>
+          <strong class="sw-tool-card-title">Stewardship Reports</strong>
+          <p class="sw-tool-card-desc">Fund breakdown, giving trends, budget pace, and year-over-year snapshots.</p>
+          <div class="sw-tool-card-body" id="givingMetricsPane">
+            <p class="sw-tool-loading">Loading…</p>
+          </div>
+          <a class="sw-tool-card-link" id="swGivingFullLink" href="#" hidden>Full metrics report →</a>
+        </div>
 
-          <div class="sw-suite-tool-card sw-tool-financials">
-            <div class="sw-tool-card-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-              </svg>
-            </div>
-            <div class="sw-tool-card-header-row">
-              <strong class="sw-tool-card-title">Financial Snapshots</strong>
-              <div class="sw-tool-card-actions" id="financialsHeaderActions" hidden>
-                <select class="sw-year-select" id="financialsYearSelect" onchange="loadFinancialSnapshotsPanel(+this.value)"></select>
-                <button class="sw-action-btn" type="button" onclick="openFinancialsEditor(null)">+ New</button>
-              </div>
-            </div>
-            <p class="sw-tool-card-desc">Income, expenses, and restricted fund balances by fiscal year.</p>
-            <div class="sw-tool-card-body" id="stewardshipFinancialsPane">
-              <p class="sw-tool-loading">Loading…</p>
+        <!-- Financial Snapshots — full-width featured card. Needs room for
+             the KPI row and the side-by-side packets/funds layout. -->
+        <div class="sw-suite-tool-card sw-tool-financials sw-tool-financials-featured">
+          <div class="sw-tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </div>
+          <div class="sw-tool-card-header-row">
+            <strong class="sw-tool-card-title">Financial Snapshots</strong>
+            <div class="sw-tool-card-actions" id="financialsHeaderActions" hidden>
+              <select class="sw-year-select" id="financialsYearSelect" onchange="loadFinancialSnapshotsPanel(+this.value)"></select>
+              <button class="sw-action-btn" type="button" onclick="openFinancialsEditor(null)">+ New</button>
             </div>
           </div>
+          <p class="sw-tool-card-desc">Income, expenses, and restricted fund balances by fiscal year.</p>
+          <div class="sw-tool-card-body" id="stewardshipFinancialsPane">
+            <p class="sw-tool-loading">Loading…</p>
+          </div>
+        </div>
+
+        <!-- Lighter cards — Concentration Risk and Recurring Giving Health
+             each have one KPI row, comfortable as a 2-column pair. -->
+        <div class="sw-suite-tool-grid sw-suite-tool-grid--pair">
 
           <div class="sw-suite-tool-card sw-tool-concentration">
             <div class="sw-tool-card-icon">
