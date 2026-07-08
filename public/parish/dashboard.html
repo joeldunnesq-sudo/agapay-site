@@ -80,7 +80,7 @@
         </div>
         <div class="sidebar-nav-item" onclick="switchTab('stewardship')" id="nav-stewardship">
           <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 6h8"/><path d="M8 10h7"/></svg>
-          <span class="nav-label">Stewardship</span>
+          <span class="nav-label">Stewardship Health</span>
         </div>
         <div class="sidebar-nav-item sidebar-nav-item--suite" onclick="switchTab('parishplus')" id="nav-parishplus">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.2 8.4-7 10-3.8-1.6-7-5-7-10V6l7-3z"/><path d="M9 12l2 2 4-5"/></svg>
@@ -933,16 +933,33 @@
         <div class="sw-suite-hero">
           <div class="sw-suite-hero-copy">
             <span class="sw-suite-eyebrow">Parish tier</span>
-            <h1 class="sw-suite-heading">Stewardship</h1>
+            <h1 class="sw-suite-heading">Stewardship Health</h1>
             <p class="sw-suite-subhead">Pledge tracking, giving reports, financial snapshots, and stewardship records for the Parish tier.</p>
           </div>
           <div class="sw-suite-hero-status" id="stewardshipHeroStatus">
             <span class="sw-suite-status-label" id="stewardshipStatusLabel">Loading…</span>
             <div class="sw-suite-hero-actions">
+              <button class="sw-report-generate-btn" type="button" onclick="openStewardshipMonthlyReport()">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 1.5h6l3 3v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1z"/><path d="M10 1.5V4.5h3"/><path d="M5.5 8.5h5M5.5 10.5h5M5.5 12h3"/></svg>
+                Generate Monthly Stewardship Report
+              </button>
               <button class="sw-suite-refresh-btn" type="button" onclick="loadStewardshipPanel(true)" title="Refresh">
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13.5 8A5.5 5.5 0 1 1 10 3.07"/><polyline points="10 1 10 4 13 4"/></svg>
               </button>
             </div>
+          </div>
+        </div>
+
+        <!-- Stewardship Health Score — full-width featured card, top of tab.
+             A single composite score, not another wall of numbers. -->
+        <div class="sw-suite-tool-card sw-tool-health-score sw-tool-financials-featured">
+          <div class="sw-tool-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6.5 7 1-5 5 1.5 7L12 18l-6.5 3.5L7 14.5l-5-5 7-1z"/></svg>
+          </div>
+          <strong class="sw-tool-card-title">Stewardship Health</strong>
+          <p class="sw-tool-card-desc">One score, calculated from pledge fulfillment, recurring donor stability, retention, lapsed donors, year-end projection, and concentration risk.</p>
+          <div class="sw-tool-card-body" id="stewardshipHealthScorePane">
+            <p class="sw-tool-loading">Loading…</p>
           </div>
         </div>
 
@@ -982,28 +999,28 @@
             </div>
           </div>
 
-          <div class="sw-suite-tool-card sw-tool-retention">
+          <div class="sw-suite-tool-card sw-tool-concentration">
             <div class="sw-tool-card-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>
               </svg>
             </div>
-            <strong class="sw-tool-card-title">Donor Retention</strong>
-            <p class="sw-tool-card-desc">Who kept giving, who lapsed, and who's new this year, at a glance.</p>
-            <div class="sw-tool-card-body" id="stewardshipRetentionPane">
+            <strong class="sw-tool-card-title">Donor Concentration Risk</strong>
+            <p class="sw-tool-card-desc">What share of annual giving comes from your top households — board-level fragility, anonymized.</p>
+            <div class="sw-tool-card-body" id="stewardshipConcentrationPane">
               <p class="sw-tool-loading">Loading…</p>
             </div>
           </div>
 
-          <div class="sw-suite-tool-card sw-tool-distribution">
+          <div class="sw-suite-tool-card sw-tool-recurring">
             <div class="sw-tool-card-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                <path d="M17.5 6.5A6.5 6.5 0 1 0 21 12"/><polyline points="21 3 21 9 15 9"/>
               </svg>
             </div>
-            <strong class="sw-tool-card-title">Giving Distribution</strong>
-            <p class="sw-tool-card-desc">Anonymized household giving tiers for the fiscal year — no individual identities shown.</p>
-            <div class="sw-tool-card-body" id="stewardshipDistributionPane">
+            <strong class="sw-tool-card-title">Recurring Giving Health</strong>
+            <p class="sw-tool-card-desc">Recurring donors, monthly revenue, and cash-flow stability signals.</p>
+            <div class="sw-tool-card-body" id="stewardshipRecurringPane">
               <p class="sw-tool-loading">Loading…</p>
             </div>
           </div>
@@ -1403,7 +1420,7 @@
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="stewardship" onclick="switchTab('stewardship')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M6 5h16v18H6z"/><path d="M10 10h8"/><path d="M10 14h8"/><path d="M10 18h5"/></svg>
-    <span>Steward</span>
+    <span>Health</span>
   </button>
   <button class="mobile-tab-link" type="button" data-nav-tab="parishplus" onclick="switchTab('parishplus')">
     <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 3l9 4v6c0 6-4 10-9 12-5-2-9-6-9-12V7l9-4z"/><path d="M10 14l3 3 6-7"/></svg>

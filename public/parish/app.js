@@ -437,7 +437,7 @@
       // Always reload metrics/financials when switching to the tab
       const _sw = stewardshipState.stewardship || {};
       const _active = _sw.active || ['active','trialing'].includes(_sw.status);
-      if (_active) { loadGivingMetricsPanel(); loadFinancialSnapshotsPanel(); loadDonorRetentionPanel(); loadGivingDistributionPanel(); }
+      if (_active) { loadGivingMetricsPanel(); loadFinancialSnapshotsPanel(); loadStewardshipHealthScorePanel(); loadDonorConcentrationPanel(); loadRecurringGivingPanel(); }
       return;
     }
     if (status) status.textContent = 'Loading…';
@@ -462,11 +462,12 @@
     }
     renderStewardshipPanel();
     renderParishPlusPanel();
-    // Load giving metrics, financials, retention, and distribution in parallel
+    // Load giving metrics, financials, health score, concentration risk, and recurring giving in parallel
     loadGivingMetricsPanel();
     loadFinancialSnapshotsPanel();
-    loadDonorRetentionPanel();
-    loadGivingDistributionPanel();
+    loadStewardshipHealthScorePanel();
+    loadDonorConcentrationPanel();
+    loadRecurringGivingPanel();
   }
 
   // ── Giving Metrics Panel ─────────────────────────────────────────────────
@@ -525,6 +526,26 @@
     const yoyHtml = yoy !== null
       ? '<span class="sw-yoy sw-yoy-' + (yoy >= 0 ? 'up' : 'down') + '">' + (yoy >= 0 ? '▲' : '▼') + ' ' + Math.abs(yoy) + '% vs prior year</span>' : '';
 
+    // Budget Pace — the annual pledge total treated as the giving goal,
+    // pro-rated against how far through the fiscal year today is. This is
+    // what turns "projected year-end: $218,000" from a number nobody can
+    // evaluate into a clear behind/ahead-of-pace verdict.
+    let budgetPaceHtml = '';
+    if (s.total_pledged_cents > 0 && s.day_of_year && s.days_in_year) {
+      const expectedByTodayCents = Math.round(s.total_pledged_cents * (s.day_of_year / s.days_in_year));
+      const behindPaceCents = expectedByTodayCents - s.total_actual_cents;
+      const isBehind = behindPaceCents > 0;
+      budgetPaceHtml =
+        '<div class="sw-fin-section-label" style="margin-top:1.1rem;">Budget Pace</div>' +
+        '<div class="sw-budget-pace-grid">' +
+          gmKpi('Annual Goal', fmtDollars(s.total_pledged_cents), 'fiscal year ' + year) +
+          gmKpi('Expected by Today', fmtDollars(expectedByTodayCents), 'pro-rated to date') +
+          gmKpi('Actual Collected', fmtDollars(s.total_actual_cents), '') +
+          gmKpi(isBehind ? 'Behind Pace' : 'Ahead of Pace', fmtDollars(Math.abs(behindPaceCents)), '') +
+          gmKpi('Projected Year-End', fmtDollars(s.run_rate_cents), s.run_rate_cents >= s.total_pledged_cents ? 'on track to meet goal' : 'short of goal at this pace') +
+        '</div>';
+    }
+
     const fundRows = (f.funds || []).filter(fd => fd.total_cents > 0).map(fd =>
       '<tr class="sw-fund-row">' +
         '<td class="sw-fund-name">' + escapeHtml(fd.fund_name) + '</td>' +
@@ -548,6 +569,7 @@
         gmKpi('Fulfillment', s.fulfillment_rate_pct !== null ? s.fulfillment_rate_pct + '%' : '—', 'of pledge goal') +
         gmKpi('Avg / Donor', fmtDollars(s.avg_per_donor_cents), s.active_donors + ' active this year') +
       '</div>' +
+      budgetPaceHtml +
       (s.total_pledged_cents > 0 ?
         '<div class="sw-progress-block">' +
           '<div class="sw-progress-label"><span>Collected vs pledge goal</span><strong>' + pct + '%</strong></div>' +
@@ -626,79 +648,137 @@
     );
   }
 
-  // ── Donor Retention Panel ────────────────────────────────────────────────
-  async function loadDonorRetentionPanel(year) {
-    const pane = document.getElementById('stewardshipRetentionPane');
+  // ── Stewardship Health Score Panel ──────────────────────────────────────
+  // Replaces the old standalone Donor Retention card — retention is now one
+  // of six signals rolled into a single composite score, matching how a
+  // parish council actually wants to read this: "are we on track," not a
+  // page of disconnected numbers.
+  async function loadStewardshipHealthScorePanel(year) {
+    const pane = document.getElementById('stewardshipHealthScorePane');
     if (!pane || !currentParish) return;
-    if (!pane.querySelector('.sw-retention-chips')) pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
+    if (!pane.querySelector('.sw-health-score-row')) pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
     try {
       const y = year || givingMetricsState.year;
-      const res = await fetch(stewardshipApi('/giving/retention?year=' + y), { headers: authHeaders() });
+      const res = await fetch(stewardshipApi('/giving/health-score?year=' + y), { headers: authHeaders() });
       const data = await res.json();
       if (data.error && data.error.includes('not activated')) {
         pane.innerHTML = renderGivingMetricsUpgrade();
         return;
       }
-      pane.innerHTML = renderDonorRetention(data);
+      pane.innerHTML = renderStewardshipHealthScore(data);
     } catch (e) {
-      pane.innerHTML = '<p class="muted">Retention data unavailable.</p>';
+      pane.innerHTML = '<p class="muted">Stewardship health score unavailable.</p>';
     }
   }
 
-  function renderDonorRetention(d) {
-    const rate = d.retention_rate_pct;
-    const tone = rate === null ? 'gold' : rate >= 75 ? 'green' : rate >= 50 ? 'gold' : 'red';
-    const ringHtml = rate !== null
-      ? swRing(rate, tone, rate + '%', 'retained from ' + d.prior_year)
-      : '<p class="sw-tool-card-desc" style="margin:0 0 .75rem;">Not enough prior-year giving to calculate retention yet.</p>';
+  function renderStewardshipHealthScore(d) {
+    const score = d.score;
+    const tone = score === null ? 'gold' : score >= 80 ? 'green' : score >= 60 ? 'gold' : 'red';
+    const componentLabels = { pledge_fulfillment: 'Pledge fulfillment', recurring_stability: 'Recurring donor stability', donor_retention: 'Donor retention', lapsed_donors: 'Lapsed donor count', year_end_projection: 'Year-end projection vs. goal', concentration_risk: 'Concentration risk' };
+    const chips = (d.components || []).map(c =>
+      '<div class="sw-health-chip">' +
+        '<span class="sw-health-chip-label">' + escapeHtml(c.label) + '</span>' +
+        '<span class="sw-health-chip-score tone-' + (c.score >= 75 ? 'green' : c.score >= 50 ? 'gold' : 'red') + '">' + c.score + '</span>' +
+      '</div>'
+    ).join('');
 
     return (
-      ringHtml +
-      '<div class="sw-retention-chips">' +
-        '<div class="sw-retention-chip tone-green"><strong>' + (d.retained || 0) + '</strong><span>Retained</span></div>' +
-        '<div class="sw-retention-chip tone-red"><strong>' + (d.lapsed || 0) + '</strong><span>Lapsed</span></div>' +
-        '<div class="sw-retention-chip tone-blue"><strong>' + (d.new_donors || 0) + '</strong><span>New</span></div>' +
-      '</div>'
+      '<div class="sw-health-score-row">' +
+        '<div class="sw-health-score-badge tone-' + tone + '">' +
+          '<strong>' + (score === null ? '—' : score) + '</strong>' +
+          '<span>/ 100</span>' +
+        '</div>' +
+        '<div class="sw-health-score-copy">' +
+          '<div class="sw-health-score-headline">Stewardship Health: ' + (score === null ? '—' : score + '/100') + ' — ' + escapeHtml(d.status) + '</div>' +
+          '<p class="sw-health-score-sub">' + (d.components && d.components.length
+            ? 'Calculated from ' + d.components.length + ' signal' + (d.components.length === 1 ? '' : 's') + ' below.'
+            : 'Not enough giving history yet to calculate a score — check back once this year has more data.') + '</p>' +
+        '</div>' +
+      '</div>' +
+      (chips ? '<div class="sw-health-chips">' + chips + '</div>' : '')
     );
   }
 
-  // ── Giving Distribution Panel ────────────────────────────────────────────
-  async function loadGivingDistributionPanel(year) {
-    const pane = document.getElementById('stewardshipDistributionPane');
+  // ── Donor Concentration Risk Panel ──────────────────────────────────────
+  // Replaces the tier-histogram Giving Distribution card. Same anonymized
+  // source data, ranked instead of bucketed — "top 5 households give 41%"
+  // is the number a parish council actually needs to gauge fragility.
+  async function loadDonorConcentrationPanel(year) {
+    const pane = document.getElementById('stewardshipConcentrationPane');
     if (!pane || !currentParish) return;
-    if (!pane.querySelector('.sw-tier-list')) pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
+    if (!pane.querySelector('.sw-concentration-row')) pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
     try {
       const y = year || givingMetricsState.year;
-      const res = await fetch(stewardshipApi('/giving/distribution?year=' + y), { headers: authHeaders() });
+      const res = await fetch(stewardshipApi('/giving/concentration?year=' + y), { headers: authHeaders() });
       const data = await res.json();
       if (data.error && data.error.includes('not activated')) {
         pane.innerHTML = renderGivingMetricsUpgrade();
         return;
       }
-      pane.innerHTML = renderGivingDistribution(data);
+      pane.innerHTML = renderDonorConcentration(data);
     } catch (e) {
-      pane.innerHTML = '<p class="muted">Distribution data unavailable.</p>';
+      pane.innerHTML = '<p class="muted">Concentration data unavailable.</p>';
     }
   }
 
-  function renderGivingDistribution(d) {
-    const tiers = d.tiers || [];
-    const maxCount = Math.max(1, ...tiers.map(t => t.count || 0));
+  function renderDonorConcentration(d) {
     if (!d.total_donors) {
       return '<p class="muted" style="font-size:.85rem;">No giving recorded yet for this fiscal year.</p>';
     }
-    const rows = tiers.map((t, i) => {
-      const pct = Math.round(((t.count || 0) / maxCount) * 100);
-      return (
-        '<div class="sw-tier-row">' +
-          '<span class="sw-tier-label">' + escapeHtml(t.label) + '</span>' +
-          '<span class="sw-tier-track"><span class="sw-tier-fill tier-' + (i + 1) + '" style="width:' + Math.max(pct, t.count ? 4 : 0) + '%"></span></span>' +
-          '<span class="sw-tier-count">' + (t.count || 0) + '</span>' +
-        '</div>'
-      );
-    }).join('');
-    return '<div class="sw-tier-list">' + rows + '</div>' +
-      '<p class="muted" style="font-size:.72rem;margin:.6rem 0 0;">' + d.total_donors + ' giving household' + (d.total_donors === 1 ? '' : 's') + ' total this fiscal year</p>';
+    const riskLabel = d.risk_level === 'high' ? 'Fragile' : d.risk_level === 'moderate' ? 'Watch' : 'Diversified';
+    const riskTone = d.risk_level === 'high' ? 'red' : d.risk_level === 'moderate' ? 'gold' : 'green';
+    return (
+      '<div class="sw-concentration-row">' +
+        '<div class="sw-concentration-stat">' +
+          '<strong>' + (d.top5_pct === null ? '—' : d.top5_pct + '%') + '</strong>' +
+          '<span>Top 5 households provide</span>' +
+        '</div>' +
+        '<div class="sw-concentration-stat">' +
+          '<strong>' + (d.top10_pct === null ? '—' : d.top10_pct + '%') + '</strong>' +
+          '<span>Top 10 households provide</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="sw-concentration-risk-badge tone-' + riskTone + '">' + riskLabel + '</div>' +
+      '<p class="muted" style="font-size:.72rem;margin:.6rem 0 0;">Based on ' + d.total_donors + ' giving household' + (d.total_donors === 1 ? '' : 's') + ' this fiscal year. No individual identities shown.</p>'
+    );
+  }
+
+  // ── Recurring Giving Health Panel ───────────────────────────────────────
+  async function loadRecurringGivingPanel(year) {
+    const pane = document.getElementById('stewardshipRecurringPane');
+    if (!pane || !currentParish) return;
+    if (!pane.querySelector('.sw-recurring-kpi-grid')) pane.innerHTML = '<p class="sw-tool-loading">Loading…</p>';
+    try {
+      const y = year || givingMetricsState.year;
+      const res = await fetch(stewardshipApi('/giving/recurring?year=' + y), { headers: authHeaders() });
+      const data = await res.json();
+      if (data.error && data.error.includes('not activated')) {
+        pane.innerHTML = renderGivingMetricsUpgrade();
+        return;
+      }
+      pane.innerHTML = renderRecurringGiving(data);
+    } catch (e) {
+      pane.innerHTML = '<p class="muted">Recurring giving data unavailable.</p>';
+    }
+  }
+
+  function renderRecurringGiving(d) {
+    return (
+      '<div class="sw-recurring-kpi-grid">' +
+        gmKpi('Recurring Donors', d.recurring_donor_count, 'giving on a schedule') +
+        gmKpi('Monthly Revenue', fmtDollars(d.monthly_recurring_revenue_cents), 'recurring, normalized to monthly') +
+        gmKpi('Avg Recurring Gift', fmtDollars(d.avg_recurring_gift_cents), 'per donor, monthly-equivalent') +
+        gmKpi('% of Giving Recurring', d.pct_of_total_giving_recurring === null ? '—' : d.pct_of_total_giving_recurring + '%', 'of total giving this year') +
+      '</div>' +
+      '<div class="sw-recurring-alert-row">' +
+        '<div class="sw-recurring-alert' + (d.failed_payments_90d > 0 ? ' sw-recurring-alert--warn' : '') + '">' +
+          '<strong>' + d.failed_payments_90d + '</strong><span>Failed payments (90d)</span>' +
+        '</div>' +
+        '<div class="sw-recurring-alert' + (d.canceled_gifts_90d > 0 ? ' sw-recurring-alert--warn' : '') + '">' +
+          '<strong>' + d.canceled_gifts_90d + '</strong><span>Canceled gifts (90d)</span>' +
+        '</div>' +
+      '</div>'
+    );
   }
 
   // ── Financial Snapshots Panel ───────────────────────────────────────────
@@ -1155,6 +1235,19 @@
     url.searchParams.set('parishId', currentParish?.parishId || '');
     url.searchParams.set('t', token);
     return url.pathname + url.search;
+  }
+
+  function stewardshipMonthlyReportUrl() {
+    const token = document.getElementById('parishToken')?.value.trim() || sessionStorage.getItem(parishSessionStorageKey) || '';
+    const url = new URL('/api/parish/dashboard/' + encodeURIComponent(currentParish?.parishId || '') + '/stewardship/report/monthly', window.location.origin);
+    url.searchParams.set('year', String(givingMetricsState.year || new Date().getFullYear()));
+    url.searchParams.set('t', token);
+    return url.pathname + url.search;
+  }
+
+  function openStewardshipMonthlyReport() {
+    if (!currentParish) return;
+    window.open(stewardshipMonthlyReportUrl(), '_blank');
   }
 
   function updateStewardshipBadges(isActive) {
@@ -2330,8 +2423,9 @@
     const planPane  = document.getElementById('stewardshipPlanPane');
     const metricPane = document.getElementById('givingMetricsPane');
     const finPane = document.getElementById('stewardshipFinancialsPane');
-    const retentionPane = document.getElementById('stewardshipRetentionPane');
-    const distributionPane = document.getElementById('stewardshipDistributionPane');
+    const healthPane = document.getElementById('stewardshipHealthScorePane');
+    const concentrationPane = document.getElementById('stewardshipConcentrationPane');
+    const recurringPane = document.getElementById('stewardshipRecurringPane');
     if (statusEl) {
       statusEl.textContent = 'Parish tier';
       statusEl.className = 'sw-suite-status-label sw-suite-status--upsell';
@@ -2351,8 +2445,9 @@
     const locked = '<div class="sw-tool-locked"><div class="sw-tool-locked-items"><div><span>✓</span> Included with the Parish tier</div></div><div class="sw-tool-locked-badge">Parish tier required</div></div>';
     if (metricPane) metricPane.innerHTML = locked;
     if (finPane) finPane.innerHTML = locked;
-    if (retentionPane) retentionPane.innerHTML = locked;
-    if (distributionPane) distributionPane.innerHTML = locked;
+    if (healthPane) healthPane.innerHTML = locked;
+    if (concentrationPane) concentrationPane.innerHTML = locked;
+    if (recurringPane) recurringPane.innerHTML = locked;
   }
 
   function renderStewardshipPanel() {
@@ -2538,27 +2633,40 @@
         '</div>';
     }
 
-    // ── Retention tool card — locked ────────────────────────────────────────
-    const retentionPane = document.getElementById('stewardshipRetentionPane');
-    if (retentionPane) {
-      retentionPane.innerHTML =
+    // ── Health Score tool card — locked ─────────────────────────────────────
+    const healthPane = document.getElementById('stewardshipHealthScorePane');
+    if (healthPane) {
+      healthPane.innerHTML =
         '<div class="sw-tool-locked">' +
           '<div class="sw-tool-locked-items">' +
-            '<div><span>✓</span> Retained, lapsed, and new donor counts</div>' +
-            '<div><span>✓</span> Year-over-year retention rate</div>' +
+            '<div><span>✓</span> One composite score from six giving signals</div>' +
+            '<div><span>✓</span> Pledge fulfillment, retention, and concentration risk at a glance</div>' +
           '</div>' +
           '<div class="sw-tool-locked-badge">Subscribe to unlock</div>' +
         '</div>';
     }
 
-    // ── Distribution tool card — locked ─────────────────────────────────────
-    const distributionPane = document.getElementById('stewardshipDistributionPane');
-    if (distributionPane) {
-      distributionPane.innerHTML =
+    // ── Concentration Risk tool card — locked ───────────────────────────────
+    const concentrationPane = document.getElementById('stewardshipConcentrationPane');
+    if (concentrationPane) {
+      concentrationPane.innerHTML =
         '<div class="sw-tool-locked">' +
           '<div class="sw-tool-locked-items">' +
-            '<div><span>✓</span> Anonymized giving-tier breakdown</div>' +
+            '<div><span>✓</span> Top 5 / top 10 household giving concentration</div>' +
             '<div><span>✓</span> No individual donor identities shown</div>' +
+          '</div>' +
+          '<div class="sw-tool-locked-badge">Subscribe to unlock</div>' +
+        '</div>';
+    }
+
+    // ── Recurring Giving Health tool card — locked ──────────────────────────
+    const recurringPane = document.getElementById('stewardshipRecurringPane');
+    if (recurringPane) {
+      recurringPane.innerHTML =
+        '<div class="sw-tool-locked">' +
+          '<div class="sw-tool-locked-items">' +
+            '<div><span>✓</span> Recurring donors, MRR, and average gift</div>' +
+            '<div><span>✓</span> Failed payments and canceled gifts</div>' +
           '</div>' +
           '<div class="sw-tool-locked-badge">Subscribe to unlock</div>' +
         '</div>';
