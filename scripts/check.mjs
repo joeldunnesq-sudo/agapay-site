@@ -293,15 +293,22 @@ assert.ok(backendSources.includes('action: "registration.status_changed"'), "reg
 assert.ok(backendSources.includes("handleAdminAuditLog"), "worker should expose an admin audit-log viewer endpoint");
 assert.ok(worker.includes('url.pathname === "/api/admin/audit-log"'), "worker should route GET /api/admin/audit-log");
 
-// Stewardship tab redesign -- new Retention/Distribution cards using
-// previously-built-but-unused backend endpoints
+// Stewardship tab redesign -- renamed "Stewardship Health", with a
+// composite Health Score card (absorbing retention), a Donor Concentration
+// Risk card (reusing the distribution endpoint's aggregation), a new
+// Recurring Giving Health card, and a Monthly Stewardship Report button.
 const parishAppJs = await readFile("public/parish/app.js", "utf8");
-assert.ok(parishDashboardHtml.includes('id="stewardshipRetentionPane"'), "Stewardship tab should include a Donor Retention card");
-assert.ok(parishDashboardHtml.includes('id="stewardshipDistributionPane"'), "Stewardship tab should include a Giving Distribution card");
-assert.ok(parishAppJs.includes("function loadDonorRetentionPanel"), "app.js should define loadDonorRetentionPanel");
-assert.ok(parishAppJs.includes("function loadGivingDistributionPanel"), "app.js should define loadGivingDistributionPanel");
-assert.ok(parishAppJs.includes("stewardshipApi('/giving/retention") && parishAppJs.includes("stewardshipApi('/giving/distribution"), "Stewardship tab should call the existing retention/distribution endpoints, not new ones");
-assert.ok(worker.includes('endsWith("/stewardship/giving/retention")') && worker.includes('endsWith("/stewardship/giving/distribution")'), "worker should already route the retention/distribution endpoints the Stewardship tab now uses");
+assert.ok(parishDashboardHtml.includes('id="stewardshipHealthScorePane"'), "Stewardship Health tab should include a Health Score card");
+assert.ok(parishDashboardHtml.includes('id="stewardshipConcentrationPane"'), "Stewardship Health tab should include a Donor Concentration Risk card");
+assert.ok(parishDashboardHtml.includes('id="stewardshipRecurringPane"'), "Stewardship Health tab should include a Recurring Giving Health card");
+assert.ok(parishDashboardHtml.includes("openStewardshipMonthlyReport()"), "Stewardship Health tab should have a Generate Monthly Stewardship Report button");
+assert.ok(parishAppJs.includes("function loadStewardshipHealthScorePanel"), "app.js should define loadStewardshipHealthScorePanel");
+assert.ok(parishAppJs.includes("function loadDonorConcentrationPanel"), "app.js should define loadDonorConcentrationPanel");
+assert.ok(parishAppJs.includes("function loadRecurringGivingPanel"), "app.js should define loadRecurringGivingPanel");
+assert.ok(parishAppJs.includes("stewardshipApi('/giving/health-score") && parishAppJs.includes("stewardshipApi('/giving/concentration") && parishAppJs.includes("stewardshipApi('/giving/recurring"), "Stewardship Health tab should call the new health-score/concentration/recurring endpoints");
+assert.ok(worker.includes('endsWith("/stewardship/giving/retention")') && worker.includes('endsWith("/stewardship/giving/distribution")'), "retention/distribution endpoints should still exist -- their data feeds the new cards, not removed");
+assert.ok(worker.includes('endsWith("/stewardship/giving/concentration")') && worker.includes('endsWith("/stewardship/giving/recurring")') && worker.includes('endsWith("/stewardship/giving/health-score")'), "worker should route the three new stewardship giving endpoints");
+assert.ok(worker.includes('endsWith("/stewardship/report/monthly")'), "worker should route the monthly stewardship report endpoint");
 
 // Tax readiness gate -- parish canonical verification vs. AGAPAY billing/tax
 // readiness are separate (src/lib/tax-readiness.js). Functional coverage
