@@ -309,6 +309,12 @@ assert.ok(parishAppJs.includes("stewardshipApi('/giving/health-score") && parish
 assert.ok(worker.includes('endsWith("/stewardship/giving/retention")') && worker.includes('endsWith("/stewardship/giving/distribution")'), "retention/distribution endpoints should still exist -- their data feeds the new cards, not removed");
 assert.ok(worker.includes('endsWith("/stewardship/giving/concentration")') && worker.includes('endsWith("/stewardship/giving/recurring")') && worker.includes('endsWith("/stewardship/giving/health-score")'), "worker should route the three new stewardship giving endpoints");
 assert.ok(worker.includes('endsWith("/stewardship/report/monthly")'), "worker should route the monthly stewardship report endpoint");
+assert.ok(!parishDashboardHtml.includes('id="swGivingFullLink"'), "standalone Full metrics report link should be retired -- combined into the Monthly Stewardship Report instead");
+assert.ok(worker.includes("handleStewardshipGivingFunds(withYear(\"funds\")"), "monthly report should include the Giving by Fund breakdown that used to be exclusive to the standalone report");
+assert.ok(parishDashboardHtml.includes('id="stewardshipManualIncomePane"'), "Stewardship Health tab should include an Other Income card for manual entry");
+assert.ok(parishAppJs.includes("function loadManualIncomePanel") && parishAppJs.includes("function submitManualIncomeEntry") && parishAppJs.includes("function deleteManualIncomeEntry"), "app.js should define the manual income entry functions");
+assert.ok(worker.includes("manual_income_entries"), "worker should reference the manual_income_entries table");
+assert.ok(worker.includes("manualIncomeTotalCents"), "manual income should fold into the giving summary totals used by Budget Pace and Stewardship Health");
 
 // Tax readiness gate -- parish canonical verification vs. AGAPAY billing/tax
 // readiness are separate (src/lib/tax-readiness.js). Functional coverage
